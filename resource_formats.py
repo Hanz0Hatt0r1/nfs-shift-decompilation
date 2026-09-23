@@ -374,6 +374,68 @@ def _xml_tree(node: ET.Element, depth: int = 0, max_depth: int = 12) -> dict[str
     return out
 
 
+
+_SGB_EXTENSIONS = (
+    ".meb", ".bmt", ".mtx", ".dds", ".csm", ".vhf",
+    ".fxo", ".fx", ".sgb", ".bml", ".bas",
+)
+_SGB_KIND = {
+    ".meb": "geometry",
+    ".bmt": "material",
+    ".mtx": "material-source",
+    ".dds": "texture",
+    ".csm": "collision",
+    ".vhf": "scene-source",
+    ".fxo": "shader-cache",
+    ".fx": "shader-source",
+    ".sgb": "scene-source",
+    ".bml": "data",
+    ".bas": "skeleton-source",
+}
+
+
+def _sgb_resource_refs(payload: bytes, base_offset: int) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[int, str]] = set()
+
+    def emit(text: str, relative_offset: int, encoding: str) -> None:
+        text = text.replace("\\", "/")
+        low = text.lower()
+        suffix = next((ext for ext in _SGB_EXTENSIONS if low.endswith(ext)), None)
+        if suffix is None or not (2 <= len(text) <= 256):
+            return
+        key = (base_offset + relative_offset, low)
+        if key in seen:
+            return
+        seen.add(key)
+        rows.append({
+            "offset": base_offset + relative_offset,
+            "relative_offset": relative_offset,
+            "encoding": encoding,
+            "path": text,
+            "extension": suffix,
+            "kind": _SGB_KIND[suffix],
+            "confidence": "string-scan",
+        })
+
+    # ASCII and UTF-8-ish path strings are normally NUL-delimited in resource tables.
+    cursor = 0
+    for segment in payload.split(b"\x00"):
+        start = cursor
+        cursor += len(segment) + 1
+        for match in re.finditer(rb"[A-Za-z0-9_./\\-]{2,256}", segment):
+            emit(match.group(0).decode("utf-8", "replace"), start + match.start(), "ascii")
+
+    # UTF-16LE path strings: accept only pairs with printable low bytes.
+    for match in re.finditer(rb"(?:(?:[A-Za-z0-9_./\\-])\x00){2,256}", payload):
+        raw = match.group(0)
+        chars = bytes(raw[i] for i in range(0, len(raw), 2))
+        emit(chars.decode("utf-8", "replace"), match.start(), "utf-16le")
+
+    rows.sort(key=lambda x: (x["offset"], x["path"].lower()))
+    return rows
+
+
 def parse_sgb(data: bytes) -> dict[str, Any]:
     """Index the SHIFT binary scene graph container used by track .sgb files.
 
@@ -405,17 +467,31 @@ def parse_sgb(data: bytes) -> dict[str, Any]:
             "payload_size": len(payload),
             "payload_sha256": __import__("hashlib").sha256(payload).hexdigest(),
             "payload_head": payload[:24].hex(),
+            "resource_refs": _sgb_resource_refs(payload, off + 8),
         })
         off = end
         if tag == "END ":
             break
 
+    refs = [ref for chunk in chunks for ref in chunk.get("resource_refs", [])]
+    unique_refs = []
+    seen_paths: set[str] = set()
+    for ref in refs:
+        key = ref["path"].lower()
+        if key not in seen_paths:
+            seen_paths.add(key)
+            unique_refs.append(ref)
+    by_kind: dict[str, int] = {}
+    for ref in unique_refs:
+        by_kind[ref["kind"]] = by_kind.get(ref["kind"], 0) + 1
     return {
         "format": "SHIFT.SGB",
         "version": 1,
         "header_hex": data[:16].hex(),
         "chunk_count": len(chunks),
         "chunks": chunks,
+        "resource_refs": unique_refs,
+        "resource_ref_counts": by_kind,
         "container_end": off,
         "trailing_bytes": max(0, len(data) - off),
     }

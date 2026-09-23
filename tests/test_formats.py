@@ -139,6 +139,7 @@ def test_sgb_chunk_index():
     assert r["format"] == "SHIFT.SGB"
     assert [c["tag"] for c in r["chunks"]] == ["NODE", "END "]
     assert r["trailing_bytes"] == 4
+    assert r["resource_ref_counts"] == {}
 
 
 def test_fxo_shader_blob_parser():
