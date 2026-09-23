@@ -336,6 +336,27 @@ def build_draw_packets(
                     ),
                 })
 
+            material_selections = [
+                (s.get("material") or {}).get("shader_selection", {})
+                for s in packet_prims
+            ]
+            ambiguous_candidates = [
+                candidate
+                for selection in material_selections
+                for candidate in selection.get("ambiguous_candidates", [])
+            ]
+            selected_fxos = [
+                selection.get("selected_fxo")
+                for selection in material_selections
+                if selection.get("selected_fxo")
+            ]
+            packet_status = (
+                "ambiguous"
+                if any(s.get("status") == "ambiguous" for s in material_selections)
+                else "unique"
+                if any(s.get("status") == "unique" for s in material_selections)
+                else "none"
+            )
             packets.append({
                 "scene": _resource_ref(scene_rec),
                 "node": {
@@ -351,19 +372,9 @@ def build_draw_packets(
                 },
                 "submeshes": packet_prims,
                 "shader_selection": {
-                    "status": (
-                        "ambiguous"
-                        if any(
-                            (s.get("material") or {}).get("shader_selection", {}).get("status") == "ambiguous"
-                            for s in packet_prims
-                        )
-                        else "unique"
-                        if any(
-                            (s.get("material") or {}).get("shader_selection", {}).get("status") == "unique"
-                            for s in packet_prims
-                        )
-                        else "none"
-                    )
+                    "status": packet_status,
+                    "ambiguous_candidates": ambiguous_candidates[:8],
+                    "selected_fxos": selected_fxos[:8],
                 },
             })
 
