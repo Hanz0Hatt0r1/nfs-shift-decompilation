@@ -1,0 +1,44 @@
+import struct
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from material_linker import link_material, parse_fx_samplers
+from shader_ir import parse_shader_blobs
+
+def synthetic_fxo():
+    names=[b'diffuseMap\0',b'environmentMap\0',b'specularMap\0']
+    header_size=28; info_size=20*len(names); type_size=20
+    offsets=[]; pos=header_size+info_size+type_size
+    for n in names: offsets.append(pos); pos+=len(n)
+    payload=bytearray(b'CTAB')
+    payload+=struct.pack('<7I',header_size,0,0xFFFF0300,len(names),header_size,0,0)
+    for i,no in enumerate(offsets):
+        payload+=struct.pack('<IHHHHII',no,3,(0,2,1)[i],1,0,header_size+info_size,0)
+    payload+=struct.pack('<HHHHHHII',4,12,1,1,1,0,0,0)
+    payload+=b''.join(names); payload+=b'\x00'*((-len(payload))%4)
+    return struct.pack('<I',0xFFFF0300)+struct.pack('<I',((len(payload)//4)<<16)|0xFFFE)+payload+struct.pack('<I',0xFFFF)
+
+def test_ctab_reflection_exposes_sampler_registers():
+    blobs=parse_shader_blobs(synthetic_fxo())
+    assert len(blobs)==1
+    assert {s['name']:s['register'] for s in blobs[0].ctab_samplers}=={'diffuseMap':0,'environmentMap':2,'specularMap':1}
+
+def test_material_linker_maps_bmt_texture_names_to_sampler_registers():
+    source='''texture diffuseTexture; texture specularTexture; texture environmentTexture;
+    sampler2D diffuseMap : SAMPLER < string SamplerTexture="diffuseTexture"; string MinFilter="Linear"; string MagFilter="Linear"; string MipFilter="Linear"; string AddressU="Wrap"; string AddressV="Wrap"; > = sampler_state { Texture=<diffuseTexture>; };
+    sampler2D specularMap : SAMPLER < string SamplerTexture="specularTexture"; string MinFilter="Linear"; string MagFilter="Linear"; string MipFilter="Linear"; string AddressU="Wrap"; string AddressV="Wrap"; > = sampler_state { Texture=<specularTexture>; };
+    samplerCUBE environmentMap : SAMPLER < string SamplerTexture="environmentTexture"; string MinFilter="Linear"; string MagFilter="Linear"; string MipFilter="Linear"; string AddressU="Clamp"; string AddressV="Clamp"; string AddressW="Clamp"; > = sampler_state { Texture=<environmentTexture>; };'''
+    material={'name':'TEST','shader':'render\\shaders\\glass.fx','technique':'Glass','shaderparams':[
+        {'name':'diffuseTexture','type':'EPT_TEXTURE','value':'Vehicles\\Textures\\A.dds'},
+        {'name':'specularTexture','type':'EPT_TEXTURE','value':'Vehicles\\Textures\\B.dds'}]}
+    r=link_material(material,source,fxo_candidates=[('glass.fxo',synthetic_fxo())],
+                    texture_paths=['vehicles/textures/a.dds','vehicles/textures/b.dds'])
+    by={b['sampler']:b for b in r['bindings']}
+    assert by['diffuseMap']['texture_resolved'].endswith('a.dds')
+    assert by['specularMap']['d3d9_sampler_register']==1
+    assert r['selected_fxo'] is not None and r['selected_fxo']['exact']
+
+def test_fx_sampler_state_parser():
+    s=parse_fx_samplers('samplerCUBE env : SAMPLER < string SamplerTexture="environmentTexture"; string AddressU="Clamp"; string AddressV="Clamp"; string AddressW="Clamp"; > = sampler_state {};')
+    assert s[0]['sampler']=='env' and s[0]['sampler_type']=='samplerCUBE'
+    assert s[0]['texture_parameter']=='environmentTexture' and s[0]['address_w']=='Clamp'
