@@ -1,50 +1,51 @@
 # SHIFT DrawPacket IR
 
-## New layer
+## Current boundary
 
-The importer now has a neutral draw-packet builder for the next runtime boundary:
+The importer now has two composition layers:
 
-VHF/CAR -> MEB/MGEO -> BMT -> DDS, with optional HLSL/FX metadata.
+`VHF/CAR -> MEB -> BMT -> DDS -> FX/FXO -> RenderBinding -> DrawPacket`
 
-The output schema is:
+`SHIFT.RenderBinding/1` resolves scene hierarchy/world transforms, MEB primitives,
+BMT materials and FX/FXO shader candidates. `SHIFT.DrawPacket/1` is the runtime-facing
+packet schema used by the next renderer stage.
 
-`SHIFT.DrawPacket/1`
+## Resolved data
 
 Each packet preserves:
-- scene/node identity and matrix reference;
-- resolved MEB path plus vertex/triangle counts;
-- primitive index range;
-- BMT material reference and material summary;
-- shader reference and resolved source path;
-- texture references with DDS metadata;
-- render-state fields already recovered by the BMT parser.
+- scene/node identity and world matrix;
+- resolved MEB path and primitive/index range;
+- BMT material reference;
+- FX source and deterministic FXO selection metadata;
+- D3D9 sampler registers when CTAB reflection proves them;
+- VS/PS semantic linkage and vertex-format evidence when available;
+- texture references and DDS metadata.
 
-## Reference resolution
+Path resolution uses slash/case normalization, `.mtx <-> .bmt` aliases and
+same-archive preference for basename fallback.
 
-The builder reuses the project's evidence-based path rules:
-- slash/case normalization;
-- legacy `.mtx <-> .bmt` alias;
-- legacy `.fx <-> .fxh` alias;
-- path match before basename fallback;
-- same-archive preference for basename fallback.
+## Selection policy
 
-No exact sampler-state claim is made yet. Texture `slot` is explicitly marked `material-order-inferred` until D3D9 sampler bindings and BMT state records are fully reconstructed.
+FXO candidates are sorted using explicit evidence:
 
-## Usage
+1. exact expected sampler set;
+2. sampler coverage;
+3. valid VS/PS semantic + vertex-format pair;
+4. vertex-pair score;
+5. material uniform coverage;
+6. specialization evidence;
+7. contradictions/unexpected features;
+8. stable file/program offsets.
 
-First produce `resource_analysis.json` with the existing importer:
+If multiple distinct shader pairs remain tied, the result is marked
+`selection_status=ambiguous` rather than depending on incidental filesystem order.
 
-```bash
-python shift_importer.py analyze-dir /path/to/bffs format_reports/ --ext .vhf .meb .bmt .dds
-python draw_packets.py format_reports/resource_analysis.json draw_packets.json
-```
+## Remaining render work
 
-An optional `analyze-shader-asm` report can be supplied with `--shader-report`.
+1. Prove exact MEB vertex packing/D3DDECLTYPE, especially raw color properties `460/461`.
+2. Validate generated GLES shaders with a real compiler for the target BMW permutations.
+3. Build the minimal desktop reference renderer.
+4. After static rendering is stable, connect blend weights/indices to BAS/BAB skinning.
 
-## Status
-
-This is a composition/IR layer, not the Android renderer itself. The next reverse-engineering work remains:
-- exact D3D9 sampler state -> material texture binding;
-- semantic vertex/pixel interface linkage;
-- MGEO/VHF transform semantics;
-- IMB animation and SGB scenegraph semantics.
+This document intentionally no longer lists semantic linkage as an unresolved
+future layer: it is implemented and regression-tested in `shader_interface.py`.
