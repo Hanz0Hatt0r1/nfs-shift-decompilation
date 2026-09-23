@@ -229,3 +229,21 @@ def test_cli_material_binding_report_reaches_draw_packet(tmp_path):
     assert binding["sampler"] == "s7"
     assert binding["binding_source"] == "fxo-ctab"
     assert payload["packets"][0]["shader_selection"]["status"] == "unique"
+
+
+def test_draw_packet_does_not_infer_texture_slot_from_material_order():
+    scene, mesh, material, texture, shader = _records()
+    result = build_draw_packets(scene, mesh, material, texture, shader)
+    binding = result["packets"][0]["submeshes"][0]["material"]["textures"][0]
+    assert binding["slot"] is None
+    assert binding["binding_source"] == "unresolved"
+    assert binding["material_parameter"] == "Diffuse"
+
+
+def test_draw_packet_carries_explicit_vertex_layout():
+    scene, mesh, material, texture, shader = _records()
+    mesh[0]["analysis"]["vertex_properties"] = ["200", "220", "130"]
+    result = build_draw_packets(scene, mesh, material, texture, shader)
+    layout = result["packets"][0]["mesh"]["vertex_layout"]
+    assert layout["format"] == "SHIFT.VertexLayout/1"
+    assert {x["property_id"] for x in layout["attributes"]} == {"200", "220", "130"}
