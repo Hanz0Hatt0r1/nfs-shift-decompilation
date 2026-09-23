@@ -137,6 +137,7 @@ def build_resource_index(
         sampler.setdefault("uses", 0)
         sampler["uses"] += 1
 
+        binding_ready, binding_reasons = _capability_check(contract, extset)
         binding_id = _binding_identity(texture_id, sampler_id, contract.get("color_space", "unspecified"))
         bindings[binding_id] = {
             "id": binding_id,
@@ -145,10 +146,10 @@ def build_resource_index(
             "color_space": contract.get("color_space", "unspecified"),
             "material_parameter": binding.get("material_parameter"),
             "d3d9_sampler_register": binding.get("d3d9_sampler_register"),
-            "gpu_ready": textures[texture_id]["gpu_ready"] and contract.get("ready", False),
+            "gpu_ready": textures[texture_id]["gpu_ready"] and binding_ready,
             "blocking_reasons": list(dict.fromkeys(
                 textures[texture_id]["blocking_reasons"]
-                + contract.get("blocking_reasons", [])
+                + binding_reasons
             )),
         }
 
