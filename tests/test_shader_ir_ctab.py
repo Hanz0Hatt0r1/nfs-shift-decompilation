@@ -35,14 +35,14 @@ def test_ctab_decodes_constant_register_and_type():
         0,       # default value
     )
 
-    # TypeInfo at payload+72.
+    # TypeInfo at payload+72. All scalar fields are WORDs.
     data[72:88] = struct.pack(
-        "<BBHHHHI",
+        "<HHHHHHI",
         1,       # class: vector
         3,       # type: float
         1, 4, 1, 0, 0,
     )
-    data[52:59] = b"Diffuse\\x00"
+    data[52:60] = b"Diffuse\x00"
 
     ctab = _parse_ctab(bytes(data), 0, 24)
     assert ctab["constant_count"] == 1
@@ -51,14 +51,18 @@ def test_ctab_decodes_constant_register_and_type():
     assert c["register_set"] == 2
     assert c["register_index"] == 7
     assert c["register_count"] == 1
+    assert c["type"]["class"] == 1
+    assert c["type"]["type"] == 3
     assert c["type"]["rows"] == 1
     assert c["type"]["columns"] == 4
+    assert c["type"]["elements"] == 1
+    assert c["type"]["struct_members"] == 0
 
 
 def test_ctab_keeps_strings_for_legacy_variants():
     data = bytearray(96)
     data[0:4] = b"CTAB"
     data[4:32] = struct.pack("<7I", 32, 0, 0x300, 0, 0, 0, 0)
-    data[40:47] = b"legacy\\x00"
+    data[40:47] = b"legacy\x00"
     ctab = _parse_ctab(bytes(data), 0, 16)
     assert "legacy" in ctab["strings"]
