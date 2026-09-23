@@ -607,7 +607,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--draw-packet", action="store_true", help="treat input as SHIFT.DrawPacket/1 JSON")
     parser.add_argument("--render-command", action="store_true", help="treat input as SHIFT.RenderCommand/1 JSON")
     parser.add_argument("--textured", action="store_true", help="use the UV0 software texture reference path")
-    parser.add_argument("--mesh", type=Path)
     parser.add_argument("--texture", type=Path, help="DDS file used by --textured")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
