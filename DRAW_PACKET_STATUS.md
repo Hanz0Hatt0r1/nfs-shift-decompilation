@@ -82,3 +82,6 @@ The test suite pins a 32x32 baseline image hash so renderer changes become expli
 ## Phase 30: strict material texture resolution
 
 `SHIFT.StaticDraw/1` now distinguishes resolved material textures from external/specialized samplers. A `material-texture` binding without `texture_resolved` is blocked; renderer-global/external bindings remain explicit external requirements.
+## Phase 31: StaticDraw index-range validation
+
+`SHIFT.StaticDraw/1` now validates each submesh `first_index/index_count` against the mesh triangle count and requires triangle-aligned counts. Negative and out-of-bounds ranges are explicit blockers before renderer execution.
