@@ -7,7 +7,7 @@ from material_linker import link_material
 from vertex_layout import build_layout_from_summary
 
 def norm_ref(v: str) -> str:
-    return v.replace("\\","/").lower().lstrip("./")
+    return re.sub(r"/+", "/", v.replace("\\","/")).lower().lstrip("./")
 
 def alias_ref(v: str) -> str:
     n=norm_ref(v)

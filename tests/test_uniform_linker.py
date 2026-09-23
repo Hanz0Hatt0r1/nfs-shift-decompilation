@@ -7,7 +7,7 @@ def synthetic_fxo_with_constant():
     names=[b"primerBasis\0"]; header=28; info=20; typ=20; no=header+info+typ
     payload=bytearray(b"CTAB")+bytearray(struct.pack("<7I",header,0,0xFFFE0300,1,header,0,0))
     payload+=struct.pack("<IHHHHII",no,2,5,1,0,header+info,0)
-    payload+=struct.pack("<HHHHHHII",1,3,1,4,1,0,0,0)+names
+    payload+=struct.pack("<HHHHHHII",1,3,1,4,1,0,0,0)+b"".join(names)
     payload+=b"\0"*((-len(payload))%4)
     return struct.pack("<I",0xFFFE0300)+struct.pack("<I",((len(payload)//4)<<16)|0xFFFE)+payload+struct.pack("<I",0xFFFF)
 

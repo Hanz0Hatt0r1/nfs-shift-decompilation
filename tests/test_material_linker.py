@@ -42,3 +42,17 @@ def test_fx_sampler_state_parser():
     s=parse_fx_samplers('samplerCUBE env : SAMPLER < string SamplerTexture="environmentTexture"; string AddressU="Clamp"; string AddressV="Clamp"; string AddressW="Clamp"; > = sampler_state {};')
     assert s[0]['sampler']=='env' and s[0]['sampler_type']=='samplerCUBE'
     assert s[0]['texture_parameter']=='environmentTexture' and s[0]['address_w']=='Clamp'
+
+
+def test_material_linker_does_not_hide_unhashed_shader_ties():
+    source='''texture diffuseTexture; sampler2D diffuseMap : SAMPLER < string SamplerTexture="diffuseTexture"; > = sampler_state { Texture=<diffuseTexture>; };'''
+    material={'name':'TEST','shader':'body.fx','technique':'Default','shaderparams':[
+        {'name':'diffuseTexture','type':'EPT_TEXTURE','value':'a.dds'}]}
+    # Two identical-scoring pixel programs in separate FXO files produce no
+    # pair hash in this synthetic fixture; their stable file/offset identity
+    # must still make the material selection explicitly ambiguous.
+    blobs=synthetic_fxo()
+    r=link_material(material,source,fxo_candidates=[('a.fxo',blobs),('b.fxo',blobs)],
+                    texture_paths=['a.dds'])
+    assert r['selection_status']=='ambiguous'
+    assert len(r['ambiguous_candidates'])==2

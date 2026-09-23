@@ -83,7 +83,7 @@ Mesh loadMgeo(const std::filesystem::path& path) {
     if (m.flags & 128u) (void)r.bytes(static_cast<std::size_t>(vertexCount) * 16u);
     m.indices.resize(indexCount);
     for (auto& i : m.indices) i = r.u32();
-    m.primitives.resize(primitiveCount);
+    m.primitiveMaterials.resize(primitiveCount);
     // Primitive material strings are stored in metadata JSON; the native core
     // intentionally treats metadata as opaque to keep this loader dependency-free.
     m.metadataJson = readBlob(r, metaBytes);

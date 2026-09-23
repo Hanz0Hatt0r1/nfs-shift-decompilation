@@ -27,3 +27,10 @@ def test_meb_vertex_format_matches_shader():
     vs=parse_program(shader("vertex",[(0,0,1,0),(10,0,1,1),(5,2,1,2),(3,0,1,3)]))
     r=match_vertex_format(vs,["200","460","220","130","132"])
     assert r["valid"] is True and not r["missing"]
+
+
+def test_meb_color1_semantic_is_preserved():
+    vs=parse_program(shader("vertex",[(10,1,1,1)]))
+    r=match_vertex_format(vs,["461"])
+    assert r["valid"] is True
+    assert r["vertex_bindings"][0]["property_id"]=="461"

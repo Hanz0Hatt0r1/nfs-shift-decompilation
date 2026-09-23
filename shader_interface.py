@@ -8,7 +8,7 @@ from meb_format import PROP_NAMES
 from skeleton_ir import skinning_contract
 
 D3D9_DECL_USAGE={0:"POSITION",1:"BLENDWEIGHT",2:"BLENDINDICES",3:"NORMAL",4:"PSIZE",5:"TEXCOORD",6:"TANGENT",7:"BINORMAL",8:"TESSFACTOR",9:"POSITIONT",10:"COLOR",11:"FOG",12:"DEPTH",13:"SAMPLE"}
-MEB_SEMANTICS={"200":("POSITION",0),"460":("COLOR",0),"220":("NORMAL",0),"240":("TANGENT",0),"250":("BINORMAL",0),"310":("BLENDWEIGHT",0),"580":("BLENDINDICES",0)}
+MEB_SEMANTICS={"200":("POSITION",0),"460":("COLOR",0),"461":("COLOR",1),"220":("NORMAL",0),"240":("TANGENT",0),"250":("BINORMAL",0),"310":("BLENDWEIGHT",0),"580":("BLENDINDICES",0)}
 for i,pid in enumerate(("130","131","132","133","134")): MEB_SEMANTICS[pid]=("TEXCOORD",i)
 for i,pid in enumerate(("230","231","232","233","234")): MEB_SEMANTICS[pid]=("TEXCOORD",i)
 
@@ -127,4 +127,12 @@ def pair_selected_pixel(data:bytes,pixel_offset:int,*,properties:Iterable[str|di
     for vs in (p for p in programs if p.stage=="vertex"):
         interface=link_vertex_pixel(vs,pixel); vf=match_vertex_format(vs,properties)
         candidates.append({"vertex_offset":vs.offset,"pixel_offset":pixel.offset,"score":0.65*interface["score"]+0.35*vf["score"],"interface":interface,"vertex_format":vf,"vertex_bindings":vertex_attribute_bindings(vs,properties)["bindings"],"pixel_samplers":list(pixel.samplers)})
-    return max(candidates,key=lambda x:(x["score"],x["interface"]["score"],x["vertex_format"]["score"],-x["vertex_offset"]),default=None)
+    if not candidates: return None
+    ranked=sorted(candidates,key=lambda x:(-x["score"],-x["interface"]["score"],-x["vertex_format"]["score"],x["vertex_offset"]))
+    best=ranked[0]
+    evidence=(best["score"],best["interface"]["score"],best["vertex_format"]["score"])
+    tied=[x for x in ranked if (x["score"],x["interface"]["score"],x["vertex_format"]["score"])==evidence]
+    result=dict(best)
+    result["selection_status"]="ambiguous" if len({x["vertex_offset"] for x in tied})>1 else "unique"
+    result["ambiguous_candidates"]=[{"vertex_offset":x["vertex_offset"],"pixel_offset":x["pixel_offset"],"score":x["score"]} for x in tied] if result["selection_status"]=="ambiguous" else []
+    return result

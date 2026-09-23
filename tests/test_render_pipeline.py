@@ -25,7 +25,7 @@ def test_render_binding_end_to_end(tmp_path):
       {"archive":"CAR.bff","path":"vehicles/A/body.bmt","output":"materials/mat.json","raw":"raw/c"},
       {"archive":"RENDER.bff","path":"render/shaders/body.fx","output":"shaders/fx.json","raw":"raw/fx"}]
     (root/"manifest.json").write_text(json.dumps(manifest),encoding="utf-8")
-    (root/"raw").mkdir(); [(root/"raw"/x).write_bytes(b"") for x in ("a","b","c")]
+    (root/"raw").mkdir(exist_ok=True); [(root/"raw"/x).write_bytes(b"") for x in ("a","b","c")]
     r=build_render_bindings(root)
     assert r["stats"]["draw_packets"]==1
     assert r["packets"][0]["world_matrix"][3:12:4]==[1,2,3]

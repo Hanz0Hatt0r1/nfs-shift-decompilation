@@ -29,7 +29,7 @@ def parse_bab(data:bytes,*,max_bones:int|None=None, preserve_tail:bool=True)->di
     name_end=name_start+name_len
     if name_end>len(data): raise ValueError("BAB name exceeds resource")
     name=data[name_start:name_end].decode("utf-8","replace")
-    cursor=ALIGN4(name_end)
+    cursor=max(0x30,ALIGN4(name_end))
     header={
         "magic":"BAB\\0","version":version,"name_length":name_len,"name":name,
         "field_18":_u32(data,0x18),"field_1c":_u32(data,0x1c),
@@ -72,7 +72,7 @@ def parse_bab(data:bytes,*,max_bones:int|None=None, preserve_tail:bool=True)->di
         if len(strings)>=256: break
     return {
         "format":"SHIFT.BAB","version":1,"header":header,
-        "skeleton_offset":ALIGN4(name_end),"skeleton_end":tail_offset,
+        "skeleton_offset":max(0x30,ALIGN4(name_end)),"skeleton_end":tail_offset,
         "bones_declared":declared,"bones_parsed":len(bones),"bones":bones,
         "animation_payload_offset":tail_offset,
         "animation_payload_size":len(trailing),

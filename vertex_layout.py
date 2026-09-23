@@ -22,8 +22,8 @@ D3DDECLTYPES = {
     "580": {"d3d9": "UBYTE4", "android": "UINT8x4", "components": 4, "normalized": False},
     # MEB stores colors as four raw bytes. Whether the original D3D9 declaration
     # used D3DCOLOR (BGRA) or UBYTE4N is not yet proven, so preserve both candidates.
-    "460": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "components": 4, "normalized": True, "channel_order": "unknown"},
-    "461": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "components": 4, "normalized": True, "channel_order": "unknown"},
+    "460": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"], "components": 4, "normalized": True, "channel_order_candidates": ["RGBA", "BGRA"]},
+    "461": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"], "components": 4, "normalized": True, "channel_order_candidates": ["RGBA", "BGRA"]},
     "033": {"d3d9_candidates": ["UNKNOWN4"], "android": "RAW4", "components": 4, "normalized": False},
 }
 

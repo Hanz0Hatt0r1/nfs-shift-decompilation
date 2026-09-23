@@ -88,10 +88,11 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             sampler_score=len(expected & names)
             wrong_camera="motionBlurMap" in names and "motionBlurTexture" not in param_names
             exact=expected <= names and not wrong_camera
-            if sampler_score and not wrong_camera:
+            if not wrong_camera and (sampler_score or not expected):
                 pair=pair_selected_pixel(data,p["offset"],properties=vertex_properties) if exact else None
                 pair_score=pair["score"] if pair else 0.0
                 pair_ok=bool(pair and pair.get("interface",{}).get("valid") and pair.get("vertex_format",{}).get("valid",True))
+                pair_selection_status=pair.get("selection_status","unique") if pair else "none"
                 offsets=[p["offset"]] + ([pair["vertex_offset"]] if pair else [])
                 all_constants=set()
                 for off in offsets:
@@ -118,6 +119,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                     "uniform_matches":uniform_matches,"uniform_expected":len(material_uniform_names),
                     "uniform_coverage":uniform_score,
                     "vertex_pair_score":pair_score,"vertex_pair_valid":pair_ok,
+                    "vertex_pair_selection_status":pair_selection_status,
                     "pixel_sha256":pixel_sha256,
                     "vertex_sha256":vertex_sha256,
                     "pair_sha256":pair_sha256,
@@ -156,9 +158,12 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
              and abs(x.get("vertex_pair_score",0.0)-best.get("vertex_pair_score",0.0)) < 1e-9
              and abs(x.get("uniform_coverage",0.0)-best.get("uniform_coverage",0.0)) < 1e-9
              and abs(x.get("specialization_score",0.0)-best.get("specialization_score",0.0)) < 1e-9]
-        hashes={x.get("pair_sha256") for x in top if x.get("pair_sha256")}
-        ambiguous_candidates=top if len(hashes)>1 else []
-        selection_status="ambiguous" if ambiguous_candidates else ("unique" if best.get("vertex_pair_valid") else "heuristic")
+        pair_ids={(x.get("file"), x.get("program_offset"), x.get("vertex_sha256"), x.get("pair_sha256")) for x in top}
+        # A tie is still ambiguous when byte hashes are unavailable. The
+        # stable file/program offsets are enough to distinguish candidates.
+        ambiguous_candidates=top if len(pair_ids)>1 else []
+        pair_ambiguous=best.get("vertex_pair_selection_status")=="ambiguous"
+        selection_status="ambiguous" if ambiguous_candidates or pair_ambiguous else ("unique" if best.get("vertex_pair_valid") else "heuristic")
     shader_pair=None
     uniform_binding=None
     if best and best["exact"]:

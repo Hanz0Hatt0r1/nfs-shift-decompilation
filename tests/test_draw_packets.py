@@ -106,8 +106,27 @@ def test_path_and_legacy_alias_resolution():
 
 def test_build_draw_packet_links_vhf_meb_bmt_dds():
     scene, mesh, material, texture, shader = _records()
+    material_binding = [{
+        "material": "BODY",
+        "bindings": [{
+            "sampler": "sDiffuse",
+            "sampler_type": "sampler2D",
+            "texture": "textures/body.dds",
+            "d3d9_sampler_register": 3,
+        }],
+        "selection_status": "ambiguous",
+        "ambiguous_candidates": [
+            {"file": "a.fxo", "program_offset": 100},
+            {"file": "b.fxo", "program_offset": 200},
+        ],
+        "selected_fxo": {
+            "file": "a.fxo",
+            "program_offset": 100,
+            "vertex_pair_selection_status": "ambiguous",
+        },
+    }]
     result = build_draw_packets(
-        scene, mesh, material, texture, shader
+        scene, mesh, material, texture, shader, [*material_binding]
     )
 
     assert result["schema"] == "SHIFT.DrawPacket/1"
@@ -124,7 +143,14 @@ def test_build_draw_packet_links_vhf_meb_bmt_dds():
     assert material_ir["resolved"][0]["path"].endswith("body.bmt")
     assert material_ir["shader"]["resolved"][0]["path"].endswith("body.fx")
     assert material_ir["textures"][0]["dds"]["fourcc"] == "DXT5"
-    assert material_ir["textures"][0]["binding_source"] == "material-order-inferred"
+    assert material_ir["textures"][0]["binding_source"] == "fxo-ctab"
+    assert material_ir["textures"][0]["d3d9_sampler_register"] == 3
+    assert material_ir["textures"][0]["sampler"] == "sDiffuse"
+    assert material_ir["textures"][0]["sampler_type"] == "sampler2D"
+    assert material_ir["shader_selection"]["status"] == "ambiguous"
+    assert len(material_ir["shader_selection"]["ambiguous_candidates"]) == 2
+    assert material_ir["shader_selection"]["vertex_pair_selection_status"] == "ambiguous"
+    assert packet["shader_selection"]["status"] == "ambiguous"
 
 
 def test_build_from_analysis_and_cli(tmp_path):
