@@ -34,6 +34,7 @@ def _packet(source="fxo-ctab"):
                     "material_parameter": "Diffuse",
                     "ref": "textures/body.dds",
                     "slot": 1 if source == "fxo-ctab" else None,
+                    "d3d9_sampler_register": 1 if source == "fxo-ctab" else None,
                     "sampler": "diffuseMap" if source == "fxo-ctab" else None,
                     "sampler_type": "sampler2D" if source == "fxo-ctab" else None,
                     "binding_source": source,

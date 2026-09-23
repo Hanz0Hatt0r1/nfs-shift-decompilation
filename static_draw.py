@@ -82,9 +82,11 @@ def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
 
     submeshes = []
     material_ready = True
+    material_reasons: list[str] = []
     for submesh in packet.get("submeshes", []) or []:
         contract = _material_contract(submesh.get("material"))
         material_ready = material_ready and contract["ready"]
+        material_reasons.extend(contract.get("blocking_reasons", []))
         submeshes.append({
             "first_index": submesh.get("first_index", 0),
             "index_count": submesh.get("index_count", 0),
@@ -96,6 +98,7 @@ def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
     if packet.get("mesh", {}).get("vertex_count") is None:
         reasons.append("mesh:vertex-count-missing")
     if not material_ready:
+        reasons.extend(dict.fromkeys(material_reasons))
         reasons.append("material:binding-not-ready")
 
     return {
