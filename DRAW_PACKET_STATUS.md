@@ -68,3 +68,6 @@ This keeps renderer validation separate from source-game resource access and giv
 ## Phase 20: canonical DrawPacket -> StaticDraw
 
 `draw_packets.py` now attaches a `SHIFT.StaticDraw/1` contract to every canonical `SHIFT.DrawPacket/1` packet. Aggregate stats expose `ready_static_draws` and `blocked_static_draws` so unresolved renderer prerequisites are visible without a second conversion pass.
+## Phase 22: submesh-aware reference rendering
+
+`reference_renderer.render_static_draw()` now respects `first_index/index_count` from `SHIFT.StaticDraw/1` submeshes instead of rasterizing the complete mesh index buffer. This preserves MEB primitive boundaries and makes multi-material meshes safe for the reference path.
