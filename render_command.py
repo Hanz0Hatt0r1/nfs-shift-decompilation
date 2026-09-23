@@ -130,7 +130,11 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
         },
     }
     validation = validate_render_command(command)
-    command["ready"] = bool(static_draw.get("ready")) and validation["valid"]
+    command["ready"] = (
+        bool(static_draw.get("ready"))
+        and not command["blocking_reasons"]
+        and validation["valid"]
+    )
     command["blocking_reasons"] = list(dict.fromkeys(
         command["blocking_reasons"] + validation["blocking_reasons"]
     ))
