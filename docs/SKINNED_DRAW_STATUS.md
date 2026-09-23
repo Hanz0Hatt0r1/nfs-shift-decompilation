@@ -44,3 +44,8 @@ build_draw_packets() can now consume SHIFT.BAB and SHIFT.BAS analysis records. F
 SHIFT.BindSkeleton/1 records local bind transforms from the verified BAB/BAS link. Those matrices are not treated as GPU skin matrices. SHIFT.SkinnedDraw/1 is render-ready only when a separate SHIFT.SkinPose/1 is supplied with one 3x4 matrix per bone and `matrix_space=skinning`. The skin pose is the only matrix source accepted by the GLES 3.1 palette contract.
 
 This separation leaves animation decoding and bind-pose/inverse-bind semantics explicit: no parent composition or inverse-bind operation is implied by the BAB parser.
+
+
+### CPU reference
+
+`skinned_reference.py` applies only an explicit `SHIFT.SkinPose/1` to vertex positions and direction vectors. It reuses `skinning.py` for influence validation and linear-blend-skinning math. This is a renderer cross-check, not an animation decoder: BAB/BAS local bind transforms are never substituted for the skin pose.
