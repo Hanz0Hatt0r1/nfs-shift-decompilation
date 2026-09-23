@@ -36,7 +36,12 @@ def _binding_identity(texture_id: str, sampler_id: str, color_space: str) -> str
 
 
 def _capability_check(contract: dict[str, Any], extensions: set[str]) -> tuple[bool, list[str]]:
-    reasons = list(contract.get("blocking_reasons", []))
+    reasons = [
+        reason
+        for reason in contract.get("blocking_reasons", [])
+        if not (reason.startswith("gpu-extension-required:") and
+                reason.split(":", 1)[1] in extensions)
+    ]
     required = contract.get("dds", {}).get("required_extension")
     if required and required not in extensions:
         reasons.append("runtime-extension-missing:" + required)
