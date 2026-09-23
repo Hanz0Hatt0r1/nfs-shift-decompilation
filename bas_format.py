@@ -7,7 +7,7 @@ def _matrix_from_hex(text: str) -> list[float]:
     words=text.split()
     if len(words)!=16:
         raise ValueError(f"BAS TRANSFORM expects 16 DWORDs, got {len(words)}")
-    vals=[struct.unpack("<f",bytes.fromhex(w)) [0] for w in words]
+    vals=[struct.unpack("<f",struct.pack("<I",int(w,16)))[0] for w in words]
     return vals
 
 def parse_bas(data: bytes | str) -> dict[str, Any]:
