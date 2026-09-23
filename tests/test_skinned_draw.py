@@ -100,6 +100,9 @@ def _packet():
                             "interface": {"valid": True},
                             "vertex_format": {"valid": True},
                         },
+                        "linked_shader_pair": {
+                            "format": "SHIFT.LinkedShaderPair/1",
+                        },
                         "external_samplers": [
                             {
                                 "sampler": "environmentMap",

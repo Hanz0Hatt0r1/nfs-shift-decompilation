@@ -108,6 +108,9 @@ def _draw():
                             "vertex_format": {"valid": True},
                         },
                         "textures": [],
+                        "linked_shader_pair": {
+                            "format": "SHIFT.LinkedShaderPair/1",
+                        },
                     }
                 }
             }
@@ -163,3 +166,19 @@ def test_skin_draw_reference_rejects_incomplete_pose():
     contract = build_skinned_draw_contract(draw)
     assert contract["ready"] is False
     assert "skin-pose:palette-incomplete" in contract["blocking_reasons"]
+
+
+def test_skinned_draw_rejects_missing_linked_glsl_pair():
+    draw = _draw()
+    del draw["submeshes"][0]["material"]["shader_selection"]["linked_shader_pair"]
+    contract = build_skinned_draw_contract(draw)
+    assert contract["ready"] is False
+    assert "material-shader-glsl:missing" in contract["blocking_reasons"]
+
+
+def test_skinned_draw_rejects_linked_glsl_error():
+    draw = _draw()
+    draw["submeshes"][0]["material"]["shader_selection"]["linked_shader_error"] = "ValueError: translator"
+    contract = build_skinned_draw_contract(draw)
+    assert contract["ready"] is False
+    assert "material-shader-glsl:error" in contract["blocking_reasons"]
