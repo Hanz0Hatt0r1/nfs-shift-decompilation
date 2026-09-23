@@ -195,6 +195,18 @@ def compile_material(
             if shader_ref
             else None
         ),
+        "shader_selection": (
+            {
+                "status": material_binding.get("selection_status", "none"),
+                "ambiguous_candidates": material_binding.get("ambiguous_candidates", []),
+                "selected_fxo": material_binding.get("selected_fxo"),
+                "vertex_pair_selection_status": (
+                    material_binding.get("selected_fxo", {}) or {}
+                ).get("vertex_pair_selection_status", "none"),
+            }
+            if material_binding
+            else {"status": "none", "ambiguous_candidates": []}
+        ),
         "technique": material.get("technique"),
         "render_state": {
             "fog": material.get("fog"),
@@ -338,6 +350,21 @@ def build_draw_packets(
                     "triangle_count": analysis.get("triangle_count"),
                 },
                 "submeshes": packet_prims,
+                "shader_selection": {
+                    "status": (
+                        "ambiguous"
+                        if any(
+                            (s.get("material") or {}).get("shader_selection", {}).get("status") == "ambiguous"
+                            for s in packet_prims
+                        )
+                        else "unique"
+                        if any(
+                            (s.get("material") or {}).get("shader_selection", {}).get("status") == "unique"
+                            for s in packet_prims
+                        )
+                        else "none"
+                    )
+                },
             })
 
         for child in node.get("children", []) or []:
