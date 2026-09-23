@@ -234,6 +234,15 @@ def compile_material(
                 "vertex_pair_selection_status": (
                     material_binding.get("selected_fxo", {}) or {}
                 ).get("vertex_pair_selection_status", "none"),
+                "shader_pair": material_binding.get("shader_pair"),
+                "vertex_bindings": (
+                    (material_binding.get("shader_pair", {}) or {}).get("vertex_bindings", [])
+                ),
+                "uniform_binding": material_binding.get("uniform_binding"),
+                "external_samplers": [
+                    b for b in (material_binding.get("bindings", []) or [])
+                    if b.get("binding") == "external-or-specialised"
+                ],
             }
             if material_binding
             else {"status": "none", "ambiguous_candidates": []}

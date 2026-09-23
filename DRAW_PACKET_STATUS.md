@@ -49,3 +49,10 @@ If multiple distinct shader pairs remain tied, the result is marked
 
 This document intentionally no longer lists semantic linkage as an unresolved
 future layer: it is implemented and regression-tested in `shader_interface.py`.
+
+
+## StaticDraw/1 readiness contract
+
+static_draw.py now converts each runtime-facing draw packet into SHIFT.StaticDraw/1. A packet is marked ready only when the MEB SHIFT.VertexLayout/1 is valid, the VS/PS selection is unique and its semantic/vertex-format evidence is valid, material texture bindings have explicit D3D9 sampler registers from FXO/CTAB, and there are no blocking unresolved references.
+
+Renderer-global samplers are preserved as explicit external requirements rather than being silently treated as material textures. This keeps the static BMW path deterministic while leaving environment/shadow resources for the renderer resource manager.
