@@ -10,4 +10,6 @@
 
 `SHIFT.SkinnedDraw/1` допускает draw only when mesh is skinned, a resolved pose has the expected bone count, each bone has a valid 3x4/4x4 matrix, and provided influence arrays are valid.
 
+`resource_formats.analyze_decoded_resource()` now recognizes binary `.bab` resources and routes them through the verified BAB parser, preserving the opaque animation tail with offset/size/SHA-256 instead of classifying it as unknown binary data.
+
 BAB bone records и BAS hierarchy уже парсятся существующими parsers. BAB animation tail пока хранится как opaque payload с offset/size/SHA-256; keyframe grammar не угадывается.
