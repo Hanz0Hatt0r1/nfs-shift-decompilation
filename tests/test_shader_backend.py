@@ -9,7 +9,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parents[1]))
 
 from shader_asm import parse_program
-from shader_backend import program_to_ir, to_glsl
+from shader_backend import program_to_ir, to_glsl, translate_pair
 
 
 def _shader(stage: str) -> bytes:
@@ -90,3 +90,31 @@ def test_sampler_type_and_relative_addressing_are_preserved():
     glsl = to_glsl(p)
     assert "samplerCube tex0" in glsl
     assert "c[(int(a0.x)+2)]" in glsl
+
+
+def _shader_pair_with_different_varying_registers() -> tuple:
+    # VS: dcl_texcoord5 oT1; PS: dcl_texcoord5 v0.
+    version_v = 0xFFFE0300
+    version_p = 0xFFFF0300
+    dcl = (2 << 24) | 31
+    out_t1 = 0x80000000 | 1 | (15 << 16) | (6 << 28)
+    in_v0 = 0x80000000 | 0 | (15 << 16) | (1 << 28)
+    words_v = [version_v, dcl, 5 | (5 << 16), out_t1, 0xFFFF]
+    words_p = [version_p, dcl, 5 | (5 << 16), in_v0, 0xFFFF]
+    vs = parse_program(struct.pack("<" + "I" * len(words_v), *words_v))
+    ps = parse_program(struct.pack("<" + "I" * len(words_p), *words_p))
+    return vs, ps
+
+
+def test_linked_glsl_translation_shares_varying_locations_by_semantic():
+    from shader_interface import build_varying_locations
+    vs, ps = _shader_pair_with_different_varying_registers()
+    locations = build_varying_locations(vs, ps)
+    assert locations["valid"] is True
+    assert locations["vertex_output_locations"] == {1: 0}
+    assert locations["pixel_input_locations"] == {0: 0}
+
+    linked = translate_pair(vs, ps)
+    assert linked["format"] == "SHIFT.LinkedShaderPair/1"
+    assert "layout(location=0) out vec4 out_1;" in linked["vertex_glsl"]
+    assert "layout(location=0) in vec4 in_0;" in linked["pixel_glsl"]
