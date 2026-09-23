@@ -266,6 +266,16 @@ def render_textured_render_command(
         "world_matrix": command.get("world_matrix"),
         "submeshes": command.get("submeshes", []),
     }
+    if sampler is None:
+        sampler = {}
+        for submesh in command.get("submeshes", []) or []:
+            for texture in submesh.get("textures", []) or []:
+                if texture.get("resource") != "external":
+                    sampler = texture.get("sampler_state") or {}
+                    if sampler:
+                        break
+            if sampler:
+                break
     result = render_textured_static_draw(
         draw,
         mesh,

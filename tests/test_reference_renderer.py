@@ -464,3 +464,52 @@ def test_reference_renderer_textured_cli(tmp_path):
     assert result["texture_format"] == "RGBA32"
     assert len(result["output"]) > 0
     assert out.exists()
+
+
+def test_textured_render_command_uses_embedded_sampler_state(tmp_path):
+    from reference_renderer import render_textured_render_command
+    command = _render_command_ready()
+    command["submeshes"][0]["textures"] = [{
+        "resource": "material",
+        "resource_binding_id": "tb_body",
+        "texture_id": "tex_body",
+        "sampler_id": "smp_body",
+        "sampler_state": {
+            "format": "SHIFT.SamplerState/1",
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
+    }]
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((123, 45, 67, 255)),
+    }
+    out = tmp_path / "embedded-sampler.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        sampler=None,
+        width=16,
+        height=16,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (123, 45, 67) in pixels

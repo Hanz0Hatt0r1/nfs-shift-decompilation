@@ -207,12 +207,15 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
                     binding.get("blocking_reasons", [])
                     or ["renderer-texture-resource:not-gpu-ready"]
                 )
+            sampler_resource = binding.get("sampler_resource") if binding else None
+            sampler_state = (sampler_resource or {}).get("state") or {}
             texture_commands.append({
                 "sampler": texture.get("sampler"),
                 "d3d9_sampler_register": binding.get("d3d9_sampler_register") if binding else texture.get("slot"),
                 "resource_binding_id": binding.get("id") if binding else None,
                 "texture_id": binding.get("texture_id") if binding else None,
                 "sampler_id": binding.get("sampler_id") if binding else None,
+                "sampler_state": sampler_state,
             })
 
         constant_commands = []
