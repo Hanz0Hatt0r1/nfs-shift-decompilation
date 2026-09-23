@@ -97,6 +97,31 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
                 "sampler_id": binding.get("sampler_id") if binding else None,
             })
 
+        constant_commands = []
+        for uniform in uniform_binding.get("bindings", []) or []:
+            try:
+                register_index = int(uniform.get("register_index"))
+            except (TypeError, ValueError):
+                reasons.append("renderer-constant-binding:register-index-invalid")
+                continue
+            try:
+                register_count = int(uniform.get("register_count"))
+            except (TypeError, ValueError):
+                reasons.append("renderer-constant-binding:register-count-invalid")
+                continue
+            if register_index < 0 or register_count <= 0:
+                reasons.append("renderer-constant-binding:register-range-invalid")
+                continue
+            constant_commands.append({
+                "name": uniform.get("name"),
+                "stage": uniform.get("stage"),
+                "register_index": register_index,
+                "register_count": register_count,
+                "ctab_type": uniform.get("ctab_type"),
+                "ubo_binding": 14,
+                "byte_offset": register_index * 16,
+            })
+
         commands.append({
             "first_index": submesh.get("first_index", 0),
             "index_count": submesh.get("index_count", 0),
@@ -105,9 +130,11 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
                 "pixel": linked_pair.get("pixel_glsl") if linked_pair else None,
                 "varying_locations": linked_pair.get("varying_locations", []) if linked_pair else [],
                 "vertex_input_locations": linked_pair.get("vertex_input_locations", {}) if linked_pair else {},
+                "constant_buffer_binding": 14,
             },
             "textures": texture_commands,
             "uniforms": uniform_binding,
+            "constant_commands": constant_commands,
         })
 
     return {
