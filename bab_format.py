@@ -94,3 +94,57 @@ def link_bab_bas(bab:dict[str,Any],bas:dict[str,Any])->dict[str,Any]:
         links.append(rec)
     extras=[{"name":n["name"],"index":n["index"]} for n in bas.get("nodes",[]) if n.get("name") not in bab_names]
     return {"format":"SHIFT.BABBasLink/1","matched":len(links)-len(missing),"missing":missing,"extra_bas_nodes":extras,"links":links,"coverage":(len(links)-len(missing))/len(links) if links else 1.0}
+
+
+def bab_local_matrices(bab: dict[str, Any]) -> list[list[float]]:
+    """Convert verified BAB quaternion+translation records to row-major 3x4 matrices.
+
+    This is only the local/bind transform. Parent composition comes from BAS;
+    no animation payload bytes are interpreted here.
+    """
+    result = []
+    for bone in bab.get("bones", []):
+        q = [float(x) for x in bone.get("rotation_quaternion_xyzw", [])]
+        t = [float(x) for x in bone.get("translation", [])]
+        if len(q) != 4 or len(t) != 3:
+            raise ValueError("BAB bone requires xyzw quaternion and xyz translation")
+        x, y, z, w = q
+        result.append([
+            1.0 - 2.0 * (y*y + z*z), 2.0 * (x*y - z*w),     2.0 * (x*z + y*w),     t[0],
+            2.0 * (x*y + z*w),     1.0 - 2.0 * (x*x + z*z), 2.0 * (y*z - x*w),     t[1],
+            2.0 * (x*z - y*w),     2.0 * (y*z + x*w),     1.0 - 2.0 * (x*x + y*y), t[2],
+        ])
+    return result
+
+
+def build_bab_bas_skeleton(bab: dict[str, Any], bas: dict[str, Any]) -> dict[str, Any]:
+    """Build an explicit bind-pose skeleton without decoding animation payload."""
+    link = link_bab_bas(bab, bas)
+    local = bab_local_matrices(bab)
+    bas_nodes = {int(n["index"]): n for n in bas.get("nodes", [])}
+    bones = []
+    for item in link["links"]:
+        bi = int(item["bone_index"])
+        node = bas_nodes.get(item.get("bas_index"))
+        bones.append({
+            "index": bi,
+            "name": item["name"],
+            "bas_index": item.get("bas_index"),
+            "parent": item.get("bas_parent"),
+            "local_matrix_3x4": local[bi] if bi < len(local) else None,
+            "mirror": item.get("mirror"),
+            "matched": bool(item.get("matched")),
+        })
+    return {
+        "format": "SHIFT.BindSkeleton/1",
+        "source": {"bab": bab.get("header", {}).get("name"), "bas": bas.get("name")},
+        "bone_count": len(bones),
+        "coverage": link["coverage"],
+        "links": bones,
+        "animation_payload": {
+            "offset": bab.get("animation_payload_offset"),
+            "size": bab.get("animation_payload_size"),
+            "sha256": bab.get("animation_payload_sha256"),
+            "decoded": False,
+        },
+    }
