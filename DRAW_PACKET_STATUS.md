@@ -76,3 +76,6 @@ The test suite pins a 32x32 baseline image hash so renderer changes become expli
 ## Phase 22: submesh-aware reference rendering
 
 `reference_renderer.render_static_draw()` now respects `first_index/index_count` from `SHIFT.StaticDraw/1` submeshes instead of rasterizing the complete mesh index buffer. This preserves MEB primitive boundaries and makes multi-material meshes safe for the reference path.
+## Phase 29: material uniform readiness
+
+`SHIFT.StaticDraw/1` now validates `SHIFT.MaterialUniformBinding/1`. CTAB bindings must target the expected material constant register set, contain valid register ranges, and carry no shape warnings; optimized-out/unreflected parameters remain diagnostic rather than automatic blockers.
