@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Iterable
 from shader_ir import parse_shader_blobs
 from shader_interface import pair_selected_pixel
+from uniform_linker import link_selected_pair
 
 def parse_fx_samplers(source: str | bytes) -> list[dict]:
     text = source.decode("utf-8", "replace") if isinstance(source, bytes) else source
@@ -91,10 +92,12 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
         payload=fxo_payloads.get((best["file"],best["program_offset"]))
         if payload is not None:
             shader_pair=pair_selected_pixel(payload,best["program_offset"],properties=vertex_properties)
+            uniform_binding=link_selected_pair(material,payload,shader_pair)
     return {"format":"SHIFT.MaterialBinding/1","material":material.get("name"),"shader":material.get("shader"),
             "technique":material.get("technique"),"bindings":bindings,"fxo_candidates":fxo,
             "selected_fxo":best if best and best["exact"] else None,
             "shader_pair":shader_pair,
+            "uniform_binding":uniform_binding if best and best["exact"] and shader_pair else None,
             "unresolved_textures":sorted(set(unresolved))}
 
 def link_from_files(material_json: str | Path, fx_source: str | Path, *, fxo_dir: str | Path | None = None, texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
