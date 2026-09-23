@@ -42,7 +42,10 @@ def _parse_ctab(data,payload,n):
             name=data[p:q].decode('ascii','replace')
         type_info=None
         if payload <= payload+type_off < ci_end and payload+type_off+16<=ci_end:
-            cls, typ, rows, cols, elements, members, member_info = struct.unpack_from('<BBHHHHI',data,payload+type_off)
+            # D3DXSHADER_TYPEINFO is seven fields:
+            # WORD Class, WORD Type, WORD Rows, WORD Columns,
+            # WORD Elements, WORD StructMembers, DWORD StructMemberInfo.
+            cls, typ, rows, cols, elements, members, member_info = struct.unpack_from('<HHHHHHI',data,payload+type_off)
             type_info={
                 'class':cls,'type':typ,'rows':rows,'columns':cols,
                 'elements':elements,'struct_members':members,
