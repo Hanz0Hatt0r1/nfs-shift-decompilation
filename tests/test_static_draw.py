@@ -224,3 +224,19 @@ def test_static_draw_rejects_uniform_shape_warning():
     result = build_static_draw_contract(packet)
     assert result["ready"] is False
     assert "material-uniform-binding:value-exceeds-register-range" in result["blocking_reasons"]
+
+
+def test_static_draw_rejects_nonempty_uniform_binding_without_schema():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["shader_selection"]["uniform_binding"] = {
+        "bindings": [{
+            "name": "primerBasis",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 5,
+            "register_count": 1,
+        }],
+    }
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "material-uniform-binding:invalid" in result["blocking_reasons"]
