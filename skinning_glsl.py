@@ -30,13 +30,30 @@ def build_gles31_skinning_contract(
     weights = skin.get("weights") or {}
     indices = skin.get("indices") or {}
     layout = (skinned_draw.get("mesh") or {}).get("vertex_layout") or {}
-    position_matches = [
-        a for a in layout.get("attributes", []) or []
-        if str(a.get("property_id")) == "200"
-    ]
-    if len(position_matches) != 1 or position_matches[0].get("location") is None:
-        raise ValueError("missing unique POSITION0 vertex binding")
-    position_location = int(position_matches[0]["location"])
+
+    def layout_location(property_id: str, label: str) -> int:
+        matches = [
+            a for a in layout.get("attributes", []) or []
+            if str(a.get("property_id")) == property_id
+        ]
+        if len(matches) != 1 or matches[0].get("location") is None:
+            raise ValueError(f"missing unique {label} vertex binding")
+        location = int(matches[0]["location"])
+        return location
+
+    position_location = layout_location("200", "POSITION0")
+    weight_location = layout_location("310", "BLENDWEIGHT0")
+    index_location = layout_location("580", "BLENDINDICES0")
+
+    for record, location, label in (
+        (weights, weight_location, "BLENDWEIGHT0"),
+        (indices, index_location, "BLENDINDICES0"),
+    ):
+        declared = record.get("target_location")
+        if declared is not None and int(declared) != location:
+            raise ValueError(
+                f"{label} location conflicts with SHIFT.VertexLayout/1"
+            )
     palette = (skinned_draw.get("bind_skeleton") or {}).get("palette") or {}
     bone_count = int(palette.get("bone_count", 0) or 0)
 
@@ -72,12 +89,12 @@ def build_gles31_skinning_contract(
                 "glsl_type": "vec3",
             },
             "blendweight0": {
-                "location": int(weights["target_location"]),
+                "location": weight_location,
                 "glsl_type": "vec4",
                 "source_format": "FLOAT32x4",
             },
             "blendindices0": {
-                "location": int(indices["target_location"]),
+                "location": index_location,
                 "glsl_type": "uvec4",
                 "source_format": "UINT8x4",
                 "integer_attribute": True,
