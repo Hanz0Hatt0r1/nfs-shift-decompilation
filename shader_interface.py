@@ -4,6 +4,7 @@ from itertools import product
 from typing import Iterable
 from shader_asm import ShaderProgram, parse_program
 from shader_ir import parse_shader_blobs
+from meb_format import PROP_NAMES
 
 D3D9_DECL_USAGE={0:"POSITION",1:"BLENDWEIGHT",2:"BLENDINDICES",3:"NORMAL",4:"PSIZE",5:"TEXCOORD",6:"TANGENT",7:"BINORMAL",8:"TESSFACTOR",9:"POSITIONT",10:"COLOR",11:"FOG",12:"DEPTH",13:"SAMPLE"}
 MEB_SEMANTICS={"200":("POSITION",0),"460":("COLOR",0),"220":("NORMAL",0),"240":("TANGENT",0),"250":("BINORMAL",0),"310":("BLENDWEIGHT",0),"580":("BLENDINDICES",0)}
@@ -88,7 +89,7 @@ def vertex_attribute_bindings(program:ShaderProgram,properties:Iterable[str|dict
         if chosen is None:
             rec["matched"]=False; missing.append(rec)
         else:
-            rec.update({"matched":True,"property_id":chosen[2],"property_name":chosen[2],"selection":"exact-width" if chosen[0]==0 else "wider-source-coverage"})
+            rec.update({"matched":True,"property_id":chosen[2],"property_name":PROP_NAMES.get(chosen[2],"unknown"),"selection":"exact-width" if chosen[0]==0 else "wider-source-coverage"})
         bindings.append(rec)
     return {"valid":not missing,"bindings":bindings,"missing":missing,"score":1.0-len(missing)/len(program.inputs) if program.inputs else 1.0}
 
