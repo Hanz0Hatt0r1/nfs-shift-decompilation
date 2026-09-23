@@ -73,12 +73,34 @@ def validate_linked_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
                 "stderr": proc.stderr,
             }
 
-    valid = all(item["valid"] for item in stages.values())
+    stage_valid = all(item["valid"] for item in stages.values())
+    link = {
+        "valid": None,
+        "returncode": None,
+        "stdout": "",
+        "stderr": "",
+    }
+    if stage_valid:
+        linked = subprocess.run(
+            [validator, "-l", str(vertex_path), str(pixel_path)],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        link = {
+            "valid": linked.returncode == 0,
+            "returncode": linked.returncode,
+            "stdout": linked.stdout,
+            "stderr": linked.stderr,
+        }
+
+    valid = stage_valid and link["valid"] is True
     return {
         "format": "SHIFT.GLESShaderValidation/1",
         "status": "valid" if valid else "invalid",
         "validator": validator,
         "stages": stages,
+        "link": link,
     }
 
 
@@ -96,11 +118,14 @@ def validate_linked_shader_pair(linked_pair: dict) -> dict:
         str(linked_pair.get("pixel_glsl") or ""),
     )
     if result["status"] == "invalid":
-        result["blocking_reasons"] = [
+        reasons = [
             f"linked-shader:{stage}-compile-failed"
             for stage, value in result["stages"].items()
             if value.get("valid") is False
         ]
+        if result.get("link", {}).get("valid") is False:
+            reasons.append("linked-shader:stage-link-failed")
+        result["blocking_reasons"] = reasons
     else:
         result["blocking_reasons"] = []
     return result
