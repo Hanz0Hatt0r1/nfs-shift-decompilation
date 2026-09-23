@@ -55,3 +55,6 @@ Linked GLSL translation now maps D3D9 VS input registers (`vN`) to the target `S
 ## Phase 34: GLES constant-buffer ABI
 
 Generated GLSL ES 3.1 now exposes D3D9 float constant banks through `ShiftD3D9Constants` at UBO binding 14. `SHIFT.RenderCommand/1` records the corresponding stage/register/count and byte offset (`register_index * 16`) for runtime upload.
+## Phase 36: float-only constant upload guard
+
+`SHIFT.StaticDraw/1` now rejects non-float or missing CTAB type information for material constants. The currently proven GLES constant path is a vec4-based float UBO; integer/bool CTAB upload semantics remain blocked until independently proven.
