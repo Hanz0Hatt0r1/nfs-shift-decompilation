@@ -25,6 +25,11 @@ def parse_fx_samplers(source: str | bytes) -> list[dict]:
             return q.group(1) if q else default
         texture = get("SamplerTexture")
         if not texture: continue
+        # A BMT texture parameter may exist even when D3D9 optimizes its sampler out.
+        # Count actual sampling calls in source; declarations alone do not make a
+        # sampler mandatory for a compiled permutation.
+        body=text[m.end():]
+        usage_count=len(re.findall(r"\\b(?:tex\\w*|sample\\w*)\\s*\\(\\s*"+re.escape(m.group(2))+r"\\b", body, re.I))
         out.append({
             "sampler_type": m.group(1), "sampler": m.group(2),
             "texture_parameter": texture, "min_filter": get("MinFilter"),
@@ -32,6 +37,8 @@ def parse_fx_samplers(source: str | bytes) -> list[dict]:
             "address_u": get("AddressU"), "address_v": get("AddressV"),
             "address_w": get("AddressW"), "lod_bias": int(get("MipMapLODBias", "0")),
             "max_anisotropy": int(get("MaxAnisotropy", "1")),
+            "usage_count": usage_count,
+            "source_used": usage_count > 0,
             "srgb": "SET_SRGB_TEXTURE" in meta, "linear": "SET_LINEAR_TEXTURE" in meta,
         })
     return out
@@ -65,9 +72,11 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
         b={**s,"texture":value,"texture_resolved":resolved,"binding":"material-texture" if resolved else "unresolved-texture"}
         if resolved is None: unresolved.append(value)
         bindings.append(b)
-    expected={b["sampler"] for b in bindings if b.get("binding")=="material-texture"}
+    sampler_by_texture={s["texture_parameter"]:s for s in samplers}
+    expected={b["sampler"] for b in bindings if b.get("binding")=="material-texture" and sampler_by_texture.get(b["texture_parameter"],{}).get("usage_count",0)>0}
     param_names=set(params)
-    if "environmentTexture" in {s["texture_parameter"] for s in samplers} and "motionBlurTexture" not in param_names:
+    env_sampler=sampler_by_texture.get("environmentTexture")
+    if env_sampler and env_sampler.get("usage_count",0)>0 and "motionBlurTexture" not in param_names:
         expected.add("environmentMap")
     material_uniform_names={n for n,p in params.items() if "TEXTURE" not in str(p.get("type") or p.get("resource_type") or "").upper()}
     fxo=[]
