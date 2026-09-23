@@ -219,6 +219,9 @@ def test_real_skinned_draw_contract_can_feed_gles31_contract():
                         "interface": {"valid": True},
                         "vertex_format": {"valid": True},
                     },
+                    "linked_shader_pair": {
+                        "format": "SHIFT.LinkedShaderPair/1",
+                    },
                 },
                 "textures": [],
             }
