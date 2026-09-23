@@ -9,6 +9,7 @@ from draw_packets import (
     build_draw_packets,
     build_from_analysis,
     resolve_ref,
+    resolve_bind_skeleton,
 )
 
 
@@ -87,6 +88,172 @@ def _records():
         "analysis": {"format": "HLSL"},
     }]
     return scene, mesh, material, texture, shader
+
+
+def _skeleton_records():
+    bab = {
+        "archive": "ANIMATION.bff",
+        "path": "animation/test/test.bab",
+        "analysis": {
+            "format": "SHIFT.BAB",
+            "header": {"name": "test"},
+            "bones": [
+                {
+                    "index": 0,
+                    "name": "Hips",
+                    "rotation_quaternion_xyzw": [0, 0, 0, 1],
+                    "translation": [1, 2, 3],
+                },
+                {
+                    "index": 1,
+                    "name": "Spine",
+                    "rotation_quaternion_xyzw": [0, 0, 0, 1],
+                    "translation": [0, 1, 0],
+                },
+            ],
+            "animation_payload_offset": 128,
+            "animation_payload_size": 16,
+            "animation_payload_sha256": "deadbeef",
+        },
+    }
+    bas = {
+        "archive": "VEHICLES.bff",
+        "path": "vehicles/test/test.bas",
+        "analysis": {
+            "format": "SHIFT.BAS",
+            "name": "test",
+            "nodes": [
+                {"index": 0, "name": "Hips", "parent": None},
+                {"index": 1, "name": "Spine", "parent": 0},
+            ],
+        },
+    }
+    return [bab], [bas]
+
+
+def test_resolve_bind_skeleton_requires_exact_meb_bone_names():
+    bab, bas = _skeleton_records()
+    mesh_analysis = {
+        "format": "SHIFT.MEB",
+        "skeleton": {"num_bones": 2, "bone_names": ["Hips", "Spine"]},
+    }
+    bind, resolution = resolve_bind_skeleton(mesh_analysis, bab, bas)
+    assert resolution["status"] == "resolved"
+    assert resolution["method"] == "exact-meb-bone-name-set"
+    assert bind["format"] == "SHIFT.BindSkeleton/1"
+    assert bind["coverage"] == 1.0
+    assert bind["links"][1]["parent"] == "Hips"
+    assert bind["animation_payload"]["decoded"] is False
+    assert bind["animation_payload"]["sha256"] == "deadbeef"
+
+
+def test_resolve_bind_skeleton_rejects_ambiguous_pairs():
+    bab, bas = _skeleton_records()
+    duplicate = dict(bab[0])
+    duplicate["path"] = "animation/alt/test.bab"
+    bind, resolution = resolve_bind_skeleton(
+        {
+            "format": "SHIFT.MEB",
+            "skeleton": {"num_bones": 2, "bone_names": ["Hips", "Spine"]},
+        },
+        [bab[0], duplicate],
+        bas,
+    )
+    assert bind is None
+    assert resolution["status"] == "ambiguous"
+    assert resolution["reason"] == "multiple-exact-pairs"
+    assert len(resolution["candidate_pairs"]) == 2
+
+
+def test_build_draw_packet_attaches_exact_bind_skeleton():
+    scene, mesh, material, texture, shader = _records()
+    mesh[0]["analysis"]["skinning"] = {
+        "has_weights": True,
+        "has_indices": True,
+        "skinned": True,
+        "valid": True,
+        "bone_count": 2,
+    }
+    mesh[0]["analysis"]["vertex_properties"] = ["200", "310", "580"]
+    mesh[0]["analysis"]["property_layouts"] = [
+        {
+            "id": "200",
+            "name": "position",
+            "payload_offset": 0,
+            "stride": 12,
+            "bytes": 36,
+            "storage": "f32x3",
+            "components": 3,
+            "normalized": False,
+        },
+        {
+            "id": "310",
+            "name": "bone_weights",
+            "payload_offset": 36,
+            "stride": 16,
+            "bytes": 48,
+            "storage": "f32x4",
+            "components": 4,
+            "normalized": False,
+        },
+        {
+            "id": "580",
+            "name": "vertex_index_hint",
+            "payload_offset": 84,
+            "stride": 4,
+            "bytes": 12,
+            "storage": "u8x4",
+            "components": 4,
+            "normalized": False,
+        },
+    ]
+    mesh[0]["analysis"]["skeleton"] = {
+        "num_bones": 2,
+        "num_chars": 11,
+        "bone_names": ["Hips", "Spine"],
+    }
+    bab, bas = _skeleton_records()
+
+    result = build_draw_packets(
+        scene,
+        mesh,
+        material,
+        texture,
+        shader,
+        bab_records=bab,
+        bas_records=bas,
+    )
+    packet = result["packets"][0]
+    assert packet["bind_skeleton"]["coverage"] == 1.0
+    assert packet["skeleton_resolution"]["status"] == "resolved"
+    assert result["stats"]["resolved_skeletons"] == 1
+    assert not result["stats"]["unresolved_skeletons"]
+
+
+def test_build_from_analysis_passes_bab_and_bas_records(tmp_path):
+    scene, mesh, material, texture, shader = _records()
+    mesh[0]["analysis"]["skinning"] = {
+        "has_weights": True,
+        "has_indices": True,
+        "skinned": True,
+        "valid": True,
+        "bone_count": 2,
+    }
+    mesh[0]["analysis"]["vertex_properties"] = ["200", "310", "580"]
+    mesh[0]["analysis"]["skeleton"] = {
+        "num_bones": 2,
+        "num_chars": 11,
+        "bone_names": ["Hips", "Spine"],
+    }
+    bab, bas = _skeleton_records()
+    analysis = tmp_path / "resource_analysis.json"
+    analysis.write_text(
+        json.dumps(scene + mesh + material + texture + shader + bab + bas),
+        encoding="utf-8",
+    )
+    result = build_from_analysis(analysis)
+    assert result["stats"]["resolved_skeletons"] == 1
+    assert result["packets"][0]["bind_skeleton"]["format"] == "SHIFT.BindSkeleton/1"
 
 
 def test_path_and_legacy_alias_resolution():
