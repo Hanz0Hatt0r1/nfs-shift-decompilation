@@ -55,3 +55,39 @@ def test_render_mesh_json_writes_expected_contract(tmp_path):
     assert result["format"] == "SHIFT.ReferenceRender/1"
     assert result["vertex_count"] == 3
     assert result["triangle_count"] == 1
+
+
+def _static_draw():
+    return {
+        "format": "SHIFT.StaticDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "world_matrix": [
+            [1, 0, 0, 0.1],
+            [0, 1, 0, 0.0],
+            [0, 0, 1, 0.0],
+            [0, 0, 0, 1],
+        ],
+    }
+
+
+def test_reference_renderer_accepts_static_draw_contract(tmp_path):
+    from reference_renderer import render_static_draw
+    out = tmp_path / "draw.ppm"
+    result = render_static_draw(_static_draw(), _triangle(), out, width=32, height=32)
+    assert result["format"] == "SHIFT.StaticDrawReference/1"
+    assert result["world_matrix_applied"] is True
+    assert out.exists()
+
+
+def test_reference_renderer_rejects_unready_static_draw(tmp_path):
+    from reference_renderer import render_static_draw
+    draw = _static_draw()
+    draw["ready"] = False
+    draw["blocking_reasons"] = ["shader-selection:ambiguous"]
+    try:
+        render_static_draw(draw, _triangle(), tmp_path / "bad.ppm")
+    except ValueError as exc:
+        assert "shader-selection:ambiguous" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
