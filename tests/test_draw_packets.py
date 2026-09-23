@@ -163,6 +163,47 @@ def test_build_from_analysis_and_cli(tmp_path):
     result = build_from_analysis(analysis)
     assert result["stats"]["draw_packets"] == 1
 
+    binding_report = tmp_path / "material_bindings.json"
+    binding_report.write_text(
+        json.dumps(
+            {
+                "materials": [
+                    {
+                        "material": "BODY",
+                        "bindings": [
+                            {
+                                "sampler": "sDiffuse",
+                                "sampler_type": "sampler2D",
+                                "texture": "textures/body.dds",
+                                "d3d9_sampler_register": 3,
+                            }
+                        ],
+                        "selection_status": "ambiguous",
+                        "ambiguous_candidates": [
+                            {"file": "a.fxo", "program_offset": 100},
+                            {"file": "b.fxo", "program_offset": 200},
+                        ],
+                        "selected_fxo": {
+                            "file": "a.fxo",
+                            "program_offset": 100,
+                            "vertex_pair_selection_status": "ambiguous",
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report_result = build_from_analysis(
+        analysis,
+        material_binding_report=binding_report,
+    )
+    report_material = report_result["packets"][0]["submeshes"][0]["material"]
+    assert report_material["textures"][0]["binding_source"] == "fxo-ctab"
+    assert report_material["textures"][0]["d3d9_sampler_register"] == 3
+    assert report_material["shader_selection"]["status"] == "ambiguous"
+
     output = tmp_path / "draw_packets.json"
     proc = subprocess.run(
         [
@@ -170,6 +211,8 @@ def test_build_from_analysis_and_cli(tmp_path):
             str(Path(__file__).resolve().parents[1] / "draw_packets.py"),
             str(analysis),
             str(output),
+            "--material-binding-report",
+            str(binding_report),
         ],
         check=True,
         capture_output=True,
@@ -179,3 +222,8 @@ def test_build_from_analysis_and_cli(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["schema"] == "SHIFT.DrawPacket/1"
     assert payload["packets"][0]["submeshes"][0]["index_count"] == 3
+    cli_material = payload["packets"][0]["submeshes"][0]["material"]
+    assert cli_material["textures"][0]["binding_source"] == "fxo-ctab"
+    assert cli_material["textures"][0]["d3d9_sampler_register"] == 3
+    assert cli_material["shader_selection"]["status"] == "ambiguous"
+    assert payload["packets"][0]["shader_selection"]["status"] == "ambiguous"
