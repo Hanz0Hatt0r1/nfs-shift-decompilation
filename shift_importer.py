@@ -1261,6 +1261,17 @@ def cmd_package(args: argparse.Namespace) -> int:
     return 1 if stats["failed"] else 0
 
 
+def cmd_render_bindings(args: argparse.Namespace) -> int:
+    """Build VHF/MEB/BMT/FXO render bindings from an existing Android IR."""
+    from render_pipeline import build_render_bindings
+    result = build_render_bindings(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(result["stats"], ensure_ascii=False, indent=2))
+    return 1 if result["stats"]["unresolved"] else 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1500,6 +1511,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output")
     p.add_argument("--fail-fast", action="store_true")
     p.set_defaults(fn=cmd_package)
+
+    p = sp.add_parser("render-bindings", help="build VHF -> MEB -> BMT -> FXO render bindings from Android IR")
+    p.add_argument("input", help="IR output directory produced by build-ir")
+    p.add_argument("output", help="SHIFT.RenderBinding/1 JSON output")
+    p.set_defaults(fn=cmd_render_bindings)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
