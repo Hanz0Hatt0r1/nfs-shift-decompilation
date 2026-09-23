@@ -193,6 +193,14 @@ def _validate_shader_selection(packet: dict[str, Any]) -> list[str]:
         if vertex_format.get("valid") is False:
             reasons.append("material-vertex-format:invalid")
 
+        linked_pair = selected.get("linked_shader_pair")
+        if not linked_pair:
+            reasons.append("material-shader-glsl:missing")
+        elif linked_pair.get("format") != "SHIFT.LinkedShaderPair/1":
+            reasons.append("material-shader-glsl:invalid")
+        if selected.get("linked_shader_error"):
+            reasons.append("material-shader-glsl:error")
+
         for tex in material.get("textures", []) or []:
             if (
                 tex.get("binding_source") != "fxo-ctab"
