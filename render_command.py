@@ -255,6 +255,8 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
             "shader": {
                 "vertex": linked_pair.get("vertex_glsl") if linked_pair else None,
                 "pixel": linked_pair.get("pixel_glsl") if linked_pair else None,
+                "vertex_program": linked_pair.get("vertex") if linked_pair else None,
+                "pixel_program": linked_pair.get("pixel") if linked_pair else None,
                 "varying_locations": linked_pair.get("varying_locations", []) if linked_pair else [],
                 "vertex_input_locations": linked_pair.get("vertex_input_locations", {}) if linked_pair else {},
                 "constant_buffer_binding": 14,
@@ -385,6 +387,14 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
             reasons.append("shader:vertex-source-missing")
         if not shader.get("pixel"):
             reasons.append("shader:pixel-source-missing")
+
+        for key in ("vertex_program", "pixel_program"):
+            program = shader.get(key)
+            if program is not None:
+                if program.get("schema") != "SHIFT.ShaderProgram/1":
+                    reasons.append(f"shader-ir:{key}:invalid-schema")
+                if program.get("stage") not in {"vertex", "pixel"}:
+                    reasons.append(f"shader-ir:{key}:invalid-stage")
 
         shader_validation = shader.get("validation") or {}
         if shader_validation.get("format") not in (None, "SHIFT.GLESShaderValidation/1"):

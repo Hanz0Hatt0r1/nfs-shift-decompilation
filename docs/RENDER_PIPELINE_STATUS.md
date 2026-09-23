@@ -63,3 +63,8 @@ The neutral render pipeline now includes RenderResources/1, RenderCommand/1 vali
 ## Phase 46: shader execution reference
 
 The project now has a deterministic software execution oracle for a bounded set of D3D9 shader IR operations. The reference renderer can therefore advance from texture sampling toward material evaluation without inventing unsupported shader behavior; full BMW shader coverage still requires expanding the supported opcode/control-flow set and validating against real FXO programs.
+
+
+## Phase 47: shader IR carried into RenderCommand
+
+`SHIFT.RenderCommand/1` now preserves the already-recovered `SHIFT.ShaderProgram/1` IR for both vertex and pixel stages when available, alongside the generated GLSL and linkage metadata. Backend implementations can therefore execute or inspect the same instruction IR without reparsing GLSL text.
