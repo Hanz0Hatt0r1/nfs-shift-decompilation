@@ -228,3 +228,85 @@ def test_reference_renderer_honors_static_draw_submesh_index_range(tmp_path):
     body = out.read_bytes().split(b"\n", 3)[3]
     pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
     assert (0, 255, 0) not in pixels
+
+
+def _render_command_ready():
+    return {
+        "format": "SHIFT.RenderCommand/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "mesh": {
+            "ref": "cars/body.meb",
+            "vertex_count": 3,
+            "triangle_count": 1,
+            "vertex_layout": {
+                "format": "SHIFT.VertexLayout/1",
+            },
+            "attributes": [{
+                "location": 0,
+                "property_id": "200",
+                "offset": 0,
+                "stride": 12,
+                "storage": "f32x3",
+            }],
+        },
+        "world_matrix": [
+            [1, 0, 0, 0.0],
+            [0, 1, 0, 0.0],
+            [0, 0, 1, 0.0],
+            [0, 0, 0, 1.0],
+        ],
+        "submeshes": [{
+            "first_index": 0,
+            "index_count": 3,
+            "shader": {
+                "vertex": "#version 310 es\\nvoid main(){}",
+                "pixel": "#version 310 es\\nvoid main(){}",
+            },
+            "uniforms": {
+                "format": "SHIFT.MaterialUniformBinding/1",
+                "bindings": [],
+            },
+            "textures": [],
+            "constant_commands": [],
+        }],
+        "resource_plan": {
+            "format": "SHIFT.RenderResources/1",
+            "texture_count": 0,
+            "sampler_count": 0,
+        },
+    }
+
+
+def test_reference_renderer_executes_render_command(tmp_path):
+    from reference_renderer import render_render_command
+    out = tmp_path / "command.ppm"
+    result = render_render_command(
+        _render_command_ready(),
+        _triangle(),
+        out,
+        width=32,
+        height=32,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    assert result["format"] == "SHIFT.StaticDrawReference/1"
+    assert result["command_contract"]["validation"]["valid"] is True
+    assert result["command_contract"]["ready"] is True
+    assert out.exists()
+
+
+def test_reference_renderer_rejects_render_command_mesh_count_mismatch(tmp_path):
+    from reference_renderer import render_render_command
+    command = _render_command_ready()
+    command["mesh"]["vertex_count"] = 4
+    try:
+        render_render_command(command, _triangle(), tmp_path / "bad.ppm", width=16, height=16)
+    except ValueError as exc:
+        assert "mesh vertex count mismatch" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
