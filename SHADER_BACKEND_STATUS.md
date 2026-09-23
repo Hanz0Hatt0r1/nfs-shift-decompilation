@@ -30,3 +30,7 @@ Known limitations:
 - final MGEO/VHF -> DrawPacket execution path.
 
 Next target: use the BMW M3 package as the golden path for exact sampler/vertex-packing evidence, then lock the resulting material draw packet before moving deeper into MGEO/VHF and skinning.
+
+## Phase 38: linked GLES shader validation
+
+`shader_backend.validate_linked_shader_pair()` now validates a `SHIFT.LinkedShaderPair/1` by compiling vertex/fragment stages separately and, when `glslangValidator` is available, linking the pair with `-l`. The result is `SHIFT.GLESShaderValidation/1` with explicit `valid`, `invalid`, or `unavailable` status and machine-readable blocking reasons.
