@@ -1,5 +1,5 @@
 from __future__ import annotations
-import struct, math
+import struct, math, re
 from dataclasses import dataclass, asdict, field
 from typing import Optional
 
@@ -380,7 +380,13 @@ def _emit_matrix(dst:Operand, src:Operand, mat:Operand, rows:int, cols:int, stag
     expr='vec4('+','.join(comps)+')'
     return _assign(dst,expr,stage,getattr(dst,'predicate',None))
 
-def to_glsl(program:ShaderProgram, max_lines:int=10000)->str:
+def to_glsl(
+    program: ShaderProgram,
+    max_lines: int = 10000,
+    *,
+    input_locations: dict[int, int] | None = None,
+    output_locations: dict[int, int] | None = None,
+)->str:
     lines=['#version 310 es','precision highp float;','precision highp int;']
     for i in program.temps: lines.append(f'vec4 r{i}=vec4(0.0);')
     for bank,rt in (('c',2),('c2',11),('c3',12),('c4',13)):
@@ -392,14 +398,21 @@ def to_glsl(program:ShaderProgram, max_lines:int=10000)->str:
     for s in program.samplers:
         sampler_type=program.sampler_types.get(s,'sampler2D')
         lines.append(f'layout(binding={s}) uniform {sampler_type} tex{s};')
+    input_locations = input_locations or {}
+    output_locations = output_locations or {}
     for x in program.inputs:
         reg=str(x.get('register','v0'))
         try: loc=int(reg.split('v',1)[1].split('.',1)[0])
         except Exception: loc=0
-        lines.append(f'layout(location={loc}) in vec4 in_{loc};')
+        glsl_loc=input_locations.get(loc,loc)
+        lines.append(f'layout(location={glsl_loc}) in vec4 in_{loc};')
     if program.stage=='vertex':
         for x in program.outputs:
-            lines.append(f'layout(location={x.get("index",0)}) out vec4 out_{x.get("index",0)};')
+            reg=str(x.get('register','oT0'))
+            match=re.search(r'(?:oT|oC|oD|oDepth)(\d+)',reg)
+            reg_index=int(match.group(1)) if match else int(x.get("index",0))
+            glsl_loc=output_locations.get(reg_index,int(x.get("index",0)))
+            lines.append(f'layout(location={glsl_loc}) out vec4 out_{reg_index};')
     else:
         lines.append('layout(location=0) out vec4 fragColor0;')
     lines.append('void main(){')

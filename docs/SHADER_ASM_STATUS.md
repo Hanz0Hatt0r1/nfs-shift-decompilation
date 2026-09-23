@@ -42,3 +42,7 @@ The compiled D3D9 token stream remains the exact fallback representation; no ori
 ## Phase 13
 
 GLSL ES 3.1 lowering now covers the D3D9 ABS opcode and the DDX/DDY derivative aliases (DSX/DSY), keeping these common semantic operations out of the unsupported path.
+
+## Phase 14: linked GLSL interface
+
+D3D9 vertex outputs and pixel inputs now receive shared GLSL interface locations derived from semantic usage/index linkage. Original register numbers are retained for internal lowering, while translate_pair() emits both stages with matching locations.

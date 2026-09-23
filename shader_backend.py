@@ -4,6 +4,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from shader_asm import ShaderProgram, parse_program, to_glsl
+from shader_interface import build_varying_locations
 
 
 def program_to_ir(program: ShaderProgram) -> dict:
@@ -26,6 +27,34 @@ def program_to_ir(program: ShaderProgram) -> dict:
         "sampler_types": program.sampler_types,
     }
 
+
+
+def translate_pair(vertex: ShaderProgram, pixel: ShaderProgram) -> dict:
+    """Translate a matched D3D9 VS/PS pair with shared GLSL varying locations."""
+    linkage = build_varying_locations(vertex, pixel)
+    if not linkage["valid"]:
+        raise ValueError("cannot translate unmatched VS/PS pair to a linked GLSL interface")
+    return {
+        "format": "SHIFT.LinkedShaderPair/1",
+        "vertex": program_to_ir(vertex),
+        "pixel": program_to_ir(pixel),
+        "interface": linkage["link"],
+        "varying_locations": linkage["semantic_locations"],
+        "vertex_glsl": to_glsl(vertex, output_locations=linkage["vertex_output_locations"]),
+        "pixel_glsl": to_glsl(pixel, input_locations=linkage["pixel_input_locations"]),
+    }
+
+
+def translate_pair_blob(data: bytes, vertex_offset: int, pixel_offset: int) -> dict:
+    """Parse and translate one VS/PS pair from a single FXO shader blob."""
+    blobs = parse_shader_blobs(data)
+    vertex_blob = next((b for b in blobs if b.offset == vertex_offset and b.stage == "vertex"), None)
+    pixel_blob = next((b for b in blobs if b.offset == pixel_offset and b.stage == "pixel"), None)
+    if vertex_blob is None or pixel_blob is None:
+        raise ValueError("requested shader pair offsets are not present")
+    vertex = parse_program(data, vertex_blob.offset, vertex_blob.end, vertex_blob.stage, vertex_blob.major, vertex_blob.minor)
+    pixel = parse_program(data, pixel_blob.offset, pixel_blob.end, pixel_blob.stage, pixel_blob.major, pixel_blob.minor)
+    return translate_pair(vertex, pixel)
 
 def translate_blob(data: bytes, offset: int, end: int, stage: str, major: int, minor: int):
     program = parse_program(data, offset, end, stage, major, minor)
