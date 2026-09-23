@@ -72,6 +72,23 @@ def _selection_evidence_key(candidate: dict) -> tuple:
     )
 
 
+def _selection_sort_key(candidate: dict) -> tuple:
+    evidence = _selection_evidence_key(candidate)
+    return (
+        -int(evidence[0]),
+        -evidence[1],
+        -int(evidence[2]),
+        -evidence[3],
+        -evidence[4],
+        -evidence[5],
+        evidence[6],
+        evidence[7],
+        -evidence[8],
+        candidate["file"],
+        candidate["program_offset"],
+    )
+
+
 def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
     params = _material_params(material)
     samplers = parse_fx_samplers(fx_source)
@@ -148,14 +165,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
         k=(x["file"],x["program_offset"])
         if k not in seen:
             seen.add(k); uniq.append(x)
-    fxo=sorted(
-        uniq,
-        key=lambda x:(
-            tuple(-int(v) if isinstance(v, (int, float, bool)) else v for v in _selection_evidence_key(x)),
-            x["file"],
-            x["program_offset"],
-        ),
-    )
+    fxo=sorted(uniq, key=_selection_sort_key)
     best=fxo[0] if fxo else None
     selection_status="none"
     ambiguous_candidates=[]
