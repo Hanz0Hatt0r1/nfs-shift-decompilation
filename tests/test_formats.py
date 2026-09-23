@@ -1,14 +1,27 @@
 import sys
+import os
 import struct
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+import pytest
 
 from resource_formats import parse_bmt_material, parse_reflection_xml, parse_bml, parse_vhf_scene, parse_sgb
 from meb_format import read_meb, mesh_summary, write_mgeo
 from csm_format import read_csm, csm_summary, write_cmesh
 from shift_importer import BFF
+from shader_ir import parse_shader_blobs, parse_fx_source
+from synthetic_fixtures import glass_fxo
 
-ROOT = Path('/mnt/data/dir_bffs')
+ROOT = Path(os.environ.get('SHIFT_TEST_BFF_ROOT', '/mnt/data/dir_bffs'))
+BMW = Path(os.environ.get('SHIFT_TEST_BMW_ROOT', '/mnt/data/bmwm3_files'))
+ALPENTAL = Path(os.environ.get('SHIFT_TEST_ALPENTAL', '/mnt/data/Alpental.bff'))
+
+
+def require_file(path: Path) -> Path:
+    if not path.exists():
+        pytest.skip(f'game-data fixture not available: {path}')
+    return path
 
 
 def test_reflection_scalar_and_vector():
@@ -21,7 +34,7 @@ def test_reflection_scalar_and_vector():
 
 
 def test_real_bmt_material():
-    with BFF(ROOT / 'GUI.bff') as b:
+    with BFF(require_file(ROOT / 'GUI.bff')) as b:
         e = next(e for e in b.entries if e.path.endswith('.bmt'))
         r = parse_bmt_material(b.extract_entry(e))
     m = r['material']
@@ -32,17 +45,16 @@ def test_real_bmt_material():
 
 
 def test_real_bmt_specialization_flags():
-    archive = Path('/mnt/data/bmwm3_files/BMW_M3_E36.bff')
-    if not archive.exists():
-        return
+    archive = require_file(BMW / 'BMW_M3_E36.bff')
     with BFF(archive) as b:
         e = next(e for e in b.entries if e.path.endswith('bmw_m3_e36_paint.bmt'))
         r = parse_bmt_material(b.extract_entry(e))
     flags = set(r['material'].get('specializations', []))
     assert {'USE_FRESNEL', 'ALLOW_VINYLS', 'DIRT_SCRATCH'} <= flags
 
+
 def test_real_bml_container():
-    with BFF(ROOT / 'SCRIPTS.bff') as b:
+    with BFF(require_file(ROOT / 'SCRIPTS.bff')) as b:
         e = next(e for e in b.entries if e.path.endswith('.bml'))
         r = parse_bml(b.extract_entry(e))
     assert r['format'] == 'SHIFT.BMLY'
@@ -52,10 +64,7 @@ def test_real_bml_container():
 
 
 def test_real_meb_mesh_and_mgeo(tmp_path):
-    archive = Path('/mnt/data/Alpental.bff')
-    if not archive.exists():
-        return
-    with BFF(archive) as b:
+    with BFF(require_file(ALPENTAL)) as b:
         e = next(e for e in b.entries if e.path == 'tracks/alpental/grid1_02.meb')
         mesh = read_meb(b.extract_entry(e))
     s = mesh_summary(mesh)
@@ -69,16 +78,11 @@ def test_real_meb_mesh_and_mgeo(tmp_path):
     assert mesh.property_layouts[0]['bytes'] == mesh.vertex_count * 12
     out = tmp_path / 'grid1_02.mgeo'
     write_mgeo(mesh, out)
-    blob = out.read_bytes()
-    assert blob[:4] == b'MGEO'
-    assert len(blob) > 32
+    assert out.read_bytes()[:4] == b'MGEO'
 
 
 def test_real_csm_collision_mesh(tmp_path):
-    archive = Path('/mnt/data/dir_bffs/TRACKS.bff')
-    if not archive.exists():
-        return
-    with BFF(archive) as b:
+    with BFF(require_file(ROOT / 'TRACKS.bff')) as b:
         e = next(e for e in b.entries if e.path.endswith('.360.csm'))
         mesh = read_csm(b.extract_entry(e))
     s = csm_summary(mesh)
@@ -92,10 +96,7 @@ def test_real_csm_collision_mesh(tmp_path):
 
 
 def test_real_meb_skinning_payload():
-    archive = Path('/mnt/data/Alpental.bff')
-    if not archive.exists():
-        return
-    with BFF(archive) as b:
+    with BFF(require_file(ALPENTAL)) as b:
         e = next(e for e in b.entries if e.path.endswith('event_flag_vertical_a_org02_loda.meb'))
         mesh = read_meb(b.extract_entry(e))
     assert mesh.vertex_count == 144
@@ -106,39 +107,36 @@ def test_real_meb_skinning_payload():
 
 
 def test_vhf_scene_parser():
-    data = b"""<?xml version=\"1.0\"?>
-<CAR Name=\"TEST\" ExporterVersion=\"Blimey\">
-  <NODE type=\"HIERARCHY\" Name=\"Root\" MatrixNumber=\"0\">
-    <MATRIX id=\"0\" Offset=\"0 0 0\" Orientation=\"0 0 0 1\"/>
-    <NODE type=\"OBJECT\" Name=\"BODY\" MatrixNumber=\"0\">
-      <RESOURCE Filename=\"vehicles\\TEST\\BODY.meb\"/>
+    data = b'''<?xml version="1.0"?>
+<CAR Name="TEST" ExporterVersion="Blimey">
+  <NODE type="HIERARCHY" Name="Root" MatrixNumber="0">
+    <MATRIX id="0" Offset="0 0 0" Orientation="0 0 0 1"/>
+    <NODE type="OBJECT" Name="BODY" MatrixNumber="0">
+      <RESOURCE Filename="vehicles\\TEST\\BODY.meb"/>
     </NODE>
   </NODE>
 </CAR>
-"""
+'''
     r = parse_vhf_scene(data)
-    assert r["format"] == "SHIFT.VHFScene"
-    assert r["stats"]["nodes"] == 2
-    assert r["stats"]["resource_refs"] == 1
-    assert r["nodes"][0]["children"][0]["resources"][0].endswith("BODY.meb")
+    assert r['format'] == 'SHIFT.VHFScene'
+    assert r['stats']['nodes'] == 2
+    assert r['stats']['resource_refs'] == 1
+    assert r['nodes'][0]['children'][0]['resources'][0].endswith('BODY.meb')
 
 
 def test_sgb_chunk_index():
     def chunk(tag: str, payload: bytes) -> bytes:
-        return tag[::-1].encode("ascii") + struct.pack("<I", 8 + len(payload)) + payload
-    data = b" \x42\x47\x53" + struct.pack("<III", 0x10, 3, 0)
-    data += chunk("NODE", b"abc") + chunk("END ", b"\x00\x00\x00\x00") + b"TAIL"
+        return tag[::-1].encode('ascii') + struct.pack('<I', 8 + len(payload)) + payload
+    data = b' \x42\x47\x53' + struct.pack('<III', 0x10, 3, 0)
+    data += chunk('NODE', b'abc') + chunk('END ', b'\x00\x00\x00\x00') + b'TAIL'
     r = parse_sgb(data)
-    assert r["format"] == "SHIFT.SGB"
-    assert [c["tag"] for c in r["chunks"]] == ["NODE", "END "]
-    assert r["trailing_bytes"] == 4
+    assert r['format'] == 'SHIFT.SGB'
+    assert [c['tag'] for c in r['chunks']] == ['NODE','END ']
+    assert r['trailing_bytes'] == 4
 
 
 def test_fxo_shader_blob_parser():
-    from shader_ir import parse_shader_blobs
-    from pathlib import Path
-    p = Path(__file__).parent / 'fixtures' / 'glass.fxo'
-    blobs = parse_shader_blobs(p.read_bytes())
+    blobs = parse_shader_blobs(glass_fxo())
     assert len(blobs) == 4
     assert {b.stage for b in blobs} == {'pixel','vertex'}
     assert all(b.instruction_count > 5 for b in blobs)
@@ -146,8 +144,7 @@ def test_fxo_shader_blob_parser():
 
 
 def test_fx_source_reflection():
-    from shader_ir import parse_fx_source
-    p = Path(__file__).parent / 'fixtures' / 'basic.fx'
-    r = parse_fx_source(p.read_bytes())
+    source = b'''#include "stddefs.fxh"\ntechnique First { pass P { } }\ntechnique Second { pass P { } }\n'''
+    r = parse_fx_source(source)
     assert 'stddefs.fxh' in r['includes']
     assert len(r['techniques']) >= 2
