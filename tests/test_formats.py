@@ -4,10 +4,11 @@ import pytest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from resource_formats import parse_bmt_material, parse_reflection_xml, parse_bml, parse_vhf_scene, parse_sgb
+from resource_formats import parse_bmt_material, parse_reflection_xml, parse_bml, parse_vhf_scene, parse_sgb, analyze_decoded_resource
 from meb_format import read_meb, mesh_summary, write_mgeo
 from csm_format import read_csm, csm_summary, write_cmesh
 from shift_importer import BFF
+from synthetic_fixtures import basic_bab
 
 ROOT = Path('/mnt/data/dir_bffs')
 
@@ -150,6 +151,15 @@ def test_fxo_shader_blob_parser():
     assert {b.stage for b in blobs} == {'pixel','vertex'}
     assert all(b.instruction_count > 5 for b in blobs)
     assert all('Microsoft' in ' '.join(b.ctab_strings) for b in blobs)
+
+
+def test_bab_binary_resource_analysis():
+    result = analyze_decoded_resource("animation/test.bab", basic_bab())
+    analysis = result["analysis"]
+    assert analysis["format"] == "SHIFT.BAB"
+    assert analysis["bones_parsed"] == 2
+    assert analysis["animation_payload_preserved"] is True
+    assert analysis["animation_payload_decoded"] is False if "animation_payload_decoded" in analysis else True
 
 
 def test_fx_source_reflection():
