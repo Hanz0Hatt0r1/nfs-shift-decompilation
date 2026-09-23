@@ -45,3 +45,7 @@ This makes the render-link stage an actual renderer contract boundary instead of
 ## Phase 35: RenderCommand -> reference renderer
 
 The desktop oracle can now execute `SHIFT.RenderCommand/1` directly. The execution path performs final command validation and cross-checks vertex/index metadata against the supplied neutral mesh before rasterization, closing the neutral submission chain without introducing BFF/runtime dependencies.
+
+## Phase 35: GLES vertex attribute submission ABI
+
+`SHIFT.RenderCommand/1` now emits concrete vertex upload metadata: GL scalar type, component count, normalized mode, byte offset/stride and pointer API. Proven bone indices (`580`) use integer `UNSIGNED_BYTE` input with `glVertexAttribIPointer`; unresolved color channel order remains explicit rather than guessed.
