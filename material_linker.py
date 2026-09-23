@@ -99,6 +99,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                     "specialization_score":feature_score["score"],
                     "specialization_matched":feature_score["matched"],
                     "specialization_contradicted":feature_score["contradicted"],
+                    "specialization_unexpected":feature_score.get("unexpected",[]),
                 })
     seen=set(); uniq=[]
     for x in fxo:
@@ -115,6 +116,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             -x.get("uniform_coverage",0.0),
             -x.get("specialization_score",0.0),
             len(x.get("specialization_contradicted",[])),
+            len(x.get("specialization_unexpected",[])),
             -len(x.get("uniform_matches",[])),
             x["file"],
             x["program_offset"],
