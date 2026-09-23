@@ -6,6 +6,7 @@ does not derive pose matrices from BAB/BAS local bind transforms.
 from __future__ import annotations
 
 from typing import Any, Iterable
+import math
 
 from skinning import skin_points, skin_directions, validate_influences
 
@@ -78,6 +79,52 @@ def skin_draw_points(
         "vertex_count": len(result),
         "positions": [list(row) for row in result],
         "influence_validation": validation,
+    }
+
+
+def validate_bind_pose(
+    draw: dict[str, Any],
+    positions: Iterable[Iterable[float]],
+    bone_indices: Iterable[Iterable[int]],
+    bone_weights: Iterable[Iterable[float]],
+    *,
+    tolerance: float = 1.0e-5,
+    normalize_weights: bool = False,
+    strict_indices: bool = True,
+) -> dict[str, Any]:
+    """Check whether an explicit SkinPose reproduces the supplied bind positions."""
+    if tolerance < 0.0:
+        raise ValueError("tolerance must be non-negative")
+    source = [tuple(float(x) for x in row) for row in positions]
+    result = skin_draw_points(
+        draw,
+        source,
+        bone_indices,
+        bone_weights,
+        normalize_weights=normalize_weights,
+        strict_indices=strict_indices,
+    )
+    mismatches: list[dict[str, Any]] = []
+    max_error = 0.0
+    for index, (expected, actual) in enumerate(zip(source, result["positions"])):
+        error = math.sqrt(sum((float(actual[i]) - expected[i]) ** 2 for i in range(3)))
+        max_error = max(max_error, error)
+        if error > tolerance:
+            mismatches.append({
+                "vertex": index,
+                "expected": list(expected),
+                "actual": list(actual),
+                "error": error,
+            })
+    return {
+        "format": "SHIFT.SkinBindPoseCheck/1",
+        "valid": not mismatches,
+        "vertex_count": len(source),
+        "max_error": max_error,
+        "tolerance": tolerance,
+        "mismatches": mismatches,
+        "influence_validation": result["influence_validation"],
+        "frame": result.get("frame"),
     }
 
 
