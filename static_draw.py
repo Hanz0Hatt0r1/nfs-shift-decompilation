@@ -60,11 +60,26 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         if binding_source == "fxo-ctab" or tex.get("binding") == "material-texture":
             if tex.get("dds"):
                 item["texture_resource"] = build_texture_contract(tex["dds"], tex)
-            explicit_textures.append(item)
+                explicit_textures.append(item)
+            elif tex.get("texture_resolved") or item["resolved"]:
+                item["resolution_status"] = "resolved-path"
+                explicit_textures.append(item)
+            else:
+                item["resolution_status"] = "unresolved"
+                unresolved_textures.append(item)
         elif binding_source in {"unresolved", "unresolved-texture"}:
+            item["resolution_status"] = "unresolved"
             unresolved_textures.append(item)
         else:
+            # Renderer-global/specialized resources are kept as external
+            # requirements and must not be mistaken for missing material textures.
+            item["resolution_status"] = "external"
             explicit_textures.append(item)
+
+    material_unresolved = [
+        x for x in material.get("unresolved_textures", []) or []
+        if x is not None
+    ]
 
     uniforms, uniform_reasons = _uniform_contract(material, selection)
     external_samplers = selection.get("external_samplers") or material.get("external_samplers") or []
@@ -80,7 +95,7 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         "material": material.get("name"),
         "shader_selection": selection,
         "textures": explicit_textures,
-        "unresolved_textures": unresolved_textures,
+        "unresolved_textures": unresolved_textures + material_unresolved,
         "external_samplers": external_samplers,
         "uniform_binding": uniforms,
         "ready": not reasons and not unresolved_textures and not texture_blockers and not uniform_reasons,

@@ -79,3 +79,6 @@ The test suite pins a 32x32 baseline image hash so renderer changes become expli
 ## Phase 29: material uniform readiness
 
 `SHIFT.StaticDraw/1` now validates `SHIFT.MaterialUniformBinding/1`. CTAB bindings must target the expected material constant register set, contain valid register ranges, and carry no shape warnings; optimized-out/unreflected parameters remain diagnostic rather than automatic blockers.
+## Phase 30: strict material texture resolution
+
+`SHIFT.StaticDraw/1` now distinguishes resolved material textures from external/specialized samplers. A `material-texture` binding without `texture_resolved` is blocked; renderer-global/external bindings remain explicit external requirements.

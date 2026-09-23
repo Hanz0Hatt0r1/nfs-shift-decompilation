@@ -240,3 +240,47 @@ def test_static_draw_rejects_nonempty_uniform_binding_without_schema():
     result = build_static_draw_contract(packet)
     assert result["ready"] is False
     assert "material-uniform-binding:invalid" in result["blocking_reasons"]
+
+
+def test_static_draw_rejects_unresolved_direct_material_texture():
+    packet = _binding_packet()
+    material = packet["submeshes"][0]["material"]
+    material["bindings"] = [{
+        "sampler": "diffuseMap",
+        "texture": "textures/body.dds",
+        "texture_resolved": None,
+        "binding": "material-texture",
+    }]
+    material.pop("textures", None)
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "material-texture-binding:unresolved" in result["blocking_reasons"]
+
+
+def test_static_draw_accepts_resolved_direct_material_texture_path():
+    packet = _binding_packet()
+    material = packet["submeshes"][0]["material"]
+    material["bindings"] = [{
+        "sampler": "diffuseMap",
+        "texture": "textures/body.dds",
+        "texture_resolved": "textures/body.dds",
+        "binding": "material-texture",
+    }]
+    material.pop("textures", None)
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is True
+    assert result["blocking_reasons"] == []
+
+
+def test_static_draw_keeps_external_specialized_texture_as_external_requirement():
+    packet = _binding_packet()
+    material = packet["submeshes"][0]["material"]
+    material["bindings"] = [{
+        "sampler": "environmentMap",
+        "texture": None,
+        "binding": "external-or-specialised",
+    }]
+    material.pop("textures", None)
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is True
+    assert result["submeshes"][0]["material"]["textures"][0]["resolution_status"] == "external"
