@@ -66,25 +66,52 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     param_names=set(params)
     if "environmentTexture" in {s["texture_parameter"] for s in samplers} and "motionBlurTexture" not in param_names:
         expected.add("environmentMap")
+    material_uniform_names={n for n,p in params.items() if "TEXTURE" not in str(p.get("type") or p.get("resource_type") or "").upper()}
     fxo=[]
     fxo_payloads={}
     for name,data in fxo_candidates:
-        for p in (p for p in reflect_fxo(data) if p["stage"]=="pixel"):
+        programs=reflect_fxo(data)
+        for p in (x for x in programs if x["stage"]=="pixel"):
             names={s["name"] for s in p["samplers"]}
-            score=len(expected & names)
+            sampler_score=len(expected & names)
             wrong_camera="motionBlurMap" in names and "motionBlurTexture" not in param_names
             exact=expected <= names and not wrong_camera
-            if score and not wrong_camera:
+            if sampler_score and not wrong_camera:
+                constants={x["name"] for x in p["constants"] if x.get("register_set")==2}
+                uniform_matches=sorted(material_uniform_names & constants)
+                uniform_score=(len(uniform_matches)/len(material_uniform_names)) if material_uniform_names else 1.0
+                pair=pair_selected_pixel(data,p["offset"],properties=vertex_properties) if exact else None
+                pair_score=pair["score"] if pair else 0.0
+                pair_ok=bool(pair and pair.get("interface",{}).get("valid") and pair.get("vertex_format",{}).get("valid",True))
                 fxo_payloads[(name,p["offset"])]=data
-                fxo.append({"file":name,"program_offset":p["offset"],"samplers":p["samplers"],
-                            "score":score,"expected_count":len(expected),"exact":exact})
+                fxo.append({
+                    "file":name,"program_offset":p["offset"],"samplers":p["samplers"],
+                    "score":sampler_score,"expected_count":len(expected),"exact":exact,
+                    "uniform_matches":uniform_matches,"uniform_expected":len(material_uniform_names),
+                    "uniform_coverage":uniform_score,
+                    "vertex_pair_score":pair_score,"vertex_pair_valid":pair_ok,
+                })
     seen=set(); uniq=[]
     for x in fxo:
         k=(x["file"],x["program_offset"])
-        if k not in seen: seen.add(k); uniq.append(x)
-    fxo=sorted(uniq,key=lambda x:(-int(x["exact"]),-x["score"],x["file"],x["program_offset"]))
+        if k not in seen:
+            seen.add(k); uniq.append(x)
+    fxo=sorted(
+        uniq,
+        key=lambda x:(
+            -int(x["exact"]),
+            -x["score"],
+            -x.get("vertex_pair_valid",False),
+            -x.get("vertex_pair_score",0.0),
+            -x.get("uniform_coverage",0.0),
+            -len(x.get("uniform_matches",[])),
+            x["file"],
+            x["program_offset"],
+        ),
+    )
     best=fxo[0] if fxo else None
     shader_pair=None
+    uniform_binding=None
     if best and best["exact"]:
         regmap={s["name"]:s["register"] for s in best["samplers"]}
         for b in bindings:
