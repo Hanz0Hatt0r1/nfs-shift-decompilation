@@ -79,7 +79,7 @@ PROP_NAMES = {
     "234": "uvw4",
     "033": "skip_033",
     "310": "bone_weights",
-    "580": "vertex_index_hint",
+    "580": "bone_indices",
 }
 
 PROP_STRIDES = {
