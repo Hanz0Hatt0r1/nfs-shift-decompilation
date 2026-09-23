@@ -75,7 +75,7 @@ def test_sampler_type_and_relative_addressing_are_preserved():
     dcl = (2 << 24) | 31
     cube = (3 << 27)
     sampler = 0x80000000 | ((10 & 7) << 28) | ((10 & 0x18) << 8) | (15 << 16)
-    rel_const = 0x80000000 | 2 | (0xE4 << 16) | (1 << 13)
+    rel_const = 0x80000000 | (2 << 28) | 2 | (0xE4 << 16) | (1 << 13)
     rel_addr = 0x80000000 | (3 << 28) | (0 << 16)
     mov = (3 << 24) | 1
     dst = 0x80000000 | 0 | (15 << 16)
