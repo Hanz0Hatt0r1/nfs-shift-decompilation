@@ -13,3 +13,7 @@ sRGB/linear are treated as renderer state. Conflicting source flags are a hard e
 `texture_reference.py` now decodes the DDS base level for DXT1/DXT3/DXT5 and common 32-bit masked RGBA resources into RGBA8, then applies explicit repeat/clamp/mirror addressing and nearest/linear sampling. `reference_renderer.py` can consume this image through a UV0-aware textured reference path without invoking BFF/LZX or the HLSL shader runtime.
 
 The path is intentionally a texture/material oracle only: full BMT/HLSL lighting and multi-texture shader execution remain separate work.
+
+## Phase 43: sampler state propagation
+
+`RenderCommand/1` now preserves the full `SHIFT.SamplerState/1` selected for each material texture binding. The textured reference renderer consumes this embedded state automatically when no sampler override is supplied, keeping filter/address behavior coupled to the recovered material binding.
