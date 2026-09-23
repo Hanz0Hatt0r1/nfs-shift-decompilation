@@ -388,7 +388,7 @@ def test_render_command_accepts_distinct_sampler_registers():
     packet["submeshes"][0]["material"]["textures"] = [
         {
             "material_parameter": "Diffuse",
-            "ref": "textures/diffuse.dds",
+            "ref": "textures/body.dds",
             "slot": 1,
             "d3d9_sampler_register": 1,
             "sampler": "diffuseMap",
@@ -396,23 +396,17 @@ def test_render_command_accepts_distinct_sampler_registers():
             "resolved": [{"path": "textures/diffuse.dds"}],
         },
         {
-            "material_parameter": "Specular",
-            "ref": "textures/specular.dds",
+            "material_parameter": "Diffuse",
+            "ref": "textures/body.dds",
             "slot": 2,
             "d3d9_sampler_register": 2,
             "sampler": "specularMap",
             "binding_source": "fxo-ctab",
-            "resolved": [{"path": "textures/specular.dds"}],
+            "resolved": [{"path": "textures/body.dds"}],
         },
     ]
     resources = _resources()
-    resources["textures"].append({
-        "id": "tex_specular",
-        "path": "textures/specular.dds",
-        "gpu_ready": True,
-        "blocking_reasons": [],
-    })
-    resources["samplers"].append({
+        resources["samplers"].append({
         "id": "smp_specular",
         "state": {
             "format": "SHIFT.SamplerState/1",
@@ -424,7 +418,7 @@ def test_render_command_accepts_distinct_sampler_registers():
     })
     resources["bindings"].append({
         "id": "tb_specular",
-        "texture_id": "tex_specular",
+        "texture_id": "tex_body",
         "sampler_id": "smp_specular",
         "material_parameter": "Specular",
         "d3d9_sampler_register": 2,
