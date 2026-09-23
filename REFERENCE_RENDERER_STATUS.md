@@ -11,3 +11,8 @@ The reference renderer now consumes `SHIFT.RenderCommand/1` directly. It validat
 ## Phase 42: textured RenderCommand CLI
 
 The reference renderer now exposes `--render-command --textured --mesh ... --texture ...` for deterministic UV0 texture execution. The command still passes through `RenderCommandValidation/1`; DDS bytes are decoded by `texture_reference.py` and sampled using the explicit sampler reference.
+
+
+## Phase 44/45: current reference-renderer scope
+
+The reference renderer now has two deterministic execution surfaces: geometry-only `RenderCommand/1` execution and a UV0 software texture path backed by DDS reference decode/sampling. It is still intentionally not a software HLSL interpreter; material lighting/blending operations remain an explicit next layer.
