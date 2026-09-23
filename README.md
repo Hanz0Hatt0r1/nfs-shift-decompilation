@@ -105,3 +105,6 @@ CTAB reflection теперь сохраняет typed constants и sampler regis
 ## Renderer resource manager
 
 `renderer_resources.py` exposes `SHIFT.RenderResources/1`, a content-addressed manifest for DDS resources, sampler states and material texture bindings. Texture identity is based on decoded-content SHA-256 when available; sampler identity is independent so different materials can reuse the same GPU texture with distinct sampling state. Optional compressed-texture capabilities are checked explicitly before a resource is marked GPU-ready.
+
+
+`python shift_importer.py bab-corpus resource_analysis.json bab_corpus.json` builds a corpus report over parsed BAB resources without decoding the opaque animation tail.
