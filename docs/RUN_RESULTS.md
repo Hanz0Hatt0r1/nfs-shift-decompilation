@@ -78,7 +78,7 @@
 
 ## Tests
 
-- Python: **8 passed**
+- Python CI: **107 passed, 2 skipped**
 - Native C++ IR reader test: passed
 - Native C++ LZX golden test: passed
 
