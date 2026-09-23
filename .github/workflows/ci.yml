@@ -14,7 +14,10 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install test dependencies
-        run: python -m pip install --upgrade pip pytest
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools
+          python -m pip install --upgrade pip pytest
       - name: Run complete Python suite
         run: python -m pytest -q
 
