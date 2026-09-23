@@ -181,7 +181,21 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
         "format": "SHIFT.RenderBinding/1",
         "packets": packets,
         "static_draws": static_draws,
-        "resources": build_resource_index(rows, texture_bindings),
+        "resources": build_resource_index(
+            [
+                {
+                    **row,
+                    "analysis": (
+                        _load_json(root, row)
+                        if norm_ref(row.get("path", "")).endswith(".dds")
+                        and row.get("output")
+                        else row.get("analysis", {})
+                    ),
+                }
+                for row in rows
+            ],
+            texture_bindings,
+        ),
         "stats": {
             "scenes": len(scenes),
             "draw_packets": len(packets),
