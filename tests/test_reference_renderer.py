@@ -310,3 +310,96 @@ def test_reference_renderer_rejects_render_command_mesh_count_mismatch(tmp_path)
         assert "mesh vertex count mismatch" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_reference_renderer_rasterizes_uv_texture(tmp_path):
+    from reference_renderer import render_textured_static_draw
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((255, 32, 16, 255)),
+    }
+    mesh = {
+        **_triangle(),
+        "uv_layers": {
+            "130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)],
+        },
+    }
+    out = tmp_path / "textured.ppm"
+    result = render_textured_static_draw(
+        _static_draw(),
+        mesh,
+        image,
+        out,
+        sampler={
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
+        width=32,
+        height=32,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert (255, 32, 16) in [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+
+
+def test_reference_renderer_textured_path_requires_uv0(tmp_path):
+    from reference_renderer import render_textured_static_draw
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_static_draw(_static_draw(), _triangle(), image, tmp_path / "bad.ppm")
+    except ValueError as exc:
+        assert "no UV0" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
+
+
+def test_reference_renderer_executes_textured_render_command(tmp_path):
+    from reference_renderer import render_textured_render_command
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((200, 100, 50, 255)),
+    }
+    mesh = {
+        **_triangle(),
+        "uv_layers": {
+            "130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)],
+        },
+    }
+    out = tmp_path / "command-textured.ppm"
+    result = render_textured_render_command(
+        _render_command_ready(),
+        mesh,
+        image,
+        out,
+        width=32,
+        height=32,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert result["command_contract"]["validation"]["valid"] is True
+    assert out.exists()
