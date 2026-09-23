@@ -116,6 +116,9 @@ class MEBMesh:
     vertex_index_hints: list[int]
     indices: list[int]
     primitives: list[MEBPrimitive]
+    # Physical MEB property payloads are contiguous arrays, not one interleaved stream.
+    # Keep exact payload offsets so the Android importer can repack them deterministically.
+    property_layouts: list[dict[str, Any]] = field(default_factory=list)
     # Raw skeleton section is retained until its exact bone layout is needed.
     skeleton: dict[str, Any] | None = None
 
@@ -182,12 +185,26 @@ def read_meb(data: bytes) -> MEBMesh:
     bone_weights: list[tuple[float, float, float, float]] = []
     bone_indices: list[tuple[int, int, int, int]] = []
     vertex_index_hints: list[int] = []
+    property_layouts: list[dict[str, Any]] = []
 
     # Vertex property descriptors and their payloads are interleaved.
     for _ in range(num_vert_props):
         a = r.u32(); b = r.u32(); c = r.u32()
         prop = f"{a}{b}{c}"
         props.append(prop)
+        payload_offset = r.pos
+        stride = PROP_STRIDES.get(prop)
+        if stride is None:
+            raise MEBError(f"unsupported MEB vertex property {prop} at 0x{r.pos:X}")
+        payload_bytes = stride * vertex_count
+        if prop in {"460", "461"}: storage, components, normalized = "u8x4", 4, True
+        elif prop in {"580"}: storage, components, normalized = "u8x4", 4, False
+        elif prop in {"200", "220", "240", "250"}: storage, components, normalized = "f32x3", 3, False
+        elif prop in {"310"}: storage, components, normalized = "f32x4", 4, False
+        elif prop in {"130", "131", "132", "133", "134"}: storage, components, normalized = "f32x2", 2, False
+        elif prop in {"230", "231", "232", "233", "234"}: storage, components, normalized = "f32x3", 3, False
+        else: storage, components, normalized = "raw4", 4, False
+        property_layouts.append({"id":prop,"name":PROP_NAMES.get(prop,"unknown"),"payload_offset":payload_offset,"stride":stride,"bytes":payload_bytes,"storage":storage,"components":components,"normalized":normalized})
         if prop == "200":
             positions = _vec3s(r, vertex_count)
         elif prop == "220":
@@ -263,6 +280,7 @@ def read_meb(data: bytes) -> MEBMesh:
         vertex_index_hints=vertex_index_hints,
         indices=indices,
         primitives=primitives,
+        property_layouts=property_layouts,
         skeleton=skeleton,
     )
 
@@ -280,6 +298,7 @@ def mesh_summary(mesh: MEBMesh) -> dict[str, Any]:
         "vertex_count": mesh.vertex_count,
         "triangle_count": mesh.triangle_count,
         "vertex_properties": [{"id": p, "name": PROP_NAMES.get(p, "unknown"), "stride": PROP_STRIDES.get(p)} for p in mesh.vertex_properties],
+        "property_layouts": mesh.property_layouts,
         "normal_count": len(mesh.normals),
         "tangent_count": len(mesh.tangents),
         "tangent2_count": len(mesh.tangents2),
@@ -339,6 +358,7 @@ def write_mgeo(mesh: MEBMesh, path: str | Path) -> None:
     meta = {
         "name": mesh.name,
         "vertex_properties": mesh.vertex_properties,
+        "property_layouts": mesh.property_layouts,
         "primitives": [asdict(x) for x in mesh.primitives],
         "uv_layer_ids": [k for k, _ in uv_items],
         "skeleton": None if mesh.skeleton is None else {"num_bones": mesh.skeleton["num_bones"], "num_chars": mesh.skeleton["num_chars"], "char_blob_hex": mesh.skeleton["char_blob_hex"], "bone_blob_hex": mesh.skeleton["bone_blob_hex"]},
