@@ -31,6 +31,16 @@ def test_real_bmt_material():
     assert len(m['shaderparams']) >= 2
 
 
+def test_real_bmt_specialization_flags():
+    archive = Path('/mnt/data/bmwm3_files/BMW_M3_E36.bff')
+    if not archive.exists():
+        return
+    with BFF(archive) as b:
+        e = next(e for e in b.entries if e.path.endswith('bmw_m3_e36_paint.bmt'))
+        r = parse_bmt_material(b.extract_entry(e))
+    flags = set(r['material'].get('specializations', []))
+    assert {'USE_FRESNEL', 'ALLOW_VINYLS', 'DIRT_SCRATCH'} <= flags
+
 def test_real_bml_container():
     with BFF(ROOT / 'SCRIPTS.bff') as b:
         e = next(e for e in b.entries if e.path.endswith('.bml'))
