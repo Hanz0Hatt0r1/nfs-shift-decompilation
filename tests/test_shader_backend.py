@@ -99,7 +99,12 @@ def _shader_pair_with_different_varying_registers() -> tuple:
     dcl = (2 << 24) | 31
     out_t1 = 0x80000000 | 1 | (15 << 16) | (6 << 28)
     in_v0 = 0x80000000 | 0 | (15 << 16) | (1 << 28)
-    words_v = [version_v, dcl, 5 | (5 << 16), out_t1, 0xFFFF]
+    words_v = [
+        version_v,
+        dcl, 0 | (0 << 16), 0x80000000 | 0 | (15 << 16) | (1 << 28),
+        dcl, 5 | (5 << 16), out_t1,
+        0xFFFF,
+    ]
     words_p = [version_p, dcl, 5 | (5 << 16), in_v0, 0xFFFF]
     vs = parse_program(struct.pack("<" + "I" * len(words_v), *words_v))
     ps = parse_program(struct.pack("<" + "I" * len(words_p), *words_p))
@@ -118,3 +123,13 @@ def test_linked_glsl_translation_shares_varying_locations_by_semantic():
     assert linked["format"] == "SHIFT.LinkedShaderPair/1"
     assert "layout(location=0) out vec4 out_1;" in linked["vertex_glsl"]
     assert "layout(location=0) in vec4 in_0;" in linked["pixel_glsl"]
+
+
+def test_linked_glsl_translation_maps_vertex_inputs_to_target_layout_locations():
+    vs, ps = _shader_pair_with_different_varying_registers()
+    # Place POSITION0 at target location 1 by preceding it with another
+    # attribute. The D3D9 shader still consumes v0.
+    properties = ["220", "200"]
+    linked = translate_pair(vs, ps, vertex_properties=properties)
+    assert linked["vertex_input_locations"] == {0: 1}
+    assert "layout(location=1) in vec4 in_0;" in linked["vertex_glsl"]
