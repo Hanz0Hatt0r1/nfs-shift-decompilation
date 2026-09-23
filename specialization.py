@@ -48,4 +48,8 @@ def feature_signature_score(material: dict, *, constants: Iterable[str], sampler
     for flag in flags:
         if flag in evidence and evidence[flag]: matched.append(flag)
         elif flag in evidence and not evidence[flag]: contradicted.append(flag)
-    return {"requested":sorted(flags),"matched":sorted(matched),"contradicted":sorted(contradicted),"score":len(matched)/len(flags) if flags else 1.0,"evidence":evidence}
+    unexpected=sorted(flag for flag,active in evidence.items() if active and flag not in flags)
+    requested_score=len(matched)/len(flags) if flags else 1.0
+    penalty=len(unexpected)/(len(unexpected)+len(flags)+1)
+    score=max(0.0,requested_score-penalty)
+    return {"requested":sorted(flags),"matched":sorted(matched),"contradicted":sorted(contradicted),"unexpected":unexpected,"score":score,"evidence":evidence}
