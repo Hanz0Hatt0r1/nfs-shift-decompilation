@@ -396,13 +396,13 @@ def test_render_command_accepts_distinct_sampler_registers():
             "resolved": [{"path": "textures/diffuse.dds"}],
         },
         {
-            "material_parameter": "Diffuse",
-            "ref": "textures/body.dds",
+            "material_parameter": "Specular",
+            "ref": "textures/specular.dds",
             "slot": 2,
             "d3d9_sampler_register": 2,
             "sampler": "specularMap",
             "binding_source": "fxo-ctab",
-            "resolved": [{"path": "textures/body.dds"}],
+            "resolved": [{"path": "textures/specular.dds"}],
         },
     ]
     resources = _resources()
@@ -418,9 +418,9 @@ def test_render_command_accepts_distinct_sampler_registers():
     })
     resources["bindings"].append({
         "id": "tb_specular",
-        "texture_id": "tex_body",
+        "texture_id": "tex_specular",
         "sampler_id": "smp_specular",
-        "material_parameter": "Diffuse",
+        "material_parameter": "Specular",
         "d3d9_sampler_register": 2,
         "gpu_ready": True,
         "blocking_reasons": [],
@@ -444,7 +444,7 @@ def test_render_command_rejects_sampler_register_collision():
             "resolved": [{"path": "textures/body.dds"}],
         },
         {
-            "material_parameter": "Diffuse",
+            "material_parameter": "Specular",
             "ref": "textures/body.dds",
             "slot": 1,
             "d3d9_sampler_register": 1,
@@ -453,8 +453,28 @@ def test_render_command_rejects_sampler_register_collision():
             "resolved": [{"path": "textures/body.dds"}],
         },
     ]
+    resources = _resources()
+    resources["samplers"].append({
+        "id": "smp_collision",
+        "state": {
+            "format": "SHIFT.SamplerState/1",
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    })
+    resources["bindings"].append({
+        "id": "tb_collision",
+        "texture_id": "tex_body",
+        "sampler_id": "smp_collision",
+        "material_parameter": "Specular",
+        "d3d9_sampler_register": 1,
+        "gpu_ready": True,
+        "blocking_reasons": [],
+    })
     draw = build_static_draw_contract(packet)
-    result = build_render_command(draw, _resources())
+    result = build_render_command(draw, resources)
     assert result["ready"] is False
     assert "texture-command:sampler-register-collision:1" in result["blocking_reasons"]
 
