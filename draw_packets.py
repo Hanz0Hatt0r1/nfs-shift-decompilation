@@ -6,6 +6,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from vertex_layout import build_layout_from_summary
+from skinning import build_skinning_contract
 
 SCHEMA = "SHIFT.DrawPacket/1"
 
@@ -389,6 +390,15 @@ def build_draw_packets(
                     "vertex_count": analysis.get("vertex_count"),
                     "triangle_count": analysis.get("triangle_count"),
                     "vertex_layout": build_layout_from_summary(analysis),
+                    "skinning": (
+                        analysis.get("skinning")
+                        or build_skinning_contract(
+                            analysis.get("vertex_properties", []),
+                            (analysis.get("skeleton") or {}).get("ir")
+                            if isinstance(analysis.get("skeleton"), dict)
+                            else None,
+                        )
+                    ),
                 },
                 "submeshes": packet_prims,
                 "shader_selection": {
