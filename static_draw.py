@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from texture_pipeline import build_texture_contract
+
 
 FORMAT = "SHIFT.StaticDraw/1"
 
@@ -47,12 +49,20 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
             "dds": tex.get("dds"),
         }
         if tex.get("binding_source") == "fxo-ctab" and tex.get("d3d9_sampler_register") is not None:
+            if tex.get("dds"):
+                item["texture_resource"] = build_texture_contract(tex["dds"], tex)
             explicit_textures.append(item)
         else:
             unresolved_textures.append(item)
 
     uniforms = selection.get("uniform_binding") or {}
     external_samplers = selection.get("external_samplers") or []
+
+    texture_blockers = [
+        f"texture:{reason}"
+        for tex in explicit_textures
+        for reason in (tex.get("texture_resource", {}) or {}).get("blocking_reasons", [])
+    ]
 
     return {
         "format": FORMAT,
@@ -62,8 +72,12 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         "unresolved_textures": unresolved_textures,
         "external_samplers": external_samplers,
         "uniform_binding": uniforms,
-        "ready": not reasons and not unresolved_textures,
-        "blocking_reasons": reasons + (["material-texture-binding:unresolved"] if unresolved_textures else []),
+        "ready": not reasons and not unresolved_textures and not texture_blockers,
+        "blocking_reasons": (
+            reasons
+            + (["material-texture-binding:unresolved"] if unresolved_textures else [])
+            + texture_blockers
+        ),
     }
 
 
