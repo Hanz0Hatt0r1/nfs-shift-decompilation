@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 10. The current CI baseline is 107 passed, 2 skipped in Python, plus successful native IR regression.
+Baseline `main` is at phase 31. Latest full CI baseline: **150 passed, 2 skipped** in Python, plus successful native IR regression.
 
 The immediate target is a deterministic pipeline:
 
@@ -22,30 +22,29 @@ the original BFF archives at runtime.
 | Resource IR | active/verified | manifest + content-addressed blobs + typed analysis |
 | BAS skeleton | verified parser | hierarchy/transforms covered by fixtures |
 | BAB bone table | verified parser | bone table + conservative opaque animation tail |
-| BAB <-> BAS linkage | active | deterministic bone mapping and diagnostics |
+| BAB <-> BAS linkage | implemented | deterministic bone mapping and diagnostics |
 | MEB vertex semantics | verified for known BMW samples | semantic usage/index mappings covered by tests |
-| Exact vertex packing | active | deterministic storage/stride plus explicit evidence states; remaining ambiguity is isolated and render-blocking when consumed |
-| BMT -> FX -> FXO | active | deterministic VS/PS + sampler permutation per material |
+| Exact vertex packing | mostly proven | deterministic locations/stride/ABI evidence and collision guards; color 460/461 declaration/channel order remains ambiguous |
+| BMT -> FX -> FXO | implemented selection path | deterministic permutation selection, CTAB sampler/uniform linkage, linked GLSL payload |
 | Shader backend | active | target BMW permutations compile in the selected GLES profile |
-| DrawPacket | active | all target packets carry proven layout/material/shader bindings |
-| Desktop reference renderer | geometry oracle | neutral geometry renderer exists; full material/shader render remains the milestone |
-| Skinning | foundation | explicit skin pose + CPU reference + GLES contract exist; bind-pose/animation evaluation remains |
-| BAB animation payload | later | clip/keyframe grammar proven on multiple samples |
+| DrawPacket | implemented contract | canonical DrawPacket carries StaticDraw readiness and explicit blockers |
+| Desktop reference renderer | deterministic geometry oracle | DrawPacket→StaticDraw path, submesh ranges, golden SHA-256 baseline; full material/shader rendering remains |
+| Skinning | bind-pose verified contract | explicit SkinPose, CPU reference, GLES ABI, bind-pose equivalence check; animated pose decoding remains |
+| BAB animation payload | evidence tooling | corpus fingerprints and byte-level differential analysis; keyframe grammar still unproven |
 | SGB scene graph | later | one track section assembles from IR |
 | Android runtime | later | renderer consumes IR without importer dependencies |
 
 ## Execution order
 
-1. Keep CI green and add regression fixtures before changing semantics.
-2. Finish exact vertex stream packing, especially ambiguous MEB property types.
-3. Make FXO permutation selection deterministic and evidence-producing.
-4. Validate generated shaders with an actual GLES compiler.
-5. Build a minimal desktop reference renderer for the BMW M3.
-6. Connect MEB blend weights/indices to BAS/BAB skeletons and verify bind pose.
-7. Reverse engineer BAB animation payload using several clips sharing one skeleton.
-8. Implement SGB scene assembly after vehicle rendering is stable.
-9. Port the proven renderer/IR boundary to Android.
-10. Only then expand into physics, input, camera, audio and gameplay systems.
+1. Keep CI green and preserve explicit evidence/regression coverage.
+2. Finish exact MEB vertex declaration details, especially COLOR0/1 type and channel byte order.
+3. Validate selected generated shader permutations with an actual GLES compiler where the toolchain is available.
+4. Complete deterministic static BMW reference rendering with real material/texture execution.
+5. Use explicit SkinPose + bind-pose checks to validate real skinned vehicle geometry.
+6. Reverse engineer BAB animation payload from multiple clips sharing one skeleton, using the corpus and byte-diff evidence tools.
+7. Implement SGB scene semantics and track assembly after the vehicle path is stable.
+8. Port the proven IR/render boundary to Android.
+9. Only then expand into physics, input, camera, audio and gameplay systems.
 
 ## Evidence rules
 
