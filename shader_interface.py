@@ -45,13 +45,62 @@ def infer_meb_semantics(properties:Iterable[str|dict])->list[dict]:
             usage,index=MEB_SEMANTICS[pid]; out.append({"property_id":pid,"usage":usage,"usage_index":index})
     return out
 
+def _used_components(program:ShaderProgram, register:int)->set[str]:
+    used=set()
+    for ins in program.instructions:
+        for op in ins.operands:
+            if op.kind=="source" and op.reg_type==1 and op.index==register:
+                sw=op.swizzle or "xyzw"
+                used.update(sw)
+    return used
+
+def _component_count(chars:set[str])->int:
+    order={"x":1,"y":2,"z":3,"w":4}
+    return max((order.get(x,0) for x in chars), default=4)
+
+def vertex_attribute_bindings(program:ShaderProgram,properties:Iterable[str|dict])->dict:
+    props=list(properties)
+    candidates={}
+    for value in props:
+        pid=str(value.get("id")) if isinstance(value,dict) else str(value)
+        sem=MEB_SEMANTICS.get(pid)
+        if not sem: continue
+        candidates.setdefault(sem,[]).append(value)
+    bindings=[]; missing=[]
+    for decl in program.inputs:
+        key=semantic_key(decl)
+        reg=register_index(decl.get("register"))
+        used=_used_components(program,reg if reg is not None else -1)
+        need=_component_count(used)
+        choices=candidates.get(key,[])
+        scored=[]
+        for value in choices:
+            pid=str(value.get("id")) if isinstance(value,dict) else str(value)
+            width=None
+            if pid in {"200","220","240","250","230","231","232","233","234"}: width=3
+            elif pid in {"130","131","132","133","134"}: width=2
+            elif pid in {"310","460","461","580"}: width=4
+            if width is None: continue
+            # Prefer the narrowest attribute that still covers all shader uses.
+            scored.append((0 if width==need else 1 if width>need else 2, abs(width-need), pid, value))
+        chosen=min(scored,key=lambda x:(x[0],x[1],x[2])) if scored else None
+        rec={"semantic":{"usage":key[0],"index":key[1]},"shader_register":decl.get("register"),"used_components":"".join(sorted(used,key="xyzw".index)) if used else "xyzw","required_components":need}
+        if chosen is None:
+            rec["matched"]=False; missing.append(rec)
+        else:
+            rec.update({"matched":True,"property_id":chosen[2],"property_name":chosen[2],"selection":"exact-width" if chosen[0]==0 else "wider-source-coverage"})
+        bindings.append(rec)
+    return {"valid":not missing,"bindings":bindings,"missing":missing,"score":1.0-len(missing)/len(program.inputs) if program.inputs else 1.0}
+
 def match_vertex_format(program:ShaderProgram,properties:Iterable[str|dict])->dict:
     available={(x["usage"],x["usage_index"]) for x in infer_meb_semantics(properties)}
     required={semantic_key(x) for x in program.inputs}
     missing=sorted(({"usage":u,"index":i} for u,i in required-available),key=lambda x:(x["usage"],x["index"]))
     unused=sorted(({"usage":u,"index":i} for u,i in available-required),key=lambda x:(x["usage"],x["index"]))
+    bindings=vertex_attribute_bindings(program,properties)
     matched=len(required)-len(missing)
-    return {"valid":not missing,"required":len(required),"available":len(available),"matched":matched,"missing":missing,"unused":unused,"score":matched/len(required) if required else 1.0,"available_semantics":sorted(({"usage":u,"index":i} for u,i in available),key=lambda x:(x["usage"],x["index"]))}
+    score=0.5*(matched/len(required) if required else 1.0)+0.5*bindings["score"]
+    return {"valid":bindings["valid"] and not missing,"required":len(required),"available":len(available),"matched":matched,"missing":missing,"unused":unused,"score":score,"available_semantics":sorted(({"usage":u,"index":i} for u,i in available),key=lambda x:(x["usage"],x["index"])),"vertex_bindings":bindings["bindings"]}
 
 def enumerate_shader_pairs(programs:Iterable[ShaderProgram],properties:Iterable[str|dict]=())->list[dict]:
     programs=list(programs); props=list(properties)
@@ -69,5 +118,5 @@ def pair_selected_pixel(data:bytes,pixel_offset:int,*,properties:Iterable[str|di
     candidates=[]
     for vs in (p for p in programs if p.stage=="vertex"):
         interface=link_vertex_pixel(vs,pixel); vf=match_vertex_format(vs,properties)
-        candidates.append({"vertex_offset":vs.offset,"pixel_offset":pixel.offset,"score":0.65*interface["score"]+0.35*vf["score"],"interface":interface,"vertex_format":vf,"pixel_samplers":list(pixel.samplers)})
+        candidates.append({"vertex_offset":vs.offset,"pixel_offset":pixel.offset,"score":0.65*interface["score"]+0.35*vf["score"],"interface":interface,"vertex_format":vf,"vertex_bindings":vertex_attribute_bindings(vs,properties)["bindings"],"pixel_samplers":list(pixel.samplers)})
     return max(candidates,key=lambda x:(x["score"],x["interface"]["score"],x["vertex_format"]["score"],-x["vertex_offset"]),default=None)
