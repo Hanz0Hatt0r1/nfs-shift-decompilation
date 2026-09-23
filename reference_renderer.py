@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import hashlib
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -265,6 +266,25 @@ def render_draw_packet(
     }
     return result
 
+def render_draw_packet_json(
+    packet_path: str | Path,
+    mesh_path: str | Path,
+    output: str | Path,
+    *,
+    width: int = 512,
+    height: int = 512,
+) -> dict[str, Any]:
+    """Render a DrawPacket JSON through StaticDraw and return a golden hash."""
+    packet = json.loads(Path(packet_path).read_text(encoding="utf-8"))
+    mesh = json.loads(Path(mesh_path).read_text(encoding="utf-8"))
+    result = render_draw_packet(packet, mesh, output, width=width, height=height)
+    digest = hashlib.sha256(Path(output).read_bytes()).hexdigest()
+    result["sha256"] = digest
+    result["packet"] = str(packet_path)
+    result["mesh"] = str(mesh_path)
+    return result
+
+
 def render_mesh_json(mesh: dict[str, Any], output: str | Path, *, width: int = 512, height: int = 512) -> dict[str, Any]:
     vertices = mesh.get("vertices") or []
     indices = mesh.get("indices") or []
@@ -285,14 +305,27 @@ def render_mesh_json(mesh: dict[str, Any], output: str | Path, *, width: int = 5
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Render neutral SHIFT mesh JSON to deterministic PPM")
+    parser = argparse.ArgumentParser(description="Render neutral SHIFT mesh JSON or a DrawPacket to deterministic PPM")
     parser.add_argument("input", type=Path)
     parser.add_argument("-o", "--output", required=True, type=Path)
+    parser.add_argument("--mesh", type=Path, help="neutral mesh JSON used with --draw-packet")
+    parser.add_argument("--draw-packet", action="store_true", help="treat input as SHIFT.DrawPacket/1 JSON")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
     args = parser.parse_args(argv)
-    mesh = json.loads(args.input.read_text(encoding="utf-8"))
-    result = render_mesh_json(mesh, args.output, width=args.width, height=args.height)
+    if args.draw_packet:
+        if args.mesh is None:
+            parser.error("--draw-packet requires --mesh")
+        result = render_draw_packet_json(
+            args.input,
+            args.mesh,
+            args.output,
+            width=args.width,
+            height=args.height,
+        )
+    else:
+        mesh = json.loads(args.input.read_text(encoding="utf-8"))
+        result = render_mesh_json(mesh, args.output, width=args.width, height=args.height)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

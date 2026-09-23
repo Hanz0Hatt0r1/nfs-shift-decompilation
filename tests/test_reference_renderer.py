@@ -174,3 +174,23 @@ def test_reference_renderer_rejects_unready_draw_packet(tmp_path):
         assert "shader-glsl:missing" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_draw_packet_golden_render_has_stable_sha256(tmp_path):
+    import json
+    from reference_renderer import render_draw_packet_json
+
+    packet_path = tmp_path / "packet.json"
+    mesh_path = tmp_path / "mesh.json"
+    out = tmp_path / "golden.ppm"
+    packet_path.write_text(json.dumps(_draw_packet_ready()), encoding="utf-8")
+    mesh_path.write_text(json.dumps(_triangle()), encoding="utf-8")
+
+    result = render_draw_packet_json(
+        packet_path,
+        mesh_path,
+        out,
+        width=32,
+        height=32,
+    )
+    assert result["sha256"] == "3981a2538abd99b38c0488e4bd0f6bf4a469c18c1d11712568a616a3ce9ce3cb"
