@@ -24,10 +24,42 @@ def _parse_ctab(data,payload,n):
     end=min(len(data),payload+n*4)
     if payload+32>end or data[payload:payload+4]!=b'CTAB':return None
     size,creator,version,constants,info,flags,target=struct.unpack_from('<7I',data,payload+4)
-    # SHIFT CTAB variants contain valid D3DX strings but some builds reorder
-    # constant-info fields; expose strings conservatively.
+    # D3DXSHADER_CONSTANT_INFO is 20 bytes in the serialized CTAB:
+    # name offset, register set/index/count, reserved, type-info offset,
+    # default-value offset. Keep offsets as evidence and decode bounds-safely.
+    constants_out=[]
+    ci_end=min(end,payload+max(size,32)+constants*32+4096)
+    for i in range(constants):
+        off=payload+info+i*20
+        if off+20>ci_end: break
+        name_off, reg_set, reg_index, reg_count, reserved, type_off, default_off = struct.unpack_from('<IHHHHII',data,off)
+        name=""
+        if payload <= payload+name_off < ci_end:
+            p=payload+name_off
+            q=data.find(b'\\x00',p,ci_end)
+            if q<0: q=ci_end
+            name=data[p:q].decode('ascii','replace')
+        type_info=None
+        if payload <= payload+type_off < ci_end and payload+type_off+16<=ci_end:
+            cls, typ, rows, cols, elements, members, member_info = struct.unpack_from('<BBHHHHI',data,payload+type_off)
+            type_info={
+                'class':cls,'type':typ,'rows':rows,'columns':cols,
+                'elements':elements,'struct_members':members,
+                'struct_member_info_offset':member_info,
+            }
+        constants_out.append({
+            'index':i,'name':name,'register_set':reg_set,
+            'register_index':reg_index,'register_count':reg_count,
+            'type':type_info,'default_value_offset':default_off,
+        })
     strings=_ascii_strings(data,payload,min(end,payload+max(size,32)+max(0,constants)*32+1024))
-    return {'size':size,'strings':strings}
+    return {
+        'size':size,'creator_offset':creator,'version':version,
+        'constant_count':constants,'constant_info_offset':info,
+        'flags':flags,'target_offset':target,
+        'constants':constants_out,'strings':strings,
+    }
+
 
 def parse_shader_blobs(data:bytes):
     out=[]; i=0
