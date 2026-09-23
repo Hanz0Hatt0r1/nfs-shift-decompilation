@@ -18,14 +18,7 @@ jobs:
           python -m pip install --upgrade pip pytest
           sudo apt-get update
           sudo apt-get install -y glslang-tools
-      - name: Run repository Python suite
-        run: python -m pytest -q --ignore=tests/test_formats.py --ignore=tests/test_shader_asm.py
-      - name: Run shader and format tests without external game fixtures
-        run: |
-          python -m pytest -q tests/test_shader_asm.py
-          python -m pytest -q tests/test_formats.py -k "not test_real_bmt_material and not test_real_bmt_specialization_flags and not test_real_bml_container and not test_real_meb_mesh_and_mgeo and not test_real_csm_collision_mesh and not test_real_meb_skinning_payload"
-      - name: Probe full Python suite against current CI environment
-        continue-on-error: true
+      - name: Run complete repository Python suite
         run: python -m pytest -q
 
   native:
