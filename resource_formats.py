@@ -687,7 +687,23 @@ def _material_summary_from_tree(tree: dict[str, Any]) -> dict[str, Any]:
         for x in candidates:
             if isinstance(x, str) and x.lower().endswith(".dds"):
                 textures.append(x.replace("\\", "/"))
-    return {**root_values, "shaderparams": params, "textures": textures}
+
+    # BMT stores shader compile-time specialisation references as hashed
+    # child elements carrying a plain name attribute, e.g. USE_FRESNEL,
+    # METALLIC, DIRT_SCRATCH. Preserve them explicitly.
+    specializations = []
+    for child in tree.get("children", []):
+        if not str(child.get("name", "")).startswith("hash_"):
+            continue
+        for attr in child.get("attributes", []):
+            if attr.get("name") != "name" or not isinstance(attr.get("value"), str):
+                continue
+            value = attr["value"]
+            if re.fullmatch(r"[A-Z][A-Z0-9_]*", value):
+                specializations.append(value)
+    specializations = list(dict.fromkeys(specializations))
+    return {**root_values, "shaderparams": params, "textures": textures,
+            "specializations": specializations}
 
 
 def parse_bmt_material(data: bytes) -> dict[str, Any]:
