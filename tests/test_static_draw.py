@@ -310,3 +310,58 @@ def test_static_draw_rejects_index_range_beyond_mesh():
     result = build_static_draw_contract(packet)
     assert result["ready"] is False
     assert "draw:index-range-out-of-bounds" in result["blocking_reasons"]
+
+
+def test_static_draw_accepts_float_matrix_ctab_type():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["shader_selection"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "world",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 4,
+            "register_count": 4,
+            "ctab_type": "float4x4",
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is True
+
+
+def test_static_draw_rejects_nonfloat_ctab_type():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["shader_selection"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "flag",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 4,
+            "register_count": 1,
+            "ctab_type": "int4",
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "material-uniform-binding:unsupported-ctab-type:int4" in result["blocking_reasons"]
+
+
+def test_static_draw_rejects_missing_ctab_type():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["shader_selection"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "mystery",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 4,
+            "register_count": 1,
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "material-uniform-binding:ctab-type-missing" in result["blocking_reasons"]
