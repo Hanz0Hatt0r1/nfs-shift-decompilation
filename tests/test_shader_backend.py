@@ -180,12 +180,12 @@ def test_linked_shader_pair_validator_reports_invalid_glsl_when_available():
     from shader_backend import validate_linked_shader_pair
     result = validate_linked_shader_pair({
         "format": "SHIFT.LinkedShaderPair/1",
-        "vertex_glsl": "#version 310 es
+        "vertex_glsl": """#version 310 es
 void main() { gl_Position = vec4(0.0); }
-",
-        "pixel_glsl": "#version 310 es
+""",
+        "pixel_glsl": """#version 310 es
 this is not valid GLSL
-",
+""",
     })
     if result["status"] == "unavailable":
         pytest.skip("glslangValidator is not installed")
