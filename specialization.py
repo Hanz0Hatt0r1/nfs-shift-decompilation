@@ -24,7 +24,6 @@ def material_specialisations(material: dict) -> list[str]:
     if any(x in params for x in ("metallicColour","metallicPower","fleckMaterialColour","fleckScale","fleckLocality","fleckShininess")):
         flags.add("METALLIC")
     if "scratchControlTexture" in params or "dirtBasis" in params: flags.add("DIRT_SCRATCH")
-    if "noiseTexture" in params: flags.add("METALFLAKE")
     return sorted(flags)
 
 def feature_indicators(material: dict, fx_source: str | bytes) -> dict:
@@ -40,7 +39,7 @@ def feature_signature_score(material: dict, *, constants: Iterable[str], sampler
       "USE_FRESNEL": int("fresnelFactor" in c),
       "METALLIC": int(any(x in c for x in ("metallicColour","metallicPower","fleckMaterialColour","fleckScale","fleckLocality","fleckShininess"))),
       "DIRT_SCRATCH": int("scratchControlMap" in s and "dirtBasis" in c),
-      "METALFLAKE": int(any("fleck" in x.lower() for x in c) or "noiseMap" in s),
+      "METALFLAKE": int(any("fleck" in x.lower() for x in c) or "noise3DMap" in s),
       "NORMAL_MAPPING": int("normalMapL2" in s),
       "USE_LAYER_2": int(any(x in s for x in ("diffuseMapL2","specularMapL2","normalMapL2","fresnelMapL2"))),
     }
