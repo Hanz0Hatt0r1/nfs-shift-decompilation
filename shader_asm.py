@@ -252,8 +252,13 @@ def _relative_index_expr(o:Operand, stage:str)->str:
     if not o.relative or o.relative_token is None:
         return str(_signed11(o.index or 0))
     rel=decode_source(o.relative_token)
-    rel_expr=_glsl_reg(rel,stage)
-    if rel.reg_type in (3,15):
+    if rel.reg_type==3:
+        rel_expr=f'a{rel.index or 0}'
+        rel_sw=rel.swizzle or 'x'
+        rel_expr += f'.{rel_sw}'
+        rel_expr=f'int({rel_expr})'
+    else:
+        rel_expr=_glsl_reg(rel,stage)
         rel_expr=f'int({rel_expr})'
     else:
         rel_expr=f'int(round({rel_expr}))'
