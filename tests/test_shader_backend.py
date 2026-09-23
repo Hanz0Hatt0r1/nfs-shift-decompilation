@@ -70,8 +70,8 @@ def test_backend_reuses_canonical_glsl_lowering():
 
 
 def test_sampler_type_and_relative_addressing_are_preserved():
-    # ps_3_0, dcl_cube s0, mov r0, c[a0.x+2]
-    version = 0xFFFF0300
+    # vs_3_0, dcl_cube s0, mov r0, c[a0.x+2]
+    version = 0xFFFE0300
     dcl = (2 << 24) | 31
     cube = (3 << 27)
     sampler = 0x80000000 | ((10 & 7) << 28) | ((10 & 0x18) << 8) | (15 << 16)
