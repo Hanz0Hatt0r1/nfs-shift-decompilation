@@ -57,6 +57,21 @@ def reflect_fxo(data: bytes) -> list[dict]:
              "instruction_count":b.instruction_count,"samplers":b.ctab_samplers,"constants":b.ctab_constants}
             for b in parse_shader_blobs(data)]
 
+def _selection_evidence_key(candidate: dict) -> tuple:
+    """Return only evidence-bearing ranking fields; exclude file/offset identity."""
+    return (
+        bool(candidate.get("exact")),
+        int(candidate.get("score", 0)),
+        bool(candidate.get("vertex_pair_valid", False)),
+        float(candidate.get("vertex_pair_score", 0.0)),
+        float(candidate.get("uniform_coverage", 0.0)),
+        float(candidate.get("specialization_score", 0.0)),
+        len(candidate.get("specialization_contradicted", [])),
+        len(candidate.get("specialization_unexpected", [])),
+        len(candidate.get("uniform_matches", [])),
+    )
+
+
 def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
     params = _material_params(material)
     samplers = parse_fx_samplers(fx_source)
@@ -136,15 +151,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     fxo=sorted(
         uniq,
         key=lambda x:(
-            -int(x["exact"]),
-            -x["score"],
-            -x.get("vertex_pair_valid",False),
-            -x.get("vertex_pair_score",0.0),
-            -x.get("uniform_coverage",0.0),
-            -x.get("specialization_score",0.0),
-            len(x.get("specialization_contradicted",[])),
-            len(x.get("specialization_unexpected",[])),
-            -len(x.get("uniform_matches",[])),
+            tuple(-int(v) if isinstance(v, (int, float, bool)) else v for v in _selection_evidence_key(x)),
             x["file"],
             x["program_offset"],
         ),
@@ -153,11 +160,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     selection_status="none"
     ambiguous_candidates=[]
     if best:
-        top=[x for x in fxo if abs(x["score"]-best["score"]) < 1e-9
-             and x.get("vertex_pair_valid")==best.get("vertex_pair_valid")
-             and abs(x.get("vertex_pair_score",0.0)-best.get("vertex_pair_score",0.0)) < 1e-9
-             and abs(x.get("uniform_coverage",0.0)-best.get("uniform_coverage",0.0)) < 1e-9
-             and abs(x.get("specialization_score",0.0)-best.get("specialization_score",0.0)) < 1e-9]
+        top=[x for x in fxo if _selection_evidence_key(x) == _selection_evidence_key(best)]
         pair_ids={(x.get("file"), x.get("program_offset"), x.get("vertex_sha256"), x.get("pair_sha256")) for x in top}
         # A tie is still ambiguous when byte hashes are unavailable. The
         # stable file/program offsets are enough to distinguish candidates.
@@ -178,6 +181,10 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             "technique":material.get("technique"),"specialization":specialization,"bindings":bindings,"fxo_candidates":fxo,
             "selected_fxo":best if best and best["exact"] else None,
             "selection_status":selection_status,
+            "selection_evidence":(
+                {"rank":list(_selection_evidence_key(best)), "ambiguous_count":len(ambiguous_candidates)}
+                if best else None
+            ),
             "ambiguous_candidates":ambiguous_candidates[:8],
             "shader_pair":shader_pair,
             "uniform_binding":uniform_binding if best and best["exact"] and shader_pair else None,
