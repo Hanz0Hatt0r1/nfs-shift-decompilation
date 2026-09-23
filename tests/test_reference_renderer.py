@@ -194,3 +194,37 @@ def test_draw_packet_golden_render_has_stable_sha256(tmp_path):
         height=32,
     )
     assert result["sha256"] == "3981a2538abd99b38c0488e4bd0f6bf4a469c18c1d11712568a616a3ce9ce3cb"
+
+
+def test_reference_renderer_honors_static_draw_submesh_index_range(tmp_path):
+    from reference_renderer import render_static_draw
+    mesh = {
+        "vertices": [
+            (-0.9, -0.8, 0.0), (0.0, 0.8, 0.0), (0.9, -0.8, 0.0),
+            (-0.9, -0.2, 0.0), (0.0, 0.2, 0.0), (0.9, -0.2, 0.0),
+        ],
+        "indices": [0, 1, 2, 3, 4, 5],
+        "colors": [
+            (255, 0, 0, 255), (255, 0, 0, 255), (255, 0, 0, 255),
+            (0, 255, 0, 255), (0, 255, 0, 255), (0, 255, 0, 255),
+        ],
+    }
+    draw = _static_draw()
+    draw["submeshes"] = [{"first_index": 0, "index_count": 3, "material": {}}]
+    out = tmp_path / "range.ppm"
+    render_static_draw(
+        draw,
+        mesh,
+        out,
+        width=32,
+        height=32,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (0, 255, 0) not in pixels
