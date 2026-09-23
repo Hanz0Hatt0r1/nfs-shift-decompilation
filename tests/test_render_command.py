@@ -1,5 +1,5 @@
 from static_draw import build_static_draw_contract
-from render_command import build_render_command
+from render_command import build_render_command, validate_render_command
 
 
 def _packet():
@@ -171,3 +171,44 @@ def test_render_command_rejects_invalid_constant_register_range():
     result = build_render_command(draw, _resources())
     assert result["ready"] is False
     assert "renderer-constant-binding:register-range-invalid" in result["blocking_reasons"]
+
+
+def test_render_command_validation_gate_is_reported():
+    static_draw = build_static_draw_contract(_packet())
+    result = build_render_command(static_draw, _resources())
+    assert result["ready"] is True
+    assert result["validation"]["format"] == "SHIFT.RenderCommandValidation/1"
+    assert result["validation"]["valid"] is True
+
+
+def test_render_command_validation_rejects_missing_shader_source():
+    static_draw = build_static_draw_contract(_packet())
+    result = build_render_command(static_draw, _resources())
+    result["submeshes"][0]["shader"]["vertex"] = None
+    validation = validate_render_command(result)
+    assert validation["valid"] is False
+    assert "shader:vertex-source-missing" in validation["blocking_reasons"]
+
+
+def test_render_command_validation_rejects_location_collision():
+    static_draw = build_static_draw_contract(_packet())
+    result = build_render_command(static_draw, _resources())
+    result["mesh"]["attributes"].append({
+        "location": 0,
+        "property_id": "220",
+        "offset": 12,
+        "stride": 12,
+        "storage": "f32x3",
+    })
+    validation = validate_render_command(result)
+    assert validation["valid"] is False
+    assert "vertex-attribute:location-collision:0" in validation["blocking_reasons"]
+
+
+def test_render_command_validation_rejects_bad_index_count():
+    static_draw = build_static_draw_contract(_packet())
+    result = build_render_command(static_draw, _resources())
+    result["submeshes"][0]["index_count"] = 4
+    validation = validate_render_command(result)
+    assert validation["valid"] is False
+    assert "index-range:invalid" in validation["blocking_reasons"]
