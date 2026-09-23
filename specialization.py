@@ -4,7 +4,7 @@ from typing import Iterable
 
 def parse_specialisation_params(source: str | bytes) -> list[dict]:
     text = source.decode("utf-8", "replace") if isinstance(source, bytes) else source
-    pat = re.compile(r"SPECIALISATION_PARAM\\s*\\(\\s*([A-Za-z_]\\w*)\\s*,\\s*\"([^\"]*)\"\\s*,\\s*\"([A-Z][A-Z0-9_]*)\"", re.I)
+    pat = re.compile(r'SPECIALISATION_PARAM\s*\(\s*([A-Za-z_]\w*)\s*,\s*"([^"]*)"\s*,\s*"([A-Z][A-Z0-9_]*)"', re.I)
     out=[]
     seen=set()
     for m in pat.finditer(text):
@@ -13,7 +13,6 @@ def parse_specialisation_params(source: str | bytes) -> list[dict]:
         seen.add(flag)
         out.append({"variable":m.group(1),"label":m.group(2),"flag":flag})
     return out
-
 def material_specialisations(material: dict) -> list[str]:
     explicit=material.get("specializations") or material.get("specialisations") or []
     flags={str(x).upper() for x in explicit if isinstance(x,str)}
