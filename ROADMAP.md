@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 31. Latest full CI baseline: **150 passed, 2 skipped** in Python, plus successful native IR regression.
+Baseline `main` is at phase 44. Latest merged CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression; the post-merge `main` CI is also green.
 
 The immediate target is a deterministic pipeline:
 
@@ -24,11 +24,11 @@ the original BFF archives at runtime.
 | BAB bone table | verified parser | bone table + conservative opaque animation tail |
 | BAB <-> BAS linkage | implemented | deterministic bone mapping and diagnostics |
 | MEB vertex semantics | verified for known BMW samples | semantic usage/index mappings covered by tests |
-| Exact vertex packing | mostly proven | deterministic locations/stride/ABI evidence and collision guards; color 460/461 declaration/channel order remains ambiguous |
+| Exact vertex packing | mostly proven | deterministic locations/stride/ABI evidence and collision guards; color 460/461 declaration/channel order remains explicitly ambiguous with candidate tooling |
 | BMT -> FX -> FXO | implemented selection path | deterministic permutation selection, CTAB sampler/uniform linkage, linked GLSL payload |
-| Shader backend | active | target BMW permutations compile in the selected GLES profile |
+| Shader backend | active/validated | selected LinkedShaderPair stages can be compile/link-checked with `glslangValidator`; unsupported toolchains report `unavailable` |
 | DrawPacket | implemented contract | canonical DrawPacket carries StaticDraw readiness and explicit blockers |
-| Desktop reference renderer | deterministic geometry oracle | DrawPacket→StaticDraw path, submesh ranges, golden SHA-256 baseline; full material/shader rendering remains |
+| Desktop reference renderer | geometry + texture oracle | DrawPacket/RenderCommand execution, DDS DXT/uncompressed decode, UV0 sampling and CLI golden path; full shader/material math remains |
 | Skinning | bind-pose verified contract | explicit SkinPose, CPU reference, GLES ABI, bind-pose equivalence check; animated pose decoding remains |
 | BAB animation payload | evidence tooling | corpus fingerprints and byte-level differential analysis; keyframe grammar still unproven |
 | SGB scene graph | later | one track section assembles from IR |
@@ -37,9 +37,9 @@ the original BFF archives at runtime.
 ## Execution order
 
 1. Keep CI green and preserve explicit evidence/regression coverage.
-2. Finish exact MEB vertex declaration details, especially COLOR0/1 type and channel byte order.
-3. Validate selected generated shader permutations with an actual GLES compiler where the toolchain is available.
-4. Complete deterministic static BMW reference rendering with real material/texture execution.
+2. Finish exact MEB vertex declaration details, especially COLOR0/1 type and channel byte order, using real BMW bytes and runtime-equivalent references.
+3. Validate selected generated shader permutations with an actual GLES compiler where the toolchain is available, then use the result as the RenderCommand submission gate.
+4. Complete deterministic static BMW reference rendering with real multi-texture material/shader execution; current texture oracle stops before HLSL lighting/blend semantics.
 5. Use explicit SkinPose + bind-pose checks to validate real skinned vehicle geometry.
 6. Reverse engineer BAB animation payload from multiple clips sharing one skeleton, using the corpus and byte-diff evidence tools.
 7. Implement SGB scene semantics and track assembly after the vehicle path is stable.
@@ -55,3 +55,12 @@ the original BFF archives at runtime.
 - Candidate shader permutations must not be selected by incidental file order.
 - Regression fixtures should cover both positive resolution and unresolved/ambiguous
   cases.
+
+
+## Phase 44: renderer submission baseline
+
+The neutral renderer path now spans `RenderBinding/1 -> StaticDraw/1 -> RenderResources/1 -> RenderCommand/1 -> desktop reference renderer`. RenderCommand validates vertex ABI, index ranges, shader-source presence, uniform/constant ranges and multi-texture sampler-register/state integrity. The desktop oracle can execute geometry-only and UV0 texture reference paths, while the shader backend can compile/link selected GLES shader pairs when the validator is installed.
+
+## Current blocker for the BMW milestone
+
+The project does **not** yet claim a full real BMW M3 material render. Remaining work is the semantic execution of generated shader code: material constants, multiple texture reads and shader operations must be mapped into a deterministic reference evaluator (and later GLES/Vulkan execution) without inventing undocumented behavior.
