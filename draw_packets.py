@@ -5,6 +5,8 @@ import json
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
+from vertex_layout import build_layout_from_summary
+
 SCHEMA = "SHIFT.DrawPacket/1"
 
 
@@ -125,6 +127,7 @@ def compile_material(
     params: list[dict[str, Any]] = []
     texture_refs: list[str] = []
 
+    texture_params: list[dict[str, Any]] = []
     for index, param in enumerate(material.get("shaderparams", []) or []):
         value = param.get("value")
         values = value if isinstance(value, list) else [value]
@@ -141,9 +144,17 @@ def compile_material(
             "value": value,
             "texture_refs": texture_candidates,
         })
+        for tref in texture_candidates:
+            texture_params.append({
+                "index": index,
+                "name": param.get("name"),
+                "ref": tref,
+            })
 
     texture_bindings: list[dict[str, Any]] = []
-    for slot, tref in enumerate(dict.fromkeys(texture_refs)):
+    reflected_bindings = list((material_binding or {}).get("bindings", []) or [])
+    for param in texture_params:
+        tref = param["ref"]
         texture_hits = resolve_ref(
             tref,
             texture_by_path or {},
@@ -151,22 +162,41 @@ def compile_material(
             prefer_archive,
         )
         binding: dict[str, Any] = {
-            "slot": slot,
+            "slot": None,
             "ref": tref,
+            "material_parameter_index": param["index"],
+            "material_parameter": param.get("name"),
             "resolved": texture_hits,
-            # The BMT parser does not yet recover exact D3D9 sampler-state
-            # bindings, so this is deliberately marked as inferred.
-            "binding_source": "material-order-inferred",
+            "binding_source": "unresolved",
         }
-        if material_binding:
-            for reflected in material_binding.get("bindings", []) or []:
-                if norm_ref(reflected.get("texture")) == tref:
-                    if reflected.get("d3d9_sampler_register") is not None:
-                        binding["d3d9_sampler_register"] = reflected["d3d9_sampler_register"]
-                        binding["sampler"] = reflected.get("sampler")
-                        binding["sampler_type"] = reflected.get("sampler_type")
-                        binding["binding_source"] = "fxo-ctab"
-                    break
+        matched = next(
+            (
+                reflected for reflected in reflected_bindings
+                if (
+                    reflected.get("texture_parameter")
+                    and reflected.get("texture_parameter") == param.get("name")
+                )
+                or (
+                    not reflected.get("texture_parameter")
+                    and norm_ref(reflected.get("texture")) == tref
+                )
+            ),
+            None,
+        )
+        if matched and matched.get("d3d9_sampler_register") is not None:
+            register = matched["d3d9_sampler_register"]
+            binding["slot"] = register
+            binding["d3d9_sampler_register"] = register
+            binding["sampler"] = matched.get("sampler")
+            binding["sampler_type"] = matched.get("sampler_type")
+            for key in (
+                "min_filter", "mag_filter", "mip_filter",
+                "address_u", "address_v", "address_w",
+                "srgb", "linear",
+            ):
+                if key in matched:
+                    binding[key] = matched[key]
+            binding["binding_source"] = "fxo-ctab"
 
         if len(texture_hits) == 1 and texture_by_path:
             texture_records = texture_by_path.get(
@@ -185,6 +215,7 @@ def compile_material(
                     }
 
         texture_bindings.append(binding)
+
 
     return {
         "ref": material_ref,
@@ -348,6 +379,7 @@ def build_draw_packets(
                     "resolved": mesh_ref,
                     "vertex_count": analysis.get("vertex_count"),
                     "triangle_count": analysis.get("triangle_count"),
+                    "vertex_layout": build_layout_from_summary(analysis),
                 },
                 "submeshes": packet_prims,
                 "shader_selection": {
