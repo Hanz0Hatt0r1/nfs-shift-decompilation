@@ -210,9 +210,27 @@ def render_static_draw(
     world = _coerce_matrix(draw.get("world_matrix")) or _identity4()
     base_mvp = mvp or orthographic_mvp(mesh.get("vertices") or [])
     final_mvp = _mat4_mul(base_mvp, world)
+    vertices = mesh.get("vertices") or []
+    indices = mesh.get("indices") or []
+    draw_indices: list[int] = []
+    for submesh in draw.get("submeshes", []) or []:
+        first = int(submesh.get("first_index", 0))
+        count = int(submesh.get("index_count", 0))
+        if first < 0 or count < 0 or first + count > len(indices):
+            raise ValueError(
+                f"submesh index range out of bounds: first={first} count={count} indices={len(indices)}"
+            )
+        if count % 3:
+            raise ValueError("submesh index_count must be divisible by three")
+        draw_indices.extend(int(x) for x in indices[first:first + count])
+
+    # Legacy/simple draw contracts without submesh metadata still render the full mesh.
+    if not (draw.get("submeshes") or []):
+        draw_indices = [int(x) for x in indices]
+
     image = rasterize_mesh(
-        mesh.get("vertices") or [],
-        mesh.get("indices") or [],
+        vertices,
+        draw_indices,
         colors=mesh.get("colors") or [],
         width=width,
         height=height,

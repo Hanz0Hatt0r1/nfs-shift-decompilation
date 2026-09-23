@@ -73,3 +73,6 @@ This keeps renderer validation separate from source-game resource access and giv
 `reference_renderer.py` now has a JSON-to-JSON-to-PPM harness that consumes a `SHIFT.DrawPacket/1` plus neutral mesh JSON, validates the packet through `SHIFT.StaticDraw/1`, and records the output SHA-256.
 
 The test suite pins a 32x32 baseline image hash so renderer changes become explicit regressions rather than visual guesswork.
+## Phase 22: submesh-aware reference rendering
+
+`reference_renderer.render_static_draw()` now respects `first_index/index_count` from `SHIFT.StaticDraw/1` submeshes instead of rasterizing the complete mesh index buffer. This preserves MEB primitive boundaries and makes multi-material meshes safe for the reference path.
