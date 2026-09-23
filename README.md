@@ -108,4 +108,5 @@ CTAB reflection теперь сохраняет typed constants и sampler regis
 
 
 `python shift_importer.py bab-corpus resource_analysis.json bab_corpus.json
-python shift_importer.py bab-payload-diff clips/idle.bab clips/run.bab bab_diff.json` builds a corpus report over parsed BAB resources without decoding the opaque animation tail.
+python shift_importer.py bab-payload-diff clips/idle.bab clips/run.bab bab_diff.json
+python reference_renderer.py command.json --render-command --textured --mesh mesh.json --texture body.dds -o body.ppm` builds a corpus report over parsed BAB resources without decoding the opaque animation tail.
