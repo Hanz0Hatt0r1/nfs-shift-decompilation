@@ -51,3 +51,33 @@ def test_bab_corpus_groups_by_exact_bone_name_skeleton():
     first = next(g for g in report["skeleton_groups"] if g["sample_count"] == 2)
     assert first["payload_hash_count"] == 2
     assert first["opaque_payloads_vary"] is True
+
+
+def test_bab_corpus_cli_writes_report(tmp_path):
+    import json
+    import subprocess
+    import sys
+
+    input_path = tmp_path / "resource_analysis.json"
+    output_path = tmp_path / "bab_corpus.json"
+    rows = [
+        {"archive": "A.bff", "path": "anim/idle.bab", "analysis": _bab("idle", "aaa", 16)},
+        {"archive": "A.bff", "path": "anim/run.bab", "analysis": _bab("run", "bbb", 24)},
+    ]
+    input_path.write_text(json.dumps({"resources": rows}), encoding="utf-8")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(__import__("pathlib").Path(__file__).resolve().parents[1] / "shift_importer.py"),
+            "bab-corpus",
+            str(input_path),
+            str(output_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    report = json.loads(output_path.read_text(encoding="utf-8"))
+    assert report["format"] == "SHIFT.BABCorpusReport/1"
+    assert report["sample_count"] == 2
+    assert "sample_count" in proc.stdout
