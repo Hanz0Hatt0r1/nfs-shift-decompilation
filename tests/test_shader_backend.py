@@ -89,4 +89,4 @@ def test_sampler_type_and_relative_addressing_are_preserved():
     assert src.relative_token == rel_addr
     glsl = to_glsl(p)
     assert "samplerCube tex0" in glsl
-    assert "c[int(a0.x)+2]" in glsl
+    assert "c[(int(a0.x)+2)]" in glsl
