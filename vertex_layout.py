@@ -79,6 +79,8 @@ def build_vertex_layout(properties: Iterable[str | dict], *, repack_interleaved:
                 "name": PROP_NAMES.get(pid, "unknown"),
                 "location": location,
                 "status": "unknown",
+                "abi_status": "unknown",
+                "evidence_basis": "property id is not decoded by the current MEB ABI table",
             }
             rows.append(row)
             continue
@@ -149,6 +151,8 @@ def property_abi(property_id: str) -> dict:
             "property_id": pid,
             "name": PROP_NAMES.get(pid, "unknown"),
             "status": "unknown",
+            "abi_status": "unknown",
+            "evidence_basis": "property id is not decoded by the current MEB ABI table",
         }
     usage, index = SEMANTICS.get(pid, ("UNKNOWN", 0))
     return {
