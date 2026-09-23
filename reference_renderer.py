@@ -605,10 +605,42 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-o", "--output", required=True, type=Path)
     parser.add_argument("--mesh", type=Path, help="neutral mesh JSON used with --draw-packet")
     parser.add_argument("--draw-packet", action="store_true", help="treat input as SHIFT.DrawPacket/1 JSON")
+    parser.add_argument("--render-command", action="store_true", help="treat input as SHIFT.RenderCommand/1 JSON")
+    parser.add_argument("--textured", action="store_true", help="use the UV0 software texture reference path")
+    parser.add_argument("--mesh", type=Path)
+    parser.add_argument("--texture", type=Path, help="DDS file used by --textured")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
     args = parser.parse_args(argv)
-    if args.draw_packet:
+    if args.textured:
+        if not args.render_command:
+            parser.error("--textured requires --render-command")
+        if args.mesh is None or args.texture is None:
+            parser.error("--textured requires --mesh and --texture")
+        command = json.loads(args.input.read_text(encoding="utf-8"))
+        mesh = json.loads(args.mesh.read_text(encoding="utf-8"))
+        from texture_reference import decode_dds
+        image = decode_dds(args.texture.read_bytes())
+        result = render_textured_render_command(
+            command,
+            mesh,
+            image,
+            args.output,
+            width=args.width,
+            height=args.height,
+        )
+        result["sha256"] = hashlib.sha256(args.output.read_bytes()).hexdigest()
+    elif args.render_command:
+        if args.mesh is None:
+            parser.error("--render-command requires --mesh")
+        result = render_render_command_json(
+            args.input,
+            args.mesh,
+            args.output,
+            width=args.width,
+            height=args.height,
+        )
+    elif args.draw_packet:
         if args.mesh is None:
             parser.error("--draw-packet requires --mesh")
         result = render_draw_packet_json(
