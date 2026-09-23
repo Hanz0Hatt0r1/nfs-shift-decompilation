@@ -65,3 +65,6 @@ Renderer-global samplers are preserved as explicit external requirements rather 
 `reference_renderer.py` now exposes `build_static_draw_from_packet()` and `render_draw_packet()`. The reference renderer consumes the same `SHIFT.StaticDraw/1` validation boundary as the future GPU backend, then rasterizes only neutral mesh data.
 
 This keeps renderer validation separate from source-game resource access and gives us a deterministic desktop oracle for the first BMW static-render milestone.
+## Phase 20: canonical DrawPacket -> StaticDraw
+
+`draw_packets.py` now attaches a `SHIFT.StaticDraw/1` contract to every canonical `SHIFT.DrawPacket/1` packet. Aggregate stats expose `ready_static_draws` and `blocked_static_draws` so unresolved renderer prerequisites are visible without a second conversion pass.
