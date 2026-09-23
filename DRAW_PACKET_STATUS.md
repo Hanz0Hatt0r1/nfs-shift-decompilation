@@ -68,3 +68,8 @@ This keeps renderer validation separate from source-game resource access and giv
 ## Phase 20: canonical DrawPacket -> StaticDraw
 
 `draw_packets.py` now attaches a `SHIFT.StaticDraw/1` contract to every canonical `SHIFT.DrawPacket/1` packet. Aggregate stats expose `ready_static_draws` and `blocked_static_draws` so unresolved renderer prerequisites are visible without a second conversion pass.
+## Phase 21: deterministic golden render
+
+`reference_renderer.py` now has a JSON-to-JSON-to-PPM harness that consumes a `SHIFT.DrawPacket/1` plus neutral mesh JSON, validates the packet through `SHIFT.StaticDraw/1`, and records the output SHA-256.
+
+The test suite pins a 32x32 baseline image hash so renderer changes become explicit regressions rather than visual guesswork.
