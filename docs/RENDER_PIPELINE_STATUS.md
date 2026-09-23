@@ -41,3 +41,7 @@ This makes the render-link stage an actual renderer contract boundary instead of
 ## Phase 34: RenderCommand validation gate
 
 `render_command.py` now exposes `SHIFT.RenderCommandValidation/1` and uses it as the final submission gate. Vertex attribute locations/ranges, index ranges, linked GLSL sources, resource-plan shape, material uniform bindings and constant register ranges are validated before `ready=true` is emitted.
+
+## Phase 35: RenderCommand -> reference renderer
+
+The desktop oracle can now execute `SHIFT.RenderCommand/1` directly. The execution path performs final command validation and cross-checks vertex/index metadata against the supplied neutral mesh before rasterization, closing the neutral submission chain without introducing BFF/runtime dependencies.

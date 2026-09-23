@@ -13,6 +13,7 @@ import hashlib
 from pathlib import Path
 from typing import Any, Iterable
 
+from render_command import validate_render_command
 from static_draw import build_static_draw_contract
 
 
@@ -257,6 +258,91 @@ def build_static_draw_from_packet(packet: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("packet is not SHIFT.DrawPacket/1")
     return build_static_draw_contract(packet)
 
+
+
+def render_render_command(
+    command: dict[str, Any],
+    mesh: dict[str, Any],
+    output: str | Path,
+    *,
+    width: int = 512,
+    height: int = 512,
+    mvp: list[list[float]] | None = None,
+) -> dict[str, Any]:
+    """Execute a validated RenderCommand with the geometry-only desktop oracle."""
+    validation = validate_render_command(command)
+    if not validation["valid"]:
+        raise ValueError(
+            "render command is not valid: "
+            + ", ".join(validation["blocking_reasons"])
+        )
+    if not command.get("ready", False):
+        raise ValueError(
+            "render command is not ready: "
+            + ", ".join(command.get("blocking_reasons", []))
+        )
+
+    vertices = mesh.get("vertices") or []
+    indices = mesh.get("indices") or []
+    expected_vertices = command.get("mesh", {}).get("vertex_count")
+    if expected_vertices is not None and int(expected_vertices) != len(vertices):
+        raise ValueError(
+            f"mesh vertex count mismatch: command={expected_vertices} actual={len(vertices)}"
+        )
+
+    for submesh in command.get("submeshes", []) or []:
+        first = int(submesh.get("first_index", 0))
+        count = int(submesh.get("index_count", 0))
+        if first < 0 or count < 0 or first + count > len(indices):
+            raise ValueError(
+                f"command index range out of bounds: first={first} count={count} indices={len(indices)}"
+            )
+
+    draw = {
+        "format": "SHIFT.StaticDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "world_matrix": command.get("world_matrix"),
+        "submeshes": command.get("submeshes", []),
+    }
+    result = render_static_draw(
+        draw,
+        mesh,
+        output,
+        width=width,
+        height=height,
+        mvp=mvp,
+    )
+    result["command_contract"] = {
+        "format": command.get("format"),
+        "ready": command.get("ready"),
+        "validation": validation,
+    }
+    return result
+
+
+def render_render_command_json(
+    command_path: str | Path,
+    mesh_path: str | Path,
+    output: str | Path,
+    *,
+    width: int = 512,
+    height: int = 512,
+) -> dict[str, Any]:
+    """Render a RenderCommand JSON plus neutral mesh JSON and return a golden hash."""
+    command = json.loads(Path(command_path).read_text(encoding="utf-8"))
+    mesh = json.loads(Path(mesh_path).read_text(encoding="utf-8"))
+    result = render_render_command(
+        command,
+        mesh,
+        output,
+        width=width,
+        height=height,
+    )
+    result["sha256"] = hashlib.sha256(Path(output).read_bytes()).hexdigest()
+    result["command"] = str(command_path)
+    result["mesh"] = str(mesh_path)
+    return result
 
 def render_draw_packet(
     packet: dict[str, Any],
