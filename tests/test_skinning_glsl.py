@@ -45,6 +45,35 @@ def _packet():
                 ],
             },
         },
+        "mesh": {
+            "vertex_layout": {
+                "format": "SHIFT.VertexLayout/1",
+                "buffer_stride": 32,
+                "attributes": [
+                    {
+                        "property_id": "200",
+                        "location": 0,
+                        "android": "FLOAT32x3",
+                        "components": 3,
+                        "normalized": False,
+                    },
+                    {
+                        "property_id": "310",
+                        "location": 1,
+                        "android": "FLOAT32x4",
+                        "components": 4,
+                        "normalized": False,
+                    },
+                    {
+                        "property_id": "580",
+                        "location": 2,
+                        "android": "UINT8x4",
+                        "components": 4,
+                        "normalized": False,
+                    },
+                ],
+            },
+        },
     }
 
 
