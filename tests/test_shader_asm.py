@@ -4,10 +4,12 @@ sys.path.insert(0,str(Path(__file__).parents[1]))
 from shader_ir import parse_shader_blobs
 from shader_asm import parse_program, to_glsl
 
-FIX=Path(__file__).parent/'fixtures'/'glass.fxo'
+from synthetic_fixtures import glass_fxo
+
+FIX=None
 
 def test_glass_programs_have_register_operands():
-    data=FIX.read_bytes(); blobs=parse_shader_blobs(data)
+    data=glass_fxo(); blobs=parse_shader_blobs(data)
     assert len(blobs)==4
     for b in blobs:
         p=parse_program(data,b.offset,b.end,b.stage,b.major,b.minor)
@@ -27,7 +29,7 @@ def test_operand_encoding_roundtrip():
     assert p.instructions[0].operands[1].swizzle=='zwxy'
 
 def test_glsl_translation_is_nonempty():
-    data=FIX.read_bytes(); b=parse_shader_blobs(data)[0]
+    data=glass_fxo(); b=parse_shader_blobs(data)[0]
     p=parse_program(data,b.offset,b.end,b.stage,b.major,b.minor)
     glsl=to_glsl(p)
     assert '#version 310 es' in glsl
