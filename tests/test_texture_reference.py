@@ -11,16 +11,17 @@ def _dds_header(
     *,
     fourcc=b"",
     rgb_bits=0,
-    pf_flags=0x4 if fourcc else 0x40,
+    pf_flags=None,
     r_mask=0,
     g_mask=0,
     b_mask=0,
     a_mask=0,
     mipmaps=1,
 ):
+    if pf_flags is None:
+        pf_flags = 0x4 if fourcc else 0x40
     pf_fourcc = struct.unpack("<I", fourcc.ljust(4, b"\x00"))[0]
-    header = struct.pack(
-        "<I6I11I8I5I",
+    values = (
         124,
         0,
         height,
@@ -28,8 +29,8 @@ def _dds_header(
         0,
         0,
         mipmaps,
+        *([0] * 11),
         32,
-        0,
         pf_flags,
         pf_fourcc,
         rgb_bits,
@@ -37,7 +38,13 @@ def _dds_header(
         g_mask,
         b_mask,
         a_mask,
+        0,
+        0,
+        0,
+        0,
+        0,
     )
+    header = struct.pack("<31I", *values)
     assert len(header) == 124
     return b"DDS " + header
 
