@@ -97,13 +97,16 @@ def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
 
     # Ambiguous ABI is blocking only when the selected shader consumes it.
     # This prevents a silent RGBA/BGRA or D3D9 declaration choice.
-    selected_pair = ((packet.get("submeshes") or [{}])[0].get("material") or {}).get("shader_selection", {}).get("shader_pair") or {}
-    selected_bindings = selected_pair.get("vertex_bindings") or selected_pair.get("vertex_format", {}).get("vertex_bindings") or []
-    used_properties = {
-        str(x.get("property_id"))
-        for x in selected_bindings
-        if x.get("matched") and x.get("property_id") is not None
-    }
+    used_properties: set[str] = set()
+    for submesh in packet.get("submeshes", []) or []:
+        material = submesh.get("material") or {}
+        pair = (material.get("shader_selection") or {}).get("shader_pair") or {}
+        selected_bindings = pair.get("vertex_bindings") or pair.get("vertex_format", {}).get("vertex_bindings") or []
+        used_properties.update(
+            str(x.get("property_id"))
+            for x in selected_bindings
+            if x.get("matched") and x.get("property_id") is not None
+        )
     ambiguous_used = [
         str(a.get("property_id"))
         for a in attributes
