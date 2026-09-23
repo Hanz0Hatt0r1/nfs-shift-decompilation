@@ -52,3 +52,6 @@ Linked GLSL translation now maps D3D9 VS input registers (`vN`) to the target `S
 ## Phase 16: material-linked shader payload
 
 `MaterialBinding/1` now attaches `SHIFT.LinkedShaderPair/1` when the selected FXO permutation has a unique VS/PS pair. The payload contains the neutral pair IR, semantic varying locations, VertexLayout input bindings when MEB properties are supplied, and the generated GLSL ES 3.1 stages.
+## Phase 34: GLES constant-buffer ABI
+
+Generated GLSL ES 3.1 now exposes D3D9 float constant banks through `ShiftD3D9Constants` at UBO binding 14. `SHIFT.RenderCommand/1` records the corresponding stage/register/count and byte offset (`register_index * 16`) for runtime upload.
