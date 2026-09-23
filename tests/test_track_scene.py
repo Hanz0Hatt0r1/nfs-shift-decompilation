@@ -3,7 +3,7 @@ from track_scene import build_track_scene_manifest
 
 
 def _chunk(tag, payload):
-    return tag[::-1].encode("ascii") + len(payload).to_bytes(4, "little") + payload
+    return tag[::-1].encode("ascii") + (8 + len(payload)).to_bytes(4, "little") + payload
 
 
 def test_sgb_resource_refs_keep_chunk_provenance():
