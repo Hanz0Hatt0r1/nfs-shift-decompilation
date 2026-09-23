@@ -91,8 +91,27 @@ def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
         reasons.append("vertex-layout:missing")
     if layout.get("buffer_stride", 0) <= 0:
         reasons.append("vertex-layout:stride-missing")
-    if any(a.get("status") == "unknown" for a in layout.get("attributes", []) or []):
+    attributes = layout.get("attributes", []) or []
+    if any(a.get("status") == "unknown" or a.get("abi_status") == "unknown" for a in attributes):
         reasons.append("vertex-layout:unknown-attribute")
+
+    # Ambiguous ABI is blocking only when the selected shader consumes it.
+    # This prevents a silent RGBA/BGRA or D3D9 declaration choice.
+    selected_pair = ((packet.get("submeshes") or [{}])[0].get("material") or {}).get("shader_selection", {}).get("shader_pair") or {}
+    selected_bindings = selected_pair.get("vertex_bindings") or selected_pair.get("vertex_format", {}).get("vertex_bindings") or []
+    used_properties = {
+        str(x.get("property_id"))
+        for x in selected_bindings
+        if x.get("matched") and x.get("property_id") is not None
+    }
+    ambiguous_used = [
+        str(a.get("property_id"))
+        for a in attributes
+        if a.get("abi_status") == "ambiguous"
+        and str(a.get("property_id")) in used_properties
+    ]
+    if ambiguous_used:
+        reasons.append("vertex-layout:ambiguous-attribute:" + ",".join(sorted(set(ambiguous_used))))
 
     submeshes = []
     material_ready = True
