@@ -1,5 +1,5 @@
 from __future__ import annotations
-import struct, math
+import struct, math, re
 from dataclasses import dataclass, asdict, field
 from typing import Optional
 
