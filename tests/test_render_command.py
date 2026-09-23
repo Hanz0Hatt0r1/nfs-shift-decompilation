@@ -358,3 +358,26 @@ def test_render_command_shader_validation_unavailable_is_nonblocking(monkeypatch
     result = build_render_command(draw, _resources(), validate_shaders=True)
     assert result["ready"] is True
     assert result["shader_validation"]["status"] == "unavailable"
+
+
+def test_render_command_propagates_sampler_state():
+    packet = _packet()
+    resources = _resources()
+    resources["samplers"][0]["state"] = {
+        "format": "SHIFT.SamplerState/1",
+        "min_filter": "LINEAR",
+        "mag_filter": "LINEAR",
+        "mip_filter": "LINEAR",
+        "min_filter_gl": "LINEAR_MIPMAP_LINEAR",
+        "address_u": "REPEAT",
+        "address_v": "CLAMP_TO_EDGE",
+        "address_w": "REPEAT",
+        "ready": True,
+        "blocking_reasons": [],
+    }
+    static_draw = build_static_draw_contract(packet)
+    result = build_render_command(static_draw, resources)
+    texture = result["submeshes"][0]["textures"][0]
+    assert texture["sampler_state"]["format"] == "SHIFT.SamplerState/1"
+    assert texture["sampler_state"]["min_filter"] == "LINEAR"
+    assert texture["sampler_state"]["address_v"] == "CLAMP_TO_EDGE"
