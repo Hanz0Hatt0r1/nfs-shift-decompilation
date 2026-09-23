@@ -12,6 +12,8 @@ import math
 from pathlib import Path
 from typing import Any, Iterable
 
+from static_draw import build_static_draw_contract
+
 
 RGBA = tuple[int, int, int, int]
 
@@ -228,6 +230,40 @@ def render_static_draw(
         "world_matrix_applied": True,
     }
 
+
+
+def build_static_draw_from_packet(packet: dict[str, Any]) -> dict[str, Any]:
+    """Validate a SHIFT.DrawPacket/1 and return its executable StaticDraw/1 contract."""
+    if packet.get("schema") != "SHIFT.DrawPacket/1":
+        raise ValueError("packet is not SHIFT.DrawPacket/1")
+    return build_static_draw_contract(packet)
+
+
+def render_draw_packet(
+    packet: dict[str, Any],
+    mesh: dict[str, Any],
+    output: str | Path,
+    *,
+    width: int = 512,
+    height: int = 512,
+    mvp: list[list[float]] | None = None,
+) -> dict[str, Any]:
+    """Render one DrawPacket through the validated StaticDraw/1 boundary."""
+    draw = build_static_draw_from_packet(packet)
+    result = render_static_draw(
+        draw,
+        mesh,
+        output,
+        width=width,
+        height=height,
+        mvp=mvp,
+    )
+    result["draw_contract"] = {
+        "format": draw["format"],
+        "ready": draw["ready"],
+        "blocking_reasons": draw["blocking_reasons"],
+    }
+    return result
 
 def render_mesh_json(mesh: dict[str, Any], output: str | Path, *, width: int = 512, height: int = 512) -> dict[str, Any]:
     vertices = mesh.get("vertices") or []
