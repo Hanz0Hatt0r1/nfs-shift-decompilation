@@ -472,3 +472,69 @@ def test_render_command_rejects_bad_sampler_state():
     result = build_render_command(draw, resources)
     assert result["ready"] is False
     assert "texture-command:sampler-state-invalid:0" in result["blocking_reasons"]
+
+
+def test_render_command_integrates_material_constant_payload():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "primerBasis",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 5,
+            "register_count": 1,
+            "ctab_type": "float4",
+            "value": [1.0, 2.0, 3.0, 4.0],
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is True
+    payload = result["submeshes"][0]["constant_payload"]
+    assert payload["ready"] is True
+    assert payload["registers"][0]["byte_offset"] == 80
+    assert payload["registers"][0]["values"] == [1.0, 2.0, 3.0, 4.0]
+
+
+def test_render_command_blocks_unproven_matrix_constant_payload():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "world",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 4,
+            "register_count": 4,
+            "ctab_type": "float4x4",
+            "value": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "uniform-payload:unsupported-ctab-type:world:float4x4" in result["blocking_reasons"]
+
+
+def test_render_command_blocks_constant_value_overflow():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "values",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 0,
+            "register_count": 2,
+            "ctab_type": "float4",
+            "value": list(range(9)),
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "uniform-payload:value-exceeds-register-range:values" in result["blocking_reasons"]
