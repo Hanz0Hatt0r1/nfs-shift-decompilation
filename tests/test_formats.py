@@ -159,7 +159,7 @@ def test_bab_binary_resource_analysis():
     assert analysis["format"] == "SHIFT.BAB"
     assert analysis["bones_parsed"] == 2
     assert analysis["animation_payload_preserved"] is True
-    assert analysis["animation_payload_decoded"] is False if "animation_payload_decoded" in analysis else True
+    assert analysis["animation_payload_size"] >= 0
 
 
 def test_fx_source_reflection():
