@@ -396,14 +396,24 @@ _SGB_KIND = {
 
 
 def _sgb_strings(data: bytes, base_offset: int = 0) -> list[dict[str, Any]]:
-    """Recover path-like strings deterministically from an SGB payload."""
+    """Recover path-like strings from NUL-delimited SGB resource strings."""
     rows: list[dict[str, Any]] = []
     seen: set[tuple[int, str]] = set()
 
+    extensions = tuple(
+        "." + x.decode("ascii")
+        for x in _SGB_EXTENSIONS
+    )
+
     def emit(text: str, absolute_offset: int, relative_offset: int, encoding: str) -> None:
         text = text.replace("\\", "/")
-        ext = Path(text.lower()).suffix
-        key = (absolute_offset, text.lower())
+        low = text.lower()
+        suffix = next((ext for ext in extensions if low.endswith(ext)), None)
+        if suffix is None:
+            return
+        if len(text) < 2 or len(text) > 256:
+            return
+        key = (absolute_offset, low)
         if key in seen:
             return
         seen.add(key)
@@ -412,109 +422,38 @@ def _sgb_strings(data: bytes, base_offset: int = 0) -> list[dict[str, Any]]:
             "relative_offset": relative_offset,
             "encoding": encoding,
             "path": text,
-            "extension": ext,
-            "kind": _SGB_KIND.get(ext, "unknown"),
+            "extension": suffix,
+            "kind": _SGB_KIND.get(suffix, "unknown"),
             "confidence": "string-scan",
         })
 
-    lower = data.lower()
-    for ext in _SGB_EXTENSIONS:
-        suffix = b"." + ext
-        cursor = 0
-        while True:
-            pos = lower.find(suffix, cursor)
-            if pos < 0:
-                break
-            start = pos
-            while start > 0 and data[start - 1] in _SGB_ALLOWED:
-                start -= 1
-            raw = data[start:pos + len(suffix)]
-            if 2 <= len(raw) <= 256:
-                emit(raw.decode("utf-8", "replace"), base_offset + start, start, "ascii")
-            cursor = pos + 1
+    def scan_ascii_segment(segment: bytes, segment_offset: int) -> None:
+        if not segment:
+            return
+        # A string table can contain several paths in a single binary segment;
+        # keep the scan bounded to printable/path-safe runs.
+        for m in re.finditer(rb"[A-Za-z0-9_./\\-]{2,256}", segment):
+            raw = m.group(0)
+            text = raw.decode("utf-8", "replace")
+            emit(text, base_offset + segment_offset + m.start(),
+                 segment_offset + m.start(), "ascii")
 
-    for ext in _SGB_EXTENSIONS:
-        suffix = b"." + ext
-        encoded = b"".join(bytes((ch, 0)) for ch in suffix)
-        cursor = 0
-        while True:
-            pos = data.find(encoded, cursor)
-            if pos < 0:
-                break
-            start = pos
-            while start >= 2 and data[start - 2] in _SGB_ALLOWED and data[start - 1] == 0:
-                start -= 2
-            raw = data[start:pos + len(encoded)]
-            if 4 <= len(raw) <= 512 and len(raw) % 2 == 0:
-                text_bytes = bytes(raw[i] for i in range(0, len(raw), 2))
-                emit(text_bytes.decode("utf-8", "replace"), base_offset + start, start, "utf-16le")
-            cursor = pos + 2
+    cursor = 0
+    for part in data.split(b"\x00"):
+        scan_ascii_segment(part, cursor)
+        cursor += len(part) + 1
+
+    # UTF-16LE string tables are handled independently to avoid treating their
+    # zero high-bytes as binary separators in the ASCII pass.
+    for match in re.finditer(rb"(?:[A-Za-z0-9_./\\-]\x00){2,256}", data):
+        raw = match.group(0)
+        if len(raw) < 4 or len(raw) % 2:
+            continue
+        text = bytes(raw[i] for i in range(0, len(raw), 2)).decode("utf-8", "replace")
+        emit(text, base_offset + match.start(), match.start(), "utf-16le")
 
     rows.sort(key=lambda x: (x["offset"], x["path"].lower()))
     return rows
-
-
-def parse_sgb(data: bytes) -> dict[str, Any]:
-    """Index the SHIFT binary scene graph container used by track .sgb files.
-
-    The format starts with a 16-byte header followed by reversed FourCC chunks.
-    Each chunk is `tag[4] + size:u32le`, where size includes the 8-byte header.
-    This intentionally records chunk boundaries without inventing semantics for
-    NODE/FLAT/SUMM payloads that still need deeper RE work.
-    """
-    if len(data) < 16 or not data.startswith(b" \x42\x47\x53"):
-        raise ValueError("not a SHIFT SGB resource")
-
-    chunks: list[dict[str, Any]] = []
-    off = 16
-    while off + 8 <= len(data):
-        raw_tag = data[off:off + 4]
-        size = struct.unpack_from("<I", data, off + 4)[0]
-        if size < 8:
-            raise ValueError(f"SGB invalid chunk size {size} at 0x{off:X}")
-        end = off + size
-        if end > len(data):
-            # The file may carry a non-container tail after END; preserve it.
-            break
-        tag = raw_tag[::-1].decode("ascii", "replace")
-        payload = data[off + 8:end]
-        chunks.append({
-            "tag": tag,
-            "offset": off,
-            "size": size,
-            "payload_size": len(payload),
-            "payload_sha256": __import__("hashlib").sha256(payload).hexdigest(),
-            "payload_head": payload[:24].hex(),
-            "resource_refs": _sgb_strings(payload, off + 8),
-        })
-        off = end
-        if tag == "END ":
-            break
-
-    refs = [ref for chunk in chunks for ref in chunk.get("resource_refs", [])]
-    unique_refs = []
-    seen_paths = set()
-    for ref in refs:
-        key = ref["path"].lower()
-        if key not in seen_paths:
-            seen_paths.add(key)
-            unique_refs.append(ref)
-    by_kind = {}
-    for ref in unique_refs:
-        by_kind.setdefault(ref["kind"], 0)
-        by_kind[ref["kind"]] += 1
-    return {
-        "format": "SHIFT.SGB",
-        "version": 1,
-        "header_hex": data[:16].hex(),
-        "chunk_count": len(chunks),
-        "chunks": chunks,
-        "resource_refs": unique_refs,
-        "resource_ref_counts": by_kind,
-        "container_end": off,
-        "trailing_bytes": max(0, len(data) - off),
-    }
-
 
 def analyze_decoded_resource(path: str, data: bytes) -> dict[str, Any]:
     """Format-aware analysis used by the universal importer."""
