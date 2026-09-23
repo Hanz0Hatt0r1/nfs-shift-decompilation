@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 from typing import Iterable
 from shader_ir import parse_shader_blobs
+from shader_interface import pair_selected_pixel
 
 def parse_fx_samplers(source: str | bytes) -> list[dict]:
     text = source.decode("utf-8", "replace") if isinstance(source, bytes) else source
@@ -46,7 +47,7 @@ def reflect_fxo(data: bytes) -> list[dict]:
              "instruction_count":b.instruction_count,"samplers":b.ctab_samplers,"constants":b.ctab_constants}
             for b in parse_shader_blobs(data)]
 
-def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = ()) -> dict:
+def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
     params = _material_params(material)
     samplers = parse_fx_samplers(fx_source)
     textures = _texture_lookup(texture_paths)
@@ -65,6 +66,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     if "environmentTexture" in {s["texture_parameter"] for s in samplers} and "motionBlurTexture" not in param_names:
         expected.add("environmentMap")
     fxo=[]
+    fxo_payloads={}
     for name,data in fxo_candidates:
         for p in (p for p in reflect_fxo(data) if p["stage"]=="pixel"):
             names={s["name"] for s in p["samplers"]}
@@ -72,6 +74,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             wrong_camera="motionBlurMap" in names and "motionBlurTexture" not in param_names
             exact=expected <= names and not wrong_camera
             if score and not wrong_camera:
+                fxo_payloads[(name,p["offset"])]=data
                 fxo.append({"file":name,"program_offset":p["offset"],"samplers":p["samplers"],
                             "score":score,"expected_count":len(expected),"exact":exact})
     seen=set(); uniq=[]
@@ -80,19 +83,24 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
         if k not in seen: seen.add(k); uniq.append(x)
     fxo=sorted(uniq,key=lambda x:(-int(x["exact"]),-x["score"],x["file"],x["program_offset"]))
     best=fxo[0] if fxo else None
+    shader_pair=None
     if best and best["exact"]:
         regmap={s["name"]:s["register"] for s in best["samplers"]}
         for b in bindings:
             if b["sampler"] in regmap: b["d3d9_sampler_register"]=regmap[b["sampler"]]
+        payload=fxo_payloads.get((best["file"],best["program_offset"]))
+        if payload is not None:
+            shader_pair=pair_selected_pixel(payload,best["program_offset"],properties=vertex_properties)
     return {"format":"SHIFT.MaterialBinding/1","material":material.get("name"),"shader":material.get("shader"),
             "technique":material.get("technique"),"bindings":bindings,"fxo_candidates":fxo,
             "selected_fxo":best if best and best["exact"] else None,
+            "shader_pair":shader_pair,
             "unresolved_textures":sorted(set(unresolved))}
 
-def link_from_files(material_json: str | Path, fx_source: str | Path, *, fxo_dir: str | Path | None = None, texture_paths: Iterable[str] = ()) -> dict:
+def link_from_files(material_json: str | Path, fx_source: str | Path, *, fxo_dir: str | Path | None = None, texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
     material=json.loads(Path(material_json).read_text(encoding="utf-8"))
     if "material" in material: material=material["material"]
     candidates=[]
     if fxo_dir:
         for p in sorted(Path(fxo_dir).glob("*.fxo")): candidates.append((p.name,p.read_bytes()))
-    return link_material(material, Path(fx_source).read_bytes(), fxo_candidates=candidates, texture_paths=texture_paths)
+    return link_material(material, Path(fx_source).read_bytes(), fxo_candidates=candidates, texture_paths=texture_paths, vertex_properties=vertex_properties)
