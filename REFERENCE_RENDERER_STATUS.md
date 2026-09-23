@@ -7,3 +7,7 @@ Inputs can be the JSON emitted by `meb_format.mesh_to_jsonable()` after BFF deco
 ## Phase 35: RenderCommand execution
 
 The reference renderer now consumes `SHIFT.RenderCommand/1` directly. It validates the final submission contract, verifies command vertex count/index ranges against the supplied neutral mesh, then reuses the deterministic geometry rasterizer. Shader source and material state remain validation inputs, not software shader execution.
+
+## Phase 42: textured RenderCommand CLI
+
+The reference renderer now exposes `--render-command --textured --mesh ... --texture ...` for deterministic UV0 texture execution. The command still passes through `RenderCommandValidation/1`; DDS bytes are decoded by `texture_reference.py` and sampled using the explicit sampler reference.
