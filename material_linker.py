@@ -88,7 +88,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             sampler_score=len(expected & names)
             wrong_camera="motionBlurMap" in names and "motionBlurTexture" not in param_names
             exact=expected <= names and not wrong_camera
-            if sampler_score and not wrong_camera:
+            if not wrong_camera and (sampler_score or not expected):
                 pair=pair_selected_pixel(data,p["offset"],properties=vertex_properties) if exact else None
                 pair_score=pair["score"] if pair else 0.0
                 pair_ok=bool(pair and pair.get("interface",{}).get("valid") and pair.get("vertex_format",{}).get("valid",True))
