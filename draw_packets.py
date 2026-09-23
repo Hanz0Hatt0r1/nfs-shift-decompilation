@@ -7,6 +7,7 @@ from typing import Any, Iterable
 
 from vertex_layout import build_layout_from_summary
 from bab_format import build_bab_bas_skeleton
+from static_draw import build_static_draw_contract
 
 SCHEMA = "SHIFT.DrawPacket/1"
 
@@ -522,6 +523,7 @@ def build_draw_packets(
                 packet["bind_skeleton"] = bind_skeleton
             if skeleton_resolution is not None:
                 packet["skeleton_resolution"] = skeleton_resolution
+            packet["static_draw"] = build_static_draw_contract(packet)
             packets.append(packet)
 
         for child in node.get("children", []) or []:
@@ -562,6 +564,16 @@ def build_draw_packets(
                 1
                 for packet in packets
                 if packet.get("bind_skeleton")
+            ),
+            "ready_static_draws": sum(
+                1
+                for packet in packets
+                if (packet.get("static_draw") or {}).get("ready") is True
+            ),
+            "blocked_static_draws": sum(
+                1
+                for packet in packets
+                if packet.get("static_draw") and not (packet.get("static_draw") or {}).get("ready")
             ),
             "unresolved_skeletons": [
                 {
