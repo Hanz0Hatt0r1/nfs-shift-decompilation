@@ -220,6 +220,16 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
                 "sampler_state": sampler_state,
             })
 
+        constant_payload = None
+        if uniform_binding.get("bindings"):
+            from material_constants import pack_material_constant_payload
+            constant_payload = pack_material_constant_payload(uniform_binding)
+            if constant_payload.get("ready") is False:
+                reasons.extend(
+                    constant_payload.get("blocking_reasons", [])
+                    or ["uniform-payload:not-ready"]
+                )
+
         constant_commands = []
         for uniform in uniform_binding.get("bindings", []) or []:
             try:
@@ -262,6 +272,7 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
             },
             "textures": texture_commands,
             "uniforms": uniform_binding,
+            "constant_payload": constant_payload,
             "constant_commands": constant_commands,
         })
 
@@ -395,6 +406,14 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
         uniform = submesh.get("uniforms") or {}
         if uniform.get("format") not in (None, "SHIFT.MaterialUniformBinding/1"):
             reasons.append("uniform-binding:invalid-format")
+        constant_payload = submesh.get("constant_payload") or {}
+        if constant_payload.get("format") not in (None, "SHIFT.MaterialConstantPayload/1"):
+            reasons.append("uniform-payload:invalid-format")
+        if constant_payload.get("ready") is False:
+            reasons.extend(
+                constant_payload.get("blocking_reasons", [])
+                or ["uniform-payload:not-ready"]
+            )
         for constant in submesh.get("constant_commands", []) or []:
             try:
                 register_index = int(constant.get("register_index"))
