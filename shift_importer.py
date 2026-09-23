@@ -1304,6 +1304,25 @@ def cmd_bab_corpus(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bab_payload_diff(args: argparse.Namespace) -> int:
+    """Compare two opaque BAB animation payloads byte-for-byte."""
+    from bab_payload_diff import compare_bab_payload_bytes
+
+    a = Path(args.first).read_bytes()
+    b = Path(args.second).read_bytes()
+    result = compare_bab_payload_bytes(a, b)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({
+        "size_delta": result["size_delta"],
+        "overlap_equal_ratio": result["overlap_equal_ratio"],
+        "equal_prefix_bytes": result["equal_prefix_bytes"],
+        "equal_suffix_bytes": result["equal_suffix_bytes"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1548,6 +1567,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="IR output directory produced by build-ir")
     p.add_argument("output", help="SHIFT.RenderBinding/1 JSON output")
     p.set_defaults(fn=cmd_render_bindings)
+
+    p = sp.add_parser("bab-payload-diff", help="compare two opaque BAB animation payload files without assigning semantics")
+    p.add_argument("first", help="first extracted .bab file")
+    p.add_argument("second", help="second extracted .bab file")
+    p.add_argument("output", help="SHIFT.BABPayloadByteComparison/1 JSON output")
+    p.set_defaults(fn=cmd_bab_payload_diff)
 
     p = sp.add_parser("bab-corpus", help="build an opaque BAB animation corpus report from resource analysis")
     p.add_argument("input", help="resource_analysis.json")
