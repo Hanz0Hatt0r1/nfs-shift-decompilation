@@ -112,11 +112,12 @@ def _validate_bind_skeleton(packet: dict[str, Any]) -> tuple[dict[str, Any] | No
 
     payload = skeleton.get("animation_payload") or {}
     palette = {
-        "format": "SHIFT.BonePalette/1",
+        "format": "SHIFT.BindLocalPalette/1",
         "source": "SHIFT.BindSkeleton/1",
+        "matrix_space": "local-bind",
         "matrix_layout": "3x4-row-major",
         "bone_count": bone_count,
-        "matrices_3x4": matrices,
+        "local_matrices_3x4": matrices,
         "animation_payload": {
             "offset": payload.get("offset"),
             "size": payload.get("size"),
@@ -125,6 +126,46 @@ def _validate_bind_skeleton(packet: dict[str, Any]) -> tuple[dict[str, Any] | No
         },
     }
     return palette, reasons
+
+
+def _validate_skin_pose(
+    packet: dict[str, Any],
+    bone_count: int,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    pose = packet.get("skin_pose")
+    reasons: list[str] = []
+    if not isinstance(pose, dict):
+        return None, ["skin-pose:missing"]
+
+    if pose.get("format") != "SHIFT.SkinPose/1":
+        reasons.append("skin-pose:wrong-format")
+    if pose.get("matrix_space") != "skinning":
+        reasons.append("skin-pose:wrong-matrix-space")
+
+    pose_bone_count = int(pose.get("bone_count", 0) or 0)
+    if pose_bone_count != bone_count:
+        reasons.append("skin-pose:bone-count-mismatch")
+
+    matrices = list(pose.get("matrices_3x4", []) or [])
+    if len(matrices) != bone_count:
+        reasons.append("skin-pose:palette-incomplete")
+    normalized: list[list[float]] = []
+    for index, matrix in enumerate(matrices):
+        if not isinstance(matrix, list) or len(matrix) != 12:
+            reasons.append(f"skin-pose:matrix-invalid:{index}")
+            continue
+        normalized.append([float(x) for x in matrix])
+
+    result = {
+        "format": "SHIFT.SkinPose/1",
+        "matrix_space": "skinning",
+        "matrix_layout": "3x4-row-major",
+        "bone_count": pose_bone_count,
+        "matrices_3x4": normalized,
+        "source": pose.get("source"),
+        "frame": pose.get("frame"),
+    }
+    return result, list(dict.fromkeys(reasons))
 
 
 def _validate_shader_selection(packet: dict[str, Any]) -> list[str]:
@@ -199,8 +240,12 @@ def build_skinned_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
     palette, skeleton_reasons = _validate_bind_skeleton(packet)
     reasons.extend(skeleton_reasons)
 
-    if palette and palette["bone_count"] > 0:
-        palette["index_range"] = [0, palette["bone_count"] - 1]
+    bone_count = palette["bone_count"] if palette else 0
+    if palette and bone_count > 0:
+        palette["index_range"] = [0, bone_count - 1]
+
+    skin_pose, pose_reasons = _validate_skin_pose(packet, bone_count)
+    reasons.extend(pose_reasons)
 
     reasons.extend(_validate_shader_selection(packet))
 
@@ -228,9 +273,10 @@ def build_skinned_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
                     "coverage"
                 )
             ),
-            "bone_count": palette["bone_count"] if palette else 0,
+            "bone_count": bone_count,
             "palette": palette,
         },
+        "skin_pose": skin_pose,
         "shader_selection": packet.get("shader_selection"),
         "submeshes": packet.get("submeshes", []),
         "external_samplers": external_samplers,
