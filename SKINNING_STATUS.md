@@ -17,3 +17,6 @@ BAB bone records и BAS hierarchy уже парсятся существующи
 ## Phase 23: shader readiness boundary
 
 `SHIFT.SkinnedDraw/1` now requires each selected material to carry a valid `SHIFT.LinkedShaderPair/1`, and rejects explicit shader translation errors. This keeps the CPU/reference and future GLES skinning paths aligned with the same shader readiness contract as `StaticDraw/1`.
+## Phase 24: bind-pose equivalence
+
+`skinned_reference.validate_bind_pose()` now provides a deterministic `SHIFT.SkinBindPoseCheck/1` report for an explicit `SHIFT.SkinPose/1`. It reports maximum Euclidean position error, per-vertex mismatches, tolerance, and influence validation without deriving the pose from BAS/BAB.
