@@ -13,15 +13,21 @@ def test_render_binding_end_to_end(tmp_path):
     (root/"scenes").mkdir(); (root/"meshes").mkdir(); (root/"materials").mkdir()
     scene={"format":"SHIFT.VHFScene","matrices":{"0":{"offset":"0 0 0","orientation":"0 0 0 1"},"1":{"offset":"1 2 3","orientation":"0 0 0 1","parent":"0"}},"nodes":[{"name":"BODY","type":"OBJECT","matrix":"1","resources":["vehicles/A/body.meb"]}]}
     mesh={"format":"SHIFT.MEB","vertex_count":3,"triangle_count":1,"primitives":[{"material":"vehicles/A/body.mtx","first_index":0,"index_count":3}]}
-    material={"format":"SHIFT.BMT","material":{"name":"BODY","shader":"render\\shaders\\missing.fx","technique":"Default","shaderparams":[]}}
+    material={"format":"SHIFT.BMT","material":{"name":"BODY","shader":"render\\shaders\\body.fx","technique":"Default","shaderparams":[]}}
     for d,n,x in [("scenes","scene.json",scene),("meshes","mesh.json",mesh),("materials","mat.json",material)]: (root/d/n).write_text(json.dumps(x),encoding="utf-8")
+    (root/"shaders").mkdir()
+    (root/"shaders"/"fx.json").write_text(json.dumps({"format":"HLSL"}),encoding="utf-8")
+    (root/"raw"/"fx").parent.mkdir(parents=True,exist_ok=True)
+    (root/"raw"/"fx").write_bytes(b"float4 main() : COLOR0 { return 1; }")
     manifest=[
       {"archive":"CAR.bff","path":"vehicles/A/car.vhf","output":"scenes/scene.json","raw":"raw/a"},
       {"archive":"CAR.bff","path":"vehicles/A/body.meb","output":"meshes/mesh.json","raw":"raw/b"},
-      {"archive":"CAR.bff","path":"vehicles/A/body.bmt","output":"materials/mat.json","raw":"raw/c"}]
+      {"archive":"CAR.bff","path":"vehicles/A/body.bmt","output":"materials/mat.json","raw":"raw/c"},
+      {"archive":"RENDER.bff","path":"render/shaders/body.fx","output":"shaders/fx.json","raw":"raw/fx"}]
     (root/"manifest.json").write_text(json.dumps(manifest),encoding="utf-8")
     (root/"raw").mkdir(); [(root/"raw"/x).write_bytes(b"") for x in ("a","b","c")]
     r=build_render_bindings(root)
     assert r["stats"]["draw_packets"]==1
     assert r["packets"][0]["world_matrix"][3:12:4]==[1,2,3]
-    assert r["packets"][0]["submeshes"][0]["material"]["unresolved_reason"]=="shader-source-not-in-IR"
+    assert r["packets"][0]["submeshes"][0]["material"]["shader"]=="render\\shaders\\body.fx"
+    assert r["packets"][0]["submeshes"][0]["material"]["selected_fxo"] is None
