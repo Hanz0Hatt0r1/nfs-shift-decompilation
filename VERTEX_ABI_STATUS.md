@@ -29,3 +29,6 @@ SHIFT.VertexLayout/1 now records ABI evidence explicitly instead of exposing onl
 `460/461` remain the primary unresolved render ABI because the current evidence does not prove the original D3D9 declaration (`D3DCOLOR` vs `UBYTE4N`) or channel byte order (`RGBA` vs `BGRA`).
 
 `SHIFT.StaticDraw/1` therefore blocks those attributes only when the selected shader binding actually consumes them.
+## Phase 28: vertex location collision guard
+
+`build_vertex_input_locations()` now rejects two classes of silent ABI corruption: one D3D9 input register mapping to multiple target locations, and multiple shader registers mapping to the same target location. The resulting `location_collisions` and `unresolved` records remain machine-readable.
