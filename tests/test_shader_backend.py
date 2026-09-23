@@ -99,7 +99,12 @@ def _shader_pair_with_different_varying_registers() -> tuple:
     dcl = (2 << 24) | 31
     out_t1 = 0x80000000 | 1 | (15 << 16) | (6 << 28)
     in_v0 = 0x80000000 | 0 | (15 << 16) | (1 << 28)
-    words_v = [version_v, dcl, 5 | (5 << 16), out_t1, 0xFFFF]
+    words_v = [
+        version_v,
+        dcl, 0 | (0 << 16), 0x80000000 | 0 | (15 << 16) | (1 << 28),
+        dcl, 5 | (5 << 16), out_t1,
+        0xFFFF,
+    ]
     words_p = [version_p, dcl, 5 | (5 << 16), in_v0, 0xFFFF]
     vs = parse_program(struct.pack("<" + "I" * len(words_v), *words_v))
     ps = parse_program(struct.pack("<" + "I" * len(words_p), *words_p))
