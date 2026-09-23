@@ -13,3 +13,7 @@
 `resource_formats.analyze_decoded_resource()` now recognizes binary `.bab` resources and routes them through the verified BAB parser, preserving the opaque animation tail with offset/size/SHA-256 instead of classifying it as unknown binary data.
 
 BAB bone records и BAS hierarchy уже парсятся существующими parsers. BAB animation tail пока хранится как opaque payload с offset/size/SHA-256; keyframe grammar не угадывается.
+
+## Phase 23: shader readiness boundary
+
+`SHIFT.SkinnedDraw/1` now requires each selected material to carry a valid `SHIFT.LinkedShaderPair/1`, and rejects explicit shader translation errors. This keeps the CPU/reference and future GLES skinning paths aligned with the same shader readiness contract as `StaticDraw/1`.
