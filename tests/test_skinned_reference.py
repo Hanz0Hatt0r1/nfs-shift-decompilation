@@ -126,7 +126,7 @@ def test_skin_draw_points_uses_explicit_skin_pose():
     result = skin_draw_points(
         draw,
         [(1, 2, 3), (0, 1, 0)],
-        [(0, 0, 0, 0), (1, 1, 0, 0)],
+        [(0, 0, 0, 0), (0, 1, 0, 0)],
         [(1, 0, 0, 0), (0.5, 0.5, 0, 0)],
     )
     assert result["format"] == "SHIFT.SkinnedReference/1"
