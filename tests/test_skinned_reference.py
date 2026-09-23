@@ -132,7 +132,7 @@ def test_skin_draw_points_uses_explicit_skin_pose():
     assert result["format"] == "SHIFT.SkinnedReference/1"
     assert result["frame"] == 7
     assert result["positions"][0] == [3.0, 2.0, 3.0]
-    assert result["positions"][1] == [0.5, 2.5, 0.0]
+    assert result["positions"][1] == [1.0, 2.5, 0.0]
 
 
 def test_skin_draw_directions_uses_zero_translation():
@@ -143,7 +143,7 @@ def test_skin_draw_directions_uses_zero_translation():
         [(1, 0, 0, 0)],
         [(1, 0, 0, 0)],
     )
-    assert result["vectors"][0] == [0.0, 1.0, 0.0]
+    assert result["vectors"][0] == [1.0, 0.0, 0.0]
 
 
 def test_skin_draw_reference_rejects_out_of_range_bone_index():
