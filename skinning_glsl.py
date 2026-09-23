@@ -29,6 +29,14 @@ def build_gles31_skinning_contract(
     skin = skinned_draw.get("skinning") or {}
     weights = skin.get("weights") or {}
     indices = skin.get("indices") or {}
+    layout = (skinned_draw.get("mesh") or {}).get("vertex_layout") or {}
+    position_matches = [
+        a for a in layout.get("attributes", []) or []
+        if str(a.get("property_id")) == "200"
+    ]
+    if len(position_matches) != 1 or position_matches[0].get("location") is None:
+        raise ValueError("missing unique POSITION0 vertex binding")
+    position_location = int(position_matches[0]["location"])
     palette = (skinned_draw.get("bind_skeleton") or {}).get("palette") or {}
     bone_count = int(palette.get("bone_count", 0) or 0)
 
@@ -59,7 +67,10 @@ def build_gles31_skinning_contract(
             "array_name": "u_bones",
         },
         "attributes": {
-            "position": {"location": 0, "glsl_type": "vec3"},
+            "position": {
+                "location": position_location,
+                "glsl_type": "vec3",
+            },
             "blendweight0": {
                 "location": int(weights["target_location"]),
                 "glsl_type": "vec4",
