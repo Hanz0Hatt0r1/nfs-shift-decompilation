@@ -13,3 +13,15 @@ def test_skinning_contract_requires_weight_index_pair():
     assert skinning_contract(["200","310"])["valid"] is False
     assert skinning_contract(["200","310","580"])["skinned"] is True
     assert skinning_contract(["200"])["skinned"] is False
+
+
+def test_skinning_contract_with_skeleton_records():
+    s = {
+        "num_bones": 2,
+        "bones": [{}, {}],
+    }
+    from skinning import build_skinning_contract
+    r = build_skinning_contract(["200", "310", "580"], s)
+    assert r["valid"] is True
+    assert r["skinned"] is True
+    assert r["bone_count"] == 2
