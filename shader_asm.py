@@ -513,7 +513,9 @@ def to_glsl(program:ShaderProgram, max_lines:int=10000)->str:
                 lhs=_glsl_reg(o[0],program.stage)
                 mask=o[0].write_mask or 'xyzw'
                 rhs=f'ivec4(round({_glsl_reg(o[1],program.stage)}))'
-                if mask!='xyzw': lhs += '.'+mask
+                if mask!='xyzw':
+                    lhs += '.'+mask
+                    rhs += '.'+mask
                 lines.append(f'  {lhs} = {rhs};')
             elif n=='RET':
                 lines.append('  return;')
