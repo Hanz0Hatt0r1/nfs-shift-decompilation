@@ -6,6 +6,7 @@ from typing import Any
 from material_linker import link_material
 from static_draw import build_static_draw_contract
 from renderer_resources import build_resource_index
+from render_command import build_render_command
 from vertex_layout import build_layout_from_summary
 
 def norm_ref(v: str) -> str:
@@ -177,29 +178,36 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
                             })
             for child in node.get("children",[]) or []: walk(child)
         for n in scene.get("nodes",[]) or []: walk(n)
+    resources = build_resource_index(
+        [
+            {
+                **row,
+                "analysis": (
+                    _load_json(root, row)
+                    if norm_ref(row.get("path", "")).endswith(".dds")
+                    and row.get("output")
+                    else row.get("analysis", {})
+                ),
+            }
+            for row in rows
+        ],
+        texture_bindings,
+    )
+    render_commands = [
+        build_render_command(draw, resources)
+        for draw in static_draws
+    ]
     return {
         "format": "SHIFT.RenderBinding/1",
         "packets": packets,
         "static_draws": static_draws,
-        "resources": build_resource_index(
-            [
-                {
-                    **row,
-                    "analysis": (
-                        _load_json(root, row)
-                        if norm_ref(row.get("path", "")).endswith(".dds")
-                        and row.get("output")
-                        else row.get("analysis", {})
-                    ),
-                }
-                for row in rows
-            ],
-            texture_bindings,
-        ),
+        "render_commands": render_commands,
+        "resources": resources,
         "stats": {
             "scenes": len(scenes),
             "draw_packets": len(packets),
             "static_draws": len(static_draws),
+            "render_commands": len(render_commands),
             "ready_static_draws": sum(1 for x in static_draws if x.get("ready")),
             "blocked_static_draws": sum(1 for x in static_draws if not x.get("ready")),
             "unresolved": unresolved,
