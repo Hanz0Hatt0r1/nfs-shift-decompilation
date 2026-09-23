@@ -101,7 +101,17 @@ def _uniform_contract(material: dict[str, Any], selection: dict[str, Any]) -> tu
         return {"format": "SHIFT.MaterialUniformBinding/1", "bindings": [], "optimized_out_or_unreflected": []}, []
 
     reasons: list[str] = []
-    if uniform_binding.get("format") != "SHIFT.MaterialUniformBinding/1":
+    if uniform_binding.get("format") is None and not (
+        uniform_binding.get("bindings") or uniform_binding.get("optimized_out_or_unreflected")
+    ):
+        # Preserve compatibility with legacy empty fixtures while keeping all
+        # non-empty bindings schema-strict.
+        uniform_binding = {
+            "format": "SHIFT.MaterialUniformBinding/1",
+            "bindings": [],
+            "optimized_out_or_unreflected": [],
+        }
+    elif uniform_binding.get("format") != "SHIFT.MaterialUniformBinding/1":
         return uniform_binding, ["material-uniform-binding:invalid"]
 
     for binding in uniform_binding.get("bindings", []) or []:
