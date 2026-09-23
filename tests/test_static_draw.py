@@ -170,3 +170,57 @@ def test_static_draw_blocks_linked_glsl_translation_error():
     r = build_static_draw_contract(packet)
     assert r["ready"] is False
     assert "shader-glsl:error" in r["blocking_reasons"]
+
+
+def test_static_draw_accepts_valid_uniform_binding():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["shader_selection"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "primerBasis",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 5,
+            "register_count": 1,
+            "ctab_type": "float4",
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is True
+    assert result["blocking_reasons"] == []
+
+
+def test_static_draw_rejects_uniform_binding_with_unexpected_register_set():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["shader_selection"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "primerBasis",
+            "binding": "unexpected-register-set",
+            "register_set": 3,
+            "register_index": 5,
+            "register_count": 1,
+        }],
+    }
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "material-uniform-binding:register-set:3" in result["blocking_reasons"]
+
+
+def test_static_draw_rejects_uniform_shape_warning():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["shader_selection"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "primerBasis",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 5,
+            "register_count": 1,
+            "shape_warning": "value-exceeds-register-range",
+        }],
+    }
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "material-uniform-binding:value-exceeds-register-range" in result["blocking_reasons"]
