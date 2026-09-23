@@ -35,6 +35,14 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         if pair.get("vertex_format", {}).get("valid") is False:
             reasons.append("vertex-format:invalid")
 
+    linked_pair = selection.get("linked_shader_pair")
+    if not linked_pair:
+        reasons.append("shader-glsl:missing")
+    elif linked_pair.get("format") != "SHIFT.LinkedShaderPair/1":
+        reasons.append("shader-glsl:invalid")
+    if selection.get("linked_shader_error"):
+        reasons.append("shader-glsl:error")
+
     explicit_textures = []
     unresolved_textures = []
     for tex in material.get("textures", []) or []:
