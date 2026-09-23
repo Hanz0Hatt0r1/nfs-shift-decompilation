@@ -454,10 +454,11 @@ def test_reference_renderer_textured_cli(tmp_path):
             "--height",
             "32",
         ],
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
     )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
     result = json.loads(proc.stdout)
     assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
     assert result["texture_format"] == "RGBA32"
