@@ -381,3 +381,96 @@ def test_render_command_propagates_sampler_state():
     assert texture["sampler_state"]["format"] == "SHIFT.SamplerState/1"
     assert texture["sampler_state"]["min_filter"] == "LINEAR"
     assert texture["sampler_state"]["address_v"] == "CLAMP_TO_EDGE"
+
+
+def test_render_command_accepts_distinct_sampler_registers():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["textures"] = [
+        {
+            "material_parameter": "Diffuse",
+            "ref": "textures/diffuse.dds",
+            "slot": 1,
+            "d3d9_sampler_register": 1,
+            "sampler": "diffuseMap",
+            "binding_source": "fxo-ctab",
+        },
+        {
+            "material_parameter": "Specular",
+            "ref": "textures/specular.dds",
+            "slot": 2,
+            "d3d9_sampler_register": 2,
+            "sampler": "specularMap",
+            "binding_source": "fxo-ctab",
+        },
+    ]
+    resources = _resources()
+    resources["textures"].append({
+        "id": "tex_specular",
+        "path": "textures/specular.dds",
+        "gpu_ready": True,
+        "blocking_reasons": [],
+    })
+    resources["samplers"].append({
+        "id": "smp_specular",
+        "state": {
+            "format": "SHIFT.SamplerState/1",
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    })
+    resources["bindings"].append({
+        "id": "tb_specular",
+        "texture_id": "tex_specular",
+        "sampler_id": "smp_specular",
+        "material_parameter": "Specular",
+        "d3d9_sampler_register": 2,
+        "gpu_ready": True,
+        "blocking_reasons": [],
+    })
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, resources)
+    assert result["ready"] is True
+    assert [x["d3d9_sampler_register"] for x in result["submeshes"][0]["textures"]] == [1, 2]
+
+
+def test_render_command_rejects_sampler_register_collision():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["textures"] = [
+        {
+            "material_parameter": "Diffuse",
+            "ref": "textures/body.dds",
+            "slot": 1,
+            "d3d9_sampler_register": 1,
+            "sampler": "diffuseMap",
+            "binding_source": "fxo-ctab",
+        },
+        {
+            "material_parameter": "Specular",
+            "ref": "textures/body.dds",
+            "slot": 1,
+            "d3d9_sampler_register": 1,
+            "sampler": "specularMap",
+            "binding_source": "fxo-ctab",
+        },
+    ]
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "texture-command:sampler-register-collision:1" in result["blocking_reasons"]
+
+
+def test_render_command_rejects_bad_sampler_state():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["textures"][0]["sampler"] = "diffuseMap"
+    resources = _resources()
+    resources["samplers"][0]["state"] = {
+        "format": "SHIFT.NotASamplerState/1",
+        "ready": False,
+        "blocking_reasons": ["sampler-min-filter:unsupported:MAGIC"],
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, resources)
+    assert result["ready"] is False
+    assert "texture-command:sampler-state-invalid:0" in result["blocking_reasons"]
