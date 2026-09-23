@@ -388,7 +388,8 @@ def build_draw_packets(
                     "resolved": mesh_ref,
                     "vertex_count": analysis.get("vertex_count"),
                     "triangle_count": analysis.get("triangle_count"),
-                    "vertex_layout": build_layout_from_summary(analysis),\n                    "skinning": analysis.get("skinning") or {},
+                    "vertex_layout": build_layout_from_summary(analysis),
+                    "skinning": analysis.get("skinning") or {},
                 },
                 "submeshes": packet_prims,
                 "shader_selection": {
