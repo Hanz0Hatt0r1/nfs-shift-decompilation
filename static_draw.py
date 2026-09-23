@@ -192,13 +192,24 @@ def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
     submeshes = []
     material_ready = True
     material_reasons: list[str] = []
+    total_indices = int(mesh.get("triangle_count", 0) or 0) * 3
     for submesh in packet.get("submeshes", []) or []:
         contract = _material_contract(submesh.get("material"))
         material_ready = material_ready and contract["ready"]
         material_reasons.extend(contract.get("blocking_reasons", []))
+
+        first_index = int(submesh.get("first_index", 0) or 0)
+        index_count = int(submesh.get("index_count", 0) or 0)
+        if first_index < 0 or index_count < 0:
+            reasons.append("draw:index-range-negative")
+        if index_count % 3:
+            reasons.append("draw:index-count-not-triangle-aligned")
+        if total_indices and first_index + index_count > total_indices:
+            reasons.append("draw:index-range-out-of-bounds")
+
         submeshes.append({
-            "first_index": submesh.get("first_index", 0),
-            "index_count": submesh.get("index_count", 0),
+            "first_index": first_index,
+            "index_count": index_count,
             "material": contract,
         })
 

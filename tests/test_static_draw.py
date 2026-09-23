@@ -284,3 +284,29 @@ def test_static_draw_keeps_external_specialized_texture_as_external_requirement(
     result = build_static_draw_contract(packet)
     assert result["ready"] is True
     assert result["submeshes"][0]["material"]["textures"][0]["resolution_status"] == "external"
+
+
+def test_static_draw_rejects_negative_index_range():
+    packet = _packet()
+    packet["submeshes"][0]["first_index"] = -1
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "draw:index-range-negative" in result["blocking_reasons"]
+
+
+def test_static_draw_rejects_non_triangle_aligned_index_count():
+    packet = _packet()
+    packet["submeshes"][0]["index_count"] = 2
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "draw:index-count-not-triangle-aligned" in result["blocking_reasons"]
+
+
+def test_static_draw_rejects_index_range_beyond_mesh():
+    packet = _packet()
+    packet["submeshes"][0]["first_index"] = 3
+    packet["submeshes"][0]["index_count"] = 3
+    packet["mesh"]["triangle_count"] = 1
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is False
+    assert "draw:index-range-out-of-bounds" in result["blocking_reasons"]
