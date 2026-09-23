@@ -247,3 +247,19 @@ def test_draw_packet_carries_explicit_vertex_layout():
     layout = result["packets"][0]["mesh"]["vertex_layout"]
     assert layout["format"] == "SHIFT.VertexLayout/1"
     assert {x["property_id"] for x in layout["attributes"]} == {"200", "220", "130"}
+
+
+def test_draw_packet_preserves_external_sampler_requirements():
+    scene, mesh, material, texture, shader = _records()
+    material_binding = [{
+        "material": "BODY",
+        "bindings": [
+            {"binding": "external-or-specialised", "sampler": "environmentMap", "sampler_type": "samplerCUBE", "d3d9_sampler_register": 3},
+        ],
+        "selection_status": "unique",
+        "shader_pair": {"vertex_bindings": [{"property_id": "200", "target_location": 0}]},
+    }]
+    result = build_draw_packets(scene, mesh, material, texture, shader, material_binding)
+    sel = result["packets"][0]["submeshes"][0]["material"]["shader_selection"]
+    assert sel["external_samplers"][0]["sampler"] == "environmentMap"
+    assert sel["vertex_bindings"][0]["target_location"] == 0
