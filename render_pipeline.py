@@ -99,7 +99,7 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
                                 pn=norm_ref(rr["path"])
                                 if pn.startswith(prefix) and pn.endswith(".fxo"):
                                     fxo.append((rr["path"],_load_raw(root,rr)))
-                            binding=link_material(material,fx_source,fxo,textures)
+                            binding=link_material(material,fx_source,fxo,textures,vertex_properties=mesh.get("vertex_properties",[]))
                         else:
                             binding={"format":"SHIFT.MaterialBinding/1","material":material.get("name"),"shader":shader_ref,"selected_fxo":None,"bindings":[],"unresolved_reason":"shader-source-not-in-IR"}
                     else:
