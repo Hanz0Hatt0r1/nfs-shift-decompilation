@@ -65,3 +65,35 @@ def test_static_draw_contract_rejects_ambiguous_shader_pair():
     r = build_static_draw_contract(packet)
     assert r["ready"] is False
     assert "shader-selection:ambiguous" in r["blocking_reasons"]
+
+
+def test_static_draw_blocks_ambiguous_vertex_abi_when_shader_uses_it():
+    packet = _packet()
+    packet["mesh"]["vertex_layout"]["attributes"].append({
+        "property_id": "460",
+        "location": 1,
+        "offset": 12,
+        "element_size": 4,
+        "abi_status": "ambiguous",
+    })
+    packet["submeshes"][0]["material"]["shader_selection"]["shader_pair"]["vertex_bindings"] = [{
+        "property_id": "460",
+        "matched": True,
+    }]
+    r = build_static_draw_contract(packet)
+    assert r["ready"] is False
+    assert "vertex-layout:ambiguous-attribute:460" in r["blocking_reasons"]
+
+
+def test_static_draw_allows_unused_ambiguous_vertex_abi():
+    packet = _packet()
+    packet["mesh"]["vertex_layout"]["attributes"].append({
+        "property_id": "460",
+        "location": 1,
+        "offset": 12,
+        "element_size": 4,
+        "abi_status": "ambiguous",
+    })
+    packet["submeshes"][0]["material"]["shader_selection"]["shader_pair"]["vertex_bindings"] = []
+    r = build_static_draw_contract(packet)
+    assert r["ready"] is True
