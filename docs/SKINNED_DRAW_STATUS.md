@@ -27,3 +27,13 @@ BLENDWEIGHT0 + BLENDINDICES0, four values each, with indices addressing
 This phase does not decode animation keyframes, compose parent matrices into
 global pose matrices, or issue GL calls. Those are separate evidence-backed
 steps.
+
+
+### Automatic DrawPacket linkage
+
+build_draw_packets() can now consume SHIFT.BAB and SHIFT.BAS analysis records. For a skinned MEB it attaches SHIFT.BindSkeleton/1 only when one unique BAB/BAS pair is supported by exact MEB bone-name evidence:
+
+- BAB bone order equals the complete MEB skeleton.bone_names list.
+- BAS node names are unique and cover exactly the same name set.
+- More than one exact pair is reported as ambiguous; the packet is not made render-ready by choosing one arbitrarily.
+- No BAB/BAS match is not fatal to static packet construction; the packet carries skeleton_resolution diagnostics and remains unsuitable for a ready skinned draw.

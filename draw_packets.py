@@ -6,6 +6,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 from vertex_layout import build_layout_from_summary
+from bab_format import build_bab_bas_skeleton
 
 SCHEMA = "SHIFT.DrawPacket/1"
 
@@ -92,6 +93,100 @@ def resolve_ref(
 
 def _resource_ref(rec: dict[str, Any]) -> dict[str, Any]:
     return {"archive": rec.get("archive"), "path": rec.get("path")}
+
+
+def _analysis(rec: dict[str, Any] | None) -> dict[str, Any]:
+    return (rec or {}).get("analysis") or {}
+
+
+def resolve_bind_skeleton(
+    mesh_analysis: dict[str, Any],
+    bab_records: Iterable[dict[str, Any]],
+    bas_records: Iterable[dict[str, Any]],
+) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """Resolve BAB/BAS only from exact MEB bone-name evidence.
+
+    No basename/nearest-resource heuristic is used here. A pair is eligible only
+    when the BAB bone order exactly matches the MEB bone-name list and the BAS
+    node-name set matches the same list with no duplicates. More than one pair is
+    treated as ambiguous.
+    """
+    skeleton = mesh_analysis.get("skeleton") or {}
+    expected = [str(x) for x in skeleton.get("bone_names", []) if str(x)]
+    if not expected:
+        return None, {
+            "status": "unresolved",
+            "method": None,
+            "reason": "meb-bone-names-missing",
+            "candidate_pairs": [],
+        }
+
+    expected_unique = len(expected) == len(set(expected))
+    if not expected_unique:
+        return None, {
+            "status": "unresolved",
+            "method": None,
+            "reason": "meb-bone-names-ambiguous",
+            "candidate_pairs": [],
+        }
+
+    babs = [
+        r for r in bab_records
+        if _analysis(r).get("format") == "SHIFT.BAB"
+    ]
+    bass = [
+        r for r in bas_records
+        if _analysis(r).get("format") == "SHIFT.BAS"
+    ]
+
+    candidates: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for bab_rec in babs:
+        bab = _analysis(bab_rec)
+        bab_names = [
+            str(b.get("name"))
+            for b in bab.get("bones", []) or []
+            if b.get("name") is not None
+        ]
+        if bab_names != expected:
+            continue
+        if len(bab_names) != len(set(bab_names)):
+            continue
+
+        for bas_rec in bass:
+            bas = _analysis(bas_rec)
+            bas_nodes = [
+                n for n in bas.get("nodes", []) or []
+                if n.get("name")
+            ]
+            bas_names = [str(n["name"]) for n in bas_nodes]
+            if len(bas_names) != len(set(bas_names)):
+                continue
+            if set(bas_names) != set(expected):
+                continue
+            candidates.append((bab_rec, bas_rec))
+
+    candidate_rows = [
+        {
+            "bab": _resource_ref(bab_rec),
+            "bas": _resource_ref(bas_rec),
+        }
+        for bab_rec, bas_rec in candidates
+    ]
+    if len(candidates) != 1:
+        return None, {
+            "status": "ambiguous" if len(candidates) > 1 else "unresolved",
+            "method": "exact-meb-bone-name-set",
+            "reason": "multiple-exact-pairs" if len(candidates) > 1 else "no-exact-bab-bas-pair",
+            "candidate_pairs": candidate_rows,
+        }
+
+    bab_rec, bas_rec = candidates[0]
+    bind = build_bab_bas_skeleton(_analysis(bab_rec), _analysis(bas_rec))
+    return bind, {
+        "status": "resolved",
+        "method": "exact-meb-bone-name-set",
+        "candidate_pairs": candidate_rows,
+    }
 
 
 def compile_material(
@@ -265,6 +360,8 @@ def build_draw_packets(
     texture_records: Iterable[dict[str, Any]] = (),
     shader_records: Iterable[dict[str, Any]] = (),
     material_binding_records: Iterable[dict[str, Any]] = (),
+    bab_records: Iterable[dict[str, Any]] = (),
+    bas_records: Iterable[dict[str, Any]] = (),
 ) -> dict[str, Any]:
     """Build one neutral draw packet per VHF node/MEB resource pair."""
     scene_records = list(scene_records)
@@ -273,6 +370,8 @@ def build_draw_packets(
     texture_records = list(texture_records)
     shader_records = list(shader_records)
     material_binding_records = list(material_binding_records)
+    bab_records = list(bab_records)
+    bas_records = list(bas_records)
     material_binding_by_name = {
         str(r.get("material")): r
         for r in material_binding_records
@@ -376,7 +475,16 @@ def build_draw_packets(
                     ),
                 })
 
-            packets.append({
+            bind_skeleton = None
+            skeleton_resolution = None
+            if (analysis.get("skinning") or {}).get("skinned") is True:
+                bind_skeleton, skeleton_resolution = resolve_bind_skeleton(
+                    analysis,
+                    bab_records,
+                    bas_records,
+                )
+
+            packet = {
                 "scene": _resource_ref(scene_rec),
                 "node": {
                     "name": node.get("name"),
@@ -407,7 +515,12 @@ def build_draw_packets(
                         else "none"
                     )
                 },
-            })
+            }
+            if bind_skeleton is not None:
+                packet["bind_skeleton"] = bind_skeleton
+            if skeleton_resolution is not None:
+                packet["skeleton_resolution"] = skeleton_resolution
+            packets.append(packet)
 
         for child in node.get("children", []) or []:
             emit_node(scene_rec, child)
@@ -443,6 +556,24 @@ def build_draw_packets(
             "texture_bindings": texture_bindings,
             "unresolved_mesh_refs": unresolved_meshes,
             "unresolved_material_refs": unresolved_materials,
+            "resolved_skeletons": sum(
+                1
+                for packet in packets
+                if packet.get("bind_skeleton")
+            ),
+            "unresolved_skeletons": [
+                {
+                    "scene": packet.get("scene"),
+                    "node": packet.get("node", {}).get("name"),
+                    "mesh": packet.get("mesh", {}).get("ref"),
+                    "resolution": packet.get("skeleton_resolution"),
+                }
+                for packet in packets
+                if (
+                    (packet.get("mesh", {}).get("skinning") or {}).get("skinned") is True
+                    and not packet.get("bind_skeleton")
+                )
+            ],
         },
     }
 
@@ -513,6 +644,17 @@ def build_from_analysis(
             }
             shaders.append(row)
 
+    bab_records = [
+        r for r in records
+        if norm_ref(r.get("path")).endswith(".bab")
+        and (r.get("analysis") or {}).get("format") == "SHIFT.BAB"
+    ]
+    bas_records = [
+        r for r in records
+        if norm_ref(r.get("path")).endswith(".bas")
+        and (r.get("analysis") or {}).get("format") == "SHIFT.BAS"
+    ]
+
     return build_draw_packets(
         scenes,
         meshes,
@@ -520,6 +662,8 @@ def build_from_analysis(
         textures,
         shaders,
         material_bindings,
+        bab_records,
+        bas_records,
     )
 
 
