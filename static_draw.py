@@ -66,7 +66,7 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         else:
             explicit_textures.append(item)
 
-    uniforms = selection.get("uniform_binding") or material.get("uniform_binding") or {}
+    uniforms, uniform_reasons = _uniform_contract(material, selection)
     external_samplers = selection.get("external_samplers") or material.get("external_samplers") or []
 
     texture_blockers = [
@@ -83,13 +83,60 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         "unresolved_textures": unresolved_textures,
         "external_samplers": external_samplers,
         "uniform_binding": uniforms,
-        "ready": not reasons and not unresolved_textures and not texture_blockers,
+        "ready": not reasons and not unresolved_textures and not texture_blockers and not uniform_reasons,
         "blocking_reasons": (
             reasons
             + (["material-texture-binding:unresolved"] if unresolved_textures else [])
             + texture_blockers
+            + uniform_reasons
         ),
     }
+
+
+def _uniform_contract(material: dict[str, Any], selection: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    uniform_binding = selection.get("uniform_binding") or material.get("uniform_binding")
+    if uniform_binding is None:
+        # Materials without reflected numeric shader params may legitimately have
+        # no uniform bindings. The linker still emits a typed empty contract.
+        return {"format": "SHIFT.MaterialUniformBinding/1", "bindings": [], "optimized_out_or_unreflected": []}, []
+
+    reasons: list[str] = []
+    if uniform_binding.get("format") is None and not (
+        uniform_binding.get("bindings") or uniform_binding.get("optimized_out_or_unreflected")
+    ):
+        # Preserve compatibility with legacy empty fixtures while keeping all
+        # non-empty bindings schema-strict.
+        uniform_binding = {
+            "format": "SHIFT.MaterialUniformBinding/1",
+            "bindings": [],
+            "optimized_out_or_unreflected": [],
+        }
+    elif uniform_binding.get("format") != "SHIFT.MaterialUniformBinding/1":
+        return uniform_binding, ["material-uniform-binding:invalid"]
+
+    for binding in uniform_binding.get("bindings", []) or []:
+        if binding.get("binding") != "material-constant":
+            reasons.append(
+                f"material-uniform-binding:register-set:{binding.get('register_set')}"
+            )
+        try:
+            register_index = int(binding.get("register_index"))
+        except (TypeError, ValueError):
+            reasons.append("material-uniform-binding:register-index-invalid")
+        else:
+            if register_index < 0:
+                reasons.append("material-uniform-binding:register-index-invalid")
+        try:
+            register_count = int(binding.get("register_count"))
+        except (TypeError, ValueError):
+            reasons.append("material-uniform-binding:register-count-invalid")
+        else:
+            if register_count <= 0:
+                reasons.append("material-uniform-binding:register-count-invalid")
+        if binding.get("shape_warning"):
+            reasons.append(f"material-uniform-binding:{binding['shape_warning']}")
+
+    return uniform_binding, list(dict.fromkeys(reasons))
 
 
 def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
