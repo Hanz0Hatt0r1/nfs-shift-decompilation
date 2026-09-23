@@ -450,6 +450,7 @@ def test_render_command_rejects_sampler_register_collision():
             "d3d9_sampler_register": 1,
             "sampler": "specularMap",
             "binding_source": "fxo-ctab",
+            "resolved": [{"path": "textures/body.dds"}],
         },
     ]
     draw = build_static_draw_contract(packet)
