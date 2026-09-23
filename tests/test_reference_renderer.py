@@ -1,3 +1,4 @@
+from pathlib import Path
 from reference_renderer import orthographic_mvp, rasterize_mesh, render_mesh_json
 
 
@@ -402,4 +403,64 @@ def test_reference_renderer_executes_textured_render_command(tmp_path):
     )
     assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
     assert result["command_contract"]["validation"]["valid"] is True
+    assert out.exists()
+
+
+def test_reference_renderer_textured_cli(tmp_path):
+    import json
+    import struct
+    import subprocess
+    import sys
+
+    command_path = tmp_path / "command.json"
+    mesh_path = tmp_path / "mesh.json"
+    texture_path = tmp_path / "texture.dds"
+    out = tmp_path / "cli.ppm"
+
+    command_path.write_text(json.dumps(_render_command_ready()), encoding="utf-8")
+    mesh_path.write_text(
+        json.dumps({
+            **_triangle(),
+            "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+        }),
+        encoding="utf-8",
+    )
+
+    values = (
+        124, 0, 1, 1, 0, 0, 1,
+        *([0] * 11),
+        32, 0x40, 0, 32,
+        0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000,
+        0, 0, 0, 0, 0,
+    )
+    texture = b"DDS " + struct.pack("<31I", *values) + struct.pack("<I", 0xFF2010FF)
+    texture_path.write_bytes(texture)
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "reference_renderer.py"),
+            str(command_path),
+            "--render-command",
+            "--textured",
+            "--mesh",
+            str(mesh_path),
+            "--texture",
+            str(texture_path),
+            "--output",
+            str(out),
+            "--width",
+            "32",
+            "--height",
+            "32",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    result = json.loads(proc.stdout)
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert result["texture_format"] == "RGBA32"
+    assert len(result["output"]) > 0
     assert out.exists()
