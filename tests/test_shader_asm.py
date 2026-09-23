@@ -71,3 +71,12 @@ def test_predication_is_preserved_in_ir():
     )
     glsl = to_glsl(p)
     assert "mix(r0,r1,predicate.xxxx)" in glsl
+
+
+def test_glsl_translation_covers_abs_and_derivative_aliases():
+    abs_glsl = to_glsl(_program_with(35, "ABS"))
+    ddx_glsl = to_glsl(_program_with(84, "DDX"))
+    ddy_glsl = to_glsl(_program_with(85, "DDY"))
+    assert "abs(r1)" in abs_glsl
+    assert "dFdx(r1)" in ddx_glsl
+    assert "dFdy(r1)" in ddy_glsl
