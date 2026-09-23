@@ -37,3 +37,8 @@ The opcode histogram reproduces the previously measured corpus counts exactly, w
 The GLSL backend is deliberately a **first-pass semantic lowering**, not yet the final production renderer. Structured control flow, exact sampler state, TEXLDD/TEXLDL gradients/LOD, relative constant addressing, SINCOS variants, and full CTAB-to-material binding still need dedicated lowering.
 
 The compiled D3D9 token stream remains the exact fallback representation; no original shader is discarded when the GLSL translator does not yet understand an instruction.
+
+
+## Phase 13
+
+GLSL ES 3.1 lowering now covers the D3D9 ABS opcode and the DDX/DDY derivative aliases (DSX/DSY), keeping these common semantic operations out of the unsupported path.
