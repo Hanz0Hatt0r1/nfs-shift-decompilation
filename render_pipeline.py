@@ -4,6 +4,7 @@ import json, math
 from pathlib import Path
 from typing import Any
 from material_linker import link_material
+from vertex_layout import build_layout_from_summary
 
 def norm_ref(v: str) -> str:
     return v.replace("\\","/").lower().lstrip("./")
