@@ -393,7 +393,7 @@ def test_render_command_accepts_distinct_sampler_registers():
             "d3d9_sampler_register": 1,
             "sampler": "diffuseMap",
             "binding_source": "fxo-ctab",
-            "resolved": [{"path": "textures/diffuse.dds"}],
+            "resolved": [{"path": "textures/body.dds"}],
         },
         {
             "material_parameter": "Specular",
@@ -406,6 +406,12 @@ def test_render_command_accepts_distinct_sampler_registers():
         },
     ]
     resources = _resources()
+    resources["textures"].append({
+        "id": "tex_specular",
+        "path": "textures/specular.dds",
+        "gpu_ready": True,
+        "blocking_reasons": [],
+    })
     resources["samplers"].append({
         "id": "smp_specular",
         "state": {
