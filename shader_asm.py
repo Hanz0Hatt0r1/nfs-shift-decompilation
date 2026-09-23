@@ -392,8 +392,6 @@ def to_glsl(
     for i in program.temps: lines.append(f'vec4 r{i}=vec4(0.0);')
     if not 0 <= constant_binding <= 31:
         raise ValueError("constant UBO binding must fit the GLES implementation range")
-    for bank,rt in (('c',2),('c2',11),('c3',12),('c4',13)):
-        lines.append(f'vec4 {bank}[{_bank_size(program,rt)}];')
     lines.insert(
         2,
         f'layout(std140, binding = {constant_binding}) uniform ShiftD3D9Constants {{'
