@@ -5,6 +5,8 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
+Baseline `main` is at phase 10. The current CI baseline is 107 passed, 2 skipped in Python, plus successful native IR regression.
+
 The immediate target is a deterministic pipeline:
 
 `BFF -> IR -> VHF/MEB/BMT/DDS -> shader permutation -> DrawPacket -> renderer`
@@ -22,12 +24,12 @@ the original BFF archives at runtime.
 | BAB bone table | verified parser | bone table + conservative opaque animation tail |
 | BAB <-> BAS linkage | active | deterministic bone mapping and diagnostics |
 | MEB vertex semantics | verified for known BMW samples | semantic usage/index mappings covered by tests |
-| Exact vertex packing | next | D3DDECLTYPE/offset/stride proven for target meshes |
+| Exact vertex packing | active | deterministic storage/stride plus explicit evidence states; remaining ambiguity is isolated and render-blocking when consumed |
 | BMT -> FX -> FXO | active | deterministic VS/PS + sampler permutation per material |
 | Shader backend | active | target BMW permutations compile in the selected GLES profile |
 | DrawPacket | active | all target packets carry proven layout/material/shader bindings |
-| Desktop reference renderer | next | one static BMW vehicle renders from IR only |
-| Skinning | next | bind-pose skinned mesh matches source geometry |
+| Desktop reference renderer | geometry oracle | neutral geometry renderer exists; full material/shader render remains the milestone |
+| Skinning | foundation | explicit skin pose + CPU reference + GLES contract exist; bind-pose/animation evaluation remains |
 | BAB animation payload | later | clip/keyframe grammar proven on multiple samples |
 | SGB scene graph | later | one track section assembles from IR |
 | Android runtime | later | renderer consumes IR without importer dependencies |
