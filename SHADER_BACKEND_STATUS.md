@@ -34,3 +34,7 @@ Next target: use the BMW M3 package as the golden path for exact sampler/vertex-
 ## Phase 38: linked GLES shader validation
 
 `shader_backend.validate_linked_shader_pair()` now validates a `SHIFT.LinkedShaderPair/1` by compiling vertex/fragment stages separately and, when `glslangValidator` is available, linking the pair with `-l`. The result is `SHIFT.GLESShaderValidation/1` with explicit `valid`, `invalid`, or `unavailable` status and machine-readable blocking reasons.
+
+## Phase 39: RenderCommand integration
+
+The GLES shader compiler validator can now be attached to `SHIFT.RenderCommand/1` on demand. This keeps expensive compiler work out of the default render-link pass while making compile/link evidence part of the final submission contract when requested.
