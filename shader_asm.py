@@ -59,6 +59,7 @@ class Instruction:
     controls:int
     predicated:bool
     operands:list[Operand]=field(default_factory=list)
+    predicate:Optional[Operand]=None
 
 @dataclass
 class ShaderProgram:
@@ -239,9 +240,7 @@ def parse_program(data:bytes, blob_offset:int=0, blob_end:int|None=None, stage:s
 
         name=OPCODES.get(op,f'OP_{op}')
         if name.startswith('OP_'): unsupported.add(op)
-        i=Instruction(pos,op,name,tok,ln,(tok>>16)&0xff,pred,operands)
-        if predicate is not None:
-            setattr(i,'predicate',predicate)
+        i=Instruction(pos,op,name,tok,ln,(tok>>16)&0xff,pred,operands,predicate)
         ins.append(i)
         pos=declared_end
     return ShaderProgram(
@@ -342,7 +341,9 @@ def _cmp_expr(a:str,b:str,controls:int)->str:
 
 def _bool_condition(o:Operand,stage:str)->str:
     x=_glsl_reg(o,stage)
-    return f'({x}.x)' if o.reg_type==14 and (o.swizzle or 'x') in ('x','r') else f'all({x})'
+    if o.reg_type in (14,19) and (o.swizzle or 'x') in ('x','r'):
+        return f'({x})'
+    return f'all({x})'
 
 def _tex_coord(coord:Operand, sampler:Operand, program:ShaderProgram)->str:
     c=_glsl_reg(coord,program.stage)
