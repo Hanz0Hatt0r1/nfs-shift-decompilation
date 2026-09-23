@@ -374,6 +374,86 @@ def _xml_tree(node: ET.Element, depth: int = 0, max_depth: int = 12) -> dict[str
     return out
 
 
+
+_SGB_ALLOWED = set(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_./\\-")
+_SGB_EXTENSIONS = tuple(
+    x.encode("ascii")
+    for x in ("meb", "bmt", "mtx", "dds", "csm", "vhf", "fxo", "fx", "sgb", "bml", "bas")
+)
+_SGB_KIND = {
+    ".meb": "geometry",
+    ".bmt": "material",
+    ".mtx": "material-source",
+    ".dds": "texture",
+    ".csm": "collision",
+    ".vhf": "scene-source",
+    ".fxo": "shader-cache",
+    ".fx": "shader-source",
+    ".sgb": "scene-source",
+    ".bml": "data",
+    ".bas": "skeleton-source",
+}
+
+
+def _sgb_strings(data: bytes, base_offset: int = 0) -> list[dict[str, Any]]:
+    """Recover path-like strings deterministically from an SGB payload."""
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[int, str]] = set()
+
+    def emit(text: str, absolute_offset: int, relative_offset: int, encoding: str) -> None:
+        text = text.replace("\\", "/")
+        ext = Path(text.lower()).suffix
+        key = (absolute_offset, text.lower())
+        if key in seen:
+            return
+        seen.add(key)
+        rows.append({
+            "offset": absolute_offset,
+            "relative_offset": relative_offset,
+            "encoding": encoding,
+            "path": text,
+            "extension": ext,
+            "kind": _SGB_KIND.get(ext, "unknown"),
+            "confidence": "string-scan",
+        })
+
+    lower = data.lower()
+    for ext in _SGB_EXTENSIONS:
+        suffix = b"." + ext
+        cursor = 0
+        while True:
+            pos = lower.find(suffix, cursor)
+            if pos < 0:
+                break
+            start = pos
+            while start > 0 and data[start - 1] in _SGB_ALLOWED:
+                start -= 1
+            raw = data[start:pos + len(suffix)]
+            if 2 <= len(raw) <= 256:
+                emit(raw.decode("utf-8", "replace"), base_offset + start, start, "ascii")
+            cursor = pos + 1
+
+    for ext in _SGB_EXTENSIONS:
+        suffix = b"." + ext
+        encoded = b"".join(bytes((ch, 0)) for ch in suffix)
+        cursor = 0
+        while True:
+            pos = data.find(encoded, cursor)
+            if pos < 0:
+                break
+            start = pos
+            while start >= 2 and data[start - 2] in _SGB_ALLOWED and data[start - 1] == 0:
+                start -= 2
+            raw = data[start:pos + len(encoded)]
+            if 4 <= len(raw) <= 512 and len(raw) % 2 == 0:
+                text_bytes = bytes(raw[i] for i in range(0, len(raw), 2))
+                emit(text_bytes.decode("utf-8", "replace"), base_offset + start, start, "utf-16le")
+            cursor = pos + 2
+
+    rows.sort(key=lambda x: (x["offset"], x["path"].lower()))
+    return rows
+
+
 def parse_sgb(data: bytes) -> dict[str, Any]:
     """Index the SHIFT binary scene graph container used by track .sgb files.
 
@@ -436,89 +516,321 @@ def parse_sgb(data: bytes) -> dict[str, Any]:
     }
 
 
+def analyze_decoded_resource(path: str, data: bytes) -> dict[str, Any]:
+    """Format-aware analysis used by the universal importer."""
+    ext = Path(path.lower()).suffix
+    base: dict[str, Any] = {"path": path, "extension": ext, "size": len(data)}
+    head = data[:64]
+    try:
+        if data.startswith(b"BLMY"):
+            base["analysis"] = parse_bmt_material(data) if ext == ".bmt" else parse_bml(data)
+        elif ext == ".lod" and data.lstrip().startswith(b"<?xml"):
+            txt = data.decode("utf-8", "replace")
+            entries = []
+            for line in txt.splitlines():
+                m = re.search(r'<ENTRY\s+substring="([^"]+)"([^>]*)/>', line)
+                if not m:
+                    continue
+                attrs = dict(re.findall(r'([A-Za-z0-9_]+)="?([^\s\"]+)"?', m.group(2)))
+                entries.append({"substring": m.group(1), "attrs": attrs})
+            base["analysis"] = {"format": "SHIFT.LOD_XML", "root": "LODCONTROL", "entry_count": len(entries), "entries": entries, "parser": "loose"}
+        elif ext == ".sgb" and data.startswith(b" \x42\x47\x53"):
+            base["analysis"] = parse_sgb(data)
+        elif ext == ".vhf" and data.lstrip().startswith(b"<?xml"):
+            base["analysis"] = parse_vhf_scene(data)
+        elif ext == ".bas" and data.lstrip().startswith(b"<?xml"):
+            base["analysis"] = parse_bas(data)
+        elif data.lstrip().startswith(b"<?xml") or data.lstrip().startswith(b"<Reflection"):
+            txt = data.decode("utf-8", "replace")
+            if b"<Reflection" in data:
+                base["analysis"] = parse_reflection_xml(data)
+            else:
+                root = ET.fromstring(txt)
+                base["analysis"] = {
+                    "format": "XML",
+                    "root": root.tag,
+                    "tree": _xml_tree(root),
+                }
+        elif data.startswith(b"DDS "):
+            base["analysis"] = parse_dds_metadata(data)
+        elif ext == ".meb":
+            base["analysis"] = mesh_summary(read_meb(data))
+        elif ext == ".csm":
+            base["analysis"] = csm_summary(read_csm(data))
+        elif data.startswith(b"FEV1"):
+            base["analysis"] = {"format": "FMOD.FEV", "magic": "FEV1"}
+        elif data.startswith(b"FSB4"):
+            base["analysis"] = {"format": "FMOD.FSB", "magic": "FSB4"}
+        elif data.startswith(b"NXS\x00MESH") or b"MESH" in data[:32]:
+            base["analysis"] = {"format": "SHIFT.MESH.binary", "signature": data[:16].hex()}
+        elif data.startswith(b" \x42\x47\x53"):
+            base["analysis"] = {"format": "SHIFT.SGB", "signature": data[:16].hex()}
+        elif ext in {".fx", ".fxh"}:
+            base["analysis"] = parse_hlsl_metadata(data)
+        else:
+            base["analysis"] = {"format": "binary/unknown", "head_hex": head.hex()}
+    except Exception as exc:
+        base["analysis_error"] = f"{type(exc).__name__}: {exc}"
+        base["analysis"] = {"format": "unparsed", "head_hex": head.hex()}
+    return base
 
-_SGB_ALLOWED = set(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_./\\-")
-_SGB_EXTENSIONS = tuple(
-    x.encode("ascii")
-    for x in ("meb", "bmt", "mtx", "dds", "csm", "vhf", "fxo", "fx", "sgb", "bml", "bas")
-)
-
-_SGB_KIND = {
-    ".meb": "geometry",
-    ".bmt": "material",
-    ".mtx": "material-source",
-    ".dds": "texture",
-    ".csm": "collision",
-    ".vhf": "scene-source",
-    ".fxo": "shader-cache",
-    ".fx": "shader-source",
-    ".sgb": "scene-source",
-    ".bml": "data",
-    ".bas": "skeleton-source",
+# BMT element/attribute IDs observed consistently in the SHIFT material format.
+# They are Resource IDs rather than direct STRS offsets. Keeping this small map
+# explicit is safer than pretending we know the original global hash function.
+BMT_ELEMENT_NAMES = {
+    3596240483: "material",
+    648867590: "shaderparam",
+    1688245861: "type",
+    1773598955: "value",
+    3396092427: "render_state_group",
+    14911235: "alpha_state_group",
+}
+BMT_ATTR_NAMES = {
+    102443717: "name",
+    1688245861: "type",
+    116: "t",
+    118: "v",
 }
 
 
-def _sgb_strings(data: bytes, base_offset: int = 0) -> list[dict[str, Any]]:
-    """Recover path-like strings deterministically from an SGB payload."""
+def _parse_bmt_blocks(data: bytes) -> tuple[dict[str, dict[str, int]], dict[str, Any]]:
+    if len(data) < 0x10 or data[:4] != b"BLMY":
+        raise ValueError("not a BLMY resource")
+    blocks: dict[str, dict[str, int]] = {}
+    off = 0x10
+    for _ in range(7):
+        if off + 16 > len(data):
+            raise ValueError("truncated BMT block directory")
+        tag = data[off:off + 4].decode("ascii", "replace")
+        size, payload_off, reserved = struct.unpack_from("<III", data, off + 4)
+        if payload_off + size > len(data):
+            raise ValueError(f"BMT block {tag} exceeds resource size")
+        blocks[tag] = {"offset": payload_off, "size": size, "reserved": reserved}
+        off += 16
+    head_off = blocks["HEAD"]["offset"]
+    head = [_u32le(data, head_off + i * 4) for i in range(7)]
+    return blocks, {
+        "version": _u32le(data, 4),
+        "declared_size": _u32le(data, 8),
+        "head_u32": head,
+    }
+
+
+def _bmt_strings(blob: bytes) -> tuple[dict[int, str], list[dict[str, Any]]]:
+    by_off: dict[int, str] = {}
     rows: list[dict[str, Any]] = []
-    seen: set[tuple[int, str]] = set()
+    p = 0
+    while p < len(blob):
+        end = blob.find(b"\x00", p)
+        if end < 0:
+            end = len(blob)
+        text = blob[p:end].decode("utf-8", "replace")
+        by_off[p] = text
+        rows.append({"offset": p, "text": text})
+        p = end + 1
+    return by_off, rows
 
-    def emit(text: str, absolute_offset: int, relative_offset: int, encoding: str) -> None:
-        text = text.replace("\\", "/")
-        ext = Path(text.lower()).suffix
-        key = (absolute_offset, text.lower())
-        if key in seen:
-            return
-        seen.add(key)
-        rows.append({
-            "offset": absolute_offset,
-            "relative_offset": relative_offset,
-            "encoding": encoding,
-            "path": text,
-            "extension": ext,
-            "kind": _SGB_KIND.get(ext, "unknown"),
-            "confidence": "string-scan",
-        })
 
-    # ASCII: scan known extensions and walk backwards over path-safe bytes.
-    lower = data.lower()
-    for ext in _SGB_EXTENSIONS:
-        suffix = b"." + ext
-        cursor = 0
-        while True:
-            pos = lower.find(suffix, cursor)
-            if pos < 0:
-                break
-            start = pos
-            while start > 0 and data[start - 1] in _SGB_ALLOWED:
-                start -= 1
-            raw = data[start:pos + len(suffix)]
-            if 2 <= len(raw) <= 256:
-                emit(raw.decode("utf-8", "replace"), base_offset + start, start, "ascii")
-            cursor = pos + 1
+def parse_bmt(data: bytes) -> dict[str, Any]:
+    """Decode the BMLY container used by SHIFT .bmt materials.
 
-    # UTF-16LE: search each extension in its UTF-16 representation.
-    for ext in _SGB_EXTENSIONS:
-        suffix = b"." + ext
-        encoded = b"".join(bytes((ch, 0)) for ch in suffix)
-        cursor = 0
-        while True:
-            pos = data.find(encoded, cursor)
-            if pos < 0:
-                break
-            start = pos
-            while start >= 2 and data[start - 2] in _SGB_ALLOWED and data[start - 1] == 0:
-                start -= 2
-            raw = data[start:pos + len(encoded)]
-            if 4 <= len(raw) <= 512 and len(raw) % 2 == 0:
-                text_bytes = bytes(raw[i] for i in range(0, len(raw), 2))
-                emit(text_bytes.decode("utf-8", "replace"), base_offset + start, start, "utf-16le")
-            cursor = pos + 2
+    The result contains the exact block layout, typed attribute values, and a
+    generic element tree. Known material node/attribute resource IDs are named;
+    unknown IDs remain explicit as hash_XXXXXXXX so no data is discarded.
+    """
+    blocks, meta = _parse_bmt_blocks(data)
+    eo, es = blocks["ELMT"]["offset"], blocks["ELMT"]["size"]
+    ao, ass = blocks["ATTR"]["offset"], blocks["ATTR"]["size"]
+    no, ns = blocks["NUMB"]["offset"], blocks["NUMB"]["size"]
+    bo, bs = blocks["BOOL"]["offset"], blocks["BOOL"]["size"]
+    so, ss = blocks["STRS"]["offset"], blocks["STRS"]["size"]
+    if es % 28:
+        raise ValueError("BMT ELMT block is not a whole number of 28-byte records")
+    if ass % 20:
+        raise ValueError("BMT ATTR block is not a whole number of 20-byte records")
+    elem_count = es // 28
+    attr_count = ass // 20
+    elems = [struct.unpack_from("<7I", data, eo + i * 28) for i in range(elem_count)]
+    attrs = [struct.unpack_from("<5I", data, ao + i * 20) for i in range(attr_count)]
+    string_map, strings = _bmt_strings(data[so:so + ss])
+    numb = [struct.unpack_from("<f", data, no + i * 4)[0] for i in range(ns // 4)]
+    bool_blob = data[bo:bo + bs]
 
-    rows.sort(key=lambda x: (x["offset"], x["path"].lower()))
-    return rows
+    def resolve_elem(v: int) -> str:
+        return BMT_ELEMENT_NAMES.get(v, f"hash_{v:08X}")
 
-SGB_KIND.get(ext, "unknown"),
-                    "confidence": "string-scan",
-                })
-    return rows
+    def resolve_attr(v: int) -> str:
+        return BMT_ATTR_NAMES.get(v, f"hash_{v:08X}")
+
+    def attr_value(attr: tuple[int, int, int, int, int]) -> Any:
+        _name, kind, start, count, _next = attr
+        if count == 0:
+            return []
+        if kind == 2:
+            vals = [string_map.get(start, "")]
+            if count > 1:
+                # STRS values are offset references in practice. Preserve the
+                # primary value and expose only direct sequential offsets when
+                # they resolve cleanly.
+                vals = [string_map.get(start + j, "") for j in range(count)]
+            return vals[0] if count == 1 else vals
+        if kind == 1:
+            vals = []
+            for j in range(count):
+                bit = start + j
+                vals.append(bool(bool_blob[bit >> 3] & (1 << (bit & 7))))
+            return vals[0] if count == 1 else vals
+        if kind == 0:
+            vals = numb[start:start + count]
+            return vals[0] if count == 1 else vals
+        return {"raw_type": kind, "value": start, "count": count}
+
+    def parse_attrs(element_index: int) -> list[dict[str, Any]]:
+        e = elems[element_index]
+        first, count = e[1], e[2]
+        out = []
+        for idx in range(first, min(first + count, attr_count)):
+            a = attrs[idx]
+            out.append({
+                "index": idx,
+                "name_id": a[0],
+                "name": resolve_attr(a[0]),
+                "type": a[1],
+                "value_index": a[2],
+                "count": a[3],
+                "next": a[4],
+                "value": attr_value(a),
+            })
+        return out
+
+    def children_of(index: int) -> list[int]:
+        first_child = elems[index][4]
+        expected = elems[index][3]
+        out: list[int] = []
+        cur = first_child
+        seen: set[int] = set()
+        while cur != 0xFFFFFFFF and cur < elem_count and cur not in seen and len(out) <= expected + 32:
+            seen.add(cur)
+            out.append(cur)
+            cur = elems[cur][5]
+        return out
+
+    def node(index: int, depth: int = 0) -> dict[str, Any]:
+        e = elems[index]
+        return {
+            "index": index,
+            "name_id": e[0],
+            "name": resolve_elem(e[0]),
+            "attributes": parse_attrs(index),
+            "declared_child_count": e[3],
+            "children": [node(i, depth + 1) for i in children_of(index)],
+        }
+
+    root_index = meta["head_u32"][6]
+    tree = node(root_index) if root_index < elem_count else None
+    return {
+        "format": "SHIFT.BMT",
+        "version": meta["version"],
+        "declared_size": meta["declared_size"],
+        "actual_size": len(data),
+        "blocks": blocks,
+        "head": {
+            "elements": meta["head_u32"][0],
+            "attributes": meta["head_u32"][1],
+            "coll": meta["head_u32"][2],
+            "numbers": meta["head_u32"][3],
+            "strings": meta["head_u32"][4],
+            "booleans": meta["head_u32"][5],
+            "root": root_index,
+        },
+        "string_count_actual": len(strings),
+        "strings": strings,
+        "root": tree,
+    }
+
+_HLSL_INCLUDE_RE = re.compile(r'#\s*include\s*[<"]([^>"]+)[>"]', re.I)
+_HLSL_TECHNIQUE_RE = re.compile(r'\btechnique(?:\d+)?\s+([A-Za-z_][A-Za-z0-9_]*)', re.I)
+_HLSL_SAMPLER_RE = re.compile(r'\bsampler(?:2D|3D|CUBE|STATE|2DARRAY|CUBEARRAY)?\s+([A-Za-z_][A-Za-z0-9_]*)', re.I)
+_HLSL_TEX_RE = re.compile(r'\b(?:Texture(?:2D|3D|Cube|2DArray)|texture2D|Texture)\s+([A-Za-z_][A-Za-z0-9_]*)', re.I)
+_HLSL_VAR_RE = re.compile(r'^\s*(?:uniform\s+)?(float|float2|float3|float4|float4x4|int|bool|half|half2|half3|half4)\s+([A-Za-z_][A-Za-z0-9_]*)', re.M | re.I)
+
+
+def _material_summary_from_tree(tree: dict[str, Any]) -> dict[str, Any]:
+    attrs = tree.get("attributes", [])
+    # The stock material schema has seven root attributes in a stable order:
+    # name, shader, technique, fog, antialias, numparams, cull.
+    semantic = ["name", "shader", "technique", "fog", "antialias", "numparams", "cull"]
+    root_values = {semantic[i]: attrs[i].get("value") for i in range(min(len(attrs), len(semantic)))}
+    params = []
+    for child in tree.get("children", []):
+        if child.get("name") != "shaderparam":
+            continue
+        p = {a["name"]: a.get("value") for a in child.get("attributes", [])}
+        for sub in child.get("children", []):
+            sub_name = sub.get("name")
+            vals = {a["name"]: a.get("value") for a in sub.get("attributes", [])}
+            if sub_name == "type":
+                root_t = vals.get("t")
+                if root_t is not None:
+                    p["resource_type"] = root_t
+            elif sub_name == "value":
+                root_v = vals.get("v")
+                if root_v is not None:
+                    p["value"] = root_v
+        params.append(p)
+    textures = []
+    for p in params:
+        v = p.get("value")
+        candidates = v if isinstance(v, list) else [v]
+        for x in candidates:
+            if isinstance(x, str) and x.lower().endswith(".dds"):
+                textures.append(x.replace("\\", "/"))
+
+    # BMT stores shader compile-time specialisation references as hashed
+    # child elements carrying a plain name attribute, e.g. USE_FRESNEL,
+    # METALLIC, DIRT_SCRATCH. Preserve them explicitly.
+    specializations = []
+    for child in tree.get("children", []):
+        if not str(child.get("name", "")).startswith("hash_"):
+            continue
+        for attr in child.get("attributes", []):
+            if attr.get("name") != "name" or not isinstance(attr.get("value"), str):
+                continue
+            value = attr["value"]
+            if re.fullmatch(r"[A-Z][A-Z0-9_]*", value):
+                specializations.append(value)
+    specializations = list(dict.fromkeys(specializations))
+    return {**root_values, "shaderparams": params, "textures": textures,
+            "specializations": specializations}
+
+
+def parse_bmt_material(data: bytes) -> dict[str, Any]:
+    parsed = parse_bmt(data)
+    summary = _material_summary_from_tree(parsed["root"]) if parsed.get("root") else {}
+    parsed["material"] = summary
+    return parsed
+
+
+def parse_hlsl_metadata(data: bytes) -> dict[str, Any]:
+    text = data.decode("utf-8", "replace")
+    # Remove comments for structural regexes; shader source is full of prose
+    # examples that otherwise look like declarations.
+    clean = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
+    clean = re.sub(r"//[^\n]*", " ", clean)
+    includes = list(dict.fromkeys(_HLSL_INCLUDE_RE.findall(clean)))
+    techniques = list(dict.fromkeys(_HLSL_TECHNIQUE_RE.findall(clean)))
+    samplers = list(dict.fromkeys(_HLSL_SAMPLER_RE.findall(clean)))
+    textures = list(dict.fromkeys(_HLSL_TEX_RE.findall(clean)))
+    variables = []
+    for kind, name in _HLSL_VAR_RE.findall(clean):
+        variables.append({"type": kind, "name": name})
+    return {
+        "format": "HLSL",
+        "bytes": len(data),
+        "includes": includes,
+        "techniques": techniques,
+        "samplers": samplers,
+        "textures": textures,
+        "global_variables": variables[:2048],
+        "requires_transpilation": True,
+    }
