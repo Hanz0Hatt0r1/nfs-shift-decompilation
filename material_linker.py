@@ -29,7 +29,7 @@ def parse_fx_samplers(source: str | bytes) -> list[dict]:
         # Count actual sampling calls in source; declarations alone do not make a
         # sampler mandatory for a compiled permutation.
         body=text[m.end():]
-        usage_count=len(re.findall(r"\\b(?:tex\\w*|sample\\w*)\\s*\\(\\s*"+re.escape(m.group(2))+r"\\b", body, re.I))
+        usage_count=len(re.findall(r"\b(?:tex\w*|sample\w*)\s*\(\s*"+re.escape(m.group(2))+r"\b", body, re.I))
         out.append({
             "sampler_type": m.group(1), "sampler": m.group(2),
             "texture_parameter": texture, "min_filter": get("MinFilter"),
