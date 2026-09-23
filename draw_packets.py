@@ -100,6 +100,7 @@ def compile_material(
     texture_by_path: dict[str, list[dict[str, Any]]] | None = None,
     shader_by_path: dict[str, list[dict[str, Any]]] | None = None,
     prefer_archive: str | None = None,
+    material_binding: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     material = (
         (material_record or {}).get("analysis", {}).get("material")
@@ -157,6 +158,15 @@ def compile_material(
             # bindings, so this is deliberately marked as inferred.
             "binding_source": "material-order-inferred",
         }
+        if material_binding:
+            for reflected in material_binding.get("bindings", []) or []:
+                if norm_ref(reflected.get("texture")) == tref:
+                    if reflected.get("d3d9_sampler_register") is not None:
+                        binding["d3d9_sampler_register"] = reflected["d3d9_sampler_register"]
+                        binding["sampler"] = reflected.get("sampler")
+                        binding["sampler_type"] = reflected.get("sampler_type")
+                        binding["binding_source"] = "fxo-ctab"
+                    break
 
         if len(texture_hits) == 1 and texture_by_path:
             texture_records = texture_by_path.get(
@@ -202,6 +212,7 @@ def build_draw_packets(
     material_records: Iterable[dict[str, Any]],
     texture_records: Iterable[dict[str, Any]] = (),
     shader_records: Iterable[dict[str, Any]] = (),
+    material_binding_records: Iterable[dict[str, Any]] = (),
 ) -> dict[str, Any]:
     """Build one neutral draw packet per VHF node/MEB resource pair."""
     scene_records = list(scene_records)
@@ -209,6 +220,12 @@ def build_draw_packets(
     material_records = list(material_records)
     texture_records = list(texture_records)
     shader_records = list(shader_records)
+    material_binding_records = list(material_binding_records)
+    material_binding_by_name = {
+        str(r.get("material")): r
+        for r in material_binding_records
+        if r.get("material")
+    }
 
     all_records = [*mesh_records, *material_records, *texture_records, *shader_records]
     _all_path_map, all_basename_map = build_index(all_records)
@@ -294,6 +311,13 @@ def build_draw_packets(
                             texture_map,
                             shader_map,
                             prefer_archive,
+                            material_binding_by_name.get(
+                                str(
+                                    (mat_rec or {}).get("analysis", {}).get("material", {}).get("name")
+                                    or (mat_rec or {}).get("material", {}).get("name")
+                                    or ""
+                                )
+                            ),
                         )
                         if mat_ref
                         else None
@@ -371,6 +395,7 @@ def load_analysis(path: str | Path) -> list[dict[str, Any]]:
 def build_from_analysis(
     path: str | Path,
     shader_report: str | Path | None = None,
+    material_binding_report: str | Path | None = None,
 ) -> dict[str, Any]:
     records = load_analysis(path)
     scenes = [
@@ -398,6 +423,13 @@ def build_from_analysis(
         if norm_ref(r.get("path")).endswith((".fx", ".fxh"))
     ]
 
+    material_bindings: list[dict[str, Any]] = []
+    if material_binding_report:
+        report = json.loads(Path(material_binding_report).read_text(encoding="utf-8"))
+        material_bindings = report.get("materials", report.get("bindings", []))
+        if isinstance(material_bindings, dict):
+            material_bindings = [material_bindings]
+
     if shader_report:
         report = json.loads(
             Path(shader_report).read_text(encoding="utf-8")
@@ -418,6 +450,7 @@ def build_from_analysis(
         materials,
         textures,
         shaders,
+        material_bindings,
     )
 
 
@@ -435,6 +468,10 @@ def main() -> int:
     ap.add_argument(
         "--shader-report",
         help="optional analyze-shader-asm report JSON",
+    )
+    ap.add_argument(
+        "--material-binding-report",
+        help="optional material_linker report JSON with exact FXO sampler bindings",
     )
     args = ap.parse_args()
 
