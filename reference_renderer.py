@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import hashlib
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -264,6 +265,25 @@ def render_draw_packet(
         "blocking_reasons": draw["blocking_reasons"],
     }
     return result
+
+def render_draw_packet_json(
+    packet_path: str | Path,
+    mesh_path: str | Path,
+    output: str | Path,
+    *,
+    width: int = 512,
+    height: int = 512,
+) -> dict[str, Any]:
+    """Render a DrawPacket JSON through StaticDraw and return a golden hash."""
+    packet = json.loads(Path(packet_path).read_text(encoding="utf-8"))
+    mesh = json.loads(Path(mesh_path).read_text(encoding="utf-8"))
+    result = render_draw_packet(packet, mesh, output, width=width, height=height)
+    digest = hashlib.sha256(Path(output).read_bytes()).hexdigest()
+    result["sha256"] = digest
+    result["packet"] = str(packet_path)
+    result["mesh"] = str(mesh_path)
+    return result
+
 
 def render_mesh_json(mesh: dict[str, Any], output: str | Path, *, width: int = 512, height: int = 512) -> dict[str, Any]:
     vertices = mesh.get("vertices") or []
