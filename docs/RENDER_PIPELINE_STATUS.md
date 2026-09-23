@@ -45,3 +45,7 @@ This makes the render-link stage an actual renderer contract boundary instead of
 ## Phase 35: RenderCommand -> reference renderer
 
 The desktop oracle can now execute `SHIFT.RenderCommand/1` directly. The execution path performs final command validation and cross-checks vertex/index metadata against the supplied neutral mesh before rasterization, closing the neutral submission chain without introducing BFF/runtime dependencies.
+
+## Phase 37: explicit GLES vertex attribute ABI
+
+`SHIFT.RenderCommand/1` now includes `attribute_setup` metadata for the future GLES backend. FLOAT32x2/3/4 uses `glVertexAttribPointer`; property 580 / BLENDINDICES0 uses integer `glVertexAttribIPointer` with `UNSIGNED_BYTE`; color 460/461 remains normalized byte input with its unresolved channel-order evidence preserved.
