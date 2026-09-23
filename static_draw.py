@@ -16,14 +16,14 @@ FORMAT = "SHIFT.StaticDraw/1"
 
 def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
     material = material or {}
-    selection = material.get("shader_selection") or {}
-    status = selection.get("status", "none")
+    selection = material.get("shader_selection") or material
+    status = selection.get("status") or selection.get("selection_status", "none")
     reasons: list[str] = []
 
     if status != "unique":
         reasons.append(f"shader-selection:{status}")
 
-    pair = selection.get("shader_pair") or {}
+    pair = selection.get("shader_pair") or material.get("shader_pair") or {}
     if not pair:
         reasons.append("shader-pair:missing")
     else:
@@ -35,36 +35,39 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         if pair.get("vertex_format", {}).get("valid") is False:
             reasons.append("vertex-format:invalid")
 
-    linked_pair = selection.get("linked_shader_pair")
+    linked_pair = selection.get("linked_shader_pair") or material.get("linked_shader_pair")
     if not linked_pair:
         reasons.append("shader-glsl:missing")
     elif linked_pair.get("format") != "SHIFT.LinkedShaderPair/1":
         reasons.append("shader-glsl:invalid")
-    if selection.get("linked_shader_error"):
+    if selection.get("linked_shader_error") or material.get("linked_shader_error"):
         reasons.append("shader-glsl:error")
 
     explicit_textures = []
     unresolved_textures = []
-    for tex in material.get("textures", []) or []:
+    for tex in (material.get("textures", []) or material.get("bindings", []) or []):
+        binding_source = tex.get("binding_source") or tex.get("binding")
         item = {
             "material_parameter": tex.get("material_parameter"),
-            "ref": tex.get("ref"),
+            "ref": tex.get("ref") or tex.get("texture"),
             "slot": tex.get("slot"),
             "sampler": tex.get("sampler"),
             "sampler_type": tex.get("sampler_type"),
-            "binding_source": tex.get("binding_source"),
-            "resolved": tex.get("resolved", []),
+            "binding_source": binding_source,
+            "resolved": tex.get("resolved", []) or ([{"path": tex.get("texture_resolved")} ] if tex.get("texture_resolved") else []),
             "dds": tex.get("dds"),
         }
-        if tex.get("binding_source") == "fxo-ctab" and tex.get("d3d9_sampler_register") is not None:
+        if binding_source == "fxo-ctab" or tex.get("binding") == "material-texture":
             if tex.get("dds"):
                 item["texture_resource"] = build_texture_contract(tex["dds"], tex)
             explicit_textures.append(item)
-        else:
+        elif binding_source in {"unresolved", "unresolved-texture"}:
             unresolved_textures.append(item)
+        else:
+            explicit_textures.append(item)
 
-    uniforms = selection.get("uniform_binding") or {}
-    external_samplers = selection.get("external_samplers") or []
+    uniforms = selection.get("uniform_binding") or material.get("uniform_binding") or {}
+    external_samplers = selection.get("external_samplers") or material.get("external_samplers") or []
 
     texture_blockers = [
         f"texture:{reason}"
@@ -108,7 +111,7 @@ def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
     used_properties: set[str] = set()
     for submesh in packet.get("submeshes", []) or []:
         material = submesh.get("material") or {}
-        pair = (material.get("shader_selection") or {}).get("shader_pair") or {}
+        pair = (material.get("shader_selection") or material).get("shader_pair") or material.get("shader_pair") or {}
         selected_bindings = pair.get("vertex_bindings") or pair.get("vertex_format", {}).get("vertex_bindings") or []
         used_properties.update(
             str(x.get("property_id"))
