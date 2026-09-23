@@ -133,3 +133,61 @@ def test_linked_glsl_translation_maps_vertex_inputs_to_target_layout_locations()
     linked = translate_pair(vs, ps, vertex_properties=properties)
     assert linked["vertex_input_locations"] == {0: 1}
     assert "layout(location=1) in vec4 in_0;" in linked["vertex_glsl"]
+
+
+def test_linked_shader_pair_validator_rejects_invalid_format():
+    from shader_backend import validate_linked_shader_pair
+    result = validate_linked_shader_pair({"format": "SHIFT.NotARealShaderPair/1"})
+    assert result["status"] == "invalid"
+    assert "linked-shader:invalid-format" in result["blocking_reasons"]
+
+
+def test_linked_shader_pair_validator_reports_compiler_state():
+    from shader_backend import validate_linked_shader_pair
+    vertex = """#version 310 es
+precision highp float;
+layout(location=0) in vec3 a_position;
+layout(location=0) out vec2 v_uv;
+void main() {
+    v_uv = a_position.xy;
+    gl_Position = vec4(a_position, 1.0);
+}
+"""
+    pixel = """#version 310 es
+precision highp float;
+layout(location=0) in vec2 v_uv;
+layout(location=0) out vec4 out_color;
+void main() {
+    out_color = vec4(v_uv, 0.0, 1.0);
+}
+"""
+    result = validate_linked_shader_pair({
+        "format": "SHIFT.LinkedShaderPair/1",
+        "vertex_glsl": vertex,
+        "pixel_glsl": pixel,
+    })
+    assert result["format"] == "SHIFT.GLESShaderValidation/1"
+    if result["status"] == "unavailable":
+        assert result["blocking_reasons"] == []
+    else:
+        assert result["status"] == "valid"
+        assert result["stages"]["vertex"]["valid"] is True
+        assert result["stages"]["pixel"]["valid"] is True
+        assert result["link"]["valid"] is True
+
+
+def test_linked_shader_pair_validator_reports_invalid_glsl_when_available():
+    from shader_backend import validate_linked_shader_pair
+    result = validate_linked_shader_pair({
+        "format": "SHIFT.LinkedShaderPair/1",
+        "vertex_glsl": "#version 310 es
+void main() { gl_Position = vec4(0.0); }
+",
+        "pixel_glsl": "#version 310 es
+this is not valid GLSL
+",
+    })
+    if result["status"] == "unavailable":
+        pytest.skip("glslangValidator is not installed")
+    assert result["status"] == "invalid"
+    assert "linked-shader:pixel-compile-failed" in result["blocking_reasons"]
