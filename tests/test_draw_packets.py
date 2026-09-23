@@ -247,6 +247,7 @@ def test_draw_packet_carries_explicit_vertex_layout():
     layout = result["packets"][0]["mesh"]["vertex_layout"]
     assert layout["format"] == "SHIFT.VertexLayout/1"
     assert {x["property_id"] for x in layout["attributes"]} == {"200", "220", "130"}
+    assert result["packets"][0]["mesh"]["skinning"] == {}
 
 
 def test_draw_packet_preserves_external_sampler_requirements():
