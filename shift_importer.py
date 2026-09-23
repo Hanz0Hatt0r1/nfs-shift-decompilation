@@ -1380,6 +1380,7 @@ def cmd_analyze_shader_asm(args: argparse.Namespace) -> int:
                             'samplers':p.samplers,'constants':p.constants,'temps':p.temps,
                             'unsupported_opcodes':p.unsupported_opcodes,
                             'instruction_names':[i.name for i in p.instructions],
+                            'ctab': b.ctab_constants,
                         })
                 except Exception as exc:
                     errors.append({'archive':bp.name,'path':e.path,'error':f'{type(exc).__name__}: {exc}'})
