@@ -405,21 +405,134 @@ def parse_sgb(data: bytes) -> dict[str, Any]:
             "payload_size": len(payload),
             "payload_sha256": __import__("hashlib").sha256(payload).hexdigest(),
             "payload_head": payload[:24].hex(),
+            "resource_refs": _sgb_strings(payload, off + 8),
         })
         off = end
         if tag == "END ":
             break
 
+    refs = [ref for chunk in chunks for ref in chunk.get("resource_refs", [])]
+    unique_refs = []
+    seen_paths = set()
+    for ref in refs:
+        key = ref["path"].lower()
+        if key not in seen_paths:
+            seen_paths.add(key)
+            unique_refs.append(ref)
+    by_kind = {}
+    for ref in unique_refs:
+        by_kind.setdefault(ref["kind"], 0)
+        by_kind[ref["kind"]] += 1
     return {
         "format": "SHIFT.SGB",
         "version": 1,
         "header_hex": data[:16].hex(),
         "chunk_count": len(chunks),
         "chunks": chunks,
+        "resource_refs": unique_refs,
+        "resource_ref_counts": by_kind,
         "container_end": off,
         "trailing_bytes": max(0, len(data) - off),
     }
 
+
+
+_SGB_REF_RE = re.compile(
+    rb'(?i)(?:[A-Za-z0-9_./\\-]{2,200}\.(?:meb|bmt|mtx|dds|csm|vhf|fxo|fx|sgb|bml|bas))'
+)
+
+_SGB_KIND = {
+    ".meb": "geometry",
+    ".bmt": "material",
+    ".mtx": "material-source",
+    ".dds": "texture",
+    ".csm": "collision",
+    ".vhf": "scene-source",
+    ".fxo": "shader-cache",
+    ".fx": "shader-source",
+    ".sgb": "scene-source",
+    ".bml": "data",
+    ".bas": "skeleton-source",
+}
+
+
+def _sgb_strings(data: bytes, base_offset: int = 0) -> list[dict[str, Any]]:
+    """Recover only path-like strings from an SGB payload.
+
+    This is deliberately a discovery pass, not a semantic parser. Every
+    recovered reference records its byte offset and encoding so false positives
+    can be filtered later without losing provenance.
+    """
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[int, str]] = set()
+
+    for match in _SGB_REF_RE.finditer(data):
+        raw = match.group(0)
+        text = raw.decode("utf-8", "replace").replace("\\", "/")
+        ext = Path(text.lower()).suffix
+        key = (base_offset + match.start(), text.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append({
+            "offset": base_offset + match.start(),
+            "relative_offset": match.start(),
+            "encoding": "ascii",
+            "path": text,
+            "extension": ext,
+            "kind": _SGB_KIND.get(ext, "unknown"),
+            "confidence": "string-scan",
+        })
+
+    # UTF-16LE literals are common in tool-generated metadata. Reuse the same
+    # extension/path grammar after dropping zero bytes from ASCII-range words.
+    utf16 = bytearray()
+    positions: list[int] = []
+    for i in range(0, len(data) - 1, 2):
+        lo, hi = data[i], data[i + 1]
+        if hi == 0 and (32 <= lo < 127):
+            utf16.append(lo)
+            positions.append(i)
+        else:
+            if len(utf16) >= 2:
+                raw = bytes(utf16)
+                for m in _SGB_REF_RE.finditer(raw):
+                    start = positions[m.start()]
+                    text = m.group(0).decode("utf-8", "replace").replace("\\", "/")
+                    ext = Path(text.lower()).suffix
+                    key = (base_offset + start, text.lower())
+                    if key not in seen:
+                        seen.add(key)
+                        rows.append({
+                            "offset": base_offset + start,
+                            "relative_offset": start,
+                            "encoding": "utf-16le",
+                            "path": text,
+                            "extension": ext,
+                            "kind": _SGB_KIND.get(ext, "unknown"),
+                            "confidence": "string-scan",
+                        })
+            utf16.clear()
+            positions.clear()
+    if len(utf16) >= 2:
+        raw = bytes(utf16)
+        for m in _SGB_REF_RE.finditer(raw):
+            start = positions[m.start()]
+            text = m.group(0).decode("utf-8", "replace").replace("\\", "/")
+            ext = Path(text.lower()).suffix
+            key = (base_offset + start, text.lower())
+            if key not in seen:
+                seen.add(key)
+                rows.append({
+                    "offset": base_offset + start,
+                    "relative_offset": start,
+                    "encoding": "utf-16le",
+                    "path": text,
+                    "extension": ext,
+                    "kind": _SGB_KIND.get(ext, "unknown"),
+                    "confidence": "string-scan",
+                })
+    return rows
 
 def analyze_decoded_resource(path: str, data: bytes) -> dict[str, Any]:
     """Format-aware analysis used by the universal importer."""
