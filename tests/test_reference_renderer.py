@@ -312,7 +312,7 @@ def test_reference_renderer_rejects_render_command_mesh_count_mismatch(tmp_path)
         raise AssertionError("expected ValueError")
 
 
-def test_reference_renderer_rasterizes_uv_texture():
+def test_reference_renderer_rasterizes_uv_texture(tmp_path):
     from reference_renderer import render_textured_static_draw
     image = {
         "format": "SHIFT.ReferenceTexture/1",
