@@ -34,3 +34,63 @@ def test_meb_color1_semantic_is_preserved():
     r=match_vertex_format(vs,["461"])
     assert r["valid"] is True
     assert r["vertex_bindings"][0]["property_id"]=="461"
+
+
+def test_vertex_input_locations_report_target_location_collisions(monkeypatch):
+    import shader_interface
+    from shader_interface import build_vertex_input_locations
+    from shader_asm import ShaderProgram
+
+    program = ShaderProgram(
+        offset=0, end=0, stage="vertex", major=3, minor=0,
+        instructions=[], inputs=[
+            {"usage": "POSITION", "index": 0, "register": "v0"},
+            {"usage": "NORMAL", "index": 0, "register": "v1"},
+        ], outputs=[], samplers=[], constants=[], temps=[],
+        unsupported_opcodes=[],
+    )
+    def fake_bindings(_program, _properties):
+        return {
+            "valid": True,
+            "score": 1.0,
+            "bindings": [
+                {"semantic": {"usage": "POSITION", "index": 0}, "shader_register": "v0", "matched": True, "target_location": 2},
+                {"semantic": {"usage": "NORMAL", "index": 0}, "shader_register": "v1", "matched": True, "target_location": 2},
+            ],
+            "missing": [],
+        }
+    monkeypatch.setattr(shader_interface, "vertex_attribute_bindings", fake_bindings)
+    result = build_vertex_input_locations(program, ["200", "220"])
+    assert result["valid"] is False
+    assert result["input_locations"] == {0: 2, 1: 2}
+    assert result["location_collisions"] == [
+        {"location": 2, "shader_registers": [0, 1]}
+    ]
+    assert result["unresolved"][-1]["reason"] == "multiple-shader-inputs-share-target-location"
+
+
+def test_vertex_input_locations_reject_one_register_mapped_to_two_targets(monkeypatch):
+    import shader_interface
+    from shader_interface import build_vertex_input_locations
+    from shader_asm import ShaderProgram
+
+    program = ShaderProgram(
+        offset=0, end=0, stage="vertex", major=3, minor=0,
+        instructions=[], inputs=[{"usage": "POSITION", "index": 0, "register": "v0"}],
+        outputs=[], samplers=[], constants=[], temps=[], unsupported_opcodes=[],
+    )
+    def fake_bindings(_program, _properties):
+        return {
+            "valid": True,
+            "score": 1.0,
+            "bindings": [
+                {"semantic": {"usage": "POSITION", "index": 0}, "shader_register": "v0", "matched": True, "target_location": 0},
+                {"semantic": {"usage": "NORMAL", "index": 0}, "shader_register": "v0", "matched": True, "target_location": 1},
+            ],
+            "missing": [],
+        }
+    monkeypatch.setattr(shader_interface, "vertex_attribute_bindings", fake_bindings)
+    result = build_vertex_input_locations(program, ["200", "220"])
+    assert result["valid"] is False
+    assert result["input_locations"] == {0: 0}
+    assert result["unresolved"][-1]["reason"] == "shader-register-maps-to-multiple-target-locations"
