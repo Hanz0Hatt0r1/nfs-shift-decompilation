@@ -305,14 +305,27 @@ def render_mesh_json(mesh: dict[str, Any], output: str | Path, *, width: int = 5
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Render neutral SHIFT mesh JSON to deterministic PPM")
+    parser = argparse.ArgumentParser(description="Render neutral SHIFT mesh JSON or a DrawPacket to deterministic PPM")
     parser.add_argument("input", type=Path)
     parser.add_argument("-o", "--output", required=True, type=Path)
+    parser.add_argument("--mesh", type=Path, help="neutral mesh JSON used with --draw-packet")
+    parser.add_argument("--draw-packet", action="store_true", help="treat input as SHIFT.DrawPacket/1 JSON")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
     args = parser.parse_args(argv)
-    mesh = json.loads(args.input.read_text(encoding="utf-8"))
-    result = render_mesh_json(mesh, args.output, width=args.width, height=args.height)
+    if args.draw_packet:
+        if args.mesh is None:
+            parser.error("--draw-packet requires --mesh")
+        result = render_draw_packet_json(
+            args.input,
+            args.mesh,
+            args.output,
+            width=args.width,
+            height=args.height,
+        )
+    else:
+        mesh = json.loads(args.input.read_text(encoding="utf-8"))
+        result = render_mesh_json(mesh, args.output, width=args.width, height=args.height)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
