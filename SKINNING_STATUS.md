@@ -24,3 +24,8 @@ BAB bone records и BAS hierarchy уже парсятся существующи
 ## Phase 25: BAB corpus fingerprinting
 
 `bab_corpus.py` groups parsed BAB analyses by exact bone-name skeleton signatures and compares preserved animation-tail SHA-256/size metadata. It intentionally treats the post-table payload as opaque; no keyframe grammar is inferred from heuristics.
+
+
+## Phase 26: BAB corpus CLI
+
+The opaque BAB corpus fingerprint report is now exposed through `shift_importer.py bab-corpus`, using the standard resource-analysis JSON container and producing `SHIFT.BABCorpusReport/1`.
