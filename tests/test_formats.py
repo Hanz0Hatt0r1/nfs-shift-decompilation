@@ -54,6 +54,9 @@ def test_real_meb_mesh_and_mgeo(tmp_path):
     assert s['triangle_count'] == 2
     assert '130' in mesh.uv_layers
     assert s['primitives'][0]['material'].lower().endswith('grid2.mtx')
+    assert mesh.property_layouts[0]['id'] == '200'
+    assert mesh.property_layouts[0]['storage'] == 'f32x3'
+    assert mesh.property_layouts[0]['bytes'] == mesh.vertex_count * 12
     out = tmp_path / 'grid1_02.mgeo'
     write_mgeo(mesh, out)
     blob = out.read_bytes()
