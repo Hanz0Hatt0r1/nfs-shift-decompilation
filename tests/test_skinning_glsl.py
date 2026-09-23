@@ -45,6 +45,17 @@ def _packet():
                 ],
             },
         },
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "bone_count": 2,
+            "matrices_3x4": [
+                [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                [1, 0, 0, 1, 0, 1, 0, 2, 0, 0, 1, 3],
+            ],
+            "source": "synthetic",
+            "frame": 0,
+        },
         "mesh": {
             "vertex_layout": {
                 "format": "SHIFT.VertexLayout/1",
@@ -151,6 +162,16 @@ def test_real_skinned_draw_contract_can_feed_gles31_contract():
                 ],
             }],
             "animation_payload": {"decoded": False, "sha256": "opaque"},
+        },
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "bone_count": 1,
+            "matrices_3x4": [
+                [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+            ],
+            "source": "synthetic",
+            "frame": 0,
         },
         "mesh": {
             "vertex_layout": {
