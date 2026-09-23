@@ -54,3 +54,13 @@ def test_vertex_layout_reports_semantic_collisions_without_guessing():
     assert r["semantic_collisions"] == [
         {"usage": "TEXCOORD", "usage_index": 0, "property_ids": ["130", "230"]}
     ]
+
+
+def test_vertex_layout_uses_consistent_unknown_abi_schema():
+    r = build_vertex_layout(["999"])
+    a = r["attributes"][0]
+    assert a["abi_status"] == "unknown"
+    assert "property id is not decoded" in a["evidence_basis"]
+    from vertex_layout import property_abi
+    abi = property_abi("999")
+    assert abi["abi_status"] == "unknown"
