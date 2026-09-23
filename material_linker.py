@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Iterable
 from shader_ir import parse_shader_blobs
 from shader_interface import pair_selected_pixel
-from uniform_linker import link_selected_pair
+from uniform_linker import link_selected_pair, reflect_constants
 
 def parse_fx_samplers(source: str | bytes) -> list[dict]:
     text = source.decode("utf-8", "replace") if isinstance(source, bytes) else source
@@ -77,12 +77,15 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             wrong_camera="motionBlurMap" in names and "motionBlurTexture" not in param_names
             exact=expected <= names and not wrong_camera
             if sampler_score and not wrong_camera:
-                constants={x["name"] for x in p["constants"] if x.get("register_set")==2}
-                uniform_matches=sorted(material_uniform_names & constants)
-                uniform_score=(len(uniform_matches)/len(material_uniform_names)) if material_uniform_names else 1.0
                 pair=pair_selected_pixel(data,p["offset"],properties=vertex_properties) if exact else None
                 pair_score=pair["score"] if pair else 0.0
                 pair_ok=bool(pair and pair.get("interface",{}).get("valid") and pair.get("vertex_format",{}).get("valid",True))
+                offsets=[p["offset"]] + ([pair["vertex_offset"]] if pair else [])
+                all_constants=set()
+                for off in offsets:
+                    all_constants.update(x["name"] for x in reflect_constants(data,off) if x.get("register_set")==2 and x.get("name"))
+                uniform_matches=sorted(material_uniform_names & all_constants)
+                uniform_score=(len(uniform_matches)/len(material_uniform_names)) if material_uniform_names else 1.0
                 fxo_payloads[(name,p["offset"])]=data
                 fxo.append({
                     "file":name,"program_offset":p["offset"],"samplers":p["samplers"],
