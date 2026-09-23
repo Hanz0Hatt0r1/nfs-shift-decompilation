@@ -29,3 +29,23 @@ def glass_fxo() -> bytes:
 
 
 BASIC_FX = b'''#include "stddefs.fxh"\ntechnique First { pass P { } }\ntechnique Second { pass P { } }\n'''
+
+
+
+def basic_bab() -> bytes:
+    b = bytearray(b"BAB\x00")
+    b += struct.pack("<7I", 13, 10, 0, 0, 1, 0, 0)
+    b[0x18:0x30] = struct.pack(
+        "<6I", 1, 3, 2, 0x3F700000, 2, 0
+    )
+    b += b"\x00" * (0x30 - len(b))
+    for name, q, t in [
+        ("Hips", (0, 0, 0, 1), (1, 2, 3)),
+        ("Spine", (0, 0, 0, 1), (0, 1, 0)),
+    ]:
+        nb = name.encode()
+        b += struct.pack("<I", len(nb)) + nb
+        b += b"\x00" * ((-(len(nb) + 4) % 4))
+        b += struct.pack("<7f", *q, *t)
+        b += struct.pack("<I", 3) + struct.pack("<4f", 1, 1, 1, 0)
+    return bytes(b)
