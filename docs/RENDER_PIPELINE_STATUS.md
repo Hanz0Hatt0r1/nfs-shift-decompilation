@@ -53,3 +53,8 @@ The desktop oracle can now execute `SHIFT.RenderCommand/1` directly. The executi
 ## Phase 39: RenderCommand shader validation
 
 `RenderCommand/1` can now optionally run the linked VS/PS compiler validator. The result is preserved as `SHIFT.RenderCommandShaderValidation/1`; a proven `invalid` result blocks submission, while `unavailable` keeps the command usable for environments without the compiler toolchain.
+
+
+## Phase 45: current renderer baseline
+
+The neutral render pipeline now includes RenderResources/1, RenderCommand/1 validation, explicit GLES vertex-attribute setup, optional GLES shader compile/link evidence, direct desktop RenderCommand execution, DDS texture reference sampling, embedded sampler state and multi-texture sampler-register validation. The remaining material-render gap is shader operation execution, not resource discovery or command construction.
