@@ -177,4 +177,36 @@ def test_real_skinned_draw_contract_can_feed_gles31_contract():
     draw["bind_skeleton"]["palette"]["matrix_layout"] = "3x4-row-major"
     contract = build_gles31_skinning_contract(draw)
     assert contract["bone_count"] == 1
+    assert contract["attributes"]["position"]["location"] == 0
     assert contract["attributes"]["blendindices0"]["location"] == 2
+
+
+def test_gles31_contract_uses_vertex_layout_position_location():
+    packet = _packet()
+    packet["mesh"]["vertex_layout"]["attributes"] = [
+        {
+            "property_id": "310",
+            "location": 0,
+            "android": "FLOAT32x4",
+            "components": 4,
+            "normalized": False,
+        },
+        {
+            "property_id": "580",
+            "location": 1,
+            "android": "UINT8x4",
+            "components": 4,
+            "normalized": False,
+        },
+        {
+            "property_id": "200",
+            "location": 7,
+            "android": "FLOAT32x3",
+            "components": 3,
+            "normalized": False,
+        },
+    ]
+    contract = build_gles31_skinning_contract(packet)
+    assert contract["attributes"]["position"]["location"] == 7
+    assert contract["attributes"]["blendweight0"]["location"] == 0
+    assert contract["attributes"]["blendindices0"]["location"] == 1
