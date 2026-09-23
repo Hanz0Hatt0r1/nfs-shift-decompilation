@@ -21,4 +21,5 @@ def test_component_usage_selects_float2_uv():
     by={x["semantic"]["usage"]+str(x["semantic"]["index"]):x for x in r["bindings"]}
     assert by["TEXCOORD2"]["property_id"]=="132"
     assert by["TEXCOORD2"]["required_components"]==2
+    assert by["TEXCOORD2"]["target_location"] == 3
     assert r["valid"] is True
