@@ -151,6 +151,8 @@ def test_build_draw_packet_links_vhf_meb_bmt_dds():
     assert len(material_ir["shader_selection"]["ambiguous_candidates"]) == 2
     assert material_ir["shader_selection"]["vertex_pair_selection_status"] == "ambiguous"
     assert packet["shader_selection"]["status"] == "ambiguous"
+    assert len(packet["shader_selection"]["ambiguous_candidates"]) == 2
+    assert packet["shader_selection"]["selected_fxos"][0]["file"] == "a.fxo"
 
 
 def test_build_from_analysis_and_cli(tmp_path):
