@@ -53,3 +53,7 @@ The desktop oracle can now execute `SHIFT.RenderCommand/1` directly. The executi
 ## Phase 39: RenderCommand shader validation
 
 `RenderCommand/1` can now optionally run the linked VS/PS compiler validator. The result is preserved as `SHIFT.RenderCommandShaderValidation/1`; a proven `invalid` result blocks submission, while `unavailable` keeps the command usable for environments without the compiler toolchain.
+
+## Phase 45: material constant payload
+
+`material_constants.py` packs proven float/scalar/vector material uniforms into deterministic 16-byte D3D9-style c-register slots and emits `SHIFT.MaterialConstantPayload/1`. `RenderCommand/1` now carries this payload and blocks register conflicts, overflow and unsupported matrix types instead of guessing their packing orientation.
