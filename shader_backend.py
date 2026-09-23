@@ -29,23 +29,51 @@ def program_to_ir(program: ShaderProgram) -> dict:
 
 
 
-def translate_pair(vertex: ShaderProgram, pixel: ShaderProgram) -> dict:
-    """Translate a matched D3D9 VS/PS pair with shared GLSL varying locations."""
+def translate_pair(
+    vertex: ShaderProgram,
+    pixel: ShaderProgram,
+    *,
+    vertex_properties: list[str | dict] | tuple[str | dict, ...] = (),
+) -> dict:
+    """Translate a matched D3D9 VS/PS pair into a shared GLSL interface."""
+    from shader_interface import build_vertex_input_locations
+
     linkage = build_varying_locations(vertex, pixel)
     if not linkage["valid"]:
         raise ValueError("cannot translate unmatched VS/PS pair to a linked GLSL interface")
+
+    input_linkage = (
+        build_vertex_input_locations(vertex, vertex_properties)
+        if vertex_properties
+        else {"valid": True, "input_locations": {}, "bindings": [], "unresolved": [], "score": 1.0}
+    )
+    if not input_linkage["valid"]:
+        raise ValueError("cannot translate VS: one or more vertex inputs lack a target VertexLayout location")
+
     return {
         "format": "SHIFT.LinkedShaderPair/1",
         "vertex": program_to_ir(vertex),
         "pixel": program_to_ir(pixel),
         "interface": linkage["link"],
         "varying_locations": linkage["semantic_locations"],
-        "vertex_glsl": to_glsl(vertex, output_locations=linkage["vertex_output_locations"]),
+        "vertex_input_bindings": input_linkage["bindings"],
+        "vertex_input_locations": input_linkage["input_locations"],
+        "vertex_glsl": to_glsl(
+            vertex,
+            input_locations=input_linkage["input_locations"],
+            output_locations=linkage["vertex_output_locations"],
+        ),
         "pixel_glsl": to_glsl(pixel, input_locations=linkage["pixel_input_locations"]),
     }
 
 
-def translate_pair_blob(data: bytes, vertex_offset: int, pixel_offset: int) -> dict:
+def translate_pair_blob(
+    data: bytes,
+    vertex_offset: int,
+    pixel_offset: int,
+    *,
+    vertex_properties: list[str | dict] | tuple[str | dict, ...] = (),
+) -> dict:
     """Parse and translate one VS/PS pair from a single FXO shader blob."""
     blobs = parse_shader_blobs(data)
     vertex_blob = next((b for b in blobs if b.offset == vertex_offset and b.stage == "vertex"), None)
@@ -54,7 +82,7 @@ def translate_pair_blob(data: bytes, vertex_offset: int, pixel_offset: int) -> d
         raise ValueError("requested shader pair offsets are not present")
     vertex = parse_program(data, vertex_blob.offset, vertex_blob.end, vertex_blob.stage, vertex_blob.major, vertex_blob.minor)
     pixel = parse_program(data, pixel_blob.offset, pixel_blob.end, pixel_blob.stage, pixel_blob.major, pixel_blob.minor)
-    return translate_pair(vertex, pixel)
+    return translate_pair(vertex, pixel, vertex_properties=vertex_properties)
 
 def translate_blob(data: bytes, offset: int, end: int, stage: str, major: int, minor: int):
     program = parse_program(data, offset, end, stage, major, minor)
