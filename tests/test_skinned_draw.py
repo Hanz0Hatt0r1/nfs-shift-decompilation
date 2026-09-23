@@ -77,6 +77,17 @@ def _packet():
                 ],
             },
         },
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "bone_count": 2,
+            "matrices_3x4": [
+                [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                [1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 2.0, 0.0, 0.0, 1.0, 3.0],
+            ],
+            "source": "synthetic",
+            "frame": 0,
+        },
         "submeshes": [
             {
                 "first_index": 0,
@@ -141,7 +152,7 @@ def test_skinned_draw_rejects_incomplete_bind_skeleton():
 def test_skinned_draw_preserves_bind_matrices_and_opaque_animation_payload():
     result = build_skinned_draw_contract(_packet())
     palette = result["bind_skeleton"]["palette"]
-    assert palette["matrices_3x4"][1] == [
+    assert palette["local_matrices_3x4"][1] == [
         1.0, 0.0, 0.0, 1.0,
         0.0, 1.0, 0.0, 2.0,
         0.0, 0.0, 1.0, 3.0,
@@ -155,6 +166,14 @@ def test_skinned_draw_preserves_external_samplers():
     result = build_skinned_draw_contract(_packet())
     assert result["external_samplers"][0]["sampler"] == "environmentMap"
     assert result["external_samplers"][0]["d3d9_sampler_register"] == 3
+
+
+def test_skinned_draw_requires_explicit_skin_pose():
+    packet = _packet()
+    del packet["skin_pose"]
+    result = build_skinned_draw_contract(packet)
+    assert result["ready"] is False
+    assert "skin-pose:missing" in result["blocking_reasons"]
 
 
 def test_skinned_draw_rejects_non_unique_shader_selection():
