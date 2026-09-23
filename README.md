@@ -80,3 +80,14 @@ CTAB reflection теперь сохраняет typed constants и sampler regis
 ### VHF -> MEB -> BMT render-link stage
 
 Добавлен `render_pipeline.py`, формирующий `SHIFT.RenderBinding/1`: VHF resource nodes связываются с MEB primitives, legacy `.mtx` автоматически разрешается в `.bmt`, VHF parent/matrix hierarchy превращается в world transforms, а BMT связывается с FX source и FXO permutations через `material_linker.py`. На следующем слое останется восстановить VS/PS pair и semantic vertex interface перед загрузкой DrawPacket в Android renderer.
+
+
+### VS/PS semantic interface
+
+Исправлена карта D3D9 `D3DDECLUSAGE`: `6=TANGENT`, `7=BINORMAL`, `10=COLOR`, `13=SAMPLE`. На реальных BMW M3 E36 FXO это устраняет прежнюю ложную интерпретацию `COLOR0` как `SAMPLE0`.
+
+`shader_interface.py` теперь связывает vertex `oTn` и pixel `vn` по паре `(usage,index)`, а не по номеру регистра, и сопоставляет входы VS с атрибутами MEB. Подтверждённые MEB semantic mappings: `200=POSITION0`, `460=COLOR0`, `220=NORMAL0`, `240=TANGENT0`, `250=BINORMAL0`, `130..134=TEXCOORD0..4`, `310=BLENDWEIGHT0`, `580=BLENDINDICES0`. `230..234` используются как 3-компонентные UVW-каналы и сохраняются как TEXCOORD slots.
+
+На наборе BMW M3 E36 + Cockpit: 1,707 FXO, 10,756 shader programs, 125 уникальных stage+IO signatures. Внутри FXO обнаружено 21,488 VS/PS candidate pairs; 13,909 пар имеют полное semantic-покрытие PS input declarations со стороны VS outputs. Например bodywork permutation связывает PS `TEXCOORD5/0/1` с VS `oT1/oT2/oT3` при разных register numbers — это подтверждает semantic linkage.
+
+Следующий слой: точный vertex stream packing/type (D3DDECLTYPE) поверх этих semantics, затем окончательная VS/PS permutation привязка к BMT specialization flags и runtime `SHIFT.DrawPacket/1`.
