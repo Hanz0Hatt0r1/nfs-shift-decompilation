@@ -70,4 +70,4 @@ def test_predication_is_preserved_in_ir():
         [], [], [], [], [0,1], [], [], [], {}
     )
     glsl = to_glsl(p)
-    assert "mix(r0,r1,predicate)" in glsl
+    assert "mix(r0,r1,predicate.xxxx)" in glsl
