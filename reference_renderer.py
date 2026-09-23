@@ -15,6 +15,7 @@ from typing import Any, Iterable
 
 from render_command import validate_render_command
 from static_draw import build_static_draw_contract
+from texture_reference import sample_texture_2d
 
 
 RGBA = tuple[int, int, int, int]
@@ -91,6 +92,196 @@ def _vertex_color(colors: list[RGBA], index: int) -> RGBA:
         return (210, 210, 210, 255)
     return tuple(max(0, min(255, int(x))) for x in c)  # type: ignore[return-value]
 
+
+
+def rasterize_textured_mesh(
+    vertices: Iterable[Iterable[float]],
+    indices: Iterable[int],
+    uvs: Iterable[Iterable[float]],
+    image: dict[str, Any],
+    *,
+    width: int = 512,
+    height: int = 512,
+    mvp: list[list[float]] | None = None,
+    sampler: dict[str, Any] | None = None,
+    clear: RGBA = (12, 12, 12, 255),
+) -> bytes:
+    """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
+    if width <= 0 or height <= 0:
+        raise ValueError("render target dimensions must be positive")
+    verts = [tuple(float(x) for x in v) for v in vertices]
+    idx = [int(x) for x in indices]
+    uv_rows = [tuple(float(x) for x in uv) for uv in uvs]
+    if len(uv_rows) != len(verts):
+        raise ValueError("UV vertex count must match vertex count")
+    if any(len(uv) < 2 for uv in uv_rows):
+        raise ValueError("each UV row must contain at least two components")
+    if len(idx) % 3:
+        raise ValueError("triangle index buffer length must be divisible by three")
+    if any(i < 0 or i >= len(verts) for i in idx):
+        raise ValueError("triangle index exceeds vertex count")
+
+    matrix = mvp or orthographic_mvp(verts)
+    projected = _project(verts, matrix, width, height)
+    pixels = bytearray(clear * (width * height))
+    depth = [float("inf")] * (width * height)
+
+    for base in range(0, len(idx), 3):
+        ia, ib, ic = idx[base:base + 3]
+        a, b, c = projected[ia], projected[ib], projected[ic]
+        if not all(math.isfinite(x) for q in (a, b, c) for x in q[:3]):
+            continue
+        p0 = (a[0], a[1]); p1 = (b[0], b[1]); p2 = (c[0], c[1])
+        area = _edge(p0, p1, p2)
+        if abs(area) <= 1.0e-12:
+            continue
+        min_x = max(0, int(math.floor(min(p0[0], p1[0], p2[0]))))
+        max_x = min(width - 1, int(math.ceil(max(p0[0], p1[0], p2[0]))))
+        min_y = max(0, int(math.floor(min(p0[1], p1[1], p2[1]))))
+        max_y = min(height - 1, int(math.ceil(max(p0[1], p1[1], p2[1]))))
+        inv_area = 1.0 / area
+        for y in range(min_y, max_y + 1):
+            py = y + 0.5
+            for x in range(min_x, max_x + 1):
+                px = x + 0.5
+                p = (px, py)
+                w0 = _edge(p1, p2, p) * inv_area
+                w1 = _edge(p2, p0, p) * inv_area
+                w2 = _edge(p0, p1, p) * inv_area
+                if w0 < -1.0e-7 or w1 < -1.0e-7 or w2 < -1.0e-7:
+                    continue
+                z = w0 * a[2] + w1 * b[2] + w2 * c[2]
+                offset = y * width + x
+                if z >= depth[offset]:
+                    continue
+                u = w0 * uv_rows[ia][0] + w1 * uv_rows[ib][0] + w2 * uv_rows[ic][0]
+                v = w0 * uv_rows[ia][1] + w1 * uv_rows[ib][1] + w2 * uv_rows[ic][1]
+                color = sample_texture_2d(image, u, v, sampler)
+                depth[offset] = z
+                pixels[offset * 4:offset * 4 + 4] = bytes(
+                    max(0, min(255, int(round(component * 255.0))))
+                    for component in color
+                )
+
+    rgb = bytearray()
+    for i in range(width * height):
+        rgb.extend(pixels[i * 4:i * 4 + 3])
+    return b"P6\n%d %d\n255\n" % (width, height) + bytes(rgb)
+
+
+def render_textured_static_draw(
+    draw: dict[str, Any],
+    mesh: dict[str, Any],
+    image: dict[str, Any],
+    output: str | Path,
+    *,
+    sampler: dict[str, Any] | None = None,
+    width: int = 512,
+    height: int = 512,
+    mvp: list[list[float]] | None = None,
+) -> dict[str, Any]:
+    """Render a validated StaticDraw with one explicit UV0 texture input."""
+    if draw.get("format") != "SHIFT.StaticDraw/1":
+        raise ValueError("draw packet is not SHIFT.StaticDraw/1")
+    if not draw.get("ready", False):
+        raise ValueError(
+            "draw packet is not ready: " + ", ".join(draw.get("blocking_reasons", []))
+        )
+    uv_layers = mesh.get("uv_layers") or {}
+    uvs = uv_layers.get("130") or uv_layers.get(130) or mesh.get("uvs") or []
+    if not uvs:
+        raise ValueError("mesh has no UV0 (property 130)")
+    vertices = mesh.get("vertices") or []
+    indices = mesh.get("indices") or []
+    draw_indices: list[int] = []
+    for submesh in draw.get("submeshes", []) or []:
+        first = int(submesh.get("first_index", 0))
+        count = int(submesh.get("index_count", 0))
+        if first < 0 or count < 0 or first + count > len(indices):
+            raise ValueError(
+                f"submesh index range out of bounds: first={first} count={count} indices={len(indices)}"
+            )
+        if count % 3:
+            raise ValueError("submesh index_count must be divisible by three")
+        draw_indices.extend(int(x) for x in indices[first:first + count])
+    if not draw.get("submeshes"):
+        draw_indices = [int(x) for x in indices]
+
+    world = _coerce_matrix(draw.get("world_matrix")) or _identity4()
+    base_mvp = mvp or orthographic_mvp(vertices)
+    final_mvp = _mat4_mul(base_mvp, world)
+    image_bytes = rasterize_textured_mesh(
+        vertices,
+        draw_indices,
+        uvs,
+        image,
+        width=width,
+        height=height,
+        mvp=final_mvp,
+        sampler=sampler,
+    )
+    out = Path(output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(image_bytes)
+    return {
+        "format": "SHIFT.TexturedStaticDrawReference/1",
+        "output": str(out),
+        "width": width,
+        "height": height,
+        "vertex_count": len(vertices),
+        "triangle_count": len(draw_indices) // 3,
+        "texture_format": image.get("source_format"),
+        "world_matrix_applied": True,
+    }
+
+
+def render_textured_render_command(
+    command: dict[str, Any],
+    mesh: dict[str, Any],
+    image: dict[str, Any],
+    output: str | Path,
+    *,
+    sampler: dict[str, Any] | None = None,
+    width: int = 512,
+    height: int = 512,
+    mvp: list[list[float]] | None = None,
+) -> dict[str, Any]:
+    """Execute a RenderCommand through the one-texture reference material path."""
+    from render_command import validate_render_command
+
+    validation = validate_render_command(command)
+    if not validation["valid"]:
+        raise ValueError(
+            "render command is not valid: " + ", ".join(validation["blocking_reasons"])
+        )
+    if not command.get("ready", False):
+        raise ValueError(
+            "render command is not ready: " + ", ".join(command.get("blocking_reasons", []))
+        )
+
+    draw = {
+        "format": "SHIFT.StaticDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "world_matrix": command.get("world_matrix"),
+        "submeshes": command.get("submeshes", []),
+    }
+    result = render_textured_static_draw(
+        draw,
+        mesh,
+        image,
+        output,
+        sampler=sampler,
+        width=width,
+        height=height,
+        mvp=mvp,
+    )
+    result["command_contract"] = {
+        "format": command.get("format"),
+        "ready": command.get("ready"),
+        "validation": validation,
+    }
+    return result
 
 def rasterize_mesh(
     vertices: Iterable[Iterable[float]],
