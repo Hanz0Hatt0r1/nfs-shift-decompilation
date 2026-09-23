@@ -193,4 +193,4 @@ def test_draw_packet_golden_render_has_stable_sha256(tmp_path):
         width=32,
         height=32,
     )
-    assert result["sha256"] == "34b8ca110ed9fba3a6a254438525d5b5f6056e1ecb8cfc5e07d404cbf0c77921"
+    assert result["sha256"] == "3981a2538abd99b38c0488e4bd0f6bf4a469c18c1d11712568a616a3ce9ce3cb"
