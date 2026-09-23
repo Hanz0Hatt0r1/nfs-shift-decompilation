@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "work/**"]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pip pytest
+      - name: Run Python tests
+        run: python -m pytest -q
+
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure native IR
+        run: cmake -S native_ir -B native_ir/build -DCMAKE_BUILD_TYPE=Release
+      - name: Build native IR
+        run: cmake --build native_ir/build --parallel
+      - name: Run native IR tests
+        run: |
+          ./native_ir/build/test_ir
+          ./native_ir/build/test_lzx
