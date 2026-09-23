@@ -20,7 +20,7 @@ def _dds_header(
 ):
     pf_fourcc = struct.unpack("<I", fourcc.ljust(4, b"\x00"))[0]
     header = struct.pack(
-        "<I7I44x2I4I",
+        "<I6I11I8I5I",
         124,
         0,
         height,
@@ -51,7 +51,7 @@ def test_decode_dxt1_to_rgba8():
     assert image["width"] == 4
     assert image["height"] == 4
     assert image["pixels"][:4] == bytes((255, 0, 0, 255))
-    assert image_hash(image) == "a8b22a31fef23fbf0a16c6b7ae3a83ab4e4eea37d7eb5f9a0a3d4d1e5c6f9a3c"
+    assert image_hash(image) == "fec0f57de0b19bc7dacb5b0fc3de7b56fc68dfdbeeebc8f9f4c506bf6e821c77"
 
 
 def test_decode_dxt3_preserves_explicit_alpha():
