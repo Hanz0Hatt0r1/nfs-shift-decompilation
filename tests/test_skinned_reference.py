@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pytest
 
 from skinned_draw import build_skinned_draw_contract
-from skinned_reference import skin_draw_directions, skin_draw_points
+from skinned_reference import skin_draw_directions, skin_draw_points, validate_bind_pose
 
 
 def _draw():
@@ -182,3 +182,35 @@ def test_skinned_draw_rejects_linked_glsl_error():
     contract = build_skinned_draw_contract(draw)
     assert contract["ready"] is False
     assert "material-shader-glsl:error" in contract["blocking_reasons"]
+
+
+def test_validate_bind_pose_accepts_identity_skin_pose():
+    draw = _ready_draw()
+    draw["skin_pose"]["matrices_3x4"] = [
+        [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+        [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+    ]
+    result = validate_bind_pose(
+        draw,
+        [(1, 2, 3), (-1, 0.5, 2)],
+        [(0, 0, 0, 0), (1, 0, 0, 0)],
+        [(1, 0, 0, 0), (1, 0, 0, 0)],
+    )
+    assert result["format"] == "SHIFT.SkinBindPoseCheck/1"
+    assert result["valid"] is True
+    assert result["max_error"] == 0.0
+    assert result["mismatches"] == []
+
+
+def test_validate_bind_pose_reports_position_error():
+    draw = _ready_draw()
+    result = validate_bind_pose(
+        draw,
+        [(0, 0, 0)],
+        [(0, 0, 0, 0)],
+        [(1, 0, 0, 0)],
+        tolerance=0.1,
+    )
+    assert result["valid"] is False
+    assert result["max_error"] == 2.0
+    assert result["mismatches"][0]["vertex"] == 0
