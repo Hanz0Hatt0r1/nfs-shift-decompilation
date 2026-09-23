@@ -17,3 +17,7 @@ The path is intentionally a texture/material oracle only: full BMT/HLSL lighting
 ## Phase 43: sampler state propagation
 
 `RenderCommand/1` now preserves the full `SHIFT.SamplerState/1` selected for each material texture binding. The textured reference renderer consumes this embedded state automatically when no sampler override is supplied, keeping filter/address behavior coupled to the recovered material binding.
+
+## Phase 44: multi-texture sampler ABI
+
+`RenderCommand/1` now rejects duplicate non-external D3D9 sampler registers and invalid/not-ready `SHIFT.SamplerState/1` payloads. This keeps diffuse/specular/scratch texture slots independently addressable and prevents accidental aliasing before GPU submission.

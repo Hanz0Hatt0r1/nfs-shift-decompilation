@@ -70,6 +70,8 @@ def _find_texture_resource(resources: dict[str, Any], texture: dict[str, Any]) -
     ref = str(texture.get("ref") or "").replace("\\", "/").lower()
     sampler = texture.get("sampler")
     register = texture.get("d3d9_sampler_register")
+    if register is None:
+        register = texture.get("slot")
     candidates = []
     for binding in resources.get("bindings", []) or []:
         if register is not None and binding.get("d3d9_sampler_register") not in (None, register):
@@ -403,7 +405,8 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
                 if register_index < 0 or register_count <= 0:
                     reasons.append("renderer-constant-binding:register-range-invalid")
 
-        for texture in submesh.get("textures", []) or []:
+        sampler_registers: dict[int, int] = {}
+        for texture_index, texture in enumerate(submesh.get("textures", []) or []):
             if texture.get("resource") == "external":
                 continue
             if not texture.get("resource_binding_id"):
@@ -412,6 +415,30 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
                 reasons.append("texture-command:texture-id-missing")
             if not texture.get("sampler_id"):
                 reasons.append("texture-command:sampler-id-missing")
+
+            register = texture.get("d3d9_sampler_register")
+            if register is not None:
+                try:
+                    register_value = int(register)
+                except (TypeError, ValueError):
+                    reasons.append(f"texture-command:sampler-register-invalid:{texture_index}")
+                else:
+                    owner = sampler_registers.get(register_value)
+                    if owner is not None:
+                        reasons.append(
+                            f"texture-command:sampler-register-collision:{register_value}"
+                        )
+                    else:
+                        sampler_registers[register_value] = texture_index
+
+            sampler_state = texture.get("sampler_state") or {}
+            if sampler_state and sampler_state.get("format") != "SHIFT.SamplerState/1":
+                reasons.append(f"texture-command:sampler-state-invalid:{texture_index}")
+            if sampler_state.get("ready") is False:
+                reasons.extend(
+                    sampler_state.get("blocking_reasons", [])
+                    or [f"texture-command:sampler-state-not-ready:{texture_index}"]
+                )
 
     reasons = list(dict.fromkeys(reasons))
     return {
