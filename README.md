@@ -101,3 +101,7 @@ CTAB reflection теперь сохраняет typed constants и sampler regis
 На наборе BMW M3 E36 + Cockpit: 1,707 FXO, 10,756 shader programs, 125 уникальных stage+IO signatures. Внутри FXO обнаружено 21,488 VS/PS candidate pairs; 13,909 пар имеют полное semantic-покрытие PS input declarations со стороны VS outputs. Например bodywork permutation связывает PS `TEXCOORD5/0/1` с VS `oT1/oT2/oT3` при разных register numbers — это подтверждает semantic linkage.
 
 Следующий слой: точный vertex stream packing/type (D3DDECLTYPE) поверх этих semantics, затем окончательная VS/PS permutation привязка к BMT specialization flags и runtime `SHIFT.DrawPacket/1`.
+
+## Renderer resource manager
+
+`renderer_resources.py` exposes `SHIFT.RenderResources/1`, a content-addressed manifest for DDS resources, sampler states and material texture bindings. Texture identity is based on decoded-content SHA-256 when available; sampler identity is independent so different materials can reuse the same GPU texture with distinct sampling state. Optional compressed-texture capabilities are checked explicitly before a resource is marked GPU-ready.
