@@ -263,3 +263,22 @@ def test_draw_packet_preserves_external_sampler_requirements():
     sel = result["packets"][0]["submeshes"][0]["material"]["shader_selection"]
     assert sel["external_samplers"][0]["sampler"] == "environmentMap"
     assert sel["vertex_bindings"][0]["target_location"] == 0
+
+
+def test_draw_packet_carries_skinning_contract():
+    scene, mesh, material, texture, shader = _records()
+    mesh[0]["analysis"].update({
+        "vertex_properties": ["200", "310", "580"],
+        "skeleton": {"ir": {"num_bones": 4, "bones": [{}, {}, {}, {}]}},
+        "skinning": {
+            "has_weights": True,
+            "has_indices": True,
+            "skinned": True,
+            "valid": True,
+            "bone_count": 4,
+        },
+    })
+    result = build_draw_packets(scene, mesh, material, texture, shader)
+    skin = result["packets"][0]["mesh"]["skinning"]
+    assert skin["skinned"] is True
+    assert skin["bone_count"] == 4
