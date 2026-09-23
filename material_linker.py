@@ -158,8 +158,10 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
              and abs(x.get("vertex_pair_score",0.0)-best.get("vertex_pair_score",0.0)) < 1e-9
              and abs(x.get("uniform_coverage",0.0)-best.get("uniform_coverage",0.0)) < 1e-9
              and abs(x.get("specialization_score",0.0)-best.get("specialization_score",0.0)) < 1e-9]
-        hashes={x.get("pair_sha256") for x in top if x.get("pair_sha256")}
-        ambiguous_candidates=top if len(hashes)>1 else []
+        pair_ids={(x.get("file"), x.get("program_offset"), x.get("vertex_sha256"), x.get("pair_sha256")) for x in top}
+        # A tie is still ambiguous when byte hashes are unavailable. The
+        # stable file/program offsets are enough to distinguish candidates.
+        ambiguous_candidates=top if len(pair_ids)>1 else []
         pair_ambiguous=best.get("vertex_pair_selection_status")=="ambiguous"
         selection_status="ambiguous" if ambiguous_candidates or pair_ambiguous else ("unique" if best.get("vertex_pair_valid") else "heuristic")
     shader_pair=None
