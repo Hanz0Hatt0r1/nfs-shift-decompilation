@@ -1,6 +1,7 @@
 # SHIFT importer — verified run results
 
-Дата: 2026-09-23
+Дата обновления: 2026-09-24
+Последний полный CI baseline: 2026-09-23, Python 150 passed / 2 skipped.
 
 ## BFF/XMem
 
@@ -78,9 +79,20 @@
 
 ## Tests
 
-- Python CI: **107 passed, 2 skipped**
+- Python CI: **150 passed, 2 skipped**
 - Native C++ IR reader test: passed
 - Native C++ LZX golden test: passed
+
+## Implemented runtime-oriented boundaries
+
+- SHIFT.VertexLayout/1: explicit ABI evidence states and semantic collision reporting.
+- SHIFT.MaterialBinding/1: deterministic FXO selection plus linked SHIFT.LinkedShaderPair/1.
+- SHIFT.LinkedShaderPair/1: semantic VS/PS varying locations and VertexLayout input locations.
+- SHIFT.StaticDraw/1: vertex ABI, submesh range, texture and uniform readiness blockers.
+- SHIFT.DrawPacket/1 and SHIFT.RenderBinding/1: canonical packet construction with attached StaticDraw contract.
+- Desktop reference renderer: deterministic DrawPacket-to-StaticDraw raster path with submesh range handling and SHA-256 golden output.
+- Skinning: explicit SkinPose/1, CPU reference, GLES 3.1 ABI and bind-pose equivalence check.
+- BAB evidence tooling: corpus fingerprinting and byte-level payload comparison without keyframe grammar guessing.
 
 ## Current remaining RE/runtime layers
 
