@@ -135,6 +135,30 @@ def vertex_attribute_bindings(program:ShaderProgram,properties:Iterable[str|dict
         bindings.append(rec)
     return {"valid":not missing,"bindings":bindings,"missing":missing,"score":1.0-len(missing)/len(program.inputs) if program.inputs else 1.0}
 
+def build_vertex_input_locations(
+    program: ShaderProgram,
+    properties: Iterable[str | dict],
+) -> dict:
+    """Map D3D9 vertex input registers to target VertexLayout locations."""
+    bindings = vertex_attribute_bindings(program, properties)
+    register_locations: dict[int, int] = {}
+    unresolved: list[dict] = []
+    for binding in bindings["bindings"]:
+        reg = register_index(binding.get("shader_register"))
+        location = binding.get("target_location")
+        if not binding.get("matched") or reg is None or location is None:
+            unresolved.append(binding)
+            continue
+        register_locations[reg] = int(location)
+    return {
+        "valid": not unresolved,
+        "input_locations": register_locations,
+        "bindings": bindings["bindings"],
+        "unresolved": unresolved,
+        "score": bindings["score"],
+    }
+
+
 def match_vertex_format(program:ShaderProgram,properties:Iterable[str|dict])->dict:
     available={(x["usage"],x["usage_index"]) for x in infer_meb_semantics(properties)}
     required={semantic_key(x) for x in program.inputs}
