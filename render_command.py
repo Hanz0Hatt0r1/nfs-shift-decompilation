@@ -103,7 +103,56 @@ def _find_texture_resource(resources: dict[str, Any], texture: dict[str, Any]) -
     return None, "renderer-texture-resource:ambiguous"
 
 
-def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any]) -> dict[str, Any]:
+def validate_render_command_shaders(command: dict[str, Any]) -> dict[str, Any]:
+    """Run the explicit GLES shader compiler validator over each RenderCommand submesh."""
+    from shader_backend import validate_linked_shader_pair
+
+    results: list[dict[str, Any]] = []
+    reasons: list[str] = []
+    for index, submesh in enumerate(command.get("submeshes", []) or []):
+        shader = submesh.get("shader") or {}
+        vertex = shader.get("vertex")
+        pixel = shader.get("pixel")
+        if not vertex or not pixel:
+            results.append({
+                "submesh": index,
+                "status": "invalid",
+                "blocking_reasons": ["shader-source-missing"],
+            })
+            reasons.append(f"shader-validation:submesh-{index}:source-missing")
+            continue
+
+        validation = validate_linked_shader_pair({
+            "format": "SHIFT.LinkedShaderPair/1",
+            "vertex_glsl": vertex,
+            "pixel_glsl": pixel,
+        })
+        results.append({"submesh": index, **validation})
+        if validation.get("status") == "invalid":
+            reasons.extend(
+                f"shader-validation:submesh-{index}:{reason}"
+                for reason in validation.get("blocking_reasons", []) or ["invalid"]
+            )
+
+    statuses = [item.get("status") for item in results]
+    if any(status == "invalid" for status in statuses):
+        status = "invalid"
+    elif any(status == "unavailable" for status in statuses):
+        status = "unavailable"
+    elif statuses:
+        status = "valid"
+    else:
+        status = "empty"
+
+    return {
+        "format": "SHIFT.RenderCommandShaderValidation/1",
+        "status": status,
+        "submeshes": results,
+        "blocking_reasons": list(dict.fromkeys(reasons)),
+    }
+
+
+def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any], *, validate_shaders: bool = False) -> dict[str, Any]:
     """Build an Android/GLES-neutral draw submission plan."""
     reasons = list(static_draw.get("blocking_reasons", []) or [])
     if static_draw.get("format") != "SHIFT.StaticDraw/1":
@@ -191,6 +240,10 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
                 "byte_offset": register_index * 16,
             })
 
+        shader_validation = None
+        if linked_pair is not None:
+            shader_validation = linked_pair.get("shader_validation")
+
         commands.append({
             "first_index": submesh.get("first_index", 0),
             "index_count": submesh.get("index_count", 0),
@@ -200,6 +253,7 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
                 "varying_locations": linked_pair.get("varying_locations", []) if linked_pair else [],
                 "vertex_input_locations": linked_pair.get("vertex_input_locations", {}) if linked_pair else {},
                 "constant_buffer_binding": 14,
+                "validation": shader_validation,
             },
             "textures": texture_commands,
             "uniforms": uniform_binding,
@@ -226,6 +280,14 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
             "sampler_count": resources.get("stats", {}).get("samplers", 0),
         },
     }
+    if validate_shaders:
+        shader_validation = validate_render_command_shaders(command)
+        command["shader_validation"] = shader_validation
+        if shader_validation["status"] == "invalid":
+            command["blocking_reasons"].extend(
+                shader_validation.get("blocking_reasons", [])
+            )
+
     validation = validate_render_command(command)
     command["ready"] = (
         bool(static_draw.get("ready"))
@@ -244,6 +306,12 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
     reasons: list[str] = []
     if command.get("format") != FORMAT:
         reasons.append("render-command:invalid-format")
+
+    shader_validation = command.get("shader_validation") or {}
+    if shader_validation.get("format") not in (None, "SHIFT.RenderCommandShaderValidation/1"):
+        reasons.append("shader-validation:invalid-format")
+    if shader_validation.get("status") == "invalid":
+        reasons.extend(shader_validation.get("blocking_reasons", []) or ["shader-validation:invalid"])
 
     mesh = command.get("mesh") or {}
     layout = mesh.get("vertex_layout") or {}
@@ -312,6 +380,12 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
             reasons.append("shader:vertex-source-missing")
         if not shader.get("pixel"):
             reasons.append("shader:pixel-source-missing")
+
+        shader_validation = shader.get("validation") or {}
+        if shader_validation.get("format") not in (None, "SHIFT.GLESShaderValidation/1"):
+            reasons.append("shader-validation:invalid-format")
+        if shader_validation.get("status") == "invalid":
+            reasons.extend(shader_validation.get("blocking_reasons", []) or ["shader-validation:invalid"])
 
         uniform = submesh.get("uniforms") or {}
         if uniform.get("format") not in (None, "SHIFT.MaterialUniformBinding/1"):

@@ -290,3 +290,71 @@ def test_render_command_blocks_normalized_integer_bone_indices():
     result = build_render_command(draw, _resources())
     assert result["ready"] is False
     assert "vertex-attribute-layout:integer-input-cannot-be-normalized" in result["blocking_reasons"]
+
+
+def test_render_command_can_attach_shader_validation(monkeypatch):
+    from render_command import validate_render_command_shaders
+
+    monkeypatch.setattr(
+        "shader_backend.validate_linked_shader_pair",
+        lambda pair: {
+            "format": "SHIFT.GLESShaderValidation/1",
+            "status": "valid",
+            "validator": "/usr/bin/glslangValidator",
+            "stages": {
+                "vertex": {"valid": True},
+                "pixel": {"valid": True},
+            },
+            "link": {"valid": True},
+            "blocking_reasons": [],
+        },
+    )
+    draw = build_static_draw_contract(_packet())
+    result = build_render_command(draw, _resources(), validate_shaders=True)
+    assert result["ready"] is True
+    assert result["shader_validation"]["format"] == "SHIFT.RenderCommandShaderValidation/1"
+    assert result["shader_validation"]["status"] == "valid"
+    assert result["shader_validation"]["submeshes"][0]["status"] == "valid"
+
+
+def test_render_command_shader_validation_blocks_invalid_pair(monkeypatch):
+    monkeypatch.setattr(
+        "shader_backend.validate_linked_shader_pair",
+        lambda pair: {
+            "format": "SHIFT.GLESShaderValidation/1",
+            "status": "invalid",
+            "validator": "/usr/bin/glslangValidator",
+            "stages": {
+                "vertex": {"valid": True},
+                "pixel": {"valid": False},
+            },
+            "link": {"valid": None},
+            "blocking_reasons": ["linked-shader:pixel-compile-failed"],
+        },
+    )
+    draw = build_static_draw_contract(_packet())
+    result = build_render_command(draw, _resources(), validate_shaders=True)
+    assert result["ready"] is False
+    assert result["shader_validation"]["status"] == "invalid"
+    assert "shader-validation:submesh-0:linked-shader:pixel-compile-failed" in result["blocking_reasons"]
+
+
+def test_render_command_shader_validation_unavailable_is_nonblocking(monkeypatch):
+    monkeypatch.setattr(
+        "shader_backend.validate_linked_shader_pair",
+        lambda pair: {
+            "format": "SHIFT.GLESShaderValidation/1",
+            "status": "unavailable",
+            "validator": None,
+            "stages": {
+                "vertex": {"valid": None},
+                "pixel": {"valid": None},
+            },
+            "link": {"valid": None},
+            "blocking_reasons": [],
+        },
+    )
+    draw = build_static_draw_contract(_packet())
+    result = build_render_command(draw, _resources(), validate_shaders=True)
+    assert result["ready"] is True
+    assert result["shader_validation"]["status"] == "unavailable"
