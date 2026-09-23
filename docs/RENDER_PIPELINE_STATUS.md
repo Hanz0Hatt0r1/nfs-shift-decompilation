@@ -38,3 +38,6 @@ This makes the render-link stage an actual renderer contract boundary instead of
 ## Phase 33: neutral RenderCommand
 
 `render_command.py` converts validated `SHIFT.StaticDraw/1` plus `SHIFT.RenderResources/1` into `SHIFT.RenderCommand/1`: vertex attribute locations, index ranges, linked GLSL stages, uniform bindings and per-texture resource IDs are preserved without calling GLES.
+## Phase 35: GLES vertex attribute ABI
+
+`SHIFT.RenderCommand/1` now carries concrete GLES attribute setup: component count, GL scalar type, normalized flag, byte offset/stride, and the correct pointer API. `BLENDINDICES0/580` uses `UNSIGNED_BYTE` with `glVertexAttribIPointer`; color 460/461 stays `glVertexAttribPointer` with normalized bytes while preserving its unresolved RGBA/BGRA evidence.
