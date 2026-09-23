@@ -7,6 +7,35 @@ from meb_format import PROP_NAMES
 # MEB properties are stored as separate contiguous payloads. These descriptors
 # preserve the physical source ABI while also defining a deterministic target
 # interleaved layout for Android/OpenGL.
+ABI_STATUS = {
+    "exact": "proven",
+    "derived-from-stride": "inferred",
+    "ambiguous-channel-order": "ambiguous",
+    "unknown": "unknown",
+}
+
+EVIDENCE_BASIS = {
+    "200": "12-byte MEB payload decoded as FLOAT32x3; POSITION0 semantic confirmed by shader declaration corpus",
+    "220": "12-byte MEB payload decoded as FLOAT32x3; NORMAL0 semantic confirmed by shader declaration corpus",
+    "240": "12-byte MEB payload decoded as FLOAT32x3; TANGENT0 semantic confirmed by shader declaration corpus",
+    "250": "12-byte MEB payload decoded as FLOAT32x3; BINORMAL0 semantic confirmed by shader declaration corpus",
+    "130": "8-byte MEB payload decoded as FLOAT32x2; TEXCOORD0 semantic",
+    "131": "8-byte MEB payload decoded as FLOAT32x2; TEXCOORD1 semantic",
+    "132": "8-byte MEB payload decoded as FLOAT32x2; TEXCOORD2 semantic",
+    "133": "8-byte MEB payload decoded as FLOAT32x2; TEXCOORD3 semantic",
+    "134": "8-byte MEB payload decoded as FLOAT32x2; TEXCOORD4 semantic",
+    "230": "12-byte MEB payload decoded as FLOAT32x3; TEXCOORD0-4 family retained as established importer mapping",
+    "231": "12-byte MEB payload decoded as FLOAT32x3; TEXCOORD0-4 family retained as established importer mapping",
+    "232": "12-byte MEB payload decoded as FLOAT32x3; TEXCOORD0-4 family retained as established importer mapping",
+    "233": "12-byte MEB payload decoded as FLOAT32x3; TEXCOORD0-4 family retained as established importer mapping",
+    "234": "12-byte MEB payload decoded as FLOAT32x3; TEXCOORD0-4 family retained as established importer mapping",
+    "310": "16-byte MEB payload decoded as four FLOAT32 values; BLENDWEIGHT0 semantic and four-influence contract confirmed",
+    "580": "4-byte MEB payload decoded as four U8 values; BLENDINDICES0 semantic and four-influence contract confirmed",
+    "460": "4-byte MEB payload; COLOR0 semantic confirmed, but D3D9 D3DCOLOR vs UBYTE4N and RGBA/BGRA byte order remain unresolved",
+    "461": "4-byte MEB payload; COLOR1 semantic confirmed, but D3D9 D3DCOLOR vs UBYTE4N and RGBA/BGRA byte order remain unresolved",
+    "033": "4-byte MEB payload preserved as opaque RAW4; semantic/type not proven",
+}
+
 D3DDECLTYPES = {
     "200": {"d3d9": "FLOAT3", "android": "FLOAT32x3", "components": 3, "normalized": False, "element_size": 12, "confidence": "derived-from-stride"},
     "220": {"d3d9": "FLOAT3", "android": "FLOAT32x3", "components": 3, "normalized": False, "element_size": 12, "confidence": "derived-from-stride"},
@@ -55,12 +84,15 @@ def build_vertex_layout(properties: Iterable[str | dict], *, repack_interleaved:
             continue
 
         usage, index = SEMANTICS.get(pid, ("UNKNOWN", 0))
+        abi_status = ABI_STATUS.get(info.get("confidence", "unknown"), "unknown")
         row = {
             "property_id": pid,
             "name": PROP_NAMES.get(pid, "unknown"),
             "usage": usage,
             "usage_index": index,
             "location": location,
+            "abi_status": abi_status,
+            "evidence_basis": EVIDENCE_BASIS.get(pid, "no evidence recorded"),
             **info,
         }
         if isinstance(value, dict):
@@ -76,11 +108,27 @@ def build_vertex_layout(properties: Iterable[str | dict], *, repack_interleaved:
             offset += int(row["element_size"])
         rows.append(row)
 
+    semantic_map: dict[tuple[str, int], list[str]] = {}
+    for row in rows:
+        if "usage" in row:
+            semantic_map.setdefault((row["usage"], int(row["usage_index"])), []).append(row["property_id"])
+    semantic_collisions = [
+        {"usage": usage, "usage_index": index, "property_ids": ids}
+        for (usage, index), ids in semantic_map.items()
+        if len(ids) > 1
+    ]
     result = {
         "format": "SHIFT.VertexLayout/1",
         "source": "MEB",
         "buffer_mode": "interleaved-repack" if repack_interleaved else "split-arrays",
         "attributes": rows,
+        "semantic_collisions": semantic_collisions,
+        "evidence": {
+            "ambiguous_properties": [x["property_id"] for x in rows if x.get("abi_status") == "ambiguous"],
+            "unknown_properties": [x["property_id"] for x in rows if x.get("abi_status") == "unknown"],
+            "inferred_properties": [x["property_id"] for x in rows if x.get("abi_status") == "inferred"],
+            "proven_properties": [x["property_id"] for x in rows if x.get("abi_status") == "proven"],
+        },
     }
     if repack_interleaved:
         result["buffer_stride"] = offset
@@ -108,5 +156,7 @@ def property_abi(property_id: str) -> dict:
         "name": PROP_NAMES.get(pid, "unknown"),
         "usage": usage,
         "usage_index": index,
+        "abi_status": ABI_STATUS.get(info.get("confidence", "unknown"), "unknown"),
+        "evidence_basis": EVIDENCE_BASIS.get(pid, "no evidence recorded"),
         **info,
     }
