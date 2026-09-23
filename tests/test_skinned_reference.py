@@ -185,7 +185,7 @@ def test_skinned_draw_rejects_linked_glsl_error():
 
 
 def test_validate_bind_pose_accepts_identity_skin_pose():
-    draw = _draw()
+    draw = _ready_draw()
     draw["skin_pose"]["matrices_3x4"] = [
         [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
         [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
