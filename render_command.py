@@ -7,6 +7,55 @@ from typing import Any
 FORMAT = "SHIFT.RenderCommand/1"
 
 
+def _gles_vertex_attribute_contract(attribute: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    """Describe the concrete GLES vertex-pointer call for one VertexLayout attribute."""
+    property_id = str(attribute.get("property_id") or "")
+    raw_storage = attribute.get("android") or attribute.get("storage") or ""
+    storage = str(raw_storage).upper().replace("_", "").replace("-", "")
+    mappings = {
+        "FLOAT32X2": (2, "FLOAT", False, "glVertexAttribPointer"),
+        "F32X2": (2, "FLOAT", False, "glVertexAttribPointer"),
+        "FLOAT32X3": (3, "FLOAT", False, "glVertexAttribPointer"),
+        "F32X3": (3, "FLOAT", False, "glVertexAttribPointer"),
+        "FLOAT32X4": (4, "FLOAT", False, "glVertexAttribPointer"),
+        "F32X4": (4, "FLOAT", False, "glVertexAttribPointer"),
+        "UINT8X4": (4, "UNSIGNED_BYTE", property_id == "580", "glVertexAttribIPointer" if property_id == "580" else "glVertexAttribPointer"),
+        "UBYTE4": (4, "UNSIGNED_BYTE", property_id == "580", "glVertexAttribIPointer" if property_id == "580" else "glVertexAttribPointer"),
+    }
+    info = mappings.get(storage)
+    if info is None:
+        return None, f"vertex-attribute-storage:unsupported:{raw_storage or 'missing'}"
+
+    components, gl_type, integer_pointer, pointer_api = info
+    try:
+        location = int(attribute.get("location"))
+        offset = int(attribute.get("offset"))
+        stride = int(attribute.get("stride"))
+    except (TypeError, ValueError):
+        return None, "vertex-attribute-layout:integer-field-invalid"
+    if location < 0 or offset < 0 or stride <= 0:
+        return None, "vertex-attribute-layout:range-invalid"
+
+    normalized = bool(attribute.get("normalized"))
+    if integer_pointer and normalized:
+        return None, "vertex-attribute-layout:integer-input-cannot-be-normalized"
+
+    return {
+        "location": location,
+        "property_id": property_id,
+        "components": components,
+        "gl_type": gl_type,
+        "normalized": normalized,
+        "integer_pointer": integer_pointer,
+        "pointer_api": pointer_api,
+        "offset": offset,
+        "stride": stride,
+        "element_size": attribute.get("element_size"),
+        "abi_status": attribute.get("abi_status"),
+        "channel_order_candidates": attribute.get("channel_order_candidates"),
+    }, None
+
+
 def _find_texture_resource(resources: dict[str, Any], texture: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
     ref = str(texture.get("ref") or "").replace("\\", "/").lower()
     sampler = texture.get("sampler")
@@ -53,17 +102,27 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
     mesh = static_draw.get("mesh") or {}
     layout = mesh.get("vertex_layout") or {}
     attributes = []
+    attribute_setup = []
     for attribute in layout.get("attributes", []) or []:
-        attributes.append({
+        normalized_attribute = {
             "location": attribute.get("location"),
             "property_id": attribute.get("property_id"),
-            "storage": attribute.get("storage"),
+            "storage": attribute.get("storage") or attribute.get("android"),
             "normalized": attribute.get("normalized"),
             "offset": attribute.get("offset"),
             "stride": attribute.get("stride") or layout.get("buffer_stride"),
             "element_size": attribute.get("element_size"),
             "abi_status": attribute.get("abi_status"),
+        }
+        attributes.append(normalized_attribute)
+        setup, error = _gles_vertex_attribute_contract({
+            **attribute,
+            "stride": attribute.get("stride") or layout.get("buffer_stride"),
         })
+        if error:
+            reasons.append(error)
+        elif setup is not None:
+            attribute_setup.append(setup)
 
     commands = []
     for submesh in static_draw.get("submeshes", []) or []:
@@ -147,6 +206,7 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
             "triangle_count": mesh.get("triangle_count"),
             "vertex_layout": layout,
             "attributes": attributes,
+            "attribute_setup": attribute_setup,
         },
         "world_matrix": static_draw.get("world_matrix"),
         "submeshes": commands,
