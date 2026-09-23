@@ -1,6 +1,6 @@
 """Universal SHIFT render-link stage: VHF -> MEB -> BMT -> FX/FXO -> draw bindings."""
 from __future__ import annotations
-import json, math
+import json, math, re
 from pathlib import Path
 from typing import Any
 from material_linker import link_material
@@ -11,7 +11,15 @@ def norm_ref(v: str) -> str:
 
 def alias_ref(v: str) -> str:
     n=norm_ref(v)
-    return n[:-4]+".bmt" if n.endswith(".mtx") else n
+    if n.endswith(".mtx"): return n[:-4]+".bmt"
+    return n
+
+def shader_family(path: str) -> str:
+    stem=Path(path).stem.lower()
+    stem=re.sub(r"_[0-9a-f]{8,}$", "", stem)
+    for prefix in ("render_shaders_","effects_particles_shaders_"):
+        if stem.startswith(prefix): stem=stem[len(prefix):]; break
+    return re.sub(r"[^a-z0-9]", "", stem)
 
 def _vec(s: str, n: int) -> list[float]:
     return [float(x) for x in s.replace(",", " ").split()][:n]
@@ -55,17 +63,23 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
     root=Path(ir_root)
     manifest=json.loads((root/"manifest.json").read_text(encoding="utf-8"))
     rows=[r for r in manifest if "error" not in r]
-    by_path={norm_ref(r["path"]):r for r in rows}
+    by_path={}
     by_base={}
-    for r in rows: by_base.setdefault(Path(norm_ref(r["path"])).name,[]).append(r)
+    for r in rows:
+        by_path.setdefault(norm_ref(r["path"]),[]).append(r)
+        by_base.setdefault(Path(norm_ref(r["path"])).name,[]).append(r)
     def resolve(ref: str, prefer: str|None=None):
         n=alias_ref(ref)
-        if n in by_path: return by_path[n]
+        hits=by_path.get(n,[])
+        if prefer:
+            same=[x for x in hits if x.get("archive")==prefer]
+            if same:return same[0]
+        if hits: return hits[0] if len(hits)==1 else hits[0]
         hits=by_base.get(Path(n).name,[])
         if prefer:
             same=[x for x in hits if x.get("archive")==prefer]
             if same:return same[0]
-        return hits[0] if len(hits)==1 else (hits[0] if hits else None)
+        return hits[0] if hits else None
 
     textures=[r["path"] for r in rows if norm_ref(r["path"]).endswith(".dds")]
     scenes=[r for r in rows if norm_ref(r["path"]).endswith(".vhf")]
@@ -94,11 +108,10 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
                         if fx_row:
                             fx_source=_load_raw(root,fx_row)
                             fxo=[]
-                            stem=Path(norm_ref(shader_ref)).stem
-                            prefix=f"render/shaders/cache/render_shaders_{stem}_"
+                            family=shader_family(shader_ref)
                             for rr in rows:
                                 pn=norm_ref(rr["path"])
-                                if pn.startswith(prefix) and pn.endswith(".fxo"):
+                                if pn.endswith(".fxo") and shader_family(pn)==family:
                                     fxo.append((rr["path"],_load_raw(root,rr)))
                             binding=link_material(material,fx_source,fxo_candidates=fxo,texture_paths=textures,vertex_properties=mesh.get("vertex_properties",[]))
                         else:
