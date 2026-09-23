@@ -112,7 +112,7 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
 
     return {
         "format": FORMAT,
-        "ready": bool(static_draw.get("ready")) and not reasons and not (resources.get("unresolved") or []),
+        "ready": bool(static_draw.get("ready")) and not reasons,
         "blocking_reasons": list(dict.fromkeys(reasons)),
         "mesh": {
             "ref": mesh.get("ref"),
