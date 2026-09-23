@@ -38,3 +38,6 @@ This makes the render-link stage an actual renderer contract boundary instead of
 ## Phase 33: neutral RenderCommand
 
 `render_command.py` converts validated `SHIFT.StaticDraw/1` plus `SHIFT.RenderResources/1` into `SHIFT.RenderCommand/1`: vertex attribute locations, index ranges, linked GLSL stages, uniform bindings and per-texture resource IDs are preserved without calling GLES.
+## Phase 34: RenderCommand validation gate
+
+`render_command.py` now validates the final `SHIFT.RenderCommand/1` submission shape before a backend consumes it. The gate checks the VertexLayout format and locations, index ranges, linked shader sources, RenderResources contract, texture resource IDs and uniform-binding schema, while preserving machine-readable blocking reasons.
