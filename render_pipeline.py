@@ -4,6 +4,7 @@ import json, math, re
 from pathlib import Path
 from typing import Any
 from material_linker import link_material
+from static_draw import build_static_draw_contract
 from vertex_layout import build_layout_from_summary
 
 def norm_ref(v: str) -> str:
@@ -84,7 +85,7 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
     textures=[r["path"] for r in rows if norm_ref(r["path"]).endswith(".dds")]
     scenes=[r for r in rows if norm_ref(r["path"]).endswith(".vhf")]
     meshes=[r for r in rows if norm_ref(r["path"]).endswith(".meb")]
-    packets=[]; unresolved=[]
+    packets=[]; unresolved=[]; static_draws=[]
     for scene_row in scenes:
         scene=_load_json(root,scene_row)
         matrices=scene.get("matrices",{}); cache={}
@@ -120,10 +121,54 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
                         unresolved.append({"kind":"material","scene":scene_row["path"],"mesh":mesh_row["path"],"ref":mat_ref})
                     subs.append({"first_index":prim.get("first_index",0),"index_count":prim.get("index_count",0),"material_ref":mat_ref,"material":binding})
                 world=resolve_matrix(matrices,node.get("matrix"),cache)
-                packets.append({"scene":scene_row["path"],"node":node.get("name"),"node_type":node.get("type"),"matrix":node.get("matrix"),"world_matrix":world,"mesh":mesh_row["path"],"submeshes":subs})
+                packet = {
+                    "scene": scene_row["path"],
+                    "node": node.get("name"),
+                    "node_type": node.get("type"),
+                    "matrix": node.get("matrix"),
+                    "world_matrix": world,
+                    "mesh": {
+                        "ref": mesh_row["path"],
+                        "resolved": {"path": mesh_row["path"], "archive": mesh_row.get("archive")},
+                        "vertex_count": mesh.get("vertex_count"),
+                        "triangle_count": mesh.get("triangle_count"),
+                        "vertex_layout": build_layout_from_summary(mesh),
+                        "skinning": mesh.get("skinning") or {},
+                    },
+                    "submeshes": subs,
+                }
+                packet["shader_selection"] = {
+                    "status": (
+                        "ambiguous"
+                        if any(
+                            (x.get("material") or {}).get("selection_status") == "ambiguous"
+                            for x in subs
+                        )
+                        else "unique"
+                        if any(
+                            (x.get("material") or {}).get("selection_status") == "unique"
+                            for x in subs
+                        )
+                        else "none"
+                    )
+                }
+                packets.append(packet)
+                static_draws.append(build_static_draw_contract(packet))
             for child in node.get("children",[]) or []: walk(child)
         for n in scene.get("nodes",[]) or []: walk(n)
-    return {"format":"SHIFT.RenderBinding/1","packets":packets,"stats":{"scenes":len(scenes),"draw_packets":len(packets),"unresolved":unresolved}}
+    return {
+        "format": "SHIFT.RenderBinding/1",
+        "packets": packets,
+        "static_draws": static_draws,
+        "stats": {
+            "scenes": len(scenes),
+            "draw_packets": len(packets),
+            "static_draws": len(static_draws),
+            "ready_static_draws": sum(1 for x in static_draws if x.get("ready")),
+            "blocked_static_draws": sum(1 for x in static_draws if not x.get("ready")),
+            "unresolved": unresolved,
+        },
+    }
 
 if __name__=="__main__":
     import argparse

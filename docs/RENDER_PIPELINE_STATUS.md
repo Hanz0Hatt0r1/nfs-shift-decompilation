@@ -26,3 +26,9 @@ MEB parsing now preserves exact `payload_offset`, `stride` and payload byte coun
 SHIFT.VertexLayout/1 now carries an explicit abi_status per attribute (proven, inferred, ambiguous, unknown) plus a human-readable evidence basis. The layout also reports semantic collisions instead of silently collapsing multiple MEB properties onto one semantic key.
 
 StaticDraw/1 now blocks an ambiguous vertex ABI only when the selected shader actually consumes that property. This prevents an unused ambiguous color field from blocking unrelated draws while preventing a renderer from silently choosing RGBA/BGRA or another unresolved declaration form.
+
+## Phase 18: RenderBinding -> StaticDraw
+
+`render_pipeline.py` now normalizes every VHF/MEB packet into the same mesh shape consumed by `SHIFT.StaticDraw/1`, including `SHIFT.VertexLayout/1`. It also emits a parallel `static_draws` array with explicit `ready` and `blocking_reasons` state.
+
+This makes the render-link stage an actual renderer contract boundary instead of a separate diagnostic report.
