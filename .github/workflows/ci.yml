@@ -13,10 +13,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install test dependency
+      - name: Install test dependencies
         run: python -m pip install --upgrade pip pytest
-      - name: Run Python tests
-        run: python -m pytest -q --ignore=tests/test_formats.py --ignore=tests/test_shader_asm.py
+      - name: Run complete Python suite
+        run: python -m pytest -q
 
   native:
     runs-on: ubuntu-latest
@@ -26,5 +26,26 @@ jobs:
         run: cmake -S native_ir -B native_ir/build -DCMAKE_BUILD_TYPE=Release
       - name: Build native IR
         run: cmake --build native_ir/build --parallel
-      - name: Validate native targets
-        run: cmake --build native_ir/build --parallel
+      - name: Generate deterministic native parser fixtures
+        run: |
+          python - <<'PY'
+          import struct
+          from pathlib import Path
+          out = Path("native_ir/ci-fixtures")
+          out.mkdir(parents=True, exist_ok=True)
+          mgeo = bytearray(b"MGEO")
+          mgeo += struct.pack("<HHIIIIII", 1, 0, 4, 6, 1, 1, 4, 0)
+          mgeo += struct.pack("<12f", *([0.0] * 12))
+          mgeo += struct.pack("<12f", *([0.0] * 12))
+          mgeo += struct.pack("<I", 2)
+          mgeo += struct.pack("<8f", *([0.0] * 8))
+          mgeo += struct.pack("<6I", 0, 1, 2, 0, 2, 3)
+          (out / "mesh.mgeo").write_bytes(mgeo)
+          cmesh = bytearray(b"CMES")
+          cmesh += struct.pack("<HHIIII", 1, 0, 363, 1887, 629, 0)
+          cmesh += struct.pack("<1089f", *([0.0] * 1089))
+          cmesh += struct.pack("<1887I", *([0] * 1887))
+          (out / "collision.cmesh").write_bytes(cmesh)
+          PY
+      - name: Run native IR regression
+        run: ./native_ir/build/test_ir native_ir/ci-fixtures/mesh.mgeo native_ir/ci-fixtures/collision.cmesh

@@ -1,5 +1,6 @@
 import sys
 import struct
+import pytest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -9,6 +10,12 @@ from csm_format import read_csm, csm_summary, write_cmesh
 from shift_importer import BFF
 
 ROOT = Path('/mnt/data/dir_bffs')
+
+
+def require_archive(path: Path) -> Path:
+    if not path.exists():
+        pytest.skip(f'game-data fixture not available: {path}')
+    return path
 
 
 def test_reflection_scalar_and_vector():
@@ -21,7 +28,7 @@ def test_reflection_scalar_and_vector():
 
 
 def test_real_bmt_material():
-    with BFF(ROOT / 'GUI.bff') as b:
+    with BFF(require_archive(ROOT / 'GUI.bff')) as b:
         e = next(e for e in b.entries if e.path.endswith('.bmt'))
         r = parse_bmt_material(b.extract_entry(e))
     m = r['material']
@@ -42,7 +49,7 @@ def test_real_bmt_specialization_flags():
     assert {'USE_FRESNEL', 'ALLOW_VINYLS', 'DIRT_SCRATCH'} <= flags
 
 def test_real_bml_container():
-    with BFF(ROOT / 'SCRIPTS.bff') as b:
+    with BFF(require_archive(ROOT / 'SCRIPTS.bff')) as b:
         e = next(e for e in b.entries if e.path.endswith('.bml'))
         r = parse_bml(b.extract_entry(e))
     assert r['format'] == 'SHIFT.BMLY'
@@ -136,9 +143,8 @@ def test_sgb_chunk_index():
 
 def test_fxo_shader_blob_parser():
     from shader_ir import parse_shader_blobs
-    from pathlib import Path
-    p = Path(__file__).parent / 'fixtures' / 'glass.fxo'
-    blobs = parse_shader_blobs(p.read_bytes())
+    from synthetic_fixtures import glass_fxo
+    blobs = parse_shader_blobs(glass_fxo())
     assert len(blobs) == 4
     assert {b.stage for b in blobs} == {'pixel','vertex'}
     assert all(b.instruction_count > 5 for b in blobs)
@@ -147,7 +153,7 @@ def test_fxo_shader_blob_parser():
 
 def test_fx_source_reflection():
     from shader_ir import parse_fx_source
-    p = Path(__file__).parent / 'fixtures' / 'basic.fx'
-    r = parse_fx_source(p.read_bytes())
+    from synthetic_fixtures import BASIC_FX
+    r = parse_fx_source(BASIC_FX)
     assert 'stddefs.fxh' in r['includes']
     assert len(r['techniques']) >= 2
