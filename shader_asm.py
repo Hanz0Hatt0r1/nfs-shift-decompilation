@@ -29,7 +29,7 @@ REG_TYPES = {
 }
 SRC_MODS = {0:'',1:'-',2:'bias',3:'biasneg',4:'sign',5:'signneg',6:'comp',7:'x2',8:'x2neg',9:'dz',10:'dw',11:'abs',12:'absneg',13:'not'}
 COMP='xyzw'
-SEMANTICS={0:'POSITION',1:'BLENDWEIGHT',2:'BLENDINDICES',3:'NORMAL',4:'PSIZE',5:'TEXCOORD',6:'POSITIONT',7:'COLOR',8:'FOG',9:'DEPTH',10:'SAMPLE'}
+SEMANTICS={0:'POSITION',1:'BLENDWEIGHT',2:'BLENDINDICES',3:'NORMAL',4:'PSIZE',5:'TEXCOORD',6:'TANGENT',7:'BINORMAL',8:'TESSFACTOR',9:'POSITIONT',10:'COLOR',11:'FOG',12:'DEPTH',13:'SAMPLE'}
 
 @dataclass
 class Operand:
