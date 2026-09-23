@@ -37,3 +37,10 @@ build_draw_packets() can now consume SHIFT.BAB and SHIFT.BAS analysis records. F
 - BAS node names are unique and cover exactly the same name set.
 - More than one exact pair is reported as ambiguous; the packet is not made render-ready by choosing one arbitrarily.
 - No BAB/BAS match is not fatal to static packet construction; the packet carries skeleton_resolution diagnostics and remains unsuitable for a ready skinned draw.
+
+
+### Bind-local versus skinning pose
+
+SHIFT.BindSkeleton/1 records local bind transforms from the verified BAB/BAS link. Those matrices are not treated as GPU skin matrices. SHIFT.SkinnedDraw/1 is render-ready only when a separate SHIFT.SkinPose/1 is supplied with one 3x4 matrix per bone and `matrix_space=skinning`. The skin pose is the only matrix source accepted by the GLES 3.1 palette contract.
+
+This separation leaves animation decoding and bind-pose/inverse-bind semantics explicit: no parent composition or inverse-bind operation is implied by the BAB parser.

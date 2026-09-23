@@ -45,6 +45,17 @@ def _packet():
                 ],
             },
         },
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "bone_count": 2,
+            "matrices_3x4": [
+                [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                [1, 0, 0, 1, 0, 1, 0, 2, 0, 0, 1, 3],
+            ],
+            "source": "synthetic",
+            "frame": 0,
+        },
         "mesh": {
             "vertex_layout": {
                 "format": "SHIFT.VertexLayout/1",
@@ -126,10 +137,12 @@ def test_minimal_gles31_skinning_shader_compiles(binding, max_bones, tmp_path):
 
 def test_gles31_contract_rejects_oversized_palette():
     packet = _packet()
-    packet["bind_skeleton"]["palette"]["bone_count"] = 129
-    packet["bind_skeleton"]["palette"]["matrices_3x4"] = (
+    packet["skin_pose"]["bone_count"] = 129
+    packet["skin_pose"]["matrices_3x4"] = (
         [[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]] * 129
     )
+    packet["bind_skeleton"]["bone_count"] = 129
+    packet["bind_skeleton"]["palette"]["bone_count"] = 129
     with pytest.raises(ValueError, match="exceeds GLES shader limit"):
         build_gles31_skinning_contract(packet, max_bones=128)
 
@@ -151,6 +164,16 @@ def test_real_skinned_draw_contract_can_feed_gles31_contract():
                 ],
             }],
             "animation_payload": {"decoded": False, "sha256": "opaque"},
+        },
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "bone_count": 1,
+            "matrices_3x4": [
+                [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+            ],
+            "source": "synthetic",
+            "frame": 0,
         },
         "mesh": {
             "vertex_layout": {
