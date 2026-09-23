@@ -20,3 +20,7 @@ BAB bone records и BAS hierarchy уже парсятся существующи
 ## Phase 24: bind-pose equivalence
 
 `skinned_reference.validate_bind_pose()` now provides a deterministic `SHIFT.SkinBindPoseCheck/1` report for an explicit `SHIFT.SkinPose/1`. It reports maximum Euclidean position error, per-vertex mismatches, tolerance, and influence validation without deriving the pose from BAS/BAB.
+
+## Phase 25: BAB corpus fingerprinting
+
+`bab_corpus.py` groups parsed BAB analyses by exact bone-name skeleton signatures and compares preserved animation-tail SHA-256/size metadata. It intentionally treats the post-table payload as opaque; no keyframe grammar is inferred from heuristics.
