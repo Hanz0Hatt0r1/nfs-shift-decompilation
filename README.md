@@ -63,7 +63,7 @@ shift_assets/
 
 **Готово/достаточно для IR:** BFF/XMem, DDS metadata, Reflection XML, BML index, BMT material graph, HLSL metadata, MEB geometry, CSM collision geometry, XML scene/data, dependency graph и автоматический `build-ir`.
 
-**Следующий слой:** IMB skeletal geometry/animation; SGB scenegraph; FXO shader bytecode → GLES/Vulkan shader IR; затем runtime сборка vehicle/track scene и перенос физики с PhysX 2.x на Android-native collision/dynamics.
+**Текущий слой:** FXO/D3D9 shader bytecode → нейтральный `SHIFT.ShaderProgram/1` → первый GLSL ES 3.1 backend. Добавлены register/operand decoding, арифметические операции, texture ops, derivatives и базовый structured control flow.\n\n**Следующий слой:** связать shader IR с BMT + DDS sampler/texture state и MGEO/VHF draw packets; затем IMB skeletal geometry/animation, SGB scenegraph и перенос физики с PhysX 2.x на Android-native collision/dynamics.
 
 `.meb` является компонентом видимой геометрии SHIFT, а `.bmt` содержит материал и связанные shader/texture данные; независимые инструменты моддинга SHIFT подтверждают, что модельные `.meb` и материальные `.bmt` работают совместно. Поэтому следующий этап должен связывать их через VHF/material references, а не конвертировать файлы изолированно.
 
