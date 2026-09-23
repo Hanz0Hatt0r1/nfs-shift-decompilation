@@ -122,3 +122,52 @@ def test_render_command_propagates_gpu_texture_blocker():
     result = build_render_command(static_draw, _resources(gpu_ready=False))
     assert result["ready"] is False
     assert "runtime-extension-missing:X" in result["blocking_reasons"]
+
+
+def test_render_command_exposes_gles_constant_buffer_offsets():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "primerBasis",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 5,
+            "register_count": 1,
+            "ctab_type": "float4",
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    draw = build_static_draw_contract(packet)
+    resources = _resources()
+    result = build_render_command(draw, resources)
+    constants = result["submeshes"][0]["constant_commands"]
+    assert constants == [{
+        "name": "primerBasis",
+        "stage": None,
+        "register_index": 5,
+        "register_count": 1,
+        "ctab_type": "float4",
+        "ubo_binding": 14,
+        "byte_offset": 80,
+    }]
+
+
+def test_render_command_rejects_invalid_constant_register_range():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "primerBasis",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": -1,
+            "register_count": 1,
+            "ctab_type": "float4",
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "renderer-constant-binding:register-range-invalid" in result["blocking_reasons"]

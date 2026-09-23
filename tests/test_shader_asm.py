@@ -80,3 +80,10 @@ def test_glsl_translation_covers_abs_and_derivative_aliases():
     assert "abs(r1)" in abs_glsl
     assert "dFdx(r1)" in ddx_glsl
     assert "dFdy(r1)" in ddy_glsl
+
+
+def test_glsl_float_constants_use_shift_d3d9_ubo():
+    glsl = to_glsl(_program_with(1, "MOV"))
+    assert "layout(std140, binding = 14) uniform ShiftD3D9Constants" in glsl
+    assert "    vec4 c[" in glsl
+    assert "vec4 c[" not in glsl.split("ShiftD3D9Constants", 1)[1].split("};", 1)[1]
