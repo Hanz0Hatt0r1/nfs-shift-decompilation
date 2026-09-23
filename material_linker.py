@@ -13,6 +13,7 @@ from shader_ir import parse_shader_blobs
 from shader_interface import pair_selected_pixel
 from uniform_linker import link_selected_pair, reflect_constants
 from specialization import feature_indicators, feature_signature_score, material_specialisations
+from shader_backend import translate_pair_blob
 
 def parse_fx_samplers(source: str | bytes) -> list[dict]:
     text = source.decode("utf-8", "replace") if isinstance(source, bytes) else source
@@ -178,6 +179,8 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
         pair_ambiguous=best.get("vertex_pair_selection_status")=="ambiguous"
         selection_status="ambiguous" if ambiguous_candidates or pair_ambiguous else ("unique" if best.get("vertex_pair_valid") else "heuristic")
     shader_pair=None
+    linked_shader_pair=None
+    linked_shader_error=None
     uniform_binding=None
     if best and best["exact"]:
         regmap={s["name"]:s["register"] for s in best["samplers"]}
@@ -186,6 +189,16 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
         payload=fxo_payloads.get((best["file"],best["program_offset"]))
         if payload is not None:
             shader_pair=pair_selected_pixel(payload,best["program_offset"],properties=vertex_properties)
+            if shader_pair and shader_pair.get("selection_status") == "unique":
+                try:
+                    linked_shader_pair = translate_pair_blob(
+                        payload,
+                        int(shader_pair["vertex_offset"]),
+                        int(shader_pair["pixel_offset"]),
+                        vertex_properties=tuple(vertex_properties),
+                    )
+                except Exception as exc:
+                    linked_shader_error = f"{type(exc).__name__}: {exc}"
             uniform_binding=link_selected_pair(material,payload,shader_pair)
     return {"format":"SHIFT.MaterialBinding/1","material":material.get("name"),"shader":material.get("shader"),
             "technique":material.get("technique"),"specialization":specialization,"bindings":bindings,"fxo_candidates":fxo,
@@ -197,6 +210,8 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             ),
             "ambiguous_candidates":ambiguous_candidates[:8],
             "shader_pair":shader_pair,
+            "linked_shader_pair":linked_shader_pair,
+            "linked_shader_error":linked_shader_error,
             "uniform_binding":uniform_binding if best and best["exact"] and shader_pair else None,
             "unresolved_textures":sorted(set(unresolved))}
 
