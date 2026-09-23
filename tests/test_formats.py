@@ -136,9 +136,8 @@ def test_sgb_chunk_index():
 
 def test_fxo_shader_blob_parser():
     from shader_ir import parse_shader_blobs
-    from pathlib import Path
-    p = Path(__file__).parent / 'fixtures' / 'glass.fxo'
-    blobs = parse_shader_blobs(p.read_bytes())
+    from synthetic_fixtures import glass_fxo
+    blobs = parse_shader_blobs(glass_fxo())
     assert len(blobs) == 4
     assert {b.stage for b in blobs} == {'pixel','vertex'}
     assert all(b.instruction_count > 5 for b in blobs)
@@ -147,7 +146,7 @@ def test_fxo_shader_blob_parser():
 
 def test_fx_source_reflection():
     from shader_ir import parse_fx_source
-    p = Path(__file__).parent / 'fixtures' / 'basic.fx'
-    r = parse_fx_source(p.read_bytes())
+    from synthetic_fixtures import BASIC_FX
+    r = parse_fx_source(BASIC_FX)
     assert 'stddefs.fxh' in r['includes']
     assert len(r['techniques']) >= 2
