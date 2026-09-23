@@ -393,6 +393,7 @@ def test_render_command_accepts_distinct_sampler_registers():
             "d3d9_sampler_register": 1,
             "sampler": "diffuseMap",
             "binding_source": "fxo-ctab",
+            "resolved": [{"path": "textures/diffuse.dds"}],
         },
         {
             "material_parameter": "Specular",
@@ -401,6 +402,7 @@ def test_render_command_accepts_distinct_sampler_registers():
             "d3d9_sampler_register": 2,
             "sampler": "specularMap",
             "binding_source": "fxo-ctab",
+            "resolved": [{"path": "textures/specular.dds"}],
         },
     ]
     resources = _resources()
@@ -445,6 +447,7 @@ def test_render_command_rejects_sampler_register_collision():
             "d3d9_sampler_register": 1,
             "sampler": "diffuseMap",
             "binding_source": "fxo-ctab",
+            "resolved": [{"path": "textures/body.dds"}],
         },
         {
             "material_parameter": "Diffuse",
