@@ -17,3 +17,6 @@ BAB bone records и BAS hierarchy уже парсятся существующи
 ## Phase 23: shader readiness boundary
 
 `SHIFT.SkinnedDraw/1` now requires each selected material to carry a valid `SHIFT.LinkedShaderPair/1`, and rejects explicit shader translation errors. This keeps the CPU/reference and future GLES skinning paths aligned with the same shader readiness contract as `StaticDraw/1`.
+## Phase 25: BAB corpus fingerprinting
+
+`bab_corpus.py` groups parsed BAB analyses by exact bone-name skeleton signatures and compares preserved animation-tail SHA-256/size metadata. It intentionally treats the post-table payload as opaque; no keyframe grammar is inferred from heuristics.
