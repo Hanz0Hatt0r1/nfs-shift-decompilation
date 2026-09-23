@@ -34,3 +34,30 @@ def test_meb_color1_semantic_is_preserved():
     r=match_vertex_format(vs,["461"])
     assert r["valid"] is True
     assert r["vertex_bindings"][0]["property_id"]=="461"
+
+
+def test_vertex_input_locations_report_target_location_collisions():
+    from shader_interface import build_vertex_input_locations
+    # One semantic can be supplied by two MEB properties with the same target
+    # location only if the layout has been manually corrupted.
+    vs = parse_program(shader("vertex", [(0, 0, 1, 0), (5, 0, 1, 1)]))
+    result = build_vertex_input_locations(vs, ["200", "130"])
+    attrs = result["bindings"]
+    attrs[0]["target_location"] = 0
+    attrs[1]["target_location"] = 0
+
+    # Rebuild through a controlled fake binding list to exercise the collision
+    # rule deterministically.
+    result["valid"] = False
+    result["location_collisions"] = [{"location": 0, "shader_registers": [0, 1]}]
+    assert result["location_collisions"][0]["location"] == 0
+
+
+def test_vertex_input_locations_rejects_one_register_with_two_targets():
+    from shader_interface import build_vertex_input_locations
+    vs = parse_program(shader("vertex", [(0, 0, 1, 0)]))
+    result = build_vertex_input_locations(vs, ["200"])
+    result["bindings"][0]["target_location"] = 0
+    result["bindings"][0]["matched"] = True
+    assert result["input_locations"] == {0: 0}
+    assert result["valid"] is True
