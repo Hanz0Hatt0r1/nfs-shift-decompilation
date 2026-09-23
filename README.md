@@ -34,6 +34,7 @@ python shift_importer.py convert-meb Alpental.bff grid1_02.mgeo --resource track
 python shift_importer.py convert-csm TRACKS.bff nord.cmesh --resource tracks/nordschleife07/physics/nordschleife07.360.csm
 python shift_importer.py graph /path/to/bffs graph.json --ext .cpt .vhf .meb .bmt .dds .fx .fxh
 python shift_importer.py build-ir /path/to/bffs android_ir/
+python draw_packets.py android_ir/../format_reports/resource_analysis.json draw_packets.json
 # native XMem/LZX
 SHIFT_LZX_NATIVE=1 python shift_importer.py build-ir /path/to/bffs android_ir_native/
 ```
@@ -63,7 +64,7 @@ shift_assets/
 
 **Готово/достаточно для IR:** BFF/XMem, DDS metadata, Reflection XML, BML index, BMT material graph, HLSL metadata, MEB geometry, CSM collision geometry, XML scene/data, dependency graph и автоматический `build-ir`.
 
-**Текущий слой:** FXO/D3D9 shader bytecode → нейтральный `SHIFT.ShaderProgram/1` → первый GLSL ES 3.1 backend. Добавлены register/operand decoding, арифметические операции, texture ops, derivatives и базовый structured control flow.\n\n**Следующий слой:** связать shader IR с BMT + DDS sampler/texture state и MGEO/VHF draw packets; затем IMB skeletal geometry/animation, SGB scenegraph и перенос физики с PhysX 2.x на Android-native collision/dynamics.
+**Текущий слой:** FXO/D3D9 shader bytecode → нейтральный `SHIFT.ShaderProgram/1` → первый GLSL ES 3.1 backend. Добавлены register/operand decoding, арифметические операции, texture ops, derivatives и базовый structured control flow.\n\n**Следующий слой:** exact sampler-state binding; semantic vertex/pixel linkage; MGEO/VHF transform semantics; затем IMB skeletal geometry/animation, SGB scenegraph и перенос физики с PhysX 2.x на Android-native collision/dynamics.\n\n`draw_packets.py` builds `SHIFT.DrawPacket/1` from `resource_analysis.json`; texture slots are marked `material-order-inferred` until the exact D3D9/BMT sampler mapping is recovered.
 
 `.meb` является компонентом видимой геометрии SHIFT, а `.bmt` содержит материал и связанные shader/texture данные; независимые инструменты моддинга SHIFT подтверждают, что модельные `.meb` и материальные `.bmt` работают совместно. Поэтому следующий этап должен связывать их через VHF/material references, а не конвертировать файлы изолированно.
 
