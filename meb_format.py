@@ -8,6 +8,7 @@ import struct
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import BinaryIO, Any
+from skeleton_ir import parse_skeleton, skinning_contract
 
 
 class MEBError(ValueError):
@@ -173,6 +174,7 @@ def read_meb(data: bytes) -> MEBMesh:
             "char_blob_hex": char_blob.hex(),
             "bone_blob_hex": bone_blob.hex(),
         }
+        skeleton["ir"] = parse_skeleton(skeleton)
 
     props: list[str] = []
     positions: list[tuple[float, float, float]] = []
@@ -312,7 +314,9 @@ def mesh_summary(mesh: MEBMesh) -> dict[str, Any]:
         "skeleton": None if mesh.skeleton is None else {
             "num_bones": mesh.skeleton["num_bones"],
             "num_chars": mesh.skeleton["num_chars"],
+            "bone_names": mesh.skeleton["ir"]["bone_names"],
         },
+        "skinning": skinning_contract(mesh.vertex_properties, mesh.skeleton["ir"] if mesh.skeleton else None),
     }
 
 
