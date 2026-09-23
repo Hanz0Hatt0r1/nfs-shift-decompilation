@@ -162,6 +162,73 @@ def rasterize_mesh(
     return b"P6\n%d %d\n255\n" % (width, height) + bytes(rgb)
 
 
+
+def _mat4_mul(a: list[list[float]], b: list[list[float]]) -> list[list[float]]:
+    return [
+        [sum(float(a[r][k]) * float(b[k][c]) for k in range(4)) for c in range(4)]
+        for r in range(4)
+    ]
+
+
+def _identity4() -> list[list[float]]:
+    return [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
+
+
+def _coerce_matrix(value: Any) -> list[list[float]] | None:
+    if isinstance(value, (list, tuple)) and len(value) == 4:
+        if all(isinstance(row, (list, tuple)) and len(row) == 4 for row in value):
+            return [[float(x) for x in row] for row in value]
+    if isinstance(value, (list, tuple)) and len(value) == 16:
+        vals = [float(x) for x in value]
+        return [vals[r * 4:(r + 1) * 4] for r in range(4)]
+    return None
+
+
+def render_static_draw(
+    draw: dict[str, Any],
+    mesh: dict[str, Any],
+    output: str | Path,
+    *,
+    width: int = 512,
+    height: int = 512,
+    mvp: list[list[float]] | None = None,
+) -> dict[str, Any]:
+    """Render a validated SHIFT.StaticDraw/1 packet using neutral mesh data."""
+    if draw.get("format") != "SHIFT.StaticDraw/1":
+        raise ValueError("draw packet is not SHIFT.StaticDraw/1")
+    if not draw.get("ready", False):
+        raise ValueError("draw packet is not ready: " + ", ".join(draw.get("blocking_reasons", [])))
+
+    world = _coerce_matrix(draw.get("world_matrix")) or _identity4()
+    base_mvp = mvp or orthographic_mvp(mesh.get("vertices") or [])
+    final_mvp = _mat4_mul(base_mvp, world)
+    image = rasterize_mesh(
+        mesh.get("vertices") or [],
+        mesh.get("indices") or [],
+        colors=mesh.get("colors") or [],
+        width=width,
+        height=height,
+        mvp=final_mvp,
+    )
+    out = Path(output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(image)
+    return {
+        "format": "SHIFT.StaticDrawReference/1",
+        "output": str(out),
+        "width": width,
+        "height": height,
+        "vertex_count": len(mesh.get("vertices") or []),
+        "triangle_count": len(mesh.get("indices") or []) // 3,
+        "world_matrix_applied": True,
+    }
+
+
 def render_mesh_json(mesh: dict[str, Any], output: str | Path, *, width: int = 512, height: int = 512) -> dict[str, Any]:
     vertices = mesh.get("vertices") or []
     indices = mesh.get("indices") or []
