@@ -35,7 +35,7 @@ def program_to_ir(program: ShaderProgram) -> dict:
 
 
 def validate_linked_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
-    """Compile a LinkedShaderPair/1 with glslangValidator when available."""
+    """Compile and link a LinkedShaderPair/1 with glslangValidator when available."""
     validator = shutil.which("glslangValidator")
     if validator is None:
         return {
@@ -46,6 +46,7 @@ def validate_linked_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
                 "vertex": {"valid": None},
                 "pixel": {"valid": None},
             },
+            "link": {"valid": None, "returncode": None, "stdout": "", "stderr": ""},
         }
 
     with tempfile.TemporaryDirectory(prefix="shift-glsl-") as td:
@@ -73,26 +74,26 @@ def validate_linked_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
                 "stderr": proc.stderr,
             }
 
-    stage_valid = all(item["valid"] for item in stages.values())
-    link = {
-        "valid": None,
-        "returncode": None,
-        "stdout": "",
-        "stderr": "",
-    }
-    if stage_valid:
-        linked = subprocess.run(
-            [validator, "-l", str(vertex_path), str(pixel_path)],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+        stage_valid = all(item["valid"] for item in stages.values())
         link = {
-            "valid": linked.returncode == 0,
-            "returncode": linked.returncode,
-            "stdout": linked.stdout,
-            "stderr": linked.stderr,
+            "valid": None,
+            "returncode": None,
+            "stdout": "",
+            "stderr": "",
         }
+        if stage_valid:
+            linked = subprocess.run(
+                [validator, "-l", str(vertex_path), str(pixel_path)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            link = {
+                "valid": linked.returncode == 0,
+                "returncode": linked.returncode,
+                "stdout": linked.stdout,
+                "stderr": linked.stderr,
+            }
 
     valid = stage_valid and link["valid"] is True
     return {
@@ -102,7 +103,6 @@ def validate_linked_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
         "stages": stages,
         "link": link,
     }
-
 
 def validate_linked_shader_pair(linked_pair: dict) -> dict:
     """Validate a SHIFT.LinkedShaderPair/1 payload through the local GLES compiler."""
