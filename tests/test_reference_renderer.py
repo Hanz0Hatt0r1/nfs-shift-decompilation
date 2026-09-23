@@ -1,3 +1,4 @@
+from pathlib import Path
 from reference_renderer import orthographic_mvp, rasterize_mesh, render_mesh_json
 
 
