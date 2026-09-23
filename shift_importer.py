@@ -1272,6 +1272,38 @@ def cmd_render_bindings(args: argparse.Namespace) -> int:
     return 1 if result["stats"]["unresolved"] else 0
 
 
+def cmd_bab_corpus(args: argparse.Namespace) -> int:
+    """Build a BAB corpus report from resource_analysis.json."""
+    from bab_corpus import build_bab_corpus_report
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    if isinstance(payload, list):
+        records = payload
+    elif isinstance(payload, dict):
+        records = next(
+            (
+                payload[key]
+                for key in ("resources", "rows", "analyses")
+                if isinstance(payload.get(key), list)
+            ),
+            None,
+        )
+        if records is None:
+            raise ValueError("BAB corpus input must contain a resource list")
+    else:
+        raise ValueError("BAB corpus input must be a JSON list or resource container object")
+
+    report = build_bab_corpus_report(records)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({
+        "sample_count": report["sample_count"],
+        "skeleton_group_count": report["skeleton_group_count"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1516,6 +1548,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="IR output directory produced by build-ir")
     p.add_argument("output", help="SHIFT.RenderBinding/1 JSON output")
     p.set_defaults(fn=cmd_render_bindings)
+
+    p = sp.add_parser("bab-corpus", help="build an opaque BAB animation corpus report from resource analysis")
+    p.add_argument("input", help="resource_analysis.json")
+    p.add_argument("output", help="SHIFT.BABCorpusReport/1 JSON output")
+    p.set_defaults(fn=cmd_bab_corpus)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
