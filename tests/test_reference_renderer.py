@@ -206,4 +206,5 @@ def test_reference_renderer_honors_static_draw_submesh_index_range(tmp_path):
         ],
     )
     body = out.read_bytes().split(b"\n", 3)[3]
-    assert bytes((0, 255, 0)) not in body
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (0, 255, 0) not in pixels
