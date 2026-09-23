@@ -678,6 +678,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--draw-packet", action="store_true", help="treat input as SHIFT.DrawPacket/1 JSON")
     parser.add_argument("--render-command", action="store_true", help="treat input as SHIFT.RenderCommand/1 JSON")
     parser.add_argument("--textured", action="store_true", help="use the UV0 software texture reference path")
+    parser.add_argument("--shader-reference", action="store_true", help="execute embedded pixel ShaderProgram/1 in software")
     parser.add_argument("--texture", type=Path, help="DDS file used by --textured")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
@@ -698,6 +699,7 @@ def main(argv: list[str] | None = None) -> int:
             args.output,
             width=args.width,
             height=args.height,
+            shader_reference=args.shader_reference,
         )
         result["sha256"] = hashlib.sha256(args.output.read_bytes()).hexdigest()
     elif args.render_command:
