@@ -228,6 +228,8 @@ def test_build_draw_packet_attaches_exact_bind_skeleton():
     assert packet["skeleton_resolution"]["status"] == "resolved"
     assert result["stats"]["resolved_skeletons"] == 1
     assert not result["stats"]["unresolved_skeletons"]
+    assert result["packets"][0]["static_draw"]["format"] == "SHIFT.StaticDraw/1"
+    assert result["stats"]["blocked_static_draws"] == 1
 
 
 def test_build_from_analysis_passes_bab_and_bas_records(tmp_path):
@@ -431,3 +433,17 @@ def test_draw_packet_preserves_external_sampler_requirements():
     sel = result["packets"][0]["submeshes"][0]["material"]["shader_selection"]
     assert sel["external_samplers"][0]["sampler"] == "environmentMap"
     assert sel["vertex_bindings"][0]["target_location"] == 0
+
+
+def test_draw_packet_attaches_static_draw_contract():
+    scene, mesh, material, texture, shader = _records()
+    mesh[0]["analysis"]["vertex_properties"] = ["200"]
+    result = build_draw_packets(scene, mesh, material, texture, shader)
+    packet = result["packets"][0]
+    contract = packet["static_draw"]
+    assert contract["format"] == "SHIFT.StaticDraw/1"
+    assert contract["mesh"]["vertex_count"] == 3
+    assert contract["ready"] is False
+    assert "shader-selection:none" in contract["blocking_reasons"]
+    assert result["stats"]["draw_packets"] == 1
+    assert result["stats"]["blocked_static_draws"] == 1
