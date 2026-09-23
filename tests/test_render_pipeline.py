@@ -129,3 +129,5 @@ def test_render_binding_attaches_render_resources_contract(tmp_path):
         assert result["resources"]["format"] == "SHIFT.RenderResources/1"
         assert result["resources"]["stats"]["textures"] >= 1
         assert "stats" in result["resources"]
+        assert len(result["render_commands"]) == result["stats"]["render_commands"]
+        assert result["render_commands"][0]["format"] == "SHIFT.RenderCommand/1"
