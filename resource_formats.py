@@ -19,6 +19,7 @@ from typing import Any
 
 from meb_format import read_meb, mesh_summary
 from csm_format import read_csm, csm_summary
+from bas_format import parse_bas
 
 _NUMBER_RE = re.compile(r"[;,\\s]+")
 
@@ -442,6 +443,8 @@ def analyze_decoded_resource(path: str, data: bytes) -> dict[str, Any]:
             base["analysis"] = parse_sgb(data)
         elif ext == ".vhf" and data.lstrip().startswith(b"<?xml"):
             base["analysis"] = parse_vhf_scene(data)
+        elif ext == ".bas" and data.lstrip().startswith(b"<?xml"):
+            base["analysis"] = parse_bas(data)
         elif data.lstrip().startswith(b"<?xml") or data.lstrip().startswith(b"<Reflection"):
             txt = data.decode("utf-8", "replace")
             if b"<Reflection" in data:
