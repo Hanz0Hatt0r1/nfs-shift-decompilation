@@ -56,6 +56,18 @@ def build_gles31_skinning_contract(
             )
     palette = (skinned_draw.get("bind_skeleton") or {}).get("palette") or {}
     bone_count = int(palette.get("bone_count", 0) or 0)
+    pose = skinned_draw.get("skin_pose") or {}
+    pose_bone_count = int(pose.get("bone_count", 0) or 0)
+    matrices = pose.get("matrices_3x4") or []
+
+    if pose.get("format") != "SHIFT.SkinPose/1":
+        raise ValueError("missing SHIFT.SkinPose/1")
+    if pose.get("matrix_space") != "skinning":
+        raise ValueError("GLES skinning requires matrix_space=skinning")
+    if pose_bone_count != bone_count:
+        raise ValueError("skin pose bone count does not match bind skeleton")
+    if len(matrices) != bone_count or any(len(m) != 12 for m in matrices):
+        raise ValueError("skin pose does not contain one complete 3x4 matrix per bone")
 
     if int(skin.get("influences", 0) or 0) != 4:
         raise ValueError("GLES skinning requires exactly four influences")
@@ -67,19 +79,22 @@ def build_gles31_skinning_contract(
         raise ValueError("skinned draw has no bone palette")
     if bone_count > max_bones:
         raise ValueError(f"bone palette {bone_count} exceeds GLES shader limit {max_bones}")
-    matrices = palette.get("matrices_3x4") or []
-    if len(matrices) != bone_count or any(len(m) != 12 for m in matrices):
-        raise ValueError("bone palette does not contain one complete 3x4 matrix per bone")
-
     return {
         "format": FORMAT,
         "api": "OpenGL ES 3.1",
         "bone_binding": bone_binding,
         "max_bones": max_bones,
         "bone_count": bone_count,
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "matrix_layout": "3x4-row-major",
+            "source": pose.get("source"),
+            "frame": pose.get("frame"),
+        },
         "palette": {
             "storage": "std140-uniform-mat4-array",
-            "matrix_source": "SHIFT.BonePalette/1",
+            "matrix_source": "SHIFT.SkinPose/1",
             "matrix_layout": "row-major-3x4-expanded-to-4x4",
             "array_name": "u_bones",
         },
