@@ -52,11 +52,61 @@ def _packet(source="fxo-ctab"):
     }
 
 
+def _binding_packet():
+    packet = _packet()
+    material = packet["submeshes"][0]["material"]
+    material["shader_selection"] = {
+        "selection_status": "unique",
+        "shader_pair": {
+            "selection_status": "unique",
+            "interface": {"valid": True},
+            "vertex_format": {"valid": True},
+            "vertex_bindings": [],
+        },
+        "linked_shader_pair": {
+            "format": "SHIFT.LinkedShaderPair/1",
+            "varying_locations": [],
+            "vertex_input_locations": {0: 0},
+            "vertex_glsl": "#version 310 es\n",
+            "pixel_glsl": "#version 310 es\n",
+        },
+        "uniform_binding": {"bindings": []},
+    }
+    return packet
+
+
 def test_static_draw_contract_accepts_explicit_unique_binding():
     r = build_static_draw_contract(_packet())
     assert r["ready"] is True
     assert r["blocking_reasons"] == []
     assert r["submeshes"][0]["material"]["textures"][0]["slot"] == 1
+
+
+def test_static_draw_contract_accepts_direct_material_binding_shape():
+    packet = _binding_packet()
+    material = packet["submeshes"][0]["material"]
+    material.pop("shader_selection")
+    material.update({
+        "selection_status": "unique",
+        "shader_pair": {
+            "selection_status": "unique",
+            "interface": {"valid": True},
+            "vertex_format": {"valid": True},
+            "vertex_bindings": [],
+        },
+        "linked_shader_pair": {
+            "format": "SHIFT.LinkedShaderPair/1",
+            "varying_locations": [],
+            "vertex_input_locations": {0: 0},
+            "vertex_glsl": "#version 310 es\n",
+            "pixel_glsl": "#version 310 es\n",
+        },
+        "uniform_binding": {"bindings": []},
+    })
+    r = build_static_draw_contract(packet)
+    assert r["ready"] is True
+    assert r["blocking_reasons"] == []
+    assert r["submeshes"][0]["material"]["shader_selection"]["selection_status"] == "unique"
 
 
 def test_static_draw_contract_rejects_inferred_texture_binding():
