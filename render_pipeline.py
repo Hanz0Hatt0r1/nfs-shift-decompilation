@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 from material_linker import link_material
 from static_draw import build_static_draw_contract
+from renderer_resources import build_resource_index
 from vertex_layout import build_layout_from_summary
 
 def norm_ref(v: str) -> str:
@@ -85,7 +86,7 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
     textures=[r["path"] for r in rows if norm_ref(r["path"]).endswith(".dds")]
     scenes=[r for r in rows if norm_ref(r["path"]).endswith(".vhf")]
     meshes=[r for r in rows if norm_ref(r["path"]).endswith(".meb")]
-    packets=[]; unresolved=[]; static_draws=[]
+    packets=[]; unresolved=[]; static_draws=[]; texture_bindings=[]
     for scene_row in scenes:
         scene=_load_json(root,scene_row)
         matrices=scene.get("matrices",{}); cache={}
@@ -154,12 +155,33 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
                 }
                 packets.append(packet)
                 static_draws.append(build_static_draw_contract(packet))
+                for submesh in subs:
+                    material_binding = submesh.get("material") or {}
+                    for binding in material_binding.get("bindings", []) or []:
+                        if binding.get("binding") == "material-texture":
+                            texture_bindings.append({
+                                "material_parameter": binding.get("texture_parameter"),
+                                "ref": binding.get("texture"),
+                                "d3d9_sampler_register": binding.get("d3d9_sampler_register"),
+                                "binding_source": "fxo-ctab",
+                                "min_filter": binding.get("min_filter"),
+                                "mag_filter": binding.get("mag_filter"),
+                                "mip_filter": binding.get("mip_filter"),
+                                "address_u": binding.get("address_u"),
+                                "address_v": binding.get("address_v"),
+                                "address_w": binding.get("address_w"),
+                                "lod_bias": binding.get("lod_bias"),
+                                "max_anisotropy": binding.get("max_anisotropy"),
+                                "srgb": binding.get("srgb"),
+                                "linear": binding.get("linear"),
+                            })
             for child in node.get("children",[]) or []: walk(child)
         for n in scene.get("nodes",[]) or []: walk(n)
     return {
         "format": "SHIFT.RenderBinding/1",
         "packets": packets,
         "static_draws": static_draws,
+        "resources": build_resource_index(rows, texture_bindings),
         "stats": {
             "scenes": len(scenes),
             "draw_packets": len(packets),
