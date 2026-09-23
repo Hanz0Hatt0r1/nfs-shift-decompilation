@@ -56,3 +56,7 @@ future layer: it is implemented and regression-tested in `shader_interface.py`.
 static_draw.py now converts each runtime-facing draw packet into SHIFT.StaticDraw/1. A packet is marked ready only when the MEB SHIFT.VertexLayout/1 is valid, the VS/PS selection is unique and its semantic/vertex-format evidence is valid, material texture bindings have explicit D3D9 sampler registers from FXO/CTAB, and there are no blocking unresolved references.
 
 Renderer-global samplers are preserved as explicit external requirements rather than being silently treated as material textures. This keeps the static BMW path deterministic while leaving environment/shadow resources for the renderer resource manager.
+
+## Phase 17: linked shader propagation
+
+`SHIFT.DrawPacket/1` now preserves `linked_shader_pair` and any `linked_shader_error` from `MaterialBinding/1`. StaticDraw readiness requires a valid `SHIFT.LinkedShaderPair/1` for each selected material, preventing a packet from becoming renderer-ready when permutation selection succeeded but GLSL translation did not.

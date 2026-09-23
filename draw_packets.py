@@ -330,6 +330,8 @@ def compile_material(
                     material_binding.get("selected_fxo", {}) or {}
                 ).get("vertex_pair_selection_status", "none"),
                 "shader_pair": material_binding.get("shader_pair"),
+                "linked_shader_pair": material_binding.get("linked_shader_pair"),
+                "linked_shader_error": material_binding.get("linked_shader_error"),
                 "vertex_bindings": (
                     (material_binding.get("shader_pair", {}) or {}).get("vertex_bindings", [])
                 ),
