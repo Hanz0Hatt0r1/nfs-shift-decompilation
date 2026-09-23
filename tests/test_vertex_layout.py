@@ -12,3 +12,11 @@ def test_color_keeps_d3d9_ambiguity():
     a=r["attributes"][0]
     assert set(a["d3d9_candidates"])=={"D3DCOLOR","UBYTE4N"}
     assert a["normalized"] is True
+
+
+def test_color_candidates_preserve_channel_order_ambiguity():
+    r=build_vertex_layout(["460","461"])
+    by={x["property_id"]:x for x in r["attributes"]}
+    for pid in ("460","461"):
+        assert by[pid]["channel_order_candidates"]==["RGBA","BGRA"]
+        assert set(by[pid]["android_candidates"])=={"UINT8x4_RGBA","UINT8x4_BGRA"}
