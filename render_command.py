@@ -129,3 +129,93 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
             "sampler_count": resources.get("stats", {}).get("samplers", 0),
         },
     }
+
+
+def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
+    """Validate the final RenderCommand/1 submission shape before a backend consumes it."""
+    reasons: list[str] = []
+
+    if command.get("format") != FORMAT:
+        reasons.append("render-command:invalid-format")
+
+    mesh = command.get("mesh") or {}
+    layout = mesh.get("vertex_layout") or {}
+    if layout.get("format") != "SHIFT.VertexLayout/1":
+        reasons.append("vertex-layout:invalid")
+    try:
+        vertex_count = int(mesh.get("vertex_count"))
+    except (TypeError, ValueError):
+        vertex_count = 0
+        reasons.append("mesh:vertex-count-invalid")
+    if vertex_count < 0:
+        reasons.append("mesh:vertex-count-invalid")
+
+    attributes = list(command.get("mesh", {}).get("attributes", []) or [])
+    seen_locations: dict[int, str] = {}
+    for attribute in attributes:
+        try:
+            location = int(attribute.get("location"))
+        except (TypeError, ValueError):
+            reasons.append("vertex-attribute:location-invalid")
+            continue
+        if location < 0:
+            reasons.append("vertex-attribute:location-invalid")
+            continue
+        property_id = str(attribute.get("property_id"))
+        owner = seen_locations.get(location)
+        if owner is not None and owner != property_id:
+            reasons.append(
+                f"vertex-attribute:location-collision:{location}"
+            )
+        else:
+            seen_locations[location] = property_id
+
+        if int(attribute.get("offset", 0) or 0) < 0:
+            reasons.append(f"vertex-attribute:offset-invalid:{property_id}")
+        stride = int(attribute.get("stride", 0) or 0)
+        if stride <= 0:
+            reasons.append(f"vertex-attribute:stride-invalid:{property_id}")
+
+    plan = command.get("resource_plan") or {}
+    if plan.get("format") != "SHIFT.RenderResources/1":
+        reasons.append("resource-plan:invalid-format")
+    for key in ("texture_count", "sampler_count"):
+        try:
+            if int(plan.get(key, 0) or 0) < 0:
+                reasons.append(f"resource-plan:{key}-invalid")
+        except (TypeError, ValueError):
+            reasons.append(f"resource-plan:{key}-invalid")
+
+    for submesh in command.get("submeshes", []) or []:
+        try:
+            first = int(submesh.get("first_index", 0))
+            count = int(submesh.get("index_count", 0))
+        except (TypeError, ValueError):
+            reasons.append("index-range:invalid")
+            continue
+        if first < 0 or count < 0 or count % 3:
+            reasons.append("index-range:invalid")
+        shader = submesh.get("shader") or {}
+        if not shader.get("vertex"):
+            reasons.append("shader:vertex-source-missing")
+        if not shader.get("pixel"):
+            reasons.append("shader:pixel-source-missing")
+        uniform = submesh.get("uniforms") or {}
+        if uniform.get("format") not in (None, "SHIFT.MaterialUniformBinding/1"):
+            reasons.append("uniform-binding:invalid-format")
+        for texture in submesh.get("textures", []) or []:
+            if texture.get("resource") == "external":
+                continue
+            if not texture.get("resource_binding_id"):
+                reasons.append("texture-command:resource-binding-missing")
+            if not texture.get("texture_id"):
+                reasons.append("texture-command:texture-id-missing")
+            if not texture.get("sampler_id"):
+                reasons.append("texture-command:sampler-id-missing")
+
+    reasons = list(dict.fromkeys(reasons))
+    return {
+        "format": "SHIFT.RenderCommandValidation/1",
+        "valid": not reasons,
+        "blocking_reasons": reasons,
+    }
