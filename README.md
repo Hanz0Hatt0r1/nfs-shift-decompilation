@@ -75,3 +75,8 @@ shift_assets/
 Добавлен универсальный слой `material_linker.py`: он связывает BMT shaderparams с SamplerTexture из исходного HLSL/FX, переносит Min/Mag/Mip/Address/sRGB state и через D3DX9 CTAB восстанавливает фактические sampler registers. Для BMW M3 E36 проверено: diffuseTexture -> diffuseMap/s1, specularTexture -> specularMap/s2, scratchControlTexture -> scratchControlMap/s4; renderer-global environmentMap -> s3 и shadow sampler -> s0.
 
 CTAB reflection теперь сохраняет typed constants и sampler register metadata в `shader_ir.py`. Следующий render-layer шаг — связать этот MaterialBinding с VHF/MEB primitive/material references и восстановить VS/PS pair + vertex semantic interface.
+
+
+### VHF -> MEB -> BMT render-link stage
+
+Добавлен `render_pipeline.py`, формирующий `SHIFT.RenderBinding/1`: VHF resource nodes связываются с MEB primitives, legacy `.mtx` автоматически разрешается в `.bmt`, VHF parent/matrix hierarchy превращается в world transforms, а BMT связывается с FX source и FXO permutations через `material_linker.py`. На следующем слое останется восстановить VS/PS pair и semantic vertex interface перед загрузкой DrawPacket в Android renderer.
