@@ -16,3 +16,8 @@ The reference renderer now exposes `--render-command --textured --mesh ... --tex
 ## Phase 44/45: current reference-renderer scope
 
 The reference renderer now has two deterministic execution surfaces: geometry-only `RenderCommand/1` execution and a UV0 software texture path backed by DDS reference decode/sampling. It is still intentionally not a software HLSL interpreter; material lighting/blending operations remain an explicit next layer.
+
+
+## Phase 48: pixel shader reference execution
+
+The textured reference renderer can optionally execute the embedded `SHIFT.ShaderProgram/1` pixel IR per covered fragment. The initial bounded path supports `TEXCOORD0` and sampler `s0` and reuses the deterministic DDS sampler; unsupported shader inputs/opcodes remain explicit blockers rather than guessed behavior.
