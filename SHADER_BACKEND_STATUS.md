@@ -38,3 +38,7 @@ Next target: use the BMW M3 package as the golden path for exact sampler/vertex-
 ## Phase 39: RenderCommand integration
 
 The GLES shader compiler validator can now be attached to `SHIFT.RenderCommand/1` on demand. This keeps expensive compiler work out of the default render-link pass while making compile/link evidence part of the final submission contract when requested.
+
+## Phase 46: software shader execution oracle
+
+`shader_reference.py` now executes a strict subset of parsed D3D9 `ShaderProgram` instructions in software, including arithmetic, dot/cross/normalize, scalar/vector math, texture reads and explicit source/write modifiers. Unsupported control-flow and unknown opcodes return machine-readable `unsupported` status; missing inputs/textures return `error`. This is a reference oracle, not a claim of full HLSL compatibility.

@@ -58,3 +58,8 @@ The desktop oracle can now execute `SHIFT.RenderCommand/1` directly. The executi
 ## Phase 45: current renderer baseline
 
 The neutral render pipeline now includes RenderResources/1, RenderCommand/1 validation, explicit GLES vertex-attribute setup, optional GLES shader compile/link evidence, direct desktop RenderCommand execution, DDS texture reference sampling, embedded sampler state and multi-texture sampler-register validation. The remaining material-render gap is shader operation execution, not resource discovery or command construction.
+
+
+## Phase 46: shader execution reference
+
+The project now has a deterministic software execution oracle for a bounded set of D3D9 shader IR operations. The reference renderer can therefore advance from texture sampling toward material evaluation without inventing unsupported shader behavior; full BMW shader coverage still requires expanding the supported opcode/control-flow set and validating against real FXO programs.
