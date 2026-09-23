@@ -431,7 +431,7 @@ def test_render_command_accepts_distinct_sampler_registers():
     })
     draw = build_static_draw_contract(packet)
     result = build_render_command(draw, resources)
-    assert result["ready"] is True
+    assert result["ready"] is True, result
     assert [x["d3d9_sampler_register"] for x in result["submeshes"][0]["textures"]] == [1, 2]
 
 
@@ -447,7 +447,7 @@ def test_render_command_rejects_sampler_register_collision():
             "binding_source": "fxo-ctab",
         },
         {
-            "material_parameter": "Specular",
+            "material_parameter": "Diffuse",
             "ref": "textures/body.dds",
             "slot": 1,
             "d3d9_sampler_register": 1,
