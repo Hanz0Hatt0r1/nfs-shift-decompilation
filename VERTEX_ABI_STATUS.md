@@ -32,3 +32,6 @@ SHIFT.VertexLayout/1 now records ABI evidence explicitly instead of exposing onl
 ## Phase 28: vertex location collision guard
 
 `build_vertex_input_locations()` now rejects two classes of silent ABI corruption: one D3D9 input register mapping to multiple target locations, and multiple shader registers mapping to the same target location. The resulting `location_collisions` and `unresolved` records remain machine-readable.
+## Phase 41: COLOR0/COLOR1 evidence
+
+`color_abi.py` now preserves the unresolved MEB 460/461 channel-order ambiguity as explicit RGBA and BGRA candidate interpretations. It records raw/candidate SHA-256, basic channel statistics and can compare both candidates against a known RGBA8 reference without selecting a winner.
