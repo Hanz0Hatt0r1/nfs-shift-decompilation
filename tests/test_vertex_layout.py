@@ -6,6 +6,7 @@ def test_known_float_and_skin_attributes():
     assert a["200"]["android"]=="FLOAT32x3"
     assert (a["310"]["usage"],a["310"]["usage_index"])==("BLENDWEIGHT",0)
     assert a["580"]["android"]=="UINT8x4"
+    assert a["580"]["name"]=="bone_indices"
 
 def test_color_keeps_d3d9_ambiguity():
     r=build_vertex_layout(["460"])
