@@ -386,11 +386,24 @@ def to_glsl(
     *,
     input_locations: dict[int, int] | None = None,
     output_locations: dict[int, int] | None = None,
+    constant_binding: int = 14,
 )->str:
     lines=['#version 310 es','precision highp float;','precision highp int;']
     for i in program.temps: lines.append(f'vec4 r{i}=vec4(0.0);')
+    if not 0 <= constant_binding <= 31:
+        raise ValueError("constant UBO binding must fit the GLES implementation range")
     for bank,rt in (('c',2),('c2',11),('c3',12),('c4',13)):
         lines.append(f'vec4 {bank}[{_bank_size(program,rt)}];')
+    lines.insert(
+        2,
+        f'layout(std140, binding = {constant_binding}) uniform ShiftD3D9Constants {{'
+    )
+    lines.insert(3, f'    vec4 c[{_bank_size(program,2)}];')
+    lines.insert(4, f'    vec4 c2[{_bank_size(program,11)}];')
+    lines.insert(5, f'    vec4 c3[{_bank_size(program,12)}];')
+    lines.insert(6, f'    vec4 c4[{_bank_size(program,13)}];')
+    lines.insert(7, '};')
+    # Integer/bool banks remain local until their exact upload ABI is proven.
     lines.append(f'ivec4 i[{max(1,max(program.const_ints+[0])+1)}];')
     lines.append(f'bvec4 b[{max(1,max(program.const_bools+[0])+1)}];')
     lines.append('ivec4 a0=ivec4(0);')
