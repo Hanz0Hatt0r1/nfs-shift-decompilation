@@ -6,6 +6,7 @@ filtering/addressing rules; FXO CTAB reflection supplies D3D9 sampler registers.
 from __future__ import annotations
 import json
 import re
+import hashlib
 from pathlib import Path
 from typing import Iterable
 from shader_ir import parse_shader_blobs
@@ -89,6 +90,18 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                 uniform_matches=sorted(material_uniform_names & all_constants)
                 uniform_score=(len(uniform_matches)/len(material_uniform_names)) if material_uniform_names else 1.0
                 feature_score=feature_signature_score(material, constants=all_constants, samplers=names)
+                pixel_sha256=hashlib.sha256(data[p["offset"]:p["end"]]).hexdigest()
+                vertex_sha256=None
+                pair_sha256=None
+                if pair:
+                    try:
+                        for vb in parse_shader_blobs(data):
+                            if vb.offset==pair["vertex_offset"]:
+                                vertex_sha256=hashlib.sha256(data[vb.offset:vb.end]).hexdigest()
+                                pair_sha256=hashlib.sha256(data[vb.offset:vb.end]+data[p["offset"]:p["end"]]).hexdigest()
+                                break
+                    except Exception:
+                        pass
                 fxo_payloads[(name,p["offset"])]=data
                 fxo.append({
                     "file":name,"program_offset":p["offset"],"samplers":p["samplers"],
@@ -96,6 +109,9 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                     "uniform_matches":uniform_matches,"uniform_expected":len(material_uniform_names),
                     "uniform_coverage":uniform_score,
                     "vertex_pair_score":pair_score,"vertex_pair_valid":pair_ok,
+                    "pixel_sha256":pixel_sha256,
+                    "vertex_sha256":vertex_sha256,
+                    "pair_sha256":pair_sha256,
                     "specialization_score":feature_score["score"],
                     "specialization_matched":feature_score["matched"],
                     "specialization_contradicted":feature_score["contradicted"],
@@ -123,6 +139,17 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
         ),
     )
     best=fxo[0] if fxo else None
+    selection_status="none"
+    ambiguous_candidates=[]
+    if best:
+        top=[x for x in fxo if abs(x["score"]-best["score"]) < 1e-9
+             and x.get("vertex_pair_valid")==best.get("vertex_pair_valid")
+             and abs(x.get("vertex_pair_score",0.0)-best.get("vertex_pair_score",0.0)) < 1e-9
+             and abs(x.get("uniform_coverage",0.0)-best.get("uniform_coverage",0.0)) < 1e-9
+             and abs(x.get("specialization_score",0.0)-best.get("specialization_score",0.0)) < 1e-9]
+        hashes={x.get("pair_sha256") for x in top if x.get("pair_sha256")}
+        ambiguous_candidates=top if len(hashes)>1 else []
+        selection_status="ambiguous" if ambiguous_candidates else ("unique" if best.get("vertex_pair_valid") else "heuristic")
     shader_pair=None
     uniform_binding=None
     if best and best["exact"]:
@@ -136,6 +163,8 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     return {"format":"SHIFT.MaterialBinding/1","material":material.get("name"),"shader":material.get("shader"),
             "technique":material.get("technique"),"specialization":specialization,"bindings":bindings,"fxo_candidates":fxo,
             "selected_fxo":best if best and best["exact"] else None,
+            "selection_status":selection_status,
+            "ambiguous_candidates":ambiguous_candidates[:8],
             "shader_pair":shader_pair,
             "uniform_binding":uniform_binding if best and best["exact"] and shader_pair else None,
             "unresolved_textures":sorted(set(unresolved))}
