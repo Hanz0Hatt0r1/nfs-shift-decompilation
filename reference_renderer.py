@@ -109,9 +109,10 @@ def rasterize_mesh(
 
     matrix = mvp or orthographic_mvp(verts)
     projected = _project(verts, matrix, width, height)
-    rgba = [_vertex_color([tuple(int(x) for x in c) for c in colors], i) for i in range(len(verts))]
+    color_rows = [tuple(int(x) for x in c) for c in colors]
+    rgba = [_vertex_color(color_rows, i) for i in range(len(verts))]
     # If no colors were supplied, use deterministic flat gray.
-    if not list(colors):
+    if not color_rows:
         rgba = [(210, 210, 210, 255)] * len(verts)
 
     pixels = bytearray(clear * (width * height))
