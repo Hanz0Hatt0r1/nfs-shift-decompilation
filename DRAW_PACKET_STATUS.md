@@ -60,3 +60,8 @@ Renderer-global samplers are preserved as explicit external requirements rather 
 ## Phase 17: linked shader propagation
 
 `SHIFT.DrawPacket/1` now preserves `linked_shader_pair` and any `linked_shader_error` from `MaterialBinding/1`. StaticDraw readiness requires a valid `SHIFT.LinkedShaderPair/1` for each selected material, preventing a packet from becoming renderer-ready when permutation selection succeeded but GLSL translation did not.
+## Phase 19: DrawPacket -> reference renderer
+
+`reference_renderer.py` now exposes `build_static_draw_from_packet()` and `render_draw_packet()`. The reference renderer consumes the same `SHIFT.StaticDraw/1` validation boundary as the future GPU backend, then rasterizes only neutral mesh data.
+
+This keeps renderer validation separate from source-game resource access and gives us a deterministic desktop oracle for the first BMW static-render milestone.
