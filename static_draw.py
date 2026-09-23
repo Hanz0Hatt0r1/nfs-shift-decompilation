@@ -148,6 +148,16 @@ def _uniform_contract(material: dict[str, Any], selection: dict[str, Any]) -> tu
         else:
             if register_count <= 0:
                 reasons.append("material-uniform-binding:register-count-invalid")
+        ctab_type = str(binding.get("ctab_type") or "").strip().lower()
+        if not ctab_type:
+            reasons.append("material-uniform-binding:ctab-type-missing")
+        elif not (
+            ctab_type == "float"
+            or ctab_type.startswith(("float1", "float2", "float3", "float4"))
+        ):
+            reasons.append(
+                f"material-uniform-binding:unsupported-ctab-type:{binding.get('ctab_type')}"
+            )
         if binding.get("shape_warning"):
             reasons.append(f"material-uniform-binding:{binding['shape_warning']}")
 
