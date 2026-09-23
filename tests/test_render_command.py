@@ -406,7 +406,7 @@ def test_render_command_accepts_distinct_sampler_registers():
         },
     ]
     resources = _resources()
-        resources["samplers"].append({
+    resources["samplers"].append({
         "id": "smp_specular",
         "state": {
             "format": "SHIFT.SamplerState/1",
@@ -420,7 +420,7 @@ def test_render_command_accepts_distinct_sampler_registers():
         "id": "tb_specular",
         "texture_id": "tex_body",
         "sampler_id": "smp_specular",
-        "material_parameter": "Specular",
+        "material_parameter": "Diffuse",
         "d3d9_sampler_register": 2,
         "gpu_ready": True,
         "blocking_reasons": [],
