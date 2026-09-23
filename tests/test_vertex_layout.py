@@ -37,3 +37,20 @@ def test_vertex_abi_keeps_color_channel_order_ambiguous():
     abi = property_abi("460")
     assert abi["confidence"] == "ambiguous-channel-order"
     assert abi["channel_order_candidates"] == ["RGBA", "BGRA"]
+
+
+def test_vertex_layout_exposes_explicit_abi_evidence_status():
+    r = build_vertex_layout(["200", "310", "580", "460"])
+    by = {x["property_id"]: x for x in r["attributes"]}
+    assert by["200"]["abi_status"] == "inferred"
+    assert by["310"]["abi_status"] == "proven"
+    assert by["580"]["abi_status"] == "proven"
+    assert by["460"]["abi_status"] == "ambiguous"
+    assert "460" in r["evidence"]["ambiguous_properties"]
+
+
+def test_vertex_layout_reports_semantic_collisions_without_guessing():
+    r = build_vertex_layout(["130", "230"])
+    assert r["semantic_collisions"] == [
+        {"usage": "TEXCOORD", "usage_index": 0, "property_ids": ["130", "230"]}
+    ]
