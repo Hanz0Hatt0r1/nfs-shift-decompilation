@@ -49,3 +49,6 @@ D3D9 vertex outputs and pixel inputs now receive shared GLSL interface locations
 ## Phase 15: vertex input ABI linkage
 
 Linked GLSL translation now maps D3D9 VS input registers (`vN`) to the target `SHIFT.VertexLayout/1` attribute locations. The original register number remains the internal operand identity; the emitted GLSL location follows the explicit repacked layout.
+## Phase 16: material-linked shader payload
+
+`MaterialBinding/1` now attaches `SHIFT.LinkedShaderPair/1` when the selected FXO permutation has a unique VS/PS pair. The payload contains the neutral pair IR, semantic varying locations, VertexLayout input bindings when MEB properties are supplied, and the generated GLSL ES 3.1 stages.
