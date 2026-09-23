@@ -32,3 +32,26 @@ def test_glsl_translation_is_nonempty():
     glsl=to_glsl(p)
     assert '#version 310 es' in glsl
     assert 'void main()' in glsl
+
+
+def _program_with(opcode: int, name: str):
+    from shader_asm import Operand, Instruction, ShaderProgram
+    dst = Operand(token=0x80000000, kind="dest", reg_type=0, index=0, write_mask="xyzw")
+    srcs = [
+        Operand(token=0x80000000 + i, kind="source", reg_type=0, index=i, swizzle="xyzw")
+        for i in (1, 2, 3)
+    ]
+    return ShaderProgram(
+        offset=0, end=0, stage="pixel", major=3, minor=0,
+        instructions=[Instruction(0, opcode, name, 0, 4, 0, False, [dst, *srcs])],
+        inputs=[], outputs=[], samplers=[], constants=[], temps=[0, 1, 2, 3],
+        unsupported_opcodes=[],
+    )
+
+
+def test_glsl_cmp_lrp_preserve_d3d9_semantics():
+    from shader_asm import to_glsl
+    cmp_glsl = to_glsl(_program_with(88, "CMP"))
+    lrp_glsl = to_glsl(_program_with(18, "LRP"))
+    assert "mix(r3,r2,greaterThanEqual(r1,vec4(0.0)))" in cmp_glsl
+    assert "mix(r3,r2,r1)" in lrp_glsl
