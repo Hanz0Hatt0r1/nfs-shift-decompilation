@@ -133,3 +133,25 @@ def test_linked_glsl_translation_maps_vertex_inputs_to_target_layout_locations()
     linked = translate_pair(vs, ps, vertex_properties=properties)
     assert linked["vertex_input_locations"] == {0: 1}
     assert "layout(location=1) in vec4 in_0;" in linked["vertex_glsl"]
+
+
+def test_linked_pair_emits_gles31_compilable_stages(tmp_path):
+    validator = shutil.which("glslangValidator")
+    if validator is None:
+        pytest.skip("glslangValidator is not installed")
+
+    vs, ps = _shader_pair_with_different_varying_registers()
+    linked = translate_pair(vs, ps, vertex_properties=("220", "200"))
+    for stage, suffix, validator_stage in (
+        (linked["vertex_glsl"], "vert", "vert"),
+        (linked["pixel_glsl"], "frag", "frag"),
+    ):
+        path = tmp_path / f"linked.{suffix}"
+        path.write_text(stage, encoding="utf-8")
+        proc = subprocess.run(
+            [validator, "-S", validator_stage, str(path)],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        assert proc.returncode == 0, proc.stdout + proc.stderr
