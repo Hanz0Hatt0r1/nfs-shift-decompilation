@@ -70,6 +70,8 @@ def _find_texture_resource(resources: dict[str, Any], texture: dict[str, Any]) -
     ref = str(texture.get("ref") or "").replace("\\", "/").lower()
     sampler = texture.get("sampler")
     register = texture.get("d3d9_sampler_register")
+    if register is None:
+        register = texture.get("slot")
     candidates = []
     for binding in resources.get("bindings", []) or []:
         if register is not None and binding.get("d3d9_sampler_register") not in (None, register):
