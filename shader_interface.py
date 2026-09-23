@@ -5,6 +5,7 @@ from typing import Iterable
 from shader_asm import ShaderProgram, parse_program
 from shader_ir import parse_shader_blobs
 from meb_format import PROP_NAMES
+from skeleton_ir import skinning_contract
 
 D3D9_DECL_USAGE={0:"POSITION",1:"BLENDWEIGHT",2:"BLENDINDICES",3:"NORMAL",4:"PSIZE",5:"TEXCOORD",6:"TANGENT",7:"BINORMAL",8:"TESSFACTOR",9:"POSITIONT",10:"COLOR",11:"FOG",12:"DEPTH",13:"SAMPLE"}
 MEB_SEMANTICS={"200":("POSITION",0),"460":("COLOR",0),"220":("NORMAL",0),"240":("TANGENT",0),"250":("BINORMAL",0),"310":("BLENDWEIGHT",0),"580":("BLENDINDICES",0)}
@@ -98,10 +99,16 @@ def match_vertex_format(program:ShaderProgram,properties:Iterable[str|dict])->di
     required={semantic_key(x) for x in program.inputs}
     missing=sorted(({"usage":u,"index":i} for u,i in required-available),key=lambda x:(x["usage"],x["index"]))
     unused=sorted(({"usage":u,"index":i} for u,i in available-required),key=lambda x:(x["usage"],x["index"]))
-    bindings=vertex_attribute_bindings(program,properties)
+    prop_list=list(properties)
+    bindings=vertex_attribute_bindings(program,prop_list)
     matched=len(required)-len(missing)
-    score=0.5*(matched/len(required) if required else 1.0)+0.5*bindings["score"]
-    return {"valid":bindings["valid"] and not missing,"required":len(required),"available":len(available),"matched":matched,"missing":missing,"unused":unused,"score":score,"available_semantics":sorted(({"usage":u,"index":i} for u,i in available),key=lambda x:(x["usage"],x["index"])),"vertex_bindings":bindings["bindings"]}
+    skin_shader={(x.get("usage"),x.get("index")) for x in program.inputs if x.get("usage") in {"BLENDWEIGHT","BLENDINDICES"}}
+    skin_contract=skinning_contract(prop_list)
+    shader_skinned=bool(skin_shader)
+    skin_compatible=(shader_skinned == skin_contract["skinned"]) and skin_contract["valid"]
+    skin_score=1.0 if skin_compatible else 0.0
+    score=0.45*(matched/len(required) if required else 1.0)+0.35*bindings["score"]+0.20*skin_score
+    return {"valid":bindings["valid"] and not missing and skin_compatible,"required":len(required),"available":len(available),"matched":matched,"missing":missing,"unused":unused,"score":score,"available_semantics":sorted(({"usage":u,"index":i} for u,i in available),key=lambda x:(x["usage"],x["index"])),"vertex_bindings":bindings["bindings"],"skinning":{**skin_contract,"shader_skinned":shader_skinned,"compatible":skin_compatible}}
 
 def enumerate_shader_pairs(programs:Iterable[ShaderProgram],properties:Iterable[str|dict]=())->list[dict]:
     programs=list(programs); props=list(properties)
