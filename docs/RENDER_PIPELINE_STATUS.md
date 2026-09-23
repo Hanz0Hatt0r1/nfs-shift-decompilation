@@ -49,3 +49,7 @@ The desktop oracle can now execute `SHIFT.RenderCommand/1` directly. The executi
 ## Phase 37: explicit GLES vertex attribute ABI
 
 `SHIFT.RenderCommand/1` now includes `attribute_setup` metadata for the future GLES backend. FLOAT32x2/3/4 uses `glVertexAttribPointer`; property 580 / BLENDINDICES0 uses integer `glVertexAttribIPointer` with `UNSIGNED_BYTE`; color 460/461 remains normalized byte input with its unresolved channel-order evidence preserved.
+
+## Phase 39: RenderCommand shader validation
+
+`RenderCommand/1` can now optionally run the linked VS/PS compiler validator. The result is preserved as `SHIFT.RenderCommandShaderValidation/1`; a proven `invalid` result blocks submission, while `unavailable` keeps the command usable for environments without the compiler toolchain.
