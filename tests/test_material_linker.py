@@ -138,7 +138,7 @@ def test_material_binding_includes_linked_shader_pair():
     )
     assert r["selection_status"] == "unique"
     linked = r["linked_shader_pair"]
-    assert linked is not None
+    assert linked is not None, r.get("linked_shader_error")
     assert linked["varying_locations"] == [{"usage": "TEXCOORD", "index": 5, "location": 0}]
     assert linked["vertex_input_locations"] == {0: 0}
     assert "layout(location=0) out vec4 out_1;" in linked["vertex_glsl"]
