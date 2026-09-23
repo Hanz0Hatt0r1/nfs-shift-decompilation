@@ -4,6 +4,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from shader_asm import ShaderProgram, parse_program, to_glsl
+from shader_ir import parse_shader_blobs
 from shader_interface import build_varying_locations
 
 
