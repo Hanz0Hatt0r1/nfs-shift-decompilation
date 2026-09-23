@@ -75,3 +75,71 @@ def test_material_selection_tie_uses_all_evidence_fields():
     worse = dict(base)
     worse["specialization_contradicted"] = ["METALLIC"]
     assert _selection_evidence_key(better) != _selection_evidence_key(worse)
+
+
+def synthetic_linkable_fxo_pair():
+    """Build one minimal CTAB-backed VS/PS pair with semantic register mismatch."""
+    import struct
+
+    def ctab(name: bytes, stage_version: int, register: int) -> bytes:
+        header = 28
+        info = 20
+        typ = 20
+        name_off = header + info + typ
+        payload = bytearray(b"CTAB")
+        payload += struct.pack("<7I", header, 0, stage_version, 1, header, 0, 0)
+        payload += struct.pack("<IHHHHII", name_off, 3, register, 1, 0, header + info, 0)
+        payload += struct.pack("<HHHHHHII", 4, 12, 1, 1, 1, 0, 0, 0)
+        payload += name
+        payload += b"\x00" * ((-len(payload)) % 4)
+        return struct.pack("<I", stage_version) + struct.pack(
+            "<I", ((len(payload) // 4) << 16) | 0xFFFE
+        ) + payload
+
+    vs_version = 0xFFFE0300
+    ps_version = 0xFFFF0300
+    dcl = (2 << 24) | 31
+    vs = bytearray(ctab(b"diffuseMap\x00", vs_version, 0))
+    vs += struct.pack(
+        "<III", dcl, 0, 0x80000000 | 0 | (15 << 16) | (1 << 28)
+    )
+    vs += struct.pack(
+        "<III", dcl, 5 | (5 << 16), 0x80000000 | 1 | (15 << 16) | (6 << 28)
+    )
+    vs += struct.pack("<I", 0xFFFF)
+
+    ps = bytearray(ctab(b"diffuseMap\x00", ps_version, 0))
+    ps += struct.pack(
+        "<III", dcl, 5 | (5 << 16), 0x80000000 | 0 | (15 << 16) | (1 << 28)
+    )
+    ps += struct.pack("<I", 0xFFFF)
+    return bytes(vs + ps)
+
+
+def test_material_binding_includes_linked_shader_pair():
+    source = '''texture diffuseTexture;
+    sampler2D diffuseMap : SAMPLER < string SamplerTexture="diffuseTexture"; > =
+        sampler_state { Texture=<diffuseTexture>; };
+    float4 sampleDiffuse(float2 uv) { return tex2D(diffuseMap, uv); }'''
+    material = {
+        "name": "TEST",
+        "shader": "body.fx",
+        "shaderparams": [
+            {"name": "diffuseTexture", "type": "EPT_TEXTURE", "value": "a.dds"},
+        ],
+    }
+    data = synthetic_linkable_fxo_pair()
+    r = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+    )
+    assert r["selection_status"] == "unique"
+    linked = r["linked_shader_pair"]
+    assert linked is not None, r.get("linked_shader_error")
+    assert linked["varying_locations"] == [{"usage": "TEXCOORD", "index": 5, "location": 0}]
+    assert linked["vertex_input_locations"] == {0: 0}
+    assert "layout(location=0) out vec4 out_1;" in linked["vertex_glsl"]
+    assert "layout(location=0) in vec4 in_0;" in linked["pixel_glsl"]
