@@ -170,7 +170,7 @@ void main() {
     if result["status"] == "unavailable":
         assert result["blocking_reasons"] == []
     else:
-        assert result["status"] == "valid"
+        assert result["status"] == "valid", result
         assert result["stages"]["vertex"]["valid"] is True
         assert result["stages"]["pixel"]["valid"] is True
         assert result["link"]["valid"] is True
