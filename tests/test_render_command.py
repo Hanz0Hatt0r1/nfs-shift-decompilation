@@ -472,3 +472,39 @@ def test_render_command_rejects_bad_sampler_state():
     result = build_render_command(draw, resources)
     assert result["ready"] is False
     assert "texture-command:sampler-state-invalid:0" in result["blocking_reasons"]
+
+
+def test_render_command_carries_shader_program_ir():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["linked_shader_pair"]["vertex"] = {
+        "schema": "SHIFT.ShaderProgram/1",
+        "stage": "vertex",
+        "shader_model": [3, 0],
+        "instructions": [],
+    }
+    packet["submeshes"][0]["material"]["linked_shader_pair"]["pixel"] = {
+        "schema": "SHIFT.ShaderProgram/1",
+        "stage": "pixel",
+        "shader_model": [3, 0],
+        "instructions": [],
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    shader = result["submeshes"][0]["shader"]
+    assert shader["vertex_program"]["schema"] == "SHIFT.ShaderProgram/1"
+    assert shader["pixel_program"]["stage"] == "pixel"
+    assert result["validation"]["valid"] is True
+
+
+def test_render_command_rejects_bad_shader_program_ir_schema():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["linked_shader_pair"]["pixel"] = {
+        "schema": "SHIFT.NotAProgram/1",
+        "stage": "pixel",
+        "shader_model": [3, 0],
+        "instructions": [],
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "shader-ir:pixel_program:invalid-schema" in result["blocking_reasons"]
