@@ -20,3 +20,19 @@ def test_color_candidates_preserve_channel_order_ambiguity():
     for pid in ("460","461"):
         assert by[pid]["channel_order_candidates"]==["RGBA","BGRA"]
         assert set(by[pid]["android_candidates"])=={"UINT8x4_RGBA","UINT8x4_BGRA"}
+
+
+def test_vertex_layout_exposes_deterministic_repack_offsets():
+    r = build_vertex_layout(["200", "220", "130"])
+    by = {x["property_id"]: x for x in r["attributes"]}
+    assert by["200"]["offset"] == 0
+    assert by["220"]["offset"] == 12
+    assert by["130"]["offset"] == 24
+    assert r["buffer_stride"] == 32
+
+
+def test_vertex_abi_keeps_color_channel_order_ambiguous():
+    from vertex_layout import property_abi
+    abi = property_abi("460")
+    assert abi["confidence"] == "ambiguous-channel-order"
+    assert abi["channel_order_candidates"] == ["RGBA", "BGRA"]

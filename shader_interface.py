@@ -5,6 +5,7 @@ from typing import Iterable
 from shader_asm import ShaderProgram, parse_program
 from shader_ir import parse_shader_blobs
 from meb_format import PROP_NAMES
+from vertex_layout import build_layout_from_summary
 from skeleton_ir import skinning_contract
 
 D3D9_DECL_USAGE={0:"POSITION",1:"BLENDWEIGHT",2:"BLENDINDICES",3:"NORMAL",4:"PSIZE",5:"TEXCOORD",6:"TANGENT",7:"BINORMAL",8:"TESSFACTOR",9:"POSITIONT",10:"COLOR",11:"FOG",12:"DEPTH",13:"SAMPLE"}
@@ -68,6 +69,9 @@ def vertex_attribute_bindings(program:ShaderProgram,properties:Iterable[str|dict
         sem=MEB_SEMANTICS.get(pid)
         if not sem: continue
         candidates.setdefault(sem,[]).append(value)
+    props_by_id={str(v.get("id")) if isinstance(v,dict) else str(v):v for v in props}
+    target_layout=build_layout_from_summary({"property_layouts": props}) if props else {"attributes":[]}
+    locations={x["property_id"]:x.get("location") for x in target_layout.get("attributes",[])}
     bindings=[]; missing=[]
     for decl in program.inputs:
         key=semantic_key(decl)
@@ -90,7 +94,8 @@ def vertex_attribute_bindings(program:ShaderProgram,properties:Iterable[str|dict
         if chosen is None:
             rec["matched"]=False; missing.append(rec)
         else:
-            rec.update({"matched":True,"property_id":chosen[2],"property_name":PROP_NAMES.get(chosen[2],"unknown"),"selection":"exact-width" if chosen[0]==0 else "wider-source-coverage"})
+            rec.update({"matched":True,"property_id":chosen[2],"property_name":PROP_NAMES.get(chosen[2],"unknown"),"selection":"exact-width" if chosen[0]==0 else "wider-source-coverage","target_location":locations.get(chosen[2])})
+
         bindings.append(rec)
     return {"valid":not missing,"bindings":bindings,"missing":missing,"score":1.0-len(missing)/len(program.inputs) if program.inputs else 1.0}
 
