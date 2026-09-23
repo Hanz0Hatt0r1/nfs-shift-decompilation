@@ -139,7 +139,7 @@ def build_material_shader_links(records: list[dict[str, Any]], shaders: list[dic
             item["confidence"] = "ambiguous-shader"
         else:
             item["confidence"] = "unresolved-shader"
-    links.append(item)
+        links.append(item)
 
     return {"schema": SCHEMA, "version": 1, "links": links, "stats": stats}
 
