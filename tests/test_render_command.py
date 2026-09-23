@@ -212,3 +212,81 @@ def test_render_command_validation_rejects_bad_index_count():
     validation = validate_render_command(result)
     assert validation["valid"] is False
     assert "index-range:invalid" in validation["blocking_reasons"]
+
+
+def test_render_command_emits_explicit_gles_vertex_setup():
+    packet = _packet()
+    packet["mesh"]["vertex_layout"]["attributes"] = [
+        {
+            "property_id": "200",
+            "location": 3,
+            "storage": "FLOAT32x3",
+            "normalized": False,
+            "offset": 0,
+            "stride": 32,
+            "element_size": 12,
+            "abi_status": "inferred",
+        },
+        {
+            "property_id": "580",
+            "location": 7,
+            "storage": "UINT8x4",
+            "normalized": False,
+            "offset": 28,
+            "stride": 32,
+            "element_size": 4,
+            "abi_status": "proven",
+        },
+        {
+            "property_id": "460",
+            "location": 9,
+            "storage": "UINT8x4",
+            "normalized": True,
+            "offset": 12,
+            "stride": 32,
+            "element_size": 4,
+            "abi_status": "ambiguous",
+            "channel_order_candidates": ["RGBA", "BGRA"],
+        },
+    ]
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is True
+    setup = {x["property_id"]: x for x in result["mesh"]["attribute_setup"]}
+    assert setup["200"]["components"] == 3
+    assert setup["200"]["gl_type"] == "FLOAT"
+    assert setup["200"]["pointer_api"] == "glVertexAttribPointer"
+    assert setup["580"]["gl_type"] == "UNSIGNED_BYTE"
+    assert setup["580"]["pointer_api"] == "glVertexAttribIPointer"
+    assert setup["580"]["integer_pointer"] is True
+    assert setup["460"]["normalized"] is True
+    assert setup["460"]["pointer_api"] == "glVertexAttribPointer"
+    assert setup["460"]["channel_order_candidates"] == ["RGBA", "BGRA"]
+
+
+def test_render_command_blocks_unsupported_vertex_storage():
+    packet = _packet()
+    packet["mesh"]["vertex_layout"]["attributes"][0]["storage"] = "RAW4"
+    packet["mesh"]["vertex_layout"]["attributes"][0]["android"] = None
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "vertex-attribute-storage:unsupported:RAW4" in result["blocking_reasons"]
+
+
+def test_render_command_blocks_normalized_integer_bone_indices():
+    packet = _packet()
+    packet["mesh"]["vertex_layout"]["attributes"] = [{
+        "property_id": "580",
+        "location": 2,
+        "storage": "UINT8x4",
+        "normalized": True,
+        "offset": 0,
+        "stride": 4,
+        "element_size": 4,
+        "abi_status": "proven",
+    }]
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "vertex-attribute-layout:integer-input-cannot-be-normalized" in result["blocking_reasons"]
