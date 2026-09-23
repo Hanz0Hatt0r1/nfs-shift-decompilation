@@ -142,6 +142,7 @@ def build_vertex_input_locations(
     """Map D3D9 vertex input registers to target VertexLayout locations."""
     bindings = vertex_attribute_bindings(program, properties)
     register_locations: dict[int, int] = {}
+    location_owners: dict[int, list[int]] = {}
     unresolved: list[dict] = []
     for binding in bindings["bindings"]:
         reg = register_index(binding.get("shader_register"))
@@ -149,12 +150,35 @@ def build_vertex_input_locations(
         if not binding.get("matched") or reg is None or location is None:
             unresolved.append(binding)
             continue
-        register_locations[reg] = int(location)
+        target = int(location)
+        prior = register_locations.get(reg)
+        if prior is not None and prior != target:
+            unresolved.append({
+                **binding,
+                "reason": "shader-register-maps-to-multiple-target-locations",
+                "existing_target_location": prior,
+            })
+            continue
+        register_locations[reg] = target
+        location_owners.setdefault(target, []).append(reg)
+
+    location_collisions = [
+        {"location": location, "shader_registers": regs}
+        for location, regs in sorted(location_owners.items())
+        if len(set(regs)) > 1
+    ]
+    for collision in location_collisions:
+        unresolved.append({
+            "reason": "multiple-shader-inputs-share-target-location",
+            **collision,
+        })
+
     return {
         "valid": not unresolved,
         "input_locations": register_locations,
         "bindings": bindings["bindings"],
         "unresolved": unresolved,
+        "location_collisions": location_collisions,
         "score": bindings["score"],
     }
 
