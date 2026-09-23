@@ -35,3 +35,6 @@ This makes the render-link stage an actual renderer contract boundary instead of
 ## Phase 32: RenderResources integration
 
 `SHIFT.RenderBinding/1` now includes `SHIFT.RenderResources/1` built from the same manifest rows and material texture bindings used by the render-link stage. Texture identity, sampler state, capability blockers and binding readiness therefore come from one shared resource plan.
+## Phase 33: neutral RenderCommand
+
+`render_command.py` converts validated `SHIFT.StaticDraw/1` plus `SHIFT.RenderResources/1` into `SHIFT.RenderCommand/1`: vertex attribute locations, index ranges, linked GLSL stages, uniform bindings and per-texture resource IDs are preserved without calling GLES.
