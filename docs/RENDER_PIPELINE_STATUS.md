@@ -32,3 +32,6 @@ StaticDraw/1 now blocks an ambiguous vertex ABI only when the selected shader ac
 `render_pipeline.py` now normalizes every VHF/MEB packet into the same mesh shape consumed by `SHIFT.StaticDraw/1`, including `SHIFT.VertexLayout/1`. It also emits a parallel `static_draws` array with explicit `ready` and `blocking_reasons` state.
 
 This makes the render-link stage an actual renderer contract boundary instead of a separate diagnostic report.
+## Phase 32: RenderResources integration
+
+`SHIFT.RenderBinding/1` now includes `SHIFT.RenderResources/1` built from the same manifest rows and material texture bindings used by the render-link stage. Texture identity, sampler state, capability blockers and binding readiness therefore come from one shared resource plan.
