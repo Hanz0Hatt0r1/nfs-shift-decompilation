@@ -127,4 +127,12 @@ def pair_selected_pixel(data:bytes,pixel_offset:int,*,properties:Iterable[str|di
     for vs in (p for p in programs if p.stage=="vertex"):
         interface=link_vertex_pixel(vs,pixel); vf=match_vertex_format(vs,properties)
         candidates.append({"vertex_offset":vs.offset,"pixel_offset":pixel.offset,"score":0.65*interface["score"]+0.35*vf["score"],"interface":interface,"vertex_format":vf,"vertex_bindings":vertex_attribute_bindings(vs,properties)["bindings"],"pixel_samplers":list(pixel.samplers)})
-    return max(candidates,key=lambda x:(x["score"],x["interface"]["score"],x["vertex_format"]["score"],-x["vertex_offset"]),default=None)
+    if not candidates: return None
+    ranked=sorted(candidates,key=lambda x:(-x["score"],-x["interface"]["score"],-x["vertex_format"]["score"],x["vertex_offset"]))
+    best=ranked[0]
+    evidence=(best["score"],best["interface"]["score"],best["vertex_format"]["score"])
+    tied=[x for x in ranked if (x["score"],x["interface"]["score"],x["vertex_format"]["score"])==evidence]
+    result=dict(best)
+    result["selection_status"]="ambiguous" if len({x["vertex_offset"] for x in tied})>1 else "unique"
+    result["ambiguous_candidates"]=[{"vertex_offset":x["vertex_offset"],"pixel_offset":x["pixel_offset"],"score":x["score"]} for x in tied] if result["selection_status"]=="ambiguous" else []
+    return result
