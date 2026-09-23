@@ -11,6 +11,7 @@ from typing import Iterable
 from shader_ir import parse_shader_blobs
 from shader_interface import pair_selected_pixel
 from uniform_linker import link_selected_pair, reflect_constants
+from specialization import feature_indicators, feature_signature_score, material_specialisations
 
 def parse_fx_samplers(source: str | bytes) -> list[dict]:
     text = source.decode("utf-8", "replace") if isinstance(source, bytes) else source
@@ -51,6 +52,7 @@ def reflect_fxo(data: bytes) -> list[dict]:
 def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
     params = _material_params(material)
     samplers = parse_fx_samplers(fx_source)
+    specialization = feature_indicators(material, fx_source)
     textures = _texture_lookup(texture_paths)
     bindings=[]; unresolved=[]
     for s in samplers:
@@ -86,6 +88,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                     all_constants.update(x["name"] for x in reflect_constants(data,off) if x.get("register_set")==2 and x.get("name"))
                 uniform_matches=sorted(material_uniform_names & all_constants)
                 uniform_score=(len(uniform_matches)/len(material_uniform_names)) if material_uniform_names else 1.0
+                feature_score=feature_signature_score(material, constants=all_constants, samplers=names)
                 fxo_payloads[(name,p["offset"])]=data
                 fxo.append({
                     "file":name,"program_offset":p["offset"],"samplers":p["samplers"],
@@ -93,6 +96,9 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                     "uniform_matches":uniform_matches,"uniform_expected":len(material_uniform_names),
                     "uniform_coverage":uniform_score,
                     "vertex_pair_score":pair_score,"vertex_pair_valid":pair_ok,
+                    "specialization_score":feature_score["score"],
+                    "specialization_matched":feature_score["matched"],
+                    "specialization_contradicted":feature_score["contradicted"],
                 })
     seen=set(); uniq=[]
     for x in fxo:
@@ -107,6 +113,8 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             -x.get("vertex_pair_valid",False),
             -x.get("vertex_pair_score",0.0),
             -x.get("uniform_coverage",0.0),
+            -x.get("specialization_score",0.0),
+            len(x.get("specialization_contradicted",[])),
             -len(x.get("uniform_matches",[])),
             x["file"],
             x["program_offset"],
@@ -124,7 +132,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             shader_pair=pair_selected_pixel(payload,best["program_offset"],properties=vertex_properties)
             uniform_binding=link_selected_pair(material,payload,shader_pair)
     return {"format":"SHIFT.MaterialBinding/1","material":material.get("name"),"shader":material.get("shader"),
-            "technique":material.get("technique"),"bindings":bindings,"fxo_candidates":fxo,
+            "technique":material.get("technique"),"specialization":specialization,"bindings":bindings,"fxo_candidates":fxo,
             "selected_fxo":best if best and best["exact"] else None,
             "shader_pair":shader_pair,
             "uniform_binding":uniform_binding if best and best["exact"] and shader_pair else None,
