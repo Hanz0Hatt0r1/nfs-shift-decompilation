@@ -260,8 +260,6 @@ def _relative_index_expr(o:Operand, stage:str)->str:
     else:
         rel_expr=_glsl_reg(rel,stage)
         rel_expr=f'int({rel_expr})'
-    else:
-        rel_expr=f'int(round({rel_expr}))'
     off=_signed11(o.index or 0)
     if off==0:
         return f'({rel_expr})'
