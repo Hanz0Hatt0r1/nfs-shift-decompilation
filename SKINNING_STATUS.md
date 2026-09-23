@@ -29,3 +29,8 @@ BAB bone records и BAS hierarchy уже парсятся существующи
 ## Phase 26: BAB corpus CLI
 
 The opaque BAB corpus fingerprint report is now exposed through `shift_importer.py bab-corpus`, using the standard resource-analysis JSON container and producing `SHIFT.BABCorpusReport/1`.
+
+
+## Phase 27: BAB payload differential analysis
+
+`bab_payload_diff.py` and `shift_importer.py bab-payload-diff` compare preserved BAB bytes by exact hashes, common prefix/suffix, overlap equality and fixed block matches. The report assigns no animation semantics and is intended as evidence input for later keyframe decoding.
