@@ -40,6 +40,42 @@ def link_vertex_pixel(vertex:ShaderProgram,pixel:ShaderProgram)->dict:
     matched=len(pixel.inputs)-len(missing)
     return {"valid":not missing,"matched":matched,"pixel_inputs":len(pixel.inputs),"missing_inputs":missing,"extra_vertex_outputs":extra,"links":links,"score":matched/len(pixel.inputs) if pixel.inputs else 1.0}
 
+def build_varying_locations(vertex:ShaderProgram, pixel:ShaderProgram) -> dict:
+    """Assign shared GLSL locations to matched VS/PS varyings by semantic key."""
+    link = link_vertex_pixel(vertex, pixel)
+    semantics = sorted(
+        (
+            (str(x["semantic"]["usage"]), int(x["semantic"]["index"]))
+            for x in link["links"]
+            if x.get("matched")
+        ),
+        key=lambda x: (x[0], x[1]),
+    )
+    location_by_semantic = {key: i for i, key in enumerate(dict.fromkeys(semantics))}
+    vertex_outputs: dict[int, int] = {}
+    pixel_inputs: dict[int, int] = {}
+    for item in link["links"]:
+        if not item.get("matched"):
+            continue
+        key = (str(item["semantic"]["usage"]), int(item["semantic"]["index"]))
+        location = location_by_semantic[key]
+        vreg = register_index(item.get("vertex_register"))
+        preg = register_index(item.get("pixel_register"))
+        if vreg is not None:
+            vertex_outputs[vreg] = location
+        if preg is not None:
+            pixel_inputs[preg] = location
+    return {
+        "valid": bool(link["valid"]),
+        "semantic_locations": [
+            {"usage": usage, "index": index, "location": location_by_semantic[(usage, index)]}
+            for usage, index in sorted(location_by_semantic, key=lambda x: (x[0], x[1]))
+        ],
+        "vertex_output_locations": vertex_outputs,
+        "pixel_input_locations": pixel_inputs,
+        "link": link,
+    }
+
 def infer_meb_semantics(properties:Iterable[str|dict])->list[dict]:
     out=[]
     for value in properties:
