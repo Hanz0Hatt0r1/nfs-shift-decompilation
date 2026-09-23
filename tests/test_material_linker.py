@@ -56,3 +56,22 @@ def test_material_linker_does_not_hide_unhashed_shader_ties():
                     texture_paths=['a.dds'])
     assert r['selection_status']=='ambiguous'
     assert len(r['ambiguous_candidates'])==2
+
+
+def test_material_selection_tie_uses_all_evidence_fields():
+    from material_linker import _selection_evidence_key
+    base = {
+        "exact": True,
+        "score": 3,
+        "vertex_pair_valid": True,
+        "vertex_pair_score": 0.9,
+        "uniform_coverage": 0.5,
+        "specialization_score": 1.0,
+        "specialization_contradicted": [],
+        "specialization_unexpected": [],
+        "uniform_matches": ["a"],
+    }
+    better = dict(base)
+    worse = dict(base)
+    worse["specialization_contradicted"] = ["METALLIC"]
+    assert _selection_evidence_key(better) != _selection_evidence_key(worse)
