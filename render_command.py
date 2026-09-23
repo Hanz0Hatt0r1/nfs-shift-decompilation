@@ -110,9 +110,9 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
             "uniforms": uniform_binding,
         })
 
-    return {
+    command = {
         "format": FORMAT,
-        "ready": bool(static_draw.get("ready")) and not reasons,
+        "ready": False,
         "blocking_reasons": list(dict.fromkeys(reasons)),
         "mesh": {
             "ref": mesh.get("ref"),
@@ -129,6 +129,13 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any])
             "sampler_count": resources.get("stats", {}).get("samplers", 0),
         },
     }
+    validation = validate_render_command(command)
+    command["ready"] = bool(static_draw.get("ready")) and validation["valid"]
+    command["blocking_reasons"] = list(dict.fromkeys(
+        command["blocking_reasons"] + validation["blocking_reasons"]
+    ))
+    command["validation"] = validation
+    return command
 
 
 def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
