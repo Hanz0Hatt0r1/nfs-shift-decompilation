@@ -1,0 +1,1385 @@
+#!/usr/bin/env python3
+"""Need for Speed: SHIFT universal resource importer.
+
+Features:
+  * BFF v3 parsing (big-endian marker, little-endian fields as used by SHIFT)
+  * Type 0 / Type 1 extraction
+  * Type 2 XMem/LZX extraction with a pure-Python LZX decoder
+  * resource signature/extension classification
+  * manifest generation with compressed/uncompressed hashes
+  * extraction preserving logical resource paths
+  * package creation into a platform-neutral content-addressed tree
+
+The LZX implementation follows the public algorithm used by OpenAssetTools's
+LZX implementation and the XMem framing behavior documented by that project.
+See NOTICE.md for attribution and source references.
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import os
+import re
+import struct
+import sys
+import zlib
+import ctypes
+
+from resource_formats import analyze_decoded_resource, parse_bml, parse_reflection_xml, parse_dds_metadata
+from meb_format import read_meb, mesh_summary, mesh_to_jsonable, write_mgeo
+from csm_format import read_csm, csm_summary, mesh_to_jsonable as csm_to_jsonable, write_cmesh
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Iterable, Iterator
+
+REC_SIZE = 42
+NAME_REC_SIZE = 16
+HEADER_RECORDS_OFFSET = 0x130
+NAME_BASE_OFFSET = 0x438
+
+# ---------------------------------------------------------------------------
+# LZX / XMem
+# ---------------------------------------------------------------------------
+
+DECR_OK = 0
+LZX_MIN_MATCH = 2
+LZX_NUM_CHARS = 256
+LZX_NUM_PRIMARY_LENGTHS = 7
+LZX_NUM_SECONDARY_LENGTHS = 249
+
+EXTRA_BITS = [
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
+    9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16,
+    17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17,
+]
+POSITION_BASE = [
+    0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192,
+    256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192,
+    12288, 16384, 24576, 32768, 49152, 65536, 98304, 131072, 196608,
+    262144, 393216, 524288, 655360, 786432, 917504, 1048576, 1179648,
+    1310720, 1441792, 1572864, 1703936, 1835008, 1966080, 2097152,
+]
+
+
+class BitReader:
+    """LZX reads a stream as little-endian 16-bit words, MSB first."""
+
+    def __init__(self, data: bytes):
+        # The reference decoder permits a small amount of look-ahead.
+        self.data = data + b"\x00\x00\x00\x00"
+        self.pos = 0
+        self.word = 0
+        self.bits = 0
+
+    def _fill_word(self) -> None:
+        if self.pos + 2 > len(self.data):
+            raise EOFError("LZX input exhausted")
+        self.word = self.data[self.pos] | (self.data[self.pos + 1] << 8)
+        self.pos += 2
+        self.bits = 16
+
+    def ensure(self, n: int) -> None:
+        while self.bits < n:
+            if self.bits == 0:
+                self._fill_word()
+                continue
+            if self.pos + 2 > len(self.data):
+                raise EOFError("LZX input exhausted")
+            nxt = self.data[self.pos] | (self.data[self.pos + 1] << 8)
+            self.pos += 2
+            self.word = (self.word << 16) | nxt
+            self.bits += 16
+
+    def peek(self, n: int) -> int:
+        self.ensure(n)
+        return self.word >> (self.bits - n)
+
+    def consume(self, n: int) -> None:
+        if n < 0 or n > self.bits:
+            raise ValueError("invalid bit consume")
+        self.bits -= n
+        self.word &= (1 << self.bits) - 1 if self.bits else 0
+
+    def read(self, n: int) -> int:
+        if n < 0 or n > 24:
+            raise ValueError(f"invalid bit count: {n}")
+        if n == 0:
+            return 0
+        value = self.peek(n)
+        self.consume(n)
+        return value
+
+    def align16(self) -> None:
+        self.word = 0
+        self.bits = 0
+
+    def read_u32le(self) -> int:
+        if self.bits != 0:
+            raise RuntimeError("LZX stream not word-aligned")
+        p = self.pos
+        if p + 4 > len(self.data):
+            raise EOFError("LZX input exhausted")
+        self.pos += 4
+        return (
+            self.data[p]
+            | (self.data[p + 1] << 8)
+            | (self.data[p + 2] << 16)
+            | (self.data[p + 3] << 24)
+        )
+
+
+@dataclass
+class HuffmanTable:
+    table_bits: int
+    lookup: list[int]
+    long_codes: dict[tuple[int, int], int]
+
+    def decode(self, br: "BitReader") -> int:
+        br.ensure(self.table_bits)
+        prefix = br.peek(self.table_bits)
+        packed = self.lookup[prefix]
+        if packed:
+            length = packed >> 16
+            symbol = packed & 0xFFFF
+            br.consume(length)
+            return symbol
+        # Rare long-code path. The first table_bits have already been
+        # inspected but not consumed, so continue one bit at a time.
+        code = 0
+        for length in range(1, 17):
+            code = (code << 1) | br.read(1)
+            symbol = self.long_codes.get((length, code))
+            if symbol is not None:
+                return symbol
+        raise ValueError("invalid LZX Huffman code")
+
+
+def build_huffman(lengths: list[int], table_bits: int = 12) -> HuffmanTable:
+    """Build canonical MSB-first Huffman lookup tables."""
+    max_len = max(lengths, default=0)
+    counts = [0] * (max_len + 1)
+    for length in lengths:
+        if length:
+            counts[length] += 1
+    next_code = [0] * (max_len + 1)
+    code = 0
+    for bits in range(1, max_len + 1):
+        code = (code + counts[bits - 1]) << 1
+        next_code[bits] = code
+
+    long_codes: dict[tuple[int, int], int] = {}
+    table = [0] * (1 << table_bits)
+    for symbol, length in enumerate(lengths):
+        if not length:
+            continue
+        c = next_code[length]
+        next_code[length] += 1
+        long_codes[(length, c)] = symbol
+        if length <= table_bits:
+            base = c << (table_bits - length)
+            fill = 1 << (table_bits - length)
+            packed = (length << 16) | symbol
+            for idx in range(base, base + fill):
+                table[idx] = packed
+    return HuffmanTable(table_bits, table, long_codes)
+
+
+def read_huffman(br: BitReader, table: HuffmanTable) -> int:
+    return table.decode(br)
+
+
+def read_code_lengths(br: BitReader, lengths: list[int], first: int, last: int) -> None:
+    pretree = [br.read(4) for _ in range(20)]
+    pretree_table = build_huffman(pretree, 6)
+    x = first
+    while x < last:
+        z = read_huffman(br, pretree_table)
+        if z == 17:
+            run = br.read(4) + 4
+            if x + run > last:
+                raise ValueError("LZX code-length run overruns table")
+            for _ in range(run):
+                lengths[x] = 0
+                x += 1
+        elif z == 18:
+            run = br.read(5) + 20
+            if x + run > last:
+                raise ValueError("LZX code-length run overruns table")
+            for _ in range(run):
+                lengths[x] = 0
+                x += 1
+        elif z == 19:
+            run = br.read(1) + 4
+            z2 = read_huffman(br, pretree_table)
+            z2 = lengths[x] - z2
+            if z2 < 0:
+                z2 += 17
+            if x + run > last:
+                raise ValueError("LZX code-length run overruns table")
+            for _ in range(run):
+                lengths[x] = z2
+                x += 1
+        else:
+            z2 = lengths[x] - z
+            if z2 < 0:
+                z2 += 17
+            lengths[x] = z2
+            x += 1
+
+
+class LZXState:
+    """Enough mutable state to decode a complete XMem Type-2 stream."""
+
+    def __init__(self, window_bits: int = 17):
+        if not 15 <= window_bits <= 21:
+            raise ValueError("LZX window must be 15..21 bits")
+        self.window_size = 1 << window_bits
+        self.window = bytearray(self.window_size)
+        pos_slots = 42 if window_bits == 20 else 50 if window_bits == 21 else window_bits * 2
+        self.main_elements = 256 + (pos_slots << 3)
+        self.reset()
+
+    def reset(self) -> None:
+        self.window_posn = 0
+        self.r0 = self.r1 = self.r2 = 1
+        self.header_read = False
+        self.block_type = 0
+        self.block_length = 0
+        self.block_remaining = 0
+        self.frames_read = 0
+        self.intel_filesize = 0
+        self.intel_curpos = 0
+        self.intel_started = False
+        self.main_lengths = [0] * self.main_elements
+        self.length_lengths = [0] * 250
+        self.aligned_lengths = [0] * 8
+        self.main_table = build_huffman(self.main_lengths, 12)
+        self.length_table = build_huffman(self.length_lengths, 12)
+        self.aligned_table = build_huffman(self.aligned_lengths, 7)
+
+    def process(self, data: bytes, outlen: int) -> bytes:
+        if outlen <= 0 or outlen > 0x8000:
+            raise ValueError(f"unsupported XMem output block size: {outlen}")
+        br = BitReader(data)
+        window = self.window
+        ws = self.window_size
+        wp = self.window_posn
+        r0, r1, r2 = self.r0, self.r1, self.r2
+
+        if not self.header_read:
+            has_intel_header = br.read(1)
+            i = j = 0
+            if has_intel_header:
+                i = br.read(16)
+                j = br.read(16)
+            self.intel_filesize = (i << 16) | j
+            self.header_read = True
+
+        togo = outlen
+        while togo > 0:
+            if self.block_remaining == 0:
+                if self.block_type == 3:
+                    br.align16()
+
+                block_type = br.read(3)
+                i = br.read(16)
+                j = br.read(8)
+                block_length = (i << 8) | j
+                if block_length == 0:
+                    raise ValueError("zero-length LZX block")
+                self.block_type = block_type
+                self.block_length = block_length
+                self.block_remaining = block_length
+
+                if block_type == 2:
+                    self.aligned_lengths = [br.read(3) for _ in range(8)]
+                    self.aligned_table = build_huffman(self.aligned_lengths, 7)
+                if block_type in (1, 2):
+                    read_code_lengths(br, self.main_lengths, 0, 256)
+                    read_code_lengths(br, self.main_lengths, 256, self.main_elements)
+                    self.main_table = build_huffman(self.main_lengths, 12)
+                    if self.main_lengths[0xE8] != 0:
+                        self.intel_started = True
+                    read_code_lengths(br, self.length_lengths, 0, LZX_NUM_SECONDARY_LENGTHS)
+                    self.length_table = build_huffman(self.length_lengths, 12)
+                elif block_type == 3:
+                    self.intel_started = True
+                    br.align16()
+                    r0 = br.read_u32le()
+                    r1 = br.read_u32le()
+                    r2 = br.read_u32le()
+                else:
+                    raise ValueError(f"illegal LZX block type {block_type}")
+
+            this_run = min(self.block_remaining, togo)
+            togo -= this_run
+            self.block_remaining -= this_run
+
+            wp &= ws - 1
+            if wp + this_run > ws:
+                raise ValueError("LZX run crosses window boundary")
+
+            if self.block_type == 3:
+                if br.pos + this_run > len(br.data):
+                    raise EOFError("LZX uncompressed block exceeds input")
+                window[wp:wp + this_run] = br.data[br.pos:br.pos + this_run]
+                br.pos += this_run
+                wp += this_run
+                continue
+
+            while this_run > 0:
+                main_element = read_huffman(br, self.main_table)
+                if main_element < LZX_NUM_CHARS:
+                    window[wp] = main_element
+                    wp += 1
+                    this_run -= 1
+                    continue
+
+                main_element -= LZX_NUM_CHARS
+                match_length = main_element & LZX_NUM_PRIMARY_LENGTHS
+                if match_length == LZX_NUM_PRIMARY_LENGTHS:
+                    match_length += read_huffman(br, self.length_table)
+                match_length += LZX_MIN_MATCH
+
+                match_offset = main_element >> 3
+                if match_offset > 2:
+                    extra = EXTRA_BITS[match_offset]
+                    if self.block_type == 1:
+                        if match_offset != 3:
+                            verbatim = br.read(extra)
+                            match_offset = POSITION_BASE[match_offset] - 2 + verbatim
+                        else:
+                            match_offset = 1
+                    else:
+                        match_offset = POSITION_BASE[match_offset] - 2
+                        if extra > 3:
+                            extra -= 3
+                            verbatim = br.read(extra)
+                            match_offset += verbatim << 3
+                            match_offset += read_huffman(br, self.aligned_table)
+                        elif extra == 3:
+                            match_offset += read_huffman(br, self.aligned_table)
+                        elif extra > 0:
+                            match_offset += br.read(extra)
+                        else:
+                            match_offset = 1
+                    r2, r1, r0 = r1, r0, match_offset
+                elif match_offset == 0:
+                    match_offset = r0
+                elif match_offset == 1:
+                    match_offset = r1
+                    r1, r0 = r0, match_offset
+                else:
+                    match_offset = r2
+                    r2, r0 = r0, match_offset
+
+                dest = wp
+                src = wp - match_offset
+                wp += match_length
+                if wp > ws:
+                    raise ValueError("LZX match crosses window boundary")
+                this_run -= match_length
+
+                remain = match_length
+                while src < 0 and remain > 0:
+                    window[dest] = window[src + ws]
+                    dest += 1
+                    src += 1
+                    remain -= 1
+                while remain > 0:
+                    window[dest] = window[src]
+                    dest += 1
+                    src += 1
+                    remain -= 1
+
+        end = ws if wp == 0 else wp
+        start = end - outlen
+        if start < 0:
+            raise ValueError("LZX output window underflow")
+        out = bytearray(window[start:end])
+
+        self.window_posn = wp
+        self.r0, self.r1, self.r2 = r0, r1, r2
+        self.frames_read += 1
+
+        # Intel E8 transform, matching the public reference implementation.
+        if self.frames_read < 32768 and self.intel_filesize:
+            if outlen <= 6 or not self.intel_started:
+                self.intel_curpos += outlen
+            else:
+                data_end = max(0, outlen - 10)
+                curpos = self.intel_curpos
+                filesize = self.intel_filesize
+                p = 0
+                while p < data_end:
+                    if out[p] != 0xE8:
+                        p += 1
+                        curpos += 1
+                        continue
+                    abs_off = int.from_bytes(out[p + 1:p + 5], "little", signed=True)
+                    if -curpos <= abs_off < filesize:
+                        rel_off = abs_off - curpos if abs_off >= 0 else abs_off + filesize
+                        out[p + 1:p + 5] = int(rel_off & 0xFFFFFFFF).to_bytes(4, "little")
+                    p += 5
+                    curpos += 5
+                self.intel_curpos += outlen
+        return bytes(out)
+
+
+_NATIVE_LZX = None
+_NATIVE_LZX_ATTEMPTED = False
+
+def _native_xmem_decompress(data: bytes, expected_size: int) -> bytes | None:
+    """Use the optional native LZX backend when built next to the importer."""
+    global _NATIVE_LZX, _NATIVE_LZX_ATTEMPTED
+    if _NATIVE_LZX_ATTEMPTED:
+        if _NATIVE_LZX is None:
+            return None
+    else:
+        _NATIVE_LZX_ATTEMPTED = True
+        candidates = [
+            Path(__file__).with_name("native_ir") / "build" / "libshift_lzx.so",
+            Path(__file__).with_name("native_ir") / "build" / "libshift_lzx.dylib",
+            Path(__file__).with_name("native_ir") / "build" / "shift_lzx.dll",
+        ]
+        for cand in candidates:
+            if cand.exists():
+                try:
+                    lib = ctypes.CDLL(str(cand))
+                    fn = lib.shift_xmem_decompress
+                    fn.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_size_t]
+                    fn.restype = ctypes.c_int
+                    _NATIVE_LZX = fn
+                    break
+                except OSError:
+                    pass
+    if _NATIVE_LZX is None:
+        return None
+    src = ctypes.create_string_buffer(data)
+    dst = ctypes.create_string_buffer(expected_size)
+    rc = _NATIVE_LZX(src, len(data), dst, expected_size, expected_size)
+    if rc != 0:
+        raise ValueError(f"native XMem/LZX decoder failed with code {rc}")
+    return dst.raw
+
+
+def xmem_decompress(data: bytes, expected_size: int, *, reset: bool = True) -> bytes:
+    """Decode a SHIFT Type-2 XMem/LZX stream."""
+    if reset and os.environ.get("SHIFT_LZX_NATIVE") == "1":
+        native = _native_xmem_decompress(data, expected_size)
+        if native is not None:
+            return native
+    state = LZXState(17)
+    if reset:
+        state.reset()
+    out = bytearray()
+    pos = 0
+    blocks: list[tuple[int, int]] = []
+    while pos < len(data) and len(out) < expected_size:
+        high = data[pos]
+        pos += 1
+        if high == 0xFF:
+            if pos + 4 > len(data):
+                raise ValueError("truncated XMem short-block header")
+            dst_size = int.from_bytes(data[pos:pos + 2], "big")
+            src_size = int.from_bytes(data[pos + 2:pos + 4], "big")
+            pos += 4
+            suffix = 5
+        else:
+            if pos >= len(data):
+                raise ValueError("truncated XMem block header")
+            dst_size = 0x8000
+            src_size = (high << 8) | data[pos]
+            pos += 1
+            suffix = 0
+
+        if src_size == 0 or dst_size == 0:
+            raise ValueError("invalid zero-sized XMem block")
+        if pos + src_size > len(data):
+            raise ValueError("XMem block extends past compressed payload")
+        payload = data[pos:pos + src_size]
+        pos += src_size
+        decoded = state.process(payload, dst_size)
+        if len(decoded) != dst_size:
+            raise ValueError("LZX decoder returned wrong block size")
+        out += decoded
+        blocks.append((src_size, dst_size))
+        if suffix:
+            if pos + suffix > len(data):
+                raise ValueError("XMem suffix extends past compressed payload")
+            pos += suffix
+
+    if len(out) != expected_size:
+        raise ValueError(f"XMem decoded {len(out)} bytes, expected {expected_size}; blocks={blocks}")
+    return bytes(out)
+
+
+# ---------------------------------------------------------------------------
+# BFF
+# ---------------------------------------------------------------------------
+
+@dataclass
+class Entry:
+    archive: str
+    index: int
+    path: str
+    offset: int
+    compressed_size: int
+    uncompressed_size: int
+    type: int
+    crc32_field: int
+    fileext: int
+
+
+class BFF:
+    def __init__(self, path: str | os.PathLike[str]):
+        self.path = Path(path)
+        self._fp = self.path.open("rb")
+        self._size = self.path.stat().st_size
+        if self._size < NAME_BASE_OFFSET:
+            raise ValueError(f"{self.path}: too small for BFF header")
+
+        hdr = self._fp.read(0x438)
+        self.magic = hdr[:4]
+        self.version = struct.unpack_from("<I", hdr, 4)[0] & 0xFF
+        self.file_count = struct.unpack_from("<I", hdr, 8)[0]
+        self.x118 = struct.unpack_from("<I", hdr, 0x118)[0]
+        self.x120_raw = struct.unpack_from("<I", hdr, 0x120)[0]
+        self.x120 = self.x120_raw - 0x308
+        self.x12d = hdr[0x12D]
+        if self.magic not in (b" KAP", b"PAK "):
+            raise ValueError(f"{self.path}: not a SHIFT BFF/PAK archive ({self.magic!r})")
+        if self.x118 != self.file_count * REC_SIZE:
+            raise ValueError(
+                f"{self.path}: record table mismatch x118=0x{self.x118:X}, "
+                f"expected=0x{self.file_count * REC_SIZE:X}"
+            )
+
+        self.records_offset = HEADER_RECORDS_OFFSET
+        self.name_base = NAME_BASE_OFFSET + self.x118
+        self.name_end = self.name_base + self.x120
+        if self.name_end > self._size:
+            raise ValueError(f"{self.path}: name table exceeds file size")
+        self.entries = list(self._read_entries())
+
+    def close(self) -> None:
+        try:
+            self._fp.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+    def _read_entries(self) -> Iterator[Entry]:
+        self._fp.seek(self.records_offset)
+        records = self._fp.read(self.file_count * REC_SIZE)
+        for i in range(self.file_count):
+            ro = i * REC_SIZE
+            offset = struct.unpack_from("<Q", records, ro + 8)[0]
+            zsize = struct.unpack_from("<I", records, ro + 16)[0]
+            size = struct.unpack_from("<I", records, ro + 20)[0]
+            typ = records[ro + 32]
+            crc = struct.unpack_from("<I", records, ro + 34)[0]
+            ext = struct.unpack_from("<I", records, ro + 38)[0]
+            self._fp.seek(self.name_base + i * NAME_REC_SIZE)
+            name_off = struct.unpack("<Q", self._fp.read(8))[0]
+            if not (self.name_base <= name_off < self.name_end):
+                raise ValueError(f"{self.path}: entry {i} has invalid name offset 0x{name_off:X}")
+            self._fp.seek(name_off)
+            nraw = self._fp.read(1)
+            if not nraw:
+                raise ValueError(f"{self.path}: entry {i} missing name length")
+            n = nraw[0]
+            name = self._fp.read(n).decode("utf-8", "replace").replace("\\", "/")
+            if offset + zsize > self._size:
+                raise ValueError(f"{self.path}: entry {i} data range outside archive")
+            yield Entry(self.path.name, i, name, offset, zsize, size, typ, crc, ext)
+
+    def raw_payload(self, entry: Entry) -> bytes:
+        self._fp.seek(entry.offset)
+        return self._fp.read(entry.compressed_size)
+
+    def extract_entry(self, entry: Entry, type2: str = "lzx") -> bytes:
+        payload = self.raw_payload(entry)
+        if entry.type == 0:
+            out = payload[:entry.uncompressed_size]
+        elif entry.type == 1:
+            out = zlib.decompress(payload)
+        elif entry.type == 2:
+            if type2 == "raw":
+                return payload
+            out = xmem_decompress(payload, entry.uncompressed_size)
+        else:
+            raise ValueError(f"{entry.path}: unsupported BFF compression type {entry.type}")
+        if len(out) != entry.uncompressed_size:
+            raise ValueError(
+                f"{entry.path}: decoded {len(out)} bytes, expected {entry.uncompressed_size}"
+            )
+        return out
+
+
+# ---------------------------------------------------------------------------
+# Classification / dependency hints
+# ---------------------------------------------------------------------------
+
+EXT_CATEGORY = {
+    ".dds": "TEXTURE",
+    ".png": "TEXTURE",
+    ".jpg": "TEXTURE",
+    ".jpeg": "TEXTURE",
+    ".tga": "TEXTURE",
+    ".bmp": "TEXTURE",
+    ".fx": "SHADER",
+    ".fxh": "SHADER",
+    ".fxo": "SHADER_BINARY",
+    ".bmt": "MATERIAL",
+    ".meb": "MESH",
+    ".vhf": "VEHICLE_RENDER",
+    ".cpt": "COCKPIT",
+    ".cgp": "VEHICLE_PHYSICS",
+    ".csd": "VEHICLE_PHYSICS",
+    ".cdp": "VEHICLE_PHYSICS",
+    ".cdv": "VEHICLE_PHYSICS",
+    ".vud": "VEHICLE_DATA",
+    ".gdf": "GEARBOX_DATA",
+    ".edf": "ENGINE_DATA",
+    ".sdf": "SUSPENSION_DATA",
+    ".tbf": "TURBO_DATA",
+    ".joi": "COLLISION",
+    ".xml": "CONFIG_XML",
+    ".bml": "SCRIPT_BML",
+    ".bmdef": "GUI_DEFINITION",
+    ".bab": "ANIMATION",
+    ".bas": "ANIMATION",
+    ".imb": "ANIMATION",
+    ".spe": "EFFECT",
+    ".lod": "LOD",
+    ".lsd": "SCENE_DATA",
+    ".enx": "SCENE_DATA",
+    ".sgb": "SCENE_DATA",
+    ".trd": "TRACK_DATA",
+    ".new": "TRACK_DATA",
+    ".fsb": "AUDIO_FSB",
+    ".fev": "AUDIO_FEV",
+    ".rcf": "CHARACTER_DATA",
+    ".log": "TEXT_OR_LOG",
+    ".bad": "CONFIG",
+}
+
+MAGIC_CATEGORY = [
+    (b"DDS ", "TEXTURE"),
+    (b"RIFF", "AUDIO_OR_RIFF"),
+    (b"OggS", "AUDIO"),
+    (b"PK\x03\x04", "ZIP_CONTAINER"),
+    (b"<?xml", "CONFIG_XML"),
+    (b"<", "TEXT"),
+]
+
+PATH_CATEGORY = [
+    ("/physics/", "VEHICLE_PHYSICS"),
+    ("/collision/", "COLLISION"),
+    ("/tracks/", "TRACK"),
+    ("/vehicles/", "VEHICLE"),
+    ("/render/", "RENDER"),
+    ("/characters/", "CHARACTER"),
+    ("/animation/", "ANIMATION"),
+    ("/effects/", "EFFECT"),
+    ("/ai/", "AI"),
+    ("/cameras/", "CAMERA"),
+    ("/gui/", "GUI"),
+    ("/campaign/", "CAMPAIGN"),
+    ("/scripts/", "SCRIPT"),
+    ("/audio/", "AUDIO"),
+]
+
+
+# Conservative path-like dependency regex; false positives are intentionally
+# allowed and marked as "hint" in the graph.
+DEP_RE = re.compile(
+    rb"(?P<q>['\"])(?P<path>[A-Za-z0-9_./\\ -]+\.(?:dds|meb|bmt|mtx|vhf|xml|bml|fxo|fx|fxh|bab|bas|imb|fsb|fev|cgp|csd|cdp|cdv|vud|gdf|edf|sdf|tbf|cpt|lod|spe|sgb|trd|new|joi))(?:['\"])?"
+)
+
+
+def classify(path: str, data: bytes | None = None) -> str:
+    lower = path.lower().replace("\\", "/")
+    ext = Path(lower).suffix
+    ext_cat = EXT_CATEGORY.get(ext)
+    if data:
+        head = data[:64].lstrip()
+        for sig, cat in MAGIC_CATEGORY:
+            if data.startswith(sig) or head.startswith(sig):
+                if cat == "AUDIO_OR_RIFF" and lower.endswith(".fsb"):
+                    return "AUDIO_FSB"
+                return cat
+    if ext_cat:
+        return ext_cat
+    for needle, category in PATH_CATEGORY:
+        if needle in "/" + lower:
+            return category
+    return "UNKNOWN"
+
+
+def dependency_hints(data: bytes, source_path: str) -> list[str]:
+    hints: list[str] = []
+    source_norm = source_path.replace("\\", "/")
+    scan_data = data
+    if source_norm.lower().endswith((".fx", ".fxh")):
+        # Includes inside shader comments are not dependencies. Keep the raw
+        # resource untouched; only sanitize the scanner input.
+        scan_data = re.sub(rb"/\*.*?\*/", b"", scan_data, flags=re.S)
+        scan_data = re.sub(rb"//[^\r\n]*", b"", scan_data)
+    for m in DEP_RE.finditer(scan_data):
+        raw = m.group("path").decode("utf-8", "replace").replace("\\", "/")
+        if raw != source_norm and raw not in hints:
+            hints.append(raw)
+
+    # MEB stores material paths as raw C-strings rather than quoted XML.
+    if source_norm.lower().endswith(".meb"):
+        try:
+            from meb_format import read_meb
+            mesh = read_meb(data)
+            for prim in mesh.primitives:
+                raw = prim.material.replace("\\", "/")
+                if raw and raw not in hints:
+                    hints.append(raw)
+        except Exception:
+            pass
+
+    # BMT's material graph contains semantic shader/texture links that are not
+    # necessarily quoted in the binary representation.
+    if source_norm.lower().endswith(".bmt"):
+        try:
+            from resource_formats import parse_bmt_material
+            mat = parse_bmt_material(data).get("material", {})
+            for raw in [mat.get("shader"), *mat.get("textures", [])]:
+                if raw:
+                    raw = str(raw).replace("\\", "/")
+                    if raw not in hints:
+                        hints.append(raw)
+            for param in mat.get("shaderparams", []):
+                value = param.get("value")
+                if isinstance(value, str) and any(value.lower().endswith(ext) for ext in (".dds", ".fx", ".fxo", ".bmt", ".mtx")):
+                    if value not in hints:
+                        hints.append(value.replace("\\", "/"))
+        except Exception:
+            pass
+    return hints[:256]
+
+
+def normalize_ref(path: str) -> str:
+    """Normalize a SHIFT resource reference for graph resolution."""
+    p = path.replace("\\", "/").strip().lower()
+    while p.startswith("./"):
+        p = p[2:]
+    return p
+
+
+def resolve_resource_ref(ref: str, path_map: dict[str, list[tuple[str, str]]], basename_map: dict[str, list[tuple[str, str]]]) -> list[dict[str, str]]:
+    """Resolve an in-game reference; .mtx/.bmt is a known legacy alias."""
+    n = normalize_ref(ref)
+    candidates = [n]
+    if n.endswith(".mtx"):
+        candidates.append(n[:-4] + ".bmt")
+    elif n.endswith(".bmt"):
+        candidates.append(n[:-4] + ".mtx")
+    if n.endswith(".fx"):
+        candidates.append(n[:-3] + ".fxh")
+    elif n.endswith(".fxh"):
+        candidates.append(n[:-4] + ".fx")
+    hits: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for c in candidates:
+        for archive, logical in path_map.get(c, []):
+            key = (archive, logical)
+            if key not in seen:
+                hits.append({"archive": archive, "path": logical, "method": "path"})
+                seen.add(key)
+    if not hits:
+        bases = [Path(c).name for c in candidates]
+        for base in bases:
+            for archive, logical in basename_map.get(base, []):
+                key = (archive, logical)
+                if key not in seen:
+                    hits.append({"archive": archive, "path": logical, "method": "basename"})
+                    seen.add(key)
+    return hits
+
+
+def sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def iter_bffs(root: Path) -> Iterator[Path]:
+    if root.is_file() and root.suffix.lower() == ".bff":
+        yield root
+        return
+    for p in sorted(root.rglob("*.bff")):
+        if p.is_file():
+            yield p
+
+
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+
+def cmd_inspect(args: argparse.Namespace) -> int:
+    with BFF(args.file) as bff:
+        from collections import Counter
+        types = Counter(e.type for e in bff.entries)
+        exts = Counter(Path(e.path).suffix.lower() or "<none>" for e in bff.entries)
+        roots = Counter(e.path.split("/", 1)[0].lower() for e in bff.entries)
+        raw = sum(e.uncompressed_size for e in bff.entries)
+        packed = sum(e.compressed_size for e in bff.entries)
+        print(f"file: {bff.path}")
+        print(f"magic: {bff.magic!r}")
+        print(f"version: {bff.version}")
+        print(f"files: {bff.file_count}")
+        print(f"record_table: 0x{bff.records_offset:X} + {bff.x118} bytes")
+        print(f"name_table: 0x{bff.name_base:X} + {bff.x120} bytes")
+        print(f"types: {dict(sorted(types.items()))}")
+        print(f"compressed: {packed} ({packed / 1048576:.2f} MiB)")
+        print(f"uncompressed: {raw} ({raw / 1048576:.2f} MiB)")
+        print("extensions:", dict(exts.most_common()))
+        print("roots:", dict(roots.most_common()))
+        for e in bff.entries[:args.samples]:
+            print(f"  {e.index:4d} t={e.type} {e.path} {e.compressed_size}->{e.uncompressed_size}")
+    return 0
+
+
+
+def _resource_analysis_output(data: bytes, path: str) -> dict:
+    return analyze_decoded_resource(path, data)
+
+
+def cmd_analyze_resource(args: argparse.Namespace) -> int:
+    """Decode one BFF resource and emit format-aware JSON analysis."""
+    with BFF(args.archive) as bff:
+        matches = [e for e in bff.entries if e.path == args.resource]
+        if not matches:
+            needle = args.resource.lower().replace("\\", "/")
+            matches = [e for e in bff.entries if e.path.lower().replace("\\", "/") == needle]
+        if not matches:
+            raise SystemExit(f"resource not found: {args.resource}")
+        e = matches[0]
+        data = bff.extract_entry(e, type2="lzx")
+        result = {
+            "archive": bff.path.name,
+            "entry": asdict(e),
+            "sha256": sha256(data),
+            "category": classify(e.path, data),
+            "dependency_hints": dependency_hints(data, e.path),
+            "analysis": _resource_analysis_output(data, e.path),
+        }
+        out = Path(args.output) if args.output else None
+        if out:
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        else:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_analyze_dir(args: argparse.Namespace) -> int:
+    """Decode selected resources and write a compact format analysis set."""
+    inputs = list(iter_bffs(Path(args.input)))
+    if not inputs:
+        raise SystemExit("no .bff archives found")
+    out = Path(args.output)
+    out.mkdir(parents=True, exist_ok=True)
+    wanted_exts = {x.lower() if x.startswith(".") else "." + x.lower() for x in args.ext}
+    rows = []
+    for bp in inputs:
+        emitted = 0
+        with BFF(bp) as bff:
+            for e in bff.entries:
+                if wanted_exts and Path(e.path).suffix.lower() not in wanted_exts:
+                    continue
+                if args.max_per_archive and emitted >= args.max_per_archive:
+                    break
+                try:
+                    d = bff.extract_entry(e, type2="lzx")
+                    a = _resource_analysis_output(d, e.path)
+                    row = {**asdict(e), "sha256": sha256(d), "category": classify(e.path, d), "analysis": a["analysis"]}
+                    rows.append(row)
+                    emitted += 1
+                except Exception as exc:
+                    rows.append({**asdict(e), "error": f"{type(exc).__name__}: {exc}"})
+                    emitted += 1
+    (out / "resource_analysis.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"analyzed {len(rows)} resources -> {out / 'resource_analysis.json'}")
+    return 0
+
+def cmd_convert_meb(args: argparse.Namespace) -> int:
+    """Convert one SHIFT MEB mesh into Android-neutral MGEO or JSON."""
+    source = Path(args.input)
+    data: bytes
+    source_name = source.name
+
+    if source.suffix.lower() == ".bff":
+        if not args.resource:
+            raise SystemExit("--resource is required when input is a .bff archive")
+        with BFF(source) as bff:
+            needle = args.resource.lower().replace("\\", "/")
+            matches = [e for e in bff.entries if e.path.lower().replace("\\", "/") == needle]
+            if not matches:
+                raise SystemExit(f"resource not found: {args.resource}")
+            e = matches[0]
+            data = bff.extract_entry(e, type2="lzx")
+            source_name = e.path
+    else:
+        data = source.read_bytes()
+
+    if not source_name.lower().endswith(".meb"):
+        raise SystemExit(f"input is not a .meb resource: {source_name}")
+
+    mesh = read_meb(data)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if args.format == "json":
+        out.write_text(json.dumps(mesh_to_jsonable(mesh), ensure_ascii=False, indent=2), encoding="utf-8")
+    else:
+        write_mgeo(mesh, out)
+    print(json.dumps({"input": source_name, "output": str(out), **mesh_summary(mesh)}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_convert_csm(args: argparse.Namespace) -> int:
+    """Convert one SHIFT CSM collision mesh into Android-neutral CMES or JSON."""
+    source = Path(args.input)
+    if source.suffix.lower() == ".bff":
+        if not args.resource:
+            raise SystemExit("--resource is required when input is a .bff archive")
+        with BFF(source) as bff:
+            needle = args.resource.lower().replace("\\", "/")
+            matches = [e for e in bff.entries if e.path.lower().replace("\\", "/") == needle]
+            if not matches:
+                raise SystemExit(f"resource not found: {args.resource}")
+            data = bff.extract_entry(matches[0], type2="lzx")
+            source_name = matches[0].path
+    else:
+        data = source.read_bytes()
+        source_name = source.name
+    if not source_name.lower().endswith(".csm"):
+        raise SystemExit(f"input is not a .csm resource: {source_name}")
+    mesh = read_csm(data)
+    out = Path(args.output); out.parent.mkdir(parents=True, exist_ok=True)
+    if args.format == "json":
+        out.write_text(json.dumps(csm_to_jsonable(mesh), ensure_ascii=False, indent=2), encoding="utf-8")
+    else:
+        write_cmesh(mesh, out)
+    print(json.dumps({"input": source_name, "output": str(out), **csm_summary(mesh)}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_graph(args: argparse.Namespace) -> int:
+    """Build a cross-BFF dependency graph with legacy path normalization."""
+    inputs = list(iter_bffs(Path(args.input)))
+    if not inputs:
+        raise SystemExit("no .bff archives found")
+    wanted_exts = {x.lower() if x.startswith(".") else "." + x.lower() for x in args.ext}
+
+    path_map: dict[str, list[tuple[str, str]]] = {}
+    basename_map: dict[str, list[tuple[str, str]]] = {}
+    entries: list[tuple[Path, object]] = []
+    for bp in inputs:
+        with BFF(bp) as bff:
+            # Copy entry objects; BFF itself is reopened during decode.
+            for e in bff.entries:
+                n = normalize_ref(e.path)
+                path_map.setdefault(n, []).append((bp.name, e.path))
+                basename_map.setdefault(Path(n).name, []).append((bp.name, e.path))
+                if Path(n).suffix in wanted_exts:
+                    entries.append((bp, e))
+
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    unresolved: list[dict] = []
+    stats = {"archives": len(inputs), "selected_entries": len(entries), "nodes": 0, "edges": 0, "resolved_edges": 0, "unresolved_refs": 0}
+    cache: dict[str, bytes] = {}
+    for bp, e in entries:
+        key = f"{bp.name}:{e.index}"
+        try:
+            with BFF(bp) as bff:
+                data = bff.extract_entry(e, type2="lzx")
+            refs = dependency_hints(data, e.path)
+            node = {"id": key, "archive": bp.name, "path": e.path, "category": classify(e.path, data), "sha256": sha256(data)}
+            nodes.append(node); stats["nodes"] += 1
+            for ref in refs:
+                hits = resolve_resource_ref(ref, path_map, basename_map)
+                edge = {"from": key, "ref": ref, "resolved": hits}
+                edges.append(edge); stats["edges"] += 1
+                if hits:
+                    stats["resolved_edges"] += 1
+                else:
+                    stats["unresolved_refs"] += 1; unresolved.append({"from": key, "ref": ref})
+        except Exception as exc:
+            nodes.append({"id": key, "archive": bp.name, "path": e.path, "error": f"{type(exc).__name__}: {exc}"}); stats["nodes"] += 1
+
+    out = Path(args.output); out.parent.mkdir(parents=True, exist_ok=True)
+    report = {"stats": stats, "nodes": nodes, "edges": edges, "unresolved": unresolved}
+    out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(stats, ensure_ascii=False, indent=2))
+    print(f"graph: {out}")
+    return 1 if args.fail_on_unresolved and unresolved else 0
+
+
+def cmd_build_ir(args: argparse.Namespace) -> int:
+    """Build an Android-oriented intermediate representation from selected BFF resources."""
+    inputs = list(iter_bffs(Path(args.input)))
+    if not inputs:
+        raise SystemExit("no .bff archives found")
+    root = Path(args.output); root.mkdir(parents=True, exist_ok=True)
+    wanted_exts = {x.lower() if x.startswith(".") else "." + x.lower() for x in args.ext}
+
+    path_map: dict[str, list[tuple[str, str]]] = {}
+    basename_map: dict[str, list[tuple[str, str]]] = {}
+    for bp in inputs:
+        with BFF(bp) as bff:
+            for e in bff.entries:
+                n = normalize_ref(e.path)
+                path_map.setdefault(n, []).append((bp.name, e.path))
+                basename_map.setdefault(Path(n).name, []).append((bp.name, e.path))
+
+    raw_root = root / "raw"
+    dirs = {k: root / k for k in ("meshes", "collisions", "materials", "reflection", "bml", "shaders", "textures", "scenes", "physics", "upgrades", "xml", "other")}
+    raw_root.mkdir(parents=True, exist_ok=True)
+    for d in dirs.values(): d.mkdir(parents=True, exist_ok=True)
+    manifest = []
+    stats = {"archives": len(inputs), "resources": 0, "converted": 0, "failed": 0, "categories": {}, "outputs": {}}
+
+    def output_for(path: str, digest: str) -> tuple[Path, str]:
+        ext = Path(path).suffix.lower()
+        if ext == ".meb": return dirs["meshes"] / f"{digest}.mgeo", "mgeo"
+        if ext == ".csm": return dirs["collisions"] / f"{digest}.cmesh", "cmesh"
+        if ext == ".bmt": return dirs["materials"] / f"{digest}.json", "json"
+        if ext == ".bml": return dirs["bml"] / f"{digest}.json", "json"
+        if ext in {".fx", ".fxh"}: return dirs["shaders"] / f"{digest}.json", "json"
+        if ext == ".dds": return dirs["textures"] / f"{digest}.dds", "raw"
+        if ext in {".vhf", ".sgb"}: return dirs["scenes"] / f"{digest}.json", "json"
+        if ext in {".cgp", ".cdp", ".cdv", ".csd"}: return dirs["physics"] / f"{digest}.json", "json"
+        if ext == ".vud": return dirs["upgrades"] / f"{digest}.json", "json"
+        if ext in {".xml", ".lod", ".new", ".old", ".cpt", ".bas", ".bad", ".spe", ".enx", ".trd"}: return dirs["xml"] / f"{digest}.json", "json"
+        return dirs["other"] / f"{digest}.bin", "raw"
+
+    import shutil
+    for bp in inputs:
+        with BFF(bp) as bff:
+            for e in bff.entries:
+                ext = Path(e.path).suffix.lower()
+                if ext not in wanted_exts:
+                    continue
+                stats["resources"] += 1
+                try:
+                    data = bff.extract_entry(e, type2="lzx")
+                    digest = sha256(data)
+                    raw_blob = raw_root / digest[:2] / digest[2:]
+                    raw_blob.parent.mkdir(parents=True, exist_ok=True)
+                    if not raw_blob.exists(): raw_blob.write_bytes(data)
+                    analysis = _resource_analysis_output(data, e.path)
+                    out_path, out_kind = output_for(e.path, digest)
+                    if not out_path.exists():
+                        if out_kind == "mgeo":
+                            write_mgeo(read_meb(data), out_path)
+                        elif out_kind == "cmesh":
+                            write_cmesh(read_csm(data), out_path)
+                        elif out_kind == "json":
+                            out_path.write_text(json.dumps(analysis.get("analysis", {}), ensure_ascii=False, indent=2), encoding="utf-8")
+                        else:
+                            out_path.write_bytes(data)
+                    refs = dependency_hints(data, e.path)
+                    resolved = []
+                    for ref in refs:
+                        hits = resolve_resource_ref(ref, path_map, basename_map)
+                        resolved.append({"ref": ref, "resolved": hits})
+                    cat = classify(e.path, data)
+                    row = {"archive": bp.name, "path": e.path, "sha256": digest, "size": len(data), "category": cat, "raw": str(raw_blob.relative_to(root)).replace(os.sep, "/"), "output": str(out_path.relative_to(root)).replace(os.sep, "/"), "output_kind": out_kind, "dependencies": resolved}
+                    manifest.append(row); stats["converted"] += 1; stats["categories"][cat] = stats["categories"].get(cat, 0) + 1; stats["outputs"][out_kind] = stats["outputs"].get(out_kind, 0) + 1
+                except Exception as exc:
+                    stats["failed"] += 1
+                    manifest.append({"archive": bp.name, "path": e.path, "error": f"{type(exc).__name__}: {exc}"})
+                    if args.fail_fast: raise
+    (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    (root / "stats.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(stats, ensure_ascii=False, indent=2))
+    return 1 if stats["failed"] else 0
+
+
+def cmd_manifest(args: argparse.Namespace) -> int:
+    inputs = list(iter_bffs(Path(args.input)))
+    if not inputs:
+        raise SystemExit("no .bff archives found")
+    rows: list[dict] = []
+    for bff_path in inputs:
+        with BFF(bff_path) as bff:
+            for e in bff.entries:
+                row = asdict(e)
+                if args.decode:
+                    try:
+                        decoded = bff.extract_entry(e, type2="lzx")
+                        row["decode"] = "ok"
+                        row["sha256"] = sha256(decoded)
+                        row["detected_type"] = classify(e.path, decoded)
+                        row["dependency_hints"] = dependency_hints(decoded, e.path)
+                    except Exception as exc:
+                        row["decode"] = f"error:{type(exc).__name__}:{exc}"
+                        row["sha256"] = ""
+                        row["detected_type"] = classify(e.path)
+                        row["dependency_hints"] = []
+                else:
+                    payload = bff.raw_payload(e)
+                    row["sha256_compressed"] = sha256(payload)
+                    row["decode"] = "not_run"
+                    row["detected_type"] = classify(e.path)
+                    row["dependency_hints"] = []
+                rows.append(row)
+
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if out.suffix.lower() == ".csv":
+        fields = list(rows[0].keys())
+        # JSON values inside CSV remain valid JSON strings.
+        with out.open("w", encoding="utf-8", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=fields)
+            w.writeheader()
+            for row in rows:
+                r = dict(row)
+                if isinstance(r.get("dependency_hints"), list):
+                    r["dependency_hints"] = json.dumps(r["dependency_hints"], ensure_ascii=False)
+                w.writerow(r)
+    else:
+        out.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"wrote {len(rows)} entries -> {out}")
+    return 0
+
+
+def safe_rel(path: str) -> Path:
+    # Do not permit source resource paths to escape output roots.
+    parts = []
+    for p in Path(path.replace("\\", "/")).parts:
+        if p in ("", "."):
+            continue
+        if p == "..":
+            parts.append("__up__")
+        else:
+            parts.append(p)
+    return Path(*parts)
+
+
+def cmd_extract(args: argparse.Namespace) -> int:
+    inputs = list(iter_bffs(Path(args.input)))
+    if not inputs:
+        raise SystemExit("no .bff archives found")
+    dest = Path(args.output)
+    dest.mkdir(parents=True, exist_ok=True)
+    manifest = []
+    ok = fail = 0
+    for bff_path in inputs:
+        with BFF(bff_path) as bff:
+            for e in bff.entries:
+                target = dest / bff_path.stem / safe_rel(e.path)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    data = bff.extract_entry(e, type2=args.type2)
+                    target.write_bytes(data)
+                    manifest.append({
+                        **asdict(e),
+                        "status": "ok",
+                        "sha256": sha256(data),
+                        "detected_type": classify(e.path, data),
+                    })
+                    ok += 1
+                except Exception as exc:
+                    manifest.append({**asdict(e), "status": f"error:{type(exc).__name__}:{exc}"})
+                    fail += 1
+                    if args.fail_fast:
+                        raise
+    (dest / "extraction_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"extracted: {ok}, failed: {fail}, output: {dest}")
+    return 1 if fail else 0
+
+
+def cmd_package(args: argparse.Namespace) -> int:
+    """Create a platform-neutral content-addressed asset database."""
+    inputs = list(iter_bffs(Path(args.input)))
+    if not inputs:
+        raise SystemExit("no .bff archives found")
+    root = Path(args.output)
+    blob_root = root / "blobs"
+    blob_root.mkdir(parents=True, exist_ok=True)
+    manifest: list[dict] = []
+    path_map: dict[str, list[dict]] = {}
+    stats = {"archives": 0, "resources": 0, "decoded": 0, "failed": 0, "bytes": 0, "categories": {}}
+
+    for bff_path in inputs:
+        stats["archives"] += 1
+        with BFF(bff_path) as bff:
+            for e in bff.entries:
+                stats["resources"] += 1
+                try:
+                    data = bff.extract_entry(e, type2="lzx")
+                    digest = sha256(data)
+                    blob = blob_root / digest[:2] / digest[2:]
+                    blob.parent.mkdir(parents=True, exist_ok=True)
+                    if not blob.exists():
+                        blob.write_bytes(data)
+                    cat = classify(e.path, data)
+                    row = {
+                        **asdict(e),
+                        "sha256": digest,
+                        "size": len(data),
+                        "category": cat,
+                        "blob": str(blob.relative_to(root)).replace(os.sep, "/"),
+                        "dependency_hints": dependency_hints(data, e.path),
+                    }
+                    manifest.append(row)
+                    path_map.setdefault(e.path, []).append({
+                        "sha256": digest,
+                        "archive": e.archive,
+                        "blob": row["blob"],
+                    })
+                    stats["decoded"] += 1
+                    stats["bytes"] += len(data)
+                    stats["categories"][cat] = stats["categories"].get(cat, 0) + 1
+                except Exception as exc:
+                    stats["failed"] += 1
+                    manifest.append({**asdict(e), "error": f"{type(exc).__name__}: {exc}"})
+                    if args.fail_fast:
+                        raise
+
+    (root / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    (root / "path_map.json").write_text(json.dumps(path_map, ensure_ascii=False, indent=2), encoding="utf-8")
+    (root / "stats.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(stats, ensure_ascii=False, indent=2))
+    return 1 if stats["failed"] else 0
+
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    inputs = list(iter_bffs(Path(args.input)))
+    if not inputs:
+        raise SystemExit("no .bff archives found")
+    total = ok = failed = 0
+    failures = []
+    for bff_path in inputs:
+        with BFF(bff_path) as bff:
+            for e in bff.entries:
+                total += 1
+                try:
+                    data = bff.extract_entry(e, type2="lzx")
+                    if len(data) != e.uncompressed_size:
+                        raise ValueError("size mismatch")
+                    # Do not assume the mysterious BFF CRC field is CRC32 of
+                    # decompressed data; SHIFT's record field is intentionally
+                    # recorded but not validated here.
+                    ok += 1
+                except Exception as exc:
+                    failed += 1
+                    failures.append({"archive": bff_path.name, "path": e.path, "error": str(exc)})
+                    if args.fail_fast:
+                        break
+        print(f"{bff_path.name}: done")
+    report = {"total": total, "ok": ok, "failed": failed, "failures": failures[:args.max_failures]}
+    if args.report:
+        Path(args.report).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 1 if failed else 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(description="SHIFT universal BFF/resource importer")
+    sp = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sp.add_parser("inspect", help="inspect one BFF")
+    p.add_argument("file")
+    p.add_argument("--samples", type=int, default=12)
+    p.set_defaults(fn=cmd_inspect)
+
+    p = sp.add_parser("analyze-resource", help="decode one resource and produce typed format analysis")
+    p.add_argument("archive", help="BFF archive")
+    p.add_argument("resource", help="logical resource path inside BFF")
+    p.add_argument("--output")
+    p.set_defaults(fn=cmd_analyze_resource)
+
+    p = sp.add_parser("analyze-dir", help="analyze resources by extension across BFF archives")
+    p.add_argument("input", help="BFF file or directory")
+    p.add_argument("output")
+    p.add_argument("--ext", nargs="+", default=[".xml", ".bml", ".dds", ".fx", ".fxh", ".meb", ".bmt", ".cgp", ".cdp", ".cdv", ".csd", ".vud"], help="extensions to analyze")
+    p.add_argument("--max-per-archive", type=int, default=0)
+    p.set_defaults(fn=cmd_analyze_dir)
+
+    p = sp.add_parser("convert-meb", help="convert one MEB mesh to Android-neutral MGEO or JSON")
+    p.add_argument("input", help=".meb file or BFF archive")
+    p.add_argument("output", help="output .mgeo or .json")
+    p.add_argument("--resource", help="logical .meb path inside the BFF archive")
+    p.add_argument("--format", choices=["mgeo", "json"], default="mgeo")
+    p.set_defaults(fn=cmd_convert_meb)
+
+    p = sp.add_parser("convert-csm", help="convert one CSM collision mesh to Android-neutral CMES or JSON")
+    p.add_argument("input", help=".csm file or BFF archive")
+    p.add_argument("output", help="output .cmesh or .json")
+    p.add_argument("--resource", help="logical .csm path inside the BFF archive")
+    p.add_argument("--format", choices=["cmesh", "json"], default="cmesh")
+    p.set_defaults(fn=cmd_convert_csm)
+
+    p = sp.add_parser("graph", help="build a cross-BFF dependency graph")
+    p.add_argument("input", help="BFF file or directory")
+    p.add_argument("output", help="graph JSON output")
+    p.add_argument("--ext", nargs="+", default=[".cpt", ".vhf", ".meb", ".bmt", ".bml", ".dds", ".fx", ".fxh", ".fxo", ".xml", ".csm"], help="resource extensions to decode")
+    p.add_argument("--fail-on-unresolved", action="store_true")
+    p.set_defaults(fn=cmd_graph)
+
+    p = sp.add_parser("build-ir", help="build Android-oriented intermediate representation")
+    p.add_argument("input", help="BFF file or directory")
+    p.add_argument("output", help="IR output directory")
+    p.add_argument("--ext", nargs="+", default=[".cpt", ".vhf", ".meb", ".csm", ".bmt", ".bml", ".dds", ".fx", ".fxh", ".fxo", ".xml", ".lod", ".new", ".old", ".vud", ".cgp", ".cdp", ".cdv", ".csd", ".bab", ".bas", ".bad", ".spe", ".enx", ".trd", ".sgb"], help="resource extensions to convert")
+    p.add_argument("--fail-fast", action="store_true")
+    p.set_defaults(fn=cmd_build_ir)
+
+    p = sp.add_parser("manifest", help="build resource manifest")
+    p.add_argument("input", help="BFF file or directory containing BFFs")
+    p.add_argument("output")
+    p.add_argument("--decode", action="store_true", help="decode all resources and hash/classify decoded bytes")
+    p.set_defaults(fn=cmd_manifest)
+
+    p = sp.add_parser("extract", help="extract BFF resources")
+    p.add_argument("input", help="BFF file or directory")
+    p.add_argument("output")
+    p.add_argument("--type2", choices=["lzx", "raw"], default="lzx")
+    p.add_argument("--fail-fast", action="store_true")
+    p.set_defaults(fn=cmd_extract)
+
+    p = sp.add_parser("package", help="build content-addressed platform-neutral asset database")
+    p.add_argument("input", help="BFF file or directory")
+    p.add_argument("output")
+    p.add_argument("--fail-fast", action="store_true")
+    p.set_defaults(fn=cmd_package)
+
+    p = sp.add_parser("validate", help="decode/validate every resource")
+    p.add_argument("input", help="BFF file or directory")
+    p.add_argument("--report")
+    p.add_argument("--max-failures", type=int, default=200)
+    p.add_argument("--fail-fast", action="store_true")
+    p.set_defaults(fn=cmd_validate)
+
+    return ap
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    try:
+        return int(args.fn(args))
+    except BrokenPipeError:
+        return 1
+    except Exception as exc:
+        print(f"ERROR: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

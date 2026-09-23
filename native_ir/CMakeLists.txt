@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.16)
+project(shift_ir LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_library(shift_ir STATIC src/shift_ir.cpp)
+target_include_directories(shift_ir PUBLIC include)
+add_library(shift_lzx SHARED src/shift_lzx.cpp)
+target_include_directories(shift_lzx PUBLIC include)
+add_executable(test_ir tests/test_ir.cpp)
+target_link_libraries(test_ir PRIVATE shift_ir)
+
+add_executable(test_lzx tests/test_lzx.cpp)
+target_link_libraries(test_lzx PRIVATE shift_lzx)
