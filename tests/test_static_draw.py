@@ -28,6 +28,13 @@ def _packet(source="fxo-ctab"):
                         "interface": {"valid": True},
                         "vertex_format": {"valid": True},
                     },
+                    "linked_shader_pair": {
+                        "format": "SHIFT.LinkedShaderPair/1",
+                        "varying_locations": [],
+                        "vertex_input_locations": {0: 0},
+                        "vertex_glsl": "#version 310 es\n",
+                        "pixel_glsl": "#version 310 es\n",
+                    },
                     "uniform_binding": {"bindings": []},
                 },
                 "textures": [{
@@ -97,3 +104,19 @@ def test_static_draw_allows_unused_ambiguous_vertex_abi():
     packet["submeshes"][0]["material"]["shader_selection"]["shader_pair"]["vertex_bindings"] = []
     r = build_static_draw_contract(packet)
     assert r["ready"] is True
+
+
+def test_static_draw_blocks_missing_linked_glsl_pair():
+    packet = _packet()
+    del packet["submeshes"][0]["material"]["shader_selection"]["linked_shader_pair"]
+    r = build_static_draw_contract(packet)
+    assert r["ready"] is False
+    assert "shader-glsl:missing" in r["blocking_reasons"]
+
+
+def test_static_draw_blocks_linked_glsl_translation_error():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["shader_selection"]["linked_shader_error"] = "ValueError: translator"
+    r = build_static_draw_contract(packet)
+    assert r["ready"] is False
+    assert "shader-glsl:error" in r["blocking_reasons"]
