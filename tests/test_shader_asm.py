@@ -57,3 +57,17 @@ def test_glsl_cmp_lrp_preserve_d3d9_semantics():
     lrp_glsl = to_glsl(_program_with(18, "LRP"))
     assert "mix(r3,r2,greaterThanEqual(r1,vec4(0.0)))" in cmp_glsl
     assert "mix(r3,r2,r1)" in lrp_glsl
+
+
+def test_predication_is_preserved_in_ir():
+    from shader_asm import Operand, Instruction, ShaderProgram, to_glsl
+    dst = Operand(token=0x80000000, kind="dest", reg_type=0, index=0, write_mask="xyzw")
+    src = Operand(token=0x80000000, kind="source", reg_type=0, index=1, swizzle="xyzw")
+    pred = Operand(token=0x80000000, kind="source", reg_type=19, index=0, swizzle="xxxx")
+    p = ShaderProgram(
+        0, 0, "pixel", 3, 0,
+        [Instruction(0, 1, "MOV", 0, 3, 0, True, [dst, src], pred)],
+        [], [], [], [], [0,1], [], [], [], {}
+    )
+    glsl = to_glsl(p)
+    assert "mix(r0,r1,predicate)" in glsl
