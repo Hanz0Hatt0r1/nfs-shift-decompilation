@@ -46,3 +46,6 @@ GLSL ES 3.1 lowering now covers the D3D9 ABS opcode and the DDX/DDY derivative a
 ## Phase 14: linked GLSL interface
 
 D3D9 vertex outputs and pixel inputs now receive shared GLSL interface locations derived from semantic usage/index linkage. Original register numbers are retained for internal lowering, while translate_pair() emits both stages with matching locations.
+## Phase 15: vertex input ABI linkage
+
+Linked GLSL translation now maps D3D9 VS input registers (`vN`) to the target `SHIFT.VertexLayout/1` attribute locations. The original register number remains the internal operand identity; the emitted GLSL location follows the explicit repacked layout.
