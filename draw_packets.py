@@ -502,7 +502,11 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    result = build_from_analysis(args.input, args.shader_report)
+    result = build_from_analysis(
+        args.input,
+        args.shader_report,
+        args.material_binding_report,
+    )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
