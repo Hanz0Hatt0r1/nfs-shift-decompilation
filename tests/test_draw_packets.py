@@ -179,3 +179,53 @@ def test_build_from_analysis_and_cli(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["schema"] == "SHIFT.DrawPacket/1"
     assert payload["packets"][0]["submeshes"][0]["index_count"] == 3
+
+
+def test_cli_material_binding_report_reaches_draw_packet(tmp_path):
+    scene, mesh, material, texture, shader = _records()
+    analysis = tmp_path / "resource_analysis.json"
+    analysis.write_text(
+        json.dumps(scene + mesh + material + texture + shader),
+        encoding="utf-8",
+    )
+    report = tmp_path / "material_bindings.json"
+    report.write_text(
+        json.dumps({
+            "materials": [{
+                "material": "BODY",
+                "selection_status": "unique",
+                "selected_fxo": {
+                    "file": "body.fxo",
+                    "program_offset": 100,
+                    "vertex_pair_selection_status": "unique",
+                },
+                "bindings": [{
+                    "sampler": "s7",
+                    "sampler_type": "sampler2D",
+                    "texture": "textures/body.dds",
+                    "d3d9_sampler_register": 7,
+                }],
+            }]
+        }),
+        encoding="utf-8",
+    )
+    output = tmp_path / "draw_packets.json"
+    subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "draw_packets.py"),
+            str(analysis),
+            str(output),
+            "--material-binding-report",
+            str(report),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    binding = payload["packets"][0]["submeshes"][0]["material"]["textures"][0]
+    assert binding["d3d9_sampler_register"] == 7
+    assert binding["sampler"] == "s7"
+    assert binding["binding_source"] == "fxo-ctab"
+    assert payload["packets"][0]["shader_selection"]["status"] == "unique"
