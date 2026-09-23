@@ -58,3 +58,13 @@
 ## Что осталось
 
 Следующая задача — восстановить D3D9 vertex declaration type/packing для каждого MEB property, после чего VS input semantic set можно превратить в реальный Android vertex layout. Затем MaterialBinding сможет фиксировать конкретную VS/PS permutation вместо одной только sampler permutation.
+
+## Phase 3 ABI contract
+
+`SHIFT.VertexLayout/1` now carries a deterministic Android repack layout for every known MEB property:
+- stable target attribute location in MEB property order;
+- byte offset and complete buffer stride for the interleaved target buffer;
+- original MEB `payload_offset` and `stride` when available;
+- explicit ABI confidence for properties whose original D3D9 declaration has not been proven.
+
+For `460/461` color properties the channel order remains explicitly ambiguous (`RGBA` vs `BGRA`); no renderer path silently chooses one.
