@@ -4,10 +4,13 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 VERSION_STAGE={0xFFFF:'pixel',0xFFFE:'vertex'}
+
 @dataclass
 class ShaderBlob:
     offset:int; end:int; stage:str; version:int; major:int; minor:int
-    instruction_count:int; ctab_offset:int|None; ctab_size:int|None; ctab_strings:list[str]
+    instruction_count:int; ctab_offset:int|None; ctab_size:int|None
+    ctab_constants:list[dict]; ctab_strings:list[str]
+
 
 def _ascii_strings(data,start,end,min_len=3):
     out=[]; i=max(0,start); end=min(end,len(data))
@@ -20,13 +23,11 @@ def _ascii_strings(data,start,end,min_len=3):
         else:i+=1
     return out
 
+
 def _parse_ctab(data,payload,n):
     end=min(len(data),payload+n*4)
     if payload+32>end or data[payload:payload+4]!=b'CTAB':return None
     size,creator,version,constants,info,flags,target=struct.unpack_from('<7I',data,payload+4)
-    # D3DXSHADER_CONSTANT_INFO is 20 bytes in the serialized CTAB:
-    # name offset, register set/index/count, reserved, type-info offset,
-    # default-value offset. Keep offsets as evidence and decode bounds-safely.
     constants_out=[]
     ci_end=min(end,payload+max(size,32)+constants*32+4096)
     for i in range(constants):
@@ -36,7 +37,7 @@ def _parse_ctab(data,payload,n):
         name=""
         if payload <= payload+name_off < ci_end:
             p=payload+name_off
-            q=data.find(b'\\x00',p,ci_end)
+            q=data.find(b'\x00',p,ci_end)
             if q<0: q=ci_end
             name=data[p:q].decode('ascii','replace')
         type_info=None
@@ -80,15 +81,20 @@ def parse_shader_blobs(data:bytes):
                 if pos+4+ln*4>len(data):break
                 pos+=4+ln*4; continue
             ln=(tok>>24)&0x0f
-            # D3D9 stores the number of parameter tokens in the instruction-length field.
             step=(1+ln)*4 if ln else 4
             if pos+step>len(data):break
             count+=1; pos+=step
         if end is None:i+=4;continue
         ctab=_parse_ctab(data,payload,n)
-        out.append(ShaderBlob(i,end,VERSION_STAGE[hi],v,(v>>8)&255,v&255,count,payload,ctab['size'] if ctab else None,ctab['strings'] if ctab else []))
+        out.append(ShaderBlob(
+            i,end,VERSION_STAGE[hi],v,(v>>8)&255,v&255,count,payload,
+            ctab['size'] if ctab else None,
+            ctab['constants'] if ctab else [],
+            ctab['strings'] if ctab else [],
+        ))
         i=end
     return out
+
 
 def parse_fx_source(src:bytes):
     text=src.decode('utf-8','replace')
