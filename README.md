@@ -69,3 +69,9 @@ shift_assets/
 `.meb` является компонентом видимой геометрии SHIFT, а `.bmt` содержит материал и связанные shader/texture данные; независимые инструменты моддинга SHIFT подтверждают, что модельные `.meb` и материальные `.bmt` работают совместно. Поэтому следующий этап должен связывать их через VHF/material references, а не конвертировать файлы изолированно.
 
 Полная валидация всех 15 базовых BFF уже прошла для архивов кроме крупного `TRACKS.bff`; проблема там пока только в скорости чистого Python LZX-декодера, а не в обнаруженной ошибке формата. Для production importer следующий шаг — native C/C++ LZX backend.
+
+### BMT -> FX -> FXO material binding
+
+Добавлен универсальный слой `material_linker.py`: он связывает BMT shaderparams с SamplerTexture из исходного HLSL/FX, переносит Min/Mag/Mip/Address/sRGB state и через D3DX9 CTAB восстанавливает фактические sampler registers. Для BMW M3 E36 проверено: diffuseTexture -> diffuseMap/s1, specularTexture -> specularMap/s2, scratchControlTexture -> scratchControlMap/s4; renderer-global environmentMap -> s3 и shadow sampler -> s0.
+
+CTAB reflection теперь сохраняет typed constants и sampler register metadata в `shader_ir.py`. Следующий render-layer шаг — связать этот MaterialBinding с VHF/MEB primitive/material references и восстановить VS/PS pair + vertex semantic interface.
