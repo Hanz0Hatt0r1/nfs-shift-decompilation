@@ -145,6 +145,21 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
     python shift_importer.py graph /path/to/bffs graph.json
 
 \n### Реальный BFF → MEB → PPM\n\nДля первого настоящего статического smoke-test можно не готовить промежуточные файлы вручную:\n\n    python bff_meb_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb \\\n      out/bmw_m3_e36_kit00_body_loda.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_body_loda.mesh.json\n\nПо умолчанию используется geometry-only flat-gray режим: он доказывает реальный BFF/XMem/LZX → MEB → rasterizer путь и не делает скрытого выбора COLOR0/COLOR1 ABI.\n\nИзолировать отдельный material primitive можно через `--primitive-index N`; режим `--vertex-colors` оставлен только как явная debug-визуализация разобранных COLOR0 bytes.\n\n\n
+
+### Реальный BMW material slice с внешним FX
+
+Когда canonical render/shader archive доступен отдельно, теперь можно сразу провести реальный M3 paint material дальше:
+
+    python bmw_real_material_slice_external_fx.py \\
+      BMW_M3_E36.bff \\
+      evidence/bmw_m3_e36_kit00_body_loda.golden.json \\
+      bodywork.fx \\
+      out/bmw_m3_e36_material_slice.json \\
+      --primitive-index 1 \\
+      --supplemental-bff BMW_M3_E36_Cockpit.bff
+
+Это сохраняет BMT/MEB/FXO/DDS как BFF-backed evidence и передаёт внешний `bodywork.fx` в тот же `StaticDraw/RenderCommand` pipeline.
+
 ### Внешний source для реального BMW paint shader
 
 Если `BMW_M3_E36.bff` содержит BMT/MEB/FXO/DDS, а `bodywork.fx` доступен отдельно из общего render archive, можно собрать реальный `MaterialBinding/1` без копирования shader source в репозиторий:
