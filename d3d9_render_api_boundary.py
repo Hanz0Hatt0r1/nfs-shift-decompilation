@@ -75,7 +75,7 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
             return start, index, "\n".join(body)
     return start, None, "\n".join(body)
 
-def _observation(body: str, byte_offset: int) -> dict[str, Any]:
+def _observation(body: str, byte_offset: int, bodies: dict[str, str] | None = None) -> dict[str, Any]:
     hex_token = f"+ 0x{byte_offset:x}"
     decimal_token = f"+ {byte_offset}"
     matched_as = None
@@ -83,6 +83,13 @@ def _observation(body: str, byte_offset: int) -> dict[str, Any]:
         matched_as = "hex"
     elif decimal_token in body:
         matched_as = "decimal"
+    else:
+        for callee in re.findall(r"\bFUN_[0-9A-Fa-f]+\s*\(", body):
+            name = callee.split("(", 1)[0].strip()
+            callee_body = (bodies or {}).get(name, "")
+            if hex_token in callee_body or decimal_token in callee_body:
+                matched_as = "delegated"
+                break
     return {
         "status": "observed" if matched_as else "not-found",
         "vtable_byte_offset": f"0x{byte_offset:x}",
@@ -98,7 +105,7 @@ def analyze_d3d9_render_api_boundary(source: str) -> dict[str, Any]:
     for key, function in SOURCE_FUNCTIONS.items():
         start, end, body = _function_body(source, function)
         api = API_METHODS[key]
-        obs = _observation(body, api["byte_offset"])
+        obs = _observation(body, api["byte_offset"], {fn: _function_body(source, fn)[2] for fn in SOURCE_FUNCTIONS.values()})
         obs.update({
             "function": function,
             "line_start": start,
