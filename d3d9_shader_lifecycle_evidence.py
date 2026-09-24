@@ -16,7 +16,7 @@ EDGES = {
 
 def _body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    start = next((i for i, line in enumerate(lines, 1) if re.search(rf'\\b{re.escape(function)}\\(', line)), None)
+    start = next((i for i, line in enumerate(lines, 1) if re.search(rf'\b{re.escape(function)}\(', line)), None)
     if start is None:
         return None, None, ''
     depth = 0
@@ -30,7 +30,7 @@ def _body(source: str, function: str) -> tuple[int | None, int | None, str]:
         seen |= '{' in line
         if seen and depth == 0:
             return start, index, '\\n'.join(body)
-    return start, None, '\\n'.join(body)
+    return start, None, '\n'.join(body)
 
 def analyze_d3d9_shader_lifecycle(source: str) -> dict[str, Any]:
     start, end, body = _body(source, FUNCTION)
