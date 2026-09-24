@@ -127,6 +127,16 @@ Skinning разделён на независимые уровни:
 
 Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключил его к desktop reference renderer, phase 62 — к embedded VS→PS execution, phase 63 — к `RenderCommand/1`, phase 64 вывел тот же skin payload в GLES 3.1 ABI, а phase 65 добавил явные extended semantic streams для shader inputs.
 
+## Render checkpoints
+
+Последние реальные локальные кадры из текущего pipeline:
+
+![BMW M3 E36 KIT00 — full vehicle geometry](docs/render-snapshots/bmw_m3_e36_kit00_full_vehicle_actual.svg)
+
+![BMW M3 E36 KIT00 — texture-only material](docs/render-snapshots/bmw_m3_e36_kit00_material_actual.svg)
+
+Это quantized SVG-представления фактических PNG render outputs; исходные BFF/PNG в репозиторий не добавляются. Следующий checkpoint — shader-executed кадр из authentic D3D9 capture.
+
 ## Быстрый старт
 
 ### Импорт
