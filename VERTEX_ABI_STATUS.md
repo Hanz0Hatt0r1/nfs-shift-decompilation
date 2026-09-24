@@ -70,3 +70,8 @@ The COLOR ABI investigation no longer requires manual raw-stream extraction. The
 ## Phase 69: COLOR corpus consistency
 
 Multiple 460/461 evidence reports can now be aggregated without selecting RGBA/BGRA. Candidate hashes and cross-report stability are exposed as machine-readable data for later declaration verification.
+
+
+## Phase 70: corpus-scale COLOR evidence
+
+A directory-level BFF scan now collects 460/461 samples from decoded MEB resources and records archive/resource identity. This provides cross-vehicle evidence for future D3D9 declaration/channel-order verification without changing the current ambiguous runtime ABI.
