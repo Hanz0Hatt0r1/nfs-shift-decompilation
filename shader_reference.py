@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from typing import Any, Iterable
 
-from shader_asm import Operand, ShaderProgram
+from shader_asm import Instruction, Operand, ShaderProgram
 
 
 FORMAT = "SHIFT.ReferenceShaderExecution/1"
