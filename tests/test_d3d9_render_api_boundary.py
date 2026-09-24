@@ -41,3 +41,13 @@ def test_render_api_boundary_fails_closed_without_draw_dispatch():
 
     assert result["status"] == "not-proven"
     assert result["observations"]["draw_indexed_dispatch"]["status"] == "not-found"
+
+
+def test_render_api_boundary_accepts_split_function_signature():
+    source = SOURCE.replace(
+        "void __thiscall FUN_0084b9a0(void *this) {",
+        "void __thiscall\nFUN_0084b9a0(void *this) {",
+    )
+    result = analyze_d3d9_render_api_boundary(source)
+
+    assert result["observations"]["mesh_render_setup_order"]["status"] == "observed"
