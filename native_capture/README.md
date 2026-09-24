@@ -86,3 +86,17 @@ The hook runs before `Present`, uses a system-memory surface and currently
 supports A8R8G8B8, X8R8G8B8 and R5G6B5 backbuffers. Screenshot capture is
 optional and failure is reported as a separate JSONL event; it does not change
 normal D3D9 rendering behavior.
+
+### Turnkey launchers
+
+For a quick first BMW runtime capture:
+
+    native_capture\capture_shift.bat C:\path\to\Shift.exe
+
+or PowerShell:
+
+    .\native_capture\capture_shift.ps1 C:\path\to\Shift.exe
+
+The launchers create a local `capture-out/` directory, enable Present
+screenshots and request s0/s3/s4 texture-content snapshots. They do not copy
+captured files into the repository automatically.
