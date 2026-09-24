@@ -398,3 +398,58 @@ def test_d3d9_usage_evidence_fails_closed_without_usage_switch():
     result = analyze_d3d9_usage_semantics("void f(void) {}")
     assert result["switch"]["status"] == "not-found"
     assert result["usages"][6]["status"] == "not-found"
+
+
+def test_d3d9_usage_evidence_anchors_target_function_not_unrelated_switch():
+    from d3d9_usage_evidence import analyze_d3d9_usage_semantics
+
+    source = r'''
+void unrelated(void) {
+  switch(local_5c) {
+  case 0:
+    pcVar23 = "WRONG";
+    break;
+  case 6:
+    pcVar23 = "WRONG";
+    break;
+  }
+}
+uint __fastcall FUN_008587e0(int param_1,int param_2)
+{
+  switch(local_5c) {
+  case 0:
+    pcVar23 = "Position";
+    break;
+  case 1:
+    pcVar23 = "Weights";
+    break;
+  case 2:
+    pcVar23 = "Normal";
+    break;
+  case 3:
+    pcVar23 = &DAT_00b1d188;
+    break;
+  case 4:
+    pcVar23 = "Tangent";
+    break;
+  case 5:
+    pcVar23 = "Binormal";
+    break;
+  case 6:
+    pcVar23 = "Colour";
+    break;
+  case 7:
+    pcVar23 = "Depth";
+    break;
+  case 8:
+    pcVar23 = "Indices";
+    break;
+  }
+  } while (local_5c < 9);
+}
+'''
+    result = analyze_d3d9_usage_semantics(source)
+    assert result["switch"]["status"] == "observed"
+    assert result["switch"]["usage_exclusive_limit"] == 9
+    assert result["usages"][6]["source_name"] == "Colour"
+    assert result["usages"][6]["status"] == "observed"
