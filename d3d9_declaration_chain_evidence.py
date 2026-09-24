@@ -3,10 +3,13 @@
 This module intentionally joins already-proven evidence reports instead of
 reconstructing facts a second time. It checks that the recovered Type tables,
 STREAM topology, 8-byte declaration record and canonicalizer all agree on the
-same declaration ABI. MEB 460/461 -> Type remains explicitly unresolved.
+same declaration ABI. Optional runtime-memory evidence is accepted only when
+its address/range metadata, hashes and complete declaration array are coherent.
+MEB 460/461 -> Type remains explicitly unresolved.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
@@ -83,6 +86,8 @@ def _runtime_memory_proven(report: Mapping[str, Any]) -> bool:
     except ValueError:
         return False
     if len(decoded) != length or memory.get("slice_length") != length:
+        return False
+    if hashlib.sha256(decoded).hexdigest() != slice_sha256:
         return False
     if instance.get("status") != "match":
         return False
