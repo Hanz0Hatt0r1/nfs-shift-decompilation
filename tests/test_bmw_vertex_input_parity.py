@@ -7,7 +7,10 @@ def _material(property_id='200', usage='POSITION', usage_index=0, location=0):
         'ready':True,
         'golden_identity':{'resource':'vehicles/bmw/body.meb','resource_sha256':'sha'},
         'material':{'permutation_identity':{'identity_sha256':'shader-id'}},
-        'mesh':{'vertex_layout':{'attributes':[{'property_id':property_id,'usage':usage,'usage_index':usage_index,'location':location}]}},
+        'mesh':{
+            'vertex_layout':{'attributes':[{'property_id':property_id,'usage':usage,'usage_index':usage_index,'location':location}]},
+            'property_descriptors':[{'id':property_id,'words':[1 if property_id=='200' else 4,0 if property_id=='200' else 6,usage_index],'raw_hex':'020000000000000000000000' if property_id=='200' else '040000000600000000000000'}],
+        },
     }
 
 
