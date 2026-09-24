@@ -162,6 +162,21 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
         "*(char *)(iVar7 + 6 + *(int *)(param_1 + 0x1c)) = (char)uVar9;",
         function_start,
     )
+    stream_line = _line_number(
+        text,
+        "*(undefined2 *)(iVar7 + *(int *)(param_1 + 0x1c)) = 0;",
+        function_start,
+    )
+    offset_line = _line_number(
+        text,
+        "*(undefined2 *)(iVar7 + 2 + *(int *)(param_1 + 0x1c)) = (undefined2)local_48;",
+        function_start,
+    )
+    method_line = _line_number(
+        text,
+        "*(undefined1 *)(iVar7 + 5 + *(int *)(param_1 + 0x1c)) = 0;",
+        function_start,
+    )
     channel_line = _line_number(
         text,
         "*(undefined1 *)(iVar7 + 7 + *(int *)(param_1 + 0x1c)) = local_1c._0_1_;",
@@ -179,19 +194,12 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
             "usage_index": markers["channel_field"],
         }[name]
         source_line = {
-            "type_code": type_line,
-            "usage_code": usage_line,
-            "channel": channel_line,
-            "reserved": _line_number(
-                text,
-                "*(undefined1 *)(iVar7 + 5 + *(int *)(param_1 + 0x1c)) = 0;",
-                function_start,
-            ),
-            "running_offset": _line_number(
-                text,
-                "*(undefined2 *)(iVar7 + 2 + *(int *)(param_1 + 0x1c)) = (undefined2)local_48;",
-                function_start,
-            ),
+            "stream": stream_line,
+            "offset": offset_line,
+            "type": type_line,
+            "method": method_line,
+            "usage": usage_line,
+            "usage_index": channel_line,
         }[name]
         field_rows.append(
             {
@@ -207,7 +215,6 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
     all_core_observed = all(
         row["status"] == "observed"
         for row in field_rows
-        if row["name"] in {"type_code", "usage_code", "channel", "reserved", "running_offset"}
     )
 
     return {
@@ -243,7 +250,7 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
                 "status": "observed"
                 if markers["type_field"]
                 else "not-proven",
-                "detail": "XML Type is searched through PTR_DAT_00b901d0 and the matched ordinal is passed to FUN_00853c20 before being stored at record + 4",
+                "detail": "XML Type is searched through PTR_DAT_00b901d0 and the matched ordinal is passed to FUN_00853c20 before being stored at record + 4 of the D3DVERTEXELEMENT9-shaped record",
             },
             "xml_usage_to_record_usage_code": {
                 "status": "observed"
