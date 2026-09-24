@@ -986,7 +986,7 @@ def test_reference_renderer_rejects_missing_semantic_uv_layer(tmp_path):
             height=8,
         )
     except ValueError as exc:
-        assert "requires TEXCOORD1 but mesh has no matching UV layer" in str(exc)
+        assert "requires TEXCOORD1 but mesh has no matching attribute" in str(exc)
     else:
         raise AssertionError("expected ValueError")
 
