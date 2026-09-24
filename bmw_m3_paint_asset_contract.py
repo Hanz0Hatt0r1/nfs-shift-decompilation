@@ -12,9 +12,10 @@ def _norm(value: Any) -> str:
     return str(value or '').replace('\\','/').strip('/').lower()
 
 def _alias(path: str) -> str:
-    p=_norm(path)
-    if p.endswith('.mtx'): return p[:-4]+'.bmt'
-    if p.endswith('.bmt'): return p[:-4]+'.mtx'
+    """Canonicalize .mtx/.bmt aliases to one material identity."""
+    p = _norm(path)
+    if p.endswith('.mtx') or p.endswith('.bmt'):
+        return p[:-4] + '.bmt'
     return p
 
 def validate_bmw_paint_asset(golden: Mapping[str, Any]) -> dict[str, Any]:
