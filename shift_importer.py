@@ -2284,6 +2284,34 @@ def cmd_source_d3d9_shader_lifecycle(args: argparse.Namespace) -> int:
     return 0 if report["status"] == "observed" else 2
 
 
+def cmd_validate_d3d9_capture(args: argparse.Namespace) -> int:
+    """Validate a JSONL runtime capture against SHIFT.D3D9RuntimeCaptureSchema/1."""
+    from d3d9_capture_schema import validate_capture_events
+
+    events = []
+    for line_no, line in enumerate(Path(args.input).read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        events.append(row)
+    report = validate_capture_events(events)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "event_count": report["event_count"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_d3d9_runtime_trace(args: argparse.Namespace) -> int:
     """Build runtime D3D9 binding evidence from an external JSONL capture."""
     from d3d9_runtime_trace import build_runtime_binding_evidence, load_events
@@ -2929,6 +2957,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9ShaderLifecycleEvidence/1 JSON")
     p.set_defaults(fn=cmd_source_d3d9_shader_lifecycle)
+
+    p = sp.add_parser("validate-d3d9-capture", help="validate a JSONL runtime capture against SHIFT.D3D9RuntimeCaptureSchema/1")
+    p.add_argument("input", help="D3D9 runtime capture JSONL")
+    p.add_argument("output", help="SHIFT.D3D9RuntimeCaptureSchema/1 JSON")
+    p.set_defaults(fn=cmd_validate_d3d9_capture)
 
     p = sp.add_parser("d3d9-runtime-trace", help="build runtime D3D9 declaration/binding evidence from JSONL capture")
     p.add_argument("trace", help="runtime capture JSONL")
