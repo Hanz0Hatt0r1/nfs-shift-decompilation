@@ -31,9 +31,9 @@ Then:
 python bmw_reference_render.py bmw-material-slice.json bmw-material-slice.json bmw.png
 ```
 
-The second argument above must be replaced with the neutral MEB JSON contained in the
-slice report when invoking the standalone renderer; the slice itself records both the
-render command and the source mesh.
+The reference renderer accepts the same `BMWMaterialSlice/1` file as its mesh input
+and automatically unwraps the embedded neutral MEB payload. The slice also records the
+exact `RenderCommand/1` used by the renderer.
 
 ## Boundary
 
