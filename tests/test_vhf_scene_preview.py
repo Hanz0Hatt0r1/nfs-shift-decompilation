@@ -10,7 +10,7 @@ def _mini_meb() -> bytes:
         data += b"\0"
     data += struct.pack("<III", 3, 1, 1)
     data += bytes(40)
-    data += struct.pack("<III", 200, 0, 0)
+    data += struct.pack("<III", 2, 0, 0)
     data += struct.pack(
         "<fffffffff",
         -0.7, -0.6, 0.0,
