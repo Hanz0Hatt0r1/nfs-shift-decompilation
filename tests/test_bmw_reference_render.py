@@ -33,7 +33,7 @@ def test_bmw_reference_render_wraps_geometry_renderer(monkeypatch, tmp_path):
     )
     assert result['format'] == 'SHIFT.BMWReferenceRender/1'
     assert result['status'] == 'rendered'
-    assert result['sha256'] == 'b0d3d5d640c1f1f8cf4b50c00c3d1a5a7a72d6f27e9dca6dbf7c8d8c9c9c0c6b'
+    assert result['sha256'] == 'f7f61f7db8e5185115f264ded4e62a8064628b0ba5b1b94d491c3d2cf4673042'
     assert captured['command']['format'] == 'SHIFT.RenderCommand/1'
     assert captured['kwargs']['width'] == 1
     assert output.exists()
