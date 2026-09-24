@@ -74,7 +74,7 @@ def test_collector_creates_small_self_describing_color_bundle(tmp_path):
             "040000000600000000000000"
         )
         assert zf.read(f"resources/{rid}/461/descriptor.bin") == bytes.fromhex(
-            "040000000600000100000000"
+            "040000000600000001000000"
         )
         assert zf.read(f"resources/{rid}/460/payload.bin") == bytes((10, 20, 30, 255))
         assert zf.read(f"resources/{rid}/461/payload.bin") == bytes((40, 50, 60, 255))
