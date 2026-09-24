@@ -46,3 +46,19 @@ def test_vertex_input_parity_blocks_missing_shader_semantic():
 def test_vertex_input_parity_keeps_physical_repack_explicit():
     report=validate_bmw_vertex_input_parity(_material(),_runtime(),usage_map={0:0})
     assert report['physical_layout']['status']=='not-comparable-by-design'
+
+def test_vertex_input_parity_blocks_semantic_collision():
+    material = _material()
+    material['mesh']['vertex_layout']['attributes'] = [
+        {'property_id':'130','usage':'TEXCOORD','usage_index':0,'location':0},
+        {'property_id':'230','usage':'TEXCOORD','usage_index':0,'location':1},
+    ]
+    material['mesh']['property_descriptors'] = [
+        {'id':'130','words':[1,3,0],'raw_hex':'010000000300000000000000'},
+        {'id':'230','words':[2,3,0],'raw_hex':'020000000300000000000000'},
+    ]
+    runtime = _runtime(usage=5, type_code=1, shader_inputs=[{'register':'v0','usage':'TEXCOORD','index':0}])
+    report = validate_bmw_vertex_input_parity(material, runtime, usage_map={3:5})
+    assert report['ready'] is False
+    assert 'vertex-input:layout-semantic-collision:TEXCOORD0' in report['blocking_reasons']
+    assert report['checks'][0]['status'] == 'ambiguous'
