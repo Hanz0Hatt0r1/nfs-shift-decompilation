@@ -99,3 +99,8 @@ Phase 56 wires MEB 310/580 into the integrated VS reference path. The next rende
 ## Phase 57: explicit external sampler resources
 
 Phase 57 makes external sampler requirements executable rather than passive: RenderCommand preserves the requirement, the reference renderer accepts explicit sampler2D images by `sN`, and the CLI can reproduce those bindings from DDS files. The next resource milestone is a real cube-map representation for `environmentMap/s3`; in parallel, COLOR0/1 and skin deformation remain separate ABI tracks.
+
+
+## Phase 58: cube-map external resources
+
+Phase 58 adds the software cube-map resource needed by the documented `environmentMap/s3` path. The next environment step is evidence-backed ingestion of the game's actual cubemap/face payload into `ReferenceCubeTexture/1`; this must not be inferred from a regular 2D DDS. In parallel, COLOR0/1 ABI and actual skin deformation remain independent rendering tracks.
