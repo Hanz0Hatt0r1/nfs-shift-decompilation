@@ -20,8 +20,8 @@ uint FUN_008587e0(int param_1,int param_2)
 
 def _base_inputs():
     return {
-        "type_profile": {"validation": {"status": "match", "match_count": 17}},
-        "stream_topology": {
+        "type_profile": {"validation": {"status": "match", "match_count": 17}, "source": {"name":"SHIFT.exe.c","sha256":"512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9","bytes":38993813,"line_count":1471366}},
+        "stream_topology": {"source": {"name":"SHIFT.exe.c","sha256":"512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9","bytes":38993813,"line_count":1471366},
             "status": "observed",
             "grouping": {"group_stride": 0x14},
             "semantic_links": {
@@ -29,7 +29,7 @@ def _base_inputs():
                 "type_to_group_byte_size": {"status": "observed"},
             },
         },
-        "stream_record": {
+        "stream_record": {"source": {"name":"SHIFT.exe.c","sha256":"512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9","bytes":38993813,"line_count":1471366},
             "status": "observed",
             "record": {"stride": 8},
             "fields": [{"status": "observed"} for _ in range(6)],
@@ -39,7 +39,7 @@ def _base_inputs():
                 "xml_channel_to_record_usage_index": {"status": "observed"},
             },
         },
-        "canonicalizer": {
+        "canonicalizer": {"source": {"name":"SHIFT.exe.c","sha256":"512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c4021a00760ee9","bytes":38993813,"line_count":1471366},
             "status": "observed",
             "canonicalization": {"full_record_identity": "observed"},
         },
