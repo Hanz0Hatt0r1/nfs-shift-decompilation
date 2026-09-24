@@ -53,3 +53,8 @@ For a same-instance bridge, require:
    ordinal map is supplied.
 
 Until all four are present, the runtime proof remains `not-proven`/`partial`.
+
+
+## Shader events (Phase 124)
+
+The same JSONL trace accepts `create_vertex_shader`, `create_pixel_shader`, `set_vertex_shader` and `set_pixel_shader`. Creation events may carry the complete D3D9 bytecode in `bytes_hex`; when both stages are bound in one frame, the bridge emits `shader_permutation_identity` using `SHIFT.ShaderPermutationIdentity/1`.
