@@ -58,3 +58,8 @@ The shader-backed reference renderer now resolves MEB properties `230..234` as t
 ## Phase 56: skin input semantics
 
 The integrated VS reference path now accepts the already-proven `BLENDWEIGHT0` and `BLENDINDICES0` MEB attributes. Bone weights enter the shader as float4; bone indices are widened from their proven UINT8x4 storage to numeric float4 shader inputs without normalization. This phase only wires the input ABI; it does not apply bone matrices or claim animated deformation.
+
+
+## Phase 57: explicit external sampler resources
+
+The shader-backed reference renderer now preserves `external_samplers` in the RenderCommand contract and accepts explicit `sampler2D` images through `external_texture_images={sN: image}`. The legacy material image fallback is never assigned to a required external sampler register. Resource type is checked against the embedded shader sampler declaration; `samplerCube`, `sampler3D` and `sampler1D` remain explicit unsupported resource types rather than being coerced to 2D.
