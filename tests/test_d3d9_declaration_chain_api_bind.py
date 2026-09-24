@@ -108,6 +108,6 @@ def test_render_api_boundary_is_a_required_gate_when_supplied():
         },
     )
 
-    assert result["status"] == "observed"
+    assert result["status"] == "observed", result
     assert result["checks"]["d3d9_render_api_boundary"]["status"] == "observed"
     assert result["summary"]["render_api_status"] == "observed"
