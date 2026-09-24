@@ -114,10 +114,24 @@ def _texture_requirements(
                 continue
             if event_stage == register and isinstance(event.get("resource_descriptor"), Mapping):
                 descriptor = dict(event["resource_descriptor"])
+        snapshot_paths: list[str] = []
+        snapshot_status = "not-supplied"
+        for event in frame.get("texture_bindings") or []:
+            if not isinstance(event, Mapping):
+                continue
+            try:
+                event_stage = int(event.get("stage"))
+            except (TypeError, ValueError):
+                continue
+            if event_stage == register:
+                snapshot_paths = [str(path) for path in (event.get("snapshot_paths") or [])]
+                snapshot_status = str(event.get("snapshot_status") or "not-supplied")
         requirements.append({
             **row,
             "texture_ptr": texture_ptr,
             "resource_descriptor": descriptor,
+            "snapshot_status": snapshot_status,
+            "snapshot_paths": snapshot_paths,
             "status": status,
         })
         if not texture_ptr:
