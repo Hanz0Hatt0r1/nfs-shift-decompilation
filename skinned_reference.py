@@ -82,6 +82,76 @@ def skin_draw_points(
     }
 
 
+def skin_mesh_reference(
+    draw: dict[str, Any],
+    mesh: dict[str, Any],
+    *,
+    normalize_weights: bool = False,
+    strict_indices: bool = True,
+) -> dict[str, Any]:
+    """Apply an explicit SkinPose to a neutral mesh without changing its ABI streams."""
+    positions = mesh.get("vertices") or []
+    bone_indices = mesh.get("bone_indices") or []
+    bone_weights = mesh.get("bone_weights") or []
+    if not positions:
+        raise ValueError("skinned mesh has no vertices")
+    if not bone_indices or not bone_weights:
+        raise ValueError("skinned mesh has no bone influence streams")
+
+    point_result = skin_draw_points(
+        draw,
+        positions,
+        bone_indices,
+        bone_weights,
+        normalize_weights=normalize_weights,
+        strict_indices=strict_indices,
+    )
+    transformed = dict(mesh)
+    transformed["vertices"] = [tuple(row) for row in point_result["positions"]]
+
+    direction_streams = (
+        ("normals", "NORMAL"),
+        ("tangents", "TANGENT"),
+        ("tangents2", "BINORMAL"),
+    )
+    direction_results: dict[str, dict[str, Any]] = {}
+    for field, semantic in direction_streams:
+        rows = mesh.get(field)
+        if not rows:
+            continue
+        result = skin_draw_directions(
+            draw,
+            rows,
+            bone_indices,
+            bone_weights,
+            normalize_weights=normalize_weights,
+            strict_indices=strict_indices,
+        )
+        transformed[field] = [tuple(row) for row in result["vectors"]]
+        direction_results[semantic] = {
+            "source_field": field,
+            "count": len(result["vectors"]),
+        }
+
+    pose = draw.get("skin_pose") or {}
+    return {
+        "format": "SHIFT.SkinnedMeshReference/1",
+        "source": "SHIFT.SkinnedDraw/1",
+        "frame": pose.get("frame"),
+        "vertex_count": len(transformed["vertices"]),
+        "mesh": transformed,
+        "streams": {
+            "position": {"source_field": "vertices", "count": len(transformed["vertices"])},
+            "directions": direction_results,
+            "preserved": [
+                field for field in ("uv_layers", "colors", "colors2", "bone_weights", "bone_indices")
+                if field in mesh
+            ],
+        },
+        "influence_validation": point_result["influence_validation"],
+    }
+
+
 def validate_bind_pose(
     draw: dict[str, Any],
     positions: Iterable[Iterable[float]],
