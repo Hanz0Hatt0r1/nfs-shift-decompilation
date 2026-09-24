@@ -188,3 +188,96 @@ def test_bridge_cli_roundtrip_with_source_text(tmp_path):
     assert report["properties"]["460"]["candidate_types"][0]["code"] == 4
     assert report["source_integrity"]["source_hash_matches_report"] is True
     assert report["meb_property_mapping"]["status"] == "not-proven"
+
+
+def _resource_color_report(property_id="460", *, payload_sha="b" * 64, raw_sha=None):
+    return {
+        "format": "SHIFT.ColorABIEvidence/1",
+        "property_id": property_id,
+        "raw_bytes_sha256": payload_sha if raw_sha is None else raw_sha,
+        "sample_count": 2,
+        "source": {
+            "kind": "bff-meb",
+            "archive": "BMW_M3_E36.bff",
+            "resource": "cars/body.meb",
+            "entry_index": 7,
+            "resource_sha256": "a" * 64,
+            "stream": "colors" if property_id == "460" else "colors2",
+            "vertex_count": 2,
+            "property_layout": {
+                "id": property_id,
+                "payload_offset": 76,
+                "stride": 4,
+                "bytes": 8,
+            },
+            "property_descriptor": {
+                "id": property_id,
+                "offset": 64,
+                "words": [4, 6, 0 if property_id == "460" else 1],
+                "raw_hex": (
+                    "040000000600000000000000"
+                    if property_id == "460"
+                    else "040000000600000100000000"
+                ),
+            },
+            "descriptor_range": {"offset": 64, "length": 12, "end": 76},
+            "descriptor_range_status": "observed",
+            "payload_range": {"offset": 76, "length": 8, "end": 84},
+            "payload_range_status": "observed",
+            "payload_raw_bytes_sha256": payload_sha,
+            "decoded_stream_matches_payload": True,
+            "decoded_stream_matches_payload_status": "observed",
+        },
+    }
+
+
+def test_color_bridge_accepts_coherent_real_resource_provenance():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460"), _color("461")]),
+        _source_report(),
+        resource_reports=[_resource_color_report("460")],
+    )
+    assert result["resource_provenance"]["460"]["status"] == "observed"
+    assert result["resource_provenance"]["460"]["reports"][0]["status"] == "observed"
+    assert result["resource_provenance"]["461"]["status"] == "not-supplied"
+    assert result["resource_errors"] == []
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_color_bridge_rejects_tampered_resource_payload_hash():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460")]),
+        _source_report(),
+        resource_reports=[_resource_color_report("460", raw_sha="c" * 64)],
+    )
+    assert result["resource_provenance"]["460"]["status"] == "mismatch"
+    assert result["resource_provenance"]["460"]["reports"][0]["status"] == "mismatch"
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_color_bridge_isolates_unknown_resource_property_id():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460"), _color("461")]),
+        _source_report(),
+        resource_reports=[_resource_color_report("999")],
+    )
+    assert result["resource_provenance"]["460"]["status"] == "not-supplied"
+    assert result["resource_provenance"]["461"]["status"] == "not-supplied"
+    assert result["resource_errors"][0]["property_id"] == "999"
+    assert result["resource_errors"][0]["status"] == "mismatch"
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_color_bridge_keeps_resource_provenance_independent_per_property():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460"), _color("461")]),
+        _source_report(),
+        resource_reports=[
+            _resource_color_report("460"),
+            _resource_color_report("461"),
+        ],
+    )
+    assert result["resource_provenance"]["460"]["status"] == "observed"
+    assert result["resource_provenance"]["461"]["status"] == "observed"
+    assert len(result["resource_provenance"]["460"]["reports"]) == 1
+    assert len(result["resource_provenance"]["461"]["reports"]) == 1
