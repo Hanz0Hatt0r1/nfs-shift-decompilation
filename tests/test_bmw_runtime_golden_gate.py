@@ -12,7 +12,7 @@ def _material(ready_command=True):
         'uniform_binding': {'bindings': [{'name': 'primerBasis', 'register_set': 2, 'register_index': 5, 'register_count': 1, 'stage': 'pixel', 'value': [1.0,2.0,3.0,4.0]}]},
         'mesh': {'vertex_layout': {'attributes': [{'property_id': '460', 'usage': 'COLOR', 'usage_index': 0}]}},
         'textures': [],
-        'render_command': {'ready': ready_command, 'blocking_reasons': [] if ready_command else ['render-command:not-ready']},
+        'render_command': {'ready': ready_command, 'blocking_reasons': [] if ready_command else ['render-command:not-ready'], 'submeshes': [{'first_index': 150, 'index_count': 6294}]},
     }
 
 
@@ -28,7 +28,7 @@ def _runtime(constant_values=True):
             'pixel_shader': {'shader_ptr':'0x3','create_known':True},
             'stream_sources': [{'stream':0}],
             'index_binding': {'index_buffer_ptr':'0x4'},
-            'draws': [{'primitive_count':1}],
+            'draws': [{'start_index':150, 'primitive_count':2098, 'base_vertex_index':0}],
             'constant_writes': [{'stage':'pixel','start_register':5,'vector4f_count':1,'values':[1.0,2.0,3.0,4.0]}] if constant_values else [],
             'shader_permutation_identity': {'identity_sha256':'shader-id','payload':{'vertex':{'constants':[]},'pixel':{'constants':[5],'sampler_types':{}}}},
         }],

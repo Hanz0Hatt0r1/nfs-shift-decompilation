@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 129. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 130. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -497,3 +497,10 @@ Next: feed a concrete runtime capture into this gate. Once it is ready, execute 
 `SHIFT.D3D9RuntimeTraceIntegrity/1` now validates object creation-before-bind ordering, pointer/byte identity reuse, and complete draw state (declaration, VS, PS, stream, indices, draw). The report is attached to `SHIFT.D3D9RuntimeBindingEvidence/1`, and the BMW runtime golden gate requires integrity `observed`.
 
 Next: obtain a real capture and run the complete `bmw-runtime-golden-gate` -> `bmw-reference-render` sequence on an exact BMW material draw.
+
+
+## Phase 130: exact BMW runtime draw correlation
+
+`SHIFT.BMWRuntimeDrawCorrelation/1` now binds the selected BMW material primitive to exactly one captured D3D9 indexed draw by `start_index == first_index` and `primitive_count == index_count / 3`. Multiple or missing matches are blockers. `SHIFT.BMWRuntimeGoldenGate/1` consumes this correlation, so shader/resource/frame agreement is no longer sufficient by itself to accept a particular M3 submesh as golden.
+
+Next: run the full gate against an actual runtime capture. A ready gate becomes the only allowed input to the first real-material desktop golden render and image hash recording.

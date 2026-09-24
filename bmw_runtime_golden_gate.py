@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from bmw_runtime_parity import validate_files as validate_runtime_parity_files
+from bmw_runtime_draw_correlation import correlate_runtime_draw
 
 FORMAT = "SHIFT.BMWRuntimeGoldenGate/1"
 
@@ -14,8 +15,10 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     material = json.loads(Path(material_path).read_text(encoding='utf-8'))
     runtime = json.loads(Path(runtime_path).read_text(encoding='utf-8'))
     parity = validate_runtime_parity_files(material_path, runtime_path, usage_map_path=usage_map_path, require_constant_values=True)
+    draw_correlation = correlate_runtime_draw(material, runtime)
     command = material.get('render_command')
     reasons = list(parity.get('blocking_reasons') or [])
+    reasons.extend(draw_correlation.get('blocking_reasons') or [])
     command_status = 'not-supplied'
     integrity = runtime.get('integrity') or {}
     if integrity.get('status') != 'observed':
@@ -60,6 +63,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
         'ready': ready,
         'blocking_reasons': list(dict.fromkeys(reasons)),
         'runtime_parity': parity,
+        'runtime_draw_correlation': draw_correlation,
         'render_command': {'status': command_status},
         'golden_requirements': {
             'shader_identity': 'required',
