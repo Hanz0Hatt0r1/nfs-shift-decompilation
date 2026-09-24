@@ -2409,6 +2409,34 @@ def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_paint_bff_pipeline(args: argparse.Namespace) -> int:
+    """Build the real BMW M3 paint binding from a BFF and validate its paint contract."""
+    from bmw_paint_bff_pipeline import build_bmw_paint_pipeline_result
+
+    report = build_bmw_paint_pipeline_result(
+        args.archive,
+        bmt_path=args.bmt,
+        meb_path=args.meb,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "bmt": report["bmt"]["path"],
+        "shader": report["shader"]["path"],
+        "meb": report["meb"]["path"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_bmw_paint_contract(args: argparse.Namespace) -> int:
     """Validate an evidence-backed BMW M3 paint material binding."""
     from bmw_m3_paint_contract import validate_material_binding
@@ -3032,6 +3060,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeDrawCorrelation/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_draw_correlation)
+
+    p = sp.add_parser("bmw-paint-bff-pipeline", help="build the real BMW M3 paint MaterialBinding directly from a BFF")
+    p.add_argument("archive", help="BMW_M3_E36.bff")
+    p.add_argument("output", help="SHIFT.BMWPaintPipelineResult/1 JSON")
+    p.add_argument("--bmt", default="vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt")
+    p.add_argument("--meb", default="vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb")
+    p.set_defaults(fn=cmd_bmw_paint_bff_pipeline)
 
     p = sp.add_parser("bmw-paint-contract", help="validate the evidence-backed BMW M3 paint material binding")
     p.add_argument("input", help="BMW paint material binding JSON")
