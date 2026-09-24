@@ -558,3 +558,67 @@ def test_non_bmw_material_does_not_activate_paint_contract():
     material = _bmw_paint_compile_material(material_ref="vehicles/other/PAINT.mtx")
     assert material["paint_contract"] is None
     assert material["blocking_reasons"] == []
+
+
+def test_compile_material_enforces_bmw_paint_shader_gate():
+    from draw_packets import compile_material
+    material = {
+        "name": "BMW_M3_E36_PAINT",
+        "shader": "bodywork.fx",
+        "specializations": ["USE_FRESNEL", "ALLOW_VINYLS", "DIRT_SCRATCH"],
+        "shaderparams": [
+            {"name": "diffuseTexture", "resource_type": "EPT_TEXTURE", "value": "COMMON_PAINT.dds"},
+            {"name": "specularTexture", "resource_type": "EPT_TEXTURE", "value": "COMMON_PAINT_SPECULAR.dds"},
+            {"name": "scratchControlTexture", "resource_type": "EPT_TEXTURE", "value": "COMMON_BLANK.dds"},
+        ],
+    }
+    selection = {
+        "status": "ambiguous",
+        "ambiguous_candidates": [{"file": "a.fxo"}, {"file": "b.fxo"}],
+        "selected_fxo": None,
+    }
+    result = compile_material(
+        {"analysis": {"material": material}},
+        "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx",
+        {}, {}, {}, {}, None,
+        {
+            "bindings": [],
+            "selection_status": selection["status"],
+            "ambiguous_candidates": selection["ambiguous_candidates"],
+            "selected_fxo": selection["selected_fxo"],
+        },
+    )
+    assert result["paint_shader_gate"]["ready"] is False
+    assert any(x.startswith("paint-shader:shader-selection:") for x in result["blocking_reasons"])
+
+
+def test_static_draw_propagates_bmw_paint_shader_gate_blocker():
+    packet = {
+        "scene": {},
+        "node": {"name": "BODY"},
+        "mesh": {
+            "ref": "vehicles/BMW_M3_E36/body.meb",
+            "vertex_count": 1,
+            "triangle_count": 1,
+            "vertex_layout": {
+                "format": "SHIFT.VertexLayout/1",
+                "buffer_stride": 12,
+                "attributes": [],
+            },
+        },
+        "submeshes": [{
+            "first_index": 0,
+            "index_count": 3,
+            "material": {
+                "name": "BMW_M3_E36_PAINT",
+                "paint_contract": {"ready": True, "blocking_reasons": []},
+                "paint_shader_gate": {
+                    "ready": False,
+                    "blocking_reasons": ["shader-selection:not-unique"],
+                },
+            },
+        }],
+    }
+    report = build_static_draw_contract(packet)
+    assert report["ready"] is False
+    assert "shader-selection:not-unique" in report["blocking_reasons"]
