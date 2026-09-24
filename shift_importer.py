@@ -1873,6 +1873,7 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
         declaration_count_evidence_path=args.declaration_count_evidence,
         declaration_sentinel_evidence_path=args.declaration_sentinel_evidence,
         declaration_lifecycle_evidence_path=args.declaration_lifecycle_evidence,
+        meb_color_bridge_evidence_path=args.meb_color_bridge_evidence,
     )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -2367,6 +2368,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--declaration-count-evidence", help="optional SHIFT.D3D9DeclarationCountEvidence/1 JSON input")
     p.add_argument("--declaration-sentinel-evidence", help="optional SHIFT.D3D9DeclarationSentinelEvidence/1 JSON input")
     p.add_argument("--declaration-lifecycle-evidence", help="optional SHIFT.D3D9DeclarationLifecycleEvidence/1 JSON input")
+    p.add_argument("--meb-color-bridge-evidence", help="optional SHIFT.MEBD3D9ColorBridgeEvidence/1 JSON input")
     p.set_defaults(fn=cmd_d3d9_declaration_chain)
 
 
