@@ -57,6 +57,21 @@ def build_real_bmw_material_slice(
         paint_ref=norm_ref(TARGET_BMT[:-4]+'.mtx')
         if material_ref!=paint_ref:
             reasons.append('material-slice:primitive-not-bmw-paint')
+            return {
+                'format':FORMAT,
+                'source_format':'SHIFT.RealBMWMaterialSliceEvidence/1',
+                'status':'blocked',
+                'ready':False,
+                'blocking_reasons':list(dict.fromkeys(reasons)),
+                'primitive_index':primitive_index,
+                'material_ref':primitive.material,
+                'golden_identity':golden.get('golden') or {},
+                'asset_contract':asset_contract,
+                'material_binding':binding_report.get('material_binding'),
+                'paint_contract':binding_report.get('paint_contract'),
+                'paint_shader_gate':binding_report.get('paint_shader_gate'),
+                'boundary':{'runtime_instance_attribution':'not-proven','raw_binaries_committed':False},
+            }
         bmt_archive,bmt_entry=_find_exact(rows,TARGET_BMT,'material')
         bmt_bytes=bmt_archive.extract_entry(bmt_entry)
         parsed=parse_bmt_material(bmt_bytes)
