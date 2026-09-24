@@ -262,3 +262,41 @@ def test_select_runtime_shader_accepts_expected_external_texture_types():
         0: "texture2d",
         3: "cube_texture",
     }
+
+def test_select_runtime_shader_reads_nested_resource_descriptor_type():
+    material = _material()
+    material["material_binding"]["bindings"] = [
+        {
+            "binding": "external-or-specialised",
+            "sampler": "sShadowMap_f1_0",
+            "d3d9_sampler_register": 0,
+            "sampler_type": "sampler2D",
+        },
+        {
+            "binding": "external-or-specialised",
+            "sampler": "environmentMap",
+            "d3d9_sampler_register": 3,
+            "sampler_type": "samplerCube",
+        },
+    ]
+    frame = _frame({
+        "format": "SHIFT.ShaderPermutationIdentity/1",
+        "identity_sha256": "i" * 64,
+    })
+    frame["texture_bindings"] = [
+        {
+            "stage": 0,
+            "texture_ptr": "0x100",
+            "resource_descriptor": {"resource_type_name": "texture2d"},
+        },
+        {
+            "stage": 3,
+            "texture_ptr": "0x300",
+            "resource_descriptor": {"resource_type_name": "cube_texture"},
+        },
+    ]
+    report = select_runtime_shader(
+        material,
+        {"format": "SHIFT.D3D9RuntimeBindingEvidence/1", "frames": [frame]},
+    )
+    assert report["status"] == "match"
