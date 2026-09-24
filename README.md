@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 70** — COLOR evidence по всему BFF-корпусу. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 71** — command-level skinned reference. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -287,3 +287,8 @@ The neutral renderer contract now has a common submission shape for skinned draw
 ## Phase 70: COLOR evidence over the BFF corpus
 
 `color-evidence-bff-corpus` scans one BFF or a directory of BFF archives, decodes every `.meb` containing property 460/461 and aggregates the resulting evidence with archive/resource provenance. This is the canonical batch workflow for the unresolved COLOR ABI.
+
+
+## Phase 71: Skinned RenderCommand reference
+
+Desktop reference теперь умеет принимать готовый `SHIFT.RenderCommand/1` skinned draw и пройти всю локальную цепочку `SkinPose → SkinnedMeshReference → embedded VS → semantic linkage → PS → raster`. Это делает `RenderCommand/1` реальной точкой входа для cross-backend verification, а не только метаданными для GLES.

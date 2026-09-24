@@ -165,3 +165,8 @@ The COLOR ABI investigation now supports corpus-level aggregation of `SHIFT.Colo
 ## Phase 70: BFF corpus COLOR evidence
 
 The unresolved 460/461 investigation can now scan the actual BFF corpus directly. Every decoded MEB color stream contributes a provenance-tagged evidence report, while corpus aggregation measures candidate consistency and never selects an ABI automatically.
+
+
+## Phase 71: Skinned RenderCommand reference
+
+A dedicated `render_skinned_render_command_reference()` entry point now executes a ready skinned RenderCommand through the desktop shader reference. The same command-level payload carries SkinPose, skin attributes, textures and ShaderProgram/1 into the reference raster path. The next step is comparing this oracle with the generated GLES 3.1 draw setup and then resolving the remaining COLOR0/1 ABI evidence.

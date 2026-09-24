@@ -1064,6 +1064,85 @@ def build_static_draw_from_packet(packet: dict[str, Any]) -> dict[str, Any]:
 
 
 
+
+def render_skinned_render_command_reference(
+    command: dict[str, Any],
+    mesh: dict[str, Any],
+    output: str | Path,
+    *,
+    image: dict[str, Any],
+    width: int = 512,
+    height: int = 512,
+    mvp: list[list[float]] | None = None,
+    shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    texture_images: dict[int, dict[str, Any]] | None = None,
+    samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Render a skinned RenderCommand through the desktop VS→PS reference oracle."""
+    from render_command import validate_render_command
+
+    validation = validate_render_command(command)
+    if not validation["valid"]:
+        raise ValueError(
+            "render command is not valid: "
+            + ", ".join(validation["blocking_reasons"])
+        )
+    if command.get("draw_kind") != "skinned":
+        raise ValueError("render command is not a skinned draw")
+    if not command.get("ready"):
+        raise ValueError(
+            "render command is not ready: "
+            + ", ".join(command.get("blocking_reasons", []) or [])
+        )
+
+    skin = command.get("skinning") or {}
+    pose = skin.get("skin_pose") or {}
+    if pose.get("format") != "SHIFT.SkinPose/1":
+        raise ValueError("skinned RenderCommand has no valid SkinPose payload")
+
+    submeshes = command.get("submeshes", []) or []
+    if not submeshes:
+        raise ValueError("skinned RenderCommand has no submeshes")
+    shader = submeshes[0].get("shader") or {}
+    vertex_program = shader.get("vertex_program")
+    pixel_program = shader.get("pixel_program")
+    if vertex_program is None or pixel_program is None:
+        raise ValueError(
+            "skinned RenderCommand reference requires embedded vertex_program and pixel_program"
+        )
+
+    draw = {
+        "format": "SHIFT.SkinnedDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "skin_pose": pose,
+        "skinning": skin,
+        "submeshes": submeshes,
+    }
+    result = render_skinned_draw_reference(
+        draw,
+        mesh,
+        output,
+        image=image,
+        width=width,
+        height=height,
+        mvp=mvp,
+        shader_reference=True,
+        vertex_program=vertex_program,
+        pixel_program=pixel_program,
+        shader_constants=shader_constants,
+        texture_images=texture_images,
+        samplers_by_sampler=samplers_by_sampler,
+    )
+    result["format"] = "SHIFT.SkinnedRenderCommandReference/1"
+    result["render_command_contract"] = {
+        "format": command.get("format"),
+        "draw_kind": command.get("draw_kind"),
+        "ready": command.get("ready"),
+        "validation": validation,
+    }
+    return result
+
 def render_render_command(
     command: dict[str, Any],
     mesh: dict[str, Any],
