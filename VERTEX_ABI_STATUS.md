@@ -270,3 +270,11 @@ This closes the byte-provenance gap at the MEB resource boundary. The D3D9 Type 
 The color bridge now accepts real BFF-backed COLOR evidence and verifies that each report's property ID matches the preserved MEB descriptor, that descriptor/payload ranges are observed, that decoded stream bytes match the raw payload, and that payload hashes agree. Reports for 460 and 461 are tracked independently.
 
 This moves the MEB side from semantic-only metadata to exact resource-byte provenance, but the D3D9 Type mapping remains not-proven until the resource/payload is correlated to the exact runtime declaration record.
+
+## Phase 110: exact MEB descriptor triple mapping
+
+A source-backed bridge is now formalized between the MEB property descriptor and the binary mesh loader. `FUN_00859800` consumes 12-byte `[Type ordinal, Usage ordinal, Channel]` triples, resolves Type through `FUN_00853c20`, Usage through `FUN_00853c40`, and copies Channel into declaration `UsageIndex`. The same source identifies the routine as `LoadBinaryMeshFromResource` and recognizes `.meb` resources.
+
+With exact MEB descriptors preserved, the validator requires 460 = `[4,6,0]` and 461 = `[4,6,1]`. When both exact triples and all source-side prerequisites are present, `d3d9_type_mapping.status` and `meb_property_mapping.status` become `match`, resolving both MEB color properties to D3D9 Type code 4. This is no longer based on decimal-ID coincidence; it compares the actual descriptor words.
+
+Remaining runtime task: prove that the same resolved Type-4 records are the records used by the renderer for a concrete mesh instance, and recover the D3D9 Usage byte from the opaque usage table rather than assuming the internal ordinal 6 is the final Usage value.
