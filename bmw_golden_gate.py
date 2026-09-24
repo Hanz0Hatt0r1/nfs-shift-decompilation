@@ -99,6 +99,18 @@ def validate_bmw_golden_gate(
             reasons.append(f"shader-glsl:{index}:missing")
         if row["status"] == "unique" and not row["permutation_identity"]:
             reasons.append(f"shader-permutation-identity:{index}:missing")
+        paint_contract = material.get("paint_contract")
+        if isinstance(paint_contract, dict):
+            if paint_contract.get("ready") is not True:
+                reasons.extend(
+                    f"paint-contract:{index}:{reason}"
+                    for reason in (paint_contract.get("blocking_reasons") or ["not-ready"])
+                )
+        elif material.get("blocking_reasons"):
+            reasons.extend(
+                f"paint-contract:{index}:{reason}"
+                for reason in material.get("blocking_reasons") or []
+            )
 
     material_status = None
     if material_binding is not None:
