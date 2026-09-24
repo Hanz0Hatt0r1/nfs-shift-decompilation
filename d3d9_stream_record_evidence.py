@@ -1,16 +1,17 @@
 """Source-backed semantics of the 8-byte STREAM declaration records.
 
-FUN_008587e0 builds one record per XML STREAM entry and stores:
-  +0x00: stream ordinal / source slot
-  +0x02: running byte offset
-  +0x04: D3D9 primitive type code
-  +0x05: reserved/zero byte
-  +0x06: usage code
-  +0x07: channel/index
+FUN_008587e0 builds a compact vertex-element record whose byte layout is
+compatible with D3DVERTEXELEMENT9:
+  +0x00: Stream (WORD), explicitly initialized to 0
+  +0x02: Offset (WORD), the running byte offset
+  +0x04: Type (BYTE), resolved from the Type ordinal table
+  +0x05: Method (BYTE), explicitly initialized to 0
+  +0x06: Usage (BYTE), resolved from the Usage ordinal table
+  +0x07: UsageIndex (BYTE), read from the XML Channel attribute
 
 This module records those writes from the recovered Ghidra C without assigning
 MEB property ids to the records.
-"""
+""
 from __future__ import annotations
 
 from typing import Any
@@ -21,32 +22,32 @@ FUNCTION = "FUN_008587e0"
 RECORD_STRIDE = 8
 
 FIELDS = {
-    "stream_ordinal": {
+    "stream": {
         "offset": 0,
         "width": 2,
-        "basis": "*(undefined2 *)(record + 0) = 0 / uVar6",
+        "basis": "*(undefined2 *)(record + 0) = 0",
     },
-    "running_offset": {
+    "offset": {
         "offset": 2,
         "width": 2,
         "basis": "*(undefined2 *)(record + 2) = local_48",
     },
-    "type_code": {
+    "type": {
         "offset": 4,
         "width": 1,
         "basis": "FUN_00853c20(type_ordinal) -> *(char *)(record + 4)",
     },
-    "reserved": {
+    "method": {
         "offset": 5,
         "width": 1,
         "basis": "record + 5 is explicitly zeroed",
     },
-    "usage_code": {
+    "usage": {
         "offset": 6,
         "width": 1,
         "basis": "FUN_00853c40(usage_ordinal) -> *(char *)(record + 6)",
     },
-    "channel": {
+    "usage_index": {
         "offset": 7,
         "width": 1,
         "basis": "Channel attribute -> record + 7",
@@ -60,7 +61,7 @@ OBSERVATIONS = {
     "record_stride": 8,
     "type_field_offset": 4,
     "usage_field_offset": 6,
-    "channel_field_offset": 7,
+    "usage_index_field_offset": 7,
 }
 
 
@@ -97,6 +98,12 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
 
     markers = {
         "function_line": function_start,
+        "stream_field": _contains_all(
+            text,
+            (
+                "*(undefined2 *)(iVar7 + *(int *)(param_1 + 0x1c)) = 0;",
+            ),
+        ),
         "type_field": _contains_all(
             text,
             (
@@ -109,6 +116,12 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
             (
                 "uVar9 = FUN_00853c40(local_5c);",
                 "*(char *)(iVar7 + 6 + *(int *)(param_1 + 0x1c)) = (char)uVar9;",
+            ),
+        ),
+        "method_field": _contains_all(
+            text,
+            (
+                "*(undefined1 *)(iVar7 + 5 + *(int *)(param_1 + 0x1c)) = 0;",
             ),
         ),
         "channel_field": _contains_all(
@@ -215,6 +228,13 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
         },
         "fields": field_rows,
         "semantic_links": {
+            "d3dvertexelement9_shape": {
+                "status": "observed" if all(
+                    row["status"] == "observed"
+                    for row in field_rows
+                ) else "not-proven",
+                "detail": "the recovered record contains the six D3DVERTEXELEMENT9-shaped fields Stream/Offset/Type/Method/Usage/UsageIndex in the documented 8-byte order",
+            },
             "xml_type_to_record_type_code": {
                 "status": "observed"
                 if markers["type_field"]
@@ -227,7 +247,7 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
                 else "not-proven",
                 "detail": "XML Usage is searched through the fixed usage-name table and the matched ordinal is passed to FUN_00853c40 before being stored at record + 6",
             },
-            "xml_channel_to_record_channel": {
+            "xml_channel_to_record_usage_index": {
                 "status": "observed"
                 if markers["channel_field"]
                 else "not-proven",
