@@ -218,7 +218,8 @@ CI запускает полный Python suite и отдельную native reg
 - **Phase 61** — skinned draw проходит через desktop reference rasterizer после explicit SkinPose.
 - **Phase 62** — transformed skinned mesh проходит через embedded VS→PS reference path.
 - **Phase 63** — SkinnedDraw нормализуется в общий RenderCommand/1 ABI.
-- **Phase 64+** — связать RenderCommand с GLES 3.1 skin palette upload и реальным material permutation.
+- **Phase 64** — RenderCommand напрямую подаёт SkinPose/palette в GLES 3.1 ABI.
+- **Phase 65+** — связать этот путь с реальным material permutation и shader-driven skin render.
 - Доказать `COLOR0/1` type + channel order.
 - Расширить real BMW shader coverage: remaining varyings, opcodes и control flow.
 - Довести material/light/blend semantics до воспроизводимого golden render.
@@ -258,3 +259,8 @@ CI запускает полный Python suite и отдельную native reg
 
 
 The neutral renderer contract now has a common submission shape for skinned draws. `build_skinned_render_command()` carries explicit SkinPose and bind-palette data alongside the existing vertex/material/resource validation. This is the handoff point for the future GLES skinning backend.
+
+
+## Phase 64: RenderCommand → GLES skinning ABI
+
+`skinning_glsl.py` now exposes a direct `SHIFT.RenderCommand/1` → `SHIFT.GLES31Skinning/1` adapter. The Android-facing layer can consume the same SkinPose, bone count and vertex locations that were validated by the neutral render command, without depending on the importer or the original SkinnedDraw builder.
