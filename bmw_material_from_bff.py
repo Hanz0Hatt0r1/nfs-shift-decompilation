@@ -120,6 +120,15 @@ def build_real_bmw_material_binding(
         shader_gate=validate_bmw_paint_shader_gate(binding)
         reasons=list(contract.get('blocking_reasons') or [])+list(shader_gate.get('blocking_reasons') or [])
         ready=bool(binding.get('selection_status')=='unique' and contract.get('ready') and shader_gate.get('ready') and not reasons)
+        provenance={
+            'primary_bff':{'path':str(primary),'sha256':_archive_sha256(primary),'size':primary.stat().st_size},
+            'supplemental_bffs':[{'path':str(p),'sha256':_archive_sha256(p),'size':p.stat().st_size} for p in paths[1:]],
+            'material_entry':{'archive':bff.path.name,'path':bmt_entry.path,'index':bmt_entry.index,'sha256':_sha256(bmt_bytes),'size':len(bmt_bytes)},
+            'mesh_entry':{'archive':meb_archive.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},
+            'shader_source':shader_source,
+            'fxo_candidate_count':len(fxo_candidates),
+            'dds_path_count':len(dds_paths),
+        }
         if shader_source_entry is not None:
             provenance['shader_source_entry']=shader_source_entry
         return {
