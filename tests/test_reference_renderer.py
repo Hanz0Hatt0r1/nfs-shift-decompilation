@@ -2128,7 +2128,10 @@ def test_reference_renderer_passes_explicit_texcoord5_through_vertex_shader(tmp_
     assert result["vertex_shader_executed"] is True
     body = out.read_bytes().split(b"\n", 3)[3]
     pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
-    assert (20, 100, 40) in pixels
+    assert (20, 100, 40) in pixels, {
+        "unique_colors": sorted(set(pixels)),
+        "result": result,
+    }
 
 
 def test_reference_renderer_vertex_output_register_types_do_not_collide(tmp_path):
