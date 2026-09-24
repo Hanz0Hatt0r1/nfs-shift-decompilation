@@ -37,8 +37,8 @@ def _line_number(source: str, needle: str) -> int | None:
     return source.count("\n", 0, offset) + 1
 
 
-def _switch_region(source: str) -> tuple[str, int] | None:
-    """Return the target Usage switch and its absolute source offset."""
+def _switch_region(source: str) -> tuple[str, int, int] | None:
+    """Return the target Usage switch, its absolute offset and function start."""
     function_start = source.find("uint __fastcall FUN_008587e0")
     if function_start < 0:
         return None
@@ -48,7 +48,7 @@ def _switch_region(source: str) -> tuple[str, int] | None:
     switch_end = source.find("\n              while (pvVar10 !=", switch_start)
     if switch_end < 0:
         switch_end = len(source)
-    return source[switch_start:switch_end], switch_start
+    return source[switch_start:switch_end], switch_start, function_start
 
 
 def _case_block(switch_text: str, case: int) -> tuple[str, int] | None:
@@ -71,23 +71,24 @@ def analyze_d3d9_usage_semantics(source: str | bytes) -> dict[str, Any]:
     region = _switch_region(text)
     switch_text = region[0] if region else ""
     switch_offset = region[1] if region else -1
+    function_offset = region[2] if region else -1
     switch_line = (
         _line_number(text, "switch(local_5c)", switch_offset)
         if switch_offset >= 0
         else None
     )
     usage_loop_line = (
-        _line_number(text, "} while (local_5c < 9);", switch_offset)
-        if switch_offset >= 0
+        _line_number(text, "} while (local_5c < 9);", function_offset)
+        if function_offset >= 0
         else None
     )
     pointer_array_line = (
         _line_number(
             text,
             "pbVar17 = (&PTR_s_Position_00b901a8)[local_5c];",
-            switch_offset,
+            function_offset,
         )
-        if switch_offset >= 0
+        if function_offset >= 0
         else None
     )
 
