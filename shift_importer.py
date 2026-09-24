@@ -2793,6 +2793,38 @@ def cmd_d3d9_api_bind_evidence(args: argparse.Namespace) -> int:
     from d3d9_api_bind_evidence import analyze_d3d9_api_bind_file
     return _write_evidence_report(analyze_d3d9_api_bind_file(args.input), args.output)
 
+def cmd_bmw_runtime_capture_pipeline(args: argparse.Namespace) -> int:
+    """Run the complete BMW capture -> runtime evidence -> shader -> render contract pipeline."""
+    from bmw_runtime_capture_pipeline import build_pipeline
+
+    report = build_pipeline(
+        args.primary_bff,
+        args.render_bff,
+        args.capture_jsonl,
+        cockpit_bff=args.cockpit_bff,
+        meb_evidence=args.meb_evidence,
+        usage_map=args.usage_map,
+        require_same_instance=args.require_same_instance,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "material_ready": report["material_binding"].get("ready"),
+        "runtime_status": report["runtime_evidence"].get("status"),
+        "shader_selection_status": report["shader_selection"].get("status"),
+        "reference_render_ready": report["runtime_render_contract"].get("reference_render_ready"),
+        "texture_snapshot_count": report["texture_snapshots"]["converted_snapshot_count"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
 
 def cmd_render_bff_evidence(args: argparse.Namespace) -> int:
     """Build evidence for BMW M3 BMT/MEB plus the split RENDER.bff shader corpus."""
@@ -3366,6 +3398,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="primary BMW_M3_E36.bff")
     p.add_argument("output", help="SHIFT.BMWBFFIntakeEvidence/1 JSON")
     p.set_defaults(fn=cmd_bmw_bff_intake)
+
+    p = sp.add_parser("bmw-runtime-capture-pipeline", help="run BMW capture -> runtime evidence -> exact shader -> RenderContract pipeline")
+    p.add_argument("primary_bff", help="primary BMW_M3_E36.bff")
+    p.add_argument("render_bff", help="RENDER.bff")
+    p.add_argument("capture_jsonl", help="D3D9 producer JSONL capture")
+    p.add_argument("output", help="SHIFT.BMWRuntimeCapturePipeline/1 JSON")
+    p.add_argument("--cockpit-bff")
+    p.add_argument("--meb-evidence", default="evidence/bmw_m3_e36_kit00_body_loda.meb.json")
+    p.add_argument("--usage-map")
+    p.add_argument("--require-same-instance", action="store_true")
+    p.set_defaults(fn=cmd_bmw_runtime_capture_pipeline)
 
     p = sp.add_parser("render-bff-evidence", help="build real BMW M3 BMT/MEB plus split RENDER.bff shader evidence")
     p.add_argument("primary", help="primary BMW_M3_E36.bff")
