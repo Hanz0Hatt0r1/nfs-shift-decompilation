@@ -56,6 +56,8 @@ def render_material_slice(
 def render_files(slice_path: str | Path, mesh_path: str | Path, output: str | Path, *, width: int = 512, height: int = 512, shader_reference: bool = False, texture_path: str | Path | None = None) -> dict[str, Any]:
     material_slice = json.loads(Path(slice_path).read_text(encoding='utf-8'))
     mesh = json.loads(Path(mesh_path).read_text(encoding='utf-8'))
+    if mesh.get('format') == 'SHIFT.BMWMaterialSlice/1' and isinstance(mesh.get('mesh'), dict):
+        mesh = mesh['mesh']
     texture = json.loads(Path(texture_path).read_text(encoding='utf-8')) if texture_path else None
     return render_material_slice(material_slice, mesh, output, width=width, height=height, shader_reference=shader_reference, texture_image=texture)
 
