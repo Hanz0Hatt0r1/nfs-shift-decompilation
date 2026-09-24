@@ -51,12 +51,20 @@ def _find_shader_source(rows: list[tuple[BFF, Any]], shader_ref: str) -> tuple[B
         raise ValueError(f'shader-source: expected one {shader_ref!r}, found {len(hits)} exact/basename matches')
     return hits[0]
 
-def build_real_bmw_material_binding(bff_path: str | Path, *, supplemental_bffs: Iterable[str | Path] = ()) -> dict[str, Any]:
+def build_real_bmw_material_binding(
+    bff_path: str | Path,
+    *,
+    supplemental_bffs: Iterable[str | Path] = (),
+    shader_source_file: str | Path | None = None,
+) -> dict[str, Any]:
     primary=Path(bff_path)
     paths=[primary, *[Path(x) for x in supplemental_bffs]]
     if any(not p.is_file() for p in paths):
         missing=[str(p) for p in paths if not p.is_file()]
         raise FileNotFoundError(', '.join(missing))
+    external_shader = Path(shader_source_file) if shader_source_file is not None else None
+    if external_shader is not None and not external_shader.is_file():
+        raise FileNotFoundError(str(external_shader))
     archive_objects: list[BFF]=[]
     try:
         archive_objects=[BFF(p) for p in paths]
@@ -70,8 +78,40 @@ def build_real_bmw_material_binding(bff_path: str | Path, *, supplemental_bffs: 
         mesh=read_meb(meb_bytes)
         shader_ref=str(material.get('shader') or '')
         if not shader_ref: raise ValueError('material:shader-reference-missing')
-        fx_archive,fx_entry=_find_shader_source(rows,shader_ref)
-        fx_bytes=fx_archive.extract_entry(fx_entry)
+        if external_shader is not None:
+            expected_shader_name=_norm(shader_ref).rsplit('/',1)[-1]
+            observed_shader_name=_norm(external_shader.name)
+            if observed_shader_name != expected_shader_name:
+                raise ValueError(
+                    f'shader-source: external basename {external_shader.name!r} '
+                    f'does not match material reference {shader_ref!r}'
+                )
+            fx_bytes=external_shader.read_bytes()
+            shader_source={
+                'kind':'external-file',
+                'path':str(external_shader),
+                'sha256':_sha256(fx_bytes),
+                'size':len(fx_bytes),
+            }
+            shader_source_entry=None
+        else:
+            fx_archive,fx_entry=_find_shader_source(rows,shader_ref)
+            fx_bytes=fx_archive.extract_entry(fx_entry)
+            shader_source={
+                'kind':'bff-entry',
+                'archive':fx_archive.path.name,
+                'path':fx_entry.path,
+                'index':fx_entry.index,
+                'sha256':_sha256(fx_bytes),
+                'size':len(fx_bytes),
+            }
+            shader_source_entry={
+                'archive':fx_archive.path.name,
+                'path':fx_entry.path,
+                'index':fx_entry.index,
+                'sha256':_sha256(fx_bytes),
+                'size':len(fx_bytes),
+            }
         fxo_rows=[(a,e) for a,e in rows if _norm(e.path).endswith('.fxo')]
         fxo_candidates=[(f'{a.path.name}::{e.path}',a.extract_entry(e)) for a,e in fxo_rows]
         dds_paths=sorted({_norm(e.path) for _,e in rows if _norm(e.path).endswith('.dds')})
@@ -80,6 +120,17 @@ def build_real_bmw_material_binding(bff_path: str | Path, *, supplemental_bffs: 
         shader_gate=validate_bmw_paint_shader_gate(binding)
         reasons=list(contract.get('blocking_reasons') or [])+list(shader_gate.get('blocking_reasons') or [])
         ready=bool(binding.get('selection_status')=='unique' and contract.get('ready') and shader_gate.get('ready') and not reasons)
+        provenance={
+            'primary_bff':{'path':str(primary),'sha256':_archive_sha256(primary),'size':primary.stat().st_size},
+            'supplemental_bffs':[{'path':str(p),'sha256':_archive_sha256(p),'size':p.stat().st_size} for p in paths[1:]],
+            'material_entry':{'archive':bff.path.name,'path':bmt_entry.path,'index':bmt_entry.index,'sha256':_sha256(bmt_bytes),'size':len(bmt_bytes)},
+            'mesh_entry':{'archive':meb_archive.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},
+            'shader_source':shader_source,
+            'fxo_candidate_count':len(fxo_candidates),
+            'dds_path_count':len(dds_paths),
+        }
+        if shader_source_entry is not None:
+            provenance['shader_source_entry']=shader_source_entry
         return {
             'format':FORMAT,
             'status':'ready' if ready else 'blocked',
@@ -88,15 +139,7 @@ def build_real_bmw_material_binding(bff_path: str | Path, *, supplemental_bffs: 
             'material_binding':binding,
             'paint_contract':contract,
             'paint_shader_gate':shader_gate,
-            'provenance':{
-                'primary_bff':{'path':str(primary),'sha256':_archive_sha256(primary),'size':primary.stat().st_size},
-                'supplemental_bffs':[{'path':str(p),'sha256':_archive_sha256(p),'size':p.stat().st_size} for p in paths[1:]],
-                'material_entry':{'archive':bff.path.name,'path':bmt_entry.path,'index':bmt_entry.index,'sha256':_sha256(bmt_bytes),'size':len(bmt_bytes)},
-                'mesh_entry':{'archive':meb_archive.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},
-                'shader_source_entry':{'archive':fx_archive.path.name,'path':fx_entry.path,'index':fx_entry.index,'sha256':_sha256(fx_bytes),'size':len(fx_bytes)},
-                'fxo_candidate_count':len(fxo_candidates),
-                'dds_path_count':len(dds_paths),
-            },
+            'provenance':provenance,
             'boundary':{'runtime_instance_attribution':'not-proven','capture_authenticity':'not-applicable','raw_binaries_committed':False},
         }
     finally:
