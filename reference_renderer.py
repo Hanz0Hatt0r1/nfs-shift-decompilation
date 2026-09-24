@@ -17,7 +17,7 @@ from typing import Any, Iterable
 from render_command import validate_render_command
 from static_draw import build_static_draw_contract
 from texture_reference import sample_texture_2d
-from shader_reference import ReferenceShaderState, material_constants_from_uniform_binding, shader_program_from_ir, validate_pixel_program_inputs
+from shader_reference import ReferenceShaderState, material_constants_from_payload, material_constants_from_uniform_binding, shader_program_from_ir, validate_pixel_program_inputs
 
 
 RGBA = tuple[int, int, int, int]
@@ -413,6 +413,16 @@ def render_textured_render_command(
             raise ValueError("RenderCommand has no embedded pixel_program for shader reference")
         if shader_constants is None:
             for submesh in command.get("submeshes", []) or []:
+                payload = submesh.get("constant_payload")
+                if payload is not None:
+                    constant_result = material_constants_from_payload(payload)
+                    if constant_result["status"] == "unsupported":
+                        raise ValueError(
+                            "material constant payload unsupported: "
+                            + ", ".join(constant_result["blocking_reasons"])
+                        )
+                    shader_constants = constant_result["banks"]
+                    break
                 uniforms = submesh.get("uniforms") or {}
                 if uniforms.get("bindings"):
                     constant_result = material_constants_from_uniform_binding(uniforms)

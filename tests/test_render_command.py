@@ -508,3 +508,69 @@ def test_render_command_rejects_bad_shader_program_ir_schema():
     result = build_render_command(draw, _resources())
     assert result["ready"] is False
     assert "shader-ir:pixel_program:invalid-schema" in result["blocking_reasons"]
+
+
+def test_render_command_carries_material_constant_payload():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "tint",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 3,
+            "register_count": 1,
+            "ctab_type": "float4",
+            "value": [0.25, 0.5, 0.75, 1.0],
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_render_command(build_static_draw_contract(packet), _resources())
+    payload = result["submeshes"][0]["constant_payload"]
+    assert result["ready"] is True
+    assert payload["ready"] is True
+    assert payload["registers"][0]["register_index"] == 3
+    assert payload["registers"][0]["byte_offset"] == 48
+    assert payload["registers"][0]["values"] == [0.25, 0.5, 0.75, 1.0]
+
+
+def test_render_command_blocks_matrix_constant_payload():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "world",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 4,
+            "register_count": 4,
+            "ctab_type": "float4x4",
+            "value": list(range(16)),
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_render_command(build_static_draw_contract(packet), _resources())
+    assert result["ready"] is False
+    assert "uniform-payload:unsupported-ctab-type:world:float4x4" in result["blocking_reasons"]
+
+
+def test_render_command_validation_rejects_constant_payload_shape():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "tint",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 3,
+            "register_count": 1,
+            "ctab_type": "float4",
+            "value": [1.0, 2.0, 3.0, 4.0],
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_render_command(build_static_draw_contract(packet), _resources())
+    result["submeshes"][0]["constant_payload"]["registers"][0]["values"] = [1.0, 2.0]
+    validation = validate_render_command(result)
+    assert validation["valid"] is False
+    assert "uniform-payload:register-width-invalid:3" in validation["blocking_reasons"]

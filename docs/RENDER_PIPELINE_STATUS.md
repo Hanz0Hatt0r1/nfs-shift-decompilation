@@ -68,3 +68,14 @@ The project now has a deterministic software execution oracle for a bounded set 
 ## Phase 47: shader IR carried into RenderCommand
 
 `SHIFT.RenderCommand/1` now preserves the already-recovered `SHIFT.ShaderProgram/1` IR for both vertex and pixel stages when available, alongside the generated GLSL and linkage metadata. Backend implementations can therefore execute or inspect the same instruction IR without reparsing GLSL text.
+
+
+## Phase 48-51: shader-backed reference progression
+
+The desktop reference path now executes embedded pixel `SHIFT.ShaderProgram/1` IR for a bounded opcode subset, accepts multiple D3D9 sampler registers through explicit reference images, and maps `TEXCOORD0..4` by semantic index onto MEB UV properties `130..134`. This closes the texture/sampler/UV gaps without assuming file order or sampler 0.
+
+## Phase 52: material constant payload
+
+`RenderCommand/1` now carries `SHIFT.MaterialConstantPayload/1` whenever a material has reflected numeric constants. The payload preserves 16-byte c-register slots and upload offsets in one deterministic contract; the shader-reference path reads the same serialized slots rather than rebuilding material values from higher-level metadata.
+
+The project still does not claim a complete real BMW material render. Remaining blockers include exact COLOR0/COLOR1 declaration and byte order, renderer-global external samplers (notably environment/shadow), unsupported D3D9 relative addressing/control flow and the complete lighting/blend model.

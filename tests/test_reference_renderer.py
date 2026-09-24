@@ -989,3 +989,65 @@ def test_reference_renderer_rejects_missing_semantic_uv_layer(tmp_path):
         assert "requires TEXCOORD1 but mesh has no matching UV layer" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_reference_renderer_uses_render_command_constant_payload(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    program = _textured_tex_shader_program()
+    program["temps"] = [0]
+    program["constants"] = [0]
+    program["instructions"][0]["operands"][0]["reg_type"] = 0
+    program["instructions"][0]["operands"][0]["index"] = 0
+    program["instructions"].append({
+        "offset": 16,
+        "opcode": 5,
+        "name": "MUL",
+        "token": 0,
+        "length": 4,
+        "controls": 0,
+        "predicated": False,
+        "operands": [
+            {"token": 0x80000000, "kind": "dest", "reg_type": 8, "index": 0, "write_mask": "xyzw"},
+            {"token": 0x80000000, "kind": "source", "reg_type": 0, "index": 0, "swizzle": "xyzw", "source_modifier": 0},
+            {"token": 0x80000000, "kind": "source", "reg_type": 2, "index": 0, "swizzle": "xyzw", "source_modifier": 0},
+        ],
+        "predicate": None,
+    })
+    command["submeshes"][0]["shader"]["pixel_program"] = program
+    command["submeshes"][0]["constant_payload"] = {
+        "format": "SHIFT.MaterialConstantPayload/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "register_count": 1,
+        "registers": [{
+            "register_index": 0,
+            "values": [0.5, 0.25, 1.0, 1.0],
+            "byte_offset": 0,
+            "byte_size": 16,
+        }],
+    }
+    mesh = {**_triangle(), "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]}}
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((200, 100, 50, 255)),
+    }
+    out = tmp_path / "payload-tint.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        width=24,
+        height=24,
+        mvp=[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert (100, 25, 50) in pixels
