@@ -35,3 +35,30 @@ def test_present_capture_hook_is_opt_in_and_frame_cadenced(tmp_path):
     assert 'SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR' in source
     assert 'present_screenshot' in source
     assert 'write_backbuffer_ppm' in source
+
+
+def test_runtime_trace_accepts_present_screenshot_events():
+    from d3d9_runtime_trace import build_runtime_binding_evidence
+
+    report = build_runtime_binding_evidence([
+        {
+            "event": "present_screenshot",
+            "frame": 12,
+            "event_index": 0,
+            "path": "capture/shift_d3d9_frame_12.ppm",
+        },
+        {
+            "event": "present_screenshot_failed",
+            "frame": 13,
+            "event_index": 1,
+            "reason": "get-render-target-data-failed",
+        },
+    ])
+    assert report["trace"]["frame_count"] == 2
+    assert report["frames"][0]["screenshot_events"] == [{
+        "event": "present_screenshot",
+        "path": "capture/shift_d3d9_frame_12.ppm",
+        "reason": None,
+        "line": None,
+    }]
+    assert report["frames"][1]["screenshot_events"][0]["event"] == "present_screenshot_failed"
