@@ -1999,3 +1999,126 @@ def test_reference_renderer_rejects_shader_skinned_draw_without_image(tmp_path):
             vertex_program=_skinned_vertex_passthrough_program(),
             pixel_program=_textured_tex_shader_program(),
         )
+
+
+def _uv5_texture_shader_program():
+    program = _textured_tex_shader_program()
+    program["inputs"] = [
+        {"usage": "TEXCOORD", "index": 5, "register": "v0"},
+    ]
+    program["instructions"][0]["operands"][1]["reg_type"] = 1
+    program["instructions"][0]["operands"][1]["index"] = 0
+    return program
+
+
+def test_reference_renderer_executes_explicit_texcoord5_stream(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _uv5_texture_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0)] * 3},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 2,
+        "height": 1,
+        "pixels": bytes((220, 30, 40, 255, 30, 220, 40, 255)),
+    }
+    out = tmp_path / "texcoord5.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        semantic_rows={
+            ("TEXCOORD", 5): [(1.0, 0.0, 0.0)] * 3,
+        },
+        width=24,
+        height=24,
+    )
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (30, 220, 40) in pixels
+
+
+def test_reference_renderer_rejects_texcoord5_without_explicit_stream(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _uv5_texture_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0)] * 3},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command,
+            mesh,
+            image,
+            tmp_path / "texcoord5-missing.ppm",
+            shader_reference=True,
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "requires TEXCOORD5 but mesh has no matching UV layer" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
+
+
+def test_reference_renderer_passes_explicit_texcoord5_through_vertex_shader(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    vertex = _vertex_passthrough_program()
+    vertex["inputs"] = [
+        {"usage": "POSITION", "index": 0, "register": "v0"},
+        {"usage": "TEXCOORD", "index": 5, "register": "v1"},
+    ]
+    vertex["outputs"] = [
+        {"usage": "POSITION", "index": 0, "register": "oR0"},
+        {"usage": "TEXCOORD", "index": 5, "register": "oT6"},
+    ]
+    command["submeshes"][0]["shader"]["vertex_program"] = vertex
+    command["submeshes"][0]["shader"]["pixel_program"] = _uv5_texture_shader_program()
+
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0)] * 3},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 2,
+        "height": 1,
+        "pixels": bytes((100, 40, 20, 255, 20, 100, 40, 255)),
+    }
+    out = tmp_path / "texcoord5-vs.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        semantic_rows={
+            ("TEXCOORD", 5): [(1.0, 0.0, 0.0)] * 3,
+        },
+        width=24,
+        height=24,
+    )
+    assert result["vertex_shader_executed"] is True
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (20, 100, 40) in pixels
