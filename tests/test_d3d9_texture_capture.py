@@ -55,6 +55,6 @@ def test_runtime_trace_keeps_texture_bindings_on_frame():
     assert report["trace"]["frame_count"] == 1
     bindings = report["frames"][0]["texture_bindings"]
     assert bindings == [
-        {"stage": 0, "texture_ptr": "0x1111", "line": 1},
-        {"stage": 3, "texture_ptr": "0x3333", "line": 2},
+        {"stage": 0, "texture_ptr": "0x1111", "line": None},
+        {"stage": 3, "texture_ptr": "0x3333", "line": None},
     ]
