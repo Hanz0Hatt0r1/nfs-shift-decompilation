@@ -72,6 +72,13 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     if isinstance(command, dict):
         constant_parity = validate_render_command_constant_parity(command)
         reasons.extend(constant_parity.get('blocking_reasons') or [])
+        has_constant_bindings = any(
+            bool((submesh.get('uniforms') or {}).get('bindings'))
+            for submesh in command.get('submeshes', []) or []
+            if isinstance(submesh, dict)
+        )
+        if has_constant_bindings and constant_parity.get('ready') is not True:
+            reasons.append('render-command:constant-parity-not-ready')
         command_status = 'ready' if command.get('ready') is True else 'blocked'
         if command.get('ready') is not True:
             reasons.extend(command.get('blocking_reasons') or ['render-command:not-ready'])
