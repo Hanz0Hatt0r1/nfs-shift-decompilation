@@ -158,7 +158,8 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
     python shift_importer.py color-evidence 460 meb.json color-evidence.json --mesh-json
     python shift_importer.py color-evidence-resource VEHICLES.bff cars/bmw_m3_e36/body.meb 460 body-color-evidence.json
     python shift_importer.py color-evidence-corpus evidence/ color-corpus.json
-    python shift_importer.py color-evidence-bff-corpus /path/to/bffs color-bff-corpus.json\n    python bmw_golden_gate.py evidence/bmw_m3_e36_kit00_body_loda.golden.json draw_packets.json
+    python shift_importer.py color-evidence-bff-corpus /path/to/bffs color-bff-corpus.json
+    python bmw_golden_gate.py evidence/bmw_m3_e36_kit00_body_loda.golden.json draw_packets.json
     python tools/analyze_meb_evidence_bundle.py shift_meb_evidence.zip -o meb_corpus.json
 
 ### D3D9 runtime evidence
