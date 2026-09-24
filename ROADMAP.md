@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 142. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 143. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -595,3 +595,10 @@ Next: feed an actual M3 `MaterialBinding/1` generated from the archive analysis 
 The BMW M3 paint path now consumes the existing `MaterialBinding/1.specialization.requested` evidence emitted by `material_linker`, avoiding a lossy dict→keys conversion. This keeps BMT feature evidence, paint contract and shader gate on the same provenance chain.
 
 Next: produce an actual M3 material-binding artifact from the archived BFF analysis when binary extraction is available; no synthetic permutation will be promoted.
+
+
+## Phase 143: source-backed BMW vehicle identity
+
+`SHIFT.SourceVehicleIdentityEvidence/1` and `source_vehicle_identity.py` now pin the uploaded `SHIFT.exe.c` source to `FUN_004c32d0 case 2 -> bmw_m3_e36`, with exact source SHA and selector line. This gives the BMW namespace a source-level anchor that can later be correlated with VHF/MEB/runtime captures without claiming execution from static source alone.
+
+Next: correlate this source vehicle identity with concrete VHF/BFF node records when extracted material data is available, then use the same resource identity in the runtime capture gate.
