@@ -117,6 +117,8 @@ class MEBMesh:
     vertex_index_hints: list[int]
     indices: list[int]
     primitives: list[MEBPrimitive]
+    # Preserve the exact on-disk 12-byte property descriptors for binary provenance.
+    property_descriptors: list[dict[str, Any]] = field(default_factory=list)
     # Physical MEB property payloads are contiguous arrays, not one interleaved stream.
     # Keep exact payload offsets so the Android importer can repack them deterministically.
     property_layouts: list[dict[str, Any]] = field(default_factory=list)
@@ -188,12 +190,21 @@ def read_meb(data: bytes) -> MEBMesh:
     bone_indices: list[tuple[int, int, int, int]] = []
     vertex_index_hints: list[int] = []
     property_layouts: list[dict[str, Any]] = []
+    property_descriptors: list[dict[str, Any]] = []
 
     # Vertex property descriptors and their payloads are interleaved.
     for _ in range(num_vert_props):
-        a = r.u32(); b = r.u32(); c = r.u32()
+        descriptor_offset = r.pos
+        descriptor_bytes = r.read(12)
+        a, b, c = struct.unpack("<III", descriptor_bytes)
         prop = f"{a}{b}{c}"
         props.append(prop)
+        property_descriptors.append({
+            "id": prop,
+            "offset": descriptor_offset,
+            "words": [a, b, c],
+            "raw_hex": descriptor_bytes.hex(),
+        })
         payload_offset = r.pos
         stride = PROP_STRIDES.get(prop)
         if stride is None:
@@ -283,6 +294,7 @@ def read_meb(data: bytes) -> MEBMesh:
         indices=indices,
         primitives=primitives,
         property_layouts=property_layouts,
+        property_descriptors=property_descriptors,
         skeleton=skeleton,
     )
 
@@ -301,6 +313,7 @@ def mesh_summary(mesh: MEBMesh) -> dict[str, Any]:
         "triangle_count": mesh.triangle_count,
         "vertex_properties": [{"id": p, "name": PROP_NAMES.get(p, "unknown"), "stride": PROP_STRIDES.get(p)} for p in mesh.vertex_properties],
         "property_layouts": mesh.property_layouts,
+        "property_descriptors": mesh.property_descriptors,
         "normal_count": len(mesh.normals),
         "tangent_count": len(mesh.tangents),
         "tangent2_count": len(mesh.tangents2),

@@ -572,3 +572,9 @@ This is an evidence gate, not a Type selection gate: `meb_property_mapping`
 must still be `not-proven`. A malformed or explicitly mismatched bridge blocks
 the chain, while a coherent ambiguous bridge is recorded as an observed
 constraint without changing the unresolved mapping.
+
+## Phase 107: raw MEB property-descriptor provenance
+
+The MEB reader now preserves each vertex-property descriptor as an exact on-disk 12-byte record: descriptor byte offset, the three little-endian DWORD words used by the current parser to construct the property id, and the raw hexadecimal bytes. The same data is exposed by mesh_summary().
+
+For COLOR0/COLOR1 this records the binary origin of properties 460/461 instead of retaining only their semantic names. It is a prerequisite for correlating one actual .meb payload with a runtime declaration instance. It does not resolve D3D9 Type 4 versus Type 8, so the MEB property mapping remains not-proven.
