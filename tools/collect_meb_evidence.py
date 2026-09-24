@@ -48,7 +48,7 @@ except ImportError as exc:
 
 
 FORMAT = "SHIFT.MEBEvidenceBundle/1"
-COLLECTOR_VERSION = "115.0"
+COLLECTOR_VERSION = "115.1"
 COLOR_PROPERTIES = ("460", "461")
 
 
