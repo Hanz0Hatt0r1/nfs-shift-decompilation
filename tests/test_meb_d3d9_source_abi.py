@@ -9,11 +9,6 @@ from meb_format import read_meb
 
 
 SOURCE = r'''
-def read_meb(data: bytes):
-    for _ in range(num_vert_props):
-        a = r.u32(); b = r.u32(); c = r.u32()
-        prop = f"{a}{b}{c}"
-
 uint __fastcall FUN_008310c0(float *param_1)
 {
   local_10 = (uint)(longlong)ROUND(param_1[3] * 255.0);
@@ -64,11 +59,13 @@ def test_property_triplet_matches_three_digit_msb_encoding():
 
 def test_source_correlates_color_properties_to_d3d9_d3dcolor():
     result = analyze_meb_d3d9_source_abi(SOURCE, ("460", "461", "580"))
-    assert result["global_evidence"]["meb_three_u32_descriptor"] is True
+    assert result["global_evidence"]["meb_three_u32_descriptor"]["status"] == "repository-derived"
     assert result["global_evidence"]["binary_descriptor_type_usage_channel"] is True
+    assert result["global_evidence"]["declaration_type_4_packed_color"] is True
     assert result["global_evidence"]["declaration_usage_6_colour_channel"] is True
     assert result["global_evidence"]["packed_color_type_4"] is True
     assert result["global_evidence"]["xml_usage_6_colour"] is True
+    assert result["global_evidence"]["packed_color_type_4"] is True
 
     by_id = {row["property_id"]: row for row in result["properties"]}
     assert by_id["460"]["descriptor_triplet"] == [4, 6, 0]
