@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 119. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 120. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -427,3 +427,10 @@ The next implementation target is the first real end-to-end BMW material packet:
 `DrawPacket/1` and `RenderBinding/1` now preserve the decoded MEB content SHA-256 when present. The BMW golden gate requires this identity rather than accepting path-only matches. This keeps the selected real M3 MEB stable through the render pipeline.
 
 Next: construct the first real BMW material slice end-to-end and turn its linked shader/RenderCommand output into a deterministic golden image.
+
+
+## Phase 120: exact BMW render slice
+
+`SHIFT.BMWRenderSlice/1` selects the golden M3 packet from `RenderBinding/1` using both normalized resource path and exact MEB SHA-256. The selected packet keeps its matching `StaticDraw/1` and `RenderCommand/1` entries by packet index. Path-only or SHA-only matches remain blockers.
+
+Next: execute this exact real-material slice through BMT -> FX -> FXO, shader translation and RenderCommand, then record the first desktop golden image hash.

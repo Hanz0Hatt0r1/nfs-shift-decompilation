@@ -2158,6 +2158,27 @@ def cmd_validate_d3d9_runtime_layout(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bmw_render_slice(args: argparse.Namespace) -> int:
+    """Extract one exact BMW M3 packet from a RenderBinding report."""
+    from bmw_render_slice import validate_files
+
+    report = validate_files(args.golden, args.render_binding)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "packet_index": report["packet_index"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_golden_gate(args: argparse.Namespace) -> int:
     """Validate the BMW M3 golden asset against a DrawPacket."""
     from bmw_golden_gate import validate_files
@@ -2643,6 +2664,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9DeclarationInstanceEvidence/1 JSON output")
     p.add_argument("--count", type=int, help="decode at most this many records")
     p.set_defaults(fn=cmd_decode_d3d9_declaration)
+
+    p = sp.add_parser("bmw-render-slice", help="extract one exact BMW M3 packet from SHIFT.RenderBinding/1")
+    p.add_argument("golden", help="SHIFT.BMWGoldenAssetManifest/1 JSON")
+    p.add_argument("render_binding", help="SHIFT.RenderBinding/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWRenderSlice/1 JSON")
+    p.set_defaults(fn=cmd_bmw_render_slice)
 
     p = sp.add_parser("bmw-golden-gate", help="validate the BMW M3 golden asset against a DrawPacket")
     p.add_argument("golden", help="SHIFT.BMWGoldenAssetManifest/1 JSON")

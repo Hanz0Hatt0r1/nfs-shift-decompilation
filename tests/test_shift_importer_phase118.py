@@ -32,3 +32,16 @@ def test_phase118_cli_exposes_d3d9_runtime_trace():
     assert args.output == "runtime.json"
     assert args.meb_resource == "body.json"
     assert args.usage_map == "usage.json"
+
+def test_phase120_cli_exposes_bmw_render_slice():
+    parser = build_parser()
+    args = parser.parse_args([
+        "bmw-render-slice",
+        "golden.json",
+        "render-bindings.json",
+        "slice.json",
+    ])
+    assert args.cmd == "bmw-render-slice"
+    assert args.golden == "golden.json"
+    assert args.render_binding == "render-bindings.json"
+    assert args.output == "slice.json"
