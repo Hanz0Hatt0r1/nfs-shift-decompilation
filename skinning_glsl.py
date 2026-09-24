@@ -192,7 +192,7 @@ def build_gles31_skinning_contract_from_render_command(
             "palette": {
                 "format": palette.get("format", "SHIFT.BonePalette/1"),
                 "bone_count": int(palette.get("bone_count", 0) or 0),
-                "matrices_3x4": list(palette.get("local_matrices_3x4", []) or []),
+                "local_matrices_3x4": list(palette.get("local_matrices_3x4", []) or []),
                 "matrix_layout": palette.get("matrix_layout"),
                 "matrix_space": palette.get("matrix_space"),
             },
