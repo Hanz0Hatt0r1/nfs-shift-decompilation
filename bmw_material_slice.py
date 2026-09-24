@@ -39,6 +39,8 @@ def select_material_slice(slice_report: Mapping[str, Any], *, primitive_index: i
     linked = selection.get('linked_shader_pair') or material.get('linked_shader_pair')
     if not linked:
         reasons.append('shader-glsl:missing')
+    if status == 'unique' and not selection.get('permutation_identity') and not material.get('permutation_identity'):
+        reasons.append('shader-permutation-identity:missing')
     if selection.get('linked_shader_error') or material.get('linked_shader_error'):
         reasons.append('shader-glsl:error')
     if not material.get('resolved'):
