@@ -83,3 +83,8 @@ Phase 60 does not change the renderer entry point yet; instead it provides a val
 ## Phase 61: skinned reference render entry point
 
 `render_skinned_draw_reference()` now applies the explicit `SHIFT.SkinPose/1` through `SHIFT.SkinnedMeshReference/1` and feeds the resulting neutral mesh into the existing desktop geometry oracle. This establishes one rendering surface for static and skinned geometry while deliberately keeping shader/material execution as a separate layer.
+
+
+## Phase 62: skinned VS→PS reference
+
+`render_skinned_draw_reference()` can opt into the embedded shader oracle: it materializes `SHIFT.SkinnedMeshReference/1`, then executes vertex and pixel ShaderProgram/1 with the existing semantic linkage and rasterization path. Skinning and shader execution therefore share one deterministic desktop reference surface.

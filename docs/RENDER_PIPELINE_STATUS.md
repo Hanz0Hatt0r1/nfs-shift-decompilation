@@ -121,3 +121,8 @@ The skinning stack now has an explicit mesh-level reference contract: `SHIFT.Ski
 ## Phase 61: skinned reference render
 
 The desktop renderer now has a dedicated `render_skinned_draw_reference()` entry point. It consumes a ready SkinnedDraw, materializes `SHIFT.SkinnedMeshReference/1`, then uses the same geometry/raster contract as StaticDraw. This is the bridge needed before adding skinned VS/PS shader execution on top of the transformed mesh.
+
+
+## Phase 62: skinned VS→PS reference
+
+The desktop reference pipeline now supports `SkinPose → SkinnedMeshReference → embedded VS → semantic varying linkage → PS → raster`. This is the first combined skin/material reference surface. RenderCommand serialization and production material permutation selection remain separate next steps.
