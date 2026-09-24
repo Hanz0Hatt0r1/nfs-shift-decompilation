@@ -639,3 +639,57 @@ def test_d3d9_stream_record_evidence_fails_closed_without_target_function():
     result = analyze_d3d9_stream_record_semantics("void f(void) {}")
     assert result["status"] == "not-found"
     assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_declaration_canonicalizer_covers_all_8_bytes():
+    from d3d9_declaration_canonicalizer_evidence import (
+        analyze_d3d9_declaration_canonicalizer,
+    )
+
+    source = r'''
+ushort * __fastcall FUN_00830f80(ushort *param_1)
+{
+  uint uVar1;
+  ushort *puVar2;
+  ushort *puVar6;
+  ushort *puVar7;
+  uVar1 = 0;
+  puVar6 = param_1;
+  do {
+    if ((((puVar7[-2] != *puVar2) || (puVar7[-1] != puVar2[1])) ||
+        ((char)*puVar7 != (char)puVar2[2])) ||
+       (((*(char *)((int)puVar7 + 1) != (char)puVar2[5] ||
+         ((char)puVar7[1] != (char)puVar2[3])) ||
+        (*(char *)((int)puVar7 + 3) != (char)puVar2[7]))))) break;
+    uVar1 = uVar1 + 1;
+    puVar2 = puVar2 + 4;
+    puVar7 = puVar7 + 4;
+  } while (uVar1 < uVar1);
+  uVar1 = uVar1 * 8 + 8;
+  _memcpy(puVar6,param_1,uVar1);
+}
+'''
+    result = analyze_d3d9_declaration_canonicalizer(source)
+    assert result["status"] == "observed"
+    assert result["canonicalization"]["record_stride"] == 8
+    assert result["canonicalization"]["full_record_copy"] == "observed"
+    assert result["canonicalization"]["full_record_identity"] == "observed"
+    assert result["semantic_links"]["d3dvertexelement9_shape"]["status"] == "observed"
+    by_name = {row["name"]: row for row in result["fields"]}
+    assert by_name["stream"]["offset"] == 0
+    assert by_name["offset"]["offset"] == 2
+    assert by_name["type"]["offset"] == 4
+    assert by_name["method"]["offset"] == 5
+    assert by_name["usage"]["offset"] == 6
+    assert by_name["usage_index"]["offset"] == 7
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_declaration_canonicalizer_fails_closed_without_function():
+    from d3d9_declaration_canonicalizer_evidence import (
+        analyze_d3d9_declaration_canonicalizer,
+    )
+
+    result = analyze_d3d9_declaration_canonicalizer("void f(void) {}")
+    assert result["status"] == "not-found"
+    assert result["fields"] == []
