@@ -906,3 +906,113 @@ def test_reference_renderer_rejects_missing_second_texture(tmp_path):
         assert "missing texture images for samplers: s1" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_reference_renderer_consumes_render_command_constant_payload(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    program = _textured_tex_shader_program()
+    program["temps"] = [0]
+    program["constants"] = [0]
+    program["instructions"][0]["operands"][0]["reg_type"] = 0
+    program["instructions"][0]["operands"][0]["index"] = 0
+    program["instructions"].append({
+        "offset": 16,
+        "opcode": 5,
+        "name": "MUL",
+        "token": 0,
+        "length": 4,
+        "controls": 0,
+        "predicated": False,
+        "operands": [
+            {"token": 0x80000000, "kind": "dest", "reg_type": 8, "index": 0, "write_mask": "xyzw"},
+            {"token": 0x80000000, "kind": "source", "reg_type": 0, "index": 0, "swizzle": "xyzw", "source_modifier": 0},
+            {"token": 0x80000000, "kind": "source", "reg_type": 2, "index": 0, "swizzle": "xyzw", "source_modifier": 0},
+        ],
+        "predicate": None,
+    })
+    command["submeshes"][0]["shader"]["pixel_program"] = program
+    command["submeshes"][0]["constant_payload"] = {
+        "format": "SHIFT.MaterialConstantPayload/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "register_count": 1,
+        "registers": [{
+            "register_index": 0,
+            "values": [0.5, 0.25, 1.0, 1.0],
+            "byte_offset": 0,
+            "byte_size": 16,
+        }],
+    }
+    mesh = {**_triangle(), "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]}}
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((200, 100, 50, 255)),
+    }
+    out = tmp_path / "payload-tint.ppm"
+    result = render_textured_render_command(
+        command, mesh, image, out, shader_reference=True, width=24, height=24,
+        mvp=[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert (100, 25, 50) in pixels
+
+
+def test_reference_renderer_cli_accepts_explicit_multi_sampler_textures(tmp_path):
+    import json
+    import struct
+    import subprocess
+    import sys
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _two_texture_add_shader_program()
+    command_path = tmp_path / "command.json"
+    mesh_path = tmp_path / "mesh.json"
+    tex0 = tmp_path / "tex0.dds"
+    tex1 = tmp_path / "tex1.dds"
+    out = tmp_path / "cli-multi.ppm"
+
+    command_path.write_text(json.dumps(command), encoding="utf-8")
+    mesh_path.write_text(json.dumps({
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+    }), encoding="utf-8")
+
+    def write_rgba32(path, rgba):
+        values = (
+            124, 0, 1, 1, 0, 0, 1,
+            *([0] * 11),
+            32, 0x40, 0, 32,
+            0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000,
+            0, 0, 0, 0, 0,
+        )
+        packed = (rgba[3] << 24) | (rgba[2] << 16) | (rgba[1] << 8) | rgba[0]
+        path.write_bytes(b"DDS " + struct.pack("<31I", *values) + struct.pack("<I", packed))
+
+    write_rgba32(tex0, (100, 40, 20, 255))
+    write_rgba32(tex1, (30, 10, 5, 255))
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "reference_renderer.py"),
+            str(command_path),
+            "--render-command", "--textured", "--shader-reference",
+            "--mesh", str(mesh_path),
+            "--texture-binding", f"0={tex0}", "--texture-binding", f"1={tex1}",
+            "--output", str(out), "--width", "24", "--height", "24",
+        ],
+        check=False, capture_output=True, text=True,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    result = json.loads(proc.stdout)
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert (130, 50, 25) in pixels
