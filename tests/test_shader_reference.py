@@ -173,4 +173,4 @@ def test_material_uniform_binding_rejects_unsupported_type():
         }],
     })
     assert result["status"] == "unsupported"
-    assert "unsupported-ctab-type:int" in result["blocking_reasons"]
+    assert "uniform-binding:unsupported-ctab-type:int" in result["blocking_reasons"]
