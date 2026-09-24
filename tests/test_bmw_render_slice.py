@@ -35,7 +35,7 @@ def test_bmw_render_slice_selects_exact_resource_and_parallel_outputs():
     assert report["render_command"] == {"id": 4}
 
 
-def test_bmw_render_slice_blocks_identity_conflict():
+def test_bmw_render_slice_ignores_nonmatching_packet_before_exact_match():
     binding = {
         "format": "SHIFT.RenderBinding/1",
         "packets": [_packet(sha="wrong"), _packet()],
