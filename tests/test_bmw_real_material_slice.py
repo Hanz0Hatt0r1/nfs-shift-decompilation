@@ -99,6 +99,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     archive=FakeArchive(primary)
 
     monkeypatch.setattr(slicer, "build_real_bmw_material_binding", lambda *a, **k: _binding_report())
+    monkeypatch.setattr(slicer, "_sha256", lambda _data: "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c")
     monkeypatch.setattr(slicer, "BFF", lambda path: archive)
     golden_path=tmp_path/"golden.json"
     golden_path.write_text(json.dumps(_golden()), encoding="utf-8")
