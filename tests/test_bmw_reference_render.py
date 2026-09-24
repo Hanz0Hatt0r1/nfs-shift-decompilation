@@ -49,3 +49,22 @@ def test_bmw_reference_render_rejects_blocked_slice(tmp_path):
         assert 'render:not-ready' in str(exc)
     else:
         raise AssertionError('expected ValueError')
+
+def test_render_files_accepts_slice_as_mesh_input(monkeypatch, tmp_path):
+    import bmw_reference_render as module
+
+    seen={}
+    def fake_render(material_slice, mesh, output, **kwargs):
+        seen['mesh']=mesh
+        return {'ok':True}
+
+    monkeypatch.setattr(module, 'render_material_slice', fake_render)
+    slice_data=_slice()
+    slice_data['mesh']={'format':'SHIFT.MEB','vertex_count':4}
+    slice_path=tmp_path/'slice.json'
+    mesh_path=tmp_path/'same.json'
+    slice_path.write_text(json.dumps(slice_data), encoding='utf-8')
+    mesh_path.write_text(json.dumps(slice_data), encoding='utf-8')
+    result=module.render_files(slice_path, mesh_path, tmp_path/'out.png')
+    assert result['ok'] is True
+    assert seen['mesh']=={'format':'SHIFT.MEB','vertex_count':4}

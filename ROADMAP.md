@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 144. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 145. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -611,3 +611,10 @@ Next: correlate this source vehicle identity with concrete VHF/BFF node records 
 The current sandbox cannot read the 18.9 MB Dropbox BFF as a local binary because the connector exposes large files only through a temporary download URL that is not reachable from the execution sandbox. Therefore no synthetic output is promoted as real material evidence.
 
 Next: execute the new command on the supplied `BMW_M3_E36.bff` (optionally with `BMW_M3_E36_Cockpit.bff`) in an environment with direct file access, then feed the resulting real `MaterialBinding/1` into the BMW golden gate.
+
+
+## Phase 145: real BMW material slice
+
+`bmw-real-material-slice` now turns the real BFF-backed M3 paint binding into the existing `SHIFT.BMWMaterialSlice/1` format, including the selected primitive, neutral MEB payload, StaticDraw, RenderResources and RenderCommand. The first target is primitive 1 `(150,6294)`; primitive 2 `(6444,7386)` is selectable explicitly.
+
+This closes the offline render-facing vertical slice. The remaining external dependency is the actual BFF binary being reachable by an execution environment, followed by runtime D3D9 capture for same-instance proof.

@@ -110,3 +110,8 @@ Consume `MaterialBinding/1.specialization.requested` when validating the BMW M3 
 ## Real BMW material extraction
 
 Use `bmw_material_from_bff.py` / `bmw-material-from-bff` to turn the retail M3 BFF into a real `MaterialBinding/1`. The extractor requires exact M3 BMT/MEB entries, resolves the material shader source unambiguously, inventories all FXO permutations and DDS paths, and returns SHA-256 provenance plus paint/shader gate results. It never treats runtime execution as proven.
+
+
+## Real BMW material slice
+
+Use `bmw-real-material-slice` to build the renderer-compatible `SHIFT.BMWMaterialSlice/1` from the retail M3 BFF and golden manifest. The output contains the neutral MEB payload, StaticDraw, RenderCommand, resource plan and source provenance; runtime execution remains separate.
