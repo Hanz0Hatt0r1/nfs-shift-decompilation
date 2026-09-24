@@ -116,8 +116,8 @@ def _selected_node(name: str, *, kit: str, lod: str, include_generic: bool, incl
         return False
     if not upper.endswith(f"LOD{lod.upper()}"):
         return False
-    if "LIGHTGLOWS" in upper and not include_lightglows:
-        return False
+    if "LIGHTGLOWS" in upper:
+        return include_lightglows and upper.startswith("BMW_M3_E36_LIGHTGLOWS_")
     if "_KIT" in upper:
         return f"_KIT{kit}_" in upper
     return include_generic and upper.startswith(_GENERIC_PREFIXES)
