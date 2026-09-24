@@ -73,3 +73,8 @@ The shader reference now executes `samplerCube` against `SHIFT.ReferenceCubeText
 ## Phase 59: native DDS cubemap decode
 
 `decode_dds()` now recognizes a complete DDS cubemap (`DDSCAPS2_CUBEMAP` plus all six face flags), advances by the full per-face mip-chain stride, decodes each base level into the existing RGBA8 reference image ABI, and returns a `SHIFT.ReferenceCubeTexture/1` resource. Incomplete face flags or truncated face/mip payloads are hard errors.
+
+
+## Phase 60: skinning bridge preparation
+
+Phase 60 does not change the renderer entry point yet; instead it provides a validated `SHIFT.SkinnedMeshReference/1` mesh adapter that can be consumed by the existing reference rasterizer. This keeps the next VS/PS integration change small and testable.

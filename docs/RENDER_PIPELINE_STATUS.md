@@ -111,3 +111,8 @@ Renderer-global/specialized sampler requirements are now a first-class RenderCom
 ## Phase 59: native DDS cubemap decode
 
 The texture reference layer can now ingest complete six-face DDS cubemaps directly. Base-level images are decoded with the same DXT1/DXT3/DXT5 or 32-bit uncompressed path already used for 2D textures, while mip levels are skipped deterministically to reach each next cube face. The result feeds the phase-58 samplerCube contract without inventing per-face source files.
+
+
+## Phase 60: skinned mesh CPU reference
+
+The skinning stack now has an explicit mesh-level reference contract: `SHIFT.SkinnedDraw/1` + `SHIFT.SkinPose/1` → `SHIFT.SkinnedMeshReference/1`. Four-influence POSITION deformation and direction-stream transformation are covered independently from BAB animation decoding. The next integration step is to feed this transformed mesh into the same VS→PS reference raster path used by static DrawCommand execution.

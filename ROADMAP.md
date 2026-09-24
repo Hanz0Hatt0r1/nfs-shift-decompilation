@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 52. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
+Baseline `main` is at phase 59. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
 
 The immediate target is a deterministic pipeline:
 
@@ -28,7 +28,7 @@ the original BFF archives at runtime.
 | BMT -> FX -> FXO | implemented selection path | deterministic permutation selection, CTAB sampler/uniform linkage, linked GLSL payload |
 | Shader backend | active/validated | selected LinkedShaderPair stages can be compile/link-checked with `glslangValidator`; unsupported toolchains report `unavailable` |
 | DrawPacket | implemented contract | canonical DrawPacket carries StaticDraw readiness and explicit blockers |
-| Desktop reference renderer | geometry + shader-reference oracle | DrawPacket/RenderCommand execution, DDS DXT/uncompressed decode, multi-sampler textures, TEXCOORD0..4 plus normal/tangent/binormal inputs, and bounded VS/PS IR execution; shader/global-resource coverage remains incomplete |
+| Desktop reference renderer | geometry + shader-reference oracle | DrawPacket/RenderCommand execution, DDS DXT/uncompressed decode, multi-sampler textures, VS→PS semantic linkage, external samplerCube and complete DDS cubemap input; full BMW shader/material coverage remains incomplete |
 | Skinning | bind-pose verified contract | explicit SkinPose, CPU reference, GLES ABI, bind-pose equivalence check; animated pose decoding remains |
 | BAB animation payload | evidence tooling | corpus fingerprints and byte-level differential analysis; keyframe grammar still unproven |
 | SGB scene graph | later | one track section assembles from IR |
@@ -37,19 +37,17 @@ the original BFF archives at runtime.
 ## Execution order
 
 1. Keep CI green and preserve explicit evidence/regression coverage.
-2. Finish exact MEB vertex declaration details, especially COLOR0/1 type and channel byte order, using real BMW bytes and runtime-equivalent references.
+2. Resolve the remaining COLOR0/COLOR1 declaration/type and byte-order ambiguity using real BMW evidence; keep ambiguous draws blocked.
 3. Validate selected generated shader permutations with an actual GLES compiler where the toolchain is available, then use the result as the RenderCommand submission gate.
-4. Finish the material execution boundary: serialize CTAB float/vector constants into deterministic RenderCommand payloads and make the reference renderer consume that exact payload.
-5. Execute the embedded VS before PS in the desktop reference path and link varyings by semantic key while preserving explicit blockers for unresolved vertex ABI.
-6. Expand reference execution toward real BMW permutations: COLOR0/1 exact packing, TEXCOORD5+ families, blend indices/weights, renderer-global samplers, remaining D3D9 relative addressing/control flow and exact shader math must be evidence-backed, not guessed.
-7. Resolve the remaining COLOR0/COLOR1 byte-order/type ambiguity and prove the exact MEB vertex declaration for real BMW meshes.
-7. Complete deterministic static BMW reference rendering with real lighting/blend semantics and all required external resources.
-8. Use explicit SkinPose + bind-pose checks to validate real skinned vehicle geometry.
-9. Reverse engineer BAB animation payload from multiple clips sharing one skeleton, using the corpus and byte-diff evidence tools.
+4. Keep the material execution ABI authoritative: CTAB float/vector values arrive through SHIFT.MaterialConstantPayload/1.
+5. Keep the desktop reference renderer as the golden oracle: embedded VS→PS execution, sampler2D/samplerCube resources, UV families and skin inputs must agree with RenderCommand.
+6. Integrate explicit SkinPose deformation into the render-ready mesh path and cross-check positions/directions against the CPU reference.
+7. Expand reference execution toward real BMW permutations: TEXCOORD5+ families, remaining D3D9 control flow, exact sampler state and lighting/blend semantics.
+8. Prove the exact MEB vertex stream packing for real BMW meshes, especially COLOR0/1.
+9. Decode BAB animation payload from multiple clips sharing one skeleton, using corpus and byte-diff evidence.
 10. Implement SGB scene semantics and track assembly after the vehicle path is stable.
 11. Port the proven IR/render boundary to Android.
 12. Only then expand into physics, input, camera, audio and gameplay systems.
-
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
@@ -109,3 +107,10 @@ Phase 58 adds the software cube-map resource needed by the documented `environme
 ## Phase 59: native DDS cubemap decode
 
 Phase 59 closes the decoder-side half of `environmentMap/s3`: complete DDS cubemaps can become `ReferenceCubeTexture/1`. The remaining environment gap is extracting/identifying the game's actual environment-map DDS payload and proving its binding/face orientation through the asset corpus. COLOR0/1 ABI and skin deformation remain separate tracks.
+
+
+## Phase 60: explicit skinned-mesh CPU reference
+
+`SHIFT.SkinnedMeshReference/1` turns a ready `SHIFT.SkinnedDraw/1` plus an explicit `SHIFT.SkinPose/1` into a transformed neutral mesh. POSITION is linearly blended from the four declared influences; known direction streams NORMAL/TANGENT/BINORMAL use the direction-only transform and normalization already covered by the CPU skinning reference. UV, color, blend weights and blend indices remain unchanged from the input mesh.
+
+The phase intentionally does not infer animation frames, parent-composed transforms or inverse-bind matrices. It is a render adapter, not a BAB decoder.
