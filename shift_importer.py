@@ -1751,9 +1751,10 @@ def cmd_d3d9_stream_record_evidence(args: argparse.Namespace) -> int:
         "format": report["format"],
         "status": report["status"],
         "record_stride": report["record"]["stride"],
+        "d3dvertexelement9_shape": report["semantic_links"]["d3dvertexelement9_shape"]["status"],
         "type_field_offset": report["record"].get("type_field_offset", 4),
         "usage_field_offset": report["record"].get("usage_field_offset", 6),
-        "channel_field_offset": report["record"].get("channel_field_offset", 7),
+        "usage_index_field_offset": report["record"].get("usage_index_field_offset", 7),
         "meb_property_mapping": report["meb_property_mapping"]["status"],
     }, ensure_ascii=False, indent=2))
     return 0
