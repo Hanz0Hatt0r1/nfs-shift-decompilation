@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 63. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
+Baseline `main` is at phase 68. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
 
 The immediate target is a deterministic pipeline:
 
@@ -155,3 +155,8 @@ COLOR ABI evidence can now be generated directly from MEB JSON output: 460 → `
 ## Phase 68: direct BFF/MEB COLOR evidence
 
 The color investigation now has a direct archive path: BFF entry → MEB decoder → property 460/461 stream → ColorABIEvidence/1. This keeps the evidence tied to the original resource bytes and records the resource SHA256 and property payload metadata. ABI selection remains blocked until external declaration/channel-order evidence is proven.
+
+
+## Phase 69: COLOR evidence corpus
+
+The COLOR ABI investigation now supports corpus-level aggregation of `SHIFT.ColorABIEvidence/1` reports. The aggregator groups reports by property 460/461, tracks unique candidate hashes, computes cross-report candidate stability and averaged channel statistics, and explicitly keeps `selection` at `not-selected`. This provides a reproducible gate for deciding whether external declaration/channel-order evidence is strong enough to change the MEB ABI.

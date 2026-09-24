@@ -154,3 +154,8 @@ The render investigation now has a canonical MEB JSON → ColorABIEvidence/1 pat
 ## Phase 68: direct COLOR evidence ingestion
 
 COLOR ABI analysis is now anchored to the decoded `.meb` resource itself instead of a manually extracted binary stream. The resulting evidence report preserves both channel-order candidates and the source resource identity, but does not alter RenderCommand readiness.
+
+
+## Phase 69: COLOR corpus gate
+
+COLOR evidence can now be aggregated across decoded MEB samples. The corpus layer is intentionally upstream of RenderCommand readiness: it reports stability but does not promote a declaration or channel order.

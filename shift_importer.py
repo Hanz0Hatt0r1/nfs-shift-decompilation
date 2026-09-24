@@ -1323,6 +1323,60 @@ def cmd_bab_payload_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_color_evidence_corpus(args: argparse.Namespace) -> int:
+    """Aggregate multiple SHIFT.ColorABIEvidence/1 JSON reports."""
+    from color_abi import aggregate_color_abi_evidence
+
+    files: list[Path] = []
+    for raw in args.input:
+        path = Path(raw)
+        if path.is_dir():
+            files.extend(sorted(path.rglob("*.json")))
+        elif path.is_file():
+            files.append(path)
+        else:
+            raise SystemExit(f"evidence input not found: {path}")
+
+    reports = []
+    seen: set[Path] = set()
+    for path in files:
+        path = path.resolve()
+        if path in seen:
+            continue
+        seen.add(path)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            raise ValueError(f"failed to read evidence JSON {path}: {exc}") from exc
+        if payload.get("format") == "SHIFT.ColorABIEvidence/1":
+            reports.append(payload)
+
+    report = aggregate_color_abi_evidence(reports)
+    report["source"] = {
+        "inputs": [str(path) for path in files],
+        "accepted_reports": len(reports),
+    }
+
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "report_count": report["report_count"],
+        "accepted_reports": len(reports),
+        "properties": {
+            key: value["report_count"]
+            for key, value in report["properties"].items()
+        },
+        "selection": report["selection"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+
 def cmd_color_evidence_resource(args: argparse.Namespace) -> int:
     """Extract one MEB resource from a BFF and emit COLOR ABI evidence."""
     from color_abi import build_color_abi_evidence, compare_color_candidate
@@ -1709,6 +1763,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="resource_analysis.json")
     p.add_argument("output", help="SHIFT.BABCorpusReport/1 JSON output")
     p.set_defaults(fn=cmd_bab_corpus)
+
+    p = sp.add_parser("color-evidence-corpus", help="aggregate multiple COLOR ABI evidence JSON reports without selecting an ABI")
+    p.add_argument("input", nargs="+", help="evidence JSON file(s) or directories")
+    p.add_argument("output", help="SHIFT.ColorABICorpusEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_color_evidence_corpus)
 
     p = sp.add_parser("color-evidence-resource", help="extract a MEB from BFF and report COLOR0/COLOR1 candidates")
     p.add_argument("archive", help="BFF archive")

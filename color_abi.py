@@ -128,3 +128,69 @@ def compare_color_candidate(
         "candidate_results": results,
         "selection": "not-selected",
     }
+
+
+
+def aggregate_color_abi_evidence(
+    reports: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Aggregate multiple COLOR evidence reports without selecting an ABI candidate."""
+    rows = list(reports)
+    by_property: dict[str, list[dict[str, Any]]] = {"460": [], "461": []}
+    invalid: list[str] = []
+    for index, report in enumerate(rows):
+        property_id = str(report.get("property_id") or "")
+        if property_id not in SUPPORTED_PROPERTIES:
+            invalid.append(f"report-{index}:unsupported-property")
+            continue
+        if report.get("format") != FORMAT:
+            invalid.append(f"report-{index}:invalid-format")
+            continue
+        by_property[property_id].append(report)
+
+    properties: dict[str, Any] = {}
+    for property_id, items in by_property.items():
+        candidate_rows: list[dict[str, Any]] = []
+        for order in CANDIDATE_ORDERS:
+            exact_hashes = []
+            mean_channels = []
+            for report in items:
+                candidate = next(
+                    (x for x in report.get("candidates", []) or [] if x.get("order") == order),
+                    None,
+                )
+                if candidate is None:
+                    continue
+                exact_hashes.append(candidate.get("pixel_bytes_sha256"))
+                stats = candidate.get("stats") or {}
+                means = stats.get("channel_means")
+                if isinstance(means, list) and len(means) == 4:
+                    mean_channels.append([float(x) for x in means])
+            consensus = len(set(x for x in exact_hashes if x)) <= 1 if exact_hashes else None
+            averaged_means = None
+            if mean_channels:
+                averaged_means = [
+                    sum(row[channel] for row in mean_channels) / len(mean_channels)
+                    for channel in range(4)
+                ]
+            candidate_rows.append({
+                "order": order,
+                "reports": len(exact_hashes),
+                "unique_candidate_hashes": sorted(set(x for x in exact_hashes if x)),
+                "stable_across_reports": consensus,
+                "mean_channel_means": averaged_means,
+            })
+
+        properties[property_id] = {
+            "report_count": len(items),
+            "candidate_consistency": candidate_rows,
+            "selection": "not-selected",
+        }
+
+    return {
+        "format": "SHIFT.ColorABICorpusEvidence/1",
+        "report_count": len(rows),
+        "invalid_reports": invalid,
+        "properties": properties,
+        "selection": "not-selected",
+    }
