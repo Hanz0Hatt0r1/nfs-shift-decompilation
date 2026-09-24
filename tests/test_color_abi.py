@@ -179,3 +179,111 @@ def test_color_abi_cli_reads_property_461_from_colors2(tmp_path):
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["source"]["stream"] == "colors2"
     assert result["candidates"][0]["rgba8_hex"] in {"01020304", "03020104"}
+
+
+def test_color_evidence_resource_reads_mab_from_bff(monkeypatch, tmp_path):
+    import argparse
+    import json
+    from types import SimpleNamespace
+
+    import shift_importer
+
+    mesh = SimpleNamespace(
+        colors=[(10, 20, 30, 255), (40, 50, 60, 255)],
+        colors2=[],
+        vertex_count=2,
+        property_layouts=[{"id": "460", "payload_offset": 64, "stride": 4, "bytes": 8}],
+    )
+    entry = SimpleNamespace(index=7, path="cars/body.meb")
+    fake_bff = SimpleNamespace(
+        path=SimpleNamespace(name="CARS.bff"),
+        entries=[entry],
+    )
+    fake_bff.extract_entry = lambda _entry, type2="lzx": b"decoded-meb"
+    output = tmp_path / "resource-color.json"
+
+    class FakeBFF:
+        def __init__(self, _path):
+            self.inner = fake_bff
+            self.path = fake_bff.path
+            self.entries = fake_bff.entries
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def extract_entry(self, entry_arg, type2="lzx"):
+            return self.inner.extract_entry(entry_arg, type2=type2)
+
+    monkeypatch.setattr(shift_importer, "BFF", FakeBFF)
+    monkeypatch.setattr(shift_importer, "read_meb", lambda _data: mesh)
+    monkeypatch.setattr(shift_importer, "sha256", lambda _data: "meb-sha256")
+
+    args = argparse.Namespace(
+        archive="CARS.bff",
+        resource="cars/body.meb",
+        property_id="460",
+        output=str(output),
+        expected_rgba=None,
+    )
+    assert shift_importer.cmd_color_evidence_resource(args) == 0
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["format"] == "SHIFT.ColorABIEvidence/1"
+    assert report["source"]["kind"] == "bff-meb"
+    assert report["source"]["archive"] == "CARS.bff"
+    assert report["source"]["entry_index"] == 7
+    assert report["source"]["stream"] == "colors"
+    assert report["source"]["property_layout"]["payload_offset"] == 64
+    assert report["sample_count"] == 2
+
+
+def test_color_evidence_resource_uses_colors2_for_property_461(monkeypatch, tmp_path):
+    import argparse
+    import json
+    from types import SimpleNamespace
+
+    import shift_importer
+
+    mesh = SimpleNamespace(
+        colors=[],
+        colors2=[(1, 2, 3, 255)],
+        vertex_count=1,
+        property_layouts=[{"id": "461", "payload_offset": 128, "stride": 4, "bytes": 4}],
+    )
+    entry = SimpleNamespace(index=9, path="cars/body.meb")
+
+    class FakeBFF:
+        path = SimpleNamespace(name="CARS.bff")
+        entries = [entry]
+
+        def __init__(self, _path):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def extract_entry(self, _entry, type2="lzx"):
+            return b"decoded-meb"
+
+    output = tmp_path / "resource-color2.json"
+    monkeypatch.setattr(shift_importer, "BFF", FakeBFF)
+    monkeypatch.setattr(shift_importer, "read_meb", lambda _data: mesh)
+    monkeypatch.setattr(shift_importer, "sha256", lambda _data: "meb-sha256")
+
+    args = argparse.Namespace(
+        archive="CARS.bff",
+        resource="cars/body.meb",
+        property_id="461",
+        output=str(output),
+        expected_rgba=None,
+    )
+    assert shift_importer.cmd_color_evidence_resource(args) == 0
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["source"]["stream"] == "colors2"
+    assert report["source"]["vertex_count"] == 1
+    assert report["candidates"][0]["rgba8_hex"] == "010203ff"
