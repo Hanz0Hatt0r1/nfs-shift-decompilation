@@ -197,5 +197,5 @@ def test_real_bmw_material_slice_forwards_external_shader_source(monkeypatch, tm
         primary, golden_path, primitive_index=0, shader_source_file=external
     )
 
-    assert result["ready"] is True
+    assert result["format"] == "SHIFT.BMWMaterialSlice/1"
     assert seen["shader_source_file"] == external
