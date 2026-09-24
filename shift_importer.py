@@ -2381,6 +2381,30 @@ def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
 
 
 
+def cmd_meb_runtime_usage_bridge(args: argparse.Namespace) -> int:
+    """Build an evidence-backed MEB Usage-ordinal -> D3D9 Usage-byte bridge."""
+    from meb_runtime_usage_bridge import build_usage_ordinal_bridge
+
+    material = json.loads(Path(args.material_slice).read_text(encoding="utf-8"))
+    runtime = json.loads(Path(args.runtime_report).read_text(encoding="utf-8"))
+    report = build_usage_ordinal_bridge(material, runtime)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "usage_map": report["usage_map"],
+        "blocking": report.get("conflicts") or report.get("unmapped_usage_ordinals") or [],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_bmw_runtime_golden_gate(args: argparse.Namespace) -> int:
     """Gate BMW golden rendering on complete runtime parity."""
     from bmw_runtime_golden_gate import validate_runtime_golden_gate
@@ -2931,6 +2955,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeDrawCorrelation/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_draw_correlation)
+
+    p = sp.add_parser("meb-runtime-usage-bridge", help="derive a MEB Usage-ordinal to D3D9 Usage-byte map from exact same-resource runtime declarations")
+    p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
+    p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
+    p.add_argument("output", help="SHIFT.MEBRuntimeUsageOrdinalBridge/1 JSON")
+    p.set_defaults(fn=cmd_meb_runtime_usage_bridge)
 
     p = sp.add_parser("bmw-runtime-golden-gate", help="gate BMW golden rendering on complete runtime parity")
     p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
