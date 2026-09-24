@@ -78,3 +78,8 @@ Phases 50 and 51 are already merged on `main`: the shader-backed reference rende
 Phase 52 adds `SHIFT.MaterialConstantPayload/1` as the deterministic bridge from `SHIFT.MaterialUniformBinding/1` into the renderer submission contract. Proven float/vector values are packed into 16-byte D3D9-style c-register slots; matrix orientation, non-float types, register conflicts and overflow remain blocking rather than guessed.
 
 The reference shader executor consumes the serialized payload when it is present, keeping the software oracle aligned with the exact RenderCommand data that a future GLES backend will upload.
+
+
+## Phase 54: vertex-shader reference execution
+
+The desktop reference path now has an explicit VS->PS execution boundary: the embedded vertex ShaderProgram/1 executes against the known MEB semantic inputs, its POSITION output drives clip-space rasterization, and VS outputs are matched to pixel inputs by semantic key before perspective-correct interpolation. The next rendering gap is expanding the proven vertex/material ABI without guessing unresolved MEB COLOR bytes, additional TEXCOORD families or renderer-global resources.
