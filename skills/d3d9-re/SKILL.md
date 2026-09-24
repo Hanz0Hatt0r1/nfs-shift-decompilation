@@ -4,7 +4,7 @@ description: >-
   Reverse-engineer the SHIFT Direct3D 9 declaration, stream, shader and binding
   ABI using explicit evidence chains. Use for D3D9 vtable calls, declaration
   records, Type/Usage tables, SetVertexDeclaration, SetStreamSource, SetIndices,
-  shader registers, or runtime capture correlation.
+  shader registers, runtime capture correlation, and parity validation.
 ---
 # D3D9 reverse-engineering workflow
 
@@ -13,7 +13,7 @@ The project uses two layers:
 - **static evidence**: recovered SHIFT.exe C source, D3D9 vtable identities,
   declaration record layout, Type/Usage profiles;
 - **runtime evidence**: captured declaration instances, resource identities,
-  stream bindings, and draw calls.
+  shader objects, stream bindings, and draw calls.
 
 Never collapse these layers into a claim of same-instance execution without an
 explicit pointer/resource/frame correlation.
@@ -22,8 +22,8 @@ explicit pointer/resource/frame correlation.
 
 A declaration record is 8 bytes:
 `Stream:WORD, Offset:WORD, Type:BYTE, Method:BYTE, Usage:BYTE, UsageIndex:BYTE`.
-Use `d3d9_declaration_instance.py` for raw decoding. Use
-`d3d9_runtime_trace.py` to correlate captured declaration pointers with frames.
+Use `d3d9_declaration_instance.py` for raw decoding and the BMW runtime parity gate
+for currently evidenced semantic checks.
 
 ## MEB bridge
 

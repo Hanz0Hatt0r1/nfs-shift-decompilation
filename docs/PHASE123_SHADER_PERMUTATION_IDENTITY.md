@@ -18,3 +18,7 @@ Blob offsets are intentionally excluded from the canonical fingerprint. `pair_by
 ## Next
 
 Use the exact BMW material slice with this identity to run the actual shader-reference path, validate GLSL with `glslangValidator` when available, and record the first real-material image hash.
+
+## Phase 126 integration
+
+`SHIFT.ShaderPermutationIdentity/1` now carries vertex constant register usage as well as pixel constant usage, allowing the BMW runtime parity gate to compare `MaterialUniformBinding/1` across both shader stages.

@@ -41,6 +41,7 @@ def build_shader_permutation_identity(data: bytes, *, vertex_offset: int, pixel_
             'instruction_count': vb.instruction_count,
             'inputs': _semantic_rows(vertex.inputs),
             'outputs': _semantic_rows(vertex.outputs),
+            'constants': sorted(int(x) for x in vertex.constants),
             'unsupported_opcodes': list(vertex.unsupported_opcodes),
         },
         'pixel': {

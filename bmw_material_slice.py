@@ -21,6 +21,7 @@ def select_material_slice(slice_report: Mapping[str, Any], *, primitive_index: i
             'primitive_index': primitive_index, 'material': None, 'render_command': None,
         }
     packet = slice_report.get('packet') or {}
+    packet_mesh = packet.get('mesh') or {}
     submeshes = packet.get('submeshes') or []
     if primitive_index < 0 or primitive_index >= len(submeshes):
         raise IndexError(f'primitive index out of range: 0..{len(submeshes)-1}')
@@ -61,6 +62,7 @@ def select_material_slice(slice_report: Mapping[str, Any], *, primitive_index: i
         'blocking_reasons': list(dict.fromkeys(reasons)),
         'primitive_index': primitive_index,
         'golden_identity': golden_identity,
+        'mesh': packet_mesh,
         'material_ref': submesh.get('material_ref') or material.get('ref'),
         'material': material,
         'shader_selection': selection,
