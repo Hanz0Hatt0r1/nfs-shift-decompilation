@@ -8,13 +8,13 @@ def _shader(stage_version):
     header = 28
     info = 20
     typ = 20
-    name = b'diffuseMap\\x00'
+    name = b'diffuseMap\x00'
     payload = bytearray(b'CTAB')
     payload += struct.pack('<7I', header, 0, stage_version, 1, header, 0, 0)
     payload += struct.pack('<IHHHHII', header + info + typ, 3, 0, 1, 0, header + info, 0)
     payload += struct.pack('<HHHHHHII', 4, 12, 1, 1, 1, 0, 0, 0)
     payload += name
-    payload += b'\\x00' * ((-len(payload)) % 4)
+    payload += b'\x00' * ((-len(payload)) % 4)
     blob = bytearray(struct.pack('<I', stage_version))
     blob += struct.pack('<I', ((len(payload) // 4) << 16) | 0xFFFE)
     blob += payload
