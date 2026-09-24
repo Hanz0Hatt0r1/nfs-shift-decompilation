@@ -96,6 +96,45 @@ def _vertex_color(colors: list[RGBA], index: int) -> RGBA:
 
 
 
+def _build_shader_inputs(
+    shader,
+    *,
+    layer_rows,
+    semantic_rows,
+    vertex_indices,
+    weights=None,
+):
+    """Interpolate shader-declared TEXCOORD/normal/tangent semantic inputs."""
+    ia, ib, ic = vertex_indices
+    w0, w1, w2 = weights if weights is not None else (1.0, 0.0, 0.0)
+    result = {}
+    for item in shader.inputs:
+        match = re.search(r"v(\d+)", str(item.get("register", "")))
+        if not match:
+            raise ValueError(f"pixel shader input has no recoverable register: {item}")
+        register = int(match.group(1))
+        usage = str(item.get("usage") or "").upper()
+        semantic_index = int(item.get("index", 0))
+        rows = layer_rows.get(semantic_index) if usage == "TEXCOORD" else semantic_rows.get((usage, semantic_index))
+        if rows is None:
+            raise ValueError(
+                f"pixel shader requires {usage}{semantic_index} but mesh has no matching attribute"
+            )
+        samples = (rows[ia], rows[ib], rows[ic])
+        width = min(4, max(len(row) for row in samples))
+        values = []
+        for channel in range(width):
+            values.append(
+                w0 * (samples[0][channel] if channel < len(samples[0]) else 0.0)
+                + w1 * (samples[1][channel] if channel < len(samples[1]) else 0.0)
+                + w2 * (samples[2][channel] if channel < len(samples[2]) else 0.0)
+            )
+        while len(values) < 3:
+            values.append(0.0)
+        result[register] = tuple(values[:3] + [1.0])
+    return result
+
+
 def rasterize_textured_mesh(
     vertices: Iterable[Iterable[float]],
     indices: Iterable[int],
@@ -112,6 +151,7 @@ def rasterize_textured_mesh(
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     uv_layers: dict[str | int, Iterable[Iterable[float]]] | None = None,
+    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -141,6 +181,15 @@ def rasterize_textured_mesh(
     if any(i < 0 or i >= len(verts) for i in idx):
         raise ValueError("triangle index exceeds vertex count")
 
+    semantic_rows = {
+        key: [tuple(float(x) for x in row) for row in rows]
+        for key, rows in (semantic_rows or {}).items()
+    }
+    for key, rows in list(semantic_rows.items()):
+        if len(rows) != len(verts):
+            raise ValueError(
+                f"semantic layer {key} vertex count {len(rows)} != {len(verts)}"
+            )
     matrix = mvp or orthographic_mvp(verts)
     projected = _project(verts, matrix, width, height)
     pixels = bytearray(clear * (width * height))
@@ -166,25 +215,12 @@ def rasterize_textured_mesh(
                 "pixel shader reference path missing texture images for samplers: "
                 + ", ".join(f"s{x}" for x in missing_samplers)
             )
-        preflight_inputs = {}
-        for item in shader.inputs:
-            match = re.search(r"v(\d+)", str(item.get("register", "")))
-            if not match:
-                raise ValueError(
-                    f"pixel shader input has no recoverable register: {item}"
-                )
-            register = int(match.group(1))
-            semantic_index = int(item.get("index", 0))
-            layer = layer_rows.get(semantic_index)
-            if layer is None:
-                raise ValueError(
-                    f"pixel shader requires TEXCOORD{semantic_index} but mesh has no matching UV layer"
-                )
-            row = layer[0]
-            values = list(row[:3])
-            while len(values) < 3:
-                values.append(0.0)
-            preflight_inputs[register] = tuple(values[:3] + [1.0])
+        preflight_inputs = _build_shader_inputs(
+            shader,
+            layer_rows=layer_rows,
+            semantic_rows=semantic_rows,
+            vertex_indices=(0, 0, 0),
+        )
         preflight = ReferenceShaderState(
             shader,
             inputs=preflight_inputs,
@@ -231,32 +267,13 @@ def rasterize_textured_mesh(
                 if shader is None:
                     color = sample_texture_2d(image, u, v, sampler)
                 else:
-                    shader_inputs = {}
-                    for item in shader.inputs:
-                        match = re.search(r"v(\d+)", str(item.get("register", "")))
-                        if not match:
-                            raise ValueError(
-                                f"pixel shader input has no recoverable register: {item}"
-                            )
-                        register = int(match.group(1))
-                        semantic_index = int(item.get("index", 0))
-                        layer = layer_rows.get(semantic_index)
-                        if layer is None:
-                            raise ValueError(
-                                f"pixel shader requires TEXCOORD{semantic_index} but mesh has no matching UV layer"
-                            )
-                        if len(layer[ia]) < 2 or len(layer[ib]) < 2 or len(layer[ic]) < 2:
-                            raise ValueError(
-                                f"TEXCOORD{semantic_index} layer must contain at least two components"
-                            )
-                        iu = w0 * layer[ia][0] + w1 * layer[ib][0] + w2 * layer[ic][0]
-                        iv = w0 * layer[ia][1] + w1 * layer[ib][1] + w2 * layer[ic][1]
-                        iw = (
-                            w0 * (layer[ia][2] if len(layer[ia]) > 2 else 0.0)
-                            + w1 * (layer[ib][2] if len(layer[ib]) > 2 else 0.0)
-                            + w2 * (layer[ic][2] if len(layer[ic]) > 2 else 0.0)
-                        )
-                        shader_inputs[register] = (iu, iv, iw, 1.0)
+                    shader_inputs = _build_shader_inputs(
+                        shader,
+                        layer_rows=layer_rows,
+                        semantic_rows=semantic_rows,
+                        vertex_indices=(ia, ib, ic),
+                        weights=(w0, w1, w2),
+                    )
                     execution = ReferenceShaderState(
                         shader,
                         inputs=shader_inputs,
@@ -341,6 +358,11 @@ def render_textured_static_draw(
         texture_images=texture_images,
         samplers_by_sampler=samplers_by_sampler,
         uv_layers=uv_layers,
+        semantic_rows={
+            ("NORMAL", 0): mesh.get("normals") or [],
+            ("TANGENT", 0): mesh.get("tangents") or [],
+            ("BINORMAL", 0): mesh.get("tangents2") or [],
+        },
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
