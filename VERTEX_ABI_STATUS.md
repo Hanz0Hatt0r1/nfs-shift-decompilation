@@ -139,3 +139,8 @@ The recovered loader constructs a fixed 8-byte record for each XML `STREAM` entr
 ## Phase 85: Type -> layout table semantics
 
 The renderer uses the declaration Type byte at offset `+4` as the common key for two opaque runtime tables. `DAT_00b8eef0[Type]` supplies the element byte size; `DAT_00b8ef38[Type]` supplies the component count. The source repeatedly uses these values for stream offset accumulation, vertex-buffer allocation/copy sizes and source component reads. The exact table initializer bytes are still absent from the exported Ghidra C, so numeric contents are not guessed.
+
+
+## Phase 86: Type semantic validation profile
+
+The recovered D3D9 Type switch is now paired with a validation-only semantic profile. The profile expects the documented packed sizes/components for Type `0..16` and can compare them against real `DAT_00b8eef0`/`DAT_00b8ef38` bytes when a memory dump is supplied. Missing values stay unavailable; mismatches are surfaced rather than repaired. `MEB 460/461 -> Type` remains a separate unresolved linkage.

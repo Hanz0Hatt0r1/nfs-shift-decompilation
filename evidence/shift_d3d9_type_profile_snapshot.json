@@ -1,0 +1,125 @@
+{
+  "format": "SHIFT.D3D9TypeProfileSnapshot/1",
+  "source_basis": {
+    "function": "FUN_00854e70",
+    "source_file": "SHIFT.exe.c",
+    "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "types": [
+    {
+      "type_code": 0,
+      "d3d9_type": "D3DDECLTYPE_FLOAT1",
+      "source_components": 1,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 1,
+      "d3d9_type": "D3DDECLTYPE_FLOAT2",
+      "source_components": 2,
+      "element_size_bytes": 8
+    },
+    {
+      "type_code": 2,
+      "d3d9_type": "D3DDECLTYPE_FLOAT3",
+      "source_components": 3,
+      "element_size_bytes": 12
+    },
+    {
+      "type_code": 3,
+      "d3d9_type": "D3DDECLTYPE_FLOAT4",
+      "source_components": 4,
+      "element_size_bytes": 16
+    },
+    {
+      "type_code": 4,
+      "d3d9_type": "D3DDECLTYPE_D3DCOLOR",
+      "source_components": 4,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 5,
+      "d3d9_type": "D3DDECLTYPE_UBYTE4",
+      "source_components": 4,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 6,
+      "d3d9_type": "D3DDECLTYPE_SHORT2",
+      "source_components": 2,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 7,
+      "d3d9_type": "D3DDECLTYPE_SHORT4",
+      "source_components": 4,
+      "element_size_bytes": 8
+    },
+    {
+      "type_code": 8,
+      "d3d9_type": "D3DDECLTYPE_UBYTE4N",
+      "source_components": 4,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 9,
+      "d3d9_type": "D3DDECLTYPE_SHORT2N",
+      "source_components": 2,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 10,
+      "d3d9_type": "D3DDECLTYPE_SHORT4N",
+      "source_components": 4,
+      "element_size_bytes": 8
+    },
+    {
+      "type_code": 11,
+      "d3d9_type": "D3DDECLTYPE_USHORT2N",
+      "source_components": 2,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 12,
+      "d3d9_type": "D3DDECLTYPE_USHORT4N",
+      "source_components": 4,
+      "element_size_bytes": 8
+    },
+    {
+      "type_code": 13,
+      "d3d9_type": "D3DDECLTYPE_UDEC3",
+      "source_components": 3,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 14,
+      "d3d9_type": "D3DDECLTYPE_DEC3N",
+      "source_components": 3,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 15,
+      "d3d9_type": "D3DDECLTYPE_FLOAT16_2",
+      "source_components": 2,
+      "element_size_bytes": 4
+    },
+    {
+      "type_code": 16,
+      "d3d9_type": "D3DDECLTYPE_FLOAT16_4",
+      "source_components": 4,
+      "element_size_bytes": 8
+    }
+  ],
+  "sentinel": {
+    "type_code": 17,
+    "d3d9_type": "D3DDECLTYPE_UNUSED",
+    "role": "declaration terminator"
+  },
+  "validation_target": {
+    "runtime_size_table": "DAT_00b8eef0",
+    "runtime_component_table": "DAT_00b8ef38"
+  },
+  "color_note": {
+    "type_4": "D3DDECLTYPE_D3DCOLOR",
+    "meb_460_461_to_type_4": "not-proven"
+  }
+}
