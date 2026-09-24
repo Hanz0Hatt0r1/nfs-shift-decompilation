@@ -796,3 +796,17 @@ Strict runtime instance proof now requires a real indexed draw in the same captu
 ## Phase 151: BMW M3 BFF intake verifier
 
 A strict `bmw-bff-intake` preflight now verifies the real M3 BFF archive structure, exact target entries, and extracted body MEB SHA before material extraction is attempted.
+
+## Phase 152: D3D9 runtime capture producer
+
+A Windows-only `native_capture/shift_d3d9_capture.cpp` proxy now emits
+`SHIFT.D3D9RuntimeCaptureSchema/1` JSONL by cloning the `IDirect3D9` and
+`IDirect3DDevice9` COM vtables and intercepting declaration/shader creation,
+render-state binding, shader constants and `DrawIndexedPrimitive`. Successful
+`Present` calls advance the capture frame counter.
+
+The producer records D3D9 object identity, exact declaration/shader byte payloads
+when terminators are available, exact float4 constant writes, thread id and
+event sequence. It deliberately does not fabricate MEB paths, resource
+SHA-256 values, Usage mappings or COLOR ABI. Those remain downstream evidence
+joins and the Phase 153 engine-side identity boundary.
