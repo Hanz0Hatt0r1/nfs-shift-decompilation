@@ -33,3 +33,8 @@ wrapper). These are source anchors already represented by project evidence modul
 ## References
 
 Upstream Ghidra headless skill: https://github.com/mitsuhiko/agent-stuff/blob/main/skills/ghidra/SKILL.md
+
+
+## Source vehicle identity
+
+Use `source_vehicle_identity.py` to verify the source-level selector `FUN_004c32d0 case 2 -> bmw_m3_e36`. Keep this as static evidence and correlate it explicitly with VHF/MEB/runtime records before treating it as an execution path.

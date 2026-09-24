@@ -1,0 +1,20 @@
+---
+format: SHIFT.SourceVehicleIdentityEvidence/1
+source_file: SHIFT.exe.c
+source_sha256: 512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9
+function: FUN_004c32d0
+source_lines: [181328, 181355]
+vehicle_selector:
+  input: vehicle_id
+  mapping:
+    1: nissan_240sx
+    2: bmw_m3_e36
+    3: aston_martin_v8_vantage_n400
+    4: lexus_lfa
+    5: lexus_lfa
+golden_resource:
+  path: vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb
+  sha256: 960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c
+boundary:
+  status: source-only
+  note: This links a source-level vehicle selector literal to the BMW resource namespace; it does not prove runtime execution or a particular render frame.
