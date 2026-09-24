@@ -27,3 +27,10 @@ def test_capture_schema_reports_multiple_invalid_events():
     assert report['ready'] is False
     assert report['event_count']==2
     assert len(report['blocking_reasons'])>=1
+
+def test_capture_schema_keeps_pointer_contract_for_pointerless_events():
+    from d3d9_capture_schema import EVENT_SPECS
+
+    assert EVENT_SPECS["draw_indexed_primitive"]["pointer"] is None
+    assert EVENT_SPECS["present_screenshot"]["pointer"] is None
+    assert EVENT_SPECS["present_screenshot_failed"]["pointer"] is None
