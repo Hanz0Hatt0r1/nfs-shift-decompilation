@@ -245,6 +245,7 @@ def analyze_d3d9_declaration_chain(
     declaration_create_evidence: Mapping[str, Any] | None = None,
     declaration_count_evidence: Mapping[str, Any] | None = None,
     declaration_sentinel_evidence: Mapping[str, Any] | None = None,
+    declaration_lifecycle_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -261,6 +262,7 @@ def analyze_d3d9_declaration_chain(
     declaration_create_evidence = declaration_create_evidence or {}
     declaration_count_evidence = declaration_count_evidence or {}
     declaration_sentinel_evidence = declaration_sentinel_evidence or {}
+    declaration_lifecycle_evidence = declaration_lifecycle_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -376,10 +378,29 @@ def analyze_d3d9_declaration_chain(
         provenance_reports["declaration_count"] = declaration_count_evidence
     if declaration_sentinel_evidence:
         provenance_reports["declaration_sentinel"] = declaration_sentinel_evidence
+    if declaration_lifecycle_evidence:
+        provenance_reports["declaration_lifecycle"] = declaration_lifecycle_evidence
     source_provenance = _source_provenance_check(provenance_reports)
 
     memory_layout_supplied = bool(runtime_layout_evidence)
     api_bind_supplied = bool(api_bind_evidence)
+    declaration_lifecycle_supplied = bool(declaration_lifecycle_evidence)
+    if declaration_lifecycle_supplied:
+        lifecycle_status = declaration_lifecycle_evidence.get("status")
+        static_chain_status = _status(
+            declaration_lifecycle_evidence,
+            "evidence_boundary",
+            "static_source_call_chain",
+        )
+        checks["d3d9_declaration_lifecycle"] = {
+            "status": (
+                "observed"
+                if lifecycle_status == "observed" and static_chain_status == "observed"
+                else ("mismatch" if lifecycle_status == "mismatch" else "not-proven")
+            ),
+            "detail": "source-backed mesh construction, declaration creation and declaration binding form one recovered lifecycle",
+        }
+
     declaration_sentinel_supplied = bool(declaration_sentinel_evidence)
     if declaration_sentinel_supplied:
         sentinel_status = declaration_sentinel_evidence.get("status")
@@ -566,6 +587,8 @@ def analyze_d3d9_declaration_chain(
         required_keys.append("d3d9_declaration_count_boundary")
     if declaration_sentinel_supplied:
         required_keys.append("d3d9_declaration_sentinel")
+    if declaration_lifecycle_supplied:
+        required_keys.append("d3d9_declaration_lifecycle")
     if instance_supplied:
         required_keys.append("declaration_instance")
     if memory_supplied:
@@ -624,6 +647,10 @@ def analyze_d3d9_declaration_chain(
                 declaration_sentinel_evidence.get("status", "not-supplied")
                 if declaration_sentinel_supplied else "not-supplied"
             ),
+            "declaration_lifecycle_status": (
+                declaration_lifecycle_evidence.get("status", "not-supplied")
+                if declaration_lifecycle_supplied else "not-supplied"
+            ),
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
@@ -662,6 +689,16 @@ def analyze_d3d9_declaration_chain(
             ),
         },
         "source_provenance": source_provenance,
+        "declaration_lifecycle_evidence": (
+            {
+                "format": declaration_lifecycle_evidence.get("format"),
+                "status": declaration_lifecycle_evidence.get("status"),
+                "lifecycle": declaration_lifecycle_evidence.get("lifecycle"),
+                "edges": declaration_lifecycle_evidence.get("edges"),
+                "evidence_boundary": declaration_lifecycle_evidence.get("evidence_boundary"),
+            }
+            if declaration_lifecycle_supplied else None
+        ),
         "declaration_sentinel_evidence": (
             {
                 "format": declaration_sentinel_evidence.get("format"),
@@ -760,6 +797,7 @@ def analyze_d3d9_declaration_chain_files(
     declaration_create_evidence_path: str | Path | None = None,
     declaration_count_evidence_path: str | Path | None = None,
     declaration_sentinel_evidence_path: str | Path | None = None,
+    declaration_lifecycle_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -810,5 +848,10 @@ def analyze_d3d9_declaration_chain_files(
             None
             if declaration_sentinel_evidence_path is None
             else load(declaration_sentinel_evidence_path)
+        ),
+        declaration_lifecycle_evidence=(
+            None
+            if declaration_lifecycle_evidence_path is None
+            else load(declaration_lifecycle_evidence_path)
         ),
     )
