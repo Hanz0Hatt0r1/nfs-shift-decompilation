@@ -31,7 +31,7 @@ def test_shader_permutation_identity_changes_when_pixel_bytes_change():
     vertex = next(blob for blob in blobs if blob.stage == "vertex")
     pixel = next(blob for blob in blobs if blob.stage == "pixel")
     original = build_shader_permutation_identity(bytes(data), vertex_offset=vertex.offset, pixel_offset=pixel.offset)
-    name_offset = bytes(data).find(b"diffuseMap", pixel.offset, pixel.end)
+    name_offset = bytes(data).find(b"Microsoft", pixel.offset, pixel.end)
     assert name_offset >= 0
     data[name_offset] ^= 1
     changed = build_shader_permutation_identity(bytes(data), vertex_offset=vertex.offset, pixel_offset=pixel.offset)
