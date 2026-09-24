@@ -49,6 +49,10 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
     if event == 'set_texture':
         if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
             reasons.append('texture:stage-invalid')
+    if event == 'set_texture' and row.get('resource_snapshot_paths') is not None:
+        paths = row.get('resource_snapshot_paths')
+        if not isinstance(paths, list) or not all(isinstance(path, str) and path for path in paths):
+            reasons.append('texture:snapshot-paths-invalid')
     if event == 'present_screenshot':
         if row.get('path') is not None and not isinstance(row.get('path'), str):
             reasons.append('screenshot:path-invalid')
