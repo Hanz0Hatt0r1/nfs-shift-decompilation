@@ -213,19 +213,12 @@ def _execute_vertex_program(
         for key, item in output_items.items():
             if key in {("POSITION", 0), ("POSITIONT", 0)}:
                 continue
-            usage, semantic_index = key
-            if not (
-                (usage == "TEXCOORD" and 0 <= semantic_index <= 4)
-                or (usage in {"NORMAL", "TANGENT", "BINORMAL"} and semantic_index == 0)
-            ):
-                raise ValueError(
-                    f"vertex shader output semantic is unsupported: {usage}{semantic_index}"
-                )
             register = _register_index(item.get("register"))
             value = outputs.get(str(register))
             if value is None:
                 raise ValueError(
-                    f"vertex shader did not write output register {register} for {usage}{semantic_index}"
+                    f"vertex shader did not write output register {register} for "
+                    f"{key[0]}{key[1]}"
                 )
             semantics[key] = tuple(float(x) for x in value)
         varying_results.append(semantics)
