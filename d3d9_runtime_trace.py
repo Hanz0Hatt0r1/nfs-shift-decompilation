@@ -176,6 +176,13 @@ def build_runtime_binding_evidence(
             if descriptor:
                 binding["resource_descriptor"] = descriptor
             frame["texture_bindings"].append(binding)
+        elif event in {"present_screenshot", "present_screenshot_failed"}:
+            frame["screenshot_events"].append({
+                "event": event,
+                "path": row.get("path"),
+                "reason": row.get("reason"),
+                "line": row.get("_line"),
+            })
         elif event in {"create_vertex_shader", "create_pixel_shader"}:
             pointer = _ptr(row.get("shader_ptr"))
             if not pointer:
