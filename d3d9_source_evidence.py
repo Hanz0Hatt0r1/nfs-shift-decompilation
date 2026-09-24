@@ -49,7 +49,8 @@ def _line_numbers(source: str, needle: str) -> list[int]:
 def _source_line_anchors(source: str, filename_fragment: str) -> list[dict[str, int | str]]:
     """Extract decompiler line -> original source line anchors from diagnostics."""
     pattern = re.compile(
-        r'FUN_0062de50\\([^,]+,".*?'
+        re.escape("FUN_0062de50(")
+        + r'[^,]+,".*?'
         + re.escape(filename_fragment)
         + r'",0x([0-9A-Fa-f]+),'
     )
