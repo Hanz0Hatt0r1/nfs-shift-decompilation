@@ -1,112 +1,255 @@
-# SHIFT Universal Resource Importer
+# Need for Speed: SHIFT — Decompilation & Resource IR
 
-Этапный reverse-engineering/import tool для Need for Speed: SHIFT. Цель проекта — один универсальный конвейер, который работает с оригинальными BFF и их ресурсами, а не набор ручных конвертеров для каждой машины.
+Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-## Уже реализовано
+> **Текущий статус:** mainline находится на **phase 59**. В рабочей ветке развивается **phase 60: explicit CPU skinned-mesh reference**.
 
-- BFF v3: таблица записей, имена, смещения, типы и целостность диапазонов.
-- Native C++ XMem/LZX backend для массовой декомпрессии; включается через `SHIFT_LZX_NATIVE=1`, с pure-Python fallback по умолчанию.
-- Type 0: raw.
-- Type 1: zlib.
-- Type 2: SHIFT/XMem + LZX с сохранением LZX-состояния между блоками.
-- Автоматическая классификация по пути, расширению и сигнатуре.
-- SHA-256 и dependency hints.
-- Content-addressed package (`blobs/<sha256>`).
-- Типизированный разбор `Reflection XML`: классы, наследование, типы свойств, вложенные `Fct`-массивы.
-- Разбор `BMLY`/`BML`: блоки `HEAD/ELMT/ATTR/COLL/NUMB/BOOL/STRS` и строковый индекс.
-- Разбор `BMT`: дерево материала, shader params, числовые/boolean/строковые значения и ссылки на DDS.
-- HLSL inventory: includes, techniques, samplers и глобальные параметры.
-- Generic XML tree для VHF/CPT/VUD/ENX/SPE/TRD/NEW и других XML-подобных ресурсов.
-- DDS metadata.
+Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
-## Команды
+    Original BFF/resources
+            │
+            ▼
+       Import / Decode
+            │
+            ▼
+     Neutral IR + blobs
+            │
+            ├── MEB / VHF / BMT / FX / FXO / DDS
+            │
+            ▼
+     Resource + Shader Linking
+            │
+            ▼
+     DrawBinding → StaticDraw / SkinnedDraw
+            │
+            ▼
+     RenderResources + RenderCommand
+            │
+            ├── Desktop reference renderer
+            └── GLES 3.1 backend
+                     │
+                     ▼
+              future Android runtime
 
-```bash
-python shift_importer.py inspect VEHICLES.bff
-python shift_importer.py manifest /path/to/Dir/ manifest.json --decode
-python shift_importer.py validate /path/to/Dir --report validation.json
-python shift_importer.py extract /path/to/Dir extracted/
-python shift_importer.py package /path/to/Dir shift_assets/
-python shift_importer.py analyze-resource VEHICLES.bff vehicles/ferrari_599/ferrari_599.cdp --output ferrari.json
-python shift_importer.py analyze-resource GUI.bff gui/hud/hud_drift_gauge.bmt --output material.json
-python shift_importer.py analyze-dir /path/to/Dir format_reports/ --ext .bmt .fx .fxh .meb .csm .xml .lod .vud .cpt
-python shift_importer.py convert-meb Alpental.bff grid1_02.mgeo --resource tracks/alpental/grid1_02.meb
-python shift_importer.py convert-csm TRACKS.bff nord.cmesh --resource tracks/nordschleife07/physics/nordschleife07.360.csm
-python shift_importer.py graph /path/to/bffs graph.json --ext .cpt .vhf .meb .bmt .dds .fx .fxh
-python shift_importer.py build-ir /path/to/bffs android_ir/
-python draw_packets.py android_ir/../format_reports/resource_analysis.json draw_packets.json
-# native XMem/LZX
-SHIFT_LZX_NATIVE=1 python shift_importer.py build-ir /path/to/bffs android_ir_native/
-```
+## Главная идея
 
-`analyze-resource` создаёт единый JSON с исходным BFF-entry, SHA-256, категорией, dependency hints и результатом форматного анализа.
+Цель — получить **детерминированное, evidence-driven представление данных SHIFT**, которое можно массово импортировать, проверять регрессионными тестами, воспроизводить вне оригинального runtime и постепенно переносить на Android/GLES.
 
-## Android intermediate representation
+> **Неподтверждённая семантика не угадывается.**
 
-Оригинальный BFF не должен становиться форматом Android runtime. Импортёр сохраняет исходные данные в content-addressed blobs и строит над ними нейтральные представления:
+Неоднозначные поля остаются `inferred`, `ambiguous` или `unknown`; runtime boundary возвращает machine-readable blocker.
 
-```text
-shift_assets/
-  blobs/<sha256>
-  manifest.json
-  path_map.json
-  stats.json
-  analysis/
-    materials/*.json
-    reflection/*.json
-    bml/*.json
-    shaders/*.json
-```
+## Текущий статус
 
-На стороне Android планируется читать уже это IR и использовать отдельные native-конвертеры для geometry/scene/physics. То есть `BFF -> Android` выполняется массово по типу ресурса и зависимостям, без hardcode имени автомобиля.
+| Слой | Статус | Что есть сейчас |
+|---|:---:|---|
+| BFF / XMem / LZX | ✅ | v3 entries, ranges, raw/zlib/XMem+LZX, native backend |
+| Resource IR | ✅ | manifest, SHA-256, content-addressed blobs, dependency graph |
+| Reflection / BML / XML | ✅ | typed parsing, inheritance, BML blocks, generic XML tree |
+| BMT / FX / FXO | ✅ | material graph, shader params, sampler mapping, CTAB metadata |
+| MEB geometry | ✅ | vertices, indices, UVs, normals, tangents, skin streams, ABI metadata |
+| Shader IR | ✅ | SHIFT.ShaderProgram/1, D3D9 register/operand decoding, typed reflection |
+| GLSL ES 3.1 | ✅ | generated stages + optional compile/link validation |
+| RenderCommand | ✅ | vertex setup, constants, resources, readiness gate |
+| Desktop reference | 🟢 | geometry, textured materials, multi-sampler, VS→PS semantic linkage |
+| Cubemaps | ✅ | ReferenceCubeTexture/1, samplerCube, complete DDS cubemap decode |
+| Skinning | 🟢 | explicit SkinPose, CPU LBS reference, GLES ABI, skin inputs |
+| Android runtime | ⏳ | после стабилизации reference pipeline |
 
-## Статус конвертеров
+## Проверенные MEB semantics
 
-**Готово/достаточно для IR:** BFF/XMem, DDS metadata, Reflection XML, BML index, BMT material graph, HLSL metadata, MEB geometry, CSM collision geometry, XML scene/data, dependency graph и автоматический `build-ir`.
+| MEB property | Semantic | Представление |
+|---:|---|---|
+| 200 | POSITION0 | FLOAT32x3 |
+| 220 | NORMAL0 | FLOAT32x3 |
+| 240 | TANGENT0 | FLOAT32x3 |
+| 250 | BINORMAL0 | FLOAT32x3 |
+| 130–134 | TEXCOORD0–4 | FLOAT32x2 |
+| 230–234 | TEXCOORD0–4 family | FLOAT32x3 UVW |
+| 310 | BLENDWEIGHT0 | FLOAT32x4 |
+| 580 | BLENDINDICES0 | UINT8x4 |
+| 460 / 461 | COLOR0 / COLOR1 | **ambiguous** |
 
-**Текущий слой:** FXO/D3D9 shader bytecode → нейтральный `SHIFT.ShaderProgram/1` → первый GLSL ES 3.1 backend. Добавлены register/operand decoding, арифметические операции, texture ops, derivatives и базовый structured control flow.\n\n**Следующий слой:** exact sampler-state binding; semantic vertex/pixel linkage; MGEO/VHF transform semantics; затем IMB skeletal geometry/animation, SGB scenegraph и перенос физики с PhysX 2.x на Android-native collision/dynamics.\n\n`draw_packets.py` builds `SHIFT.DrawPacket/1` from `resource_analysis.json`; texture slots are marked `material-order-inferred` until the exact D3D9/BMT sampler mapping is recovered.
+`COLOR0/1` сознательно остаются заблокированными там, где выбор D3D9 declaration или RGBA/BGRA byte order влияет на результат.
 
-`.meb` является компонентом видимой геометрии SHIFT, а `.bmt` содержит материал и связанные shader/texture данные; независимые инструменты моддинга SHIFT подтверждают, что модельные `.meb` и материальные `.bmt` работают совместно. Поэтому следующий этап должен связывать их через VHF/material references, а не конвертировать файлы изолированно.
+## Shader reference
 
-Полная валидация всех 15 базовых BFF уже прошла для архивов кроме крупного `TRACKS.bff`; проблема там пока только в скорости чистого Python LZX-декодера, а не в обнаруженной ошибке формата. Для production importer следующий шаг — native C/C++ LZX backend.
+FXO bytecode переводится в neutral `SHIFT.ShaderProgram/1` и используется двумя путями: generated GLSL ES 3.1 и строгий desktop software oracle.
 
-### BMT -> FX -> FXO material binding
+Уже поддержаны:
 
-Добавлен универсальный слой `material_linker.py`: он связывает BMT shaderparams с SamplerTexture из исходного HLSL/FX, переносит Min/Mag/Mip/Address/sRGB state и через D3DX9 CTAB восстанавливает фактические sampler registers. Для BMW M3 E36 проверено: diffuseTexture -> diffuseMap/s1, specularTexture -> specularMap/s2, scratchControlTexture -> scratchControlMap/s4; renderer-global environmentMap -> s3 и shadow sampler -> s0.
+- arithmetic / vector operations;
+- dot / cross / normalize;
+- CMP / LRP / scalar math;
+- TEX / TEXLDD / TEXLDL reference path;
+- DSX / DSY;
+- bounded structured control flow;
+- D3D9 a0-relative constant addressing;
+- material constant payload → deterministic c-register banks;
+- VS→PS linkage по `(usage,index)`.
 
-CTAB reflection теперь сохраняет typed constants и sampler register metadata в `shader_ir.py`. Следующий render-layer шаг — связать этот MaterialBinding с VHF/MEB primitive/material references и восстановить VS/PS pair + vertex semantic interface.
+Неподдержанные opcode/resource forms не отбрасываются молча: они становятся явным `unsupported` или `error` состоянием.
 
+## Material и render contracts
 
-### VHF -> MEB -> BMT render-link stage
+Основные нейтральные схемы образуют цепочку:
 
-Добавлен `render_pipeline.py`, формирующий `SHIFT.RenderBinding/1`: VHF resource nodes связываются с MEB primitives, legacy `.mtx` автоматически разрешается в `.bmt`, VHF parent/matrix hierarchy превращается в world transforms, а BMT связывается с FX source и FXO permutations через `material_linker.py`. На следующем слое останется восстановить VS/PS pair и semantic vertex interface перед загрузкой DrawPacket в Android renderer.
+    RenderBinding/1
+          │
+          ├── StaticDraw/1
+          └── SkinnedDraw/1
+                    │
+                    ▼
+             RenderCommand/1
+                    │
+              ┌─────┴─────┐
+              ▼           ▼
+      RenderResources   ShaderProgram
+              │           │
+              └─────┬─────┘
+                    ▼
+           desktop reference
 
+Для material constants используется `SHIFT.MaterialConstantPayload/1` с 16-byte register slots и deterministic byte offsets.
 
-### VS/PS semantic interface
+Renderer-global resources передаются явно по `sN`. Для `environmentMap → s3` существует отдельный cube-resource contract; обычный 2D image не подменяет cube map.
 
-Исправлена карта D3D9 `D3DDECLUSAGE`: `6=TANGENT`, `7=BINORMAL`, `10=COLOR`, `13=SAMPLE`. На реальных BMW M3 E36 FXO это устраняет прежнюю ложную интерпретацию `COLOR0` как `SAMPLE0`.
+## Skinning
 
-`shader_interface.py` теперь связывает vertex `oTn` и pixel `vn` по паре `(usage,index)`, а не по номеру регистра, и сопоставляет входы VS с атрибутами MEB. Подтверждённые MEB semantic mappings: `200=POSITION0`, `460=COLOR0`, `220=NORMAL0`, `240=TANGENT0`, `250=BINORMAL0`, `130..134=TEXCOORD0..4`, `310=BLENDWEIGHT0`, `580=BLENDINDICES0`. `230..234` используются как 3-компонентные UVW-каналы и сохраняются как TEXCOORD slots.
+Skinning разделён на независимые уровни:
 
-На наборе BMW M3 E36 + Cockpit: 1,707 FXO, 10,756 shader programs, 125 уникальных stage+IO signatures. Внутри FXO обнаружено 21,488 VS/PS candidate pairs; 13,909 пар имеют полное semantic-покрытие PS input declarations со стороны VS outputs. Например bodywork permutation связывает PS `TEXCOORD5/0/1` с VS `oT1/oT2/oT3` при разных register numbers — это подтверждает semantic linkage.
+1. **BindSkeleton** — точная привязка BAB/BAS к MEB skeleton.
+2. **SkinPose** — явная matrix palette в `SHIFT.SkinPose/1`.
+3. **CPU reference** — deterministic linear-blend skinning.
+4. **GLES ABI** — std140 palette + BLENDWEIGHT0/BLENDINDICES0.
+5. **Animation decoding** — отдельная задача; opaque BAB tail не интерпретируется без evidence.
 
-Следующий слой: точный vertex stream packing/type (D3DDECLTYPE) поверх этих semantics, затем окончательная VS/PS permutation привязка к BMT specialization flags и runtime `SHIFT.DrawPacket/1`.
+Phase 60 добавляет `SHIFT.SkinnedMeshReference/1`: explicit SkinPose применяется к POSITION и известным direction streams, а UV/color/influence streams остаются без изменения.
 
-### VS/PS semantic interface
+## Быстрый старт
 
-Исправлена карта D3D9 `D3DDECLUSAGE`: `6=TANGENT`, `7=BINORMAL`, `10=COLOR`, `13=SAMPLE`. На реальных BMW M3 E36 FXO это устраняет прежнюю ложную интерпретацию `COLOR0` как `SAMPLE0`.
+### Импорт
 
-`shader_interface.py` теперь связывает vertex `oTn` и pixel `vn` по паре `(usage,index)`, а не по номеру регистра, и сопоставляет входы VS с атрибутами MEB. Подтверждённые MEB semantic mappings: `200=POSITION0`, `460=COLOR0`, `220=NORMAL0`, `240=TANGENT0`, `250=BINORMAL0`, `130..134=TEXCOORD0..4`, `310=BLENDWEIGHT0`, `580=BLENDINDICES0`. `230..234` используются как 3-компонентные UVW-каналы и сохраняются как TEXCOORD slots.
+    python shift_importer.py inspect VEHICLES.bff
+    python shift_importer.py manifest /path/to/Dir/ manifest.json --decode
+    python shift_importer.py validate /path/to/Dir --report validation.json
+    python shift_importer.py extract /path/to/Dir extracted/
+    python shift_importer.py package /path/to/Dir shift_assets/
 
-На наборе BMW M3 E36 + Cockpit: 1,707 FXO, 10,756 shader programs, 125 уникальных stage+IO signatures. Внутри FXO обнаружено 21,488 VS/PS candidate pairs; 13,909 пар имеют полное semantic-покрытие PS input declarations со стороны VS outputs. Например bodywork permutation связывает PS `TEXCOORD5/0/1` с VS `oT1/oT2/oT3` при разных register numbers — это подтверждает semantic linkage.
+### Анализ
 
-Следующий слой: точный vertex stream packing/type (D3DDECLTYPE) поверх этих semantics, затем окончательная VS/PS permutation привязка к BMT specialization flags и runtime `SHIFT.DrawPacket/1`.
+    python shift_importer.py analyze-resource VEHICLES.bff cars/bmw_m3_e36/body.meb --output body.json
+    python shift_importer.py analyze-resource GUI.bff gui/hud/hud.bmt --output material.json
+    python shift_importer.py analyze-dir /path/to/Dir reports/ --ext .bmt .fx .fxh .meb .bab .bas .csm .xml .lod .vud .cpt
+    python shift_importer.py graph /path/to/bffs graph.json
 
-## Renderer resource manager
+### Построение IR
 
-`renderer_resources.py` exposes `SHIFT.RenderResources/1`, a content-addressed manifest for DDS resources, sampler states and material texture bindings. Texture identity is based on decoded-content SHA-256 when available; sampler identity is independent so different materials can reuse the same GPU texture with distinct sampling state. Optional compressed-texture capabilities are checked explicitly before a resource is marked GPU-ready.
+    python shift_importer.py build-ir /path/to/bffs android_ir/
+    SHIFT_LZX_NATIVE=1 python shift_importer.py build-ir /path/to/bffs android_ir_native/
 
+### Render reference
 
-`python shift_importer.py bab-corpus resource_analysis.json bab_corpus.json
-python shift_importer.py bab-payload-diff clips/idle.bab clips/run.bab bab_diff.json
-python reference_renderer.py command.json --render-command --textured --mesh mesh.json --texture body.dds -o body.ppm` builds a corpus report over parsed BAB resources without decoding the opaque animation tail.
+    python draw_packets.py resource_analysis.json draw_packets.json
+    python reference_renderer.py command.json --render-command --textured --shader-reference --mesh mesh.json --texture body.dds --output body.ppm
+
+Дополнительные bindings:
+
+    # material sampler sN
+    --texture-binding 1=specular.dds
+
+    # renderer-global 2D sampler sN
+    --external-texture-binding 0=shadow.dds
+
+    # renderer-global cube sampler sN
+    --external-cube-face 3=px=env_px.dds
+    --external-cube-face 3=nx=env_nx.dds
+    --external-cube-face 3=py=env_py.dds
+    --external-cube-face 3=ny=env_ny.dds
+    --external-cube-face 3=pz=env_pz.dds
+    --external-cube-face 3=nz=env_nz.dds
+
+## Структура IR
+
+    shift_assets/
+    ├── blobs/
+    │   └── <sha256>
+    ├── manifest.json
+    ├── path_map.json
+    ├── stats.json
+    └── analysis/
+        ├── materials/
+        ├── reflection/
+        ├── shaders/
+        ├── bml/
+        └── ...
+
+Android runtime не должен читать BFF напрямую. Импортёр заранее строит neutral IR, а runtime получает подготовленные ресурсы и контракты.
+
+## Тестирование
+
+CI запускает полный Python suite и отдельную native regression:
+
+    python -m pytest -q
+
+    cmake -S native_ir -B native_ir/build -DCMAKE_BUILD_TYPE=Release
+    cmake --build native_ir/build --parallel
+    ./native_ir/build/test_ir <mgeo-fixture> <cmesh-fixture>
+
+При наличии `glslangValidator` pipeline также проверяет compile/link generated GLSL ES 3.1 stages.
+
+## Roadmap
+
+    BFF → IR
+       ├── Geometry
+       ├── Material
+       ├── Shader
+       └── Skeleton / Animation
+                 │
+                 ▼
+          RenderCommand
+                 │
+          ┌──────┴──────┐
+          ▼             ▼
+   Desktop reference  Android/GLES
+
+Ближайшие задачи:
+
+- **Phase 60** — explicit CPU skinned-mesh reference.
+- **Phase 61+** — свести skinned mesh reference с embedded VS execution и RenderCommand.
+- Доказать `COLOR0/1` type + channel order.
+- Расширить real BMW shader coverage: remaining varyings, opcodes и control flow.
+- Довести material/light/blend semantics до воспроизводимого golden render.
+- Расшифровать BAB animation payload по corpus + byte-diff evidence.
+- После стабилизации vehicle path перейти к SGB/track assembly.
+- Затем — Android runtime.
+
+Подробный план находится в [ROADMAP.md](ROADMAP.md).
+
+## Документация по слоям
+
+| Документ | Назначение |
+|---|---|
+| [ROADMAP.md](ROADMAP.md) | единый план реализации |
+| [docs/RENDER_PIPELINE_STATUS.md](docs/RENDER_PIPELINE_STATUS.md) | render/link/reference pipeline |
+| [REFERENCE_RENDERER_STATUS.md](REFERENCE_RENDERER_STATUS.md) | desktop reference |
+| [SHADER_BACKEND_STATUS.md](SHADER_BACKEND_STATUS.md) | D3D9 → ShaderProgram → GLSL |
+| [VERTEX_ABI_STATUS.md](VERTEX_ABI_STATUS.md) | MEB vertex semantics |
+| [SKINNING_STATUS.md](SKINNING_STATUS.md) | skeleton, pose, skinning |
+| [TEXTURE_RENDER_STATUS.md](TEXTURE_RENDER_STATUS.md) | DDS / sampler / cubemap |
+| [docs/SKINNED_DRAW_STATUS.md](docs/SKINNED_DRAW_STATUS.md) | SkinnedDraw contract |
+
+## Evidence policy
+
+Проект ставит воспроизводимость выше «красивого» результата:
+
+- parser output не считается verified только потому, что он синтаксически правдоподобен;
+- ambiguous fields не выбираются по file order или удобству;
+- runtime contracts должны содержать явные blockers;
+- каждая новая ABI-гипотеза должна получать позитивный и негативный regression case.
+
+Особенно осторожно обрабатываются D3D9 vertex declarations, COLOR0/1 packing, shader permutation selection, renderer-global resources и BAB animation grammar.
+
+## Данные и лицензирование
+
+Код предназначен для исследовательского reverse engineering и tooling. Оригинальные игровые данные в репозиторий не включаются.
