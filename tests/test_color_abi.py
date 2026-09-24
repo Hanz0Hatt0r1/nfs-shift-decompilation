@@ -438,6 +438,7 @@ def test_color_evidence_bff_corpus_scans_meb_color_streams(monkeypatch, tmp_path
 
 def test_color_evidence_bff_corpus_can_fail_on_decode_error(monkeypatch, tmp_path):
     import argparse
+    from types import SimpleNamespace
 
     import shift_importer
 
