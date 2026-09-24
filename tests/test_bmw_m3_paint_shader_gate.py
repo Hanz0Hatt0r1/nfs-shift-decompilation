@@ -69,3 +69,17 @@ def test_bmw_paint_shader_gate_accepts_material_binding_bindings_shape():
     binding.pop('external_samplers')
     report=validate_bmw_paint_shader_gate(binding)
     assert report['ready'] is True
+
+
+def test_bmw_paint_shader_gate_accepts_top_level_material_binding_shape():
+    binding=_binding()
+    selection=binding.pop('shader_selection')
+    binding.update({
+        'selection_status':selection['status'],
+        'selected_fxo':selection['selected_fxo'],
+        'shader_pair':selection['shader_pair'],
+        'linked_shader_pair':selection['linked_shader_pair'],
+        'permutation_identity':selection['permutation_identity'],
+    })
+    report=validate_bmw_paint_shader_gate(binding)
+    assert report['ready'] is True
