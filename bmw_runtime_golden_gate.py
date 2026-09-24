@@ -23,6 +23,8 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     # Vertex-input parity is evaluated below only when an explicit Usage map is supplied by the caller.
     if usage_map_path:
         usage_raw = json.loads(Path(usage_map_path).read_text(encoding='utf-8'))
+        if isinstance(usage_raw, dict) and isinstance(usage_raw.get('usage_map'), dict):
+            usage_raw = usage_raw.get('usage_map')
         usage_map = {int(k): int(v) for k, v in usage_raw.items()} if isinstance(usage_raw, dict) else None
         vertex_input_parity = validate_bmw_vertex_input_parity(material, runtime, usage_map=usage_map)
     else:

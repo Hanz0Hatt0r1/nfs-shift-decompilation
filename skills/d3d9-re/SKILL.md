@@ -55,3 +55,8 @@ remapping the original BFF at runtime.
 ## MEB descriptor triples
 
 `SHIFT.BMWMEBDescriptorParity/1` validates preserved MEB descriptor bytes against their decoded `[Type, Usage, Channel]` words and the target `VertexLayout/1`. The raw 12-byte payload is checked as little-endian DWORDs before it participates in runtime declaration parity.
+
+
+## Usage ordinal bridge
+
+Use `meb_runtime_usage_bridge.py` to derive MEB Usage ordinals from exact same-resource runtime declaration records. The tool never invents missing Usage bytes and marks conflicting observations as `ambiguous`.

@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 132. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 133. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -518,3 +518,10 @@ Next: obtain one real BMW runtime capture containing declaration, VS/PS, constan
 The MEB descriptor triples now survive from resource analysis into `DrawPacket/1`, golden manifest generation, `BMWMaterialSlice/1` and runtime vertex-input parity. `SHIFT.BMWMEBDescriptorParity/1` checks exact 12-byte raw descriptor encoding against decoded `[Type, Usage, Channel]`, and the BMW vertex-input gate derives its runtime declaration expectations from those resource-derived triples.
 
 Next: use the compact BMW descriptor snapshot with a real runtime capture to prove the remaining Usage ordinal -> D3D9 Usage byte mapping and then execute the first accepted material draw through the desktop renderer.
+
+
+## Phase 133: MEB Usage ordinal bridge
+
+`SHIFT.MEBRuntimeUsageOrdinalBridge/1` now derives MEB Usage-ordinal → D3D9 Usage-byte candidates only from exact same-resource runtime declaration observations. Type and UsageIndex must agree with the preserved MEB descriptor; multiple observed Usage bytes produce `ambiguous`, missing observations remain `unmapped`. The resulting bridge report can be supplied directly to the existing parity/golden-gate `--usage-map` input.
+
+Next: run the bridge on a real BMW capture and promote only unique same-resource mappings. Then execute the complete `bmw-runtime-golden-gate` and reference render.

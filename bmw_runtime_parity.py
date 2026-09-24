@@ -171,6 +171,8 @@ def validate_files(material_path: str | Path, runtime_path: str | Path, *, usage
     material=json.loads(Path(material_path).read_text(encoding='utf-8'))
     runtime=json.loads(Path(runtime_path).read_text(encoding='utf-8'))
     raw=json.loads(Path(usage_map_path).read_text(encoding='utf-8')) if usage_map_path else None
+    if isinstance(raw, dict) and isinstance(raw.get('usage_map'), dict):
+        raw = raw.get('usage_map')
     usage_map={int(k):int(v) for k,v in raw.items()} if isinstance(raw,dict) else None
     return validate_runtime_parity(material,runtime,usage_map=usage_map,require_constant_values=require_constant_values)
 
