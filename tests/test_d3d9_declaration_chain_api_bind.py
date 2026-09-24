@@ -101,6 +101,12 @@ def test_render_api_boundary_is_a_required_gate_when_supplied():
         render_api_evidence={
             "format": "SHIFT.D3D9RenderApiBoundaryEvidence/1",
             "status": "observed",
+            "source": {
+                "name": "SHIFT.exe.c",
+                "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+                "bytes": 38993813,
+                "line_count": 1471366,
+            },
             "semantic_links": {
                 "declaration_to_stream_setup": {"status": "observed"},
                 "render_setup_to_draw": {"status": "observed"},
