@@ -56,7 +56,10 @@ EDGES = {
 
 def _function_body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    match = re.search(rf"\b{re.escape(function)}\s*\(", source)
+    pattern = re.compile(
+        rf"(?m)^[^\n{{}}]*\b{re.escape(function)}\s*\([^;\n]*\)\s*(?:\n[^\n{{}}]*)?\{{"
+    )
+    match = pattern.search(source)
     if match is None:
         return None, None, ""
     start = source.count("\n", 0, match.start()) + 1
@@ -73,7 +76,6 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
         if seen and depth == 0:
             return start, index, "\n".join(body)
     return start, None, "\n".join(body)
-
 
 def _function_call_status(body: str, function: str) -> bool:
     return bool(re.search(rf"\b{re.escape(function)}\s*\(", body))
