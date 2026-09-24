@@ -29,3 +29,7 @@ When both stages are available in one frame, the capture derives the same
 
 Correlate the captured shader permutation identity with the selected BMW material
 slice, then require sampler/constants/interface parity before the first real material render is accepted as golden.
+
+## Phase 125 integration
+
+The runtime shader capture is now consumed by `SHIFT.BMWRuntimeShaderJoin/1`, which matches the captured VS/PS permutation identity and exact BMW resource identity against the offline material slice before checking sampler parity.
