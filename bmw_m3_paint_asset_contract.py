@@ -22,10 +22,14 @@ def validate_bmw_paint_asset(golden: Mapping[str, Any]) -> dict[str, Any]:
     fmt=golden.get('format')
     if fmt!='SHIFT.BMWGoldenAssetManifest/1': reasons.append('golden:invalid-format')
     meta=golden.get('golden') or {}; mesh=golden.get('mesh') or {}
+    provenance=golden.get('provenance') or {}
     resource=_norm(meta.get('resource'))
     if resource!='vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb': reasons.append('asset:resource-mismatch')
     if not meta.get('resource_sha256'): reasons.append('asset:resource-sha256-missing')
     elif str(meta.get('resource_sha256')).lower()!=EXPECTED_RESOURCE_SHA256: reasons.append('asset:resource-sha256-mismatch')
+    for field in ('bundle','bundle_resource_id','collector_version','raw_row_sha256'):
+        if not provenance.get(field):
+            reasons.append(f'provenance:{field}:missing')
     color=(mesh.get('color460_descriptor') or {}).get('words')
     if color!=[4,6,0]: reasons.append('asset:color460-proof-missing')
     primitives=list(mesh.get('primitives') or [])
