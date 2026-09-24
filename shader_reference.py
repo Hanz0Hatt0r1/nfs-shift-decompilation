@@ -430,16 +430,26 @@ def shader_program_from_ir(payload: dict[str, Any]) -> ShaderProgram:
     )
 
 
-def validate_pixel_program_inputs(program: ShaderProgram) -> dict[str, Any]:
-    """Validate the varyings currently supported by the texture reference renderer."""
+def validate_pixel_program_inputs(
+    program: ShaderProgram,
+    *,
+    available_semantics: Iterable[tuple[str, int]] | None = None,
+) -> dict[str, Any]:
+    """Validate fixed shader inputs plus explicitly supplied reference streams."""
+    available = {
+        (str(usage).upper(), int(index))
+        for usage, index in (available_semantics or ())
+    }
     unsupported = []
     for item in program.inputs:
         usage = str(item.get("usage") or "").upper()
         index = int(item.get("index", 0))
-        if not (
+        semantic = (usage, index)
+        fixed = (
             (usage == "TEXCOORD" and 0 <= index <= 4)
             or (usage in {"NORMAL", "TANGENT", "BINORMAL"} and index == 0)
-        ):
+        )
+        if not fixed and semantic not in available:
             unsupported.append({
                 "usage": usage,
                 "index": index,
@@ -458,26 +468,33 @@ def validate_pixel_program_inputs(program: ShaderProgram) -> dict[str, Any]:
     }
 
 
-
-def validate_vertex_program_inputs(program: ShaderProgram) -> dict[str, Any]:
-    """Validate vertex inputs supported by the deterministic reference renderer."""
+def validate_vertex_program_inputs(
+    program: ShaderProgram,
+    *,
+    available_semantics: Iterable[tuple[str, int]] | None = None,
+) -> dict[str, Any]:
+    """Validate known MEB vertex inputs plus explicitly supplied reference streams."""
+    available = {
+        (str(usage).upper(), int(index))
+        for usage, index in (available_semantics or ())
+    }
     unsupported = []
     for item in program.inputs:
         usage = str(item.get("usage") or "").upper()
         index = int(item.get("index", 0))
-        if usage == "POSITION" and index == 0:
-            continue
-        if usage in {"TEXCOORD"} and 0 <= index <= 4:
-            continue
-        if usage in {"NORMAL", "TANGENT", "BINORMAL"} and index == 0:
-            continue
-        if usage in {"BLENDWEIGHT", "BLENDINDICES"} and index == 0:
-            continue
-        unsupported.append({
-            "usage": usage,
-            "index": index,
-            "register": item.get("register"),
-        })
+        semantic = (usage, index)
+        fixed = (
+            (usage == "POSITION" and index == 0)
+            or (usage == "TEXCOORD" and 0 <= index <= 4)
+            or (usage in {"NORMAL", "TANGENT", "BINORMAL"} and index == 0)
+            or (usage in {"BLENDWEIGHT", "BLENDINDICES"} and index == 0)
+        )
+        if not fixed and semantic not in available:
+            unsupported.append({
+                "usage": usage,
+                "index": index,
+                "register": item.get("register"),
+            })
     if program.stage != "vertex":
         unsupported.append({"reason": "not-vertex-stage", "stage": program.stage})
     return {
