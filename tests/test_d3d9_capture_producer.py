@@ -7,7 +7,7 @@ def _events():
         {"event":"set_vertex_declaration","frame":0,"event_index":1,"thread_id":7,"device_ptr":"0x10","declaration_ptr":"0x20"},
         {"event":"set_stream_source","frame":0,"event_index":2,"thread_id":7,"device_ptr":"0x10","vertex_buffer_ptr":"0x30","stream":0,"offset_in_bytes":0,"stride":32},
         {"event":"set_indices","frame":0,"event_index":3,"thread_id":7,"device_ptr":"0x10","index_buffer_ptr":"0x40"},
-        {"event":"set_texture","frame":0,"event_index":4,"thread_id":7,"device_ptr":"0x10","stage":3,"texture_ptr":"0x41"},
+        {"event":"set_texture","frame":0,"event_index":4,"thread_id":7,"device_ptr":"0x10","stage":3,"texture_ptr":"0x41","resource_descriptor_status":"observed","resource_type":3,"resource_type_name":"cube_texture","width":128,"height":128,"format":21,"pool":1,"level_count":8},
         {"event":"create_vertex_shader","frame":0,"event_index":5,"thread_id":7,"device_ptr":"0x10","shader_ptr":"0x50","bytes_hex":"0000ffff"},
         {"event":"set_vertex_shader","frame":0,"event_index":6,"thread_id":7,"device_ptr":"0x10","shader_ptr":"0x50"},
         {"event":"set_vertex_shader_constant_f","frame":0,"event_index":7,"thread_id":7,"device_ptr":"0x10","start_register":0,"vector4f_count":1,"values":[1.0,0.0,0.0,1.0]},
