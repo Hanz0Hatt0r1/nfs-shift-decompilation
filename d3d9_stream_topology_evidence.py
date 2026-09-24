@@ -60,8 +60,12 @@ def analyze_d3d9_stream_topology(source: str | bytes) -> dict[str, Any]:
         "*(int *)(*(int *)(iVar9 + 8) + *(int *)(iVar9 + 4) * 4)", start=start)
     count = _any(text, "local_24 = local_24 + 1;", "*piVar7 = *piVar7 + 1;",
                  "*(int *)((int)local_38 * 0x10 + 4 + *(int *)(iVar15 + 0x24))", start=start)
-    size = _any(text, "DAT_00b8eef0", "local_40 = local_40 +",
+    size = (
+        _has(text, "DAT_00b8eef0",
+             "local_40 = local_40 +", start=start)
+        or _has(text, "DAT_00b8eef0",
                 "*piVar7 = *piVar7 + *(int *)(&DAT_00b8eef0", start=start)
+    )
 
     required = all([
         v["status"] == "observed" for v in inputs.values()
