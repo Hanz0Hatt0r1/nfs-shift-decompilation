@@ -37,8 +37,6 @@ def build_shader_permutation_identity(data: bytes, *, vertex_offset: int, pixel_
         'version': 1,
         'vertex': {
             'shader_model': [vb.major, vb.minor],
-            'offset': vb.offset,
-            'end': vb.end,
             'byte_sha256': hashlib.sha256(vertex_bytes).hexdigest(),
             'instruction_count': vb.instruction_count,
             'inputs': _semantic_rows(vertex.inputs),
@@ -47,8 +45,6 @@ def build_shader_permutation_identity(data: bytes, *, vertex_offset: int, pixel_
         },
         'pixel': {
             'shader_model': [pb.major, pb.minor],
-            'offset': pb.offset,
-            'end': pb.end,
             'byte_sha256': hashlib.sha256(pixel_bytes).hexdigest(),
             'instruction_count': pb.instruction_count,
             'inputs': _semantic_rows(pixel.inputs),
