@@ -188,18 +188,27 @@ def test_color_evidence_resource_reads_mab_from_bff(monkeypatch, tmp_path):
 
     import shift_importer
 
+    decoded_meb = bytearray(96)
+    decoded_meb[64:76] = bytes.fromhex("040000000600000000000000")
+    decoded_meb[76:84] = bytes((10, 20, 30, 255, 40, 50, 60, 255))
     mesh = SimpleNamespace(
         colors=[(10, 20, 30, 255), (40, 50, 60, 255)],
         colors2=[],
         vertex_count=2,
-        property_layouts=[{"id": "460", "payload_offset": 64, "stride": 4, "bytes": 8}],
+        property_layouts=[{"id": "460", "payload_offset": 76, "stride": 4, "bytes": 8}],
+        property_descriptors=[{
+            "id": "460",
+            "offset": 64,
+            "words": [4, 6, 0],
+            "raw_hex": "040000000600000000000000",
+        }],
     )
     entry = SimpleNamespace(index=7, path="cars/body.meb")
     fake_bff = SimpleNamespace(
         path=SimpleNamespace(name="CARS.bff"),
         entries=[entry],
     )
-    fake_bff.extract_entry = lambda _entry, type2="lzx": b"decoded-meb"
+    fake_bff.extract_entry = lambda _entry, type2="lzx": bytes(decoded_meb)
     output = tmp_path / "resource-color.json"
 
     class FakeBFF:
@@ -235,7 +244,16 @@ def test_color_evidence_resource_reads_mab_from_bff(monkeypatch, tmp_path):
     assert report["source"]["archive"] == "CARS.bff"
     assert report["source"]["entry_index"] == 7
     assert report["source"]["stream"] == "colors"
-    assert report["source"]["property_layout"]["payload_offset"] == 64
+    assert report["source"]["property_layout"]["payload_offset"] == 76
+    assert report["source"]["property_descriptor"]["offset"] == 64
+    assert report["source"]["property_descriptor"]["raw_hex"] == "040000000600000000000000"
+    assert report["source"]["descriptor_range"] == {"offset": 64, "length": 12, "end": 76}
+    assert report["source"]["descriptor_range_status"] == "observed"
+    assert report["source"]["payload_range"] == {"offset": 76, "length": 8, "end": 84}
+    assert report["source"]["payload_range_status"] == "observed"
+    assert report["source"]["payload_raw_hex"] == "0a141eff28323cff"
+    assert report["source"]["decoded_stream_matches_payload"] is True
+    assert report["source"]["decoded_stream_matches_payload_status"] == "observed"
     assert report["sample_count"] == 2
 
 
@@ -246,11 +264,20 @@ def test_color_evidence_resource_uses_colors2_for_property_461(monkeypatch, tmp_
 
     import shift_importer
 
+    decoded_meb = bytearray(88)
+    decoded_meb[64:76] = bytes.fromhex("040000000600000100000000")
+    decoded_meb[76:80] = bytes((1, 2, 3, 255))
     mesh = SimpleNamespace(
         colors=[],
         colors2=[(1, 2, 3, 255)],
         vertex_count=1,
-        property_layouts=[{"id": "461", "payload_offset": 128, "stride": 4, "bytes": 4}],
+        property_layouts=[{"id": "461", "payload_offset": 76, "stride": 4, "bytes": 4}],
+        property_descriptors=[{
+            "id": "461",
+            "offset": 64,
+            "words": [4, 6, 1],
+            "raw_hex": "040000000600000100000000",
+        }],
     )
     entry = SimpleNamespace(index=9, path="cars/body.meb")
 
@@ -268,7 +295,7 @@ def test_color_evidence_resource_uses_colors2_for_property_461(monkeypatch, tmp_
             return False
 
         def extract_entry(self, _entry, type2="lzx"):
-            return b"decoded-meb"
+            return bytes(decoded_meb)
 
     output = tmp_path / "resource-color2.json"
     monkeypatch.setattr(shift_importer, "BFF", FakeBFF)
@@ -286,6 +313,11 @@ def test_color_evidence_resource_uses_colors2_for_property_461(monkeypatch, tmp_
     report = json.loads(output.read_text(encoding="utf-8"))
     assert report["source"]["stream"] == "colors2"
     assert report["source"]["vertex_count"] == 1
+    assert report["source"]["property_descriptor"]["words"] == [4, 6, 1]
+    assert report["source"]["descriptor_range_status"] == "observed"
+    assert report["source"]["payload_range"] == {"offset": 76, "length": 4, "end": 80}
+    assert report["source"]["payload_raw_hex"] == "010203ff"
+    assert report["source"]["decoded_stream_matches_payload"] is True
     assert report["candidates"][0]["rgba8_hex"] == "010203ff"
 
 
