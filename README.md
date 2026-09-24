@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 103** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 104** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -537,3 +537,12 @@ CLI:
     python shift_importer.py source-d3d9-declaration-lifecycle SHIFT.exe.c declaration-lifecycle.json
 
 Report намеренно не утверждает конкретный runtime frame или конкретный mesh instance. MEB 460/461 → Type остаётся not-proven.
+
+
+## Phase 104 — D3D9 binding arguments
+
+Добавлен SHIFT.D3D9BindingArgsEvidence/1. Source-анализ фиксирует аргументы SetStreamSource: Stream из param_2, vertex-buffer из per-stream storage, OffsetInBytes=0 и Stride из stream-type getter. Для SetIndices фиксируется прямой forwarding восстановленного index-buffer pointer. Runtime resource identity остаётся отдельным boundary.
+
+CLI:
+
+    python shift_importer.py source-d3d9-binding-args SHIFT.exe.c binding-args.json

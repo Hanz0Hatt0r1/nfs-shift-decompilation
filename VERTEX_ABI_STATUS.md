@@ -230,3 +230,8 @@ Phase 102 follow-up verified the exact sentinel producer against the uploaded SH
 ## Phase 103: D3D9 declaration lifecycle call chain
 
 The source-backed ABI evidence now includes an explicit declaration lifecycle: mesh construction invokes the recovered loader, the loader canonicalizes the declaration buffer, the canonicalizer creates the D3D9 declaration object, and the render path later applies that stored object through SetVertexDeclaration. The report distinguishes this static source chain from a specific runtime frame.
+
+
+## Phase 104: D3D9 binding argument semantics
+
+The recovered vertex/index binding wrappers now expose their device-call arguments as evidence: stream number, vertex-buffer storage path, zero byte offset, computed stride, and index-buffer pointer. This extends the ABI boundary beyond vtable slot identity while keeping runtime object identity and MEB 460/461 -> Type separate.
