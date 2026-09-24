@@ -315,6 +315,10 @@ influences, SkinPose и bind-palette. Для матриц используетс
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
 
+## Phase 77 — CPrimitiveType source anchors
+
+Phase 77 recovers original Win CPrimitiveType.cpp line numbers from decompiler diagnostic calls and records the mapping to exact decompiled source lines. This gives a stable bridge back to the original source logic while keeping the COLOR0/1 ABI unresolved.
+
 ## Phase 76 — type-table reference census
 
 Phase 76 adds a complete source callsite census for FUN_00853c20 and records all embedded CPrimitiveType.cpp source-path references with exact source lines. The report now distinguishes an actively consumed opaque type table from an accidental symbol match while keeping MEB 460/461 -> D3D9 type unresolved.
