@@ -62,3 +62,20 @@ A skinned RenderCommand can now produce the existing `SHIFT.GLES31Skinning/1` co
 ## Phase 71: command-level shader reference
 
 SkinPose deformation is now reachable from the same RenderCommand source used by the GLES handoff, while the desktop oracle reuses the exact VS→PS reference path. This is the intended CPU-side oracle for future Android/backend parity tests.
+
+
+## Phase 73: RenderCommand ↔ GLES parity gate
+
+`validate_gles31_skinning_contract_parity()` compares the final
+`SHIFT.RenderCommand/1` skinned payload with `SHIFT.GLES31Skinning/1` before a
+future Android submission.
+
+The gate checks the exact vertex attribute locations and source formats for
+POSITION0, BLENDWEIGHT0 and BLENDINDICES0, the four-influence contract, SkinPose
+format/space/layout/bone count and a deterministic hash of every 3x4 pose matrix.
+The bind skeleton bone count, matrix layout/space and local-palette hash are also
+cross-checked.
+
+Any mismatch is returned as a machine-readable `SHIFT.GLES31SkinningParity/1`
+blocker. This keeps the neutral RenderCommand ABI authoritative and avoids
+silently rebuilding a different skinning payload for GLES.
