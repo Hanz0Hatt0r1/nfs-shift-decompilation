@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 106** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 112** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -602,3 +602,17 @@ CLI:
     python shift_importer.py meb-d3d9-descriptor-triple meb.json source-d3d9.json descriptor-triple.json
 
 The resulting Type mapping is now evidence-backed at the descriptor/triple boundary: both properties resolve to D3D9 Type code 4 under the exact-match conditions. Channel 0/1 remains the COLOR0/COLOR1 distinction at the source triple level.
+
+## Linux: сбор MEB-доказательств для 460/461
+
+Для передачи игровых данных для reverse engineering не нужно вручную искать MEB внутри BFF. Запусти из корня репозитория:
+
+    python3 tools/collect_meb_evidence.py "/путь/к/Need for Speed Shift" -o shift_meb_evidence.zip
+
+Утилита рекурсивно сканирует `.bff` и отдельные `.meb`, разбирает все MEB, отбирает ресурсы с properties **460/461** и сохраняет в один ZIP только нужные доказательства: exact 12-byte property descriptors, exact color payloads, byte ranges, SHA-256, mesh/property metadata и provenance исходного BFF/ресурса. Полные игровые архивы в ZIP не копируются.
+
+Дополнительно, если на той же машине есть загруженный Ghidra C dump:
+
+    python3 tools/collect_meb_evidence.py "/путь/к/Need for Speed Shift" --source "/путь/к/SHIFT.exe.c" -o shift_meb_evidence.zip
+
+После выполнения достаточно прислать `shift_meb_evidence.zip` и SHA-256 из последней строки консоли.

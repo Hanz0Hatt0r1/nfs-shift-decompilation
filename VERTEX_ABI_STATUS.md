@@ -278,3 +278,9 @@ A source-backed bridge is now formalized between the MEB property descriptor and
 With exact MEB descriptors preserved, the validator requires 460 = `[4,6,0]` and 461 = `[4,6,1]`. When both exact triples and all source-side prerequisites are present, `d3d9_type_mapping.status` and `meb_property_mapping.status` become `match`, resolving both MEB color properties to D3D9 Type code 4. This is no longer based on decimal-ID coincidence; it compares the actual descriptor words.
 
 Remaining runtime task: prove that the same resolved Type-4 records are the records used by the renderer for a concrete mesh instance, and recover the D3D9 Usage byte from the opaque usage table rather than assuming the internal ordinal 6 is the final Usage value.
+
+## Phase 112: portable MEB evidence collection
+
+A one-command Linux collector now produces `SHIFT.MEBEvidenceBundle/1`. For every parsed MEB it records structure/property metadata; for 460/461 it additionally preserves exact on-disk descriptors and property payloads, raw hashes, color ABI evidence and BFF/resource provenance. With `--source SHIFT.exe.c` it also emits per-resource descriptor-triple proofs.
+
+This is the handoff mechanism for the remaining runtime correlation task: the returned bundle contains the exact MEB-side bytes needed to match a concrete D3D9 declaration instance without sending the full game archive.
