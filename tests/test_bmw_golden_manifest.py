@@ -1,0 +1,31 @@
+from bmw_golden_manifest import build_golden_manifest, select_bmw_resource
+
+
+def test_bmw_golden_manifest_selects_exact_resource():
+    row = {
+        "id": "resource-id",
+        "collector_version": "115.0",
+        "source": {
+            "archive": "Pakfiles/Vehicles/BMW_M3_E36.bff",
+            "root_relative_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+            "resource_sha256": "abc",
+            "resource_size": 300764,
+            "entry_index": 863,
+        },
+        "mesh": {
+            "name": "BMW_M3_E36_KIT00_BODY_LODA",
+            "vertex_count": 3550,
+            "triangle_count": 5034,
+            "property_descriptors": [{"id": "460", "words": [4, 6, 0]}],
+            "property_layouts": [{"id": "200"}, {"id": "460"}],
+            "primitives": [{"first_index": 0, "index_count": 3, "material": "x.mtx"}],
+            "skinning": {"skinned": False},
+        },
+    }
+    selected = select_bmw_resource([row])
+    assert selected is row
+    manifest = build_golden_manifest(row, source_bundle="bundle.zip")
+    assert manifest["golden"]["resource_sha256"] == "abc"
+    assert manifest["mesh"]["vertex_count"] == 3550
+    assert manifest["mesh"]["color460_descriptor"]["words"] == [4, 6, 0]
+    assert manifest["render_requirements"]["runtime_archive_access"] is False
