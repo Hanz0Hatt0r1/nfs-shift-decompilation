@@ -13,12 +13,46 @@ FORMAT = "SHIFT.ColorABIEvidence/1"
 SUPPORTED_PROPERTIES = {"460", "461"}
 CANDIDATE_ORDERS = ("RGBA", "BGRA")
 
+# D3D9 couples packed-color declaration semantics to shader-visible channels:
+# D3DCOLOR expands packed input to RGBA; UBYTE4N only normalizes each byte.
+# The SHIFT executable also contains a float4 -> 0xAARRGGBB pack helper
+# (FUN_008310c0), which is a concrete in-source observation of packed BGRA
+# memory order on the original little-endian Windows target.
+D3D9_COLOR_CANDIDATES = (
+    {
+        "order": "RGBA",
+        "d3d9_type": "UBYTE4N",
+        "memory_order": "RGBA",
+        "shader_order": "RGBA",
+        "normalized": True,
+    },
+    {
+        "order": "BGRA",
+        "d3d9_type": "D3DCOLOR",
+        "memory_order": "BGRA",
+        "shader_order": "RGBA",
+        "normalized": True,
+    },
+)
+D3D9_COLOR_TYPES = {
+    item["d3d9_type"]: item for item in D3D9_COLOR_CANDIDATES
+}
+
 
 def _validate_payload(property_id: str, payload: bytes) -> None:
     if str(property_id) not in SUPPORTED_PROPERTIES:
         raise ValueError(f"unsupported color property {property_id!r}")
     if len(payload) % 4:
         raise ValueError("color property payload must be divisible by four bytes")
+
+
+def interpret_color_d3d9(payload: bytes, d3d9_type: str) -> bytes:
+    """Interpret a packed color stream under an explicit D3D9 declaration type."""
+    kind = str(d3d9_type).upper()
+    candidate = D3D9_COLOR_TYPES.get(kind)
+    if candidate is None:
+        raise ValueError(f"unsupported D3D9 color type {d3d9_type!r}")
+    return interpret_color_bytes(payload, candidate["order"])
 
 
 def interpret_color_bytes(payload: bytes, order: str) -> bytes:
@@ -81,8 +115,13 @@ def build_color_abi_evidence(
     candidates: list[dict[str, Any]] = []
     for order in CANDIDATE_ORDERS:
         rgba = interpret_color_bytes(raw, order)
+        candidate_type = D3D9_COLOR_TYPES[order]
         candidates.append({
             "order": order,
+            "d3d9_type": candidate_type["d3d9_type"],
+            "memory_order": candidate_type["memory_order"],
+            "shader_order": candidate_type["shader_order"],
+            "normalized": candidate_type["normalized"],
             "pixel_bytes_sha256": hashlib.sha256(rgba).hexdigest(),
             "stats": _channel_stats(rgba),
             "rgba8_hex": rgba.hex(),
@@ -94,8 +133,16 @@ def build_color_abi_evidence(
         "element_size": 4,
         "raw_bytes_sha256": hashlib.sha256(raw).hexdigest(),
         "sample_count": len(raw) // 4,
-        "confidence": "ambiguous-channel-order",
+        "confidence": "ambiguous-declaration-and-channel-order",
         "candidates": candidates,
+        "source_evidence": {
+            "kind": "shift-exe-c",
+            "function": "FUN_008310c0",
+            "address": "0x008310C0",
+            "observed_behavior": "float4 RGBA is rounded to 8-bit channels and packed as 0xAARRGGBB",
+            "little_endian_memory_order": "BGRA",
+            "status": "supporting-packed-color-evidence-not-MEB-declaration-proof",
+        },
     }
 
 
@@ -116,6 +163,9 @@ def compare_color_candidate(
         differing = sum(1 for a, b in zip(rgba, expected) if a != b)
         results.append({
             "order": candidate["order"],
+            "d3d9_type": candidate.get("d3d9_type"),
+            "memory_order": candidate.get("memory_order"),
+            "shader_order": candidate.get("shader_order"),
             "exact_match": differing == 0,
             "differing_bytes": differing,
             "expected_sha256": hashlib.sha256(expected).hexdigest(),
