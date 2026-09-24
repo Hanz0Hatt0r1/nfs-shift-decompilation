@@ -74,6 +74,14 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
             return start, index, "\n".join(body)
     return start, None, "\n".join(body)
 
+
+def _function_call_status(body: str, function: str) -> bool:
+    return bool(re.search(rf"\b{re.escape(function)}\s*\(", body))
+
+
+def _api_slot_status(body: str, byte_offset: int) -> bool:
+    return f"+ 0x{byte_offset:x}" in body or f"+ {byte_offset}" in body
+
 def analyze_d3d9_declaration_lifecycle(source: str) -> dict[str, Any]:
     if not isinstance(source, str):
         raise TypeError("source must be str")
