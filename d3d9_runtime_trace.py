@@ -12,6 +12,7 @@ from typing import Any, Iterable, Mapping
 from d3d9_declaration_instance import decode_d3d9_declaration_records
 from shader_ir import parse_shader_blobs
 from shader_permutation_identity import build_shader_permutation_identity
+from d3d9_capture_schema import validate_capture_event
 from d3d9_runtime_trace_integrity import validate_runtime_trace_integrity
 
 FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
@@ -59,6 +60,11 @@ def load_events(path: str | Path) -> list[dict[str, Any]]:
             raise ValueError(f"trace line {line_no}: invalid JSON") from exc
         if not isinstance(row, dict) or row.get("event") not in EVENTS:
             raise ValueError(f"trace line {line_no}: unsupported event")
+        schema_reasons = validate_capture_event(row)
+        if schema_reasons:
+            raise ValueError(
+                f"trace line {line_no}: capture schema invalid: " + ", ".join(schema_reasons)
+            )
         row["_line"] = line_no
         rows.append(row)
     return rows
