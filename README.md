@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 74** — command-level skinned reference. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 78** — command-level skinned reference + source-backed D3D9 type semantics. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence уже образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -314,6 +314,10 @@ influences, SkinPose и bind-palette. Для матриц используетс
 
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
+
+## Phase 78 — D3D9 primitive type semantics
+
+Phase 78 adds a reusable source-evidence layer for the recovered FUN_00854e70 declaration switch. All 17 type codes 0..16 are observed, their D3D9 declaration names are recorded, and exact conversion behavior is preserved. Type code 4 is source-backed as the packed-color path, while MEB 460/461 -> type code 4 remains unresolved.
 
 ## Phase 77 — CPrimitiveType source anchors
 
