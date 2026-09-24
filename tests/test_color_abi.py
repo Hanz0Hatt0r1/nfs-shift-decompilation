@@ -102,3 +102,80 @@ def test_color_abi_cli_rejects_non_color_property(tmp_path):
     )
     assert proc.returncode != 0
     assert not output.exists()
+
+
+def test_color_abi_cli_reads_mgeo_style_json_color_stream(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    mesh = tmp_path / "mesh.json"
+    output = tmp_path / "evidence.json"
+    mesh.write_text(
+        json.dumps({
+            "format": "SHIFT.MEB",
+            "vertex_count": 2,
+            "colors": [[10, 20, 30, 255], [40, 50, 60, 255]],
+            "colors2": [[70, 80, 90, 255], [100, 110, 120, 255]],
+        }),
+        encoding="utf-8",
+    )
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "shift_importer.py"),
+            "color-evidence",
+            "460",
+            str(mesh),
+            str(output),
+            "--mesh-json",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["source"]["kind"] == "meb-json"
+    assert result["source"]["stream"] == "colors"
+    assert result["source"]["vertex_count"] == 2
+    assert result["sample_count"] == 2
+    rgba = next(x for x in result["candidates"] if x["order"] == "RGBA")
+    assert rgba["rgba8_hex"] == "0a141eff28323cff"
+
+
+def test_color_abi_cli_reads_property_461_from_colors2(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    mesh = tmp_path / "mesh.json"
+    output = tmp_path / "evidence.json"
+    mesh.write_text(
+        json.dumps({
+            "colors2": [[1, 2, 3, 4]],
+        }),
+        encoding="utf-8",
+    )
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "shift_importer.py"),
+            "color-evidence",
+            "461",
+            str(mesh),
+            str(output),
+            "--mesh-json",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    result = json.loads(output.read_text(encoding="utf-8"))
+    assert result["source"]["stream"] == "colors2"
+    assert result["candidates"][0]["rgba8_hex"] in {"01020304", "03020104"}
