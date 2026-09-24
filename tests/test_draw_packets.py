@@ -447,3 +447,20 @@ def test_draw_packet_attaches_static_draw_contract():
     assert "shader-selection:none" in contract["blocking_reasons"]
     assert result["stats"]["draw_packets"] == 1
     assert result["stats"]["blocked_static_draws"] == 1
+
+
+def test_resource_ref_preserves_content_addressed_identity():
+    from draw_packets import _resource_ref
+
+    result = _resource_ref({
+        "archive": "BMW_M3_E36.bff",
+        "path": "vehicles/bmw/body.meb",
+        "sha256": "abc",
+        "size": 300764,
+    })
+    assert result == {
+        "archive": "BMW_M3_E36.bff",
+        "path": "vehicles/bmw/body.meb",
+        "resource_sha256": "abc",
+        "resource_size": 300764,
+    }
