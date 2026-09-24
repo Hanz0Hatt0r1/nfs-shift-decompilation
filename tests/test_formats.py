@@ -205,7 +205,7 @@ def test_meb_preserves_raw_vertex_property_descriptor_provenance():
         "id": "461",
         "offset": 80,
         "words": [4, 6, 1],
-        "raw_hex": "040000000600000100000000",
+        "raw_hex": "040000000600000001000000",
     }
 
     summary = mesh_summary(mesh)
