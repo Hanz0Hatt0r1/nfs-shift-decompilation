@@ -141,6 +141,7 @@ def _execute_vertex_program(
     semantic_data: dict[tuple[str, int], list[tuple[float, ...]]],
     *,
     shader_constants: dict[str, dict[int, Iterable[float]]] | None,
+    vertex_shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
 ) -> tuple[
     list[tuple[float, float, float, float]],
     list[dict[tuple[str, int], tuple[float, float, float, float]]],
@@ -214,7 +215,7 @@ def _execute_vertex_program(
         execution = ReferenceShaderState(
             program,
             inputs=shader_inputs,
-            constants=shader_constants,
+            constants=vertex_shader_constants if vertex_shader_constants is not None else shader_constants,
         ).execute()
         if execution["status"] != "executed":
             raise ValueError(
@@ -303,6 +304,8 @@ def rasterize_textured_mesh(
     clear: RGBA = (12, 12, 12, 255),
     pixel_program: dict[str, Any] | None = None,
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    vertex_shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    pixel_shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     uv_layers: dict[str | int, Iterable[Iterable[float]]] | None = None,
@@ -467,7 +470,7 @@ def rasterize_textured_mesh(
         preflight = ReferenceShaderState(
             shader,
             inputs=preflight_inputs,
-            constants=shader_constants,
+            constants=pixel_shader_constants if pixel_shader_constants is not None else shader_constants,
             textures=shader_textures,
             samplers=shader_samplers,
         ).execute()
@@ -592,6 +595,8 @@ def render_textured_static_draw(
     mvp: list[list[float]] | None = None,
     pixel_program: dict[str, Any] | None = None,
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    vertex_shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    pixel_shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
@@ -650,6 +655,8 @@ def render_textured_static_draw(
         sampler=sampler,
         pixel_program=pixel_program,
         shader_constants=shader_constants,
+        vertex_shader_constants=vertex_shader_constants,
+        pixel_shader_constants=pixel_shader_constants,
         texture_images=texture_images,
         samplers_by_sampler=samplers_by_sampler,
         uv_layers=uv_layers,
