@@ -6,6 +6,8 @@ standalone shader used by CI to prove the ABI compiles as OpenGL ES 3.1.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any
 
 FORMAT = "SHIFT.GLES31Skinning/1"
@@ -79,9 +81,21 @@ def build_gles31_skinning_contract(
         raise ValueError("skinned draw has no bone palette")
     if bone_count > max_bones:
         raise ValueError(f"bone palette {bone_count} exceeds GLES shader limit {max_bones}")
+    pose_matrix_blob = json.dumps(
+        matrices,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    bind_matrix_rows = list(palette.get("local_matrices_3x4", []) or [])
+    bind_matrix_blob = json.dumps(
+        bind_matrix_rows,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
     return {
         "format": FORMAT,
         "api": "OpenGL ES 3.1",
+        "ready": True,
         "bone_binding": bone_binding,
         "max_bones": max_bones,
         "bone_count": bone_count,
@@ -89,8 +103,17 @@ def build_gles31_skinning_contract(
             "format": "SHIFT.SkinPose/1",
             "matrix_space": "skinning",
             "matrix_layout": "3x4-row-major",
+            "bone_count": pose_bone_count,
+            "matrices_sha256": hashlib.sha256(pose_matrix_blob).hexdigest(),
             "source": pose.get("source"),
             "frame": pose.get("frame"),
+        },
+        "bind_skeleton": {
+            "format": "SHIFT.BindSkeleton/1",
+            "bone_count": bone_count,
+            "matrix_layout": palette.get("matrix_layout"),
+            "matrix_space": palette.get("matrix_space"),
+            "matrices_sha256": hashlib.sha256(bind_matrix_blob).hexdigest(),
         },
         "palette": {
             "storage": "std140-uniform-mat4-array",
@@ -181,6 +204,173 @@ def build_gles31_skinning_contract_from_render_command(
         bone_binding=bone_binding,
         max_bones=max_bones,
     )
+
+def validate_gles31_skinning_contract_parity(
+    command: dict[str, Any],
+    contract: dict[str, Any],
+) -> dict[str, Any]:
+    """Cross-check the GLES skinning contract against its RenderCommand source."""
+    checks: list[dict[str, Any]] = []
+    blockers: list[str] = []
+
+    def check(name: str, expected: Any, actual: Any, reason: str) -> None:
+        status = "match" if expected == actual else "mismatch"
+        checks.append({
+            "name": name,
+            "status": status,
+            "render_command": expected,
+            "gles_contract": actual,
+        })
+        if status != "match":
+            blockers.append(reason)
+
+    if command.get("format") != "SHIFT.RenderCommand/1":
+        blockers.append("parity:render-command-invalid-format")
+    if command.get("draw_kind") != "skinned":
+        blockers.append("parity:render-command-not-skinned")
+    skin = command.get("skinning") or {}
+    if skin.get("format") != "SHIFT.Skinning/1":
+        blockers.append("parity:skinning-invalid-format")
+    if not command.get("ready"):
+        blockers.append("parity:render-command-not-ready")
+    blockers.extend(
+        f"parity:source-blocker:{reason}"
+        for reason in command.get("blocking_reasons", []) or []
+    )
+
+    if contract.get("format") != FORMAT:
+        blockers.append("parity:gles-contract-invalid-format")
+    if contract.get("api") != "OpenGL ES 3.1":
+        blockers.append("parity:gles-api-invalid")
+    if contract.get("ready") is not True:
+        blockers.append("parity:gles-contract-not-ready")
+
+    attributes = (command.get("mesh") or {}).get("attributes") or []
+
+    def location_for(property_id: str) -> Any:
+        rows = [
+            row.get("location")
+            for row in attributes
+            if str(row.get("property_id")) == property_id
+        ]
+        return rows[0] if len(rows) == 1 else None
+
+    contract_attrs = contract.get("attributes") or {}
+    check(
+        "position-location",
+        location_for("200"),
+        (contract_attrs.get("position") or {}).get("location"),
+        "parity:position-location-mismatch",
+    )
+    check(
+        "blendweight0-location",
+        (skin.get("weights") or {}).get("target_location"),
+        (contract_attrs.get("blendweight0") or {}).get("location"),
+        "parity:blendweight0-location-mismatch",
+    )
+    check(
+        "blendindices0-location",
+        (skin.get("indices") or {}).get("target_location"),
+        (contract_attrs.get("blendindices0") or {}).get("location"),
+        "parity:blendindices0-location-mismatch",
+    )
+    check(
+        "blendweight0-format",
+        (skin.get("weights") or {}).get("format"),
+        (contract_attrs.get("blendweight0") or {}).get("source_format"),
+        "parity:blendweight0-format-mismatch",
+    )
+    check(
+        "blendindices0-format",
+        (skin.get("indices") or {}).get("format"),
+        (contract_attrs.get("blendindices0") or {}).get("source_format"),
+        "parity:blendindices0-format-mismatch",
+    )
+    check(
+        "influences",
+        int(skin.get("influences", 0) or 0),
+        contract.get("influences"),
+        "parity:influence-count-mismatch",
+    )
+
+    pose = skin.get("skin_pose") or {}
+    contract_pose = contract.get("skin_pose") or {}
+    check(
+        "skin-pose-format",
+        pose.get("format"),
+        contract_pose.get("format"),
+        "parity:skin-pose-format-mismatch",
+    )
+    check(
+        "skin-pose-space",
+        pose.get("matrix_space"),
+        contract_pose.get("matrix_space"),
+        "parity:skin-pose-space-mismatch",
+    )
+    check(
+        "skin-pose-layout",
+        pose.get("matrix_layout", "3x4-row-major"),
+        contract_pose.get("matrix_layout"),
+        "parity:skin-pose-layout-mismatch",
+    )
+    pose_bone_count = int(pose.get("bone_count", 0) or 0)
+    pose_blob = json.dumps(
+        pose.get("matrices_3x4") or [],
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    check(
+        "skin-pose-bone-count",
+        pose_bone_count,
+        contract_pose.get("bone_count"),
+        "parity:skin-pose-bone-count-mismatch",
+    )
+    check(
+        "skin-pose-matrices",
+        hashlib.sha256(pose_blob).hexdigest(),
+        contract_pose.get("matrices_sha256"),
+        "parity:skin-pose-matrices-mismatch",
+    )
+
+    source_palette = skin.get("bind_skeleton") or {}
+    contract_palette = contract.get("bind_skeleton") or {}
+    check(
+        "bind-bone-count",
+        int(source_palette.get("bone_count", 0) or 0),
+        int(contract_palette.get("bone_count", 0) or 0),
+        "parity:bind-bone-count-mismatch",
+    )
+    check(
+        "bind-matrix-layout",
+        source_palette.get("matrix_layout"),
+        contract_palette.get("matrix_layout"),
+        "parity:bind-matrix-layout-mismatch",
+    )
+    check(
+        "bind-matrix-space",
+        source_palette.get("matrix_space"),
+        contract_palette.get("matrix_space"),
+        "parity:bind-matrix-space-mismatch",
+    )
+    bind_blob = json.dumps(
+        source_palette.get("local_matrices_3x4") or [],
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    check(
+        "bind-matrices",
+        hashlib.sha256(bind_blob).hexdigest(),
+        contract_palette.get("matrices_sha256"),
+        "parity:bind-matrices-mismatch",
+    )
+
+    return {
+        "format": "SHIFT.GLES31SkinningParity/1",
+        "valid": not blockers,
+        "checks": checks,
+        "blocking_reasons": list(dict.fromkeys(blockers)),
+    }
+
 
 def gles31_skinning_functions(*, bone_binding: int = DEFAULT_BONE_BINDING,
                                max_bones: int = DEFAULT_MAX_BONES) -> str:
