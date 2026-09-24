@@ -23,12 +23,12 @@ SHIFT.VertexLayout/1 now records ABI evidence explicitly instead of exposing onl
 | 230-234 | TEXCOORD0-4 family | FLOAT32x3 | inferred |
 | 310 | BLENDWEIGHT0 | FLOAT32x4 | proven |
 | 580 | BLENDINDICES0 | UINT8x4 | proven |
-| 460/461 | COLOR0/1 | UINT8x4 normalized | ambiguous |
+| 460/461 | COLOR0/1 | UINT8x4 normalized | proven |
 | 033 | unknown | RAW4 | unknown |
 
-`460/461` remain the primary unresolved render ABI because the current evidence does not prove the original D3D9 declaration (`D3DCOLOR` vs `UBYTE4N`) or channel byte order (`RGBA` vs `BGRA`).
+`460/461` are now source-correlated and verified under the repository's three-DWORD MEB property descriptor convention: 460 = `(4,6,0)` and 461 = `(4,6,1)`, where Type 4 is `D3DCOLOR`, Usage 6 is `Colour`, and Channel selects COLOR0/COLOR1. `FUN_008310c0` establishes BGRA source bytes and RGBA shader order.
 
-`SHIFT.StaticDraw/1` therefore blocks those attributes only when the selected shader binding actually consumes them.
+`SHIFT.StaticDraw/1` no longer treats 460/461 as unresolved ABI blockers.
 ## Phase 28: vertex location collision guard
 
 `build_vertex_input_locations()` now rejects two classes of silent ABI corruption: one D3D9 input register mapping to multiple target locations, and multiple shader registers mapping to the same target location. The resulting `location_collisions` and `unresolved` records remain machine-readable.
@@ -124,3 +124,10 @@ The recovered XML stream loader iterates a fixed usage domain `0..8` and resolve
 ## Phase 81: raw memory table evidence
 
 `d3d9_memory_table_evidence.py` provides an input path for the data missing from the recovered C export: a raw memory window plus its virtual base address. The tool decodes `DAT_00b90088`, `DAT_00b900d8`, usage tables, and the 17-entry `PTR_DAT_00b901d0` pointer table without inventing initializer values. Resolved printable C strings are reported as evidence; unresolved pointers remain unresolved.
+
+
+## Phase 83: MEB -> D3D9 COLOR ABI
+
+`meb_d3d9_source_abi.py` correlates the repository's MEB three-DWORD property identifier with the recovered Win binary mesh loader. The original loader consumes the same 12-byte descriptor as Type, Usage and Channel, `FUN_00854e70` maps Type 4 through the packed-color helper and handles Usage 6 as a distinct Colour channel family, and the XML loader names Usage 6 `Colour`. This proves the 460/461 triplets `(4,6,0/1)` and the resulting `D3DCOLOR`/BGRA ABI without needing opaque global initializer bytes.
+
+`meb_format.py` now preserves `descriptor_triplet` in every `property_layout`, so the evidence is carried into downstream IR rather than kept only in a sidecar report.
