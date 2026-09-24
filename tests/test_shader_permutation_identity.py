@@ -20,9 +20,8 @@ def test_shader_permutation_identity_is_stable_for_same_pair():
     assert first['format'] == 'SHIFT.ShaderPermutationIdentity/1'
     assert len(first['identity_sha256']) == 64
     assert first['pair_byte_sha256'] == hashlib.sha256(
-        data[first['vertex_offset']:] if False else
-        data[first['vertex_offset']:blobs[-2].end] +
-        data[first['pixel_offset']:blobs[-1].end]
+        data[first['vertex_offset']:vertex.end] +
+        data[first['pixel_offset']:pixel.end]
     ).hexdigest()
 
 
