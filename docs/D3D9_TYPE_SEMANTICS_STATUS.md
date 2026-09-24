@@ -37,3 +37,8 @@ Run:
     python shift_importer.py source-d3d9-type-evidence SHIFT.exe.c d3d9-types.json
 
 This command is intentionally separate from MEB property mapping so an observed D3D9 primitive type cannot silently become a mesh ABI selection.
+
+
+## Phase 83: MEB linkage
+
+Type semantics are now consumed by a source-correlated MEB linkage module. Type 4 is no longer an isolated enum observation: 460/461 map to `(4,6,0/1)` through the same three-DWORD property descriptor used by the original binary loader. The type-table initializer bytes remain opaque, but they are no longer needed to establish the 460/461 declaration type.
