@@ -43,3 +43,19 @@ def test_bmw_paint_contract_blocks_sampler_register_drift():
     report=validate_material_binding(binding)
     assert report['ready'] is False
     assert 'sampler:diffuseMap:register-mismatch' in report['blocking_reasons']
+
+def test_bmw_paint_contract_accepts_compile_material_shape():
+    raw=_binding()
+    raw['shader']={'ref':'render/shaders/bodywork.fx','resolved':[{'path':'render/shaders/bodywork.fx'}]}
+    raw['specializations']=None
+    raw['specialization']=None
+    raw['shader_selection']={
+        'selected_fxo': {'specialization_matched':['USE_FRESNEL','ALLOW_VINYLS','DIRT_SCRATCH']},
+    }
+    raw['textures']=[
+        {'material_parameter':'diffuseTexture','sampler':'diffuseMap','d3d9_sampler_register':1,'ref':'vehicles/textures/COMMON_PAINT.dds'},
+        {'material_parameter':'specularTexture','sampler':'specularMap','d3d9_sampler_register':2,'ref':'vehicles/textures/COMMON_PAINT_SPECULAR.dds'},
+        {'material_parameter':'scratchControlTexture','sampler':'scratchControlMap','d3d9_sampler_register':4,'ref':'vehicles/textures/COMMON_BLANK.dds'},
+    ]
+    report=validate_material_binding(raw)
+    assert report['ready'] is True

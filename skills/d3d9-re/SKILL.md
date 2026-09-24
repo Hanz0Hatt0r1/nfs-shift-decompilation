@@ -75,3 +75,8 @@ Use `render-command-constant-parity` to validate c-register ranges and 16-byte o
 ## BMW paint material
 
 Use `bmw_m3_paint_contract.py` to validate the documented M3 paint binding. The contract captures exact material sampler registers and renderer-global samplers without treating them as runtime proof.
+
+
+## BMW paint binding adapter
+
+`bmw_m3_paint_contract.py` accepts the current `compile_material()` output shape and normalizes it before validation against the documented BMW M3 paint contract.

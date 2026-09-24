@@ -20,10 +20,41 @@ PAINT_CONTRACT = {
     'specializations':['USE_FRESNEL','ALLOW_VINYLS','DIRT_SCRATCH'],
 }
 
+def normalize_material_binding(binding: Mapping[str, Any]) -> dict[str, Any]:
+    """Normalize current compile_material/MaterialBinding output for this contract."""
+    shader_value = binding.get("shader")
+    if isinstance(shader_value, Mapping):
+        shader_value = shader_value.get("ref") or shader_value.get("path")
+    shader_selection = binding.get("shader_selection") or {}
+    selected_fxo = shader_selection.get("selected_fxo") or {}
+    specializations = (
+        binding.get("specializations")
+        or binding.get("specialization_flags")
+        or binding.get("specialization")
+        or selected_fxo.get("specialization_matched")
+        or []
+    )
+    textures = []
+    for row in binding.get("textures") or []:
+        item = dict(row)
+        if item.get("texture") is None and item.get("ref") is not None:
+            item["texture"] = item.get("ref")
+        if item.get("sampler") is None:
+            item["sampler"] = item.get("name")
+        textures.append(item)
+    return {
+        "shader": shader_value,
+        "specializations": list(specializations),
+        "textures": textures,
+        "external_samplers": list(binding.get("external_samplers") or []),
+    }
+
+
 def get_bmw_paint_contract() -> dict[str, Any]:
     return {'format':FORMAT,'status':'documented','contract':PAINT_CONTRACT}
 
 def validate_material_binding(binding: Mapping[str, Any]) -> dict[str, Any]:
+    binding = normalize_material_binding(binding)
     reasons=[]; checks=[]
     shader = str(binding.get('shader') or binding.get('shader_path') or '').replace('\\','/').rsplit('/', 1)[-1].lower()
     expected_shader = PAINT_CONTRACT['shader'].lower()
