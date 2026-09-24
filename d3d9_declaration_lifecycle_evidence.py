@@ -58,7 +58,11 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
     lines = source.splitlines()
     start = None
     for index, line in enumerate(lines, 1):
-        if re.search(rf"\b{re.escape(function)}\s*\(", line):
+        match = re.search(rf"\b{re.escape(function)}\s*\(", line)
+        if not match:
+            continue
+        tail = "\n".join(lines[index - 1:min(len(lines), index + 2)])
+        if "{" in tail and (";" not in line or line.rstrip().endswith("{")):
             start = index
             break
     if start is None:
@@ -76,7 +80,6 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
         if seen and depth == 0:
             return start, index, "\n".join(body)
     return start, None, "\n".join(body)
-
 
 def _function_call_status(body: str, function: str) -> bool:
     return bool(re.search(rf"\b{re.escape(function)}\(", body))
