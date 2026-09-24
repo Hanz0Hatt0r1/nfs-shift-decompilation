@@ -29,7 +29,7 @@ def _body(source: str, function: str) -> tuple[int | None, int | None, str]:
         depth -= line.count('}')
         seen |= '{' in line
         if seen and depth == 0:
-            return start, index, '\\n'.join(body)
+            return start, index, '\n'.join(body)
     return start, None, '\n'.join(body)
 
 def analyze_d3d9_shader_lifecycle(source: str) -> dict[str, Any]:
