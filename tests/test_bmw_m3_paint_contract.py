@@ -7,9 +7,9 @@ def _binding():
         'shader':'bodywork.fx',
         'specializations':contract['specializations'][:],
         'textures':[
-            {'material_parameter':'diffuseTexture','sampler':'diffuseMap','d3d9_sampler_register':1,'texture':'COMMON_PAINT.dds'},
-            {'material_parameter':'specularTexture','sampler':'specularMap','d3d9_sampler_register':2,'texture':'COMMON_PAINT_SPECULAR.dds'},
-            {'material_parameter':'scratchControlTexture','sampler':'scratchControlMap','d3d9_sampler_register':4,'texture':'COMMON_BLANK.dds'},
+            {'material_parameter':'diffuseTexture','sampler':'diffuseMap','d3d9_sampler_register':1,'texture':'COMMON_PAINT.dds','min_filter':'Linear','mag_filter':'Linear','mip_filter':'Linear','address_u':'Wrap','address_v':'Wrap','srgb':True},
+            {'material_parameter':'specularTexture','sampler':'specularMap','d3d9_sampler_register':2,'texture':'COMMON_PAINT_SPECULAR.dds','min_filter':'Linear','mag_filter':'Linear','mip_filter':'Linear','address_u':'Wrap','address_v':'Wrap','srgb':True},
+            {'material_parameter':'scratchControlTexture','sampler':'scratchControlMap','d3d9_sampler_register':4,'texture':'COMMON_BLANK.dds','min_filter':'Linear','mag_filter':'Linear','mip_filter':'None','address_u':'Clamp','address_v':'Clamp','srgb':False},
         ],
         'external_samplers':[
             {'sampler':'environmentMap','d3d9_sampler_register':3},
