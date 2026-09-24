@@ -315,6 +315,10 @@ influences, SkinPose и bind-palette. Для матриц используетс
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
 
+## Phase 81 — raw D3D9 memory table decoder
+
+Phase 81 adds `source-d3d9-memory-evidence`: a raw loaded-memory decoder for the opaque D3D9 tables. It extracts little-endian DWORD entries at the recovered addresses, 17 type-name pointers, and optionally the channel-table layout hint. Pointer dereferences are decoded only when they resolve to printable bytes inside the supplied memory window; otherwise the report stays unresolved. This prepares the missing declaration-table bytes without selecting an ABI automatically.
+
 ## Phase 80 — D3D9 usage semantics
 
 Phase 80 records the recovered XML STREAM Usage domain `0..8` and its source-visible names. The source explicitly maps usage code `6` to `Colour`; usage code `3` remains tied to opaque `DAT_00b1d188` instead of being guessed. This closes the usage-name half of the COLOR chain while `MEB 460/461 -> Type ordinal` remains unresolved.
