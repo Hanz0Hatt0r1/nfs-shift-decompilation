@@ -48,3 +48,8 @@ The shader-backed reference renderer now accepts `NORMAL0`, `TANGENT0` and `BINO
 The shader-backed desktop oracle now optionally executes the embedded SHIFT.ShaderProgram/1 vertex stage before rasterization. Supported MEB-backed vertex inputs are POSITION0, TEXCOORD0..4, NORMAL0, TANGENT0 and BINORMAL0; the vertex outputs are linked to pixel inputs by semantic (usage,index), independent of physical register numbers. POSITION0/POSITIONT0 is treated as clip-space output for this path, while non-position varyings are perspective-correctly interpolated before pixel execution.
 
 When a vertex program is present, CPU-side world/MVP transforms are not applied a second time. Unsupported vertex semantics, missing outputs, non-finite clip positions and unmatched VS/PS semantics remain hard errors.
+
+
+## Phase 55: alternate MEB TEXCOORD family
+
+The reference renderer now accepts MEB properties `230..234` as the established 3-component UVW family for semantic `TEXCOORD0..4`. This makes the software oracle usable with layouts that contain the 230-family without requiring a synthetic 130-family layer. If both 130-family and 230-family properties for the same semantic appear in one mesh, the renderer rejects the layout rather than guessing which ABI declaration wins.
