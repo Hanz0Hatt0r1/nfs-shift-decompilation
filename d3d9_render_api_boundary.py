@@ -97,6 +97,14 @@ def _observation(body: str, byte_offset: int, bodies: dict[str, str] | None = No
     }
 
 
+def _function_bodies(source: str) -> dict[str, str]:
+    names = sorted(set(re.findall(r"\bFUN_[0-9A-Fa-f]+\b", source)))
+    return {
+        name: _function_body(source, name)[2]
+        for name in names
+    }
+
+
 def analyze_d3d9_render_api_boundary(source: str) -> dict[str, Any]:
     if not isinstance(source, str):
         raise TypeError("source must be str")
@@ -105,7 +113,7 @@ def analyze_d3d9_render_api_boundary(source: str) -> dict[str, Any]:
     for key, function in SOURCE_FUNCTIONS.items():
         start, end, body = _function_body(source, function)
         api = API_METHODS[key]
-        obs = _observation(body, api["byte_offset"], {fn: _function_body(source, fn)[2] for fn in SOURCE_FUNCTIONS.values()})
+        obs = _observation(body, api["byte_offset"], _function_bodies(source))
         obs.update({
             "function": function,
             "line_start": start,
