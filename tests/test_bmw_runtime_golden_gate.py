@@ -30,7 +30,7 @@ def _runtime(constant_values=True):
             'index_binding': {'index_buffer_ptr':'0x4'},
             'draws': [{'start_index':150, 'primitive_count':2098, 'base_vertex_index':0}],
             'constant_writes': [{'stage':'pixel','start_register':5,'vector4f_count':1,'values':[1.0,2.0,3.0,4.0]}] if constant_values else [],
-            'shader_permutation_identity': {'identity_sha256':'shader-id','payload':{'vertex':{'constants':[]},'pixel':{'constants':[5],'sampler_types':{}}}},
+            'shader_permutation_identity': {'identity_sha256':'shader-id','payload':{'vertex':{'inputs':[{'register':'v0','usage':'COLOR','index':0}], 'constants':[]},'pixel':{'constants':[5],'sampler_types':{}}}},
         }],
     }
 
