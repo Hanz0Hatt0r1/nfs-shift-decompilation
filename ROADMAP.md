@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 126. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 127. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -476,3 +476,10 @@ Next: add constant-bank parity and declaration/vertex-input parity to this same 
 `SHIFT.BMWRuntimeParity/1` now combines the exact runtime shader/resource join with constant-bank parity and an explicitly evidenced declaration subset. Material `register_set=2` ranges are checked against VS/PS shader constant usage; COLOR0 property 460 is checked against a captured D3D9 Type/Usage/UsageIndex only when an explicit Usage-ordinal map is supplied.
 
 Next: use this parity gate on the first real BMW runtime capture, then feed the accepted frame into the desktop shader-reference renderer and record the first non-synthetic image hash.
+
+
+## Phase 127: runtime shader constant capture
+
+`SHIFT.D3D9RuntimeBindingEvidence/1` now accepts `set_vertex_shader_constant_f` and `set_pixel_shader_constant_f` events with exact float4 payloads. `SHIFT.BMWRuntimeParity/1` can require exact constant-value parity against material uniforms, while source evidence records the recovered vertex constant wrapper at `0x178` and pixel constant wrapper at `0x1b4`.
+
+Next: use a real BMW runtime trace with these events, then close the remaining declaration/VS-input parity and drive the accepted frame into the reference renderer.
