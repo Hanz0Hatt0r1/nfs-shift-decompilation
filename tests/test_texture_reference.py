@@ -248,3 +248,33 @@ def test_decode_dds_rejects_truncated_cubemap_payload():
                 caps2=caps2,
             ) + b"\x00" * 20
         )
+
+
+def test_decode_dds_cubemap_skips_mip_levels_per_face():
+    caps2 = 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000
+    face_blocks = []
+    colors = [(255, 0, 0, 255), (0, 255, 0, 255), (0, 0, 255, 255),
+              (255, 255, 0, 255), (255, 0, 255, 255), (0, 255, 255, 255)]
+    for rgba in colors:
+        base = struct.pack("<4I", *(
+            (rgba[3] << 24) | (rgba[2] << 16) | (rgba[1] << 8) | rgba[0],
+        ) * 4)
+        mip = struct.pack("<I", 0)
+        face_blocks.append(base + mip)
+
+    cube = decode_dds(
+        _dds_header(
+            width=2,
+            height=2,
+            rgb_bits=32,
+            pf_flags=0x40,
+            r_mask=0x000000FF,
+            g_mask=0x0000FF00,
+            b_mask=0x00FF0000,
+            a_mask=0xFF000000,
+            mipmaps=2,
+            caps2=caps2,
+        ) + b"".join(face_blocks)
+    )
+    assert cube["faces"]["px"]["pixels"][:4] == bytes(colors[0])
+    assert cube["faces"]["nz"]["pixels"][:4] == bytes(colors[5])
