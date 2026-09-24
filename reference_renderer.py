@@ -193,8 +193,9 @@ def rasterize_textured_mesh(
                 else semantic_data.get((usage, semantic_index))
             )
             if layer is None:
+                target = "UV layer" if usage == "TEXCOORD" else "attribute"
                 raise ValueError(
-                    f"pixel shader requires {usage}{semantic_index} but mesh has no matching attribute"
+                    f"pixel shader requires {usage}{semantic_index} but mesh has no matching {target}"
                 )
             row = layer[0]
             values = list(row[:3])
@@ -263,8 +264,9 @@ def rasterize_textured_mesh(
                             else semantic_data.get((usage, semantic_index))
                         )
                         if layer is None:
+                            target = "UV layer" if usage == "TEXCOORD" else "attribute"
                             raise ValueError(
-                                f"pixel shader requires {usage}{semantic_index} but mesh has no matching attribute"
+                                f"pixel shader requires {usage}{semantic_index} but mesh has no matching {target}"
                             )
                         samples = (layer[ia], layer[ib], layer[ic])
                         width = min(4, max(len(row) for row in samples))
