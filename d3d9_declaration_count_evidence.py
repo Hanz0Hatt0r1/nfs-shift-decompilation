@@ -23,7 +23,10 @@ RECORD_STRIDE = 8
 
 def _function_body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    match = re.search(rf"\b{re.escape(function)}\s*\(", source)
+    pattern = re.compile(
+        rf"(?m)^[^\n{{}}]*\b{re.escape(function)}\s*\([^;\n]*\)\s*(?:\n[^\n{{}}]*)?\{{"
+    )
+    match = pattern.search(source)
     if match is None:
         return None, None, ""
     start = source.count("\n", 0, match.start()) + 1
