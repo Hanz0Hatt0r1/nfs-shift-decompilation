@@ -37,3 +37,10 @@ def test_meb_descriptor_parity_blocks_missing_descriptor():
     report=validate_meb_descriptor_parity(material)
     assert report['ready'] is False
     assert 'meb-descriptor:missing:200' in report['blocking_reasons']
+
+def test_meb_descriptor_parity_blocks_raw_byte_mismatch():
+    material=_material()
+    material['mesh']['property_descriptors'][0]['raw_hex']='030000000000000000000000'
+    report=validate_meb_descriptor_parity(material)
+    assert report['ready'] is False
+    assert 'meb-descriptor:raw-bytes-mismatch:200' in report['blocking_reasons']
