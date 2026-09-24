@@ -210,3 +210,71 @@ def test_material_constant_payload_rejects_bad_byte_range():
     })
     assert result["status"] == "unsupported"
     assert "uniform-payload:byte-range-invalid:3" in result["blocking_reasons"]
+
+
+def _vertex_program(instructions, *, temps=(0,)):
+    return ShaderProgram(
+        offset=0,
+        end=0,
+        stage="vertex",
+        major=3,
+        minor=0,
+        instructions=list(instructions),
+        inputs=[{"usage": "POSITION", "index": 0, "register": "v0"}],
+        outputs=[],
+        samplers=[],
+        constants=[],
+        temps=list(temps),
+        unsupported_opcodes=[],
+    )
+
+def _relative_const(index, address_token):
+    return Operand(
+        token=0x80000000 | (2 << 28) | (index & 0x7FF) | (0xE4 << 16) | (1 << 13),
+        kind="source",
+        reg_type=2,
+        index=index,
+        swizzle="xyzw",
+        source_modifier=0,
+        relative=True,
+        relative_token=address_token,
+    )
+
+def test_reference_shader_executes_a0_relative_constant_read():
+    address_token = 0x80000000 | (3 << 28)
+    mova = Instruction(0, 46, "MOVA", 0, 3, 0, False, [_dst(3, 0, mask="x"), _src(1, 0)])
+    mov = Instruction(4, 1, "MOV", 0, 3, 0, False, [_dst(0, 0), _relative_const(2, address_token)])
+    out = Instruction(8, 1, "MOV", 0, 3, 0, False, [_dst(6, 0), _src(0, 0)])
+    result = execute_shader(
+        _vertex_program([mova, mov, out]),
+        inputs={0: (2.0, 0.0, 0.0, 0.0)},
+        constants={"c": {4: (4.0, 3.0, 2.0, 1.0)}},
+    )
+    assert result["status"] == "executed"
+    assert result["color"] == [4.0, 3.0, 2.0, 1.0]
+
+def test_reference_shader_returns_zero_for_out_of_range_relative_constant():
+    address_token = 0x80000000 | (3 << 28)
+    mova = Instruction(0, 46, "MOVA", 0, 3, 0, False, [_dst(3, 0, mask="x"), _src(1, 0)])
+    mov = Instruction(4, 1, "MOV", 0, 3, 0, False, [_dst(0, 0), _relative_const(2, address_token)])
+    out = Instruction(8, 1, "MOV", 0, 3, 0, False, [_dst(6, 0), _src(0, 0)])
+    result = execute_shader(
+        _vertex_program([mova, mov, out]),
+        inputs={0: (10.0, 0.0, 0.0, 0.0)},
+        constants={"c": {4: (4.0, 3.0, 2.0, 1.0)}},
+    )
+    assert result["status"] == "executed"
+    assert result["color"] == [0.0, 0.0, 0.0, 0.0]
+
+def test_reference_shader_blocks_relative_constant_on_pixel_stage():
+    address_token = 0x80000000 | (3 << 28)
+    mov = Instruction(0, 1, "MOV", 0, 3, 0, False, [_dst(8, 0), _relative_const(0, address_token)])
+    result = execute_shader(_program([mov], temps=()), constants={"c": {0: (1.0, 0.0, 0.0, 1.0)}})
+    assert result["status"] == "error"
+    assert "relative constant addressing requires vertex shader stage" in result["blocking_reasons"][0]
+
+def test_reference_shader_does_not_guess_address_rounding_ties():
+    mova = Instruction(0, 46, "MOVA", 0, 3, 0, False, [_dst(3, 0, mask="x"), _src(1, 0)])
+    result = execute_shader(_vertex_program([mova]), inputs={0: (1.5, 0.0, 0.0, 0.0)})
+    assert result["status"] == "error"
+    assert "address register rounding tie is not proven" in result["blocking_reasons"][0]
