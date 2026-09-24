@@ -42,8 +42,12 @@ def _golden():
             "triangle_count": 1,
             "color460_descriptor": {"words": [4, 6, 0]},
             "primitives": [
-                {"first_index": 0, "index_count": 3, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
-                {"first_index": 3, "index_count": 3, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 0, "index_count": 150, "material": "vehicles/BMW_M3_E36/BMW_M3_E36_BADGING.mtx"},
+                {"first_index": 150, "index_count": 6294, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 6444, "index_count": 7386, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 13830, "index_count": 612, "material": "vehicles/BMW_M3_E36/GENERIC_WINDOWS.mtx"},
+                {"first_index": 14442, "index_count": 576, "material": "vehicles/BMW_M3_E36/GENERIC_GLOSS_BLACK.mtx"},
+                {"first_index": 15018, "index_count": 84, "material": "vehicles/BMW_M3_E36/BMW_M3_E36_LIGHTSGLASS.mtx"},
             ],
             "skinning": {"skinned": False},
         },
@@ -95,6 +99,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     archive=FakeArchive(primary)
 
     monkeypatch.setattr(slicer, "build_real_bmw_material_binding", lambda *a, **k: _binding_report())
+    monkeypatch.setattr(slicer, "_sha256", lambda _data: "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c")
     monkeypatch.setattr(slicer, "BFF", lambda path: archive)
     golden_path=tmp_path/"golden.json"
     golden_path.write_text(json.dumps(_golden()), encoding="utf-8")
@@ -129,10 +134,10 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
         "mesh":packet["mesh"],"submeshes":packet["submeshes"],"world_matrix":None
     })
     monkeypatch.setattr(slicer, "build_resource_index", lambda *a, **k: {"format":"SHIFT.RenderResources/1","textures":[],"samplers":[],"bindings":[],"stats":{"textures":0,"samplers":0,"bindings":0}})
-    monkeypatch.setattr(slicer, "build_render_command", lambda *a, **k: {"format":"SHIFT.RenderCommand/1","ready":True,"blocking_reasons":[],"mesh":{"vertex_layout":{"format":"SHIFT.VertexLayout/1"},"vertex_count":4,"attributes":[]},"submeshes":[{"first_index":0,"index_count":3,"shader":{"vertex":"void main(){}","pixel":"void main(){}"}}],"resource_plan":{"format":"SHIFT.RenderResources/1","texture_count":0,"sampler_count":0,"external_sampler_count":0}})
+    monkeypatch.setattr(slicer, "build_render_command", lambda *a, **k: {"format":"SHIFT.RenderCommand/1","ready":True,"blocking_reasons":[],"mesh":{"vertex_layout":{"format":"SHIFT.VertexLayout/1"},"vertex_count":4,"attributes":[]},"submeshes":[{"index":1,"first_index":150,"index_count":6294,"shader":{"vertex":"void main(){}","pixel":"void main(){}"}}],"resource_plan":{"format":"SHIFT.RenderResources/1","texture_count":0,"sampler_count":0,"external_sampler_count":0}})
     report=slicer.build_real_bmw_material_slice(primary, golden_path)
     assert report["format"]=="SHIFT.BMWMaterialSlice/1"
-    assert report["ready"] is True
+    assert report["ready"] is True, report
     assert report["render_command"]["ready"] is True
     assert report["static_draw"]["ready"] is True
     assert report["slice_golden_gate"]["ready"] is True

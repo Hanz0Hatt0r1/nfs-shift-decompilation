@@ -82,7 +82,7 @@ def test_declaration_chain_rejects_tampered_runtime_memory_bytes():
     )
     tampered = dict(evidence)
     tampered["bytes"] = dict(evidence["bytes"])
-    tampered["bytes"]["hex"] = "00" + evidence["bytes"]["hex"][2:]
+    tampered["bytes"]["hex"] = evidence["bytes"]["hex"][:2] + "01" + evidence["bytes"]["hex"][4:]
 
     result = analyze_d3d9_declaration_chain(
         **_base_inputs(),

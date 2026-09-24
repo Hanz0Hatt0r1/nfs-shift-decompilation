@@ -1,4 +1,5 @@
 import struct
+import json
 
 from d3d9_declaration_chain_evidence import analyze_d3d9_declaration_chain
 from d3d9_declaration_sentinel_evidence import analyze_d3d9_declaration_sentinel
@@ -20,8 +21,8 @@ uint FUN_008587e0(int param_1,int param_2)
 
 def _base_inputs():
     return {
-        "type_profile": {"validation": {"status": "match", "match_count": 17}},
-        "stream_topology": {
+        "type_profile": {"validation": {"status": "match", "match_count": 17}, "source": {"name":"SHIFT.exe.c","sha256":"5947074951f0cc25373f60180abad61413fcb0b8454ade1d13a48aba64d99e57","bytes":482,"line_count":10}},
+        "stream_topology": {"source": {"name":"SHIFT.exe.c","sha256":"5947074951f0cc25373f60180abad61413fcb0b8454ade1d13a48aba64d99e57","bytes":482,"line_count":10},
             "status": "observed",
             "grouping": {"group_stride": 0x14},
             "semantic_links": {
@@ -29,7 +30,7 @@ def _base_inputs():
                 "type_to_group_byte_size": {"status": "observed"},
             },
         },
-        "stream_record": {
+        "stream_record": {"source": {"name":"SHIFT.exe.c","sha256":"5947074951f0cc25373f60180abad61413fcb0b8454ade1d13a48aba64d99e57","bytes":482,"line_count":10},
             "status": "observed",
             "record": {"stride": 8},
             "fields": [{"status": "observed"} for _ in range(6)],
@@ -39,7 +40,7 @@ def _base_inputs():
                 "xml_channel_to_record_usage_index": {"status": "observed"},
             },
         },
-        "canonicalizer": {
+        "canonicalizer": {"source": {"name":"SHIFT.exe.c","sha256":"5947074951f0cc25373f60180abad61413fcb0b8454ade1d13a48aba64d99e57","bytes":482,"line_count":10},
             "status": "observed",
             "canonicalization": {"full_record_identity": "observed"},
         },
@@ -60,8 +61,16 @@ def test_runtime_sentinel_matches_source_producer():
         declaration_sentinel_evidence=source,
     )
 
-    assert result["status"] == "observed"
-    assert result["checks"]["runtime_source_sentinel_coherence"]["status"] == "observed"
+    print("SENTINEL_DEBUG", json.dumps({
+        "blocking_checks": result["summary"]["blocking_checks"],
+        "source_provenance": result["source_provenance"],
+        "source_signatures": result["source_signatures"],
+        "sentinel_check": result["checks"].get("runtime_source_sentinel_coherence"),
+        "memory_check": result["checks"].get("runtime_memory_provenance"),
+        "decl_sentinel_check": result["checks"].get("d3d9_declaration_sentinel"),
+    }, ensure_ascii=False, sort_keys=True))
+    assert result["status"] == "observed", result
+    assert result["checks"]["runtime_source_sentinel_coherence"]["status"] == "observed", result
     assert result["summary"]["runtime_sentinel_coherence_status"] == "observed"
     assert result["runtime_sentinel_coherence"]["expected_sentinel"] == {
         "stream": 0xFFFF,

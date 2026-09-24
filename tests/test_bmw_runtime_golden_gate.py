@@ -7,6 +7,7 @@ def _material(ready_command=True):
     return {
         'format': 'SHIFT.BMWMaterialSlice/1',
         'ready': True,
+        'primitive_index': 1,
         'golden_identity': {'resource': 'vehicles/bmw/body.meb', 'resource_sha256': 'sha'},
         'material': {'permutation_identity': {'identity_sha256': 'shader-id'}},
         'uniform_binding': {'bindings': [{'name': 'primerBasis', 'register_set': 2, 'register_index': 5, 'register_count': 1, 'stage': 'pixel', 'value': [1.0,2.0,3.0,4.0]}]},
@@ -15,7 +16,21 @@ def _material(ready_command=True):
             'property_descriptors': [{'id': '460', 'offset': 0, 'words': [4, 6, 0], 'raw_hex': '040000000600000000000000'}],
         },
         'textures': [],
-        'render_command': {'ready': ready_command, 'blocking_reasons': [] if ready_command else ['render-command:not-ready'], 'submeshes': [{'first_index': 150, 'index_count': 6294}]},
+        'render_command': {
+            'format': 'SHIFT.RenderCommand/1',
+            'ready': ready_command,
+            'blocking_reasons': [] if ready_command else ['render-command:not-ready'],
+            'mesh': {'vertex_layout': {'format': 'SHIFT.VertexLayout/1'}, 'vertex_count': 3550, 'attributes': []},
+            'submeshes': [{
+                'index': 1,
+                'first_index': 150,
+                'index_count': 6294,
+                'uniforms': {'bindings': [{'name': 'primerBasis', 'stage': 'pixel', 'register_index': 5, 'register_count': 1, 'ctab_type': 'float4'}]},
+                'constant_payload': {'format': 'SHIFT.MaterialConstantPayload/1', 'ready': True, 'registers': [{'register_index': 5, 'values': [1.0,2.0,3.0,4.0], 'byte_offset': 80, 'byte_size': 16}]},
+                'constant_commands': [{'name': 'primerBasis', 'stage': 'pixel', 'register_index': 5, 'register_count': 1, 'ctab_type': 'float4', 'byte_offset': 80}],
+            }],
+            'resource_plan': {'format': 'SHIFT.RenderResources/1', 'texture_count': 0, 'sampler_count': 0, 'external_sampler_count': 0},
+        },
     }
 
 
@@ -71,7 +86,7 @@ def test_runtime_golden_gate_ready_with_usage_map_and_command(tmp_path):
     m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'
     m.write_text(json.dumps(_material())); r.write_text(json.dumps(_runtime())); u.write_text(json.dumps({'6':10}))
     report=validate_runtime_golden_gate(m,r,usage_map_path=u)
-    assert report['ready'] is True
+    assert report['ready'] is True, report
     assert report['status'] == 'ready'
 
 
