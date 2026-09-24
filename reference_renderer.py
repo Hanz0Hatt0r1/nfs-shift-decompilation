@@ -272,6 +272,7 @@ def rasterize_textured_mesh(
     semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
     vertex_program: dict[str, Any] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
+    external_texture_resources: dict[int, dict[str, Any]] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -350,6 +351,8 @@ def rasterize_textured_mesh(
     }
     for register, external_image in (external_texture_images or {}).items():
         shader_textures[int(register)] = external_image
+    for register, external_resource in (external_texture_resources or {}).items():
+        shader_textures[int(register)] = external_resource
     shader_samplers = {
         int(k): dict(v)
         for k, v in (samplers_by_sampler or ({0: sampler or {}})).items()
@@ -536,6 +539,7 @@ def render_textured_static_draw(
     semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
     vertex_program: dict[str, Any] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
+    external_texture_resources: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw, optionally executing the embedded vertex shader."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -594,6 +598,7 @@ def render_textured_static_draw(
         semantic_rows=semantic_rows,
         vertex_program=vertex_program,
         external_texture_images=external_texture_images,
+        external_texture_resources=external_texture_resources,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -626,6 +631,7 @@ def render_textured_render_command(
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
+    external_texture_resources: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Execute a RenderCommand through the one-texture reference material path."""
     from render_command import validate_render_command
@@ -724,10 +730,16 @@ def render_textured_render_command(
                     f"external sampler s{register} type mismatch: "
                     f"RenderCommand={required_type} shader={declared_type}"
                 )
-            if required_type != "sampler2D":
+            if required_type not in {"sampler2D", "samplerCube"}:
                 raise ValueError(
                     f"external sampler s{register} ({required_type}) requires a dedicated reference resource implementation"
                 )
+            if required_type == "samplerCube":
+                resource = (external_texture_resources or {}).get(register)
+                if resource is None and register in (external_texture_images or {}):
+                    raise ValueError(
+                        f"external sampler s{register} requires ReferenceCubeTexture/1 resource"
+                    )
         if effective_texture_images is None:
             effective_texture_images = {}
         if not effective_texture_images:
@@ -798,6 +810,7 @@ def render_textured_render_command(
         samplers_by_sampler=samplers_by_sampler,
         vertex_program=vertex_program,
         external_texture_images=None,
+        external_texture_resources=external_texture_resources,
         semantic_rows={
             key: rows
             for key, rows in {
