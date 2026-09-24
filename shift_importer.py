@@ -1865,6 +1865,7 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
         args.canonicalizer,
         pe_evidence_path=args.pe_evidence,
         declaration_instance_path=args.declaration_instance,
+        runtime_memory_evidence_path=args.runtime_memory_evidence,
     )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -1906,6 +1907,35 @@ def cmd_decode_d3d9_declaration(args: argparse.Namespace) -> int:
         "meb_property_mapping": result["meb_property_mapping"]["status"],
     }, ensure_ascii=False, indent=2))
     return 0
+
+def cmd_capture_d3d9_memory_declaration(args: argparse.Namespace) -> int:
+    """Capture an address/range-qualified D3D9 declaration from a memory dump."""
+    from d3d9_memory_declaration_evidence import capture_d3d9_memory_declaration_file
+
+    result = capture_d3d9_memory_declaration_file(
+        args.input,
+        base_address=args.base_address,
+        offset=args.offset,
+        length=args.length,
+        count=args.count,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "slice_start_address": result["memory"]["slice_start_address"],
+        "slice_length": result["memory"]["slice_length"],
+        "declaration_array_records": result["extraction"]["declaration_array_records"],
+        "end_sentinel_status": result["extraction"]["end_sentinel_status"],
+        "meb_property_mapping": result["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
 
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
@@ -2270,8 +2300,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9DeclarationChainEvidence/1 JSON output")
     p.add_argument("--pe-evidence", help="optional SHIFT.PEImageEvidence/1 JSON input")
     p.add_argument("--declaration-instance", help="optional SHIFT.D3D9DeclarationInstanceEvidence/1 JSON input")
+    p.add_argument("--runtime-memory-evidence", help="optional SHIFT.D3D9MemoryDeclarationEvidence/1 JSON input")
     p.set_defaults(fn=cmd_d3d9_declaration_chain)
 
+
+    p = sp.add_parser("capture-d3d9-memory-declaration", help="capture a D3D9 declaration array from a virtual-addressed memory dump")
+    p.add_argument("input", help="raw loaded-memory dump")
+    p.add_argument("base_address", type=lambda value: int(value, 0), help="virtual address of the first dump byte, e.g. 0x12340000")
+    p.add_argument("output", help="SHIFT.D3D9MemoryDeclarationEvidence/1 JSON output")
+    p.add_argument("--offset", type=lambda value: int(value, 0), default=0, help="byte offset within the input dump")
+    p.add_argument("--length", type=lambda value: int(value, 0), help="number of bytes to capture")
+    p.add_argument("--count", type=int, help="decode at most this many declaration records")
+    p.set_defaults(fn=cmd_capture_d3d9_memory_declaration)
 
     p = sp.add_parser("decode-d3d9-declaration", help="decode raw 8-byte D3D9 declaration records")
     p.add_argument("input", help="raw declaration-record bytes")
