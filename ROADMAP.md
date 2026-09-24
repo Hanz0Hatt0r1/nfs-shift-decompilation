@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 133. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 134. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -525,3 +525,10 @@ Next: use the compact BMW descriptor snapshot with a real runtime capture to pro
 `SHIFT.MEBRuntimeUsageOrdinalBridge/1` now derives MEB Usage-ordinal → D3D9 Usage-byte candidates only from exact same-resource runtime declaration observations. Type and UsageIndex must agree with the preserved MEB descriptor; multiple observed Usage bytes produce `ambiguous`, missing observations remain `unmapped`. The resulting bridge report can be supplied directly to the existing parity/golden-gate `--usage-map` input.
 
 Next: run the bridge on a real BMW capture and promote only unique same-resource mappings. Then execute the complete `bmw-runtime-golden-gate` and reference render.
+
+
+## Phase 134: D3D9 runtime capture schema
+
+`SHIFT.D3D9RuntimeCaptureSchema/1` is now enforced at JSONL ingestion and exposed as `validate-d3d9-capture`. It validates frame/object identity fields, shader/declaration bytes, stream/draw numerics and constant vector lengths without inferring any runtime semantics. This turns the capture itself into a versioned input contract for the BMW golden pipeline.
+
+Next: obtain one concrete BMW runtime capture through this schema, derive the Usage bridge, pass full runtime parity and run the first non-synthetic reference render.
