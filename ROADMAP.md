@@ -567,3 +567,10 @@ Next: run the actual M3 BMT/FXO/texture records through this path and verify the
 `bmw_golden_gate.py` now consumes `compile_material().paint_contract` and propagates every unready paint-contract blocker into `SHIFT.BMWGoldenRenderGate/1`. The static evidence chain is therefore fail-closed from the BMW golden MEB through material binding and StaticDraw to the golden gate.
 
 Next: run the gate on a real extracted BMW M3 resource analysis/material-binding report; no synthetic BFF content will be treated as proof.
+
+
+## Phase 139: BMW paint shader gate
+
+`SHIFT.BMWM3PaintShaderGate/1` is now part of the exact M3 paint render path. It requires unique exact FXO selection, unique VS/PS pairing, a linked shader pair, a valid permutation identity, documented sampler registers and no unresolved material textures. Heuristic or ambiguous shader selection is fail-closed and propagates into `StaticDraw/1`.
+
+Next: run the actual BMW M3 BMT/FXO analysis output through the complete material contract without synthetic substitution; then the only remaining external proof gap is same-instance runtime capture.

@@ -9,6 +9,7 @@ from vertex_layout import build_layout_from_summary
 from bab_format import build_bab_bas_skeleton
 from static_draw import build_static_draw_contract
 from bmw_m3_paint_contract import validate_material_binding
+from bmw_m3_paint_shader_gate import validate_bmw_paint_shader_gate
 
 SCHEMA = "SHIFT.DrawPacket/1"
 
@@ -260,6 +261,7 @@ def compile_material(
 
     bmw_paint_contract = None
     bmw_paint_contract_reasons: list[str] = []
+    bmw_paint_shader_gate = None
     normalized_material_ref = norm_ref(material_ref)
     is_bmw_m3_paint = normalized_material_ref.endswith(
         "/bmw_m3_e36/bmw_m3_e36_paint.mtx"
@@ -353,6 +355,17 @@ def compile_material(
         if bmw_paint_contract_reasons:
             bmw_paint_contract_reasons.insert(0, "paint-contract:not-ready")
 
+        bmw_paint_shader_gate = validate_bmw_paint_shader_gate({
+            **dict(material_binding or {}),
+            "shader": shader_ref,
+            "specializations": specializations,
+        })
+        if bmw_paint_shader_gate.get("ready") is not True:
+            bmw_paint_contract_reasons.extend(
+                "paint-shader:" + reason
+                for reason in bmw_paint_shader_gate.get("blocking_reasons") or []
+            )
+
     return {
         "ref": material_ref,
         "resolved": hits,
@@ -395,6 +408,7 @@ def compile_material(
         "shaderparams": params,
         "textures": texture_bindings,
         "paint_contract": bmw_paint_contract,
+        "paint_shader_gate": bmw_paint_shader_gate,
         "blocking_reasons": list(dict.fromkeys(bmw_paint_contract_reasons)),
     }
 
