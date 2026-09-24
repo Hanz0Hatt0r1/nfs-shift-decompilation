@@ -17,7 +17,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y glslang-tools
-          python -m pip install --upgrade pip pytest
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
       - name: Run complete Python suite
         run: python -m pytest -q
 
