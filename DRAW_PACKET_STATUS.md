@@ -85,3 +85,7 @@ The test suite pins a 32x32 baseline image hash so renderer changes become expli
 ## Phase 31: StaticDraw index-range validation
 
 `SHIFT.StaticDraw/1` now validates each submesh `first_index/index_count` against the mesh triangle count and requires triangle-aligned counts. Negative and out-of-bounds ranges are explicit blockers before renderer execution.
+
+## Phase 83: COLOR ABI no longer blocks DrawPacket
+
+DrawPacket -> StaticDraw -> RenderCommand no longer treats MEB 460/461 as unresolved when the descriptor triplet is present. The verified ABI carries D3DCOLOR/BGRA metadata through vertex layout and RenderCommand. Remaining readiness blockers are now the actual selected shader/material/resource contracts rather than COLOR declaration ambiguity.
