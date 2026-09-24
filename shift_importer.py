@@ -1480,6 +1480,55 @@ def cmd_color_evidence_resource(args: argparse.Namespace) -> int:
         )
     raw = bytes(component for row in stream for component in row)
     report = build_color_abi_evidence(args.property_id, raw)
+
+    property_layout = next(
+        (
+            layout
+            for layout in mesh.property_layouts
+            if str(layout.get("id")) == args.property_id
+        ),
+        None,
+    )
+    property_descriptor = next(
+        (
+            descriptor
+            for descriptor in getattr(mesh, "property_descriptors", [])
+            if str(descriptor.get("id")) == args.property_id
+        ),
+        None,
+    )
+    raw_payload = b""
+    payload_range = None
+    descriptor_range = None
+    if isinstance(property_layout, dict):
+        payload_offset = property_layout.get("payload_offset")
+        payload_bytes = property_layout.get("bytes")
+        if isinstance(payload_offset, int) and isinstance(payload_bytes, int):
+            payload_end = payload_offset + payload_bytes
+            if 0 <= payload_offset <= payload_end <= len(data):
+                raw_payload = data[payload_offset:payload_end]
+                payload_range = {
+                    "offset": payload_offset,
+                    "length": payload_bytes,
+                    "end": payload_end,
+                }
+    if isinstance(property_descriptor, dict):
+        descriptor_offset = property_descriptor.get("offset")
+        descriptor_hex = property_descriptor.get("raw_hex")
+        if isinstance(descriptor_offset, int) and isinstance(descriptor_hex, str):
+            descriptor_length = len(descriptor_hex) // 2
+            descriptor_end = descriptor_offset + descriptor_length
+            if (
+                descriptor_length == 12
+                and 0 <= descriptor_offset <= descriptor_end <= len(data)
+                and data[descriptor_offset:descriptor_end].hex() == descriptor_hex
+            ):
+                descriptor_range = {
+                    "offset": descriptor_offset,
+                    "length": descriptor_length,
+                    "end": descriptor_end,
+                }
+
     report["source"] = {
         "kind": "bff-meb",
         "archive": bff.path.name,
@@ -1488,13 +1537,17 @@ def cmd_color_evidence_resource(args: argparse.Namespace) -> int:
         "resource_sha256": sha256(data),
         "stream": "colors" if args.property_id == "460" else "colors2",
         "vertex_count": mesh.vertex_count,
-        "property_layout": next(
-            (
-                layout
-                for layout in mesh.property_layouts
-                if str(layout.get("id")) == args.property_id
-            ),
-            None,
+        "property_layout": property_layout,
+        "property_descriptor": property_descriptor,
+        "descriptor_range": descriptor_range,
+        "descriptor_range_status": "observed" if descriptor_range else "not-proven",
+        "payload_range": payload_range,
+        "payload_range_status": "observed" if payload_range else "not-proven",
+        "payload_raw_bytes_sha256": sha256(raw_payload) if raw_payload else None,
+        "payload_raw_hex": raw_payload.hex() if raw_payload else None,
+        "decoded_stream_matches_payload": raw_payload == raw,
+        "decoded_stream_matches_payload_status": (
+            "observed" if raw_payload and raw_payload == raw else "not-proven"
         ),
     }
     if args.expected_rgba:
