@@ -339,3 +339,62 @@ def test_gles31_contract_from_render_command_rejects_not_ready_command():
     command["blocking_reasons"] = ["skinning:skin-pose-palette-incomplete"]
     with pytest.raises(ValueError, match="skin-pose-palette-incomplete"):
         build_gles31_skinning_contract_from_render_command(command)
+
+
+def test_render_command_gles31_skinning_parity_accepts_matching_contract():
+    from skinning_glsl import (
+        build_gles31_skinning_contract_from_render_command,
+        validate_gles31_skinning_contract_parity,
+    )
+
+    command = _skinned_render_command()
+    contract = build_gles31_skinning_contract_from_render_command(command)
+    parity = validate_gles31_skinning_contract_parity(command, contract)
+    assert parity["format"] == "SHIFT.GLES31SkinningParity/1"
+    assert parity["valid"] is True
+    assert parity["blocking_reasons"] == []
+    assert all(row["status"] == "match" for row in parity["checks"])
+
+
+def test_render_command_gles31_skinning_parity_detects_attribute_location_mismatch():
+    from skinning_glsl import (
+        build_gles31_skinning_contract_from_render_command,
+        validate_gles31_skinning_contract_parity,
+    )
+
+    command = _skinned_render_command()
+    contract = build_gles31_skinning_contract_from_render_command(command)
+    contract["attributes"]["blendindices0"]["location"] = 99
+    parity = validate_gles31_skinning_contract_parity(command, contract)
+    assert parity["valid"] is False
+    assert "parity:blendindices0-location-mismatch" in parity["blocking_reasons"]
+
+
+def test_render_command_gles31_skinning_parity_detects_skin_pose_matrix_mismatch():
+    from skinning_glsl import (
+        build_gles31_skinning_contract_from_render_command,
+        validate_gles31_skinning_contract_parity,
+    )
+
+    command = _skinned_render_command()
+    contract = build_gles31_skinning_contract_from_render_command(command)
+    contract["skin_pose"]["matrices_sha256"] = "deadbeef"
+    parity = validate_gles31_skinning_contract_parity(command, contract)
+    assert parity["valid"] is False
+    assert "parity:skin-pose-matrices-mismatch" in parity["blocking_reasons"]
+
+
+def test_render_command_gles31_skinning_parity_propagates_source_blocker():
+    from skinning_glsl import (
+        build_gles31_skinning_contract_from_render_command,
+        validate_gles31_skinning_contract_parity,
+    )
+
+    command = _skinned_render_command()
+    contract = build_gles31_skinning_contract_from_render_command(command)
+    command["ready"] = False
+    command["blocking_reasons"] = ["skinning:external-pose-blocked"]
+    parity = validate_gles31_skinning_contract_parity(command, contract)
+    assert parity["valid"] is False
+    assert "parity:render-command-not-ready" in parity["blocking_reasons"]
+    assert "parity:source-blocker:skinning:external-pose-blocked" in parity["blocking_reasons"]
