@@ -191,6 +191,10 @@ formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
 
+## Phase 81: raw memory table decoder
+
+Phase 81 adds a deterministic decoder for raw loaded-memory evidence of the opaque D3D9 tables. This is the bridge needed to recover the actual Type-table values from a future Ghidra/WinDbg memory export; the tool does not treat the absence of such bytes as a verified ABI.
+
 ## Phase 80: recovered Usage semantics
 
 Phase 80 records the source-backed XML STREAM Usage table and the exact `Colour = usage 6` branch. The usage table is independent from the opaque primitive Type table; no MEB 460/461 declaration type is selected.
