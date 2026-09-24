@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 96** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 97** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -463,3 +463,10 @@ validate-d3d9-declaration-chain теперь принимает --runtime-memory
 ## Phase 96 — source provenance coherence
 
 Declaration chain теперь умеет проверять согласованность provenance для source-backed звеньев. Когда evidence reports содержат SHA-256 исходного SHIFT.exe.c, chain требует совпадения sha256, размера и количества строк, а также имени исходного файла; конфликт становится blocker. Старые минимальные reports без hash сохраняют прежний режим, но новый guard включается автоматически, как только provenance предоставлен.
+
+
+## Phase 97 — D3D9 declaration bind API
+
+Добавлен SHIFT.D3D9ApiBindEvidence/1. Полный SHIFT.exe.c теперь анализируется на отдельном runtime boundary wrapper FUN_0082e510: он кеширует текущую declaration pointer и выполняет COM-vtable dispatch по смещению 0x15c. Для IDirect3DDevice9 это vtable slot 87, соответствующий SetVertexDeclaration. Source evidence и внешний API ordering теперь соединены в отдельный machine-readable слой.
+
+Declaration chain принимает этот report как optional gate и включает его source provenance в общий snapshot coherence. Это закрывает путь declaration object → D3D9 bind call, но не закрывает MEB 460/461 → Type.
