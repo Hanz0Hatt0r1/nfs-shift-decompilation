@@ -299,14 +299,10 @@ def rasterize_textured_mesh(
     for semantic_index, candidates in sorted(uv_candidates.items()):
         property_ids = sorted(candidates)
         if len(property_ids) > 1:
-            first_id = property_ids[0]
-            first_rows = candidates[first_id]
-            for other_id in property_ids[1:]:
-                if candidates[other_id] != first_rows:
-                    raise ValueError(
-                        f"TEXCOORD{semantic_index} has conflicting MEB UV families: "
-                        f"{first_id} and {other_id}"
-                    )
+            raise ValueError(
+                f"TEXCOORD{semantic_index} has conflicting MEB UV families: "
+                + " and ".join(str(value) for value in property_ids)
+            )
         layer_rows[semantic_index] = candidates[property_ids[0]]
 
     if 0 not in layer_rows:
