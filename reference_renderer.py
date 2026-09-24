@@ -108,6 +108,8 @@ def rasterize_textured_mesh(
     clear: RGBA = (12, 12, 12, 255),
     pixel_program: dict[str, Any] | None = None,
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    texture_images: dict[int, dict[str, Any]] | None = None,
+    samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -130,6 +132,11 @@ def rasterize_textured_mesh(
     depth = [float("inf")] * (width * height)
 
     shader = None
+    shader_textures = {int(k): v for k, v in (texture_images or {0: image}).items()}
+    shader_samplers = {
+        int(k): dict(v)
+        for k, v in (samplers_by_sampler or ({0: sampler or {}})).items()
+    }
     if pixel_program is not None:
         shader = shader_program_from_ir(pixel_program)
         input_validation = validate_pixel_program_inputs(shader)
@@ -138,16 +145,18 @@ def rasterize_textured_mesh(
                 "pixel shader input contract is not supported: "
                 + ", ".join(input_validation["blocking_reasons"])
             )
-        if any(int(x) != 0 for x in shader.samplers):
+        missing_samplers = [int(x) for x in shader.samplers if int(x) not in shader_textures]
+        if missing_samplers:
             raise ValueError(
-                "pixel shader reference path currently supports only sampler s0"
+                "pixel shader reference path missing texture images for samplers: "
+                + ", ".join(f"s{x}" for x in missing_samplers)
             )
         preflight = ReferenceShaderState(
             shader,
             inputs={0: (0.0, 0.0, 0.0, 1.0)},
             constants=shader_constants,
-            textures={0: image},
-            samplers={0: sampler or {}},
+            textures=shader_textures,
+            samplers=shader_samplers,
         ).execute()
         if preflight["status"] != "executed":
             raise ValueError(
@@ -192,8 +201,8 @@ def rasterize_textured_mesh(
                         shader,
                         inputs={0: (u, v, 0.0, 1.0)},
                         constants=shader_constants,
-                        textures={0: image},
-                        samplers={0: sampler or {}},
+                        textures=shader_textures,
+                        samplers=shader_samplers,
                     ).execute()
                     if execution["status"] != "executed" or execution.get("color") is None:
                         reasons = execution.get("blocking_reasons", []) or [
@@ -225,6 +234,8 @@ def render_textured_static_draw(
     mvp: list[list[float]] | None = None,
     pixel_program: dict[str, Any] | None = None,
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    texture_images: dict[int, dict[str, Any]] | None = None,
+    samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw with one explicit UV0 texture input."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -267,6 +278,8 @@ def render_textured_static_draw(
         sampler=sampler,
         pixel_program=pixel_program,
         shader_constants=shader_constants,
+        texture_images=texture_images,
+        samplers_by_sampler=samplers_by_sampler,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -295,6 +308,8 @@ def render_textured_render_command(
     mvp: list[list[float]] | None = None,
     shader_reference: bool = False,
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    texture_images: dict[int, dict[str, Any]] | None = None,
+    samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Execute a RenderCommand through the one-texture reference material path."""
     from render_command import validate_render_command
@@ -347,6 +362,14 @@ def render_textured_render_command(
                         )
                     shader_constants = constant_result["banks"]
                     break
+    if shader_reference and samplers_by_sampler is None:
+        samplers_by_sampler = {}
+        for submesh in command.get("submeshes", []) or []:
+            for texture in submesh.get("textures", []) or []:
+                register = texture.get("d3d9_sampler_register")
+                if register is None:
+                    continue
+                samplers_by_sampler[int(register)] = texture.get("sampler_state") or {}
     result = render_textured_static_draw(
         draw,
         mesh,
@@ -358,6 +381,8 @@ def render_textured_render_command(
         mvp=mvp,
         pixel_program=pixel_program,
         shader_constants=shader_constants,
+        texture_images=texture_images,
+        samplers_by_sampler=samplers_by_sampler,
     )
     result["command_contract"] = {
         "format": command.get("format"),
