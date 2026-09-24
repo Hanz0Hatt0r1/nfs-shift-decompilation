@@ -16,7 +16,7 @@ def _pair():
         payload += struct.pack("<IHHHHII", name_off, 3, register, 1, 0, header + info, 0)
         payload += struct.pack("<HHHHHHII", 4, 12, 1, 1, 1, 0, 0, 0)
         payload += name
-        payload += b"\\x00" * ((-len(payload)) % 4)
+        payload += b"\x00" * ((-len(payload)) % 4)
         return struct.pack("<I", stage_version) + struct.pack(
             "<I", ((len(payload) // 4) << 16) | 0xFFFE
         ) + payload
