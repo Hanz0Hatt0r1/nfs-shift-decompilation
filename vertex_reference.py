@@ -50,7 +50,14 @@ def _row(
         rows = mesh.get("bone_indices")
     elif semantic == "TEXCOORD" and 0 <= index <= 4:
         layers = mesh.get("uv_layers") or {}
-        rows = layers.get(str(130 + index)) or layers.get(130 + index)
+        primary = layers.get(str(130 + index)) or layers.get(130 + index)
+        alternate = layers.get(str(230 + index)) or layers.get(230 + index)
+        if primary is not None and alternate is not None:
+            raise ValueError(
+                f"TEXCOORD{index} has conflicting MEB UV families: "
+                f"{130 + index} and {230 + index}"
+            )
+        rows = primary if primary is not None else alternate
         if rows is None and index == 0:
             rows = mesh.get("uvs")
     if rows is None:
