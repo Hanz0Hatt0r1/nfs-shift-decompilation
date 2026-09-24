@@ -2792,6 +2792,23 @@ def cmd_d3d9_render_api_boundary(args: argparse.Namespace) -> int:
 def cmd_d3d9_api_bind_evidence(args: argparse.Namespace) -> int:
     from d3d9_api_bind_evidence import analyze_d3d9_api_bind_file
     return _write_evidence_report(analyze_d3d9_api_bind_file(args.input), args.output)
+def cmd_bmw_runtime_shader_render(args: argparse.Namespace) -> int:
+    """Execute one exact captured BMW VS/PS permutation through the reference rasterizer."""
+    from bmw_runtime_shader_render import render_runtime_shader
+
+    result = render_runtime_shader(
+        args.contract,
+        args.material_input,
+        args.mesh_json,
+        args.primary_bff,
+        args.output,
+        external_resources=args.external_resource or [],
+        width=args.width,
+        height=args.height,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
 
 def cmd_bmw_runtime_capture_pipeline(args: argparse.Namespace) -> int:
     """Run the complete BMW capture -> runtime evidence -> shader -> render contract pipeline."""
@@ -3398,6 +3415,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="primary BMW_M3_E36.bff")
     p.add_argument("output", help="SHIFT.BMWBFFIntakeEvidence/1 JSON")
     p.set_defaults(fn=cmd_bmw_bff_intake)
+
+    p = sp.add_parser("bmw-runtime-shader-render", help="execute exact captured BMW VS/PS offline")
+    p.add_argument("contract", help="SHIFT.BMWRuntimeRenderContract/1 JSON")
+    p.add_argument("material_input", help="SHIFT.RealBMWMaterialBindingEvidence/1 JSON")
+    p.add_argument("mesh_json", help="neutral MEB JSON with vertices/indices/UVs")
+    p.add_argument("primary_bff", help="BMW_M3_E36.bff containing material DDS")
+    p.add_argument("output", help="shader-executed PPM output")
+    p.add_argument("--external-resource", action="append", default=[], help="STAGE=ReferenceTexture/1, ReferenceCubeTexture/1 or DDS path")
+    p.add_argument("--width", type=int, default=1200)
+    p.add_argument("--height", type=int, default=800)
+    p.set_defaults(fn=cmd_bmw_runtime_shader_render)
 
     p = sp.add_parser("bmw-runtime-capture-pipeline", help="run BMW capture -> runtime evidence -> exact shader -> RenderContract pipeline")
     p.add_argument("primary_bff", help="primary BMW_M3_E36.bff")
