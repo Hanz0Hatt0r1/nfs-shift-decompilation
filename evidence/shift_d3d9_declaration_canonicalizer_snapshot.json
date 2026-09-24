@@ -1,0 +1,63 @@
+{
+  "format": "SHIFT.D3D9DeclarationCanonicalizerSnapshot/1",
+  "source": {
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "bytes": 38993813,
+    "line_count": 1471366
+  },
+  "function": "FUN_00830f80",
+  "function_line": 903157,
+  "record_stride": 8,
+  "comparison_fields": [
+    {
+      "name": "Stream",
+      "offset": 0,
+      "width": 2,
+      "source_line": 903206
+    },
+    {
+      "name": "Offset",
+      "offset": 2,
+      "width": 2,
+      "source_line": 903207
+    },
+    {
+      "name": "Type",
+      "offset": 4,
+      "width": 1,
+      "source_line": 903207
+    },
+    {
+      "name": "Method",
+      "offset": 5,
+      "width": 1,
+      "source_line": 903208
+    },
+    {
+      "name": "Usage",
+      "offset": 6,
+      "width": 1,
+      "source_line": 903209
+    },
+    {
+      "name": "UsageIndex",
+      "offset": 7,
+      "width": 1,
+      "source_line": 903210
+    }
+  ],
+  "sizing": {
+    "source_line": 903187,
+    "expression": "uVar1 = uVar1 * 8 + 8"
+  },
+  "copy": {
+    "source_line": 903191,
+    "expression": "_memcpy(puVar6,param_1,uVar1)"
+  },
+  "conclusion": {
+    "full_8_byte_declaration_identity": "observed",
+    "d3dvertexelement9_shape": "observed",
+    "meb_460_461_to_type_code": "not-proven"
+  }
+}
