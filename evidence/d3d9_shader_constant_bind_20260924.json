@@ -1,0 +1,33 @@
+{
+  "format": "SHIFT.D3D9ShaderConstantBindEvidence/1",
+  "status": "observed",
+  "source": {
+    "kind": "shift-exe-c",
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "bindings": {
+    "vertex_float": {
+      "function": "FUN_0084eb80",
+      "line_start": 925504,
+      "line_end": 925509,
+      "api": "IDirect3DDevice9::SetVertexShaderConstantF",
+      "vtable_slot": 94,
+      "vtable_byte_offset": "0x178",
+      "dispatch_status": "observed"
+    },
+    "pixel_float": {
+      "function": "FUN_0084eea0",
+      "line_start": 925687,
+      "line_end": 925692,
+      "api": "IDirect3DDevice9::SetPixelShaderConstantF",
+      "vtable_slot": 109,
+      "vtable_byte_offset": "0x1b4",
+      "dispatch_status": "observed"
+    }
+  },
+  "evidence_boundary": {
+    "runtime_frame_identity": "not-supplied",
+    "constant_values": "not-supplied"
+  }
+}
