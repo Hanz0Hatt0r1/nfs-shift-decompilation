@@ -369,3 +369,9 @@ This makes the MEB boundary machine-checkable without turning a candidate into
 a false proof. The next closure target remains a same-instance correlation
 between an actual MEB color payload and the exact D3D9 declaration record used
 by that mesh.
+
+## Phase 107: preserve MEB property descriptor bytes
+
+MEB vertex-property descriptors are now retained with their exact file-relative offset, three LE DWORD values and raw 12-byte representation. Regression coverage uses synthetic 460/461 descriptors and verifies the offsets and payload ordering.
+
+This removes a provenance gap at the MEB boundary: future runtime correlation can start from exact descriptor bytes rather than a derived property-name table. The D3D9 Type selection remains unresolved until the same mesh instance is tied to a concrete declaration record.
