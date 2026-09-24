@@ -126,3 +126,55 @@ def test_texture_sampler_linear_filter_interpolates_texels():
 def test_decode_dds_rejects_truncated_block():
     with pytest.raises(ValueError, match="truncated"):
         decode_dds(_dds_header(fourcc=b"DXT1") + b"\x00" * 7)
+
+
+def _cube_resource():
+    faces = {}
+    colors = {
+        "px": (255, 0, 0, 255),
+        "nx": (0, 255, 0, 255),
+        "py": (0, 0, 255, 255),
+        "ny": (255, 255, 0, 255),
+        "pz": (255, 0, 255, 255),
+        "nz": (0, 255, 255, 255),
+    }
+    for face, rgba in colors.items():
+        faces[face] = {
+            "format": "SHIFT.ReferenceTexture/1",
+            "source_format": "RGBA32",
+            "width": 1,
+            "height": 1,
+            "pixels": bytes(rgba),
+        }
+    return {
+        "format": "SHIFT.ReferenceCubeTexture/1",
+        "faces": faces,
+    }
+
+
+def test_sample_texture_cube_selects_d3d9_faces():
+    from texture_reference import sample_texture_cube
+
+    cube = _cube_resource()
+    assert sample_texture_cube(cube, 1.0, 0.0, 0.0) == pytest.approx((1.0, 0.0, 0.0, 1.0))
+    assert sample_texture_cube(cube, -1.0, 0.0, 0.0) == pytest.approx((0.0, 1.0, 0.0, 1.0))
+    assert sample_texture_cube(cube, 0.0, 1.0, 0.0) == pytest.approx((0.0, 0.0, 1.0, 1.0))
+    assert sample_texture_cube(cube, 0.0, -1.0, 0.0) == pytest.approx((1.0, 1.0, 0.0, 1.0))
+    assert sample_texture_cube(cube, 0.0, 0.0, 1.0) == pytest.approx((1.0, 0.0, 1.0, 1.0))
+    assert sample_texture_cube(cube, 0.0, 0.0, -1.0) == pytest.approx((0.0, 1.0, 1.0, 1.0))
+
+
+def test_sample_texture_cube_rejects_incomplete_resource():
+    from texture_reference import sample_texture_cube
+
+    cube = _cube_resource()
+    del cube["faces"]["nz"]
+    with pytest.raises(ValueError, match="missing faces: nz"):
+        sample_texture_cube(cube, 0.0, 0.0, 1.0)
+
+
+def test_sample_texture_cube_rejects_zero_direction():
+    from texture_reference import sample_texture_cube
+
+    with pytest.raises(ValueError, match="finite non-zero major component"):
+        sample_texture_cube(_cube_resource(), 0.0, 0.0, 0.0)
