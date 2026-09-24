@@ -47,11 +47,12 @@ def validate_bmw_vertex_input_parity(
     records = list((((declaration_obj or {}).get('decoded') or {}).get('records')) or [])
     attrs = _layout_attrs(material_slice)
     descriptors = {str(row.get('id')): row for row in (material_slice.get('mesh') or {}).get('property_descriptors', []) if row.get('id') is not None}
-    attrs_by_semantic = {
-        (str(a.get('usage')).upper(), int(a.get('usage_index', 0))): a
-        for a in attrs
-        if a.get('usage')
-    }
+    attrs_by_semantic: dict[tuple[str, int], list[Mapping[str, Any]]] = {}
+    for attr in attrs:
+        if not attr.get('usage'):
+            continue
+        key = (str(attr.get('usage')).upper(), int(attr.get('usage_index', 0)))
+        attrs_by_semantic.setdefault(key, []).append(attr)
     checks = []
     shader_inputs = _shader_inputs(runtime_frame)
     if not declaration_obj or not records:
@@ -66,15 +67,32 @@ def validate_bmw_vertex_input_parity(
             register = int(register_text.removeprefix('v'))
         except ValueError:
             register = None
-        attr = attrs_by_semantic.get((usage, usage_index))
+        attr_candidates = attrs_by_semantic.get((usage, usage_index), [])
+        if len(attr_candidates) == 1:
+            attr = attr_candidates[0]
+            row_status = 'match'
+            property_id = str(attr.get('property_id'))
+            render_location = attr.get('location')
+        elif not attr_candidates:
+            attr = None
+            row_status = 'not-found'
+            property_id = None
+            render_location = None
+        else:
+            attr = None
+            row_status = 'ambiguous'
+            property_id = [str(x.get('property_id')) for x in attr_candidates]
+            render_location = None
+            reasons.append(f'vertex-input:layout-semantic-collision:{usage}{usage_index}')
         row = {
             'usage': usage, 'usage_index': usage_index, 'shader_register': register,
-            'status': 'match' if attr is not None else 'not-found',
-            'property_id': str(attr.get('property_id')) if attr is not None else None,
-            'render_location': attr.get('location') if attr is not None else None,
+            'status': row_status,
+            'property_id': property_id,
+            'render_location': render_location,
         }
         if attr is None:
-            reasons.append(f'vertex-input:layout-semantic-missing:{usage}{usage_index}')
+            if not attr_candidates:
+                reasons.append(f'vertex-input:layout-semantic-missing:{usage}{usage_index}')
             checks.append(row)
             continue
         pid = str(attr.get('property_id'))
