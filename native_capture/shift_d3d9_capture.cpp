@@ -1,7 +1,9 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#define Direct3DCreate9 SHIFT_SYSTEM_Direct3DCreate9
 #include <d3d9.h>
+#undef Direct3DCreate9
 
 #include <atomic>
 #include <cmath>
@@ -533,7 +535,7 @@ bool ensure_system_d3d9() {
 
 } // namespace
 
-__declspec(dllexport)
+extern "C" __declspec(dllexport)
 IDirect3D9* WINAPI Direct3DCreate9(UINT sdk_version) {
     if (!ensure_system_d3d9()) return nullptr;
     IDirect3D9* d3d = g_real_direct3d_create9(sdk_version);
