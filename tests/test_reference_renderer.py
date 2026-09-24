@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 from reference_renderer import orthographic_mvp, rasterize_mesh, render_mesh_json
 
@@ -1683,7 +1684,7 @@ def test_reference_renderer_rejects_external_cube_sampler(tmp_path):
             height=8,
         )
     except ValueError as exc:
-        assert "external sampler s3 (samplerCube) requires a dedicated reference resource implementation" in str(exc)
+        assert "external sampler s3 requires ReferenceCubeTexture/1 resource" in str(exc)
     else:
         raise AssertionError("expected ValueError")
 
