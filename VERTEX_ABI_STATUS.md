@@ -50,3 +50,8 @@ The deterministic reference layers now consume `230..234` directly as `TEXCOORD0
 ## Phase 65: TEXCOORD5 evidence boundary
 
 `TEXCOORD5` is present in the recovered BMW shader interface and can be linked to a matching vertex output, but its MEB storage property remains unresolved. The runtime reference layer now accepts it only through an explicit semantic stream; no property id 235/236/etc. is inferred.
+
+
+## Phase 66: COLOR evidence CLI
+
+`shift_importer.py color-evidence` is now the standard entry point for collecting evidence on MEB properties 460/461. It preserves both RGBA and BGRA candidate streams and reports exact byte differences against an external RGBA8 reference without changing the unresolved ABI status.
