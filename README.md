@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 91** — source-backed D3D9 declaration chain плюс decoder реального 8-byte declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 92** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -421,3 +421,7 @@ CLI:
 CLI:
 
     python shift_importer.py decode-d3d9-declaration declaration.bin declaration.json --count 32
+
+## Phase 92 — declaration instance in the full chain
+
+`validate-d3d9-declaration-chain` теперь принимает `--declaration-instance`. При переданном отчёте `SHIFT.D3D9DeclarationInstanceEvidence/1` chain добавляет отдельный обязательный check: instance должен быть полным, иметь stride 8 и сохранять подтверждённую D3DVERTEXELEMENT9-shaped форму. Несовпадение runtime instance блокирует итог `observed`; отсутствие instance сохраняет source-only режим без ложного утверждения runtime proof.

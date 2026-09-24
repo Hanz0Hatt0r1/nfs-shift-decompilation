@@ -158,3 +158,7 @@ The recovered renderer groups declaration records by Stream id. The Stream/Type/
 ## Phase 91: raw declaration instance decoder
 
 `SHIFT.D3D9DeclarationInstanceEvidence/1` даёт воспроизводимый декодер фактических 8-байтных declaration records. Type codes 0..16 разрешаются через recovered Type profile, `0x11` экспонируется как `D3DDECLTYPE_UNUSED`; неполный payload и неизвестный Type не принимаются как валидный declaration. Numeric Usage/UsageIndex сохраняются без недоказанной semantic remapping, а MEB 460/461 linkage остаётся `not-proven`.
+
+## Phase 92: instance-to-chain integration
+
+При передаче `SHIFT.D3D9DeclarationInstanceEvidence/1` в declaration chain фактический instance становится отдельным обязательным check. Это связывает декодер bytes с ранее подтверждённой source-backed ABI-формой, не закрывая MEB 460/461 → Type ordinal.

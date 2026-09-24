@@ -271,3 +271,7 @@ Phase 90 связывает уже проверенные слои в один m
 ## Phase 91: raw D3D9 declaration instance
 
 Phase 91 добавляет instance-level decoder для фактических 8-байтных declaration records. Он декодирует поля `Stream/Offset/Type/Method/Usage/UsageIndex`, проверяет Type against the recovered profile и fail-closed различает `match`, `partial` и `mismatch`. Source-backed Method=0 проверяется отдельно; Usage byte остаётся сырым значением без недоказанного преобразования. MEB 460/461 → Type ordinal остаётся `not-proven`.
+
+## Phase 92: declaration instance in the full chain
+
+Phase 92 подключает `SHIFT.D3D9DeclarationInstanceEvidence/1` обратно в `SHIFT.D3D9DeclarationChainEvidence/1`. Когда runtime declaration report передан, chain требует `match`, stride 8 и observed D3DVERTEXELEMENT9 shape; mismatch/partial становится явным blocker. Без runtime report цепочка остаётся source-backed и не выдаёт runtime proof.

@@ -1864,6 +1864,7 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
         args.stream_record,
         args.canonicalizer,
         pe_evidence_path=args.pe_evidence,
+        declaration_instance_path=args.declaration_instance,
     )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -2268,7 +2269,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("canonicalizer", help="SHIFT.D3D9DeclarationCanonicalizerEvidence/1 JSON input")
     p.add_argument("output", help="SHIFT.D3D9DeclarationChainEvidence/1 JSON output")
     p.add_argument("--pe-evidence", help="optional SHIFT.PEImageEvidence/1 JSON input")
+    p.add_argument("--declaration-instance", help="optional SHIFT.D3D9DeclarationInstanceEvidence/1 JSON input")
     p.set_defaults(fn=cmd_d3d9_declaration_chain)
+
 
     p = sp.add_parser("decode-d3d9-declaration", help="decode raw 8-byte D3D9 declaration records")
     p.add_argument("input", help="raw declaration-record bytes")
