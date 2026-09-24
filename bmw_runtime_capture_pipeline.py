@@ -93,7 +93,7 @@ def _texture_snapshot_inventory(runtime_report: Mapping[str, Any]) -> dict[str, 
             "width": image["width"],
             "height": image["height"],
             "byte_size": image["byte_size"],
-            "reference_resource": image,
+            "source_path": image["source_path"],
         })
     return {
         "capture_snapshot_count": len(rows),
