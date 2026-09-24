@@ -172,7 +172,15 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
 
 Весь BFF-backed material evidence остаётся прежним; внешний FX получает собственный SHA-256 provenance. Это подготовка к первому настоящему BMT → FX → FXO → RenderCommand render.
 
-### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### VHF scene preview
+### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### Render snapshots
+
+Последний реальный geometry-preview BMW M3 сохранён непосредственно в репозитории:
+
+![BMW M3 E36 KIT00 geometry preview](docs/render-snapshots/bmw_m3_e36_kit00_scene_geometry.svg)
+
+Это quantized SVG-снимок кадра, полученного из реальных VHF/MEB ресурсов. Он нужен как визуальный checkpoint; material/shader golden image остаётся отдельным этапом.
+
+### VHF scene preview
 
 Для проверки уже реальной сборки автомобиля из VHF hierarchy можно отрисовать выбранный LOD непосредственно из BFF:
 
