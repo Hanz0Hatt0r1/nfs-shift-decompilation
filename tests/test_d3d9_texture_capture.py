@@ -54,9 +54,9 @@ def test_runtime_trace_keeps_texture_bindings_on_frame():
     report = build_runtime_binding_evidence(events)
     assert report["trace"]["frame_count"] == 1
     bindings = report["frames"][0]["texture_bindings"]
-    assert bindings == [
-        {"stage": 0, "texture_ptr": "0x1111", "line": None},
-        {"stage": 3, "texture_ptr": "0x3333", "line": None},
+    assert [(row["stage"], row["texture_ptr"], row["line"]) for row in bindings] == [
+        (0, "0x1111", None),
+        (3, "0x3333", None),
     ]
 
 def test_set_texture_schema_accepts_resource_descriptor():
