@@ -281,11 +281,14 @@ def analyze_d3d9_declaration_chain(
         },
     }
 
-    source_provenance = _source_provenance_check({
+    provenance_reports = {
         "stream_topology": stream_topology,
         "stream_record": stream_record,
         "canonicalizer": canonicalizer,
-    })
+    }
+    if api_bind_evidence:
+        provenance_reports["api_bind"] = api_bind_evidence
+    source_provenance = _source_provenance_check(provenance_reports)
 
     memory_layout_supplied = bool(runtime_layout_evidence)
     api_bind_supplied = bool(api_bind_evidence)
