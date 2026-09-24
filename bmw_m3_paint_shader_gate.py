@@ -9,7 +9,15 @@ FORMAT = "SHIFT.BMWM3PaintShaderGate/1"
 
 def validate_bmw_paint_shader_gate(binding: Mapping[str, Any]) -> dict[str, Any]:
     normalized = normalize_material_binding(binding)
-    selection = binding.get('shader_selection') or {}
+    selection = binding.get('shader_selection')
+    if not isinstance(selection, Mapping):
+        selection = {
+            'status': binding.get('selection_status'),
+            'selected_fxo': binding.get('selected_fxo'),
+            'shader_pair': binding.get('shader_pair'),
+            'linked_shader_pair': binding.get('linked_shader_pair'),
+            'permutation_identity': binding.get('permutation_identity'),
+        }
     selected_fxo = selection.get('selected_fxo') or {}
     pair = selection.get('shader_pair') or {}
     linked = selection.get('linked_shader_pair') or binding.get('linked_shader_pair')
