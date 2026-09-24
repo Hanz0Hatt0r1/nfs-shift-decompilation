@@ -1,3 +1,4 @@
+from pathlib import Path
 from bmw_golden_gate import validate_bmw_golden_gate
 
 
@@ -136,3 +137,31 @@ def test_bmw_golden_gate_requires_shader_gate_for_exact_m3_paint_path():
     report=validate_bmw_golden_gate(golden,packet)
     assert report["ready"] is False
     assert "paint-shader:0:missing" in report["blocking_reasons"]
+
+
+def test_bmw_golden_gate_reports_exact_asset_contract_from_repo_manifest():
+    golden=json.loads(
+        (Path(__file__).resolve().parents[1] / 'evidence' / 'bmw_m3_e36_kit00_body_loda.golden.json').read_text(
+            encoding='utf-8'
+        )
+    )
+    packet=_packet()
+    packet["mesh"]["resolved"]={
+        "path": golden["golden"]["resource"],
+        "resource_sha256": golden["golden"]["resource_sha256"],
+    }
+    packet["mesh"]["ref"]=golden["golden"]["resource"]
+    packet["mesh"]["vertex_count"]=golden["mesh"]["vertex_count"]
+    packet["mesh"]["triangle_count"]=golden["mesh"]["triangle_count"]
+    packet["submeshes"][0]["material"]["ref"]=golden["mesh"]["primitives"][1]["material"]
+    packet["submeshes"][0]["first_index"]=golden["mesh"]["primitives"][1]["first_index"]
+    packet["submeshes"][0]["index_count"]=golden["mesh"]["primitives"][1]["index_count"]
+    packet["submeshes"][0]["material"]["paint_shader_gate"]={
+        "format":"SHIFT.BMWM3PaintShaderGate/1",
+        "status":"ready",
+        "ready":True,
+        "blocking_reasons":[],
+    }
+    report=validate_bmw_golden_gate(golden,packet)
+    assert report["ready"] is True
+    assert report["asset_contract"]["ready"] is True
