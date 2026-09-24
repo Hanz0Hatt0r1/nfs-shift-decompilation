@@ -54,7 +54,9 @@ def analyze_d3d9_stream_topology(source: str | bytes) -> dict[str, Any]:
     pointer_array = _any(text,
         "*(int *)(*(int *)((int)local_38 * 0x10 + 8 + *(int *)(iVar15 + 0x24)) + local_24 * 4)",
         "*(int *)(*(int *)(iVar1 + 8 + *(int *)((int)this + 0x24)) + *piVar7 * 4)",
-        "*(int *)(iVar1 + 8 + *(int *)((int)this + 0x24))", start=start)
+        "*(int *)(iVar1 + 8 + *(int *)((int)this + 0x24))",
+        "*(int *)(*(int *)(iVar9 + 8) + *(int *)(iVar9 + 4) * 4)",
+        start=start)
     count = _any(text, "local_24 = local_24 + 1;", "*piVar7 = *piVar7 + 1;",
                  "*(int *)((int)local_38 * 0x10 + 4 + *(int *)(iVar15 + 0x24))", start=start)
     size = _any(text, "DAT_00b8eef0", "local_40 = local_40 +",
