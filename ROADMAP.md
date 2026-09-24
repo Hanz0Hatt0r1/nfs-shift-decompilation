@@ -191,6 +191,10 @@ formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
 
+## Phase 77: CPrimitiveType source anchors
+
+Phase 77 extracts original CPrimitiveType.cpp line numbers from embedded diagnostic calls. The evidence report now carries both decompiler and original-source line coordinates; this improves source navigation but does not by itself identify MEB 460/461 declaration types.
+
 ## Phase 76: type-table reference census
 
 Phase 76 adds a source callsite census for FUN_00853c20 and records embedded CPrimitiveType.cpp source-path references. Exact source line lists are retained; the opaque DAT_00b90088 contents are still unavailable, so the COLOR ABI remains blocked.
