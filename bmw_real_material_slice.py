@@ -18,7 +18,7 @@ from vertex_layout import build_layout_from_summary
 from shift_importer import BFF
 from static_draw import build_static_draw_contract
 
-FORMAT = "SHIFT.RealBMWMaterialSliceEvidence/1"
+FORMAT = "SHIFT.BMWMaterialSlice/1"
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -110,6 +110,7 @@ def build_real_bmw_material_slice(
         ready=bool(binding_report.get('ready') and asset_contract.get('ready') and static_draw.get('ready') and render_command.get('ready') and not reasons)
         return {
             'format':FORMAT,
+            'source_format':'SHIFT.RealBMWMaterialSliceEvidence/1',
             'status':'ready' if ready else 'blocked',
             'ready':ready,
             'blocking_reasons':list(dict.fromkeys(reasons)),
@@ -121,6 +122,9 @@ def build_real_bmw_material_slice(
             'paint_contract':binding_report.get('paint_contract'),
             'paint_shader_gate':binding_report.get('paint_shader_gate'),
             'material':compiled_material,
+            'shader_selection':compiled_material.get('shader_selection') or {},
+            'textures':compiled_material.get('textures') or [],
+            'uniform_binding':compiled_material.get('shader_selection',{}).get('uniform_binding') if isinstance(compiled_material.get('shader_selection'),dict) else compiled_material.get('uniform_binding'),
             'mesh':mesh_to_jsonable(mesh),
             'packet':packet,
             'static_draw':static_draw,
