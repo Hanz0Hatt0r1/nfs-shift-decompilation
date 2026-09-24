@@ -157,12 +157,17 @@ def analyze_d3d9_declaration_chain(
     }
 
     if instance_supplied:
-        checks["declaration_instance"] = {
-            "status": "observed"
+        instance_check_status = (
+            "observed"
             if instance_status == "match"
             and instance_stride == EXPECTED_RECORD_STRIDE
             and instance_shape == "observed"
-            else instance_status,
+            else "not-proven"
+            if instance_status == "match"
+            else instance_status
+        )
+        checks["declaration_instance"] = {
+            "status": instance_check_status,
             "detail": "supplied runtime declaration bytes decode as a complete 8-byte D3DVERTEXELEMENT9-shaped instance",
         }
 

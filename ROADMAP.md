@@ -275,3 +275,8 @@ Phase 91 добавляет instance-level decoder для фактических
 ## Phase 92: declaration instance in the full chain
 
 Phase 92 подключает `SHIFT.D3D9DeclarationInstanceEvidence/1` обратно в `SHIFT.D3D9DeclarationChainEvidence/1`. Когда runtime declaration report передан, chain требует `match`, stride 8 и observed D3DVERTEXELEMENT9 shape; mismatch/partial становится явным blocker. Без runtime report цепочка остаётся source-backed и не выдаёт runtime proof.
+
+
+## Phase 93: declaration instance integrity
+
+Phase 93 усиливает instance-level evidence: декодер распознаёт точную форму `D3DDECL_END`, а declaration chain не принимает report со статусом `match`, если фактический stride или D3DVERTEXELEMENT9 shape не совпадают с recovered ABI. Следующий практический вход — реальный runtime/memory dump.

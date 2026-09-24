@@ -162,3 +162,8 @@ The recovered renderer groups declaration records by Stream id. The Stream/Type/
 ## Phase 92: instance-to-chain integration
 
 При передаче `SHIFT.D3D9DeclarationInstanceEvidence/1` в declaration chain фактический instance становится отдельным обязательным check. Это связывает декодер bytes с ранее подтверждённой source-backed ABI-формой, не закрывая MEB 460/461 → Type ordinal.
+
+
+## Phase 93: declaration instance integrity
+
+Точная форма `D3DDECL_END` теперь фиксируется как отдельное наблюдение, а chain проверяет внутреннюю согласованность runtime report, а не доверяет его полю `status`. Это снижает риск ложного `observed` при импорте внешних memory-dump evidence.
