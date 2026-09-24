@@ -53,9 +53,9 @@ def test_bmw_paint_contract_accepts_compile_material_shape():
         'selected_fxo': {'specialization_matched':['USE_FRESNEL','ALLOW_VINYLS','DIRT_SCRATCH']},
     }
     raw['textures']=[
-        {'material_parameter':'diffuseTexture','sampler':'diffuseMap','d3d9_sampler_register':1,'ref':'vehicles/textures/COMMON_PAINT.dds'},
-        {'material_parameter':'specularTexture','sampler':'specularMap','d3d9_sampler_register':2,'ref':'vehicles/textures/COMMON_PAINT_SPECULAR.dds'},
-        {'material_parameter':'scratchControlTexture','sampler':'scratchControlMap','d3d9_sampler_register':4,'ref':'vehicles/textures/COMMON_BLANK.dds'},
+        {'material_parameter':'diffuseTexture','sampler':'diffuseMap','d3d9_sampler_register':1,'ref':'vehicles/textures/COMMON_PAINT.dds','min_filter':'Linear','mag_filter':'Linear','mip_filter':'Linear','address_u':'Wrap','address_v':'Wrap','srgb':True},
+        {'material_parameter':'specularTexture','sampler':'specularMap','d3d9_sampler_register':2,'ref':'vehicles/textures/COMMON_PAINT_SPECULAR.dds','min_filter':'Linear','mag_filter':'Linear','mip_filter':'Linear','address_u':'Wrap','address_v':'Wrap','srgb':True},
+        {'material_parameter':'scratchControlTexture','sampler':'scratchControlMap','d3d9_sampler_register':4,'ref':'vehicles/textures/COMMON_BLANK.dds','min_filter':'Linear','mag_filter':'Linear','mip_filter':'None','address_u':'Clamp','address_v':'Clamp','srgb':False},
     ]
     report=validate_material_binding(raw)
     assert report['ready'] is True
