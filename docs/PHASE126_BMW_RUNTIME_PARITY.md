@@ -31,3 +31,7 @@ python shift_importer.py bmw-runtime-parity bmw-paint-slice.json runtime-evidenc
 The gate is ready only when shader identity, exact resource identity, constant-bank
 parity and the currently evidenced declaration subset all match. Otherwise the
 blocking reasons remain machine-readable.
+
+## Phase 127 integration
+
+Runtime shader constant capture extends the phase-126 parity gate from register presence to exact value comparison. This remains optional during exploration and becomes mandatory with `--require-constant-values`.
