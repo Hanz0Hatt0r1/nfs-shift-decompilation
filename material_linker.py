@@ -14,6 +14,7 @@ from shader_interface import pair_selected_pixel
 from uniform_linker import link_selected_pair, reflect_constants
 from specialization import feature_indicators, feature_signature_score, material_specialisations
 from shader_backend import translate_pair_blob
+from shader_permutation_identity import build_shader_permutation_identity
 
 def parse_fx_samplers(source: str | bytes) -> list[dict]:
     text = source.decode("utf-8", "replace") if isinstance(source, bytes) else source
@@ -136,12 +137,23 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                 pixel_sha256=hashlib.sha256(data[p["offset"]:p["end"]]).hexdigest()
                 vertex_sha256=None
                 pair_sha256=None
+                permutation_identity=None
+                permutation_identity_error=None
                 if pair:
                     try:
                         for vb in parse_shader_blobs(data):
                             if vb.offset==pair["vertex_offset"]:
                                 vertex_sha256=hashlib.sha256(data[vb.offset:vb.end]).hexdigest()
                                 pair_sha256=hashlib.sha256(data[vb.offset:vb.end]+data[p["offset"]:p["end"]]).hexdigest()
+                                try:
+                                    permutation_identity=build_shader_permutation_identity(
+                                        data,
+                                        vertex_offset=int(vb.offset),
+                                        pixel_offset=int(p["offset"]),
+                                    )
+                                except Exception as exc:
+                                    permutation_identity=None
+                                    permutation_identity_error=f"{type(exc).__name__}: {exc}"
                                 break
                     except Exception:
                         pass
@@ -156,6 +168,8 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                     "pixel_sha256":pixel_sha256,
                     "vertex_sha256":vertex_sha256,
                     "pair_sha256":pair_sha256,
+                    "permutation_identity":permutation_identity,
+                    "permutation_identity_error":permutation_identity_error,
                     "specialization_score":feature_score["score"],
                     "specialization_matched":feature_score["matched"],
                     "specialization_contradicted":feature_score["contradicted"],
@@ -203,6 +217,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     return {"format":"SHIFT.MaterialBinding/1","material":material.get("name"),"shader":material.get("shader"),
             "technique":material.get("technique"),"specialization":specialization,"bindings":bindings,"fxo_candidates":fxo,
             "selected_fxo":best if best and best["exact"] else None,
+            "permutation_identity":(best or {}).get("permutation_identity") if best else None,
             "selection_status":selection_status,
             "selection_evidence":(
                 {"rank":list(_selection_evidence_key(best)), "ambiguous_count":len(ambiguous_candidates)}

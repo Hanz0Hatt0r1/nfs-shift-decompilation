@@ -9,6 +9,7 @@ def _slice(status='unique', linked=True, resolved=True, command_ready=True):
             'status': status,
             'shader_pair': {'selection_status': 'unique'},
             'linked_shader_pair': {'format': 'SHIFT.LinkedShaderPair/1'} if linked else None,
+            'permutation_identity': {'format': 'SHIFT.ShaderPermutationIdentity/1', 'identity_sha256': 'id'} if linked else None,
             'bindings': [],
         },
         'textures': [{
@@ -51,3 +52,11 @@ def test_bmw_material_slice_propagates_render_command_blocker():
     report = select_material_slice(_slice(command_ready=False))
     assert report['ready'] is False
     assert 'command:not-ready' in report['blocking_reasons']
+
+def test_bmw_material_slice_blocks_missing_permutation_identity():
+    report = select_material_slice(_slice())
+    report_source = _slice()
+    del report_source['packet']['submeshes'][0]['material']['shader_selection']['permutation_identity']
+    report = select_material_slice(report_source)
+    assert report['ready'] is False
+    assert 'shader-permutation-identity:missing' in report['blocking_reasons']

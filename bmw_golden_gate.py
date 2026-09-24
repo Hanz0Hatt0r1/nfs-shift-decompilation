@@ -86,6 +86,7 @@ def validate_bmw_golden_gate(
                 or (selection.get("selected_fxo") or {}).get("vertex_pair_selection_status", "none")
             ),
             "linked_shader_pair": bool(selection.get("linked_shader_pair")),
+            "permutation_identity": selection.get("permutation_identity"),
         }
         selection_rows.append(row)
         if row["status"] != "unique":
@@ -96,6 +97,8 @@ def validate_bmw_golden_gate(
             )
         if not row["linked_shader_pair"]:
             reasons.append(f"shader-glsl:{index}:missing")
+        if row["status"] == "unique" and not row["permutation_identity"]:
+            reasons.append(f"shader-permutation-identity:{index}:missing")
 
     material_status = None
     if material_binding is not None:

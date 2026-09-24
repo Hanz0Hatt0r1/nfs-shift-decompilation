@@ -284,6 +284,7 @@ def test_build_draw_packet_links_vhf_meb_bmt_dds():
             "d3d9_sampler_register": 3,
         }],
         "selection_status": "ambiguous",
+        "permutation_identity": {"format": "SHIFT.ShaderPermutationIdentity/1", "identity_sha256": "id"},
         "ambiguous_candidates": [
             {"file": "a.fxo", "program_offset": 100},
             {"file": "b.fxo", "program_offset": 200},
@@ -320,6 +321,7 @@ def test_build_draw_packet_links_vhf_meb_bmt_dds():
     assert len(material_ir["shader_selection"]["ambiguous_candidates"]) == 2
     assert material_ir["shader_selection"]["vertex_pair_selection_status"] == "ambiguous"
     assert packet["shader_selection"]["status"] == "ambiguous"
+    assert packet["submeshes"][0]["material"]["shader_selection"]["permutation_identity"]["identity_sha256"] == "id"
 
 
 def test_build_from_analysis_and_cli(tmp_path):

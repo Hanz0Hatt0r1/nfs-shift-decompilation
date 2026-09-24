@@ -339,6 +339,7 @@ def compile_material(
                 ).get("vertex_pair_selection_status", "none"),
                 "shader_pair": material_binding.get("shader_pair"),
                 "linked_shader_pair": material_binding.get("linked_shader_pair"),
+                "permutation_identity": material_binding.get("permutation_identity"),
                 "linked_shader_error": material_binding.get("linked_shader_error"),
                 "vertex_bindings": (
                     (material_binding.get("shader_pair", {}) or {}).get("vertex_bindings", [])
