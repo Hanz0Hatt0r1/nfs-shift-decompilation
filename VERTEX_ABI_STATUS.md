@@ -225,3 +225,8 @@ Runtime declaration evidence now has a direct source comparison for its terminat
 
 
 Phase 102 follow-up verified the exact sentinel producer against the uploaded SHIFT.exe.c local_14 form. The evidence layer remains based on the six field writes and 8-byte indexing, not on decompiler-local naming.
+
+
+## Phase 103: D3D9 declaration lifecycle call chain
+
+The source-backed ABI evidence now includes an explicit declaration lifecycle: mesh construction invokes the recovered loader, the loader canonicalizes the declaration buffer, the canonicalizer creates the D3D9 declaration object, and the render path later applies that stored object through SetVertexDeclaration. The report distinguishes this static source chain from a specific runtime frame.
