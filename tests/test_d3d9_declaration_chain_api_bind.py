@@ -82,3 +82,32 @@ def test_api_bind_snapshot_conflict_blocks_the_chain():
     assert result["checks"]["d3d9_api_bind"]["status"] == "observed"
     assert result["checks"]["source_provenance_coherence"]["status"] == "mismatch"
     assert "source_provenance_coherence" in result["summary"]["blocking_checks"]
+
+
+def test_render_api_boundary_is_a_required_gate_when_supplied():
+    inputs = _inputs()
+    api = _api()
+    api["format"] = "SHIFT.D3D9RenderApiBoundaryEvidence/1"
+    api["api_methods"] = {}
+    api["observations"] = {}
+    api["semantic_links"] = {
+        "declaration_to_stream_setup": {"status": "observed"},
+        "render_setup_to_draw": {"status": "observed"},
+    }
+
+    result = analyze_d3d9_declaration_chain(
+        **inputs,
+        api_bind_evidence=_api(),
+        render_api_evidence={
+            "format": "SHIFT.D3D9RenderApiBoundaryEvidence/1",
+            "status": "observed",
+            "semantic_links": {
+                "declaration_to_stream_setup": {"status": "observed"},
+                "render_setup_to_draw": {"status": "observed"},
+            },
+        },
+    )
+
+    assert result["status"] == "observed"
+    assert result["checks"]["d3d9_render_api_boundary"]["status"] == "observed"
+    assert result["summary"]["render_api_status"] == "observed"

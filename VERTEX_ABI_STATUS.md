@@ -193,3 +193,10 @@ Source-backed D3D9 evidence теперь может быть сопоставл�
 Source analysis now reaches the actual D3D9 declaration-binding boundary: FUN_0082e510 compares against cached declaration state at +0x70c, forwards the declaration object through the device vtable at +0x15c, and is identified as IDirect3DDevice9::SetVertexDeclaration by the interface slot ordering.
 
 This is the missing source-side edge between the recovered 8-byte declaration records and the device state transition. It does not prove the originating MEB property, runtime dump authenticity, or MEB 460/461 -> Type ordinal.
+
+
+## Phase 98: D3D9 render API boundary
+
+The source-backed declaration path now reaches the renderer's device API setup boundary. FUN_00854d30 applies the declaration, FUN_00854da0 binds a vertex stream source, and FUN_00854e10 binds the index buffer; the mesh render path calls these wrappers in declaration → stream → index order. The recovered source also contains an IDirect3DDevice9 indexed-draw dispatch at vtable slot 82.
+
+These are API-boundary observations rather than new vertex semantic inference. MEB 460/461 -> Type remains not-proven.
