@@ -47,7 +47,7 @@ except ImportError as exc:
 
 
 FORMAT = "SHIFT.MEBEvidenceBundle/1"
-COLLECTOR_VERSION = "114.0"
+COLLECTOR_VERSION = "115.0"
 COLOR_PROPERTIES = ("460", "461")
 
 
@@ -325,6 +325,9 @@ def collect(args: argparse.Namespace) -> int:
             if args.fail_fast:
                 raise
 
+    extract_root = Path(args.extract_dir).expanduser() if args.extract_dir else out.with_name(out.stem + "_extracted")
+    extract_root.mkdir(parents=True, exist_ok=True)
+    progress(f"Unpacked MEB output directory: {extract_root}")
     progress("Opening BFF archives and looking for embedded .meb entries...")
     for archive_index, bff_path in enumerate(bffs, 1):
         display_path = relative_display(bff_path, root)
@@ -353,7 +356,15 @@ def collect(args: argparse.Namespace) -> int:
                         f"{entry_index}/{len(meb_entries)}: extracting {entry.path}"
                     )
                     try:
-                        data = bff.extract_entry(entry, type2="lzx")
+                        safe_entry = Path(entry.path.replace("\\", "/")).name or f"entry_{entry.index}.meb"
+                        archive_dir = extract_root / f"{archive_index:04d}_{Path(display_path).stem}"
+                        extracted_path = archive_dir / f"{entry.index:08d}_{safe_entry}"
+                        bff.extract_entry_to_file(entry, extracted_path, type2="lzx")
+                        progress(
+                            f"BFF {archive_index}/{len(bffs)} MEB {entry_index}/{len(meb_entries)}: "
+                            f"written {extracted_path} ({extracted_path.stat().st_size:,} bytes)"
+                        )
+                        data = extracted_path.read_bytes()
                         add_meb(
                             data,
                             source_kind="bff-meb",
@@ -495,7 +506,7 @@ This bundle is intended for reverse-engineering analysis. It contains:
 - summary.json: scan totals and missing-evidence status
 - source_d3d9.json: optional SHIFT.exe.c source evidence
 - descriptor_triple_proofs.json: optional per-color-resource MEB [Type, Usage, Channel] proofs
-- resources/<id>/460|461/: exact descriptor/payload bytes and color ABI JSON
+- resources/<id>/460|461/: exact descriptor/payload bytes and color ABI JSON\n- the extracted MEB directory: decompressed .meb files written to disk as they are processed
 
 The bundle does NOT include the original BFF/MEG game archives in full.
 """
@@ -564,6 +575,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("input", help="Game directory, .bff archive, or .meb file")
     parser.add_argument("-o", "--output", default="shift_meb_evidence.zip", help="Output ZIP path")
+    parser.add_argument(
+        "--extract-dir",
+        help="Directory for decompressed .meb files from BFF archives (default: <output-stem>_extracted)",
+    )
     parser.add_argument("--source", help="Optional recovered SHIFT.exe.c; adds source-level D3D9 proof")
     parser.add_argument("--fail-on-error", action="store_true", help="Return exit code 1 when any file/resource failed")
     parser.add_argument("--fail-fast", action="store_true", help="Stop at the first failed resource")
