@@ -1871,6 +1871,7 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
         render_api_evidence_path=args.render_api_evidence,
         declaration_create_evidence_path=args.declaration_create_evidence,
         declaration_count_evidence_path=args.declaration_count_evidence,
+        declaration_sentinel_evidence_path=args.declaration_sentinel_evidence,
     )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -2266,6 +2267,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9SourceVertexEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_source_evidence)
 
+    p = sp.add_parser("source-d3d9-declaration-sentinel-evidence", help="analyze exact D3DDECL_END sentinel production in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9DeclarationSentinelEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_declaration_sentinel_evidence)
+
     p = sp.add_parser("source-d3d9-declaration-count-evidence", help="analyze declaration count/sentinel boundary in SHIFT.exe.c")
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9DeclarationCountEvidence/1 JSON output")
@@ -2353,6 +2359,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--render-api-evidence", help="optional SHIFT.D3D9RenderApiBoundaryEvidence/1 JSON input")
     p.add_argument("--declaration-create-evidence", help="optional SHIFT.D3D9DeclarationCreateEvidence/1 JSON input")
     p.add_argument("--declaration-count-evidence", help="optional SHIFT.D3D9DeclarationCountEvidence/1 JSON input")
+    p.add_argument("--declaration-sentinel-evidence", help="optional SHIFT.D3D9DeclarationSentinelEvidence/1 JSON input")
     p.set_defaults(fn=cmd_d3d9_declaration_chain)
 
 

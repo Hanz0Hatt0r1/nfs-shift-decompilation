@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 100** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 101** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -501,3 +501,12 @@ CLI:
 CLI:
 
     python shift_importer.py source-d3d9-declaration-count-evidence SHIFT.exe.c declaration-count.json
+
+
+## Phase 101 — exact D3DDECL_END producer
+
+Добавлен SHIFT.D3D9DeclarationSentinelEvidence/1. В FUN_008587e0 исходник явно записывает все шесть полей последнего 8-byte record: Stream=0xffff, Offset=0, Type=0x11, Method=0, Usage=0, UsageIndex=0. Это прямое source-доказательство точной формы D3DDECL_END; граница уже обнаруживается runtime decoder, а теперь также подтверждена producer-side.
+
+CLI:
+
+    python shift_importer.py source-d3d9-declaration-sentinel-evidence SHIFT.exe.c declaration-sentinel.json
