@@ -60,3 +60,8 @@ remapping the original BFF at runtime.
 ## Usage ordinal bridge
 
 Use `meb_runtime_usage_bridge.py` to derive MEB Usage ordinals from exact same-resource runtime declaration records. The tool never invents missing Usage bytes and marks conflicting observations as `ambiguous`.
+
+
+## Capture schema
+
+`SHIFT.D3D9RuntimeCaptureSchema/1` is enforced by `d3d9_runtime_trace.load_events`. Use `validate-d3d9-capture` to validate a raw JSONL capture before semantic correlation. The schema checks structure only; resource identity, shader identity and Usage mappings remain separate evidence layers.
