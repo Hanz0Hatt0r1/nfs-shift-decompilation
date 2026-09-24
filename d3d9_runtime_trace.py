@@ -261,6 +261,7 @@ def build_runtime_binding_evidence(
             correlation["status"] = "observed"
 
     same_instance_candidates: list[dict[str, Any]] = []
+    valid_bound_frames: list[dict[str, Any]] = []
     frame_rows: list[dict[str, Any]] = []
     for frame_key in sorted(frames, key=_sort_key):
         frame = frames[frame_key]
@@ -333,6 +334,8 @@ def build_runtime_binding_evidence(
                         "channel": channel,
                         "record_indices": [record.get("index") for record in matched_records],
                     })
+        if bound_decl_valid and same_resource is True:
+            valid_bound_frames.append(frame_candidate)
         if frame_candidate["descriptor_matches"]:
             same_instance_candidates.append(frame_candidate)
 
@@ -393,7 +396,8 @@ def build_runtime_binding_evidence(
                 )
                 + (
                     ["declaration:bound-instance-not-valid"]
-                    if not any(x.get("bound_declaration_valid") is True for x in same_instance_candidates)
+                    if any(x["binding"].get("same_meb_resource") is True for x in frame_rows)
+                    and not valid_bound_frames
                     else []
                 )
                 + (
