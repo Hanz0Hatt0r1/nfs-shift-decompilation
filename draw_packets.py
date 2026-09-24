@@ -508,6 +508,7 @@ def build_draw_packets(
                     "vertex_count": analysis.get("vertex_count"),
                     "triangle_count": analysis.get("triangle_count"),
                     "vertex_layout": build_layout_from_summary(analysis),
+                    "property_descriptors": list(analysis.get("property_descriptors") or []),
                     "skinning": analysis.get("skinning") or {},
                 },
                 "submeshes": packet_prims,

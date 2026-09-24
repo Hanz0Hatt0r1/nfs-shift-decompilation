@@ -10,7 +10,10 @@ def _material(ready_command=True):
         'golden_identity': {'resource': 'vehicles/bmw/body.meb', 'resource_sha256': 'sha'},
         'material': {'permutation_identity': {'identity_sha256': 'shader-id'}},
         'uniform_binding': {'bindings': [{'name': 'primerBasis', 'register_set': 2, 'register_index': 5, 'register_count': 1, 'stage': 'pixel', 'value': [1.0,2.0,3.0,4.0]}]},
-        'mesh': {'vertex_layout': {'attributes': [{'property_id': '460', 'usage': 'COLOR', 'usage_index': 0}]}},
+        'mesh': {
+            'vertex_layout': {'attributes': [{'property_id': '460', 'usage': 'COLOR', 'usage_index': 0}]},
+            'property_descriptors': [{'id': '460', 'offset': 0, 'words': [4, 6, 0], 'raw_hex': '040000000600000000000000'}],
+        },
         'textures': [],
         'render_command': {'ready': ready_command, 'blocking_reasons': [] if ready_command else ['render-command:not-ready'], 'submeshes': [{'first_index': 150, 'index_count': 6294}]},
     }

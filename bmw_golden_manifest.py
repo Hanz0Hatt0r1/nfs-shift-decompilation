@@ -69,6 +69,16 @@ def build_golden_manifest(row: dict[str, Any], *, source_bundle: str | Path) -> 
             "triangle_count": mesh.get("triangle_count"),
             "bbox": mesh.get("bbox"),
             "property_ids": properties,
+            "property_descriptors": [
+                {
+                    "id": str(descriptor.get("id")),
+                    "offset": descriptor.get("offset"),
+                    "raw_hex": descriptor.get("raw_hex"),
+                    "words": list(descriptor.get("words") or [])[:3],
+                }
+                for descriptor in descriptors
+                if descriptor.get("id") is not None
+            ],
             "color460_descriptor": color460,
             "skinning": mesh.get("skinning"),
             "primitives": mesh.get("primitives"),

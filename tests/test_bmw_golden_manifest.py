@@ -28,4 +28,16 @@ def test_bmw_golden_manifest_selects_exact_resource():
     assert manifest["golden"]["resource_sha256"] == "abc"
     assert manifest["mesh"]["vertex_count"] == 3550
     assert manifest["mesh"]["color460_descriptor"]["words"] == [4, 6, 0]
+    descriptors = {
+        row["id"]: row["words"]
+        for row in manifest["mesh"]["property_descriptors"]
+    }
+    assert descriptors["200"] == [2, 0, 0]
+    assert descriptors["460"] == [4, 6, 0]
+    assert descriptors["220"] == [2, 2, 0]
+    assert descriptors["240"] == [2, 4, 0]
+    assert descriptors["250"] == [2, 5, 0]
+    assert descriptors["130"] == [1, 3, 0]
+    assert descriptors["132"] == [1, 3, 2]
+    assert descriptors["133"] == [1, 3, 3]
     assert manifest["render_requirements"]["runtime_archive_access"] is False

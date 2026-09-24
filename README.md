@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 131** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 132** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -691,3 +691,8 @@ The BMW runtime golden path now verifies the exact indexed draw range for the se
 ## Phase 131: BMW vertex-input parity
 
 Runtime D3D9 declaration semantics are now checked against shader `DCL` semantics and the target `VertexLayout/1`. The golden gate can reject a draw when the captured declaration does not carry the expected Type/Usage/UsageIndex for the selected material inputs.
+
+
+## Phase 132: BMW MEB descriptor parity
+
+The selected BMW M3 golden path now preserves the full eight resource-level `[Type, Usage, Channel]` descriptor triples and checks their raw bytes. Runtime vertex-input parity uses these exact descriptors instead of an independent hardcoded property map.

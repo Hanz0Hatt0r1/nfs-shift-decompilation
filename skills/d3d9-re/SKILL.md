@@ -50,3 +50,8 @@ runtime Stream/Offset values.
 
 Carry the same evidence into RenderCommand rather than reparsing or heuristically
 remapping the original BFF at runtime.
+
+
+## MEB descriptor triples
+
+`SHIFT.BMWMEBDescriptorParity/1` validates preserved MEB descriptor bytes against their decoded `[Type, Usage, Channel]` words and the target `VertexLayout/1`. The raw 12-byte payload is checked as little-endian DWORDs before it participates in runtime declaration parity.

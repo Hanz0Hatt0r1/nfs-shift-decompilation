@@ -466,3 +466,14 @@ def test_resource_ref_preserves_content_addressed_identity():
         "resource_sha256": "abc",
         "resource_size": 300764,
     }
+
+
+def test_draw_packet_preserves_meb_property_descriptors():
+    scene, mesh, material, texture, shader = _records()
+    mesh[0]["analysis"]["property_descriptors"] = [
+        {"id": "200", "offset": 88, "words": [2, 0, 0], "raw_hex": "020000000000000000000000"},
+        {"id": "460", "offset": 42700, "words": [4, 6, 0], "raw_hex": "040000000600000000000000"},
+    ]
+    result = build_draw_packets(scene, mesh, material, texture, shader)
+    descriptors = result["packets"][0]["mesh"]["property_descriptors"]
+    assert descriptors == mesh[0]["analysis"]["property_descriptors"]

@@ -4,9 +4,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from bmw_runtime_shader_join import join_runtime_shader
+from bmw_meb_descriptor_parity import validate_meb_descriptor_parity
 
 FORMAT = "SHIFT.BMWVertexInputParity/1"
-from bmw_runtime_parity import TYPE_BY_PROPERTY, USAGE_ORDINAL_BY_PROPERTY
 
 def _layout_attrs(material_slice: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     mesh = material_slice.get('mesh') or {}
@@ -23,8 +23,10 @@ def validate_bmw_vertex_input_parity(
     *,
     usage_map: Mapping[int, int] | None = None,
 ) -> dict[str, Any]:
+    descriptor_parity = validate_meb_descriptor_parity(material_slice)
     join = join_runtime_shader(material_slice, runtime_report)
     reasons = list(join.get('blocking_reasons') or [])
+    reasons.extend(descriptor_parity.get('blocking_reasons') or [])
     if not join.get('matched_frame_count'):
         return {
             'format': FORMAT, 'status': 'not-found', 'ready': False,
@@ -44,11 +46,13 @@ def validate_bmw_vertex_input_parity(
     declaration_obj = next((x for x in declaration_rows if x.get('pointer') == pointer), None)
     records = list((((declaration_obj or {}).get('decoded') or {}).get('records')) or [])
     attrs = _layout_attrs(material_slice)
-    attrs_by_semantic = {
-        (str(a.get('usage')).upper(), int(a.get('usage_index', 0))): a
-        for a in attrs
-        if a.get('usage')
-    }
+    descriptors = {str(row.get('id')): row for row in (material_slice.get('mesh') or {}).get('property_descriptors', []) if row.get('id') is not None}
+    attrs_by_semantic: dict[tuple[str, int], list[Mapping[str, Any]]] = {}
+    for attr in attrs:
+        if not attr.get('usage'):
+            continue
+        key = (str(attr.get('usage')).upper(), int(attr.get('usage_index', 0)))
+        attrs_by_semantic.setdefault(key, []).append(attr)
     checks = []
     shader_inputs = _shader_inputs(runtime_frame)
     if not declaration_obj or not records:
@@ -63,20 +67,40 @@ def validate_bmw_vertex_input_parity(
             register = int(register_text.removeprefix('v'))
         except ValueError:
             register = None
-        attr = attrs_by_semantic.get((usage, usage_index))
+        attr_candidates = attrs_by_semantic.get((usage, usage_index), [])
+        if len(attr_candidates) == 1:
+            attr = attr_candidates[0]
+            row_status = 'match'
+            property_id = str(attr.get('property_id'))
+            render_location = attr.get('location')
+        elif not attr_candidates:
+            attr = None
+            row_status = 'not-found'
+            property_id = None
+            render_location = None
+        else:
+            attr = None
+            row_status = 'ambiguous'
+            property_id = [str(x.get('property_id')) for x in attr_candidates]
+            render_location = None
+            reasons.append(f'vertex-input:layout-semantic-collision:{usage}{usage_index}')
         row = {
             'usage': usage, 'usage_index': usage_index, 'shader_register': register,
-            'status': 'match' if attr is not None else 'not-found',
-            'property_id': str(attr.get('property_id')) if attr is not None else None,
-            'render_location': attr.get('location') if attr is not None else None,
+            'status': row_status,
+            'property_id': property_id,
+            'render_location': render_location,
         }
         if attr is None:
-            reasons.append(f'vertex-input:layout-semantic-missing:{usage}{usage_index}')
+            if not attr_candidates:
+                reasons.append(f'vertex-input:layout-semantic-missing:{usage}{usage_index}')
             checks.append(row)
             continue
         pid = str(attr.get('property_id'))
-        expected_type = TYPE_BY_PROPERTY.get(pid)
-        expected_usage_ordinal = USAGE_ORDINAL_BY_PROPERTY.get(pid)
+        descriptor = descriptors.get(pid) or {}
+        words = descriptor.get('words')
+        expected_type = int(words[0]) if isinstance(words, list) and len(words) >= 3 else None
+        expected_usage_ordinal = int(words[1]) if isinstance(words, list) and len(words) >= 3 else None
+        descriptor_channel = int(words[2]) if isinstance(words, list) and len(words) >= 3 else None
         runtime_usage = usage_map.get(expected_usage_ordinal) if usage_map is not None and expected_usage_ordinal is not None else None
         matches = [
             r for r in records
@@ -88,11 +112,14 @@ def validate_bmw_vertex_input_parity(
             'expected_d3d9_type': expected_type,
             'expected_usage_ordinal': expected_usage_ordinal,
             'runtime_usage': runtime_usage,
-            'declaration_status': 'match' if matches and expected_type is not None and runtime_usage is not None else 'not-proven',
+            'descriptor_channel': descriptor_channel,
+            'declaration_status': 'match' if matches and expected_type is not None and runtime_usage is not None and descriptor_channel == usage_index else 'not-proven',
             'declaration_matches': matches[:4],
         })
         if expected_type is None or expected_usage_ordinal is None:
-            reasons.append(f'vertex-input:property-unmapped:{pid}')
+            reasons.append(f'vertex-input:descriptor-missing:{pid}')
+        elif descriptor_channel != usage_index:
+            reasons.append(f'vertex-input:descriptor-channel-mismatch:{pid}')
         elif usage_map is None:
             reasons.append(f'vertex-input:usage-map-missing:{pid}')
         elif not matches:
@@ -129,6 +156,7 @@ def validate_bmw_vertex_input_parity(
         'ready': ready,
         'blocking_reasons': list(dict.fromkeys(reasons)),
         'shader_join': join,
+        'meb_descriptor_parity': descriptor_parity,
         'checks': checks,
         'physical_layout': physical_layout,
     }

@@ -88,7 +88,10 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
             'sampler_parity': 'required',
             'constant_register_parity': 'required',
             'constant_value_parity': 'required',
+            'meb_descriptor_parity': 'required',
             'declaration_parity': 'required',
+            'vertex_input_parity': 'required',
+            'draw_correlation': 'required',
         },
     }
 
