@@ -21,7 +21,8 @@ PE32PLUS_MAGIC = 0x20B
 
 TARGET_RANGES = {
     "type_code_table": (0x00B90088, 20 * 4),
-    "size_table": (0x00B900D8, 17 * 4),
+    "type_size_table": (0x00B8EEF0, 18 * 4),
+    "type_component_table": (0x00B8EF38, 18 * 4),
     "usage_table": (0x00B9011C, 9 * 4),
     "usage_index_table": (0x00B90140, 14 * 4),
     "channel_table": (0x00B90178, 22 * 4),
@@ -242,6 +243,8 @@ def analyze_d3d9_pe_image(
         "conclusions": {
             "file_backed_type_table": tables["type_code_table"]["file_backed"],
             "file_backed_type_name_pointer_table": tables["type_name_pointer_table"]["file_backed"],
+            "file_backed_type_size_table": tables["type_size_table"]["file_backed"],
+            "file_backed_type_component_table": tables["type_component_table"]["file_backed"],
             "meb_460_461_to_type_code": {
                 "status": "not-proven",
                 "detail": "a PE image can expose the declaration-table bytes, but this adapter does not assign MEB properties to type codes automatically",
