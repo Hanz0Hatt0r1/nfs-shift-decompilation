@@ -287,3 +287,47 @@ def test_color_evidence_resource_uses_colors2_for_property_461(monkeypatch, tmp_
     assert report["source"]["stream"] == "colors2"
     assert report["source"]["vertex_count"] == 1
     assert report["candidates"][0]["rgba8_hex"] == "010203ff"
+
+
+
+def test_color_abi_corpus_aggregates_multiple_reports_without_selection():
+    from color_abi import aggregate_color_abi_evidence, build_color_abi_evidence
+
+    first = build_color_abi_evidence(
+        "460",
+        bytes((10, 20, 30, 255, 40, 50, 60, 255)),
+    )
+    second = build_color_abi_evidence(
+        "460",
+        bytes((70, 80, 90, 255, 100, 110, 120, 255)),
+    )
+    first_461 = build_color_abi_evidence(
+        "461",
+        bytes((1, 2, 3, 4)),
+    )
+
+    report = aggregate_color_abi_evidence([first, second, first_461])
+    assert report["format"] == "SHIFT.ColorABICorpusEvidence/1"
+    assert report["report_count"] == 3
+    assert report["selection"] == "not-selected"
+    assert report["properties"]["460"]["report_count"] == 2
+    assert report["properties"]["460"]["selection"] == "not-selected"
+    assert report["properties"]["461"]["report_count"] == 1
+    orders = {
+        row["order"]: row
+        for row in report["properties"]["460"]["candidate_consistency"]
+    }
+    assert orders["RGBA"]["reports"] == 2
+    assert orders["RGBA"]["stable_across_reports"] is False
+
+
+def test_color_abi_corpus_marks_invalid_reports():
+    from color_abi import aggregate_color_abi_evidence
+
+    report = aggregate_color_abi_evidence([
+        {"format": "SHIFT.NotColor/1", "property_id": "460"},
+        {"format": "SHIFT.ColorABIEvidence/1", "property_id": "200"},
+    ])
+    assert report["report_count"] == 2
+    assert len(report["invalid_reports"]) == 2
+    assert report["selection"] == "not-selected"
