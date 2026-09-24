@@ -27,6 +27,7 @@ constexpr size_t kSetPixelShader = 107;
 constexpr size_t kSetPixelShaderConstantF = 109;
 constexpr size_t kDrawIndexedPrimitive = 82;
 
+using CreateVertexDeclarationFn = HRESULT (WINAPI*)(IDirect3DDevice9*, const D3DVERTEXELEMENT9*, IDirect3DVertexDeclaration9**);
 using SetVertexDeclarationFn = HRESULT (WINAPI*)(IDirect3DDevice9*, IDirect3DVertexDeclaration9*);
 using CreateVertexShaderFn = HRESULT (WINAPI*)(IDirect3DDevice9*, const DWORD*, IDirect3DVertexShader9**);
 using SetVertexShaderFn = HRESULT (WINAPI*)(IDirect3DDevice9*, IDirect3DVertexShader9*);
@@ -188,6 +189,12 @@ void log_constant_write(const char* event_name, UINT start_register, const float
   end_event();
 }
 
+HRESULT WINAPI hook_CreateVertexDeclaration(IDirect3DDevice9* self, const D3DVERTEXELEMENT9* elements, IDirect3DVertexDeclaration9** out) {
+  const HRESULT hr = original<CreateVertexDeclarationFn>(86)(self, elements, out);
+  log_declaration_create(elements, (out && SUCCEEDED(hr)) ? *out : nullptr, hr);
+  return hr;
+}
+
 HRESULT WINAPI hook_SetVertexDeclaration(IDirect3DDevice9* self, IDirect3DVertexDeclaration9* declaration) {
   const HRESULT hr = original<SetVertexDeclarationFn>(kSetVertexDeclaration)(self, declaration);
   begin_event("set_vertex_declaration");
@@ -308,6 +315,7 @@ extern "C" __declspec(dllexport) HRESULT ShiftD3D9TraceInstall(IDirect3DDevice9*
   g_state.hooked_vtable = new (std::nothrow) void*[kDeviceVtableSlots];
   if (!g_state.hooked_vtable) return E_OUTOFMEMORY;
   std::memcpy(g_state.hooked_vtable, g_state.original_vtable, sizeof(void*) * kDeviceVtableSlots);
+  patch(g_state.hooked_vtable, 86, reinterpret_cast<void*>(&hook_CreateVertexDeclaration));
   patch(g_state.hooked_vtable, kSetVertexDeclaration, reinterpret_cast<void*>(&hook_SetVertexDeclaration));
   patch(g_state.hooked_vtable, kCreateVertexShader, reinterpret_cast<void*>(&hook_CreateVertexShader));
   patch(g_state.hooked_vtable, kSetVertexShader, reinterpret_cast<void*>(&hook_SetVertexShader));
