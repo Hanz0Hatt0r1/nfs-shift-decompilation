@@ -124,6 +124,12 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
         ),
     )
 
+    type_table_chain = (
+        type_table_accessor
+        and xml_type_table_chain
+        and declaration_record_layout
+    )
+
     packed_path = packed_helper and declaration_type_switch
     observations = [
         {
