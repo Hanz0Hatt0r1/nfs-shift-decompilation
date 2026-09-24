@@ -62,9 +62,9 @@ def build_real_bmw_material_binding(bff_path: str | Path, *, supplemental_bffs: 
         archive_objects=[BFF(p) for p in paths]
         rows=_entry_rows(archive_objects)
         bff, bmt_entry=_find_exact(rows,TARGET_BMT,label='material')
-        _, meb_entry=_find_exact(rows,TARGET_MEB,label='mesh')
+        meb_archive, meb_entry=_find_exact(rows,TARGET_MEB,label='mesh')
         bmt_bytes=bff.extract_entry(bmt_entry)
-        meb_bytes=bff.extract_entry(meb_entry)
+        meb_bytes=meb_archive.extract_entry(meb_entry)
         parsed_bmt=parse_bmt_material(bmt_bytes)
         material=parsed_bmt.get('material') or {}
         mesh=read_meb(meb_bytes)
@@ -92,7 +92,7 @@ def build_real_bmw_material_binding(bff_path: str | Path, *, supplemental_bffs: 
                 'primary_bff':{'path':str(primary),'sha256':_archive_sha256(primary),'size':primary.stat().st_size},
                 'supplemental_bffs':[{'path':str(p),'sha256':_archive_sha256(p),'size':p.stat().st_size} for p in paths[1:]],
                 'material_entry':{'archive':bff.path.name,'path':bmt_entry.path,'index':bmt_entry.index,'sha256':_sha256(bmt_bytes),'size':len(bmt_bytes)},
-                'mesh_entry':{'archive':bff.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},
+                'mesh_entry':{'archive':meb_archive.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},
                 'shader_source_entry':{'archive':fx_archive.path.name,'path':fx_entry.path,'index':fx_entry.index,'sha256':_sha256(fx_bytes),'size':len(fx_bytes)},
                 'fxo_candidate_count':len(fxo_candidates),
                 'dds_path_count':len(dds_paths),
