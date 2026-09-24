@@ -127,7 +127,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     })
     monkeypatch.setattr(slicer, "build_resource_index", lambda *a, **k: {"format":"SHIFT.RenderResources/1","textures":[],"samplers":[],"bindings":[],"stats":{"textures":0,"samplers":0,"bindings":0}})
     monkeypatch.setattr(slicer, "build_render_command", lambda *a, **k: {"format":"SHIFT.RenderCommand/1","ready":True,"blocking_reasons":[],"mesh":{"vertex_layout":{"format":"SHIFT.VertexLayout/1"},"vertex_count":4,"attributes":[]},"submeshes":[{"first_index":0,"index_count":3,"shader":{"vertex":"void main(){}","pixel":"void main(){}"}}],"resource_plan":{"format":"SHIFT.RenderResources/1","texture_count":0,"sampler_count":0,"external_sampler_count":0}})
-    report=slicer.build_real_bmw_material_slice(primary, golden_path)
+    report=slicer.build_real_bmw_material_slice(primary, golden_path, primitive_index=0)
     assert report["format"]=="SHIFT.BMWMaterialSlice/1"
     assert report["ready"] is True
     assert report["render_command"]["ready"] is True
@@ -150,6 +150,7 @@ def test_real_bmw_material_slice_blocks_non_paint_primitive(monkeypatch, tmp_pat
     monkeypatch.setattr(slicer, "read_meb", lambda data: mesh)
     monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":[],"primitives":[]})
     monkeypatch.setattr(slicer, "mesh_to_jsonable", lambda m: {"format":"SHIFT.MEB"})
+    monkeypatch.setattr(slicer, "parse_bmt_material", lambda data: {"material":{"name":"BMW_M3_E36_BADGING","shader":"bodywork.fx","shaderparams":[]}})
     report=slicer.build_real_bmw_material_slice(primary,golden_path,primitive_index=0)
     assert report["ready"] is False
     assert "material-slice:primitive-not-bmw-paint" in report["blocking_reasons"]
