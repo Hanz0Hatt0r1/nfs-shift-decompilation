@@ -75,3 +75,21 @@ Multiple 460/461 evidence reports can now be aggregated without selecting RGBA/B
 ## Phase 70: corpus-scale COLOR evidence
 
 A directory-level BFF scan now collects 460/461 samples from decoded MEB resources and records archive/resource identity. This provides cross-vehicle evidence for future D3D9 declaration/channel-order verification without changing the current ambiguous runtime ABI.
+
+## Phase 72: packed-color evidence from SHIFT.exe
+
+The uploaded full Ghidra decompilation provides a new source-level observation in the
+original renderer. `FUN_008310c0` rounds a float4 color to 8-bit channels and constructs
+the value as `0xAARRGGBB`; on the original little-endian Windows target this is a BGRA
+byte sequence in memory. The same helper is called from the vertex-buffer conversion
+logic in `FUN_00854e70`, where a 4-byte converted value is written into the generated
+vertex buffer.
+
+This is **supporting evidence for the packed-color/D3DCOLOR-style candidate**, but it
+does not by itself prove that MEB properties 460/461 use `D3DDECLTYPE_D3DCOLOR` rather
+than `D3DDECLTYPE_UBYTE4N`. The exact MEB declaration remains ambiguous.
+
+`color_abi.py` and `vertex_layout.py` now preserve this distinction explicitly:
+- `UBYTE4N` candidate: RGBA bytes are consumed in memory order and normalized;
+- `D3DCOLOR` candidate: packed BGRA memory is expanded to shader-visible RGBA;
+- no candidate is selected automatically.
