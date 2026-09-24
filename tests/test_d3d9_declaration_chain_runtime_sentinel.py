@@ -60,8 +60,8 @@ def test_runtime_sentinel_matches_source_producer():
         declaration_sentinel_evidence=source,
     )
 
-    assert result["status"] == "observed"
-    assert result["checks"]["runtime_source_sentinel_coherence"]["status"] == "observed"
+    assert result["status"] == "observed", result
+    assert result["checks"]["runtime_source_sentinel_coherence"]["status"] == "observed", result
     assert result["summary"]["runtime_sentinel_coherence_status"] == "observed"
     assert result["runtime_sentinel_coherence"]["expected_sentinel"] == {
         "stream": 0xFFFF,
