@@ -37,3 +37,10 @@ def test_bmw_paint_asset_contract_blocks_skinned_asset():
     report=validate_bmw_paint_asset(golden)
     assert report['ready'] is False
     assert 'asset:skinning-not-static' in report['blocking_reasons']
+
+def test_bmw_paint_asset_contract_blocks_missing_provenance():
+    golden=json.loads(_golden_path().read_text(encoding='utf-8'))
+    del golden['provenance']['raw_row_sha256']
+    report=validate_bmw_paint_asset(golden)
+    assert report['ready'] is False
+    assert 'provenance:raw_row_sha256:missing' in report['blocking_reasons']
