@@ -478,7 +478,7 @@ def test_d3d9_memory_table_evidence_decodes_tables_and_type_name_pointers():
     string_addresses = [base + 0x300 + i * 16 for i in range(17)]
     put_words(TYPE_NAME_POINTER_TABLE_ADDRESS, string_addresses)
     for ordinal, address in enumerate(string_addresses):
-        payload = f"Type{ordinal}".encode("ascii") + b"\\0"
+        payload = f"Type{ordinal}".encode("ascii") + b"\x00"
         data[address - base : address - base + len(payload)] = payload
 
     result = analyze_d3d9_memory_tables(bytes(data), base)
