@@ -245,8 +245,9 @@ def test_render_command_emits_explicit_gles_vertex_setup():
             "offset": 12,
             "stride": 32,
             "element_size": 4,
-            "abi_status": "ambiguous",
-            "channel_order_candidates": ["RGBA", "BGRA"],
+            "abi_status": "proven",
+            "channel_order": "BGRA",
+            "channel_order_candidates": ["BGRA"],
         },
     ]
     draw = build_static_draw_contract(packet)
@@ -261,7 +262,9 @@ def test_render_command_emits_explicit_gles_vertex_setup():
     assert setup["580"]["integer_pointer"] is True
     assert setup["460"]["normalized"] is True
     assert setup["460"]["pointer_api"] == "glVertexAttribPointer"
-    assert setup["460"]["channel_order_candidates"] == ["RGBA", "BGRA"]
+    assert setup["460"]["abi_status"] == "proven"
+    assert setup["460"]["channel_order"] == "BGRA"
+    assert setup["460"]["channel_order_candidates"] == ["BGRA"]
 
 
 def test_render_command_blocks_unsupported_vertex_storage():
