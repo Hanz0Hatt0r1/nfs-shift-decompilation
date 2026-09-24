@@ -771,3 +771,56 @@ def test_d3d9_type_profile_reports_mismatch_and_missing_values():
     by = {row["type_code"]: row for row in result["validation"]["rows"]}
     assert by[1]["status"] == "mismatch"
     assert by[2]["status"] == "unavailable"
+
+
+def test_d3d9_stream_topology_recovers_grouping_and_size_accumulation():
+    from d3d9_stream_topology_evidence import analyze_d3d9_stream_topology
+
+    source = r'''
+undefined4 __fastcall FUN_00854e70(int param_1,int param_2)
+{
+  if (*(int *)(uVar3 + 0x68) != 0) {
+    do {
+      iVar1 = *(int *)(*(int *)(uVar3 + 0x6c) + local_8 * 4) * 0x14;
+      iVar9 = iVar1 + *(int *)((int)this + 0x24);
+      iVar8 = local_8 * 8;
+      *(int *)(*(int *)(iVar9 + 8) + *(int *)(iVar9 + 4) * 4) = *(int *)((int)this + 0x1c) + iVar8;
+      piVar7 = (int *)(iVar1 + 4 + *(int *)((int)this + 0x24));
+      *piVar7 = *piVar7 + 1;
+      *(undefined2 *)(iVar8 + *(int *)((int)this + 0x1c)) =
+           *(undefined2 *)(*(int *)(uVar3 + 0x6c) + local_8 * 4);
+      *(undefined1 *)(iVar8 + 5 + *(int *)((int)this + 0x1c)) = 0;
+      uVar5 = FUN_00853c20(*(int *)(*(int *)(uVar3 + 0x70) + local_8 * 4));
+      *(char *)(extraout_EDX_00 + 4 + *(int *)((int)this + 0x1c)) = (char)uVar5;
+      uVar5 = FUN_00853c40(*(int *)(*(int *)(uVar3 + 0x74) + uVar11 * 4));
+      *(char *)(extraout_EDX_01 + 6 + *(int *)((int)this + 0x1c)) = (char)uVar5;
+      *(undefined1 *)(extraout_EDX_01 + 7 + *(int *)((int)this + 0x1c)) =
+           *(undefined1 *)(*(int *)(uVar3 + 0x78) + uVar11 * 4);
+      piVar7 = (int *)(iVar1 + *(int *)((int)this + 0x24));
+      *piVar7 = *piVar7 + *(int *)(&DAT_00b8eef0 + (uint)*(byte *)(extraout_EDX_01 + 4 + *(int *)((int)this + 0x1c)) * 4);
+    } while (local_8 < *(uint *)(uVar3 + 0x68));
+  }
+}
+'''
+    result = analyze_d3d9_stream_topology(source)
+    assert result["status"] == "observed"
+    assert result["inputs"]["stream_array"]["status"] == "observed"
+    assert result["inputs"]["type_ordinal_array"]["status"] == "observed"
+    assert result["inputs"]["usage_ordinal_array"]["status"] == "observed"
+    assert result["inputs"]["channel_array"]["status"] == "observed"
+    assert result["grouping"]["group_stride"] == 0x14
+    assert result["grouping"]["stream_to_group_index"] == "observed"
+    assert result["grouping"]["record_pointer_array"] == "observed"
+    assert result["grouping"]["count_increment"] == "observed"
+    assert result["grouping"]["byte_size_accumulation"] == "observed"
+    assert result["semantic_links"]["stream_id_to_group"]["status"] == "observed"
+    assert result["semantic_links"]["type_to_group_byte_size"]["status"] == "observed"
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_stream_topology_fails_closed_without_constructor():
+    from d3d9_stream_topology_evidence import analyze_d3d9_stream_topology
+
+    result = analyze_d3d9_stream_topology("void f(void) {}")
+    assert result["status"] == "not-found"
+    assert result["grouping"] == {}
