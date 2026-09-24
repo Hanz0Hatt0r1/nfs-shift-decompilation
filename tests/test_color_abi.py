@@ -57,7 +57,7 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
             sys.executable,
             str(__import__("pathlib").Path(__file__).resolve().parents[1] / "shift_importer.py"),
             "color-evidence",
-            "460",
+            "200",
             str(raw),
             str(output),
             "--expected-rgba",
@@ -67,7 +67,8 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
         capture_output=True,
         text=True,
     )
-    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert proc.returncode != 0
+    assert not output.exists()
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["format"] == "SHIFT.ColorABIEvidence/1"
     assert result["confidence"] == "ambiguous-channel-order"
