@@ -50,14 +50,16 @@ RENDER_FUNCTION = "FUN_0084b9a0"
 
 def _function_body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    pattern = re.compile(rf"\b{re.escape(function)}\s*\(", re.S)
+    pattern = re.compile(
+        rf"(?m)^[^\n{{}}]*\b{re.escape(function)}\s*\([^;\n]*\)\s*(?:\n[^\n{{}}]*)?\{{"
+    )
     match = pattern.search(source)
     if match is None:
         return None, None, ""
     start = source.count("\n", 0, match.start()) + 1
     depth = 0
     seen = False
-    body = []
+    body: list[str] = []
     for index in range(start, len(lines) + 1):
         line = lines[index - 1]
         body.append(line)
@@ -68,7 +70,6 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
         if seen and depth == 0:
             return start, index, "\n".join(body)
     return start, None, "\n".join(body)
-
 
 def _contains_call(body: str, function: str) -> bool:
     return bool(re.search(rf"\b{re.escape(function)}\s*\(", body))
