@@ -84,14 +84,12 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
     material_blockers = list(material.get("blocking_reasons") or [])
     paint_contract = material.get("paint_contract")
     if isinstance(paint_contract, dict) and paint_contract.get("ready") is not True:
-        material_blockers.extend(
-            paint_contract.get("blocking_reasons") or ["paint-contract:not-ready"]
-        )
+        material_blockers.append("paint-contract:not-ready")
+        material_blockers.extend(paint_contract.get("blocking_reasons") or [])
     paint_shader_gate = material.get("paint_shader_gate")
     if isinstance(paint_shader_gate, dict) and paint_shader_gate.get("ready") is not True:
-        material_blockers.extend(
-            paint_shader_gate.get("blocking_reasons") or ["paint-shader:not-ready"]
-        )
+        material_blockers.append("paint-shader:not-ready")
+        material_blockers.extend(paint_shader_gate.get("blocking_reasons") or [])
 
     uniforms, uniform_reasons = _uniform_contract(material, selection)
     external_samplers = selection.get("external_samplers") or material.get("external_samplers") or []
