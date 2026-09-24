@@ -8,13 +8,13 @@ def _shader(stage_version):
     header = 28
     info = 20
     typ = 20
-    name = b'diffuseMap\\x00'
+    name = b'diffuseMap\x00'
     payload = bytearray(b'CTAB')
     payload += struct.pack('<7I', header, 0, stage_version, 1, header, 0, 0)
     payload += struct.pack('<IHHHHII', header + info + typ, 3, 0, 1, 0, header + info, 0)
     payload += struct.pack('<HHHHHHII', 4, 12, 1, 1, 1, 0, 0, 0)
     payload += name
-    payload += b'\\x00' * ((-len(payload)) % 4)
+    payload += b'\x00' * ((-len(payload)) % 4)
     blob = bytearray(struct.pack('<I', stage_version))
     blob += struct.pack('<I', ((len(payload) // 4) << 16) | 0xFFFE)
     blob += payload
@@ -33,7 +33,7 @@ def test_runtime_trace_tracks_shader_objects_and_pair_identity(tmp_path):
         {'event': 'set_pixel_shader', 'frame': 4, 'shader_ptr': '0x20'},
         {'event': 'draw_indexed_primitive', 'frame': 4, 'primitive_count': 1, 'start_index': 0, 'base_vertex_index': 0},
     ]
-    trace.write_text('\\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    trace.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
     report = build_runtime_binding_evidence(load_events(trace))
     assert report['trace']['shader_object_count'] == 2
     assert report['trace']['decoded_shader_count'] == 2
