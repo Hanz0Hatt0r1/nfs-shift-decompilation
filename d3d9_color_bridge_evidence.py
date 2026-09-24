@@ -243,12 +243,17 @@ def analyze_meb_d3d9_color_bridge(
         }
         for pid in SUPPORTED_PROPERTIES
     }
+    resource_errors: list[dict[str, Any]] = []
     for index, report in enumerate(loaded_resource_reports):
         pid = str(report.get("property_id") or "")
         row = resource_rows.get(pid)
         if row is None:
-            for target in resource_rows.values():
-                target["status"] = "mismatch" if target["status"] == "not-supplied" else target["status"]
+            resource_errors.append({
+                "index": index,
+                "status": "mismatch",
+                "reason": "unsupported or missing color property id",
+                "property_id": pid or None,
+            })
             continue
         source_info = report.get("source")
         property_descriptor = source_info.get("property_descriptor") if isinstance(source_info, Mapping) else None
@@ -328,6 +333,7 @@ def analyze_meb_d3d9_color_bridge(
         "source_linkage": link_rows,
         "runtime_color_type_observation": runtime_rows,
         "resource_provenance": resource_rows,
+        "resource_errors": resource_errors,
         "source_integrity": {
             "source_report_format": source.get("format"),
             "source_text_sha256": source_hash,
