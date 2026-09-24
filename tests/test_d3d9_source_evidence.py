@@ -576,6 +576,8 @@ def test_d3d9_pe_evidence_maps_real_ghidra_virtual_addresses():
     assert report["tables"]["type_code_table"]["hex"] is not None
     assert report["tables"]["type_size_table"]["file_backed"] is True
     assert report["tables"]["type_component_table"]["file_backed"] is True
+    assert report["type_profile_validation"]["validation"]["status"] == "match"
+    assert report["type_profile_validation"]["validation"]["match_count"] == 17
     assert report["type_name_pointers"][0]["string"] == "TYPE_0"
     assert report["type_name_pointers"][16]["string"] == "TYPE_16"
     assert report["type_name_pointers"][16]["status"] == "decoded"
