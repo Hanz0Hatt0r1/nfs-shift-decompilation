@@ -85,3 +85,8 @@ Use `bmw_m3_paint_contract.py` to validate the documented M3 paint binding. The 
 ## Paint contract enforcement
 
 For the exact BMW M3 paint material, `compile_material()` invokes `SHIFT.BMWM3PaintMaterialContract/1`. Sampler registers/state, shader path, specialization flags and external samplers are fail-closed before StaticDraw readiness.
+
+
+## BMW paint shader gate
+
+`bmw_m3_paint_shader_gate.py` enforces unique exact FXO selection, VS/PS pair validity and permutation identity for the documented BMW M3 paint material. It is fail-closed and does not invent a shader permutation.
