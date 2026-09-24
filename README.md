@@ -315,6 +315,10 @@ influences, SkinPose и bind-palette. Для матриц используетс
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
 
+## Phase 79 — D3D9 lookup-table shape evidence
+
+Phase 79 adds `source-d3d9-table-evidence`, which records the recoverable shape and indexing rules of the opaque D3D9 type/usage tables: `DAT_00b90088` is accessed as 4-byte entries, its adjacent symbol span is 0x50 bytes (20 DWORD slots as a layout hint), `DAT_00b900d8` spans 0x44 bytes (17 DWORD slots as a layout hint), and the XML loader searches exactly 17 type ordinals before feeding the selected ordinal to `FUN_00853c20`. The initializer bytes themselves remain opaque, and `MEB 460/461 -> type` remains not-proven.
+
 ## Phase 78 — D3D9 primitive type semantics
 
 Phase 78 adds a reusable source-evidence layer for the recovered FUN_00854e70 declaration switch. All 17 type codes 0..16 are observed, their D3D9 declaration names are recorded, and exact conversion behavior is preserved. Type code 4 is source-backed as the packed-color path, while MEB 460/461 -> type code 4 remains unresolved.
