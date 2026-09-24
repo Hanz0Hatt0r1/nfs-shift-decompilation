@@ -17,7 +17,14 @@ from typing import Any, Iterable
 from render_command import validate_render_command
 from static_draw import build_static_draw_contract
 from texture_reference import sample_texture_2d
-from shader_reference import ReferenceShaderState, material_constants_from_payload, material_constants_from_uniform_binding, shader_program_from_ir, validate_pixel_program_inputs
+from shader_reference import (
+    ReferenceShaderState,
+    material_constants_from_payload,
+    material_constants_from_uniform_binding,
+    shader_program_from_ir,
+    validate_pixel_program_inputs,
+    validate_vertex_program_inputs,
+)
 
 
 RGBA = tuple[int, int, int, int]
@@ -62,14 +69,15 @@ def orthographic_mvp(
 
 
 def _project(
-    vertices: list[tuple[float, float, float]],
+    vertices: list[tuple[float, ...]],
     mvp: list[list[float]],
     width: int,
     height: int,
 ) -> list[tuple[float, float, float, float]]:
     out = []
     for v in vertices:
-        clip = _mat4_vec4(mvp, (v[0], v[1], v[2], 1.0))
+        w = float(v[3]) if len(v) >= 4 else 1.0
+        clip = _mat4_vec4(mvp, (float(v[0]), float(v[1]), float(v[2]), w))
         if abs(clip[3]) <= 1.0e-12:
             out.append((math.nan, math.nan, math.nan, clip[3]))
             continue
@@ -96,8 +104,139 @@ def _vertex_color(colors: list[RGBA], index: int) -> RGBA:
 
 
 
-def rasterize_textured_mesh(
-    vertices: Iterable[Iterable[float]],
+
+def _register_index(register: Any) -> int:
+    match = re.search(r"(\d+)$", str(register))
+    if not match:
+        raise ValueError(f"shader register has no numeric index: {register}")
+    return int(match.group(1))
+
+
+def _semantic_key(item: dict[str, Any]) -> tuple[str, int]:
+    return (str(item.get("usage") or "").upper(), int(item.get("index", 0)))
+
+
+def _execute_vertex_program(
+    program,
+    vertices: list[tuple[float, ...]],
+    layer_rows: dict[int, list[tuple[float, ...]]],
+    *,
+    shader_constants: dict[str, dict[int, Iterable[float]]] | None,
+) -> tuple[list[tuple[float, float, float, float]], list[dict[tuple[str, int], tuple[float, float, float, float]]]]:
+    validation = validate_vertex_program_inputs(program)
+    if not validation["valid"]:
+        raise ValueError(
+            "vertex shader input contract is not supported: "
+            + ", ".join(validation["blocking_reasons"])
+        )
+
+    output_items: dict[tuple[str, int], dict[str, Any]] = {}
+    for item in program.outputs:
+        key = _semantic_key(item)
+        if key in output_items:
+            raise ValueError(f"vertex shader has duplicate output semantic: {key[0]}{key[1]}")
+        output_items[key] = item
+
+    position_item = output_items.get(("POSITION", 0))
+    if position_item is None:
+        position_item = output_items.get(("POSITIONT", 0))
+    if position_item is None:
+        raise ValueError("vertex shader has no POSITION0/POSITIONT0 output")
+
+    results: list[tuple[float, float, float, float]] = []
+    varying_results: list[dict[tuple[str, int], tuple[float, float, float, float]]] = []
+
+    for vertex_index, vertex in enumerate(vertices):
+        shader_inputs: dict[int, tuple[float, float, float, float]] = {}
+        for item in program.inputs:
+            register = _register_index(item.get("register"))
+            usage, semantic_index = _semantic_key(item)
+            if usage in {"POSITION", "POSITIONT"} and semantic_index == 0:
+                values = list(vertex[:3])
+                while len(values) < 3:
+                    values.append(0.0)
+                shader_inputs[register] = (values[0], values[1], values[2], 1.0)
+                continue
+            if usage == "TEXCOORD" and 0 <= semantic_index <= 4:
+                layer = layer_rows.get(semantic_index)
+                if layer is None:
+                    raise ValueError(
+                        f"vertex shader requires TEXCOORD{semantic_index} but mesh has no matching UV layer"
+                    )
+                row = layer[vertex_index]
+                values = list(row[:3])
+                while len(values) < 3:
+                    values.append(0.0)
+                shader_inputs[register] = (values[0], values[1], values[2], 1.0)
+                continue
+            raise ValueError(
+                f"vertex shader input semantic is unsupported: {usage}{semantic_index}"
+            )
+
+        execution = ReferenceShaderState(
+            program,
+            inputs=shader_inputs,
+            constants=shader_constants,
+        ).execute()
+        if execution["status"] != "executed":
+            raise ValueError(
+                "vertex shader execution failed: "
+                + ", ".join(execution.get("blocking_reasons", []) or ["unknown failure"])
+            )
+        outputs = execution.get("outputs") or {}
+        position_register = _register_index(position_item.get("register"))
+        position = outputs.get(str(position_register))
+        if position is None:
+            raise ValueError(
+                f"vertex shader did not write POSITION0 register {position_register}"
+            )
+        if len(position) != 4 or not all(math.isfinite(float(x)) for x in position):
+            raise ValueError("vertex shader produced a non-finite POSITION0")
+        results.append(tuple(float(x) for x in position))
+
+        semantics: dict[tuple[str, int], tuple[float, float, float, float]] = {}
+        for key, item in output_items.items():
+            if key == ("POSITION", 0) or key == ("POSITIONT", 0):
+                continue
+            usage, semantic_index = key
+            if usage != "TEXCOORD" or not 0 <= semantic_index <= 4:
+                raise ValueError(
+                    f"vertex shader output semantic is unsupported: {usage}{semantic_index}"
+                )
+            register = _register_index(item.get("register"))
+            value = outputs.get(str(register))
+            if value is None:
+                raise ValueError(
+                    f"vertex shader did not write TEXCOORD{semantic_index} register {register}"
+                )
+            semantics[key] = tuple(float(x) for x in value)
+        varying_results.append(semantics)
+
+    return results, varying_results
+
+
+def _interp_varying(
+    values: tuple[tuple[float, float, float, float], tuple[float, float, float, float], tuple[float, float, float, float]],
+    projected: tuple[tuple[float, float, float, float], tuple[float, float, float, float], tuple[float, float, float, float]],
+    weights: tuple[float, float, float],
+) -> tuple[float, float, float, float]:
+    denom = 0.0
+    numerator = [0.0, 0.0, 0.0, 0.0]
+    for value, point, weight in zip(values, projected, weights):
+        clip_w = float(point[3])
+        if abs(clip_w) <= 1.0e-12:
+            raise ValueError("cannot interpolate varying with zero clip-space w")
+        q = weight / clip_w
+        denom += q
+        for component in range(4):
+            numerator[component] += value[component] * q
+    if abs(denom) <= 1.0e-12:
+        raise ValueError("cannot interpolate varying with zero perspective denominator")
+    return tuple(component / denom for component in numerator)
+
+
+
+def rasterize_textured_mesh(    vertices: Iterable[Iterable[float]],
     indices: Iterable[int],
     uvs: Iterable[Iterable[float]],
     image: dict[str, Any],
@@ -112,6 +251,7 @@ def rasterize_textured_mesh(
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     uv_layers: dict[str | int, Iterable[Iterable[float]]] | None = None,
+    vertex_program: dict[str, Any] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -141,8 +281,20 @@ def rasterize_textured_mesh(
     if any(i < 0 or i >= len(verts) for i in idx):
         raise ValueError("triangle index exceeds vertex count")
 
-    matrix = mvp or orthographic_mvp(verts)
-    projected = _project(verts, matrix, width, height)
+    vertex_shader = None
+    vertex_varyings: list[dict[tuple[str, int], tuple[float, float, float, float]]] | None = None
+    if vertex_program is not None:
+        vertex_shader = shader_program_from_ir(vertex_program)
+        clip_vertices, vertex_varyings = _execute_vertex_program(
+            vertex_shader,
+            [tuple(v) for v in verts],
+            layer_rows,
+            shader_constants=shader_constants,
+        )
+        projected = _project(clip_vertices, _identity4(), width, height)
+    else:
+        matrix = mvp or orthographic_mvp(verts)
+        projected = _project(verts, matrix, width, height)
     pixels = bytearray(clear * (width * height))
     depth = [float("inf")] * (width * height)
 
@@ -168,13 +320,26 @@ def rasterize_textured_mesh(
             )
         preflight_inputs = {}
         for item in shader.inputs:
-            match = re.search(r"v(\d+)", str(item.get("register", "")))
-            if not match:
+            register = _register_index(item.get("register"))
+            semantic = _semantic_key(item)
+            if vertex_varyings is not None:
+                matches = [item for item in (vertex_shader.outputs if vertex_shader is not None else []) if _semantic_key(item) == semantic]
+                if not matches:
+                    raise ValueError(
+                        f"pixel shader semantic has no matching vertex output: {semantic[0]}{semantic[1]}"
+                    )
+                sample = vertex_varyings[0].get(semantic)
+                if sample is None:
+                    raise ValueError(
+                        f"vertex shader did not produce pixel semantic: {semantic[0]}{semantic[1]}"
+                    )
+                preflight_inputs[register] = sample
+                continue
+            if semantic[0] != "TEXCOORD":
                 raise ValueError(
-                    f"pixel shader input has no recoverable register: {item}"
+                    f"pixel shader input semantic is unsupported without vertex shader: {semantic[0]}{semantic[1]}"
                 )
-            register = int(match.group(1))
-            semantic_index = int(item.get("index", 0))
+            semantic_index = semantic[1]
             layer = layer_rows.get(semantic_index)
             if layer is None:
                 raise ValueError(
@@ -233,13 +398,27 @@ def rasterize_textured_mesh(
                 else:
                     shader_inputs = {}
                     for item in shader.inputs:
-                        match = re.search(r"v(\d+)", str(item.get("register", "")))
-                        if not match:
-                            raise ValueError(
-                                f"pixel shader input has no recoverable register: {item}"
+                        register = _register_index(item.get("register"))
+                        semantic = _semantic_key(item)
+                        if vertex_varyings is not None:
+                            varying_values = (
+                                vertex_varyings[ia].get(semantic),
+                                vertex_varyings[ib].get(semantic),
+                                vertex_varyings[ic].get(semantic),
                             )
-                        register = int(match.group(1))
-                        semantic_index = int(item.get("index", 0))
+                            if any(value is None for value in varying_values):
+                                raise ValueError(
+                                    f"pixel shader semantic has no complete vertex varying: {semantic[0]}{semantic[1]}"
+                                )
+                            shader_inputs[register] = _interp_varying(
+                                varying_values, (a, b, c), (w0, w1, w2)
+                            )
+                            continue
+                        if semantic[0] != "TEXCOORD":
+                            raise ValueError(
+                                f"pixel shader input semantic is unsupported without vertex shader: {semantic[0]}{semantic[1]}"
+                            )
+                        semantic_index = semantic[1]
                         layer = layer_rows.get(semantic_index)
                         if layer is None:
                             raise ValueError(
@@ -296,8 +475,9 @@ def render_textured_static_draw(
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
+    vertex_program: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Render a validated StaticDraw with one explicit UV0 texture input."""
+    """Render a validated StaticDraw, optionally executing the embedded vertex shader."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
         raise ValueError("draw packet is not SHIFT.StaticDraw/1")
     if not draw.get("ready", False):
@@ -324,9 +504,13 @@ def render_textured_static_draw(
     if not draw.get("submeshes"):
         draw_indices = [int(x) for x in indices]
 
-    world = _coerce_matrix(draw.get("world_matrix")) or _identity4()
-    base_mvp = mvp or orthographic_mvp(vertices)
-    final_mvp = _mat4_mul(base_mvp, world)
+    if vertex_program is None:
+        world = _coerce_matrix(draw.get("world_matrix")) or _identity4()
+        base_mvp = mvp or orthographic_mvp(vertices)
+        final_mvp = _mat4_mul(base_mvp, world)
+    else:
+        # The embedded vertex program owns POSITION/clip-space transformation.
+        final_mvp = _identity4()
     image_bytes = rasterize_textured_mesh(
         vertices,
         draw_indices,
@@ -341,6 +525,7 @@ def render_textured_static_draw(
         texture_images=texture_images,
         samplers_by_sampler=samplers_by_sampler,
         uv_layers=uv_layers,
+        vertex_program=vertex_program,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -402,8 +587,14 @@ def render_textured_render_command(
                         break
             if sampler:
                 break
+    vertex_program = None
     pixel_program = None
     if shader_reference:
+        programs = [
+            (submesh.get("shader") or {}).get("vertex_program")
+            for submesh in command.get("submeshes", []) or []
+        ]
+        vertex_program = next((program for program in programs if program), None)
         programs = [
             (submesh.get("shader") or {}).get("pixel_program")
             for submesh in command.get("submeshes", []) or []
@@ -454,6 +645,7 @@ def render_textured_render_command(
         shader_constants=shader_constants,
         texture_images=texture_images,
         samplers_by_sampler=samplers_by_sampler,
+        vertex_program=vertex_program,
     )
     result["command_contract"] = {
         "format": command.get("format"),
