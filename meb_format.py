@@ -192,6 +192,7 @@ def read_meb(data: bytes) -> MEBMesh:
     # Vertex property descriptors and their payloads are interleaved.
     for _ in range(num_vert_props):
         a = r.u32(); b = r.u32(); c = r.u32()
+        descriptor_triplet = (a, b, c)
         prop = f"{a}{b}{c}"
         props.append(prop)
         payload_offset = r.pos
@@ -206,7 +207,17 @@ def read_meb(data: bytes) -> MEBMesh:
         elif prop in {"130", "131", "132", "133", "134"}: storage, components, normalized = "f32x2", 2, False
         elif prop in {"230", "231", "232", "233", "234"}: storage, components, normalized = "f32x3", 3, False
         else: storage, components, normalized = "raw4", 4, False
-        property_layouts.append({"id":prop,"name":PROP_NAMES.get(prop,"unknown"),"payload_offset":payload_offset,"stride":stride,"bytes":payload_bytes,"storage":storage,"components":components,"normalized":normalized})
+        property_layouts.append({
+            "id": prop,
+            "name": PROP_NAMES.get(prop, "unknown"),
+            "descriptor_triplet": list(descriptor_triplet),
+            "payload_offset": payload_offset,
+            "stride": stride,
+            "bytes": payload_bytes,
+            "storage": storage,
+            "components": components,
+            "normalized": normalized,
+        })
         if prop == "200":
             positions = _vec3s(r, vertex_count)
         elif prop == "220":
