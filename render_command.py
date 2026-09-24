@@ -332,11 +332,108 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
     return command
 
 
+
+def build_skinned_render_command(
+    skinned_draw: dict[str, Any],
+    resources: dict[str, Any],
+    *,
+    validate_shaders: bool = False,
+) -> dict[str, Any]:
+    """Build the common RenderCommand/1 ABI from a validated SkinnedDraw/1."""
+    if skinned_draw.get("format") != "SHIFT.SkinnedDraw/1":
+        raise ValueError("expected SHIFT.SkinnedDraw/1")
+
+    static_draw = {
+        "format": "SHIFT.StaticDraw/1",
+        "ready": bool(skinned_draw.get("ready")),
+        "blocking_reasons": list(skinned_draw.get("blocking_reasons", []) or []),
+        "mesh": skinned_draw.get("mesh") or {},
+        "world_matrix": skinned_draw.get("world_matrix"),
+        "submeshes": skinned_draw.get("submeshes", []) or [],
+    }
+    command = build_render_command(
+        static_draw,
+        resources,
+        validate_shaders=validate_shaders,
+    )
+
+    palette = (skinned_draw.get("bind_skeleton") or {}).get("palette") or {}
+    pose = skinned_draw.get("skin_pose") or {}
+    skin_contract = skinned_draw.get("skinning") or {}
+    command["draw_kind"] = "skinned"
+    command["skinning"] = {
+        "format": "SHIFT.Skinning/1",
+        "influences": int(skin_contract.get("influences", 0) or 0),
+        "weights": dict(skin_contract.get("weights") or {}),
+        "indices": dict(skin_contract.get("indices") or {}),
+        "bind_skeleton": {
+            "format": palette.get("format", "SHIFT.BonePalette/1"),
+            "bone_count": int(palette.get("bone_count", 0) or 0),
+            "matrix_layout": palette.get("matrix_layout"),
+            "matrix_space": palette.get("matrix_space"),
+            "local_matrices_3x4": list(palette.get("local_matrices_3x4", []) or []),
+        },
+        "skin_pose": {
+            "format": pose.get("format"),
+            "matrix_space": pose.get("matrix_space"),
+            "matrix_layout": pose.get("matrix_layout", "3x4-row-major"),
+            "bone_count": int(pose.get("bone_count", 0) or 0),
+            "matrices_3x4": list(pose.get("matrices_3x4", []) or []),
+            "source": pose.get("source"),
+            "frame": pose.get("frame"),
+        },
+    }
+    validation = validate_render_command(command)
+    command["ready"] = bool(command.get("ready")) and validation["valid"]
+    command["blocking_reasons"] = list(dict.fromkeys(
+        list(command.get("blocking_reasons", []) or [])
+        + validation["blocking_reasons"]
+    ))
+    command["validation"] = validation
+    return command
+
+
+
 def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
     """Validate the final RenderCommand/1 submission shape before backend consumption."""
     reasons: list[str] = []
     if command.get("format") != FORMAT:
         reasons.append("render-command:invalid-format")
+
+    if command.get("draw_kind") == "skinned":
+        skin = command.get("skinning") or {}
+        if skin.get("format") != "SHIFT.Skinning/1":
+            reasons.append("skinning:invalid-format")
+        try:
+            influences = int(skin.get("influences", 0))
+        except (TypeError, ValueError):
+            influences = 0
+            reasons.append("skinning:influence-count-invalid")
+        if influences != 4:
+            reasons.append("skinning:influence-count-invalid")
+        for label in ("weights", "indices"):
+            if not isinstance(skin.get(label), dict):
+                reasons.append(f"skinning:{label}-binding-missing")
+        pose = skin.get("skin_pose") or {}
+        palette = skin.get("bind_skeleton") or {}
+        if pose.get("format") != "SHIFT.SkinPose/1":
+            reasons.append("skinning:skin-pose-invalid")
+        if pose.get("matrix_space") != "skinning":
+            reasons.append("skinning:skin-pose-space-invalid")
+        if palette.get("matrix_layout") not in (None, "3x4-row-major"):
+            reasons.append("skinning:bind-palette-layout-invalid")
+        try:
+            pose_bones = int(pose.get("bone_count", 0))
+            pose_matrices = list(pose.get("matrices_3x4", []) or [])
+        except (TypeError, ValueError):
+            pose_bones = 0
+            pose_matrices = []
+            reasons.append("skinning:skin-pose-payload-invalid")
+        if pose_bones <= 0 or len(pose_matrices) != pose_bones:
+            reasons.append("skinning:skin-pose-palette-incomplete")
+        for index, matrix in enumerate(pose_matrices):
+            if not isinstance(matrix, list) or len(matrix) != 12:
+                reasons.append(f"skinning:skin-pose-matrix-invalid:{index}")
 
     shader_validation = command.get("shader_validation") or {}
     if shader_validation.get("format") not in (None, "SHIFT.RenderCommandShaderValidation/1"):

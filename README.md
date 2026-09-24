@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 62** — explicit SkinPose → skinned mesh → embedded VS→PS reference. Импорт/IR, material linking, shader IR, external samplers и cubemap decode уже собраны в единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 63** — SkinnedDraw → RenderCommand with explicit SkinPose. Импорт/IR, material linking, shader IR, external samplers и cubemap decode уже собраны в единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -217,7 +217,8 @@ CI запускает полный Python suite и отдельную native reg
 
 - **Phase 61** — skinned draw проходит через desktop reference rasterizer после explicit SkinPose.
 - **Phase 62** — transformed skinned mesh проходит через embedded VS→PS reference path.
-- **Phase 63+** — связать этот путь с RenderCommand и реальным material permutation.
+- **Phase 63** — SkinnedDraw нормализуется в общий RenderCommand/1 ABI.
+- **Phase 64+** — связать RenderCommand с GLES 3.1 skin palette upload и реальным material permutation.
 - Доказать `COLOR0/1` type + channel order.
 - Расширить real BMW shader coverage: remaining varyings, opcodes и control flow.
 - Довести material/light/blend semantics до воспроизводимого golden render.
@@ -254,3 +255,6 @@ CI запускает полный Python suite и отдельную native reg
 ## Данные и лицензирование
 
 Код предназначен для исследовательского reverse engineering и tooling. Оригинальные игровые данные в репозиторий не включаются.
+
+
+The neutral renderer contract now has a common submission shape for skinned draws. `build_skinned_render_command()` carries explicit SkinPose and bind-palette data alongside the existing vertex/material/resource validation. This is the handoff point for the future GLES skinning backend.

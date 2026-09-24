@@ -126,3 +126,6 @@ The desktop renderer now has a dedicated `render_skinned_draw_reference()` entry
 ## Phase 62: skinned VS→PS reference
 
 The desktop reference pipeline now supports `SkinPose → SkinnedMeshReference → embedded VS → semantic varying linkage → PS → raster`. This is the first combined skin/material reference surface. RenderCommand serialization and production material permutation selection remain separate next steps.
+
+
+StaticDraw and SkinnedDraw now converge on the same RenderCommand/1 resource/shader validation boundary; skinned commands additionally carry an explicit SkinPose/palette payload. This keeps future GLES skinning upload logic independent from the importer and consistent with the desktop reference.

@@ -64,3 +64,6 @@ A ready `SHIFT.SkinnedDraw/1` can now be rendered through the desktop reference 
 ## Phase 62: shader reference integration
 
 A skinned draw can now be tested through the embedded VS→PS software reference after explicit SkinPose deformation. The integration requires explicit vertex/pixel programs and a reference texture; it does not infer shader permutation, animation pose or missing resources.
+
+
+A validated SkinnedDraw can now be normalized into the common RenderCommand/1 submission shape without losing its SkinPose or bind-skeleton palette. The new command validates four-influence semantics and the 3x4 skin-pose matrix payload before marking the submission ready.

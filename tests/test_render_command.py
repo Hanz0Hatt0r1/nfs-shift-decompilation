@@ -605,3 +605,133 @@ def test_render_command_rejects_external_sampler_collision_with_material():
     result = build_render_command(draw, _resources())
     assert result["ready"] is False
     assert "external-sampler:collides-with-material:1" in result["blocking_reasons"]
+
+
+def _skinned_draw_contract():
+    draw = {
+        "format": "SHIFT.SkinnedDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "mesh": {
+            "vertex_count": 3,
+            "triangle_count": 1,
+            "vertex_layout": {
+                "format": "SHIFT.VertexLayout/1",
+                "buffer_stride": 32,
+                "attributes": [
+                    {
+                        "property_id": "200",
+                        "location": 0,
+                        "offset": 0,
+                        "stride": 32,
+                        "storage": "FLOAT32x3",
+                        "normalized": False,
+                    },
+                    {
+                        "property_id": "310",
+                        "location": 1,
+                        "offset": 12,
+                        "stride": 32,
+                        "storage": "FLOAT32x4",
+                        "normalized": False,
+                    },
+                    {
+                        "property_id": "580",
+                        "location": 2,
+                        "offset": 28,
+                        "stride": 32,
+                        "storage": "UINT8x4",
+                        "normalized": False,
+                    },
+                ],
+            },
+        },
+        "submeshes": [{
+            "first_index": 0,
+            "index_count": 3,
+            "material": {
+                "status": "unique",
+                "shader_pair": {
+                    "selection_status": "unique",
+                    "interface": {"valid": True},
+                    "vertex_format": {"valid": True},
+                },
+                "textures": [],
+                "uniform_binding": {
+                    "format": "SHIFT.MaterialUniformBinding/1",
+                    "bindings": [],
+                    "optimized_out_or_unreflected": [],
+                },
+                "linked_shader_pair": {
+                    "format": "SHIFT.LinkedShaderPair/1",
+                    "vertex": None,
+                    "pixel": None,
+                    "vertex_glsl": "vertex",
+                    "pixel_glsl": "pixel",
+                },
+            },
+        }],
+        "skinning": {
+            "influences": 4,
+            "weights": {
+                "property_id": "310",
+                "target_location": 1,
+                "format": "FLOAT32x4",
+            },
+            "indices": {
+                "property_id": "580",
+                "target_location": 2,
+                "format": "UINT8x4",
+            },
+        },
+        "bind_skeleton": {
+            "format": "SHIFT.BindSkeleton/1",
+            "coverage": 1.0,
+            "bone_count": 1,
+            "palette": {
+                "format": "SHIFT.BonePalette/1",
+                "matrix_space": "local-bind",
+                "matrix_layout": "3x4-row-major",
+                "bone_count": 1,
+                "local_matrices_3x4": [
+                    [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                ],
+            },
+        },
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "matrix_layout": "3x4-row-major",
+            "bone_count": 1,
+            "matrices_3x4": [
+                [1, 0, 0, 0.5, 0, 1, 0, 0, 0, 0, 1, 0],
+            ],
+            "source": "synthetic",
+            "frame": 4,
+        },
+    }
+    return draw
+
+
+def test_build_skinned_render_command_preserves_skin_pose_and_palette():
+    from render_command import build_skinned_render_command
+
+    result = build_skinned_render_command(_skinned_draw_contract(), _resources())
+    assert result["format"] == "SHIFT.RenderCommand/1"
+    assert result["draw_kind"] == "skinned"
+    assert result["ready"] is True
+    assert result["skinning"]["skin_pose"]["frame"] == 4
+    assert result["skinning"]["skin_pose"]["matrices_3x4"][0][3] == 0.5
+    assert result["skinning"]["bind_skeleton"]["bone_count"] == 1
+    assert result["skinning"]["indices"]["target_location"] == 2
+    assert result["validation"]["valid"] is True
+
+
+def test_build_skinned_render_command_blocks_incomplete_skin_pose():
+    from render_command import build_skinned_render_command
+
+    draw = _skinned_draw_contract()
+    draw["skin_pose"]["matrices_3x4"] = []
+    result = build_skinned_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "skinning:skin-pose-palette-incomplete" in result["blocking_reasons"]

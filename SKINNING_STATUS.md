@@ -49,3 +49,6 @@ Explicit SkinPose deformation is now connected to the desktop geometry oracle th
 ## Phase 62: shader-backed skinned reference
 
 `render_skinned_draw_reference()` connects the explicit CPU SkinPose deformation to the existing shader reference renderer. The path is intentionally deterministic: vertex and pixel programs, texture resources and constants must be supplied explicitly. BAB animation decoding remains independent.
+
+
+`render_command.py` now carries `SHIFT.Skinning/1` inside RenderCommand/1 for skinned submissions. This is metadata/ABI transport only: SkinPose is still explicit, and no BAB animation data is synthesized.
