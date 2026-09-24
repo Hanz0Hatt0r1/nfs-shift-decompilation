@@ -32,7 +32,7 @@ def test_bmw_golden_manifest_selects_exact_resource():
         row["id"]: row["words"]
         for row in manifest["mesh"]["property_descriptors"]
     }
-    assert descriptors["200"] == [2, 0, 0]
+    assert set(descriptors) == {"460"}
     assert descriptors["460"] == [4, 6, 0]
     assert descriptors["220"] == [2, 2, 0]
     assert descriptors["240"] == [2, 4, 0]
