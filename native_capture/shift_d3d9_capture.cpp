@@ -24,6 +24,7 @@ constexpr std::size_t IDIRECT3D9_VTABLE_COUNT = 17;
 
 constexpr std::size_t SLOT_PRESENT = 17;
 constexpr std::size_t SLOT_DRAW_INDEXED_PRIMITIVE = 82;
+constexpr std::size_t SLOT_CREATE_VERTEX_SHADER = 91;
 constexpr std::size_t SLOT_CREATE_VERTEX_DECLARATION = 86;
 constexpr std::size_t SLOT_SET_VERTEX_DECLARATION = 87;
 constexpr std::size_t SLOT_SET_VERTEX_SHADER = 92;
@@ -532,7 +533,7 @@ bool ensure_system_d3d9() {
 
 } // namespace
 
-extern "C" __declspec(dllexport)
+__declspec(dllexport)
 IDirect3D9* WINAPI Direct3DCreate9(UINT sdk_version) {
     if (!ensure_system_d3d9()) return nullptr;
     IDirect3D9* d3d = g_real_direct3d_create9(sdk_version);
