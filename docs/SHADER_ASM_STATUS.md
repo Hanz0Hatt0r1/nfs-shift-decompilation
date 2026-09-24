@@ -34,7 +34,7 @@ The opcode histogram reproduces the previously measured corpus counts exactly, w
 
 ## Important limitation
 
-The GLSL backend is deliberately a **first-pass semantic lowering**, not yet the final production renderer. Structured control flow, exact sampler state, TEXLDD/TEXLDL gradients/LOD, relative constant addressing, SINCOS variants, and full CTAB-to-material binding still need dedicated lowering.
+The GLSL backend is deliberately a **first-pass semantic lowering**, not yet the final production renderer. Structured control flow, exact sampler state, TEXLDD/TEXLDL gradients/LOD, aL/loop-register relative addressing, SINCOS variants, and full CTAB-to-material binding still need dedicated lowering.
 
 The compiled D3D9 token stream remains the exact fallback representation; no original shader is discarded when the GLSL translator does not yet understand an instruction.
 
@@ -58,3 +58,7 @@ Generated GLSL ES 3.1 now exposes D3D9 float constant banks through `ShiftD3D9Co
 ## Phase 36: float-only constant upload guard
 
 `SHIFT.StaticDraw/1` now rejects non-float or missing CTAB type information for material constants. The currently proven GLES constant path is a vec4-based float UBO; integer/bool CTAB upload semantics remain blocked until independently proven.
+
+## Phase 53
+
+The deterministic software reference executor now supports the documented D3D9 a0 relative addressing form for vertex-shader constant reads, including MOVA/address-register writes. The GLSL backend had already preserved the relative expression; the software oracle now evaluates the same IR form under explicit evidence guards.
