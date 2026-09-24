@@ -117,8 +117,9 @@ def analyze_d3d9_type_layout_tables(source: str | bytes) -> dict[str, Any]:
 
     sentinel_written = bool(
         re.search(
-            r"\+ 4 \+ [^)]* \* 8\) = 0x11;",
+            r"^.*\+ 4 \+ .*\* 8\) = 0x11;$",
             text,
+            re.MULTILINE,
         )
     )
 
