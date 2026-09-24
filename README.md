@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 97** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 98** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -470,3 +470,14 @@ Declaration chain теперь умеет проверять согласова�
 Добавлен SHIFT.D3D9ApiBindEvidence/1. Полный SHIFT.exe.c теперь анализируется на отдельном runtime boundary wrapper FUN_0082e510: он кеширует текущую declaration pointer и выполняет COM-vtable dispatch по смещению 0x15c. Для IDirect3DDevice9 это vtable slot 87, соответствующий SetVertexDeclaration. Source evidence и внешний API ordering теперь соединены в отдельный machine-readable слой.
 
 Declaration chain принимает этот report как optional gate и включает его source provenance в общий snapshot coherence. Это закрывает путь declaration object → D3D9 bind call, но не закрывает MEB 460/461 → Type.
+
+
+## Phase 98 — D3D9 render API boundary
+
+Добавлен SHIFT.D3D9RenderApiBoundaryEvidence/1. Source evidence теперь фиксирует полный setup boundary для mesh primitive: declaration через slot 87 / 0x15c, vertex stream через slot 100 / 0x190, index buffer через slot 104 / 0x1a0 и indexed draw через slot 82 / 0x148. В recovered C эти вызовы наблюдаются через соответствующие wrappers и render-path ordering.
+
+CLI:
+
+    python shift_importer.py source-d3d9-render-api-boundary SHIFT.exe.c render-api.json
+
+Declaration chain может принять этот report как дополнительный gate через --render-api-evidence. API mapping отделён от MEB property mapping; 460/461 → Type остаётся not-proven.
