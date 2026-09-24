@@ -195,6 +195,10 @@ machine-readable backend blocker; no alternate payload is synthesized silently.
 
 Phase 82 adds direct PE address resolution for `SHIFT.exe`. The resolver parses the DOS/PE headers, section table, image base and maps the recovered virtual addresses for `DAT_00b90088` and `PTR_DAT_00b901d0` to file offsets. It distinguishes file-backed bytes from runtime-only memory and leaves `MEB 460/461 -> type code` unresolved until the actual declaration table contents are evidenced.
 
+## Phase 84: D3D9 declaration canonicalizer
+
+Phase 84 formalizes the recovered declaration interning/comparison path in `FUN_00830f80`. All six bytes/word fields of the 8-byte declaration record are part of the equality check; the remaining blocker is still the MEB property-to-Type linkage.
+
 ## Phase 83: STREAM declaration record semantics
 
 Phase 83 turns the recovered 8-byte STREAM descriptor construction into machine-readable evidence and identifies its field layout as `D3DVERTEXELEMENT9`-shaped. This closes the XML-side path `Type/Usage/Channel -> declaration record`; the MEB property-to-Type ordinal link remains the active blocker.
