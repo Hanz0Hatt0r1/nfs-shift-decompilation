@@ -196,10 +196,26 @@ class ReferenceShaderState:
         from texture_reference import sample_texture_2d
 
         idx = int(sampler.index or 0)
+        sampler_type = str(self.program.sampler_types.get(idx, "sampler2D"))
         image = self.textures.get(idx)
         if image is None:
-            raise ValueError(f"texture sampler s{idx} has no reference image")
-        return list(sample_texture_2d(image, coord[0], coord[1], self.samplers.get(idx, {})))
+            raise ValueError(
+                f"texture sampler s{idx} ({sampler_type}) has no reference image"
+            )
+        if sampler_type == "sampler2D":
+            return list(
+                sample_texture_2d(
+                    image,
+                    coord[0],
+                    coord[1],
+                    self.samplers.get(idx, {}),
+                )
+            )
+        if sampler_type in {"samplerCube", "sampler3D", "sampler1D"}:
+            raise ValueError(
+                f"reference resource type {sampler_type} for s{idx} is not implemented"
+            )
+        raise ValueError(f"reference resource type {sampler_type} for s{idx} is unknown")
 
     def execute(self) -> dict[str, Any]:
         unsupported = [
