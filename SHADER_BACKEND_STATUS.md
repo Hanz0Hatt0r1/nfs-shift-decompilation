@@ -82,3 +82,8 @@ Shader reference input validation now accepts semantics outside the fixed MEB se
 ## Phase 66: COLOR evidence
 
 Shader/vertex validation continues to treat COLOR0/1 as unresolved source ABI. The new evidence CLI can supply candidate byte-order comparisons, but no declaration or channel order is promoted to verified until external evidence is supplied.
+
+
+## Phase 83: source-correlated COLOR ABI
+
+COLOR0/COLOR1 no longer depend on a runtime candidate choice. The source-correlated MEB descriptor mapping resolves 460/461 to Type 4 (`D3DCOLOR`), Usage 6 (`Colour`) and Channels 0/1; the packed-color helper gives BGRA source bytes and RGBA shader semantics. Shader input validation can therefore consume the verified color attributes through the same RenderCommand ABI used by the GLES backend.
