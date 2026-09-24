@@ -13,7 +13,8 @@ the desktop renderer is allowed to be treated as a golden result.
 - a `SHIFT.DrawPacket/1` JSON;
 - optionally a `SHIFT.MaterialBinding/1` JSON.
 
-The gate is fail-closed on resource/primitive mismatch, non-unique shader selection,
+The gate is fail-closed on missing or mismatched SHA-256 resource identity, resource
+path mismatch, mesh-count mismatch, primitive mismatch, non-unique shader selection,
 missing linked GLSL, or missing COLOR0 evidence.
 
 ## CLI
