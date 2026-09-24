@@ -72,11 +72,18 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
     return start, None, "\n".join(body)
 
 
-def _observation(body: str, offset_hex: str) -> dict[str, Any]:
-    token = f"+ {offset_hex}"
+def _observation(body: str, byte_offset: int) -> dict[str, Any]:
+    hex_token = f"+ 0x{byte_offset:x}"
+    decimal_token = f"+ {byte_offset}"
+    matched_as = None
+    if hex_token in body:
+        matched_as = "hex"
+    elif decimal_token in body:
+        matched_as = "decimal"
     return {
-        "status": "observed" if token in body else "not-found",
-        "vtable_byte_offset": offset_hex,
+        "status": "observed" if matched_as else "not-found",
+        "vtable_byte_offset": f"0x{byte_offset:x}",
+        "source_offset_representation": matched_as,
     }
 
 
@@ -88,7 +95,7 @@ def analyze_d3d9_render_api_boundary(source: str) -> dict[str, Any]:
     for key, function in SOURCE_FUNCTIONS.items():
         start, end, body = _function_body(source, function)
         api = API_METHODS[key]
-        obs = _observation(body, f"0x{api['byte_offset']:x}")
+        obs = _observation(body, api["byte_offset"])
         obs.update({
             "function": function,
             "line_start": start,
