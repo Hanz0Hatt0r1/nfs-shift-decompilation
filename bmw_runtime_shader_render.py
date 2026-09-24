@@ -84,7 +84,7 @@ def _material_texture_images(
             if path:
                 image = _load_resource(path)
             else:
-                entry = entry_map.get(str(resolved).replace("\", "/").strip("/").lower())
+                entry = entry_map.get(str(resolved).replace("\\", "/").strip("/").lower())
                 if entry is None:
                     continue
                 image = decode_dds(archive.extract_entry(entry))
