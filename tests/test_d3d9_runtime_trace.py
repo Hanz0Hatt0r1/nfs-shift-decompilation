@@ -82,3 +82,33 @@ def test_same_instance_gate_rejects_malformed_bound_declaration():
     report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
     assert report["same_instance_gate"]["ready"] is False
     assert report["same_instance_gate"]["status"] == "not-proven"
+
+
+
+def test_same_instance_gate_requires_descriptor_match_on_valid_bound_declaration():
+    events = load_events_from_rows([
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x1111","bytes_hex":"0000000004000a00ffff000011000000"},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x1111","resource_sha256":"abc","resource_path":"vehicles/bmw/body.meb"},
+    ])
+    meb={"resource":"vehicles/bmw/body.meb","resource_sha256":"abc","property_descriptors":[{"id":"460","words":[4,6,0]}]}
+    report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:11})
+    assert report["same_instance_gate"]["ready"] is False
+    assert "descriptor:bound-instance-no-match" in report["same_instance_gate"]["blocking_reasons"]
+    assert not any(
+        reason == "declaration:bound-instance-not-valid"
+        for reason in report["same_instance_gate"]["blocking_reasons"]
+    )
+
+
+
+def test_runtime_trace_module_exposes_same_instance_gate_requirements():
+    events = load_events_from_rows([
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x1111","bytes_hex":"0000000004000a00ffff000011000000"},
+    ])
+    report=build_runtime_binding_evidence(
+        events,
+        meb_resource={"property_descriptors":[{"id":"460","words":[4,6,0]}]},
+    )
+    assert report["same_instance_gate"]["ready"] is False
+    assert "usage-ordinal-map:not-supplied" in report["same_instance_gate"]["blocking_reasons"]
+    assert report["same_instance_gate"]["requirements"]["bound_declaration_decoder_status"] == "match"
