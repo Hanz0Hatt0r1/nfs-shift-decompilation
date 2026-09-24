@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import bmw_reference_render
@@ -23,7 +24,7 @@ def test_bmw_reference_render_wraps_geometry_renderer(monkeypatch, tmp_path):
     captured = {}
     def fake_render(command, mesh, output, **kwargs):
         captured.update({'command': command, 'mesh': mesh, 'output': output, 'kwargs': kwargs})
-        Path(output).write_bytes(b'P6\\n1 1\\n255\\n\\x01\\x02\\x03')
+        Path(output).write_bytes(b'P6\n1 1\n255\n\x01\x02\x03')
         return {'format': 'SHIFT.StaticDrawReference/1', 'sha': 'inner'}
 
     monkeypatch.setattr('reference_renderer.render_render_command', fake_render)

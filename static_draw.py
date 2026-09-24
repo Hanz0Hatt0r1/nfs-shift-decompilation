@@ -243,7 +243,10 @@ def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
     if packet.get("mesh", {}).get("vertex_count") is None:
         reasons.append("mesh:vertex-count-missing")
     if not material_ready:
-        reasons.extend(dict.fromkeys(material_reasons))
+        unique_material_reasons = list(dict.fromkeys(material_reasons))
+        reasons.extend(unique_material_reasons)
+        if any(str(reason).startswith("paint-") or str(reason).startswith("sampler:") for reason in unique_material_reasons):
+            reasons.append("paint-contract:not-ready")
         reasons.append("material:binding-not-ready")
 
     return {
