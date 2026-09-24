@@ -332,9 +332,16 @@ def compile_material(
 
     if is_bmw_m3_paint:
         selected_fxo = (material_binding or {}).get("selected_fxo") or {}
+        specialization_evidence = (material_binding or {}).get("specialization")
+        specialization_requested = (
+            specialization_evidence.get("requested")
+            if isinstance(specialization_evidence, dict)
+            else None
+        )
         specializations = list(
             material.get("specializations")
             or (material_binding or {}).get("specializations")
+            or specialization_requested
             or selected_fxo.get("specialization_matched")
             or []
         )

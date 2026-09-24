@@ -27,13 +27,19 @@ def normalize_material_binding(binding: Mapping[str, Any]) -> dict[str, Any]:
         shader_value = shader_value.get("ref") or shader_value.get("path")
     shader_selection = binding.get("shader_selection") or {}
     selected_fxo = shader_selection.get("selected_fxo") or {}
-    specializations = (
-        binding.get("specializations")
-        or binding.get("specialization_flags")
-        or binding.get("specialization")
-        or selected_fxo.get("specialization_matched")
-        or []
-    )
+    raw_specialization = binding.get("specializations") or binding.get("specialization_flags")
+    if raw_specialization is None:
+        raw_specialization = binding.get("specialization")
+    if isinstance(raw_specialization, Mapping):
+        specializations = (
+            raw_specialization.get("requested")
+            or raw_specialization.get("matched")
+            or []
+        )
+    else:
+        specializations = raw_specialization or []
+    if not specializations:
+        specializations = selected_fxo.get("specialization_matched") or []
     raw_texture_rows = list(binding.get("textures") or [])
     if not raw_texture_rows and binding.get("bindings"):
         raw_texture_rows = list(binding.get("bindings") or [])
