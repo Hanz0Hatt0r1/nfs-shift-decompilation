@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 151** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline дошла до **Phase 168** — реальный BMW M3 уже проходит `VHF → MEB → BMT → DDS`, для `bodywork.fx` зафиксирован реальный FXO corpus, runtime selector умеет exact VS/PS match, D3D9 capture пишет shader/constants/SetTexture и resource descriptors. Следующий визуальный gate — один runtime capture кадра M3 body.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
