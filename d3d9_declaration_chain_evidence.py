@@ -172,6 +172,7 @@ def analyze_d3d9_declaration_chain(
     render_api_evidence: Mapping[str, Any] | None = None,
     declaration_create_evidence: Mapping[str, Any] | None = None,
     declaration_count_evidence: Mapping[str, Any] | None = None,
+    declaration_sentinel_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -187,6 +188,7 @@ def analyze_d3d9_declaration_chain(
     render_api_evidence = render_api_evidence or {}
     declaration_create_evidence = declaration_create_evidence or {}
     declaration_count_evidence = declaration_count_evidence or {}
+    declaration_sentinel_evidence = declaration_sentinel_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -300,10 +302,38 @@ def analyze_d3d9_declaration_chain(
         provenance_reports["declaration_create"] = declaration_create_evidence
     if declaration_count_evidence:
         provenance_reports["declaration_count"] = declaration_count_evidence
+    if declaration_sentinel_evidence:
+        provenance_reports["declaration_sentinel"] = declaration_sentinel_evidence
     source_provenance = _source_provenance_check(provenance_reports)
 
     memory_layout_supplied = bool(runtime_layout_evidence)
     api_bind_supplied = bool(api_bind_evidence)
+    declaration_sentinel_supplied = bool(declaration_sentinel_evidence)
+    if declaration_sentinel_supplied:
+        sentinel_status = declaration_sentinel_evidence.get("status")
+        sentinel_link = _status(
+            declaration_sentinel_evidence,
+            "semantic_links",
+            "exact_d3ddecl_end_shape",
+            "status",
+        )
+        follow_link = _status(
+            declaration_sentinel_evidence,
+            "semantic_links",
+            "sentinel_follows_data_count",
+            "status",
+        )
+        checks["d3d9_declaration_sentinel"] = {
+            "status": (
+                "observed"
+                if sentinel_status == "observed"
+                and sentinel_link == "observed"
+                and follow_link == "observed"
+                else ("mismatch" if sentinel_status == "mismatch" else "not-proven")
+            ),
+            "detail": "source-backed loader writes the complete D3DDECL_END-shaped sentinel after the data declaration records",
+        }
+
     declaration_count_supplied = bool(declaration_count_evidence)
     if declaration_count_supplied:
         count_status = declaration_count_evidence.get("status")
@@ -448,6 +478,8 @@ def analyze_d3d9_declaration_chain(
         required_keys.append("d3d9_declaration_create")
     if declaration_count_supplied:
         required_keys.append("d3d9_declaration_count_boundary")
+    if declaration_sentinel_supplied:
+        required_keys.append("d3d9_declaration_sentinel")
     if instance_supplied:
         required_keys.append("declaration_instance")
     if memory_supplied:
@@ -500,6 +532,10 @@ def analyze_d3d9_declaration_chain(
                 declaration_count_evidence.get("status", "not-supplied")
                 if declaration_count_supplied else "not-supplied"
             ),
+            "declaration_sentinel_status": (
+                declaration_sentinel_evidence.get("status", "not-supplied")
+                if declaration_sentinel_supplied else "not-supplied"
+            ),
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
@@ -534,6 +570,16 @@ def analyze_d3d9_declaration_chain(
             ),
         },
         "source_provenance": source_provenance,
+        "declaration_sentinel_evidence": (
+            {
+                "format": declaration_sentinel_evidence.get("format"),
+                "status": declaration_sentinel_evidence.get("status"),
+                "function": declaration_sentinel_evidence.get("function"),
+                "sentinel": declaration_sentinel_evidence.get("sentinel"),
+                "semantic_links": declaration_sentinel_evidence.get("semantic_links"),
+            }
+            if declaration_sentinel_supplied else None
+        ),
         "declaration_count_evidence": (
             {
                 "format": declaration_count_evidence.get("format"),
@@ -617,6 +663,7 @@ def analyze_d3d9_declaration_chain_files(
     render_api_evidence_path: str | Path | None = None,
     declaration_create_evidence_path: str | Path | None = None,
     declaration_count_evidence_path: str | Path | None = None,
+    declaration_sentinel_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -662,5 +709,10 @@ def analyze_d3d9_declaration_chain_files(
             None
             if declaration_count_evidence_path is None
             else load(declaration_count_evidence_path)
+        ),
+        declaration_sentinel_evidence=(
+            None
+            if declaration_sentinel_evidence_path is None
+            else load(declaration_sentinel_evidence_path)
         ),
     )
