@@ -509,9 +509,9 @@ def _make_minimal_pe32():
     import struct
 
     image_base = 0x00400000
-    section_rva = 0x00790000
+    section_rva = 0x0078E000
     raw_pointer = 0x00000400
-    raw_size = 0x1000
+    raw_size = 0x4000
     section = bytearray(raw_size)
 
     def put_words(address, words):
@@ -572,7 +572,7 @@ def test_d3d9_pe_evidence_maps_real_ghidra_virtual_addresses():
     assert report["image"]["image_base"] == "0x00400000"
     assert report["image"]["pointer_size"] == 4
     assert report["tables"]["type_code_table"]["file_backed"] is True
-    assert report["tables"]["type_code_table"]["file_offset"] == 0x488
+    assert report["tables"]["type_code_table"]["file_offset"] == 0x2488
     assert report["tables"]["type_code_table"]["hex"] is not None
     assert report["tables"]["type_size_table"]["file_backed"] is True
     assert report["tables"]["type_component_table"]["file_backed"] is True
