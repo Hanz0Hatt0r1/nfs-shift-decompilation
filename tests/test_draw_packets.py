@@ -11,6 +11,7 @@ from draw_packets import (
     resolve_ref,
     resolve_bind_skeleton,
 )
+from static_draw import build_static_draw_contract
 
 
 def _records():
