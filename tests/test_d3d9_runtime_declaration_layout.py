@@ -69,5 +69,5 @@ def test_runtime_layout_is_partial_without_end_sentinel():
 
     result = validate_d3d9_runtime_declaration_layout(report)
 
-    assert result["status"] == "not-proven"
+    assert result["status"] == "partial"
     assert result["declaration"]["end_sentinel_status"] == "not-present"
