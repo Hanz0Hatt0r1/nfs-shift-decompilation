@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.MEBD3D9SourceABISnapshot/1",
+  "source": {
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "bytes": 38993813,
+    "line_count": 1471366
+  },
+  "repo_encoder": {
+    "file": "meb_format.py",
+    "descriptor_read_line": 194,
+    "property_id_build_line": 196,
+    "descriptor_triplet_preserved_line": 213,
+    "rule": "property_id = decimal(Type) + decimal(Usage) + decimal(Channel)"
+  },
+  "original_source": {
+    "binary_loader_function": "FUN_00859800",
+    "binary_loader_start_line": 934192,
+    "descriptor_type_lookup_line": 934549,
+    "descriptor_usage_lookup_line": 934551,
+    "descriptor_channel_line": 934553,
+    "descriptor_stride_line": 934467,
+    "declaration_builder_type4_line": 930776,
+    "declaration_usage6_line": 930672,
+    "xml_colour_line": 933885,
+    "packed_colour_helper_line": 903227
+  },
+  "verified_properties": {
+    "460": {
+      "descriptor_triplet": [
+        4,
+        6,
+        0
+      ],
+      "d3d9_type": "D3DCOLOR",
+      "usage": "Colour",
+      "semantic": "COLOR0",
+      "source_memory_order": "BGRA",
+      "shader_order": "RGBA"
+    },
+    "461": {
+      "descriptor_triplet": [
+        4,
+        6,
+        1
+      ],
+      "d3d9_type": "D3DCOLOR",
+      "usage": "Colour",
+      "semantic": "COLOR1",
+      "source_memory_order": "BGRA",
+      "shader_order": "RGBA"
+    }
+  },
+  "verification_scope": "source-correlated-under-MEB-three-u32-property-id-convention",
+  "table_initializer_bytes": {
+    "DAT_00b90088": "opaque-in-export",
+    "PTR_DAT_00b901d0": "opaque-in-export"
+  }
+}
