@@ -280,3 +280,10 @@ Phase 92 подключает `SHIFT.D3D9DeclarationInstanceEvidence/1` обра
 ## Phase 93: declaration instance integrity
 
 Phase 93 усиливает instance-level evidence: декодер распознаёт точную форму `D3DDECL_END`, а declaration chain не принимает report со статусом `match`, если фактический stride или D3DVERTEXELEMENT9 shape не совпадают с recovered ABI. Следующий практический вход — реальный runtime/memory dump.
+
+
+## Phase 94: runtime memory declaration evidence
+
+Phase 94 adds SHIFT.D3D9MemoryDeclarationEvidence/1 as the reproducible bridge from a raw loaded-memory dump to the already recovered D3D9 declaration ABI. The capture records the virtual base/range, little-endian interpretation, complete and slice SHA-256 provenance, exact bytes, and a declaration instance trimmed through the exact D3DDECL_END shape. Extra bytes after the sentinel remain explicitly outside the declaration array.
+
+The declaration chain can now consume the wrapper directly and fail closed on incoherent provenance, bytes, stride, or declaration shape. This is runtime evidence infrastructure only: it does not authenticate an external dump and does not infer MEB 460/461 -> Type.
