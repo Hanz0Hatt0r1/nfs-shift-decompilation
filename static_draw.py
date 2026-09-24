@@ -87,6 +87,11 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         material_blockers.extend(
             paint_contract.get("blocking_reasons") or ["paint-contract:not-ready"]
         )
+    paint_shader_gate = material.get("paint_shader_gate")
+    if isinstance(paint_shader_gate, dict) and paint_shader_gate.get("ready") is not True:
+        material_blockers.extend(
+            paint_shader_gate.get("blocking_reasons") or ["paint-shader:not-ready"]
+        )
 
     uniforms, uniform_reasons = _uniform_contract(material, selection)
     external_samplers = selection.get("external_samplers") or material.get("external_samplers") or []
@@ -106,6 +111,7 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         "external_samplers": external_samplers,
         "uniform_binding": uniforms,
         "paint_contract": paint_contract,
+        "paint_shader_gate": paint_shader_gate,
         "ready": not reasons and not material_blockers and not unresolved_textures and not texture_blockers and not uniform_reasons,
         "blocking_reasons": (
             reasons
