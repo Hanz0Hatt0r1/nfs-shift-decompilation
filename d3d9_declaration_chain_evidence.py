@@ -106,6 +106,7 @@ def analyze_d3d9_declaration_chain(
     pe_evidence: Mapping[str, Any] | None = None,
     declaration_instance: Mapping[str, Any] | None = None,
     runtime_memory_evidence: Mapping[str, Any] | None = None,
+    runtime_layout_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -116,6 +117,7 @@ def analyze_d3d9_declaration_chain(
     pe_evidence = pe_evidence or {}
     declaration_instance = declaration_instance or {}
     runtime_memory_evidence = runtime_memory_evidence or {}
+    runtime_layout_evidence = runtime_layout_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -216,10 +218,28 @@ def analyze_d3d9_declaration_chain(
         },
     }
 
+    memory_layout_supplied = bool(runtime_layout_evidence)
     if memory_supplied:
         checks["runtime_memory_provenance"] = {
             "status": "observed" if _runtime_memory_proven(runtime_memory_evidence) else "not-proven",
             "detail": "the runtime memory slice has coherent address/range provenance, byte hashes and a complete declaration array",
+        }
+
+    if memory_layout_supplied:
+        layout_status = runtime_layout_evidence.get("status")
+        layout_link_status = _status(
+            runtime_layout_evidence,
+            "semantic_links",
+            "offsets_follow_type_sizes",
+            "status",
+        )
+        checks["runtime_declaration_layout"] = {
+            "status": (
+                "observed"
+                if layout_status == "match" and layout_link_status == "observed"
+                else ("mismatch" if layout_status == "mismatch" else "not-proven")
+            ),
+            "detail": "runtime declaration offsets follow the recovered packed Type sizes within each Stream",
         }
 
     if instance_supplied:
@@ -252,6 +272,8 @@ def analyze_d3d9_declaration_chain(
         required_keys.append("declaration_instance")
     if memory_supplied:
         required_keys.append("runtime_memory_provenance")
+    if memory_layout_supplied:
+        required_keys.append("runtime_declaration_layout")
     required_keys = tuple(required_keys)
     blocking = [
         key for key in required_keys if checks[key]["status"] != "observed"
@@ -284,6 +306,10 @@ def analyze_d3d9_declaration_chain(
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
+            ),
+            "runtime_layout_status": (
+                runtime_layout_evidence.get("status", "not-supplied")
+                if memory_layout_supplied else "not-supplied"
             ),
         },
         "evidence_boundary": {
@@ -319,6 +345,15 @@ def analyze_d3d9_declaration_chain(
             "stream_record": _source_signature(stream_record),
             "canonicalizer": _source_signature(canonicalizer),
         },
+        "runtime_layout_evidence": (
+            {
+                "format": runtime_layout_evidence.get("format"),
+                "status": runtime_layout_evidence.get("status"),
+                "stream_summaries": runtime_layout_evidence.get("stream_summaries"),
+                "issues": runtime_layout_evidence.get("issues"),
+            }
+            if memory_layout_supplied else None
+        ),
         "runtime_memory_evidence": (
             {
                 "format": runtime_memory_evidence.get("format"),
@@ -340,6 +375,7 @@ def analyze_d3d9_declaration_chain_files(
     pe_evidence_path: str | Path | None = None,
     declaration_instance_path: str | Path | None = None,
     runtime_memory_evidence_path: str | Path | None = None,
+    runtime_layout_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -360,5 +396,10 @@ def analyze_d3d9_declaration_chain_files(
             None
             if runtime_memory_evidence_path is None
             else load(runtime_memory_evidence_path)
+        ),
+        runtime_layout_evidence=(
+            None
+            if runtime_layout_evidence_path is None
+            else load(runtime_layout_evidence_path)
         ),
     )
