@@ -1,0 +1,94 @@
+{
+  "format": "SHIFT.BMWM3PaintMaterialContract/1",
+  "provenance": {
+    "source": "docs/BMW_M3_E36_MATERIAL_BINDING.md",
+    "archives": [
+      "BMW_M3_E36.bff",
+      "BMW_M3_E36_Cockpit.bff"
+    ],
+    "note": "Machine-readable copy of the documented M3 paint BMT -> FX -> FXO binding; runtime-instance attribution remains separate."
+  },
+  "contract": {
+    "material_path": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+    "shader": "bodywork.fx",
+    "samplers": [
+      {
+        "parameter": "diffuseTexture",
+        "fx_sampler": "diffuseMap",
+        "register": 1,
+        "texture": "COMMON_PAINT.dds",
+        "filter": {
+          "min": "Linear",
+          "mag": "Linear",
+          "mip": "Linear"
+        },
+        "address": {
+          "u": "Wrap",
+          "v": "Wrap"
+        },
+        "srgb": true
+      },
+      {
+        "parameter": "specularTexture",
+        "fx_sampler": "specularMap",
+        "register": 2,
+        "texture": "COMMON_PAINT_SPECULAR.dds",
+        "filter": {
+          "min": "Linear",
+          "mag": "Linear",
+          "mip": "Linear"
+        },
+        "address": {
+          "u": "Wrap",
+          "v": "Wrap"
+        },
+        "srgb": true
+      },
+      {
+        "parameter": "scratchControlTexture",
+        "fx_sampler": "scratchControlMap",
+        "register": 4,
+        "texture": "COMMON_BLANK.dds",
+        "filter": {
+          "min": "Linear",
+          "mag": "Linear",
+          "mip": "None"
+        },
+        "address": {
+          "u": "Clamp",
+          "v": "Clamp"
+        },
+        "srgb": false
+      }
+    ],
+    "external_samplers": [
+      {
+        "name": "environmentMap",
+        "register": 3,
+        "sampler_type": "samplerCube",
+        "resource": "external-cube",
+        "filter": {
+          "min": "Linear",
+          "mag": "Linear",
+          "mip": "Linear"
+        },
+        "address": {
+          "u": "Clamp",
+          "v": "Clamp",
+          "w": "Clamp"
+        }
+      },
+      {
+        "name": "sShadowMap_f1_0",
+        "register": 0,
+        "sampler_type": "sampler2D",
+        "resource": "external-shadow"
+      }
+    ],
+    "specializations": [
+      "USE_FRESNEL",
+      "ALLOW_VINYLS",
+      "DIRT_SCRATCH"
+    ]
+  }
+}

@@ -2409,6 +2409,28 @@ def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_paint_contract(args: argparse.Namespace) -> int:
+    """Validate an evidence-backed BMW M3 paint material binding."""
+    from bmw_m3_paint_contract import validate_material_binding
+
+    binding = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    report = validate_material_binding(binding)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_render_command_constant_parity(args: argparse.Namespace) -> int:
     """Validate MaterialConstantPayload/uniform ranges against RenderCommand constants."""
     from render_command_constant_parity import validate_render_command_constant_parity
@@ -3010,6 +3032,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeDrawCorrelation/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_draw_correlation)
+
+    p = sp.add_parser("bmw-paint-contract", help="validate the evidence-backed BMW M3 paint material binding")
+    p.add_argument("input", help="BMW paint material binding JSON")
+    p.add_argument("output", help="SHIFT.BMWM3PaintMaterialContract/1 validation JSON")
+    p.set_defaults(fn=cmd_bmw_paint_contract)
 
     p = sp.add_parser("render-command-constant-parity", help="validate MaterialConstantPayload/uniform ranges against RenderCommand constants")
     p.add_argument("input", help="SHIFT.RenderCommand/1 JSON")

@@ -70,3 +70,8 @@ Use `meb_runtime_usage_bridge.py` to derive MEB Usage ordinals from exact same-r
 ## RenderCommand constants
 
 Use `render-command-constant-parity` to validate c-register ranges and 16-byte offsets between `MaterialUniformBinding/1`, `MaterialConstantPayload/1` and `RenderCommand/1`. The unified BMW gate runs this check automatically for constant-bearing commands.
+
+
+## BMW paint material
+
+Use `bmw_m3_paint_contract.py` to validate the documented M3 paint binding. The contract captures exact material sampler registers and renderer-global samplers without treating them as runtime proof.

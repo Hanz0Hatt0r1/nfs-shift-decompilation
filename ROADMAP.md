@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 135. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 136. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -539,3 +539,10 @@ Next: obtain one concrete BMW runtime capture through this schema, derive the Us
 `SHIFT.RenderCommandConstantParity/1` now verifies the offline c-register chain from `MaterialUniformBinding/1` through `MaterialConstantPayload/1` into `RenderCommand/1 constant_commands`. Constant-bearing commands are blocked if ranges, byte offsets or payload register presence diverge. The unified BMW runtime golden gate consumes this result.
 
 Next: obtain the first real BMW runtime capture and run the complete gate. After a ready result, the exact RenderCommand can be handed to the desktop reference renderer for the first real-material image hash.
+
+
+## Phase 136: BMW M3 paint material contract
+
+`SHIFT.BMWM3PaintMaterialContract/1` converts the evidence-backed M3 paint chain into a machine-readable contract: `bodywork.fx`, material sampler registers s1/s2/s4, renderer-global s3/s0, exact texture names, sampler state and the documented specialization flags `USE_FRESNEL`, `ALLOW_VINYLS`, `DIRT_SCRATCH`.
+
+Next: compare this contract directly against the material binding emitted by the real BMT/FX/FXO pipeline, then carry the exact sampler state into `RenderCommand/1` and the first golden render.
