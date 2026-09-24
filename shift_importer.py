@@ -2158,6 +2158,27 @@ def cmd_validate_d3d9_runtime_layout(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bmw_material_slice(args: argparse.Namespace) -> int:
+    """Extract one exact BMW material draw from a BMW render slice."""
+    from bmw_material_slice import validate_files
+
+    report = validate_files(args.slice, primitive_index=args.primitive_index)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "primitive_index": report["primitive_index"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_render_slice(args: argparse.Namespace) -> int:
     """Extract one exact BMW M3 packet from a RenderBinding report."""
     from bmw_render_slice import validate_files
@@ -2664,6 +2685,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9DeclarationInstanceEvidence/1 JSON output")
     p.add_argument("--count", type=int, help="decode at most this many records")
     p.set_defaults(fn=cmd_decode_d3d9_declaration)
+
+    p = sp.add_parser("bmw-material-slice", help="extract one exact BMW material draw from SHIFT.BMWRenderSlice/1")
+    p.add_argument("slice", help="SHIFT.BMWRenderSlice/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWMaterialSlice/1 JSON")
+    p.add_argument("--primitive-index", type=int, default=0)
+    p.set_defaults(fn=cmd_bmw_material_slice)
 
     p = sp.add_parser("bmw-render-slice", help="extract one exact BMW M3 packet from SHIFT.RenderBinding/1")
     p.add_argument("golden", help="SHIFT.BMWGoldenAssetManifest/1 JSON")
