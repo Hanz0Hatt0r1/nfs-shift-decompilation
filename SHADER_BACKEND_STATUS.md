@@ -52,3 +52,8 @@ The GLES shader compiler validator can now be attached to `SHIFT.RenderCommand/1
 ## Phase 53: relative constant addressing
 
 The software shader reference now executes D3D9 vertex-shader a0 relative constant reads and MOVA writes. Constant indices are resolved as the signed 11-bit base index plus the selected a0 component; out-of-range constant reads retain the D3D9 zero-vector behavior. The oracle refuses non-vertex use, non-a0 relative tokens and exact rounding ties instead of guessing undocumented behavior.
+
+
+## Phase 53: vertex shader reference adapter
+
+`vertex_reference.py` now feeds neutral MEB vertex semantics into `SHIFT.ShaderProgram/1` vertex programs and extracts typed D3D9 output registers. POSITION, NORMAL, TANGENT, BINORMAL, TEXCOORD0..4 and raw blend inputs are mapped where neutral data exists; COLOR remains deliberately excluded because 460/461 byte order is unresolved. Typed output storage prevents `oR0` and `oT0` from colliding even though both use numeric index 0.
