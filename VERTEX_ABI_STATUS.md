@@ -23,7 +23,7 @@ SHIFT.VertexLayout/1 now records ABI evidence explicitly instead of exposing onl
 | 230-234 | TEXCOORD0-4 family | FLOAT32x3 | inferred |
 | 310 | BLENDWEIGHT0 | FLOAT32x4 | proven |
 | 580 | BLENDINDICES0 | UINT8x4 | proven |
-| 460/461 | COLOR0/1 | UINT8x4 normalized | ambiguous |
+| 460 | COLOR0 | UINT8x4 normalized | corpus-proven D3D9 Type 4 / D3DCOLOR triple; runtime-instance correlation remains |\n| 461 | COLOR1 | UINT8x4 normalized | not-observed in supplied 1.02 MEB corpus |
 | 033 | unknown | RAW4 | unknown |
 
 `460/461` remain the primary unresolved render ABI because the current evidence does not prove the original D3D9 declaration (`D3DCOLOR` vs `UBYTE4N`) or channel byte order (`RGBA` vs `BGRA`).
@@ -284,3 +284,14 @@ Remaining runtime task: prove that the same resolved Type-4 records are the reco
 A one-command Linux collector now produces `SHIFT.MEBEvidenceBundle/1`. For every parsed MEB it records structure/property metadata; for 460/461 it additionally preserves exact on-disk descriptors and property payloads, raw hashes, color ABI evidence and BFF/resource provenance. With `--source SHIFT.exe.c` it also emits per-resource descriptor-triple proofs.
 
 This is the handoff mechanism for the remaining runtime correlation task: the returned bundle contains the exact MEB-side bytes needed to match a concrete D3D9 declaration instance without sending the full game archive.
+
+
+## Phase 116: supplied 1.02 MEB corpus bridge
+
+The supplied evidence bundle `evidence/meb_corpus_20260924.json` records a complete corpus scan of 70,370 parsed MEB resources from 1,834 BFF archives with zero collection errors. Every resource contains property `460`, and every observed 460 descriptor is exactly `[4, 6, 0]`.
+
+The same corpus reports exact descriptor/payload provenance for all 70,370 color-460 resources, and every decoded color stream matches its raw payload byte-for-byte. The recovered source evidence identifies the binary mesh element triple as `[Type ordinal, Usage ordinal, Channel]`; therefore the corpus provides a source-backed bridge `MEB 460 -> Type 4, Usage 6, Channel 0`. The recovered Type switch identifies Type 4 as `D3DCOLOR` and Usage 6 as `Colour`.
+
+No property `461` was observed anywhere in the supplied 1.02 corpus, so COLOR1 has no positive resource instance in this evidence set. A runtime declaration instance correlated to the same resource is still a separate evidence target.
+
+The large raw bundle is intentionally not committed; only its SHA-256 and aggregate findings are stored in the small snapshot above. `tools/analyze_meb_evidence_bundle.py` can reproduce the aggregate analysis by streaming `resources.jsonl` from the ZIP without loading the corpus into RAM.
