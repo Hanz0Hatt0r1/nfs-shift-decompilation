@@ -235,3 +235,9 @@ The source-backed ABI evidence now includes an explicit declaration lifecycle: m
 ## Phase 104: D3D9 binding argument semantics
 
 The recovered vertex/index binding wrappers now expose their device-call arguments as evidence: stream number, vertex-buffer storage path, zero byte offset, computed stride, and index-buffer pointer. This extends the ABI boundary beyond vtable slot identity while keeping runtime object identity and MEB 460/461 -> Type separate.
+
+## Phase 105: MEB 460/461 D3D9 candidate constraint
+
+`d3d9_color_bridge_evidence.py` now records explicit D3D9 candidate Type codes for the unresolved color properties: **4 = D3DCOLOR** and **8 = UBYTE4N**. The existing MEB parser establishes 4-byte normalized `u8x4` storage for 460/461; the recovered executable source establishes a separate Type-4 packed-color path and `Colour` stream family.
+
+Neither observation links property 460/461 to one declaration Type. The new evidence schema keeps the final property mapping at `not-proven` and can optionally record runtime COLOR declaration Type bytes without treating them as property identity proof. The intended fail-closed closure condition is a same-instance correlation across the MEB payload, declaration record and D3D9 render/bind boundary.

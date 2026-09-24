@@ -348,3 +348,11 @@ Phase 103 adds SHIFT.D3D9DeclarationLifecycleEvidence/1. The recovered source ca
 ## Phase 104: D3D9 binding argument semantics
 
 Phase 104 formalizes the resource arguments forwarded by FUN_00854da0 and FUN_00854e10. SetStreamSource receives the stream number, per-stream vertex-buffer pointer, zero byte offset and computed stride; SetIndices receives the recovered index-buffer pointer. These are source-backed argument semantics and do not infer MEB property mapping.
+
+## Phase 105: MEB COLOR Type constraint bridge
+
+`d3d9_color_bridge_evidence.py` formalizes the strongest currently defensible constraint for MEB properties 460/461: 4-byte normalized `u8x4` storage is compatible with D3D9 Type 4 (`D3DCOLOR`) or Type 8 (`UBYTE4N`). This narrows the search space but does not select a Type.
+
+The recovered SHIFT source independently proves the `Colour` stream family and a Type-4 packed-color conversion path. Because the exported source does not expose a MEB property id → declaration-record identity edge, the bridge remains `not-proven`. Runtime COLOR declaration records are observations, not automatic attributions to MEB 460/461.
+
+Next evidence target: correlate one real .meb color payload with the exact declaration record consumed by the same mesh instance, preferably with runtime memory/API capture and a source-backed property identity.

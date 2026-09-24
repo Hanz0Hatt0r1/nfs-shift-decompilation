@@ -546,3 +546,16 @@ Report намеренно не утверждает конкретный runtime
 CLI:
 
     python shift_importer.py source-d3d9-binding-args SHIFT.exe.c binding-args.json
+
+## Phase 105: conservative MEB 460/461 ↔ D3D9 color bridge
+
+`d3d9_color_bridge_evidence.py` adds the missing evidence layer between the project's MEB COLOR0/COLOR1 storage contract and the recovered D3D9 declaration model. It records the current 4-byte normalized `u8x4` constraint for properties 460/461 and expresses the compatible D3D9 color candidates as numeric Type codes **4 (`D3DCOLOR`)** and **8 (`UBYTE4N`)**.
+
+The bridge consumes `SHIFT.D3D9SourceVertexEvidence/1`: the recovered source proves the XML `Colour` stream family and a separate Type-4 packed-color path, but the source export does not expose a direct MEB-property-to-Type edge. The tool therefore keeps `meb_property_mapping.status = not-proven` even when a runtime declaration report contains a COLOR record.
+
+Example:
+
+    python d3d9_color_bridge_evidence.py meb.json source-d3d9.json color-bridge.json
+    python d3d9_color_bridge_evidence.py meb.json source-d3d9.json color-bridge.json --runtime-report declaration.json --source-text SHIFT.exe.c
+
+Runtime COLOR declaration observations are recorded separately from property identity. A future proof must correlate the same MEB payload, declaration record and render/bind path rather than selecting Type 4 from the packed-color helper alone.
