@@ -66,7 +66,7 @@ def _material_texture_images(
 
     with BFF(primary_bff) as archive:
         entry_map = {
-            str(entry.path).replace("\", "/").strip("/").lower(): entry
+            str(entry.path).replace("\\", "/").strip("/").lower(): entry
             for entry in archive.entries
         }
         for binding in bindings:
