@@ -79,7 +79,7 @@ D3DDECLTYPES = {
         "element_size": 4,
         "confidence": "exact",
         "channel_order": "BGRA",
-        "channel_order_candidates": ["BGRA"],
+        "channel_order_candidates": ["RGBA", "BGRA"],
         "shader_order": "RGBA",
         "descriptor_triplet": list(VERIFIED_COLOR_ABI["461"]["descriptor_triplet"]),
         "source_evidence": {"format": "SHIFT.MEBD3D9SourceABIEvidence/1", **VERIFIED_COLOR_ABI["461"]},
