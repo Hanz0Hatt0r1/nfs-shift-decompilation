@@ -252,3 +252,9 @@ bridge's final mapping to remain `not-proven`.
 A coherent ambiguous bridge can therefore travel through the same evidence
 pipeline as the declaration lifecycle, binding and runtime evidence without
 claiming that MEB 460/461 have been assigned to one declaration Type.
+
+## Phase 107: MEB property-descriptor provenance
+
+MEBMesh.property_descriptors and mesh_summary()[property_descriptors] now preserve descriptor offset, the three little-endian DWORD words and the raw 12-byte descriptor for every vertex property. The regression fixture confirms the expected binary locations for synthetic 460 and 461 descriptors.
+
+This strengthens traceability of MEB 460/461, but it is deliberately not a D3D9 Type proof. The unresolved boundary remains the identity edge from the MEB descriptor/payload to the exact D3D9 declaration record used by that mesh.
