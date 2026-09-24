@@ -835,3 +835,14 @@ hard blocker before shader execution.
 The Windows D3D9 capture producer can optionally persist supported sampler surfaces to PPM: one level-0 image for 2D textures and six face images for cubemaps. Runtime trace preserves the descriptor and snapshot paths, the BMW runtime render contract carries them forward, and the offline exact shader renderer can auto-load those captures from a snapshot root.
 
 This closes the remaining manual resource step before executing the exact captured BMW bodywork VS/PS pair. Capture remains explicitly opt-in.
+
+## Phase 181: one-command post-capture pipeline
+
+The runtime tooling now has a single Python entrypoint that consumes
+BMW_M3_E36.bff, RENDER.bff and a D3D9 JSONL capture. It writes the material
+binding, neutral MEB, runtime trace, exact shader selection and runtime render
+contract, and then executes the selected VS/PS offline when all evidence and
+captured sampler contents are available.
+
+Incomplete captures remain fail-closed while preserving every intermediate
+artifact for diagnosis.
