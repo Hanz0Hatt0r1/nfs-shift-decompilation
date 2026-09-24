@@ -56,6 +56,16 @@ def _source_path_line_numbers(source: str, filename_fragment: str) -> list[int]:
     ]
 
 
+def _source_path_line_numbers(source: str, filename_fragment: str) -> list[int]:
+    """Return all source lines containing an escaped path fragment."""
+    normalized_path = re.escape(filename_fragment).replace(r"\\", r"\\+")
+    pattern = re.compile(normalized_path)
+    return [
+        source.count("\n", 0, match.start()) + 1
+        for match in pattern.finditer(source)
+    ]
+
+
 def _source_line_anchors(source: str, filename_fragment: str) -> list[dict[str, int | str]]:
     """Extract decompiler line -> original source line anchors from diagnostics."""
     normalized_path = re.escape(filename_fragment).replace(r"\\", r"\\+")
