@@ -59,3 +59,19 @@ def test_bmw_paint_contract_accepts_compile_material_shape():
     ]
     report=validate_material_binding(raw)
     assert report['ready'] is True
+
+
+def test_bmw_paint_contract_blocks_sampler_state_drift():
+    binding=_binding()
+    binding['textures'][0]['address_u']='Clamp'
+    report=validate_material_binding(binding)
+    assert report['ready'] is False
+    assert 'sampler:diffuseMap:address_u:mismatch' in report['blocking_reasons']
+
+
+def test_bmw_paint_contract_blocks_missing_sampler_state():
+    binding=_binding()
+    del binding['textures'][0]['mip_filter']
+    report=validate_material_binding(binding)
+    assert report['ready'] is False
+    assert 'sampler:diffuseMap:mip_filter:missing' in report['blocking_reasons']
