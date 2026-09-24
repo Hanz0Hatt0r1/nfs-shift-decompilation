@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 74. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 78. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -190,6 +190,10 @@ GLES 3.1 skinning contract. The parity gate verifies attribute locations and
 formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
+
+## Phase 78: D3D9 primitive type semantics
+
+Phase 78 formalizes the recovered declaration conversion switch in FUN_00854e70. All 17 codes 0..16 are observed and aligned with the D3D9 D3DDECLTYPE numeric table, with source behaviors retained per case. Type code 4 is explicitly tied to the packed-color helper, but MEB 460/461 -> type code 4 remains a separate unresolved linkage.
 
 ## Phase 77: CPrimitiveType source anchors
 
