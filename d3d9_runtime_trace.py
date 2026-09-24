@@ -300,6 +300,7 @@ def build_runtime_binding_evidence(
             and bound_decl_decoded.get("status") == "match"
         )
 
+        draw_present = bool(frame.get("draws"))
         frame_candidate = {
             "frame": frame.get("frame"),
             "declaration_ptr": binding_ptr,
@@ -307,9 +308,10 @@ def build_runtime_binding_evidence(
             "declaration_create_known": bool(binding and binding.get("create_known")),
             "declaration_decode_status": bound_decl_decoded.get("status"),
             "bound_declaration_valid": bound_decl_valid,
+            "indexed_draw_present": draw_present,
             "descriptor_matches": [],
         }
-        if bound_decl_valid and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
+        if bound_decl_valid and draw_present and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
             bound_records = bound_decl_decoded.get("records", [])
             for descriptor in meb_resource.get("property_descriptors", []):
                 if not isinstance(descriptor, Mapping):
@@ -336,7 +338,10 @@ def build_runtime_binding_evidence(
                     })
         if bound_decl_valid and same_resource is True:
             valid_bound_frames.append(frame_candidate)
-        if frame_candidate["descriptor_matches"]:
+        if (
+            frame_candidate["descriptor_matches"]
+            and draw_present
+        ):
             same_instance_candidates.append(frame_candidate)
 
         frame_rows.append({
@@ -387,6 +392,7 @@ def build_runtime_binding_evidence(
                 "bound_declaration_decoder_status": "match",
                 "usage_ordinal_mapping": "required",
                 "descriptor_match_on_bound_declaration": True,
+                "indexed_draw_present": True,
             },
             "blocking_reasons": list(dict.fromkeys(
                 (
@@ -406,12 +412,34 @@ def build_runtime_binding_evidence(
                     else []
                 )
                 + (
+                    ["draw:same-frame-indexed-draw-not-observed"]
+                    if usage_ordinal_map is not None
+                    and not same_instance_candidates
+                    and any(
+                        x["binding"].get("same_meb_resource") is True
+                        for x in frame_rows
+                    )
+                    and any(
+                        x.get("bound_declaration_valid") is True
+                        for x in valid_bound_frames
+                    )
+                    and not any(
+                        x.get("indexed_draw_present") is True
+                        for x in valid_bound_frames
+                    )
+                    else []
+                )
+                + (
                     ["descriptor:bound-instance-no-match"]
                     if usage_ordinal_map is not None
                     and not same_instance_candidates
                     and any(
                         x["binding"].get("same_meb_resource") is True
                         for x in frame_rows
+                    )
+                    and any(
+                        x.get("indexed_draw_present") is True
+                        for x in valid_bound_frames
                     )
                     else []
                 )
