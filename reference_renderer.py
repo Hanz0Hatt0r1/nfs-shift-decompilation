@@ -406,6 +406,15 @@ def rasterize_textured_mesh(
             available_semantics=available_pixel_semantics,
         )
         if not input_validation["valid"]:
+            unsupported = input_validation.get("unsupported", []) or []
+            if unsupported:
+                first = unsupported[0]
+                usage = str(first.get("usage") or "").upper()
+                semantic_index = int(first.get("index", 0))
+                raise ValueError(
+                    f"pixel shader requires {usage}{semantic_index} but mesh has no matching "
+                    f"{'UV layer' if usage == 'TEXCOORD' else 'attribute'}"
+                )
             raise ValueError(
                 "pixel shader input contract is not supported: "
                 + ", ".join(input_validation["blocking_reasons"])
