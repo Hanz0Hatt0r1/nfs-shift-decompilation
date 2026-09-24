@@ -236,7 +236,8 @@ def _interp_varying(
 
 
 
-def rasterize_textured_mesh(    vertices: Iterable[Iterable[float]],
+def rasterize_textured_mesh(
+    vertices: Iterable[Iterable[float]],
     indices: Iterable[int],
     uvs: Iterable[Iterable[float]],
     image: dict[str, Any],
@@ -538,7 +539,8 @@ def render_textured_static_draw(
         "vertex_count": len(vertices),
         "triangle_count": len(draw_indices) // 3,
         "texture_format": image.get("source_format"),
-        "world_matrix_applied": True,
+        "world_matrix_applied": vertex_program is None,
+        "vertex_shader_executed": vertex_program is not None,
     }
 
 
