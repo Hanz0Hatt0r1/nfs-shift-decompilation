@@ -135,3 +135,8 @@ Use `d3d9_runtime_trace.py --require-same-instance` for strict runtime proof. A 
 ## Runtime golden same-instance
 
 `bmw_runtime_golden_gate.py` requires the D3D9 runtime report's `same_instance_gate.ready` field before runtime parity can become golden-ready.
+
+
+## Same-frame indexed draw
+
+The D3D9 same-instance gate requires `indexed_draw_present=true` in the bound frame. A valid declaration without a same-frame `draw_indexed_primitive` is not proof of mesh submission.
