@@ -110,6 +110,78 @@ def _source_provenance_check(
         "conflicts": conflicts,
     }
 
+def _runtime_source_sentinel_coherence(
+    runtime_memory: Mapping[str, Any],
+    source_sentinel: Mapping[str, Any],
+) -> dict[str, Any]:
+    nested = runtime_memory.get("declaration_instance")
+    if not isinstance(nested, Mapping):
+        return {"status": "not-proven", "conflicts": [{"reason": "missing nested declaration instance"}]}
+
+    runtime_validation = nested.get("validation")
+    records = nested.get("records")
+    source_shape = source_sentinel.get("sentinel")
+    source_status = source_sentinel.get("status")
+    source_link = _status(
+        source_sentinel,
+        "semantic_links",
+        "exact_d3ddecl_end_shape",
+        "status",
+    )
+    follow_link = _status(
+        source_sentinel,
+        "semantic_links",
+        "sentinel_follows_data_count",
+        "status",
+    )
+    if not isinstance(runtime_validation, Mapping) or not isinstance(records, list):
+        return {"status": "not-proven", "conflicts": [{"reason": "runtime sentinel metadata missing"}]}
+    if source_status != "observed" or source_link != "observed" or follow_link != "observed":
+        return {"status": "not-proven", "conflicts": [{"reason": "source sentinel evidence incomplete"}]}
+    end_index = runtime_validation.get("end_sentinel_index")
+    if not isinstance(end_index, int) or end_index < 0 or end_index >= len(records):
+        return {"status": "not-proven", "conflicts": [{"reason": "runtime end sentinel index invalid", "observed": end_index}]}
+    runtime_record = records[end_index]
+    if not isinstance(runtime_record, Mapping):
+        return {"status": "not-proven", "conflicts": [{"reason": "runtime sentinel record missing"}]}
+
+    if not isinstance(source_shape, Mapping):
+        return {"status": "not-proven", "conflicts": [{"reason": "source sentinel values missing"}]}
+
+    fields = ("stream", "offset", "type", "method", "usage", "usage_index")
+    conflicts = []
+    for field in fields:
+        observed = runtime_record.get(field)
+        expected = source_shape.get(field)
+        if observed != expected:
+            conflicts.append({
+                "field": field,
+                "expected": expected,
+                "observed": observed,
+            })
+
+    expected_array_records = end_index + 1
+    extraction = runtime_memory.get("extraction")
+    if isinstance(extraction, Mapping):
+        observed_array_records = extraction.get("declaration_array_records")
+        if observed_array_records is not None and observed_array_records != expected_array_records:
+            conflicts.append({
+                "field": "declaration_array_records",
+                "expected": expected_array_records,
+                "observed": observed_array_records,
+            })
+
+    return {
+        "status": "observed" if not conflicts else "mismatch",
+        "end_sentinel_index": end_index,
+        "expected_sentinel": dict(source_shape),
+        "observed_sentinel": {
+            field: runtime_record.get(field)
+            for field in fields
+        },
+        "conflicts": conflicts,
+    }
+
 def _runtime_memory_proven(report: Mapping[str, Any]) -> bool:
     if report.get("format") != "SHIFT.D3D9MemoryDeclarationEvidence/1":
         return False
@@ -413,6 +485,20 @@ def analyze_d3d9_declaration_chain(
             "detail": "source-backed declaration object reaches the IDirect3DDevice9 SetVertexDeclaration vtable slot",
         }
 
+    runtime_memory_sentinel_coherence_supplied = bool(
+        runtime_memory_evidence and declaration_sentinel_evidence
+    )
+    if runtime_memory_sentinel_coherence_supplied:
+        sentinel_coherence = _runtime_source_sentinel_coherence(
+            runtime_memory_evidence,
+            declaration_sentinel_evidence,
+        )
+        checks["runtime_source_sentinel_coherence"] = {
+            "status": sentinel_coherence["status"],
+            "detail": "runtime D3DDECL_END bytes exactly match the source-proven sentinel producer",
+            "coherence": sentinel_coherence,
+        }
+
     if source_provenance["status"] != "not-supplied":
         checks["source_provenance_coherence"] = {
             "status": source_provenance["status"],
@@ -484,6 +570,8 @@ def analyze_d3d9_declaration_chain(
         required_keys.append("declaration_instance")
     if memory_supplied:
         required_keys.append("runtime_memory_provenance")
+    if runtime_memory_sentinel_coherence_supplied:
+        required_keys.append("runtime_source_sentinel_coherence")
     if memory_layout_supplied:
         required_keys.append("runtime_declaration_layout")
     required_keys = tuple(required_keys)
@@ -539,6 +627,10 @@ def analyze_d3d9_declaration_chain(
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
+            ),
+            "runtime_sentinel_coherence_status": (
+                sentinel_coherence["status"]
+                if runtime_memory_sentinel_coherence_supplied else "not-supplied"
             ),
             "runtime_layout_status": (
                 runtime_layout_evidence.get("status", "not-supplied")
@@ -628,6 +720,10 @@ def analyze_d3d9_declaration_chain(
             "stream_record": _source_signature(stream_record),
             "canonicalizer": _source_signature(canonicalizer),
         },
+        "runtime_sentinel_coherence": (
+            sentinel_coherence
+            if runtime_memory_sentinel_coherence_supplied else None
+        ),
         "runtime_layout_evidence": (
             {
                 "format": runtime_layout_evidence.get("format"),
