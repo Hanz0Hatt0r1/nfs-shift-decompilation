@@ -1,0 +1,140 @@
+{
+  "format": "SHIFT.BMWRenderBFFEvidence/1",
+  "status": "observed",
+  "generated_from_attached_corpus": true,
+  "archives": {
+    "BMW_M3_E36.bff": {
+      "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+      "entry_count": 1122
+    },
+    "BMW_M3_E36_Cockpit.bff": {
+      "sha256": "a9bc1b3c0dfb21408913089d565fa2ffc80f2fb2c4a408ab9aef101d012f15be",
+      "entry_count": 1043
+    },
+    "RENDER.bff": {
+      "sha256": "b0b03960ba7e620b7ad5e2b027ed13de67afffe168eb8b30da73c2a632a7c0af",
+      "entry_count": 694,
+      "fx_count": 81,
+      "fxo_count": 592,
+      "fxh_count": 21
+    }
+  },
+  "targets": {
+    "bmt": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 858,
+      "path": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "sha256": "6dd62026600849a7fec2b29e48bcb68c61b342e7275954d6f3fe74a7be107b0a",
+      "size": 3308,
+      "material_name": "BMW_M3_E36_PAINT",
+      "shader": "render/shaders/bodywork.fx",
+      "specializations": [
+        "USE_FRESNEL",
+        "ALLOW_VINYLS",
+        "DIRT_SCRATCH"
+      ],
+      "texture_references": [
+        "Vehicles\\Textures\\COMMON_PAINT.dds",
+        "Vehicles\\Textures\\COMMON_PAINT_SPECULAR.dds",
+        "Vehicles\\Textures\\COMMON_BLANK.dds"
+      ]
+    },
+    "meb": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 863,
+      "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+      "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c",
+      "size": 300764,
+      "name": "BMW_M3_E36_KIT00_BODY_LODA",
+      "vertex_count": 3550,
+      "triangle_count": 5034,
+      "vertex_properties": [
+        "200",
+        "460",
+        "220",
+        "240",
+        "250",
+        "130",
+        "132",
+        "133"
+      ],
+      "primitives": [
+        {
+          "index": 0,
+          "material": "vehicles\\BMW_M3_E36\\BMW_M3_E36_BADGING.mtx",
+          "first_index": 0,
+          "index_count": 150
+        },
+        {
+          "index": 1,
+          "material": "vehicles\\BMW_M3_E36\\BMW_M3_E36_PAINT.mtx",
+          "first_index": 150,
+          "index_count": 6294
+        },
+        {
+          "index": 2,
+          "material": "vehicles\\BMW_M3_E36\\BMW_M3_E36_PAINT.mtx",
+          "first_index": 6444,
+          "index_count": 7386
+        },
+        {
+          "index": 3,
+          "material": "vehicles\\BMW_M3_E36\\GENERIC_WINDOWS.mtx",
+          "first_index": 13830,
+          "index_count": 612
+        },
+        {
+          "index": 4,
+          "material": "vehicles\\BMW_M3_E36\\GENERIC_GLOSS_BLACK.mtx",
+          "first_index": 14442,
+          "index_count": 576
+        },
+        {
+          "index": 5,
+          "material": "vehicles\\BMW_M3_E36\\BMW_M3_E36_LIGHTSGLASS.mtx",
+          "first_index": 15018,
+          "index_count": 84
+        }
+      ]
+    },
+    "textures": {
+      "common_paint": {
+        "archive": "BMW_M3_E36.bff",
+        "entry_index": 857,
+        "path": "vehicles/textures/common_paint.dds",
+        "sha256": "8950a54d0a1227970cf73c937c2c47ee6a0886b28a8fd142f4235ce24911d63f",
+        "size": 184
+      },
+      "common_paint_specular": {
+        "archive": "BMW_M3_E36.bff",
+        "entry_index": 856,
+        "path": "vehicles/textures/common_paint_specular.dds",
+        "sha256": "5154d913ec64a41a3a50275637e5cec53e161e3b175ef03d2bb28e9bf8ae5ece",
+        "size": 240
+      }
+    }
+  },
+  "bodywork_fx": {
+    "archive": "RENDER.bff",
+    "source_path": "render/shaders/bodywork.fx",
+    "source_sha256": "ea00d9c0605aab144ed3def2895c9ff5b29eed02823c3e0426e67b4dd1184d6f",
+    "fxo_family_count": 61,
+    "pixel_program_count": 183,
+    "expected_paint_sampler_registers": {
+      "sShadowMap_f1_0": 0,
+      "diffuseMap": 1,
+      "specularMap": 2,
+      "environmentMap": 3,
+      "scratchControlMap": 4
+    },
+    "full_paint_sampler_pixel_program_count": 16,
+    "selection_status": "not-final",
+    "selection_blocker": "16 pixel programs still satisfy the complete sampler ABI; exact VS-pair/specialization selection must use the repository linker and captured runtime evidence."
+  },
+  "boundary": {
+    "raw_binaries_committed": false,
+    "runtime_draw_identity": "not-supplied",
+    "environment_cube_identity": "not-supplied",
+    "shadow_map_identity": "not-supplied"
+  }
+}

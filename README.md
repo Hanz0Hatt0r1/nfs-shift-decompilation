@@ -172,7 +172,17 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
 
 Весь BFF-backed material evidence остаётся прежним; внешний FX получает собственный SHA-256 provenance. Это подготовка к первому настоящему BMT → FX → FXO → RenderCommand render.
 
-### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### Split BFF shader probe
+### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### Real RENDER.bff evidence
+
+Для полного локального evidence checkpoint:
+
+    python shift_importer.py render-bff-evidence \\
+      BMW_M3_E36.bff RENDER.bff out/bmw_m3_e36_render_bff_evidence.json \\
+      --supplemental-bff BMW_M3_E36_Cockpit.bff
+
+В отчёте фиксируются SHA архивов, target entry indices, MEB geometry statistics, bodywork FX/FXO inventory и число compiled pixel programs с полным paint sampler ABI. Runtime draw identity, environment cube и shadow map намеренно остаются отдельными gates.
+
+### Split BFF shader probe
 
 Для реального BMW material path, где MEB/BMT/textures лежат в vehicle archive, а `bodywork.fx` и FXO cache — в `RENDER.bff`:
 

@@ -709,3 +709,18 @@ split-archive layout: primary BMW BFF plus supplemental `RENDER.bff`. It keeps
 BMT/MEB provenance separate from bodywork FX/FXO provenance and reports the
 selected permutation identity and linked shader presence without fabricating
 runtime-global samplers.
+
+## Phase 162: real RENDER.bff evidence
+
+The attached retail render archive is now captured as an evidence-only checkpoint:
+694 entries, including 81 FX, 592 FXO and 21 FXH resources. The BMW M3 paint
+asset resolves to a 3,550-vertex / 5,034-triangle MEB with two paint primitives.
+
+The bodywork FXO corpus contains 61 permutation files / 183 pixel programs. A
+sampler-ABI preflight identifies 16 pixel programs with the complete paint set:
+`sShadowMap_f1_0=s0`, `diffuseMap=s1`, `specularMap=s2`,
+`environmentMap=s3`, `scratchControlMap=s4`.
+
+This narrows the next task from "find a bodywork shader" to exact VS/PS
+permutation selection and execution. Runtime draw identity, the actual s0 shadow
+resource and s3 environment cube remain explicit gates.

@@ -2743,6 +2743,35 @@ def cmd_d3d9_api_bind_evidence(args: argparse.Namespace) -> int:
     return _write_evidence_report(analyze_d3d9_api_bind_file(args.input), args.output)
 
 
+def cmd_render_bff_evidence(args: argparse.Namespace) -> int:
+    """Build evidence for BMW M3 BMT/MEB plus the split RENDER.bff shader corpus."""
+    from render_bff_evidence import build_evidence
+
+    report = build_evidence(
+        args.primary,
+        args.render_bff,
+        supplemental_bffs=args.supplemental_bff or [],
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "bmt": report["targets"]["bmt"]["path"],
+        "meb_vertex_count": report["targets"]["meb"]["vertex_count"],
+        "meb_triangle_count": report["targets"]["meb"]["triangle_count"],
+        "render_fxo_count": report["render_archive"]["fxo_count"],
+        "bodywork_fxo_count": report["render_archive"]["bodywork"]["bodywork_fxo_count"],
+        "full_paint_sampler_program_count": report["render_archive"]["bodywork"]["full_paint_sampler_program_count"],
+        "shader_selection_status": report["shader_probe"].get("status"),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -3271,6 +3300,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="primary BMW_M3_E36.bff")
     p.add_argument("output", help="SHIFT.BMWBFFIntakeEvidence/1 JSON")
     p.set_defaults(fn=cmd_bmw_bff_intake)
+
+    p = sp.add_parser("render-bff-evidence", help="build real BMW M3 BMT/MEB plus split RENDER.bff shader evidence")
+    p.add_argument("primary", help="primary BMW_M3_E36.bff")
+    p.add_argument("render_bff", help="renderer archive, normally RENDER.bff")
+    p.add_argument("output", help="SHIFT.BMWRenderBFFEvidence/1 JSON output")
+    p.add_argument("--supplemental-bff", action="append", default=[], help="additional BFF archives such as BMW_M3_E36_Cockpit.bff")
+    p.set_defaults(fn=cmd_render_bff_evidence)
 
     p = sp.add_parser("bmw-material-from-bff", help="build real BMW M3 MaterialBinding/1 from retail BFF archives")
     p.add_argument("input", help="primary BMW_M3_E36.bff")
