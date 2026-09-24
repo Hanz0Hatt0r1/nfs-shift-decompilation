@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 151** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline дошла до **Phase 168** — реальный BMW M3 уже проходит `VHF → MEB → BMT → DDS`, для `bodywork.fx` зафиксирован реальный FXO corpus, runtime selector умеет exact VS/PS match, D3D9 capture пишет shader/constants/SetTexture и resource descriptors. Следующий визуальный gate — один runtime capture кадра M3 body.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -172,7 +172,34 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
 
 Весь BFF-backed material evidence остаётся прежним; внешний FX получает собственный SHA-256 provenance. Это подготовка к первому настоящему BMT → FX → FXO → RenderCommand render.
 
-### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### Runtime shader render contract
+### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### Первый runtime capture
+
+На Windows соберите capture producer и положите его `d3d9.dll` рядом с executable тестовой копии SHIFT:
+
+    cmake -S native_capture -B native_capture/build -A Win32
+    cmake --build native_capture/build --config Release
+    set SHIFT_D3D9_CAPTURE=C:\\path\\shift_m3_capture.jsonl
+
+Запустите игру до появления BMW M3 и сделайте несколько кадров. Затем прогоните:
+
+    python shift_importer.py d3d9-runtime-trace \\
+      shift_m3_capture.jsonl \\
+      out/bmw_m3_runtime_binding.json
+
+    python shift_importer.py bmw-runtime-shader-select \\
+      out/bmw_m3_material_binding.json \\
+      out/bmw_m3_runtime_binding.json \\
+      out/bmw_m3_runtime_shader_selection.json
+
+    python shift_importer.py bmw-runtime-render-contract \\
+      out/bmw_m3_material_binding.json \\
+      out/bmw_m3_runtime_binding.json \\
+      BMW_M3_E36.bff RENDER.bff \\
+      out/bmw_m3_runtime_render_contract.json
+
+Первый capture, содержащий тот же MEB instance на indexed draw, exact VS/PS identity и реальные `s0/s3` texture bindings, замкнёт последний крупный evidence gate. Содержимое external textures намеренно не подменяется offline.
+
+### Runtime shader render contract
 
 После exact runtime shader selection:
 
