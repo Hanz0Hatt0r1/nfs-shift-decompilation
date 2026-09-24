@@ -743,3 +743,13 @@ declared by the selected material (notably s0 shadow and s3 environment).
 
 This closes the remaining instrumentation gap before an authentic bodywork
 shader render can be attempted from a captured frame.
+
+## Phase 167: stage-specific runtime render contract
+
+The desktop reference renderer now supports distinct VS and PS constant banks.
+A new BMW runtime render contract consumes the exact runtime-selected FXO pair,
+reconstructs the stage-specific D3D9 c-banks, and records external sampler
+object bindings for the captured frame.
+
+The contract distinguishes shader readiness from image readiness: runtime
+texture pointers are evidence of bound objects, not their resource contents.

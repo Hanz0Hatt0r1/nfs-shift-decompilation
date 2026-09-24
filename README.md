@@ -172,7 +172,19 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
 
 Весь BFF-backed material evidence остаётся прежним; внешний FX получает собственный SHA-256 provenance. Это подготовка к первому настоящему BMT → FX → FXO → RenderCommand render.
 
-### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### Exact runtime shader selection
+### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### Runtime shader render contract
+
+После exact runtime shader selection:
+
+    python shift_importer.py bmw-runtime-render-contract \\
+      out/bmw_m3_material_binding.json \\
+      out/d3d9_runtime_binding.json \\
+      BMW_M3_E36.bff RENDER.bff \\
+      out/bmw_m3_runtime_render_contract.json
+
+Контракт собирает выбранную VS/PS permutation из реального FXO, переводит её в `LinkedShaderPair/1`, разделяет captured D3D9 constants по стадиям VS/PS и фиксирует bound external texture objects. `reference_render_ready` остаётся false, пока содержимое external resources не предоставлено отдельно.
+
+### Exact runtime shader selection
 
 После `bmw-material-from-bff` и получения реального D3D9 capture можно строго выбрать одну FXO permutation:
 

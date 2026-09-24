@@ -2341,6 +2341,32 @@ def cmd_d3d9_runtime_trace(args: argparse.Namespace) -> int:
         return 2
     return 0
 
+def cmd_bmw_runtime_render_contract(args: argparse.Namespace) -> int:
+    """Build the exact BMW runtime render contract from shader selection and capture."""
+    from bmw_runtime_render_contract import validate_files
+
+    report = validate_files(
+        args.material_input,
+        args.runtime_report,
+        primary_bff=args.primary_bff,
+        render_bff=args.render_bff,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "reference_render_ready": report["reference_render_ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_runtime_shader_select(args: argparse.Namespace) -> int:
     """Select one exact static BMW FXO permutation from a runtime shader identity."""
     from bmw_runtime_shader_select import validate_files
@@ -3286,6 +3312,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--usage-map", help="optional JSON mapping MEB Usage ordinals to D3D9 Usage bytes")
     p.add_argument("--require-same-instance", action="store_true", help="return 2 unless strict same-instance proof is established")
     p.set_defaults(fn=cmd_d3d9_runtime_trace)
+
+    p = sp.add_parser("bmw-runtime-render-contract", help="build the exact BMW runtime render contract from shader selection and D3D9 capture")
+    p.add_argument("material_input", help="BMW material binding/evidence JSON")
+    p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
+    p.add_argument("primary_bff", help="primary BMW_M3_E36.bff")
+    p.add_argument("render_bff", help="RENDER.bff containing the selected FXO")
+    p.add_argument("output", help="SHIFT.BMWRuntimeRenderContract/1 JSON")
+    p.set_defaults(fn=cmd_bmw_runtime_render_contract)
 
     p = sp.add_parser("bmw-runtime-shader-select", help="select an exact BMW FXO permutation from captured D3D9 shader identity")
     p.add_argument("material_input", help="SHIFT.RealBMWMaterialBindingEvidence/1 or SHIFT.MaterialBinding/1 JSON")
