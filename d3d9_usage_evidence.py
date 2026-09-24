@@ -30,8 +30,8 @@ EXPECTED_USAGE_NAMES: dict[int, str | None] = {
 }
 
 
-def _line_number(source: str, needle: str) -> int | None:
-    offset = source.find(needle)
+def _line_number(source: str, needle: str, start: int = 0) -> int | None:
+    offset = source.find(needle, start)
     if offset < 0:
         return None
     return source.count("\n", 0, offset) + 1
