@@ -21,6 +21,7 @@ EVENTS = {
     "set_vertex_declaration",
     "set_stream_source",
     "set_indices",
+    "set_texture",
     "draw_indexed_primitive",
     "create_vertex_shader",
     "create_pixel_shader",
@@ -104,7 +105,7 @@ def build_runtime_binding_evidence(
     shaders: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
-        "constant_writes": [], "stream_sources": [], "index_binding": None, "draws": [],
+        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "draws": [],
     })
     blockers: list[dict[str, Any]] = []
 
@@ -149,6 +150,12 @@ def build_runtime_binding_evidence(
                 "index_buffer_ptr": _ptr(row.get("index_buffer_ptr")),
                 "line": row.get("_line"),
             }
+        elif event == "set_texture":
+            frame["texture_bindings"].append({
+                "stage": row.get("stage"),
+                "texture_ptr": _ptr(row.get("texture_ptr")),
+                "line": row.get("_line"),
+            })
         elif event in {"create_vertex_shader", "create_pixel_shader"}:
             pointer = _ptr(row.get("shader_ptr"))
             if not pointer:
