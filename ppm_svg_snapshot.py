@@ -6,44 +6,50 @@ import hashlib
 from pathlib import Path
 
 
-def _tokens(data: bytes):
-    i = 0
+def _next_token(data: bytes, position: int) -> tuple[bytes, int]:
     n = len(data)
+    i = position
     while i < n:
         while i < n and data[i] in b" \t\r\n":
             i += 1
-        if i >= n:
-            break
-        if data[i] == 35:  # '#'
+        if i < n and data[i] == 35:  # '#'
             while i < n and data[i] not in b"\r\n":
                 i += 1
             continue
-        start = i
-        while i < n and data[i] not in b" \t\r\n":
-            i += 1
-        yield data[start:i]
+        break
+    if i >= n:
+        raise ValueError("PPM header is truncated")
+    start = i
+    while i < n and data[i] not in b" \t\r\n":
+        i += 1
+    return data[start:i], i
 
 
 def read_ppm(path: str | Path) -> tuple[int, int, bytes]:
     data = Path(path).read_bytes()
     if not data.startswith(b"P6"):
         raise ValueError("only binary P6 PPM is supported")
-    tokens = _tokens(data)
-    magic = next(tokens)
-    width = int(next(tokens))
-    height = int(next(tokens))
-    max_value = int(next(tokens))
-    if magic != b"P6" or max_value != 255:
-        raise ValueError("PPM must be P6 with max value 255")
-    header = b"P6"
-    # Locate the payload by re-parsing the header robustly.
-    marker = f"{width} {height} 255".encode()
-    pos = data.find(marker)
-    if pos < 0:
-        raise ValueError("PPM header not found")
-    payload_start = pos + len(marker)
-    while payload_start < len(data) and data[payload_start] in b" \t\r\n":
-        payload_start += 1
+
+    magic, pos = _next_token(data, 0)
+    width_token, pos = _next_token(data, pos)
+    height_token, pos = _next_token(data, pos)
+    max_token, pos = _next_token(data, pos)
+
+    if magic != b"P6":
+        raise ValueError("only binary P6 PPM is supported")
+    width = int(width_token)
+    height = int(height_token)
+    max_value = int(max_token)
+    if width <= 0 or height <= 0 or max_value != 255:
+        raise ValueError("PPM must be P6 with positive dimensions and max value 255")
+
+    if pos >= len(data) or data[pos] not in b" \t\r\n":
+        raise ValueError("PPM header must end with whitespace")
+    if data[pos:pos + 2] == b"\r\n":
+        payload_start = pos + 2
+    else:
+        payload_start = pos + 1
+
     pixels = data[payload_start:]
     expected = width * height * 3
     if len(pixels) != expected:
