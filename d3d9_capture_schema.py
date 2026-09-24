@@ -15,7 +15,7 @@ EVENT_SPECS = {
     'create_pixel_shader': {'pointer':'shader_ptr'},
     'set_vertex_shader': {'pointer':'shader_ptr'},
     'set_pixel_shader': {'pointer':'shader_ptr'},
-    'draw_indexed_primitive': {},
+    'draw_indexed_primitive': {'pointer': None},
     'set_vertex_shader_constant_f': {'pointer':None},
     'set_pixel_shader_constant_f': {'pointer':None},
 }
