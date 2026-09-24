@@ -66,3 +66,10 @@ The producer also records `IDirect3DDevice9::SetTexture` as
 
 The hook uses vtable slot 65 and is used by the runtime shader selector to
 require real s0/s3 object bindings for the BMW bodywork material.
+
+### Texture resource descriptors
+
+Each `set_texture` event now optionally includes best-effort resource metadata:
+resource type, dimensions, format, pool and level count for 2D/cube textures
+(and width/height/depth for volume textures). Descriptor failure never drops the
+original bind event.
