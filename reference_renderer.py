@@ -16,7 +16,13 @@ from typing import Any, Iterable
 from render_command import validate_render_command
 from static_draw import build_static_draw_contract
 from texture_reference import sample_texture_2d
-from shader_reference import ReferenceShaderState, material_constants_from_uniform_binding, shader_program_from_ir, validate_pixel_program_inputs
+from shader_reference import (
+    ReferenceShaderState,
+    material_constants_from_payload,
+    material_constants_from_uniform_binding,
+    shader_program_from_ir,
+    validate_pixel_program_inputs,
+)
 
 
 RGBA = tuple[int, int, int, int]
@@ -352,6 +358,16 @@ def render_textured_render_command(
             raise ValueError("RenderCommand has no embedded pixel_program for shader reference")
         if shader_constants is None:
             for submesh in command.get("submeshes", []) or []:
+                payload = submesh.get("constant_payload")
+                if payload is not None:
+                    constant_result = material_constants_from_payload(payload)
+                    if constant_result["status"] == "unsupported":
+                        raise ValueError(
+                            "material constant payload unsupported: "
+                            + ", ".join(constant_result["blocking_reasons"])
+                        )
+                    shader_constants = constant_result["banks"]
+                    break
                 uniforms = submesh.get("uniforms") or {}
                 if uniforms.get("bindings"):
                     constant_result = material_constants_from_uniform_binding(uniforms)
@@ -707,6 +723,35 @@ def render_mesh_json(mesh: dict[str, Any], output: str | Path, *, width: int = 5
     }
 
 
+def _default_reference_sampler_register(command: dict[str, Any]) -> int:
+    """Choose the legacy single-image sampler without assuming sampler zero."""
+    for submesh in command.get("submeshes", []) or []:
+        for texture in submesh.get("textures", []) or []:
+            if texture.get("resource") == "external":
+                continue
+            register = texture.get("d3d9_sampler_register")
+            if register is not None:
+                return int(register)
+    for submesh in command.get("submeshes", []) or []:
+        program = (submesh.get("shader") or {}).get("pixel_program") or {}
+        samplers = program.get("samplers") or []
+        if samplers:
+            return int(samplers[0])
+    return 0
+
+
+def _decode_cli_texture_binding(spec: str) -> tuple[int, Path]:
+    register_text, separator, path_text = str(spec).partition("=")
+    if not separator or not register_text.strip() or not path_text.strip():
+        raise ValueError("expected SAMPLER_REGISTER=TEXTURE.dds")
+    try:
+        register = int(register_text, 10)
+    except ValueError as exc:
+        raise ValueError(f"invalid sampler register: {register_text!r}") from exc
+    if register < 0:
+        raise ValueError("sampler register must be non-negative")
+    return register, Path(path_text)
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Render neutral SHIFT mesh JSON or a DrawPacket to deterministic PPM")
     parser.add_argument("input", type=Path)
@@ -716,7 +761,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--render-command", action="store_true", help="treat input as SHIFT.RenderCommand/1 JSON")
     parser.add_argument("--textured", action="store_true", help="use the UV0 software texture reference path")
     parser.add_argument("--shader-reference", action="store_true", help="execute embedded pixel ShaderProgram/1 in software")
-    parser.add_argument("--texture", type=Path, help="DDS file used by --textured")
+    parser.add_argument("--texture", type=Path, help="legacy single DDS file; maps to the first material shader sampler")
+    parser.add_argument("--texture-binding", action="append", default=[], metavar="SLOT=PATH", help="explicit DDS mapping, repeatable, e.g. 1=body.dds")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
     args = parser.parse_args(argv)
@@ -728,15 +774,30 @@ def main(argv: list[str] | None = None) -> int:
         command = json.loads(args.input.read_text(encoding="utf-8"))
         mesh = json.loads(args.mesh.read_text(encoding="utf-8"))
         from texture_reference import decode_dds
-        image = decode_dds(args.texture.read_bytes())
+        texture_images: dict[int, dict[str, Any]] = {}
+        if args.texture is not None:
+            register = _default_reference_sampler_register(command)
+            texture_images[register] = decode_dds(args.texture.read_bytes())
+        for spec in args.texture_binding:
+            try:
+                register, path = _decode_cli_texture_binding(spec)
+            except ValueError as exc:
+                parser.error(str(exc))
+            if not path.exists():
+                parser.error(f"texture file not found: {path}")
+            texture_images[register] = decode_dds(path.read_bytes())
+        if not texture_images:
+            parser.error("--textured requires --texture or at least one --texture-binding")
+        legacy_image = next(iter(texture_images.values()))
         result = render_textured_render_command(
             command,
             mesh,
-            image,
+            legacy_image,
             args.output,
             width=args.width,
             height=args.height,
             shader_reference=args.shader_reference,
+            texture_images=texture_images,
         )
         result["sha256"] = hashlib.sha256(args.output.read_bytes()).hexdigest()
     elif args.render_command:
