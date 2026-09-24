@@ -442,7 +442,9 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
                 except (TypeError, ValueError):
                     reasons.append("uniform-payload:register-invalid")
                     continue
-                if len(values or []) != 4:
+                if not isinstance(values, list) or len(values) != 4 or any(
+                    not isinstance(value, (int, float)) for value in values
+                ):
                     reasons.append(f"uniform-payload:register-width-invalid:{reg}")
                 if byte_offset != reg * 16 or byte_size != 16:
                     reasons.append(f"uniform-payload:byte-range-invalid:{reg}")
