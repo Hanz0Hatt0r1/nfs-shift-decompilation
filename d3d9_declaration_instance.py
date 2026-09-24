@@ -17,8 +17,6 @@ from d3d9_type_profile import TYPE_PROFILE, TYPE_UNUSED
 
 FORMAT = "SHIFT.D3D9DeclarationInstanceEvidence/1"
 RECORD_STRIDE = 8
-FIELD_NAMES = ("stream", "offset", "type", "method", "usage", "usage_index")
-
 
 def decode_d3d9_declaration_records(
     payload: bytes,
@@ -82,11 +80,9 @@ def decode_d3d9_declaration_records(
         )
 
     insufficient_count = requested_count > available_records
-    if malformed_type_count:
+    if malformed_type_count or nonzero_method_count:
         status = "mismatch"
-    elif insufficient_count:
-        status = "partial"
-    elif trailing_bytes:
+    elif insufficient_count or trailing_bytes:
         status = "partial"
     else:
         status = "match"
