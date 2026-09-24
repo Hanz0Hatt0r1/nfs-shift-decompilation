@@ -212,3 +212,8 @@ The created declaration object is retained by the interning structure. This clos
 ## Phase 100: declaration count boundary
 
 The declaration creation path now has explicit evidence for its count rule. FUN_0082ea90 advances by 8-byte records and stops when the Stream WORD reaches 0xff or above; FUN_00830f80 uses the resulting count in an allocation of count * 8 + 8 bytes. This supports a terminator/reserved-record boundary, but exact D3DECL_END field semantics remain a separate observation.
+
+
+## Phase 101: exact D3DDECL_END producer
+
+The recovered loader now has direct source evidence for the complete declaration terminator. FUN_008587e0 writes all six fields of the final 8-byte record to the exact D3DDECL_END values at the index following the data records. This complements the count helper's Stream >= 0xff stop rule and the runtime decoder's exact sentinel recognition.
