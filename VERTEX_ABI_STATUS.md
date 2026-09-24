@@ -200,3 +200,10 @@ This is the missing source-side edge between the recovered 8-byte declaration re
 The source-backed declaration path now reaches the renderer's device API setup boundary. FUN_00854d30 applies the declaration, FUN_00854da0 binds a vertex stream source, and FUN_00854e10 binds the index buffer; the mesh render path calls these wrappers in declaration → stream → index order. The recovered source also contains an IDirect3DDevice9 indexed-draw dispatch at vtable slot 82.
 
 These are API-boundary observations rather than new vertex semantic inference. MEB 460/461 -> Type remains not-proven.
+
+
+## Phase 99: D3D9 declaration creation
+
+FUN_00830f80 now has an explicit machine-readable creation report. The recovered canonicalizer copies the 8-byte declaration record sequence into a new buffer sized as uVar1 * 8 + 8 and passes it through vtable slot 86 (0x158) identified as IDirect3DDevice9::CreateVertexDeclaration.
+
+The created declaration object is retained by the interning structure. This closes the source-side object creation boundary before Phase 97's SetVertexDeclaration bind. It does not select MEB 460/461 -> Type.

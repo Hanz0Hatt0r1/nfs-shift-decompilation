@@ -170,6 +170,7 @@ def analyze_d3d9_declaration_chain(
     runtime_layout_evidence: Mapping[str, Any] | None = None,
     api_bind_evidence: Mapping[str, Any] | None = None,
     render_api_evidence: Mapping[str, Any] | None = None,
+    declaration_create_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -183,6 +184,7 @@ def analyze_d3d9_declaration_chain(
     runtime_layout_evidence = runtime_layout_evidence or {}
     api_bind_evidence = api_bind_evidence or {}
     render_api_evidence = render_api_evidence or {}
+    declaration_create_evidence = declaration_create_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -292,10 +294,30 @@ def analyze_d3d9_declaration_chain(
         provenance_reports["api_bind"] = api_bind_evidence
     if render_api_evidence:
         provenance_reports["render_api"] = render_api_evidence
+    if declaration_create_evidence:
+        provenance_reports["declaration_create"] = declaration_create_evidence
     source_provenance = _source_provenance_check(provenance_reports)
 
     memory_layout_supplied = bool(runtime_layout_evidence)
     api_bind_supplied = bool(api_bind_evidence)
+    declaration_create_supplied = bool(declaration_create_evidence)
+    if declaration_create_supplied:
+        create_status = declaration_create_evidence.get("status")
+        create_link = _status(
+            declaration_create_evidence,
+            "semantic_links",
+            "canonical_record_bytes_to_create_call",
+            "status",
+        )
+        checks["d3d9_declaration_create"] = {
+            "status": (
+                "observed"
+                if create_status == "observed" and create_link == "observed"
+                else ("mismatch" if create_status == "mismatch" else "not-proven")
+            ),
+            "detail": "the canonicalized 8-byte declaration array reaches IDirect3DDevice9 CreateVertexDeclaration",
+        }
+
     render_api_supplied = bool(render_api_evidence)
     if render_api_supplied:
         render_status = render_api_evidence.get("status")
@@ -400,6 +422,8 @@ def analyze_d3d9_declaration_chain(
         required_keys.append("d3d9_api_bind")
     if render_api_supplied:
         required_keys.append("d3d9_render_api_boundary")
+    if declaration_create_supplied:
+        required_keys.append("d3d9_declaration_create")
     if instance_supplied:
         required_keys.append("declaration_instance")
     if memory_supplied:
@@ -444,6 +468,10 @@ def analyze_d3d9_declaration_chain(
                 render_api_evidence.get("status", "not-supplied")
                 if render_api_supplied else "not-supplied"
             ),
+            "declaration_create_status": (
+                declaration_create_evidence.get("status", "not-supplied")
+                if declaration_create_supplied else "not-supplied"
+            ),
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
@@ -478,6 +506,16 @@ def analyze_d3d9_declaration_chain(
             ),
         },
         "source_provenance": source_provenance,
+        "declaration_create_evidence": (
+            {
+                "format": declaration_create_evidence.get("format"),
+                "status": declaration_create_evidence.get("status"),
+                "api_identity": declaration_create_evidence.get("api_identity"),
+                "record_layout": declaration_create_evidence.get("record_layout"),
+                "semantic_links": declaration_create_evidence.get("semantic_links"),
+            }
+            if declaration_create_supplied else None
+        ),
         "render_api_evidence": (
             {
                 "format": render_api_evidence.get("format"),
@@ -539,6 +577,7 @@ def analyze_d3d9_declaration_chain_files(
     runtime_layout_evidence_path: str | Path | None = None,
     api_bind_evidence_path: str | Path | None = None,
     render_api_evidence_path: str | Path | None = None,
+    declaration_create_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -574,5 +613,10 @@ def analyze_d3d9_declaration_chain_files(
             None
             if render_api_evidence_path is None
             else load(render_api_evidence_path)
+        ),
+        declaration_create_evidence=(
+            None
+            if declaration_create_evidence_path is None
+            else load(declaration_create_evidence_path)
         ),
     )

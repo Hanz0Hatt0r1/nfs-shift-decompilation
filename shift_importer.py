@@ -1869,6 +1869,7 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
         runtime_layout_evidence_path=args.runtime_layout_evidence,
         api_bind_evidence_path=args.api_bind_evidence,
         render_api_evidence_path=args.render_api_evidence,
+        declaration_create_evidence_path=args.declaration_create_evidence,
     )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -2264,6 +2265,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9SourceVertexEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_source_evidence)
 
+    p = sp.add_parser("source-d3d9-declaration-create-evidence", help="analyze D3D9 vertex declaration creation in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9DeclarationCreateEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_declaration_create_evidence)
+
     p = sp.add_parser("source-d3d9-render-api-boundary", help="analyze declaration/stream/index/draw D3D9 API boundaries in SHIFT.exe.c")
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9RenderApiBoundaryEvidence/1 JSON output")
@@ -2339,6 +2345,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--runtime-layout-evidence", help="optional SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1 JSON input")
     p.add_argument("--api-bind-evidence", help="optional SHIFT.D3D9ApiBindEvidence/1 JSON input")
     p.add_argument("--render-api-evidence", help="optional SHIFT.D3D9RenderApiBoundaryEvidence/1 JSON input")
+    p.add_argument("--declaration-create-evidence", help="optional SHIFT.D3D9DeclarationCreateEvidence/1 JSON input")
     p.set_defaults(fn=cmd_d3d9_declaration_chain)
 
 
