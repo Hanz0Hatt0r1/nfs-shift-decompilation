@@ -40,8 +40,11 @@ def validate_bmw_golden_gate(
         packet_mesh.get("resource_sha256")
         or packet_mesh.get("resolved", {}).get("resource_sha256")
     )
-    if expected_sha is not None and observed_sha is not None and observed_sha != expected_sha:
-        reasons.append("mesh:resource-sha256-mismatch")
+    if expected_sha is not None:
+        if observed_sha is None:
+            reasons.append("mesh:resource-sha256-missing")
+        elif observed_sha != expected_sha:
+            reasons.append("mesh:resource-sha256-mismatch")
 
     for key in ("vertex_count", "triangle_count"):
         expected = mesh.get(key)
@@ -66,7 +69,7 @@ def validate_bmw_golden_gate(
             primitive_mismatches.append(index)
         expected_material = _norm(expected.get("material"))
         observed_material = _material_ref(observed)
-        if expected_material and observed_material and expected_material != observed_material:
+        if expected_material and observed_material != expected_material:
             primitive_mismatches.append(index)
     if primitive_mismatches:
         reasons.append("draw:primitive-definition-mismatch")
