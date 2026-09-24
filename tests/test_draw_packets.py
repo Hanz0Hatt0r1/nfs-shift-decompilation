@@ -477,3 +477,84 @@ def test_draw_packet_preserves_meb_property_descriptors():
     result = build_draw_packets(scene, mesh, material, texture, shader)
     descriptors = result["packets"][0]["mesh"]["property_descriptors"]
     assert descriptors == mesh[0]["analysis"]["property_descriptors"]
+
+
+def _bmw_paint_compile_material(binding_rows=None, specializations=None, material_ref="vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx"):
+    from draw_packets import compile_material
+
+    rows = binding_rows if binding_rows is not None else [
+        {
+            "texture_parameter": "diffuseTexture",
+            "sampler": "diffuseMap",
+            "d3d9_sampler_register": 1,
+            "min_filter": "Linear", "mag_filter": "Linear", "mip_filter": "Linear",
+            "address_u": "Wrap", "address_v": "Wrap", "srgb": True,
+            "binding": "material-texture",
+        },
+        {
+            "texture_parameter": "specularTexture",
+            "sampler": "specularMap",
+            "d3d9_sampler_register": 2,
+            "min_filter": "Linear", "mag_filter": "Linear", "mip_filter": "Linear",
+            "address_u": "Wrap", "address_v": "Wrap", "srgb": True,
+            "binding": "material-texture",
+        },
+        {
+            "texture_parameter": "scratchControlTexture",
+            "sampler": "scratchControlMap",
+            "d3d9_sampler_register": 4,
+            "min_filter": "Linear", "mag_filter": "Linear", "mip_filter": "None",
+            "address_u": "Clamp", "address_v": "Clamp", "srgb": False,
+            "binding": "material-texture",
+        },
+        {
+            "sampler": "environmentMap",
+            "d3d9_sampler_register": 3,
+            "sampler_type": "samplerCube",
+            "binding": "external-or-specialised",
+        },
+        {
+            "sampler": "sShadowMap_f1_0",
+            "d3d9_sampler_register": 0,
+            "sampler_type": "sampler2D",
+            "binding": "external-or-specialised",
+        },
+    ]
+    material = {
+        "name": "BMW_M3_E36_PAINT",
+        "shader": "bodywork.fx",
+        "specializations": specializations or ["USE_FRESNEL", "ALLOW_VINYLS", "DIRT_SCRATCH"],
+        "shaderparams": [
+            {"name": "diffuseTexture", "resource_type": "EPT_TEXTURE", "value": "COMMON_PAINT.dds"},
+            {"name": "specularTexture", "resource_type": "EPT_TEXTURE", "value": "COMMON_PAINT_SPECULAR.dds"},
+            {"name": "scratchControlTexture", "resource_type": "EPT_TEXTURE", "value": "COMMON_BLANK.dds"},
+        ],
+    }
+    return compile_material(
+        {"analysis": {"material": material}},
+        material_ref,
+        {},
+        {},
+        {},
+        {},
+        None,
+        {"bindings": rows, "selected_fxo": {"specialization_matched": specializations or ["USE_FRESNEL", "ALLOW_VINYLS", "DIRT_SCRATCH"]}},
+    )
+
+
+def test_compile_material_enforces_exact_bmw_paint_contract():
+    material = _bmw_paint_compile_material()
+    assert material["paint_contract"]["ready"] is True
+    assert material["blocking_reasons"] == []
+
+
+def test_compile_material_blocks_bmw_paint_contract_on_missing_sampler():
+    rows = _bmw_paint_compile_material(binding_rows=[])
+    assert rows["paint_contract"]["ready"] is False
+    assert "paint-contract:not-ready" in rows["blocking_reasons"]
+
+
+def test_non_bmw_material_does_not_activate_paint_contract():
+    material = _bmw_paint_compile_material(material_ref="vehicles/other/PAINT.mtx")
+    assert material["paint_contract"] is None
+    assert material["blocking_reasons"] == []
