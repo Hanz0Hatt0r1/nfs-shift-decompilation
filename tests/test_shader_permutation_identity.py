@@ -4,14 +4,18 @@ from shader_permutation_identity import build_shader_permutation_identity
 
 
 def _pair():
-    from tests.test_material_linker import synthetic_linkable_fxo_pair
+    from test_material_linker import synthetic_linkable_fxo_pair
     return synthetic_linkable_fxo_pair()
 
 
 def test_shader_permutation_identity_is_stable_for_same_pair():
     data = _pair()
-    first = build_shader_permutation_identity(data, vertex_offset=0, pixel_offset=84)
-    second = build_shader_permutation_identity(data, vertex_offset=0, pixel_offset=84)
+    from shader_ir import parse_shader_blobs
+    blobs = parse_shader_blobs(data)
+    vertex = next(blob for blob in blobs if blob.stage == "vertex")
+    pixel = next(blob for blob in blobs if blob.stage == "pixel")
+    first = build_shader_permutation_identity(data, vertex_offset=vertex.offset, pixel_offset=pixel.offset)
+    second = build_shader_permutation_identity(data, vertex_offset=vertex.offset, pixel_offset=pixel.offset)
     assert first == second
     assert first['format'] == 'SHIFT.ShaderPermutationIdentity/1'
     assert len(first['identity_sha256']) == 64
@@ -23,8 +27,12 @@ def test_shader_permutation_identity_is_stable_for_same_pair():
 
 def test_shader_permutation_identity_changes_when_pixel_bytes_change():
     data = bytearray(_pair())
-    original = build_shader_permutation_identity(bytes(data), vertex_offset=0, pixel_offset=84)
-    data[-5] ^= 1
-    changed = build_shader_permutation_identity(bytes(data), vertex_offset=0, pixel_offset=84)
+    from shader_ir import parse_shader_blobs
+    blobs = parse_shader_blobs(bytes(data))
+    vertex = next(blob for blob in blobs if blob.stage == "vertex")
+    pixel = next(blob for blob in blobs if blob.stage == "pixel")
+    original = build_shader_permutation_identity(bytes(data), vertex_offset=vertex.offset, pixel_offset=pixel.offset)
+    data[pixel.offset + 8] ^= 1
+    changed = build_shader_permutation_identity(bytes(data), vertex_offset=vertex.offset, pixel_offset=pixel.offset)
     assert original['pair_byte_sha256'] != changed['pair_byte_sha256']
     assert original['identity_sha256'] != changed['identity_sha256']
