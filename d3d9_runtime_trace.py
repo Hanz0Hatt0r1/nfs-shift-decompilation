@@ -22,6 +22,8 @@ EVENTS = {
     "set_stream_source",
     "set_indices",
     "set_texture",
+    "present_screenshot",
+    "present_screenshot_failed",
     "draw_indexed_primitive",
     "create_vertex_shader",
     "create_pixel_shader",
@@ -105,7 +107,7 @@ def build_runtime_binding_evidence(
     shaders: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
-        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "draws": [],
+        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "screenshot_events": [], "draws": [],
     })
     blockers: list[dict[str, Any]] = []
 
