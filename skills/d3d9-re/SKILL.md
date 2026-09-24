@@ -100,3 +100,8 @@ For `vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx`, `bmw_golden_gate.py` requires `p
 ## BMW asset contract
 
 `bmw_m3_paint_asset_contract.py` locks the exact M3 golden MEB identity, paint primitive ranges and manifest provenance before material/shader/runtime joins.
+
+
+## Specialization evidence
+
+Consume `MaterialBinding/1.specialization.requested` when validating the BMW M3 paint contract. Do not convert a structured specialization report to dictionary-key names.
