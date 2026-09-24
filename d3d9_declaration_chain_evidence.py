@@ -564,12 +564,15 @@ def analyze_d3d9_declaration_chain(
             "render_setup_to_draw",
             "status",
         )
+        render_boundary_ready = (
+            render_status == "observed"
+            and render_links == "observed"
+            and draw_link == "observed"
+        )
         checks["d3d9_render_api_boundary"] = {
             "status": (
                 "observed"
-                if render_status == "observed"
-                and render_links == "observed"
-                and draw_link == "observed"
+                if render_boundary_ready
                 else ("mismatch" if render_status == "mismatch" else "not-proven")
             ),
             "detail": "source-backed declaration/stream/index setup reaches the indexed D3D9 draw API boundary",
