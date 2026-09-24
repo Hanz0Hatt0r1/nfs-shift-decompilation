@@ -1,0 +1,234 @@
+"""Cross-check the recovered D3D9 declaration evidence chain.
+
+This module intentionally joins already-proven evidence reports instead of
+reconstructing facts a second time. It checks that the recovered Type tables,
+STREAM topology, 8-byte declaration record and canonicalizer all agree on the
+same declaration ABI. MEB 460/461 -> Type remains explicitly unresolved.
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Mapping
+
+FORMAT = "SHIFT.D3D9DeclarationChainEvidence/1"
+EXPECTED_RECORD_STRIDE = 8
+EXPECTED_GROUP_STRIDE = 0x14
+EXPECTED_TYPE_MATCHES = 17
+
+def _status(report: Mapping[str, Any], *path: str) -> str:
+    value: Any = report
+    for key in path:
+        if not isinstance(value, Mapping):
+            return "not-found"
+        value = value.get(key)
+    return str(value) if value is not None else "not-found"
+
+def _count_observed_fields(report: Mapping[str, Any]) -> tuple[int, int]:
+    fields = report.get("fields", [])
+    if not isinstance(fields, list):
+        return (0, 0)
+    total = len(fields)
+    observed = sum(
+        isinstance(row, Mapping) and row.get("status") == "observed"
+        for row in fields
+    )
+    return observed, total
+
+def _source_signature(report: Mapping[str, Any]) -> dict[str, Any]:
+    source = report.get("source", {})
+    if not isinstance(source, Mapping):
+        return {}
+    return {
+        key: source.get(key)
+        for key in ("kind", "bytes", "line_count")
+        if source.get(key) is not None
+    }
+
+def analyze_d3d9_declaration_chain(
+    *,
+    type_profile: Mapping[str, Any] | None = None,
+    stream_topology: Mapping[str, Any] | None = None,
+    stream_record: Mapping[str, Any] | None = None,
+    canonicalizer: Mapping[str, Any] | None = None,
+    pe_evidence: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Join independent evidence reports into one conservative chain result."""
+
+    type_profile = type_profile or {}
+    stream_topology = stream_topology or {}
+    stream_record = stream_record or {}
+    canonicalizer = canonicalizer or {}
+    pe_evidence = pe_evidence or {}
+
+    type_validation = _status(type_profile, "validation", "status")
+    type_match_count = _status(type_profile, "validation", "match_count")
+    topology_status = _status(stream_topology, "status")
+    topology_group_stride = stream_topology.get("grouping", {}).get("group_stride")
+    record_status = _status(stream_record, "status")
+    record_stride = stream_record.get("record", {}).get("stride")
+    observed_fields, total_fields = _count_observed_fields(stream_record)
+    canonicalizer_status = _status(canonicalizer, "status")
+    canonicalizer_identity = _status(
+        canonicalizer, "canonicalization", "full_record_identity"
+    )
+
+    checks = {
+        "type_table_semantics": {
+            "status": "observed"
+            if type_validation == "match" and type_match_count == EXPECTED_TYPE_MATCHES
+            else ("not-proven" if type_validation == "not-found" else type_validation),
+            "detail": (
+                "file-backed Type size/component tables match all recovered "
+                "Type codes 0..16"
+            ),
+        },
+        "stream_grouping": {
+            "status": "observed"
+            if topology_status == "observed"
+            and topology_group_stride == EXPECTED_GROUP_STRIDE
+            else "not-proven",
+            "detail": "FUN_00854e70 groups declaration elements by Stream using a 0x14-byte group",
+        },
+        "declaration_record_shape": {
+            "status": "observed"
+            if record_status == "observed"
+            and record_stride == EXPECTED_RECORD_STRIDE
+            and observed_fields == total_fields == 6
+            else "not-proven",
+            "detail": "the XML STREAM builder emits the six 8-byte D3DVERTEXELEMENT9-shaped fields",
+        },
+        "full_record_identity": {
+            "status": "observed"
+            if canonicalizer_status == "observed"
+            and canonicalizer_identity == "observed"
+            else "not-proven",
+            "detail": "FUN_00830f80 compares the complete 8-byte declaration record",
+        },
+        "xml_type_to_record_type": {
+            "status": _status(
+                stream_record, "semantic_links", "xml_type_to_record_type_code", "status"
+            ),
+        },
+        "xml_usage_to_record_usage": {
+            "status": _status(
+                stream_record,
+                "semantic_links",
+                "xml_usage_to_record_usage_code",
+                "status",
+            ),
+        },
+        "xml_channel_to_usage_index": {
+            "status": _status(
+                stream_record,
+                "semantic_links",
+                "xml_channel_to_record_usage_index",
+                "status",
+            ),
+        },
+        "stream_group_to_record_pointer": {
+            "status": _status(
+                stream_topology,
+                "semantic_links",
+                "stream_group_to_record_pointer",
+                "status",
+            ),
+        },
+        "type_to_group_byte_size": {
+            "status": _status(
+                stream_topology,
+                "semantic_links",
+                "type_to_group_byte_size",
+                "status",
+            ),
+        },
+    }
+
+    required_keys = (
+        "type_table_semantics",
+        "stream_grouping",
+        "declaration_record_shape",
+        "full_record_identity",
+        "xml_type_to_record_type",
+        "xml_usage_to_record_usage",
+        "xml_channel_to_usage_index",
+        "stream_group_to_record_pointer",
+        "type_to_group_byte_size",
+    )
+    blocking = [
+        key for key in required_keys if checks[key]["status"] != "observed"
+    ]
+    pe_validation = _status(pe_evidence, "type_profile_validation", "validation", "status")
+    pe_available = bool(pe_evidence)
+    meb_status = "not-proven"
+
+    return {
+        "format": FORMAT,
+        "status": "observed" if not blocking else "not-proven",
+        "chain": {
+            "source": "SHIFT.exe.c",
+            "type_tables": "D3D9 Type size/component tables",
+            "stream_topology": "FUN_00854e70",
+            "declaration_record": "FUN_008587e0",
+            "canonicalizer": "FUN_00830f80",
+        },
+        "checks": checks,
+        "summary": {
+            "required_checks": len(required_keys),
+            "observed_checks": len(required_keys) - len(blocking),
+            "blocking_checks": blocking,
+            "type_match_count": type_match_count,
+            "record_stride": record_stride,
+            "group_stride": topology_group_stride,
+            "record_fields_observed": observed_fields,
+            "record_fields_expected": total_fields,
+            "pe_type_profile_status": pe_validation if pe_available else "not-supplied",
+        },
+        "evidence_boundary": {
+            "source_backed": all(
+                value in {"observed", "match"}
+                for value in (
+                    topology_status,
+                    record_status,
+                    canonicalizer_status,
+                    checks["xml_type_to_record_type"]["status"],
+                    checks["xml_usage_to_record_usage"]["status"],
+                    checks["xml_channel_to_usage_index"]["status"],
+                )
+            ),
+            "pe_file_backed_validation": pe_validation if pe_available else "not-supplied",
+            "runtime_memory_dump": "not-supplied",
+            "runtime_declaration_instance": "not-supplied",
+        },
+        "meb_property_mapping": {
+            "status": meb_status,
+            "detail": "No joined evidence in this chain assigns MEB properties 460/461 to a D3D9 Type ordinal.",
+        },
+        "source_signatures": {
+            "stream_topology": _source_signature(stream_topology),
+            "stream_record": _source_signature(stream_record),
+            "canonicalizer": _source_signature(canonicalizer),
+        },
+    }
+
+def analyze_d3d9_declaration_chain_files(
+    type_profile_path: str | Path,
+    stream_topology_path: str | Path,
+    stream_record_path: str | Path,
+    canonicalizer_path: str | Path,
+    *,
+    pe_evidence_path: str | Path | None = None,
+) -> dict[str, Any]:
+    def load(path: str | Path) -> dict[str, Any]:
+        value = json.loads(Path(path).read_text(encoding="utf-8"))
+        if not isinstance(value, dict):
+            raise ValueError(f"expected JSON object: {path}")
+        return value
+
+    return analyze_d3d9_declaration_chain(
+        type_profile=load(type_profile_path),
+        stream_topology=load(stream_topology_path),
+        stream_record=load(stream_record_path),
+        canonicalizer=load(canonicalizer_path),
+        pe_evidence=None if pe_evidence_path is None else load(pe_evidence_path),
+    )
