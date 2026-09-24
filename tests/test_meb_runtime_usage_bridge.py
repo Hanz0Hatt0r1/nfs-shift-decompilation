@@ -16,7 +16,7 @@ def _runtime(records, resource_sha='sha'):
     return {
         'format':'SHIFT.D3D9RuntimeBindingEvidence/1',
         'declarations':[{'pointer':'0x1','decoded':{'records':records}}],
-        'frames':[{'frame':1,'vertex_declaration':{'declaration_ptr':'0x1','resource_sha256':resource_sha}],
+        'frames':[{'frame':1,'vertex_declaration':{'declaration_ptr':'0x1','resource_sha256':resource_sha}}],
     }
 
 
