@@ -1322,6 +1322,8 @@ def render_skinned_draw_reference(
                     ("BINORMAL", 0): skinned_mesh["mesh"].get("tangents2"),
                     ("BLENDWEIGHT", 0): skinned_mesh["mesh"].get("bone_weights"),
                     ("BLENDINDICES", 0): skinned_mesh["mesh"].get("bone_indices"),
+                    ("COLOR", 0): _source_color_rows(skinned_mesh["mesh"], "460"),
+                    ("COLOR", 1): _source_color_rows(skinned_mesh["mesh"], "461"),
                 }.items()
                 if rows
             },
