@@ -11,7 +11,7 @@ compatible with D3DVERTEXELEMENT9:
 
 This module records those writes from the recovered Ghidra C without assigning
 MEB property ids to the records.
-""
+"""
 from __future__ import annotations
 
 from typing import Any
@@ -97,7 +97,7 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
         }
 
     markers = {
-        "function_line": function_start,
+        "function_line": text.count("\n", 0, function_start) + 1,
         "stream_field": _contains_all(
             text,
             (
