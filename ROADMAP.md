@@ -670,3 +670,7 @@ The next blocker for the first paint image is therefore data availability: the e
 ## Phase 156: real BMW material slice with external FX
 
 The real BMW material-slice builder now accepts an external `bodywork.fx` while retaining BMT, MEB, cached FXO permutations and DDS dependency evidence from the original BMW BFF set. The resulting slice continues through StaticDraw/1 and RenderCommand/1. This removes the previous source-location limitation; the remaining paint-render blockers are the actual FX byte payload and any external render-global textures required by the selected permutation.
+
+## Phase 157: real BMW MEB + DDS texture preview
+
+The desktop reference path now has a direct real-data texture adapter: the BMW M3 body MEB and COMMON_PAINT.dds are decoded from the original BFF, UV0 property 130 is sampled through the existing software renderer, and the output receives deterministic resource/render hashes. The phase is deliberately shader-free; the real paint color still belongs to material constants and bodywork.fx execution.
