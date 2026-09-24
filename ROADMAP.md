@@ -133,3 +133,10 @@ Phase 63 adds a `SHIFT.RenderCommand/1` adapter for `SHIFT.SkinnedDraw/1`. The c
 ## Phase 64: RenderCommand → GLES skinning ABI
 
 The GLES 3.1 skinning contract can now be built directly from a skinned `SHIFT.RenderCommand/1`. This keeps SkinPose, palette size and BLENDWEIGHT0/BLENDINDICES0 locations identical between the neutral submission layer and the future Android renderer.
+
+
+## Phase 65: explicit extended shader semantics
+
+`TEXCOORD5` is proven in the BMW bodywork shader interface, but no MEB property id for its source stream has been established. The reference path therefore accepts an explicit per-vertex semantic stream keyed by `(TEXCOORD, 5)` instead of inventing a property mapping. Without that stream, the shader remains blocked.
+
+This mechanism is generic enough to carry future evidence-backed semantics while keeping the MEB ABI table strict. The next evidence milestone remains exact COLOR0/COLOR1 declaration and channel order.
