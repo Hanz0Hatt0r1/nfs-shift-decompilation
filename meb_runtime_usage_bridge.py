@@ -43,8 +43,8 @@ def build_usage_ordinal_bridge(material_slice: Mapping[str, Any], runtime_report
             usages=sorted({int(r.get('usage')) for r in matches if r.get('usage') is not None})
             row={'frame':frame.get('frame'),'property_id':str(descriptor.get('id')),'type_ordinal':type_ordinal,'usage_ordinal':usage_ordinal,'channel':channel,'declaration_ptr':binding.get('declaration_ptr'),'candidate_runtime_usages':usages,'status':'match' if len(usages)==1 else ('ambiguous' if len(usages)>1 else 'not-found')}
             evidence_rows.append(row)
-            if len(usages)==1:
-                observations.setdefault(usage_ordinal,[]).append(usages[0])
+            if usages:
+                observations.setdefault(usage_ordinal,[]).extend(usages)
     mapping={}; conflicts=[]; unmapped=[]
     for ordinal, usages in sorted(observations.items()):
         unique=sorted(set(usages))
