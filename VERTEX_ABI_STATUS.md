@@ -93,3 +93,16 @@ than `D3DDECLTYPE_UBYTE4N`. The exact MEB declaration remains ambiguous.
 - `UBYTE4N` candidate: RGBA bytes are consumed in memory order and normalized;
 - `D3DCOLOR` candidate: packed BGRA memory is expanded to shader-visible RGBA;
 - no candidate is selected automatically.
+
+## Phase 74: machine-readable SHIFT.exe source evidence
+
+`d3d9_source_evidence.py` and `shift_importer.py source-d3d9-evidence` now turn the
+recovered `SHIFT.exe.c` observations into a reproducible JSON report. The extractor
+records `FUN_008310c0` as the packed-color helper and `FUN_00854e70` as the vertex
+conversion/declaration path where type code 4 calls that helper. It also records the
+`STREAM` parser's `Type`, `Usage` and `Channel` fields.
+
+The extractor deliberately reports `MEB 460/461 -> type 4` as `not-proven`: the
+exported C does not expose the contents of `DAT_00b90088` / `PTR_DAT_00b901d0` well
+enough to establish that exact property-to-type linkage. Therefore phase 74 improves
+provenance and repeatability without changing the runtime ABI selection.
