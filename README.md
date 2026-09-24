@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 142** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 143** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -751,3 +751,8 @@ The exact BMW M3 golden MEB is now machine-checked against its paint primitive r
 ## Phase 142: specialization evidence bridge
 
 The M3 paint contract now accepts the structured specialization evidence emitted by the material linker, preserving the existing requested-feature provenance through compile and shader gates.
+
+
+## Phase 143: source vehicle identity
+
+The uploaded `SHIFT.exe.c` now has a machine-checked source anchor for vehicle case 2 → `bmw_m3_e36`, tied to the exact golden MEB namespace and source SHA.
