@@ -359,9 +359,13 @@ def render_textured_static_draw(
         samplers_by_sampler=samplers_by_sampler,
         uv_layers=uv_layers,
         semantic_rows={
-            ("NORMAL", 0): mesh.get("normals") or [],
-            ("TANGENT", 0): mesh.get("tangents") or [],
-            ("BINORMAL", 0): mesh.get("tangents2") or [],
+            key: rows
+            for key, rows in {
+                ("NORMAL", 0): mesh.get("normals"),
+                ("TANGENT", 0): mesh.get("tangents"),
+                ("BINORMAL", 0): mesh.get("tangents2"),
+            }.items()
+            if rows
         },
     )
     out = Path(output)
