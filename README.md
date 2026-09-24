@@ -211,6 +211,10 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
 
 Контракт собирает выбранную VS/PS permutation из реального FXO, переводит её в `LinkedShaderPair/1`, разделяет captured D3D9 constants по стадиям VS/PS и фиксирует bound external texture objects. `reference_render_ready` остаётся false, пока содержимое external resources не предоставлено отдельно.
 
+### Runtime texture resource type gate
+
+Exact shader selection теперь проверяет не только наличие `SetTexture`, но и тип внешнего ресурса: `s0/sShadowMap_f1_0` должен быть `texture2d`, а `s3/environmentMap` — `cube_texture` по объявленному sampler ABI. Несовпадение оставляет selection `not-found` и не допускается в shader execution.
+
 ### Exact runtime shader selection
 
 После `bmw-material-from-bff` и получения реального D3D9 capture можно строго выбрать одну FXO permutation:
