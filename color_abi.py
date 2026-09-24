@@ -37,6 +37,9 @@ D3D9_COLOR_CANDIDATES = (
 D3D9_COLOR_TYPES = {
     item["d3d9_type"]: item for item in D3D9_COLOR_CANDIDATES
 }
+D3D9_COLOR_ORDERS = {
+    item["order"]: item for item in D3D9_COLOR_CANDIDATES
+}
 
 
 def _validate_payload(property_id: str, payload: bytes) -> None:
@@ -115,7 +118,7 @@ def build_color_abi_evidence(
     candidates: list[dict[str, Any]] = []
     for order in CANDIDATE_ORDERS:
         rgba = interpret_color_bytes(raw, order)
-        candidate_type = D3D9_COLOR_TYPES[order]
+        candidate_type = D3D9_COLOR_ORDERS[order]
         candidates.append({
             "order": order,
             "d3d9_type": candidate_type["d3d9_type"],
