@@ -57,3 +57,8 @@ The software shader reference now executes D3D9 vertex-shader a0 relative consta
 ## Phase 54: vertex stage reference boundary
 
 The software reference executor now exposes all written shader outputs to the renderer, enabling a bounded vertex-stage execution path. POSITION/TEXCOORD/NORMAL/TANGENT/BINORMAL semantics that are already represented in the neutral MEB contract can flow through the VS->PS reference boundary; unresolved semantics remain explicit blockers.
+
+
+## Phase 53: vertex shader reference adapter
+
+The reference execution layer now exposes typed D3D9 shader output registers and a standalone vertex-stage adapter. Neutral MEB POSITION/NORMAL/TANGENT/BINORMAL/TEXCOORD0..4 data can feed declared vertex input registers; POSITION/POSITIONT and varying outputs are recovered by typed output-register identity, so `oR0` and `oT0` cannot alias merely because both use index 0.
