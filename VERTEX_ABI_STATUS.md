@@ -241,3 +241,14 @@ The recovered vertex/index binding wrappers now expose their device-call argumen
 `d3d9_color_bridge_evidence.py` now records explicit D3D9 candidate Type codes for the unresolved color properties: **4 = D3DCOLOR** and **8 = UBYTE4N**. The existing MEB parser establishes 4-byte normalized `u8x4` storage for 460/461; the recovered executable source establishes a separate Type-4 packed-color path and `Colour` stream family.
 
 Neither observation links property 460/461 to one declaration Type. The new evidence schema keeps the final property mapping at `not-proven` and can optionally record runtime COLOR declaration Type bytes without treating them as property identity proof. The intended fail-closed closure condition is a same-instance correlation across the MEB payload, declaration record and D3D9 render/bind boundary.
+
+## Phase 106: MEB bridge integrated into declaration chain
+
+`validate-d3d9-declaration-chain` now accepts the optional
+`--meb-color-bridge-evidence` input. The integrated gate checks both 460/461
+properties and the explicit D3D9 candidate codes 4 and 8, while requiring the
+bridge's final mapping to remain `not-proven`.
+
+A coherent ambiguous bridge can therefore travel through the same evidence
+pipeline as the declaration lifecycle, binding and runtime evidence without
+claiming that MEB 460/461 have been assigned to one declaration Type.
