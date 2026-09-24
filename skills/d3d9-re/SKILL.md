@@ -90,3 +90,8 @@ For the exact BMW M3 paint material, `compile_material()` invokes `SHIFT.BMWM3Pa
 ## BMW paint shader gate
 
 `bmw_m3_paint_shader_gate.py` enforces unique exact FXO selection, VS/PS pair validity and permutation identity for the documented BMW M3 paint material. It is fail-closed and does not invent a shader permutation.
+
+
+## BMW golden shader gate
+
+For `vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx`, `bmw_golden_gate.py` requires `paint_shader_gate.ready == true` as well as the existing paint contract. Other materials are unaffected.

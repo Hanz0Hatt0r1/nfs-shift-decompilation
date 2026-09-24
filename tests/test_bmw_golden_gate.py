@@ -36,6 +36,16 @@ def _packet(status="unique"):
                     "status": status,
                     "vertex_pair_selection_status": "unique",
                     "linked_shader_pair": {"format": "SHIFT.LinkedShaderPair/1"},
+                    "permutation_identity": {
+                        "format": "SHIFT.ShaderPermutationIdentity/1",
+                        "identity_sha256": "a" * 64,
+                    },
+                },
+                "paint_shader_gate": {
+                    "format": "SHIFT.BMWM3PaintShaderGate/1",
+                    "status": "ready",
+                    "ready": True,
+                    "blocking_reasons": [],
                 },
             },
         }],
@@ -97,3 +107,32 @@ def test_bmw_golden_gate_accepts_ready_paint_contract():
     packet["submeshes"][0]["material"]["paint_contract"]={"ready":True,"blocking_reasons":[]}
     report=validate_bmw_golden_gate(golden,packet)
     assert report["ready"] is True
+
+
+def test_bmw_golden_gate_blocks_missing_bmw_paint_shader_gate():
+    golden=_golden()
+    packet=_packet()
+    packet["submeshes"][0]["material"]["paint_shader_gate"] = None
+    report=validate_bmw_golden_gate(golden,packet)
+    assert report["ready"] is False
+    assert "paint-shader:0:missing" in report["blocking_reasons"]
+
+
+def test_bmw_golden_gate_requires_shader_gate_only_for_exact_m3_paint():
+    golden=_golden()
+    packet=_packet()
+    packet["submeshes"][0]["material"]["ref"]="vehicles/bmw/bmw_m3_badging.mtx"
+    packet["submeshes"][0]["material"].pop("paint_shader_gate", None)
+    report=validate_bmw_golden_gate(golden,packet)
+    assert report["ready"] is True
+
+
+def test_bmw_golden_gate_requires_shader_gate_for_exact_m3_paint_path():
+    golden=_golden()
+    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
+    packet=_packet()
+    packet["submeshes"][0]["material"]["ref"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
+    packet["submeshes"][0]["material"].pop("paint_shader_gate", None)
+    report=validate_bmw_golden_gate(golden,packet)
+    assert report["ready"] is False
+    assert "paint-shader:0:missing" in report["blocking_reasons"]

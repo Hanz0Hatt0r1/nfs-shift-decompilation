@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 139. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 140. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -574,3 +574,10 @@ Next: run the gate on a real extracted BMW M3 resource analysis/material-binding
 `SHIFT.BMWM3PaintShaderGate/1` is now part of the exact M3 paint render path. It requires unique exact FXO selection, unique VS/PS pairing, a linked shader pair, a valid permutation identity, documented sampler registers and no unresolved material textures. Heuristic or ambiguous shader selection is fail-closed and propagates into `StaticDraw/1`.
 
 Next: run the actual BMW M3 BMT/FXO analysis output through the complete material contract without synthetic substitution; then the only remaining external proof gap is same-instance runtime capture.
+
+
+## Phase 140: BMW golden shader gate
+
+`SHIFT.BMWGoldenRenderGate/1` now consumes `paint_shader_gate` for the exact BMW M3 paint material. The gate will not accept a paint primitive unless both the evidence-backed sampler contract and unique exact FXO/VS/PS permutation identity are ready. Non-paint materials remain on the generic path.
+
+Next: generate and validate a real M3 `MaterialBinding/1` from the extracted BFF analysis. The runtime capture remains the last external proof needed for same-instance parity.
