@@ -659,6 +659,12 @@ def render_textured_render_command(
                 break
     vertex_program = None
     pixel_program = None
+    effective_texture_images = (
+        {int(k): v for k, v in (texture_images or {}).items()}
+        if texture_images is not None
+        else None
+    )
+    external_requirements: dict[int, dict[str, Any]] = {}
     if shader_reference:
         programs = [
             (submesh.get("shader") or {}).get("vertex_program")
@@ -722,9 +728,8 @@ def render_textured_render_command(
                 raise ValueError(
                     f"external sampler s{register} ({required_type}) requires a dedicated reference resource implementation"
                 )
-        effective_texture_images = {
-            int(k): v for k, v in (texture_images or {}).items()
-        }
+        if effective_texture_images is None:
+            effective_texture_images = {}
         if not effective_texture_images:
             legacy_register = None
             for submesh in command.get("submeshes", []) or []:
