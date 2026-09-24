@@ -127,6 +127,7 @@ def test_bmw_golden_gate_requires_shader_gate_only_for_exact_m3_paint():
     packet=_packet()
     packet["submeshes"][0]["material"]["ref"]="vehicles/bmw/bmw_m3_badging.mtx"
     packet["submeshes"][0]["material"].pop("paint_shader_gate", None)
+    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw/bmw_m3_badging.mtx"
     report=validate_bmw_golden_gate(golden,packet)
     assert report["ready"] is True
 
@@ -156,15 +157,26 @@ def test_bmw_golden_gate_reports_exact_asset_contract_from_repo_manifest():
     packet["mesh"]["ref"]=golden["golden"]["resource"]
     packet["mesh"]["vertex_count"]=golden["mesh"]["vertex_count"]
     packet["mesh"]["triangle_count"]=golden["mesh"]["triangle_count"]
-    packet["submeshes"][0]["material"]["ref"]=golden["mesh"]["primitives"][1]["material"]
-    packet["submeshes"][0]["first_index"]=golden["mesh"]["primitives"][1]["first_index"]
-    packet["submeshes"][0]["index_count"]=golden["mesh"]["primitives"][1]["index_count"]
-    packet["submeshes"][0]["material"]["paint_shader_gate"]={
-        "format":"SHIFT.BMWM3PaintShaderGate/1",
-        "status":"ready",
-        "ready":True,
-        "blocking_reasons":[],
-    }
+    base_material=packet["submeshes"][0]["material"]
+    packet["submeshes"]=[]
+    paint_path="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
+    for primitive in golden["mesh"]["primitives"]:
+        material=dict(base_material)
+        material["ref"]=primitive["material"]
+        if str(primitive["material"]).replace("\\","/").strip("/").lower()!=paint_path:
+            material.pop("paint_shader_gate",None)
+        else:
+            material["paint_shader_gate"]={
+                "format":"SHIFT.BMWM3PaintShaderGate/1",
+                "status":"ready",
+                "ready":True,
+                "blocking_reasons":[],
+            }
+        packet["submeshes"].append({
+            "first_index":primitive["first_index"],
+            "index_count":primitive["index_count"],
+            "material":material,
+        })
     report=validate_bmw_golden_gate(golden,packet)
     assert report["ready"] is True
     assert report["asset_contract"]["ready"] is True
