@@ -171,6 +171,7 @@ def analyze_d3d9_declaration_chain(
     api_bind_evidence: Mapping[str, Any] | None = None,
     render_api_evidence: Mapping[str, Any] | None = None,
     declaration_create_evidence: Mapping[str, Any] | None = None,
+    declaration_count_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -185,6 +186,7 @@ def analyze_d3d9_declaration_chain(
     api_bind_evidence = api_bind_evidence or {}
     render_api_evidence = render_api_evidence or {}
     declaration_create_evidence = declaration_create_evidence or {}
+    declaration_count_evidence = declaration_count_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -296,10 +298,30 @@ def analyze_d3d9_declaration_chain(
         provenance_reports["render_api"] = render_api_evidence
     if declaration_create_evidence:
         provenance_reports["declaration_create"] = declaration_create_evidence
+    if declaration_count_evidence:
+        provenance_reports["declaration_count"] = declaration_count_evidence
     source_provenance = _source_provenance_check(provenance_reports)
 
     memory_layout_supplied = bool(runtime_layout_evidence)
     api_bind_supplied = bool(api_bind_evidence)
+    declaration_count_supplied = bool(declaration_count_evidence)
+    if declaration_count_supplied:
+        count_status = declaration_count_evidence.get("status")
+        count_link = _status(
+            declaration_count_evidence,
+            "semantic_links",
+            "count_to_create_buffer",
+            "status",
+        )
+        checks["d3d9_declaration_count_boundary"] = {
+            "status": (
+                "observed"
+                if count_status == "observed" and count_link == "observed"
+                else ("mismatch" if count_status == "mismatch" else "not-proven")
+            ),
+            "detail": "source-backed declaration count drives the 8-byte record buffer passed to creation",
+        }
+
     declaration_create_supplied = bool(declaration_create_evidence)
     if declaration_create_supplied:
         create_status = declaration_create_evidence.get("status")
@@ -424,6 +446,8 @@ def analyze_d3d9_declaration_chain(
         required_keys.append("d3d9_render_api_boundary")
     if declaration_create_supplied:
         required_keys.append("d3d9_declaration_create")
+    if declaration_count_supplied:
+        required_keys.append("d3d9_declaration_count_boundary")
     if instance_supplied:
         required_keys.append("declaration_instance")
     if memory_supplied:
@@ -472,6 +496,10 @@ def analyze_d3d9_declaration_chain(
                 declaration_create_evidence.get("status", "not-supplied")
                 if declaration_create_supplied else "not-supplied"
             ),
+            "declaration_count_status": (
+                declaration_count_evidence.get("status", "not-supplied")
+                if declaration_count_supplied else "not-supplied"
+            ),
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
@@ -506,6 +534,16 @@ def analyze_d3d9_declaration_chain(
             ),
         },
         "source_provenance": source_provenance,
+        "declaration_count_evidence": (
+            {
+                "format": declaration_count_evidence.get("format"),
+                "status": declaration_count_evidence.get("status"),
+                "count_boundary": declaration_count_evidence.get("count_boundary"),
+                "create_boundary": declaration_count_evidence.get("create_boundary"),
+                "semantic_links": declaration_count_evidence.get("semantic_links"),
+            }
+            if declaration_count_supplied else None
+        ),
         "declaration_create_evidence": (
             {
                 "format": declaration_create_evidence.get("format"),
@@ -578,6 +616,7 @@ def analyze_d3d9_declaration_chain_files(
     api_bind_evidence_path: str | Path | None = None,
     render_api_evidence_path: str | Path | None = None,
     declaration_create_evidence_path: str | Path | None = None,
+    declaration_count_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -618,5 +657,10 @@ def analyze_d3d9_declaration_chain_files(
             None
             if declaration_create_evidence_path is None
             else load(declaration_create_evidence_path)
+        ),
+        declaration_count_evidence=(
+            None
+            if declaration_count_evidence_path is None
+            else load(declaration_count_evidence_path)
         ),
     )

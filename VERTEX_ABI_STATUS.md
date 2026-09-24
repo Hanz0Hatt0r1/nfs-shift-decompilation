@@ -207,3 +207,8 @@ These are API-boundary observations rather than new vertex semantic inference. M
 FUN_00830f80 now has an explicit machine-readable creation report. The recovered canonicalizer copies the 8-byte declaration record sequence into a new buffer sized as uVar1 * 8 + 8 and passes it through vtable slot 86 (0x158) identified as IDirect3DDevice9::CreateVertexDeclaration.
 
 The created declaration object is retained by the interning structure. This closes the source-side object creation boundary before Phase 97's SetVertexDeclaration bind. It does not select MEB 460/461 -> Type.
+
+
+## Phase 100: declaration count boundary
+
+The declaration creation path now has explicit evidence for its count rule. FUN_0082ea90 advances by 8-byte records and stops when the Stream WORD reaches 0xff or above; FUN_00830f80 uses the resulting count in an allocation of count * 8 + 8 bytes. This supports a terminator/reserved-record boundary, but exact D3DECL_END field semantics remain a separate observation.
