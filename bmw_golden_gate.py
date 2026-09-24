@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from bmw_m3_paint_asset_contract import validate_bmw_paint_asset
+
 FORMAT = "SHIFT.BMWGoldenRenderGate/1"
 
 
@@ -32,6 +34,14 @@ def validate_bmw_golden_gate(
 
     expected_path = _norm(golden_meta.get("resource"))
     observed_path = _norm(packet_mesh.get("resolved", {}).get("path") or packet_mesh.get("ref"))
+
+    asset_contract = None
+    if expected_path == "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb":
+        asset_contract = validate_bmw_paint_asset(golden)
+        reasons.extend(
+            f"asset-contract:{reason}"
+            for reason in asset_contract.get("blocking_reasons") or []
+        )
     if expected_path and observed_path != expected_path:
         reasons.append("mesh:resource-path-mismatch")
 
@@ -149,6 +159,7 @@ def validate_bmw_golden_gate(
             "triangle_count": packet_mesh.get("triangle_count"),
         },
         "shader_selection": selection_rows,
+        "asset_contract": asset_contract,
     }
 
 
