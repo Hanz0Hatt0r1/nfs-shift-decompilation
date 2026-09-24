@@ -1323,6 +1323,77 @@ def cmd_bab_payload_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_color_evidence_resource(args: argparse.Namespace) -> int:
+    """Extract one MEB resource from a BFF and emit COLOR ABI evidence."""
+    from color_abi import build_color_abi_evidence, compare_color_candidate
+
+    with BFF(args.archive) as bff:
+        needle = args.resource.lower().replace("\\", "/")
+        matches = [
+            entry
+            for entry in bff.entries
+            if entry.path.lower().replace("\\", "/") == needle
+        ]
+        if not matches:
+            raise SystemExit(f"resource not found: {args.resource}")
+        entry = matches[0]
+        data = bff.extract_entry(entry, type2="lzx")
+
+    if not entry.path.lower().endswith(".meb"):
+        raise SystemExit(f"input is not a .meb resource: {entry.path}")
+
+    mesh = read_meb(data)
+    stream = mesh.colors if args.property_id == "460" else mesh.colors2
+    if not stream:
+        raise ValueError(
+            f"MEB resource has no property {args.property_id} stream"
+        )
+    raw = bytes(component for row in stream for component in row)
+    report = build_color_abi_evidence(args.property_id, raw)
+    report["source"] = {
+        "kind": "bff-meb",
+        "archive": bff.path.name,
+        "resource": entry.path,
+        "entry_index": entry.index,
+        "resource_sha256": sha256(data),
+        "stream": "colors" if args.property_id == "460" else "colors2",
+        "vertex_count": mesh.vertex_count,
+        "property_layout": next(
+            (
+                layout
+                for layout in mesh.property_layouts
+                if str(layout.get("id")) == args.property_id
+            ),
+            None,
+        ),
+    }
+    if args.expected_rgba:
+        expected = Path(args.expected_rgba).read_bytes()
+        report["comparison"] = compare_color_candidate(
+            args.property_id,
+            raw,
+            expected,
+        )
+
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "property_id": report["property_id"],
+        "sample_count": report["sample_count"],
+        "confidence": report["confidence"],
+        "archive": bff.path.name,
+        "resource": entry.path,
+        "selection": (report.get("comparison") or {}).get("selection", "not-selected"),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+
 def cmd_color_evidence(args: argparse.Namespace) -> int:
     """Build non-selecting COLOR0/COLOR1 ABI evidence from raw bytes or MEB JSON."""
     from color_abi import build_color_abi_evidence, compare_color_candidate
@@ -1638,6 +1709,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="resource_analysis.json")
     p.add_argument("output", help="SHIFT.BABCorpusReport/1 JSON output")
     p.set_defaults(fn=cmd_bab_corpus)
+
+    p = sp.add_parser("color-evidence-resource", help="extract a MEB from BFF and report COLOR0/COLOR1 candidates")
+    p.add_argument("archive", help="BFF archive")
+    p.add_argument("resource", help="logical .meb resource path")
+    p.add_argument("property_id", choices=["460", "461"])
+    p.add_argument("output", help="SHIFT.ColorABIEvidence/1 JSON output")
+    p.add_argument(
+        "--expected-rgba",
+        help="optional raw RGBA8 stream used only for comparison; no candidate is auto-selected",
+    )
+    p.set_defaults(fn=cmd_color_evidence_resource)
 
     p = sp.add_parser("color-evidence", help="report unresolved COLOR0/COLOR1 channel-order candidates")
     p.add_argument("property_id", choices=["460", "461"])
