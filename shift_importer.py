@@ -1807,6 +1807,29 @@ def cmd_d3d9_type_layout_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_type_profile(args: argparse.Namespace) -> int:
+    """Validate raw Type table values against the D3D9 semantic profile."""
+    from d3d9_type_profile import validate_type_table_report
+
+    report = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    result = validate_type_table_report(report)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["validation"]["status"],
+        "match_count": result["validation"]["match_count"],
+        "mismatch_count": result["validation"]["mismatch_count"],
+        "unavailable_count": result["validation"]["unavailable_count"],
+        "meb_property_mapping": result["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2151,6 +2174,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9TypeLayoutTableEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_type_layout_evidence)
+
+    p = sp.add_parser("validate-d3d9-type-profile", help="validate a D3D9 memory-table evidence report against the Type profile")
+    p.add_argument("input", help="SHIFT.D3D9MemoryTableEvidence/1 JSON input")
+    p.add_argument("output", help="SHIFT.D3D9TypeProfile/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_type_profile)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
