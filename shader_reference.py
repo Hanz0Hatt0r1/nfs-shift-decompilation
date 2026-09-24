@@ -367,6 +367,55 @@ def validate_pixel_program_inputs(program: ShaderProgram) -> dict[str, Any]:
     }
 
 
+
+def material_constants_from_payload(
+    payload: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Convert a ready SHIFT.MaterialConstantPayload/1 into D3D9-style c-bank data."""
+    binding = payload or {}
+    if binding.get("format") != "SHIFT.MaterialConstantPayload/1":
+        return {
+            "format": "SHIFT.ReferenceConstantBank/1",
+            "status": "unsupported",
+            "blocking_reasons": ["uniform-payload:invalid-format"],
+            "banks": {"c": {}, "c2": {}, "c3": {}, "c4": {}},
+        }
+    if binding.get("ready") is not True:
+        return {
+            "format": "SHIFT.ReferenceConstantBank/1",
+            "status": "unsupported",
+            "blocking_reasons": list(binding.get("blocking_reasons", []) or [])
+            or ["uniform-payload:not-ready"],
+            "banks": {"c": {}, "c2": {}, "c3": {}, "c4": {}},
+        }
+
+    banks: dict[str, dict[int, list[float]]] = {"c": {}, "c2": {}, "c3": {}, "c4": {}}
+    reasons: list[str] = []
+    for row in binding.get("registers", []) or []:
+        try:
+            reg = int(row.get("register_index"))
+            values = [float(x) for x in row.get("values", [])]
+            byte_offset = int(row.get("byte_offset"))
+            byte_size = int(row.get("byte_size"))
+        except (TypeError, ValueError):
+            reasons.append("uniform-payload:register-invalid")
+            continue
+        if reg < 0:
+            reasons.append("uniform-payload:register-range-invalid")
+            continue
+        if len(values) != 4:
+            reasons.append(f"uniform-payload:register-width-invalid:{reg}")
+        if byte_offset != reg * 16 or byte_size != 16:
+            reasons.append(f"uniform-payload:byte-range-invalid:{reg}")
+        banks["c"][reg] = (values + [0.0] * 4)[:4]
+
+    return {
+        "format": "SHIFT.ReferenceConstantBank/1",
+        "status": "ready" if not reasons else "unsupported",
+        "blocking_reasons": list(dict.fromkeys(reasons)),
+        "banks": banks,
+    }
+
 def material_constants_from_uniform_binding(
     uniform_binding: dict[str, Any] | None,
 ) -> dict[str, Any]:
