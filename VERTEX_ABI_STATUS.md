@@ -181,3 +181,8 @@ Chain-level validation перепроверяет slice hash и структур
 SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1 проверяет фактические runtime Offsets против recovered packed Type sizes по каждому Stream. Для каждого элемента фиксируются observed/expected Offset, Type и element size; per-Stream summary показывает element count, byte size и final Offset.
 
 Это runtime consistency gate поверх phase 94, а не новая semantic inference. Несогласованный Offset остаётся mismatch, отсутствующий end sentinel — неполным доказательством. MEB 460/461 -> Type ordinal остаётся not-proven.
+
+
+## Phase 96: source provenance coherence
+
+Source-backed D3D9 evidence теперь может быть сопоставлено по единому SHA-256 snapshot. Chain сравнивает hash/size/line-count across STREAM topology, declaration record and canonicalizer reports; смешение данных из разных decompilation snapshots становится явным mismatch. Без переданного source hash статус остаётся not-supplied.
