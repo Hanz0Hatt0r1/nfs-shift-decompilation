@@ -112,6 +112,7 @@ def rasterize_textured_mesh(
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     uv_layers: dict[str | int, Iterable[Iterable[float]]] | None = None,
+    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -136,6 +137,16 @@ def rasterize_textured_mesh(
             layer_rows[layer_id - 130] = parsed
     if any(len(uv) < 2 for uv in uv_rows):
         raise ValueError("each UV row must contain at least two components")
+    semantic_data = {
+        key: [tuple(float(x) for x in row) for row in rows]
+        for key, rows in (semantic_rows or {}).items()
+        if rows
+    }
+    for key, rows in semantic_data.items():
+        if len(rows) != len(verts):
+            raise ValueError(
+                f"semantic layer {key!r} vertex count {len(rows)} != {len(verts)}"
+            )
     if len(idx) % 3:
         raise ValueError("triangle index buffer length must be divisible by three")
     if any(i < 0 or i >= len(verts) for i in idx):
@@ -174,11 +185,17 @@ def rasterize_textured_mesh(
                     f"pixel shader input has no recoverable register: {item}"
                 )
             register = int(match.group(1))
+            usage = str(item.get("usage") or "").upper()
             semantic_index = int(item.get("index", 0))
-            layer = layer_rows.get(semantic_index)
+            layer = (
+                layer_rows.get(semantic_index)
+                if usage == "TEXCOORD"
+                else semantic_data.get((usage, semantic_index))
+            )
             if layer is None:
+                target = "UV layer" if usage == "TEXCOORD" else "attribute"
                 raise ValueError(
-                    f"pixel shader requires TEXCOORD{semantic_index} but mesh has no matching UV layer"
+                    f"pixel shader requires {usage}{semantic_index} but mesh has no matching {target}"
                 )
             row = layer[0]
             values = list(row[:3])
@@ -239,24 +256,30 @@ def rasterize_textured_mesh(
                                 f"pixel shader input has no recoverable register: {item}"
                             )
                         register = int(match.group(1))
+                        usage = str(item.get("usage") or "").upper()
                         semantic_index = int(item.get("index", 0))
-                        layer = layer_rows.get(semantic_index)
-                        if layer is None:
-                            raise ValueError(
-                                f"pixel shader requires TEXCOORD{semantic_index} but mesh has no matching UV layer"
-                            )
-                        if len(layer[ia]) < 2 or len(layer[ib]) < 2 or len(layer[ic]) < 2:
-                            raise ValueError(
-                                f"TEXCOORD{semantic_index} layer must contain at least two components"
-                            )
-                        iu = w0 * layer[ia][0] + w1 * layer[ib][0] + w2 * layer[ic][0]
-                        iv = w0 * layer[ia][1] + w1 * layer[ib][1] + w2 * layer[ic][1]
-                        iw = (
-                            w0 * (layer[ia][2] if len(layer[ia]) > 2 else 0.0)
-                            + w1 * (layer[ib][2] if len(layer[ib]) > 2 else 0.0)
-                            + w2 * (layer[ic][2] if len(layer[ic]) > 2 else 0.0)
+                        layer = (
+                            layer_rows.get(semantic_index)
+                            if usage == "TEXCOORD"
+                            else semantic_data.get((usage, semantic_index))
                         )
-                        shader_inputs[register] = (iu, iv, iw, 1.0)
+                        if layer is None:
+                            target = "UV layer" if usage == "TEXCOORD" else "attribute"
+                            raise ValueError(
+                                f"pixel shader requires {usage}{semantic_index} but mesh has no matching {target}"
+                            )
+                        samples = (layer[ia], layer[ib], layer[ic])
+                        width = min(4, max(len(row) for row in samples))
+                        values = []
+                        for channel in range(width):
+                            values.append(
+                                w0 * (samples[0][channel] if channel < len(samples[0]) else 0.0)
+                                + w1 * (samples[1][channel] if channel < len(samples[1]) else 0.0)
+                                + w2 * (samples[2][channel] if channel < len(samples[2]) else 0.0)
+                            )
+                        while len(values) < 3:
+                            values.append(0.0)
+                        shader_inputs[register] = tuple(values[:3] + [1.0])
                     execution = ReferenceShaderState(
                         shader,
                         inputs=shader_inputs,
@@ -296,6 +319,7 @@ def render_textured_static_draw(
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
+    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw with one explicit UV0 texture input."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -341,6 +365,7 @@ def render_textured_static_draw(
         texture_images=texture_images,
         samplers_by_sampler=samplers_by_sampler,
         uv_layers=uv_layers,
+        semantic_rows=semantic_rows,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -454,6 +479,15 @@ def render_textured_render_command(
         shader_constants=shader_constants,
         texture_images=texture_images,
         samplers_by_sampler=samplers_by_sampler,
+        semantic_rows={
+            key: rows
+            for key, rows in {
+                ("NORMAL", 0): mesh.get("normals"),
+                ("TANGENT", 0): mesh.get("tangents"),
+                ("BINORMAL", 0): mesh.get("tangents2"),
+            }.items()
+            if rows
+        },
     )
     result["command_contract"] = {
         "format": command.get("format"),

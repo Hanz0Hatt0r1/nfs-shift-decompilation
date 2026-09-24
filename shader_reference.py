@@ -404,7 +404,10 @@ def validate_pixel_program_inputs(program: ShaderProgram) -> dict[str, Any]:
     for item in program.inputs:
         usage = str(item.get("usage") or "").upper()
         index = int(item.get("index", 0))
-        if usage != "TEXCOORD" or not 0 <= index <= 4:
+        if not (
+            (usage == "TEXCOORD" and 0 <= index <= 4)
+            or (usage in {"NORMAL", "TANGENT", "BINORMAL"} and index == 0)
+        ):
             unsupported.append({
                 "usage": usage,
                 "index": index,
