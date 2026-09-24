@@ -317,6 +317,7 @@ def render_textured_static_draw(
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
+    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw with one explicit UV0 texture input."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -362,6 +363,7 @@ def render_textured_static_draw(
         texture_images=texture_images,
         samplers_by_sampler=samplers_by_sampler,
         uv_layers=uv_layers,
+        semantic_rows=semantic_rows,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
