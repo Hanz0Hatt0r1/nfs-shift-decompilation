@@ -155,6 +155,21 @@ def build_runtime_binding_evidence(
                 "stage": row.get("stage"),
                 "texture_ptr": _ptr(row.get("texture_ptr")),
                 "line": row.get("_line"),
+                "resource_descriptor": {
+                    key: row.get(key)
+                    for key in (
+                        "resource_descriptor_status",
+                        "resource_type",
+                        "resource_type_name",
+                        "width",
+                        "height",
+                        "depth",
+                        "format",
+                        "pool",
+                        "level_count",
+                    )
+                    if key in row
+                },
             })
         elif event in {"create_vertex_shader", "create_pixel_shader"}:
             pointer = _ptr(row.get("shader_ptr"))
