@@ -159,3 +159,8 @@ COLOR ABI analysis is now anchored to the decoded `.meb` resource itself instead
 ## Phase 69: COLOR corpus gate
 
 COLOR evidence can now be aggregated across decoded MEB samples. The corpus layer is intentionally upstream of RenderCommand readiness: it reports stability but does not promote a declaration or channel order.
+
+
+## Phase 70: corpus COLOR evidence
+
+The evidence pipeline now supports BFF-directory scale ingestion: `.bff` → `.meb` → 460/461 → `ColorABIEvidence/1` → `ColorABICorpusEvidence/1`. Runtime readiness remains unaffected until an external declaration/order proof is established.

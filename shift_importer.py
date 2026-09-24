@@ -1323,6 +1323,82 @@ def cmd_bab_payload_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_color_evidence_bff_corpus(args: argparse.Namespace) -> int:
+    """Scan BFF archives for MEB COLOR0/COLOR1 streams and aggregate evidence."""
+    from color_abi import aggregate_color_abi_evidence, build_color_abi_evidence
+
+    inputs = list(iter_bffs(Path(args.input)))
+    if not inputs:
+        raise SystemExit("no .bff archives found")
+
+    reports: list[dict] = []
+    resources: list[dict] = []
+    errors: list[dict] = []
+
+    for archive in inputs:
+        with BFF(archive) as bff:
+            for entry in bff.entries:
+                if not entry.path.lower().endswith(".meb"):
+                    continue
+                try:
+                    data = bff.extract_entry(entry, type2="lzx")
+                    mesh = read_meb(data)
+                    for property_id, stream_name, stream in (
+                        ("460", "colors", mesh.colors),
+                        ("461", "colors2", mesh.colors2),
+                    ):
+                        if not stream:
+                            continue
+                        raw = bytes(component for row in stream for component in row)
+                        report = build_color_abi_evidence(property_id, raw)
+                        report["source"] = {
+                            "kind": "bff-meb-corpus",
+                            "archive": archive.name,
+                            "resource": entry.path,
+                            "entry_index": entry.index,
+                            "resource_sha256": sha256(data),
+                            "stream": stream_name,
+                            "vertex_count": mesh.vertex_count,
+                        }
+                        reports.append(report)
+                        resources.append(report["source"])
+                except Exception as exc:
+                    errors.append({
+                        "archive": archive.name,
+                        "resource": entry.path,
+                        "error": f"{type(exc).__name__}: {exc}",
+                    })
+
+    aggregate = aggregate_color_abi_evidence(reports)
+    aggregate["source"] = {
+        "kind": "bff-corpus",
+        "archives": [archive.name for archive in inputs],
+        "accepted_reports": len(reports),
+        "resource_count": len(resources),
+        "errors": errors,
+    }
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(aggregate, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": aggregate["format"],
+        "archives": len(inputs),
+        "accepted_reports": len(reports),
+        "resource_count": len(resources),
+        "errors": len(errors),
+        "selection": aggregate["selection"],
+        "properties": {
+            key: value["report_count"]
+            for key, value in aggregate["properties"].items()
+        },
+    }, ensure_ascii=False, indent=2))
+    return 1 if errors and args.fail_on_error else 0
+
+
+
 def cmd_color_evidence_corpus(args: argparse.Namespace) -> int:
     """Aggregate multiple SHIFT.ColorABIEvidence/1 JSON reports."""
     from color_abi import aggregate_color_abi_evidence
@@ -1763,6 +1839,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="resource_analysis.json")
     p.add_argument("output", help="SHIFT.BABCorpusReport/1 JSON output")
     p.set_defaults(fn=cmd_bab_corpus)
+
+    p = sp.add_parser("color-evidence-bff-corpus", help="scan BFF archives for MEB COLOR0/COLOR1 evidence and aggregate it")
+    p.add_argument("input", help="BFF file or directory")
+    p.add_argument("output", help="SHIFT.ColorABICorpusEvidence/1 JSON output")
+    p.add_argument(
+        "--fail-on-error",
+        action="store_true",
+        help="return non-zero when any MEB resource fails to decode",
+    )
+    p.set_defaults(fn=cmd_color_evidence_bff_corpus)
 
     p = sp.add_parser("color-evidence-corpus", help="aggregate multiple COLOR ABI evidence JSON reports without selecting an ABI")
     p.add_argument("input", nargs="+", help="evidence JSON file(s) or directories")
