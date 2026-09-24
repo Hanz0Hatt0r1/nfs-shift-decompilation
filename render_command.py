@@ -191,6 +191,15 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
         shader_selection = material.get("shader_selection") or {}
         linked_pair = shader_selection.get("linked_shader_pair") or material.get("linked_shader_pair")
         uniform_binding = material.get("uniform_binding") or shader_selection.get("uniform_binding") or {}
+        constant_payload = None
+        if uniform_binding.get("bindings"):
+            from material_constants import pack_material_constant_payload
+            constant_payload = pack_material_constant_payload(uniform_binding)
+            if constant_payload.get("ready") is False:
+                reasons.extend(
+                    constant_payload.get("blocking_reasons", [])
+                    or ["uniform-payload:not-ready"]
+                )
         texture_commands = []
         for texture in material.get("textures", []) or []:
             binding, error = _find_texture_resource(resources, texture)
@@ -264,6 +273,7 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
             },
             "textures": texture_commands,
             "uniforms": uniform_binding,
+            "constant_payload": constant_payload,
             "constant_commands": constant_commands,
         })
 
@@ -405,6 +415,40 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
         uniform = submesh.get("uniforms") or {}
         if uniform.get("format") not in (None, "SHIFT.MaterialUniformBinding/1"):
             reasons.append("uniform-binding:invalid-format")
+        constant_payload = submesh.get("constant_payload") or {}
+        if constant_payload.get("format") not in (None, "SHIFT.MaterialConstantPayload/1"):
+            reasons.append("uniform-payload:invalid-format")
+        if constant_payload.get("ready") is False:
+            reasons.extend(
+                constant_payload.get("blocking_reasons", [])
+                or ["uniform-payload:not-ready"]
+            )
+        expected_registers: set[int] = set()
+        for constant in submesh.get("constant_commands", []) or []:
+            try:
+                start = int(constant.get("register_index"))
+                count = int(constant.get("register_count"))
+            except (TypeError, ValueError):
+                continue
+            expected_registers.update(range(start, start + max(0, count)))
+        if constant_payload.get("ready") is True:
+            payload_registers: set[int] = set()
+            for payload_register in constant_payload.get("registers", []) or []:
+                try:
+                    reg = int(payload_register.get("register_index"))
+                    values = payload_register.get("values")
+                    byte_offset = int(payload_register.get("byte_offset"))
+                    byte_size = int(payload_register.get("byte_size"))
+                except (TypeError, ValueError):
+                    reasons.append("uniform-payload:register-invalid")
+                    continue
+                if len(values or []) != 4:
+                    reasons.append(f"uniform-payload:register-width-invalid:{reg}")
+                if byte_offset != reg * 16 or byte_size != 16:
+                    reasons.append(f"uniform-payload:byte-range-invalid:{reg}")
+                payload_registers.add(reg)
+            if expected_registers and payload_registers != expected_registers:
+                reasons.append("uniform-payload:register-set-mismatch")
         for constant in submesh.get("constant_commands", []) or []:
             try:
                 register_index = int(constant.get("register_index"))
