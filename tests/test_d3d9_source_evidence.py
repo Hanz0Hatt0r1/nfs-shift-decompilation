@@ -163,3 +163,30 @@ def test_source_evidence_census_is_empty_without_type_table_or_source_reference(
     assert by_id["type-table-callsite-census"]["call_count"] == 0
     assert by_id["cprimitive-type-source-reference"]["status"] == "not-found"
     assert by_id["cprimitive-type-source-reference"]["reference_count"] == 0
+
+def test_source_evidence_recovers_original_cprimitivetype_line_numbers():
+    result = analyze_shift_exe_c(
+        SOURCE
+        + r'''
+void f(void) {
+  FUN_0062de50(0xb1c958,".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",0xb28,0xb1c9a0,'\\0');
+  FUN_0062de50(0xb1c6d8,".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",0xbdb,0xb1c9a0,'\\0');
+}
+'''
+    )
+    by_id = {row["id"]: row for row in result["observations"]}
+    anchors = by_id["cprimitive-type-source-anchors"]["source_line_anchors"]
+    assert by_id["cprimitive-type-source-anchors"]["anchor_count"] == 2
+    assert anchors[0]["original_line"] == 0xB28
+    assert anchors[1]["original_line"] == 0xBDB
+    assert anchors[0]["original_line_hex"] == "0xb28"
+    assert anchors[1]["original_line_hex"] == "0xbdb"
+    assert all(item["decompiler_line"] > 0 for item in anchors)
+
+
+def test_source_evidence_source_anchors_require_diagnostic_call_shape():
+    result = analyze_shift_exe_c('".\\Source\\Platforms\\Win\\CPrimitiveType.cpp"')
+    by_id = {row["id"]: row for row in result["observations"]}
+    assert by_id["cprimitive-type-source-reference"]["reference_count"] == 1
+    assert by_id["cprimitive-type-source-anchors"]["status"] == "not-found"
+    assert by_id["cprimitive-type-source-anchors"]["anchor_count"] == 0
