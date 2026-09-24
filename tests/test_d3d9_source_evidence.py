@@ -557,7 +557,6 @@ def _make_minimal_pe32():
         0,
         0,
     )
-    pe += bytes(40 - 8 - 36)
     image = dos + pe
     image += bytes(raw_pointer - len(image))
     image += section
