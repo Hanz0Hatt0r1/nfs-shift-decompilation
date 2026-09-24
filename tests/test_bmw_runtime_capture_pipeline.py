@@ -94,4 +94,5 @@ def test_texture_snapshot_inventory_converts_real_ppm(tmp_path):
     snapshot = report["snapshots"][0]
     assert snapshot["stage"] == 3
     assert snapshot["reference_format"] == "SHIFT.ReferenceTexture/1"
-    assert snapshot["reference_resource"]["pixels"] == [9, 8, 7, 255]
+    assert snapshot["source_path"] == str(ppm)
+    assert "reference_resource" not in snapshot
