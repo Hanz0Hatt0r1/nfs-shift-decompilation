@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 73** — command-level skinned reference. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 74** — command-level skinned reference. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -314,3 +314,13 @@ influences, SkinPose и bind-palette. Для матриц используетс
 
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
+
+## Phase 74 — source-d3d9-evidence
+
+В проект добавлен `d3d9_source_evidence.py` и команда
+`python shift_importer.py source-d3d9-evidence SHIFT.exe.c evidence.json`.
+
+Она фиксирует source-level observations из recovered `SHIFT.exe.c`: packed-color
+helper `FUN_008310c0`, vertex declaration/conversion path `FUN_00854e70` и
+`STREAM` parser с `Type/Usage/Channel`. При этом точная связь MEB 460/461 с type 4
+не повышается до verified без содержимого соответствующих глобальных таблиц.
