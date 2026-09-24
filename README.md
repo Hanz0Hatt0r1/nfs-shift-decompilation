@@ -731,3 +731,8 @@ The real `compile_material()` path now validates the exact BMW M3 paint material
 ## Phase 139: BMW golden gate paint integration
 
 The BMW golden gate now fails closed on an unready M3 paint contract emitted by the real material compilation path.
+
+
+## Phase 139: BMW paint shader gate
+
+The exact BMW M3 paint material now requires unique, exact FXO/VS/PS selection and a valid permutation identity before StaticDraw can become ready. Ambiguous shader permutations remain explicit blockers.
