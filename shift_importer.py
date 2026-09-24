@@ -1830,6 +1830,29 @@ def cmd_d3d9_type_profile(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_stream_topology_evidence(args: argparse.Namespace) -> int:
+    """Analyze Stream-group topology in FUN_00854e70."""
+    from d3d9_stream_topology_evidence import analyze_d3d9_stream_topology_file
+
+    report = analyze_d3d9_stream_topology_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "group_stride": report["grouping"].get("group_stride"),
+        "stream_to_group": report["grouping"].get("stream_to_group_index"),
+        "record_pointer_array": report["grouping"].get("record_pointer_array"),
+        "byte_size_accumulation": report["grouping"].get("byte_size_accumulation"),
+        "meb_property_mapping": report["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2179,6 +2202,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="SHIFT.D3D9MemoryTableEvidence/1 JSON input")
     p.add_argument("output", help="SHIFT.D3D9TypeProfile/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_type_profile)
+
+    p = sp.add_parser("source-d3d9-stream-topology-evidence", help="analyze Stream grouping topology in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9StreamTopologyEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_stream_topology_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
