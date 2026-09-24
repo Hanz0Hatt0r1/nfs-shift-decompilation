@@ -320,3 +320,8 @@ This closes the source-backed setup path down to the draw boundary. It does not 
 Phase 99 formalizes the recovered FUN_00830f80 creation boundary. The canonicalizer allocates element_count * 8 + 8 bytes, copies the recovered declaration-record array, and dispatches through IDirect3DDevice9 vtable slot 86 (0x158) as CreateVertexDeclaration. The resulting declaration object is retained by the interned declaration record.
 
 Together with Phase 97, this gives a source-backed creation-to-bind path without assuming the unresolved MEB 460/461 -> Type mapping.
+
+
+## Phase 100: declaration count boundary
+
+Phase 100 formalizes the recovered declaration-count helper FUN_0082ea90. It walks 8-byte records using the first WORD (Stream) and stops counting when Stream >= 0xff; FUN_00830f80 then allocates count * 8 + 8 bytes for declaration creation. The report deliberately does not equate that one-field stop rule with the full D3DDECL_END sentinel.
