@@ -315,6 +315,10 @@ influences, SkinPose и bind-palette. Для матриц используетс
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
 
+## Phase 76 — type-table reference census
+
+Phase 76 adds a complete source callsite census for FUN_00853c20 and records all embedded CPrimitiveType.cpp source-path references with exact source lines. The report now distinguishes an actively consumed opaque type table from an accidental symbol match while keeping MEB 460/461 -> D3D9 type unresolved.
+
 ## Phase 75 — source type-table chain evidence
 
 Phase 75 adds source-line tracking and the recovered declaration type-table chain to source-d3d9-evidence: FUN_00853c20 -> DAT_00b90088, XML Type lookup through PTR_DAT_00b901d0, XML Usage/Channel, and the XML Colour stream family. This is stronger provenance for the original declaration path, but it still does not prove MEB 460/461 -> D3D9 type, so selection=not-selected remains authoritative.

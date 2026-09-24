@@ -34,6 +34,17 @@ def _line_number(source: str, needle: str) -> int | None:
         return None
     return source.count("\n", 0, offset) + 1
 
+def _line_numbers(source: str, needle: str) -> list[int]:
+    """Return all 1-based source lines containing a marker."""
+    lines: list[int] = []
+    start = 0
+    while True:
+        offset = source.find(needle, start)
+        if offset < 0:
+            return lines
+        lines.append(source.count("\n", 0, offset) + 1)
+        start = offset + len(needle)
+
 
 def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
     """Extract explicit D3D9 vertex/color observations from SHIFT.exe.c text."""
@@ -130,6 +141,16 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
         and declaration_record_layout
     )
 
+    type_table_call_lines = [
+        line
+        for line in _line_numbers(text, "FUN_00853c20(")
+        if line != _line_number(text, "undefined4 __fastcall FUN_00853c20(int param_1)")
+    ]
+    primitive_type_source_lines = _line_numbers(
+        text,
+        ".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",
+    )
+
     packed_path = packed_helper and declaration_type_switch
     observations = [
         {
@@ -201,6 +222,22 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
             "source_line": _line_number(text, colour_stream_marker),
             "detail": "the XML stream-data loader names local stream family 6 as Colour",
             "stream_family_index": 6,
+        },
+        {
+            "id": "type-table-callsite-census",
+            "status": "observed" if type_table_call_lines else "not-found",
+            "function": FUNCTIONS["type_table_accessor"],
+            "address": "0x00853C20",
+            "source_lines": type_table_call_lines,
+            "call_count": len(type_table_call_lines),
+            "detail": "FUN_00853c20 is called from declaration/type-resolution paths",
+        },
+        {
+            "id": "cprimitive-type-source-reference",
+            "status": "observed" if primitive_type_source_lines else "not-found",
+            "source_lines": primitive_type_source_lines,
+            "reference_count": len(primitive_type_source_lines),
+            "detail": "recovered diagnostics embed the original Win CPrimitiveType.cpp source path",
         },
     ]
 
