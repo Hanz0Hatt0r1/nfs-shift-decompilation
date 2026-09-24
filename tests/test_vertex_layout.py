@@ -23,7 +23,7 @@ def test_color_keeps_alternate_candidates_for_forensics():
     r=build_vertex_layout(["460","461"])
     by={x["property_id"]:x for x in r["attributes"]}
     for pid in ("460","461"):
-        assert by[pid]["channel_order_candidates"] == ["BGRA"]
+        assert by[pid]["channel_order_candidates"] == ["RGBA", "BGRA"]
         assert set(by[pid]["android_candidates"]) == {"UINT8x4_RGBA","UINT8x4_BGRA"}
         assert by[pid]["channel_order"] == "BGRA"
 
