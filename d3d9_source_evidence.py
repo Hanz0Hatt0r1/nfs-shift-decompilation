@@ -129,6 +129,23 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
         ),
     )
 
+    binary_descriptor_triple = _contains_all(
+        text,
+        (
+            "uint __fastcall FUN_00859800(int param_1,int param_2)",
+            "uVar13 = FUN_00853c20(*(uint *)pAVar24);",
+            "uVar13 = FUN_00853c40(*(uint *)(pAVar24 + 4));",
+            "SUB41(*(uint *)(pAVar24 + 8),0)",
+            "pAVar24 = pAVar24 + 0xc;",
+        ),
+    )
+
+    binary_descriptor_name = "LoadBinaryMeshFromResource"
+    binary_loader_name = binary_descriptor_name in text
+
+    meb_extension_marker = 'FUN_00636310(&local_64,"meb");'
+    meb_extension_registration = meb_extension_marker in text
+
     packed_color_marker = "uint __fastcall FUN_008310c0(float *param_1)"
     declaration_type_marker = "fVar7 = (float)FUN_008310c0(&local_100);"
     type_table_marker = "return *(undefined4 *)(&DAT_00b90088 + param_1 * 4);"
@@ -224,6 +241,35 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
             "detail": "STREAM records are parsed through Type, Usage and Channel fields",
         },
         {
+            "id": "binary-descriptor-triple-semantics",
+            "status": "observed" if binary_descriptor_triple else "not-found",
+            "function": FUNCTIONS["stream_data_parser"],
+            "address": "0x00859800",
+            "source_line": _line_number(text, "uVar13 = FUN_00853c20(*(uint *)pAVar24);"),
+            "detail": "binary mesh element records consume a 12-byte triple [Type ordinal, Usage ordinal, Channel] at offsets 0, 4 and 8",
+            "record_stride": 0x0C,
+            "fields": [
+                {"name": "type_ordinal", "offset": 0, "width": 4},
+                {"name": "usage_ordinal", "offset": 4, "width": 4},
+                {"name": "channel", "offset": 8, "width": 4},
+            ],
+        },
+        {
+            "id": "binary-mesh-loader-identity",
+            "status": "observed" if binary_loader_name else "not-found",
+            "function": FUNCTIONS["stream_data_parser"],
+            "address": "0x00859800",
+            "source_line": _line_number(text, binary_descriptor_name),
+            "detail": "diagnostic identifies FUN_00859800 as LoadBinaryMeshFromResource",
+        },
+        {
+            "id": "meb-extension-registration",
+            "status": "observed" if meb_extension_registration else "not-found",
+            "source_line": _line_number(text, meb_extension_marker),
+            "detail": "source registers/recognizes the .meb mesh-resource extension",
+            "extension": ".meb",
+        },
+        {
             "id": "type-table-accessor",
             "status": "observed" if type_table_accessor else "not-found",
             "function": FUNCTIONS["type_table_accessor"],
@@ -292,6 +338,14 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
             "status": "observed" if type_table_chain else "not-proven",
             "reason": "XML Type ordinal is fed into FUN_00853c20 and the returned type code reaches the declaration record; the opaque table contents are not exposed" if type_table_chain else "required type-table and declaration patterns were not found",
         },
+        "binary_triple_to_declaration_fields": {
+            "status": "observed" if binary_descriptor_triple else "not-proven",
+            "reason": "FUN_00859800 resolves triple[0] via FUN_00853c20 to declaration Type, triple[1] via FUN_00853c40 to declaration Usage, and copies triple[2] into UsageIndex" if binary_descriptor_triple else "required binary descriptor triple patterns were not found",
+        },
+        "meb_descriptor_triple_to_binary_record": {
+            "status": "observed" if (binary_descriptor_triple and binary_loader_name and meb_extension_registration) else "not-proven",
+            "reason": "the recovered source identifies the binary mesh loader, recognizes .meb resources, and consumes 12-byte Type/Usage/Channel triples; this is the source-side identity bridge used for exact MEB descriptor matching" if (binary_descriptor_triple and binary_loader_name and meb_extension_registration) else "required source-side .meb loader/triple evidence is incomplete",
+        },
         "xml_colour_to_type_4": {
             "status": "not-proven",
             "reason": "the XML loader exposes a Colour stream family and a shared Type table, but the recovered C does not expose the table contents needed to prove that Colour resolves to D3D9 type 4",
@@ -313,6 +367,19 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
         "functions": FUNCTIONS,
         "observations": observations,
         "linkage": linkage,
+        "binary_descriptor_triple": {
+            "status": "observed" if binary_descriptor_triple else "not-proven",
+            "record_stride": 0x0C,
+            "fields": [
+                {"name": "type_ordinal", "offset": 0, "width": 4},
+                {"name": "usage_ordinal", "offset": 4, "width": 4},
+                {"name": "channel", "offset": 8, "width": 4},
+            ],
+        },
+        "meb_source_identity": {
+            "extension_registration_status": "observed" if meb_extension_registration else "not-found",
+            "binary_loader_status": "observed" if binary_loader_name else "not-found",
+        },
         "selection": "not-selected",
         "verified_abi": False,
     }

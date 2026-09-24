@@ -1642,6 +1642,33 @@ def cmd_color_evidence(args: argparse.Namespace) -> int:
 
 
 
+def cmd_meb_d3d9_descriptor_triple(args: argparse.Namespace) -> int:
+    """Cross-check exact MEB 460/461 descriptor triples against recovered binary loader semantics."""
+    from meb_d3d9_descriptor_triple_evidence import write_descriptor_triple_report
+
+    resource_reports = [
+        Path(path)
+        for path in args.resource_report
+    ]
+    report = write_descriptor_triple_report(
+        args.meb_report,
+        args.source_report,
+        args.output,
+        resource_reports=resource_reports,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["d3d9_type_mapping"]["status"],
+        "meb_property_mapping": report["meb_property_mapping"]["status"],
+        "type_codes": report["d3d9_type_mapping"]["type_codes"],
+        "usage_ordinals": report["d3d9_type_mapping"]["usage_ordinals"],
+        "channels": report["d3d9_type_mapping"]["channels"],
+        "selection": report["selection"],
+        "verified_abi": report["verified_abi"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_d3d9_source_evidence(args: argparse.Namespace) -> int:
     """Analyze recovered SHIFT.exe C source for explicit D3D9 vertex evidence."""
     from d3d9_source_evidence import analyze_shift_exe_c_file
@@ -2321,6 +2348,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional raw RGBA8 stream used only for candidate comparison; no candidate is auto-selected",
     )
     p.set_defaults(fn=cmd_color_evidence)
+
+    p = sp.add_parser("meb-d3d9-descriptor-triple", help="prove MEB 460/461 descriptor triples against the recovered binary mesh loader")
+    p.add_argument("meb_report", help="SHIFT.MEB JSON report with property_descriptors")
+    p.add_argument("source_report", help="SHIFT.D3D9SourceVertexEvidence/1 JSON report")
+    p.add_argument("output", help="SHIFT.MEBD3D9DescriptorTripleEvidence/1 JSON output")
+    p.add_argument(
+        "--resource-report",
+        action="append",
+        default=[],
+        help="optional real BFF-backed SHIFT.ColorABIEvidence/1 report; repeat for 460 and 461",
+    )
+    p.set_defaults(fn=cmd_meb_d3d9_descriptor_triple)
 
     p = sp.add_parser("source-d3d9-evidence", help="analyze SHIFT.exe.c for explicit D3D9 vertex/color evidence")
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")

@@ -829,3 +829,54 @@ def test_d3d9_stream_topology_fails_closed_without_constructor():
     result = analyze_d3d9_stream_topology("void f(void) {}")
     assert result["status"] == "not-found"
     assert result["grouping"] == {}
+
+
+def test_source_evidence_observes_binary_meb_descriptor_triple_semantics():
+    source = r'''
+uint __fastcall FUN_00859800(int param_1,int param_2)
+{
+  uint *pAVar24;
+  uVar13 = FUN_00853c20(*(uint *)pAVar24);
+  uVar13 = FUN_00853c40(*(uint *)(pAVar24 + 4));
+  extraout_EDX_01[*(int *)(param_1 + 0x1c) + 7] = SUB41(*(uint *)(pAVar24 + 8),0);
+  pAVar24 = pAVar24 + 0xc;
+  _DAT_00bf99b0 = "MWL::Renderer::WinRenderer::CMeshPrimitiveType::LoadBinaryMeshFromResource";
+}
+void registration(void) {
+  FUN_00636310(&local_64,"meb");
+}
+'''
+    result = analyze_shift_exe_c(source)
+    by_id = {row["id"]: row for row in result["observations"]}
+    assert by_id["binary-descriptor-triple-semantics"]["status"] == "observed"
+    assert by_id["binary-descriptor-triple-semantics"]["record_stride"] == 0x0C
+    assert by_id["binary-descriptor-triple-semantics"]["fields"][0] == {
+        "name": "type_ordinal", "offset": 0, "width": 4
+    }
+    assert by_id["binary-descriptor-triple-semantics"]["fields"][1] == {
+        "name": "usage_ordinal", "offset": 4, "width": 4
+    }
+    assert by_id["binary-descriptor-triple-semantics"]["fields"][2] == {
+        "name": "channel", "offset": 8, "width": 4
+    }
+    assert by_id["binary-mesh-loader-identity"]["status"] == "observed"
+    assert by_id["meb-extension-registration"]["status"] == "observed"
+    assert result["linkage"]["binary_triple_to_declaration_fields"]["status"] == "observed"
+    assert result["linkage"]["meb_descriptor_triple_to_binary_record"]["status"] == "observed"
+
+
+def test_source_evidence_does_not_invent_binary_meb_identity_without_loader_context():
+    source = r'''
+uint __fastcall FUN_00859800(int param_1,int param_2)
+{
+  uVar13 = FUN_00853c20(*(uint *)pAVar24);
+  uVar13 = FUN_00853c40(*(uint *)(pAVar24 + 4));
+  extraout_EDX_01[*(int *)(param_1 + 0x1c) + 7] = SUB41(*(uint *)(pAVar24 + 8),0);
+  pAVar24 = pAVar24 + 0xc;
+}
+'''
+    result = analyze_shift_exe_c(source)
+    assert result["linkage"]["binary_triple_to_declaration_fields"]["status"] == "observed"
+    assert result["linkage"]["meb_descriptor_triple_to_binary_record"]["status"] == "not-proven"
+    assert result["meb_source_identity"]["extension_registration_status"] == "not-found"
+    assert result["meb_source_identity"]["binary_loader_status"] == "not-found"
