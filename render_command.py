@@ -62,7 +62,11 @@ def _gles_vertex_attribute_contract(attribute: dict[str, Any]) -> tuple[dict[str
         "stride": stride,
         "element_size": attribute.get("element_size"),
         "abi_status": attribute.get("abi_status"),
+        "channel_order": attribute.get("channel_order"),
         "channel_order_candidates": attribute.get("channel_order_candidates"),
+        "shader_order": attribute.get("shader_order"),
+        "d3d9_type": attribute.get("d3d9"),
+        "descriptor_triplet": attribute.get("descriptor_triplet"),
     }, None
 
 
@@ -174,6 +178,10 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
             "stride": attribute.get("stride") or layout.get("buffer_stride"),
             "element_size": attribute.get("element_size"),
             "abi_status": attribute.get("abi_status"),
+            "channel_order": attribute.get("channel_order"),
+            "shader_order": attribute.get("shader_order"),
+            "d3d9_type": attribute.get("d3d9"),
+            "descriptor_triplet": attribute.get("descriptor_triplet"),
         }
         attributes.append(normalized_attribute)
         setup, error = _gles_vertex_attribute_contract({
