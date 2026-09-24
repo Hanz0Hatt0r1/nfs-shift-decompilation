@@ -12,7 +12,8 @@ def test_color_abi_preserves_rgba_and_bgra_candidates():
     result = build_color_abi_evidence("460", raw)
     assert result["format"] == "SHIFT.ColorABIEvidence/1"
     assert result["property_id"] == "460"
-    assert result["confidence"] == "ambiguous-declaration-and-channel-order"
+    assert result["confidence"] == "source-proven"
+    assert result["selection"] == "BGRA"
     by_order = {x["order"]: x for x in result["candidates"]}
     assert interpret_color_bytes(raw, "RGBA") == raw
     assert interpret_color_bytes(raw, "BGRA") == bytes((30, 20, 10, 40, 120, 110, 100, 130))
@@ -25,7 +26,7 @@ def test_color_abi_known_reference_can_distinguish_candidates_without_selection(
     expected = bytes((30, 20, 10, 255))
     result = compare_color_candidate("461", raw, expected)
     assert result["format"] == "SHIFT.ColorABICandidateComparison/1"
-    assert result["selection"] == "not-selected"
+    assert result["selection"] == "BGRA"
     matches = {x["order"]: x for x in result["candidate_results"]}
     assert matches["RGBA"]["exact_match"] is False
     assert matches["BGRA"]["exact_match"] is True
@@ -71,8 +72,9 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
     assert proc.returncode == 0, proc.stdout + proc.stderr
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["format"] == "SHIFT.ColorABIEvidence/1"
-    assert result["confidence"] == "ambiguous-declaration-and-channel-order"
-    assert result["comparison"]["selection"] == "not-selected"
+    assert result["confidence"] == "source-proven"
+    assert result["selection"] == "BGRA"
+    assert result["comparison"]["selection"] == "BGRA"
     matches = {row["order"]: row for row in result["comparison"]["candidate_results"]}
     assert matches["BGRA"]["exact_match"] is True
     assert matches["RGBA"]["exact_match"] is False
@@ -476,7 +478,8 @@ def test_color_abi_exposes_d3d9_declaration_candidates():
 
     raw = bytes((0x12, 0x34, 0x56, 0x78))
     result = build_color_abi_evidence("460", raw)
-    assert result["confidence"] == "ambiguous-declaration-and-channel-order"
+    assert result["confidence"] == "source-proven"
+    assert result["selection"] == "BGRA"
     by_order = {row["order"]: row for row in result["candidates"]}
     assert by_order["RGBA"]["d3d9_type"] == "UBYTE4N"
     assert by_order["RGBA"]["memory_order"] == "RGBA"
@@ -486,5 +489,5 @@ def test_color_abi_exposes_d3d9_declaration_candidates():
     assert interpret_color_d3d9(raw, "UBYTE4N") == raw
     assert interpret_color_d3d9(raw, "D3DCOLOR") == bytes((0x56, 0x34, 0x12, 0x78))
     assert result["source_evidence"]["function"] == "FUN_008310c0"
-    assert result["source_evidence"]["status"] == "supporting-packed-color-evidence-not-MEB-declaration-proof"
+    assert result["source_evidence"]["status"] == "source-correlated-under-MEB-three-u32-property-id-convention"
 
