@@ -53,12 +53,14 @@ def select_material_slice(slice_report: Mapping[str, Any], *, primitive_index: i
     render_command = slice_report.get('render_command')
     if isinstance(render_command, Mapping) and render_command.get('ready') is False:
         reasons.extend(render_command.get('blocking_reasons') or ['render-command:not-ready'])
+    golden_identity = slice_report.get('golden_identity') or {}
     return {
         'format': FORMAT,
         'status': 'match' if not reasons else 'blocked',
         'ready': not reasons,
         'blocking_reasons': list(dict.fromkeys(reasons)),
         'primitive_index': primitive_index,
+        'golden_identity': golden_identity,
         'material_ref': submesh.get('material_ref') or material.get('ref'),
         'material': material,
         'shader_selection': selection,
