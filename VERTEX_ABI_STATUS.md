@@ -295,3 +295,8 @@ The same corpus reports exact descriptor/payload provenance for all 70,370 color
 No property `461` was observed anywhere in the supplied 1.02 corpus, so COLOR1 has no positive resource instance in this evidence set. A runtime declaration instance correlated to the same resource is still a separate evidence target.
 
 The large raw bundle is intentionally not committed; only its SHA-256 and aggregate findings are stored in the small snapshot above. `tools/analyze_meb_evidence_bundle.py` can reproduce the aggregate analysis by streaming `resources.jsonl` from the ZIP without loading the corpus into RAM.
+
+
+## Phase 124: D3D9 shader runtime lifecycle
+
+The recovered `SHIFT.exe.c` now has a concrete source snapshot for `FUN_0084f000` (source SHA-256 `512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9`, lines 925759–925892). One state flush applies `SetPixelShader` at vtable offset `0x1ac`, `SetVertexShader` at `0x170`, `SetVertexDeclaration` at `0x15c`, `SetStreamSource` at `0x190` and `SetIndices` at `0x1a0`. This is source-static evidence; a concrete runtime frame is still required for same-instance attribution.
