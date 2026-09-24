@@ -299,3 +299,10 @@ The declaration chain can consume this as an additional runtime gate. This prove
 ## Phase 96: source provenance coherence
 
 Phase 96 adds an optional but strict source-provenance guard to the D3D9 declaration chain. Once SHA-256 provenance is present, all source-backed reports must identify the same SHIFT.exe.c snapshot by hash, size and line count. Missing provenance in legacy reports remains explicitly not-supplied rather than being invented.
+
+
+## Phase 97: D3D9 declaration bind API
+
+Phase 97 adds SHIFT.D3D9ApiBindEvidence/1 for the recovered FUN_0082e510 wrapper. The source shows a cached current declaration pointer and a device COM-vtable dispatch at byte offset 0x15c. The documented IDirect3DDevice9 ordering identifies slot 87 as SetVertexDeclaration, creating a source-backed bridge from the recovered declaration object to the actual D3D9 bind API boundary.
+
+The declaration chain can consume this evidence and includes its source provenance in snapshot coherence. MEB 460/461 -> Type remains not-proven.
