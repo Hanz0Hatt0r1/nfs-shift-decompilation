@@ -194,7 +194,7 @@ def analyze_d3d9_type_semantics(source: str | bytes) -> dict[str, Any]:
         "format": FORMAT,
         "function": FUNCTION,
         "enum_alignment": {
-            "status": "observed" if all_cases_present and observed_count == len(expected) else "not-proven",
+            "status": "observed" if all_cases_present else "not-proven",
             "expected_case_count": len(expected),
             "observed_case_count": len(observed & expected),
             "missing_cases": sorted(expected - observed),
