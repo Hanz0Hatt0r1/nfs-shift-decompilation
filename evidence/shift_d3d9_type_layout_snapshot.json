@@ -1,0 +1,68 @@
+{
+  "format": "SHIFT.D3D9TypeLayoutSnapshot/1",
+  "source": {
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "bytes": 38993813,
+    "line_count": 1471366
+  },
+  "tables": {
+    "type_size": {
+      "address": "0x00b8eef0",
+      "element_width": 4,
+      "component_table_address": "0x00b8ef38",
+      "span_bytes": 72,
+      "span_dword_slots": 18,
+      "type3_entry": "0x00b8eefc",
+      "initializer_status": "opaque"
+    },
+    "type_component_count": {
+      "address": "0x00b8ef38",
+      "element_width": 4,
+      "layout_hint_slots": 18,
+      "initializer_status": "opaque"
+    }
+  },
+  "source_coordinates": {
+    "globals": {
+      "type_size": 660885,
+      "type3_size_symbol": 660886,
+      "type_component_count": 660889
+    },
+    "type_size_getter": 929522,
+    "synthetic_type3_write": 929696,
+    "synthetic_type3_size_increment": 929698,
+    "type_size_offset_accumulation": 930686,
+    "type_component_count_use": 930679,
+    "render_component_count_use": 930728
+  },
+  "type_domain": {
+    "conversion_cases": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "sentinel_type_code": 17,
+    "size_table_layout_hint_entries": 18
+  },
+  "semantic_links": {
+    "type_byte_at_declaration_offset_4_to_size_table": "observed",
+    "type_byte_at_declaration_offset_4_to_component_count_table": "observed",
+    "type3_to_DAT_00b8eefc_entry": "observed",
+    "meb_460_461_to_type_code": "not-proven"
+  }
+}
