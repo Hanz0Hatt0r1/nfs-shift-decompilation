@@ -189,12 +189,18 @@ def analyze_meb_d3d9_color_bridge(
     *,
     runtime_report: str | Path | Mapping[str, Any] | None = None,
     resource_reports: Iterable[str | Path | Mapping[str, Any]] | None = None,
+    descriptor_triple_report: str | Path | Mapping[str, Any] | None = None,
     source_text: str | bytes | None = None,
 ) -> dict[str, Any]:
     """Build the conservative 460/461 -> D3D9 color candidate report."""
     meb = _load_json(meb_report)
     source = _load_json(source_report)
     runtime = _load_json(runtime_report) if runtime_report is not None else None
+    descriptor_triple = (
+        _load_json(descriptor_triple_report)
+        if descriptor_triple_report is not None
+        else None
+    )
     loaded_resource_reports = [
         _load_json(item)
         for item in (resource_reports or [])
@@ -316,11 +322,61 @@ def analyze_meb_d3d9_color_bridge(
             "runtime_color_type_observation": runtime_rows,
             "resource_provenance": resource_rows[pid],
             "property_to_type": {
-                "status": "not-proven",
+                "status": (
+                    "match"
+                    if isinstance(descriptor_triple, Mapping)
+                    and (descriptor_triple.get("meb_property_mapping") or {}).get("status") == "match"
+                    and isinstance(
+                        (descriptor_triple.get("properties") or {}).get(pid),
+                        Mapping,
+                    )
+                    and (
+                        (
+                            descriptor_triple.get("properties") or {}
+                        ).get(pid, {}).get("d3d9_type_mapping", {}).get("status")
+                        == "match"
+                    )
+                    else "mismatch"
+                    if isinstance(descriptor_triple, Mapping)
+                    and (descriptor_triple.get("meb_property_mapping") or {}).get("status") == "mismatch"
+                    else "not-proven"
+                ),
+                "d3d9_type_code": (
+                    4
+                    if isinstance(descriptor_triple, Mapping)
+                    and isinstance((descriptor_triple.get("properties") or {}).get(pid), Mapping)
+                    and (
+                        (
+                            descriptor_triple.get("properties") or {}
+                        ).get(pid, {}).get("d3d9_type_mapping", {}).get("status")
+                        == "match"
+                    )
+                    else None
+                ),
+                "descriptor_triple_evidence_status": (
+                    (descriptor_triple.get("properties") or {})
+                    .get(pid, {})
+                    .get("d3d9_type_mapping", {})
+                    .get("status", "not-supplied")
+                    if isinstance(descriptor_triple, Mapping)
+                    else "not-supplied"
+                ),
                 "reason": (
-                    "MEB 460/461 storage constrains the type to 4-byte normalized candidates "
+                    "Exact MEB descriptor triple proof resolves this property to D3D9 Type 4"
+                    if isinstance(descriptor_triple, Mapping)
+                    and (
+                        (descriptor_triple.get("properties") or {})
+                        .get(pid, {})
+                        .get("d3d9_type_mapping", {})
+                        .get("status")
+                        == "match"
+                    )
+                    else (
+                        "MEB 460/461 storage constrains the type to 4-byte normalized candidates "
+
                     "(D3DCOLOR=4 or UBYTE4N=8), while the recovered source proves a separate "
-                    "Type-4 packed-color path but does not expose the MEB-property-to-Type bridge"
+                        "Type-4 packed-color path but does not expose the MEB-property-to-Type bridge"
+                    )
                 ),
             },
             "status": _status_from_checks(required_checks),
@@ -334,6 +390,7 @@ def analyze_meb_d3d9_color_bridge(
         "runtime_color_type_observation": runtime_rows,
         "resource_provenance": resource_rows,
         "resource_errors": resource_errors,
+        "descriptor_triple_evidence": descriptor_triple,
         "source_integrity": {
             "source_report_format": source.get("format"),
             "source_text_sha256": source_hash,
@@ -347,10 +404,19 @@ def analyze_meb_d3d9_color_bridge(
             "basis": "D3D9 type semantics + current 4-byte normalized MEB storage",
         },
         "meb_property_mapping": {
-            "status": "not-proven",
+            "status": (
+                descriptor_triple.get("meb_property_mapping", {}).get("status", "not-proven")
+                if isinstance(descriptor_triple, Mapping)
+                else "not-proven"
+            ),
             "reason": (
-                "No source-backed or runtime-correlated evidence ties MEB property 460/461 "
-                "to a specific D3D9 declaration record Type byte."
+                descriptor_triple.get("meb_property_mapping", {}).get(
+                    "reason",
+                    "No source-backed or runtime-correlated evidence ties MEB property 460/461 "
+                    "to a specific D3D9 declaration record Type byte.",
+                )
+                if isinstance(descriptor_triple, Mapping)
+                else "No exact MEB descriptor-triple proof supplied."
             ),
         },
         "selection": "not-selected",
@@ -365,6 +431,7 @@ def write_bridge_report(
     *,
     runtime_report: str | Path | Mapping[str, Any] | None = None,
     resource_reports: Iterable[str | Path | Mapping[str, Any]] | None = None,
+    descriptor_triple_report: str | Path | Mapping[str, Any] | None = None,
     source_text: str | bytes | None = None,
 ) -> dict[str, Any]:
     report = analyze_meb_d3d9_color_bridge(
@@ -372,6 +439,7 @@ def write_bridge_report(
         source_report,
         runtime_report=runtime_report,
         resource_reports=resource_reports,
+        descriptor_triple_report=descriptor_triple_report,
         source_text=source_text,
     )
     Path(output).write_text(
@@ -401,6 +469,10 @@ def main(argv: list[str] | None = None) -> int:
         help="optional real BFF-backed SHIFT.ColorABIEvidence/1 report; repeat for 460 and 461",
     )
     parser.add_argument(
+        "--descriptor-triple-report",
+        help="optional SHIFT.MEBD3D9DescriptorTripleEvidence/1 JSON proof",
+    )
+    parser.add_argument(
         "--source-text",
         help="optional SHIFT.exe.c text used to verify source-report SHA-256",
     )
@@ -416,6 +488,7 @@ def main(argv: list[str] | None = None) -> int:
         args.output,
         runtime_report=args.runtime_report,
         resource_reports=args.resource_report,
+        descriptor_triple_report=args.descriptor_triple_report,
         source_text=source_text,
     )
     return 0
