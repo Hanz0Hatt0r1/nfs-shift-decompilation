@@ -61,3 +61,11 @@ def test_bmw_golden_gate_blocks_resource_identity_mismatch():
     report = validate_bmw_golden_gate(_golden(), packet)
     assert report["ready"] is False
     assert "mesh:resource-sha256-mismatch" in report["blocking_reasons"]
+
+
+def test_bmw_golden_gate_blocks_missing_resource_identity():
+    packet = _packet()
+    del packet["mesh"]["resolved"]["resource_sha256"]
+    report = validate_bmw_golden_gate(_golden(), packet)
+    assert report["ready"] is False
+    assert "mesh:resource-sha256-missing" in report["blocking_reasons"]
