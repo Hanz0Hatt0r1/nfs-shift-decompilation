@@ -1584,6 +1584,36 @@ def cmd_color_evidence(args: argparse.Namespace) -> int:
 
 
 
+def cmd_d3d9_source_evidence(args: argparse.Namespace) -> int:
+    """Analyze recovered SHIFT.exe C source for explicit D3D9 vertex evidence."""
+    from d3d9_source_evidence import analyze_shift_exe_c_file
+
+    report = analyze_shift_exe_c_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "source_sha256": report["source"]["sha256"],
+        "observed": sum(
+            row["status"] == "observed"
+            for row in report["observations"]
+        ),
+        "not_found": sum(
+            row["status"] == "not-found"
+            for row in report["observations"]
+        ),
+        "type_4_to_packed_color": report["linkage"]["type_4_to_packed_color"]["status"],
+        "meb_460_461_to_type_4": report["linkage"]["meb_460_461_to_type_4"]["status"],
+        "selection": report["selection"],
+        "verified_abi": report["verified_abi"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1880,6 +1910,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional raw RGBA8 stream used only for candidate comparison; no candidate is auto-selected",
     )
     p.set_defaults(fn=cmd_color_evidence)
+
+    p = sp.add_parser("source-d3d9-evidence", help="analyze SHIFT.exe.c for explicit D3D9 vertex/color evidence")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9SourceVertexEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_source_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
