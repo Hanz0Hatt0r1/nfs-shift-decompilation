@@ -112,6 +112,17 @@ def validate_bmw_golden_gate(
                 for reason in material.get("blocking_reasons") or []
             )
 
+        material_ref = _material_ref(submesh)
+        if material_ref.endswith("/bmw_m3_e36/bmw_m3_e36_paint.mtx"):
+            paint_shader_gate = material.get("paint_shader_gate")
+            if not isinstance(paint_shader_gate, dict):
+                reasons.append(f"paint-shader:{index}:missing")
+            elif paint_shader_gate.get("ready") is not True:
+                reasons.extend(
+                    f"paint-shader:{index}:{reason}"
+                    for reason in (paint_shader_gate.get("blocking_reasons") or ["not-ready"])
+                )
+
     material_status = None
     if material_binding is not None:
         material_status = material_binding.get("selection_status") or material_binding.get("status")
