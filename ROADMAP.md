@@ -191,6 +191,10 @@ formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
 
+## Phase 76: type-table reference census
+
+Phase 76 adds a source callsite census for FUN_00853c20 and records embedded CPrimitiveType.cpp source-path references. Exact source line lists are retained; the opaque DAT_00b90088 contents are still unavailable, so the COLOR ABI remains blocked.
+
 ## Phase 75: source type-table chain evidence
 
 Phase 75 extends the source evidence scanner with line-addressed observations and the recovered declaration type-table chain. The scanner now records FUN_00853c20 -> DAT_00b90088, the XML Type lookup through PTR_DAT_00b901d0, XML Usage/Channel, and the XML Colour stream family. This narrows the source-level ABI path without making an undocumented ABI choice.
