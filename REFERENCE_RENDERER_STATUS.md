@@ -100,3 +100,8 @@ Explicit streams are available to both VS and PS stages and are linked by `(usag
 ## Phase 71: RenderCommand-level skinned oracle
 
 `render_skinned_render_command_reference()` accepts only a ready `SHIFT.RenderCommand/1` with `draw_kind=skinned`, a valid SkinPose and embedded VS/PS programs. The result keeps the RenderCommand validation payload alongside the rendered output so backend parity tests can compare the same source contract.
+
+
+## Phase 83: verified COLOR inputs
+
+`reference_renderer.py` now recognizes the verified MEB descriptor triplets for 460/461 and converts source BGRA bytes to shader RGBA values before VS input. The same conversion is used for static, textured RenderCommand and skinned reference paths. Legacy synthetic meshes without `property_layouts` remain untouched, preserving backward-compatible tests while real MEB JSON carries the exact descriptor triplet.
