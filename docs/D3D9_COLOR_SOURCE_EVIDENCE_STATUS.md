@@ -34,3 +34,8 @@ Run:
     python shift_importer.py source-d3d9-evidence SHIFT.exe.c evidence.json
 
 The report now contains source_line fields, making the evidence trace auditable against the exact decompilation snapshot.
+
+
+## Phase 83: resolution
+
+The previous unresolved linkage is now closed under the repository's MEB three-DWORD property-id convention. The original binary mesh loader consumes the descriptor as Type/Usage/Channel; MEB 460/461 therefore map to `(4,6,0)` and `(4,6,1)`. Source Usage 6 is `Colour`; source Type 4 is the packed `D3DCOLOR` path; `FUN_008310c0` yields BGRA memory order on little-endian Windows. The authoritative status is now `verified` for 460/461.
