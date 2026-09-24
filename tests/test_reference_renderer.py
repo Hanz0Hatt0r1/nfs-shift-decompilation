@@ -2373,3 +2373,41 @@ def test_reference_renderer_rejects_non_skinned_render_command(tmp_path):
                 "pixels": bytes((1, 2, 3, 255)),
             },
         )
+
+def test_reference_renderer_forwards_stage_specific_constants_to_rasterizer(monkeypatch, tmp_path):
+    from reference_renderer import render_textured_static_draw
+
+    captured = {}
+
+    def fake_rasterize(*args, **kwargs):
+        captured["vertex"] = kwargs["vertex_shader_constants"]
+        captured["pixel"] = kwargs["pixel_shader_constants"]
+        return b"P6\n1 1\n255\n\x00\x00\x00"
+
+    monkeypatch.setattr("reference_renderer.rasterize_textured_mesh", fake_rasterize)
+    mesh = {
+        "vertices": [(-0.5, -0.5, 0.0)],
+        "indices": [0, 0, 0],
+        "uv_layers": {"130": [(0.0, 0.0)]},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    vertex_bank = {"c": {0: [1.0, 2.0, 3.0, 4.0]}}
+    pixel_bank = {"c": {0: [5.0, 6.0, 7.0, 8.0]}}
+
+    render_textured_static_draw(
+        _static_draw(),
+        mesh,
+        image,
+        tmp_path / "stage-specific.ppm",
+        vertex_shader_constants=vertex_bank,
+        pixel_shader_constants=pixel_bank,
+    )
+
+    assert captured["vertex"] == vertex_bank
+    assert captured["pixel"] == pixel_bank
