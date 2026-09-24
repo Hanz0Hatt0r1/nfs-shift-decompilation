@@ -65,3 +65,8 @@ The COLOR ABI investigation no longer requires manual raw-stream extraction. The
 ## Phase 68: direct MEB resource evidence
 
 `color-evidence-resource` can read properties 460/461 directly from a `.meb` stored inside a `.bff`, recording entry index, resource SHA256, vertex count and `property_layout` metadata. This is now the canonical ingestion path for future real BMW color evidence.
+
+
+## Phase 69: COLOR corpus consistency
+
+Multiple 460/461 evidence reports can now be aggregated without selecting RGBA/BGRA. Candidate hashes and cross-report stability are exposed as machine-readable data for later declaration verification.
