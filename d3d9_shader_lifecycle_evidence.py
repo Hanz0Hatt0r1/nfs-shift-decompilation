@@ -16,21 +16,29 @@ EDGES = {
 
 def _body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    start = next((i for i, line in enumerate(lines, 1) if re.search(rf'\b{re.escape(function)}\s*\(', line)), None)
+    start = None
+    for i, line in enumerate(lines, 1):
+        match = re.search(rf"\b{re.escape(function)}\s*\(", line)
+        if not match:
+            continue
+        tail = "\n".join(lines[i - 1:min(len(lines), i + 2)])
+        if "{" in tail and (";" not in line or line.rstrip().endswith("{")):
+            start = i
+            break
     if start is None:
-        return None, None, ''
+        return None, None, ""
     depth = 0
     seen = False
     body = []
     for index in range(start, len(lines) + 1):
         line = lines[index - 1]
         body.append(line)
-        depth += line.count('{')
-        depth -= line.count('}')
-        seen |= '{' in line
+        depth += line.count("{")
+        depth -= line.count("}")
+        seen |= "{" in line
         if seen and depth == 0:
-            return start, index, '\\n'.join(body)
-    return start, None, '\\n'.join(body)
+            return start, index, "\n".join(body)
+    return start, None, "\n".join(body)
 
 def analyze_d3d9_shader_lifecycle(source: str) -> dict[str, Any]:
     start, end, body = _body(source, FUNCTION)
