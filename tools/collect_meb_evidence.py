@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import mmap
 import os
 import platform
 import sys
@@ -364,16 +365,18 @@ def collect(args: argparse.Namespace) -> int:
                             f"BFF {archive_index}/{len(bffs)} MEB {entry_index}/{len(meb_entries)}: "
                             f"written {extracted_path} ({extracted_path.stat().st_size:,} bytes)"
                         )
-                        data = extracted_path.read_bytes()
-                        add_meb(
-                            data,
-                            source_kind="bff-meb",
-                            source_path=entry.path,
-                            archive_path=display_path,
-                            entry_index=entry.index,
-                            entry_compressed_size=entry.compressed_size,
-                            entry_uncompressed_size=entry.uncompressed_size,
-                        )
+                        with extracted_path.open("rb") as fp, mmap.mmap(
+                            fp.fileno(), 0, access=mmap.ACCESS_READ
+                        ) as mapped:
+                            add_meb(
+                                mapped,
+                                source_kind="bff-meb",
+                                source_path=entry.path,
+                                archive_path=display_path,
+                                entry_index=entry.index,
+                                entry_compressed_size=entry.compressed_size,
+                                entry_uncompressed_size=entry.uncompressed_size,
+                            )
                     except Exception as exc:
                         errors.append({
                             "source_kind": "bff-meb",
