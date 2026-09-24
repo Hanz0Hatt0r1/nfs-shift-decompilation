@@ -195,6 +195,10 @@ machine-readable backend blocker; no alternate payload is synthesized silently.
 
 Phase 82 adds direct PE address resolution for `SHIFT.exe`. The resolver parses the DOS/PE headers, section table, image base and maps the recovered virtual addresses for `DAT_00b90088` and `PTR_DAT_00b901d0` to file offsets. It distinguishes file-backed bytes from runtime-only memory and leaves `MEB 460/461 -> type code` unresolved until the actual declaration table contents are evidenced.
 
+## Phase 87: D3D9 Stream-group topology
+
+Phase 87 formalizes how the renderer groups declaration records by Stream and derives per-stream byte size from the Type table. This is the next bridge for exact MEB vertex-stream reconstruction; the direct property-to-Type mapping remains the blocker.
+
 ## Phase 86: D3D9 Type semantic validation
 
 Phase 86 introduces an explicit oracle for comparing future raw Type-table values with the `D3DDECLTYPE` semantics already recovered from `FUN_00854e70`. This lets the next memory dump prove table contents without hardcoding guessed values into the renderer.
