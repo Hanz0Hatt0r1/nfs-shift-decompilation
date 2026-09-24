@@ -57,3 +57,12 @@ Run with:
 Missing shader/declaration bytecode and unsuccessful D3D9 state changes are
 not converted into inferred evidence. The Python capture schema and runtime
 trace remain authoritative validation stages.
+
+### Texture stage capture
+
+The producer also records `IDirect3DDevice9::SetTexture` as
+`set_texture` events with zero-based sampler `stage` and the bound
+`texture_ptr`. A NULL pointer is preserved as an explicit unbind.
+
+The hook uses vtable slot 65 and is used by the runtime shader selector to
+require real s0/s3 object bindings for the BMW bodywork material.
