@@ -36,8 +36,13 @@ def build_real_bmw_material_slice(
     *,
     primitive_index: int = 1,
     supplemental_bffs: Iterable[str | Path] = (),
+    shader_source_file: str | Path | None = None,
 ) -> dict[str, Any]:
-    binding_report=build_real_bmw_material_binding(bff_path,supplemental_bffs=supplemental_bffs)
+    binding_report=build_real_bmw_material_binding(
+        bff_path,
+        supplemental_bffs=supplemental_bffs,
+        shader_source_file=shader_source_file,
+    )
     golden=json.loads(Path(golden_manifest_path).read_text(encoding='utf-8'))
     asset_contract=validate_bmw_paint_asset(golden)
     reasons=list(binding_report.get('blocking_reasons') or [])+list(asset_contract.get('blocking_reasons') or [])
@@ -64,8 +69,22 @@ def build_real_bmw_material_slice(
         if str(material.get('name') or '').upper()!='BMW_M3_E36_PAINT':
             reasons.append('material-slice:bmt-name-mismatch')
         shader_ref=str(material.get('shader') or '')
-        fx_archive,fx_entry=_find_shader(rows,shader_ref)
-        fx_bytes=fx_archive.extract_entry(fx_entry)
+        external_shader = Path(shader_source_file) if shader_source_file is not None else None
+        if external_shader is not None:
+            if not external_shader.is_file():
+                raise FileNotFoundError(str(external_shader))
+            expected_shader_name=norm_ref(shader_ref).rsplit('/',1)[-1]
+            if norm_ref(external_shader.name) != expected_shader_name:
+                raise ValueError(
+                    f'shader-source: external basename {external_shader.name!r} '
+                    f'does not match material reference {shader_ref!r}'
+                )
+            fx_bytes=external_shader.read_bytes()
+            shader_record={'path':shader_ref,'archive':'external-file','sha256':_sha256(fx_bytes),'size':len(fx_bytes)}
+        else:
+            fx_archive,fx_entry=_find_shader(rows,shader_ref)
+            fx_bytes=fx_archive.extract_entry(fx_entry)
+            shader_record={'path':fx_entry.path,'archive':fx_archive.path.name,'sha256':_sha256(fx_bytes),'size':len(fx_bytes)}
         texture_records=[]
         for value in material.get('shaderparams',[]) or []:
             raw=value.get('value')
@@ -79,7 +98,6 @@ def build_real_bmw_material_slice(
         dedup={norm_ref(x['path']):x for x in texture_records}
         texture_records=list(dedup.values())
         material_record={'path':bmt_entry.path,'archive':bmt_archive.path.name,'analysis':{'format':'SHIFT.BMT','material':material}}
-        shader_record={'path':fx_entry.path,'archive':fx_archive.path.name}
         binding=binding_report['material_binding']
         material_map,all_base=build_index([material_record,*texture_records,shader_record])
         texture_map,_=build_index(texture_records)
