@@ -2341,6 +2341,31 @@ def cmd_d3d9_runtime_trace(args: argparse.Namespace) -> int:
         return 2
     return 0
 
+def cmd_bmw_runtime_shader_select(args: argparse.Namespace) -> int:
+    """Select one exact static BMW FXO permutation from a runtime shader identity."""
+    from bmw_runtime_shader_select import validate_files
+
+    report = validate_files(
+        args.material_input,
+        args.runtime_report,
+        require_same_resource=not args.allow_resource_mismatch,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "selected": report.get("selected"),
+        "blocking_reasons": report.get("blocking_reasons", []),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_runtime_shader_join(args: argparse.Namespace) -> int:
     """Join an exact BMW material slice with captured D3D9 runtime shader state."""
     from bmw_runtime_shader_join import validate_files
@@ -3261,6 +3286,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--usage-map", help="optional JSON mapping MEB Usage ordinals to D3D9 Usage bytes")
     p.add_argument("--require-same-instance", action="store_true", help="return 2 unless strict same-instance proof is established")
     p.set_defaults(fn=cmd_d3d9_runtime_trace)
+
+    p = sp.add_parser("bmw-runtime-shader-select", help="select an exact BMW FXO permutation from captured D3D9 shader identity")
+    p.add_argument("material_input", help="SHIFT.RealBMWMaterialBindingEvidence/1 or SHIFT.MaterialBinding/1 JSON")
+    p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWRuntimeShaderSelection/1 JSON")
+    p.add_argument("--allow-resource-mismatch", action="store_true", help="diagnostic mode; do not require exact MEB resource identity")
+    p.set_defaults(fn=cmd_bmw_runtime_shader_select)
 
     p = sp.add_parser("bmw-runtime-shader-join", help="join a BMW material slice with captured D3D9 runtime shader state")
     p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
