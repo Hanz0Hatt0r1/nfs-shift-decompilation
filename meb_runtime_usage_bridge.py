@@ -45,6 +45,8 @@ def build_usage_ordinal_bridge(material_slice: Mapping[str, Any], runtime_report
             evidence_rows.append(row)
             if len(usages)==1:
                 observations.setdefault(usage_ordinal,[]).append(usages[0])
+            elif len(usages)>1:
+                conflicts.append({'usage_ordinal':usage_ordinal,'runtime_usages':usages})
     mapping={}; conflicts=[]; unmapped=[]
     for ordinal, usages in sorted(observations.items()):
         unique=sorted(set(usages))
@@ -52,6 +54,11 @@ def build_usage_ordinal_bridge(material_slice: Mapping[str, Any], runtime_report
             mapping[str(ordinal)]=unique[0]
         else:
             conflicts.append({'usage_ordinal':ordinal,'runtime_usages':unique})
+    conflicts_by_ordinal={}
+    for conflict in conflicts:
+        conflicts_by_ordinal.setdefault(conflict['usage_ordinal'], set()).update(conflict['runtime_usages'])
+    conflicts=[{'usage_ordinal':k,'runtime_usages':sorted(v)} for k,v in sorted(conflicts_by_ordinal.items())]
+
     descriptor_ordinals=sorted({int(d['words'][1]) for d in _descriptor_rows(material_slice) if isinstance(d.get('words'),list) and len(d['words'])>=3})
     for ordinal in descriptor_ordinals:
         if str(ordinal) not in mapping and not any(x['usage_ordinal']==ordinal for x in conflicts):
