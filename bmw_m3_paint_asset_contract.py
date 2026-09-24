@@ -6,6 +6,7 @@ from typing import Any, Mapping
 FORMAT = "SHIFT.BMWM3PaintAssetContract/1"
 PAINT_MTX = "vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
 PAINT_BMT = "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt"
+EXPECTED_RESOURCE_SHA256 = "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
 
 def _norm(value: Any) -> str:
     return str(value or '').replace('\\','/').strip('/').lower()
@@ -24,6 +25,7 @@ def validate_bmw_paint_asset(golden: Mapping[str, Any]) -> dict[str, Any]:
     resource=_norm(meta.get('resource'))
     if resource!='vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb': reasons.append('asset:resource-mismatch')
     if not meta.get('resource_sha256'): reasons.append('asset:resource-sha256-missing')
+    elif str(meta.get('resource_sha256')).lower()!=EXPECTED_RESOURCE_SHA256: reasons.append('asset:resource-sha256-mismatch')
     color=(mesh.get('color460_descriptor') or {}).get('words')
     if color!=[4,6,0]: reasons.append('asset:color460-proof-missing')
     primitives=list(mesh.get('primitives') or [])
