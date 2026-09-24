@@ -94,3 +94,8 @@ Phase 55 closes the known 230..234 UVW semantic gap across the desktop renderer 
 ## Phase 56: proven skin input semantics
 
 Phase 56 wires MEB 310/580 into the integrated VS reference path. The next rendering/vehicle step is to resolve COLOR0/1 exact type/channel order and then prove the minimal SkinPose adapter that can transform a vertex using known bone weights/indices without conflating that with BAB animation decoding.
+
+
+## Phase 57: explicit external sampler resources
+
+Phase 57 makes external sampler requirements executable rather than passive: RenderCommand preserves the requirement, the reference renderer accepts explicit sampler2D images by `sN`, and the CLI can reproduce those bindings from DDS files. The next resource milestone is a real cube-map representation for `environmentMap/s3`; in parallel, COLOR0/1 and skin deformation remain separate ABI tracks.

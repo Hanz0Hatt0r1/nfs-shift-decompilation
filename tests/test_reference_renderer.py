@@ -1570,3 +1570,119 @@ def test_reference_renderer_rejects_missing_blend_index_input(tmp_path):
         assert "requires BLENDINDICES0 but mesh has no matching attribute" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_reference_renderer_executes_external_sampler2d_without_material_fallback(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["textures"] = []
+    command["submeshes"][0]["external_samplers"] = [{
+        "sampler": "sShadowMap_f1_0",
+        "sampler_type": "sampler2D",
+        "d3d9_sampler_register": 0,
+        "binding": "external-or-specialised",
+    }]
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+    external = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((80, 90, 100, 255)),
+    }
+    out = tmp_path / "external-shadow.ppm"
+    result = render_textured_render_command(
+        command,
+        {**_triangle(), "uv_layers": {"130": [(0.0, 0.0)] * 3}},
+        external,
+        out,
+        shader_reference=True,
+        external_texture_images={0: external},
+        width=24,
+        height=24,
+    )
+    assert result["external_sampler_requirements"] == [{
+        "sampler": "sShadowMap_f1_0",
+        "d3d9_sampler_register": 0,
+        "sampler_type": "sampler2D",
+    }]
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (80, 90, 100) in pixels
+
+
+def test_reference_renderer_does_not_use_legacy_image_for_external_sampler(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["textures"] = []
+    command["submeshes"][0]["external_samplers"] = [{
+        "sampler": "sShadowMap_f1_0",
+        "sampler_type": "sampler2D",
+        "d3d9_sampler_register": 0,
+        "binding": "external-or-specialised",
+    }]
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((10, 20, 30, 255)),
+    }
+    out = tmp_path / "missing-external.ppm"
+    try:
+        render_textured_render_command(
+            command,
+            {**_triangle(), "uv_layers": {"130": [(0.0, 0.0)] * 3}},
+            image,
+            out,
+            shader_reference=True,
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "missing texture images for samplers: s0" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
+
+
+def test_reference_renderer_rejects_external_cube_sampler(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["textures"] = []
+    command["submeshes"][0]["external_samplers"] = [{
+        "sampler": "environmentMap",
+        "sampler_type": "samplerCube",
+        "d3d9_sampler_register": 3,
+        "binding": "external-or-specialised",
+    }]
+    program = _textured_tex_shader_program()
+    program["samplers"] = [3]
+    program["sampler_types"] = {"3": "samplerCube"}
+    program["instructions"][0]["operands"][2]["index"] = 3
+    command["submeshes"][0]["shader"]["pixel_program"] = program
+    cube_image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command,
+            {**_triangle(), "uv_layers": {"130": [(0.0, 0.0)] * 3}},
+            cube_image,
+            tmp_path / "cube.ppm",
+            shader_reference=True,
+            external_texture_images={3: cube_image},
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "external sampler s3 (samplerCube) requires a dedicated reference resource implementation" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")

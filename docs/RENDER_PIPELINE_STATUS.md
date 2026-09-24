@@ -96,3 +96,8 @@ The desktop reference renderer and standalone vertex-reference adapter now accep
 ## Phase 56: skin input semantics
 
 The desktop VS reference boundary now consumes MEB 310/580 as `BLENDWEIGHT0`/`BLENDINDICES0` inputs when a vertex ShaderProgram declares them. Both are passed through unchanged at semantic level (indices widened to numeric float4 for the shader register), with missing attributes treated as hard errors. No skin deformation is performed yet.
+
+
+## Phase 57: explicit external sampler resources
+
+Renderer-global/specialized sampler requirements are now a first-class RenderCommand field. The deterministic reference path can bind external `sampler2D` resources by D3D9 sampler register and validates the declared sampler type before execution. The CLI exposes repeatable `--external-texture-binding SLOT=PATH` inputs. Environment `samplerCube` resources remain a dedicated future milestone.

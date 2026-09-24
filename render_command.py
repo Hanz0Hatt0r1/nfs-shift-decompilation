@@ -257,6 +257,15 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
         shader_validation = None
         if linked_pair is not None:
             shader_validation = linked_pair.get("shader_validation")
+        external_samplers = []
+        for external in material.get("external_samplers", []) or []:
+            row = dict(external)
+            register = row.get("d3d9_sampler_register")
+            if register is None:
+                register = row.get("slot")
+            if register is not None:
+                row["d3d9_sampler_register"] = register
+            external_samplers.append(row)
 
         commands.append({
             "first_index": submesh.get("first_index", 0),
@@ -272,6 +281,7 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
                 "validation": shader_validation,
             },
             "textures": texture_commands,
+            "external_samplers": external_samplers,
             "uniforms": uniform_binding,
             "constant_payload": constant_payload,
             "constant_commands": constant_commands,
@@ -295,6 +305,10 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
             "format": resources.get("format"),
             "texture_count": resources.get("stats", {}).get("textures", 0),
             "sampler_count": resources.get("stats", {}).get("samplers", 0),
+            "external_sampler_count": sum(
+                len(submesh.get("external_samplers", []) or [])
+                for submesh in commands
+            ),
         },
     }
     if validate_shaders:
@@ -372,7 +386,7 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
     plan = command.get("resource_plan") or {}
     if plan.get("format") != "SHIFT.RenderResources/1":
         reasons.append("resource-plan:invalid-format")
-    for key in ("texture_count", "sampler_count"):
+    for key in ("texture_count", "sampler_count", "external_sampler_count"):
         try:
             if int(plan.get(key, 0) or 0) < 0:
                 reasons.append(f"resource-plan:{key}-invalid")
@@ -494,6 +508,28 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
                 reasons.extend(
                     sampler_state.get("blocking_reasons", [])
                     or [f"texture-command:sampler-state-not-ready:{texture_index}"]
+                )
+
+        external_registers: set[int] = set()
+        for external_index, external in enumerate(submesh.get("external_samplers", []) or []):
+            register = external.get("d3d9_sampler_register")
+            try:
+                register_value = int(register)
+            except (TypeError, ValueError):
+                reasons.append(f"external-sampler:register-invalid:{external_index}")
+                continue
+            if register_value < 0:
+                reasons.append(f"external-sampler:register-invalid:{external_index}")
+                continue
+            if register_value in external_registers:
+                reasons.append(f"external-sampler:register-collision:{register_value}")
+            external_registers.add(register_value)
+            if register_value in sampler_registers:
+                reasons.append(f"external-sampler:collides-with-material:{register_value}")
+            sampler_type = str(external.get("sampler_type") or "").strip()
+            if sampler_type not in {"sampler2D", "samplerCube", "sampler3D", "sampler1D"}:
+                reasons.append(
+                    f"external-sampler:type-invalid:{external_index}:{sampler_type or 'missing'}"
                 )
 
     reasons = list(dict.fromkeys(reasons))
