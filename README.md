@@ -270,3 +270,12 @@ The neutral renderer contract now has a common submission shape for skinned draw
 ## Phase 64: RenderCommand → GLES skinning ABI
 
 `skinning_glsl.py` now exposes a direct `SHIFT.RenderCommand/1` → `SHIFT.GLES31Skinning/1` adapter. The Android-facing layer can consume the same SkinPose, bone count and vertex locations that were validated by the neutral render command, without depending on the importer or the original SkinnedDraw builder.
+
+
+## Phase 68: COLOR evidence directly from BFF/MEB
+
+Для реальных архивов добавлена команда `color-evidence-resource`: она извлекает указанный `.meb` из `.bff`, читает `colors`/`colors2` и строит тот же `SHIFT.ColorABIEvidence/1`. Это убирает ручной шаг `convert-meb --format json`; выбор `RGBA/BGRA` остаётся исключительно evidence-driven.
+
+Пример:
+
+    python shift_importer.py color-evidence-resource VEHICLES.bff cars/bmw_m3_e36/body.meb 460 body-color-evidence.json
