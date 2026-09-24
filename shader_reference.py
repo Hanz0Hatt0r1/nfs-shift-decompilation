@@ -234,12 +234,18 @@ class ReferenceShaderState:
                 if name == "MOV":
                     value = self._read(o[1])
                     if o[0].reg_type == 3:
-                        value = [_address_round(x) for x in value]
+                        value = list(value)
+                        for pos, channel in enumerate(o[0].write_mask or "xyzw"):
+                            value["xyzw".index(channel)] = _address_round(value["xyzw".index(channel)])
                     self._write(o[0], value)
                 elif name == "MOVA":
                     if o[0].reg_type != 3:
                         raise ValueError("MOVA destination must be the a0 address register")
-                    self._write(o[0], [_address_round(x) for x in self._read(o[1])])
+                    value = list(self._read(o[1]))
+                    for pos, channel in enumerate(o[0].write_mask or "xyzw"):
+                        index = "xyzw".index(channel)
+                        value[index] = _address_round(value[index])
+                    self._write(o[0], value)
                 elif name == "ADD":
                     self._write(o[0], _component(self._read(o[1]), lambda a, b: a + b, self._read(o[2])))
                 elif name == "SUB":
