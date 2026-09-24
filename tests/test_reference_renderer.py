@@ -2038,6 +2038,12 @@ def test_reference_renderer_executes_explicit_texcoord5_stream(tmp_path):
         semantic_rows={
             ("TEXCOORD", 5): [(1.0, 0.0, 0.0)] * 3,
         },
+        sampler={
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
         width=24,
         height=24,
     )
