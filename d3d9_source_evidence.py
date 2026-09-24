@@ -83,6 +83,47 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
         ),
     )
 
+    packed_color_marker = "uint __fastcall FUN_008310c0(float *param_1)"
+    declaration_type_marker = "fVar7 = (float)FUN_008310c0(&local_100);"
+    type_table_marker = "return *(undefined4 *)(&DAT_00b90088 + param_1 * 4);"
+    type_table_accessor = _contains_all(
+        text,
+        (
+            "undefined4 __fastcall FUN_00853c20(int param_1)",
+            type_table_marker,
+        ),
+    )
+
+    xml_type_link_marker = "pbVar17 = (&PTR_DAT_00b901d0)[(int)local_18];"
+    xml_type_table_chain = _contains_all(
+        text,
+        (
+            "uint __fastcall FUN_008587e0(int param_1,int param_2)",
+            xml_type_link_marker,
+            "uVar9 = FUN_00853c20((int)local_18);",
+            "*(char *)(iVar7 + 4 + *(int *)(param_1 + 0x1c)) = (char)uVar9;",
+        ),
+    )
+
+    xml_usage_channel = _contains_all(
+        text,
+        (
+            'pcVar16 = (char *)FUN_0063d360(local_40,(byte *)"Usage");',
+            "uVar9 = FUN_00853c40(local_5c);",
+            stream_fields_marker,
+        ),
+    )
+
+    colour_stream_marker = 'pcVar23 = "Colour";'
+    colour_stream_field = _contains_all(
+        text,
+        (
+            "switch(local_5c)",
+            "case 6:",
+            colour_stream_marker,
+        ),
+    )
+
     packed_path = packed_helper and declaration_type_switch
     observations = [
         {
