@@ -44,10 +44,71 @@ def _source_signature(report: Mapping[str, Any]) -> dict[str, Any]:
         return {}
     return {
         key: source.get(key)
-        for key in ("kind", "bytes", "line_count")
+        for key in ("name", "sha256", "kind", "bytes", "line_count")
         if source.get(key) is not None
     }
 
+
+def _source_provenance_check(
+    reports: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    signatures = {
+        name: _source_signature(report)
+        for name, report in reports.items()
+    }
+    candidates = {
+        name: signature
+        for name, signature in signatures.items()
+        if signature.get("sha256") is not None
+    }
+    if not candidates:
+        return {
+            "status": "not-supplied",
+            "reference": None,
+            "conflicts": [],
+        }
+
+    required_fields = ("sha256", "bytes", "line_count")
+    incomplete = [
+        name for name, signature in signatures.items()
+        if any(signature.get(field) is None for field in required_fields)
+    ]
+    if incomplete:
+        return {
+            "status": "not-proven",
+            "reference": None,
+            "conflicts": [{"source": name, "reason": "incomplete source provenance"} for name in incomplete],
+        }
+
+    first_name, first_signature = next(iter(signatures.items()))
+    reference = {
+        field: first_signature.get(field)
+        for field in required_fields
+    }
+    reference["name"] = first_signature.get("name")
+    conflicts = []
+    for name, signature in signatures.items():
+        for field in required_fields:
+            if signature.get(field) != reference.get(field):
+                conflicts.append({
+                    "source": name,
+                    "field": field,
+                    "expected": reference.get(field),
+                    "observed": signature.get(field),
+                })
+        if reference.get("name") is not None and signature.get("name") != reference["name"]:
+            conflicts.append({
+                "source": name,
+                "field": "name",
+                "expected": reference["name"],
+                "observed": signature.get("name"),
+            })
+
+    return {
+        "status": "observed" if not conflicts else "mismatch",
+        "reference": reference,
+        "conflicts": conflicts,
+    }
 
 def _runtime_memory_proven(report: Mapping[str, Any]) -> bool:
     if report.get("format") != "SHIFT.D3D9MemoryDeclarationEvidence/1":
@@ -218,7 +279,19 @@ def analyze_d3d9_declaration_chain(
         },
     }
 
+    source_provenance = _source_provenance_check({
+        "stream_topology": stream_topology,
+        "stream_record": stream_record,
+        "canonicalizer": canonicalizer,
+    })
+
     memory_layout_supplied = bool(runtime_layout_evidence)
+    if source_provenance["status"] != "not-supplied":
+        checks["source_provenance_coherence"] = {
+            "status": source_provenance["status"],
+            "detail": "source-backed evidence reports refer to one coherent SHIFT.exe.c provenance tuple",
+        }
+
     if memory_supplied:
         checks["runtime_memory_provenance"] = {
             "status": "observed" if _runtime_memory_proven(runtime_memory_evidence) else "not-proven",
@@ -268,6 +341,8 @@ def analyze_d3d9_declaration_chain(
         "stream_group_to_record_pointer",
         "type_to_group_byte_size",
     ]
+    if source_provenance["status"] != "not-supplied":
+        required_keys.append("source_provenance_coherence")
     if instance_supplied:
         required_keys.append("declaration_instance")
     if memory_supplied:
@@ -303,6 +378,7 @@ def analyze_d3d9_declaration_chain(
             "record_fields_observed": observed_fields,
             "record_fields_expected": total_fields,
             "pe_type_profile_status": pe_validation if pe_available else "not-supplied",
+            "source_provenance_status": source_provenance["status"],
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
@@ -336,6 +412,7 @@ def analyze_d3d9_declaration_chain(
                 )
             ),
         },
+        "source_provenance": source_provenance,
         "meb_property_mapping": {
             "status": meb_status,
             "detail": "No joined evidence in this chain assigns MEB properties 460/461 to a D3D9 Type ordinal.",
