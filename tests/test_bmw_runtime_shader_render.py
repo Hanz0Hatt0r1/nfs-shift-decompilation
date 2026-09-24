@@ -105,3 +105,43 @@ def test_runtime_shader_render_forwards_exact_contract(monkeypatch, tmp_path):
     assert captured["kwargs"]["semantic_rows"][("COLOR", 0)] == mesh["colors"]
     assert captured["kwargs"]["texture_images"][1]["pixels"] == [255, 20, 10, 255]
     assert output.read_bytes().startswith(b"P6\n1 1\n255\n")
+
+
+
+def _write_ppm(path, rgb=(10, 20, 30)):
+    path.write_bytes(
+        b"P6\n1 1\n255\n" + bytes(rgb)
+    )
+
+
+def test_runtime_render_contract_loads_captured_sampler_snapshots(tmp_path):
+    import bmw_runtime_shader_render as render
+
+    s0 = tmp_path / "s0.ppm"
+    _write_ppm(s0, (20, 30, 40))
+
+    cube_paths = {}
+    for face in ("px", "nx", "py", "ny", "pz", "nz"):
+        path = tmp_path / f"s3_{face}.ppm"
+        _write_ppm(path, (50, 60, 70))
+        cube_paths[face] = path
+
+    contract = {
+        "external_textures": [
+            {
+                "d3d9_sampler_register": 0,
+                "snapshot_status": "captured",
+                "snapshot_paths": [str(s0)],
+            },
+            {
+                "d3d9_sampler_register": 3,
+                "snapshot_status": "captured",
+                "snapshot_paths": [str(cube_paths[face]) for face in ("px", "nx", "py", "ny", "pz", "nz")],
+            },
+        ]
+    }
+
+    images, resources = render._contract_snapshot_resources(contract, None)
+    assert images[0]["format"] == "SHIFT.ReferenceTexture/1"
+    assert resources[3]["format"] == "SHIFT.ReferenceCubeTexture/1"
+    assert set(resources[3]["faces"]) == {"px", "nx", "py", "ny", "pz", "nz"}

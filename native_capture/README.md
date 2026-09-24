@@ -86,3 +86,13 @@ The hook runs before `Present`, uses a system-memory surface and currently
 supports A8R8G8B8, X8R8G8B8 and R5G6B5 backbuffers. Screenshot capture is
 optional and failure is reported as a separate JSONL event; it does not change
 normal D3D9 rendering behavior.
+
+### Sampler-content snapshots
+
+For offline shader execution, enable:
+
+    SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT=1
+    SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR=C:\\capture\\textures
+    SHIFT_D3D9_CAPTURE_TEXTURE_STAGES=0,3,4
+
+Stage 0 and 4 2D textures are written as one level-0 PPM. Cube stage 3 is written as six face PPM files (px, nx, py, ny, pz, nz) when the surface is readable in a supported color format. Snapshot failure never drops the original set_texture event.

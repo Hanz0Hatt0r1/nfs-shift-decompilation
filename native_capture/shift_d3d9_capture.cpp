@@ -263,6 +263,193 @@ bool write_backbuffer_ppm(
     return ok;
 }
 
+
+
+std::string capture_texture_snapshot_dir() {
+    const char* directory = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR");
+    std::string value = (directory && *directory) ? directory : ".";
+    if (!value.empty() && value.back() != '\\' && value.back() != '/') {
+        value.push_back('\\');
+    }
+    return value;
+}
+
+bool texture_snapshot_stage_enabled(DWORD stage) {
+    if (!env_enabled("SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT")) return false;
+    const char* stages = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_STAGES");
+    std::string list = (stages && *stages) ? stages : "0,3,4";
+    std::size_t begin = 0;
+    while (begin < list.size()) {
+        std::size_t end = list.find(',', begin);
+        if (end == std::string::npos) end = list.size();
+        std::string token = list.substr(begin, end - begin);
+        char* parse_end = nullptr;
+        unsigned long value = std::strtoul(token.c_str(), &parse_end, 0);
+        if (parse_end != token.c_str() && *parse_end == '\0' && value == stage) {
+            return true;
+        }
+        begin = end + 1;
+    }
+    return false;
+}
+
+const char* cube_face_name(D3DCUBEMAP_FACES face) {
+    switch (face) {
+    case D3DCUBEMAP_FACE_POSITIVE_X: return "px";
+    case D3DCUBEMAP_FACE_NEGATIVE_X: return "nx";
+    case D3DCUBEMAP_FACE_POSITIVE_Y: return "py";
+    case D3DCUBEMAP_FACE_NEGATIVE_Y: return "ny";
+    case D3DCUBEMAP_FACE_POSITIVE_Z: return "pz";
+    case D3DCUBEMAP_FACE_NEGATIVE_Z: return "nz";
+    default: return "unknown";
+    }
+}
+
+bool write_texture_surface_ppm(
+    IDirect3DDevice9* device,
+    IDirect3DSurface9* source,
+    const D3DSURFACE_DESC& desc,
+    const std::string& output_path) {
+    if (!device || !source) return false;
+    const bool supported =
+        desc.Format == D3DFMT_A8R8G8B8 ||
+        desc.Format == D3DFMT_X8R8G8B8 ||
+        desc.Format == D3DFMT_R5G6B5;
+    if (!supported || desc.Width == 0 || desc.Height == 0) return false;
+
+    IDirect3DSurface9* render_target = nullptr;
+    if (FAILED(device->CreateRenderTarget(
+            desc.Width, desc.Height, desc.Format,
+            D3DMULTISAMPLE_NONE, 0, TRUE, &render_target, nullptr))) {
+        return false;
+    }
+
+    bool ok = SUCCEEDED(device->StretchRect(
+        source, nullptr, render_target, nullptr, D3DTEXF_NONE));
+
+    IDirect3DSurface9* staging = nullptr;
+    if (ok) {
+        ok = SUCCEEDED(device->CreateOffscreenPlainSurface(
+            desc.Width, desc.Height, desc.Format,
+            D3DPOOL_SYSTEMMEM, &staging, nullptr));
+    }
+    if (ok) {
+        ok = SUCCEEDED(device->GetRenderTargetData(render_target, staging));
+    }
+
+    D3DLOCKED_RECT locked{};
+    if (ok) ok = SUCCEEDED(staging->LockRect(&locked, nullptr, D3DLOCK_READONLY));
+
+    if (ok) {
+        std::ofstream image(output_path, std::ios::binary);
+        ok = image.is_open();
+        if (ok) {
+            image << "P6\n" << desc.Width << " " << desc.Height << "\n255\n";
+            for (UINT y = 0; y < desc.Height && ok; ++y) {
+                const auto* row = static_cast<const unsigned char*>(locked.pBits) +
+                                  static_cast<std::size_t>(y) * locked.Pitch;
+                for (UINT x = 0; x < desc.Width; ++x) {
+                    unsigned char rgb[3]{};
+                    if (desc.Format == D3DFMT_R5G6B5) {
+                        const auto value =
+                            *reinterpret_cast<const std::uint16_t*>(row + x * 2);
+                        rgb[0] = static_cast<unsigned char>(((value >> 11) & 0x1f) * 255 / 31);
+                        rgb[1] = static_cast<unsigned char>(((value >> 5) & 0x3f) * 255 / 63);
+                        rgb[2] = static_cast<unsigned char>((value & 0x1f) * 255 / 31);
+                    } else {
+                        const auto* pixel = row + x * 4;
+                        rgb[0] = pixel[2];
+                        rgb[1] = pixel[1];
+                        rgb[2] = pixel[0];
+                    }
+                    image.write(reinterpret_cast<const char*>(rgb), sizeof(rgb));
+                    if (!image) {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (staging && ok) staging->UnlockRect();
+    if (staging) staging->Release();
+    render_target->Release();
+    return ok;
+}
+
+void append_texture_snapshot_json(
+    std::ostringstream& out,
+    IDirect3DDevice9* device,
+    DWORD stage,
+    IDirect3DBaseTexture9* texture) {
+    if (!texture_snapshot_stage_enabled(stage) || !texture) return;
+
+    const auto type = texture->GetType();
+    const std::string dir = capture_texture_snapshot_dir();
+    const std::string pointer_text = CaptureWriter::ptr(texture);
+    std::ostringstream prefix;
+    prefix << dir << "shift_d3d9_s" << stage << "_" << pointer_text.substr(1, pointer_text.size() - 2);
+
+    if (type == D3DRTYPE_TEXTURE) {
+        auto* tex = static_cast<IDirect3DTexture9*>(texture);
+        IDirect3DSurface9* surface = nullptr;
+        bool captured = false;
+        if (SUCCEEDED(tex->GetSurfaceLevel(0, &surface))) {
+            D3DSURFACE_DESC desc{};
+            if (SUCCEEDED(surface->GetDesc(&desc))) {
+                captured = write_texture_surface_ppm(
+                    device, surface, desc, prefix.str() + ".ppm");
+            }
+            surface->Release();
+        }
+        out << ",\"snapshot_status\":" << CaptureWriter::quote(captured ? "captured" : "capture-failed");
+        if (captured) {
+            out << ",\"snapshot_paths\":[" << CaptureWriter::quote(prefix.str() + ".ppm") << "]";
+        }
+        return;
+    }
+
+    if (type == D3DRTYPE_CUBETEXTURE) {
+        auto* cube = static_cast<IDirect3DCubeTexture9*>(texture);
+        const D3DCUBEMAP_FACES faces[] = {
+            D3DCUBEMAP_FACE_POSITIVE_X, D3DCUBEMAP_FACE_NEGATIVE_X,
+            D3DCUBEMAP_FACE_POSITIVE_Y, D3DCUBEMAP_FACE_NEGATIVE_Y,
+            D3DCUBEMAP_FACE_POSITIVE_Z, D3DCUBEMAP_FACE_NEGATIVE_Z,
+        };
+        bool captured_any = false;
+        bool all_captured = true;
+        std::ostringstream json_paths;
+        bool first = true;
+        for (const auto face : faces) {
+            IDirect3DSurface9* surface = nullptr;
+            bool captured = false;
+            if (SUCCEEDED(cube->GetCubeMapSurface(face, 0, &surface))) {
+                D3DSURFACE_DESC desc{};
+                if (SUCCEEDED(surface->GetDesc(&desc))) {
+                    std::string path = prefix.str() + "_" + cube_face_name(face) + ".ppm";
+                    captured = write_texture_surface_ppm(device, surface, desc, path);
+                    if (captured) {
+                        if (!first) json_paths << ",";
+                        json_paths << CaptureWriter::quote(path);
+                        first = false;
+                        captured_any = true;
+                    }
+                }
+                surface->Release();
+            }
+            if (!captured) all_captured = false;
+        }
+        out << ",\"snapshot_status\":" << CaptureWriter::quote(all_captured ? "captured" : (captured_any ? "partial" : "capture-failed"));
+        if (captured_any) {
+            out << ",\"snapshot_paths\":[" << json_paths.str() << "]";
+        }
+        return;
+    }
+
+    out << ",\"snapshot_status\":\"unsupported-resource-type\"";
+}
+
 void patch_object_vtable(
     void* object,
     std::size_t count,
@@ -489,6 +676,7 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"stage\":" << stage;
         append_texture_descriptor_json(f, texture);
+        append_texture_snapshot_json(f, self, stage, texture);
         writer().write_event("set_texture", f.str());
     }
     return hr;
