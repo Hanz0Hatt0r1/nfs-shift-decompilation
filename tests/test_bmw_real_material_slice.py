@@ -104,10 +104,16 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
         vertex_count=4,
         triangle_count=1,
         property_descriptors=[{"id":"200","words":[2,0,0]},{"id":"460","words":[4,6,0]}],
-        primitives=[SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx")],
+        primitives=[
+            SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/bmw_m3_e36_badging.mtx"),
+            SimpleNamespace(first_index=150,index_count=6294,material="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"),
+        ],
     )
     monkeypatch.setattr(slicer, "read_meb", lambda data: mesh)
-    monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":m.property_descriptors,"primitives":[{"first_index":0,"index_count":3,"material":m.primitives[0].material}]})
+    monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":m.property_descriptors,"primitives":[
+            {"first_index":0,"index_count":3,"material":m.primitives[0].material},
+            {"first_index":150,"index_count":6294,"material":m.primitives[1].material},
+        ]})
     monkeypatch.setattr(slicer, "mesh_to_jsonable", lambda m: {"format":"SHIFT.MEB","vertices":[[0,0,0]]*4,"indices":[0,1,2]})
     monkeypatch.setattr(slicer, "build_layout_from_summary", lambda x: {"format":"SHIFT.VertexLayout/1","buffer_stride":32,"attributes":[{"property_id":"200","usage":"POSITION","usage_index":0,"location":0,"offset":0,"stride":32,"storage":"f32x3"}]})
     monkeypatch.setattr(slicer, "parse_bmt_material", lambda data: {"material":{"name":"BMW_M3_E36_PAINT","shader":"bodywork.fx","shaderparams":[]}})
