@@ -55,3 +55,8 @@ The deterministic reference layers now consume `230..234` directly as `TEXCOORD0
 ## Phase 66: COLOR evidence CLI
 
 `shift_importer.py color-evidence` is now the standard entry point for collecting evidence on MEB properties 460/461. It preserves both RGBA and BGRA candidate streams and reports exact byte differences against an external RGBA8 reference without changing the unresolved ABI status.
+
+
+## Phase 67: MEB JSON evidence input
+
+The COLOR ABI investigation no longer requires manual raw-stream extraction. The evidence CLI accepts canonical MEB mesh JSON and reconstructs the exact four-byte `colors`/`colors2` streams emitted by the decoder, preserving the unresolved declaration/channel-order status.
