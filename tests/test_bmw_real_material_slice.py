@@ -43,7 +43,7 @@ def _golden():
             "color460_descriptor": {"words": [4, 6, 0]},
             "primitives": [
                 {"first_index": 0, "index_count": 3, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
-                {"first_index": 3, "index_count": 3, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 150, "index_count": 6294, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
             ],
             "skinning": {"skinned": False},
         },
