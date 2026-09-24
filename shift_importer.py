@@ -1881,6 +1881,31 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
     }, ensure_ascii=False, indent=2))
     return 0
 
+
+def cmd_decode_d3d9_declaration(args: argparse.Namespace) -> int:
+    """Decode raw 8-byte D3D9 declaration records from a memory dump."""
+    from d3d9_declaration_instance import decode_d3d9_declaration_records_file
+
+    result = decode_d3d9_declaration_records_file(
+        args.input,
+        count=args.count,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "decoded_records": result["payload"]["decoded_records"],
+        "trailing_bytes": result["payload"]["trailing_bytes"],
+        "terminator_indices": result["validation"]["terminator_indices"],
+        "meb_property_mapping": result["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2244,6 +2269,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9DeclarationChainEvidence/1 JSON output")
     p.add_argument("--pe-evidence", help="optional SHIFT.PEImageEvidence/1 JSON input")
     p.set_defaults(fn=cmd_d3d9_declaration_chain)
+
+    p = sp.add_parser("decode-d3d9-declaration", help="decode raw 8-byte D3D9 declaration records")
+    p.add_argument("input", help="raw declaration-record bytes")
+    p.add_argument("output", help="SHIFT.D3D9DeclarationInstanceEvidence/1 JSON output")
+    p.add_argument("--count", type=int, help="decode at most this many records")
+    p.set_defaults(fn=cmd_decode_d3d9_declaration)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")

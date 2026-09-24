@@ -154,3 +154,7 @@ The recovered renderer groups declaration records by Stream id. The Stream/Type/
 ## Phase 90: D3D9 declaration evidence chain
 
 `SHIFT.D3D9DeclarationChainEvidence/1` теперь объединяет четыре независимых source-backed звена: Type size/component semantics, STREAM grouping, 8-byte `D3DVERTEXELEMENT9`-shaped record и full-record canonicalization. Отсутствующее звено блокирует итоговый статус. Реальный runtime declaration и MEB 460/461 → Type ordinal остаются отдельными unresolved boundaries.
+
+## Phase 91: raw declaration instance decoder
+
+`SHIFT.D3D9DeclarationInstanceEvidence/1` даёт воспроизводимый декодер фактических 8-байтных declaration records. Type codes 0..16 разрешаются через recovered Type profile, `0x11` экспонируется как `D3DDECLTYPE_UNUSED`; неполный payload и неизвестный Type не принимаются как валидный declaration. Numeric Usage/UsageIndex сохраняются без недоказанной semantic remapping, а MEB 460/461 linkage остаётся `not-proven`.

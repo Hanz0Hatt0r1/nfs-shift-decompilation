@@ -267,3 +267,7 @@ The PE resolver is corrected to the source-backed Type layout addresses DAT_00b8
 ## Phase 90: D3D9 declaration evidence chain
 
 Phase 90 связывает уже проверенные слои в один machine-readable contract. `SHIFT.D3D9DeclarationChainEvidence/1` проверяет согласованность PE Type-profile validation, `FUN_00854e70` STREAM grouping, `FUN_008587e0` 8-byte `D3DVERTEXELEMENT9`-shaped record и `FUN_00830f80` full-record canonicalization. Любое отсутствующее или противоречивое звено блокирует итог `observed`; цепочка не выбирает MEB 460/461 → Type ordinal и явно фиксирует отсутствие runtime memory/declaration evidence.
+
+## Phase 91: raw D3D9 declaration instance
+
+Phase 91 добавляет instance-level decoder для фактических 8-байтных declaration records. Он декодирует поля `Stream/Offset/Type/Method/Usage/UsageIndex`, проверяет Type against the recovered profile и fail-closed различает `match`, `partial` и `mismatch`. Source-backed Method=0 проверяется отдельно; Usage byte остаётся сырым значением без недоказанного преобразования. MEB 460/461 → Type ordinal остаётся `not-proven`.
