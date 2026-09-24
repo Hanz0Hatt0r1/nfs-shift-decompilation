@@ -365,3 +365,25 @@ def test_static_draw_rejects_missing_ctab_type():
     result = build_static_draw_contract(packet)
     assert result["ready"] is False
     assert "material-uniform-binding:ctab-type-missing" in result["blocking_reasons"]
+
+
+def test_static_draw_accepts_source_proven_color_abi_when_shader_uses_it():
+    packet = _packet()
+    packet["mesh"]["vertex_layout"]["attributes"].append({
+        "property_id": "460",
+        "location": 1,
+        "offset": 12,
+        "element_size": 4,
+        "abi_status": "proven",
+        "d3d9": "D3DCOLOR",
+        "channel_order": "BGRA",
+        "shader_order": "RGBA",
+        "descriptor_triplet": [4, 6, 0],
+    })
+    packet["submeshes"][0]["material"]["shader_selection"]["shader_pair"]["vertex_bindings"] = [{
+        "property_id": "460",
+        "matched": True,
+    }]
+    result = build_static_draw_contract(packet)
+    assert result["ready"] is True
+    assert result["blocking_reasons"] == []
