@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 98** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 99** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -481,3 +481,14 @@ CLI:
     python shift_importer.py source-d3d9-render-api-boundary SHIFT.exe.c render-api.json
 
 Declaration chain может принять этот report как дополнительный gate через --render-api-evidence. API mapping отделён от MEB property mapping; 460/461 → Type остаётся not-proven.
+
+
+## Phase 99 — D3D9 declaration creation
+
+Добавлен SHIFT.D3D9DeclarationCreateEvidence/1. FUN_00830f80 теперь формализован как source-backed creation boundary: canonicalizer выделяет buffer размера element_count * 8 + 8, копирует туда declaration-record bytes и передаёт buffer через IDirect3DDevice9 slot 86 (0x158), то есть CreateVertexDeclaration.
+
+CLI:
+
+    python shift_importer.py source-d3d9-declaration-create-evidence SHIFT.exe.c declaration-create.json
+
+Это замыкает source-side путь 8-byte declaration records → CreateVertexDeclaration → declaration object, который затем используется Phase 97 для SetVertexDeclaration. MEB 460/461 → Type остаётся not-proven.
