@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 121. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 122. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -441,3 +441,10 @@ Next: execute this exact real-material slice through BMT -> FX -> FXO, shader tr
 `SHIFT.BMWMaterialSlice/1` narrows the exact BMW render slice to one real primitive/material. The selector requires unique shader selection, unique VS/PS pairing, linked GLSL, resolved material data, explicit sampler registers and a ready `RenderCommand/1` when present.
 
 Next: execute the selected material through the desktop shader reference and compare the result against the linked shader IR and RenderCommand inputs.
+
+
+## Phase 122: BMW desktop reference render
+
+`SHIFT.BMWReferenceRender/1` now executes a ready BMW material slice through the existing desktop `RenderCommand/1` oracle and records a deterministic PPM SHA-256. Shader-reference mode reuses the existing `render_textured_render_command` path and requires explicit reference texture data rather than loading BFFs at render time.
+
+Next: feed one actual BMW material slice with a real mesh payload, inspect the selected FXO VS/PS pair and drive the first non-synthetic golden image.

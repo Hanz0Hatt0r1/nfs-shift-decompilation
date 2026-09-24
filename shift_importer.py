@@ -2158,6 +2158,29 @@ def cmd_validate_d3d9_runtime_layout(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bmw_reference_render(args: argparse.Namespace) -> int:
+    """Render one ready BMW material slice through the desktop reference renderer."""
+    from bmw_reference_render import render_files
+
+    result = render_files(
+        args.slice,
+        args.mesh,
+        args.output,
+        width=args.width,
+        height=args.height,
+        shader_reference=args.shader_reference,
+        texture_path=args.texture_json,
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "sha256": result["sha256"],
+        "width": result["width"],
+        "height": result["height"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_bmw_material_slice(args: argparse.Namespace) -> int:
     """Extract one exact BMW material draw from a BMW render slice."""
     from bmw_material_slice import validate_files
@@ -2685,6 +2708,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9DeclarationInstanceEvidence/1 JSON output")
     p.add_argument("--count", type=int, help="decode at most this many records")
     p.set_defaults(fn=cmd_decode_d3d9_declaration)
+
+    p = sp.add_parser("bmw-reference-render", help="render one ready BMW material slice through the desktop reference renderer")
+    p.add_argument("slice", help="SHIFT.BMWMaterialSlice/1 JSON")
+    p.add_argument("mesh", help="neutral MEB mesh JSON")
+    p.add_argument("output", help="output PPM")
+    p.add_argument("--width", type=int, default=512)
+    p.add_argument("--height", type=int, default=512)
+    p.add_argument("--shader-reference", action="store_true")
+    p.add_argument("--texture-json", help="optional SHIFT.ReferenceTexture/1 JSON")
+    p.set_defaults(fn=cmd_bmw_reference_render)
 
     p = sp.add_parser("bmw-material-slice", help="extract one exact BMW material draw from SHIFT.BMWRenderSlice/1")
     p.add_argument("slice", help="SHIFT.BMWRenderSlice/1 JSON")
