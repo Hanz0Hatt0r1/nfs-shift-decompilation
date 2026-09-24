@@ -372,6 +372,28 @@ def validate_gles31_skinning_contract_parity(
     }
 
 
+def build_gles31_skinning_submission_gate(
+    command: dict[str, Any],
+    *,
+    bone_binding: int = DEFAULT_BONE_BINDING,
+    max_bones: int = DEFAULT_MAX_BONES,
+) -> dict[str, Any]:
+    """Build the GLES skinning contract and verify parity against RenderCommand/1."""
+    contract = build_gles31_skinning_contract_from_render_command(
+        command,
+        bone_binding=bone_binding,
+        max_bones=max_bones,
+    )
+    parity = validate_gles31_skinning_contract_parity(command, contract)
+    return {
+        "format": "SHIFT.GLES31SkinningSubmissionGate/1",
+        "ready": parity["valid"],
+        "contract": contract,
+        "parity": parity,
+        "blocking_reasons": list(parity.get("blocking_reasons", []) or []),
+    }
+
+
 def gles31_skinning_functions(*, bone_binding: int = DEFAULT_BONE_BINDING,
                                max_bones: int = DEFAULT_MAX_BONES) -> str:
     """Return reusable GLSL ES 3.1 linear-blend skinning functions."""
