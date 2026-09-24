@@ -247,6 +247,7 @@ def analyze_d3d9_declaration_chain(
     declaration_sentinel_evidence: Mapping[str, Any] | None = None,
     declaration_lifecycle_evidence: Mapping[str, Any] | None = None,
     binding_args_evidence: Mapping[str, Any] | None = None,
+    meb_color_bridge_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -265,6 +266,7 @@ def analyze_d3d9_declaration_chain(
     declaration_sentinel_evidence = declaration_sentinel_evidence or {}
     declaration_lifecycle_evidence = declaration_lifecycle_evidence or {}
     binding_args_evidence = binding_args_evidence or {}
+    meb_color_bridge_evidence = meb_color_bridge_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -389,6 +391,60 @@ def analyze_d3d9_declaration_chain(
     memory_layout_supplied = bool(runtime_layout_evidence)
     api_bind_supplied = bool(api_bind_evidence)
     binding_args_supplied = bool(binding_args_evidence)
+    meb_color_bridge_supplied = bool(meb_color_bridge_evidence)
+
+    if meb_color_bridge_supplied:
+        bridge_format = meb_color_bridge_evidence.get("format")
+        bridge_mapping_status = _status(
+            meb_color_bridge_evidence,
+            "meb_property_mapping",
+            "status",
+        )
+        bridge_candidate_status = _status(
+            meb_color_bridge_evidence,
+            "d3d9_candidates",
+            "status",
+        )
+        bridge_properties = meb_color_bridge_evidence.get("properties")
+        bridge_storage_ok = isinstance(bridge_properties, Mapping) and all(
+            isinstance(bridge_properties.get(property_id), Mapping)
+            and _status(
+                bridge_properties,
+                property_id,
+                "meb_storage",
+                "status",
+            )
+            == "observed"
+            for property_id in ("460", "461")
+        )
+        bridge_candidate_codes = [
+            int(row.get("code"))
+            for row in (meb_color_bridge_evidence.get("d3d9_candidates") or {}).get(
+                "types",
+                []
+            )
+            if isinstance(row, Mapping) and row.get("code") is not None
+        ]
+        checks["meb_color_bridge"] = {
+            "status": (
+                "observed"
+                if bridge_format == "SHIFT.MEBD3D9ColorBridgeEvidence/1"
+                and bridge_mapping_status == "not-proven"
+                and bridge_candidate_status == "ambiguous"
+                and bridge_storage_ok
+                and bridge_candidate_codes == [4, 8]
+                else (
+                    "mismatch"
+                    if bridge_mapping_status == "mismatch"
+                    else "not-proven"
+                )
+            ),
+            "detail": (
+                "MEB COLOR0/COLOR1 are constrained to D3D9 Type 4/8 candidates "
+                "without selecting a property-to-Type identity"
+            ),
+        }
+
     if binding_args_supplied:
         binding_status = binding_args_evidence.get("status")
         stream_link = _status(
@@ -621,6 +677,8 @@ def analyze_d3d9_declaration_chain(
         required_keys.append("d3d9_declaration_lifecycle")
     if binding_args_supplied:
         required_keys.append("d3d9_binding_arguments")
+    if meb_color_bridge_supplied:
+        required_keys.append("meb_color_bridge")
     if instance_supplied:
         required_keys.append("declaration_instance")
     if memory_supplied:
@@ -687,6 +745,10 @@ def analyze_d3d9_declaration_chain(
                 binding_args_evidence.get("status", "not-supplied")
                 if binding_args_supplied else "not-supplied"
             ),
+            "meb_color_bridge_status": (
+                checks["meb_color_bridge"]["status"]
+                if meb_color_bridge_supplied else "not-supplied"
+            ),
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
@@ -725,6 +787,19 @@ def analyze_d3d9_declaration_chain(
             ),
         },
         "source_provenance": source_provenance,
+        "meb_color_bridge_evidence": (
+            {
+                "format": meb_color_bridge_evidence.get("format"),
+                "selection": meb_color_bridge_evidence.get("selection"),
+                "verified_abi": meb_color_bridge_evidence.get("verified_abi"),
+                "meb_property_mapping": meb_color_bridge_evidence.get(
+                    "meb_property_mapping"
+                ),
+                "d3d9_candidates": meb_color_bridge_evidence.get("d3d9_candidates"),
+                "source_integrity": meb_color_bridge_evidence.get("source_integrity"),
+            }
+            if meb_color_bridge_supplied else None
+        ),
         "binding_args_evidence": (
             {
                 "format": binding_args_evidence.get("format"),
@@ -845,6 +920,7 @@ def analyze_d3d9_declaration_chain_files(
     declaration_sentinel_evidence_path: str | Path | None = None,
     declaration_lifecycle_evidence_path: str | Path | None = None,
     binding_args_evidence_path: str | Path | None = None,
+    meb_color_bridge_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -905,5 +981,10 @@ def analyze_d3d9_declaration_chain_files(
             None
             if binding_args_evidence_path is None
             else load(binding_args_evidence_path)
+        ),
+        meb_color_bridge_evidence=(
+            None
+            if meb_color_bridge_evidence_path is None
+            else load(meb_color_bridge_evidence_path)
         ),
     )

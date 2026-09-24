@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 104** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 106** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -559,3 +559,16 @@ Example:
     python d3d9_color_bridge_evidence.py meb.json source-d3d9.json color-bridge.json --runtime-report declaration.json --source-text SHIFT.exe.c
 
 Runtime COLOR declaration observations are recorded separately from property identity. A future proof must correlate the same MEB payload, declaration record and render/bind path rather than selecting Type 4 from the packed-color helper alone.
+
+## Phase 106: declaration-chain integration for MEB 460/461
+
+The declaration-chain validator now accepts `SHIFT.MEBD3D9ColorBridgeEvidence/1`
+through `--meb-color-bridge-evidence`. The new check verifies that both MEB
+properties 460/461 are actually present with the expected 4-byte normalized
+`u8x4` storage and that the bridge exposes exactly the D3D9 Type 4/8 candidate
+set.
+
+This is an evidence gate, not a Type selection gate: `meb_property_mapping`
+must still be `not-proven`. A malformed or explicitly mismatched bridge blocks
+the chain, while a coherent ambiguous bridge is recorded as an observed
+constraint without changing the unresolved mapping.

@@ -356,3 +356,16 @@ Phase 104 formalizes the resource arguments forwarded by FUN_00854da0 and FUN_00
 The recovered SHIFT source independently proves the `Colour` stream family and a Type-4 packed-color conversion path. Because the exported source does not expose a MEB property id → declaration-record identity edge, the bridge remains `not-proven`. Runtime COLOR declaration records are observations, not automatic attributions to MEB 460/461.
 
 Next evidence target: correlate one real .meb color payload with the exact declaration record consumed by the same mesh instance, preferably with runtime memory/API capture and a source-backed property identity.
+
+## Phase 106: integrate MEB color constraints into the D3D9 chain
+
+The common declaration-chain validator now consumes the Phase 105 color bridge
+as an optional evidence gate. The gate requires both 460 and 461 storage
+constraints plus the candidate D3D9 Type set {4, 8}; it deliberately rejects
+the input as complete when either property is missing or the bridge claims a
+resolved Type.
+
+This makes the MEB boundary machine-checkable without turning a candidate into
+a false proof. The next closure target remains a same-instance correlation
+between an actual MEB color payload and the exact D3D9 declaration record used
+by that mesh.
