@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from meb_format import PROP_NAMES
+from meb_d3d9_source_abi import VERIFIED_COLOR_ABI
 
 
 # MEB properties are stored as separate contiguous payloads. These descriptors
@@ -31,8 +32,8 @@ EVIDENCE_BASIS = {
     "234": "12-byte MEB payload decoded as FLOAT32x3; TEXCOORD0-4 family retained as established importer mapping",
     "310": "16-byte MEB payload decoded as four FLOAT32 values; BLENDWEIGHT0 semantic and four-influence contract confirmed",
     "580": "4-byte MEB payload decoded as four U8 values; BLENDINDICES0 semantic and four-influence contract confirmed",
-    "460": "4-byte MEB payload; COLOR0 semantic confirmed, but D3D9 D3DCOLOR vs UBYTE4N and RGBA/BGRA byte order remain unresolved",
-    "461": "4-byte MEB payload; COLOR1 semantic confirmed, but D3D9 D3DCOLOR vs UBYTE4N and RGBA/BGRA byte order remain unresolved",
+    "460": "4-byte MEB payload; source-correlated descriptor (4,6,0) resolves to D3DDECLTYPE_D3DCOLOR with BGRA source memory order and COLOR0 shader order RGBA",
+    "461": "4-byte MEB payload; source-correlated descriptor (4,6,1) resolves to D3DDECLTYPE_D3DCOLOR with BGRA source memory order and COLOR1 shader order RGBA",
     "033": "4-byte MEB payload preserved as opaque RAW4; semantic/type not proven",
 }
 
@@ -53,8 +54,36 @@ D3DDECLTYPES = {
     "234": {"d3d9": "FLOAT3", "android": "FLOAT32x3", "components": 3, "normalized": False, "element_size": 12, "confidence": "derived-from-stride"},
     "310": {"d3d9": "FLOAT4", "android": "FLOAT32x4", "components": 4, "normalized": False, "element_size": 16, "confidence": "exact"},
     "580": {"d3d9": "UBYTE4", "android": "UINT8x4", "components": 4, "normalized": False, "element_size": 4, "confidence": "exact"},
-    "460": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"], "components": 4, "normalized": True, "element_size": 4, "confidence": "ambiguous-declaration-and-channel-order", "channel_order_candidates": ["RGBA", "BGRA"], "source_evidence": {"kind": "shift-exe-c", "function": "FUN_008310c0", "address": "0x008310C0", "observed_behavior": "float4 RGBA is rounded to 8-bit channels and packed as 0xAARRGGBB", "little_endian_memory_order": "BGRA", "status": "supporting-packed-color-evidence-not-MEB-declaration-proof"}},
-    "461": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"], "components": 4, "normalized": True, "element_size": 4, "confidence": "ambiguous-channel-order", "channel_order_candidates": ["RGBA", "BGRA"]},
+    "460": {
+        "d3d9": "D3DCOLOR",
+        "d3d9_candidates": ["D3DCOLOR", "UBYTE4N"],
+        "android": "UINT8x4",
+        "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"],
+        "components": 4,
+        "normalized": True,
+        "element_size": 4,
+        "confidence": "exact",
+        "channel_order": "BGRA",
+        "channel_order_candidates": ["BGRA"],
+        "shader_order": "RGBA",
+        "descriptor_triplet": list(VERIFIED_COLOR_ABI["460"]["descriptor_triplet"]),
+        "source_evidence": {"format": "SHIFT.MEBD3D9SourceABIEvidence/1", **VERIFIED_COLOR_ABI["460"]},
+    },
+    "461": {
+        "d3d9": "D3DCOLOR",
+        "d3d9_candidates": ["D3DCOLOR", "UBYTE4N"],
+        "android": "UINT8x4",
+        "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"],
+        "components": 4,
+        "normalized": True,
+        "element_size": 4,
+        "confidence": "exact",
+        "channel_order": "BGRA",
+        "channel_order_candidates": ["BGRA"],
+        "shader_order": "RGBA",
+        "descriptor_triplet": list(VERIFIED_COLOR_ABI["461"]["descriptor_triplet"]),
+        "source_evidence": {"format": "SHIFT.MEBD3D9SourceABIEvidence/1", **VERIFIED_COLOR_ABI["461"]},
+    },
     "033": {"d3d9_candidates": ["UNKNOWN4"], "android": "RAW4", "components": 4, "normalized": False, "element_size": 4, "confidence": "unknown"},
 }
 
