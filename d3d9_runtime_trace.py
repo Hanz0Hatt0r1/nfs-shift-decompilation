@@ -1,0 +1,249 @@
+"""Correlate external D3D9 capture events with SHIFT MEB evidence.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from collections import defaultdict
+from pathlib import Path
+from typing import Any, Iterable, Mapping
+
+from d3d9_declaration_instance import decode_d3d9_declaration_records
+
+FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
+EVENTS = {
+    "create_vertex_declaration",
+    "set_vertex_declaration",
+    "set_stream_source",
+    "set_indices",
+    "draw_indexed_primitive",
+}
+
+
+def _ptr(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return f"0x{value:x}"
+    value = str(value).strip()
+    if not value:
+        return None
+    try:
+        return f"0x{int(value, 0):x}"
+    except ValueError:
+        return value.lower()
+
+
+def _norm(value: Any) -> str | None:
+    return None if value is None else str(value).replace("\\", "/").strip("/").lower()
+
+
+def load_events(path: str | Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for line_no, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"trace line {line_no}: invalid JSON") from exc
+        if not isinstance(row, dict) or row.get("event") not in EVENTS:
+            raise ValueError(f"trace line {line_no}: unsupported event")
+        row["_line"] = line_no
+        rows.append(row)
+    return rows
+
+
+def _decode_declaration(row: Mapping[str, Any]) -> dict[str, Any] | None:
+    raw = row.get("bytes_hex")
+    if raw is None:
+        return None
+    if not isinstance(raw, str):
+        raise ValueError(f"declaration event line {row.get('_line')}: bytes_hex must be a string")
+    try:
+        payload = bytes.fromhex(raw)
+    except ValueError as exc:
+        raise ValueError(f"declaration event line {row.get('_line')}: invalid bytes_hex") from exc
+    report = decode_d3d9_declaration_records(payload)
+    report["payload_sha256"] = hashlib.sha256(payload).hexdigest()
+    return report
+
+
+def _sort_key(value: Any) -> tuple[int, str]:
+    try:
+        return (0, f"{int(value):020d}")
+    except (TypeError, ValueError):
+        return (1, str(value))
+
+
+def build_runtime_binding_evidence(
+    events: Iterable[Mapping[str, Any]],
+    *,
+    meb_resource: Mapping[str, Any] | None = None,
+    usage_ordinal_map: Mapping[int, int] | None = None,
+) -> dict[str, Any]:
+    rows = [dict(row) for row in events]
+    declarations: dict[str, dict[str, Any]] = {}
+    frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
+        "frame": None, "vertex_declaration": None, "stream_sources": [],
+        "index_binding": None, "draws": [],
+    })
+    blockers: list[dict[str, Any]] = []
+
+    for row in rows:
+        frame_key = str(row.get("frame", "unknown"))
+        frame = frames[frame_key]
+        frame["frame"] = row.get("frame")
+        event = row["event"]
+        if event == "create_vertex_declaration":
+            pointer = _ptr(row.get("declaration_ptr"))
+            decoded = _decode_declaration(row)
+            if not pointer:
+                blockers.append({"line": row.get("_line"), "reason": "declaration-pointer-missing"})
+                continue
+            declarations[pointer] = {
+                "pointer": pointer,
+                "line": row.get("_line"),
+                "source_sha256": row.get("source_sha256"),
+                "raw_bytes_sha256": decoded.get("payload_sha256") if decoded else None,
+                "decoded": decoded,
+            }
+        elif event == "set_vertex_declaration":
+            pointer = _ptr(row.get("declaration_ptr"))
+            frame["vertex_declaration"] = {
+                "declaration_ptr": pointer,
+                "line": row.get("_line"),
+                "resource_sha256": row.get("resource_sha256"),
+                "resource_path": row.get("resource_path"),
+                "create_known": bool(pointer and pointer in declarations),
+                "declaration_sha256": declarations.get(pointer, {}).get("raw_bytes_sha256") if pointer else None,
+            }
+        elif event == "set_stream_source":
+            frame["stream_sources"].append({
+                "stream": row.get("stream"),
+                "vertex_buffer_ptr": _ptr(row.get("vertex_buffer_ptr")),
+                "offset_in_bytes": row.get("offset_in_bytes"),
+                "stride": row.get("stride"),
+                "line": row.get("_line"),
+            })
+        elif event == "set_indices":
+            frame["index_binding"] = {
+                "index_buffer_ptr": _ptr(row.get("index_buffer_ptr")),
+                "line": row.get("_line"),
+            }
+        elif event == "draw_indexed_primitive":
+            frame["draws"].append({
+                "primitive_count": row.get("primitive_count"),
+                "start_index": row.get("start_index"),
+                "base_vertex_index": row.get("base_vertex_index"),
+                "line": row.get("_line"),
+            })
+
+    correlation: dict[str, Any] = {
+        "status": "not-supplied",
+        "resource_identity": None,
+        "descriptor_matches": [],
+    }
+    if meb_resource is not None:
+        source = meb_resource.get("source") if isinstance(meb_resource.get("source"), Mapping) else {}
+        meb_sha = meb_resource.get("resource_sha256") or source.get("resource_sha256")
+        meb_path = meb_resource.get("resource") or source.get("root_relative_path")
+        correlation["status"] = "not-proven"
+        correlation["resource_identity"] = {"resource_sha256": meb_sha, "resource_path": meb_path}
+        for descriptor in meb_resource.get("property_descriptors", []):
+            if not isinstance(descriptor, Mapping):
+                continue
+            words = descriptor.get("words")
+            if not isinstance(words, list) or len(words) < 3:
+                continue
+            type_ordinal, usage_ordinal, channel = map(int, words[:3])
+            runtime_usage = usage_ordinal_map.get(usage_ordinal) if usage_ordinal_map is not None else None
+            matches: list[dict[str, Any]] = []
+            for declaration in declarations.values():
+                decoded = declaration.get("decoded") or {}
+                for record in decoded.get("records", []):
+                    if record.get("type") != type_ordinal or record.get("usage_index") != channel:
+                        continue
+                    if runtime_usage is None or record.get("usage") != runtime_usage:
+                        continue
+                    matches.append({
+                        "declaration_ptr": declaration["pointer"],
+                        "record_index": record.get("index"),
+                        "type": record.get("type"),
+                        "usage": record.get("usage"),
+                        "usage_index": record.get("usage_index"),
+                    })
+            correlation["descriptor_matches"].append({
+                "property_id": str(descriptor.get("id")),
+                "type_ordinal": type_ordinal,
+                "usage_ordinal": usage_ordinal,
+                "channel": channel,
+                "runtime_usage_required": runtime_usage,
+                "status": "match" if matches else ("not-proven" if usage_ordinal_map is None else "not-found"),
+                "matches": matches,
+            })
+        if correlation["descriptor_matches"]:
+            correlation["status"] = "observed"
+
+    frame_rows: list[dict[str, Any]] = []
+    for frame_key in sorted(frames, key=_sort_key):
+        frame = frames[frame_key]
+        binding = frame["vertex_declaration"]
+        same_resource = None
+        if binding and meb_resource is not None:
+            identity = correlation["resource_identity"] or {}
+            if binding.get("resource_sha256") and identity.get("resource_sha256"):
+                same_resource = binding["resource_sha256"] == identity["resource_sha256"]
+            elif binding.get("resource_path") and identity.get("resource_path"):
+                same_resource = _norm(binding["resource_path"]) == _norm(identity["resource_path"])
+        frame_rows.append({
+            **frame,
+            "binding": {
+                "status": "observed" if binding and binding.get("create_known") else ("partial" if binding else "not-observed"),
+                "same_meb_resource": same_resource,
+            },
+        })
+
+    return {
+        "format": FORMAT,
+        "status": "observed" if declarations and frame_rows else "partial",
+        "trace": {
+            "event_count": len(rows),
+            "declaration_instance_count": len(declarations),
+            "decoded_declaration_count": sum(1 for x in declarations.values() if x.get("decoded")),
+            "frame_count": len(frame_rows),
+            "source": "external-runtime-capture",
+        },
+        "declarations": list(declarations.values()),
+        "frames": frame_rows,
+        "meb_correlation": correlation,
+        "evidence_boundary": {
+            "runtime_frame_identity": "observed" if frame_rows else "not-supplied",
+            "specific_mesh_instance": "observed" if any(x["binding"].get("same_meb_resource") is True for x in frame_rows) else "not-proven",
+            "usage_ordinal_mapping": "observed" if usage_ordinal_map is not None else "not-supplied",
+        },
+        "blocking_reasons": blockers,
+    }
+
+
+def write_report(report: Mapping[str, Any], output: str | Path) -> None:
+    Path(output).write_text(json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Build SHIFT D3D9 runtime binding evidence from JSONL capture")
+    parser.add_argument("trace")
+    parser.add_argument("output")
+    parser.add_argument("--meb-resource")
+    parser.add_argument("--usage-map")
+    args = parser.parse_args()
+    meb = json.loads(Path(args.meb_resource).read_text(encoding="utf-8")) if args.meb_resource else None
+    raw_map = json.loads(Path(args.usage_map).read_text(encoding="utf-8")) if args.usage_map else None
+    usage_map = {int(k): int(v) for k, v in raw_map.items()} if raw_map else None
+    write_report(build_runtime_binding_evidence(load_events(args.trace), meb_resource=meb, usage_ordinal_map=usage_map), args.output)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
