@@ -106,3 +106,8 @@ Renderer-global/specialized sampler requirements are now a first-class RenderCom
 ## Phase 58: cube-map external resources
 
 `environmentMap → s3` can now be supplied to the deterministic reference renderer as an explicit six-face cube resource. The resource contract validates all six faces and identical dimensions before lookup; the embedded shader sampler type must agree with the RenderCommand external sampler declaration. This removes the previous need to treat samplerCube as an automatic blocker while still keeping source DDS cubemap ingestion as a separate task.
+
+
+## Phase 59: native DDS cubemap decode
+
+The texture reference layer can now ingest complete six-face DDS cubemaps directly. Base-level images are decoded with the same DXT1/DXT3/DXT5 or 32-bit uncompressed path already used for 2D textures, while mip levels are skipped deterministically to reach each next cube face. The result feeds the phase-58 samplerCube contract without inventing per-face source files.
