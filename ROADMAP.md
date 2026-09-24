@@ -195,6 +195,10 @@ machine-readable backend blocker; no alternate payload is synthesized silently.
 
 Phase 82 adds direct PE address resolution for `SHIFT.exe`. The resolver parses the DOS/PE headers, section table, image base and maps the recovered virtual addresses for `DAT_00b90088` and `PTR_DAT_00b901d0` to file offsets. It distinguishes file-backed bytes from runtime-only memory and leaves `MEB 460/461 -> type code` unresolved until the actual declaration table contents are evidenced.
 
+## Phase 86: D3D9 Type semantic validation
+
+Phase 86 introduces an explicit oracle for comparing future raw Type-table values with the `D3DDECLTYPE` semantics already recovered from `FUN_00854e70`. This lets the next memory dump prove table contents without hardcoding guessed values into the renderer.
+
 ## Phase 85: D3D9 Type layout tables
 
 Phase 85 formalizes the runtime meaning of the two opaque Type-indexed layout tables and the 18-entry address-span hint. This closes another source-side part of the declaration ABI; MEB 460/461 -> Type remains the unresolved bridge.
