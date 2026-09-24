@@ -171,11 +171,12 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
     field_rows: list[dict[str, Any]] = []
     for name, spec in FIELDS.items():
         observed = {
-            "type_code": markers["type_field"],
-            "usage_code": markers["usage_field"],
-            "channel": markers["channel_field"],
-            "reserved": markers["reserved_field"],
-            "running_offset": markers["running_offset_field"],
+            "stream": markers["stream_field"],
+            "offset": markers["running_offset_field"],
+            "type": markers["type_field"],
+            "method": markers["method_field"],
+            "usage": markers["usage_field"],
+            "usage_index": markers["channel_field"],
         }[name]
         source_line = {
             "type_code": type_line,
