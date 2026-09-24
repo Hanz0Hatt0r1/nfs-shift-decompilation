@@ -43,10 +43,10 @@ evidence joins, with engine-side resource identity scheduled for Phase 153.
 
 ## Validation
 
-d3d9_capture_schema.py now validates producer metadata, monotonic event_index
-when supplied, non-regressing integer frames, and finite constant vectors.
-Regression coverage exercises a complete producer-shaped event sequence,
-sequence gaps, negative frames and non-finite values.
+d3d9_capture_schema.py already accepts the producer event family, including
+optional event_index/thread/device metadata and the exact constant/declaration
+payload fields used here. Regression coverage exercises a complete
+producer-shaped event sequence plus invalid constant and stream cases.
 
 ## Acceptance
 
