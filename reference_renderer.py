@@ -165,7 +165,7 @@ def _execute_vertex_program(
 
             if usage == "TEXCOORD" and 0 <= semantic_index <= 4:
                 layer = layer_rows.get(semantic_index)
-            elif usage in {"NORMAL", "TANGENT", "BINORMAL"} and semantic_index == 0:
+            elif usage in {"NORMAL", "TANGENT", "BINORMAL", "BLENDWEIGHT", "BLENDINDICES"} and semantic_index == 0:
                 layer = semantic_data.get(semantic)
             else:
                 layer = None
@@ -713,6 +713,8 @@ def render_textured_render_command(
                 ("NORMAL", 0): mesh.get("normals"),
                 ("TANGENT", 0): mesh.get("tangents"),
                 ("BINORMAL", 0): mesh.get("tangents2"),
+                ("BLENDWEIGHT", 0): mesh.get("bone_weights"),
+                ("BLENDINDICES", 0): mesh.get("bone_indices"),
             }.items()
             if rows
         },
