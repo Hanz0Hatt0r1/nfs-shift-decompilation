@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 116** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 118** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -158,7 +158,7 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
     python shift_importer.py color-evidence 460 meb.json color-evidence.json --mesh-json
     python shift_importer.py color-evidence-resource VEHICLES.bff cars/bmw_m3_e36/body.meb 460 body-color-evidence.json
     python shift_importer.py color-evidence-corpus evidence/ color-corpus.json
-    python shift_importer.py color-evidence-bff-corpus /path/to/bffs color-bff-corpus.json
+    python shift_importer.py color-evidence-bff-corpus /path/to/bffs color-bff-corpus.json\n    python bmw_golden_gate.py evidence/bmw_m3_e36_kit00_body_loda.golden.json draw_packets.json
     python tools/analyze_meb_evidence_bundle.py shift_meb_evidence.zip -o meb_corpus.json
 
 ### D3D9 runtime evidence
@@ -619,3 +619,9 @@ The resulting Type mapping is now evidence-backed at the descriptor/triple bound
     python3 tools/collect_meb_evidence.py "/путь/к/Need for Speed Shift" --source "/путь/к/SHIFT.exe.c" -o shift_meb_evidence.zip
 
 После выполнения достаточно прислать `shift_meb_evidence.zip` и SHA-256 из последней строки консоли.
+
+## Phase 117–118: BMW vertical slice
+
+The project now contains a runtime D3D9 capture bridge and a deterministic BMW M3 golden-render gate. The runtime bridge keeps static Ghidra evidence separate from runtime-instance evidence; the golden gate prevents resource, primitive or shader-permutation drift from reaching the renderer unnoticed.
+
+The selected BMW M3 E36 LODA asset is recorded in `evidence/bmw_m3_e36_kit00_body_loda.golden.json`. The next render milestone is an actual BMT -> FX -> FXO binding for one of its real primitives, followed by `RenderCommand/1`, GLES compile validation and a reproducible desktop image SHA-256.
