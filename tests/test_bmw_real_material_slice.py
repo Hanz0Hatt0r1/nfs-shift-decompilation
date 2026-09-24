@@ -35,7 +35,7 @@ def _golden():
         "format": "SHIFT.BMWGoldenAssetManifest/1",
         "golden": {
             "resource": slicer.TARGET_MEB,
-            "resource_sha256": "9" * 64,
+            "resource_sha256": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
         },
         "mesh": {
             "vertex_count": 4,
