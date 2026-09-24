@@ -660,3 +660,21 @@ Next: supply an authentic retail runtime trace for the exact M3 MEB and run `--r
 `SHIFT.BMWBFFIntakeEvidence/1` now provides a deterministic preflight for the real `BMW_M3_E36.bff`: exact archive size, BFF table parse, unique paint BMT/body MEB entries, extracted MEB size and exact golden MEB SHA. This is the final intake check before running the real material-slice pipeline.
 
 Next: run the intake and `bmw-real-material-slice` in an environment with the actual BFF file available to the filesystem. The remaining runtime proof still requires an authentic D3D9 capture.
+
+## Phase 152: D3D9 runtime capture producer
+
+Added a Windows-only d3d9.dll proxy under native_capture/ that loads the system
+D3D9 implementation, intercepts CreateDevice, clones each device vtable, and
+emits schema-compliant JSONL for declaration/shader creation, render-state
+binding, shader constants and DrawIndexedPrimitive. Present is used only as a
+frame boundary. The producer is intentionally resource-identity agnostic: it
+records D3D9 object pointers and exact byte payloads but does not invent a SHIFT
+MEB path or SHA-256.
+
+The capture schema now validates monotonic event_index, non-regressing integer
+frame ids, producer thread/device metadata and finite constant vectors.
+Regression coverage uses a complete producer-shaped draw sequence.
+
+Next: Phase 153 must attach the SHIFT engine MEB/resource identity to the D3D9
+vertex-buffer/declaration state so same_instance_gate can be proven for an
+authentic BMW M3 draw.
