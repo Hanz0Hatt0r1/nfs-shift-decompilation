@@ -435,7 +435,7 @@ def validate_vertex_program_inputs(program: ShaderProgram) -> dict[str, Any]:
     for item in program.inputs:
         usage = str(item.get("usage") or "").upper()
         index = int(item.get("index", 0))
-        if usage in {"POSITION", "POSITIONT"} and index == 0:
+        if usage == "POSITION" and index == 0:
             continue
         if usage in {"TEXCOORD"} and 0 <= index <= 4:
             continue
