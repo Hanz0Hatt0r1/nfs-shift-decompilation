@@ -168,6 +168,7 @@ def analyze_d3d9_declaration_chain(
     declaration_instance: Mapping[str, Any] | None = None,
     runtime_memory_evidence: Mapping[str, Any] | None = None,
     runtime_layout_evidence: Mapping[str, Any] | None = None,
+    api_bind_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -179,6 +180,7 @@ def analyze_d3d9_declaration_chain(
     declaration_instance = declaration_instance or {}
     runtime_memory_evidence = runtime_memory_evidence or {}
     runtime_layout_evidence = runtime_layout_evidence or {}
+    api_bind_evidence = api_bind_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -286,6 +288,24 @@ def analyze_d3d9_declaration_chain(
     })
 
     memory_layout_supplied = bool(runtime_layout_evidence)
+    api_bind_supplied = bool(api_bind_evidence)
+    if api_bind_supplied:
+        api_status = api_bind_evidence.get("status")
+        api_link = _status(
+            api_bind_evidence,
+            "semantic_links",
+            "declaration_object_to_d3d9_bind",
+            "status",
+        )
+        checks["d3d9_api_bind"] = {
+            "status": (
+                "observed"
+                if api_status == "observed" and api_link == "observed"
+                else ("mismatch" if api_status == "mismatch" else "not-proven")
+            ),
+            "detail": "source-backed declaration object reaches the IDirect3DDevice9 SetVertexDeclaration vtable slot",
+        }
+
     if source_provenance["status"] != "not-supplied":
         checks["source_provenance_coherence"] = {
             "status": source_provenance["status"],
@@ -343,6 +363,8 @@ def analyze_d3d9_declaration_chain(
     ]
     if source_provenance["status"] != "not-supplied":
         required_keys.append("source_provenance_coherence")
+    if api_bind_supplied:
+        required_keys.append("d3d9_api_bind")
     if instance_supplied:
         required_keys.append("declaration_instance")
     if memory_supplied:
@@ -379,6 +401,10 @@ def analyze_d3d9_declaration_chain(
             "record_fields_expected": total_fields,
             "pe_type_profile_status": pe_validation if pe_available else "not-supplied",
             "source_provenance_status": source_provenance["status"],
+            "api_bind_status": (
+                api_bind_evidence.get("status", "not-supplied")
+                if api_bind_supplied else "not-supplied"
+            ),
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
@@ -413,6 +439,15 @@ def analyze_d3d9_declaration_chain(
             ),
         },
         "source_provenance": source_provenance,
+        "api_bind_evidence": (
+            {
+                "format": api_bind_evidence.get("format"),
+                "status": api_bind_evidence.get("status"),
+                "api_identity": api_bind_evidence.get("api_identity"),
+                "semantic_links": api_bind_evidence.get("semantic_links"),
+            }
+            if api_bind_supplied else None
+        ),
         "meb_property_mapping": {
             "status": meb_status,
             "detail": "No joined evidence in this chain assigns MEB properties 460/461 to a D3D9 Type ordinal.",
@@ -453,6 +488,7 @@ def analyze_d3d9_declaration_chain_files(
     declaration_instance_path: str | Path | None = None,
     runtime_memory_evidence_path: str | Path | None = None,
     runtime_layout_evidence_path: str | Path | None = None,
+    api_bind_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -478,5 +514,10 @@ def analyze_d3d9_declaration_chain_files(
             None
             if runtime_layout_evidence_path is None
             else load(runtime_layout_evidence_path)
+        ),
+        api_bind_evidence=(
+            None
+            if api_bind_evidence_path is None
+            else load(api_bind_evidence_path)
         ),
     )
