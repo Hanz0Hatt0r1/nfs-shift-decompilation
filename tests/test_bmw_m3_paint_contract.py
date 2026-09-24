@@ -75,3 +75,16 @@ def test_bmw_paint_contract_blocks_missing_sampler_state():
     report=validate_material_binding(binding)
     assert report['ready'] is False
     assert 'sampler:diffuseMap:mip_filter:missing' in report['blocking_reasons']
+
+
+def test_bmw_paint_contract_accepts_material_linker_specialization_dict():
+    binding=_binding()
+    binding.pop('specializations')
+    binding['specialization']={
+        'requested':['USE_FRESNEL','ALLOW_VINYLS','DIRT_SCRATCH'],
+        'declared':[],
+        'missing_declarations':[],
+        'unexpected_declarations':[],
+    }
+    report=validate_material_binding(binding)
+    assert report['ready'] is True
