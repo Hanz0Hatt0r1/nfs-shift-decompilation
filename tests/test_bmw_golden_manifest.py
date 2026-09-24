@@ -16,7 +16,16 @@ def test_bmw_golden_manifest_selects_exact_resource():
             "name": "BMW_M3_E36_KIT00_BODY_LODA",
             "vertex_count": 3550,
             "triangle_count": 5034,
-            "property_descriptors": [{"id": "460", "words": [4, 6, 0]}],
+            "property_descriptors": [
+                {"id": "200", "words": [2, 0, 0]},
+                {"id": "220", "words": [2, 2, 0]},
+                {"id": "240", "words": [2, 4, 0]},
+                {"id": "250", "words": [2, 5, 0]},
+                {"id": "130", "words": [1, 3, 0]},
+                {"id": "132", "words": [1, 3, 2]},
+                {"id": "133", "words": [1, 3, 3]},
+                {"id": "460", "words": [4, 6, 0]},
+            ],
             "property_layouts": [{"id": "200"}, {"id": "460"}],
             "primitives": [{"first_index": 0, "index_count": 3, "material": "x.mtx"}],
             "skinning": {"skinned": False},
@@ -32,7 +41,7 @@ def test_bmw_golden_manifest_selects_exact_resource():
         row["id"]: row["words"]
         for row in manifest["mesh"]["property_descriptors"]
     }
-    assert set(descriptors) == {"460"}
+    assert set(descriptors) == {"200", "220", "240", "250", "130", "132", "133", "460"}
     assert descriptors["460"] == [4, 6, 0]
     assert descriptors["220"] == [2, 2, 0]
     assert descriptors["240"] == [2, 4, 0]
