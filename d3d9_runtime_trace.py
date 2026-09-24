@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from d3d9_declaration_instance import decode_d3d9_declaration_records
+from shader_ir import parse_shader_blobs
+from shader_permutation_identity import build_shader_permutation_identity
 
 FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
 EVENTS = {
@@ -18,6 +20,10 @@ EVENTS = {
     "set_stream_source",
     "set_indices",
     "draw_indexed_primitive",
+    "create_vertex_shader",
+    "create_pixel_shader",
+    "set_vertex_shader",
+    "set_pixel_shader",
 }
 
 
@@ -85,9 +91,10 @@ def build_runtime_binding_evidence(
 ) -> dict[str, Any]:
     rows = [dict(row) for row in events]
     declarations: dict[str, dict[str, Any]] = {}
+    shaders: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
-        "frame": None, "vertex_declaration": None, "stream_sources": [],
-        "index_binding": None, "draws": [],
+        "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
+        "stream_sources": [], "index_binding": None, "draws": [],
     })
     blockers: list[dict[str, Any]] = []
 
@@ -131,6 +138,43 @@ def build_runtime_binding_evidence(
             frame["index_binding"] = {
                 "index_buffer_ptr": _ptr(row.get("index_buffer_ptr")),
                 "line": row.get("_line"),
+            }
+        elif event in {"create_vertex_shader", "create_pixel_shader"}:
+            pointer = _ptr(row.get("shader_ptr"))
+            if not pointer:
+                blockers.append({"line": row.get("_line"), "reason": "shader-pointer-missing"})
+                continue
+            raw = row.get("bytes_hex")
+            payload = None
+            decoded = None
+            if raw is not None:
+                if not isinstance(raw, str):
+                    raise ValueError(f"shader event line {row.get('_line')}: bytes_hex must be a string")
+                try:
+                    payload = bytes.fromhex(raw)
+                except ValueError as exc:
+                    raise ValueError(f"shader event line {row.get('_line')}: invalid bytes_hex") from exc
+                blobs = parse_shader_blobs(payload)
+                if len(blobs) != 1:
+                    raise ValueError(f"shader event line {row.get('_line')}: expected exactly one shader blob")
+                decoded = {
+                    "stage": blobs[0].stage,
+                    "version": [blobs[0].major, blobs[0].minor],
+                    "raw_bytes_sha256": hashlib.sha256(payload).hexdigest(),
+                }
+            shaders[pointer] = {
+                "pointer": pointer,
+                "stage": "vertex" if event == "create_vertex_shader" else "pixel",
+                "line": row.get("_line"),
+                "raw_bytes_hex": payload.hex() if payload is not None else None,
+                "decoded": decoded,
+            }
+        elif event in {"set_vertex_shader", "set_pixel_shader"}:
+            pointer = _ptr(row.get("shader_ptr"))
+            frame["vertex_shader" if event == "set_vertex_shader" else "pixel_shader"] = {
+                "shader_ptr": pointer,
+                "line": row.get("_line"),
+                "create_known": bool(pointer and pointer in shaders),
             }
         elif event == "draw_indexed_primitive":
             frame["draws"].append({
@@ -197,8 +241,28 @@ def build_runtime_binding_evidence(
                 same_resource = binding["resource_sha256"] == identity["resource_sha256"]
             elif binding.get("resource_path") and identity.get("resource_path"):
                 same_resource = _norm(binding["resource_path"]) == _norm(identity["resource_path"])
+        shader_pair_identity = None
+        vs = frame.get("vertex_shader") or {}
+        ps = frame.get("pixel_shader") or {}
+        vsp = shaders.get(vs.get("shader_ptr")) if vs.get("shader_ptr") else None
+        psp = shaders.get(ps.get("shader_ptr")) if ps.get("shader_ptr") else None
+        vraw = bytes.fromhex(vsp["raw_bytes_hex"]) if vsp and vsp.get("raw_bytes_hex") else None
+        praw = bytes.fromhex(psp["raw_bytes_hex"]) if psp and psp.get("raw_bytes_hex") else None
+        if vraw and praw:
+            try:
+                shader_pair_identity = build_shader_permutation_identity(
+                    vraw + praw,
+                    vertex_offset=0,
+                    pixel_offset=len(vraw),
+                )
+            except Exception as exc:
+                shader_pair_identity = {
+                    "status": "error",
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
         frame_rows.append({
             **frame,
+            "shader_permutation_identity": shader_pair_identity,
             "binding": {
                 "status": "observed" if binding and binding.get("create_known") else ("partial" if binding else "not-observed"),
                 "same_meb_resource": same_resource,
@@ -212,10 +276,13 @@ def build_runtime_binding_evidence(
             "event_count": len(rows),
             "declaration_instance_count": len(declarations),
             "decoded_declaration_count": sum(1 for x in declarations.values() if x.get("decoded")),
+            "shader_object_count": len(shaders),
+            "decoded_shader_count": sum(1 for x in shaders.values() if x.get("decoded")),
             "frame_count": len(frame_rows),
             "source": "external-runtime-capture",
         },
         "declarations": list(declarations.values()),
+        "shaders": list(shaders.values()),
         "frames": frame_rows,
         "meb_correlation": correlation,
         "evidence_boundary": {

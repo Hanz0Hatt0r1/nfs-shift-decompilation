@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 123. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 124. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -455,3 +455,10 @@ Next: feed one actual BMW material slice with a real mesh payload, inspect the s
 `SHIFT.ShaderPermutationIdentity/1` is now computed from exact VS/PS bytes plus shader-model and reflection data. Blob offsets are excluded from the canonical fingerprint. `MaterialBinding/1` exposes the identity and the BMW golden gate requires it whenever shader selection is unique.
 
 Next: execute the exact BMW material slice with the selected permutation through the desktop shader-reference path and record the first real-material render evidence.
+
+
+## Phase 124: D3D9 shader runtime lifecycle
+
+The source evidence layer now covers the unified `FUN_0084f000` state flush: pixel shader `0x1ac`, vertex shader `0x170`, declaration `0x15c`, stream source `0x190` and indices `0x1a0`. Runtime JSONL capture also accepts shader-object creation/bind events and computes `SHIFT.ShaderPermutationIdentity/1` when both shader stages are captured for a frame.
+
+Next: correlate the runtime shader identity with the exact BMW material slice and require sampler/register/constant/interface parity before accepting a real-material golden render.

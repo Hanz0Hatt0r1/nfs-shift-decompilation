@@ -1,0 +1,41 @@
+{
+  "format": "SHIFT.D3D9ShaderLifecycleEvidence/1",
+  "status": "observed",
+  "source": {
+    "kind": "shift-exe-c",
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "function": {
+    "name": "FUN_0084f000",
+    "line_start": 925759,
+    "line_end": 925892
+  },
+  "shaders": {
+    "pixel_shader": {
+      "api": "IDirect3DDevice9::SetPixelShader",
+      "vtable_slot": 107,
+      "vtable_byte_offset": "0x1ac",
+      "state_field_offset": "0x1890",
+      "cache_field_offset": "0x1894",
+      "dispatch_status": "observed",
+      "state_status": "observed",
+      "cache_status": "observed"
+    },
+    "vertex_shader": {
+      "api": "IDirect3DDevice9::SetVertexShader",
+      "vtable_slot": 92,
+      "vtable_byte_offset": "0x170",
+      "state_field_offset": "0x1898",
+      "cache_field_offset": "0x189c",
+      "dispatch_status": "observed",
+      "state_status": "observed",
+      "cache_status": "observed"
+    }
+  },
+  "unified_draw_state": {
+    "vertex_declaration": {"vtable_byte_offset": "0x15c", "api": "SetVertexDeclaration", "status": "observed"},
+    "set_stream_source": {"vtable_byte_offset": "0x190", "api": "SetStreamSource", "status": "observed"},
+    "set_indices": {"vtable_byte_offset": "0x1a0", "api": "SetIndices", "status": "observed"}
+  }
+}
