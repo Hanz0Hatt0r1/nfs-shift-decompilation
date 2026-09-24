@@ -22,6 +22,7 @@ def _material(ready_command=True):
             'blocking_reasons': [] if ready_command else ['render-command:not-ready'],
             'mesh': {'vertex_layout': {'format': 'SHIFT.VertexLayout/1'}, 'vertex_count': 3550, 'attributes': []},
             'submeshes': [{
+                'index': 1,
                 'first_index': 150,
                 'index_count': 6294,
                 'uniforms': {'bindings': [{'name': 'primerBasis', 'stage': 'pixel', 'register_index': 5, 'register_count': 1, 'ctab_type': 'float4'}]},
