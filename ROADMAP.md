@@ -287,3 +287,10 @@ Phase 93 усиливает instance-level evidence: декодер распоз
 Phase 94 adds SHIFT.D3D9MemoryDeclarationEvidence/1 as the reproducible bridge from a raw loaded-memory dump to the already recovered D3D9 declaration ABI. The capture records the virtual base/range, little-endian interpretation, complete and slice SHA-256 provenance, exact bytes, and a declaration instance trimmed through the exact D3DDECL_END shape. Extra bytes after the sentinel remain explicitly outside the declaration array.
 
 The declaration chain can now consume the wrapper directly and fail closed on incoherent provenance, bytes, stride, or declaration shape. This is runtime evidence infrastructure only: it does not authenticate an external dump and does not infer MEB 460/461 -> Type.
+
+
+## Phase 95: runtime declaration layout
+
+Phase 95 adds SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1. Runtime declaration records are grouped by Stream and checked against the recovered Type byte sizes: each Stream starts at Offset 0 and every following Offset advances by the packed size of its preceding Type. The report exposes per-Stream byte-size totals and explicit mismatch rows.
+
+The declaration chain can consume this as an additional runtime gate. This proves consistency of the supplied declaration bytes with the recovered offset-building rule; it does not infer MEB 460/461 -> Type or authenticate dump provenance.
