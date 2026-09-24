@@ -693,3 +693,54 @@ def test_d3d9_declaration_canonicalizer_fails_closed_without_function():
     result = analyze_d3d9_declaration_canonicalizer("void f(void) {}")
     assert result["status"] == "not-found"
     assert result["fields"] == []
+
+
+def test_d3d9_type_layout_evidence_recovers_size_and_component_table_semantics():
+    from d3d9_type_layout_evidence import analyze_d3d9_type_layout_tables
+
+    source = r'''
+undefined DAT_00b8eef0;
+undefined DAT_00b8eefc;
+undefined DAT_00b8ef38;
+
+undefined4 __fastcall FUN_00853d50(int param_1,int param_2,int param_3)
+{
+  return *(undefined4 *)(&DAT_00b8eef0 +
+          (uint)*(byte *)(*(int *)(*(int *)(param_2 * 0x10 + 8 + *(int *)(param_1 + 0x24)) +
+                                  param_3 * 4) + 4) * 4);
+}
+void __fastcall FUN_00854040(int param_1)
+{
+  *puVar6 = 3;
+  iVar9 = iVar9 + _DAT_00b8eefc;
+}
+undefined4 __fastcall FUN_00854e70(int param_1,int param_2)
+{
+  *(undefined1 *)(*(int *)(local_48 + 0x1c) + 4 + *(int *)(local_48 + 0x14) * 8) = 0x11;
+  local_48 = local_48 + *(int *)(&DAT_00b8eef0 +
+      (uint)*(byte *)(iVar7 + 4 + *(int *)(param_1 + 0x1c)) * 4);
+  local_b0 = *(int *)(&DAT_00b8ef38 +
+      (uint)*(byte *)(*(int *)(iVar15 + 0x1c) + 4 + iVar12) * 4) * 4;
+}
+'''
+    result = analyze_d3d9_type_layout_tables(source)
+    assert result["tables"]["type_size"]["entry_width"] == 4
+    assert result["tables"]["type_size"]["layout_hint_slots_before_component_table"] == 18
+    assert result["tables"]["type_size"]["third_entry_address"] == "0x00b8eefc"
+    assert result["tables"]["type_size"]["third_entry_declared"] is True
+    assert result["tables"]["type_component_count"]["layout_hint_slots"] == 18
+    assert result["type_domain"]["sentinel_type_code"] == 17
+    assert result["type_domain"]["sentinel_write_observed"] is True
+    assert result["semantics"]["type_code_to_byte_size"]["status"] == "observed"
+    assert result["semantics"]["type_code_to_component_count"]["status"] == "observed"
+    assert result["semantics"]["type3_size_entry"]["status"] == "observed"
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_type_layout_evidence_fails_closed_without_tables():
+    from d3d9_type_layout_evidence import analyze_d3d9_type_layout_tables
+
+    result = analyze_d3d9_type_layout_tables("void f(void) {}")
+    assert result["tables"]["type_size"]["initializer_status"] == "opaque"
+    assert result["semantics"]["type_code_to_byte_size"]["status"] == "not-proven"
+    assert result["meb_property_mapping"]["status"] == "not-proven"

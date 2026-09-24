@@ -1784,6 +1784,29 @@ def cmd_d3d9_canonicalizer_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_type_layout_evidence(args: argparse.Namespace) -> int:
+    """Analyze D3D9 Type size/component-count table semantics."""
+    from d3d9_type_layout_evidence import analyze_d3d9_type_layout_tables_file
+
+    report = analyze_d3d9_type_layout_tables_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "type_domain_status": report["type_domain"]["status"],
+        "type_size_status": report["semantics"]["type_code_to_byte_size"]["status"],
+        "type_component_status": report["semantics"]["type_code_to_component_count"]["status"],
+        "type3_size_entry": report["semantics"]["type3_size_entry"]["status"],
+        "sentinel_type_code": report["type_domain"]["sentinel_type_code"],
+        "meb_property_mapping": report["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2123,6 +2146,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9DeclarationCanonicalizerEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_canonicalizer_evidence)
+
+    p = sp.add_parser("source-d3d9-type-layout-evidence", help="analyze Type->size/component-count tables in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9TypeLayoutTableEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_type_layout_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")

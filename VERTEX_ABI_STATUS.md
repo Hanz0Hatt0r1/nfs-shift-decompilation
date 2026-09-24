@@ -134,3 +134,8 @@ The recovered loader constructs a fixed 8-byte record for each XML `STREAM` entr
 ## Phase 84: declaration canonicalizer evidence
 
 `FUN_00830f80` compares the two WORD fields plus the four BYTE fields of the recovered 8-byte declaration record and copies/interns the complete record. Combined with phase 83, this is source-level evidence that the renderer treats the recovered `Stream/Offset/Type/Method/Usage/UsageIndex` tuple as the declaration identity. MEB 460/461 linkage remains unresolved.
+
+
+## Phase 85: Type -> layout table semantics
+
+The renderer uses the declaration Type byte at offset `+4` as the common key for two opaque runtime tables. `DAT_00b8eef0[Type]` supplies the element byte size; `DAT_00b8ef38[Type]` supplies the component count. The source repeatedly uses these values for stream offset accumulation, vertex-buffer allocation/copy sizes and source component reads. The exact table initializer bytes are still absent from the exported Ghidra C, so numeric contents are not guessed.

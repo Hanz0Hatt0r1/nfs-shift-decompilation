@@ -319,6 +319,10 @@ GLES contract не считается эквивалентной без этог
 
 Phase 82 adds `source-d3d9-pe-evidence`, a pure-Python PE32/PE32+ resolver that maps the recovered Ghidra virtual addresses into file offsets and inspects the D3D9 lookup-table regions directly when they are file-backed. It can also dereference the 17 `PTR_DAT_00b901d0` entries to printable ASCII strings. Loader-initialized/BSS bytes remain explicitly unavailable; MEB 460/461 mapping is still not selected automatically.
 
+## Phase 85 — D3D9 Type layout tables
+
+Phase 85 records the source-backed runtime semantics of the Type layout tables. The declaration `Type` byte at `record +4` indexes `DAT_00b8eef0` for the element byte size used in offset accumulation, allocations and copies, and indexes `DAT_00b8ef38` for component counts used when reading source vertex data. The two bases are separated by `0x48` bytes, giving an 18-DWORD layout hint that includes sentinel Type `0x11`; initializer values remain opaque.
+
 ## Phase 84 — D3D9 declaration canonicalizer evidence
 
 Phase 84 formalizes `FUN_00830f80`, the declaration canonicalizer/interning path. Its comparison loop checks both WORD fields and all four trailing BYTE fields of the same 8-byte record, so the complete `Stream/Offset/Type/Method/Usage/UsageIndex` tuple participates in declaration identity. The report remains source-backed and does not assign MEB properties 460/461 to a Type ordinal.
