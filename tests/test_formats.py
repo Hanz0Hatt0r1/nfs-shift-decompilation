@@ -174,7 +174,7 @@ def _synthetic_meb_with_color_descriptors() -> bytes:
     data = bytearray()
     data += struct.pack(">I", 1)          # version
     data += struct.pack(">I", 0)          # flags: no skeleton
-    data += b"descriptor-test\x00"
+    data += b"x\x00"
     while len(data) % 4:
         data += b"\x00"
     data += struct.pack("<III", 1, 2, 0)  # one vertex, two properties, no primitives
