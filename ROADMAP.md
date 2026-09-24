@@ -191,6 +191,12 @@ formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
 
+## Phase 75: source type-table chain evidence
+
+Phase 75 extends the source evidence scanner with line-addressed observations and the recovered declaration type-table chain. The scanner now records FUN_00853c20 -> DAT_00b90088, the XML Type lookup through PTR_DAT_00b901d0, XML Usage/Channel, and the XML Colour stream family. This narrows the source-level ABI path without making an undocumented ABI choice.
+
+COLOR0/1 remains explicitly blocked until the declaration-table contents or equivalent runtime evidence proves MEB 460/461 -> D3D9 type and byte order.
+
 ## Phase 74: machine-readable D3D9 source evidence
 
 The recovered SHIFT.exe Ghidra C source is now consumable by a dedicated source
