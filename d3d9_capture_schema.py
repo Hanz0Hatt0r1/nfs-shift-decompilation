@@ -45,6 +45,8 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
         if not isinstance(raw, str) or len(raw) % 2 or not _HEX_RE.fullmatch(raw):
             reasons.append('shader-bytes:invalid-hex')
     if event == 'set_texture':
+        if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
+            reasons.append('texture:stage-invalid')
         if row.get('texture_ptr') not in (None, ''):
             status = row.get('resource_descriptor_status')
             if status is not None and status not in {'observed', 'type-only', 'null'}:
