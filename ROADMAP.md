@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 149. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 150. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -646,3 +646,10 @@ Next: obtain a real runtime capture and run the strict gate against the exact M3
 `SHIFT.BMWRuntimeGoldenGate/1` now requires `runtime.same_instance_gate.ready == true` in addition to shader/resource/declaration/input/draw/constant parity. This prevents a runtime golden result from accepting a descriptor match found in an unrelated created declaration.
 
 Next: run the strict runtime tracer on an authentic retail capture for the exact BMW M3 MEB. This is the primary remaining external proof gap.
+
+
+## Phase 150: same-frame indexed draw requirement
+
+The strict D3D9 `same_instance_gate` now requires an indexed draw in the same frame as the bound MEB resource and declaration descriptor match. This prevents declaration-only observations from being promoted to runtime instance proof.
+
+Next: supply an authentic retail runtime trace for the exact M3 MEB and run `--require-same-instance` plus the unified BMW runtime golden gate.
