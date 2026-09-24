@@ -2083,6 +2083,25 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_declaration_lifecycle(args: argparse.Namespace) -> int:
+    """Analyze source-backed D3D9 declaration creation/bind lifecycle."""
+    from d3d9_declaration_lifecycle_evidence import analyze_d3d9_declaration_lifecycle_file
+
+    report = analyze_d3d9_declaration_lifecycle_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "function_count": len(report.get("functions", {})),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["status"] == "observed" else 2
+
+
 def cmd_decode_d3d9_declaration(args: argparse.Namespace) -> int:
     """Decode raw 8-byte D3D9 declaration records from a memory dump."""
     from d3d9_declaration_instance import decode_d3d9_declaration_records_file
