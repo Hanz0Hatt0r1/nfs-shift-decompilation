@@ -132,6 +132,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     assert report["ready"] is True
     assert report["render_command"]["ready"] is True
     assert report["static_draw"]["ready"] is True
+    assert report["slice_golden_gate"]["ready"] is True
     assert report["source_format"]=="SHIFT.RealBMWMaterialSliceEvidence/1"
 
 
