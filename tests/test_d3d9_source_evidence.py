@@ -129,3 +129,37 @@ def test_source_evidence_negative_fixture_does_not_invent_type_table_linkage():
     assert by_id["xml-type-table-chain"]["status"] == "not-found"
     assert result["linkage"]["xml_type_name_to_d3d9_type_table"]["status"] == "not-proven"
     assert result["linkage"]["xml_colour_to_type_4"]["status"] == "not-proven"
+
+
+def test_source_evidence_census_records_type_table_callsites_and_source_reference():
+    source = SOURCE + r'''
+undefined4 __fastcall FUN_00853c20(int param_1)
+{
+  return *(undefined4 *)(&DAT_00b90088 + param_1 * 4);
+}
+uint __fastcall FUN_008587e0(int param_1,int param_2)
+{
+  uVar9 = FUN_00853c20((int)local_18);
+}
+uint __fastcall FUN_00854e70(int param_1,int param_2)
+{
+  uVar5 = FUN_00853c20(*(int *)(*(int *)(local_28 + 0x3c) + local_70 * 4));
+}
+void f(void) {
+  FUN_0062de50(0xb1c6d8,".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",0xbdb,0xb1c9a0,'\\0');
+}
+'''
+    result = analyze_shift_exe_c(source)
+    by_id = {row["id"]: row for row in result["observations"]}
+    assert by_id["type-table-callsite-census"]["call_count"] == 2
+    assert all(line > 0 for line in by_id["type-table-callsite-census"]["source_lines"])
+    assert by_id["cprimitive-type-source-reference"]["reference_count"] == 1
+
+
+def test_source_evidence_census_is_empty_without_type_table_or_source_reference():
+    result = analyze_shift_exe_c("void f(void) {}")
+    by_id = {row["id"]: row for row in result["observations"]}
+    assert by_id["type-table-callsite-census"]["status"] == "not-found"
+    assert by_id["type-table-callsite-census"]["call_count"] == 0
+    assert by_id["cprimitive-type-source-reference"]["status"] == "not-found"
+    assert by_id["cprimitive-type-source-reference"]["reference_count"] == 0
