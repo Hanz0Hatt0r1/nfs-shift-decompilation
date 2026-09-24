@@ -1872,3 +1872,130 @@ def test_reference_renderer_skinned_draw_rejects_unready_pose(tmp_path):
         assert "palette-incomplete" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def _skinned_shader_draw():
+    return {
+        "format": "SHIFT.SkinnedDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "bone_count": 1,
+            "matrices_3x4": [
+                [1, 0, 0, 0.35, 0, 1, 0, 0, 0, 0, 1, 0],
+            ],
+            "source": "synthetic",
+            "frame": 11,
+        },
+        "submeshes": [{
+            "first_index": 0,
+            "index_count": 3,
+            "material": {},
+        }],
+    }
+
+
+def _skinned_vertex_passthrough_program():
+    program = _vertex_passthrough_program()
+    return program
+
+
+def test_reference_renderer_runs_skinned_draw_through_vertex_and_pixel_shader(tmp_path):
+    from reference_renderer import render_skinned_draw_reference
+
+    draw = _skinned_shader_draw()
+    vertex = _skinned_vertex_passthrough_program()
+    pixel = _textured_tex_shader_program()
+    mesh = {
+        "vertices": [
+            (-0.6, -0.5, 0.0),
+            (0.6, -0.5, 0.0),
+            (0.0, 0.6, 0.0),
+        ],
+        "indices": [0, 1, 2],
+        "uv_layers": {"130": [(0.0, 0.0)] * 3},
+        "bone_weights": [(1.0, 0.0, 0.0, 0.0)] * 3,
+        "bone_indices": [(0, 0, 0, 0)] * 3,
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((90, 140, 210, 255)),
+    }
+    out = tmp_path / "skinned-shader.ppm"
+    result = render_skinned_draw_reference(
+        draw,
+        mesh,
+        out,
+        image=image,
+        shader_reference=True,
+        vertex_program=vertex,
+        pixel_program=pixel,
+        width=32,
+        height=32,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    assert result["format"] == "SHIFT.SkinnedDrawReference/1"
+    assert result["shader_reference"] is True
+    assert result["vertex_shader_executed"] is True
+    assert result["skinning"]["frame"] == 11
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (90, 140, 210) in pixels
+
+
+def test_reference_renderer_requires_shaders_for_skinned_shader_reference(tmp_path):
+    from reference_renderer import render_skinned_draw_reference
+
+    draw = _skinned_shader_draw()
+    mesh = {
+        "vertices": [(-0.5, -0.5, 0.0), (0.5, -0.5, 0.0), (0.0, 0.5, 0.0)],
+        "indices": [0, 1, 2],
+        "bone_weights": [(1.0, 0.0, 0.0, 0.0)] * 3,
+        "bone_indices": [(0, 0, 0, 0)] * 3,
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    with pytest.raises(ValueError, match="requires explicit vertex_program and pixel_program"):
+        render_skinned_draw_reference(
+            draw,
+            mesh,
+            tmp_path / "missing-shader.ppm",
+            image=image,
+            shader_reference=True,
+        )
+
+
+def test_reference_renderer_rejects_shader_skinned_draw_without_image(tmp_path):
+    from reference_renderer import render_skinned_draw_reference
+
+    draw = _skinned_shader_draw()
+    mesh = {
+        "vertices": [(-0.5, -0.5, 0.0), (0.5, -0.5, 0.0), (0.0, 0.5, 0.0)],
+        "indices": [0, 1, 2],
+        "bone_weights": [(1.0, 0.0, 0.0, 0.0)] * 3,
+        "bone_indices": [(0, 0, 0, 0)] * 3,
+    }
+    with pytest.raises(ValueError, match="requires an explicit reference image"):
+        render_skinned_draw_reference(
+            draw,
+            mesh,
+            tmp_path / "missing-image.ppm",
+            shader_reference=True,
+            vertex_program=_skinned_vertex_passthrough_program(),
+            pixel_program=_textured_tex_shader_program(),
+        )
