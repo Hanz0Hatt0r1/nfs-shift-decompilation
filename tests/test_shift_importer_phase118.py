@@ -45,3 +45,20 @@ def test_phase120_cli_exposes_bmw_render_slice():
     assert args.golden == "golden.json"
     assert args.render_binding == "render-bindings.json"
     assert args.output == "slice.json"
+
+
+def test_phase122_cli_exposes_bmw_reference_render():
+    parser = build_parser()
+    args = parser.parse_args([
+        "bmw-reference-render", "slice.json", "mesh.json", "body.ppm",
+        "--width", "64", "--height", "32", "--shader-reference",
+        "--texture-json", "texture.json",
+    ])
+    assert args.cmd == "bmw-reference-render"
+    assert args.slice == "slice.json"
+    assert args.mesh == "mesh.json"
+    assert args.output == "body.ppm"
+    assert args.width == 64
+    assert args.height == 32
+    assert args.shader_reference is True
+    assert args.texture_json == "texture.json"
