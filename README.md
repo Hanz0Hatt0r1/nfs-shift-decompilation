@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 95** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 96** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -458,3 +458,8 @@ validate-d3d9-declaration-chain теперь принимает --runtime-memory
 Добавлен SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1. Для фактического declaration instance validator группирует элементы по Stream и проверяет source-backed invariant из STREAM builder: первый Offset каждого Stream равен нулю, а следующий Offset равен предыдущему Offset плюс packed size его Type.
 
 Результат сохраняет per-Stream element count, итоговый byte size, final Offset и Type codes, а несовпадение становится явным mismatch. Exact D3DDECL_END по-прежнему отделяет declaration array от любых последующих bytes. Этот слой усиливает runtime consistency, но не устанавливает MEB 460/461 → Type.
+
+
+## Phase 96 — source provenance coherence
+
+Declaration chain теперь умеет проверять согласованность provenance для source-backed звеньев. Когда evidence reports содержат SHA-256 исходного SHIFT.exe.c, chain требует совпадения sha256, размера и количества строк, а также имени исходного файла; конфликт становится blocker. Старые минимальные reports без hash сохраняют прежний режим, но новый guard включается автоматически, как только provenance предоставлен.
