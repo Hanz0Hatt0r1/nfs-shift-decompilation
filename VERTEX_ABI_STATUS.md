@@ -174,3 +174,10 @@ The recovered renderer groups declaration records by Stream id. The Stream/Type/
 SHIFT.D3D9MemoryDeclarationEvidence/1 теперь связывает сырой loaded-memory dump с recovered 8-byte D3D9 declaration instance через явный адресный диапазон, little-endian marker, SHA-256 полного dump/slice и exact raw bytes. Declaration array автоматически ограничивается точным D3DDECL_END sentinel; дополнительные bytes после него не считаются частью ABI.
 
 Chain-level validation перепроверяет slice hash и структуру вложенного declaration report, поэтому внешний JSON не может одним полем status=match скрыть повреждённые bytes. Provenance фиксирует источник, но остаётся not-authenticated: сам факт наличия dump не является независимой проверкой его происхождения. MEB 460/461 -> Type ordinal остаётся not-proven.
+
+
+## Phase 95: runtime declaration layout
+
+SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1 проверяет фактические runtime Offsets против recovered packed Type sizes по каждому Stream. Для каждого элемента фиксируются observed/expected Offset, Type и element size; per-Stream summary показывает element count, byte size и final Offset.
+
+Это runtime consistency gate поверх phase 94, а не новая semantic inference. Несогласованный Offset остаётся mismatch, отсутствующий end sentinel — неполным доказательством. MEB 460/461 -> Type ordinal остаётся not-proven.

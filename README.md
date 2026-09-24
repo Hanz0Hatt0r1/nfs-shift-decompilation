@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 94** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 95** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -451,3 +451,10 @@ Instance decoder теперь распознаёт полный `D3DDECL_END`-о
 Из slice автоматически выделяется массив до точного D3DDECL_END (ffff 0000 11000000). Байты после sentinel сохраняются как post_sentinel_bytes, поэтому широкий memory window не смешивается с самим declaration array. Некратный 8-byte диапазон, отсутствующий sentinel или неконсистентный record дают partial/mismatch, а недостоверность происхождения внешнего dump явно остаётся not-authenticated.
 
 validate-d3d9-declaration-chain теперь принимает --runtime-memory-evidence и fail-closed перепроверяет формат, little-endian, диапазон, длину/raw bytes, SHA-256 slice и вложенный declaration instance. MEB 460/461 → D3D9 Type ordinal по-прежнему not-proven.
+
+
+## Phase 95 — runtime declaration layout
+
+Добавлен SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1. Для фактического declaration instance validator группирует элементы по Stream и проверяет source-backed invariant из STREAM builder: первый Offset каждого Stream равен нулю, а следующий Offset равен предыдущему Offset плюс packed size его Type.
+
+Результат сохраняет per-Stream element count, итоговый byte size, final Offset и Type codes, а несовпадение становится явным mismatch. Exact D3DDECL_END по-прежнему отделяет declaration array от любых последующих bytes. Этот слой усиливает runtime consistency, но не устанавливает MEB 460/461 → Type.

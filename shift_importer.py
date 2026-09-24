@@ -1866,6 +1866,7 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
         pe_evidence_path=args.pe_evidence,
         declaration_instance_path=args.declaration_instance,
         runtime_memory_evidence_path=args.runtime_memory_evidence,
+        runtime_layout_evidence_path=args.runtime_layout_evidence,
     )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -1932,6 +1933,28 @@ def cmd_capture_d3d9_memory_declaration(args: argparse.Namespace) -> int:
         "slice_length": result["memory"]["slice_length"],
         "declaration_array_records": result["extraction"]["declaration_array_records"],
         "end_sentinel_status": result["extraction"]["end_sentinel_status"],
+        "meb_property_mapping": result["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_validate_d3d9_runtime_layout(args: argparse.Namespace) -> int:
+    """Validate runtime declaration offsets against recovered Type sizes."""
+    from d3d9_runtime_declaration_layout import validate_d3d9_runtime_declaration_layout_file
+
+    result = validate_d3d9_runtime_declaration_layout_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "records_considered": result.get("declaration", {}).get("records_considered"),
+        "streams": len(result.get("stream_summaries", [])),
+        "issues": len(result.get("issues", [])),
         "meb_property_mapping": result["meb_property_mapping"]["status"],
     }, ensure_ascii=False, indent=2))
     return 0
@@ -2301,6 +2324,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--pe-evidence", help="optional SHIFT.PEImageEvidence/1 JSON input")
     p.add_argument("--declaration-instance", help="optional SHIFT.D3D9DeclarationInstanceEvidence/1 JSON input")
     p.add_argument("--runtime-memory-evidence", help="optional SHIFT.D3D9MemoryDeclarationEvidence/1 JSON input")
+    p.add_argument("--runtime-layout-evidence", help="optional SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1 JSON input")
     p.set_defaults(fn=cmd_d3d9_declaration_chain)
 
 
@@ -2312,6 +2336,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--length", type=lambda value: int(value, 0), help="number of bytes to capture")
     p.add_argument("--count", type=int, help="decode at most this many declaration records")
     p.set_defaults(fn=cmd_capture_d3d9_memory_declaration)
+
+    p = sp.add_parser("validate-d3d9-runtime-layout", help="validate runtime declaration offsets against recovered Type sizes")
+    p.add_argument("input", help="SHIFT.D3D9DeclarationInstanceEvidence/1 or SHIFT.D3D9MemoryDeclarationEvidence/1 JSON input")
+    p.add_argument("output", help="SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_validate_d3d9_runtime_layout)
+
 
     p = sp.add_parser("decode-d3d9-declaration", help="decode raw 8-byte D3D9 declaration records")
     p.add_argument("input", help="raw declaration-record bytes")
