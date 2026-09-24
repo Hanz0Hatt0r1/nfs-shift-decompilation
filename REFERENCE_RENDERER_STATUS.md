@@ -36,3 +36,8 @@ The shader-backed reference path now supports multiple 2D sampler registers thro
 ## Phase 51: semantic TEXCOORD layers
 
 The shader-backed reference renderer now maps `TEXCOORD0..4` declarations to MEB UV property layers `130..134` by semantic index, interpolating the selected layer into the shader register declared by the pixel program. Missing required layers are explicit execution errors; COLOR0/1 remains outside this automatic path because its channel order is still unresolved.
+
+
+## Phase 52: normal/tangent/binormal semantic inputs
+
+The shader-backed reference renderer now accepts `NORMAL0`, `TANGENT0` and `BINORMAL0` pixel inputs and interpolates them from neutral MEB mesh attributes into declared D3D9 input registers. Values are passed through unchanged; normalization remains an explicit shader operation. Missing required attributes are hard execution errors.
