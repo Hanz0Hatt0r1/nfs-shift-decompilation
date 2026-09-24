@@ -25,6 +25,7 @@ constexpr std::size_t D3D9_VTABLE_COUNT = 119;
 constexpr std::size_t IDIRECT3D9_VTABLE_COUNT = 17;
 
 constexpr std::size_t SLOT_PRESENT = 17;
+constexpr std::size_t SLOT_SET_TEXTURE = 65;
 constexpr std::size_t SLOT_DRAW_INDEXED_PRIMITIVE = 82;
 constexpr std::size_t SLOT_CREATE_VERTEX_SHADER = 91;
 constexpr std::size_t SLOT_CREATE_VERTEX_DECLARATION = 86;
@@ -50,6 +51,8 @@ using SetStreamSourceFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, UINT, IDirect3DVertexBuffer9*, UINT, UINT);
 using SetIndicesFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, IDirect3DIndexBuffer9*);
+using SetTextureFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, DWORD, IDirect3DBaseTexture9*);
 using CreateVertexShaderFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const DWORD*, IDirect3DVertexShader9**);
 using SetVertexShaderFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -73,6 +76,7 @@ CreateVertexDeclarationFn g_real_create_vertex_declaration = nullptr;
 SetVertexDeclarationFn g_real_set_vertex_declaration = nullptr;
 SetStreamSourceFn g_real_set_stream_source = nullptr;
 SetIndicesFn g_real_set_indices = nullptr;
+SetTextureFn g_real_set_texture = nullptr;
 CreateVertexShaderFn g_real_create_vertex_shader = nullptr;
 SetVertexShaderFn g_real_set_vertex_shader = nullptr;
 SetVertexShaderConstantFFn g_real_set_vertex_shader_constant_f = nullptr;
@@ -323,6 +327,24 @@ HRESULT STDMETHODCALLTYPE hook_set_indices(
     return hr;
 }
 
+
+HRESULT STDMETHODCALLTYPE hook_set_texture(
+    IDirect3DDevice9* self,
+    DWORD stage,
+    IDirect3DBaseTexture9* texture) {
+    const HRESULT hr = g_real_set_texture
+        ? g_real_set_texture(self, stage, texture)
+        : E_FAIL;
+    if (SUCCEEDED(hr)) {
+        std::ostringstream f;
+        f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
+          << ",\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"stage\":" << stage;
+        writer().write_event("set_texture", f.str());
+    }
+    return hr;
+}
+
 HRESULT STDMETHODCALLTYPE hook_create_vertex_shader(
     IDirect3DDevice9* self,
     const DWORD* function,
@@ -484,6 +506,9 @@ void patch_device(IDirect3DDevice9* device) {
     patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_INDICES,
                         reinterpret_cast<void*>(&hook_set_indices),
                         reinterpret_cast<void**>(&g_real_set_indices));
+    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_TEXTURE,
+                        reinterpret_cast<void*>(&hook_set_texture),
+                        reinterpret_cast<void**>(&g_real_set_texture));
     patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_VERTEX_SHADER,
                         reinterpret_cast<void*>(&hook_create_vertex_shader),
                         reinterpret_cast<void**>(&g_real_create_vertex_shader));

@@ -733,3 +733,13 @@ runtime selector that matches captured D3D9 VS/PS shader identity back to the
 static FXO candidate set and requires the same MEB resource identity.
 
 This is the bridge from "shader candidate corpus" to one executable permutation.
+
+## Phase 166: runtime texture-stage capture
+
+The D3D9 capture producer now records `SetTexture(stage, texture_ptr)` events,
+including explicit NULL unbinds. Runtime trace keeps these per frame, and the
+exact BMW shader selector requires non-null bindings for every external sampler
+declared by the selected material (notably s0 shadow and s3 environment).
+
+This closes the remaining instrumentation gap before an authentic bodywork
+shader render can be attempted from a captured frame.

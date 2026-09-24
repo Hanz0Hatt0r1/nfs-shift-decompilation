@@ -91,6 +91,49 @@ def _candidate_identity_matches(
     return 0, reasons
 
 
+
+def _expected_external_stages(material_input: Mapping[str, Any]) -> list[int]:
+    binding = material_input.get("material_binding")
+    rows = (
+        binding.get("bindings")
+        if isinstance(binding, Mapping)
+        else material_input.get("bindings")
+    )
+    stages: set[int] = set()
+    for row in rows or []:
+        if not isinstance(row, Mapping):
+            continue
+        if row.get("binding") != "external-or-specialised":
+            continue
+        register = row.get("d3d9_sampler_register")
+        if register is None:
+            continue
+        try:
+            stages.add(int(register))
+        except (TypeError, ValueError):
+            continue
+    return sorted(stages)
+
+
+def _texture_stage_status(
+    frame: Mapping[str, Any],
+    stages: list[int],
+) -> tuple[bool, list[int]]:
+    if not stages:
+        return True, []
+    latest: dict[int, Any] = {}
+    for row in frame.get("texture_bindings") or []:
+        if not isinstance(row, Mapping):
+            continue
+        try:
+            stage = int(row.get("stage"))
+        except (TypeError, ValueError):
+            continue
+        latest[stage] = row.get("texture_ptr")
+    missing = [stage for stage in stages if not latest.get(stage)]
+    return not missing, missing
+
+
 def select_runtime_shader(
     material_input: Mapping[str, Any],
     runtime_report: Mapping[str, Any],
@@ -101,6 +144,7 @@ def select_runtime_shader(
         raise ValueError("input is not SHIFT.D3D9RuntimeBindingEvidence/1")
 
     candidates = _candidate_rows(material_input)
+    expected_external_stages = _expected_external_stages(material_input)
     if not candidates:
         return {
             "format": FORMAT,
@@ -110,6 +154,7 @@ def select_runtime_shader(
             "candidate_count": 0,
             "runtime_frame_count": len(runtime_report.get("frames") or []),
             "matches": [],
+            "required_external_texture_stages": expected_external_stages,
         }
 
     matches: list[dict[str, Any]] = []
@@ -121,6 +166,11 @@ def select_runtime_shader(
             continue
         same_resource = _same_resource(material_input, frame)
         if require_same_resource and same_resource is not True:
+            continue
+        texture_ok, _missing_texture_stages = _texture_stage_status(
+            frame, expected_external_stages
+        )
+        if not texture_ok:
             continue
         for candidate_index, candidate in enumerate(candidates):
             score, evidence = _candidate_identity_matches(candidate, identity)
@@ -134,6 +184,7 @@ def select_runtime_shader(
                 "score": score,
                 "evidence": evidence,
                 "same_meb_resource": same_resource,
+                "external_texture_stages": expected_external_stages,
                 "identity_sha256": identity.get("identity_sha256"),
                 "pair_byte_sha256": identity.get("pair_byte_sha256"),
                 "vertex_byte_sha256": (
