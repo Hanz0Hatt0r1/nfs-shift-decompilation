@@ -4,8 +4,35 @@ from shader_permutation_identity import build_shader_permutation_identity
 
 
 def _pair():
-    from tests.test_material_linker import synthetic_linkable_fxo_pair
-    return synthetic_linkable_fxo_pair()
+    import struct
+
+    def ctab(name: bytes, stage_version: int, register: int) -> bytes:
+        header = 28
+        info = 20
+        typ = 20
+        name_off = header + info + typ
+        payload = bytearray(b"CTAB")
+        payload += struct.pack("<7I", header, 0, stage_version, 1, header, 0, 0)
+        payload += struct.pack("<IHHHHII", name_off, 3, register, 1, 0, header + info, 0)
+        payload += struct.pack("<HHHHHHII", 4, 12, 1, 1, 1, 0, 0, 0)
+        payload += name
+        payload += b"\\x00" * ((-len(payload)) % 4)
+        return struct.pack("<I", stage_version) + struct.pack(
+            "<I", ((len(payload) // 4) << 16) | 0xFFFE
+        ) + payload
+
+    vs_version = 0xFFFE0300
+    ps_version = 0xFFFF0300
+    dcl = (2 << 24) | 31
+    vs = bytearray(ctab(b"diffuseMap\\x00", vs_version, 0))
+    vs += struct.pack("<III", dcl, 0, 0x80000000 | 0 | (15 << 16) | (1 << 28))
+    vs += struct.pack("<III", dcl, 5 | (5 << 16), 0x80000000 | 1 | (15 << 16) | (6 << 28))
+    vs += struct.pack("<I", 0xFFFF)
+
+    ps = bytearray(ctab(b"diffuseMap\\x00", ps_version, 0))
+    ps += struct.pack("<III", dcl, 5 | (5 << 16), 0x80000000 | 0 | (15 << 16) | (1 << 28))
+    ps += struct.pack("<I", 0xFFFF)
+    return bytes(vs + ps)
 
 
 def test_shader_permutation_identity_is_stable_for_same_pair():
