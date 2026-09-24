@@ -1,7 +1,7 @@
 import struct
 
 from shader_asm import Instruction, Operand, ShaderProgram
-from shader_reference import execute_shader
+from shader_reference import execute_shader, material_constants_from_uniform_binding
 
 
 def _program(instructions, *, temps=(0, 1, 2)):
@@ -122,3 +122,55 @@ def test_reference_shader_error_is_explicit_for_missing_texture():
     )
     assert result["status"] == "error"
     assert "texture sampler s0 has no reference image" in result["blocking_reasons"][0]
+
+
+def test_material_uniform_binding_builds_reference_constant_bank():
+    result = material_constants_from_uniform_binding({
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "tint",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 3,
+            "register_count": 1,
+            "ctab_type": "float4",
+            "value": [0.25, 0.5, 0.75, 1.0],
+        }],
+    })
+    assert result["status"] == "ready"
+    assert result["banks"]["c"][3] == [0.25, 0.5, 0.75, 1.0]
+
+
+def test_material_uniform_binding_builds_matrix_rows():
+    result = material_constants_from_uniform_binding({
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "viewProj",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 4,
+            "register_count": 4,
+            "ctab_type": "float4x4",
+            "value": list(range(16)),
+        }],
+    })
+    assert result["status"] == "ready"
+    assert result["banks"]["c"][4] == [0.0, 1.0, 2.0, 3.0]
+    assert result["banks"]["c"][7] == [12.0, 13.0, 14.0, 15.0]
+
+
+def test_material_uniform_binding_rejects_unsupported_type():
+    result = material_constants_from_uniform_binding({
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "flag",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 1,
+            "register_count": 1,
+            "ctab_type": "int",
+            "value": 1,
+        }],
+    })
+    assert result["status"] == "unsupported"
+    assert "uniform-binding:unsupported-ctab-type:int" in result["blocking_reasons"]

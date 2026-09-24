@@ -21,3 +21,8 @@ The reference renderer now has two deterministic execution surfaces: geometry-on
 ## Phase 48: pixel shader reference execution
 
 The textured reference renderer can optionally execute the embedded `SHIFT.ShaderProgram/1` pixel IR per covered fragment. The initial bounded path supports `TEXCOORD0` and sampler `s0` and reuses the deterministic DDS sampler; unsupported shader inputs/opcodes remain explicit blockers rather than guessed behavior.
+
+
+## Phase 49: material constant path
+
+The shader-backed reference render path can now source numeric material values from `MaterialUniformBinding/1` automatically. This enables constant-driven shader operations such as texture tinting while retaining strict type/register validation.

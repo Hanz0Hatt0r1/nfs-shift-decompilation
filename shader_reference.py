@@ -367,6 +367,69 @@ def validate_pixel_program_inputs(program: ShaderProgram) -> dict[str, Any]:
     }
 
 
+def material_constants_from_uniform_binding(
+    uniform_binding: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Convert a MaterialUniformBinding/1 float payload into D3D9-style vec4 banks."""
+    binding = uniform_binding or {}
+    if binding.get("format") not in (None, "SHIFT.MaterialUniformBinding/1"):
+        return {
+            "format": "SHIFT.ReferenceConstantBank/1",
+            "status": "unsupported",
+            "blocking_reasons": ["uniform-binding:invalid-format"],
+            "banks": {"c": {}},
+        }
+
+    banks: dict[str, dict[int, list[float]]] = {"c": {}, "c2": {}, "c3": {}, "c4": {}}
+    reasons: list[str] = []
+    for item in binding.get("bindings", []) or []:
+        if item.get("binding") != "material-constant":
+            reasons.append(f"uniform-binding:unsupported-binding:{item.get('binding')}")
+            continue
+        if int(item.get("register_set") or 0) != 2:
+            reasons.append(
+                f"uniform-binding:unsupported-register-set:{item.get('register_set')}"
+            )
+            continue
+        ctab_type = str(item.get("ctab_type") or "").lower()
+        values = item.get("value")
+        if isinstance(values, (int, float)):
+            flat = [float(values)]
+        elif isinstance(values, list):
+            flat = [float(x) for x in values]
+        else:
+            reasons.append(f"uniform-binding:value-not-numeric:{item.get('name')}")
+            continue
+
+        reg = int(item.get("register_index", -1))
+        count = int(item.get("register_count", 0))
+        if reg < 0 or count <= 0:
+            reasons.append(f"uniform-binding:register-range-invalid:{item.get('name')}")
+            continue
+
+        if ctab_type in {"float", "float1", "float2", "float3", "float4"}:
+            banks["c"][reg] = (flat + [0.0] * 4)[:4]
+            continue
+        if ctab_type == "float4x4":
+            if len(flat) < 16 or count < 4:
+                reasons.append(f"uniform-binding:matrix-payload-invalid:{item.get('name')}")
+                continue
+            for row in range(4):
+                banks["c"][reg + row] = flat[row * 4:(row + 1) * 4]
+            continue
+
+        reasons.append(
+            f"uniform-binding:unsupported-ctab-type:{item.get('ctab_type')}"
+        )
+
+    return {
+        "format": "SHIFT.ReferenceConstantBank/1",
+        "status": "ready" if not reasons else "unsupported",
+        "blocking_reasons": list(dict.fromkeys(reasons)),
+        "banks": banks,
+    }
+
+
 def execute_shader_ir(
     payload: dict[str, Any],
     *,

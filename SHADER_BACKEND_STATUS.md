@@ -42,3 +42,8 @@ The GLES shader compiler validator can now be attached to `SHIFT.RenderCommand/1
 ## Phase 46: software shader execution oracle
 
 `shader_reference.py` now executes a strict subset of parsed D3D9 `ShaderProgram` instructions in software, including arithmetic, dot/cross/normalize, scalar/vector math, texture reads and explicit source/write modifiers. Unsupported control-flow and unknown opcodes return machine-readable `unsupported` status; missing inputs/textures return `error`. This is a reference oracle, not a claim of full HLSL compatibility.
+
+
+## Phase 49: material constant execution
+
+`shader_reference.py` now converts `SHIFT.MaterialUniformBinding/1` float register bindings into deterministic D3D9-style `c/c2/c3/c4` vec4 banks. Scalar/vector values and float4x4 row registers are supported; non-float or non-register-set-2 bindings are explicit `unsupported` states.
