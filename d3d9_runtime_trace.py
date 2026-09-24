@@ -24,6 +24,8 @@ EVENTS = {
     "create_pixel_shader",
     "set_vertex_shader",
     "set_pixel_shader",
+    "set_vertex_shader_constant_f",
+    "set_pixel_shader_constant_f",
 }
 
 
@@ -94,7 +96,7 @@ def build_runtime_binding_evidence(
     shaders: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
-        "stream_sources": [], "index_binding": None, "draws": [],
+        "constant_writes": [], "stream_sources": [], "index_binding": None, "draws": [],
     })
     blockers: list[dict[str, Any]] = []
 
@@ -176,6 +178,26 @@ def build_runtime_binding_evidence(
                 "line": row.get("_line"),
                 "create_known": bool(pointer and pointer in shaders),
             }
+        elif event in {"set_vertex_shader_constant_f", "set_pixel_shader_constant_f"}:
+            start_register = row.get("start_register")
+            vector_count = row.get("vector4f_count", row.get("register_count"))
+            values = row.get("values")
+            if not isinstance(start_register, int) or start_register < 0:
+                blockers.append({"line": row.get("_line"), "reason": "shader-constant-start-register-invalid"})
+                continue
+            if not isinstance(vector_count, int) or vector_count <= 0:
+                blockers.append({"line": row.get("_line"), "reason": "shader-constant-vector-count-invalid"})
+                continue
+            if not isinstance(values, list) or len(values) != vector_count * 4 or not all(isinstance(x, (int, float)) for x in values):
+                blockers.append({"line": row.get("_line"), "reason": "shader-constant-values-invalid"})
+                continue
+            frame["constant_writes"].append({
+                "stage": "vertex" if event == "set_vertex_shader_constant_f" else "pixel",
+                "start_register": start_register,
+                "vector4f_count": vector_count,
+                "values": [float(x) for x in values],
+                "line": row.get("_line"),
+            })
         elif event == "draw_indexed_primitive":
             frame["draws"].append({
                 "primitive_count": row.get("primitive_count"),
@@ -278,6 +300,7 @@ def build_runtime_binding_evidence(
             "decoded_declaration_count": sum(1 for x in declarations.values() if x.get("decoded")),
             "shader_object_count": len(shaders),
             "decoded_shader_count": sum(1 for x in shaders.values() if x.get("decoded")),
+            "constant_write_count": sum(len(x.get("constant_writes", [])) for x in frame_rows),
             "frame_count": len(frame_rows),
             "source": "external-runtime-capture",
         },
