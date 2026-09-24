@@ -71,3 +71,19 @@ def test_runtime_golden_gate_propagates_vertex_input_mismatch(tmp_path):
     assert report['ready'] is False
     assert 'vertex-input:layout-semantic-missing:NORMAL0' in report['blocking_reasons']
     assert report['vertex_input_parity']['status'] == 'partial'
+
+
+def test_runtime_golden_gate_blocks_render_command_constant_parity(tmp_path):
+    material=_material()
+    material['render_command']['submeshes'][0] = {
+        'first_index':150,
+        'index_count':6294,
+        'uniforms':{'bindings':[{'name':'Tint','stage':'pixel','register_index':5,'register_count':1,'ctab_type':'float4'}]},
+        'constant_payload':{'ready':True,'registers':[{'register_index':5,'values':[1.0,2.0,3.0,4.0],'byte_offset':80,'byte_size':16}]},
+        'constant_commands':[{'name':'Tint','stage':'pixel','register_index':5,'register_count':1,'ctab_type':'float4','byte_offset':96}],
+    }
+    m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'
+    m.write_text(json.dumps(material)); r.write_text(json.dumps(_runtime())); u.write_text(json.dumps({'6':10}))
+    report=validate_runtime_golden_gate(m,r,usage_map_path=u)
+    assert report['ready'] is False
+    assert 'render-command:constant-parity-not-ready' in report['blocking_reasons']
