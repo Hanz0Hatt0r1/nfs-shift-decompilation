@@ -331,3 +331,50 @@ def test_color_abi_corpus_marks_invalid_reports():
     assert report["report_count"] == 2
     assert len(report["invalid_reports"]) == 2
     assert report["selection"] == "not-selected"
+
+
+
+def test_color_abi_corpus_cli_aggregates_directory(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    from color_abi import build_color_abi_evidence
+
+    evidence_dir = tmp_path / "evidence"
+    evidence_dir.mkdir()
+    (evidence_dir / "a.json").write_text(
+        json.dumps(build_color_abi_evidence("460", bytes((1, 2, 3, 255)))),
+        encoding="utf-8",
+    )
+    (evidence_dir / "b.json").write_text(
+        json.dumps(build_color_abi_evidence("461", bytes((4, 5, 6, 255)))),
+        encoding="utf-8",
+    )
+    (evidence_dir / "ignored.json").write_text(
+        json.dumps({"format": "SHIFT.Other/1"}),
+        encoding="utf-8",
+    )
+    output = tmp_path / "corpus.json"
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parents[1] / "shift_importer.py"),
+            "color-evidence-corpus",
+            str(evidence_dir),
+            str(output),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["format"] == "SHIFT.ColorABICorpusEvidence/1"
+    assert report["report_count"] == 2
+    assert report["source"]["accepted_reports"] == 2
+    assert report["properties"]["460"]["report_count"] == 1
+    assert report["properties"]["461"]["report_count"] == 1
+    assert report["selection"] == "not-selected"
