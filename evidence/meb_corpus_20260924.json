@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.MEBCorpusEvidence/1",
+  "analyzer_version": "116.0",
+  "bundle": {
+    "sha256": "9f09a03165fb1100c24f8ebbf1d8f2f461565a8342956d628fa20b9d410f3955",
+    "collector_version": "115.0",
+    "created_utc": "20260924T145145Z"
+  },
+  "scan": {
+    "resources": 70370,
+    "color_resources": 70370,
+    "bff_files": 1834,
+    "archives_with_resources": 220,
+    "errors": 0
+  },
+  "properties": {
+    "460": {
+      "corpus_presence": "observed",
+      "resources_with_property": 70370,
+      "descriptor_records": 70370,
+      "exact_expected_descriptors": 70370,
+      "expected_descriptor_words": [4, 6, 0],
+      "descriptor_range_observed": 70370,
+      "payload_range_observed": 70370,
+      "decoded_stream_matches_payload": 70370,
+      "payload_bytes_total": 127953960
+    },
+    "461": {
+      "corpus_presence": "not-observed",
+      "resources_with_property": 0,
+      "descriptor_records": 0,
+      "exact_expected_descriptors": 0,
+      "expected_descriptor_words": [4, 6, 1],
+      "descriptor_range_observed": 0,
+      "payload_range_observed": 0,
+      "decoded_stream_matches_payload": 0,
+      "payload_bytes_total": 0
+    }
+  },
+  "conclusions": {
+    "color0_460_exact_descriptor_corpus": "proven",
+    "color1_461_corpus_presence": "not-observed",
+    "source_evidence": "observed",
+    "overall_type_bridge": "460-compatible-with-[4,6,0]"
+  },
+  "top_archives_by_color_resource_count": [
+    ["Pakfiles/VEHICLEUPGRADES.bff", 5624],
+    ["Pakfiles/Tracks/Spa_Era3.bff", 2719],
+    ["Pakfiles/Tracks/Silverstone_Era3_GrandPrix.bff", 2160],
+    ["Pakfiles/Tracks/Silverstone_Era3_International.bff", 1833],
+    ["Pakfiles/Tracks/Tokyo_Circuit.bff", 1821],
+    ["Pakfiles/Tracks/London_Circuit2.bff", 1747],
+    ["Pakfiles/Tracks/Nordschleife07.bff", 1718],
+    ["Pakfiles/Tracks/London_Circuit.bff", 1660],
+    ["Pakfiles/Tracks/Tokyo_Short.bff", 1637],
+    ["Pakfiles/Tracks/Autopolis_GP.bff", 1602]
+  ]
+}
