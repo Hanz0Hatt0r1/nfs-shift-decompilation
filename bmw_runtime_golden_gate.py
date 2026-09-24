@@ -43,6 +43,13 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     integrity = runtime.get('integrity') or {}
     if integrity.get('status') != 'observed':
         reasons.append('runtime-trace:integrity-not-proven')
+
+    same_instance_gate = runtime.get('same_instance_gate') or {}
+    if same_instance_gate.get('ready') is not True:
+        reasons.extend(
+            'runtime-same-instance:' + str(reason)
+            for reason in (same_instance_gate.get('blocking_reasons') or ['not-proven'])
+        )
     matched_frame_ids = {
         row.get('frame')
         for row in (parity.get('shader_join', {}).get('candidate_frames') or [])
@@ -93,6 +100,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
         'blocking_reasons': list(dict.fromkeys(reasons)),
         'runtime_parity': parity,
         'runtime_draw_correlation': draw_correlation,
+        'runtime_same_instance_gate': same_instance_gate,
         'vertex_input_parity': vertex_input_parity,
         'render_command_constant_parity': constant_parity,
         'render_command': {'status': command_status},
@@ -106,6 +114,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
             'declaration_parity': 'required',
             'vertex_input_parity': 'required',
             'draw_correlation': 'required',
+            'same_instance_gate': 'required',
             'render_command_constant_parity': 'required',
         },
     }

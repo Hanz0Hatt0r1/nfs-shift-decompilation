@@ -35,6 +35,27 @@ def _runtime(constant_values=True):
             'constant_writes': [{'stage':'pixel','start_register':5,'vector4f_count':1,'values':[1.0,2.0,3.0,4.0]}] if constant_values else [],
             'shader_permutation_identity': {'identity_sha256':'shader-id','payload':{'vertex':{'inputs':[{'register':'v0','usage':'COLOR','index':0}], 'constants':[]},'pixel':{'constants':[5],'sampler_types':{}}}},
         }],
+        'same_instance_gate': {
+            'status': 'proven',
+            'ready': True,
+            'candidate_frames': [{
+                'frame': 1,
+                'declaration_ptr': '0x1',
+                'same_meb_resource': True,
+                'declaration_create_known': True,
+                'declaration_decode_status': 'match',
+                'bound_declaration_valid': True,
+                'descriptor_matches': [{
+                    'property_id': '460',
+                    'type_ordinal': 4,
+                    'usage_ordinal': 6,
+                    'runtime_usage': 10,
+                    'channel': 0,
+                    'record_indices': [0],
+                }],
+            }],
+            'blocking_reasons': [],
+        },
     }
 
 
@@ -87,3 +108,13 @@ def test_runtime_golden_gate_blocks_render_command_constant_parity(tmp_path):
     report=validate_runtime_golden_gate(m,r,usage_map_path=u)
     assert report['ready'] is False
     assert 'render-command:constant-parity-not-ready' in report['blocking_reasons']
+
+
+
+def test_runtime_golden_gate_requires_same_instance_gate(tmp_path):
+    m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'
+    m.write_text(json.dumps(_material())); runtime=_runtime(); runtime.pop('same_instance_gate')
+    r.write_text(json.dumps(runtime)); u.write_text(json.dumps({'6':10}))
+    report=validate_runtime_golden_gate(m,r,usage_map_path=u)
+    assert report['ready'] is False
+    assert 'runtime-same-instance:not-proven' in report['blocking_reasons']

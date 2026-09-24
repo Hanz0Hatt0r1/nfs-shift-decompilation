@@ -130,3 +130,8 @@ Use `bmw_material_slice_golden_gate.py` to validate one selected BMW M3 material
 ## Runtime same-instance gate
 
 Use `d3d9_runtime_trace.py --require-same-instance` for strict runtime proof. A matching declaration that was created but not bound by the target frame must not be accepted.
+
+
+## Runtime golden same-instance
+
+`bmw_runtime_golden_gate.py` requires the D3D9 runtime report's `same_instance_gate.ready` field before runtime parity can become golden-ready.

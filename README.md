@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 148** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 149** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -781,3 +781,8 @@ A dedicated single-primitive gate now validates a renderer-facing BMWMaterialSli
 ## Phase 148: strict runtime same-instance gate
 
 Runtime D3D9 evidence now distinguishes generic observation from strict same-instance proof. The latter requires the declaration actually bound by the target frame to decode cleanly and match the exact MEB resource under an explicit usage map.
+
+
+## Phase 149: runtime golden same-instance requirement
+
+The unified BMW runtime golden gate now requires strict same-instance declaration proof, not merely a matching created declaration. A real retail capture is the remaining external dependency.
