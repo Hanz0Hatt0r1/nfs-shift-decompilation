@@ -252,7 +252,7 @@ def _render_scene_ppm(
         mesh = part["mesh"]
         world = part["world_matrix"]
         vertices = [_camera_point(_transform_point(world, v), yaw_deg=yaw_deg, pitch_deg=pitch_deg) for v in mesh.vertices]
-        normals = [_camera_point(_transform_direction(world, n), yaw_deg=0.0, pitch_deg=0.0) for n in mesh.normals]
+        normals = [_camera_point(_transform_direction(world, n), yaw_deg=yaw_deg, pitch_deg=pitch_deg) for n in mesh.normals]
         if not mesh.normals:
             normals = [(0.0, 1.0, 0.0)] * len(vertices)
         prepared.append({"part": part, "vertices": vertices, "normals": normals, "indices": list(mesh.indices)})
