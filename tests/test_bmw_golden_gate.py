@@ -77,3 +77,23 @@ def test_bmw_golden_gate_blocks_missing_shader_permutation_identity():
     report = validate_bmw_golden_gate(_golden(), packet)
     assert report["ready"] is False
     assert "shader-permutation-identity:0:missing" in report["blocking_reasons"]
+
+
+def test_bmw_golden_gate_blocks_unready_paint_contract():
+    golden=_golden()
+    packet=_packet()
+    packet["submeshes"][0]["material"]["paint_contract"]={
+        "ready":False,
+        "blocking_reasons":["sampler:diffuseMap:register-mismatch"],
+    }
+    report=validate_bmw_golden_gate(golden,packet)
+    assert report["ready"] is False
+    assert "paint-contract:0:sampler:diffuseMap:register-mismatch" in report["blocking_reasons"]
+
+
+def test_bmw_golden_gate_accepts_ready_paint_contract():
+    golden=_golden()
+    packet=_packet()
+    packet["submeshes"][0]["material"]["paint_contract"]={"ready":True,"blocking_reasons":[]}
+    report=validate_bmw_golden_gate(golden,packet)
+    assert report["ready"] is True
