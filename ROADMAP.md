@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 143. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 144. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -602,3 +602,12 @@ Next: produce an actual M3 material-binding artifact from the archived BFF analy
 `SHIFT.SourceVehicleIdentityEvidence/1` and `source_vehicle_identity.py` now pin the uploaded `SHIFT.exe.c` source to `FUN_004c32d0 case 2 -> bmw_m3_e36`, with exact source SHA and selector line. This gives the BMW namespace a source-level anchor that can later be correlated with VHF/MEB/runtime captures without claiming execution from static source alone.
 
 Next: correlate this source vehicle identity with concrete VHF/BFF node records when extracted material data is available, then use the same resource identity in the runtime capture gate.
+
+
+## Phase 144: real BMW material extraction
+
+`bmw-material-from-bff` now orchestrates the existing BFF, BMT, MEB, FX, FXO and DDS parsers for the exact BMW M3 paint material. It emits `SHIFT.RealBMWMaterialBindingEvidence/1` with per-entry SHA-256 provenance and runs the existing paint contract and strict shader gate. The command is fail-closed and does not commit raw extracted payloads.
+
+The current sandbox cannot read the 18.9 MB Dropbox BFF as a local binary because the connector exposes large files only through a temporary download URL that is not reachable from the execution sandbox. Therefore no synthetic output is promoted as real material evidence.
+
+Next: execute the new command on the supplied `BMW_M3_E36.bff` (optionally with `BMW_M3_E36_Cockpit.bff`) in an environment with direct file access, then feed the resulting real `MaterialBinding/1` into the BMW golden gate.
