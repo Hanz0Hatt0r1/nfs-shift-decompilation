@@ -395,3 +395,9 @@ Static analysis now identifies the binary mesh loader `FUN_00859800` as consumin
 The new descriptor-triple validator consumes exact `MEBMesh.property_descriptors`. Under complete source evidence, 460 must be `[4,6,0]` and 461 must be `[4,6,1]` for a `match`, which resolves their D3D9 Type code to 4. Incorrect descriptors fail as `mismatch`; missing descriptors remain `partial`.
 
 Next target: correlate the resolved Type-4 descriptor with the actual runtime declaration record for the same mesh instance, including the D3D9 Usage byte produced by the opaque usage table.
+
+## Phase 112: one-command Linux MEB evidence collector
+
+`tools/collect_meb_evidence.py` provides a single-command collection path for the unresolved MEB↔D3D9 work. It recursively scans direct `.meb` files and `.bff` archives, parses every MEB, records property histograms, and preserves exact 460/461 descriptor and payload bytes with BFF/resource provenance and hashes. Optional `--source SHIFT.exe.c` adds source-backed D3D9 and exact descriptor-triple proofs.
+
+The output is one self-describing ZIP; full BFF archives are never copied into it. The collector is designed so the next analysis pass can operate entirely from the returned bundle.
