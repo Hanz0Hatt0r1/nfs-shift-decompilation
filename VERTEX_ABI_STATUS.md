@@ -60,3 +60,8 @@ The deterministic reference layers now consume `230..234` directly as `TEXCOORD0
 ## Phase 67: MEB JSON evidence input
 
 The COLOR ABI investigation no longer requires manual raw-stream extraction. The evidence CLI accepts canonical MEB mesh JSON and reconstructs the exact four-byte `colors`/`colors2` streams emitted by the decoder, preserving the unresolved declaration/channel-order status.
+
+
+## Phase 68: direct MEB resource evidence
+
+`color-evidence-resource` can read properties 460/461 directly from a `.meb` stored inside a `.bff`, recording entry index, resource SHA256, vertex count and `property_layout` metadata. This is now the canonical ingestion path for future real BMW color evidence.

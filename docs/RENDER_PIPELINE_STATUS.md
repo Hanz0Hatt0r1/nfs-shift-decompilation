@@ -149,3 +149,8 @@ The render pipeline now has a reproducible command for COLOR0/1 candidate compar
 ## Phase 67: COLOR evidence ingestion
 
 The render investigation now has a canonical MEB JSON → ColorABIEvidence/1 path. This keeps the evidence workflow tied to the same decoder output consumed by RenderCommand rather than a separately prepared byte dump.
+
+
+## Phase 68: direct COLOR evidence ingestion
+
+COLOR ABI analysis is now anchored to the decoded `.meb` resource itself instead of a manually extracted binary stream. The resulting evidence report preserves both channel-order candidates and the source resource identity, but does not alter RenderCommand readiness.
