@@ -67,3 +67,8 @@ Vertex input validation now recognizes `BLENDWEIGHT0` and `BLENDINDICES0` alongs
 ## Phase 58: samplerCube reference resource
 
 The software executor now supports `samplerCube` when the bound resource is `SHIFT.ReferenceCubeTexture/1`. The cube resource is deliberately explicit and separate from 2D images; `sampler3D`/`sampler1D` remain unsupported.
+
+
+## Phase 59: DDS cubemap input
+
+The texture reference decoder now produces six-face cube resources from complete DDS cubemaps, preserving the existing RGBA8 software-resource ABI. SamplerCube execution can therefore consume either explicitly assembled faces or a decoded DDS cubemap.
