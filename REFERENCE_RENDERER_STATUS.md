@@ -26,3 +26,8 @@ The textured reference renderer can optionally execute the embedded `SHIFT.Shade
 ## Phase 49: material constant path
 
 The shader-backed reference render path can now source numeric material values from `MaterialUniformBinding/1` automatically. This enables constant-driven shader operations such as texture tinting while retaining strict type/register validation.
+
+
+## Phase 50: multi-texture shader reference execution
+
+The shader-backed reference path now supports multiple 2D sampler registers through an explicit `texture_images` map. The command's `d3d9_sampler_register` and embedded sampler state determine which reference image/state is supplied to each `sN`. Missing sampler images remain hard execution errors.
