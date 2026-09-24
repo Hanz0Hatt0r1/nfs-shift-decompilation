@@ -2121,16 +2121,13 @@ def cmd_d3d9_api_bind_evidence(args: argparse.Namespace) -> int:
     return _write_d3d9_source_report(analyze_d3d9_api_bind_file, args)
 
 
+def cmd_d3d9_declaration_lifecycle(args: argparse.Namespace) -> int:
     """Analyze source-backed D3D9 declaration creation/bind lifecycle."""
     from d3d9_declaration_lifecycle_evidence import analyze_d3d9_declaration_lifecycle_file
-
     report = analyze_d3d9_declaration_lifecycle_file(args.input)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({
         "format": report["format"],
         "status": report["status"],
