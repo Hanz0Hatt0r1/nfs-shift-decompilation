@@ -773,3 +773,13 @@ This does not create a shader reconstruction by itself: the PPM is the retail
 runtime frame, while the SVG is only a review artifact. The next runtime task
 is to capture one BMW M3 body frame and use its exact shader/resource state for
 the offline reference render.
+
+## Phase 169: runtime texture reference resources
+
+Captured render-target texture surfaces can now be converted into the existing
+`SHIFT.ReferenceTexture/1` and `SHIFT.ReferenceCubeTexture/1` resources.
+This allows runtime shadow/environment snapshots to enter the software shader
+reference path without introducing a second texture representation.
+
+The remaining gap for a first fully shader-executed BMW body frame is the actual
+runtime capture from the game and sufficient readable s0/s3 texture contents.
