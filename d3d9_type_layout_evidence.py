@@ -115,7 +115,12 @@ def analyze_d3d9_type_layout_tables(source: str | bytes) -> dict[str, Any]:
         ),
     }
 
-    sentinel_written = "+ 4 + local_68 * 8) = 0x11;" in text
+    sentinel_written = bool(
+        re.search(
+            r"\+ 4 \+ [^)]* \* 8\) = 0x11;",
+            text,
+        )
+    )
 
     return {
         "format": FORMAT,
