@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 151. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Current `main` is at Phase 170. Native and Windows D3D9 capture-producer CI are green; the Python suite still carries 38 historical baseline failures unrelated to the current runtime-capture work.
 
 The immediate target is a deterministic pipeline:
 
