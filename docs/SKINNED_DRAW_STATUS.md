@@ -54,3 +54,8 @@ This separation leaves animation decoding and bind-pose/inverse-bind semantics e
 ## Phase 60: mesh transformation adapter
 
 The CPU reference can now materialize a complete transformed mesh from an explicit SkinPose. The adapter preserves the source mesh schema and only replaces vertex POSITION and known direction streams. This keeps the skinning math reusable by the desktop renderer without forcing animation decoding into the render layer.
+
+
+## Phase 61: desktop reference integration
+
+A ready `SHIFT.SkinnedDraw/1` can now be rendered through the desktop reference path after explicit SkinPose deformation. The integration does not derive poses from BAB/BAS and does not decode animation payloads; it only connects the already-proven CPU skinning contract to rasterization.
