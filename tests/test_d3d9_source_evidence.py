@@ -597,6 +597,7 @@ def test_d3d9_stream_record_evidence_recovers_type_usage_channel_offsets():
     source = r'''
 uint __fastcall FUN_008587e0(int param_1,int param_2)
 {
+  *(undefined2 *)(iVar7 + *(int *)(param_1 + 0x1c)) = 0;
   *(undefined1 *)(iVar7 + 5 + *(int *)(param_1 + 0x1c)) = 0;
   *(undefined2 *)(iVar7 + 2 + *(int *)(param_1 + 0x1c)) = (undefined2)local_48;
   uVar9 = FUN_00853c20((int)local_18);
