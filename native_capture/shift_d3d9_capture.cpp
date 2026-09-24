@@ -5,6 +5,7 @@
 #include <d3d9.h>
 #undef Direct3DCreate9
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <locale>
@@ -172,31 +173,94 @@ CaptureWriter& writer() {
     return value;
 }
 
-std::vector<unsigned char> copy_declaration(const D3DVERTEXELEMENT9* declaration) {
-    std::vector<unsigned char> bytes;
-    if (!declaration) return bytes;
-    constexpr std::size_t MAX_ELEMENTS = 64;
-    for (std::size_t i = 0; i < MAX_ELEMENTS; ++i) {
-        const auto* element = declaration + i;
-        const auto* raw = reinterpret_cast<const unsigned char*>(element);
-        bytes.insert(bytes.end(), raw, raw + sizeof(D3DVERTEXELEMENT9));
-        if (element->Stream == 0xFF) return bytes;
-    }
-    return {};
+
+bool env_enabled(const char* name) {
+    const char* value = std::getenv(name);
+    if (!value || !*value) return false;
+    return std::string(value) != "0" && std::string(value) != "false";
 }
 
-std::vector<unsigned char> copy_shader(const DWORD* shader) {
-    std::vector<unsigned char> bytes;
-    if (!shader) return bytes;
-    constexpr std::size_t MAX_DWORDS = 1u << 20;
-    constexpr DWORD SHADER_END = 0x0000FFFFu;
-    for (std::size_t i = 0; i < MAX_DWORDS; ++i) {
-        const DWORD value = shader[i];
-        const auto* raw = reinterpret_cast<const unsigned char*>(&value);
-        bytes.insert(bytes.end(), raw, raw + sizeof(DWORD));
-        if (value == SHADER_END) return bytes;
+unsigned long long env_u64(const char* name, unsigned long long fallback) {
+    const char* value = std::getenv(name);
+    if (!value || !*value) return fallback;
+    char* end = nullptr;
+    unsigned long long parsed = std::strtoull(value, &end, 0);
+    return (end && *end == '\0') ? parsed : fallback;
+}
+
+bool write_backbuffer_ppm(
+    IDirect3DDevice9* device,
+    IDirect3DSurface9* backbuffer,
+    unsigned long long frame,
+    std::string& output_path) {
+    if (!device || !backbuffer) return false;
+
+    D3DSURFACE_DESC desc{};
+    if (FAILED(backbuffer->GetDesc(&desc))) return false;
+    const bool supported_format =
+        desc.Format == D3DFMT_A8R8G8B8 ||
+        desc.Format == D3DFMT_X8R8G8B8 ||
+        desc.Format == D3DFMT_R5G6B5;
+    if (!supported_format) return false;
+
+    IDirect3DSurface9* staging = nullptr;
+    if (FAILED(device->CreateOffscreenPlainSurface(
+            desc.Width, desc.Height, desc.Format,
+            D3DPOOL_SYSTEMMEM, &staging, nullptr))) {
+        return false;
     }
-    return {};
+
+    bool ok = SUCCEEDED(device->GetRenderTargetData(backbuffer, staging));
+    D3DLOCKED_RECT locked{};
+    bool locked_ok = false;
+    if (ok) {
+        ok = SUCCEEDED(staging->LockRect(
+            &locked, nullptr, D3DLOCK_READONLY));
+        locked_ok = ok;
+    }
+
+    if (ok) {
+        const char* directory = std::getenv("SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR");
+        std::string dir = (directory && *directory) ? directory : ".";
+        if (!dir.empty() && dir.back() != '\\' && dir.back() != '/') dir.push_back('\\');
+        std::ostringstream filename;
+        filename << dir << "shift_d3d9_frame_" << frame << ".ppm";
+        output_path = filename.str();
+
+        std::ofstream image(output_path, std::ios::binary);
+        ok = image.is_open();
+        if (ok) {
+            image << "P6\n" << desc.Width << " " << desc.Height << "\n255\n";
+            for (UINT y = 0; y < desc.Height && ok; ++y) {
+                const auto* row = static_cast<const unsigned char*>(locked.pBits) +
+                                  static_cast<std::size_t>(y) * locked.Pitch;
+                for (UINT x = 0; x < desc.Width; ++x) {
+                    unsigned char rgb[3]{};
+                    if (desc.Format == D3DFMT_R5G6B5) {
+                        const auto value =
+                            *reinterpret_cast<const std::uint16_t*>(row + x * 2);
+                        rgb[0] = static_cast<unsigned char>(((value >> 11) & 0x1f) * 255 / 31);
+                        rgb[1] = static_cast<unsigned char>(((value >> 5) & 0x3f) * 255 / 63);
+                        rgb[2] = static_cast<unsigned char>((value & 0x1f) * 255 / 31);
+                    } else {
+                        const auto* pixel = row + x * 4;
+                        rgb[0] = pixel[2];
+                        rgb[1] = pixel[1];
+                        rgb[2] = pixel[0];
+                    }
+                    image.write(reinterpret_cast<const char*>(rgb), sizeof(rgb));
+                    if (!image) {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (locked_ok) staging->UnlockRect();
+    staging->Release();
+    return ok;
 }
 
 void patch_object_vtable(
@@ -251,6 +315,28 @@ HRESULT STDMETHODCALLTYPE hook_present(
     const RECT* dst,
     HWND override_window,
     const RGNDATA* dirty_region) {
+    if (env_enabled("SHIFT_D3D9_CAPTURE_SCREENSHOT")) {
+        const auto every = std::max<unsigned long long>(
+            1, env_u64("SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY", 1));
+        if ((g_frame.load() % every) == 0) {
+            IDirect3DSurface9* backbuffer = nullptr;
+            std::string screenshot_path;
+            if (SUCCEEDED(self->GetRenderTarget(0, &backbuffer))) {
+                const bool captured = write_backbuffer_ppm(
+                    self, backbuffer, g_frame.load(), screenshot_path);
+                if (captured) {
+                    std::ostringstream f;
+                    f << "\"path\":" << CaptureWriter::quote(screenshot_path);
+                    writer().write_event("present_screenshot", f.str());
+                } else {
+                    writer().write_event(
+                        "present_screenshot_failed",
+                        "\"reason\":\"get-render-target-data-failed\"");
+                }
+                backbuffer->Release();
+            }
+        }
+    }
     const HRESULT hr = g_real_present
         ? g_real_present(self, src, dst, override_window, dirty_region)
         : E_FAIL;

@@ -760,3 +760,16 @@ The capture producer now enriches SetTexture events with best-effort GPU resourc
 metadata. Runtime trace and BMW runtime render contract preserve these
 descriptors, making captured s0/s3 state self-describing before resource-content
 snapshotting is implemented.
+
+## Phase 170: D3D9 Present screenshot capture
+
+The runtime producer can now optionally capture the real D3D9 backbuffer before
+Present as a P6 PPM. This is deliberately opt-in and frame-cadenced. The
+repository also includes `tools/ppm_to_snapshot_svg.py`, which downsamples and
+run-length-encodes a captured frame into a compact quantized SVG suitable for a
+GitHub visual checkpoint.
+
+This does not create a shader reconstruction by itself: the PPM is the retail
+runtime frame, while the SVG is only a review artifact. The next runtime task
+is to capture one BMW M3 body frame and use its exact shader/resource state for
+the offline reference render.

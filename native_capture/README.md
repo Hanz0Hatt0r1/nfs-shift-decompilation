@@ -74,3 +74,15 @@ Each `set_texture` event now optionally includes best-effort resource metadata:
 resource type, dimensions, format, pool and level count for 2D/cube textures
 (and width/height/depth for volume textures). Descriptor failure never drops the
 original bind event.
+
+## Optional frame screenshots
+
+Set `SHIFT_D3D9_CAPTURE_SCREENSHOT=1` to save the D3D9 backbuffer on successful
+capture frames as `shift_d3d9_frame_<frame>.ppm`. Use
+`SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY=N` to capture every Nth frame and
+`SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR` to choose the output directory.
+
+The hook runs before `Present`, uses a system-memory surface and currently
+supports A8R8G8B8, X8R8G8B8 and R5G6B5 backbuffers. Screenshot capture is
+optional and failure is reported as a separate JSONL event; it does not change
+normal D3D9 rendering behavior.

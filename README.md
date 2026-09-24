@@ -255,6 +255,22 @@ Probe сохраняет provenance по обоим архивам, shader refer
 
 Это `texture-only` preview: BMT resolution и UV0/DDS sampling реальные, но `bodywork.fx`, FXO, envmap и runtime constants ещё не исполняются.
 
+### Runtime screenshots
+
+The D3D9 capture producer can optionally save real retail backbuffer frames:
+
+    set SHIFT_D3D9_CAPTURE_SCREENSHOT=1
+    set SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY=30
+    set SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR=C:\\path\\capture\\
+
+Then convert a captured PPM to a compact GitHub SVG checkpoint:
+
+    python tools/ppm_to_snapshot_svg.py \\
+      capture/shift_d3d9_frame_120.ppm \\
+      docs/render-snapshots/shift_runtime_frame_120.svg
+
+The SVG is downsampled/quantized; it is a review snapshot, while the original PPM remains the source capture outside the repository.
+
 ### Render snapshots
 
 Последний реальный geometry-preview BMW M3 сохранён непосредственно в репозитории:
