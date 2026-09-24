@@ -744,3 +744,30 @@ def test_d3d9_type_layout_evidence_fails_closed_without_tables():
     assert result["tables"]["type_size"]["initializer_status"] == "opaque"
     assert result["semantics"]["type_code_to_byte_size"]["status"] == "not-proven"
     assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_type_profile_validates_all_documented_layouts():
+    from d3d9_type_profile import validate_type_tables
+
+    sizes = [4, 8, 12, 16, 4, 4, 4, 8, 4, 4, 8, 4, 8, 4, 4, 4, 8]
+    components = [1, 2, 3, 4, 4, 4, 2, 4, 4, 2, 4, 2, 4, 3, 3, 2, 4]
+
+    result = validate_type_tables(sizes, components)
+    assert result["validation"]["status"] == "match"
+    assert result["validation"]["match_count"] == 17
+    assert result["validation"]["mismatch_count"] == 0
+    assert result["validation"]["unavailable_count"] == 0
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_type_profile_reports_mismatch_and_missing_values():
+    from d3d9_type_profile import validate_type_tables
+
+    result = validate_type_tables(
+        {0: 4, 1: 7},
+        {0: 1, 1: 2},
+    )
+    assert result["validation"]["status"] == "mismatch"
+    by = {row["type_code"]: row for row in result["validation"]["rows"]}
+    assert by[1]["status"] == "mismatch"
+    assert by[2]["status"] == "unavailable"
