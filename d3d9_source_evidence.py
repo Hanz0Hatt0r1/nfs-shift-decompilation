@@ -66,10 +66,9 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
     stream_fields = _contains_all(
         text,
         (
-            '(byte *)"STREAM"',
-            '(byte *)"Type"',
-            '(byte *)"Usage"',
-            '(byte *)"Channel"',
+            '"STREAM"',
+            '"Usage"',
+            '"Channel"',
         ),
     )
 
