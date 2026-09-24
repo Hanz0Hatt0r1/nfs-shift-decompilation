@@ -32,17 +32,30 @@ def validate_meb_descriptor_parity(material_slice: Mapping[str, Any]) -> dict[st
             checks.append(row)
             continue
         type_ordinal, usage_ordinal, channel = map(int, words[:3])
+        raw_hex = str(descriptor.get('raw_hex') or '')
+        raw_words = None
+        if raw_hex:
+            try:
+                raw = bytes.fromhex(raw_hex)
+                if len(raw) == 12:
+                    raw_words = [int.from_bytes(raw[offset:offset + 4], 'little') for offset in (0, 4, 8)]
+            except ValueError:
+                raw_words = None
         expected_type = TYPE_BY_PROPERTY.get(pid)
         layout_index = int(attr.get('usage_index', 0) or 0)
         row.update({
             'descriptor_offset': descriptor.get('offset'),
             'descriptor_raw_hex': descriptor.get('raw_hex'),
+            'raw_words': raw_words,
             'type_ordinal': type_ordinal,
             'usage_ordinal': usage_ordinal,
             'channel': channel,
             'expected_type_ordinal': expected_type,
             'layout_usage_index': layout_index,
         })
+        if raw_hex and raw_words != list(words[:3]):
+            reasons.append(f'meb-descriptor:raw-bytes-mismatch:{pid}')
+            row['status'] = 'mismatch'
         if expected_type is not None and type_ordinal != expected_type:
             reasons.append(f'meb-descriptor:type-mismatch:{pid}')
             row['status'] = 'mismatch'
