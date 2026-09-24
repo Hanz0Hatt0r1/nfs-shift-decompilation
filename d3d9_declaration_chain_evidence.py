@@ -248,6 +248,7 @@ def analyze_d3d9_declaration_chain(
     declaration_lifecycle_evidence: Mapping[str, Any] | None = None,
     binding_args_evidence: Mapping[str, Any] | None = None,
     meb_color_bridge_evidence: Mapping[str, Any] | None = None,
+    meb_descriptor_triple_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -267,6 +268,7 @@ def analyze_d3d9_declaration_chain(
     declaration_lifecycle_evidence = declaration_lifecycle_evidence or {}
     binding_args_evidence = binding_args_evidence or {}
     meb_color_bridge_evidence = meb_color_bridge_evidence or {}
+    meb_descriptor_triple_evidence = meb_descriptor_triple_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -392,6 +394,32 @@ def analyze_d3d9_declaration_chain(
     api_bind_supplied = bool(api_bind_evidence)
     binding_args_supplied = bool(binding_args_evidence)
     meb_color_bridge_supplied = bool(meb_color_bridge_evidence)
+    meb_descriptor_triple_supplied = bool(meb_descriptor_triple_evidence)
+
+    if meb_descriptor_triple_supplied:
+        triple_format = meb_descriptor_triple_evidence.get("format")
+        triple_status = _status(meb_descriptor_triple_evidence, "meb_property_mapping", "status")
+        triple_mapping_status = _status(meb_descriptor_triple_evidence, "d3d9_type_mapping", "status")
+        triple_properties = meb_descriptor_triple_evidence.get("properties")
+        triple_complete = (
+            isinstance(triple_properties, Mapping)
+            and all(
+                _status(triple_properties, property_id, "d3d9_type_mapping", "status") == "match"
+                for property_id in ("460", "461")
+            )
+            and triple_mapping_status == "match"
+            and triple_status == "match"
+        )
+        checks["meb_descriptor_triple"] = {
+            "status": (
+                "observed"
+                if triple_format == "SHIFT.MEBD3D9DescriptorTripleEvidence/1" and triple_complete
+                else "mismatch"
+                if triple_status == "mismatch" or triple_mapping_status == "mismatch"
+                else "not-proven"
+            ),
+            "detail": "exact MEB 460/461 descriptor triples resolve to D3D9 Type 4 through the source-backed binary mesh loader semantics",
+        }
 
     if meb_color_bridge_supplied:
         bridge_format = meb_color_bridge_evidence.get("format")
@@ -679,6 +707,8 @@ def analyze_d3d9_declaration_chain(
         required_keys.append("d3d9_binding_arguments")
     if meb_color_bridge_supplied:
         required_keys.append("meb_color_bridge")
+    if meb_descriptor_triple_supplied:
+        required_keys.append("meb_descriptor_triple")
     if instance_supplied:
         required_keys.append("declaration_instance")
     if memory_supplied:
@@ -693,7 +723,10 @@ def analyze_d3d9_declaration_chain(
     ]
     pe_validation = _status(pe_evidence, "type_profile_validation", "validation", "status")
     pe_available = bool(pe_evidence)
-    meb_status = "not-proven"
+    meb_status = (
+        _status(meb_descriptor_triple_evidence, "meb_property_mapping", "status")
+        if meb_descriptor_triple_supplied else "not-proven"
+    )
 
     return {
         "format": FORMAT,
@@ -749,6 +782,10 @@ def analyze_d3d9_declaration_chain(
                 checks["meb_color_bridge"]["status"]
                 if meb_color_bridge_supplied else "not-supplied"
             ),
+            "meb_descriptor_triple_status": (
+                checks["meb_descriptor_triple"]["status"]
+                if meb_descriptor_triple_supplied else "not-supplied"
+            ),
             "runtime_memory_status": (
                 runtime_memory_evidence.get("status", "not-supplied")
                 if memory_supplied else "not-supplied"
@@ -799,6 +836,20 @@ def analyze_d3d9_declaration_chain(
                 "source_integrity": meb_color_bridge_evidence.get("source_integrity"),
             }
             if meb_color_bridge_supplied else None
+        ),
+        "meb_descriptor_triple_evidence": (
+            {
+                "format": meb_descriptor_triple_evidence.get("format"),
+                "meb_property_mapping": meb_descriptor_triple_evidence.get(
+                    "meb_property_mapping"
+                ),
+                "d3d9_type_mapping": meb_descriptor_triple_evidence.get(
+                    "d3d9_type_mapping"
+                ),
+                "properties": meb_descriptor_triple_evidence.get("properties"),
+                "source": meb_descriptor_triple_evidence.get("source"),
+            }
+            if meb_descriptor_triple_supplied else None
         ),
         "binding_args_evidence": (
             {
@@ -921,6 +972,7 @@ def analyze_d3d9_declaration_chain_files(
     declaration_lifecycle_evidence_path: str | Path | None = None,
     binding_args_evidence_path: str | Path | None = None,
     meb_color_bridge_evidence_path: str | Path | None = None,
+    meb_descriptor_triple_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -981,6 +1033,11 @@ def analyze_d3d9_declaration_chain_files(
             None
             if binding_args_evidence_path is None
             else load(binding_args_evidence_path)
+        ),
+        meb_descriptor_triple_evidence=(
+            None
+            if meb_descriptor_triple_evidence_path is None
+            else load(meb_descriptor_triple_evidence_path)
         ),
         meb_color_bridge_evidence=(
             None
