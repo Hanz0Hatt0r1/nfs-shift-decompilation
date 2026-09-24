@@ -258,3 +258,8 @@ global table contents are not sufficient to prove that mapping.
 Phase 88 makes the STREAM grouping topology machine-readable and regression-tested. FUN_00854e70 groups declaration elements by Stream using a 0x14-byte per-stream record, tracks element count and declaration-record pointers, and accumulates byte size through DAT_00b8eef0. The report remains conservative about MEB property linkage.
 
 The PE resolver is corrected to the source-backed Type layout addresses DAT_00b8eef0 (element size) and DAT_00b8ef38 (source component count), both covering the recovered 18-entry domain including sentinel Type 0x11. This removes the stale DAT_00b900d8 alias from the PE path while preserving the separate declaration lookup table at DAT_00b90088.
+
+
+## Phase 89: PE Type-table semantic validation
+
+`source-d3d9-pe-evidence` now validates file-backed DAT_00b8eef0 and DAT_00b8ef38 contents against the recovered D3D9 Type semantic profile. The result is machine-readable and fail-closed: missing bytes are `unavailable`, conflicting values are `mismatch`, and only a complete semantic match reaches `match`. This validates table contents but does not select an MEB 460/461 declaration Type.
