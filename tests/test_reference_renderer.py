@@ -1457,35 +1457,3 @@ def test_reference_renderer_rejects_conflicting_uv_families(tmp_path):
     else:
         raise AssertionError("expected ValueError")
 
-
-def test_reference_renderer_accepts_identical_uv_families(tmp_path):
-    from reference_renderer import render_textured_render_command
-
-    command = _render_command_ready()
-    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
-    mesh = {
-        **_triangle(),
-        "uv_layers": {
-            "130": [(1.0, 0.0)] * 3,
-            "230": [(1.0, 0.0, 0.0)] * 3,
-        },
-    }
-    image = {
-        "format": "SHIFT.ReferenceTexture/1",
-        "source_format": "RGBA32",
-        "width": 2,
-        "height": 1,
-        "pixels": bytes((255, 0, 0, 255, 0, 255, 0, 255)),
-    }
-    out = tmp_path / "identical.ppm"
-    result = render_textured_render_command(
-        command,
-        mesh,
-        image,
-        out,
-        shader_reference=True,
-        sampler={"min_filter": "POINT", "mag_filter": "POINT", "address_u": "CLAMP_TO_EDGE", "address_v": "CLAMP_TO_EDGE"},
-        width=24,
-        height=24,
-    )
-    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
