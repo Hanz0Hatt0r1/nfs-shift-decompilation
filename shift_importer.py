@@ -2083,7 +2083,44 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_d3d9_declaration_lifecycle(args: argparse.Namespace) -> int:
+def _write_d3d9_source_report(analyze_file, args: argparse.Namespace) -> int:
+    report = analyze_file(args.input)
+    output = Path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({
+        "format": report.get("format"),
+        "status": report.get("status"),
+        "output": str(output),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report.get("status") in {"observed", "match"} else 2
+
+
+def cmd_d3d9_declaration_sentinel_evidence(args: argparse.Namespace) -> int:
+    from d3d9_declaration_sentinel_evidence import analyze_d3d9_declaration_sentinel_file
+    return _write_d3d9_source_report(analyze_d3d9_declaration_sentinel_file, args)
+
+
+def cmd_d3d9_declaration_count_evidence(args: argparse.Namespace) -> int:
+    from d3d9_declaration_count_evidence import analyze_d3d9_declaration_count_file
+    return _write_d3d9_source_report(analyze_d3d9_declaration_count_file, args)
+
+
+def cmd_d3d9_declaration_create_evidence(args: argparse.Namespace) -> int:
+    from d3d9_declaration_create_evidence import analyze_d3d9_declaration_create_file
+    return _write_d3d9_source_report(analyze_d3d9_declaration_create_file, args)
+
+
+def cmd_d3d9_render_api_boundary(args: argparse.Namespace) -> int:
+    from d3d9_render_api_boundary import analyze_d3d9_render_api_boundary_file
+    return _write_d3d9_source_report(analyze_d3d9_render_api_boundary_file, args)
+
+
+def cmd_d3d9_api_bind_evidence(args: argparse.Namespace) -> int:
+    from d3d9_api_bind_evidence import analyze_d3d9_api_bind_file
+    return _write_d3d9_source_report(analyze_d3d9_api_bind_file, args)
+
+
     """Analyze source-backed D3D9 declaration creation/bind lifecycle."""
     from d3d9_declaration_lifecycle_evidence import analyze_d3d9_declaration_lifecycle_file
 
