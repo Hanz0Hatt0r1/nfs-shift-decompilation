@@ -398,3 +398,14 @@ def test_render_command_gles31_skinning_parity_propagates_source_blocker():
     assert parity["valid"] is False
     assert "parity:render-command-not-ready" in parity["blocking_reasons"]
     assert "parity:source-blocker:skinning:external-pose-blocked" in parity["blocking_reasons"]
+
+def test_gles31_skinning_submission_gate_returns_contract_and_parity():
+    from skinning_glsl import build_gles31_skinning_submission_gate
+
+    command = _skinned_render_command()
+    gate = build_gles31_skinning_submission_gate(command, bone_binding=9, max_bones=64)
+    assert gate["format"] == "SHIFT.GLES31SkinningSubmissionGate/1"
+    assert gate["ready"] is True
+    assert gate["blocking_reasons"] == []
+    assert gate["contract"]["bone_binding"] == 9
+    assert gate["parity"]["valid"] is True
