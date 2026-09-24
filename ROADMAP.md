@@ -343,3 +343,8 @@ Phase 102 follow-up: the sentinel producer extractor now matches the actual uplo
 ## Phase 103: D3D9 declaration lifecycle call chain
 
 Phase 103 adds SHIFT.D3D9DeclarationLifecycleEvidence/1. The recovered source call graph now explicitly links mesh construction to FUN_008587e0, declaration creation through FUN_00830f80 and CreateVertexDeclaration, and the render path through FUN_00854d30, FUN_0082e510 and SetVertexDeclaration. This is a static lifecycle contract, not runtime frame attribution.
+
+
+## Phase 104: D3D9 binding argument semantics
+
+Phase 104 formalizes the resource arguments forwarded by FUN_00854da0 and FUN_00854e10. SetStreamSource receives the stream number, per-stream vertex-buffer pointer, zero byte offset and computed stride; SetIndices receives the recovered index-buffer pointer. These are source-backed argument semantics and do not infer MEB property mapping.
