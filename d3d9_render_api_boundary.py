@@ -70,6 +70,10 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
     return start, None, "\n".join(body)
 
 
+def _contains_call(body: str, function: str) -> bool:
+    return bool(re.search(rf"\b{re.escape(function)}\s*\(", body))
+
+
 def _observation(body: str, byte_offset: int) -> dict[str, Any]:
     hex_token = f"+ 0x{byte_offset:x}"
     decimal_token = f"+ {byte_offset}"
