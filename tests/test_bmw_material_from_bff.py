@@ -110,7 +110,7 @@ def test_real_bmw_material_extractor_supports_split_material_and_mesh_archives(m
 
 
 def test_real_bmw_material_extractor_builds_ready_binding(monkeypatch,tmp_path):
-    primary=_setup(monkeypatch,tmp_path)
+    primary,_=_setup(monkeypatch,tmp_path)
     report=extractor.build_real_bmw_material_binding(primary)
     assert report['format']=='SHIFT.RealBMWMaterialBindingEvidence/1'
     assert report['ready'] is True
@@ -123,7 +123,7 @@ def test_real_bmw_material_extractor_builds_ready_binding(monkeypatch,tmp_path):
 
 
 def test_real_bmw_material_extractor_blocks_ambiguous_bodywork_shader(monkeypatch,tmp_path):
-    primary=_setup(
+    primary,_=_setup(
         monkeypatch,
         tmp_path,
         shader_entries=['render/shaders/bodywork.fx','vehicles/shaders/bodywork.fx'],
