@@ -62,6 +62,7 @@ def validate_bmw_bff(path: str | Path) -> dict[str, Any]:
             "source": {"path": str(source), "size": size},
         }
 
+    entry_reports: dict[str, dict[str, Any]] = {}
     try:
         for label, target, expected_sha, expected_size in (
             ("paint_bmt", TARGET_BMT, None, None),
@@ -90,6 +91,7 @@ def validate_bmw_bff(path: str | Path) -> dict[str, Any]:
             if expected_sha is not None:
                 payload = archive.extract_entry(entry)
                 digest = _sha256(payload)
+                row["extracted_sha256"] = digest
                 sha_ok = digest == expected_sha
                 checks.append({
                     "field": label + "_sha256",
@@ -107,8 +109,8 @@ def validate_bmw_bff(path: str | Path) -> dict[str, Any]:
                     reasons.append(f"{label}:sha256-mismatch")
                 if len(payload) != expected_size:
                     reasons.append(f"{label}:size-mismatch")
-            row["extracted_sha256"] = expected_sha if expected_sha is not None and not reasons else row.get("extracted_sha256")
             checks.append({"field": label + "_path", "expected": target, "observed": entry.path, "status": "match"})
+            entry_reports[label] = row
 
     finally:
         archive.close()
@@ -119,6 +121,7 @@ def validate_bmw_bff(path: str | Path) -> dict[str, Any]:
         "ready": not reasons,
         "blocking_reasons": list(dict.fromkeys(reasons)),
         "checks": checks,
+        "entries": entry_reports,
         "source": {
             "path": str(source),
             "size": size,
