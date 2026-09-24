@@ -68,3 +68,10 @@ The project now has a deterministic software execution oracle for a bounded set 
 ## Phase 47: shader IR carried into RenderCommand
 
 `SHIFT.RenderCommand/1` now preserves the already-recovered `SHIFT.ShaderProgram/1` IR for both vertex and pixel stages when available, alongside the generated GLSL and linkage metadata. Backend implementations can therefore execute or inspect the same instruction IR without reparsing GLSL text.
+
+
+## Phase 50: material execution contract
+
+`SHIFT.MaterialConstantPayload/1` is now part of `SHIFT.RenderCommand/1` when numeric material constants are present. The payload is packed into deterministic 16-byte D3D9-style c-register slots at GLES UBO binding 14; unproven matrix orientation, non-float types, register conflicts and overflow remain explicit blockers.
+
+The desktop shader reference consumes the same payload instead of reconstructing values from the higher-level uniform binding. The CLI now accepts repeatable `--texture-binding SLOT=PATH` arguments, so multi-sampler shader evidence can be reproduced from files without Python-only setup. The legacy single `--texture` path maps to the first material/shader sampler rather than assuming s0.
