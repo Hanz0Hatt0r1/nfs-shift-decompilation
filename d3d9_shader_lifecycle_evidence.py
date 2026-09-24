@@ -37,8 +37,8 @@ def analyze_d3d9_shader_lifecycle(source: str) -> dict[str, Any]:
     observations = {}
     for name, edge in EDGES.items():
         dispatch = f'+ 0x{edge["byte_offset"]:x}' in body
-        current = f'*(int *)(param_1 + 0x{edge["field"]:x})' in body
-        cached = f'*(int *)(param_1 + 0x{edge["cache_field"]:x})' in body
+        current = f'param_1 + 0x{edge["field"]:x}' in body
+        cached = f'param_1 + 0x{edge["cache_field"]:x}' in body
         observations[name] = {
             'api': edge['api'],
             'vtable_slot': edge['vtable_slot'],
