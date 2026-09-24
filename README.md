@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 66** — COLOR0/COLOR1 evidence tooling. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 67** — canonical COLOR evidence from MEB JSON. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -155,6 +155,7 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
     python reference_renderer.py command.json --render-command --textured --shader-reference --mesh mesh.json --texture body.dds --output body.ppm
     python shift_importer.py color-evidence 460 color.bin color-evidence.json
     python shift_importer.py color-evidence 460 color.bin color-evidence.json --expected-rgba expected.rgba
+    python shift_importer.py color-evidence 460 meb.json color-evidence.json --mesh-json
 
 Дополнительные bindings:
 
@@ -230,7 +231,7 @@ CI запускает полный Python suite и отдельную native reg
 - После стабилизации vehicle path перейти к SGB/track assembly.
 - Затем — Android runtime.
 
-Для `COLOR0/1` evidence utility принимает сырой 4-byte stream и сохраняет обе кандидатные интерпретации (`RGBA`/`BGRA`). Опциональный `--expected-rgba` добавляет byte-level сравнение, но итог всегда остаётся `not-selected`.
+Для `COLOR0/1` evidence utility принимает сырой 4-byte stream или MEB JSON (`--mesh-json`) и сохраняет обе кандидатные интерпретации (`RGBA`/`BGRA`). Опциональный `--expected-rgba` добавляет byte-level сравнение, но итог всегда остаётся `not-selected`.
 
 Подробный план находится в [ROADMAP.md](ROADMAP.md).
 

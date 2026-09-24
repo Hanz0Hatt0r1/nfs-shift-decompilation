@@ -144,3 +144,8 @@ The reference pipeline now distinguishes two states: fixed MEB-backed semantics 
 ## Phase 66: COLOR evidence
 
 The render pipeline now has a reproducible command for COLOR0/1 candidate comparison. This is intentionally upstream of RenderCommand readiness: the evidence report can demonstrate a candidate match, while the runtime ABI remains ambiguous until the project records a verified declaration/order.
+
+
+## Phase 67: COLOR evidence ingestion
+
+The render investigation now has a canonical MEB JSON → ColorABIEvidence/1 path. This keeps the evidence workflow tied to the same decoder output consumed by RenderCommand rather than a separately prepared byte dump.
