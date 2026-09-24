@@ -365,3 +365,35 @@ def test_static_draw_rejects_missing_ctab_type():
     result = build_static_draw_contract(packet)
     assert result["ready"] is False
     assert "material-uniform-binding:ctab-type-missing" in result["blocking_reasons"]
+
+
+def test_static_draw_propagates_bmw_paint_contract_blocker():
+    packet = {
+        "scene": {},
+        "node": {"name": "BODY"},
+        "mesh": {
+            "ref": "vehicles/BMW_M3_E36/body.meb",
+            "vertex_count": 1,
+            "triangle_count": 1,
+            "vertex_layout": {
+                "format": "SHIFT.VertexLayout/1",
+                "buffer_stride": 12,
+                "attributes": [],
+            },
+        },
+        "submeshes": [{
+            "first_index": 0,
+            "index_count": 3,
+            "material": {
+                "name": "BMW_M3_E36_PAINT",
+                "paint_contract": {
+                    "ready": False,
+                    "blocking_reasons": ["sampler:diffuseMap:register-mismatch"],
+                },
+            },
+        }],
+    }
+    report = build_static_draw_contract(packet)
+    assert report["ready"] is False
+    assert "paint-contract:not-ready" in report["blocking_reasons"]
+    assert "sampler:diffuseMap:register-mismatch" in report["blocking_reasons"]

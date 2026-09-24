@@ -80,3 +80,8 @@ Use `bmw_m3_paint_contract.py` to validate the documented M3 paint binding. The 
 ## BMW paint binding adapter
 
 `bmw_m3_paint_contract.py` accepts the current `compile_material()` output shape and normalizes it before validation against the documented BMW M3 paint contract.
+
+
+## Paint contract enforcement
+
+For the exact BMW M3 paint material, `compile_material()` invokes `SHIFT.BMWM3PaintMaterialContract/1`. Sampler registers/state, shader path, specialization flags and external samplers are fail-closed before StaticDraw readiness.

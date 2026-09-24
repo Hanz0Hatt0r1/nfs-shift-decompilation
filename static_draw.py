@@ -81,6 +81,13 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         if x is not None
     ]
 
+    material_blockers = list(material.get("blocking_reasons") or [])
+    paint_contract = material.get("paint_contract")
+    if isinstance(paint_contract, dict) and paint_contract.get("ready") is not True:
+        material_blockers.extend(
+            paint_contract.get("blocking_reasons") or ["paint-contract:not-ready"]
+        )
+
     uniforms, uniform_reasons = _uniform_contract(material, selection)
     external_samplers = selection.get("external_samplers") or material.get("external_samplers") or []
 
@@ -98,9 +105,11 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         "unresolved_textures": unresolved_textures + material_unresolved,
         "external_samplers": external_samplers,
         "uniform_binding": uniforms,
-        "ready": not reasons and not unresolved_textures and not texture_blockers and not uniform_reasons,
+        "paint_contract": paint_contract,
+        "ready": not reasons and not material_blockers and not unresolved_textures and not texture_blockers and not uniform_reasons,
         "blocking_reasons": (
             reasons
+            + material_blockers
             + (["material-texture-binding:unresolved"] if unresolved_textures else [])
             + texture_blockers
             + uniform_reasons
