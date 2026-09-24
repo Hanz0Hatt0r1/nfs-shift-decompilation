@@ -68,3 +68,8 @@ The shader-backed reference renderer now preserves `external_samplers` in the Re
 ## Phase 58: cube-map external resources
 
 The shader reference now executes `samplerCube` against `SHIFT.ReferenceCubeTexture/1`, a six-face resource with explicit `px/nx/py/ny/pz/nz` RGBA8 images. D3D9 cube lookup consumes the three-component direction vector and resolves the major-axis face before sampling that face as a 2D image. `sampler3D` and `sampler1D` remain unsupported.
+
+
+## Phase 59: native DDS cubemap decode
+
+`decode_dds()` now recognizes a complete DDS cubemap (`DDSCAPS2_CUBEMAP` plus all six face flags), advances by the full per-face mip-chain stride, decodes each base level into the existing RGBA8 reference image ABI, and returns a `SHIFT.ReferenceCubeTexture/1` resource. Incomplete face flags or truncated face/mip payloads are hard errors.
