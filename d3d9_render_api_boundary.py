@@ -50,13 +50,11 @@ RENDER_FUNCTION = "FUN_0084b9a0"
 
 def _function_body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    start = None
-    for index, line in enumerate(lines, 1):
-        if re.match(rf"^\w.*\b{re.escape(function)}\(", line):
-            start = index
-            break
-    if start is None:
+    pattern = re.compile(rf"\b{re.escape(function)}\s*\(", re.S)
+    match = pattern.search(source)
+    if match is None:
         return None, None, ""
+    start = source.count("\n", 0, match.start()) + 1
     depth = 0
     seen = False
     body = []
