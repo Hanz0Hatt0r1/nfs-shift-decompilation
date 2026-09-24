@@ -19,7 +19,7 @@ def validate_source_vehicle_identity(source: str | bytes, *, source_sha256: str 
     if source_sha256 is not None and digest != source_sha256:
         reasons.append('source:sha256-mismatch')
     signature=re.search(
-        r'float10\\s+__fastcall\\s+FUN_004c32d0\\s*\\(\\s*int\\s+param_1\\s*\\)',
+        r'float10\s+__fastcall\s+FUN_004c32d0\s*\(\s*int\s+param_1\s*\)',
         text,
     )
     if signature:
@@ -31,13 +31,13 @@ def validate_source_vehicle_identity(source: str | bytes, *, source_sha256: str 
         body=''
         function_start=None
     exact_match=re.search(
-        r'case\\s+2\\s*:\\s*pcVar3\\s*=\\s*"bmw_m3_e36"\\s*;',
+        r'case\s+2\s*:\s*pcVar3\s*=\s*"bmw_m3_e36"\s*;',
         body,
     )
     exact=bool(exact_match)
     selector_line=None
     if exact_match and function_start is not None:
-        selector_line=text[:function_start + exact_match.start()].count('\\n')+1
+        selector_line=text[:function_start + exact_match.start()].count('\n')+1
     else:
         reasons.append('source:bmw-case2-missing')
     return {
