@@ -281,3 +281,49 @@ def test_color_bridge_keeps_resource_provenance_independent_per_property():
     assert result["resource_provenance"]["461"]["status"] == "observed"
     assert len(result["resource_provenance"]["460"]["reports"]) == 1
     assert len(result["resource_provenance"]["461"]["reports"]) == 1
+
+
+def _descriptor_triple_proof(status="match"):
+    return {
+        "format": "SHIFT.MEBD3D9DescriptorTripleEvidence/1",
+        "meb_property_mapping": {"status": status},
+        "properties": {
+            "460": {"d3d9_type_mapping": {"status": status}},
+            "461": {"d3d9_type_mapping": {"status": status}},
+        },
+    }
+
+
+def test_color_bridge_promotes_exact_descriptor_type_proof():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460"), _color("461")]),
+        _source_report(),
+        descriptor_triple_report=_descriptor_triple_proof(),
+    )
+    assert result["properties"]["460"]["property_to_type"]["status"] == "match"
+    assert result["properties"]["460"]["property_to_type"]["d3d9_type_code"] == 4
+    assert result["properties"]["461"]["property_to_type"]["status"] == "match"
+    assert result["properties"]["461"]["property_to_type"]["d3d9_type_code"] == 4
+    assert result["meb_property_mapping"]["status"] == "match"
+
+
+def test_color_bridge_keeps_partial_descriptor_proof_unresolved():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460"), _color("461")]),
+        _source_report(),
+        descriptor_triple_report=_descriptor_triple_proof("partial"),
+    )
+    assert result["properties"]["460"]["property_to_type"]["status"] == "not-proven"
+    assert result["properties"]["461"]["property_to_type"]["status"] == "not-proven"
+    assert result["meb_property_mapping"]["status"] == "partial"
+
+
+def test_color_bridge_propagates_descriptor_mismatch():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460"), _color("461")]),
+        _source_report(),
+        descriptor_triple_report=_descriptor_triple_proof("mismatch"),
+    )
+    assert result["properties"]["460"]["property_to_type"]["status"] == "mismatch"
+    assert result["properties"]["461"]["property_to_type"]["status"] == "mismatch"
+    assert result["meb_property_mapping"]["status"] == "mismatch"
