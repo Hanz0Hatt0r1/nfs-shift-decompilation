@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 118** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 119** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -626,3 +626,8 @@ The resulting Type mapping is now evidence-backed at the descriptor/triple bound
 The project now contains a runtime D3D9 capture bridge and a deterministic BMW M3 golden-render gate. The runtime bridge keeps static Ghidra evidence separate from runtime-instance evidence; the golden gate prevents resource, primitive or shader-permutation drift from reaching the renderer unnoticed.
 
 The selected BMW M3 E36 LODA asset is recorded in `evidence/bmw_m3_e36_kit00_body_loda.golden.json`. The next render milestone is an actual BMT -> FX -> FXO binding for one of its real primitives, followed by `RenderCommand/1`, GLES compile validation and a reproducible desktop image SHA-256.
+
+
+## Phase 119: resource identity propagation
+
+The renderer now carries decoded MEB SHA-256 identity through the render-facing packet, and the BMW golden gate fails closed when that identity is missing or mismatched. The next step is the first real BMT -> FX -> FXO -> RenderCommand -> desktop golden image for the selected M3 resource.
