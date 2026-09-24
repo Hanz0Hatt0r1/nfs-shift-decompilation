@@ -321,7 +321,7 @@ Phase 83 closes the previous 460/461 blocker using the recovered source chain ra
 
 ## Phase 82 — direct PE image resolver
 
-Phase 82 adds `source-d3d9-pe-evidence`, a pure-Python PE32/PE32+ resolver that maps the recovered Ghidra virtual addresses into file offsets and inspects the D3D9 lookup-table regions directly when they are file-backed. It can also dereference the 17 `PTR_DAT_00b901d0` entries to printable ASCII strings. Loader-initialized/BSS bytes remain explicitly unavailable; MEB 460/461 mapping is still not selected automatically.
+Phase 82 adds `source-d3d9-pe-evidence`, a pure-Python PE32/PE32+ resolver that maps the recovered Ghidra virtual addresses into file offsets and inspects the D3D9 lookup-table regions directly when they are file-backed. It can also dereference the 17 `PTR_DAT_00b901d0` entries to printable ASCII strings. Loader-initialized/BSS bytes remain explicitly unavailable; phase 83 now separately source-correlates MEB 460/461 and no longer depends on automatic PE table selection for that ABI.
 
 ## Phase 81 — raw D3D9 memory table decoder
 
