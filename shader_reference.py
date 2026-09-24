@@ -193,7 +193,7 @@ class ReferenceShaderState:
             raise ValueError(f"unsupported destination register type {rt}")
 
     def _texture(self, sampler: Operand, coord: list[float]) -> list[float]:
-        from texture_reference import sample_texture_2d
+        from texture_reference import sample_texture_2d, sample_texture_cube
 
         idx = int(sampler.index or 0)
         sampler_type = str(self.program.sampler_types.get(idx, "sampler2D"))
@@ -211,7 +211,21 @@ class ReferenceShaderState:
                     self.samplers.get(idx, {}),
                 )
             )
-        if sampler_type in {"samplerCube", "sampler3D", "sampler1D"}:
+        if sampler_type == "samplerCube":
+            if image.get("format") != "SHIFT.ReferenceCubeTexture/1":
+                raise ValueError(
+                    f"texture sampler s{idx} expects ReferenceCubeTexture/1"
+                )
+            return list(
+                sample_texture_cube(
+                    image,
+                    coord[0],
+                    coord[1],
+                    coord[2],
+                    self.samplers.get(idx, {}),
+                )
+            )
+        if sampler_type in {"sampler3D", "sampler1D"}:
             raise ValueError(
                 f"reference resource type {sampler_type} for s{idx} is not implemented"
             )

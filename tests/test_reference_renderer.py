@@ -1686,3 +1686,105 @@ def test_reference_renderer_rejects_external_cube_sampler(tmp_path):
         assert "external sampler s3 (samplerCube) requires a dedicated reference resource implementation" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_reference_renderer_executes_external_sampler_cube_environment(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["textures"] = []
+    command["submeshes"][0]["external_samplers"] = [{
+        "sampler": "environmentMap",
+        "sampler_type": "samplerCube",
+        "d3d9_sampler_register": 3,
+        "binding": "external-or-specialised",
+    }]
+    program = _textured_tex_shader_program()
+    program["samplers"] = [3]
+    program["sampler_types"] = {"3": "samplerCube"}
+    program["instructions"][0]["operands"][2]["index"] = 3
+    command["submeshes"][0]["shader"]["pixel_program"] = program
+
+    def face(rgba):
+        return {
+            "format": "SHIFT.ReferenceTexture/1",
+            "source_format": "RGBA32",
+            "width": 1,
+            "height": 1,
+            "pixels": bytes(rgba),
+        }
+
+    cube = {
+        "format": "SHIFT.ReferenceCubeTexture/1",
+        "faces": {
+            "px": face((255, 0, 0, 255)),
+            "nx": face((0, 255, 0, 255)),
+            "py": face((0, 0, 255, 255)),
+            "ny": face((255, 255, 0, 255)),
+            "pz": face((255, 0, 255, 255)),
+            "nz": face((0, 255, 255, 255)),
+        },
+    }
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"230": [(0.0, 0.0, 1.0)] * 3},
+    }
+    out = tmp_path / "environment-cube.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        face((1, 2, 3, 255)),
+        out,
+        shader_reference=True,
+        external_texture_resources={3: cube},
+        width=24,
+        height=24,
+    )
+    assert result["external_sampler_requirements"] == [{
+        "sampler": "environmentMap",
+        "d3d9_sampler_register": 3,
+        "sampler_type": "samplerCube",
+    }]
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (255, 0, 255) in pixels
+
+
+def test_reference_renderer_rejects_cube_sampler_without_cube_resource(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["textures"] = []
+    command["submeshes"][0]["external_samplers"] = [{
+        "sampler": "environmentMap",
+        "sampler_type": "samplerCube",
+        "d3d9_sampler_register": 3,
+        "binding": "external-or-specialised",
+    }]
+    program = _textured_tex_shader_program()
+    program["samplers"] = [3]
+    program["sampler_types"] = {"3": "samplerCube"}
+    program["instructions"][0]["operands"][2]["index"] = 3
+    command["submeshes"][0]["shader"]["pixel_program"] = program
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command,
+            {**_triangle(), "uv_layers": {"230": [(0.0, 0.0, 1.0)] * 3}},
+            image,
+            tmp_path / "cube-missing.ppm",
+            shader_reference=True,
+            external_texture_images={3: image},
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "external sampler s3 requires ReferenceCubeTexture/1 resource" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")

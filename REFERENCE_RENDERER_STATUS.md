@@ -63,3 +63,8 @@ The integrated VS reference path now accepts the already-proven `BLENDWEIGHT0` a
 ## Phase 57: explicit external sampler resources
 
 The shader-backed reference renderer now preserves `external_samplers` in the RenderCommand contract and accepts explicit `sampler2D` images through `external_texture_images={sN: image}`. The legacy material image fallback is never assigned to a required external sampler register. Resource type is checked against the embedded shader sampler declaration; `samplerCube`, `sampler3D` and `sampler1D` remain explicit unsupported resource types rather than being coerced to 2D.
+
+
+## Phase 58: cube-map external resources
+
+The shader reference now executes `samplerCube` against `SHIFT.ReferenceCubeTexture/1`, a six-face resource with explicit `px/nx/py/ny/pz/nz` RGBA8 images. D3D9 cube lookup consumes the three-component direction vector and resolves the major-axis face before sampling that face as a 2D image. `sampler3D` and `sampler1D` remain unsupported.

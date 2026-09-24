@@ -101,3 +101,8 @@ The desktop VS reference boundary now consumes MEB 310/580 as `BLENDWEIGHT0`/`BL
 ## Phase 57: explicit external sampler resources
 
 Renderer-global/specialized sampler requirements are now a first-class RenderCommand field. The deterministic reference path can bind external `sampler2D` resources by D3D9 sampler register and validates the declared sampler type before execution. The CLI exposes repeatable `--external-texture-binding SLOT=PATH` inputs. Environment `samplerCube` resources remain a dedicated future milestone.
+
+
+## Phase 58: cube-map external resources
+
+`environmentMap → s3` can now be supplied to the deterministic reference renderer as an explicit six-face cube resource. The resource contract validates all six faces and identical dimensions before lookup; the embedded shader sampler type must agree with the RenderCommand external sampler declaration. This removes the previous need to treat samplerCube as an automatic blocker while still keeping source DDS cubemap ingestion as a separate task.

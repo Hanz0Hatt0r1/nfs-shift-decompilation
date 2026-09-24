@@ -272,6 +272,7 @@ def rasterize_textured_mesh(
     semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
     vertex_program: dict[str, Any] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
+    external_texture_resources: dict[int, dict[str, Any]] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -350,6 +351,8 @@ def rasterize_textured_mesh(
     }
     for register, external_image in (external_texture_images or {}).items():
         shader_textures[int(register)] = external_image
+    for register, external_resource in (external_texture_resources or {}).items():
+        shader_textures[int(register)] = external_resource
     shader_samplers = {
         int(k): dict(v)
         for k, v in (samplers_by_sampler or ({0: sampler or {}})).items()
@@ -536,6 +539,7 @@ def render_textured_static_draw(
     semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
     vertex_program: dict[str, Any] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
+    external_texture_resources: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw, optionally executing the embedded vertex shader."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -594,6 +598,7 @@ def render_textured_static_draw(
         semantic_rows=semantic_rows,
         vertex_program=vertex_program,
         external_texture_images=external_texture_images,
+        external_texture_resources=external_texture_resources,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -626,6 +631,7 @@ def render_textured_render_command(
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
+    external_texture_resources: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Execute a RenderCommand through the one-texture reference material path."""
     from render_command import validate_render_command
@@ -724,10 +730,16 @@ def render_textured_render_command(
                     f"external sampler s{register} type mismatch: "
                     f"RenderCommand={required_type} shader={declared_type}"
                 )
-            if required_type != "sampler2D":
+            if required_type not in {"sampler2D", "samplerCube"}:
                 raise ValueError(
                     f"external sampler s{register} ({required_type}) requires a dedicated reference resource implementation"
                 )
+            if required_type == "samplerCube":
+                resource = (external_texture_resources or {}).get(register)
+                if resource is None and register in (external_texture_images or {}):
+                    raise ValueError(
+                        f"external sampler s{register} requires ReferenceCubeTexture/1 resource"
+                    )
         if effective_texture_images is None:
             effective_texture_images = {}
         if not effective_texture_images:
@@ -798,6 +810,7 @@ def render_textured_render_command(
         samplers_by_sampler=samplers_by_sampler,
         vertex_program=vertex_program,
         external_texture_images=None,
+        external_texture_resources=external_texture_resources,
         semantic_rows={
             key: rows
             for key, rows in {
@@ -1148,6 +1161,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--texture", type=Path, help="legacy DDS file used by --textured")
     parser.add_argument("--texture-binding", action="append", default=[], metavar="SLOT=PATH", help="explicit material sampler DDS mapping, repeatable")
     parser.add_argument("--external-texture-binding", action="append", default=[], metavar="SLOT=PATH", help="explicit external sampler2D DDS mapping, repeatable")
+    parser.add_argument("--external-cube-face", action="append", default=[], metavar="SLOT=FACE=PATH", help="explicit samplerCube face DDS mapping, repeatable; FACE is px/nx/py/ny/pz/nz")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
     args = parser.parse_args(argv)
@@ -1162,6 +1176,8 @@ def main(argv: list[str] | None = None) -> int:
 
         texture_images: dict[int, dict[str, Any]] = {}
         external_texture_images: dict[int, dict[str, Any]] = {}
+        external_texture_resources: dict[int, dict[str, Any]] = {}
+        external_cube_faces: dict[int, dict[str, dict[str, Any]]] = {}
 
         def decode_binding(spec: str) -> tuple[int, dict[str, Any]]:
             register_text, separator, path_text = str(spec).partition("=")
@@ -1199,11 +1215,46 @@ def main(argv: list[str] | None = None) -> int:
             register, decoded = decode_binding(spec)
             external_texture_images[register] = decoded
 
+        for spec in args.external_cube_face:
+            left, separator, path_text = str(spec).partition("=")
+            face_separator = left.rfind("=")
+            if not separator or face_separator <= 0 or not path_text.strip():
+                parser.error("expected SAMPLER_REGISTER=FACE=TEXTURE.dds")
+            register_text = left[:face_separator]
+            face = left[face_separator + 1:].strip().lower()
+            if face not in {"px", "nx", "py", "ny", "pz", "nz"}:
+                parser.error(f"invalid cube face {face!r}; expected px/nx/py/ny/pz/nz")
+            try:
+                register = int(register_text, 10)
+            except ValueError:
+                parser.error(f"invalid sampler register: {register_text!r}")
+            if register < 0:
+                parser.error("sampler register must be non-negative")
+            path = Path(path_text)
+            if not path.exists():
+                parser.error(f"texture file not found: {path}")
+            external_cube_faces.setdefault(register, {})[face] = decode_dds(path.read_bytes())
+
+        for register, faces in external_cube_faces.items():
+            missing = [face for face in ("px", "nx", "py", "ny", "pz", "nz") if face not in faces]
+            if missing:
+                parser.error(
+                    f"external cube sampler s{register} is missing faces: " + ", ".join(missing)
+                )
+            external_texture_resources[register] = {
+                "format": "SHIFT.ReferenceCubeTexture/1",
+                "faces": faces,
+            }
+
         image = next(iter(texture_images.values()), None)
         if image is None:
             image = next(iter(external_texture_images.values()), None)
+        if image is None and external_texture_resources:
+            image = next(iter(next(iter(external_texture_resources.values()))["faces"].values()))
         if image is None:
-            parser.error("--textured requires --texture, --texture-binding, or --external-texture-binding")
+            parser.error(
+                "--textured requires --texture, --texture-binding, --external-texture-binding, or --external-cube-face"
+            )
 
         result = render_textured_render_command(
             command,
@@ -1215,6 +1266,7 @@ def main(argv: list[str] | None = None) -> int:
             shader_reference=args.shader_reference,
             texture_images=texture_images or None,
             external_texture_images=external_texture_images or None,
+            external_texture_resources=external_texture_resources or None,
         )
         result["sha256"] = hashlib.sha256(args.output.read_bytes()).hexdigest()
     elif args.render_command:

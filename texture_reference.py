@@ -12,6 +12,8 @@ from typing import Any
 
 
 FORMAT = "SHIFT.ReferenceTexture/1"
+CUBE_FORMAT = "SHIFT.ReferenceCubeTexture/1"
+CUBE_FACES = ("px", "nx", "py", "ny", "pz", "nz")
 _HEADER_SIZE = 128
 
 
@@ -277,6 +279,65 @@ def sample_texture_2d(
         + fy * ((1 - fx) * c01[k] + fx * c11[k])
         for k in range(4)
     )
+
+
+def _cube_face_uv(x: float, y: float, z: float) -> tuple[str, float, float]:
+    """Resolve a normalized direction to a D3D9 cube face and 2D face coordinates."""
+    components = {"x": float(x), "y": float(y), "z": float(z)}
+    major = max(components, key=lambda key: abs(components[key]))
+    value = components[major]
+    if not math.isfinite(value) or abs(value) <= 1.0e-12:
+        raise ValueError("cube-map direction must contain a finite non-zero major component")
+
+    ax = abs(x)
+    ay = abs(y)
+    az = abs(z)
+    if major == "x":
+        if value > 0.0:
+            face, s, t = "px", -z / ax, -y / ax
+        else:
+            face, s, t = "nx", z / ax, -y / ax
+    elif major == "y":
+        if value > 0.0:
+            face, s, t = "py", x / ay, z / ay
+        else:
+            face, s, t = "ny", x / ay, -z / ay
+    else:
+        if value > 0.0:
+            face, s, t = "pz", x / az, -y / az
+        else:
+            face, s, t = "nz", -x / az, -y / az
+
+    return face, 0.5 * (s + 1.0), 0.5 * (t + 1.0)
+
+
+def sample_texture_cube(
+    cube: dict[str, Any],
+    x: float,
+    y: float,
+    z: float,
+    sampler: dict[str, Any] | None = None,
+) -> tuple[float, float, float, float]:
+    """Sample a six-face RGBA8 cube resource using a D3D9 direction vector."""
+    if cube.get("format") != CUBE_FORMAT:
+        raise ValueError("not a SHIFT.ReferenceCubeTexture/1 resource")
+    faces = cube.get("faces") or {}
+    missing = [face for face in CUBE_FACES if face not in faces]
+    if missing:
+        raise ValueError(
+            "cube resource is missing faces: " + ", ".join(missing)
+        )
+
+    dimensions = {
+        (int(image.get("width", 0)), int(image.get("height", 0)))
+        for image in faces.values()
+    }
+    if len(dimensions) != 1 or not dimensions or next(iter(dimensions))[0] <= 0:
+        raise ValueError("cube resource faces must have identical positive dimensions")
+
+    face, u, v = _cube_face_uv(float(x), float(y), float(z))
+    return sample_texture_2d(faces[face], u, v, sampler)
+
 
 
 def image_hash(image: dict[str, Any]) -> str:

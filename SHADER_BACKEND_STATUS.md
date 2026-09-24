@@ -62,3 +62,8 @@ The software reference executor now exposes all written shader outputs to the re
 ## Phase 56: proven skin input semantics
 
 Vertex input validation now recognizes `BLENDWEIGHT0` and `BLENDINDICES0` alongside POSITION/TEXCOORD/NORMAL/TANGENT/BINORMAL. The reference renderer sources these values from the neutral MEB mesh, while the separate skinning matrix/pose path remains intentionally unimplemented.
+
+
+## Phase 58: samplerCube reference resource
+
+The software executor now supports `samplerCube` when the bound resource is `SHIFT.ReferenceCubeTexture/1`. The cube resource is deliberately explicit and separate from 2D images; `sampler3D`/`sampler1D` remain unsupported.

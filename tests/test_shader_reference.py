@@ -442,3 +442,37 @@ def test_reference_shader_reports_missing_external_sampler_image():
     )
     assert result["status"] == "error"
     assert "texture sampler s0 (sampler2D) has no reference image" in result["blocking_reasons"][0]
+
+
+def test_reference_shader_executes_sampler_cube_resource():
+    from texture_reference import sample_texture_cube
+
+    program = _sampler2d_pixel_program("samplerCube")
+    program.sampler_types = {0: "samplerCube"}
+    cube = {
+        "format": "SHIFT.ReferenceCubeTexture/1",
+        "faces": {
+            face: {
+                "format": "SHIFT.ReferenceTexture/1",
+                "width": 1,
+                "height": 1,
+                "pixels": bytes(rgba),
+            }
+            for face, rgba in {
+                "px": (255, 0, 0, 255),
+                "nx": (0, 255, 0, 255),
+                "py": (0, 0, 255, 255),
+                "ny": (255, 255, 0, 255),
+                "pz": (255, 0, 255, 255),
+                "nz": (0, 255, 255, 255),
+            }.items()
+        },
+    }
+    assert sample_texture_cube(cube, 0.0, 0.0, 1.0) == pytest.approx((1.0, 0.0, 1.0, 1.0))
+    result = execute_shader(
+        program,
+        inputs={0: (0.0, 0.0, 1.0, 1.0)},
+        textures={0: cube},
+    )
+    assert result["status"] == "executed"
+    assert result["color"] == [1.0, 0.0, 1.0, 1.0]
