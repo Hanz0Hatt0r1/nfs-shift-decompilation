@@ -23,6 +23,7 @@ def build_usage_ordinal_bridge(material_slice: Mapping[str, Any], runtime_report
     declarations={str(x.get('pointer')):x for x in runtime_report.get('declarations') or [] if x.get('pointer')}
     observations: dict[int, list[int]]={}
     evidence_rows=[]
+    conflicts=[]
     for frame in runtime_report.get('frames') or []:
         binding=frame.get('vertex_declaration') or {}
         same=False
@@ -47,7 +48,7 @@ def build_usage_ordinal_bridge(material_slice: Mapping[str, Any], runtime_report
                 observations.setdefault(usage_ordinal,[]).append(usages[0])
             elif len(usages)>1:
                 conflicts.append({'usage_ordinal':usage_ordinal,'runtime_usages':usages})
-    mapping={}; conflicts=[]; unmapped=[]
+    mapping={}; unmapped=[]
     for ordinal, usages in sorted(observations.items()):
         unique=sorted(set(usages))
         if len(unique)==1:
