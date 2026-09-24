@@ -2,7 +2,7 @@
 """Collect the smallest useful evidence bundle for SHIFT MEB 460/461 research.
 
 Usage:
-    python3 tools/collect_meb_evidence.py /path/to/Need\ for\ Speed\ Shift
+    python3 tools/collect_meb_evidence.py "/path/to/Need for Speed Shift"
 
 The collector scans .meb files directly and .meb entries inside .bff archives.
 For every MEB it records structural metadata; for MEBs containing property
