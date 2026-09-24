@@ -5,6 +5,7 @@
 #include <d3d9.h>
 #undef Direct3DCreate9
 
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <locale>
