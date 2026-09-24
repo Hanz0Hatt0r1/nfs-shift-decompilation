@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 112** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 116** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -159,6 +159,7 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
     python shift_importer.py color-evidence-resource VEHICLES.bff cars/bmw_m3_e36/body.meb 460 body-color-evidence.json
     python shift_importer.py color-evidence-corpus evidence/ color-corpus.json
     python shift_importer.py color-evidence-bff-corpus /path/to/bffs color-bff-corpus.json
+    python tools/analyze_meb_evidence_bundle.py shift_meb_evidence.zip -o meb_corpus.json
 
 ### D3D9 runtime evidence
 
@@ -245,6 +246,8 @@ CI запускает полный Python suite и отдельную native reg
 - Расшифровать BAB animation payload по corpus + byte-diff evidence.
 - После стабилизации vehicle path перейти к SGB/track assembly.
 - Затем — Android runtime.
+
+Для больших corpus bundle анализ выполняется потоково: `tools/analyze_meb_evidence_bundle.py` читает `resources.jsonl` построчно и не загружает весь JSONL в RAM. Collector `tools/collect_meb_evidence.py` складывает распакованные `.meb` на диск в `<output-stem>_extracted/`; каталог можно переопределить через `--extract-dir`.
 
 Для `COLOR0/1` evidence utility принимает сырой 4-byte stream, MEB JSON (`--mesh-json`) или реальный `.meb` внутри `.bff` (`color-evidence-resource`). `color-evidence-corpus` агрегирует несколько отчётов и показывает межсемпловую стабильность кандидатов, но итог всегда остаётся `not-selected`.
 
