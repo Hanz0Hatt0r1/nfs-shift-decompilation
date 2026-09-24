@@ -7,6 +7,7 @@ def _material(ready_command=True):
     return {
         'format': 'SHIFT.BMWMaterialSlice/1',
         'ready': True,
+        'primitive_index': 1,
         'golden_identity': {'resource': 'vehicles/bmw/body.meb', 'resource_sha256': 'sha'},
         'material': {'permutation_identity': {'identity_sha256': 'shader-id'}},
         'uniform_binding': {'bindings': [{'name': 'primerBasis', 'register_set': 2, 'register_index': 5, 'register_count': 1, 'stage': 'pixel', 'value': [1.0,2.0,3.0,4.0]}]},
