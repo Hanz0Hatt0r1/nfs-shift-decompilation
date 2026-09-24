@@ -95,3 +95,8 @@ For the exact BMW M3 paint material, `compile_material()` invokes `SHIFT.BMWM3Pa
 ## BMW golden shader gate
 
 For `vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx`, `bmw_golden_gate.py` requires `paint_shader_gate.ready == true` as well as the existing paint contract. Other materials are unaffected.
+
+
+## BMW asset contract
+
+`bmw_m3_paint_asset_contract.py` locks the exact M3 golden MEB identity, paint primitive ranges and manifest provenance before material/shader/runtime joins.

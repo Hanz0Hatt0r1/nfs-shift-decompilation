@@ -2409,6 +2409,28 @@ def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_paint_asset_contract(args: argparse.Namespace) -> int:
+    """Validate the exact BMW M3 golden MEB -> paint material relationship."""
+    from bmw_m3_paint_asset_contract import validate_bmw_paint_asset
+
+    golden = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    report = validate_bmw_paint_asset(golden)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_bmw_paint_contract(args: argparse.Namespace) -> int:
     """Validate an evidence-backed BMW M3 paint material binding."""
     from bmw_m3_paint_contract import validate_material_binding
@@ -3032,6 +3054,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeDrawCorrelation/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_draw_correlation)
+
+    p = sp.add_parser("bmw-paint-asset-contract", help="validate the exact BMW M3 golden MEB -> paint material relationship")
+    p.add_argument("input", help="SHIFT.BMWGoldenAssetManifest/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWM3PaintAssetContract/1 JSON")
+    p.set_defaults(fn=cmd_bmw_paint_asset_contract)
 
     p = sp.add_parser("bmw-paint-contract", help="validate the evidence-backed BMW M3 paint material binding")
     p.add_argument("input", help="BMW paint material binding JSON")
