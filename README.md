@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 102** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 103** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -526,3 +526,14 @@ CLI-цепочка:
 
 
 Phase 102 follow-up hardens the D3DDECL_END source matcher against Ghidra temporary-variable renaming. The uploaded SHIFT.exe.c uses local_14 for the sentinel record index, and the matcher now validates the field expressions without depending on a synthetic variable name.
+
+
+## Phase 103 — D3D9 declaration lifecycle call chain
+
+Добавлен SHIFT.D3D9DeclarationLifecycleEvidence/1. Source-анализ теперь фиксирует прямую цепочку: mesh construction → FUN_008587e0 → FUN_00830f80 → CreateVertexDeclaration, а render path → FUN_00854d30 → FUN_0082e510 → SetVertexDeclaration. Это объединяет ранее раздельные evidence reports в один статический lifecycle contract.
+
+CLI:
+
+    python shift_importer.py source-d3d9-declaration-lifecycle SHIFT.exe.c declaration-lifecycle.json
+
+Report намеренно не утверждает конкретный runtime frame или конкретный mesh instance. MEB 460/461 → Type остаётся not-proven.
