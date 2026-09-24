@@ -114,7 +114,7 @@ def _selected_node(name: str, *, kit: str, lod: str, include_generic: bool, incl
     upper = name.upper()
     if "_DAMAGE" in upper:
         return False
-    if not upper.endswith(f"LO{lod.upper()}"):
+    if not upper.endswith(f"LOD{lod.upper()}"):
         return False
     if "LIGHTGLOWS" in upper and not include_lightglows:
         return False
