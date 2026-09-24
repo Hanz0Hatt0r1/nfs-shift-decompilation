@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 134. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 135. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -532,3 +532,10 @@ Next: run the bridge on a real BMW capture and promote only unique same-resource
 `SHIFT.D3D9RuntimeCaptureSchema/1` is now enforced at JSONL ingestion and exposed as `validate-d3d9-capture`. It validates frame/object identity fields, shader/declaration bytes, stream/draw numerics and constant vector lengths without inferring any runtime semantics. This turns the capture itself into a versioned input contract for the BMW golden pipeline.
 
 Next: obtain one concrete BMW runtime capture through this schema, derive the Usage bridge, pass full runtime parity and run the first non-synthetic reference render.
+
+
+## Phase 135: RenderCommand constant parity
+
+`SHIFT.RenderCommandConstantParity/1` now verifies the offline c-register chain from `MaterialUniformBinding/1` through `MaterialConstantPayload/1` into `RenderCommand/1 constant_commands`. Constant-bearing commands are blocked if ranges, byte offsets or payload register presence diverge. The unified BMW runtime golden gate consumes this result.
+
+Next: obtain the first real BMW runtime capture and run the complete gate. After a ready result, the exact RenderCommand can be handed to the desktop reference renderer for the first real-material image hash.
