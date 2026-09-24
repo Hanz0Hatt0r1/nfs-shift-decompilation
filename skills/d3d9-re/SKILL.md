@@ -120,3 +120,8 @@ Use `bmw-real-material-slice` to build the renderer-compatible `SHIFT.BMWMateria
 ## M3 MEB evidence parity
 
 Use `bmw-meb-evidence-parity` to compare the exact committed M3 MEB evidence snapshot with the golden manifest. Treat descriptor/property-layout drift as a resource evidence failure before material or renderer stages.
+
+
+## BMW material slice golden gate
+
+Use `bmw_material_slice_golden_gate.py` to validate one selected BMW M3 material slice against the exact golden MEB. The real BFF-backed slice builder invokes this gate automatically; do not use material ordering as an inference.
