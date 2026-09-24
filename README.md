@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 69** — COLOR evidence corpus tooling. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 70** — COLOR evidence по всему BFF-корпусу. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -158,6 +158,7 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
     python shift_importer.py color-evidence 460 meb.json color-evidence.json --mesh-json
     python shift_importer.py color-evidence-resource VEHICLES.bff cars/bmw_m3_e36/body.meb 460 body-color-evidence.json
     python shift_importer.py color-evidence-corpus evidence/ color-corpus.json
+    python shift_importer.py color-evidence-bff-corpus /path/to/bffs color-bff-corpus.json
 
 Дополнительные bindings:
 
@@ -281,3 +282,8 @@ The neutral renderer contract now has a common submission shape for skinned draw
 Пример:
 
     python shift_importer.py color-evidence-resource VEHICLES.bff cars/bmw_m3_e36/body.meb 460 body-color-evidence.json
+
+
+## Phase 70: COLOR evidence over the BFF corpus
+
+`color-evidence-bff-corpus` scans one BFF or a directory of BFF archives, decodes every `.meb` containing property 460/461 and aggregates the resulting evidence with archive/resource provenance. This is the canonical batch workflow for the unresolved COLOR ABI.
