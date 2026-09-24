@@ -1,0 +1,278 @@
+{
+  "format": "SHIFT.BMWM3MEBEvidence/1",
+  "collector_version": "115.0",
+  "id": "16eea09cb3388fd08bdf",
+  "source": {
+    "archive": "Pakfiles/Vehicles/BMW_M3_E36.bff",
+    "entry_index": 863,
+    "entry_compressed_size": 170520,
+    "entry_uncompressed_size": 300764,
+    "resource_size": 300764,
+    "resource_sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c",
+    "root_relative_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "kind": "bff-meb"
+  },
+  "mesh": {
+    "format": "SHIFT.MEB",
+    "version": 1,
+    "name": "BMW_M3_E36_KIT00_BODY_LODA",
+    "vertex_count": 3550,
+    "triangle_count": 5034,
+    "bbox": {
+      "min": [
+        -0.8597128987312317,
+        0.1543293446302414,
+        -2.0720279216766357
+      ],
+      "max": [
+        0.8576227426528931,
+        1.3603827953338623,
+        2.2685751914978027
+      ]
+    },
+    "skinning": {
+      "has_indices": false,
+      "has_weights": false,
+      "skinned": false,
+      "valid": true
+    },
+    "vertex_properties": [
+      {
+        "id": "200",
+        "name": "position",
+        "stride": 12
+      },
+      {
+        "id": "460",
+        "name": "color",
+        "stride": 4
+      },
+      {
+        "id": "220",
+        "name": "normal",
+        "stride": 12
+      },
+      {
+        "id": "240",
+        "name": "tangent",
+        "stride": 12
+      },
+      {
+        "id": "250",
+        "name": "tangent2",
+        "stride": 12
+      },
+      {
+        "id": "130",
+        "name": "uv0",
+        "stride": 8
+      },
+      {
+        "id": "132",
+        "name": "uv2",
+        "stride": 8
+      },
+      {
+        "id": "133",
+        "name": "uv3",
+        "stride": 8
+      }
+    ],
+    "property_layouts": [
+      {
+        "id": "200",
+        "name": "position",
+        "storage": "f32x3",
+        "components": 3,
+        "normalized": false,
+        "bytes": 42600,
+        "payload_offset": 100,
+        "stride": 12
+      },
+      {
+        "id": "460",
+        "name": "color",
+        "storage": "u8x4",
+        "components": 4,
+        "normalized": true,
+        "bytes": 14200,
+        "payload_offset": 42712,
+        "stride": 4
+      },
+      {
+        "id": "220",
+        "name": "normal",
+        "storage": "f32x3",
+        "components": 3,
+        "normalized": false,
+        "bytes": 42600,
+        "payload_offset": 56924,
+        "stride": 12
+      },
+      {
+        "id": "240",
+        "name": "tangent",
+        "storage": "f32x3",
+        "components": 3,
+        "normalized": false,
+        "bytes": 42600,
+        "payload_offset": 99536,
+        "stride": 12
+      },
+      {
+        "id": "250",
+        "name": "tangent2",
+        "storage": "f32x3",
+        "components": 3,
+        "normalized": false,
+        "bytes": 42600,
+        "payload_offset": 142148,
+        "stride": 12
+      },
+      {
+        "id": "130",
+        "name": "uv0",
+        "storage": "f32x2",
+        "components": 2,
+        "normalized": false,
+        "bytes": 28400,
+        "payload_offset": 184760,
+        "stride": 8
+      },
+      {
+        "id": "132",
+        "name": "uv2",
+        "storage": "f32x2",
+        "components": 2,
+        "normalized": false,
+        "bytes": 28400,
+        "payload_offset": 213172,
+        "stride": 8
+      },
+      {
+        "id": "133",
+        "name": "uv3",
+        "storage": "f32x2",
+        "components": 2,
+        "normalized": false,
+        "bytes": 28400,
+        "payload_offset": 241584,
+        "stride": 8
+      }
+    ],
+    "property_descriptors": [
+      {
+        "id": "200",
+        "offset": 88,
+        "words": [
+          2,
+          0,
+          0
+        ],
+        "raw_hex": "020000000000000000000000"
+      },
+      {
+        "id": "460",
+        "offset": 42700,
+        "words": [
+          4,
+          6,
+          0
+        ],
+        "raw_hex": "040000000600000000000000"
+      },
+      {
+        "id": "220",
+        "offset": 56912,
+        "words": [
+          2,
+          2,
+          0
+        ],
+        "raw_hex": "020000000200000000000000"
+      },
+      {
+        "id": "240",
+        "offset": 99524,
+        "words": [
+          2,
+          4,
+          0
+        ],
+        "raw_hex": "020000000400000000000000"
+      },
+      {
+        "id": "250",
+        "offset": 142136,
+        "words": [
+          2,
+          5,
+          0
+        ],
+        "raw_hex": "020000000500000000000000"
+      },
+      {
+        "id": "130",
+        "offset": 184748,
+        "words": [
+          1,
+          3,
+          0
+        ],
+        "raw_hex": "010000000300000000000000"
+      },
+      {
+        "id": "132",
+        "offset": 213160,
+        "words": [
+          1,
+          3,
+          2
+        ],
+        "raw_hex": "010000000300000002000000"
+      },
+      {
+        "id": "133",
+        "offset": 241572,
+        "words": [
+          1,
+          3,
+          3
+        ],
+        "raw_hex": "010000000300000003000000"
+      }
+    ],
+    "primitives": [
+      {
+        "first_index": 0,
+        "index_count": 150,
+        "material": "vehicles/BMW_M3_E36/BMW_M3_E36_BADGING.mtx"
+      },
+      {
+        "first_index": 150,
+        "index_count": 6294,
+        "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx"
+      },
+      {
+        "first_index": 6444,
+        "index_count": 7386,
+        "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx"
+      },
+      {
+        "first_index": 13830,
+        "index_count": 612,
+        "material": "vehicles/BMW_M3_E36/GENERIC_WINDOWS.mtx"
+      },
+      {
+        "first_index": 14442,
+        "index_count": 576,
+        "material": "vehicles/BMW_M3_E36/GENERIC_GLOSS_BLACK.mtx"
+      },
+      {
+        "first_index": 15018,
+        "index_count": 84,
+        "material": "vehicles/BMW_M3_E36/BMW_M3_E36_LIGHTSGLASS.mtx"
+      }
+    ]
+  }
+}
