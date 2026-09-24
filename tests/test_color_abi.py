@@ -292,7 +292,7 @@ def test_color_evidence_resource_uses_colors2_for_property_461(monkeypatch, tmp_
 
 
 
-def test_color_abi_corpus_aggregates_multiple_reports_without_selection():
+def test_color_abi_corpus_uses_source_proven_selection():
     from color_abi import aggregate_color_abi_evidence, build_color_abi_evidence
 
     first = build_color_abi_evidence(
@@ -311,10 +311,11 @@ def test_color_abi_corpus_aggregates_multiple_reports_without_selection():
     report = aggregate_color_abi_evidence([first, second, first_461])
     assert report["format"] == "SHIFT.ColorABICorpusEvidence/1"
     assert report["report_count"] == 3
-    assert report["selection"] == "not-selected"
+    assert report["selection"] == "BGRA"
     assert report["properties"]["460"]["report_count"] == 2
-    assert report["properties"]["460"]["selection"] == "not-selected"
+    assert report["properties"]["460"]["selection"] == "BGRA"
     assert report["properties"]["461"]["report_count"] == 1
+    assert report["properties"]["461"]["selection"] == "BGRA"
     orders = {
         row["order"]: row
         for row in report["properties"]["460"]["candidate_consistency"]
