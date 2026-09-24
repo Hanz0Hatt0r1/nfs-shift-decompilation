@@ -2090,7 +2090,7 @@ def test_reference_renderer_passes_explicit_texcoord5_through_vertex_shader(tmp_
     ]
     vertex["outputs"] = [
         {"usage": "POSITION", "index": 0, "register": "oR0"},
-        {"usage": "TEXCOORD", "index": 5, "register": "oT6"},
+        {"usage": "TEXCOORD", "index": 5, "register": "oT1"},
     ]
     command["submeshes"][0]["shader"]["vertex_program"] = vertex
     command["submeshes"][0]["shader"]["pixel_program"] = _uv5_texture_shader_program()
