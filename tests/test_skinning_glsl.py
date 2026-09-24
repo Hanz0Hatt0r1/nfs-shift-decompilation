@@ -351,7 +351,7 @@ def test_render_command_gles31_skinning_parity_accepts_matching_contract():
     contract = build_gles31_skinning_contract_from_render_command(command)
     parity = validate_gles31_skinning_contract_parity(command, contract)
     assert parity["format"] == "SHIFT.GLES31SkinningParity/1"
-    assert parity["valid"] is True
+    assert parity["valid"] is True, parity["blocking_reasons"]
     assert parity["blocking_reasons"] == []
     assert all(row["status"] == "match" for row in parity["checks"])
 
@@ -405,7 +405,7 @@ def test_gles31_skinning_submission_gate_returns_contract_and_parity():
     command = _skinned_render_command()
     gate = build_gles31_skinning_submission_gate(command, bone_binding=9, max_bones=64)
     assert gate["format"] == "SHIFT.GLES31SkinningSubmissionGate/1"
-    assert gate["ready"] is True
+    assert gate["ready"] is True, gate["blocking_reasons"]
     assert gate["blocking_reasons"] == []
     assert gate["contract"]["bone_binding"] == 9
     assert gate["parity"]["valid"] is True
