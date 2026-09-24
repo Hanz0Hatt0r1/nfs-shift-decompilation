@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from typing import Any, Iterable
 
-from shader_asm import Instruction, Operand, ShaderProgram
+from shader_asm import Instruction, Operand, ShaderProgram, decode_source
 
 
 FORMAT = "SHIFT.ReferenceShaderExecution/1"
@@ -19,7 +19,7 @@ _SUPPORTED = {
     "MOV", "ADD", "SUB", "MUL", "MAD", "DP3", "DP4", "MIN", "MAX",
     "SLT", "SGE", "EXP", "EXPP", "LOG", "LOGP", "LIT", "DST", "LRP",
     "FRC", "RCP", "RSQ", "NRM", "ABS", "POW", "CRS", "SINCOS", "CMP",
-    "DP2ADD", "TEX", "TEXLDD", "TEXLDL",
+    "DP2ADD", "TEX", "TEXLDD", "TEXLDL", "MOVA",
 }
 
 
@@ -86,6 +86,22 @@ def _component(a: list[float], op, b: list[float] | None = None) -> list[float]:
     ]
 
 
+def _signed11(value: int) -> int:
+    return value - 0x800 if value & 0x400 else value
+
+
+def _address_round(value: float) -> int:
+    """Deterministic nearest-integer conversion with an explicit tie guard."""
+    if not math.isfinite(value):
+        raise ValueError("address register value is non-finite")
+    lower = math.floor(value)
+    if math.isclose(value, lower + 0.5, rel_tol=0.0, abs_tol=1.0e-7):
+        raise ValueError(
+            "address register rounding tie is not proven by the available D3D9 evidence"
+        )
+    return int(math.floor(value + 0.5) if value >= 0.0 else math.ceil(value - 0.5))
+
+
 class ReferenceShaderState:
     def __init__(
         self,
@@ -105,6 +121,7 @@ class ReferenceShaderState:
         self.textures = {int(k): v for k, v in (textures or {}).items()}
         self.samplers = {int(k): dict(v) for k, v in (samplers or {}).items()}
         self.temps = {int(i): [0.0, 0.0, 0.0, 0.0] for i in program.temps}
+        self.address: list[float] = [0.0, 0.0, 0.0, 0.0]
         self.outputs: dict[int, list[float]] = {}
         self.depth: float | None = None
 
@@ -115,7 +132,29 @@ class ReferenceShaderState:
         rt = operand.reg_type
         idx = int(operand.index or 0)
         if operand.relative:
-            raise ValueError("dynamic relative register addressing is not yet supported by reference executor")
+            if rt not in (2, 11, 12, 13):
+                raise ValueError(
+                    f"relative addressing is only implemented for constant registers, got reg_type {rt}"
+                )
+            if self.program.stage.lower() != "vertex":
+                raise ValueError(
+                    "relative constant addressing requires vertex shader stage"
+                )
+            if operand.relative_token is None:
+                raise ValueError("relative constant operand has no address token")
+            address = decode_source(int(operand.relative_token))
+            if address.reg_type != 3 or int(address.index or 0) != 0:
+                raise ValueError(
+                    "relative constant addressing requires the D3D9 a0 address register"
+                )
+            swizzle = address.swizzle or "x"
+            if len(swizzle) != 1 or swizzle not in "xyzw":
+                raise ValueError(
+                    f"relative constant address component is ambiguous: {swizzle}"
+                )
+            component_index = "xyzw".index(swizzle)
+            relative_offset = _address_round(self.address[component_index])
+            idx = _signed11(idx) + relative_offset
 
         if rt == 0:
             value = self.temps.setdefault(idx, [0.0] * 4)
@@ -140,6 +179,10 @@ class ReferenceShaderState:
         idx = int(operand.index or 0)
         if rt == 0:
             self.temps[idx] = _write_mask(self.temps.get(idx, [0.0] * 4), row, operand.write_mask)
+        elif rt == 3:
+            if self.program.stage.lower() != "vertex" or idx != 0:
+                raise ValueError("only vertex-shader a0 address register is writable")
+            self.address = _write_mask(self.address, row, operand.write_mask)
         elif rt == 8:
             self.outputs[idx] = _write_mask(self.outputs.get(idx, [0.0, 0.0, 0.0, 1.0]), row, operand.write_mask)
         elif rt == 9:
@@ -189,7 +232,20 @@ class ReferenceShaderState:
                     raise ValueError("predicated shader instructions are not yet supported")
 
                 if name == "MOV":
-                    self._write(o[0], self._read(o[1]))
+                    value = self._read(o[1])
+                    if o[0].reg_type == 3:
+                        value = list(value)
+                        for pos, channel in enumerate(o[0].write_mask or "xyzw"):
+                            value["xyzw".index(channel)] = _address_round(value["xyzw".index(channel)])
+                    self._write(o[0], value)
+                elif name == "MOVA":
+                    if o[0].reg_type != 3:
+                        raise ValueError("MOVA destination must be the a0 address register")
+                    value = list(self._read(o[1]))
+                    for pos, channel in enumerate(o[0].write_mask or "xyzw"):
+                        index = "xyzw".index(channel)
+                        value[index] = _address_round(value[index])
+                    self._write(o[0], value)
                 elif name == "ADD":
                     self._write(o[0], _component(self._read(o[1]), lambda a, b: a + b, self._read(o[2])))
                 elif name == "SUB":

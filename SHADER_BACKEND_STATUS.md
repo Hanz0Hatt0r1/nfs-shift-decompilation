@@ -23,7 +23,7 @@ Current evidence from the supplied SHIFT 1.02 install:
 - the supplied Ghidra project contains a decompiler export `SHIFT.exe.c`, but the connector cannot stream that 39 MB text export as one fetch, so runtime call-site evidence still needs to be extracted from the project in smaller pieces.
 
 Known limitations:
-- exact relative constant addressing;
+- exact aL/loop-register constant addressing (a0 relative addressing is implemented in the software reference with explicit tie guards);
 - exact D3D9 sampler-state -> BMT/DDS state binding;
 - exact VS/PS permutation selection against runtime specialization flags;
 - exact loop-register semantics;
@@ -47,3 +47,8 @@ The GLES shader compiler validator can now be attached to `SHIFT.RenderCommand/1
 ## Phase 49: material constant execution
 
 `shader_reference.py` now converts `SHIFT.MaterialUniformBinding/1` float register bindings into deterministic D3D9-style `c/c2/c3/c4` vec4 banks. Scalar/vector values and float4x4 row registers are supported; non-float or non-register-set-2 bindings are explicit `unsupported` states.
+
+
+## Phase 53: relative constant addressing
+
+The software shader reference now executes D3D9 vertex-shader a0 relative constant reads and MOVA writes. Constant indices are resolved as the signed 11-bit base index plus the selected a0 component; out-of-range constant reads retain the D3D9 zero-vector behavior. The oracle refuses non-vertex use, non-a0 relative tokens and exact rounding ties instead of guessing undocumented behavior.
