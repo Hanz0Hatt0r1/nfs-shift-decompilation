@@ -1736,6 +1736,32 @@ def cmd_d3d9_pe_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_meb_d3d9_source_abi(args: argparse.Namespace) -> int:
+    """Correlate MEB Type/Usage/Channel IDs with recovered D3D9 source behavior."""
+    from meb_d3d9_source_abi import analyze_meb_d3d9_source_abi_file
+
+    properties = tuple(args.property_ids) if args.property_ids else ("460", "461")
+    report = analyze_meb_d3d9_source_abi_file(args.input)
+    selected = [row for row in report["properties"] if row["property_id"] in properties]
+    report["requested_properties"] = list(properties)
+    report["requested_results"] = selected
+
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "verification_count": report["verification_count"],
+        "verified_properties": report["verified_properties"],
+        "requested_properties": list(properties),
+        "meb_mapping": report["meb_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2065,6 +2091,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.PEImageEvidence/1 JSON output")
     p.add_argument("--image-base", help="override PE image base, e.g. 0x400000")
     p.set_defaults(fn=cmd_d3d9_pe_evidence)
+
+    p = sp.add_parser("meb-d3d9-source-abi", help="correlate MEB Type/Usage/Channel IDs with recovered D3D9 source ABI")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.MEBD3D9SourceABIEvidence/1 JSON output")
+    p.add_argument("property_ids", nargs="*", help="three-digit MEB property IDs; defaults to 460 461")
+    p.set_defaults(fn=cmd_meb_d3d9_source_abi)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
