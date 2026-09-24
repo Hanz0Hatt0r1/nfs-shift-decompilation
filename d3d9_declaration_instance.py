@@ -34,6 +34,7 @@ def decode_d3d9_declaration_records(
     trailing_bytes = len(payload) % RECORD_STRIDE
     requested_count = available_records if count is None else count
     decoded_count = min(requested_count, available_records)
+    terminator_index: int | None = None
 
     records: list[dict[str, Any]] = []
     malformed_type_count = 0
@@ -47,6 +48,16 @@ def decode_d3d9_declaration_records(
             payload,
             offset,
         )
+        if (
+            stream == 0xFFFF
+            and element_offset == 0
+            and type_code == TYPE_UNUSED
+            and method == 0
+            and usage == 0
+            and usage_index == 0
+        ):
+            terminator_index = index
+
         if type_code not in TYPE_PROFILE and type_code != TYPE_UNUSED:
             malformed_type_count += 1
             type_name = None
@@ -111,7 +122,14 @@ def decode_d3d9_declaration_records(
             "type_codes_recognized": malformed_type_count == 0,
             "nonzero_method_count": nonzero_method_count,
             "terminator_indices": terminator_indices,
-            "terminator_policy": "Type code 0x11 is exposed as D3DDECLTYPE_UNUSED; no extra sentinel fields are assumed",
+            "end_sentinel_index": terminator_index,
+            "end_sentinel_status": (
+                "observed" if terminator_index is not None else "not-present"
+            ),
+            "terminator_policy": (
+                "D3DDECL_END-shaped sentinel is Stream=0xffff, Offset=0, "
+                "Type=0x11, Method=0, Usage=0, UsageIndex=0"
+            ),
         },
         "semantic_links": {
             "d3dvertexelement9_shape": {
