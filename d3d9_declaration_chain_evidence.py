@@ -52,6 +52,7 @@ def analyze_d3d9_declaration_chain(
     stream_record: Mapping[str, Any] | None = None,
     canonicalizer: Mapping[str, Any] | None = None,
     pe_evidence: Mapping[str, Any] | None = None,
+    declaration_instance: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -60,6 +61,7 @@ def analyze_d3d9_declaration_chain(
     stream_record = stream_record or {}
     canonicalizer = canonicalizer or {}
     pe_evidence = pe_evidence or {}
+    declaration_instance = declaration_instance or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -71,6 +73,16 @@ def analyze_d3d9_declaration_chain(
     canonicalizer_status = _status(canonicalizer, "status")
     canonicalizer_identity = _status(
         canonicalizer, "canonicalization", "full_record_identity"
+    )
+
+    instance_supplied = bool(declaration_instance)
+    instance_status = _status(declaration_instance, "status")
+    instance_stride = declaration_instance.get("record_stride")
+    instance_shape = _status(
+        declaration_instance,
+        "semantic_links",
+        "d3dvertexelement9_shape",
+        "status",
     )
 
     checks = {
@@ -144,7 +156,17 @@ def analyze_d3d9_declaration_chain(
         },
     }
 
-    required_keys = (
+    if instance_supplied:
+        checks["declaration_instance"] = {
+            "status": "observed"
+            if instance_status == "match"
+            and instance_stride == EXPECTED_RECORD_STRIDE
+            and instance_shape == "observed"
+            else instance_status,
+            "detail": "supplied runtime declaration bytes decode as a complete 8-byte D3DVERTEXELEMENT9-shaped instance",
+        }
+
+    required_keys = [
         "type_table_semantics",
         "stream_grouping",
         "declaration_record_shape",
@@ -154,7 +176,10 @@ def analyze_d3d9_declaration_chain(
         "xml_channel_to_usage_index",
         "stream_group_to_record_pointer",
         "type_to_group_byte_size",
-    )
+    ]
+    if instance_supplied:
+        required_keys.append("declaration_instance")
+    required_keys = tuple(required_keys)
     blocking = [
         key for key in required_keys if checks[key]["status"] != "observed"
     ]
@@ -197,8 +222,14 @@ def analyze_d3d9_declaration_chain(
                 )
             ),
             "pe_file_backed_validation": pe_validation if pe_available else "not-supplied",
-            "runtime_memory_dump": "not-supplied",
-            "runtime_declaration_instance": "not-supplied",
+            "runtime_memory_dump": (
+                "observed" if instance_supplied and instance_status == "match" else "not-supplied"
+            ),
+            "runtime_declaration_instance": (
+                "observed" if instance_supplied and instance_status == "match" else (
+                    instance_status if instance_supplied else "not-supplied"
+                )
+            ),
         },
         "meb_property_mapping": {
             "status": meb_status,
@@ -218,6 +249,7 @@ def analyze_d3d9_declaration_chain_files(
     canonicalizer_path: str | Path,
     *,
     pe_evidence_path: str | Path | None = None,
+    declaration_instance_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -231,4 +263,7 @@ def analyze_d3d9_declaration_chain_files(
         stream_record=load(stream_record_path),
         canonicalizer=load(canonicalizer_path),
         pe_evidence=None if pe_evidence_path is None else load(pe_evidence_path),
+        declaration_instance=(
+            None if declaration_instance_path is None else load(declaration_instance_path)
+        ),
     )
