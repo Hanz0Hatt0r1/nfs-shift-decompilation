@@ -30,7 +30,7 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
         reasons.append('frame:missing')
     if 'event_index' in row and not isinstance(row.get('event_index'), int):
         reasons.append('event-index:invalid')
-    pointer_key = EVENT_SPECS[event]['pointer']
+    pointer_key = EVENT_SPECS[event].get('pointer')
     if pointer_key:
         value = row.get(pointer_key)
         allow_null = bool(EVENT_SPECS[event].get('allow_null'))
