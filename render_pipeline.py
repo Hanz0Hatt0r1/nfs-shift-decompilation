@@ -131,7 +131,15 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
                     "world_matrix": world,
                     "mesh": {
                         "ref": mesh_row["path"],
-                        "resolved": {"path": mesh_row["path"], "archive": mesh_row.get("archive")},
+                        "resolved": {
+                            "path": mesh_row["path"],
+                            "archive": mesh_row.get("archive"),
+                            **(
+                                {"resource_sha256": mesh_row.get("sha256")}
+                                if mesh_row.get("sha256")
+                                else {}
+                            ),
+                        },
                         "vertex_count": mesh.get("vertex_count"),
                         "triangle_count": mesh.get("triangle_count"),
                         "vertex_layout": build_layout_from_summary(mesh),
