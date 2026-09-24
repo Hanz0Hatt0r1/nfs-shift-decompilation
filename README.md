@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 72** — command-level skinned reference. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 73** — command-level skinned reference. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -304,3 +304,13 @@ renderer содержит packed-color helper `FUN_008310c0`, который с�
 Это сужает пространство гипотез, но не закрывает ABI полностью: связь именно MEB 460/461
 с `D3DCOLOR` ещё должна быть доказана отдельным declaration evidence. Поэтому runtime
 по-прежнему не выбирает candidate автоматически.
+
+## Phase 73 — RenderCommand ↔ GLES parity
+
+Для skinned draw добавлен отдельный cross-backend gate `SHIFT.GLES31SkinningParity/1`.
+Он сравнивает итоговый `RenderCommand/1` с GLES ABI по locations/formats, четырём
+influences, SkinPose и bind-palette. Для матриц используется deterministic SHA-256,
+поэтому backend не может незаметно пересобрать другую pose-палитру.
+
+Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
+GLES contract не считается эквивалентной без этого parity check.
