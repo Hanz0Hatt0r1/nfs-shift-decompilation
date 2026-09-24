@@ -119,6 +119,69 @@ def build_gles31_skinning_contract(
     }
 
 
+
+def build_gles31_skinning_contract_from_render_command(
+    command: dict[str, Any],
+    *,
+    bone_binding: int = DEFAULT_BONE_BINDING,
+    max_bones: int = DEFAULT_MAX_BONES,
+) -> dict[str, Any]:
+    """Build the GLES 3.1 skinning ABI directly from RenderCommand/1."""
+    if command.get("format") != "SHIFT.RenderCommand/1":
+        raise ValueError("expected SHIFT.RenderCommand/1")
+    if command.get("draw_kind") != "skinned":
+        raise ValueError("RenderCommand is not a skinned draw")
+    if not command.get("ready"):
+        raise ValueError(
+            "render command is not ready: "
+            + ", ".join(command.get("blocking_reasons", []) or [])
+        )
+
+    skin = command.get("skinning") or {}
+    pose = skin.get("skin_pose") or {}
+    palette = skin.get("bind_skeleton") or {}
+    mesh = command.get("mesh") or {}
+
+    if skin.get("format") != "SHIFT.Skinning/1":
+        raise ValueError("RenderCommand is missing SHIFT.Skinning/1")
+    attributes = mesh.get("attributes") or []
+    normalized_layout = {
+        "format": "SHIFT.VertexLayout/1",
+        "attributes": attributes,
+    }
+    skinned_draw = {
+        "format": "SHIFT.SkinnedDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "mesh": {
+            "vertex_layout": normalized_layout,
+            "skinning": {
+                "influences": int(skin.get("influences", 0) or 0),
+                "weights": skin.get("weights") or {},
+                "indices": skin.get("indices") or {},
+            },
+        },
+        "skinning": skin,
+        "bind_skeleton": {
+            "format": "SHIFT.BindSkeleton/1",
+            "coverage": 1.0,
+            "bone_count": int(palette.get("bone_count", 0) or 0),
+            "palette": {
+                "format": palette.get("format", "SHIFT.BonePalette/1"),
+                "bone_count": int(palette.get("bone_count", 0) or 0),
+                "matrices_3x4": list(palette.get("local_matrices_3x4", []) or []),
+                "matrix_layout": palette.get("matrix_layout"),
+                "matrix_space": palette.get("matrix_space"),
+            },
+        },
+        "skin_pose": pose,
+    }
+    return build_gles31_skinning_contract(
+        skinned_draw,
+        bone_binding=bone_binding,
+        max_bones=max_bones,
+    )
+
 def gles31_skinning_functions(*, bone_binding: int = DEFAULT_BONE_BINDING,
                                max_bones: int = DEFAULT_MAX_BONES) -> str:
     """Return reusable GLSL ES 3.1 linear-blend skinning functions."""
