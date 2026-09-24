@@ -2311,6 +2311,31 @@ def cmd_bmw_runtime_shader_join(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+
+def cmd_bmw_runtime_golden_gate(args: argparse.Namespace) -> int:
+    """Gate BMW golden rendering on complete runtime parity."""
+    from bmw_runtime_golden_gate import validate_runtime_golden_gate
+
+    report = validate_runtime_golden_gate(
+        args.material_slice,
+        args.runtime_report,
+        usage_map_path=args.usage_map,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_runtime_parity(args: argparse.Namespace) -> int:
     """Validate BMW runtime shader, constant and declaration parity."""
     from bmw_runtime_parity import validate_files
@@ -2819,6 +2844,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeShaderJoin/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_shader_join)
+
+    p = sp.add_parser("bmw-runtime-golden-gate", help="gate BMW golden rendering on complete runtime parity")
+    p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
+    p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWRuntimeGoldenGate/1 JSON")
+    p.add_argument("--usage-map", required=True, help="evidence-backed JSON mapping MEB Usage ordinals to D3D9 Usage bytes")
+    p.set_defaults(fn=cmd_bmw_runtime_golden_gate)
 
     p = sp.add_parser("bmw-runtime-parity", help="validate BMW runtime shader, constant and declaration parity")
     p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
