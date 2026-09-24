@@ -34,3 +34,8 @@ The opaque BAB corpus fingerprint report is now exposed through `shift_importer.
 ## Phase 27: BAB payload differential analysis
 
 `bab_payload_diff.py` and `shift_importer.py bab-payload-diff` compare preserved BAB bytes by exact hashes, common prefix/suffix, overlap equality and fixed block matches. The report assigns no animation semantics and is intended as evidence input for later keyframe decoding.
+
+
+## Phase 60: skinned mesh CPU reference
+
+`skinned_reference.py` now exposes `SHIFT.SkinnedMeshReference/1`, which turns a validated `SHIFT.SkinnedDraw/1` and explicit `SHIFT.SkinPose/1` into a transformed neutral mesh. Position uses the existing four-influence linear-blend reference; NORMAL/TANGENT/BINORMAL use the direction-only transform. UV, color and influence streams remain unchanged. No parent-pose composition, inverse-bind inference or BAB keyframe decoding is introduced.
