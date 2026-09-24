@@ -294,3 +294,8 @@ The declaration chain can now consume the wrapper directly and fail closed on in
 Phase 95 adds SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1. Runtime declaration records are grouped by Stream and checked against the recovered Type byte sizes: each Stream starts at Offset 0 and every following Offset advances by the packed size of its preceding Type. The report exposes per-Stream byte-size totals and explicit mismatch rows.
 
 The declaration chain can consume this as an additional runtime gate. This proves consistency of the supplied declaration bytes with the recovered offset-building rule; it does not infer MEB 460/461 -> Type or authenticate dump provenance.
+
+
+## Phase 96: source provenance coherence
+
+Phase 96 adds an optional but strict source-provenance guard to the D3D9 declaration chain. Once SHA-256 provenance is present, all source-backed reports must identify the same SHIFT.exe.c snapshot by hash, size and line count. Missing provenance in legacy reports remains explicitly not-supplied rather than being invented.
