@@ -315,6 +315,10 @@ influences, SkinPose и bind-palette. Для матриц используетс
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
 
+## Phase 80 — D3D9 usage semantics
+
+Phase 80 records the recovered XML STREAM Usage domain `0..8` and its source-visible names. The source explicitly maps usage code `6` to `Colour`; usage code `3` remains tied to opaque `DAT_00b1d188` instead of being guessed. This closes the usage-name half of the COLOR chain while `MEB 460/461 -> Type ordinal` remains unresolved.
+
 ## Phase 79 — D3D9 lookup-table shape evidence
 
 Phase 79 adds `source-d3d9-table-evidence`, which records the recoverable shape and indexing rules of the opaque D3D9 type/usage tables: `DAT_00b90088` is accessed as 4-byte entries, its adjacent symbol span is 0x50 bytes (20 DWORD slots as a layout hint), `DAT_00b900d8` spans 0x44 bytes (17 DWORD slots as a layout hint), and the XML loader searches exactly 17 type ordinals before feeding the selected ordinal to `FUN_00853c20`. The initializer bytes themselves remain opaque, and `MEB 460/461 -> type` remains not-proven.
