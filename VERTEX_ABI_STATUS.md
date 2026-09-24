@@ -217,3 +217,8 @@ The declaration creation path now has explicit evidence for its count rule. FUN_
 ## Phase 101: exact D3DDECL_END producer
 
 The recovered loader now has direct source evidence for the complete declaration terminator. FUN_008587e0 writes all six fields of the final 8-byte record to the exact D3DDECL_END values at the index following the data records. This complements the count helper's Stream >= 0xff stop rule and the runtime decoder's exact sentinel recognition.
+
+
+## Phase 102: runtime/source sentinel coherence
+
+Runtime declaration evidence now has a direct source comparison for its terminator. The chain verifies the exact six-field D3DDECL_END record against FUN_008587e0 and checks the sentinel index against the declared array length. This closes the producer/consumer consistency boundary while leaving runtime dump authenticity and MEB 460/461 -> Type unresolved.

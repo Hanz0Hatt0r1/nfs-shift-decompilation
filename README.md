@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 101** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 102** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -510,3 +510,16 @@ CLI:
 CLI:
 
     python shift_importer.py source-d3d9-declaration-sentinel-evidence SHIFT.exe.c declaration-sentinel.json
+
+
+## Phase 102 — runtime/source sentinel coherence
+
+Declaration chain теперь сравнивает фактический D3DDECL_END из runtime memory evidence с source-proven producer из FUN_008587e0. Проверяются все шесть полей sentinel и согласованность end_sentinel_index с размером declaration array. Повреждение любого значения становится mismatch/not-proven.
+
+CLI-цепочка:
+
+    python shift_importer.py validate-d3d9-declaration-chain \
+        type-profile.json stream-topology.json stream-record.json canonicalizer.json \
+        declaration-chain.json \
+        --runtime-memory-evidence declaration-memory.json \
+        --declaration-sentinel-evidence declaration-sentinel.json

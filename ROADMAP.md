@@ -330,3 +330,8 @@ Phase 100 formalizes the recovered declaration-count helper FUN_0082ea90. It wal
 ## Phase 101: exact D3DDECL_END producer
 
 Phase 101 formalizes the producer-side terminator in FUN_008587e0. The source writes Stream=0xffff, Offset=0, Type=0x11, Method=0, Usage=0, UsageIndex=0 at the record immediately after the parsed declaration elements. This closes the exact sentinel semantics that Phase 100 intentionally left separate from the one-field Stream >= 0xff count rule.
+
+
+## Phase 102: runtime/source sentinel coherence
+
+Phase 102 correlates the exact runtime D3DDECL_END record with the source-backed sentinel producer in FUN_008587e0. The chain checks all six sentinel fields and confirms that the runtime sentinel index agrees with the declaration-array boundary. A missing or altered field is an explicit blocker rather than a recoverable guess.
