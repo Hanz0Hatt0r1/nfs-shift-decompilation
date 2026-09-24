@@ -172,7 +172,17 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
 
 Весь BFF-backed material evidence остаётся прежним; внешний FX получает собственный SHA-256 provenance. Это подготовка к первому настоящему BMT → FX → FXO → RenderCommand render.
 
-### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### VHF material preview
+### Сборка реальной машины через VHF\n\nСледующий geometry-only smoke-test собирает несколько реальных MEB по VHF matrix hierarchy:\n\n    python bff_vehicle_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36.vhf \\\n      out/bmw_m3_e36_kit00_vehicle.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_vehicle.mesh.json\n\nПрофиль `kit00` выбирает базовый кузовной комплект и shared wheel/tire/brake/mirror/lightglow LODA-узлы; damage и альтернативные KIT01/KIT02/KIT04 части не подмешиваются. `--profile all` оставлен для диагностических сравнений.\n\nВ JSON сохраняются world matrices, SHA-256 каждого реально декодированного MEB, primitive/material references и unresolved nodes. Рендер остаётся geometry-only и поэтому не утверждает окончательную material/COLOR/shader семантику.\n\n### Split BFF shader probe
+
+Для реального BMW material path, где MEB/BMT/textures лежат в vehicle archive, а `bodywork.fx` и FXO cache — в `RENDER.bff`:
+
+    python bmw_split_bff_shader_probe.py \\
+      BMW_M3_E36.bff out/bmw_m3_e36_shader_probe.json \\
+      --supplemental-bff RENDER.bff
+
+Probe сохраняет provenance по обоим архивам, shader reference из BMT, найденный `bodywork.fx`, число FXO-кандидатов, selected permutation identity и наличие linked VS/PS pair. Он ничего не подменяет и не выбирает runtime-global resources.
+
+### VHF material preview
 
 Поверх geometry scene preview есть отдельный безопасный material checkpoint: он разрешает реальный BMT `diffuseTexture`, извлекает DDS из того же BFF и наносит его только на primitive, чей материал совпадает с `BMW_M3_E36_PAINT`.
 
