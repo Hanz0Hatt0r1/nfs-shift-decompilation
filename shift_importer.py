@@ -1736,6 +1736,30 @@ def cmd_d3d9_pe_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_stream_record_evidence(args: argparse.Namespace) -> int:
+    """Analyze the recovered 8-byte XML STREAM declaration records."""
+    from d3d9_stream_record_evidence import analyze_d3d9_stream_record_semantics_file
+
+    report = analyze_d3d9_stream_record_semantics_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "record_stride": report["record"]["stride"],
+        "d3dvertexelement9_shape": report["semantic_links"]["d3dvertexelement9_shape"]["status"],
+        "type_field_offset": report["record"]["field_offsets"]["type"],
+        "usage_field_offset": report["record"]["field_offsets"]["usage"],
+        "usage_index_field_offset": report["record"]["field_offsets"]["usage_index"],
+        "meb_property_mapping": report["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2065,6 +2089,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.PEImageEvidence/1 JSON output")
     p.add_argument("--image-base", help="override PE image base, e.g. 0x400000")
     p.set_defaults(fn=cmd_d3d9_pe_evidence)
+
+    p = sp.add_parser("source-d3d9-stream-record-evidence", help="analyze 8-byte XML STREAM declaration records in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9StreamRecordEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_stream_record_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")

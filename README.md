@@ -319,6 +319,10 @@ GLES contract не считается эквивалентной без этог
 
 Phase 82 adds `source-d3d9-pe-evidence`, a pure-Python PE32/PE32+ resolver that maps the recovered Ghidra virtual addresses into file offsets and inspects the D3D9 lookup-table regions directly when they are file-backed. It can also dereference the 17 `PTR_DAT_00b901d0` entries to printable ASCII strings. Loader-initialized/BSS bytes remain explicitly unavailable; MEB 460/461 mapping is still not selected automatically.
 
+## Phase 83 — STREAM declaration record semantics
+
+Phase 83 formalizes the 8-byte declaration records built by `FUN_008587e0`: type code at byte `+4`, usage code at `+6`, and Channel at `+7`, with 4-byte pointers to records stored in the owning array. The report ties XML `Type`/`Usage`/`Channel` parsing to those exact record fields while keeping the MEB 460/461 mapping unresolved.
+
 ## Phase 81 — raw D3D9 memory table decoder
 
 Phase 81 adds `source-d3d9-memory-evidence`: a raw loaded-memory decoder for the opaque D3D9 tables. It extracts little-endian DWORD entries at the recovered addresses, 17 type-name pointers, and optionally the channel-table layout hint. Pointer dereferences are decoded only when they resolve to printable bytes inside the supplied memory window; otherwise the report stays unresolved. This prepares the missing declaration-table bytes without selecting an ABI automatically.

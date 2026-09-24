@@ -124,3 +124,8 @@ The recovered XML stream loader iterates a fixed usage domain `0..8` and resolve
 ## Phase 81: raw memory table evidence
 
 `d3d9_memory_table_evidence.py` provides an input path for the data missing from the recovered C export: a raw memory window plus its virtual base address. The tool decodes `DAT_00b90088`, `DAT_00b900d8`, usage tables, and the 17-entry `PTR_DAT_00b901d0` pointer table without inventing initializer values. Resolved printable C strings are reported as evidence; unresolved pointers remain unresolved.
+
+
+## Phase 83: STREAM declaration record semantics
+
+The recovered loader constructs a fixed 8-byte record for each XML `STREAM` entry whose six fields match the documented `D3DVERTEXELEMENT9` order: `Stream` (WORD), `Offset` (WORD), `Type` (BYTE), `Method` (BYTE), `Usage` (BYTE), `UsageIndex` (BYTE). Source evidence shows `Stream=0`, a running `Offset`, the resolved D3D9 `Type` at `+4`, `Method=0`, the resolved `Usage` at `+6`, and the XML `Channel` at `+7`. Microsoft documents the same field order and meanings for `D3DVERTEXELEMENT9`. This is a source-level ABI observation and does not assign MEB property ids 460/461 to any Type ordinal.

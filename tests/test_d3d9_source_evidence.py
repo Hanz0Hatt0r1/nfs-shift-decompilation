@@ -589,3 +589,53 @@ def test_d3d9_pe_evidence_rejects_invalid_image():
             pass
         else:
             raise AssertionError("invalid PE image was accepted")
+
+
+def test_d3d9_stream_record_evidence_recovers_type_usage_channel_offsets():
+    from d3d9_stream_record_evidence import analyze_d3d9_stream_record_semantics
+
+    source = r'''
+uint __fastcall FUN_008587e0(int param_1,int param_2)
+{
+  *(undefined2 *)(iVar7 + *(int *)(param_1 + 0x1c)) = 0;
+  *(undefined1 *)(iVar7 + 5 + *(int *)(param_1 + 0x1c)) = 0;
+  *(undefined2 *)(iVar7 + 2 + *(int *)(param_1 + 0x1c)) = (undefined2)local_48;
+  uVar9 = FUN_00853c20((int)local_18);
+  *(char *)(iVar7 + 4 + *(int *)(param_1 + 0x1c)) = (char)uVar9;
+  uVar9 = FUN_00853c40(local_5c);
+  *(char *)(iVar7 + 6 + *(int *)(param_1 + 0x1c)) = (char)uVar9;
+  FUN_0063d410(local_40,"Channel",&local_1c);
+  *(undefined1 *)(iVar7 + 7 + *(int *)(param_1 + 0x1c)) = local_1c._0_1_;
+  *(int *)(*(int *)(*(int *)(param_1 + 0x24) + 8) + (int)local_10 * 4) =
+       *(int *)(param_1 + 0x1c) + iVar7;
+}
+'''
+    result = analyze_d3d9_stream_record_semantics(source)
+    assert result["status"] == "observed"
+    by_name = {row["name"]: row for row in result["fields"]}
+    assert by_name["stream"]["offset"] == 0
+    assert by_name["stream"]["status"] == "observed"
+    assert by_name["offset"]["offset"] == 2
+    assert by_name["offset"]["status"] == "observed"
+    assert by_name["type"]["offset"] == 4
+    assert by_name["type"]["status"] == "observed"
+    assert by_name["method"]["offset"] == 5
+    assert by_name["method"]["status"] == "observed"
+    assert by_name["usage"]["offset"] == 6
+    assert by_name["usage"]["status"] == "observed"
+    assert by_name["usage_index"]["offset"] == 7
+    assert by_name["usage_index"]["status"] == "observed"
+    assert result["record"]["stride"] == 8
+    assert result["semantic_links"]["d3dvertexelement9_shape"]["status"] == "observed"
+    assert result["semantic_links"]["xml_type_to_record_type_code"]["status"] == "observed"
+    assert result["semantic_links"]["xml_usage_to_record_usage_code"]["status"] == "observed"
+    assert result["semantic_links"]["xml_channel_to_record_usage_index"]["status"] == "observed"
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_stream_record_evidence_fails_closed_without_target_function():
+    from d3d9_stream_record_evidence import analyze_d3d9_stream_record_semantics
+
+    result = analyze_d3d9_stream_record_semantics("void f(void) {}")
+    assert result["status"] == "not-found"
+    assert result["meb_property_mapping"]["status"] == "not-proven"
