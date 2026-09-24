@@ -95,3 +95,8 @@ Phase 60 does not change the renderer entry point yet; instead it provides a val
 The desktop reference renderer can now accept a caller-supplied `semantic_rows` mapping for shader semantics that are proven at the shader interface but whose MEB source property is unresolved. `TEXCOORD5` is the first intended use: the BMW bodywork shader pair establishes the semantic linkage, while the renderer refuses to fabricate a MEB property id.
 
 Explicit streams are available to both VS and PS stages and are linked by `(usage,index)`. Missing streams remain hard errors.
+
+
+## Phase 71: RenderCommand-level skinned oracle
+
+`render_skinned_render_command_reference()` accepts only a ready `SHIFT.RenderCommand/1` with `draw_kind=skinned`, a valid SkinPose and embedded VS/PS programs. The result keeps the RenderCommand validation payload alongside the rendered output so backend parity tests can compare the same source contract.
