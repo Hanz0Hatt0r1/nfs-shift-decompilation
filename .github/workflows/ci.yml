@@ -53,3 +53,12 @@ jobs:
           PY
       - name: Run native IR regression
         run: ./native_ir/build/test_ir native_ir/ci-fixtures/mesh.mgeo native_ir/ci-fixtures/collision.cmesh
+
+  capture-producer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure D3D9 capture producer
+        run: cmake -S native_capture -B native_capture/build -A Win32
+      - name: Build D3D9 capture producer
+        run: cmake --build native_capture/build --config Release
