@@ -380,7 +380,7 @@ def test_color_abi_corpus_cli_aggregates_directory(tmp_path):
     assert report["source"]["accepted_reports"] == 2
     assert report["properties"]["460"]["report_count"] == 1
     assert report["properties"]["461"]["report_count"] == 1
-    assert report["selection"] == "not-selected"
+    assert report["selection"] == "BGRA"
 
 
 def test_color_evidence_bff_corpus_scans_meb_color_streams(monkeypatch, tmp_path):
