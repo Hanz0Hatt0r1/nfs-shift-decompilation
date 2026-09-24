@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 135** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 136** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -711,3 +711,8 @@ The D3D9 capture ingestion path is now versioned and shape-validated before sema
 ## Phase 135: RenderCommand constant parity
 
 The final renderer command now has an explicit c-register parity check against the material constant payload. This prevents a successful runtime capture from being paired with a drifted offline uniform upload contract.
+
+
+## Phase 136: BMW M3 paint contract
+
+The real BMW M3 paint material chain is now represented as a versioned machine-readable contract, including exact D3D9 sampler registers, texture identities, sampler state and specialization flags. It remains separate from runtime-instance evidence.
