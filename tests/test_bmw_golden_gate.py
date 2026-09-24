@@ -69,3 +69,11 @@ def test_bmw_golden_gate_blocks_missing_resource_identity():
     report = validate_bmw_golden_gate(_golden(), packet)
     assert report["ready"] is False
     assert "mesh:resource-sha256-missing" in report["blocking_reasons"]
+
+
+def test_bmw_golden_gate_blocks_missing_shader_permutation_identity():
+    packet = _packet()
+    del packet["submeshes"][0]["material"]["shader_selection"]["permutation_identity"]
+    report = validate_bmw_golden_gate(_golden(), packet)
+    assert report["ready"] is False
+    assert "shader-permutation-identity:0:missing" in report["blocking_reasons"]
