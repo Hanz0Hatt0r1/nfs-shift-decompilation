@@ -96,6 +96,8 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
 
     monkeypatch.setattr(slicer, "build_real_bmw_material_binding", lambda *a, **k: _binding_report())
     monkeypatch.setattr(slicer, "BFF", lambda path: archive)
+    golden_path=tmp_path/"golden.json"
+    golden_path.write_text(json.dumps(_golden()), encoding="utf-8")
     monkeypatch.setattr(slicer, "validate_bmw_paint_asset", lambda golden: {"ready":True,"blocking_reasons":[]})
     mesh=SimpleNamespace(
         name="BMW_M3_E36_KIT00_BODY_LODA",
@@ -125,7 +127,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     })
     monkeypatch.setattr(slicer, "build_resource_index", lambda *a, **k: {"format":"SHIFT.RenderResources/1","textures":[],"samplers":[],"bindings":[],"stats":{"textures":0,"samplers":0,"bindings":0}})
     monkeypatch.setattr(slicer, "build_render_command", lambda *a, **k: {"format":"SHIFT.RenderCommand/1","ready":True,"blocking_reasons":[],"mesh":{"vertex_layout":{"format":"SHIFT.VertexLayout/1"},"vertex_count":4,"attributes":[]},"submeshes":[{"first_index":0,"index_count":3,"shader":{"vertex":"void main(){}","pixel":"void main(){}"}}],"resource_plan":{"format":"SHIFT.RenderResources/1","texture_count":0,"sampler_count":0,"external_sampler_count":0}})
-    report=slicer.build_real_bmw_material_slice(primary, tmp_path/"golden.json")
+    report=slicer.build_real_bmw_material_slice(primary, golden_path)
     assert report["format"]=="SHIFT.BMWMaterialSlice/1"
     assert report["ready"] is True
     assert report["render_command"]["ready"] is True
@@ -138,6 +140,8 @@ def test_real_bmw_material_slice_blocks_non_paint_primitive(monkeypatch, tmp_pat
     primary.write_bytes(b"fixture")
     monkeypatch.setattr(slicer, "build_real_bmw_material_binding", lambda *a, **k: _binding_report())
     monkeypatch.setattr(slicer, "BFF", lambda path: FakeArchive(path))
+    golden_path=tmp_path/"golden.json"
+    golden_path.write_text(json.dumps(_golden()), encoding="utf-8")
     monkeypatch.setattr(slicer, "validate_bmw_paint_asset", lambda golden: {"ready":True,"blocking_reasons":[]})
     mesh=SimpleNamespace(name="M3",vertex_count=4,triangle_count=1,property_descriptors=[],primitives=[
         SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/BMW_M3_E36_BADGING.mtx")
@@ -145,6 +149,6 @@ def test_real_bmw_material_slice_blocks_non_paint_primitive(monkeypatch, tmp_pat
     monkeypatch.setattr(slicer, "read_meb", lambda data: mesh)
     monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":[],"primitives":[]})
     monkeypatch.setattr(slicer, "mesh_to_jsonable", lambda m: {"format":"SHIFT.MEB"})
-    report=slicer.build_real_bmw_material_slice(primary,tmp_path/"golden.json",primitive_index=0)
+    report=slicer.build_real_bmw_material_slice(primary,golden_path,primitive_index=0)
     assert report["ready"] is False
     assert "material-slice:primitive-not-bmw-paint" in report["blocking_reasons"]
