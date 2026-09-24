@@ -1,3 +1,4 @@
+import pytest
 import struct
 
 from shader_asm import Instruction, Operand, ShaderProgram
@@ -121,7 +122,7 @@ def test_reference_shader_error_is_explicit_for_missing_texture():
         inputs={0: (0.0, 0.0, 0.0, 1.0)},
     )
     assert result["status"] == "error"
-    assert "texture sampler s0 has no reference image" in result["blocking_reasons"][0]
+    assert "texture sampler s0 (sampler2D) has no reference image" in result["blocking_reasons"][0]
 
 
 def test_material_uniform_binding_builds_reference_constant_bank():
@@ -431,7 +432,7 @@ def test_reference_shader_rejects_cube_sampler_resource_without_cube_implementat
         }},
     )
     assert result["status"] == "error"
-    assert "reference resource type samplerCube for s0 is not implemented" in result["blocking_reasons"][0]
+    assert "texture sampler s0 expects ReferenceCubeTexture/1" in result["blocking_reasons"][0]
 
 
 def test_reference_shader_reports_missing_external_sampler_image():

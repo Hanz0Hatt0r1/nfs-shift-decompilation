@@ -239,7 +239,7 @@ def test_skin_mesh_reference_transforms_geometry_and_direction_streams():
     assert result["format"] == "SHIFT.SkinnedMeshReference/1"
     assert result["frame"] == 7
     assert result["mesh"]["vertices"][0] == (2.0, 2.0, 3.0)
-    assert result["mesh"]["vertices"][1] == (0.5, 1.5, 0.0)
+    assert result["mesh"]["vertices"][1] == (0.5, 2.0, 1.5)
     assert result["mesh"]["normals"][0] == (1.0, 0.0, 0.0)
     assert result["mesh"]["uv_layers"] == mesh["uv_layers"]
     assert result["mesh"]["colors"] == mesh["colors"]

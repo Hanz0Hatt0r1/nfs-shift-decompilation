@@ -77,3 +77,8 @@ The texture reference decoder now produces six-face cube resources from complete
 ## Phase 65: extended semantic availability
 
 Shader reference input validation now accepts semantics outside the fixed MEB set when the caller explicitly provides the corresponding semantic stream. This preserves the shader-level evidence for TEXCOORD5 while keeping unresolved source ABI out of the MEB table.
+
+
+## Phase 66: COLOR evidence
+
+Shader/vertex validation continues to treat COLOR0/1 as unresolved source ABI. The new evidence CLI can supply candidate byte-order comparisons, but no declaration or channel order is promoted to verified until external evidence is supplied.

@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 from reference_renderer import orthographic_mvp, rasterize_mesh, render_mesh_json
 
@@ -1683,7 +1684,7 @@ def test_reference_renderer_rejects_external_cube_sampler(tmp_path):
             height=8,
         )
     except ValueError as exc:
-        assert "external sampler s3 (samplerCube) requires a dedicated reference resource implementation" in str(exc)
+        assert "external sampler s3 requires ReferenceCubeTexture/1 resource" in str(exc)
     else:
         raise AssertionError("expected ValueError")
 
@@ -2037,6 +2038,12 @@ def test_reference_renderer_executes_explicit_texcoord5_stream(tmp_path):
         semantic_rows={
             ("TEXCOORD", 5): [(1.0, 0.0, 0.0)] * 3,
         },
+        sampler={
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
         width=24,
         height=24,
     )
@@ -2089,7 +2096,7 @@ def test_reference_renderer_passes_explicit_texcoord5_through_vertex_shader(tmp_
     ]
     vertex["outputs"] = [
         {"usage": "POSITION", "index": 0, "register": "oR0"},
-        {"usage": "TEXCOORD", "index": 5, "register": "oT6"},
+        {"usage": "TEXCOORD", "index": 5, "register": "oT1"},
     ]
     command["submeshes"][0]["shader"]["vertex_program"] = vertex
     command["submeshes"][0]["shader"]["pixel_program"] = _uv5_texture_shader_program()
@@ -2115,10 +2122,85 @@ def test_reference_renderer_passes_explicit_texcoord5_through_vertex_shader(tmp_
         semantic_rows={
             ("TEXCOORD", 5): [(1.0, 0.0, 0.0)] * 3,
         },
+        sampler={
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
         width=24,
         height=24,
     )
     assert result["vertex_shader_executed"] is True
     body = out.read_bytes().split(b"\n", 3)[3]
     pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
-    assert (20, 100, 40) in pixels
+    assert (20, 100, 40) in pixels, {
+        "unique_colors": sorted(set(pixels)),
+        "result": result,
+    }
+
+
+def test_reference_renderer_vertex_output_register_types_do_not_collide(tmp_path):
+    from reference_renderer import _execute_vertex_program
+
+    program = {
+        "schema": "SHIFT.ShaderProgram/1",
+        "stage": "vertex",
+        "shader_model": [3, 0],
+        "offset": 0,
+        "end": 0,
+        "inputs": [
+            {"usage": "POSITION", "index": 0, "register": "v0"},
+            {"usage": "TEXCOORD", "index": 0, "register": "v1"},
+        ],
+        "outputs": [
+            {"usage": "POSITION", "index": 0, "register": "oR0"},
+            {"usage": "TEXCOORD", "index": 0, "register": "oT0"},
+        ],
+        "samplers": [],
+        "constants": [],
+        "temps": [],
+        "unsupported_opcodes": [],
+        "instructions": [
+            {
+                "offset": 0,
+                "opcode": 1,
+                "name": "MOV",
+                "token": 0,
+                "length": 3,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    {"token": 0x80000000, "kind": "dest", "reg_type": 4, "index": 0, "write_mask": "xyzw"},
+                    {"token": 0x80000000, "kind": "source", "reg_type": 1, "index": 0, "swizzle": "xyzw", "source_modifier": 0},
+                ],
+                "predicate": None,
+            },
+            {
+                "offset": 12,
+                "opcode": 1,
+                "name": "MOV",
+                "token": 0,
+                "length": 3,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    {"token": 0x80000000, "kind": "dest", "reg_type": 6, "index": 0, "write_mask": "xyzw"},
+                    {"token": 0x80000000, "kind": "source", "reg_type": 1, "index": 1, "swizzle": "xyzw", "source_modifier": 0},
+                ],
+                "predicate": None,
+            },
+        ],
+        "const_ints": [],
+        "const_bools": [],
+        "sampler_types": {},
+    }
+    clips, varyings = _execute_vertex_program(
+        __import__("shader_reference").shader_program_from_ir(program),
+        [(-0.5, 0.0, 0.0)],
+        {0: [(0.25, 0.5)]},
+        {},
+        shader_constants=None,
+    )
+    assert clips[0] == (-0.5, 0.0, 0.0, 1.0)
+    assert varyings[0][("TEXCOORD", 0)] == (0.25, 0.5, 0.0, 1.0)

@@ -116,6 +116,24 @@ def _semantic_key(item: dict[str, Any]) -> tuple[str, int]:
     return (str(item.get("usage") or "").upper(), int(item.get("index", 0)))
 
 
+_OUTPUT_REGISTER_TYPES = {
+    "or": 4,
+    "oc": 8,
+    "ot": 6,
+    "od": 9,
+}
+
+
+def _output_register_key(register: Any) -> tuple[int, int]:
+    raw = str(register or "").strip().lower()
+    for prefix, register_type in _OUTPUT_REGISTER_TYPES.items():
+        if raw.startswith(prefix):
+            suffix = raw[len(prefix):]
+            if suffix.isdigit():
+                return register_type, int(suffix)
+    raise ValueError(f"shader output register has no recoverable typed register: {register}")
+
+
 def _execute_vertex_program(
     program,
     vertices: list[tuple[float, ...]],
@@ -205,8 +223,14 @@ def _execute_vertex_program(
             )
 
         outputs = execution.get("outputs") or {}
-        position_register = _register_index(position_item.get("register"))
-        position = outputs.get(str(position_register))
+        position_key = _output_register_key(position_item.get("register"))
+        output_registers = execution.get("output_registers") or {}
+        position = output_registers.get(
+            f"{position_key[0]}:{position_key[1]}"
+        )
+        if position is None:
+            # Backward-compatible fallback for older software-reference records.
+            position = outputs.get(str(position_key[1]))
         if position is None:
             raise ValueError(
                 f"vertex shader did not write POSITION0 register {position_register}"
@@ -219,12 +243,17 @@ def _execute_vertex_program(
         for key, item in output_items.items():
             if key == ("POSITION", 0):
                 continue
-            register = _register_index(item.get("register"))
-            value = outputs.get(str(register))
+            register_key = _output_register_key(item.get("register"))
+            value = (execution.get("output_registers") or {}).get(
+                f"{register_key[0]}:{register_key[1]}"
+            )
+            if value is None:
+                # Backward-compatible fallback for older software-reference records.
+                value = outputs.get(str(register_key[1]))
             if value is None:
                 raise ValueError(
-                    f"vertex shader did not write output register {register} for "
-                    f"{key[0]}{key[1]}"
+                    f"vertex shader did not write output register "
+                    f"{register_key[0]}:{register_key[1]} for {key[0]}{key[1]}"
                 )
             semantics[key] = tuple(float(x) for x in value)
         varying_results.append(semantics)
@@ -377,6 +406,15 @@ def rasterize_textured_mesh(
             available_semantics=available_pixel_semantics,
         )
         if not input_validation["valid"]:
+            unsupported = input_validation.get("unsupported", []) or []
+            if unsupported:
+                first = unsupported[0]
+                usage = str(first.get("usage") or "").upper()
+                semantic_index = int(first.get("index", 0))
+                raise ValueError(
+                    f"pixel shader requires {usage}{semantic_index} but mesh has no matching "
+                    f"{'UV layer' if usage == 'TEXCOORD' else 'attribute'}"
+                )
             raise ValueError(
                 "pixel shader input contract is not supported: "
                 + ", ".join(input_validation["blocking_reasons"])
@@ -560,7 +598,6 @@ def render_textured_static_draw(
     vertex_program: dict[str, Any] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
     external_texture_resources: dict[int, dict[str, Any]] | None = None,
-    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw, optionally executing the embedded vertex shader."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -653,6 +690,7 @@ def render_textured_render_command(
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
     external_texture_resources: dict[int, dict[str, Any]] | None = None,
+    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Execute a RenderCommand through the one-texture reference material path."""
     from render_command import validate_render_command

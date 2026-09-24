@@ -140,3 +140,8 @@ The GLES 3.1 skinning contract can now be built directly from a skinned `SHIFT.R
 `TEXCOORD5` is proven in the BMW bodywork shader interface, but no MEB property id for its source stream has been established. The reference path therefore accepts an explicit per-vertex semantic stream keyed by `(TEXCOORD, 5)` instead of inventing a property mapping. Without that stream, the shader remains blocked.
 
 This mechanism is generic enough to carry future evidence-backed semantics while keeping the MEB ABI table strict. The next evidence milestone remains exact COLOR0/COLOR1 declaration and channel order.
+
+
+## Phase 66: COLOR ABI evidence CLI
+
+The existing `color_abi.py` evidence logic is now exposed through `shift_importer.py color-evidence`. It accepts a raw 4-byte-per-sample stream for MEB property 460 or 461 and emits deterministic RGBA/BGRA candidates, hashes and channel statistics. An optional expected RGBA8 stream adds exact byte comparison but cannot select an ABI automatically.

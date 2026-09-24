@@ -123,6 +123,7 @@ class ReferenceShaderState:
         self.temps = {int(i): [0.0, 0.0, 0.0, 0.0] for i in program.temps}
         self.address: list[float] = [0.0, 0.0, 0.0, 0.0]
         self.outputs: dict[int, list[float]] = {}
+        self.output_registers: dict[tuple[int, int], list[float]] = {}
         self.depth: float | None = None
 
     def _read(self, operand: Operand) -> list[float]:
@@ -184,11 +185,19 @@ class ReferenceShaderState:
                 raise ValueError("only vertex-shader a0 address register is writable")
             self.address = _write_mask(self.address, row, operand.write_mask)
         elif rt == 8:
-            self.outputs[idx] = _write_mask(self.outputs.get(idx, [0.0, 0.0, 0.0, 1.0]), row, operand.write_mask)
+            previous = self.output_registers.get((rt, idx), self.outputs.get(idx, [0.0, 0.0, 0.0, 1.0]))
+            value = _write_mask(previous, row, operand.write_mask)
+            self.output_registers[(rt, idx)] = value
+            self.outputs[idx] = value
         elif rt == 9:
             self.depth = row[0]
+            self.output_registers[(rt, idx)] = [row[0], 0.0, 0.0, 0.0]
         elif rt in (4, 5, 6):
-            self.outputs[idx] = _write_mask(self.outputs.get(idx, [0.0] * 4), row, operand.write_mask)
+            previous = self.output_registers.get((rt, idx), [0.0] * 4)
+            value = _write_mask(previous, row, operand.write_mask)
+            self.output_registers[(rt, idx)] = value
+            # Keep the legacy index-only view for pixel color and existing callers.
+            self.outputs[idx] = value
         else:
             raise ValueError(f"unsupported destination register type {rt}")
 
@@ -370,6 +379,11 @@ class ReferenceShaderState:
             "unsupported": [],
             "color": self.outputs.get(0),
             "outputs": {str(k): list(v) for k, v in sorted(self.outputs.items())},
+            "output_registers": {
+                f"{register_type}:{register_index}": list(value)
+                for (register_type, register_index), value
+                in sorted(self.output_registers.items())
+            },
             "depth": self.depth,
             "temps": {str(k): list(v) for k, v in sorted(self.temps.items())},
             "address": list(self.address),

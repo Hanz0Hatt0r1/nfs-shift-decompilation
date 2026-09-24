@@ -1323,6 +1323,38 @@ def cmd_bab_payload_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_color_evidence(args: argparse.Namespace) -> int:
+    """Build non-selecting COLOR0/COLOR1 ABI evidence from a raw packed stream."""
+    from color_abi import build_color_abi_evidence, compare_color_candidate
+
+    raw = Path(args.input).read_bytes()
+    report = build_color_abi_evidence(args.property_id, raw)
+    if args.expected_rgba:
+        expected = Path(args.expected_rgba).read_bytes()
+        report["comparison"] = compare_color_candidate(
+            args.property_id,
+            raw,
+            expected,
+        )
+
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "property_id": report["property_id"],
+        "sample_count": report["sample_count"],
+        "confidence": report["confidence"],
+        "candidate_orders": [x["order"] for x in report["candidates"]],
+        "selection": (report.get("comparison") or {}).get("selection", "not-selected"),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1578,6 +1610,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="resource_analysis.json")
     p.add_argument("output", help="SHIFT.BABCorpusReport/1 JSON output")
     p.set_defaults(fn=cmd_bab_corpus)
+
+    p = sp.add_parser("color-evidence", help="report unresolved COLOR0/COLOR1 channel-order candidates")
+    p.add_argument("property_id", choices=["460", "461"])
+    p.add_argument("input", help="raw packed 4-byte color stream")
+    p.add_argument("output", help="SHIFT.ColorABIEvidence/1 JSON output")
+    p.add_argument(
+        "--expected-rgba",
+        help="optional raw RGBA8 stream used only for candidate comparison; no candidate is auto-selected",
+    )
+    p.set_defaults(fn=cmd_color_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
