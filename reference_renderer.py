@@ -16,7 +16,7 @@ from typing import Any, Iterable
 from render_command import validate_render_command
 from static_draw import build_static_draw_contract
 from texture_reference import sample_texture_2d
-from shader_reference import ReferenceShaderState, shader_program_from_ir, validate_pixel_program_inputs
+from shader_reference import ReferenceShaderState, material_constants_from_uniform_binding, shader_program_from_ir, validate_pixel_program_inputs
 
 
 RGBA = tuple[int, int, int, int]
@@ -335,6 +335,18 @@ def render_textured_render_command(
         pixel_program = next((program for program in programs if program), None)
         if pixel_program is None:
             raise ValueError("RenderCommand has no embedded pixel_program for shader reference")
+        if shader_constants is None:
+            for submesh in command.get("submeshes", []) or []:
+                uniforms = submesh.get("uniforms") or {}
+                if uniforms.get("bindings"):
+                    constant_result = material_constants_from_uniform_binding(uniforms)
+                    if constant_result["status"] == "unsupported":
+                        raise ValueError(
+                            "material constant reference unsupported: "
+                            + ", ".join(constant_result["blocking_reasons"])
+                        )
+                    shader_constants = constant_result["banks"]
+                    break
     result = render_textured_static_draw(
         draw,
         mesh,
