@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 73. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 74. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -190,3 +190,11 @@ GLES 3.1 skinning contract. The parity gate verifies attribute locations and
 formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
+
+## Phase 74: machine-readable D3D9 source evidence
+
+The recovered SHIFT.exe Ghidra C source is now consumable by a dedicated source
+evidence scanner. It records the packed-color helper, the declaration conversion
+path and the STREAM Type/Usage/Channel parser as explicit observations. The report
+keeps the critical `460/461 -> type 4` linkage unresolved because the exported
+global table contents are not sufficient to prove that mapping.
