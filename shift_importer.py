@@ -1572,6 +1572,11 @@ def cmd_color_evidence_resource(args: argparse.Namespace) -> int:
         "archive": bff.path.name,
         "resource": entry.path,
         "selection": (report.get("comparison") or {}).get("selection", "not-selected"),
+        "descriptor_range_status": report["source"].get("descriptor_range_status"),
+        "payload_range_status": report["source"].get("payload_range_status"),
+        "decoded_stream_matches_payload_status": report["source"].get(
+            "decoded_stream_matches_payload_status"
+        ),
     }, ensure_ascii=False, indent=2))
     return 0
 
