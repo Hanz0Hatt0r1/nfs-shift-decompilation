@@ -10,7 +10,7 @@ from meb_format import PROP_NAMES
 ABI_STATUS = {
     "exact": "proven",
     "derived-from-stride": "inferred",
-    "ambiguous-channel-order": "ambiguous",
+    "ambiguous-declaration-and-channel-order": "ambiguous",
     "unknown": "unknown",
 }
 
@@ -53,7 +53,7 @@ D3DDECLTYPES = {
     "234": {"d3d9": "FLOAT3", "android": "FLOAT32x3", "components": 3, "normalized": False, "element_size": 12, "confidence": "derived-from-stride"},
     "310": {"d3d9": "FLOAT4", "android": "FLOAT32x4", "components": 4, "normalized": False, "element_size": 16, "confidence": "exact"},
     "580": {"d3d9": "UBYTE4", "android": "UINT8x4", "components": 4, "normalized": False, "element_size": 4, "confidence": "exact"},
-    "460": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"], "components": 4, "normalized": True, "element_size": 4, "confidence": "ambiguous-channel-order", "channel_order_candidates": ["RGBA", "BGRA"]},
+    "460": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"], "components": 4, "normalized": True, "element_size": 4, "confidence": "ambiguous-declaration-and-channel-order", "channel_order_candidates": ["RGBA", "BGRA"], "source_evidence": {"kind": "shift-exe-c", "function": "FUN_008310c0", "address": "0x008310C0", "observed_behavior": "float4 RGBA is rounded to 8-bit channels and packed as 0xAARRGGBB", "little_endian_memory_order": "BGRA", "status": "supporting-packed-color-evidence-not-MEB-declaration-proof"}},
     "461": {"d3d9_candidates": ["D3DCOLOR", "UBYTE4N"], "android": "UINT8x4", "android_candidates": ["UINT8x4_RGBA", "UINT8x4_BGRA"], "components": 4, "normalized": True, "element_size": 4, "confidence": "ambiguous-channel-order", "channel_order_candidates": ["RGBA", "BGRA"]},
     "033": {"d3d9_candidates": ["UNKNOWN4"], "android": "RAW4", "components": 4, "normalized": False, "element_size": 4, "confidence": "unknown"},
 }
