@@ -222,3 +222,6 @@ The recovered loader now has direct source evidence for the complete declaration
 ## Phase 102: runtime/source sentinel coherence
 
 Runtime declaration evidence now has a direct source comparison for its terminator. The chain verifies the exact six-field D3DDECL_END record against FUN_008587e0 and checks the sentinel index against the declared array length. This closes the producer/consumer consistency boundary while leaving runtime dump authenticity and MEB 460/461 -> Type unresolved.
+
+
+Phase 102 follow-up verified the exact sentinel producer against the uploaded SHIFT.exe.c local_14 form. The evidence layer remains based on the six field writes and 8-byte indexing, not on decompiler-local naming.
