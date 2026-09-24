@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 122** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 123** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -646,3 +646,8 @@ The selected M3 resource can now be narrowed to one deterministic material draw 
 ## Phase 122: BMW desktop reference render
 
 A thin `SHIFT.BMWReferenceRender/1` adapter now turns the exact BMW material slice into a deterministic desktop PPM result while preserving the existing RenderCommand contract. This is the final execution bridge before the first real BMW image is recorded.
+
+
+## Phase 123: shader permutation identity
+
+Shader selections now carry a stable content-derived permutation identity independent of FXO blob offsets. This strengthens the BMW golden path so a `unique` shader selection is tied to a reproducible VS/PS byte pair rather than a heuristic score alone.
