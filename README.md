@@ -315,6 +315,10 @@ influences, SkinPose и bind-palette. Для матриц используетс
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
 
+## Phase 75 — source type-table chain evidence
+
+Phase 75 adds source-line tracking and the recovered declaration type-table chain to source-d3d9-evidence: FUN_00853c20 -> DAT_00b90088, XML Type lookup through PTR_DAT_00b901d0, XML Usage/Channel, and the XML Colour stream family. This is stronger provenance for the original declaration path, but it still does not prove MEB 460/461 -> D3D9 type, so selection=not-selected remains authoritative.
+
 ## Phase 74 — source-d3d9-evidence
 
 В проект добавлен `d3d9_source_evidence.py` и команда
