@@ -30,10 +30,11 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
         reasons.append('frame:missing')
     if 'event_index' in row and not isinstance(row.get('event_index'), int):
         reasons.append('event-index:invalid')
-    pointer_key = EVENT_SPECS[event].get('pointer')
+    spec = EVENT_SPECS[event]
+    pointer_key = spec.get('pointer')
     if pointer_key:
         value = row.get(pointer_key)
-        allow_null = bool(EVENT_SPECS[event].get('allow_null'))
+        allow_null = bool(spec.get('allow_null'))
         if value in (None, '') and not (allow_null and value is None):
             reasons.append(f'{pointer_key}:missing')
     if event == 'create_vertex_declaration' and row.get('bytes_hex') is not None:
