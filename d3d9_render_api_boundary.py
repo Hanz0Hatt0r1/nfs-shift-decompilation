@@ -52,7 +52,11 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
     lines = source.splitlines()
     start = None
     for index, line in enumerate(lines, 1):
-        if re.match(rf"^\w.*\b{re.escape(function)}\s*\(", line):
+        match = re.search(rf"\b{re.escape(function)}\s*\(", line)
+        if not match:
+            continue
+        tail = "\n".join(lines[index - 1:min(len(lines), index + 2)])
+        if "{" in tail and (";" not in line or line.rstrip().endswith("{")):
             start = index
             break
     if start is None:
@@ -70,7 +74,6 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
         if seen and depth == 0:
             return start, index, "\n".join(body)
     return start, None, "\n".join(body)
-
 
 def _observation(body: str, byte_offset: int) -> dict[str, Any]:
     hex_token = f"+ 0x{byte_offset:x}"
