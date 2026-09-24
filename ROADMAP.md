@@ -733,3 +733,15 @@ runtime selector that matches captured D3D9 VS/PS shader identity back to the
 static FXO candidate set and requires the same MEB resource identity.
 
 This is the bridge from "shader candidate corpus" to one executable permutation.
+
+## Phase 165: runtime shader render contract
+
+The runtime evidence chain now has a renderer-facing contract. It combines the
+exact selected bodywork permutation, same-MEB resource proof, D3D9 constant
+writes, indexed draws and runtime texture-stage object bindings into a
+fail-closed `SHIFT.BMWRuntimeRenderContract/1` / `SHIFT.RenderCommandInput/1`
+payload.
+
+The contract is intentionally not yet a final rendered frame: s0 shadow and
+s3 environment remain runtime-external until their concrete resource identities
+and image/cubemap payloads are captured and resolved.
