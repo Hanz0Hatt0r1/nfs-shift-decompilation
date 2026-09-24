@@ -4,7 +4,8 @@ description: >-
   Reverse-engineer the SHIFT Direct3D 9 declaration, stream, shader and binding
   ABI using explicit evidence chains. Use for D3D9 vtable calls, declaration
   records, Type/Usage tables, SetVertexDeclaration, SetStreamSource, SetIndices,
-  shader registers, runtime capture correlation, parity validation and shader constants.
+  shader registers, runtime capture correlation, parity validation, shader constants,
+  and vertex-input semantic parity.
 ---
 # D3D9 reverse-engineering workflow
 
@@ -22,8 +23,8 @@ explicit pointer/resource/frame correlation.
 
 A declaration record is 8 bytes:
 `Stream:WORD, Offset:WORD, Type:BYTE, Method:BYTE, Usage:BYTE, UsageIndex:BYTE`.
-Use `d3d9_declaration_instance.py` for raw decoding and the BMW runtime parity gate
-for currently evidenced semantic checks.
+Use `d3d9_declaration_instance.py` for raw decoding and `bmw_vertex_input_parity.py`
+for semantic checks against shader DCLs and the target VertexLayout.
 
 ## Shader constants
 
@@ -37,6 +38,13 @@ MEB binary descriptor triples are `[Type ordinal, Usage ordinal, Channel]`.
 Runtime declarations contain D3D9 Type/Usage/UsageIndex bytes. A triple-level match
 therefore requires an explicit Usage-ordinal map; the tooling intentionally refuses
 to invent one.
+
+## Vertex inputs
+
+Semantic identity is taken from the shader `DCL` usage/index and the target
+`VertexLayout/1` usage/index. A missing MEB Usage ordinal is a proof gap, not a reason
+to invent a D3D9 Usage value. Repacked target offsets are not presented as original
+runtime Stream/Offset values.
 
 ## Rendering boundary
 
