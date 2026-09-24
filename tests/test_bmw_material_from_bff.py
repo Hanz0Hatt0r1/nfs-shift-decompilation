@@ -123,13 +123,25 @@ def test_real_bmw_material_extractor_builds_ready_binding(monkeypatch,tmp_path):
 
 
 def test_real_bmw_material_extractor_blocks_ambiguous_bodywork_shader(monkeypatch,tmp_path):
-    primary,_=_setup(
-        monkeypatch,
-        tmp_path,
-        shader_entries=['render/shaders/bodywork.fx','vehicles/shaders/bodywork.fx'],
+    primary,_=_setup(monkeypatch,tmp_path)
+    original_bff = extractor.BFF
+    primary_archive = original_bff(str(primary))
+    supplemental=tmp_path/'RENDER.bff'
+    supplemental.write_bytes(b'render')
+    duplicate=FakeEntry('render/shaders/bodywork.fx',99)
+    supplemental_archive=FakeArchive(
+        supplemental,
+        [duplicate],
+        {duplicate.path:b'x'},
     )
+    def fake_bff(path):
+        path = str(Path(path))
+        if path == str(supplemental):
+            return supplemental_archive
+        return primary_archive
+    monkeypatch.setattr(extractor,'BFF',fake_bff)
     with pytest.raises(ValueError,match='expected one'):
-        extractor.build_real_bmw_material_binding(primary)
+        extractor.build_real_bmw_material_binding(primary,supplemental_bffs=[supplemental])
 
 
 def test_real_bmw_material_extractor_requires_actual_files(monkeypatch,tmp_path):
