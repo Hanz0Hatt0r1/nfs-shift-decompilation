@@ -86,3 +86,8 @@ The project still does not claim a complete real BMW material render. Remaining 
 The reference renderer can now execute an embedded vertex ShaderProgram/1 before the pixel stage. POSITION0/POSITIONT0 and the currently proven MEB semantics are sourced into declared D3D9 vertex registers; outputs are linked to pixel inputs by semantic (usage,index), not physical register number; and VS-produced varyings use perspective-correct interpolation.
 
 This closes the architectural VS->PS gap while keeping the reference ABI explicit. COLOR0/1 channel type/order, TEXCOORD5+, blend indices/weights, renderer-global resources and the remaining D3D9 control-flow/addressing cases stay outside the claimed deterministic material-render surface.
+
+
+## Phase 55: alternate MEB TEXCOORD family
+
+The desktop reference renderer and standalone vertex-reference adapter now accept either MEB UV family `130..134` (FLOAT32x2) or `230..234` (FLOAT32x3) for semantic `TEXCOORD0..4`. The 230-family is passed through with its third component available to shader code. When both families for the same semantic are present, rendering is blocked to avoid guessing the source declaration.

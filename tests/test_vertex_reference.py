@@ -120,3 +120,19 @@ def test_execute_vertex_rejects_pixel_program():
     result = execute_vertex(program, _mesh(), 0)
     assert result["status"] == "unsupported"
     assert "vertex-program:not-vertex-stage" in result["blocking_reasons"]
+
+
+def test_build_vertex_inputs_maps_uvw0_property_230_to_texcoord0():
+    mesh = _mesh()
+    mesh["uv_layers"] = {"230": [(0.1, 0.2, 0.3), (0.4, 0.5, 0.6)]}
+    assert build_vertex_inputs(_program(), mesh, 1)[1] == (0.4, 0.5, 0.6, 1.0)
+
+
+def test_build_vertex_inputs_rejects_mixed_130_230_uv_families():
+    mesh = _mesh()
+    mesh["uv_layers"] = {
+        "130": [(0.1, 0.2), (0.4, 0.5)],
+        "230": [(0.1, 0.2, 0.0), (0.4, 0.5, 0.0)],
+    }
+    with pytest.raises(ValueError, match="TEXCOORD0 has conflicting MEB UV families: 130 and 230"):
+        build_vertex_inputs(_program(), mesh, 0)

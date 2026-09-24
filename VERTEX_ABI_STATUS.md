@@ -35,3 +35,8 @@ SHIFT.VertexLayout/1 now records ABI evidence explicitly instead of exposing onl
 ## Phase 41: COLOR0/COLOR1 evidence
 
 `color_abi.py` now preserves the unresolved MEB 460/461 channel-order ambiguity as explicit RGBA and BGRA candidate interpretations. It records raw/candidate SHA-256, basic channel statistics and can compare both candidates against a known RGBA8 reference without selecting a winner.
+
+
+## Phase 55: 230..234 reference execution
+
+The deterministic reference layers now consume `230..234` directly as `TEXCOORD0..4` semantic inputs, preserving their FLOAT32x3 payloads. This is an execution mapping only; it does not assert an exact original D3D9 declaration beyond the evidence already recorded. Mixed 130/230 families for the same semantic remain a hard ABI collision.

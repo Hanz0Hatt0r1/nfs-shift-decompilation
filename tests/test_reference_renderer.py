@@ -1355,3 +1355,76 @@ def test_reference_renderer_feeds_known_normal_into_vertex_shader(tmp_path):
     assert result["vertex_shader_executed"] is True
     body = out.read_bytes().split(b"\n", 3)[3]
     assert (40, 50, 60) in [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+
+
+def test_reference_renderer_accepts_uvw0_property_230(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"230": [(1.0, 0.0, 0.5)] * 3},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 2,
+        "height": 1,
+        "pixels": bytes((200, 20, 30, 255, 20, 200, 30, 255)),
+    }
+    out = tmp_path / "uvw0-230.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        sampler={
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
+        width=24,
+        height=24,
+    )
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (20, 200, 30) in pixels
+
+
+def test_reference_renderer_rejects_mixed_130_230_uv_families(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {
+            "130": [(0.0, 0.0)] * 3,
+            "230": [(1.0, 0.0, 0.0)] * 3,
+        },
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command,
+            mesh,
+            image,
+            tmp_path / "mixed-uv-family.ppm",
+            shader_reference=True,
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "TEXCOORD0 has conflicting MEB UV families: 130 and 230" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
