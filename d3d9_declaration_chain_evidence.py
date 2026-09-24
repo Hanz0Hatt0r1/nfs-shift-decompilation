@@ -16,13 +16,13 @@ EXPECTED_RECORD_STRIDE = 8
 EXPECTED_GROUP_STRIDE = 0x14
 EXPECTED_TYPE_MATCHES = 17
 
-def _status(report: Mapping[str, Any], *path: str) -> str:
+def _status(report: Mapping[str, Any], *path: str) -> Any:
     value: Any = report
     for key in path:
         if not isinstance(value, Mapping):
             return "not-found"
         value = value.get(key)
-    return str(value) if value is not None else "not-found"
+    return value if value is not None else "not-found"
 
 def _count_observed_fields(report: Mapping[str, Any]) -> tuple[int, int]:
     fields = report.get("fields", [])
