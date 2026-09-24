@@ -44,3 +44,41 @@ def load_events_from_rows(rows):
         f.write("\n".join(json.dumps(row) for row in rows))
         f.flush()
         return load_events(f.name)
+
+
+
+def test_same_instance_gate_requires_the_bound_declaration():
+    events = load_events_from_rows([
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x1111","bytes_hex":"0000000004000a00ffff000011000000"},
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x2222","bytes_hex":"0000000004000a00ffff000011000000"},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x1111","resource_sha256":"abc","resource_path":"vehicles/bmw/body.meb"},
+    ])
+    meb={"resource":"vehicles/bmw/body.meb","resource_sha256":"abc","property_descriptors":[{"id":"460","words":[4,6,0]}]}
+    report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
+    assert report["same_instance_gate"]["ready"] is True
+    assert report["same_instance_gate"]["status"] == "proven"
+    assert report["same_instance_gate"]["candidate_frames"][0]["declaration_ptr"] == "0x1111"
+
+
+def test_same_instance_gate_rejects_match_on_unbound_declaration():
+    events = load_events_from_rows([
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x1111","bytes_hex":"0000000004000a00ffff000011000000"},
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x2222","bytes_hex":"0000000000001100ffff000000000000"},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x2222","resource_sha256":"abc","resource_path":"vehicles/bmw/body.meb"},
+    ])
+    meb={"resource":"vehicles/bmw/body.meb","resource_sha256":"abc","property_descriptors":[{"id":"460","words":[4,6,0]}]}
+    report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
+    assert report["same_instance_gate"]["ready"] is False
+    assert report["same_instance_gate"]["status"] == "not-proven"
+    assert "descriptor:bound-instance-no-match" in report["same_instance_gate"]["blocking_reasons"]
+
+
+def test_same_instance_gate_rejects_malformed_bound_declaration():
+    events = load_events_from_rows([
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x1111","bytes_hex":"0000000004ff0a00ffff000011000000"},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x1111","resource_sha256":"abc","resource_path":"vehicles/bmw/body.meb"},
+    ])
+    meb={"resource":"vehicles/bmw/body.meb","resource_sha256":"abc","property_descriptors":[{"id":"460","words":[4,6,0]}]}
+    report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
+    assert report["same_instance_gate"]["ready"] is False
+    assert report["same_instance_gate"]["status"] == "not-proven"
