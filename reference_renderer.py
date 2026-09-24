@@ -104,6 +104,30 @@ def _vertex_color(colors: list[RGBA], index: int) -> RGBA:
     return tuple(max(0, min(255, int(x))) for x in c)  # type: ignore[return-value]
 
 
+def _source_color_rows(
+    mesh: dict[str, Any],
+    property_id: str,
+) -> list[tuple[int, int, int, int]]:
+    """Convert a verified MEB COLOR stream from source BGRA bytes to shader RGBA."""
+    rows = mesh.get("colors" if property_id == "460" else "colors2") or []
+    result = [tuple(int(x) for x in row[:4]) for row in rows]
+    if not result:
+        return []
+
+    layouts = mesh.get("property_layouts") or []
+    descriptor = next(
+        (
+            item.get("descriptor_triplet")
+            for item in layouts
+            if str(item.get("id")) == property_id
+        ),
+        None,
+    )
+    if descriptor == [4, 6, 0] or descriptor == [4, 6, 1]:
+        return [(row[2], row[1], row[0], row[3]) for row in result]
+    return result
+
+
 
 def _register_index(register: Any) -> int:
     match = re.search(r"(\d+)$", str(register))
@@ -878,6 +902,8 @@ def render_textured_render_command(
                 ("BINORMAL", 0): mesh.get("tangents2"),
                 ("BLENDWEIGHT", 0): mesh.get("bone_weights"),
                 ("BLENDINDICES", 0): mesh.get("bone_indices"),
+                ("COLOR", 0): _source_color_rows(mesh, "460"),
+                ("COLOR", 1): _source_color_rows(mesh, "461"),
             }.items()
             if rows
         } | {
@@ -1036,7 +1062,7 @@ def render_static_draw(
     image = rasterize_mesh(
         vertices,
         draw_indices,
-        colors=mesh.get("colors") or [],
+        colors=_source_color_rows(mesh, "460"),
         width=width,
         height=height,
         mvp=final_mvp,
@@ -1296,6 +1322,8 @@ def render_skinned_draw_reference(
                     ("BINORMAL", 0): skinned_mesh["mesh"].get("tangents2"),
                     ("BLENDWEIGHT", 0): skinned_mesh["mesh"].get("bone_weights"),
                     ("BLENDINDICES", 0): skinned_mesh["mesh"].get("bone_indices"),
+                    ("COLOR", 0): _source_color_rows(skinned_mesh["mesh"], "460"),
+                    ("COLOR", 1): _source_color_rows(skinned_mesh["mesh"], "461"),
                 }.items()
                 if rows
             },
@@ -1370,7 +1398,7 @@ def render_draw_packet_json(
 def render_mesh_json(mesh: dict[str, Any], output: str | Path, *, width: int = 512, height: int = 512) -> dict[str, Any]:
     vertices = mesh.get("vertices") or []
     indices = mesh.get("indices") or []
-    colors = mesh.get("colors") or []
+    colors = _source_color_rows(mesh, "460")
     image = rasterize_mesh(vertices, indices, colors=colors, width=width, height=height)
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
