@@ -2409,6 +2409,34 @@ def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_material_slice_golden_gate(args: argparse.Namespace) -> int:
+    """Validate one BMWMaterialSlice/1 against the exact M3 golden manifest."""
+    from bmw_material_slice_golden_gate import validate_bmw_material_slice_golden
+
+    golden = json.loads(Path(args.golden).read_text(encoding="utf-8"))
+    slice_data = json.loads(Path(args.slice).read_text(encoding="utf-8"))
+    report = validate_bmw_material_slice_golden(
+        golden,
+        slice_data,
+        primitive_index=args.primitive_index,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "primitive_index": report["primitive_index"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_bmw_real_material_slice(args: argparse.Namespace) -> int:
     """Build a real renderer-compatible BMWMaterialSlice/1 from retail BFF data."""
     from bmw_real_material_slice import build_real_bmw_material_slice
@@ -3154,6 +3182,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeDrawCorrelation/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_draw_correlation)
+
+    p = sp.add_parser("bmw-material-slice-golden-gate", help="validate one BMWMaterialSlice/1 against the exact M3 golden manifest")
+    p.add_argument("golden", help="SHIFT.BMWGoldenAssetManifest/1 JSON")
+    p.add_argument("slice", help="SHIFT.BMWMaterialSlice/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWMaterialSliceGoldenGate/1 JSON")
+    p.add_argument("--primitive-index", type=int, default=1)
+    p.set_defaults(fn=cmd_bmw_material_slice_golden_gate)
 
     p = sp.add_parser("bmw-real-material-slice", help="build a renderer-compatible BMWMaterialSlice/1 from retail BFF data")
     p.add_argument("input", help="primary BMW_M3_E36.bff")

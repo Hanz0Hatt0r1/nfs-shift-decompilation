@@ -35,3 +35,8 @@ shader inputs, not used to redefine the data model.
 Every new golden fixture should record resource identities, shader pair hashes,
 material constant payload hash, texture identities, readiness blockers and final
 image SHA-256. Raw copyrighted game archives should not be committed.
+
+
+## Material slice golden gate
+
+`bmw_material_slice_golden_gate.py` is the single-primitive gate between `bmw-real-material-slice` and `bmw_reference_render.py`. It checks exact M3 resource identity, selected primitive range/material ref, paint/shader readiness and RenderCommand readiness.
