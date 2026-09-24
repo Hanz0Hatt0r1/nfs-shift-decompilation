@@ -2158,6 +2158,54 @@ def cmd_validate_d3d9_runtime_layout(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bmw_golden_gate(args: argparse.Namespace) -> int:
+    """Validate the BMW M3 golden asset against a DrawPacket."""
+    from bmw_golden_gate import validate_files
+
+    report = validate_files(
+        args.golden,
+        args.draw_packet,
+        material_binding_path=args.material_binding,
+    )
+    out = Path(args.output) if args.output else None
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+def cmd_d3d9_runtime_trace(args: argparse.Namespace) -> int:
+    """Build runtime D3D9 binding evidence from an external JSONL capture."""
+    from d3d9_runtime_trace import build_runtime_binding_evidence, load_events
+
+    events = load_events(args.trace)
+    meb = json.loads(Path(args.meb_resource).read_text(encoding="utf-8")) if args.meb_resource else None
+    raw_map = json.loads(Path(args.usage_map).read_text(encoding="utf-8")) if args.usage_map else None
+    usage_map = {int(k): int(v) for k, v in raw_map.items()} if isinstance(raw_map, dict) else None
+    report = build_runtime_binding_evidence(
+        events,
+        meb_resource=meb,
+        usage_ordinal_map=usage_map,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "events": report["trace"]["event_count"],
+        "frames": report["trace"]["frame_count"],
+        "declarations": report["trace"]["declaration_instance_count"],
+        "specific_mesh_instance": report["evidence_boundary"]["specific_mesh_instance"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2595,6 +2643,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9DeclarationInstanceEvidence/1 JSON output")
     p.add_argument("--count", type=int, help="decode at most this many records")
     p.set_defaults(fn=cmd_decode_d3d9_declaration)
+
+    p = sp.add_parser("bmw-golden-gate", help="validate the BMW M3 golden asset against a DrawPacket")
+    p.add_argument("golden", help="SHIFT.BMWGoldenAssetManifest/1 JSON")
+    p.add_argument("draw_packet", help="SHIFT.DrawPacket/1 JSON")
+    p.add_argument("--material-binding", help="optional SHIFT.MaterialBinding/1 JSON")
+    p.add_argument("-o", "--output", help="optional SHIFT.BMWGoldenRenderGate/1 JSON")
+    p.set_defaults(fn=cmd_bmw_golden_gate)
+
+    p = sp.add_parser("d3d9-runtime-trace", help="build runtime D3D9 declaration/binding evidence from JSONL capture")
+    p.add_argument("trace", help="runtime capture JSONL")
+    p.add_argument("output", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
+    p.add_argument("--meb-resource", help="optional MEB resource analysis JSON")
+    p.add_argument("--usage-map", help="optional JSON mapping MEB Usage ordinals to D3D9 Usage bytes")
+    p.set_defaults(fn=cmd_d3d9_runtime_trace)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
