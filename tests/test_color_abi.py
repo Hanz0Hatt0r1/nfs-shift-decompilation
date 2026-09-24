@@ -378,3 +378,93 @@ def test_color_abi_corpus_cli_aggregates_directory(tmp_path):
     assert report["properties"]["460"]["report_count"] == 1
     assert report["properties"]["461"]["report_count"] == 1
     assert report["selection"] == "not-selected"
+
+
+def test_color_evidence_bff_corpus_scans_meb_color_streams(monkeypatch, tmp_path):
+    import argparse
+    import json
+    from types import SimpleNamespace
+
+    import shift_importer
+
+    entry = SimpleNamespace(index=3, path="cars/bmw/body.meb")
+    mesh = SimpleNamespace(
+        colors=[(10, 20, 30, 255)],
+        colors2=[(40, 50, 60, 255)],
+        vertex_count=1,
+    )
+
+    class FakeBFF:
+        path = SimpleNamespace(name="CARS.bff")
+        entries = [entry]
+
+        def __init__(self, path):
+            self.archive = path
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def extract_entry(self, _entry, type2="lzx"):
+            return b"meb-bytes"
+
+    monkeypatch.setattr(
+        shift_importer,
+        "iter_bffs",
+        lambda _path: [tmp_path / "CARS.bff"],
+    )
+    monkeypatch.setattr(shift_importer, "BFF", FakeBFF)
+    monkeypatch.setattr(shift_importer, "read_meb", lambda _data: mesh)
+    monkeypatch.setattr(shift_importer, "sha256", lambda _data: "sha")
+
+    output = tmp_path / "corpus.json"
+    args = argparse.Namespace(
+        input=str(tmp_path),
+        output=str(output),
+        fail_on_error=False,
+    )
+    assert shift_importer.cmd_color_evidence_bff_corpus(args) == 0
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["format"] == "SHIFT.ColorABICorpusEvidence/1"
+    assert report["source"]["accepted_reports"] == 2
+    assert report["source"]["resource_count"] == 2
+    assert report["source"]["errors"] == []
+    assert report["properties"]["460"]["report_count"] == 1
+    assert report["properties"]["461"]["report_count"] == 1
+    assert report["selection"] == "not-selected"
+
+
+def test_color_evidence_bff_corpus_can_fail_on_decode_error(monkeypatch, tmp_path):
+    import argparse
+
+    import shift_importer
+
+    entry = SimpleNamespace(index=4, path="bad/body.meb")
+    class FakeBFF:
+        path = SimpleNamespace(name="BAD.bff")
+        entries = [entry]
+
+        def __init__(self, path):
+            self.archive = path
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def extract_entry(self, _entry, type2="lzx"):
+            raise ValueError("decode failed")
+
+    monkeypatch.setattr(shift_importer, "iter_bffs", lambda _path: [tmp_path / "BAD.bff"])
+    monkeypatch.setattr(shift_importer, "BFF", FakeBFF)
+
+    output = tmp_path / "errors.json"
+    args = argparse.Namespace(
+        input=str(tmp_path),
+        output=str(output),
+        fail_on_error=True,
+    )
+    assert shift_importer.cmd_color_evidence_bff_corpus(args) == 1
