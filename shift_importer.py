@@ -1760,6 +1760,30 @@ def cmd_d3d9_stream_record_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_canonicalizer_evidence(args: argparse.Namespace) -> int:
+    """Analyze the recovered D3D9 declaration canonicalizer."""
+    from d3d9_declaration_canonicalizer_evidence import (
+        analyze_d3d9_declaration_canonicalizer_file,
+    )
+
+    report = analyze_d3d9_declaration_canonicalizer_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "record_stride": report["canonicalization"]["record_stride"],
+        "full_record_identity": report["canonicalization"]["full_record_identity"],
+        "d3dvertexelement9_shape": report["semantic_links"]["d3dvertexelement9_shape"]["status"],
+        "meb_property_mapping": report["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2094,6 +2118,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9StreamRecordEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_stream_record_evidence)
+
+    p = sp.add_parser("source-d3d9-canonicalizer-evidence", help="analyze FUN_00830f80 declaration canonicalization in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9DeclarationCanonicalizerEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_canonicalizer_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")

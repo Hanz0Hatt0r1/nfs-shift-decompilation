@@ -129,3 +129,8 @@ The recovered XML stream loader iterates a fixed usage domain `0..8` and resolve
 ## Phase 83: STREAM declaration record semantics
 
 The recovered loader constructs a fixed 8-byte record for each XML `STREAM` entry whose six fields match the documented `D3DVERTEXELEMENT9` order: `Stream` (WORD), `Offset` (WORD), `Type` (BYTE), `Method` (BYTE), `Usage` (BYTE), `UsageIndex` (BYTE). Source evidence shows `Stream=0`, a running `Offset`, the resolved D3D9 `Type` at `+4`, `Method=0`, the resolved `Usage` at `+6`, and the XML `Channel` at `+7`. Microsoft documents the same field order and meanings for `D3DVERTEXELEMENT9`. This is a source-level ABI observation and does not assign MEB property ids 460/461 to any Type ordinal.
+
+
+## Phase 84: declaration canonicalizer evidence
+
+`FUN_00830f80` compares the two WORD fields plus the four BYTE fields of the recovered 8-byte declaration record and copies/interns the complete record. Combined with phase 83, this is source-level evidence that the renderer treats the recovered `Stream/Offset/Type/Method/Usage/UsageIndex` tuple as the declaration identity. MEB 460/461 linkage remains unresolved.

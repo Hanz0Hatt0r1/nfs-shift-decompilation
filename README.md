@@ -319,6 +319,10 @@ GLES contract не считается эквивалентной без этог
 
 Phase 82 adds `source-d3d9-pe-evidence`, a pure-Python PE32/PE32+ resolver that maps the recovered Ghidra virtual addresses into file offsets and inspects the D3D9 lookup-table regions directly when they are file-backed. It can also dereference the 17 `PTR_DAT_00b901d0` entries to printable ASCII strings. Loader-initialized/BSS bytes remain explicitly unavailable; MEB 460/461 mapping is still not selected automatically.
 
+## Phase 84 — D3D9 declaration canonicalizer evidence
+
+Phase 84 formalizes `FUN_00830f80`, the declaration canonicalizer/interning path. Its comparison loop checks both WORD fields and all four trailing BYTE fields of the same 8-byte record, so the complete `Stream/Offset/Type/Method/Usage/UsageIndex` tuple participates in declaration identity. The report remains source-backed and does not assign MEB properties 460/461 to a Type ordinal.
+
 ## Phase 83 — STREAM declaration record semantics
 
 Phase 83 formalizes the 8-byte declaration records built by `FUN_008587e0`: type code at byte `+4`, usage code at `+6`, and Channel at `+7`, with 4-byte pointers to records stored in the owning array. The report ties XML `Type`/`Usage`/`Channel` parsing to those exact record fields while keeping the MEB 460/461 mapping unresolved.
