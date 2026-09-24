@@ -612,16 +612,23 @@ uint __fastcall FUN_008587e0(int param_1,int param_2)
     result = analyze_d3d9_stream_record_semantics(source)
     assert result["status"] == "observed"
     by_name = {row["name"]: row for row in result["fields"]}
-    assert by_name["type_code"]["offset"] == 4
-    assert by_name["type_code"]["status"] == "observed"
-    assert by_name["usage_code"]["offset"] == 6
-    assert by_name["usage_code"]["status"] == "observed"
-    assert by_name["channel"]["offset"] == 7
-    assert by_name["channel"]["status"] == "observed"
+    assert by_name["stream"]["offset"] == 0
+    assert by_name["stream"]["status"] == "observed"
+    assert by_name["offset"]["offset"] == 2
+    assert by_name["offset"]["status"] == "observed"
+    assert by_name["type"]["offset"] == 4
+    assert by_name["type"]["status"] == "observed"
+    assert by_name["method"]["offset"] == 5
+    assert by_name["method"]["status"] == "observed"
+    assert by_name["usage"]["offset"] == 6
+    assert by_name["usage"]["status"] == "observed"
+    assert by_name["usage_index"]["offset"] == 7
+    assert by_name["usage_index"]["status"] == "observed"
     assert result["record"]["stride"] == 8
+    assert result["semantic_links"]["d3dvertexelement9_shape"]["status"] == "observed"
     assert result["semantic_links"]["xml_type_to_record_type_code"]["status"] == "observed"
     assert result["semantic_links"]["xml_usage_to_record_usage_code"]["status"] == "observed"
-    assert result["semantic_links"]["xml_channel_to_record_channel"]["status"] == "observed"
+    assert result["semantic_links"]["xml_channel_to_record_usage_index"]["status"] == "observed"
     assert result["meb_property_mapping"]["status"] == "not-proven"
 
 
