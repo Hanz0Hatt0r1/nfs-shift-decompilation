@@ -13,28 +13,160 @@
   },
   "mesh": {
     "bbox": {
-      "max": [0.8576227426528931, 1.3603827953338623, 2.2685751914978027],
-      "min": [-0.8597128987312317, 0.1543293446302414, -2.0720279216766357]
+      "max": [
+        0.8576227426528931,
+        1.3603827953338623,
+        2.2685751914978027
+      ],
+      "min": [
+        -0.8597128987312317,
+        0.1543293446302414,
+        -2.0720279216766357
+      ]
     },
     "color460_descriptor": {
       "id": "460",
       "offset": 42700,
       "raw_hex": "040000000600000000000000",
-      "words": [4, 6, 0]
+      "words": [
+        4,
+        6,
+        0
+      ]
     },
     "name": "BMW_M3_E36_KIT00_BODY_LODA",
     "primitives": [
-      {"first_index": 0, "index_count": 150, "material": "vehicles/BMW_M3_E36/BMW_M3_E36_BADGING.mtx"},
-      {"first_index": 150, "index_count": 6294, "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx"},
-      {"first_index": 6444, "index_count": 7386, "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx"},
-      {"first_index": 13830, "index_count": 612, "material": "vehicles/BMW_M3_E36/GENERIC_WINDOWS.mtx"},
-      {"first_index": 14442, "index_count": 576, "material": "vehicles/BMW_M3_E36/GENERIC_GLOSS_BLACK.mtx"},
-      {"first_index": 15018, "index_count": 84, "material": "vehicles/BMW_M3_E36/BMW_M3_E36_LIGHTSGLASS.mtx"}
+      {
+        "first_index": 0,
+        "index_count": 150,
+        "material": "vehicles/BMW_M3_E36/BMW_M3_E36_BADGING.mtx"
+      },
+      {
+        "first_index": 150,
+        "index_count": 6294,
+        "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx"
+      },
+      {
+        "first_index": 6444,
+        "index_count": 7386,
+        "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx"
+      },
+      {
+        "first_index": 13830,
+        "index_count": 612,
+        "material": "vehicles/BMW_M3_E36/GENERIC_WINDOWS.mtx"
+      },
+      {
+        "first_index": 14442,
+        "index_count": 576,
+        "material": "vehicles/BMW_M3_E36/GENERIC_GLOSS_BLACK.mtx"
+      },
+      {
+        "first_index": 15018,
+        "index_count": 84,
+        "material": "vehicles/BMW_M3_E36/BMW_M3_E36_LIGHTSGLASS.mtx"
+      }
     ],
-    "property_ids": ["200", "460", "220", "240", "250", "130", "132", "133"],
-    "skinning": {"has_indices": false, "has_weights": false, "skinned": false, "valid": true},
+    "property_ids": [
+      "200",
+      "460",
+      "220",
+      "240",
+      "250",
+      "130",
+      "132",
+      "133"
+    ],
+    "skinning": {
+      "has_indices": false,
+      "has_weights": false,
+      "skinned": false,
+      "valid": true
+    },
     "triangle_count": 5034,
-    "vertex_count": 3550
+    "vertex_count": 3550,
+    "property_descriptors": [
+      {
+        "id": "200",
+        "offset": 88,
+        "raw_hex": "020000000000000000000000",
+        "words": [
+          2,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "460",
+        "offset": 42700,
+        "raw_hex": "040000000600000000000000",
+        "words": [
+          4,
+          6,
+          0
+        ]
+      },
+      {
+        "id": "220",
+        "offset": 56912,
+        "raw_hex": "020000000200000000000000",
+        "words": [
+          2,
+          2,
+          0
+        ]
+      },
+      {
+        "id": "240",
+        "offset": 99524,
+        "raw_hex": "020000000400000000000000",
+        "words": [
+          2,
+          4,
+          0
+        ]
+      },
+      {
+        "id": "250",
+        "offset": 142136,
+        "raw_hex": "020000000500000000000000",
+        "words": [
+          2,
+          5,
+          0
+        ]
+      },
+      {
+        "id": "130",
+        "offset": 184748,
+        "raw_hex": "010000000300000000000000",
+        "words": [
+          1,
+          3,
+          0
+        ]
+      },
+      {
+        "id": "132",
+        "offset": 213160,
+        "raw_hex": "010000000300000002000000",
+        "words": [
+          1,
+          3,
+          2
+        ]
+      },
+      {
+        "id": "133",
+        "offset": 241572,
+        "raw_hex": "010000000300000003000000",
+        "words": [
+          1,
+          3,
+          3
+        ]
+      }
+    ]
   },
   "provenance": {
     "bundle": "shift_meb_evidence.zip",
@@ -46,6 +178,15 @@
     "geometry": "real-MEB",
     "material_chain": "BMT -> FX -> FXO",
     "runtime_archive_access": false,
-    "vertex_semantics": ["POSITION0", "COLOR0", "NORMAL0", "TANGENT0", "BINORMAL0", "TEXCOORD0", "TEXCOORD2", "TEXCOORD3"]
+    "vertex_semantics": [
+      "POSITION0",
+      "COLOR0",
+      "NORMAL0",
+      "TANGENT0",
+      "BINORMAL0",
+      "TEXCOORD0",
+      "TEXCOORD2",
+      "TEXCOORD3"
+    ]
   }
 }
