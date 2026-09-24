@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 133** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 134** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -701,3 +701,8 @@ The selected BMW M3 golden path now preserves the full eight resource-level `[Ty
 ## Phase 133: runtime Usage bridge
 
 A machine-readable `SHIFT.MEBRuntimeUsageOrdinalBridge/1` now derives D3D9 Usage-byte mappings from exact same-resource declaration evidence instead of hardcoded assumptions. Ambiguous mappings remain blockers, and the bridge report can be passed directly to the BMW golden gate.
+
+
+## Phase 134: runtime capture schema
+
+The D3D9 capture ingestion path is now versioned and shape-validated before semantic analysis. `validate-d3d9-capture` rejects malformed declarations, shaders, stream bindings, draw ranges and shader-constant vectors before they enter the evidence pipeline.
