@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import hashlib
 from pathlib import Path
 from typing import Any, Iterable
@@ -110,6 +111,7 @@ def rasterize_textured_mesh(
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
+    uv_layers: dict[str | int, Iterable[Iterable[float]]] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -119,6 +121,19 @@ def rasterize_textured_mesh(
     uv_rows = [tuple(float(x) for x in uv) for uv in uvs]
     if len(uv_rows) != len(verts):
         raise ValueError("UV vertex count must match vertex count")
+    layer_rows: dict[int, list[tuple[float, ...]]] = {0: uv_rows}
+    for key, rows in (uv_layers or {}).items():
+        try:
+            layer_id = int(str(key))
+        except (TypeError, ValueError):
+            raise ValueError(f"invalid UV layer key {key!r}")
+        if 130 <= layer_id <= 134:
+            parsed = [tuple(float(x) for x in row) for row in rows]
+            if len(parsed) != len(verts):
+                raise ValueError(
+                    f"UV layer {layer_id} vertex count {len(parsed)} != {len(verts)}"
+                )
+            layer_rows[layer_id - 130] = parsed
     if any(len(uv) < 2 for uv in uv_rows):
         raise ValueError("each UV row must contain at least two components")
     if len(idx) % 3:
@@ -151,9 +166,28 @@ def rasterize_textured_mesh(
                 "pixel shader reference path missing texture images for samplers: "
                 + ", ".join(f"s{x}" for x in missing_samplers)
             )
+        preflight_inputs = {}
+        for item in shader.inputs:
+            match = re.search(r"v(\d+)", str(item.get("register", "")))
+            if not match:
+                raise ValueError(
+                    f"pixel shader input has no recoverable register: {item}"
+                )
+            register = int(match.group(1))
+            semantic_index = int(item.get("index", 0))
+            layer = layer_rows.get(semantic_index)
+            if layer is None:
+                raise ValueError(
+                    f"pixel shader requires TEXCOORD{semantic_index} but mesh has no matching UV layer"
+                )
+            row = layer[0]
+            values = list(row[:3])
+            while len(values) < 3:
+                values.append(0.0)
+            preflight_inputs[register] = tuple(values[:3] + [1.0])
         preflight = ReferenceShaderState(
             shader,
-            inputs={0: (0.0, 0.0, 0.0, 1.0)},
+            inputs=preflight_inputs,
             constants=shader_constants,
             textures=shader_textures,
             samplers=shader_samplers,
@@ -197,9 +231,35 @@ def rasterize_textured_mesh(
                 if shader is None:
                     color = sample_texture_2d(image, u, v, sampler)
                 else:
+                    shader_inputs = {}
+                    for item in shader.inputs:
+                        match = re.search(r"v(\d+)", str(item.get("register", "")))
+                        if not match:
+                            raise ValueError(
+                                f"pixel shader input has no recoverable register: {item}"
+                            )
+                        register = int(match.group(1))
+                        semantic_index = int(item.get("index", 0))
+                        layer = layer_rows.get(semantic_index)
+                        if layer is None:
+                            raise ValueError(
+                                f"pixel shader requires TEXCOORD{semantic_index} but mesh has no matching UV layer"
+                            )
+                        if len(layer[ia]) < 2 or len(layer[ib]) < 2 or len(layer[ic]) < 2:
+                            raise ValueError(
+                                f"TEXCOORD{semantic_index} layer must contain at least two components"
+                            )
+                        iu = w0 * layer[ia][0] + w1 * layer[ib][0] + w2 * layer[ic][0]
+                        iv = w0 * layer[ia][1] + w1 * layer[ib][1] + w2 * layer[ic][1]
+                        iw = (
+                            w0 * (layer[ia][2] if len(layer[ia]) > 2 else 0.0)
+                            + w1 * (layer[ib][2] if len(layer[ib]) > 2 else 0.0)
+                            + w2 * (layer[ic][2] if len(layer[ic]) > 2 else 0.0)
+                        )
+                        shader_inputs[register] = (iu, iv, iw, 1.0)
                     execution = ReferenceShaderState(
                         shader,
-                        inputs={0: (u, v, 0.0, 1.0)},
+                        inputs=shader_inputs,
                         constants=shader_constants,
                         textures=shader_textures,
                         samplers=shader_samplers,
@@ -280,6 +340,7 @@ def render_textured_static_draw(
         shader_constants=shader_constants,
         texture_images=texture_images,
         samplers_by_sampler=samplers_by_sampler,
+        uv_layers=uv_layers,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)

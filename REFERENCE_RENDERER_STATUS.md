@@ -31,3 +31,8 @@ The shader-backed reference render path can now source numeric material values f
 ## Phase 50: multi-texture shader reference execution
 
 The shader-backed reference path now supports multiple 2D sampler registers through an explicit `texture_images` map. The command's `d3d9_sampler_register` and embedded sampler state determine which reference image/state is supplied to each `sN`. Missing sampler images remain hard execution errors.
+
+
+## Phase 51: semantic TEXCOORD layers
+
+The shader-backed reference renderer now maps `TEXCOORD0..4` declarations to MEB UV property layers `130..134` by semantic index, interpolating the selected layer into the shader register declared by the pixel program. Missing required layers are explicit execution errors; COLOR0/1 remains outside this automatic path because its channel order is still unresolved.
