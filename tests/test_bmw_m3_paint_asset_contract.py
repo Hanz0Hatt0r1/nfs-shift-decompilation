@@ -44,3 +44,9 @@ def test_bmw_paint_asset_contract_blocks_missing_provenance():
     report=validate_bmw_paint_asset(golden)
     assert report['ready'] is False
     assert 'provenance:raw_row_sha256:missing' in report['blocking_reasons']
+
+def test_bmw_paint_asset_contract_material_alias_is_extension_neutral():
+    from bmw_m3_paint_asset_contract import _alias
+    assert _alias("vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx") == _alias(
+        "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt"
+    )
