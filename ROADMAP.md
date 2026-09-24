@@ -821,3 +821,9 @@ the original DLL even on process failure.
 This turns the remaining runtime evidence step into a reproducible one-command
 operation. The resulting capture is consumed by the existing D3D9 trace and
 exact BMW shader-selection tools.
+
+## Phase 178: runtime sampler-content snapshots
+
+The D3D9 capture producer can now, when explicitly enabled, copy supported sampler surfaces into PPM files. 2D resources produce one level-0 PPM; cube resources produce six face PPMs. The runtime trace preserves these paths and resource descriptors, the BMW runtime render contract carries them forward, and the offline shader renderer can auto-load them using a snapshot root.
+
+This removes the last manual-resource step between a real captured paint draw and offline execution of the exact selected VS/PS pair. Capture remains opt-in because texture copies can be expensive and are not needed for geometry-only or static material previews.
