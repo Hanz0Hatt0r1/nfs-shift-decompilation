@@ -80,11 +80,38 @@ def validate_material_binding(binding: Mapping[str, Any]) -> dict[str, Any]:
 
         row_check={'sampler':expected['fx_sampler'],'register':register,'expected_register':expected['register'],'texture':row.get('texture'),'expected_texture':expected['texture'],'status':'match'}
 
-        if register!=expected['register']: reasons.append(f"sampler:{expected['fx_sampler']}:register-mismatch"); row_check['status']='mismatch'
+        if register!=expected['register']:
+            reasons.append(f"sampler:{expected['fx_sampler']}:register-mismatch"); row_check['status']='mismatch'
 
         observed_texture=str(row.get('texture') or '').replace('\\','/').rsplit('/',1)[-1].lower()
+        if not observed_texture:
+            reasons.append(f"sampler:{expected['fx_sampler']}:texture-missing"); row_check['status']='mismatch'
+        elif observed_texture!=expected['texture'].lower():
+            reasons.append(f"sampler:{expected['fx_sampler']}:texture-mismatch"); row_check['status']='mismatch'
 
-        if observed_texture and observed_texture!=expected['texture'].lower(): reasons.append(f"sampler:{expected['fx_sampler']}:texture-mismatch"); row_check['status']='mismatch'
+        filter_map=(('min_filter','min'),('mag_filter','mag'),('mip_filter','mip'))
+        address_map=(('address_u','u'),('address_v','v'),('address_w','w'))
+        for field,key in filter_map:
+            observed=row.get(field); wanted=expected['filter'].get(key)
+            if observed is None:
+                reasons.append(f"sampler:{expected['fx_sampler']}:{field}:missing"); row_check['status']='mismatch'
+            elif str(observed).lower()!=str(wanted).lower():
+                reasons.append(f"sampler:{expected['fx_sampler']}:{field}:mismatch"); row_check['status']='mismatch'
+        for field,key in address_map:
+            wanted=expected['address'].get(key)
+            if wanted is None:
+                continue
+            observed=row.get(field)
+            if observed is None:
+                reasons.append(f"sampler:{expected['fx_sampler']}:{field}:missing"); row_check['status']='mismatch'
+            elif str(observed).lower()!=str(wanted).lower():
+                reasons.append(f"sampler:{expected['fx_sampler']}:{field}:mismatch"); row_check['status']='mismatch'
+        wanted_srgb=expected.get('srgb')
+        observed_srgb=row.get('srgb')
+        if observed_srgb is None:
+            reasons.append(f"sampler:{expected['fx_sampler']}:srgb:missing"); row_check['status']='mismatch'
+        elif bool(observed_srgb)!=bool(wanted_srgb):
+            reasons.append(f"sampler:{expected['fx_sampler']}:srgb:mismatch"); row_check['status']='mismatch'
 
         checks.append(row_check)
     external=list(binding.get('external_samplers') or [])
