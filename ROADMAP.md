@@ -666,3 +666,7 @@ Next: run the intake and `bmw-real-material-slice` in an environment with the ac
 The real BMW material linker can now consume bodywork.fx from an external file while keeping BMT, MEB, FXO and DDS evidence inside the supplied BFF set. The external source is recorded with SHA-256 provenance and must match the BMT shader basename. This removes the artificial requirement that the shader source itself be co-located with the BMW vehicle archive.
 
 The next blocker for the first paint image is therefore data availability: the exact bodywork.fx bytes must be extracted from RENDER.bff (or another evidence-equivalent source), after which the existing FXO selector, material constant linker, DDS decoder and desktop VS→PS renderer can be driven on the real BMW paint primitive.
+
+## Phase 157: real BMW MEB + DDS texture preview
+
+The desktop reference path now has a direct real-data texture adapter: the BMW M3 body MEB and COMMON_PAINT.dds are decoded from the original BFF, UV0 property 130 is sampled through the existing software renderer, and the output receives deterministic resource/render hashes. The phase is deliberately shader-free; the real paint color still belongs to material constants and bodywork.fx execution.
