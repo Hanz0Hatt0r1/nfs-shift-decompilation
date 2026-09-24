@@ -376,3 +376,9 @@ Phase 75 adds source-line tracking and the recovered declaration type-table chai
 helper `FUN_008310c0`, vertex declaration/conversion path `FUN_00854e70` и
 `STREAM` parser с `Type/Usage/Channel`. При этом точная связь MEB 460/461 с type 4
 не повышается до verified без содержимого соответствующих глобальных таблиц.
+
+## Phase 88 — declaration topology consistency
+
+Phase 88 closes the source-evidence gap between individual D3D9 declaration records and their per-stream grouping. The recovered FUN_00854e70 path is now represented as SHIFT.D3D9StreamTopologyEvidence/1: Stream selects a 0x14-byte group, generated declaration records are retained through a per-stream pointer array, and the resolved Type indexes DAT_00b8eef0 for byte-size accumulation. The evidence layer accepts the recovered decompiler variants without assigning MEB property ids.
+
+The PE evidence resolver is also aligned with the phase-85 source addresses: Type element-size data comes from DAT_00b8eef0 and component-count data from DAT_00b8ef38, each with the recovered 18-entry/sentinel layout. The resolver remains evidence-only and does not infer MEB-to-Type mapping.
