@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline дошла до **Phase 168** — реальный BMW M3 уже проходит `VHF → MEB → BMT → DDS`, для `bodywork.fx` зафиксирован реальный FXO corpus, runtime selector умеет exact VS/PS match, D3D9 capture пишет shader/constants/SetTexture и resource descriptors. Следующий визуальный gate — один runtime capture кадра M3 body.
+> **Текущий статус:** mainline дошла до **Phase 170** — реальный BMW M3 уже проходит `VHF → MEB → BMT → DDS`, для `bodywork.fx` зафиксирован реальный FXO corpus, runtime selector умеет exact VS/PS match, D3D9 capture пишет shader/constants/SetTexture и resource descriptors, а `Present` может опционально сохранять реальный backbuffer в PPM для визуального checkpoint. Следующий визуальный gate — один runtime capture кадра M3 body.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
