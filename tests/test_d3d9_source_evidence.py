@@ -85,3 +85,47 @@ def test_source_evidence_file_preserves_source_hash(tmp_path):
     assert result["source"]["path"] == str(path)
     assert result["source"]["bytes"] == path.stat().st_size
     assert len(result["source"]["sha256"]) == 64
+
+
+def test_source_evidence_records_type_table_chain_and_source_lines():
+    result = analyze_shift_exe_c(
+        SOURCE
+        + r'''
+undefined4 __fastcall FUN_00853c20(int param_1)
+{
+  return *(undefined4 *)(&DAT_00b90088 + param_1 * 4);
+}
+
+uint __fastcall FUN_008587e0(int param_1,int param_2)
+{
+  pbVar17 = (&PTR_DAT_00b901d0)[(int)local_18];
+  uVar9 = FUN_00853c20((int)local_18);
+  *(char *)(iVar7 + 4 + *(int *)(param_1 + 0x1c)) = (char)uVar9;
+  pcVar16 = (char *)FUN_0063d360(local_40,(byte *)"Usage");
+  uVar9 = FUN_00853c40(local_5c);
+  FUN_0063d410(local_40,"Channel",&local_1c);
+  switch(local_5c) {
+    case 6:
+      pcVar23 = "Colour";
+  }
+}
+'''
+    )
+    by_id = {row["id"]: row for row in result["observations"]}
+    assert by_id["type-table-accessor"]["status"] == "observed"
+    assert by_id["type-table-accessor"]["source_line"] is not None
+    assert by_id["xml-type-table-chain"]["status"] == "observed"
+    assert by_id["xml-type-table-chain"]["source_line"] is not None
+    assert by_id["xml-colour-stream-field"]["status"] == "observed"
+    assert result["linkage"]["xml_type_name_to_d3d9_type_table"]["status"] == "observed"
+    assert result["linkage"]["xml_colour_to_type_4"]["status"] == "not-proven"
+    assert result["linkage"]["meb_460_461_to_type_4"]["status"] == "not-proven"
+
+
+def test_source_evidence_negative_fixture_does_not_invent_type_table_linkage():
+    result = analyze_shift_exe_c("uint f(void) { return 0; }")
+    by_id = {row["id"]: row for row in result["observations"]}
+    assert by_id["type-table-accessor"]["status"] == "not-found"
+    assert by_id["xml-type-table-chain"]["status"] == "not-found"
+    assert result["linkage"]["xml_type_name_to_d3d9_type_table"]["status"] == "not-proven"
+    assert result["linkage"]["xml_colour_to_type_4"]["status"] == "not-proven"
