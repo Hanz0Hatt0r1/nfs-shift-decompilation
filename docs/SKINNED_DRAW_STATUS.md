@@ -49,3 +49,8 @@ This separation leaves animation decoding and bind-pose/inverse-bind semantics e
 ### CPU reference
 
 `skinned_reference.py` applies only an explicit `SHIFT.SkinPose/1` to vertex positions and direction vectors. It reuses `skinning.py` for influence validation and linear-blend-skinning math. This is a renderer cross-check, not an animation decoder: BAB/BAS local bind transforms are never substituted for the skin pose.
+
+
+## Phase 60: mesh transformation adapter
+
+The CPU reference can now materialize a complete transformed mesh from an explicit SkinPose. The adapter preserves the source mesh schema and only replaces vertex POSITION and known direction streams. This keeps the skinning math reusable by the desktop renderer without forcing animation decoding into the render layer.
