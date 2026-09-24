@@ -2373,3 +2373,25 @@ def test_reference_renderer_rejects_non_skinned_render_command(tmp_path):
                 "pixels": bytes((1, 2, 3, 255)),
             },
         )
+
+
+def test_reference_renderer_converts_verified_meb_bgra_colors_to_shader_rgba():
+    from reference_renderer import _source_color_rows
+
+    mesh = {
+        "colors": [(10, 20, 30, 255)],
+        "colors2": [(40, 50, 60, 255)],
+        "property_layouts": [
+            {"id": "460", "descriptor_triplet": [4, 6, 0]},
+            {"id": "461", "descriptor_triplet": [4, 6, 1]},
+        ],
+    }
+    assert _source_color_rows(mesh, "460") == [(30, 20, 10, 255)]
+    assert _source_color_rows(mesh, "461") == [(60, 50, 40, 255)]
+
+
+def test_reference_renderer_preserves_legacy_color_fixture_without_descriptor():
+    from reference_renderer import _source_color_rows
+
+    mesh = {"colors": [(10, 20, 30, 255)]}
+    assert _source_color_rows(mesh, "460") == [(10, 20, 30, 255)]
