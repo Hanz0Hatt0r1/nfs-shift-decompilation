@@ -52,3 +52,8 @@ Explicit SkinPose deformation is now connected to the desktop geometry oracle th
 
 
 `render_command.py` now carries `SHIFT.Skinning/1` inside RenderCommand/1 for skinned submissions. This is metadata/ABI transport only: SkinPose is still explicit, and no BAB animation data is synthesized.
+
+
+## Phase 64: GLES handoff from RenderCommand
+
+A skinned RenderCommand can now produce the existing `SHIFT.GLES31Skinning/1` contract directly. The adapter validates draw kind/readiness and reuses the serialized SkinPose/palette payload; no new animation semantics are inferred.

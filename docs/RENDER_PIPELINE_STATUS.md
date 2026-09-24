@@ -129,3 +129,8 @@ The desktop reference pipeline now supports `SkinPose → SkinnedMeshReference �
 
 
 StaticDraw and SkinnedDraw now converge on the same RenderCommand/1 resource/shader validation boundary; skinned commands additionally carry an explicit SkinPose/palette payload. This keeps future GLES skinning upload logic independent from the importer and consistent with the desktop reference.
+
+
+## Phase 64: RenderCommand to GLES skinning
+
+The common submission ABI now reaches the GLES skinning contract directly: `SkinnedDraw → RenderCommand/1 → GLES31Skinning/1`. This removes the need for Android runtime code to reconstruct skin attributes or pose metadata from higher-level packets.

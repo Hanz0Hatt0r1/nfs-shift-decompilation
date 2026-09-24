@@ -251,3 +251,91 @@ def test_gles31_contract_rejects_stale_skin_summary_location():
     packet["mesh"]["vertex_layout"]["attributes"][1]["location"] = 4
     with pytest.raises(ValueError, match="conflicts with SHIFT.VertexLayout"):
         build_gles31_skinning_contract(packet)
+
+
+def _skinned_render_command():
+    return {
+        "format": "SHIFT.RenderCommand/1",
+        "ready": True,
+        "draw_kind": "skinned",
+        "blocking_reasons": [],
+        "mesh": {
+            "attributes": [
+                {"property_id": "200", "location": 4},
+                {"property_id": "310", "location": 5},
+                {"property_id": "580", "location": 6},
+            ],
+        },
+        "skinning": {
+            "format": "SHIFT.Skinning/1",
+            "influences": 4,
+            "weights": {
+                "property_id": "310",
+                "format": "FLOAT32x4",
+                "target_location": 5,
+            },
+            "indices": {
+                "property_id": "580",
+                "format": "UINT8x4",
+                "target_location": 6,
+            },
+            "bind_skeleton": {
+                "format": "SHIFT.BonePalette/1",
+                "bone_count": 2,
+                "matrix_layout": "3x4-row-major",
+                "matrix_space": "local-bind",
+                "local_matrices_3x4": [
+                    [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                    [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0],
+                ],
+            },
+            "skin_pose": {
+                "format": "SHIFT.SkinPose/1",
+                "matrix_space": "skinning",
+                "matrix_layout": "3x4-row-major",
+                "bone_count": 2,
+                "matrices_3x4": [
+                    [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                    [1, 0, 0, 2, 0, 1, 0, 3, 0, 0, 1, 4],
+                ],
+                "source": "synthetic",
+                "frame": 12,
+            },
+        },
+    }
+
+
+def test_gles31_contract_can_be_built_directly_from_render_command():
+    from skinning_glsl import build_gles31_skinning_contract_from_render_command
+
+    result = build_gles31_skinning_contract_from_render_command(
+        _skinned_render_command(),
+        bone_binding=7,
+        max_bones=64,
+    )
+    assert result["format"] == "SHIFT.GLES31Skinning/1"
+    assert result["bone_binding"] == 7
+    assert result["bone_count"] == 2
+    assert result["attributes"]["position"]["location"] == 4
+    assert result["attributes"]["blendweight0"]["location"] == 5
+    assert result["attributes"]["blendindices0"]["location"] == 6
+    assert result["skin_pose"]["frame"] == 12
+
+
+def test_gles31_contract_from_render_command_rejects_static_command():
+    from skinning_glsl import build_gles31_skinning_contract_from_render_command
+
+    command = _skinned_render_command()
+    command["draw_kind"] = "static"
+    with pytest.raises(ValueError, match="not a skinned draw"):
+        build_gles31_skinning_contract_from_render_command(command)
+
+
+def test_gles31_contract_from_render_command_rejects_not_ready_command():
+    from skinning_glsl import build_gles31_skinning_contract_from_render_command
+
+    command = _skinned_render_command()
+    command["ready"] = False
+    command["blocking_reasons"] = ["skinning:skin-pose-palette-incomplete"]
+    with pytest.raises(ValueError, match="skin-pose-palette-incomplete"):
+        build_gles31_skinning_contract_from_render_command(command)
