@@ -136,3 +136,19 @@ def test_build_vertex_inputs_rejects_mixed_130_230_uv_families():
     }
     with pytest.raises(ValueError, match="TEXCOORD0 has conflicting MEB UV families: 130 and 230"):
         build_vertex_inputs(_program(), mesh, 0)
+
+
+def test_build_vertex_inputs_preserves_skin_weights_as_shader_float4():
+    program = _program()
+    program["inputs"].append({"usage": "BLENDWEIGHT", "index": 0, "register": "v2"})
+    mesh = _mesh()
+    mesh["bone_weights"] = [(0.1, 0.2, 0.3, 0.4), (0.5, 0.6, 0.7, 0.8)]
+    assert build_vertex_inputs(program, mesh, 1)[2] == (0.5, 0.6, 0.7, 0.8)
+
+
+def test_build_vertex_inputs_preserves_skin_indices_without_normalization():
+    program = _program()
+    program["inputs"].append({"usage": "BLENDINDICES", "index": 0, "register": "v3"})
+    mesh = _mesh()
+    mesh["bone_indices"] = [(1, 2, 3, 4), (10, 20, 30, 40)]
+    assert build_vertex_inputs(program, mesh, 1)[3] == (10.0, 20.0, 30.0, 40.0)
