@@ -55,15 +55,22 @@ def analyze_d3d9_declaration_sentinel(source: str) -> dict[str, Any]:
 
     start, end, body = _function_body(source, FUNCTION)
 
-    writes = {
-        "stream": "*(undefined2 *)(*(int *)(param_1 + 0x1c) + (int)pAVar22 * 8) = 0xff;" in body,
-        "offset": "*(undefined2 *)(*(int *)(param_1 + 0x1c) + 2 + (int)pAVar22 * 8) = 0;" in body,
-        "type": "*(undefined1 *)(*(int *)(param_1 + 0x1c) + 4 + (int)pAVar22 * 8) = 0x11;" in body,
-        "method": "*(undefined1 *)(*(int *)(param_1 + 0x1c) + 5 + (int)pAVar22 * 8) = 0;" in body,
-        "usage": "*(undefined1 *)(*(int *)(param_1 + 0x1c) + 6 + (int)pAVar22 * 8) = 0;" in body,
-        "usage_index": "*(undefined1 *)(*(int *)(param_1 + 0x1c) + 7 + (int)pAVar22 * 8) = 0;" in body,
+    write_patterns = {
+        "stream": r"\*\(undefined2 \*\)\(\*\(int \*\)\(param_1 \+ 0x1c\) \+ [^;=]+\) = 0xff;",
+        "offset": r"\*\(undefined2 \*\)\(\*\(int \*\)\(param_1 \+ 0x1c\) \+ 2 \+ [^;=]+\) = 0;",
+        "type": r"\*\(undefined1 \*\)\(\*\(int \*\)\(param_1 \+ 0x1c\) \+ 4 \+ [^;=]+\) = 0x11;",
+        "method": r"\*\(undefined1 \*\)\(\*\(int \*\)\(param_1 \+ 0x1c\) \+ 5 \+ [^;=]+\) = 0;",
+        "usage": r"\*\(undefined1 \*\)\(\*\(int \*\)\(param_1 \+ 0x1c\) \+ 6 \+ [^;=]+\) = 0;",
+        "usage_index": r"\*\(undefined1 \*\)\(\*\(int \*\)\(param_1 \+ 0x1c\) \+ 7 \+ [^;=]+\) = 0;",
     }
-    count_indexing = "(int)pAVar22 * 8" in body
+    writes = {
+        field: re.search(pattern, body, flags=re.MULTILINE) is not None
+        for field, pattern in write_patterns.items()
+    }
+    count_indexing = any(
+        re.search(r"\+ (?:\(int\))?[A-Za-z_]\w* \* 8", line)
+        for line in body.splitlines()
+    )
     all_fields = all(writes.values())
 
     return {
