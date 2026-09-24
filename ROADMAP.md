@@ -104,3 +104,8 @@ Phase 57 makes external sampler requirements executable rather than passive: Ren
 ## Phase 58: cube-map external resources
 
 Phase 58 adds the software cube-map resource needed by the documented `environmentMap/s3` path. The next environment step is evidence-backed ingestion of the game's actual cubemap/face payload into `ReferenceCubeTexture/1`; this must not be inferred from a regular 2D DDS. In parallel, COLOR0/1 ABI and actual skin deformation remain independent rendering tracks.
+
+
+## Phase 59: native DDS cubemap decode
+
+Phase 59 closes the decoder-side half of `environmentMap/s3`: complete DDS cubemaps can become `ReferenceCubeTexture/1`. The remaining environment gap is extracting/identifying the game's actual environment-map DDS payload and proving its binding/face orientation through the asset corpus. COLOR0/1 ABI and skin deformation remain separate tracks.

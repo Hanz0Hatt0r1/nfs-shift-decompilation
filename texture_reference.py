@@ -175,6 +175,107 @@ def _decode_block_compressed(data: bytes, width: int, height: int, fourcc: str) 
     return bytes(out)
 
 
+
+def _dds_level_size(width: int, height: int, fourcc: str, rgb_bits: int) -> int:
+    if fourcc in {"DXT1", "DXT3", "DXT5"}:
+        block_bytes = {"DXT1": 8, "DXT3": 16, "DXT5": 16}[fourcc]
+        blocks_x = max(1, (width + 3) // 4)
+        blocks_y = max(1, (height + 3) // 4)
+        return blocks_x * blocks_y * block_bytes
+    if not fourcc and rgb_bits == 32:
+        return width * height * 4
+    raise ValueError(
+        f"unsupported DDS face level format fourcc={fourcc!r} rgb_bits={rgb_bits}"
+    )
+
+
+def _decode_dds_level(data: bytes, width: int, height: int, fourcc: str, rgb_bits: int, masks: tuple[int, int, int, int]) -> tuple[bytes, str]:
+    size = _dds_level_size(width, height, fourcc, rgb_bits)
+    if len(data) < size:
+        raise ValueError("DDS cubemap face payload is truncated")
+    level = data[:size]
+    if fourcc in {"DXT1", "DXT3", "DXT5"}:
+        return _decode_block_compressed(level, width, height, fourcc), "block-compressed"
+    return _decode_uncompressed_rgba(level, width, height, rgb_bits, masks), "uncompressed"
+
+
+def _decode_dds_cube(
+    payload: bytes,
+    width: int,
+    height: int,
+    mipmaps: int,
+    fourcc: str,
+    rgb_bits: int,
+    masks: tuple[int, int, int, int],
+    caps2: int,
+) -> dict[str, Any]:
+    required_faces = {
+        0x400: "px",
+        0x800: "nx",
+        0x1000: "py",
+        0x2000: "ny",
+        0x4000: "pz",
+        0x8000: "nz",
+    }
+    missing = [name for bit, name in required_faces.items() if not (caps2 & bit)]
+    if missing:
+        raise ValueError("DDS cubemap is missing face flags: " + ", ".join(missing))
+
+    face_level_sizes: list[int] = []
+    level_width = width
+    level_height = height
+    for _ in range(max(1, mipmaps)):
+        face_level_sizes.append(_dds_level_size(level_width, level_height, fourcc, rgb_bits))
+        level_width = max(1, level_width // 2)
+        level_height = max(1, level_height // 2)
+
+    face_bytes = sum(face_level_sizes)
+    required = face_bytes * 6
+    if len(payload) < required:
+        raise ValueError(
+            f"DDS cubemap payload is truncated: need {required} bytes, have {len(payload)}"
+        )
+
+    faces: dict[str, dict[str, Any]] = {}
+    offset = 0
+    storage = ""
+    for face_name in ("px", "nx", "py", "ny", "pz", "nz"):
+        base_size = face_level_sizes[0]
+        pixels, storage = _decode_dds_level(
+            payload[offset:offset + base_size],
+            width,
+            height,
+            fourcc,
+            rgb_bits,
+            masks,
+        )
+        faces[face_name] = {
+            "format": FORMAT,
+            "source_format": fourcc or "RGBA32",
+            "width": width,
+            "height": height,
+            "mipmaps": mipmaps,
+            "base_level_only": True,
+            "storage": storage,
+            "pixel_format": "RGBA8",
+            "pixels": pixels,
+            "byte_size": len(pixels),
+        }
+        offset += face_bytes
+
+    return {
+        "format": CUBE_FORMAT,
+        "source_format": fourcc or "RGBA32",
+        "width": width,
+        "height": height,
+        "mipmaps": mipmaps,
+        "base_level_only": True,
+        "storage": storage,
+        "pixel_format": "RGBA8",
+        "faces": faces,
+        "byte_size": sum(len(face["pixels"]) for face in faces.values()),
+    }
+
 def decode_dds(data: bytes, *, base_level_only: bool = True) -> dict[str, Any]:
     """Decode the DDS base level into RGBA8 pixels."""
     if len(data) < _HEADER_SIZE or data[:4] != b"DDS ":
@@ -193,11 +294,23 @@ def decode_dds(data: bytes, *, base_level_only: bool = True) -> dict[str, Any]:
         _u32(data, 104),
     )
     fourcc = struct.pack("<I", pf_fourcc_value).decode("ascii", "replace").rstrip("\x00")
+    caps2 = _u32(data, 112)
 
     if width <= 0 or height <= 0:
         raise ValueError("DDS dimensions must be positive")
 
     payload = data[_HEADER_SIZE:]
+    if caps2 & 0x200:
+        return _decode_dds_cube(
+            payload,
+            width,
+            height,
+            mipmaps,
+            fourcc,
+            rgb_bits,
+            masks,
+            caps2,
+        )
     if fourcc in {"DXT1", "DXT3", "DXT5"}:
         pixels = _decode_block_compressed(payload, width, height, fourcc)
         storage = "block-compressed"

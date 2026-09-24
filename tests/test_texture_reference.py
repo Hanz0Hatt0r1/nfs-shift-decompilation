@@ -17,6 +17,7 @@ def _dds_header(
     b_mask=0,
     a_mask=0,
     mipmaps=1,
+    caps2=0,
 ):
     if pf_flags is None:
         pf_flags = 0x4 if fourcc else 0x40
@@ -39,7 +40,7 @@ def _dds_header(
         b_mask,
         a_mask,
         0,
-        0,
+        caps2,
         0,
         0,
         0,
@@ -178,3 +179,102 @@ def test_sample_texture_cube_rejects_zero_direction():
 
     with pytest.raises(ValueError, match="finite non-zero major component"):
         sample_texture_cube(_cube_resource(), 0.0, 0.0, 0.0)
+
+
+def test_decode_complete_dds_cubemap_to_six_reference_faces():
+    caps2 = 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000
+    colors = [
+        (255, 0, 0, 255),
+        (0, 255, 0, 255),
+        (0, 0, 255, 255),
+        (255, 255, 0, 255),
+        (255, 0, 255, 255),
+        (0, 255, 255, 255),
+    ]
+    data = _dds_header(
+        width=1,
+        height=1,
+        rgb_bits=32,
+        pf_flags=0x40,
+        r_mask=0x000000FF,
+        g_mask=0x0000FF00,
+        b_mask=0x00FF0000,
+        a_mask=0xFF000000,
+        caps2=caps2,
+    ) + b"".join(struct.pack("<I", (a << 24) | (b << 16) | (g << 8) | r) for r, g, b, a in colors)
+
+    cube = decode_dds(data)
+    assert cube["format"] == "SHIFT.ReferenceCubeTexture/1"
+    assert cube["source_format"] == "RGBA32"
+    assert cube["width"] == 1
+    assert cube["height"] == 1
+    assert set(cube["faces"]) == {"px", "nx", "py", "ny", "pz", "nz"}
+    assert cube["faces"]["px"]["pixels"] == bytes(colors[0])
+    assert cube["faces"]["pz"]["pixels"] == bytes(colors[4])
+
+
+def test_decode_dds_rejects_incomplete_cubemap_face_flags():
+    caps2 = 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000
+    payload = struct.pack("<I", 0xFFFFFFFF) * 5
+    with pytest.raises(ValueError, match="missing face flags: nz"):
+        decode_dds(
+            _dds_header(
+                width=1,
+                height=1,
+                rgb_bits=32,
+                pf_flags=0x40,
+                r_mask=0x000000FF,
+                g_mask=0x0000FF00,
+                b_mask=0x00FF0000,
+                a_mask=0xFF000000,
+                caps2=caps2,
+            ) + payload
+        )
+
+
+def test_decode_dds_rejects_truncated_cubemap_payload():
+    caps2 = 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000
+    with pytest.raises(ValueError, match="cubemap payload is truncated"):
+        decode_dds(
+            _dds_header(
+                width=1,
+                height=1,
+                rgb_bits=32,
+                pf_flags=0x40,
+                r_mask=0x000000FF,
+                g_mask=0x0000FF00,
+                b_mask=0x00FF0000,
+                a_mask=0xFF000000,
+                caps2=caps2,
+            ) + b"\x00" * 20
+        )
+
+
+def test_decode_dds_cubemap_skips_mip_levels_per_face():
+    caps2 = 0x200 | 0x400 | 0x800 | 0x1000 | 0x2000 | 0x4000 | 0x8000
+    face_blocks = []
+    colors = [(255, 0, 0, 255), (0, 255, 0, 255), (0, 0, 255, 255),
+              (255, 255, 0, 255), (255, 0, 255, 255), (0, 255, 255, 255)]
+    for rgba in colors:
+        base = struct.pack("<4I", *(
+            (rgba[3] << 24) | (rgba[2] << 16) | (rgba[1] << 8) | rgba[0],
+        ) * 4)
+        mip = struct.pack("<I", 0)
+        face_blocks.append(base + mip)
+
+    cube = decode_dds(
+        _dds_header(
+            width=2,
+            height=2,
+            rgb_bits=32,
+            pf_flags=0x40,
+            r_mask=0x000000FF,
+            g_mask=0x0000FF00,
+            b_mask=0x00FF0000,
+            a_mask=0xFF000000,
+            mipmaps=2,
+            caps2=caps2,
+        ) + b"".join(face_blocks)
+    )
+    assert cube["faces"]["px"]["pixels"][:4] == bytes(colors[0])
+    assert cube["faces"]["nz"]["pixels"][:4] == bytes(colors[5])
