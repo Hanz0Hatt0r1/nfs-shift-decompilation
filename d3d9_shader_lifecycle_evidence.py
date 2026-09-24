@@ -16,7 +16,7 @@ EDGES = {
 
 def _body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    start = next((i for i, line in enumerate(lines, 1) if re.search(rf'\\b{re.escape(function)}\\s*\\(', line)), None)
+    start = next((i for i, line in enumerate(lines, 1) if re.search(rf'\b{re.escape(function)}\s*\(', line)), None)
     if start is None:
         return None, None, ''
     depth = 0
