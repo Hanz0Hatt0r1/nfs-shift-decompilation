@@ -674,3 +674,17 @@ The real BMW material-slice builder now accepts an external `bodywork.fx` while 
 ## Phase 157: real BMW MEB + DDS texture preview
 
 The desktop reference path now has a direct real-data texture adapter: the BMW M3 body MEB and COMMON_PAINT.dds are decoded from the original BFF, UV0 property 130 is sampled through the existing software renderer, and the output receives deterministic resource/render hashes. The phase is deliberately shader-free; the real paint color still belongs to material constants and bodywork.fx execution.
+
+## Phase 154: VHF scene preview
+
+A reusable `VHF -> MEB -> scene raster` adapter now assembles the selected
+vehicle kit from the real hierarchy and exact BFF resources. It resolves VHF
+parent matrices, selects one LOD (default `A`), excludes damage and
+screen-space `LIGHTGLOWS` by default, and produces a deterministic depth-tested
+geometry preview with per-part SHA-256 provenance.
+
+For the supplied BMW M3 E36 corpus this reaches the whole static kit assembly:
+body, hood, trunk, bumpers, chassis, interior, steering wheel plus generic
+wheel/tire/brake/mirror resources. This is a preview boundary only; the
+authoritative material path remains
+`VHF -> MEB -> BMT -> FX -> FXO -> RenderCommand -> reference renderer`.
