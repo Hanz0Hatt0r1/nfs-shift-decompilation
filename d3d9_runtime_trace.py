@@ -260,6 +260,8 @@ def build_runtime_binding_evidence(
         if correlation["descriptor_matches"]:
             correlation["status"] = "observed"
 
+    same_instance_candidates: list[dict[str, Any]] = []
+    valid_bound_frames: list[dict[str, Any]] = []
     frame_rows: list[dict[str, Any]] = []
     for frame_key in sorted(frames, key=_sort_key):
         frame = frames[frame_key]
@@ -290,12 +292,61 @@ def build_runtime_binding_evidence(
                     "status": "error",
                     "error": f"{type(exc).__name__}: {exc}",
                 }
+        binding_ptr = (binding or {}).get("declaration_ptr")
+        bound_decl = declarations.get(binding_ptr) if binding_ptr else None
+        bound_decl_decoded = (bound_decl or {}).get("decoded") or {}
+        bound_decl_valid = bool(
+            bound_decl
+            and bound_decl_decoded.get("status") == "match"
+        )
+
+        frame_candidate = {
+            "frame": frame.get("frame"),
+            "declaration_ptr": binding_ptr,
+            "same_meb_resource": same_resource,
+            "declaration_create_known": bool(binding and binding.get("create_known")),
+            "declaration_decode_status": bound_decl_decoded.get("status"),
+            "bound_declaration_valid": bound_decl_valid,
+            "descriptor_matches": [],
+        }
+        if bound_decl_valid and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
+            bound_records = bound_decl_decoded.get("records", [])
+            for descriptor in meb_resource.get("property_descriptors", []):
+                if not isinstance(descriptor, Mapping):
+                    continue
+                words = descriptor.get("words")
+                if not isinstance(words, list) or len(words) < 3:
+                    continue
+                type_ordinal, usage_ordinal, channel = map(int, words[:3])
+                runtime_usage = usage_ordinal_map.get(usage_ordinal)
+                matched_records = [
+                    record for record in bound_records
+                    if record.get("type") == type_ordinal
+                    and record.get("usage") == runtime_usage
+                    and record.get("usage_index") == channel
+                ]
+                if matched_records:
+                    frame_candidate["descriptor_matches"].append({
+                        "property_id": str(descriptor.get("id")),
+                        "type_ordinal": type_ordinal,
+                        "usage_ordinal": usage_ordinal,
+                        "runtime_usage": runtime_usage,
+                        "channel": channel,
+                        "record_indices": [record.get("index") for record in matched_records],
+                    })
+        if bound_decl_valid and same_resource is True:
+            valid_bound_frames.append(frame_candidate)
+        if frame_candidate["descriptor_matches"]:
+            same_instance_candidates.append(frame_candidate)
+
         frame_rows.append({
             **frame,
             "shader_permutation_identity": shader_pair_identity,
             "binding": {
                 "status": "observed" if binding and binding.get("create_known") else ("partial" if binding else "not-observed"),
                 "same_meb_resource": same_resource,
+                "declaration_decode_status": bound_decl_decoded.get("status"),
+                "bound_declaration_valid": bound_decl_valid,
             },
         })
 
@@ -321,6 +372,50 @@ def build_runtime_binding_evidence(
             "runtime_frame_identity": "observed" if frame_rows else "not-supplied",
             "specific_mesh_instance": "observed" if any(x["binding"].get("same_meb_resource") is True for x in frame_rows) else "not-proven",
             "usage_ordinal_mapping": "observed" if usage_ordinal_map is not None else "not-supplied",
+        },
+        "same_instance_gate": {
+            "status": (
+                "proven"
+                if same_instance_candidates
+                else "not-proven"
+            ),
+            "ready": bool(same_instance_candidates),
+            "candidate_frames": same_instance_candidates,
+            "requirements": {
+                "same_meb_resource": True,
+                "bound_declaration_known": True,
+                "bound_declaration_decoder_status": "match",
+                "usage_ordinal_mapping": "required",
+                "descriptor_match_on_bound_declaration": True,
+            },
+            "blocking_reasons": list(dict.fromkeys(
+                (
+                    ["frame:same-meb-resource-not-observed"]
+                    if not any(x["binding"].get("same_meb_resource") is True for x in frame_rows)
+                    else []
+                )
+                + (
+                    ["declaration:bound-instance-not-valid"]
+                    if any(x["binding"].get("same_meb_resource") is True for x in frame_rows)
+                    and not valid_bound_frames
+                    else []
+                )
+                + (
+                    ["usage-ordinal-map:not-supplied"]
+                    if usage_ordinal_map is None
+                    else []
+                )
+                + (
+                    ["descriptor:bound-instance-no-match"]
+                    if usage_ordinal_map is not None
+                    and not same_instance_candidates
+                    and any(
+                        x["binding"].get("same_meb_resource") is True
+                        for x in frame_rows
+                    )
+                    else []
+                )
+            )),
         },
         "blocking_reasons": blockers,
     }

@@ -2335,7 +2335,10 @@ def cmd_d3d9_runtime_trace(args: argparse.Namespace) -> int:
         "frames": report["trace"]["frame_count"],
         "declarations": report["trace"]["declaration_instance_count"],
         "specific_mesh_instance": report["evidence_boundary"]["specific_mesh_instance"],
+        "same_instance_gate": report["same_instance_gate"]["status"],
     }, ensure_ascii=False, indent=2))
+    if args.require_same_instance and not report["same_instance_gate"].get("ready"):
+        return 2
     return 0
 
 def cmd_bmw_runtime_shader_join(args: argparse.Namespace) -> int:
@@ -3162,6 +3165,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("--meb-resource", help="optional MEB resource analysis JSON")
     p.add_argument("--usage-map", help="optional JSON mapping MEB Usage ordinals to D3D9 Usage bytes")
+    p.add_argument("--require-same-instance", action="store_true", help="return 2 unless strict same-instance proof is established")
     p.set_defaults(fn=cmd_d3d9_runtime_trace)
 
     p = sp.add_parser("bmw-runtime-shader-join", help="join a BMW material slice with captured D3D9 runtime shader state")

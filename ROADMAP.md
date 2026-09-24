@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 147. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 148. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -632,3 +632,10 @@ Next: once the archived BFF is reachable, run `bmw-real-material-slice` and requ
 `SHIFT.BMWMaterialSliceGoldenGate/1` now validates one selected M3 paint primitive against the exact golden resource, including resource SHA, primitive range/material ref, mesh counts, paint contract, shader gate and `RenderCommand/1`. `bmw-real-material-slice` runs this gate automatically, closing the offline single-submesh path before the desktop reference renderer.
 
 Next: execute the real BFF-backed slice when the 18.9 MB archive is reachable. The remaining proof gap after a ready offline slice is the runtime D3D9 capture and exact same-instance correlation.
+
+
+## Phase 148: strict D3D9 runtime same-instance gate
+
+`d3d9_runtime_trace.py` now separates observational capture status from a strict `same_instance_gate`. Proof requires the frame's actually bound declaration pointer, a valid declaration decode, exact MEB identity, explicit usage mapping and at least one descriptor match on that bound declaration. `--require-same-instance` turns this into a hard CLI acceptance gate.
+
+Next: obtain a real runtime capture and run the strict gate against the exact M3 MEB evidence. This is now the primary remaining proof gap.

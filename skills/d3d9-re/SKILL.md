@@ -125,3 +125,8 @@ Use `bmw-meb-evidence-parity` to compare the exact committed M3 MEB evidence sna
 ## BMW material slice golden gate
 
 Use `bmw_material_slice_golden_gate.py` to validate one selected BMW M3 material slice against the exact golden MEB. The real BFF-backed slice builder invokes this gate automatically; do not use material ordering as an inference.
+
+
+## Runtime same-instance gate
+
+Use `d3d9_runtime_trace.py --require-same-instance` for strict runtime proof. A matching declaration that was created but not bound by the target frame must not be accepted.
