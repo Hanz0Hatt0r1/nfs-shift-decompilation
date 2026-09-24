@@ -84,3 +84,8 @@ The reference shader executor consumes the serialized payload when it is present
 ## Phase 54: vertex-shader reference execution
 
 The desktop reference path now has an explicit VS->PS execution boundary: the embedded vertex ShaderProgram/1 executes against the known MEB semantic inputs, its POSITION output drives clip-space rasterization, and VS outputs are matched to pixel inputs by semantic key before perspective-correct interpolation. The next rendering gap is expanding the proven vertex/material ABI without guessing unresolved MEB COLOR bytes, additional TEXCOORD families or renderer-global resources.
+
+
+## Phase 55: alternate MEB TEXCOORD family
+
+Phase 55 extends the shader-reference input boundary to the alternate MEB `230..234` UVW family. The next ABI work is COLOR0/1 exact declaration/channel order and, separately, skinning inputs (BLENDWEIGHT0/BLENDINDICES0) once their neutral runtime adapter is wired to the vertex shader reference path.
