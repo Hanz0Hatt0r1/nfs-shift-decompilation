@@ -174,3 +174,39 @@ def test_material_uniform_binding_rejects_unsupported_type():
     })
     assert result["status"] == "unsupported"
     assert "uniform-binding:unsupported-ctab-type:int" in result["blocking_reasons"]
+
+
+def test_material_constant_payload_builds_reference_bank():
+    from shader_reference import material_constants_from_payload
+
+    result = material_constants_from_payload({
+        "format": "SHIFT.MaterialConstantPayload/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "register_count": 1,
+        "registers": [{
+            "register_index": 3,
+            "values": [0.25, 0.5, 0.75, 1.0],
+            "byte_offset": 48,
+            "byte_size": 16,
+        }],
+    })
+    assert result["status"] == "ready"
+    assert result["banks"]["c"][3] == [0.25, 0.5, 0.75, 1.0]
+
+
+def test_material_constant_payload_rejects_malformed_register():
+    from shader_reference import material_constants_from_payload
+
+    result = material_constants_from_payload({
+        "format": "SHIFT.MaterialConstantPayload/1",
+        "ready": True,
+        "registers": [{
+            "register_index": 3,
+            "values": [1.0, 2.0],
+            "byte_offset": 48,
+            "byte_size": 16,
+        }],
+    })
+    assert result["status"] == "unsupported"
+    assert "uniform-payload:register-width-invalid:3" in result["blocking_reasons"]
