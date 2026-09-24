@@ -32,3 +32,7 @@ python shift_importer.py bmw-runtime-draw-correlation bmw-paint-slice.json runti
 
 Run the full golden gate on an actual runtime capture. Only a ready result may be
 passed to `bmw-reference-render` and recorded as the first real-material image.
+
+## Phase 131 integration
+
+The exact runtime draw correlation is now joined with semantic vertex-input parity. The unified BMW golden gate therefore requires both the primitive range and the declaration/shader input contract to match.

@@ -30,7 +30,7 @@ def _runtime(constant_values=True):
             'index_binding': {'index_buffer_ptr':'0x4'},
             'draws': [{'start_index':150, 'primitive_count':2098, 'base_vertex_index':0}],
             'constant_writes': [{'stage':'pixel','start_register':5,'vector4f_count':1,'values':[1.0,2.0,3.0,4.0]}] if constant_values else [],
-            'shader_permutation_identity': {'identity_sha256':'shader-id','payload':{'vertex':{'constants':[]},'pixel':{'constants':[5],'sampler_types':{}}}},
+            'shader_permutation_identity': {'identity_sha256':'shader-id','payload':{'vertex':{'inputs':[{'register':'v0','usage':'COLOR','index':0}], 'constants':[]},'pixel':{'constants':[5],'sampler_types':{}}}},
         }],
     }
 
@@ -57,3 +57,14 @@ def test_runtime_golden_gate_blocks_render_command(tmp_path):
     report=validate_runtime_golden_gate(m,r,usage_map_path=u)
     assert report['ready'] is False
     assert 'render-command:not-ready' in report['blocking_reasons']
+
+def test_runtime_golden_gate_propagates_vertex_input_mismatch(tmp_path):
+    m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'
+    material=_material()
+    runtime=_runtime()
+    runtime['frames'][0]['shader_permutation_identity']['payload']['vertex']['inputs']=[{'register':'v0','usage':'NORMAL','index':0}]
+    m.write_text(json.dumps(material)); r.write_text(json.dumps(runtime)); u.write_text(json.dumps({'6':10}))
+    report=validate_runtime_golden_gate(m,r,usage_map_path=u)
+    assert report['ready'] is False
+    assert 'vertex-input:layout-semantic-missing:NORMAL0' in report['blocking_reasons']
+    assert report['vertex_input_parity']['status'] == 'partial'

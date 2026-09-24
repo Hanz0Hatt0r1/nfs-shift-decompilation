@@ -2332,6 +2332,31 @@ def cmd_bmw_runtime_shader_join(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_vertex_input_parity(args: argparse.Namespace) -> int:
+    """Validate BMW shader semantic inputs against a captured D3D9 declaration."""
+    from bmw_vertex_input_parity import validate_bmw_vertex_input_parity
+
+    material = json.loads(Path(args.material_slice).read_text(encoding="utf-8"))
+    runtime = json.loads(Path(args.runtime_report).read_text(encoding="utf-8"))
+    usage_raw = json.loads(Path(args.usage_map).read_text(encoding="utf-8"))
+    usage_map = {int(k): int(v) for k, v in usage_raw.items()}
+    report = validate_bmw_vertex_input_parity(material, runtime, usage_map=usage_map)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
     """Correlate one exact BMW primitive with a captured indexed draw."""
     from bmw_runtime_draw_correlation import correlate_runtime_draw
@@ -2893,6 +2918,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeShaderJoin/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_shader_join)
+
+    p = sp.add_parser("bmw-vertex-input-parity", help="validate BMW shader semantic inputs against a captured D3D9 declaration")
+    p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
+    p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWVertexInputParity/1 JSON")
+    p.add_argument("--usage-map", required=True, help="evidence-backed JSON mapping MEB Usage ordinals to D3D9 Usage bytes")
+    p.set_defaults(fn=cmd_bmw_vertex_input_parity)
 
     p = sp.add_parser("bmw-runtime-draw-correlation", help="correlate one exact BMW primitive with a captured indexed draw")
     p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
