@@ -273,6 +273,20 @@ The SVG is downsampled/quantized; it is a review snapshot, while the original PP
 
 ### Render snapshots
 
+Последние локальные кадры, полученные из реальных BMW M3 BFF/VHF/MEB ресурсов:
+
+**Geometry-only scene**
+
+![BMW M3 E36 KIT00 geometry render checkpoint](docs/render-snapshots/bmw_m3_e36_kit00_full_vehicle_scene_real_quantized.svg)
+
+**Texture-only material scene**
+
+![BMW M3 E36 KIT00 material render checkpoint](docs/render-snapshots/bmw_m3_e36_kit00_material_scene_real_quantized.svg)
+
+SVG checkpoints сгенерированы автоматически из соответствующих PNG-кадров текущего renderer’а с квантованием только для компактного хранения в GitHub. Они служат визуальными контрольными точками и не заменяют shader golden image.
+
+
+
 Последний реальный geometry-preview BMW M3 сохранён непосредственно в репозитории:
 
 ![BMW M3 E36 KIT00 geometry preview](docs/render-snapshots/bmw_m3_e36_kit00_scene_geometry.svg)
