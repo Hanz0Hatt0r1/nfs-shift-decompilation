@@ -106,3 +106,11 @@ The extractor deliberately reports `MEB 460/461 -> type 4` as `not-proven`: the
 exported C does not expose the contents of `DAT_00b90088` / `PTR_DAT_00b901d0` well
 enough to establish that exact property-to-type linkage. Therefore phase 74 improves
 provenance and repeatability without changing the runtime ABI selection.
+
+## Phase 78: recovered D3D9 primitive-type switch
+
+The recovered `FUN_00854e70` declaration conversion switch contains every type code `0..16`. A dedicated `d3d9_type_semantics.py` evidence layer records each case's source behavior and the corresponding D3D9 `D3DDECLTYPE` name. The strongest new link is type code `4 -> D3DDECLTYPE_D3DCOLOR -> FUN_008310c0 packed-color conversion`.
+
+This proves the semantics of the recovered type-code switch, but it still does not prove `MEB 460/461 -> type code 4`. The mesh ABI therefore remains ambiguous until the declaration/table linkage is recovered.
+
+The full supplied source snapshot is recorded without including the game source itself in `evidence/shift_d3d9_type_switch_snapshot.json`.
