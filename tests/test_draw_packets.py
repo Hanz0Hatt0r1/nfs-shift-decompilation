@@ -538,7 +538,26 @@ def _bmw_paint_compile_material(binding_rows=None, specializations=None, materia
         {},
         {},
         None,
-        {"bindings": rows, "selected_fxo": {"specialization_matched": specializations or ["USE_FRESNEL", "ALLOW_VINYLS", "DIRT_SCRATCH"]}},
+        {
+            "bindings": rows,
+            "selection_status": "unique",
+            "selected_fxo": {
+                "file": "bodywork.fxo",
+                "program_offset": 64,
+                "exact": True,
+                "vertex_pair_selection_status": "unique",
+                "specialization_matched": specializations or ["USE_FRESNEL", "ALLOW_VINYLS", "DIRT_SCRATCH"],
+                "pixel_sha256": "a" * 64,
+                "vertex_sha256": "b" * 64,
+                "pair_sha256": "c" * 64,
+            },
+            "shader_pair": {"selection_status": "unique"},
+            "linked_shader_pair": {"format": "SHIFT.LinkedShaderPair/1"},
+            "permutation_identity": {
+                "format": "SHIFT.ShaderPermutationIdentity/1",
+                "identity_sha256": "d" * 64,
+            },
+        },
     )
 
 
