@@ -124,7 +124,7 @@ def test_bmw_golden_gate_blocks_missing_bmw_paint_shader_gate():
 
 def test_bmw_golden_gate_requires_shader_gate_only_for_exact_m3_paint():
     golden=_golden()
-    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
+    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw/bmw_m3_badging.mtx"
     packet=_packet()
     packet["submeshes"][0]["material"]["ref"]="vehicles/bmw/bmw_m3_badging.mtx"
     packet["submeshes"][0]["material"].pop("paint_shader_gate", None)
@@ -157,15 +157,32 @@ def test_bmw_golden_gate_reports_exact_asset_contract_from_repo_manifest():
     packet["mesh"]["ref"]=golden["golden"]["resource"]
     packet["mesh"]["vertex_count"]=golden["mesh"]["vertex_count"]
     packet["mesh"]["triangle_count"]=golden["mesh"]["triangle_count"]
-    packet["submeshes"][0]["material"]["ref"]=golden["mesh"]["primitives"][1]["material"]
-    packet["submeshes"][0]["first_index"]=golden["mesh"]["primitives"][1]["first_index"]
-    packet["submeshes"][0]["index_count"]=golden["mesh"]["primitives"][1]["index_count"]
-    packet["submeshes"][0]["material"]["paint_shader_gate"]={
-        "format":"SHIFT.BMWM3PaintShaderGate/1",
-        "status":"ready",
-        "ready":True,
-        "blocking_reasons":[],
-    }
+    packet["submeshes"]=[]
+    for primitive in golden["mesh"]["primitives"]:
+        submesh={
+            "first_index": primitive["first_index"],
+            "index_count": primitive["index_count"],
+            "material": {
+                "ref": primitive["material"],
+                "shader_selection": {
+                    "status":"unique",
+                    "vertex_pair_selection_status":"unique",
+                    "linked_shader_pair":{"format":"SHIFT.LinkedShaderPair/1"},
+                    "permutation_identity":{
+                        "format":"SHIFT.ShaderPermutationIdentity/1",
+                        "identity_sha256":"a"*64,
+                    },
+                },
+            },
+        }
+        if primitive["material"].upper().endswith("BMW_M3_E36_PAINT.MTX"):
+            submesh["material"]["paint_shader_gate"]={
+                "format":"SHIFT.BMWM3PaintShaderGate/1",
+                "status":"ready",
+                "ready":True,
+                "blocking_reasons":[],
+            }
+        packet["submeshes"].append(submesh)
     report=validate_bmw_golden_gate(golden,packet)
     assert report["ready"] is True
     assert report["asset_contract"]["ready"] is True
