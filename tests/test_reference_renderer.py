@@ -1051,3 +1051,135 @@ def test_reference_renderer_uses_render_command_constant_payload(tmp_path):
     pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
     assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
     assert (100, 25, 50) in pixels
+
+
+def _vertex_passthrough_program():
+    def operand(kind, reg_type, index, *, swizzle="xyzw", write_mask="xyzw"):
+        return {
+            "token": 0x80000000,
+            "kind": kind,
+            "reg_type": reg_type,
+            "index": index,
+            "swizzle": swizzle,
+            "source_modifier": 0,
+            "write_mask": write_mask if kind == "dest" else None,
+        }
+
+    return {
+        "schema": "SHIFT.ShaderProgram/1",
+        "stage": "vertex",
+        "shader_model": [3, 0],
+        "offset": 0,
+        "end": 0,
+        "inputs": [
+            {"usage": "POSITION", "index": 0, "register": "v0"},
+            {"usage": "TEXCOORD", "index": 0, "register": "v1"},
+        ],
+        "outputs": [
+            {"usage": "POSITION", "index": 0, "register": "oR0"},
+            {"usage": "TEXCOORD", "index": 0, "register": "oT1"},
+        ],
+        "samplers": [],
+        "constants": [],
+        "temps": [],
+        "unsupported_opcodes": [],
+        "instructions": [
+            {
+                "offset": 0,
+                "opcode": 1,
+                "name": "MOV",
+                "token": 0,
+                "length": 3,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    operand("dest", 4, 0),
+                    operand("source", 1, 0),
+                ],
+                "predicate": None,
+            },
+            {
+                "offset": 12,
+                "opcode": 1,
+                "name": "MOV",
+                "token": 0,
+                "length": 3,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    operand("dest", 6, 1),
+                    operand("source", 1, 1),
+                ],
+                "predicate": None,
+            },
+        ],
+        "const_ints": [],
+        "const_bools": [],
+        "sampler_types": {},
+    }
+
+
+def test_reference_renderer_executes_vertex_shader_and_links_varying_by_semantic(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["vertex_program"] = _vertex_passthrough_program()
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((10, 120, 220, 255)),
+    }
+    out = tmp_path / "vertex-reference.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        width=24,
+        height=24,
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert result["vertex_shader_executed"] is True
+    assert result["world_matrix_applied"] is False
+    assert (10, 120, 220) in pixels
+
+
+def test_reference_renderer_rejects_unmatched_vertex_pixel_semantic(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    vertex = _vertex_passthrough_program()
+    vertex["outputs"] = [
+        {"usage": "POSITION", "index": 0, "register": "oR0"},
+        {"usage": "TEXCOORD", "index": 1, "register": "oT1"},
+    ]
+    command["submeshes"][0]["shader"]["vertex_program"] = vertex
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+    mesh = {**_triangle(), "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]}}
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command, mesh, image, tmp_path / "bad-varying.ppm",
+            shader_reference=True, width=8, height=8,
+        )
+    except ValueError as exc:
+        assert "pixel shader semantic has no matching vertex output: TEXCOORD0" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
