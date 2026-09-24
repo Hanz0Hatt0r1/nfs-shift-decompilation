@@ -375,3 +375,9 @@ by that mesh.
 MEB vertex-property descriptors are now retained with their exact file-relative offset, three LE DWORD values and raw 12-byte representation. Regression coverage uses synthetic 460/461 descriptors and verifies the offsets and payload ordering.
 
 This removes a provenance gap at the MEB boundary: future runtime correlation can start from exact descriptor bytes rather than a derived property-name table. The D3D9 Type selection remains unresolved until the same mesh instance is tied to a concrete declaration record.
+
+## Phase 108: exact MEB COLOR resource provenance
+
+The BFF-backed COLOR evidence path now preserves the exact descriptor and payload byte ranges from each decoded `.meb`, including descriptor raw bytes and payload SHA-256. It also checks that the parser's decoded 460/461 stream is identical to the selected raw payload range.
+
+The result is a reproducible bridge from an actual archive/resource to the MEB property byte range. It still does not prove which D3D9 declaration Type consumes that range; that requires same-instance runtime correlation.

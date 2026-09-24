@@ -258,3 +258,9 @@ claiming that MEB 460/461 have been assigned to one declaration Type.
 MEBMesh.property_descriptors and mesh_summary()[property_descriptors] now preserve descriptor offset, the three little-endian DWORD words and the raw 12-byte descriptor for every vertex property. The regression fixture confirms the expected binary locations for synthetic 460 and 461 descriptors.
 
 This strengthens traceability of MEB 460/461, but it is deliberately not a D3D9 Type proof. The unresolved boundary remains the identity edge from the MEB descriptor/payload to the exact D3D9 declaration record used by that mesh.
+
+## Phase 108: exact MEB COLOR resource provenance
+
+The BFF-backed COLOR evidence command now records the exact MEB descriptor range and payload range for properties 460/461, preserving descriptor raw bytes and payload SHA-256/hex. It also reports whether the decoded color stream is byte-identical to the selected raw payload range.
+
+This closes the byte-provenance gap at the MEB resource boundary. The D3D9 Type 4 versus Type 8 mapping remains not-proven until the same MEB instance is correlated with the exact declaration record used by the renderer.

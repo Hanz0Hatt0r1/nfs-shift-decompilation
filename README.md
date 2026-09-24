@@ -578,3 +578,9 @@ constraint without changing the unresolved mapping.
 The MEB reader now preserves each vertex-property descriptor as an exact on-disk 12-byte record: descriptor byte offset, the three little-endian DWORD words used by the current parser to construct the property id, and the raw hexadecimal bytes. The same data is exposed by mesh_summary().
 
 For COLOR0/COLOR1 this records the binary origin of properties 460/461 instead of retaining only their semantic names. It is a prerequisite for correlating one actual .meb payload with a runtime declaration instance. It does not resolve D3D9 Type 4 versus Type 8, so the MEB property mapping remains not-proven.
+
+## Phase 108: exact MEB COLOR resource provenance
+
+The real-resource color evidence command now records the exact 12-byte MEB property descriptor and the exact COLOR payload range inside the decoded `.meb`. For property 460/461 it also emits the descriptor words/raw bytes, payload hex/SHA-256, and an explicit check that the decoded color stream is byte-identical to the payload range selected by the parser.
+
+This makes a real `.bff` → `.meb` observation auditable down to byte offsets before attempting any MEB↔D3D9 identity inference. The Type mapping remains non-selective.
