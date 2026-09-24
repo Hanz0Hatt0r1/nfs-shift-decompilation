@@ -19,11 +19,27 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
         primitive_index = 0
     command = material_slice.get('render_command') or {}
     submeshes = command.get('submeshes') or []
-    if primitive_index < 0 or primitive_index >= len(submeshes):
-        reasons.append('material:primitive-not-found')
+    if primitive_index < 0:
+        reasons.append('material:primitive-index-invalid')
         expected = {}
     else:
-        expected = submeshes[primitive_index] or {}
+        indexed = [
+            row for row in submeshes
+            if isinstance(row, Mapping) and int(row.get('index', -1)) == primitive_index
+        ]
+        if indexed:
+            if len(indexed) > 1:
+                reasons.append('material:primitive-ambiguous')
+                expected = {}
+            else:
+                expected = indexed[0] or {}
+        elif primitive_index < len(submeshes):
+            # Backward-compatible fallback for older render-command slices
+            # that omitted the explicit submesh index field.
+            expected = submeshes[primitive_index] or {}
+        else:
+            reasons.append('material:primitive-not-found')
+            expected = {}
     try:
         expected_first = int(expected.get('first_index'))
         expected_count = int(expected.get('index_count'))
