@@ -590,3 +590,15 @@ This makes a real `.bff` → `.meb` observation auditable down to byte offsets b
 The MEB↔D3D9 color bridge can now consume one or more real BFF-backed COLOR evidence reports. For each supplied 460/461 report it verifies the bff-meb source kind, property descriptor identity, observed descriptor/payload ranges, decoded-stream-to-payload equality, and equality of the raw payload SHA-256 with the COLOR evidence hash.
 
 This is a stronger resource-level property proof, but it still does not select D3D9 Type 4 or Type 8. Unknown resource property IDs are isolated as explicit errors rather than contaminating both color properties.
+
+## Phase 110: exact MEB descriptor triple → D3D9 Type proof
+
+The recovered binary mesh loader `FUN_00859800` consumes a 12-byte element triple as three DWORD values: `[Type ordinal, Usage ordinal, Channel]`. It resolves the first two through the D3D9 type/usage tables and copies the third into the declaration record's `UsageIndex` byte. The source also identifies this routine as `LoadBinaryMeshFromResource` and the surrounding resource code recognizes `.meb` files.
+
+The new `meb_d3d9_descriptor_triple_evidence.py` compares that source-backed triple semantics with the exact descriptor words preserved by the MEB reader. Thus 460 (`[4,6,0]`) and 461 (`[4,6,1]`) can reach `match` only when both descriptors are actually present and exact, with the source loader/triple evidence intact. A wrong Type word yields `mismatch`; a missing descriptor yields `partial`; no decimal-ID-only inference is used.
+
+CLI:
+
+    python shift_importer.py meb-d3d9-descriptor-triple meb.json source-d3d9.json descriptor-triple.json
+
+The resulting Type mapping is now evidence-backed at the descriptor/triple boundary: both properties resolve to D3D9 Type code 4 under the exact-match conditions. Channel 0/1 remains the COLOR0/COLOR1 distinction at the source triple level.
