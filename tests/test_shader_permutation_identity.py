@@ -4,7 +4,7 @@ from shader_permutation_identity import build_shader_permutation_identity
 
 
 def _pair():
-    from test_material_linker import synthetic_linkable_fxo_pair
+    from tests.test_material_linker import synthetic_linkable_fxo_pair
     return synthetic_linkable_fxo_pair()
 
 
