@@ -508,3 +508,46 @@ def test_render_command_rejects_bad_shader_program_ir_schema():
     result = build_render_command(draw, _resources())
     assert result["ready"] is False
     assert "shader-ir:pixel_program:invalid-schema" in result["blocking_reasons"]
+
+
+def test_render_command_integrates_material_constant_payload():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "primerBasis",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 5,
+            "register_count": 1,
+            "ctab_type": "float4",
+            "value": [1.0, 2.0, 3.0, 4.0],
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_render_command(build_static_draw_contract(packet), _resources())
+    payload = result["submeshes"][0]["constant_payload"]
+    assert result["ready"] is True
+    assert payload["ready"] is True
+    assert payload["registers"][0]["byte_offset"] == 80
+    assert payload["registers"][0]["values"] == [1.0, 2.0, 3.0, 4.0]
+
+
+def test_render_command_blocks_unproven_matrix_constant_payload():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["uniform_binding"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "world",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 4,
+            "register_count": 4,
+            "ctab_type": "float4x4",
+            "value": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    result = build_render_command(build_static_draw_contract(packet), _resources())
+    assert result["ready"] is False
+    assert "uniform-payload:unsupported-ctab-type:world:float4x4" in result["blocking_reasons"]
