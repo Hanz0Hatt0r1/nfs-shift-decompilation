@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 59. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
+Baseline `main` is at phase 63. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
 
 The immediate target is a deterministic pipeline:
 
@@ -41,13 +41,14 @@ the original BFF archives at runtime.
 3. Validate selected generated shader permutations with an actual GLES compiler where the toolchain is available, then use the result as the RenderCommand submission gate.
 4. Keep the material execution ABI authoritative: CTAB float/vector values arrive through SHIFT.MaterialConstantPayload/1.
 5. Keep the desktop reference renderer as the golden oracle: embedded VS→PS execution, sampler2D/samplerCube resources, UV families and skin inputs must agree with RenderCommand.
-6. Integrate explicit SkinPose deformation into the render-ready mesh path and cross-check positions/directions against the CPU reference.
-7. Expand reference execution toward real BMW permutations: TEXCOORD5+ families, remaining D3D9 control flow, exact sampler state and lighting/blend semantics.
-8. Prove the exact MEB vertex stream packing for real BMW meshes, especially COLOR0/1.
-9. Decode BAB animation payload from multiple clips sharing one skeleton, using corpus and byte-diff evidence.
-10. Implement SGB scene semantics and track assembly after the vehicle path is stable.
-11. Port the proven IR/render boundary to Android.
-12. Only then expand into physics, input, camera, audio and gameplay systems.
+6. Keep explicit SkinPose deformation and SkinnedMeshReference as the CPU oracle, and expose the same payload through RenderCommand.
+7. Drive the GLES 3.1 skinning ABI directly from RenderCommand, then cross-check shader-driven skinning against the CPU reference.
+8. Expand reference execution toward real BMW permutations: TEXCOORD5+ families, remaining D3D9 control flow, exact sampler state and lighting/blend semantics.
+9. Prove the exact MEB vertex stream packing for real BMW meshes, especially COLOR0/1.
+10. Decode BAB animation payload from multiple clips sharing one skeleton, using corpus and byte-diff evidence.
+11. Implement SGB scene semantics and track assembly after the vehicle path is stable.
+12. Port the proven IR/render boundary to Android.
+13. Only then expand into physics, input, camera, audio and gameplay systems.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
