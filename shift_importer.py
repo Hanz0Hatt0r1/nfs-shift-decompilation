@@ -1867,6 +1867,7 @@ def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
         declaration_instance_path=args.declaration_instance,
         runtime_memory_evidence_path=args.runtime_memory_evidence,
         runtime_layout_evidence_path=args.runtime_layout_evidence,
+        api_bind_evidence_path=args.api_bind_evidence,
     )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -2262,6 +2263,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9SourceVertexEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_source_evidence)
 
+    p = sp.add_parser("source-d3d9-api-bind-evidence", help="analyze the D3D9 declaration bind API boundary in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9ApiBindEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_api_bind_evidence)
+
     p = sp.add_parser("source-d3d9-type-evidence", help="analyze the D3D9 primitive type switch in SHIFT.exe.c")
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9TypeSemanticsEvidence/1 JSON output")
@@ -2325,6 +2331,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--declaration-instance", help="optional SHIFT.D3D9DeclarationInstanceEvidence/1 JSON input")
     p.add_argument("--runtime-memory-evidence", help="optional SHIFT.D3D9MemoryDeclarationEvidence/1 JSON input")
     p.add_argument("--runtime-layout-evidence", help="optional SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1 JSON input")
+    p.add_argument("--api-bind-evidence", help="optional SHIFT.D3D9ApiBindEvidence/1 JSON input")
     p.set_defaults(fn=cmd_d3d9_declaration_chain)
 
 

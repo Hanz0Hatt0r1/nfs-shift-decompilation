@@ -186,3 +186,10 @@ SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1 проверяет фактичес
 ## Phase 96: source provenance coherence
 
 Source-backed D3D9 evidence теперь может быть сопоставлено по единому SHA-256 snapshot. Chain сравнивает hash/size/line-count across STREAM topology, declaration record and canonicalizer reports; смешение данных из разных decompilation snapshots становится явным mismatch. Без переданного source hash статус остаётся not-supplied.
+
+
+## Phase 97: D3D9 declaration bind API
+
+Source analysis now reaches the actual D3D9 declaration-binding boundary: FUN_0082e510 compares against cached declaration state at +0x70c, forwards the declaration object through the device vtable at +0x15c, and is identified as IDirect3DDevice9::SetVertexDeclaration by the interface slot ordering.
+
+This is the missing source-side edge between the recovered 8-byte declaration records and the device state transition. It does not prove the originating MEB property, runtime dump authenticity, or MEB 460/461 -> Type ordinal.
