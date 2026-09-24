@@ -136,3 +136,22 @@ def test_real_bmw_material_extractor_requires_actual_files(monkeypatch,tmp_path)
     missing=tmp_path/'missing.bff'
     with pytest.raises(FileNotFoundError):
         extractor.build_real_bmw_material_binding(missing)
+
+
+def test_real_bmw_material_extractor_accepts_external_shader_source(monkeypatch,tmp_path):
+    primary,_=_setup(monkeypatch,tmp_path,shader_entries=['render/shaders/bodywork.fx','vehicles/shaders/bodywork.fx'])
+    external=tmp_path/'bodywork.fx'
+    external.write_text('float4 main() : COLOR { return 1; }',encoding='utf-8')
+    report=extractor.build_real_bmw_material_binding(primary,shader_source_file=external)
+    assert report['ready'] is True
+    assert report['provenance']['shader_source']['kind']=='external-file'
+    assert report['provenance']['shader_source']['path']==str(external)
+    assert 'shader_source_entry' not in report['provenance']
+
+
+def test_real_bmw_material_extractor_rejects_wrong_external_shader_name(monkeypatch,tmp_path):
+    primary,_=_setup(monkeypatch,tmp_path)
+    external=tmp_path/'glass.fx'
+    external.write_text('void main() {}',encoding='utf-8')
+    with pytest.raises(ValueError,match='does not match material reference'):
+        extractor.build_real_bmw_material_binding(primary,shader_source_file=external)
