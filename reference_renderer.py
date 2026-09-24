@@ -127,7 +127,10 @@ def _execute_vertex_program(
     list[tuple[float, float, float, float]],
     list[dict[tuple[str, int], tuple[float, float, float, float]]],
 ]:
-    validation = validate_vertex_program_inputs(program)
+    validation = validate_vertex_program_inputs(
+        program,
+        available_semantics=semantic_data.keys(),
+    )
     if not validation["valid"]:
         raise ValueError(
             "vertex shader input contract is not supported: "
@@ -166,10 +169,14 @@ def _execute_vertex_program(
 
             if usage == "TEXCOORD" and 0 <= semantic_index <= 4:
                 layer = layer_rows.get(semantic_index)
-            elif usage in {"NORMAL", "TANGENT", "BINORMAL", "BLENDWEIGHT", "BLENDINDICES"} and semantic_index == 0:
+                if layer is None:
+                    layer = semantic_data.get(semantic)
+            elif usage in {
+                "NORMAL", "TANGENT", "BINORMAL", "BLENDWEIGHT", "BLENDINDICES"
+            } and semantic_index == 0:
                 layer = semantic_data.get(semantic)
             else:
-                layer = None
+                layer = semantic_data.get(semantic)
 
             if layer is None:
                 raise ValueError(
@@ -360,7 +367,15 @@ def rasterize_textured_mesh(
     }
     if pixel_program is not None:
         shader = shader_program_from_ir(pixel_program)
-        input_validation = validate_pixel_program_inputs(shader)
+        available_pixel_semantics = set(semantic_data)
+        if vertex_shader is not None:
+            available_pixel_semantics.update(
+                _semantic_key(output) for output in vertex_shader.outputs
+            )
+        input_validation = validate_pixel_program_inputs(
+            shader,
+            available_semantics=available_pixel_semantics,
+        )
         if not input_validation["valid"]:
             raise ValueError(
                 "pixel shader input contract is not supported: "
@@ -397,8 +412,10 @@ def rasterize_textured_mesh(
             layer = (
                 layer_rows.get(semantic_index)
                 if usage == "TEXCOORD"
-                else semantic_data.get(semantic)
+                else None
             )
+            if layer is None:
+                layer = semantic_data.get(semantic)
             if layer is None:
                 target = "UV layer" if usage == "TEXCOORD" else "attribute"
                 raise ValueError(
@@ -479,8 +496,10 @@ def rasterize_textured_mesh(
                         layer = (
                             layer_rows.get(semantic_index)
                             if usage == "TEXCOORD"
-                            else semantic_data.get(semantic)
+                            else None
                         )
+                        if layer is None:
+                            layer = semantic_data.get(semantic)
                         if layer is None:
                             target = "UV layer" if usage == "TEXCOORD" else "attribute"
                             raise ValueError(
