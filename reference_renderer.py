@@ -144,9 +144,7 @@ def _execute_vertex_program(
 
     position_item = output_items.get(("POSITION", 0))
     if position_item is None:
-        position_item = output_items.get(("POSITIONT", 0))
-    if position_item is None:
-        raise ValueError("vertex shader has no POSITION0/POSITIONT0 output")
+        raise ValueError("vertex shader has no POSITION0 output")
 
     clip_positions: list[tuple[float, float, float, float]] = []
     varying_results: list[dict[tuple[str, int], tuple[float, float, float, float]]] = []
@@ -158,7 +156,7 @@ def _execute_vertex_program(
             semantic = _semantic_key(item)
             usage, semantic_index = semantic
 
-            if usage in {"POSITION", "POSITIONT"} and semantic_index == 0:
+            if usage == "POSITION" and semantic_index == 0:
                 values = list(vertex[:3])
                 while len(values) < 3:
                     values.append(0.0)
@@ -211,7 +209,7 @@ def _execute_vertex_program(
 
         semantics: dict[tuple[str, int], tuple[float, float, float, float]] = {}
         for key, item in output_items.items():
-            if key in {("POSITION", 0), ("POSITIONT", 0)}:
+            if key == ("POSITION", 0):
                 continue
             register = _register_index(item.get("register"))
             value = outputs.get(str(register))
