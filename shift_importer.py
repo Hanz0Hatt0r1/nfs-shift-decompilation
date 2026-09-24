@@ -2409,6 +2409,28 @@ def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
 
 
 
+def cmd_render_command_constant_parity(args: argparse.Namespace) -> int:
+    """Validate MaterialConstantPayload/uniform ranges against RenderCommand constants."""
+    from render_command_constant_parity import validate_render_command_constant_parity
+
+    command = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    report = validate_render_command_constant_parity(command)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_meb_runtime_usage_bridge(args: argparse.Namespace) -> int:
     """Build an evidence-backed MEB Usage-ordinal -> D3D9 Usage-byte bridge."""
     from meb_runtime_usage_bridge import build_usage_ordinal_bridge
@@ -2988,6 +3010,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeDrawCorrelation/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_draw_correlation)
+
+    p = sp.add_parser("render-command-constant-parity", help="validate MaterialConstantPayload/uniform ranges against RenderCommand constants")
+    p.add_argument("input", help="SHIFT.RenderCommand/1 JSON")
+    p.add_argument("output", help="SHIFT.RenderCommandConstantParity/1 JSON")
+    p.set_defaults(fn=cmd_render_command_constant_parity)
 
     p = sp.add_parser("meb-runtime-usage-bridge", help="derive a MEB Usage-ordinal to D3D9 Usage-byte map from exact same-resource runtime declarations")
     p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")

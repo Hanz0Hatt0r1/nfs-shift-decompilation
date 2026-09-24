@@ -65,3 +65,8 @@ Use `meb_runtime_usage_bridge.py` to derive MEB Usage ordinals from exact same-r
 ## Capture schema
 
 `SHIFT.D3D9RuntimeCaptureSchema/1` is enforced by `d3d9_runtime_trace.load_events`. Use `validate-d3d9-capture` to validate a raw JSONL capture before semantic correlation. The schema checks structure only; resource identity, shader identity and Usage mappings remain separate evidence layers.
+
+
+## RenderCommand constants
+
+Use `render-command-constant-parity` to validate c-register ranges and 16-byte offsets between `MaterialUniformBinding/1`, `MaterialConstantPayload/1` and `RenderCommand/1`. The unified BMW gate runs this check automatically for constant-bearing commands.
