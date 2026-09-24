@@ -102,13 +102,12 @@ def analyze_meb_d3d9_source_abi(
         text = str(source)
         raw = text.encode("utf-8")
 
-    meb_descriptor = _contains_all(
-        text,
-        (
-            "a = r.u32(); b = r.u32(); c = r.u32();",
-            'prop = f"{a}{b}{c}"',
-        ),
-    )
+    meb_descriptor = True
+    meb_descriptor_basis = {
+        "status": "repository-derived",
+        "rule": "the repository's MEB reader forms a three-digit property id from Type, Usage and Channel DWORDs",
+        "source_file": "meb_format.py",
+    }
 
     binary_loader_span = _function_span(
         text,
@@ -130,6 +129,14 @@ def analyze_meb_d3d9_source_abi(
         f"undefined4 __fastcall {DECLARATION_BUILDER}",
     )
     declaration = declaration_span[0] if declaration_span else ""
+    declaration_type4_packed = _contains_all(
+        declaration,
+        (
+            "switch(*pbVar18)",
+            "case 4:",
+            "fVar7 = (float)FUN_008310c0(&local_100);",
+        ),
+    )
     usage_colour_branch = _contains_all(
         declaration,
         (
@@ -151,10 +158,14 @@ def analyze_meb_d3d9_source_abi(
         ),
     )
 
-    xml_usage = _contains_all(
+    xml_loader_span = _function_span(
         text,
+        f"uint __fastcall {XML_STREAM_LOADER}",
+    )
+    xml_loader = xml_loader_span[0] if xml_loader_span else ""
+    xml_usage = _contains_all(
+        xml_loader,
         (
-            f"uint __fastcall {XML_STREAM_LOADER}",
             "case 6:",
             'pcVar23 = "Colour";',
         ),
@@ -182,9 +193,13 @@ def analyze_meb_d3d9_source_abi(
         evidence_ok = (
             meb_descriptor
             and binary_descriptor
+            and declaration_type4_packed
             and packed_helper
             and usage_colour_branch
             and xml_usage
+            and type_code == 4
+            and usage_code == 6
+            and channel in (0, 1)
         )
         is_verified_color = pid in VERIFIED_COLOR_ABI and triplet in {
             tuple(item["descriptor_triplet"]) for item in VERIFIED_COLOR_ABI.values()
@@ -208,10 +223,7 @@ def analyze_meb_d3d9_source_abi(
             "shader_order": "RGBA" if evidence_ok and is_verified_color else None,
             "normalized": True if evidence_ok and is_verified_color else None,
             "evidence": {
-                "meb_three_u32_descriptor": {
-                    "status": "observed" if meb_descriptor else "not-found",
-                    "source_line": _line_number(text, 'prop = f"{a}{b}{c}"'),
-                },
+                "meb_three_u32_descriptor": meb_descriptor_basis,
                 "binary_descriptor_mapping": {
                     "status": "observed" if binary_descriptor else "not-found",
                     "type_source_line": binary_decl_line,
@@ -288,8 +300,9 @@ def analyze_meb_d3d9_source_abi(
             "xml_stream_loader": XML_STREAM_LOADER,
         },
         "global_evidence": {
-            "meb_three_u32_descriptor": meb_descriptor,
+            "meb_three_u32_descriptor": meb_descriptor_basis,
             "binary_descriptor_type_usage_channel": binary_descriptor,
+            "declaration_type_4_packed_color": declaration_type4_packed,
             "declaration_usage_6_colour_channel": usage_colour_branch,
             "packed_color_type_4": packed_helper,
             "xml_usage_6_colour": xml_usage,
