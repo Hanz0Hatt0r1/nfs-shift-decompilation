@@ -290,3 +290,27 @@ def test_reference_shader_only_rounds_written_address_components():
         inputs={0: (1.0, 1.5, 0.0, 0.0)},
     )
     assert result["status"] == "executed"
+
+
+
+def test_reference_shader_returns_all_outputs_for_vertex_stage():
+    mov = Instruction(
+        0, 1, "MOV", 0, 3, 0, False,
+        [_dst(6, 0), _src(1, 0)],
+    )
+    result = execute_shader(
+        _vertex_program([mov]),
+        inputs={0: (1.0, 0.5, -0.25, 1.0)},
+    )
+    assert result["status"] == "executed"
+    assert result["outputs"]["0"] == [1.0, 0.5, -0.25, 1.0]
+
+
+def test_validate_vertex_program_input_contract_rejects_unknown_semantic():
+    from shader_reference import validate_vertex_program_inputs
+
+    program = _vertex_program([])
+    program.inputs = [{"usage": "NORMAL", "index": 0, "register": "v1"}]
+    result = validate_vertex_program_inputs(program)
+    assert result["valid"] is False
+    assert "vertex-input:unsupported:NORMAL:0" in result["blocking_reasons"]
