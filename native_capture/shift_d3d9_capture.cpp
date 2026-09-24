@@ -263,6 +263,153 @@ bool write_backbuffer_ppm(
     return ok;
 }
 
+
+
+bool texture_stage_enabled(DWORD stage) {
+    const char* env = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_STAGES");
+    if (!env || !*env) return true;
+    std::string text(env);
+    std::size_t pos = 0;
+    while (pos <= text.size()) {
+        const std::size_t comma = text.find(',', pos);
+        const std::string token = text.substr(
+            pos, comma == std::string::npos ? std::string::npos : comma - pos);
+        if (!token.empty()) {
+            char* end = nullptr;
+            const unsigned long value = std::strtoul(token.c_str(), &end, 0);
+            if (end && *end == '\0' && value == stage) return true;
+        }
+        if (comma == std::string::npos) break;
+        pos = comma + 1;
+    }
+    return false;
+}
+
+bool write_surface_ppm(
+    IDirect3DDevice9* device,
+    IDirect3DSurface9* source,
+    const std::string& output_path) {
+    if (!device || !source) return false;
+
+    D3DSURFACE_DESC desc{};
+    if (FAILED(source->GetDesc(&desc))) return false;
+    const bool supported =
+        desc.Format == D3DFMT_A8R8G8B8 ||
+        desc.Format == D3DFMT_X8R8G8B8 ||
+        desc.Format == D3DFMT_R5G6B5;
+    if (!supported || desc.Width == 0 || desc.Height == 0) return false;
+
+    IDirect3DSurface9* staging = nullptr;
+    if (FAILED(device->CreateOffscreenPlainSurface(
+            desc.Width, desc.Height, desc.Format,
+            D3DPOOL_SYSTEMMEM, &staging, nullptr))) {
+        return false;
+    }
+    bool ok = SUCCEEDED(device->GetRenderTargetData(source, staging));
+    D3DLOCKED_RECT locked{};
+    bool locked_ok = false;
+    if (ok) {
+        ok = SUCCEEDED(staging->LockRect(&locked, nullptr, D3DLOCK_READONLY));
+        locked_ok = ok;
+    }
+    if (ok) {
+        std::ofstream image(output_path, std::ios::binary | std::ios::trunc);
+        ok = image.is_open();
+        if (ok) {
+            image << "P6\n" << desc.Width << " " << desc.Height << "\n255\n";
+            for (UINT y = 0; y < desc.Height && ok; ++y) {
+                const auto* row =
+                    static_cast<const unsigned char*>(locked.pBits) +
+                    static_cast<std::size_t>(y) * locked.Pitch;
+                for (UINT x = 0; x < desc.Width; ++x) {
+                    unsigned char rgb[3]{};
+                    if (desc.Format == D3DFMT_R5G6B5) {
+                        const auto value =
+                            *reinterpret_cast<const std::uint16_t*>(row + x * 2);
+                        rgb[0] = static_cast<unsigned char>(((value >> 11) & 0x1f) * 255 / 31);
+                        rgb[1] = static_cast<unsigned char>(((value >> 5) & 0x3f) * 255 / 63);
+                        rgb[2] = static_cast<unsigned char>((value & 0x1f) * 255 / 31);
+                    } else {
+                        const auto* pixel = row + x * 4;
+                        rgb[0] = pixel[2];
+                        rgb[1] = pixel[1];
+                        rgb[2] = pixel[0];
+                    }
+                    image.write(reinterpret_cast<const char*>(rgb), sizeof(rgb));
+                    if (!image) {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (locked_ok) staging->UnlockRect();
+    staging->Release();
+    return ok;
+}
+
+bool dump_texture_contents(
+    IDirect3DDevice9* device,
+    IDirect3DBaseTexture9* texture,
+    DWORD stage,
+    unsigned long long frame,
+    std::vector<std::string>& output_paths) {
+    if (!env_enabled("SHIFT_D3D9_CAPTURE_TEXTURE_CONTENTS") ||
+        !device || !texture || !texture_stage_enabled(stage)) {
+        return false;
+    }
+
+    const char* dir_env = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_DIR");
+    std::string dir = (dir_env && *dir_env) ? dir_env : ".";
+    if (!dir.empty() && dir.back() != '\\' && dir.back() != '/') dir.push_back('\\');
+    CreateDirectoryA(dir.c_str(), nullptr);
+
+    std::ostringstream base;
+    base << dir << "shift_d3d9_texture_s" << stage << "_" 
+         << reinterpret_cast<std::uintptr_t>(texture) << "_frame_" << frame;
+
+    if (texture->GetType() == D3DRTYPE_TEXTURE) {
+        IDirect3DSurface9* surface = nullptr;
+        if (FAILED(static_cast<IDirect3DTexture9*>(texture)->GetSurfaceLevel(0, &surface))) {
+            return false;
+        }
+        const std::string path = base.str() + ".ppm";
+        const bool ok = write_surface_ppm(device, surface, path);
+        surface->Release();
+        if (ok) output_paths.push_back(path);
+        return ok;
+    }
+
+    if (texture->GetType() == D3DRTYPE_CUBETEXTURE) {
+        static const D3DCUBEMAP_FACES faces[] = {
+            D3DCUBEMAP_FACE_POSITIVE_X,
+            D3DCUBEMAP_FACE_NEGATIVE_X,
+            D3DCUBEMAP_FACE_POSITIVE_Y,
+            D3DCUBEMAP_FACE_NEGATIVE_Y,
+            D3DCUBEMAP_FACE_POSITIVE_Z,
+            D3DCUBEMAP_FACE_NEGATIVE_Z,
+        };
+        bool any = false;
+        for (std::size_t index = 0; index < 6; ++index) {
+            IDirect3DSurface9* surface = nullptr;
+            if (FAILED(static_cast<IDirect3DCubeTexture9*>(texture)->GetCubeMapSurface(
+                    faces[index], 0, &surface))) {
+                continue;
+            }
+            std::ostringstream path;
+            path << base.str() << "_face_" << index << ".ppm";
+            if (write_surface_ppm(device, surface, path.str())) {
+                output_paths.push_back(path.str());
+                any = true;
+            }
+            surface->Release();
+        }
+        return any;
+    }
+    return false;
+}
+
 void patch_object_vtable(
     void* object,
     std::size_t count,
@@ -489,6 +636,15 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"stage\":" << stage;
         append_texture_descriptor_json(f, texture);
+        std::vector<std::string> texture_snapshots;
+        if (dump_texture_contents(self, texture, stage, g_frame.load(), texture_snapshots)) {
+            f << ","resource_snapshot_paths":[";
+            for (std::size_t i = 0; i < texture_snapshots.size(); ++i) {
+                if (i) f << ",";
+                f << CaptureWriter::quote(texture_snapshots[i]);
+            }
+            f << "]";
+        }
         writer().write_event("set_texture", f.str());
     }
     return hr;
