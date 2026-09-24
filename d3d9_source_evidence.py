@@ -48,10 +48,11 @@ def _line_numbers(source: str, needle: str) -> list[int]:
 
 def _source_line_anchors(source: str, filename_fragment: str) -> list[dict[str, int | str]]:
     """Extract decompiler line -> original source line anchors from diagnostics."""
+    normalized_path = re.escape(filename_fragment).replace(r"\\", r"\\+")
     pattern = re.compile(
         re.escape("FUN_0062de50(")
         + r'[^,]+,".*?'
-        + re.escape(filename_fragment)
+        + normalized_path
         + r'",0x([0-9A-Fa-f]+),'
     )
     anchors: list[dict[str, int | str]] = []
@@ -158,11 +159,7 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
         ),
     )
 
-    type_table_chain = (
-        type_table_accessor
-        and xml_type_table_chain
-        and declaration_record_layout
-    )
+    type_table_chain = type_table_accessor and xml_type_table_chain
 
     type_table_call_lines = [
         line
