@@ -57,3 +57,14 @@ def test_runtime_golden_gate_blocks_render_command(tmp_path):
     report=validate_runtime_golden_gate(m,r,usage_map_path=u)
     assert report['ready'] is False
     assert 'render-command:not-ready' in report['blocking_reasons']
+
+def test_runtime_golden_gate_propagates_vertex_input_mismatch(tmp_path):
+    m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'
+    material=_material()
+    runtime=_runtime()
+    runtime['frames'][0]['shader_permutation_identity']['payload']['vertex']['inputs']=[{'register':'v0','usage':'NORMAL','index':0}]
+    m.write_text(json.dumps(material)); r.write_text(json.dumps(runtime)); u.write_text(json.dumps({'6':10}))
+    report=validate_runtime_golden_gate(m,r,usage_map_path=u)
+    assert report['ready'] is False
+    assert 'vertex-input:layout-semantic-missing:NORMAL0' in report['blocking_reasons']
+    assert report['vertex_input_parity']['status'] == 'partial'
