@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 90** — source-backed D3D9 Type/STREAM/declaration-chain evidence. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 90** — source-backed D3D9 Type/STREAM/declaration-chain evidence. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
