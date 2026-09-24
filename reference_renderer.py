@@ -560,6 +560,7 @@ def render_textured_static_draw(
     vertex_program: dict[str, Any] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
     external_texture_resources: dict[int, dict[str, Any]] | None = None,
+    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw, optionally executing the embedded vertex shader."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -840,6 +841,10 @@ def render_textured_render_command(
                 ("BLENDWEIGHT", 0): mesh.get("bone_weights"),
                 ("BLENDINDICES", 0): mesh.get("bone_indices"),
             }.items()
+            if rows
+        } | {
+            (str(key[0]).upper(), int(key[1])): rows
+            for key, rows in (semantic_rows or {}).items()
             if rows
         },
     )
