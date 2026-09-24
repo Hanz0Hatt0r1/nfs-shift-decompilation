@@ -49,9 +49,9 @@ def build_shader_permutation_identity(data: bytes, *, vertex_offset: int, pixel_
             'instruction_count': pb.instruction_count,
             'inputs': _semantic_rows(pixel.inputs),
             'outputs': _semantic_rows(pixel.outputs),
-            'samplers': sorted([dict(x) for x in pixel.samplers], key=lambda x: (x.get('name',''), x.get('register',-1))),
+            'samplers': sorted(int(x) for x in pixel.samplers),
             'sampler_types': {str(k): v for k, v in sorted(pixel.sampler_types.items())},
-            'constants': sorted([dict(x) for x in pixel.constants], key=lambda x: (x.get('name',''), x.get('register',-1))),
+            'constants': sorted(int(x) for x in pixel.constants),
             'unsupported_opcodes': list(pixel.unsupported_opcodes),
         },
     }
