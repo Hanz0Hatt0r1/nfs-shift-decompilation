@@ -35,8 +35,10 @@ def test_vertex_layout_exposes_deterministic_repack_offsets():
 def test_vertex_abi_keeps_color_channel_order_ambiguous():
     from vertex_layout import property_abi
     abi = property_abi("460")
-    assert abi["confidence"] == "ambiguous-channel-order"
+    assert abi["confidence"] == "ambiguous-declaration-and-channel-order"
     assert abi["channel_order_candidates"] == ["RGBA", "BGRA"]
+    assert abi["source_evidence"]["function"] == "FUN_008310c0"
+    assert abi["source_evidence"]["little_endian_memory_order"] == "BGRA"
 
 
 def test_vertex_layout_exposes_explicit_abi_evidence_status():

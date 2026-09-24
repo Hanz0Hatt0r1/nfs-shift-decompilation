@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 71. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 72. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -170,3 +170,15 @@ The unresolved 460/461 investigation can now scan the actual BFF corpus directly
 ## Phase 71: Skinned RenderCommand reference
 
 A dedicated `render_skinned_render_command_reference()` entry point now executes a ready skinned RenderCommand through the desktop shader reference. The same command-level payload carries SkinPose, skin attributes, textures and ShaderProgram/1 into the reference raster path. The next step is comparing this oracle with the generated GLES 3.1 draw setup and then resolving the remaining COLOR0/1 ABI evidence.
+
+## Phase 72: packed-color declaration evidence
+
+The full `SHIFT.exe.c` source now provides a concrete packed-color observation:
+`FUN_008310c0` forms `0xAARRGGBB` from float RGBA input, yielding BGRA memory order on
+the original little-endian target, and `FUN_00854e70` writes that packed value during
+vertex-buffer conversion. The project records this as supporting evidence for the
+`D3DCOLOR` candidate but does not promote MEB 460/461 to verified, because the exact
+source declaration linkage is still not proven.
+
+The evidence report now names the coupled D3D9 candidates explicitly and retains
+`selection=not-selected`.

@@ -12,7 +12,7 @@ def test_color_abi_preserves_rgba_and_bgra_candidates():
     result = build_color_abi_evidence("460", raw)
     assert result["format"] == "SHIFT.ColorABIEvidence/1"
     assert result["property_id"] == "460"
-    assert result["confidence"] == "ambiguous-channel-order"
+    assert result["confidence"] == "ambiguous-declaration-and-channel-order"
     by_order = {x["order"]: x for x in result["candidates"]}
     assert interpret_color_bytes(raw, "RGBA") == raw
     assert interpret_color_bytes(raw, "BGRA") == bytes((30, 20, 10, 40, 120, 110, 100, 130))
@@ -71,7 +71,7 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
     assert proc.returncode == 0, proc.stdout + proc.stderr
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["format"] == "SHIFT.ColorABIEvidence/1"
-    assert result["confidence"] == "ambiguous-channel-order"
+    assert result["confidence"] == "ambiguous-declaration-and-channel-order"
     assert result["comparison"]["selection"] == "not-selected"
     matches = {row["order"]: row for row in result["comparison"]["candidate_results"]}
     assert matches["BGRA"]["exact_match"] is True
@@ -469,3 +469,22 @@ def test_color_evidence_bff_corpus_can_fail_on_decode_error(monkeypatch, tmp_pat
         fail_on_error=True,
     )
     assert shift_importer.cmd_color_evidence_bff_corpus(args) == 1
+
+
+def test_color_abi_exposes_d3d9_declaration_candidates():
+    from color_abi import interpret_color_d3d9
+
+    raw = bytes((0x12, 0x34, 0x56, 0x78))
+    result = build_color_abi_evidence("460", raw)
+    assert result["confidence"] == "ambiguous-declaration-and-channel-order"
+    by_order = {row["order"]: row for row in result["candidates"]}
+    assert by_order["RGBA"]["d3d9_type"] == "UBYTE4N"
+    assert by_order["RGBA"]["memory_order"] == "RGBA"
+    assert by_order["BGRA"]["d3d9_type"] == "D3DCOLOR"
+    assert by_order["BGRA"]["memory_order"] == "BGRA"
+    assert by_order["BGRA"]["shader_order"] == "RGBA"
+    assert interpret_color_d3d9(raw, "UBYTE4N") == raw
+    assert interpret_color_d3d9(raw, "D3DCOLOR") == bytes((0x56, 0x34, 0x12, 0x78))
+    assert result["source_evidence"]["function"] == "FUN_008310c0"
+    assert result["source_evidence"]["status"] == "supporting-packed-color-evidence-not-MEB-declaration-proof"
+

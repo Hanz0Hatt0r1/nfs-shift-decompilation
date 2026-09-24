@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 71** — command-level skinned reference. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 72** — command-level skinned reference. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -292,3 +292,15 @@ The neutral renderer contract now has a common submission shape for skinned draw
 ## Phase 71: Skinned RenderCommand reference
 
 Desktop reference теперь умеет принимать готовый `SHIFT.RenderCommand/1` skinned draw и пройти всю локальную цепочку `SkinPose → SkinnedMeshReference → embedded VS → semantic linkage → PS → raster`. Это делает `RenderCommand/1` реальной точкой входа для cross-backend verification, а не только метаданными для GLES.
+
+
+## Phase 72 — source-backed COLOR evidence
+
+Полный `SHIFT.exe.c` добавил новый уровень доказательств для `COLOR0/1`: оригинальный
+renderer содержит packed-color helper `FUN_008310c0`, который собирает RGBA float4 в
+`0xAARRGGBB`; на little-endian Windows это соответствует BGRA bytes. Этот helper также
+участвует в vertex-buffer conversion path `FUN_00854e70`.
+
+Это сужает пространство гипотез, но не закрывает ABI полностью: связь именно MEB 460/461
+с `D3DCOLOR` ещё должна быть доказана отдельным declaration evidence. Поэтому runtime
+по-прежнему не выбирает candidate автоматически.
