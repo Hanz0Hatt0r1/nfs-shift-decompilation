@@ -67,4 +67,14 @@ def test_material_preview_paints_only_matching_material():
     assert painted_triangles == 1
     assert ppm.startswith(b"P6\n64 64\n255\n")
     assert bytes((12, 12, 12)) in ppm
-    payload = ppm.split(b"255\\n", 1)[1]\n    colored = [payload[i:i + 3] for i in range(0, len(payload), 3) if payload[i:i + 3] != bytes((12, 12, 12))]\n    assert colored\n    assert any(pixel[0] > pixel[1] * 2 and pixel[0] > pixel[2] for pixel in colored)\n
+    payload = ppm.split(b"255\\n", 1)[1]
+    colored = [
+        payload[i:i + 3]
+        for i in range(0, len(payload), 3)
+        if payload[i:i + 3] != bytes((12, 12, 12))
+    ]
+    assert colored
+    assert any(
+        pixel[0] > pixel[1] * 2 and pixel[0] > pixel[2]
+        for pixel in colored
+    )
