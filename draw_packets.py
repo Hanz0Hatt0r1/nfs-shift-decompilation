@@ -93,7 +93,14 @@ def resolve_ref(
 
 
 def _resource_ref(rec: dict[str, Any]) -> dict[str, Any]:
-    return {"archive": rec.get("archive"), "path": rec.get("path")}
+    result = {"archive": rec.get("archive"), "path": rec.get("path")}
+    digest = rec.get("resource_sha256") or rec.get("sha256")
+    if digest:
+        result["resource_sha256"] = digest
+    size = rec.get("size") or rec.get("uncompressed_size")
+    if size is not None:
+        result["resource_size"] = size
+    return result
 
 
 def _analysis(rec: dict[str, Any] | None) -> dict[str, Any]:
