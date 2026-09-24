@@ -1707,6 +1707,35 @@ def cmd_d3d9_memory_table_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_pe_evidence(args: argparse.Namespace) -> int:
+    """Resolve recovered D3D9 virtual addresses in a PE image."""
+    from d3d9_pe_evidence import analyze_d3d9_pe_image_file
+
+    override = int(args.image_base, 0) if args.image_base else None
+    report = analyze_d3d9_pe_image_file(
+        args.input,
+        image_base_override=override,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "image_base": report["image"]["image_base"],
+        "machine": report["image"]["machine"],
+        "type_table_file_backed": report["tables"]["type_code_table"]["file_backed"],
+        "type_name_pointer_table_file_backed": report["tables"]["type_name_pointer_table"]["file_backed"],
+        "decoded_type_name_count": sum(
+            item["status"] == "decoded" for item in report["type_name_pointers"]
+        ),
+        "meb_460_461_mapping": report["conclusions"]["meb_460_461_to_type_code"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2030,6 +2059,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.D3D9MemoryTableEvidence/1 JSON output")
     p.add_argument("--include-channel-layout-hint", action="store_true")
     p.set_defaults(fn=cmd_d3d9_memory_table_evidence)
+
+    p = sp.add_parser("source-d3d9-pe-evidence", help="resolve D3D9 table addresses in a PE image")
+    p.add_argument("input", help="SHIFT.exe or another PE image")
+    p.add_argument("output", help="SHIFT.PEImageEvidence/1 JSON output")
+    p.add_argument("--image-base", help="override PE image base, e.g. 0x400000")
+    p.set_defaults(fn=cmd_d3d9_pe_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")

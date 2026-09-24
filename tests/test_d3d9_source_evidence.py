@@ -503,3 +503,89 @@ def test_d3d9_memory_table_evidence_fails_closed_for_partial_dump():
     assert result["tables"]["size"]["status"] == "out-of-range"
     assert result["type_name_pointers"][0]["status"] == "unavailable"
     assert result["proven_type_code_prefix"]["status"] == "partial"
+
+
+def _make_minimal_pe32():
+    import struct
+
+    image_base = 0x00400000
+    section_rva = 0x00790000
+    raw_pointer = 0x00000400
+    raw_size = 0x1000
+    section = bytearray(raw_size)
+
+    def put_words(address, words):
+        offset = address - (image_base + section_rva)
+        struct.pack_into("<" + "I" * len(words), section, offset, *words)
+
+    put_words(0x00B90088, list(range(20)))
+    put_words(0x00B900D8, [17] * 17)
+    put_words(0x00B9011C, list(range(9)))
+    put_words(0x00B90140, [100 + i for i in range(14)])
+
+    string_addresses = [
+        image_base + section_rva + 0x300 + i * 16
+        for i in range(17)
+    ]
+    put_words(0x00B901D0, string_addresses)
+    for ordinal, address in enumerate(string_addresses):
+        payload = f"TYPE_{ordinal}".encode("ascii") + bytes([0])
+        offset = address - (image_base + section_rva)
+        section[offset : offset + len(payload)] = payload
+
+    dos = bytearray(0x80)
+    struct.pack_into("<H", dos, 0, 0x5A4D)
+    struct.pack_into("<I", dos, 0x3C, 0x80)
+
+    pe = bytearray(b"PE")
+    pe += bytes([0, 0])
+    pe += struct.pack("<HHIIIHH", 0x14C, 1, 0, 0, 0, 224, 0)
+    optional = bytearray(224)
+    struct.pack_into("<H", optional, 0, 0x10B)
+    struct.pack_into("<I", optional, 28, image_base)
+    pe += optional
+    pe += b".data" + bytes([0]) * 3
+    pe += struct.pack(
+        "<IIIIIIHHI",
+        raw_size,
+        section_rva,
+        raw_size,
+        raw_pointer,
+        0,
+        0,
+        0,
+        0,
+        0,
+    )
+    image = dos + pe
+    image += bytes(raw_pointer - len(image))
+    image += section
+    return bytes(image)
+
+
+def test_d3d9_pe_evidence_maps_real_ghidra_virtual_addresses():
+    from d3d9_pe_evidence import analyze_d3d9_pe_image
+
+    report = analyze_d3d9_pe_image(_make_minimal_pe32())
+    assert report["format"] == "SHIFT.PEImageEvidence/1"
+    assert report["image"]["image_base"] == "0x00400000"
+    assert report["image"]["pointer_size"] == 4
+    assert report["tables"]["type_code_table"]["file_backed"] is True
+    assert report["tables"]["type_code_table"]["file_offset"] == 0x488
+    assert report["tables"]["type_code_table"]["hex"] is not None
+    assert report["type_name_pointers"][0]["string"] == "TYPE_0"
+    assert report["type_name_pointers"][16]["string"] == "TYPE_16"
+    assert report["type_name_pointers"][16]["status"] == "decoded"
+    assert report["conclusions"]["meb_460_461_to_type_code"]["status"] == "not-proven"
+
+
+def test_d3d9_pe_evidence_rejects_invalid_image():
+    from d3d9_pe_evidence import PEFormatError, parse_pe
+
+    for payload in (b"", b"MZ", b"not-a-pe"):
+        try:
+            parse_pe(payload)
+        except PEFormatError:
+            pass
+        else:
+            raise AssertionError("invalid PE image was accepted")

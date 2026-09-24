@@ -191,6 +191,10 @@ formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
 
+## Phase 82: direct PE image resolver
+
+Phase 82 adds direct PE address resolution for `SHIFT.exe`. The resolver parses the DOS/PE headers, section table, image base and maps the recovered virtual addresses for `DAT_00b90088` and `PTR_DAT_00b901d0` to file offsets. It distinguishes file-backed bytes from runtime-only memory and leaves `MEB 460/461 -> type code` unresolved until the actual declaration table contents are evidenced.
+
 ## Phase 81: raw memory table decoder
 
 Phase 81 adds a deterministic decoder for raw loaded-memory evidence of the opaque D3D9 tables. This is the bridge needed to recover the actual Type-table values from a future Ghidra/WinDbg memory export; the tool does not treat the absence of such bytes as a verified ABI.
