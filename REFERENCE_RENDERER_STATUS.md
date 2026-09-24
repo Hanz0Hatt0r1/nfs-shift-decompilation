@@ -78,3 +78,8 @@ The shader reference now executes `samplerCube` against `SHIFT.ReferenceCubeText
 ## Phase 60: skinning bridge preparation
 
 Phase 60 does not change the renderer entry point yet; instead it provides a validated `SHIFT.SkinnedMeshReference/1` mesh adapter that can be consumed by the existing reference rasterizer. This keeps the next VS/PS integration change small and testable.
+
+
+## Phase 61: skinned reference render entry point
+
+`render_skinned_draw_reference()` now applies the explicit `SHIFT.SkinPose/1` through `SHIFT.SkinnedMeshReference/1` and feeds the resulting neutral mesh into the existing desktop geometry oracle. This establishes one rendering surface for static and skinned geometry while deliberately keeping shader/material execution as a separate layer.
