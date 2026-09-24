@@ -68,3 +68,8 @@
 - explicit ABI confidence for properties whose original D3D9 declaration has not been proven.
 
 For `460/461` color properties the channel order remains explicitly ambiguous (`RGBA` vs `BGRA`); no renderer path silently chooses one.
+
+
+## Phase 83: verified COLOR declaration
+
+The BMW M3 E36 vehicle path now has source-correlated COLOR declaration evidence. MEB 460/461 use the repository's three-DWORD `(Type,Usage,Channel)` identifier convention, and the recovered Win loader consumes that descriptor in the same order. The resulting `(4,6,0/1)` mappings are `D3DCOLOR`, `Colour`, and COLOR0/COLOR1, with BGRA source memory order and RGBA shader order. The remaining BMW render work is shader/material execution, not COLOR ABI selection.
