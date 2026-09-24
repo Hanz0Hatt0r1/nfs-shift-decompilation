@@ -19,7 +19,9 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
         primitive_index = 0
     command = material_slice.get('render_command') or {}
     submeshes = command.get('submeshes') or []
-    if primitive_index < 0 or primitive_index >= len(submeshes):
+    if len(submeshes) == 1:
+        expected = submeshes[0] or {}
+    elif primitive_index < 0 or primitive_index >= len(submeshes):
         reasons.append('material:primitive-not-found')
         expected = {}
     else:
