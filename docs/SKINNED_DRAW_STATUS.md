@@ -59,3 +59,8 @@ The CPU reference can now materialize a complete transformed mesh from an explic
 ## Phase 61: desktop reference integration
 
 A ready `SHIFT.SkinnedDraw/1` can now be rendered through the desktop reference path after explicit SkinPose deformation. The integration does not derive poses from BAB/BAS and does not decode animation payloads; it only connects the already-proven CPU skinning contract to rasterization.
+
+
+## Phase 62: shader reference integration
+
+A skinned draw can now be tested through the embedded VS→PS software reference after explicit SkinPose deformation. The integration requires explicit vertex/pixel programs and a reference texture; it does not infer shader permutation, animation pose or missing resources.
