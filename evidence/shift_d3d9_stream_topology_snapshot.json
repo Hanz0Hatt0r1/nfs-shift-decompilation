@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.D3D9StreamTopologySnapshot/1",
+  "source": {
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "bytes": 38993813,
+    "line_count": 1471366
+  },
+  "function": "FUN_00854e70",
+  "input_arrays": {
+    "stream_array": {
+      "object_offset": "0x6c",
+      "element_width": 4
+    },
+    "type_ordinal_array": {
+      "object_offset": "0x70",
+      "element_width": 4
+    },
+    "usage_ordinal_array": {
+      "object_offset": "0x74",
+      "element_width": 4
+    },
+    "channel_array": {
+      "object_offset": "0x78",
+      "element_width": 4,
+      "value_width": 1
+    }
+  },
+  "per_stream_group": {
+    "base": "this + 0x24",
+    "stride": 20,
+    "fields": {
+      "stream_id": {
+        "offset": 0,
+        "width": 4
+      },
+      "element_count": {
+        "offset": 4,
+        "width": 4
+      },
+      "byte_size": {
+        "offset": 8,
+        "width": 4
+      },
+      "resource_ref": {
+        "offset": 12,
+        "width": 4
+      }
+    },
+    "record_pointer_array_offset": 8
+  },
+  "semantics": {
+    "stream_to_group": "observed",
+    "group_to_record_list": "observed",
+    "type_to_group_byte_size": "observed",
+    "meb_460_461_to_type": "not-proven"
+  }
+}
