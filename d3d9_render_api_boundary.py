@@ -98,6 +98,9 @@ def analyze_d3d9_render_api_boundary(source: str) -> dict[str, Any]:
         start, end, body = _function_body(source, function)
         api = API_METHODS[key]
         obs = _observation(body, api["byte_offset"])
+        if key == "declaration" and _contains_call(body, "FUN_0082e510"):
+            obs["status"] = "observed"
+            obs["source_offset_representation"] = "delegated"
         obs.update({
             "function": function,
             "line_start": start,
