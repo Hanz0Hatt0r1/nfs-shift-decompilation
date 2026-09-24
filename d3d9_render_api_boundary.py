@@ -52,7 +52,7 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
     lines = source.splitlines()
     start = None
     for index, line in enumerate(lines, 1):
-        if re.match(rf"^\w.*\b{re.escape(function)}\(", line):
+        if re.match(rf"^\w.*\b{re.escape(function)}\s*\(", line):
             start = index
             break
     if start is None:
