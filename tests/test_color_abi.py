@@ -12,7 +12,7 @@ def test_color_abi_preserves_rgba_and_bgra_candidates():
     result = build_color_abi_evidence("460", raw)
     assert result["format"] == "SHIFT.ColorABIEvidence/1"
     assert result["property_id"] == "460"
-    assert result["confidence"] == "ambiguous-channel-order"
+    assert result["confidence"] == "ambiguous-declaration-and-channel-order"
     by_order = {x["order"]: x for x in result["candidates"]}
     assert interpret_color_bytes(raw, "RGBA") == raw
     assert interpret_color_bytes(raw, "BGRA") == bytes((30, 20, 10, 40, 120, 110, 100, 130))
@@ -71,7 +71,7 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
     assert proc.returncode == 0, proc.stdout + proc.stderr
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["format"] == "SHIFT.ColorABIEvidence/1"
-    assert result["confidence"] == "ambiguous-channel-order"
+    assert result["confidence"] == "ambiguous-declaration-and-channel-order"
     assert result["comparison"]["selection"] == "not-selected"
     matches = {row["order"]: row for row in result["comparison"]["candidate_results"]}
     assert matches["BGRA"]["exact_match"] is True
