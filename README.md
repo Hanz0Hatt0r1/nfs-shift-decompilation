@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 92** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 93** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -425,3 +425,8 @@ CLI:
 ## Phase 92 — declaration instance in the full chain
 
 `validate-d3d9-declaration-chain` теперь принимает `--declaration-instance`. При переданном отчёте `SHIFT.D3D9DeclarationInstanceEvidence/1` chain добавляет отдельный обязательный check: instance должен быть полным, иметь stride 8 и сохранять подтверждённую D3DVERTEXELEMENT9-shaped форму. Несовпадение runtime instance блокирует итог `observed`; отсутствие instance сохраняет source-only режим без ложного утверждения runtime proof.
+
+
+## Phase 93 — declaration instance integrity
+
+Instance decoder теперь распознаёт полный `D3DDECL_END`-образный sentinel (`Stream=0xffff, Offset=0, Type=0x11, Method=0, Usage=0, UsageIndex=0`) отдельно от обычных элементов. Общая chain дополнительно fail-closed при несоответствии stride/shape даже если входной report ошибочно помечен `match`. Это подготовка к обработке реальных memory dumps без изменения MEB-части.
