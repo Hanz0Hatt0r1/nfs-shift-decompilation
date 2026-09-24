@@ -54,3 +54,18 @@ def test_bmw_paint_shader_gate_blocks_sampler_register_drift():
     report=validate_bmw_paint_shader_gate(binding)
     assert report['ready'] is False
     assert 'sampler:diffuseMap:register-mismatch' in report['blocking_reasons']
+
+def test_bmw_paint_shader_gate_accepts_material_binding_bindings_shape():
+    binding=_binding()
+    rows=[]
+    for row in binding['textures']:
+        rows.append(dict(row))
+    rows.extend([
+        {'binding':'external-or-specialised','sampler':'environmentMap','d3d9_sampler_register':3},
+        {'binding':'external-or-specialised','sampler':'sShadowMap_f1_0','d3d9_sampler_register':0},
+    ])
+    binding.pop('textures')
+    binding['bindings']=rows
+    binding.pop('external_samplers')
+    report=validate_bmw_paint_shader_gate(binding)
+    assert report['ready'] is True
