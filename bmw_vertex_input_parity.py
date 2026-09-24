@@ -6,15 +6,7 @@ from typing import Any, Mapping
 from bmw_runtime_shader_join import join_runtime_shader
 
 FORMAT = "SHIFT.BMWVertexInputParity/1"
-TYPE_BY_PROPERTY = {
-    '200': 1, '220': 2, '240': 2, '250': 2,
-    '130': 1, '131': 1, '132': 1, '133': 1, '134': 1,
-    '230': 2, '231': 2, '232': 2, '233': 2, '234': 2,
-    '310': 3, '460': 4, '580': 5,
-}
-USAGE_ORDINAL_BY_PROPERTY = {
-    '200': 0, '310': 1, '220': 3, '240': 6, '250': 7, '460': 10, '580': 2,
-}
+from bmw_runtime_parity import TYPE_BY_PROPERTY, USAGE_ORDINAL_BY_PROPERTY
 
 def _layout_attrs(material_slice: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     mesh = material_slice.get('mesh') or {}
