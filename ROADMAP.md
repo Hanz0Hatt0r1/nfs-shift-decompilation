@@ -688,3 +688,16 @@ body, hood, trunk, bumpers, chassis, interior, steering wheel plus generic
 wheel/tire/brake/mirror resources. This is a preview boundary only; the
 authoritative material path remains
 `VHF -> MEB -> BMT -> FX -> FXO -> RenderCommand -> reference renderer`.
+
+## Phase 156: VHF material texture preview
+
+The real vehicle scene can now resolve an exact BMT diffuseTexture reference and
+its DDS payload and apply that texture only to matching MEB primitives in a
+multi-part VHF scene. This creates a visual checkpoint between raw geometry and
+full shader execution.
+
+The mode is explicitly `texture-only`: it does not select or emulate
+undocumented bodywork lighting, envmap, material-constant or FXO behavior. The
+next step is to feed the already-proven `BMT -> bodywork.fx -> FXO` selection
+into the RenderCommand shader-reference path and supply the explicit external
+environment/shadow resources.
