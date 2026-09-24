@@ -1,4 +1,5 @@
 from pathlib import Path
+import hashlib
 from types import SimpleNamespace
 import json
 
@@ -35,7 +36,7 @@ def _golden():
         "format": "SHIFT.BMWGoldenAssetManifest/1",
         "golden": {
             "resource": slicer.TARGET_MEB,
-            "resource_sha256": "9" * 64,
+            "resource_sha256": hashlib.sha256(b"x").hexdigest(),
         },
         "mesh": {
             "vertex_count": 4,
