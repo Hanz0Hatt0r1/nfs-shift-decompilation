@@ -39,3 +39,8 @@ The opaque BAB corpus fingerprint report is now exposed through `shift_importer.
 ## Phase 60: skinned mesh CPU reference
 
 `skinned_reference.py` now exposes `SHIFT.SkinnedMeshReference/1`, which turns a validated `SHIFT.SkinnedDraw/1` and explicit `SHIFT.SkinPose/1` into a transformed neutral mesh. Position uses the existing four-influence linear-blend reference; NORMAL/TANGENT/BINORMAL use the direction-only transform. UV, color and influence streams remain unchanged. No parent-pose composition, inverse-bind inference or BAB keyframe decoding is introduced.
+
+
+## Phase 61: desktop render bridge
+
+Explicit SkinPose deformation is now connected to the desktop geometry oracle through `render_skinned_draw_reference()`. This provides an end-to-end position/raster smoke path for skinned draws while preserving the separation between pose application and BAB animation decoding.
