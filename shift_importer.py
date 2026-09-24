@@ -1324,11 +1324,39 @@ def cmd_bab_payload_diff(args: argparse.Namespace) -> int:
 
 
 def cmd_color_evidence(args: argparse.Namespace) -> int:
-    """Build non-selecting COLOR0/COLOR1 ABI evidence from a raw packed stream."""
+    """Build non-selecting COLOR0/COLOR1 ABI evidence from raw bytes or MEB JSON."""
     from color_abi import build_color_abi_evidence, compare_color_candidate
 
-    raw = Path(args.input).read_bytes()
+    source = "raw"
+    if args.mesh_json:
+        source = "meb-json"
+        payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+        field = "colors" if args.property_id == "460" else "colors2"
+        rows = payload.get(field)
+        if rows is None:
+            raise ValueError(
+                f"MEB JSON has no {field} stream for property {args.property_id}"
+            )
+        try:
+            raw = bytes(
+                component
+                for row in rows
+                for component in row
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"MEB JSON {field} stream is not a numeric 4-byte color array"
+            ) from exc
+    else:
+        raw = Path(args.input).read_bytes()
     report = build_color_abi_evidence(args.property_id, raw)
+    report["source"] = {
+        "kind": source,
+        "input": str(args.input),
+    }
+    if args.mesh_json:
+        report["source"]["stream"] = field
+        report["source"]["vertex_count"] = len(rows)
     if args.expected_rgba:
         expected = Path(args.expected_rgba).read_bytes()
         report["comparison"] = compare_color_candidate(
@@ -1615,6 +1643,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("property_id", choices=["460", "461"])
     p.add_argument("input", help="raw packed 4-byte color stream")
     p.add_argument("output", help="SHIFT.ColorABIEvidence/1 JSON output")
+    p.add_argument(
+        "--mesh-json",
+        action="store_true",
+        help="interpret input as MEB mesh_to_jsonable/1 JSON and read colors/colors2",
+    )
     p.add_argument(
         "--expected-rgba",
         help="optional raw RGBA8 stream used only for candidate comparison; no candidate is auto-selected",
