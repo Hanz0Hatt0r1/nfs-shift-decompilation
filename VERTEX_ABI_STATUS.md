@@ -114,3 +114,8 @@ The recovered `FUN_00854e70` declaration conversion switch contains every type c
 This proves the semantics of the recovered type-code switch, but it still does not prove `MEB 460/461 -> type code 4`. The mesh ABI therefore remains ambiguous until the declaration/table linkage is recovered.
 
 The full supplied source snapshot is recorded without including the game source itself in `evidence/shift_d3d9_type_switch_snapshot.json`.
+
+
+## Phase 80: recovered Usage semantics
+
+The recovered XML stream loader iterates a fixed usage domain `0..8` and resolves the usage name through `PTR_s_Position_00b901a8`. Source-visible entries are `Position`, `Weights`, `Normal`, an opaque `DAT_00b1d188` entry, `Tangent`, `Binormal`, `Colour`, `Depth`, and `Indices`. Usage code `6 -> Colour` is now machine-readable. This does not resolve the separate Type table, so COLOR0/1 remain ambiguous.

@@ -191,6 +191,10 @@ formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
 
+## Phase 80: recovered Usage semantics
+
+Phase 80 records the source-backed XML STREAM Usage table and the exact `Colour = usage 6` branch. The usage table is independent from the opaque primitive Type table; no MEB 460/461 declaration type is selected.
+
 ## Phase 79: D3D9 lookup-table shape evidence
 
 Phase 79 records symbol-address spans, 4-byte table indexing, the 17-entry XML type ordinal domain and the exact declaration/type lookup callsite. The report intentionally labels adjacent-address capacity as a layout hint because Ghidra emitted the global initializers as opaque `undefined` objects.
