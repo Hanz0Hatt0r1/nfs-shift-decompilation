@@ -1092,15 +1092,27 @@ def render_skinned_draw_reference(
     mesh: dict[str, Any],
     output: str | Path,
     *,
+    image: dict[str, Any] | None = None,
     width: int = 512,
     height: int = 512,
     mvp: list[list[float]] | None = None,
     normalize_weights: bool = False,
     strict_indices: bool = True,
+    shader_reference: bool = False,
+    vertex_program: dict[str, Any] | None = None,
+    pixel_program: dict[str, Any] | None = None,
+    shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    texture_images: dict[int, dict[str, Any]] | None = None,
+    samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Apply an explicit SkinPose and render the resulting mesh with the geometry oracle."""
+    """Render a SkinnedDraw after explicit SkinPose deformation.
+
+    Shader execution is opt-in and uses the same embedded VS→PS reference path
+    as RenderCommand textured draws. No animation or bind-pose inference occurs.
+    """
     if draw.get("format") != "SHIFT.SkinnedDraw/1":
         raise ValueError("draw packet is not SHIFT.SkinnedDraw/1")
+
     skinned_mesh = skin_mesh_reference(
         draw,
         mesh,
@@ -1114,14 +1126,50 @@ def render_skinned_draw_reference(
         "world_matrix": None,
         "submeshes": draw.get("submeshes", []) or [],
     }
-    result = render_static_draw(
-        static_draw,
-        skinned_mesh["mesh"],
-        output,
-        width=width,
-        height=height,
-        mvp=mvp,
-    )
+
+    if shader_reference:
+        if image is None:
+            raise ValueError("shader_reference for SkinnedDraw requires an explicit reference image")
+        if vertex_program is None or pixel_program is None:
+            raise ValueError(
+                "shader_reference for SkinnedDraw requires explicit vertex_program and pixel_program"
+            )
+        result = render_textured_static_draw(
+            static_draw,
+            skinned_mesh["mesh"],
+            image,
+            output,
+            sampler=None,
+            width=width,
+            height=height,
+            mvp=mvp,
+            pixel_program=pixel_program,
+            shader_constants=shader_constants,
+            texture_images=texture_images,
+            samplers_by_sampler=samplers_by_sampler,
+            semantic_rows={
+                key: rows
+                for key, rows in {
+                    ("NORMAL", 0): skinned_mesh["mesh"].get("normals"),
+                    ("TANGENT", 0): skinned_mesh["mesh"].get("tangents"),
+                    ("BINORMAL", 0): skinned_mesh["mesh"].get("tangents2"),
+                    ("BLENDWEIGHT", 0): skinned_mesh["mesh"].get("bone_weights"),
+                    ("BLENDINDICES", 0): skinned_mesh["mesh"].get("bone_indices"),
+                }.items()
+                if rows
+            },
+            vertex_program=vertex_program,
+        )
+    else:
+        result = render_static_draw(
+            static_draw,
+            skinned_mesh["mesh"],
+            output,
+            width=width,
+            height=height,
+            mvp=mvp,
+        )
+
     result["format"] = "SHIFT.SkinnedDrawReference/1"
     result["skinning"] = {
         "format": skinned_mesh["format"],
@@ -1130,6 +1178,7 @@ def render_skinned_draw_reference(
         "influence_validation": skinned_mesh["influence_validation"],
         "streams": skinned_mesh["streams"],
     }
+    result["shader_reference"] = bool(shader_reference)
     return result
 
 def render_draw_packet(
