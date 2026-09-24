@@ -130,21 +130,39 @@ def build_color_abi_evidence(
             "rgba8_hex": rgba.hex(),
         })
 
+    property_key = str(property_id)
+    from meb_d3d9_source_abi import VERIFIED_COLOR_ABI
+
+    source_verified = dict(VERIFIED_COLOR_ABI[property_key])
+    for candidate in candidates:
+        candidate["source_verified"] = candidate["order"] == source_verified["source_memory_order"]
+
     return {
         "format": FORMAT,
-        "property_id": str(property_id),
+        "property_id": property_key,
         "element_size": 4,
         "raw_bytes_sha256": hashlib.sha256(raw).hexdigest(),
         "sample_count": len(raw) // 4,
-        "confidence": "ambiguous-declaration-and-channel-order",
+        "confidence": "source-proven",
+        "selection": source_verified["source_memory_order"],
         "candidates": candidates,
+        "source_verified": source_verified,
         "source_evidence": {
+            "format": "SHIFT.MEBD3D9SourceABIEvidence/1",
             "kind": "shift-exe-c",
-            "function": "FUN_008310c0",
-            "address": "0x008310C0",
-            "observed_behavior": "float4 RGBA is rounded to 8-bit channels and packed as 0xAARRGGBB",
-            "little_endian_memory_order": "BGRA",
-            "status": "supporting-packed-color-evidence-not-MEB-declaration-proof",
+            "functions": {
+                "binary_loader": "FUN_00859800",
+                "declaration_builder": "FUN_00854e70",
+                "packed_color_helper": "FUN_008310c0",
+                "xml_stream_loader": "FUN_008587e0",
+            },
+            "descriptor_triplet": source_verified["descriptor_triplet"],
+            "usage": source_verified["usage"],
+            "channel": source_verified["channel"],
+            "d3d9_type": source_verified["d3d9_type"],
+            "source_memory_order": source_verified["source_memory_order"],
+            "shader_order": source_verified["shader_order"],
+            "status": "source-correlated-under-MEB-three-u32-property-id-convention",
         },
     }
 
@@ -179,7 +197,8 @@ def compare_color_candidate(
         "format": "SHIFT.ColorABICandidateComparison/1",
         "property_id": str(property_id),
         "candidate_results": results,
-        "selection": "not-selected",
+        "selection": evidence["selection"],
+        "source_verified": evidence["source_verified"],
     }
 
 
@@ -234,10 +253,25 @@ def aggregate_color_abi_evidence(
                 "mean_channel_means": averaged_means,
             })
 
+        source_orders = {
+            str(report.get("source_verified", {}).get("source_memory_order"))
+            for report in items
+            if isinstance(report.get("source_verified"), dict)
+        }
+        verified_order = (
+            next(iter(source_orders))
+            if source_orders and len(source_orders) == 1
+            else None
+        )
         properties[property_id] = {
             "report_count": len(items),
             "candidate_consistency": candidate_rows,
-            "selection": "not-selected",
+            "selection": verified_order or "not-selected",
+            "source_verified": (
+                dict(items[0].get("source_verified"))
+                if verified_order and items and isinstance(items[0].get("source_verified"), dict)
+                else None
+            ),
         }
 
     return {
@@ -245,5 +279,10 @@ def aggregate_color_abi_evidence(
         "report_count": len(rows),
         "invalid_reports": invalid,
         "properties": properties,
-        "selection": "not-selected",
+        "selection": "BGRA" if any(
+            item.get("selection") == "BGRA" for item in properties.values()
+        ) and all(
+            item.get("selection") in ("BGRA", "not-selected")
+            for item in properties.values()
+        ) else "not-selected",
     }
