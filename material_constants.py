@@ -116,19 +116,18 @@ def pack_material_constant_payload(uniform_binding: dict[str, Any]) -> dict[str,
             reasons.append("uniform-payload:value-invalid:" + str(name))
             continue
 
-        expected_components = width * register_count
-        if len(values) > expected_components:
+        capacity = register_count * REGISTER_WIDTH
+        if len(values) > capacity:
             binding_reports.append({
                 "name": name,
                 "status": "blocked",
                 "reason": "value-exceeds-register-range",
                 "value_components": len(values),
-                "capacity_components": register_count * REGISTER_WIDTH,
+                "capacity_components": capacity,
             })
             reasons.append("uniform-payload:value-exceeds-register-range:" + str(name))
             continue
 
-        capacity = register_count * REGISTER_WIDTH
         padded = values + [0.0] * (capacity - len(values))
         binding_reports.append({
             "name": name,
