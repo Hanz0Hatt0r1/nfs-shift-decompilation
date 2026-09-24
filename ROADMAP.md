@@ -150,3 +150,8 @@ The existing `color_abi.py` evidence logic is now exposed through `shift_importe
 ## Phase 67: MEB JSON COLOR evidence
 
 COLOR ABI evidence can now be generated directly from MEB JSON output: 460 → `colors`, 461 → `colors2`. The report retains both channel-order candidates and optional external RGBA comparison without promoting an ABI choice to verified.
+
+
+## Phase 68: direct BFF/MEB COLOR evidence
+
+The color investigation now has a direct archive path: BFF entry → MEB decoder → property 460/461 stream → ColorABIEvidence/1. This keeps the evidence tied to the original resource bytes and records the resource SHA256 and property payload metadata. ABI selection remains blocked until external declaration/channel-order evidence is proven.
