@@ -2409,6 +2409,30 @@ def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
 
 
 
+def cmd_source_bmw_vehicle_identity(args: argparse.Namespace) -> int:
+    """Verify the source-level BMW M3 vehicle selector in SHIFT.exe.c."""
+    from source_vehicle_identity import validate_source_vehicle_file
+
+    report = validate_source_vehicle_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "selector_case": report["selector_case"],
+        "selector_line": report["selector_line"],
+        "selector_value": report["selector_value"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_bmw_paint_asset_contract(args: argparse.Namespace) -> int:
     """Validate the exact BMW M3 golden MEB -> paint material relationship."""
     from bmw_m3_paint_asset_contract import validate_bmw_paint_asset
@@ -3054,6 +3078,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeDrawCorrelation/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_draw_correlation)
+
+    p = sp.add_parser("source-bmw-vehicle-identity", help="verify the source-level BMW M3 vehicle selector in SHIFT.exe.c")
+    p.add_argument("input", help="decompiled SHIFT.exe.c source file")
+    p.add_argument("output", help="SHIFT.SourceVehicleIdentityEvidence/1 JSON")
+    p.set_defaults(fn=cmd_source_bmw_vehicle_identity)
 
     p = sp.add_parser("bmw-paint-asset-contract", help="validate the exact BMW M3 golden MEB -> paint material relationship")
     p.add_argument("input", help="SHIFT.BMWGoldenAssetManifest/1 JSON")
