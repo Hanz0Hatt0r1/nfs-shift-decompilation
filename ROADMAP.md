@@ -783,3 +783,13 @@ reference path without introducing a second texture representation.
 
 The remaining gap for a first fully shader-executed BMW body frame is the actual
 runtime capture from the game and sufficient readable s0/s3 texture contents.
+
+## Phase 170: one-command BMW runtime capture pipeline
+
+The runtime workflow is now exposed as one reproducible command that chains real
+BMW material extraction, D3D9 JSONL trace parsing, exact FXO permutation
+selection, runtime RenderContract construction and optional conversion of
+captured texture snapshots into the existing reference-texture ABI.
+
+The command remains fail-closed: missing runtime capture, usage mapping, MEB
+instance attribution or external texture contents remain explicit blockers.
