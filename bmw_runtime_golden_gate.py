@@ -17,14 +17,14 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     runtime = json.loads(Path(runtime_path).read_text(encoding='utf-8'))
     parity = validate_runtime_parity_files(material_path, runtime_path, usage_map_path=usage_map_path, require_constant_values=True)
     draw_correlation = correlate_runtime_draw(material, runtime)
+    reasons = list(parity.get('blocking_reasons') or [])
     reasons.extend(draw_correlation.get('blocking_reasons') or [])
+
     # Vertex-input parity is evaluated below only when an explicit Usage map is supplied by the caller.
-    vertex_input_parity = None
     if usage_map_path:
         usage_raw = json.loads(Path(usage_map_path).read_text(encoding='utf-8'))
         usage_map = {int(k): int(v) for k, v in usage_raw.items()} if isinstance(usage_raw, dict) else None
         vertex_input_parity = validate_bmw_vertex_input_parity(material, runtime, usage_map=usage_map)
-        reasons.extend(vertex_input_parity.get('blocking_reasons') or [])
     else:
         vertex_input_parity = {
             'format': 'SHIFT.BMWVertexInputParity/1',
@@ -32,11 +32,9 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
             'ready': False,
             'blocking_reasons': ['vertex-input:usage-map-missing'],
         }
-        reasons.append('vertex-input:usage-map-missing')
+    reasons.extend(vertex_input_parity.get('blocking_reasons') or [])
 
     command = material.get('render_command')
-    reasons = list(parity.get('blocking_reasons') or [])
-    reasons.extend(draw_correlation.get('blocking_reasons') or [])
     command_status = 'not-supplied'
     integrity = runtime.get('integrity') or {}
     if integrity.get('status') != 'observed':
