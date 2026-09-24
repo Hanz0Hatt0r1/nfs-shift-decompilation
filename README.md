@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 63** — SkinnedDraw → RenderCommand with explicit SkinPose. Импорт/IR, material linking, shader IR, external samplers и cubemap decode уже собраны в единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 64** — RenderCommand → GLES 3.1 skinning ABI. Импорт/IR, material linking, shader IR, external samplers и cubemap decode уже собраны в единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -124,7 +124,7 @@ Skinning разделён на независимые уровни:
 4. **GLES ABI** — std140 palette + BLENDWEIGHT0/BLENDINDICES0.
 5. **Animation decoding** — отдельная задача; opaque BAB tail не интерпретируется без evidence.
 
-Phase 60 добавляет `SHIFT.SkinnedMeshReference/1`: explicit SkinPose применяется к POSITION и известным direction streams, а UV/color/influence streams остаются без изменения.
+Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключил его к desktop reference renderer, phase 62 — к embedded VS→PS execution, phase 63 — к `RenderCommand/1`, а phase 64 выводит тот же skin payload в GLES 3.1 ABI.
 
 ## Быстрый старт
 
