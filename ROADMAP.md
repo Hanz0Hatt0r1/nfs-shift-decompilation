@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 68. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
+Baseline `main` is at phase 71. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
