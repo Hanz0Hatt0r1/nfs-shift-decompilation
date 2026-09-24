@@ -197,7 +197,7 @@ Phase 82 adds direct PE address resolution for `SHIFT.exe`. The resolver parses 
 
 ## Phase 83: STREAM declaration record semantics
 
-Phase 83 turns the recovered 8-byte STREAM descriptor construction into machine-readable evidence. This closes the XML-side path `Type/Usage/Channel -> declaration record`, but the MEB property-to-Type ordinal link remains the active blocker.
+Phase 83 turns the recovered 8-byte STREAM descriptor construction into machine-readable evidence and identifies its field layout as `D3DVERTEXELEMENT9`-shaped. This closes the XML-side path `Type/Usage/Channel -> declaration record`; the MEB property-to-Type ordinal link remains the active blocker.
 
 ## Phase 81: raw memory table decoder
 
