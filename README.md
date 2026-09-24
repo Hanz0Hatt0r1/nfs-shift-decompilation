@@ -319,6 +319,10 @@ GLES contract не считается эквивалентной без этог
 
 Phase 82 adds `source-d3d9-pe-evidence`, a pure-Python PE32/PE32+ resolver that maps the recovered Ghidra virtual addresses into file offsets and inspects the D3D9 lookup-table regions directly when they are file-backed. It can also dereference the 17 `PTR_DAT_00b901d0` entries to printable ASCII strings. Loader-initialized/BSS bytes remain explicitly unavailable; MEB 460/461 mapping is still not selected automatically.
 
+## Phase 87 — D3D9 Stream grouping topology
+
+Phase 87 records the constructor-side topology behind the declaration ABI. `FUN_00854e70` receives per-element arrays for Stream, Type ordinal, Usage ordinal and Channel, groups elements by Stream using a `0x14`-byte per-stream group, stores pointers to the shared 8-byte declaration records, and accumulates per-stream byte size through `DAT_00b8eef0[Type]`. No MEB property ID is inferred from this chain.
+
 ## Phase 86 — D3D9 Type semantic validation profile
 
 Phase 86 adds `d3d9_type_profile.py`: a deterministic profile for Type codes `0..16` with expected source-component counts and packed element byte sizes. `validate-d3d9-type-profile` compares these expectations to a phase-81 raw-memory evidence report and distinguishes `match`, `mismatch`, and `partial`/unavailable data. The profile is explicitly a validation oracle; it does not synthesize missing table bytes or resolve MEB 460/461 linkage.
