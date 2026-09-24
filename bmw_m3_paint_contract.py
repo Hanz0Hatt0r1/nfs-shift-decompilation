@@ -54,6 +54,7 @@ def get_bmw_paint_contract() -> dict[str, Any]:
     return {'format':FORMAT,'status':'documented','contract':PAINT_CONTRACT}
 
 def validate_material_binding(binding: Mapping[str, Any]) -> dict[str, Any]:
+    binding = normalize_material_binding(binding)
     reasons=[]; checks=[]
     shader = str(binding.get('shader') or binding.get('shader_path') or '').replace('\\','/').rsplit('/', 1)[-1].lower()
     expected_shader = PAINT_CONTRACT['shader'].lower()
