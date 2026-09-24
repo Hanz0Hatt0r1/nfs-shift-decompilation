@@ -36,3 +36,10 @@ The shader-backed reference path now supports multiple 2D sampler registers thro
 ## Phase 51: semantic TEXCOORD layers
 
 The shader-backed reference renderer now maps `TEXCOORD0..4` declarations to MEB UV property layers `130..134` by semantic index, interpolating the selected layer into the shader register declared by the pixel program. Missing required layers are explicit execution errors; COLOR0/1 remains outside this automatic path because its channel order is still unresolved.
+
+
+## Phase 54: vertex-shader reference execution
+
+The shader-backed desktop oracle now optionally executes the embedded SHIFT.ShaderProgram/1 vertex stage before rasterization. The supported boundary is deliberately narrow: POSITION0 plus TEXCOORD0..4 vertex inputs, POSITION0/POSITIONT0 and TEXCOORD0..4 outputs, semantic (usage,index) matching into the pixel stage, and perspective-correct interpolation of the resulting varyings. When the vertex stage is active it owns clip-space POSITION transformation, so CPU-side world/MVP transforms are not applied a second time.
+
+Unsupported vertex semantics, missing vertex outputs, non-finite clip positions and unmatched VS/PS varyings remain hard execution errors.
