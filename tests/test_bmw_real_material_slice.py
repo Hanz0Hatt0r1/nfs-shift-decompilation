@@ -104,7 +104,10 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
         vertex_count=4,
         triangle_count=1,
         property_descriptors=[{"id":"200","words":[2,0,0]},{"id":"460","words":[4,6,0]}],
-        primitives=[\n            SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/bmw_m3_e36_badging.mtx"),\n            SimpleNamespace(first_index=150,index_count=6294,material="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"),\n        ],
+        primitives=[
+            SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/bmw_m3_e36_badging.mtx"),
+            SimpleNamespace(first_index=150,index_count=6294,material="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"),
+        ],
     )
     monkeypatch.setattr(slicer, "read_meb", lambda data: mesh)
     monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":m.property_descriptors,"primitives":[{"first_index":0,"index_count":3,"material":m.primitives[0].material}]})
