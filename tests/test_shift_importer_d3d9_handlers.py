@@ -18,3 +18,16 @@ def test_d3d9_evidence_cli_handlers_are_registered():
         )
         assert action.cmd == command
         assert callable(action.fn)
+
+
+def test_bmw_runtime_render_contract_cli_is_registered():
+    parser = shift_importer.build_parser()
+    args = parser.parse_args([
+        "bmw-runtime-render-contract",
+        "material.json",
+        "runtime.json",
+        "selection.json",
+        "contract.json",
+    ])
+    assert args.cmd == "bmw-runtime-render-contract"
+    assert callable(args.fn)
