@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 78** — command-level skinned reference + source-backed D3D9 type semantics. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 83** — source-correlated MEB→D3D9 COLOR ABI закрыт для 460/461. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и source-backed declaration evidence теперь образуют единую проверяемую цепочку.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -69,9 +69,9 @@
 | — | TEXCOORD5 | **shader-proven, MEB source unresolved** |
 | 310 | BLENDWEIGHT0 | FLOAT32x4 |
 | 580 | BLENDINDICES0 | UINT8x4 |
-| 460 / 461 | COLOR0 / COLOR1 | **ambiguous** |
+| 460 / 461 | COLOR0 / COLOR1 | **D3DCOLOR • BGRA source • RGBA shader** |
 
-`COLOR0/1` сознательно остаются заблокированными там, где выбор D3D9 declaration или RGBA/BGRA byte order влияет на результат.
+`COLOR0/1` теперь имеют source-correlated ABI: MEB 460 = `(4,6,0)`, MEB 461 = `(4,6,1)`, D3D9 `D3DCOLOR`, source memory order `BGRA`, shader order `RGBA`. Альтернативные candidates сохраняются только для forensic comparison.
 
 ## Shader reference
 
@@ -314,6 +314,10 @@ influences, SkinPose и bind-palette. Для матриц используетс
 
 Любое расхождение остаётся machine-readable blocker; готовность RenderCommand и
 GLES contract не считается эквивалентной без этого parity check.
+
+## Phase 83 — MEB → D3D9 COLOR ABI
+
+Phase 83 closes the previous 460/461 blocker using the recovered source chain rather than an initializer guess. The MEB reader constructs each three-digit property id from three DWORDs; the original `LoadBinaryMeshFromResource` consumes the corresponding 12-byte descriptor as `Type`, `Usage`, `Channel`; source usage code `6` is `Colour`; and declaration type code `4` is the packed `D3DCOLOR` path backed by `FUN_008310c0`. Therefore 460/461 resolve to `D3DCOLOR` with `BGRA` source bytes and `RGBA` shader values, while the MEB layout, RenderCommand and desktop reference renderer now carry that ABI explicitly.
 
 ## Phase 82 — direct PE image resolver
 
