@@ -810,3 +810,14 @@ Runtime texture snapshot metadata in the one-command capture pipeline is now
 kept outside the report payload. The JSON stores only frame/stage/pointer/path
 and decoded dimensions/format; pixel contents remain in the captured PPM files
 and are converted on demand to ReferenceTexture/1 or ReferenceCubeTexture/1.
+
+## Phase 169: one-command runtime capture
+
+A Windows PowerShell runner now installs the D3D9 proxy temporarily, preserves
+the original `d3d9.dll`, launches the retail executable from its own directory,
+captures the JSONL trace, optionally captures PPM backbuffer frames, and restores
+the original DLL even on process failure.
+
+This turns the remaining runtime evidence step into a reproducible one-command
+operation. The resulting capture is consumed by the existing D3D9 trace and
+exact BMW shader-selection tools.
