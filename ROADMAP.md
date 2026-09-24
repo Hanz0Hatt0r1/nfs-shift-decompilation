@@ -119,3 +119,8 @@ The phase intentionally does not infer animation frames, parent-composed transfo
 ## Phase 61: skinned reference render
 
 The desktop reference renderer can now consume a ready SkinnedDraw after explicit SkinPose deformation. The next step is to feed that transformed mesh through the existing VS→PS shader reference path so skinning, material constants, textures and shader semantics can be validated together without deriving pose data from BAB/BAS.
+
+
+## Phase 62: skinned VS→PS reference
+
+The desktop shader reference now accepts a transformed neutral mesh from an explicit SkinPose and runs it through the same embedded VS→PS path as static material draws. This proves the local chain without introducing animation decoding or inverse-bind inference.
