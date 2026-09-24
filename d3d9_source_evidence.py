@@ -1,12 +1,3 @@
-def _source_path_line_numbers(source: str, filename_fragment: str) -> list[int]:
-    """Return all source lines containing an escaped path fragment."""
-    normalized_path = re.escape(filename_fragment).replace(r"\\", r"\\+")
-    pattern = re.compile(normalized_path)
-    return [
-        source.count("\n", 0, match.start()) + 1
-        for match in pattern.finditer(source)
-    ]
-
 """Source-level evidence extractor for the recovered SHIFT.exe Ghidra C output.
 
 This module never promotes an ABI guess. It records only observations that are
