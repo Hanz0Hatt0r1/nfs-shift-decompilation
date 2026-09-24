@@ -99,3 +99,26 @@ def test_runtime_trace_preserves_resource_descriptor():
     assert descriptor["resource_type_name"] == "cube_texture"
     assert descriptor["width"] == 256
     assert descriptor["level_count"] == 9
+
+def test_set_texture_schema_accepts_snapshot_paths():
+    row = {
+        "event": "set_texture",
+        "frame": 7,
+        "stage": 3,
+        "texture_ptr": "0x3333",
+        "resource_snapshot_paths": [
+            "captures/shift_d3d9_texture_s3_13107_frame_7_face_0.ppm",
+        ],
+    }
+    assert validate_capture_event(row) == []
+
+
+def test_set_texture_schema_rejects_non_string_snapshot_paths():
+    row = {
+        "event": "set_texture",
+        "frame": 7,
+        "stage": 3,
+        "texture_ptr": "0x3333",
+        "resource_snapshot_paths": [123],
+    }
+    assert "texture:snapshot-paths-invalid" in validate_capture_event(row)

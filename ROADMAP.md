@@ -773,3 +773,15 @@ This does not create a shader reconstruction by itself: the PPM is the retail
 runtime frame, while the SVG is only a review artifact. The next runtime task
 is to capture one BMW M3 body frame and use its exact shader/resource state for
 the offline reference render.
+
+## Phase 168: runtime texture-content snapshots
+
+The D3D9 capture producer can now optionally dump render-target-backed 2D and
+cube texture contents for selected sampler stages. The JSONL bind event keeps
+the exact stage/pointer identity and adds `resource_snapshot_paths` when data
+was captured.
+
+This is the bridge needed to turn runtime s0/s3 object bindings into actual
+offline shader inputs when the game exposes them as readable render targets.
+Unsupported/default-pool resources remain explicit gaps rather than inferred
+textures.

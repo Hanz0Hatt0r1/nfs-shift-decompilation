@@ -86,3 +86,18 @@ The hook runs before `Present`, uses a system-memory surface and currently
 supports A8R8G8B8, X8R8G8B8 and R5G6B5 backbuffers. Screenshot capture is
 optional and failure is reported as a separate JSONL event; it does not change
 normal D3D9 rendering behavior.
+
+### Optional runtime texture-content snapshots
+
+For render-target-backed 2D/cube textures, the producer can also try to save the
+actual surface contents:
+
+    set SHIFT_D3D9_CAPTURE_TEXTURE_CONTENTS=1
+    set SHIFT_D3D9_CAPTURE_TEXTURE_DIR=C:\shift-capture\textures
+    set SHIFT_D3D9_CAPTURE_TEXTURE_STAGES=0,3
+
+Only stages selected by `SHIFT_D3D9_CAPTURE_TEXTURE_STAGES` are attempted.
+The default is all stages. 2D textures are written as one PPM; cube textures
+are written as six face PPMs. Unsupported/non-render-target resources simply
+produce no snapshot and the original `set_texture` event remains intact.
+The event records `resource_snapshot_paths` when a snapshot was captured.
