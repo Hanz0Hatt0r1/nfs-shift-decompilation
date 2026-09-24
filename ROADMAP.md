@@ -793,3 +793,13 @@ captured texture snapshots into the existing reference-texture ABI.
 
 The command remains fail-closed: missing runtime capture, usage mapping, MEB
 instance attribution or external texture contents remain explicit blockers.
+
+## Phase 171: offline exact BMW shader render
+
+A runtime-selected BMW VS/PS pair can now be executed through the existing
+software rasterizer using neutral MEB JSON, real material DDS and explicitly
+captured external texture resources. The renderer is deliberately fail-closed
+when the runtime contract is incomplete or an external sampler has no content.
+
+The first authentic bodywork image therefore only needs a real game capture;
+all offline conversion layers are now in place.
