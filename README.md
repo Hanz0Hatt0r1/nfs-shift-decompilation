@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 93** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 94** — source-backed D3D9 declaration chain теперь умеет включать проверку фактического declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -159,6 +159,18 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
     python shift_importer.py color-evidence-resource VEHICLES.bff cars/bmw_m3_e36/body.meb 460 body-color-evidence.json
     python shift_importer.py color-evidence-corpus evidence/ color-corpus.json
     python shift_importer.py color-evidence-bff-corpus /path/to/bffs color-bff-corpus.json
+
+### D3D9 runtime evidence
+
+Для реального memory dump:
+
+    python shift_importer.py capture-d3d9-memory-declaration dump.bin 0x12340000 declaration-memory.json --offset 0x200 --length 0x200
+
+SHIFT.D3D9MemoryDeclarationEvidence/1 сохраняет endianness, виртуальный адрес начала/конца slice, исходный размер dump, SHA-256 исходника и slice, точные raw bytes и декодированный Stream/Offset/Type/Method/Usage/UsageIndex. Из slice автоматически выделяется declaration array до точного D3DDECL_END-sentinel. Отсутствие sentinel остаётся partial; hash/provenance не считается подтверждением подлинности внешнего dump.
+
+Цепочка может принимать этот отчёт напрямую:
+
+    python shift_importer.py validate-d3d9-declaration-chain         type-profile.json stream-topology.json stream-record.json canonicalizer.json         declaration-chain.json --pe-evidence pe-evidence.json         --runtime-memory-evidence declaration-memory.json
 
 Дополнительные bindings:
 
@@ -430,3 +442,12 @@ CLI:
 ## Phase 93 — declaration instance integrity
 
 Instance decoder теперь распознаёт полный `D3DDECL_END`-образный sentinel (`Stream=0xffff, Offset=0, Type=0x11, Method=0, Usage=0, UsageIndex=0`) отдельно от обычных элементов. Общая chain дополнительно fail-closed при несоответствии stride/shape даже если входной report ошибочно помечен `match`. Это подготовка к обработке реальных memory dumps без изменения MEB-части.
+
+
+## Phase 94 — runtime memory declaration evidence
+
+Добавлен SHIFT.D3D9MemoryDeclarationEvidence/1 — адресно-квалифицированный слой для реальных loaded-memory dump. Он фиксирует base address, slice offset, абсолютный диапазон, little-endian ABI, SHA-256 полного dump и выбранного slice, точные raw bytes и декодированный declaration instance.
+
+Из slice автоматически выделяется массив до точного D3DDECL_END (ffff 0000 11000000). Байты после sentinel сохраняются как post_sentinel_bytes, поэтому широкий memory window не смешивается с самим declaration array. Некратный 8-byte диапазон, отсутствующий sentinel или неконсистентный record дают partial/mismatch, а недостоверность происхождения внешнего dump явно остаётся not-authenticated.
+
+validate-d3d9-declaration-chain теперь принимает --runtime-memory-evidence и fail-closed перепроверяет формат, little-endian, диапазон, длину/raw bytes, SHA-256 slice и вложенный declaration instance. MEB 460/461 → D3D9 Type ordinal по-прежнему not-proven.
