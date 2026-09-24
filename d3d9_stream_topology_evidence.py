@@ -1,8 +1,9 @@
 """Source-backed STREAM grouping topology from FUN_00854e70.
 
 The recovered loader receives per-element arrays for Stream, Type, Usage and
-Channel, groups declaration records by Stream id, and maintains a per-stream
-record pointer array plus a byte-size accumulator.
+vertex-data buffers, groups declaration records by Stream id, and maintains a
+per-stream record pointer array plus byte-size/count state. UsageIndex is
+generated from Usage-specific counters.
 
 This module intentionally does not map MEB property ids to those arrays.
 """
@@ -16,9 +17,9 @@ FUNCTION = "FUN_00854e70"
 GROUP_STRIDE = 0x10
 
 GROUP_FIELDS = {
-    "stream_id": {"group_offset": 0, "width": 4},
+    "byte_size": {"group_offset": 0, "width": 4},
     "element_count": {"group_offset": 4, "width": 4},
-    "byte_size": {"group_offset": 8, "width": 4},
+    "record_pointer_array": {"group_offset": 8, "width": 4},
     "resource_ref": {"group_offset": 0x0C, "width": 4},
 }
 
@@ -129,7 +130,7 @@ def analyze_d3d9_stream_topology(source: str | bytes) -> dict[str, Any]:
                 "if (local_6c == (ushort *)0x3)",
                 "else if (local_6c == (ushort *)0x6)",
                 "local_31 = local_31 + '\\x01';",
-                "local_14._3_1_ + '\\x01'",
+                "local_14 = CONCAT13(local_14._3_1_ + '\\x01',(undefined3)local_14);",
             ),
             function_start,
         ),
