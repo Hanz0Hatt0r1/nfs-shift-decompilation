@@ -407,7 +407,8 @@ def analyze_d3d9_declaration_chain(
         )
         bridge_properties = meb_color_bridge_evidence.get("properties")
         bridge_storage_ok = isinstance(bridge_properties, Mapping) and all(
-            _status(
+            isinstance(bridge_properties.get(property_id), Mapping)
+            and _status(
                 bridge_properties,
                 property_id,
                 "meb_storage",
@@ -415,7 +416,6 @@ def analyze_d3d9_declaration_chain(
             )
             == "observed"
             for property_id in ("460", "461")
-            if isinstance(bridge_properties.get(property_id), Mapping)
         )
         bridge_candidate_codes = [
             int(row.get("code"))
