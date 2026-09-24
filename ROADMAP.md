@@ -387,3 +387,11 @@ The result is a reproducible bridge from an actual archive/resource to the MEB p
 The Phase 105 color bridge now accepts real BFF-backed COLOR evidence as an optional resource proof. It correlates the report property ID with its preserved MEB descriptor, exact descriptor/payload ranges, payload hash, and decoded stream bytes. Multiple reports remain independent for 460 and 461, so a bad or unknown report cannot falsely resolve the other property.
 
 The final Type identity is still not-proven. The next closure condition is a same-instance runtime correlation from this exact MEB resource/payload to the D3D9 declaration record.
+
+## Phase 110: prove the MEB 460/461 descriptor triple
+
+Static analysis now identifies the binary mesh loader `FUN_00859800` as consuming 12-byte triples `[Type ordinal, Usage ordinal, Channel]`, resolving Type and Usage through the recovered D3D9 lookup functions and copying Channel into UsageIndex. The source also contains the `.meb` resource-extension registration and the `LoadBinaryMeshFromResource` diagnostic.
+
+The new descriptor-triple validator consumes exact `MEBMesh.property_descriptors`. Under complete source evidence, 460 must be `[4,6,0]` and 461 must be `[4,6,1]` for a `match`, which resolves their D3D9 Type code to 4. Incorrect descriptors fail as `mismatch`; missing descriptors remain `partial`.
+
+Next target: correlate the resolved Type-4 descriptor with the actual runtime declaration record for the same mesh instance, including the D3D9 Usage byte produced by the opaque usage table.
