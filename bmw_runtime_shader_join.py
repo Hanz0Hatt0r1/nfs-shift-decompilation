@@ -44,16 +44,27 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
     if not expected:
         reasons.append('material:permutation-identity-missing')
     expected_id = expected.get('identity_sha256') if expected else None
+    golden_identity = material_slice.get('golden_identity') or {}
+    expected_resource = str(golden_identity.get('resource') or '')
+    expected_resource_sha = golden_identity.get('resource_sha256')
     expected_samplers = _expected_sampler_registers(material_slice)
     frame_rows = runtime_report.get('frames') or []
     matches = []
     for frame in frame_rows:
         identity = frame.get('shader_permutation_identity') or {}
         same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
-        if same_id:
+        binding = frame.get('vertex_declaration') or {}
+        frame_sha = binding.get('resource_sha256')
+        frame_path = binding.get('resource_path')
+        same_resource = False
+        if expected_resource_sha and frame_sha:
+            same_resource = str(frame_sha) == str(expected_resource_sha)
+        elif expected_resource and frame_path:
+            same_resource = str(frame_path).replace('\\', '/').strip('/').lower() == expected_resource.replace('\\', '/').strip('/').lower()
+        if same_id and same_resource:
             matches.append(frame)
     if expected_id and not matches:
-        reasons.append('runtime:shader-permutation-not-found')
+        reasons.append('runtime:shader-or-resource-instance-not-found')
     candidate_rows = []
     for frame in matches:
         identity = frame.get('shader_permutation_identity') or {}
