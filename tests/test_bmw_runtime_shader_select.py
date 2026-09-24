@@ -129,3 +129,69 @@ def test_select_runtime_shader_rejects_wrong_resource_by_default():
     assert report["blocking_reasons"] == [
         "runtime:exact-shader-and-resource-instance-not-found"
     ]
+
+def test_select_runtime_shader_requires_external_texture_stages():
+    material = _material()
+    material["material_binding"]["bindings"] = [
+        {
+            "binding": "external-or-specialised",
+            "sampler": "sShadowMap_f1_0",
+            "d3d9_sampler_register": 0,
+            "sampler_type": "sampler2D",
+        },
+        {
+            "binding": "external-or-specialised",
+            "sampler": "environmentMap",
+            "d3d9_sampler_register": 3,
+            "sampler_type": "samplerCube",
+        },
+    ]
+    runtime = {
+        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
+        "frames": [{
+            **_frame({
+                "format": "SHIFT.ShaderPermutationIdentity/1",
+                "identity_sha256": "i" * 64,
+            }),
+            "texture_bindings": [],
+        }],
+    }
+    report = select_runtime_shader(material, runtime)
+    assert report["status"] == "not-found"
+    assert report["blocking_reasons"] == [
+        "runtime:exact-shader-and-resource-instance-not-found"
+    ]
+
+
+def test_select_runtime_shader_accepts_external_texture_stage_bindings():
+    material = _material()
+    material["material_binding"]["bindings"] = [
+        {
+            "binding": "external-or-specialised",
+            "sampler": "sShadowMap_f1_0",
+            "d3d9_sampler_register": 0,
+            "sampler_type": "sampler2D",
+        },
+        {
+            "binding": "external-or-specialised",
+            "sampler": "environmentMap",
+            "d3d9_sampler_register": 3,
+            "sampler_type": "samplerCube",
+        },
+    ]
+    runtime = {
+        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
+        "frames": [{
+            **_frame({
+                "format": "SHIFT.ShaderPermutationIdentity/1",
+                "identity_sha256": "i" * 64,
+            }),
+            "texture_bindings": [
+                {"stage": 0, "texture_ptr": "0x100"},
+                {"stage": 3, "texture_ptr": "0x300"},
+            ],
+        }],
+    }
+    report = select_runtime_shader(material, runtime)
+    assert report["status"] == "match"
+    assert report["selected"]["external_texture_stages"] == [0, 3]
