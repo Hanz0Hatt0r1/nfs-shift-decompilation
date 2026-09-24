@@ -114,6 +114,8 @@ def test_bmw_golden_gate_accepts_ready_paint_contract():
 def test_bmw_golden_gate_blocks_missing_bmw_paint_shader_gate():
     golden=_golden()
     packet=_packet()
+    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
+    packet["submeshes"][0]["material"]["ref"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
     packet["submeshes"][0]["material"]["paint_shader_gate"] = None
     report=validate_bmw_golden_gate(golden,packet)
     assert report["ready"] is False
