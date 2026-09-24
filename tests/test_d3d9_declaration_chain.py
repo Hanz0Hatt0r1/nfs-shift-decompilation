@@ -184,3 +184,20 @@ def test_meb_color_bridge_mismatch_blocks_the_chain_when_supplied():
     assert result["status"] == "not-proven"
     assert result["checks"]["meb_color_bridge"]["status"] == "mismatch"
     assert "meb_color_bridge" in result["summary"]["blocking_checks"]
+
+
+def test_meb_color_bridge_missing_one_property_is_not_observed():
+    bridge = _meb_color_bridge()
+    del bridge["properties"]["461"]
+
+    result = analyze_d3d9_declaration_chain(
+        type_profile=_type_profile_match(),
+        stream_topology=_stream_topology(),
+        stream_record=_stream_record(),
+        canonicalizer=_canonicalizer(),
+        meb_color_bridge_evidence=bridge,
+    )
+
+    assert result["status"] == "not-proven"
+    assert result["checks"]["meb_color_bridge"]["status"] == "not-proven"
+    assert "meb_color_bridge" in result["summary"]["blocking_checks"]
