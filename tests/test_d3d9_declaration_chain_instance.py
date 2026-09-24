@@ -75,3 +75,22 @@ def test_declaration_chain_blocks_supplied_mismatched_runtime_instance():
     assert result["checks"]["declaration_instance"]["status"] == "mismatch"
     assert "declaration_instance" in result["summary"]["blocking_checks"]
     assert result["evidence_boundary"]["runtime_declaration_instance"] == "mismatch"
+
+
+def test_declaration_chain_blocks_runtime_instance_with_wrong_stride():
+    inputs = _inputs()
+    result = analyze_d3d9_declaration_chain(
+        **inputs,
+        declaration_instance={
+            "format": "SHIFT.D3D9DeclarationInstanceEvidence/1",
+            "status": "match",
+            "record_stride": 12,
+            "semantic_links": {
+                "d3dvertexelement9_shape": {"status": "observed"},
+            },
+        },
+    )
+
+    assert result["status"] == "not-proven"
+    assert result["checks"]["declaration_instance"]["status"] == "not-proven"
+    assert "declaration_instance" in result["summary"]["blocking_checks"]
