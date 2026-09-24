@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 150. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 151. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -653,3 +653,10 @@ Next: run the strict runtime tracer on an authentic retail capture for the exact
 The strict D3D9 `same_instance_gate` now requires an indexed draw in the same frame as the bound MEB resource and declaration descriptor match. This prevents declaration-only observations from being promoted to runtime instance proof.
 
 Next: supply an authentic retail runtime trace for the exact M3 MEB and run `--require-same-instance` plus the unified BMW runtime golden gate.
+
+
+## Phase 151: BMW M3 BFF intake verifier
+
+`SHIFT.BMWBFFIntakeEvidence/1` now provides a deterministic preflight for the real `BMW_M3_E36.bff`: exact archive size, BFF table parse, unique paint BMT/body MEB entries, extracted MEB size and exact golden MEB SHA. This is the final intake check before running the real material-slice pipeline.
+
+Next: run the intake and `bmw-real-material-slice` in an environment with the actual BFF file available to the filesystem. The remaining runtime proof still requires an authentic D3D9 capture.
