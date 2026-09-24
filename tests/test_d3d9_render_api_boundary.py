@@ -2,6 +2,9 @@ from d3d9_render_api_boundary import analyze_d3d9_render_api_boundary
 
 
 SOURCE = """
+void __fastcall FUN_0082e510(int param_1) {
+  (**(code **)(*piVar2 + 0x15c))(piVar2, param_1);
+}
 void __fastcall FUN_00854d30(int param_1) {
   FUN_0082e510(0, param_1);
 }
