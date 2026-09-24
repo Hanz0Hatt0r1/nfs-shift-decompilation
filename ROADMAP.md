@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 124. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 125. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -462,3 +462,10 @@ Next: execute the exact BMW material slice with the selected permutation through
 The source evidence layer now covers the unified `FUN_0084f000` state flush: pixel shader `0x1ac`, vertex shader `0x170`, declaration `0x15c`, stream source `0x190` and indices `0x1a0`. Runtime JSONL capture also accepts shader-object creation/bind events and computes `SHIFT.ShaderPermutationIdentity/1` when both shader stages are captured for a frame.
 
 Next: correlate the runtime shader identity with the exact BMW material slice and require sampler/register/constant/interface parity before accepting a real-material golden render.
+
+
+## Phase 125: BMW runtime shader join
+
+`SHIFT.BMWRuntimeShaderJoin/1` now correlates an exact BMW material slice with a captured D3D9 frame using the stable shader permutation identity and exact MEB resource identity. It also checks runtime pixel-shader sampler types against the material/external sampler contract.
+
+Next: add constant-bank parity and declaration/vertex-input parity to this same join, then drive the joined frame into the desktop shader-reference renderer.
