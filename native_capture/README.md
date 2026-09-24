@@ -14,6 +14,7 @@ Captured events are JSONL and match SHIFT.D3D9RuntimeCaptureSchema/1.
 - SetVertexDeclaration
 - SetStreamSource
 - SetIndices
+- SetTexture
 - CreateVertexShader
 - SetVertexShader
 - SetVertexShaderConstantF
