@@ -128,6 +128,18 @@ def test_real_bmw_material_extractor_blocks_ambiguous_bodywork_shader(monkeypatc
         tmp_path,
         shader_entries=['render/shaders/bodywork.fx','vehicles/shaders/bodywork.fx'],
     )
+    monkeypatch.setattr(
+        extractor,
+        'parse_bmt_material',
+        lambda data: {
+            'material': {
+                'name':'BMW_M3_E36_PAINT',
+                'shader':'missing/bodywork.fx',
+                'specializations':['USE_FRESNEL','ALLOW_VINYLS','DIRT_SCRATCH'],
+                'shaderparams':[],
+            }
+        },
+    )
     with pytest.raises(ValueError,match='expected one'):
         extractor.build_real_bmw_material_binding(primary)
 
