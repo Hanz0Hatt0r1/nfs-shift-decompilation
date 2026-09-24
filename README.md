@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 64** — RenderCommand → GLES 3.1 skinning ABI. Импорт/IR, material linking, shader IR, external samplers и cubemap decode уже собраны в единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 65** — explicit extended shader semantics. RenderCommand, VS→PS reference, skinning, external samplers и cubemap decode уже образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -66,6 +66,7 @@
 | 250 | BINORMAL0 | FLOAT32x3 |
 | 130–134 | TEXCOORD0–4 | FLOAT32x2 |
 | 230–234 | TEXCOORD0–4 family | FLOAT32x3 UVW |
+| — | TEXCOORD5 | **shader-proven, MEB source unresolved** |
 | 310 | BLENDWEIGHT0 | FLOAT32x4 |
 | 580 | BLENDINDICES0 | UINT8x4 |
 | 460 / 461 | COLOR0 / COLOR1 | **ambiguous** |
@@ -124,7 +125,7 @@ Skinning разделён на независимые уровни:
 4. **GLES ABI** — std140 palette + BLENDWEIGHT0/BLENDINDICES0.
 5. **Animation decoding** — отдельная задача; opaque BAB tail не интерпретируется без evidence.
 
-Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключил его к desktop reference renderer, phase 62 — к embedded VS→PS execution, phase 63 — к `RenderCommand/1`, а phase 64 выводит тот же skin payload в GLES 3.1 ABI.
+Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключил его к desktop reference renderer, phase 62 — к embedded VS→PS execution, phase 63 — к `RenderCommand/1`, phase 64 вывел тот же skin payload в GLES 3.1 ABI, а phase 65 добавил явные extended semantic streams для shader inputs.
 
 ## Быстрый старт
 
