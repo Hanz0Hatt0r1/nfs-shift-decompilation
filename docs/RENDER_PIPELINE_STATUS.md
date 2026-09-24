@@ -134,3 +134,8 @@ StaticDraw and SkinnedDraw now converge on the same RenderCommand/1 resource/sha
 ## Phase 64: RenderCommand to GLES skinning
 
 The common submission ABI now reaches the GLES skinning contract directly: `SkinnedDraw → RenderCommand/1 → GLES31Skinning/1`. This removes the need for Android runtime code to reconstruct skin attributes or pose metadata from higher-level packets.
+
+
+## Phase 65: explicit extended semantic streams
+
+The reference pipeline now distinguishes two states: fixed MEB-backed semantics (for example TEXCOORD0..4) and explicit semantic streams supplied by an evidence producer. This allows shader-proven `TEXCOORD5` to be tested end-to-end without claiming that an unknown MEB property id has been decoded.

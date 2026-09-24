@@ -476,3 +476,37 @@ def test_reference_shader_executes_sampler_cube_resource():
     )
     assert result["status"] == "executed"
     assert result["color"] == [1.0, 0.0, 1.0, 1.0]
+
+
+def test_validate_pixel_program_accepts_explicit_texcoord5_stream():
+    from shader_reference import validate_pixel_program_inputs
+
+    program = _sampler2d_pixel_program("sampler2D")
+    program.inputs = [{"usage": "TEXCOORD", "index": 5, "register": "v0"}]
+
+    unavailable = validate_pixel_program_inputs(program)
+    assert unavailable["valid"] is False
+    assert "pixel-input:unsupported:TEXCOORD:5" in unavailable["blocking_reasons"]
+
+    available = validate_pixel_program_inputs(
+        program,
+        available_semantics={("TEXCOORD", 5)},
+    )
+    assert available["valid"] is True
+
+
+def test_validate_vertex_program_accepts_explicit_texcoord5_stream():
+    from shader_reference import validate_vertex_program_inputs
+
+    program = _vertex_passthrough_program()
+    program.inputs = [{"usage": "TEXCOORD", "index": 5, "register": "v1"}]
+
+    unavailable = validate_vertex_program_inputs(program)
+    assert unavailable["valid"] is False
+    assert "vertex-input:unsupported:TEXCOORD:5" in unavailable["blocking_reasons"]
+
+    available = validate_vertex_program_inputs(
+        program,
+        available_semantics={("TEXCOORD", 5)},
+    )
+    assert available["valid"] is True

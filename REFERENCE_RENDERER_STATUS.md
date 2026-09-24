@@ -88,3 +88,10 @@ Phase 60 does not change the renderer entry point yet; instead it provides a val
 ## Phase 62: skinned VS→PS reference
 
 `render_skinned_draw_reference()` can opt into the embedded shader oracle: it materializes `SHIFT.SkinnedMeshReference/1`, then executes vertex and pixel ShaderProgram/1 with the existing semantic linkage and rasterization path. Skinning and shader execution therefore share one deterministic desktop reference surface.
+
+
+## Phase 65: explicit extended semantic streams
+
+The desktop reference renderer can now accept a caller-supplied `semantic_rows` mapping for shader semantics that are proven at the shader interface but whose MEB source property is unresolved. `TEXCOORD5` is the first intended use: the BMW bodywork shader pair establishes the semantic linkage, while the renderer refuses to fabricate a MEB property id.
+
+Explicit streams are available to both VS and PS stages and are linked by `(usage,index)`. Missing streams remain hard errors.
