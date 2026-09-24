@@ -200,7 +200,8 @@ def meb_resource_report(
                 "decoded_stream_matches_payload_status": (
                     "observed" if decoded_stream == payload else "mismatch"
                 ),
-            }
+            },
+        }
 
     report = {
         "format": "SHIFT.MEBEvidenceResource/1",
