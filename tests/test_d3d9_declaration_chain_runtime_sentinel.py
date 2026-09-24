@@ -1,4 +1,5 @@
 import struct
+import json
 
 from d3d9_declaration_chain_evidence import analyze_d3d9_declaration_chain
 from d3d9_declaration_sentinel_evidence import analyze_d3d9_declaration_sentinel
@@ -60,6 +61,7 @@ def test_runtime_sentinel_matches_source_producer():
         declaration_sentinel_evidence=source,
     )
 
+    print("SENTINEL_DEBUG", json.dumps({"blocking_checks": result["summary"]["blocking_checks"], "sentinel_check": result["checks"].get("runtime_source_sentinel_coherence"), "memory_check": result["checks"].get("runtime_memory_provenance"), "decl_sentinel_check": result["checks"].get("d3d9_declaration_sentinel")}, ensure_ascii=False, sort_keys=True))
     assert result["status"] == "observed", result
     assert result["checks"]["runtime_source_sentinel_coherence"]["status"] == "observed", result
     assert result["summary"]["runtime_sentinel_coherence_status"] == "observed"
