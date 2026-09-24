@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <mutex>
+#include <new>
 #include <vector>
 
 namespace {
@@ -51,6 +52,10 @@ struct TraceState {
 };
 
 TraceState g_state;
+
+void ensure_lock() {
+  ensure_lock();
+}
 
 template <typename T>
 T original(size_t slot) {
@@ -270,9 +275,13 @@ bool swap_vtable(IDirect3DDevice9* device, void** table) {
 
 extern "C" __declspec(dllexport) HRESULT ShiftD3D9TraceSetOutput(const char* path) {
   if (!path || !path[0]) return E_INVALIDARG;
+  ensure_lock();
+  EnterCriticalSection(&g_state.io_lock);
   if (g_state.output) fclose(g_state.output);
   g_state.output = fopen(path, "ab");
-  return g_state.output ? S_OK : E_FAIL;
+  const HRESULT result = g_state.output ? S_OK : E_FAIL;
+  LeaveCriticalSection(&g_state.io_lock);
+  return result;
 }
 
 extern "C" __declspec(dllexport) void ShiftD3D9TraceSetFrame(unsigned long long frame) {
@@ -280,6 +289,7 @@ extern "C" __declspec(dllexport) void ShiftD3D9TraceSetFrame(unsigned long long 
 }
 
 extern "C" __declspec(dllexport) void ShiftD3D9TraceSetResource(const char* path, const char* sha256) {
+  ensure_lock();
   EnterCriticalSection(&g_state.io_lock);
   strncpy_s(g_state.resource_path, sizeof(g_state.resource_path), path ? path : "", _TRUNCATE);
   strncpy_s(g_state.resource_sha256, sizeof(g_state.resource_sha256), sha256 ? sha256 : "", _TRUNCATE);
@@ -288,7 +298,7 @@ extern "C" __declspec(dllexport) void ShiftD3D9TraceSetResource(const char* path
 
 extern "C" __declspec(dllexport) HRESULT ShiftD3D9TraceInstall(IDirect3DDevice9* device) {
   if (!device) return E_INVALIDARG;
-  if (g_state.device) return g_state.device == device ? S_FALSE : E_ALREADY_REGISTERED;
+  if (g_state.device) return g_state.device == device ? S_FALSE : HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS);
   if (!g_state.lock_initialized) {
     InitializeCriticalSection(&g_state.io_lock);
     g_state.lock_initialized = true;
