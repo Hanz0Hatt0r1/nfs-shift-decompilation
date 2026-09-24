@@ -381,3 +381,9 @@ This removes a provenance gap at the MEB boundary: future runtime correlation ca
 The BFF-backed COLOR evidence path now preserves the exact descriptor and payload byte ranges from each decoded `.meb`, including descriptor raw bytes and payload SHA-256. It also checks that the parser's decoded 460/461 stream is identical to the selected raw payload range.
 
 The result is a reproducible bridge from an actual archive/resource to the MEB property byte range. It still does not prove which D3D9 declaration Type consumes that range; that requires same-instance runtime correlation.
+
+## Phase 109: bind real MEB resource provenance to the color bridge
+
+The Phase 105 color bridge now accepts real BFF-backed COLOR evidence as an optional resource proof. It correlates the report property ID with its preserved MEB descriptor, exact descriptor/payload ranges, payload hash, and decoded stream bytes. Multiple reports remain independent for 460 and 461, so a bad or unknown report cannot falsely resolve the other property.
+
+The final Type identity is still not-proven. The next closure condition is a same-instance runtime correlation from this exact MEB resource/payload to the D3D9 declaration record.

@@ -584,3 +584,9 @@ For COLOR0/COLOR1 this records the binary origin of properties 460/461 instead o
 The real-resource color evidence command now records the exact 12-byte MEB property descriptor and the exact COLOR payload range inside the decoded `.meb`. For property 460/461 it also emits the descriptor words/raw bytes, payload hex/SHA-256, and an explicit check that the decoded color stream is byte-identical to the payload range selected by the parser.
 
 This makes a real `.bff` → `.meb` observation auditable down to byte offsets before attempting any MEB↔D3D9 identity inference. The Type mapping remains non-selective.
+
+## Phase 109: bind real MEB resource provenance to the color bridge
+
+The MEB↔D3D9 color bridge can now consume one or more real BFF-backed COLOR evidence reports. For each supplied 460/461 report it verifies the bff-meb source kind, property descriptor identity, observed descriptor/payload ranges, decoded-stream-to-payload equality, and equality of the raw payload SHA-256 with the COLOR evidence hash.
+
+This is a stronger resource-level property proof, but it still does not select D3D9 Type 4 or Type 8. Unknown resource property IDs are isolated as explicit errors rather than contaminating both color properties.

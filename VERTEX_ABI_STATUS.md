@@ -264,3 +264,9 @@ This strengthens traceability of MEB 460/461, but it is deliberately not a D3D9 
 The BFF-backed COLOR evidence command now records the exact MEB descriptor range and payload range for properties 460/461, preserving descriptor raw bytes and payload SHA-256/hex. It also reports whether the decoded color stream is byte-identical to the selected raw payload range.
 
 This closes the byte-provenance gap at the MEB resource boundary. The D3D9 Type 4 versus Type 8 mapping remains not-proven until the same MEB instance is correlated with the exact declaration record used by the renderer.
+
+## Phase 109: resource-level MEB 460/461 provenance
+
+The color bridge now accepts real BFF-backed COLOR evidence and verifies that each report's property ID matches the preserved MEB descriptor, that descriptor/payload ranges are observed, that decoded stream bytes match the raw payload, and that payload hashes agree. Reports for 460 and 461 are tracked independently.
+
+This moves the MEB side from semantic-only metadata to exact resource-byte provenance, but the D3D9 Type mapping remains not-proven until the resource/payload is correlated to the exact runtime declaration record.
