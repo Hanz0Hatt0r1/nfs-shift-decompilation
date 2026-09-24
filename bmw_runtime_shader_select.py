@@ -134,6 +134,38 @@ def _texture_stage_status(
     return not missing, missing
 
 
+
+
+def _texture_stage_contract(
+    frame: Mapping[str, Any],
+    stages: list[int],
+    expected_types: Mapping[int, str],
+) -> tuple[bool, list[str]]:
+    if not stages:
+        return True, []
+    latest: dict[int, Mapping[str, Any]] = {}
+    for row in frame.get("texture_bindings") or []:
+        if not isinstance(row, Mapping):
+            continue
+        try:
+            stage = int(row.get("stage"))
+        except (TypeError, ValueError):
+            continue
+        latest[stage] = row
+    reasons: list[str] = []
+    for stage in stages:
+        row = latest.get(stage)
+        if not row or not row.get("texture_ptr"):
+            reasons.append(f"runtime:texture-stage-{stage}:missing")
+            continue
+        wanted = expected_types.get(stage)
+        observed = row.get("resource_type_name")
+        if wanted and observed and str(observed).lower() != str(wanted).lower():
+            reasons.append(
+                f"runtime:texture-stage-{stage}:type-mismatch:{observed}:{wanted}"
+            )
+    return not reasons, reasons
+
 def select_runtime_shader(
     material_input: Mapping[str, Any],
     runtime_report: Mapping[str, Any],
@@ -145,6 +177,25 @@ def select_runtime_shader(
 
     candidates = _candidate_rows(material_input)
     expected_external_stages = _expected_external_stages(material_input)
+    expected_external_types: dict[int, str] = {}
+    binding = material_input.get("material_binding")
+    binding_rows = (
+        binding.get("bindings")
+        if isinstance(binding, Mapping)
+        else material_input.get("bindings")
+    )
+    for row in binding_rows or []:
+        if not isinstance(row, Mapping) or row.get("binding") != "external-or-specialised":
+            continue
+        try:
+            register = int(row.get("d3d9_sampler_register"))
+        except (TypeError, ValueError):
+            continue
+        sampler_type = str(row.get("sampler_type") or "").lower()
+        if sampler_type == "samplercube":
+            expected_external_types[register] = "cube_texture"
+        elif sampler_type == "sampler2d":
+            expected_external_types[register] = "texture2d"
     if not candidates:
         return {
             "format": FORMAT,
@@ -170,7 +221,10 @@ def select_runtime_shader(
         texture_ok, _missing_texture_stages = _texture_stage_status(
             frame, expected_external_stages
         )
-        if not texture_ok:
+        type_ok, _texture_type_reasons = _texture_stage_contract(
+            frame, expected_external_stages, expected_external_types
+        )
+        if not texture_ok or not type_ok:
             continue
         for candidate_index, candidate in enumerate(candidates):
             score, evidence = _candidate_identity_matches(candidate, identity)
@@ -185,6 +239,7 @@ def select_runtime_shader(
                 "evidence": evidence,
                 "same_meb_resource": same_resource,
                 "external_texture_stages": expected_external_stages,
+                "external_texture_types": expected_external_types,
                 "identity_sha256": identity.get("identity_sha256"),
                 "pair_byte_sha256": identity.get("pair_byte_sha256"),
                 "vertex_byte_sha256": (

@@ -941,3 +941,11 @@ Strict runtime instance proof now requires a real indexed draw in the same captu
 ## Phase 151: BMW M3 BFF intake verifier
 
 A strict `bmw-bff-intake` preflight now verifies the real M3 BFF archive structure, exact target entries, and extracted body MEB SHA before material extraction is attempted.
+
+
+### Runtime external texture type gate
+
+The exact BMW runtime shader selector validates captured external sampler
+resource types before accepting a permutation for shader execution: s0
+(sShadowMap_f1_0) must resolve to a 2D texture object, while s3
+(environmentMap) must resolve to a cube texture object.
