@@ -274,5 +274,10 @@
         "material": "vehicles/BMW_M3_E36/BMW_M3_E36_LIGHTSGLASS.mtx"
       }
     ]
+  },
+  "provenance": {
+    "source_bundle": "shift_meb_evidence.zip",
+    "analysis_file": "body_meb_line.json",
+    "note": "Exact parsed MEB evidence snapshot; raw MEB binary is not committed."
   }
 }
