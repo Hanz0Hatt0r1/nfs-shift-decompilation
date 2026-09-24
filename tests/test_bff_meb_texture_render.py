@@ -37,8 +37,7 @@ def _mini_dds() -> bytes:
     header = [
         124, 0, 1, 4, 4, 0, 1,
         *([0] * 11),
-        32, 0x4, 0, 0,
-        int.from_bytes(b"DXT1", "little"), 0, 0, 0, 0,
+        32, 0x4, int.from_bytes(b"DXT1", "little"), 0, 0, 0, 0, 0,
         0x1000, 0, 0, 0, 0,
     ]
     block = struct.pack("<HHI", 0xF800, 0x001F, 0)
