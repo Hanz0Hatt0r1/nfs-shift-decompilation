@@ -24,7 +24,7 @@ def _vec4(value: Iterable[float] | None, *, default_w: float = 1.0) -> tuple[flo
         row = [0.0, 0.0, 0.0]
     source_len = len(row)
     row = (row + [0.0] * 4)[:4]
-    if source_len == 3:
+    if source_len < 4:
         row[3] = default_w
     return tuple(row)  # type: ignore[return-value]
 
@@ -55,7 +55,8 @@ def _row(mesh: dict[str, Any], semantic: str, index: int, vertex_index: int) -> 
         value = rows[vertex_index]
     except (IndexError, KeyError, TypeError):
         return None
-    return _vec4(value, default_w=1.0)
+    default_w = 1.0 if semantic in {"POSITION", "POSITIONT", "TEXCOORD"} else 0.0
+    return _vec4(value, default_w=default_w)
 
 
 def build_vertex_inputs(
