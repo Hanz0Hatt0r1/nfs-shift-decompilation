@@ -35,7 +35,7 @@ def _golden():
         "format": "SHIFT.BMWGoldenAssetManifest/1",
         "golden": {
             "resource": slicer.TARGET_MEB,
-            "resource_sha256": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+            "resource_sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c",
         },
         "mesh": {
             "vertex_count": 4,
@@ -104,7 +104,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
         vertex_count=4,
         triangle_count=1,
         property_descriptors=[{"id":"200","words":[2,0,0]},{"id":"460","words":[4,6,0]}],
-        primitives=[SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx")],
+        primitives=[\n            SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/bmw_m3_e36_badging.mtx"),\n            SimpleNamespace(first_index=150,index_count=6294,material="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"),\n        ],
     )
     monkeypatch.setattr(slicer, "read_meb", lambda data: mesh)
     monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":m.property_descriptors,"primitives":[{"first_index":0,"index_count":3,"material":m.primitives[0].material}]})
@@ -127,7 +127,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     })
     monkeypatch.setattr(slicer, "build_resource_index", lambda *a, **k: {"format":"SHIFT.RenderResources/1","textures":[],"samplers":[],"bindings":[],"stats":{"textures":0,"samplers":0,"bindings":0}})
     monkeypatch.setattr(slicer, "build_render_command", lambda *a, **k: {"format":"SHIFT.RenderCommand/1","ready":True,"blocking_reasons":[],"mesh":{"vertex_layout":{"format":"SHIFT.VertexLayout/1"},"vertex_count":4,"attributes":[]},"submeshes":[{"first_index":0,"index_count":3,"shader":{"vertex":"void main(){}","pixel":"void main(){}"}}],"resource_plan":{"format":"SHIFT.RenderResources/1","texture_count":0,"sampler_count":0,"external_sampler_count":0}})
-    report=slicer.build_real_bmw_material_slice(primary, golden_path, primitive_index=0)
+    report=slicer.build_real_bmw_material_slice(primary, golden_path)
     assert report["format"]=="SHIFT.BMWMaterialSlice/1"
     assert report["ready"] is True
     assert report["render_command"]["ready"] is True
