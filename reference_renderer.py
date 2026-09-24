@@ -560,7 +560,6 @@ def render_textured_static_draw(
     vertex_program: dict[str, Any] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
     external_texture_resources: dict[int, dict[str, Any]] | None = None,
-    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw, optionally executing the embedded vertex shader."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -653,6 +652,7 @@ def render_textured_render_command(
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     external_texture_images: dict[int, dict[str, Any]] | None = None,
     external_texture_resources: dict[int, dict[str, Any]] | None = None,
+    semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Execute a RenderCommand through the one-texture reference material path."""
     from render_command import validate_render_command
