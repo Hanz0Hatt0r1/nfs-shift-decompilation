@@ -39,7 +39,7 @@ def _base_inputs():
                 "xml_channel_to_record_usage_index": {"status": "observed"},
             },
         },
-        "canonicalizer": {"source": {"name":"SHIFT.exe.c","sha256":"512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c4021a00760ee9","bytes":38993813,"line_count":1471366},
+        "canonicalizer": {"source": {"name":"SHIFT.exe.c","sha256":"512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9","bytes":38993813,"line_count":1471366},
             "status": "observed",
             "canonicalization": {"full_record_identity": "observed"},
         },
