@@ -164,3 +164,8 @@ COLOR evidence can now be aggregated across decoded MEB samples. The corpus laye
 ## Phase 70: corpus COLOR evidence
 
 The evidence pipeline now supports BFF-directory scale ingestion: `.bff` → `.meb` → 460/461 → `ColorABIEvidence/1` → `ColorABICorpusEvidence/1`. Runtime readiness remains unaffected until an external declaration/order proof is established.
+
+
+## Phase 71: command-level skinned reference
+
+The renderer now has a command-level skinned oracle: `RenderCommand/1` validation is followed by explicit SkinPose materialization and the existing VS→PS shader/raster path. This removes one more hand-built adapter from the validation chain.
