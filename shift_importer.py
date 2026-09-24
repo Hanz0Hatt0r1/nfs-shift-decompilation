@@ -2290,6 +2290,51 @@ def cmd_d3d9_runtime_trace(args: argparse.Namespace) -> int:
     }, ensure_ascii=False, indent=2))
     return 0
 
+def cmd_bmw_runtime_shader_join(args: argparse.Namespace) -> int:
+    """Join an exact BMW material slice with captured D3D9 runtime shader state."""
+    from bmw_runtime_shader_join import validate_files
+
+    report = validate_files(args.material_slice, args.runtime_report)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "matched_frame_count": report["matched_frame_count"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+def cmd_bmw_runtime_parity(args: argparse.Namespace) -> int:
+    """Validate BMW runtime shader, constant and declaration parity."""
+    from bmw_runtime_parity import validate_files
+
+    report = validate_files(
+        args.material_slice,
+        args.runtime_report,
+        usage_map_path=args.usage_map,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2768,6 +2813,19 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--meb-resource", help="optional MEB resource analysis JSON")
     p.add_argument("--usage-map", help="optional JSON mapping MEB Usage ordinals to D3D9 Usage bytes")
     p.set_defaults(fn=cmd_d3d9_runtime_trace)
+
+    p = sp.add_parser("bmw-runtime-shader-join", help="join a BMW material slice with captured D3D9 runtime shader state")
+    p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
+    p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWRuntimeShaderJoin/1 JSON")
+    p.set_defaults(fn=cmd_bmw_runtime_shader_join)
+
+    p = sp.add_parser("bmw-runtime-parity", help="validate BMW runtime shader, constant and declaration parity")
+    p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
+    p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWRuntimeParity/1 JSON")
+    p.add_argument("--usage-map", help="optional JSON mapping MEB Usage ordinals to D3D9 Usage bytes")
+    p.set_defaults(fn=cmd_bmw_runtime_parity)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
