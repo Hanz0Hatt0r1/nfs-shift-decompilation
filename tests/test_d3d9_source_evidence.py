@@ -284,3 +284,54 @@ def test_d3d9_type_semantics_fails_closed_without_primitive_switch():
     result = analyze_d3d9_type_semantics("void f(void) {}")
     assert result["enum_alignment"]["status"] == "not-found"
     assert result["cases"] == []
+
+
+def test_d3d9_table_shape_evidence_recovers_17_type_ordinals():
+    from d3d9_table_shape_evidence import analyze_d3d9_table_shapes
+
+    source = r'''
+undefined DAT_00b90088;
+undefined DAT_00b900d8;
+undefined DAT_00b9011c;
+undefined DAT_00b90140;
+undefined DAT_00b90178;
+pointer PTR_DAT_00b901d0;
+
+undefined4 __fastcall FUN_00853c20(int param_1)
+{
+  return *(undefined4 *)(&DAT_00b90088 + param_1 * 4);
+}
+undefined4 __fastcall FUN_00853c30(int param_1)
+{
+  return *(undefined4 *)(&DAT_00b900d8 + param_1 * 4);
+}
+uint __fastcall FUN_008587e0(int param_1,int param_2)
+{
+  do {
+    pbVar17 = (&PTR_DAT_00b901d0)[(int)local_18];
+    uVar9 = FUN_00853c20((int)local_18);
+  } while (local_18 < (AptCIH *)0x11);
+  do {
+    local_5c = local_5c + 1;
+  } while (local_5c < 9);
+}
+'''
+    result = analyze_d3d9_table_shapes(source)
+    assert result["tables"]["DAT_00b90088"]["declared"] is True
+    assert result["tables"]["PTR_DAT_00b901d0"]["declared"] is True
+    assert result["indexing"]["type_table"]["byte_stride"] == 4
+    assert result["indexing"]["type_table"]["layout_hint_dword_slots"] == 20
+    assert result["indexing"]["size_table"]["layout_hint_dword_slots"] == 17
+    assert result["xml_stream"]["type_ordinal_exclusive_limit"] == 0x11
+    assert result["xml_stream"]["usage_exclusive_limit"] == 9
+    assert result["xml_stream"]["status"] == "observed"
+    assert result["conclusions"]["type_table_initializer_bytes"]["status"] == "opaque"
+    assert result["conclusions"]["meb_460_461_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_table_shape_evidence_is_conservative_without_xml_bounds():
+    from d3d9_table_shape_evidence import analyze_d3d9_table_shapes
+
+    result = analyze_d3d9_table_shapes("undefined DAT_00b90088;")
+    assert result["xml_stream"]["status"] == "not-proven"
+    assert result["conclusions"]["type_table_initializer_bytes"]["status"] == "opaque"
