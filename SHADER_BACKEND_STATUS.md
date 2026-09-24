@@ -72,3 +72,8 @@ The software executor now supports `samplerCube` when the bound resource is `SHI
 ## Phase 59: DDS cubemap input
 
 The texture reference decoder now produces six-face cube resources from complete DDS cubemaps, preserving the existing RGBA8 software-resource ABI. SamplerCube execution can therefore consume either explicitly assembled faces or a decoded DDS cubemap.
+
+
+## Phase 65: extended semantic availability
+
+Shader reference input validation now accepts semantics outside the fixed MEB set when the caller explicitly provides the corresponding semantic stream. This preserves the shader-level evidence for TEXCOORD5 while keeping unresolved source ABI out of the MEB table.
