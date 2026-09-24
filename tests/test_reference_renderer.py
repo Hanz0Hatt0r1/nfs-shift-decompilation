@@ -906,3 +906,86 @@ def test_reference_renderer_rejects_missing_second_texture(tmp_path):
         assert "missing texture images for samplers: s1" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def _uv1_texture_shader_program():
+    program = _textured_tex_shader_program()
+    program["inputs"] = [
+        {"usage": "TEXCOORD", "index": 1, "register": "v1"},
+    ]
+    program["instructions"][0]["operands"][1]["reg_type"] = 1
+    program["instructions"][0]["operands"][1]["index"] = 1
+    return program
+
+
+def test_reference_renderer_maps_texcoord1_to_m132_layer(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _uv1_texture_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {
+            "130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)],
+            "131": [(1.0, 0.0), (1.0, 0.0), (1.0, 0.0)],
+        },
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 2,
+        "height": 1,
+        "pixels": bytes((255, 0, 0, 255, 0, 255, 0, 255)),
+    }
+    out = tmp_path / "uv1.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        sampler={
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
+        width=24,
+        height=24,
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert (0, 255, 0) in pixels
+
+
+def test_reference_renderer_rejects_missing_semantic_uv_layer(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _uv1_texture_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command,
+            mesh,
+            image,
+            tmp_path / "missing-uv1.ppm",
+            shader_reference=True,
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "requires TEXCOORD1 but mesh has no matching UV layer" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
