@@ -989,3 +989,99 @@ def test_reference_renderer_rejects_missing_semantic_uv_layer(tmp_path):
         assert "requires TEXCOORD1 but mesh has no matching UV layer" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def _normal_dot_shader_program():
+    def operand(kind, reg_type, index, *, swizzle="xyzw", write_mask=None):
+        return {
+            "token": 0x80000000,
+            "kind": kind,
+            "reg_type": reg_type,
+            "index": index,
+            "swizzle": swizzle,
+            "source_modifier": 0,
+            "write_mask": write_mask,
+        }
+    return {
+        "schema": "SHIFT.ShaderProgram/1",
+        "stage": "pixel",
+        "shader_model": [3, 0],
+        "offset": 0,
+        "end": 0,
+        "inputs": [{"usage": "NORMAL", "index": 0, "register": "v1"}],
+        "outputs": [{"usage": "COLOR", "index": 0, "register": "oC0"}],
+        "samplers": [],
+        "constants": [0],
+        "temps": [],
+        "unsupported_opcodes": [],
+        "instructions": [{
+            "offset": 0,
+            "opcode": 8,
+            "name": "DP3",
+            "token": 0,
+            "length": 4,
+            "controls": 0,
+            "predicated": False,
+            "operands": [
+                operand("dest", 8, 0, write_mask="xyzw"),
+                operand("source", 1, 1),
+                operand("source", 2, 0),
+            ],
+            "predicate": None,
+        }],
+        "const_ints": [],
+        "const_bools": [],
+        "sampler_types": {},
+    }
+
+
+def test_reference_renderer_executes_normal_varying(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _normal_dot_shader_program()
+    command["submeshes"][0]["uniforms"] = {
+        "format": "SHIFT.MaterialUniformBinding/1",
+        "bindings": [{
+            "name": "lightDirection",
+            "binding": "material-constant",
+            "register_set": 2,
+            "register_index": 0,
+            "register_count": 1,
+            "ctab_type": "float4",
+            "value": [0.0, 0.0, 1.0, 0.0],
+        }],
+        "optimized_out_or_unreflected": [],
+    }
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+        "normals": [(0.0, 0.0, 1.0), (0.0, 0.0, 1.0), (0.0, 0.0, 1.0)],
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((5, 6, 7, 255)),
+    }
+    out = tmp_path / "normal-dot.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        width=24,
+        height=24,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert (255, 255, 255) in pixels
