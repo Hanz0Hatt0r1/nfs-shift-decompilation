@@ -44,3 +44,8 @@ The opaque BAB corpus fingerprint report is now exposed through `shift_importer.
 ## Phase 61: desktop render bridge
 
 Explicit SkinPose deformation is now connected to the desktop geometry oracle through `render_skinned_draw_reference()`. This provides an end-to-end position/raster smoke path for skinned draws while preserving the separation between pose application and BAB animation decoding.
+
+
+## Phase 62: shader-backed skinned reference
+
+`render_skinned_draw_reference()` connects the explicit CPU SkinPose deformation to the existing shader reference renderer. The path is intentionally deterministic: vertex and pixel programs, texture resources and constants must be supplied explicitly. BAB animation decoding remains independent.
