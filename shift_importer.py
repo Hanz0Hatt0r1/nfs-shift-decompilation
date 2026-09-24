@@ -1636,6 +1636,30 @@ def cmd_d3d9_type_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_table_evidence(args: argparse.Namespace) -> int:
+    """Analyze recovered D3D9 lookup-table bounds and XML ordinal limits."""
+    from d3d9_table_shape_evidence import analyze_d3d9_table_shapes
+
+    source = Path(args.input).read_bytes()
+    report = analyze_d3d9_table_shapes(source)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "type_table_slots_hint": report["indexing"]["type_table"]["layout_hint_dword_slots"],
+        "size_table_slots_hint": report["indexing"]["size_table"]["layout_hint_dword_slots"],
+        "xml_type_ordinal_exclusive_limit": report["xml_stream"]["type_ordinal_exclusive_limit"],
+        "xml_status": report["xml_stream"]["status"],
+        "initializer_status": report["conclusions"]["type_table_initializer_bytes"]["status"],
+        "meb_460_461_mapping": report["conclusions"]["meb_460_461_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1942,6 +1966,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9TypeSemanticsEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_type_evidence)
+
+    p = sp.add_parser("source-d3d9-table-evidence", help="analyze D3D9 lookup-table bounds in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9TypeTableShapeEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_table_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
