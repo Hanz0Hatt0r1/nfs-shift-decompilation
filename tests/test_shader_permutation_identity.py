@@ -24,7 +24,7 @@ def _pair():
     vs_version = 0xFFFE0300
     ps_version = 0xFFFF0300
     dcl = (2 << 24) | 31
-    vs = bytearray(ctab(b"diffuseMap\\x00", vs_version, 0))
+    vs = bytearray(ctab(b"diffuseMap\x00", vs_version, 0))
     vs += struct.pack("<III", dcl, 0, 0x80000000 | 0 | (15 << 16) | (1 << 28))
     vs += struct.pack("<III", dcl, 5 | (5 << 16), 0x80000000 | 1 | (15 << 16) | (6 << 28))
     vs += struct.pack("<I", 0xFFFF)
