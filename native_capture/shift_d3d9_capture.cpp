@@ -3,7 +3,9 @@
 #include <windows.h>
 #include <d3d9.h>
 
+#include <atomic>
 #include <cmath>
+#include <locale>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
