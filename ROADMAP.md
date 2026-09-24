@@ -335,3 +335,6 @@ Phase 101 formalizes the producer-side terminator in FUN_008587e0. The source wr
 ## Phase 102: runtime/source sentinel coherence
 
 Phase 102 correlates the exact runtime D3DDECL_END record with the source-backed sentinel producer in FUN_008587e0. The chain checks all six sentinel fields and confirms that the runtime sentinel index agrees with the declaration-array boundary. A missing or altered field is an explicit blocker rather than a recoverable guess.
+
+
+Phase 102 follow-up: the sentinel producer extractor now matches the actual uploaded decompiler form using field/address expressions rather than a single local-variable spelling.

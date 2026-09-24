@@ -523,3 +523,6 @@ CLI-цепочка:
         declaration-chain.json \
         --runtime-memory-evidence declaration-memory.json \
         --declaration-sentinel-evidence declaration-sentinel.json
+
+
+Phase 102 follow-up hardens the D3DDECL_END source matcher against Ghidra temporary-variable renaming. The uploaded SHIFT.exe.c uses local_14 for the sentinel record index, and the matcher now validates the field expressions without depending on a synthetic variable name.

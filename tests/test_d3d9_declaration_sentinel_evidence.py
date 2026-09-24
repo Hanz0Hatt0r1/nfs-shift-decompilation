@@ -43,3 +43,14 @@ def test_declaration_sentinel_evidence_fails_closed_when_one_field_is_missing():
 
     assert result["status"] == "not-proven"
     assert result["observations"]["field_writes"]["usage_index"]["status"] == "not-found"
+
+
+def test_declaration_sentinel_evidence_accepts_local_index_variant():
+    source = SOURCE.replace(
+        "(int)pAVar22 * 8",
+        "local_14 * 8",
+    )
+    result = analyze_d3d9_declaration_sentinel(source)
+
+    assert result["status"] == "observed"
+    assert result["observations"]["field_writes"]["stream"]["status"] == "observed"
