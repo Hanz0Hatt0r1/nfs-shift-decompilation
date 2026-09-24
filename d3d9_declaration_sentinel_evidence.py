@@ -27,13 +27,10 @@ SENTINEL = {
 
 def _function_body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    start = None
-    for index, line in enumerate(lines, 1):
-        if re.search(rf"\b{re.escape(function)}\(", line):
-            start = index
-            break
-    if start is None:
+    match = re.search(rf"\b{re.escape(function)}\s*\(", source)
+    if match is None:
         return None, None, ""
+    start = source.count("\n", 0, match.start()) + 1
     depth = 0
     seen = False
     body: list[str] = []
@@ -47,7 +44,6 @@ def _function_body(source: str, function: str) -> tuple[int | None, int | None, 
         if seen and depth == 0:
             return start, index, "\n".join(body)
     return start, None, "\n".join(body)
-
 
 def analyze_d3d9_declaration_sentinel(source: str) -> dict[str, Any]:
     if not isinstance(source, str):
