@@ -2699,6 +2699,50 @@ def cmd_bmw_runtime_parity(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+
+def _write_evidence_report(report: dict, output: str | Path) -> int:
+    out = Path(output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({
+        "format": report.get("format"),
+        "status": report.get("status"),
+        "ready": report.get("ready"),
+        "blocking_reasons": report.get("blocking_reasons", []),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report.get("status") in ("observed", "match") or report.get("ready") is True else 2
+
+
+def cmd_d3d9_declaration_lifecycle(args: argparse.Namespace) -> int:
+    from d3d9_declaration_lifecycle_evidence import analyze_d3d9_declaration_lifecycle_file
+    return _write_evidence_report(analyze_d3d9_declaration_lifecycle_file(args.input), args.output)
+
+
+def cmd_d3d9_declaration_sentinel_evidence(args: argparse.Namespace) -> int:
+    from d3d9_declaration_sentinel_evidence import analyze_d3d9_declaration_sentinel_file
+    return _write_evidence_report(analyze_d3d9_declaration_sentinel_file(args.input), args.output)
+
+
+def cmd_d3d9_declaration_count_evidence(args: argparse.Namespace) -> int:
+    from d3d9_declaration_count_evidence import analyze_d3d9_declaration_count_file
+    return _write_evidence_report(analyze_d3d9_declaration_count_file(args.input), args.output)
+
+
+def cmd_d3d9_declaration_create_evidence(args: argparse.Namespace) -> int:
+    from d3d9_declaration_create_evidence import analyze_d3d9_declaration_create_file
+    return _write_evidence_report(analyze_d3d9_declaration_create_file(args.input), args.output)
+
+
+def cmd_d3d9_render_api_boundary(args: argparse.Namespace) -> int:
+    from d3d9_render_api_boundary import analyze_d3d9_render_api_boundary_file
+    return _write_evidence_report(analyze_d3d9_render_api_boundary_file(args.input), args.output)
+
+
+def cmd_d3d9_api_bind_evidence(args: argparse.Namespace) -> int:
+    from d3d9_api_bind_evidence import analyze_d3d9_api_bind_file
+    return _write_evidence_report(analyze_d3d9_api_bind_file(args.input), args.output)
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
