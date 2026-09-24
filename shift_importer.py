@@ -2409,6 +2409,32 @@ def cmd_bmw_runtime_draw_correlation(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_material_from_bff(args: argparse.Namespace) -> int:
+    """Build a real BMW M3 MaterialBinding directly from retail BFF archives."""
+    from bmw_material_from_bff import build_real_bmw_material_binding
+
+    report = build_real_bmw_material_binding(
+        args.input,
+        supplemental_bffs=args.supplemental_bff or [],
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+        "fxo_candidate_count": report["provenance"]["fxo_candidate_count"],
+        "dds_path_count": report["provenance"]["dds_path_count"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_source_bmw_vehicle_identity(args: argparse.Namespace) -> int:
     """Verify the source-level BMW M3 vehicle selector in SHIFT.exe.c."""
     from source_vehicle_identity import validate_source_vehicle_file
@@ -3078,6 +3104,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runtime_report", help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON")
     p.add_argument("output", help="SHIFT.BMWRuntimeDrawCorrelation/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_draw_correlation)
+
+    p = sp.add_parser("bmw-material-from-bff", help="build real BMW M3 MaterialBinding/1 from retail BFF archives")
+    p.add_argument("input", help="primary BMW_M3_E36.bff")
+    p.add_argument("output", help="SHIFT.RealBMWMaterialBindingEvidence/1 JSON")
+    p.add_argument("--supplemental-bff", action="append", default=[], help="additional BFF archives such as BMW_M3_E36_Cockpit.bff")
+    p.set_defaults(fn=cmd_bmw_material_from_bff)
 
     p = sp.add_parser("source-bmw-vehicle-identity", help="verify the source-level BMW M3 vehicle selector in SHIFT.exe.c")
     p.add_argument("input", help="decompiled SHIFT.exe.c source file")
