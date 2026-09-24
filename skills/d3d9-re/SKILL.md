@@ -105,3 +105,8 @@ For `vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx`, `bmw_golden_gate.py` requires `p
 ## Specialization evidence
 
 Consume `MaterialBinding/1.specialization.requested` when validating the BMW M3 paint contract. Do not convert a structured specialization report to dictionary-key names.
+
+
+## Real BMW material extraction
+
+Use `bmw_material_from_bff.py` / `bmw-material-from-bff` to turn the retail M3 BFF into a real `MaterialBinding/1`. The extractor requires exact M3 BMT/MEB entries, resolves the material shader source unambiguously, inventories all FXO permutations and DDS paths, and returns SHA-256 provenance plus paint/shader gate results. It never treats runtime execution as proven.
