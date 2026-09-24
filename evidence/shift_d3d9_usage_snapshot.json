@@ -9,56 +9,56 @@
   "function": "FUN_008587e0",
   "usage_loop": {
     "pointer_table_line": 933815,
-    "switch_line": 933867,
-    "exclusive_limit_line": 933899,
+    "switch_line": 933865,
+    "exclusive_limit_line": 933840,
     "exclusive_limit": 9
   },
   "entries": [
     {
       "usage_code": 0,
       "name": "Position",
-      "case_line": 933870
+      "case_line": 933866
     },
     {
       "usage_code": 1,
       "name": "Weights",
-      "case_line": 933873
+      "case_line": 933869
     },
     {
       "usage_code": 2,
       "name": "Normal",
-      "case_line": 933876
+      "case_line": 933872
     },
     {
       "usage_code": 3,
       "name": null,
       "symbol": "DAT_00b1d188",
-      "case_line": 933879
+      "case_line": 933875
     },
     {
       "usage_code": 4,
       "name": "Tangent",
-      "case_line": 933881
+      "case_line": 933878
     },
     {
       "usage_code": 5,
       "name": "Binormal",
-      "case_line": 933884
+      "case_line": 933881
     },
     {
       "usage_code": 6,
       "name": "Colour",
-      "case_line": 933887
+      "case_line": 933884
     },
     {
       "usage_code": 7,
       "name": "Depth",
-      "case_line": 933890
+      "case_line": 933887
     },
     {
       "usage_code": 8,
       "name": "Indices",
-      "case_line": 933893
+      "case_line": 933890
     }
   ],
   "conclusion": {
