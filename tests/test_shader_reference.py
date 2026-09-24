@@ -278,3 +278,15 @@ def test_reference_shader_does_not_guess_address_rounding_ties():
     result = execute_shader(_vertex_program([mova]), inputs={0: (1.5, 0.0, 0.0, 0.0)})
     assert result["status"] == "error"
     assert "address register rounding tie is not proven" in result["blocking_reasons"][0]
+
+
+def test_reference_shader_only_rounds_written_address_components():
+    mova = Instruction(0, 46, "MOVA", 0, 3, 0, False, [
+        _dst(3, 0, mask="x"),
+        _src(1, 0),
+    ])
+    result = execute_shader(
+        _vertex_program([mova]),
+        inputs={0: (1.0, 1.5, 0.0, 0.0)},
+    )
+    assert result["status"] == "executed"
