@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 144** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 145** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -761,3 +761,8 @@ The uploaded `SHIFT.exe.c` now has a machine-checked source anchor for vehicle c
 ## Phase 144: real BMW material extraction
 
 A new `bmw-material-from-bff` command can build the real BMW M3 `MaterialBinding/1` directly from retail BFF archives using the existing parsers and fail-closed paint/shader gates, with SHA-256 provenance for every selected source entry.
+
+
+## Phase 145: real BMW material slice
+
+The project can now emit the existing `SHIFT.BMWMaterialSlice/1` directly from the real M3 BFF path, with a neutral MEB payload and ready `StaticDraw/1`/`RenderCommand/1` when all archived evidence gates pass.
