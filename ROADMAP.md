@@ -829,3 +829,9 @@ External sampler readiness now includes captured D3D9 resource type metadata:
 the BMW bodywork shader's s0 shadow sampler requires a 2D texture object and
 s3 environmentMap requires a cube texture object. A type mismatch remains a
 hard blocker before shader execution.
+
+## Phase 178: runtime sampler-content snapshots
+
+The Windows D3D9 capture producer can optionally persist supported sampler surfaces to PPM: one level-0 image for 2D textures and six face images for cubemaps. Runtime trace preserves the descriptor and snapshot paths, the BMW runtime render contract carries them forward, and the offline exact shader renderer can auto-load those captures from a snapshot root.
+
+This closes the remaining manual resource step before executing the exact captured BMW bodywork VS/PS pair. Capture remains explicitly opt-in.

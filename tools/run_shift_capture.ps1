@@ -10,7 +10,11 @@ param(
 
     [string[]]$GameArgument = @(),
 
-    [switch]$CaptureScreenshots
+    [switch]$CaptureScreenshots,
+
+    [switch]$CaptureTextureSnapshots,
+
+    [string]$TextureStages = "0,3,4"
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,6 +46,9 @@ $oldCapture = $env:SHIFT_D3D9_CAPTURE
 $oldScreenshots = $env:SHIFT_D3D9_CAPTURE_SCREENSHOT
 $oldEvery = $env:SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY
 $oldScreenshotDir = $env:SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR
+$oldTextureSnapshot = $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT
+$oldTextureSnapshotDir = $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR
+$oldTextureStages = $env:SHIFT_D3D9_CAPTURE_TEXTURE_STAGES
 
 try {
     $env:SHIFT_D3D9_CAPTURE = $capturePath
@@ -51,11 +58,20 @@ try {
         $env:SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR = (Join-Path $out "frames")
         New-Item -ItemType Directory -Force -Path $env:SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR | Out-Null
     }
+    if ($CaptureTextureSnapshots) {
+        $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT = "1"
+        $env:SHIFT_D3D9_CAPTURE_TEXTURE_STAGES = $TextureStages
+        $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR = (Join-Path $out "textures")
+        New-Item -ItemType Directory -Force -Path $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR | Out-Null
+    }
 
     Write-Host "Launching: $gamePath"
     Write-Host "Capture : $capturePath"
     if ($CaptureScreenshots) {
         Write-Host "Frames  : $env:SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR"
+    }
+    if ($CaptureTextureSnapshots) {
+        Write-Host "Textures: $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR (stages $TextureStages)"
     }
 
     $process = Start-Process -FilePath $gamePath -ArgumentList $GameArgument -WorkingDirectory $gameDir -PassThru
@@ -73,6 +89,9 @@ finally {
     if ($null -eq $oldScreenshots) { Remove-Item Env:SHIFT_D3D9_CAPTURE_SCREENSHOT -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_SCREENSHOT = $oldScreenshots }
     if ($null -eq $oldEvery) { Remove-Item Env:SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY = $oldEvery }
     if ($null -eq $oldScreenshotDir) { Remove-Item Env:SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR = $oldScreenshotDir }
+    if ($null -eq $oldTextureSnapshot) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT = $oldTextureSnapshot }
+    if ($null -eq $oldTextureSnapshotDir) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR = $oldTextureSnapshotDir }
+    if ($null -eq $oldTextureStages) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_STAGES -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_STAGES = $oldTextureStages }
 }
 
 if ($exitCode -ne 0) {

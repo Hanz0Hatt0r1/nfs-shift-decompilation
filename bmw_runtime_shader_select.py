@@ -159,7 +159,12 @@ def _texture_stage_contract(
             reasons.append(f"runtime:texture-stage-{stage}:missing")
             continue
         wanted = expected_types.get(stage)
-        observed = row.get("resource_type_name")
+        descriptor = row.get("resource_descriptor")
+        observed = (
+            descriptor.get("resource_type_name")
+            if isinstance(descriptor, Mapping)
+            else row.get("resource_type_name")
+        )
         if wanted and observed and str(observed).lower() != str(wanted).lower():
             reasons.append(
                 f"runtime:texture-stage-{stage}:type-mismatch:{observed}:{wanted}"

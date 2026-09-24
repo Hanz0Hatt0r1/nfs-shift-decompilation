@@ -13,7 +13,7 @@ from typing import Any
 
 from bff_meb_render import find_meb_entry
 from reference_renderer import rasterize_textured_mesh
-from runtime_texture_reference import ppm_to_reference_texture
+from runtime_texture_reference import ppm_to_reference_texture, ppms_to_reference_cube
 from shift_importer import BFF
 from texture_reference import decode_dds, CUBE_FORMAT, FORMAT
 
@@ -31,9 +31,55 @@ def _load_resource(path: str | Path) -> dict[str, Any]:
     path = Path(path)
     if path.suffix.lower() == ".dds":
         return decode_dds(path.read_bytes())
+    if path.suffix.lower() == ".ppm":
+        return ppm_to_reference_texture(path)
     value = _json(path)
     return value
 
+
+
+def _contract_snapshot_resources(
+    contract: dict[str, Any],
+    root: str | Path | None,
+) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+    images: dict[int, dict[str, Any]] = {}
+    resources: dict[int, dict[str, Any]] = {}
+    root_path = Path(root) if root is not None else None
+    for row in contract.get("external_textures") or []:
+        if not isinstance(row, dict):
+            continue
+        try:
+            stage = int(row.get("d3d9_sampler_register"))
+        except (TypeError, ValueError):
+            continue
+        paths = [str(path) for path in (row.get("snapshot_paths") or [])]
+        if not paths:
+            continue
+        resolved = [
+            (
+                root_path / path
+                if root_path is not None and not Path(path).is_absolute()
+                else Path(path)
+            )
+            for path in paths
+        ]
+        if len(resolved) == 1:
+            if not resolved[0].is_file():
+                continue
+            image = _load_resource(resolved[0])
+            if image.get("format") == CUBE_FORMAT:
+                resources[stage] = image
+            else:
+                images[stage] = image
+        elif len(resolved) == 6 and all(path.is_file() for path in resolved):
+            resources[stage] = ppms_to_reference_cube({
+                face: path
+                for face, path in zip(
+                    ("px", "nx", "py", "ny", "pz", "nz"),
+                    resolved,
+                )
+            })
+    return images, resources
 
 def _stage_arg(value: str) -> tuple[int, str]:
     if "=" not in value:
@@ -162,6 +208,7 @@ def render_runtime_shader(
     output: str | Path,
     *,
     external_resources: list[str] = (),
+    snapshot_root: str | Path | None = None,
     width: int = 1200,
     height: int = 800,
 ) -> dict[str, Any]:
@@ -197,6 +244,14 @@ def render_runtime_shader(
         primary_bff,
         external_resources,
     )
+    snapshot_images, snapshot_resources = _contract_snapshot_resources(
+        contract,
+        snapshot_root if snapshot_root is not None else Path(contract_path).parent,
+    )
+    for stage, image in snapshot_images.items():
+        texture_images.setdefault(stage, image)
+    for stage, resource in snapshot_resources.items():
+        texture_resources.setdefault(stage, resource)
     sampler_states = _sampler_states(material_input)
 
     # The reference renderer expects one conventional base image argument.
@@ -286,6 +341,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("primary_bff")
     parser.add_argument("output")
     parser.add_argument(
+        "--snapshot-root",
+        help="root directory containing runtime sampler PPM snapshots",
+    )
+    parser.add_argument(
         "--external-resource",
         action="append",
         default=[],
@@ -302,6 +361,7 @@ def main(argv: list[str] | None = None) -> int:
         args.primary_bff,
         args.output,
         external_resources=args.external_resource,
+        snapshot_root=args.snapshot_root,
         width=args.width,
         height=args.height,
     )

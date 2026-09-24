@@ -175,6 +175,8 @@ def build_runtime_binding_evidence(
             }
             if descriptor:
                 binding["resource_descriptor"] = descriptor
+            binding["snapshot_status"] = row.get("snapshot_status")
+            binding["snapshot_paths"] = list(row.get("snapshot_paths") or [])
             frame["texture_bindings"].append(binding)
         elif event in {"present_screenshot", "present_screenshot_failed"}:
             frame["screenshot_events"].append({
