@@ -15,5 +15,5 @@ target_link_libraries(shift_d3d9_capture PRIVATE d3d9)
 set_target_properties(shift_d3d9_capture PROPERTIES OUTPUT_NAME "d3d9")
 
 if (MSVC)
-  target_compile_options(shift_d3d9 PRIVATE /FI"${CMAKE_CURRENT_SOURCE_DIR}/capture_helpers.h")
+  target_compile_options(shift_d3d9_capture PRIVATE /FI"${CMAKE_CURRENT_SOURCE_DIR}/capture_helpers.h")
 endif()
