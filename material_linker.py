@@ -138,6 +138,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                 vertex_sha256=None
                 pair_sha256=None
                 permutation_identity=None
+                permutation_identity_error=None
                 if pair:
                     try:
                         for vb in parse_shader_blobs(data):
@@ -150,8 +151,9 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                                         vertex_offset=int(vb.offset),
                                         pixel_offset=int(p["offset"]),
                                     )
-                                except Exception:
+                                except Exception as exc:
                                     permutation_identity=None
+                                    permutation_identity_error=f"{type(exc).__name__}: {exc}"
                                 break
                     except Exception:
                         pass
@@ -167,6 +169,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                     "vertex_sha256":vertex_sha256,
                     "pair_sha256":pair_sha256,
                     "permutation_identity":permutation_identity,
+                    "permutation_identity_error":permutation_identity_error,
                     "specialization_score":feature_score["score"],
                     "specialization_matched":feature_score["matched"],
                     "specialization_contradicted":feature_score["contradicted"],
