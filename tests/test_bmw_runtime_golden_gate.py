@@ -20,9 +20,15 @@ def _runtime(constant_values=True):
     return {
         'format': 'SHIFT.D3D9RuntimeBindingEvidence/1',
         'declarations': [{'pointer': '0x1', 'decoded': {'records': [{'type':4,'usage':10,'usage_index':0}]}}],
+        'integrity': {'format':'SHIFT.D3D9RuntimeTraceIntegrity/1','status':'observed','blocking_reasons':[]},
         'frames': [{
             'frame': 1,
-            'vertex_declaration': {'declaration_ptr':'0x1','resource_sha256':'sha'},
+            'vertex_declaration': {'declaration_ptr':'0x1','resource_sha256':'sha','create_known':True},
+            'vertex_shader': {'shader_ptr':'0x2','create_known':True},
+            'pixel_shader': {'shader_ptr':'0x3','create_known':True},
+            'stream_sources': [{'stream':0}],
+            'index_binding': {'index_buffer_ptr':'0x4'},
+            'draws': [{'primitive_count':1}],
             'constant_writes': [{'stage':'pixel','start_register':5,'vector4f_count':1,'values':[1.0,2.0,3.0,4.0]}] if constant_values else [],
             'shader_permutation_identity': {'identity_sha256':'shader-id','payload':{'vertex':{'constants':[]},'pixel':{'constants':[5],'sampler_types':{}}}},
         }],

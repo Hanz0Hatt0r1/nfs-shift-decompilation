@@ -12,6 +12,7 @@ from typing import Any, Iterable, Mapping
 from d3d9_declaration_instance import decode_d3d9_declaration_records
 from shader_ir import parse_shader_blobs
 from shader_permutation_identity import build_shader_permutation_identity
+from d3d9_runtime_trace_integrity import validate_runtime_trace_integrity
 
 FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
 EVENTS = {
@@ -92,6 +93,7 @@ def build_runtime_binding_evidence(
     usage_ordinal_map: Mapping[int, int] | None = None,
 ) -> dict[str, Any]:
     rows = [dict(row) for row in events]
+    integrity = validate_runtime_trace_integrity(rows)
     declarations: dict[str, dict[str, Any]] = {}
     shaders: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
@@ -294,6 +296,7 @@ def build_runtime_binding_evidence(
     return {
         "format": FORMAT,
         "status": "observed" if declarations and frame_rows else "partial",
+        "integrity": integrity,
         "trace": {
             "event_count": len(rows),
             "declaration_instance_count": len(declarations),

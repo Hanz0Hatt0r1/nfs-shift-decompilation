@@ -17,6 +17,35 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     command = material.get('render_command')
     reasons = list(parity.get('blocking_reasons') or [])
     command_status = 'not-supplied'
+    integrity = runtime.get('integrity') or {}
+    if integrity.get('status') != 'observed':
+        reasons.append('runtime-trace:integrity-not-proven')
+    matched_frame_ids = {
+        row.get('frame')
+        for row in (parity.get('shader_join', {}).get('candidate_frames') or [])
+    }
+    runtime_frames = [
+        frame for frame in runtime.get('frames') or []
+        if frame.get('frame') in matched_frame_ids
+    ]
+    for frame in runtime_frames:
+        missing = []
+        binding = frame.get('vertex_declaration') or {}
+        if not binding.get('create_known'):
+            missing.append('declaration')
+        for key in ('vertex_shader', 'pixel_shader'):
+            if not (frame.get(key) or {}).get('create_known'):
+                missing.append(key)
+        if not frame.get('stream_sources'):
+            missing.append('stream')
+        if not frame.get('index_binding'):
+            missing.append('indices')
+        if not frame.get('draws'):
+            missing.append('draw')
+        if missing:
+            reasons.append(f"runtime-frame:{frame.get('frame')}:state-incomplete")
+    if parity.get('matched_frame_count') and not runtime_frames:
+        reasons.append('runtime-frame:matched-frame-missing')
     if isinstance(command, dict):
         command_status = 'ready' if command.get('ready') is True else 'blocked'
         if command.get('ready') is not True:

@@ -2245,6 +2245,26 @@ def cmd_bmw_golden_gate(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+
+def cmd_source_d3d9_shader_constant_bind(args: argparse.Namespace) -> int:
+    """Analyze source-backed D3D9 float shader constant bind wrappers."""
+    from d3d9_shader_constant_bind_evidence import analyze_d3d9_shader_constant_bind_file
+
+    report = analyze_d3d9_shader_constant_bind_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "bindings": report["bindings"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["status"] == "observed" else 2
+
+
 def cmd_source_d3d9_shader_lifecycle(args: argparse.Namespace) -> int:
     """Analyze source-backed D3D9 shader bind lifecycle in SHIFT.exe.c."""
     from d3d9_shader_lifecycle_evidence import analyze_d3d9_shader_lifecycle_file
@@ -2826,6 +2846,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--material-binding", help="optional SHIFT.MaterialBinding/1 JSON")
     p.add_argument("-o", "--output", help="optional SHIFT.BMWGoldenRenderGate/1 JSON")
     p.set_defaults(fn=cmd_bmw_golden_gate)
+
+    p = sp.add_parser("source-d3d9-shader-constant-bind", help="analyze source-backed D3D9 float shader constant bind wrappers")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9ShaderConstantBindEvidence/1 JSON")
+    p.set_defaults(fn=cmd_source_d3d9_shader_constant_bind)
 
     p = sp.add_parser("source-d3d9-shader-lifecycle", help="analyze source-backed D3D9 shader bind lifecycle in SHIFT.exe.c")
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
