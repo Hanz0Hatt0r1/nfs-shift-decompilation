@@ -10,6 +10,7 @@ EVENT_SPECS = {
     'set_vertex_declaration': {'pointer':'declaration_ptr'},
     'set_stream_source': {'pointer':'vertex_buffer_ptr'},
     'set_indices': {'pointer':'index_buffer_ptr'},
+    'set_texture': {'pointer':'texture_ptr', 'allow_null': True},
     'create_vertex_shader': {'pointer':'shader_ptr'},
     'create_pixel_shader': {'pointer':'shader_ptr'},
     'set_vertex_shader': {'pointer':'shader_ptr'},
@@ -32,7 +33,8 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
     pointer_key = EVENT_SPECS[event]['pointer']
     if pointer_key:
         value = row.get(pointer_key)
-        if value in (None, ''):
+        allow_null = bool(EVENT_SPECS[event].get('allow_null'))
+        if value in (None, '') and not (allow_null and value is None):
             reasons.append(f'{pointer_key}:missing')
     if event == 'create_vertex_declaration' and row.get('bytes_hex') is not None:
         raw = row.get('bytes_hex')
@@ -42,6 +44,9 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
         raw = row.get('bytes_hex')
         if not isinstance(raw, str) or len(raw) % 2 or not _HEX_RE.fullmatch(raw):
             reasons.append('shader-bytes:invalid-hex')
+    if event == 'set_texture':
+        if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
+            reasons.append('texture:stage-invalid')
     if event in {'set_stream_source'}:
         if not isinstance(row.get('stream'), int) or int(row.get('stream')) < 0:
             reasons.append('stream:invalid')
