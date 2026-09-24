@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from d3d9_type_profile import validate_type_tables
+
 
 FORMAT = "SHIFT.PEImageEvidence/1"
 
@@ -177,6 +179,17 @@ def _read_cstring(image: PEImage, address: int, max_length: int = 256) -> str | 
     return payload.decode("ascii", errors="strict")
 
 
+def _decode_u32_hex_table(hex_value: str | None, count: int) -> list[int | None]:
+    if not hex_value:
+        return [None] * count
+    raw = bytes.fromhex(hex_value)
+    values: list[int | None] = []
+    for index in range(count):
+        offset = index * 4
+        values.append(struct.unpack_from('<I', raw, offset)[0] if offset + 4 <= len(raw) else None)
+    return values
+
+
 def analyze_d3d9_pe_image(
     data: bytes,
     *,
@@ -198,6 +211,10 @@ def analyze_d3d9_pe_image(
             ),
             "hex": None if raw is None else raw.hex(),
         }
+
+    type_size_values = _decode_u32_hex_table(tables['type_size_table']['hex'], 17)
+    type_component_values = _decode_u32_hex_table(tables['type_component_table']['hex'], 17)
+    type_profile_validation = validate_type_tables(type_size_values, type_component_values)
 
     pointer_entries: list[dict[str, Any]] = []
     for ordinal in range(17):
@@ -240,6 +257,7 @@ def analyze_d3d9_pe_image(
         ],
         "tables": tables,
         "type_name_pointers": pointer_entries,
+        "type_profile_validation": type_profile_validation,
         "conclusions": {
             "file_backed_type_table": tables["type_code_table"]["file_backed"],
             "file_backed_type_name_pointer_table": tables["type_name_pointer_table"]["file_backed"],
