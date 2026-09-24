@@ -810,3 +810,14 @@ Runtime texture snapshot metadata in the one-command capture pipeline is now
 kept outside the report payload. The JSON stores only frame/stage/pointer/path
 and decoded dimensions/format; pixel contents remain in the captured PPM files
 and are converted on demand to ReferenceTexture/1 or ReferenceCubeTexture/1.
+
+## Phase 170: runtime external texture type gate
+
+The runtime shader selector now consumes the SetTexture resource descriptors
+captured by the D3D9 producer. External material samplers are validated against
+their declared sampler type before a permutation can become executable:
+shadow-map s0 requires a 2D texture object and environment s3 requires a cube
+texture object.
+
+This is the last runtime-resource preflight before executing the selected
+bodywork VS/PS pair.
