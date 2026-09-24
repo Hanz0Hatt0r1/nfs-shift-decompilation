@@ -26,10 +26,9 @@ def test_bmw_paint_asset_contract_blocks_paint_range_drift():
 def test_bmw_paint_asset_contract_blocks_wrong_resource_identity():
     golden=json.loads(_golden_path().read_text(encoding='utf-8'))
     golden['golden']['resource_sha256']='wrong'
-    # The exact manifest identity must remain present; an arbitrary replacement is still data drift.
     report=validate_bmw_paint_asset(golden)
-    assert report['ready'] is True
-    assert report['golden_identity']['resource_sha256']=='wrong'
+    assert report['ready'] is False
+    assert 'asset:resource-sha256-mismatch' in report['blocking_reasons']
 
 
 def test_bmw_paint_asset_contract_blocks_skinned_asset():
