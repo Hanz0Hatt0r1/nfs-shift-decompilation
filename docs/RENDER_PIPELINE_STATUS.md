@@ -169,3 +169,8 @@ The evidence pipeline now supports BFF-directory scale ingestion: `.bff` → `.m
 ## Phase 71: command-level skinned reference
 
 The renderer now has a command-level skinned oracle: `RenderCommand/1` validation is followed by explicit SkinPose materialization and the existing VS→PS shader/raster path. This removes one more hand-built adapter from the validation chain.
+
+
+## Phase 83: MEB -> D3D9 COLOR ABI
+
+The former 460/461 ABI blocker is resolved from source-correlated descriptor evidence. MEB property IDs are built from three DWORDs `(Type, Usage, Channel)`, while `LoadBinaryMeshFromResource` consumes the same 12-byte vertex descriptor in that order and resolves Type/Usage through the original lookup tables. Source usage 6 is `Colour`; declaration Type 4 is `D3DCOLOR`; `FUN_008310c0` establishes BGRA source memory order. The runtime path therefore uses 460 `(4,6,0) -> COLOR0` and 461 `(4,6,1) -> COLOR1`, with BGRA storage converted to RGBA shader values.
