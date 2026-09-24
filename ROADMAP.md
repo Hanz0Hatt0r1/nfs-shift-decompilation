@@ -145,3 +145,8 @@ This mechanism is generic enough to carry future evidence-backed semantics while
 ## Phase 66: COLOR ABI evidence CLI
 
 The existing `color_abi.py` evidence logic is now exposed through `shift_importer.py color-evidence`. It accepts a raw 4-byte-per-sample stream for MEB property 460 or 461 and emits deterministic RGBA/BGRA candidates, hashes and channel statistics. An optional expected RGBA8 stream adds exact byte comparison but cannot select an ABI automatically.
+
+
+## Phase 67: MEB JSON COLOR evidence
+
+COLOR ABI evidence can now be generated directly from MEB JSON output: 460 → `colors`, 461 → `colors2`. The report retains both channel-order candidates and optional external RGBA comparison without promoting an ABI choice to verified.
