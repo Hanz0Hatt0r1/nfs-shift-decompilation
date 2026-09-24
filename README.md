@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 78** — command-level skinned reference + source-backed D3D9 type semantics. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence уже образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 90** — source-backed D3D9 Type/STREAM/declaration-chain evidence. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -387,3 +387,29 @@ The PE evidence resolver is also aligned with the phase-85 source addresses: Typ
 ## Phase 89 — PE Type-table semantic validation
 
 The PE evidence path now decodes the file-backed Type element-size and source-component tables and runs them through SHIFT.D3D9TypeProfile/1. A real executable can therefore produce `match`, `mismatch`, or `partial` evidence for the recovered 17 Type ordinals without hardcoding runtime table bytes. MEB 460/461 linkage remains independent and is not inferred by this validator.
+
+## Phase 90 — D3D9 declaration evidence chain
+
+Добавлен `SHIFT.D3D9DeclarationChainEvidence/1`, который не переинтерпретирует исходник, а проверяет согласованность уже извлечённых доказательств:
+
+    PE Type tables
+          │
+          ▼
+    Type profile validation
+          │
+          ▼
+    FUN_00854e70 — STREAM grouping
+          │
+          ▼
+    FUN_008587e0 — 8-byte declaration record
+          │
+          ▼
+    FUN_00830f80 — full-record canonicalization
+
+Chain-report требует подтверждения каждого звена и возвращает `not-proven`, если хотя бы одно звено отсутствует или противоречит ожидаемой ABI-форме. Отдельно сохраняются границы доказательств: реальный runtime memory dump и экземпляр runtime declaration пока не предоставлены, а MEB 460/461 → D3D9 Type ordinal остаётся `not-proven`.
+
+CLI:
+
+    python shift_importer.py validate-d3d9-declaration-chain \\
+        type-profile.json stream-topology.json stream-record.json canonicalizer.json \\
+        declaration-chain.json --pe-evidence pe-evidence.json

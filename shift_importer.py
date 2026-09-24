@@ -1853,6 +1853,34 @@ def cmd_d3d9_stream_topology_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+
+def cmd_d3d9_declaration_chain(args: argparse.Namespace) -> int:
+    """Cross-check the recovered D3D9 declaration evidence chain."""
+    from d3d9_declaration_chain_evidence import analyze_d3d9_declaration_chain_files
+
+    result = analyze_d3d9_declaration_chain_files(
+        args.type_profile,
+        args.stream_topology,
+        args.stream_record,
+        args.canonicalizer,
+        pe_evidence_path=args.pe_evidence,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "observed_checks": result["summary"]["observed_checks"],
+        "required_checks": result["summary"]["required_checks"],
+        "blocking_checks": result["summary"]["blocking_checks"],
+        "meb_property_mapping": result["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -2207,6 +2235,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9StreamTopologyEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_stream_topology_evidence)
+
+    p = sp.add_parser("validate-d3d9-declaration-chain", help="cross-check the recovered D3D9 declaration evidence chain")
+    p.add_argument("type_profile", help="SHIFT.D3D9TypeProfile/1 JSON input")
+    p.add_argument("stream_topology", help="SHIFT.D3D9StreamTopologyEvidence/1 JSON input")
+    p.add_argument("stream_record", help="SHIFT.D3D9StreamRecordEvidence/1 JSON input")
+    p.add_argument("canonicalizer", help="SHIFT.D3D9DeclarationCanonicalizerEvidence/1 JSON input")
+    p.add_argument("output", help="SHIFT.D3D9DeclarationChainEvidence/1 JSON output")
+    p.add_argument("--pe-evidence", help="optional SHIFT.PEImageEvidence/1 JSON input")
+    p.set_defaults(fn=cmd_d3d9_declaration_chain)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")

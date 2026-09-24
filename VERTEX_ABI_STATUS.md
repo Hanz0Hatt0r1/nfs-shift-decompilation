@@ -149,3 +149,8 @@ The recovered D3D9 Type switch is now paired with a validation-only semantic pro
 ## Phase 87: Stream-group topology
 
 The recovered renderer groups declaration records by Stream id. The Stream/Type/Usage/Channel input arrays are carried separately; each element resolves its Type and Usage through the recovered ordinal tables, writes Channel as UsageIndex, and is appended to a per-stream record list. The same Type byte indexes `DAT_00b8eef0` to grow the per-stream byte-size accumulator. This provides source-backed topology for future MEB→STREAM correlation, without asserting a property mapping.
+
+
+## Phase 90: D3D9 declaration evidence chain
+
+`SHIFT.D3D9DeclarationChainEvidence/1` теперь объединяет четыре независимых source-backed звена: Type size/component semantics, STREAM grouping, 8-byte `D3DVERTEXELEMENT9`-shaped record и full-record canonicalization. Отсутствующее звено блокирует итоговый статус. Реальный runtime declaration и MEB 460/461 → Type ordinal остаются отдельными unresolved boundaries.

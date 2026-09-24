@@ -263,3 +263,7 @@ The PE resolver is corrected to the source-backed Type layout addresses DAT_00b8
 ## Phase 89: PE Type-table semantic validation
 
 `source-d3d9-pe-evidence` now validates file-backed DAT_00b8eef0 and DAT_00b8ef38 contents against the recovered D3D9 Type semantic profile. The result is machine-readable and fail-closed: missing bytes are `unavailable`, conflicting values are `mismatch`, and only a complete semantic match reaches `match`. This validates table contents but does not select an MEB 460/461 declaration Type.
+
+## Phase 90: D3D9 declaration evidence chain
+
+Phase 90 связывает уже проверенные слои в один machine-readable contract. `SHIFT.D3D9DeclarationChainEvidence/1` проверяет согласованность PE Type-profile validation, `FUN_00854e70` STREAM grouping, `FUN_008587e0` 8-byte `D3DVERTEXELEMENT9`-shaped record и `FUN_00830f80` full-record canonicalization. Любое отсутствующее или противоречивое звено блокирует итог `observed`; цепочка не выбирает MEB 460/461 → Type ordinal и явно фиксирует отсутствие runtime memory/declaration evidence.
