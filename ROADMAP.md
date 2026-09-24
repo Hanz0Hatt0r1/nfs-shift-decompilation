@@ -821,3 +821,11 @@ the original DLL even on process failure.
 This turns the remaining runtime evidence step into a reproducible one-command
 operation. The resulting capture is consumed by the existing D3D9 trace and
 exact BMW shader-selection tools.
+
+
+## Phase 170: runtime external texture type gate
+
+External sampler readiness now includes captured D3D9 resource type metadata:
+the BMW bodywork shader's s0 shadow sampler requires a 2D texture object and
+s3 environmentMap requires a cube texture object. A type mismatch remains a
+hard blocker before shader execution.
