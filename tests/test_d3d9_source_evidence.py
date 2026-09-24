@@ -190,3 +190,97 @@ def test_source_evidence_source_anchors_require_diagnostic_call_shape():
     assert by_id["cprimitive-type-source-reference"]["reference_count"] == 1
     assert by_id["cprimitive-type-source-anchors"]["status"] == "not-found"
     assert by_id["cprimitive-type-source-anchors"]["anchor_count"] == 0
+
+
+def test_d3d9_type_semantics_covers_all_recovered_cases():
+    from d3d9_type_semantics import analyze_d3d9_type_semantics
+
+    source = r'''
+undefined4 __fastcall FUN_00854e70(int param_1,int param_2)
+{
+  switch(*pbVar18) {
+  case 0:
+  case 1:
+  case 2:
+  case 3:
+    _memcpy(local_18,local_84,uVar4 * 4);
+    break;
+  case 4:
+    local_100 = local_84[0];
+    local_fc = local_84[1];
+    local_f8 = local_84[2];
+    local_f4 = local_78;
+    fVar7 = (float)FUN_008310c0(&local_100);
+    *local_18 = fVar7;
+    break;
+  case 5:
+    local_30 = (longlong)ROUND(local_84[uVar11]);
+    *(undefined1 *)((int)&local_c0 + uVar11) = local_30._4_1_;
+    break;
+  case 6:
+    uVar21 = FUN_00901310(uVar5,uVar4);
+    *(short *)((int)&local_c4 + uVar11 * 2) = (short)uVar21;
+    break;
+  case 7:
+    uVar21 = FUN_00901310(uVar5,uVar4);
+    *(short *)((int)local_dc + uVar11 * 2) = (short)uVar21;
+    break;
+  case 8:
+    local_30 = (longlong)ROUND(local_84[uVar11] * 255.0);
+    *(undefined1 *)((int)&local_b4 + uVar11) = local_30._4_1_;
+    break;
+  case 9:
+    uVar21 = FUN_00901310(uVar5,uVar4);
+    *(short *)((int)local_ac + uVar11 * 2) = (short)uVar21;
+    break;
+  case 10:
+    uVar21 = FUN_00901310(uVar5,uVar4);
+    *(short *)((int)local_a4 + uVar11 * 2) = (short)uVar21;
+    break;
+  case 0xb:
+    local_30 = CONCAT44((int)ROUND(*pfVar14 * 65535.0),(int)local_30);
+    (&uStack_76)[uVar11] = local_30._4_2_;
+    break;
+  case 0xc:
+    local_30 = CONCAT44((int)ROUND(*pfVar14 * 65535.0),(int)local_30);
+    *(undefined2 *)((int)local_98 + uVar11 * 2) = local_30._4_2_;
+    break;
+  case 0xd:
+    if (0x3fe < (uint)local_30) local_30._0_4_ = 0x3ff;
+    *local_18 = (float)((local_ec[2] * 0x400 + local_ec[1]) * 0x400 + local_ec[0]);
+    break;
+  case 0xe:
+    uVar21 = FUN_00901310(uVar5,uVar4);
+    (&local_d0)[uVar11] = (float)uVar21;
+    *local_18 = (float)((local_c8 * 0x400 + local_cc) * 0x400 + (int)local_d0);
+    break;
+  case 0xf:
+    FUN_0064fcb0(this,(uint)local_84[uVar11]);
+    break;
+  case 0x10:
+    FUN_0064fcb0(puVar16,(uint)local_84[uVar11]);
+    break;
+  }
+}
+  FUN_00886930(local_3c,cVar13,(uint)local_3c);
+'''
+    result = analyze_d3d9_type_semantics(source)
+    assert result["enum_alignment"]["status"] == "observed"
+    assert result["enum_alignment"]["observed_case_count"] == 17
+    assert result["enum_alignment"]["missing_cases"] == []
+    assert len(result["cases"]) == 17
+    by_code = {row["type_code"]: row for row in result["cases"]}
+    assert by_code[4]["d3d9_type"] == "D3DDECLTYPE_D3DCOLOR"
+    assert by_code[4]["status"] == "observed"
+    assert by_code[8]["d3d9_type"] == "D3DDECLTYPE_UBYTE4N"
+    assert by_code[11]["d3d9_type"] == "D3DDECLTYPE_USHORT2N"
+    assert "32767" in by_code[9]["note"]
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+
+
+def test_d3d9_type_semantics_fails_closed_without_primitive_switch():
+    from d3d9_type_semantics import analyze_d3d9_type_semantics
+
+    result = analyze_d3d9_type_semantics("void f(void) {}")
+    assert result["enum_alignment"]["status"] == "not-found"
+    assert result["cases"] == []
