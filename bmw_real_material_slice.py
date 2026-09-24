@@ -10,10 +10,11 @@ from bmw_material_from_bff import TARGET_BMT, TARGET_MEB, build_real_bmw_materia
 from bmw_m3_paint_asset_contract import validate_bmw_paint_asset
 from draw_packets import build_index, compile_material, norm_ref
 from material_linker import link_material
-from meb_format import read_meb, mesh_to_jsonable
+from meb_format import mesh_summary, mesh_to_jsonable, read_meb
 from renderer_resources import build_resource_index
 from resource_formats import parse_bmt_material, parse_dds_metadata
 from render_command import build_render_command
+from vertex_layout import build_layout_from_summary
 from shift_importer import BFF
 from static_draw import build_static_draw_contract
 
@@ -79,13 +80,12 @@ def build_real_bmw_material_slice(
         texture_records=list(dedup.values())
         material_record={'path':bmt_entry.path,'archive':bmt_archive.path.name,'analysis':{'format':'SHIFT.BMT','material':material}}
         shader_record={'path':fx_entry.path,'archive':fx_archive.path.name}
-        path_map,base_map=build_index([material_record,*texture_records,shader_record])
         binding=binding_report['material_binding']
-        compiled_material=compile_material(material_record,TARGET_BMT.replace('.bmt','.mtx'),path_map,base_map,*build_index(texture_records)[0:1],{},None,binding) if False else None
         material_map,all_base=build_index([material_record,*texture_records,shader_record])
         texture_map,_=build_index(texture_records)
         shader_map,_=build_index([shader_record])
         compiled_material=compile_material(material_record,primitive.material,material_map,all_base,texture_map,shader_map,meb_archive.path.name,binding)
+        mesh_summary_data=mesh_summary(mesh)
         packet={
             'scene':{'archive':primary.name,'path':'bmw://golden'},
             'node':{'name':mesh.name,'type':'OBJECT','matrix':None},
@@ -94,9 +94,9 @@ def build_real_bmw_material_slice(
                 'resolved':{'path':TARGET_MEB,'archive':meb_archive.path.name,'resource_sha256':_sha256(meb_bytes)},
                 'vertex_count':mesh.vertex_count,
                 'triangle_count':mesh.triangle_count,
-                'vertex_layout':__import__('vertex_layout').build_layout_from_summary(__import__('meb_format').mesh_summary(mesh)),
+                'vertex_layout':build_layout_from_summary(mesh_summary_data),
                 'property_descriptors':mesh.property_descriptors,
-                'skinning':__import__('meb_format').mesh_summary(mesh).get('skinning') or {},
+                'skinning':mesh_summary_data.get('skinning') or {},
             },
             'submeshes':[{'index':primitive_index,'first_index':primitive.first_index,'index_count':primitive.index_count,'material_ref':primitive.material,'material':compiled_material}],
         }
