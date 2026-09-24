@@ -339,8 +339,10 @@ class ReferenceShaderState:
             "blocking_reasons": [],
             "unsupported": [],
             "color": self.outputs.get(0),
+            "outputs": {str(k): list(v) for k, v in sorted(self.outputs.items())},
             "depth": self.depth,
             "temps": {str(k): list(v) for k, v in sorted(self.temps.items())},
+            "address": list(self.address),
         }
 
 
@@ -425,6 +427,36 @@ def validate_pixel_program_inputs(program: ShaderProgram) -> dict[str, Any]:
         ],
     }
 
+
+
+def validate_vertex_program_inputs(program: ShaderProgram) -> dict[str, Any]:
+    """Validate vertex inputs supported by the deterministic reference renderer."""
+    unsupported = []
+    for item in program.inputs:
+        usage = str(item.get("usage") or "").upper()
+        index = int(item.get("index", 0))
+        if usage == "POSITION" and index == 0:
+            continue
+        if usage in {"TEXCOORD"} and 0 <= index <= 4:
+            continue
+        if usage in {"NORMAL", "TANGENT", "BINORMAL"} and index == 0:
+            continue
+        unsupported.append({
+            "usage": usage,
+            "index": index,
+            "register": item.get("register"),
+        })
+    if program.stage != "vertex":
+        unsupported.append({"reason": "not-vertex-stage", "stage": program.stage})
+    return {
+        "format": "SHIFT.ReferenceVertexInputValidation/1",
+        "valid": not unsupported,
+        "unsupported": unsupported,
+        "blocking_reasons": [
+            f"vertex-input:unsupported:{item.get('usage')}:{item.get('index')}"
+            for item in unsupported
+        ],
+    }
 
 
 def material_constants_from_payload(

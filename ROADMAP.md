@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 51. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
+Baseline `main` is at phase 52. Latest documented full CI baseline: **193 passed, 2 skipped** in Python, plus successful native IR regression.
 
 The immediate target is a deterministic pipeline:
 
@@ -28,7 +28,7 @@ the original BFF archives at runtime.
 | BMT -> FX -> FXO | implemented selection path | deterministic permutation selection, CTAB sampler/uniform linkage, linked GLSL payload |
 | Shader backend | active/validated | selected LinkedShaderPair stages can be compile/link-checked with `glslangValidator`; unsupported toolchains report `unavailable` |
 | DrawPacket | implemented contract | canonical DrawPacket carries StaticDraw readiness and explicit blockers |
-| Desktop reference renderer | geometry + shader-reference oracle | DrawPacket/RenderCommand execution, DDS DXT/uncompressed decode, multi-sampler textures and TEXCOORD0..4 mapping; deterministic shader IR execution is still bounded by explicit opcode/resource blockers |
+| Desktop reference renderer | geometry + shader-reference oracle | DrawPacket/RenderCommand execution, DDS DXT/uncompressed decode, multi-sampler textures, TEXCOORD0..4 plus normal/tangent/binormal inputs, and bounded VS/PS IR execution; shader/global-resource coverage remains incomplete |
 | Skinning | bind-pose verified contract | explicit SkinPose, CPU reference, GLES ABI, bind-pose equivalence check; animated pose decoding remains |
 | BAB animation payload | evidence tooling | corpus fingerprints and byte-level differential analysis; keyframe grammar still unproven |
 | SGB scene graph | later | one track section assembles from IR |
@@ -40,7 +40,8 @@ the original BFF archives at runtime.
 2. Finish exact MEB vertex declaration details, especially COLOR0/1 type and channel byte order, using real BMW bytes and runtime-equivalent references.
 3. Validate selected generated shader permutations with an actual GLES compiler where the toolchain is available, then use the result as the RenderCommand submission gate.
 4. Finish the material execution boundary: serialize CTAB float/vector constants into deterministic RenderCommand payloads and make the reference renderer consume that exact payload.
-5. Expand reference execution toward real BMW permutations: renderer-global samplers, remaining D3D9 relative addressing/control flow and exact shader math must be evidence-backed, not guessed.
+5. Execute the embedded VS before PS in the desktop reference path and link varyings by semantic key while preserving explicit blockers for unresolved vertex ABI.
+6. Expand reference execution toward real BMW permutations: COLOR0/1 exact packing, TEXCOORD5+ families, blend indices/weights, renderer-global samplers, remaining D3D9 relative addressing/control flow and exact shader math must be evidence-backed, not guessed.
 6. Resolve the remaining COLOR0/COLOR1 byte-order/type ambiguity and prove the exact MEB vertex declaration for real BMW meshes.
 7. Complete deterministic static BMW reference rendering with real lighting/blend semantics and all required external resources.
 8. Use explicit SkinPose + bind-pose checks to validate real skinned vehicle geometry.
@@ -78,3 +79,8 @@ Phases 50 and 51 are already merged on `main`: the shader-backed reference rende
 Phase 52 adds `SHIFT.MaterialConstantPayload/1` as the deterministic bridge from `SHIFT.MaterialUniformBinding/1` into the renderer submission contract. Proven float/vector values are packed into 16-byte D3D9-style c-register slots; matrix orientation, non-float types, register conflicts and overflow remain blocking rather than guessed.
 
 The reference shader executor consumes the serialized payload when it is present, keeping the software oracle aligned with the exact RenderCommand data that a future GLES backend will upload.
+
+
+## Phase 54: vertex-shader reference execution
+
+The desktop reference path now has an explicit VS->PS execution boundary: the embedded vertex ShaderProgram/1 executes against the known MEB semantic inputs, its POSITION output drives clip-space rasterization, and VS outputs are matched to pixel inputs by semantic key before perspective-correct interpolation. The next rendering gap is expanding the proven vertex/material ABI without guessing unresolved MEB COLOR bytes, additional TEXCOORD families or renderer-global resources.

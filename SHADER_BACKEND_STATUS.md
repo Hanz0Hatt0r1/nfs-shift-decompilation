@@ -52,3 +52,8 @@ The GLES shader compiler validator can now be attached to `SHIFT.RenderCommand/1
 ## Phase 53: relative constant addressing
 
 The software shader reference now executes D3D9 vertex-shader a0 relative constant reads and MOVA writes. Constant indices are resolved as the signed 11-bit base index plus the selected a0 component; out-of-range constant reads retain the D3D9 zero-vector behavior. The oracle refuses non-vertex use, non-a0 relative tokens and exact rounding ties instead of guessing undocumented behavior.
+
+
+## Phase 54: vertex stage reference boundary
+
+The software reference executor now exposes all written shader outputs to the renderer, enabling a bounded vertex-stage execution path. POSITION/TEXCOORD/NORMAL/TANGENT/BINORMAL semantics that are already represented in the neutral MEB contract can flow through the VS->PS reference boundary; unresolved semantics remain explicit blockers.

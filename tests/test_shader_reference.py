@@ -290,3 +290,65 @@ def test_reference_shader_only_rounds_written_address_components():
         inputs={0: (1.0, 1.5, 0.0, 0.0)},
     )
     assert result["status"] == "executed"
+
+
+def _vertex_passthrough_program():
+    return ShaderProgram(
+        offset=0,
+        end=0,
+        stage="vertex",
+        major=3,
+        minor=0,
+        instructions=[
+            Instruction(
+                0, 1, "MOV", 0, 3, 0, False,
+                [
+                    _dst(4, 0),
+                    _src(1, 0),
+                ],
+            ),
+            Instruction(
+                12, 1, "MOV", 0, 3, 0, False,
+                [
+                    _dst(6, 1),
+                    _src(1, 1),
+                ],
+            ),
+        ],
+        inputs=[
+            {"usage": "POSITION", "index": 0, "register": "v0"},
+            {"usage": "TEXCOORD", "index": 0, "register": "v1"},
+        ],
+        outputs=[
+            {"usage": "POSITION", "index": 0, "register": "oR0"},
+            {"usage": "TEXCOORD", "index": 0, "register": "oT1"},
+        ],
+        samplers=[],
+        constants=[],
+        temps=[],
+        unsupported_opcodes=[],
+    )
+
+
+def test_reference_shader_returns_all_outputs_for_vertex_stage():
+    program = _vertex_passthrough_program()
+    result = execute_shader(
+        program,
+        inputs={
+            0: (1.0, 0.5, -0.25, 1.0),
+            1: (0.25, 0.75, 0.0, 1.0),
+        },
+    )
+    assert result["status"] == "executed"
+    assert result["outputs"]["0"] == [1.0, 0.5, -0.25, 1.0]
+    assert result["outputs"]["1"] == [0.25, 0.75, 0.0, 1.0]
+
+
+def test_validate_vertex_program_input_contract_rejects_unknown_semantic():
+    from shader_reference import validate_vertex_program_inputs
+
+    program = _vertex_passthrough_program()
+    program.inputs = [{"usage": "COLOR", "index": 0, "register": "v1"}]
+    result = validate_vertex_program_inputs(program)
+    assert result["valid"] is False
+    assert "vertex-input:unsupported:COLOR:0" in result["blocking_reasons"]

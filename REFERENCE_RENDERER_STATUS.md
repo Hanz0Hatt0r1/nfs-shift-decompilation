@@ -41,3 +41,10 @@ The shader-backed reference renderer now maps `TEXCOORD0..4` declarations to MEB
 ## Phase 52: normal/tangent/binormal semantic inputs
 
 The shader-backed reference renderer now accepts `NORMAL0`, `TANGENT0` and `BINORMAL0` pixel inputs and interpolates them from neutral MEB mesh attributes into declared D3D9 input registers. Values are passed through unchanged; normalization remains an explicit shader operation. Missing required attributes are hard execution errors.
+
+
+## Phase 54: vertex-shader reference execution
+
+The shader-backed desktop oracle now optionally executes the embedded SHIFT.ShaderProgram/1 vertex stage before rasterization. Supported MEB-backed vertex inputs are POSITION0, TEXCOORD0..4, NORMAL0, TANGENT0 and BINORMAL0; the vertex outputs are linked to pixel inputs by semantic (usage,index), independent of physical register numbers. POSITION0/POSITIONT0 is treated as clip-space output for this path, while non-position varyings are perspective-correctly interpolated before pixel execution.
+
+When a vertex program is present, CPU-side world/MVP transforms are not applied a second time. Unsupported vertex semantics, missing outputs, non-finite clip positions and unmatched VS/PS semantics remain hard errors.
