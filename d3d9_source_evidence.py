@@ -7,6 +7,7 @@ machine-readable.
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,27 @@ def _line_numbers(source: str, needle: str) -> list[int]:
             return lines
         lines.append(source.count("\n", 0, offset) + 1)
         start = offset + len(needle)
+
+def _source_line_anchors(source: str, filename_fragment: str) -> list[dict[str, int | str]]:
+    """Extract decompiler line -> original source line anchors from diagnostics."""
+    pattern = re.compile(
+        r'FUN_0062de50\\([^,]+,".*?'
+        + re.escape(filename_fragment)
+        + r'",0x([0-9A-Fa-f]+),'
+    )
+    anchors: list[dict[str, int | str]] = []
+    for match in pattern.finditer(source):
+        decompiler_line = source.count("\n", 0, match.start()) + 1
+        original_line_hex = match.group(1).lower()
+        anchors.append(
+            {
+                "decompiler_line": decompiler_line,
+                "original_line": int(original_line_hex, 16),
+                "original_line_hex": "0x" + original_line_hex,
+                "source_file": filename_fragment,
+            }
+        )
+    return anchors
 
 
 def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
@@ -150,6 +172,10 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
         text,
         ".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",
     )
+    primitive_type_anchors = _source_line_anchors(
+        text,
+        ".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",
+    )
 
     packed_path = packed_helper and declaration_type_switch
     observations = [
@@ -238,6 +264,13 @@ def analyze_shift_exe_c(source: str | bytes) -> dict[str, Any]:
             "source_lines": primitive_type_source_lines,
             "reference_count": len(primitive_type_source_lines),
             "detail": "recovered diagnostics embed the original Win CPrimitiveType.cpp source path",
+        },
+        {
+            "id": "cprimitive-type-source-anchors",
+            "status": "observed" if primitive_type_anchors else "not-found",
+            "source_line_anchors": primitive_type_anchors,
+            "anchor_count": len(primitive_type_anchors),
+            "detail": "diagnostic calls preserve original CPrimitiveType.cpp line numbers for selected decompiled branches",
         },
     ]
 
