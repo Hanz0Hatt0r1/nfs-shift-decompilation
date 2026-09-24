@@ -666,3 +666,7 @@ Next: run the intake and `bmw-real-material-slice` in an environment with the ac
 The real BMW material linker can now consume bodywork.fx from an external file while keeping BMT, MEB, FXO and DDS evidence inside the supplied BFF set. The external source is recorded with SHA-256 provenance and must match the BMT shader basename. This removes the artificial requirement that the shader source itself be co-located with the BMW vehicle archive.
 
 The next blocker for the first paint image is therefore data availability: the exact bodywork.fx bytes must be extracted from RENDER.bff (or another evidence-equivalent source), after which the existing FXO selector, material constant linker, DDS decoder and desktop VS→PS renderer can be driven on the real BMW paint primitive.
+
+## Phase 156: real BMW material slice with external FX
+
+The real BMW material-slice builder now accepts an external `bodywork.fx` while retaining BMT, MEB, cached FXO permutations and DDS dependency evidence from the original BMW BFF set. The resulting slice continues through StaticDraw/1 and RenderCommand/1. This removes the previous source-location limitation; the remaining paint-render blockers are the actual FX byte payload and any external render-global textures required by the selected permutation.
