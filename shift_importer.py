@@ -722,10 +722,6 @@ class BFF:
                     if suffix:
                         read_exact(suffix)
 
-            if compressed_remaining:
-                raise ValueError(
-                    f"{entry.path}: {compressed_remaining} trailing compressed bytes remain"
-                )
             if decoded_total != entry.uncompressed_size:
                 raise ValueError(
                     f"{entry.path}: decoded {decoded_total} bytes, expected {entry.uncompressed_size}"
