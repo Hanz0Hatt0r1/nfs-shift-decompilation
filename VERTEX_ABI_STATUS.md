@@ -45,3 +45,8 @@ The deterministic reference layers now consume `230..234` directly as `TEXCOORD0
 ## Phase 56: skin inputs at the renderer boundary
 
 `BLENDWEIGHT0` (MEB 310) and `BLENDINDICES0` (MEB 580) are now available to the integrated vertex shader reference path. The neutral mesh values are converted to shader-register float4 values without normalization or reinterpretation. Actual SkinPose matrix application remains a separate milestone.
+
+
+## Phase 65: TEXCOORD5 evidence boundary
+
+`TEXCOORD5` is present in the recovered BMW shader interface and can be linked to a matching vertex output, but its MEB storage property remains unresolved. The runtime reference layer now accepts it only through an explicit semantic stream; no property id 235/236/etc. is inferred.
