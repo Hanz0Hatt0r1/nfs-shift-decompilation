@@ -168,3 +168,45 @@ def test_fx_source_reflection():
     r = parse_fx_source(BASIC_FX)
     assert 'stddefs.fxh' in r['includes']
     assert len(r['techniques']) >= 2
+
+
+def _synthetic_meb_with_color_descriptors() -> bytes:
+    data = bytearray()
+    data += struct.pack(">I", 1)          # version
+    data += struct.pack(">I", 0)          # flags: no skeleton
+    data += b"descriptor-test\x00"
+    while len(data) % 4:
+        data += b"\x00"
+    data += struct.pack("<III", 1, 2, 0)  # one vertex, two properties, no primitives
+    data += b"\x00" * 40                # fixed header
+    data += struct.pack("<III", 4, 6, 0)  # property 460
+    data += bytes((10, 20, 30, 255))     # COLOR0 payload
+    data += struct.pack("<III", 4, 6, 1)  # property 461
+    data += bytes((40, 50, 60, 255))     # COLOR1 payload
+    return bytes(data)
+
+
+def test_meb_preserves_raw_vertex_property_descriptor_provenance():
+    mesh = read_meb(_synthetic_meb_with_color_descriptors())
+
+    assert mesh.vertex_properties == ["460", "461"]
+    assert mesh.colors == [(10, 20, 30, 255)]
+    assert mesh.colors2 == [(40, 50, 60, 255)]
+
+    descriptors = mesh.property_descriptors
+    assert len(descriptors) == 2
+    assert descriptors[0] == {
+        "id": "460",
+        "offset": 64,
+        "words": [4, 6, 0],
+        "raw_hex": "040000000600000000000000",
+    }
+    assert descriptors[1] == {
+        "id": "461",
+        "offset": 80,
+        "words": [4, 6, 1],
+        "raw_hex": "040000000600000100000000",
+    }
+
+    summary = mesh_summary(mesh)
+    assert summary["property_descriptors"] == descriptors
