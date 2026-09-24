@@ -28,3 +28,19 @@ def test_constant_parity_blocks_missing_payload_register():
     report=validate_render_command_constant_parity(command)
     assert report['ready'] is False
     assert 'submesh:0:constant:Tint:payload' in report['blocking_reasons']
+
+
+def test_constant_parity_gate_returns_structured_invalid_format():
+    report = validate_render_command_constant_parity({
+        "format": "SHIFT.NotRenderCommand/1",
+        "submeshes": [],
+    })
+    assert report["status"] == "invalid"
+    assert report["ready"] is False
+    assert report["blocking_reasons"] == ["render-command:invalid-format"]
+
+
+def test_constant_parity_gate_returns_structured_invalid_input_type():
+    report = validate_render_command_constant_parity(None)
+    assert report["status"] == "invalid"
+    assert report["blocking_reasons"] == ["render-command:invalid-input-type"]

@@ -22,8 +22,10 @@ def _range_rows(command: Mapping[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 def validate_render_command_constant_parity(render_command: Mapping[str, Any]) -> dict[str, Any]:
+    if not isinstance(render_command, Mapping):
+        return {'format':FORMAT,'status':'invalid','ready':False,'blocking_reasons':['render-command:invalid-input-type'],'checks':[]}
     if render_command.get('format') != 'SHIFT.RenderCommand/1':
-        raise ValueError('input is not SHIFT.RenderCommand/1')
+        return {'format':FORMAT,'status':'invalid','ready':False,'blocking_reasons':['render-command:invalid-format'],'checks':[]}
     reasons=[]; checks=[]; submeshes=render_command.get('submeshes') or []
     for index,submesh in enumerate(submeshes):
         uniforms=(submesh.get('uniforms') or {}) if isinstance(submesh,Mapping) else {}
