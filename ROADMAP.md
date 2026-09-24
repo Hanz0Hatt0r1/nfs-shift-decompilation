@@ -127,3 +127,8 @@ The desktop shader reference now accepts a transformed neutral mesh from an expl
 
 
 Phase 63 adds a `SHIFT.RenderCommand/1` adapter for `SHIFT.SkinnedDraw/1`. The command preserves the common vertex/material/resource submission ABI plus an explicit `SHIFT.Skinning/1` payload containing SkinPose and bind-palette metadata. The next step is to connect this command to the existing GLES 3.1 skinning contract and keep the desktop reference path as the oracle.
+
+
+## Phase 64: RenderCommand → GLES skinning ABI
+
+The GLES 3.1 skinning contract can now be built directly from a skinned `SHIFT.RenderCommand/1`. This keeps SkinPose, palette size and BLENDWEIGHT0/BLENDINDICES0 locations identical between the neutral submission layer and the future Android renderer.
