@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 126** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 127** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -666,3 +666,8 @@ The runtime bridge can now join a concrete D3D9 frame to the exact BMW material 
 ## Phase 126: BMW runtime parity
 
 The BMW runtime pipeline now has a final parity gate for shader constant registers and the currently evidenced D3D9 declaration subset. It remains fail-closed when the Usage mapping or declaration instance is unavailable.
+
+
+## Phase 127: runtime shader constants
+
+The runtime capture bridge now records floating-point shader constant writes. The BMW parity gate can compare captured values against `MaterialUniformBinding/1` and make missing values a hard blocker for the final golden path.
