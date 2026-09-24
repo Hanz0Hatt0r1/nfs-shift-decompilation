@@ -2,6 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import bmw_runtime_render_contract as contract
+import bmw_runtime_shader_select
 
 
 class FakeArchive:
@@ -127,7 +128,7 @@ def test_runtime_render_contract_builds_stage_specific_inputs(monkeypatch, tmp_p
         },
     )
     monkeypatch.setattr(
-        contract,
+        bmw_runtime_shader_select,
         "select_runtime_shader",
         lambda material, runtime: {
             "format": "SHIFT.BMWRuntimeShaderSelection/1",
