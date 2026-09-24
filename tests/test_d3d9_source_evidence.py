@@ -519,7 +519,8 @@ def _make_minimal_pe32():
         struct.pack_into("<" + "I" * len(words), section, offset, *words)
 
     put_words(0x00B90088, list(range(20)))
-    put_words(0x00B900D8, [17] * 17)
+    put_words(0x00B8EEF0, [4, 8, 12, 16, 4, 4, 4, 8, 4, 4, 8, 4, 8, 4, 4, 4, 8, 0])
+    put_words(0x00B8EF38, [1, 2, 3, 4, 4, 4, 2, 4, 4, 2, 4, 2, 4, 3, 3, 2, 4, 0])
     put_words(0x00B9011C, list(range(9)))
     put_words(0x00B90140, [100 + i for i in range(14)])
 
@@ -573,6 +574,8 @@ def test_d3d9_pe_evidence_maps_real_ghidra_virtual_addresses():
     assert report["tables"]["type_code_table"]["file_backed"] is True
     assert report["tables"]["type_code_table"]["file_offset"] == 0x488
     assert report["tables"]["type_code_table"]["hex"] is not None
+    assert report["tables"]["type_size_table"]["file_backed"] is True
+    assert report["tables"]["type_component_table"]["file_backed"] is True
     assert report["type_name_pointers"][0]["string"] == "TYPE_0"
     assert report["type_name_pointers"][16]["string"] == "TYPE_16"
     assert report["type_name_pointers"][16]["status"] == "decoded"
