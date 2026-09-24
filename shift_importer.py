@@ -1736,11 +1736,16 @@ def cmd_d3d9_pe_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_d3d9_stream_record_evidence(args: argparse.Namespace) -> int:
-    """Analyze the recovered 8-byte XML STREAM declaration records."""
-    from d3d9_stream_record_evidence import analyze_d3d9_stream_record_semantics_file
+def cmd_meb_d3d9_source_abi(args: argparse.Namespace) -> int:
+    """Correlate MEB Type/Usage/Channel IDs with recovered D3D9 source behavior."""
+    from meb_d3d9_source_abi import analyze_meb_d3d9_source_abi_file
 
-    report = analyze_d3d9_stream_record_semantics_file(args.input)
+    properties = tuple(args.property_ids) if args.property_ids else ("460", "461")
+    report = analyze_meb_d3d9_source_abi_file(args.input)
+    selected = [row for row in report["properties"] if row["property_id"] in properties]
+    report["requested_properties"] = list(properties)
+    report["requested_results"] = selected
+
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
@@ -1749,37 +1754,10 @@ def cmd_d3d9_stream_record_evidence(args: argparse.Namespace) -> int:
     )
     print(json.dumps({
         "format": report["format"],
-        "status": report["status"],
-        "record_stride": report["record"]["stride"],
-        "d3dvertexelement9_shape": report["semantic_links"]["d3dvertexelement9_shape"]["status"],
-        "type_field_offset": report["record"]["field_offsets"]["type"],
-        "usage_field_offset": report["record"]["field_offsets"]["usage"],
-        "usage_index_field_offset": report["record"]["field_offsets"]["usage_index"],
-        "meb_property_mapping": report["meb_property_mapping"]["status"],
-    }, ensure_ascii=False, indent=2))
-    return 0
-
-
-def cmd_d3d9_canonicalizer_evidence(args: argparse.Namespace) -> int:
-    """Analyze the recovered D3D9 declaration canonicalizer."""
-    from d3d9_declaration_canonicalizer_evidence import (
-        analyze_d3d9_declaration_canonicalizer_file,
-    )
-
-    report = analyze_d3d9_declaration_canonicalizer_file(args.input)
-    out = Path(args.output)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    print(json.dumps({
-        "format": report["format"],
-        "status": report["status"],
-        "record_stride": report["canonicalization"]["record_stride"],
-        "full_record_identity": report["canonicalization"]["full_record_identity"],
-        "d3dvertexelement9_shape": report["semantic_links"]["d3dvertexelement9_shape"]["status"],
-        "meb_property_mapping": report["meb_property_mapping"]["status"],
+        "verification_count": report["verification_count"],
+        "verified_properties": report["verified_properties"],
+        "requested_properties": list(properties),
+        "meb_mapping": report["meb_mapping"]["status"],
     }, ensure_ascii=False, indent=2))
     return 0
 
@@ -2114,15 +2092,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--image-base", help="override PE image base, e.g. 0x400000")
     p.set_defaults(fn=cmd_d3d9_pe_evidence)
 
-    p = sp.add_parser("source-d3d9-stream-record-evidence", help="analyze 8-byte XML STREAM declaration records in SHIFT.exe.c")
+    p = sp.add_parser("meb-d3d9-source-abi", help="correlate MEB Type/Usage/Channel IDs with recovered D3D9 source ABI")
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
-    p.add_argument("output", help="SHIFT.D3D9StreamRecordEvidence/1 JSON output")
-    p.set_defaults(fn=cmd_d3d9_stream_record_evidence)
-
-    p = sp.add_parser("source-d3d9-canonicalizer-evidence", help="analyze FUN_00830f80 declaration canonicalization in SHIFT.exe.c")
-    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
-    p.add_argument("output", help="SHIFT.D3D9DeclarationCanonicalizerEvidence/1 JSON output")
-    p.set_defaults(fn=cmd_d3d9_canonicalizer_evidence)
+    p.add_argument("output", help="SHIFT.MEBD3D9SourceABIEvidence/1 JSON output")
+    p.add_argument("property_ids", nargs="*", help="three-digit MEB property IDs; defaults to 460 461")
+    p.set_defaults(fn=cmd_meb_d3d9_source_abi)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
