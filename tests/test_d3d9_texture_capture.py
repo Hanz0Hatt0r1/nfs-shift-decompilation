@@ -126,8 +126,9 @@ def test_runtime_trace_preserves_texture_snapshot_metadata():
     }]
     report = build_runtime_binding_evidence(events)
     binding = report["frames"][0]["texture_bindings"][0]
-    assert binding["resource_type_name"] == "cube_texture"
-    assert binding["width"] == 128
-    assert binding["level_count"] == 8
+    descriptor = binding["resource_descriptor"]
+    assert descriptor["resource_type_name"] == "cube_texture"
+    assert descriptor["width"] == 128
+    assert descriptor["level_count"] == 8
     assert binding["snapshot_status"] == "captured"
     assert len(binding["snapshot_paths"]) == 6
