@@ -363,7 +363,7 @@ void append_texture_descriptor_json(
             << ",\"width\":" << surface.Width
             << ",\"height\":" << surface.Height
             << ",\"format\":" << static_cast<unsigned>(surface.Format)
-            << ",\"mip_levels\":" << surface.Pool;
+            << ",\"pool\":" << static_cast<unsigned>(surface.Pool);
         // Pool is intentionally not exposed as mip_levels; replace with the
         // actual base-texture level count below.
     } else {
