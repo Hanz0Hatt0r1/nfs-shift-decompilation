@@ -313,3 +313,10 @@ The declaration chain can consume this evidence and includes its source provenan
 Phase 98 adds SHIFT.D3D9RenderApiBoundaryEvidence/1. The recovered mesh render setup is now tied to the D3D9 API boundary: SetVertexDeclaration (slot 87), SetStreamSource (slot 100), SetIndices (slot 104), and an indexed draw dispatch at DrawIndexedPrimitive (slot 82). The source-side mesh setup order is recorded separately from the external API slot identity.
 
 This closes the source-backed setup path down to the draw boundary. It does not establish MEB 460/461 -> Type, runtime dump authenticity, or a specific mesh draw call identity beyond the recovered dispatch evidence.
+
+
+## Phase 99: D3D9 declaration creation
+
+Phase 99 formalizes the recovered FUN_00830f80 creation boundary. The canonicalizer allocates element_count * 8 + 8 bytes, copies the recovered declaration-record array, and dispatches through IDirect3DDevice9 vtable slot 86 (0x158) as CreateVertexDeclaration. The resulting declaration object is retained by the interned declaration record.
+
+Together with Phase 97, this gives a source-backed creation-to-bind path without assuming the unresolved MEB 460/461 -> Type mapping.
