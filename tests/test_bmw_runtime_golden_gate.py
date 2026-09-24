@@ -15,7 +15,7 @@ def _material(ready_command=True):
             'property_descriptors': [{'id': '460', 'offset': 0, 'words': [4, 6, 0], 'raw_hex': '040000000600000000000000'}],
         },
         'textures': [],
-        'render_command': {'format':'SHIFT.RenderCommand/1', 'ready': ready_command, 'blocking_reasons': [] if ready_command else ['render-command:not-ready'], 'submeshes': [{'first_index': 150, 'index_count': 6294}]},
+        'render_command': {'format':'SHIFT.RenderCommand/1', 'ready': ready_command, 'blocking_reasons': [] if ready_command else ['render-command:not-ready'], 'submeshes': [{'first_index': 150, 'index_count': 6294}],},
     }
 
 
