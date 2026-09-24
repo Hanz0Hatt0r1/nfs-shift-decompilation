@@ -144,7 +144,7 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
     python shift_importer.py analyze-dir /path/to/Dir reports/ --ext .bmt .fx .fxh .meb .bab .bas .csm .xml .lod .vud .cpt
     python shift_importer.py graph /path/to/bffs graph.json
 
-### Построение IR
+\n### Реальный BFF → MEB → PPM\n\nДля первого настоящего статического smoke-test можно не готовить промежуточные файлы вручную:\n\n    python bff_meb_render.py \\\n      BMW_M3_E36.bff \\\n      vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb \\\n      out/bmw_m3_e36_kit00_body_loda.ppm \\\n      --mesh-json out/bmw_m3_e36_kit00_body_loda.mesh.json\n\nПо умолчанию используется geometry-only flat-gray режим: он доказывает реальный BFF/XMem/LZX → MEB → rasterizer путь и не делает скрытого выбора COLOR0/COLOR1 ABI.\n\nИзолировать отдельный material primitive можно через `--primitive-index N`; режим `--vertex-colors` оставлен только как явная debug-визуализация разобранных COLOR0 bytes.\n\n### Построение IR
 
     python shift_importer.py build-ir /path/to/bffs android_ir/
     SHIFT_LZX_NATIVE=1 python shift_importer.py build-ir /path/to/bffs android_ir_native/
