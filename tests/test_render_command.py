@@ -264,7 +264,10 @@ def test_render_command_emits_explicit_gles_vertex_setup():
     assert setup["460"]["pointer_api"] == "glVertexAttribPointer"
     assert setup["460"]["abi_status"] == "proven"
     assert setup["460"]["channel_order"] == "BGRA"
-    assert setup["460"]["channel_order_candidates"] == ["BGRA"]
+    assert setup["460"]["channel_order_candidates"] == ["RGBA", "BGRA"]
+    assert setup["460"]["shader_order"] == "RGBA"
+    assert setup["460"]["d3d9_type"] == "D3DCOLOR"
+    assert setup["460"]["descriptor_triplet"] == [4, 6, 0]
 
 
 def test_render_command_blocks_unsupported_vertex_storage():
