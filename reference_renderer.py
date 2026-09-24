@@ -16,6 +16,7 @@ from typing import Any, Iterable
 from render_command import validate_render_command
 from static_draw import build_static_draw_contract
 from texture_reference import sample_texture_2d
+from shader_reference import ReferenceShaderState, shader_program_from_ir, validate_pixel_program_inputs
 
 
 RGBA = tuple[int, int, int, int]
@@ -105,6 +106,8 @@ def rasterize_textured_mesh(
     mvp: list[list[float]] | None = None,
     sampler: dict[str, Any] | None = None,
     clear: RGBA = (12, 12, 12, 255),
+    pixel_program: dict[str, Any] | None = None,
+    shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -125,6 +128,32 @@ def rasterize_textured_mesh(
     projected = _project(verts, matrix, width, height)
     pixels = bytearray(clear * (width * height))
     depth = [float("inf")] * (width * height)
+
+    shader = None
+    if pixel_program is not None:
+        shader = shader_program_from_ir(pixel_program)
+        input_validation = validate_pixel_program_inputs(shader)
+        if not input_validation["valid"]:
+            raise ValueError(
+                "pixel shader input contract is not supported: "
+                + ", ".join(input_validation["blocking_reasons"])
+            )
+        if any(int(x) != 0 for x in shader.samplers):
+            raise ValueError(
+                "pixel shader reference path currently supports only sampler s0"
+            )
+        preflight = ReferenceShaderState(
+            shader,
+            inputs={0: (0.0, 0.0, 0.0, 1.0)},
+            constants=shader_constants,
+            textures={0: image},
+            samplers={0: sampler or {}},
+        ).execute()
+        if preflight["status"] != "executed":
+            raise ValueError(
+                "pixel shader preflight failed: "
+                + ", ".join(preflight["blocking_reasons"])
+            )
 
     for base in range(0, len(idx), 3):
         ia, ib, ic = idx[base:base + 3]
@@ -156,7 +185,22 @@ def rasterize_textured_mesh(
                     continue
                 u = w0 * uv_rows[ia][0] + w1 * uv_rows[ib][0] + w2 * uv_rows[ic][0]
                 v = w0 * uv_rows[ia][1] + w1 * uv_rows[ib][1] + w2 * uv_rows[ic][1]
-                color = sample_texture_2d(image, u, v, sampler)
+                if shader is None:
+                    color = sample_texture_2d(image, u, v, sampler)
+                else:
+                    execution = ReferenceShaderState(
+                        shader,
+                        inputs={0: (u, v, 0.0, 1.0)},
+                        constants=shader_constants,
+                        textures={0: image},
+                        samplers={0: sampler or {}},
+                    ).execute()
+                    if execution["status"] != "executed" or execution.get("color") is None:
+                        reasons = execution.get("blocking_reasons", []) or [
+                            "pixel shader produced no color"
+                        ]
+                        raise ValueError("pixel shader execution failed: " + ", ".join(reasons))
+                    color = execution["color"]
                 depth[offset] = z
                 pixels[offset * 4:offset * 4 + 4] = bytes(
                     max(0, min(255, int(round(component * 255.0))))
@@ -179,6 +223,8 @@ def render_textured_static_draw(
     width: int = 512,
     height: int = 512,
     mvp: list[list[float]] | None = None,
+    pixel_program: dict[str, Any] | None = None,
+    shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw with one explicit UV0 texture input."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -219,6 +265,8 @@ def render_textured_static_draw(
         height=height,
         mvp=final_mvp,
         sampler=sampler,
+        pixel_program=pixel_program,
+        shader_constants=shader_constants,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -245,6 +293,8 @@ def render_textured_render_command(
     width: int = 512,
     height: int = 512,
     mvp: list[list[float]] | None = None,
+    shader_reference: bool = False,
+    shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
 ) -> dict[str, Any]:
     """Execute a RenderCommand through the one-texture reference material path."""
     from render_command import validate_render_command
@@ -276,6 +326,15 @@ def render_textured_render_command(
                         break
             if sampler:
                 break
+    pixel_program = None
+    if shader_reference:
+        programs = [
+            (submesh.get("shader") or {}).get("pixel_program")
+            for submesh in command.get("submeshes", []) or []
+        ]
+        pixel_program = next((program for program in programs if program), None)
+        if pixel_program is None:
+            raise ValueError("RenderCommand has no embedded pixel_program for shader reference")
     result = render_textured_static_draw(
         draw,
         mesh,
@@ -285,6 +344,8 @@ def render_textured_render_command(
         width=width,
         height=height,
         mvp=mvp,
+        pixel_program=pixel_program,
+        shader_constants=shader_constants,
     )
     result["command_contract"] = {
         "format": command.get("format"),
@@ -617,6 +678,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--draw-packet", action="store_true", help="treat input as SHIFT.DrawPacket/1 JSON")
     parser.add_argument("--render-command", action="store_true", help="treat input as SHIFT.RenderCommand/1 JSON")
     parser.add_argument("--textured", action="store_true", help="use the UV0 software texture reference path")
+    parser.add_argument("--shader-reference", action="store_true", help="execute embedded pixel ShaderProgram/1 in software")
     parser.add_argument("--texture", type=Path, help="DDS file used by --textured")
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--height", type=int, default=512)
@@ -637,6 +699,7 @@ def main(argv: list[str] | None = None) -> int:
             args.output,
             width=args.width,
             height=args.height,
+            shader_reference=args.shader_reference,
         )
         result["sha256"] = hashlib.sha256(args.output.read_bytes()).hexdigest()
     elif args.render_command:

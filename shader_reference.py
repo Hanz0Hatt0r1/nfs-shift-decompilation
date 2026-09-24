@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from typing import Any, Iterable
 
-from shader_asm import Operand, ShaderProgram
+from shader_asm import Instruction, Operand, ShaderProgram
 
 
 FORMAT = "SHIFT.ReferenceShaderExecution/1"
@@ -286,6 +286,104 @@ class ReferenceShaderState:
             "depth": self.depth,
             "temps": {str(k): list(v) for k, v in sorted(self.temps.items())},
         }
+
+
+def shader_program_from_ir(payload: dict[str, Any]) -> ShaderProgram:
+    """Rehydrate a SHIFT.ShaderProgram/1 JSON record for reference execution."""
+    if payload.get("schema") != "SHIFT.ShaderProgram/1":
+        raise ValueError("invalid shader IR schema")
+    operands = []
+    instructions = []
+    for record in payload.get("instructions", []) or []:
+        decoded_operands = []
+        for raw in record.get("operands", []) or []:
+            decoded_operands.append(Operand(**{
+                key: raw.get(key)
+                for key in Operand.__dataclass_fields__
+                if key in raw
+            }))
+        predicate = record.get("predicate")
+        decoded_predicate = (
+            Operand(**{
+                key: predicate.get(key)
+                for key in Operand.__dataclass_fields__
+                if key in predicate
+            })
+            if predicate
+            else None
+        )
+        instructions.append(Instruction(
+            offset=int(record.get("offset", 0)),
+            opcode=int(record.get("opcode", 0)),
+            name=str(record.get("name", "")),
+            token=int(record.get("token", 0)),
+            length=int(record.get("length", 0)),
+            controls=int(record.get("controls", 0)),
+            predicated=bool(record.get("predicated", False)),
+            operands=decoded_operands,
+            predicate=decoded_predicate,
+        ))
+    return ShaderProgram(
+        offset=int(payload.get("offset", 0)),
+        end=int(payload.get("end", 0)),
+        stage=str(payload.get("stage", "unknown")),
+        major=int((payload.get("shader_model") or [3, 0])[0]),
+        minor=int((payload.get("shader_model") or [3, 0])[1]),
+        instructions=instructions,
+        inputs=list(payload.get("inputs", []) or []),
+        outputs=list(payload.get("outputs", []) or []),
+        samplers=[int(x) for x in payload.get("samplers", []) or []],
+        constants=[int(x) for x in payload.get("constants", []) or []],
+        temps=[int(x) for x in payload.get("temps", []) or []],
+        unsupported_opcodes=[int(x) for x in payload.get("unsupported_opcodes", []) or []],
+        const_ints=[int(x) for x in payload.get("const_ints", []) or []],
+        const_bools=[int(x) for x in payload.get("const_bools", []) or []],
+        sampler_types={int(k): str(v) for k, v in (payload.get("sampler_types") or {}).items()},
+    )
+
+
+def validate_pixel_program_inputs(program: ShaderProgram) -> dict[str, Any]:
+    """Validate the varyings currently supported by the texture reference renderer."""
+    unsupported = []
+    for item in program.inputs:
+        usage = str(item.get("usage") or "").upper()
+        index = int(item.get("index", 0))
+        if usage != "TEXCOORD" or index != 0:
+            unsupported.append({
+                "usage": usage,
+                "index": index,
+                "register": item.get("register"),
+            })
+    if program.stage != "pixel":
+        unsupported.append({"reason": "not-pixel-stage", "stage": program.stage})
+    return {
+        "format": "SHIFT.ReferencePixelInputValidation/1",
+        "valid": not unsupported,
+        "unsupported": unsupported,
+        "blocking_reasons": [
+            f"pixel-input:unsupported:{item.get('usage')}:{item.get('index')}"
+            for item in unsupported
+        ],
+    }
+
+
+def execute_shader_ir(
+    payload: dict[str, Any],
+    *,
+    inputs: dict[int, Iterable[float]] | None = None,
+    constants: dict[str, dict[int, Iterable[float]]] | None = None,
+    textures: dict[int, dict[str, Any]] | None = None,
+    samplers: dict[int, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Execute one embedded SHIFT.ShaderProgram/1 payload."""
+    program = shader_program_from_ir(payload)
+    return execute_shader(
+        program,
+        inputs=inputs,
+        constants=constants,
+        textures=textures,
+        samplers=samplers,
+    )
 
 
 def execute_shader(

@@ -513,3 +513,118 @@ def test_textured_render_command_uses_embedded_sampler_state(tmp_path):
     body = out.read_bytes().split(b"\n", 3)[3]
     pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
     assert (123, 45, 67) in pixels
+
+
+def _textured_tex_shader_program():
+    def operand(kind, reg_type, index, **extra):
+        return {
+            "token": 0x80000000,
+            "kind": kind,
+            "reg_type": reg_type,
+            "index": index,
+            "swizzle": extra.get("swizzle"),
+            "source_modifier": extra.get("source_modifier"),
+            "write_mask": extra.get("write_mask"),
+        }
+
+    return {
+        "schema": "SHIFT.ShaderProgram/1",
+        "stage": "pixel",
+        "shader_model": [3, 0],
+        "offset": 0,
+        "end": 0,
+        "inputs": [{"usage": "TEXCOORD", "index": 0, "register": "v0"}],
+        "outputs": [{"usage": "COLOR", "index": 0, "register": "oC0"}],
+        "samplers": [0],
+        "constants": [],
+        "temps": [],
+        "unsupported_opcodes": [],
+        "instructions": [{
+            "offset": 0,
+            "opcode": 66,
+            "name": "TEX",
+            "token": 0,
+            "length": 4,
+            "controls": 0,
+            "predicated": False,
+            "operands": [
+                operand("dest", 8, 0, write_mask="xyzw"),
+                operand("source", 1, 0, swizzle="xyzw"),
+                operand("source", 10, 0, swizzle="xyzw"),
+            ],
+            "predicate": None,
+        }],
+        "const_ints": [],
+        "const_bools": [],
+        "sampler_types": {"0": "sampler2D"},
+    }
+
+
+def test_reference_renderer_executes_pixel_shader_reference(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((10, 120, 220, 255)),
+    }
+    out = tmp_path / "shader-reference.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        width=24,
+        height=24,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert (10, 120, 220) in pixels
+
+
+def test_reference_renderer_rejects_shader_reference_without_pixel_program(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command,
+            mesh,
+            image,
+            tmp_path / "missing.ppm",
+            shader_reference=True,
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "no embedded pixel_program" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
