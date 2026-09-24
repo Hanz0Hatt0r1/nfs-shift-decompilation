@@ -6,7 +6,7 @@ def _material(first=150, count=6294):
         'format':'SHIFT.BMWMaterialSlice/1',
         'primitive_index':1,
         'render_command':{'submeshes':[
-            {'first_index':first,'index_count':count},
+            {'index': 1, 'first_index':first,'index_count':count},
         ]},
     }
 
