@@ -57,3 +57,8 @@ The software shader reference now executes D3D9 vertex-shader a0 relative consta
 ## Phase 54: vertex stage reference boundary
 
 The software reference executor now exposes all written shader outputs to the renderer, enabling a bounded vertex-stage execution path. POSITION/TEXCOORD/NORMAL/TANGENT/BINORMAL semantics that are already represented in the neutral MEB contract can flow through the VS->PS reference boundary; unresolved semantics remain explicit blockers.
+
+
+## Phase 56: proven skin input semantics
+
+Vertex input validation now recognizes `BLENDWEIGHT0` and `BLENDINDICES0` alongside POSITION/TEXCOORD/NORMAL/TANGENT/BINORMAL. The reference renderer sources these values from the neutral MEB mesh, while the separate skinning matrix/pose path remains intentionally unimplemented.
