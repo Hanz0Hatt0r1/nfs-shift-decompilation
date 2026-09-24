@@ -140,3 +140,8 @@ Use `d3d9_runtime_trace.py --require-same-instance` for strict runtime proof. A 
 ## Same-frame indexed draw
 
 The D3D9 same-instance gate requires `indexed_draw_present=true` in the bound frame. A valid declaration without a same-frame `draw_indexed_primitive` is not proof of mesh submission.
+
+
+## BMW BFF intake
+
+Use `bmw-bff-intake` to preflight the real M3 archive. It verifies the archive size, SHIFT BFF structure, exact BMT/MEB target entries and extracted body-MEB SHA without writing raw payloads.
