@@ -271,6 +271,7 @@ def rasterize_textured_mesh(
     uv_layers: dict[str | int, Iterable[Iterable[float]]] | None = None,
     semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
     vertex_program: dict[str, Any] | None = None,
+    external_texture_images: dict[int, dict[str, Any]] | None = None,
 ) -> bytes:
     """Rasterize one UV-mapped RGBA8 texture as a deterministic material oracle."""
     if width <= 0 or height <= 0:
@@ -343,7 +344,12 @@ def rasterize_textured_mesh(
     depth = [float("inf")] * (width * height)
 
     shader = None
-    shader_textures = {int(k): v for k, v in (texture_images or {0: image}).items()}
+    shader_textures = {
+        int(k): v
+        for k, v in (texture_images if texture_images is not None else {0: image}).items()
+    }
+    for register, external_image in (external_texture_images or {}).items():
+        shader_textures[int(register)] = external_image
     shader_samplers = {
         int(k): dict(v)
         for k, v in (samplers_by_sampler or ({0: sampler or {}})).items()
@@ -529,6 +535,7 @@ def render_textured_static_draw(
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
     semantic_rows: dict[tuple[str, int], Iterable[Iterable[float]]] | None = None,
     vertex_program: dict[str, Any] | None = None,
+    external_texture_images: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Render a validated StaticDraw, optionally executing the embedded vertex shader."""
     if draw.get("format") != "SHIFT.StaticDraw/1":
@@ -586,6 +593,7 @@ def render_textured_static_draw(
         uv_layers=uv_layers,
         semantic_rows=semantic_rows,
         vertex_program=vertex_program,
+        external_texture_images=external_texture_images,
     )
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -617,6 +625,7 @@ def render_textured_render_command(
     shader_constants: dict[str, dict[int, Iterable[float]]] | None = None,
     texture_images: dict[int, dict[str, Any]] | None = None,
     samplers_by_sampler: dict[int, dict[str, Any]] | None = None,
+    external_texture_images: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Execute a RenderCommand through the one-texture reference material path."""
     from render_command import validate_render_command
@@ -663,6 +672,82 @@ def render_textured_render_command(
         pixel_program = next((program for program in programs if program), None)
         if pixel_program is None:
             raise ValueError("RenderCommand has no embedded pixel_program for shader reference")
+
+        external_requirements: dict[int, dict[str, Any]] = {}
+        material_registers: set[int] = set()
+        for submesh in command.get("submeshes", []) or []:
+            for texture in submesh.get("textures", []) or []:
+                if texture.get("resource") == "external":
+                    continue
+                register = texture.get("d3d9_sampler_register")
+                if register is not None:
+                    material_registers.add(int(register))
+            for external in submesh.get("external_samplers", []) or []:
+                register = external.get("d3d9_sampler_register")
+                try:
+                    register_value = int(register)
+                except (TypeError, ValueError):
+                    raise ValueError("RenderCommand external sampler has invalid register")
+                sampler_type = str(external.get("sampler_type") or "").strip()
+                existing = external_requirements.get(register_value)
+                row = {
+                    "sampler": external.get("sampler"),
+                    "d3d9_sampler_register": register_value,
+                    "sampler_type": sampler_type,
+                }
+                if existing is not None and existing != row:
+                    raise ValueError(
+                        f"RenderCommand has conflicting external sampler requirements for s{register_value}"
+                    )
+                external_requirements[register_value] = row
+        overlap = sorted(material_registers.intersection(external_requirements))
+        if overlap:
+            raise ValueError(
+                "RenderCommand has material/external sampler register collision: "
+                + ", ".join(f"s{x}" for x in overlap)
+            )
+        shader_sampler_types = {
+            int(register): str(sampler_type)
+            for register, sampler_type in pixel_program.get("sampler_types", {}).items()
+        }
+        for register, requirement in sorted(external_requirements.items()):
+            declared_type = shader_sampler_types.get(register)
+            required_type = requirement["sampler_type"]
+            if declared_type is not None and declared_type != required_type:
+                raise ValueError(
+                    f"external sampler s{register} type mismatch: "
+                    f"RenderCommand={required_type} shader={declared_type}"
+                )
+            if required_type != "sampler2D":
+                raise ValueError(
+                    f"external sampler s{register} ({required_type}) requires a dedicated reference resource implementation"
+                )
+        effective_texture_images = {
+            int(k): v for k, v in (texture_images or {}).items()
+        }
+        if not effective_texture_images:
+            legacy_register = None
+            for submesh in command.get("submeshes", []) or []:
+                for texture in submesh.get("textures", []) or []:
+                    if texture.get("resource") == "external":
+                        continue
+                    register = texture.get("d3d9_sampler_register")
+                    if register is not None:
+                        legacy_register = int(register)
+                        break
+                if legacy_register is not None:
+                    break
+            if legacy_register is None and 0 not in external_requirements:
+                legacy_register = 0
+            if legacy_register is not None:
+                effective_texture_images[legacy_register] = image
+        for register, external_image in (external_texture_images or {}).items():
+            register_value = int(register)
+            if register_value in material_registers:
+                raise ValueError(
+                    f"external texture image s{register_value} collides with material texture"
+                )
+            effective_texture_images[register_value] = external_image
         if shader_constants is None:
             for submesh in command.get("submeshes", []) or []:
                 payload = submesh.get("constant_payload")
@@ -704,9 +789,10 @@ def render_textured_render_command(
         mvp=mvp,
         pixel_program=pixel_program,
         shader_constants=shader_constants,
-        texture_images=texture_images,
+        texture_images=effective_texture_images,
         samplers_by_sampler=samplers_by_sampler,
         vertex_program=vertex_program,
+        external_texture_images=None,
         semantic_rows={
             key: rows
             for key, rows in {
@@ -719,6 +805,9 @@ def render_textured_render_command(
             if rows
         },
     )
+    result["external_sampler_requirements"] = [
+        row for _, row in sorted(external_requirements.items())
+    ] if shader_reference else []
     result["command_contract"] = {
         "format": command.get("format"),
         "ready": command.get("ready"),
