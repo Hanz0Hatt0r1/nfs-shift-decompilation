@@ -191,6 +191,8 @@ Phase 60 добавил `SHIFT.SkinnedMeshReference/1`, phase 61 подключ�
 
 ![BMW M3 E36 KIT00 geometry preview](docs/render-snapshots/bmw_m3_e36_kit00_scene_geometry.svg)
 
+![BMW M3 E36 KIT00 texture-only material preview](docs/render-snapshots/bmw_m3_e36_kit00_material_scene.svg)
+
 Это quantized SVG-снимок кадра, полученного из реальных VHF/MEB ресурсов. Он нужен как визуальный checkpoint; material/shader golden image остаётся отдельным этапом.
 
 ### VHF scene preview
