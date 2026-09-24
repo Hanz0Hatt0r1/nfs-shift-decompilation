@@ -166,6 +166,88 @@
           3
         ]
       }
+    ],
+    "property_layouts": [
+      {
+        "id": "200",
+        "name": "position",
+        "storage": "f32x3",
+        "components": 3,
+        "normalized": false,
+        "bytes": 42600,
+        "payload_offset": 100,
+        "stride": 12
+      },
+      {
+        "id": "460",
+        "name": "color",
+        "storage": "u8x4",
+        "components": 4,
+        "normalized": true,
+        "bytes": 14200,
+        "payload_offset": 42712,
+        "stride": 4
+      },
+      {
+        "id": "220",
+        "name": "normal",
+        "storage": "f32x3",
+        "components": 3,
+        "normalized": false,
+        "bytes": 42600,
+        "payload_offset": 56924,
+        "stride": 12
+      },
+      {
+        "id": "240",
+        "name": "tangent",
+        "storage": "f32x3",
+        "components": 3,
+        "normalized": false,
+        "bytes": 42600,
+        "payload_offset": 99536,
+        "stride": 12
+      },
+      {
+        "id": "250",
+        "name": "tangent2",
+        "storage": "f32x3",
+        "components": 3,
+        "normalized": false,
+        "bytes": 42600,
+        "payload_offset": 142148,
+        "stride": 12
+      },
+      {
+        "id": "130",
+        "name": "uv0",
+        "storage": "f32x2",
+        "components": 2,
+        "normalized": false,
+        "bytes": 28400,
+        "payload_offset": 184760,
+        "stride": 8
+      },
+      {
+        "id": "132",
+        "name": "uv2",
+        "storage": "f32x2",
+        "components": 2,
+        "normalized": false,
+        "bytes": 28400,
+        "payload_offset": 213172,
+        "stride": 8
+      },
+      {
+        "id": "133",
+        "name": "uv3",
+        "storage": "f32x2",
+        "components": 2,
+        "normalized": false,
+        "bytes": 28400,
+        "payload_offset": 241584,
+        "stride": 8
+      }
     ]
   },
   "provenance": {

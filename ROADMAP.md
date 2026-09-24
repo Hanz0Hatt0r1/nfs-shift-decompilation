@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 145. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 146. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -618,3 +618,10 @@ Next: execute the new command on the supplied `BMW_M3_E36.bff` (optionally with 
 `bmw-real-material-slice` now turns the real BFF-backed M3 paint binding into the existing `SHIFT.BMWMaterialSlice/1` format, including the selected primitive, neutral MEB payload, StaticDraw, RenderResources and RenderCommand. The first target is primitive 1 `(150,6294)`; primitive 2 `(6444,7386)` is selectable explicitly.
 
 This closes the offline render-facing vertical slice. The remaining external dependency is the actual BFF binary being reachable by an execution environment, followed by runtime D3D9 capture for same-instance proof.
+
+
+## Phase 146: BMW M3 MEB evidence parity
+
+The exact parsed BMW M3 body MEB now has a compact committed `SHIFT.BMWM3MEBEvidence/1` snapshot. `SHIFT.BMWM3MEBEvidenceParity/1` verifies the resource SHA, archive entry metadata, mesh counts, six primitive definitions, all eight descriptor triples and all eight property layouts against the golden manifest.
+
+Next: once the archived BFF is reachable, run `bmw-real-material-slice` and require the emitted real material/render slice to pass the offline contracts. Runtime D3D9 capture remains the final same-instance evidence gate.

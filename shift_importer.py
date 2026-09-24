@@ -2462,6 +2462,29 @@ def cmd_bmw_material_from_bff(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_meb_evidence_parity(args: argparse.Namespace) -> int:
+    """Compare the exact BMW M3 MEB evidence snapshot with the golden manifest."""
+    from bmw_m3_meb_evidence_parity import validate_bmw_meb_evidence
+
+    evidence = json.loads(Path(args.evidence).read_text(encoding="utf-8"))
+    golden = json.loads(Path(args.golden).read_text(encoding="utf-8"))
+    report = validate_bmw_meb_evidence(evidence, golden)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_source_bmw_vehicle_identity(args: argparse.Namespace) -> int:
     """Verify the source-level BMW M3 vehicle selector in SHIFT.exe.c."""
     from source_vehicle_identity import validate_source_vehicle_file
@@ -3145,6 +3168,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.RealBMWMaterialBindingEvidence/1 JSON")
     p.add_argument("--supplemental-bff", action="append", default=[], help="additional BFF archives such as BMW_M3_E36_Cockpit.bff")
     p.set_defaults(fn=cmd_bmw_material_from_bff)
+
+    p = sp.add_parser("bmw-meb-evidence-parity", help="compare exact BMW M3 MEB evidence with the golden manifest")
+    p.add_argument("evidence", help="SHIFT.BMWM3MEBEvidence/1 JSON")
+    p.add_argument("golden", help="SHIFT.BMWGoldenAssetManifest/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWM3MEBEvidenceParity/1 JSON")
+    p.set_defaults(fn=cmd_bmw_meb_evidence_parity)
 
     p = sp.add_parser("source-bmw-vehicle-identity", help="verify the source-level BMW M3 vehicle selector in SHIFT.exe.c")
     p.add_argument("input", help="decompiled SHIFT.exe.c source file")

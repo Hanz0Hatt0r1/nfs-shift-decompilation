@@ -115,3 +115,8 @@ Use `bmw_material_from_bff.py` / `bmw-material-from-bff` to turn the retail M3 B
 ## Real BMW material slice
 
 Use `bmw-real-material-slice` to build the renderer-compatible `SHIFT.BMWMaterialSlice/1` from the retail M3 BFF and golden manifest. The output contains the neutral MEB payload, StaticDraw, RenderCommand, resource plan and source provenance; runtime execution remains separate.
+
+
+## M3 MEB evidence parity
+
+Use `bmw-meb-evidence-parity` to compare the exact committed M3 MEB evidence snapshot with the golden manifest. Treat descriptor/property-layout drift as a resource evidence failure before material or renderer stages.
