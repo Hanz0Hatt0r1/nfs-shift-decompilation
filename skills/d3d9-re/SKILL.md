@@ -145,3 +145,15 @@ The D3D9 same-instance gate requires `indexed_draw_present=true` in the bound fr
 ## BMW BFF intake
 
 Use `bmw-bff-intake` to preflight the real M3 archive. It verifies the archive size, SHIFT BFF structure, exact BMT/MEB target entries and extracted body-MEB SHA without writing raw payloads.
+
+## D3D9 runtime capture producer
+
+Build native_capture on an authorized Windows test installation with the MSVC
+toolchain and run the resulting d3d9.dll proxy beside the game executable.
+Set SHIFT_D3D9_CAPTURE to the JSONL output path. The producer covers declaration
+creation/bind, stream/index state, VS/PS creation/bind, VS/PS float constants
+and indexed draws. Successful Present advances the frame counter.
+
+The producer is evidence collection only. It must not infer resource_path,
+resource_sha256, MEB Usage mappings or COLOR ABI. Pass its JSONL through
+validate-d3d9-capture and then d3d9_runtime_trace.py.
