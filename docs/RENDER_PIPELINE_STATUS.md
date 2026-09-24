@@ -79,3 +79,10 @@ The desktop reference path now executes embedded pixel `SHIFT.ShaderProgram/1` I
 `RenderCommand/1` now carries `SHIFT.MaterialConstantPayload/1` whenever a material has reflected numeric constants. The payload preserves 16-byte c-register slots and upload offsets in one deterministic contract; the shader-reference path reads the same serialized slots rather than rebuilding material values from higher-level metadata.
 
 The project still does not claim a complete real BMW material render. Remaining blockers include exact COLOR0/COLOR1 declaration and byte order, renderer-global external samplers (notably environment/shadow), unsupported D3D9 relative addressing/control flow and the complete lighting/blend model.
+
+
+## Phase 54: vertex-shader reference execution
+
+The reference renderer can now execute an embedded vertex ShaderProgram/1 before the pixel stage. POSITION0/POSITIONT0 and the currently proven MEB semantics are sourced into declared D3D9 vertex registers; outputs are linked to pixel inputs by semantic (usage,index), not physical register number; and VS-produced varyings use perspective-correct interpolation.
+
+This closes the architectural VS->PS gap while keeping the reference ABI explicit. COLOR0/1 channel type/order, TEXCOORD5+, blend indices/weights, renderer-global resources and the remaining D3D9 control-flow/addressing cases stay outside the claimed deterministic material-render surface.
