@@ -91,3 +91,8 @@ This closes the architectural VS->PS gap while keeping the reference ABI explici
 ## Phase 55: alternate MEB TEXCOORD family
 
 The desktop reference renderer and standalone vertex-reference adapter now accept either MEB UV family `130..134` (FLOAT32x2) or `230..234` (FLOAT32x3) for semantic `TEXCOORD0..4`. The 230-family is passed through with its third component available to shader code. When both families for the same semantic are present, rendering is blocked to avoid guessing the source declaration.
+
+
+## Phase 56: skin input semantics
+
+The desktop VS reference boundary now consumes MEB 310/580 as `BLENDWEIGHT0`/`BLENDINDICES0` inputs when a vertex ShaderProgram declares them. Both are passed through unchanged at semantic level (indices widened to numeric float4 for the shader register), with missing attributes treated as hard errors. No skin deformation is performed yet.

@@ -53,3 +53,8 @@ When a vertex program is present, CPU-side world/MVP transforms are not applied 
 ## Phase 55: alternate MEB TEXCOORD family
 
 The shader-backed reference renderer now resolves MEB properties `230..234` as the established 3-component `TEXCOORD0..4` UVW family. Layouts that contain the 230-family can therefore feed the existing VS/PS semantic path without fabricating 130-family data. A mesh that contains both 130-family and 230-family properties for one semantic is rejected as an ABI collision rather than silently selecting one declaration.
+
+
+## Phase 56: skin input semantics
+
+The integrated VS reference path now accepts the already-proven `BLENDWEIGHT0` and `BLENDINDICES0` MEB attributes. Bone weights enter the shader as float4; bone indices are widened from their proven UINT8x4 storage to numeric float4 shader inputs without normalization. This phase only wires the input ABI; it does not apply bone matrices or claim animated deformation.

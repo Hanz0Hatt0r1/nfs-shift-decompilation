@@ -1428,3 +1428,145 @@ def test_reference_renderer_rejects_mixed_130_230_uv_families(tmp_path):
         assert "TEXCOORD0 has conflicting MEB UV families: 130 and 230" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def _vertex_skin_input_program():
+    def operand(kind, reg_type, index, *, write_mask="xyzw"):
+        return {
+            "token": 0x80000000,
+            "kind": kind,
+            "reg_type": reg_type,
+            "index": index,
+            "swizzle": "xyzw",
+            "source_modifier": 0,
+            "write_mask": write_mask if kind == "dest" else None,
+        }
+
+    return {
+        "schema": "SHIFT.ShaderProgram/1",
+        "stage": "vertex",
+        "shader_model": [3, 0],
+        "offset": 0,
+        "end": 0,
+        "inputs": [
+            {"usage": "POSITION", "index": 0, "register": "v0"},
+            {"usage": "BLENDWEIGHT", "index": 0, "register": "v2"},
+            {"usage": "BLENDINDICES", "index": 0, "register": "v3"},
+        ],
+        "outputs": [
+            {"usage": "POSITION", "index": 0, "register": "oR0"},
+            {"usage": "TEXCOORD", "index": 0, "register": "oT0"},
+        ],
+        "samplers": [],
+        "constants": [],
+        "temps": [],
+        "unsupported_opcodes": [],
+        "instructions": [
+            {
+                "offset": 0,
+                "opcode": 1,
+                "name": "MOV",
+                "token": 0,
+                "length": 3,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    operand("dest", 4, 0),
+                    operand("source", 1, 0),
+                ],
+                "predicate": None,
+            },
+            {
+                "offset": 12,
+                "opcode": 1,
+                "name": "MOV",
+                "token": 0,
+                "length": 3,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    operand("dest", 6, 0),
+                    operand("source", 1, 2),
+                ],
+                "predicate": None,
+            },
+        ],
+        "const_ints": [],
+        "const_bools": [],
+        "sampler_types": {},
+    }
+
+
+def test_reference_renderer_executes_vs_with_blend_weight_and_index_inputs(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["vertex_program"] = _vertex_skin_input_program()
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0)] * 3},
+        "bone_weights": [(1.0, 0.0, 0.0, 1.0)] * 3,
+        "bone_indices": [(7, 8, 9, 10)] * 3,
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 2,
+        "height": 1,
+        "pixels": bytes((25, 35, 45, 255, 225, 235, 245, 255)),
+    }
+    out = tmp_path / "skin-inputs.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image,
+        out,
+        shader_reference=True,
+        sampler={
+            "min_filter": "POINT",
+            "mag_filter": "POINT",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
+        width=24,
+        height=24,
+    )
+    assert result["vertex_shader_executed"] is True
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (225, 235, 245) in pixels
+
+
+def test_reference_renderer_rejects_missing_blend_index_input(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["vertex_program"] = _vertex_skin_input_program()
+    command["submeshes"][0]["shader"]["pixel_program"] = _textured_tex_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0)] * 3},
+        "bone_weights": [(1.0, 0.0, 0.0, 1.0)] * 3,
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((25, 35, 45, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command,
+            mesh,
+            image,
+            tmp_path / "missing-blend-index.ppm",
+            shader_reference=True,
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "requires BLENDINDICES0 but mesh has no matching attribute" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")

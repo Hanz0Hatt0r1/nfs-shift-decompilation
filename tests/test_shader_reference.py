@@ -352,3 +352,15 @@ def test_validate_vertex_program_input_contract_rejects_unknown_semantic():
     result = validate_vertex_program_inputs(program)
     assert result["valid"] is False
     assert "vertex-input:unsupported:COLOR:0" in result["blocking_reasons"]
+
+
+def test_validate_vertex_program_accepts_proven_skin_inputs():
+    from shader_reference import validate_vertex_program_inputs
+
+    program = _vertex_passthrough_program()
+    program.inputs.extend([
+        {"usage": "BLENDWEIGHT", "index": 0, "register": "v2"},
+        {"usage": "BLENDINDICES", "index": 0, "register": "v3"},
+    ])
+    result = validate_vertex_program_inputs(program)
+    assert result["valid"] is True

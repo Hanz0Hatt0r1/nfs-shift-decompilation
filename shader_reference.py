@@ -441,6 +441,8 @@ def validate_vertex_program_inputs(program: ShaderProgram) -> dict[str, Any]:
             continue
         if usage in {"NORMAL", "TANGENT", "BINORMAL"} and index == 0:
             continue
+        if usage in {"BLENDWEIGHT", "BLENDINDICES"} and index == 0:
+            continue
         unsupported.append({
             "usage": usage,
             "index": index,
