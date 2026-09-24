@@ -45,6 +45,7 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
     import json
     import subprocess
     import sys
+    from pathlib import Path
 
     raw = tmp_path / "color.bin"
     expected = tmp_path / "expected.rgba"
@@ -55,9 +56,9 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
     proc = subprocess.run(
         [
             sys.executable,
-            str(__import__("pathlib").Path(__file__).resolve().parents[1] / "shift_importer.py"),
+            str(Path(__file__).resolve().parents[1] / "shift_importer.py"),
             "color-evidence",
-            "200",
+            "460",
             str(raw),
             str(output),
             "--expected-rgba",
@@ -67,8 +68,7 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
         capture_output=True,
         text=True,
     )
-    assert proc.returncode != 0
-    assert not output.exists()
+    assert proc.returncode == 0, proc.stdout + proc.stderr
     result = json.loads(output.read_text(encoding="utf-8"))
     assert result["format"] == "SHIFT.ColorABIEvidence/1"
     assert result["confidence"] == "ambiguous-channel-order"
@@ -81,17 +81,18 @@ def test_color_abi_cli_writes_non_selecting_evidence_report(tmp_path):
 def test_color_abi_cli_rejects_non_color_property(tmp_path):
     import subprocess
     import sys
+    from pathlib import Path
 
     raw = tmp_path / "color.bin"
     output = tmp_path / "evidence.json"
-    raw.write_bytes(b"\x00\x00\x00\x00")
+    raw.write_bytes(b"\\x00\\x00\\x00\\x00")
 
     proc = subprocess.run(
         [
             sys.executable,
-            str(__import__("pathlib").Path(__file__).resolve().parents[1] / "shift_importer.py"),
+            str(Path(__file__).resolve().parents[1] / "shift_importer.py"),
             "color-evidence",
-            "460",
+            "200",
             str(raw),
             str(output),
         ],
@@ -99,4 +100,5 @@ def test_color_abi_cli_rejects_non_color_property(tmp_path):
         capture_output=True,
         text=True,
     )
-    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert proc.returncode != 0
+    assert not output.exists()
