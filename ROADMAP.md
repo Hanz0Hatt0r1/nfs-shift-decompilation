@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 78. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 83. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -24,7 +24,7 @@ the original BFF archives at runtime.
 | BAB bone table | verified parser | bone table + conservative opaque animation tail |
 | BAB <-> BAS linkage | implemented | deterministic bone mapping and diagnostics |
 | MEB vertex semantics | verified for known BMW samples | semantic usage/index mappings covered by tests |
-| Exact vertex packing | mostly proven | deterministic locations/stride/ABI evidence and collision guards; color 460/461 declaration/channel order remains explicitly ambiguous with candidate tooling |
+| Exact vertex packing | verified for COLOR0/1 | deterministic locations/stride/ABI evidence; 460/461 are source-correlated `(Type,Usage,Channel)=(4,6,0/1)` → `D3DCOLOR`/BGRA; remaining exact packing gaps are tracked separately |
 | BMT -> FX -> FXO | implemented selection path | deterministic permutation selection, CTAB sampler/uniform linkage, linked GLSL payload |
 | Shader backend | active/validated | selected LinkedShaderPair stages can be compile/link-checked with `glslangValidator`; unsupported toolchains report `unavailable` |
 | DrawPacket | implemented contract | canonical DrawPacket carries StaticDraw readiness and explicit blockers |
@@ -37,14 +37,14 @@ the original BFF archives at runtime.
 ## Execution order
 
 1. Keep CI green and preserve explicit evidence/regression coverage.
-2. Resolve the remaining COLOR0/COLOR1 declaration/type and byte-order ambiguity using real BMW evidence; keep ambiguous draws blocked.
+2. Use the now-verified COLOR0/COLOR1 ABI in the BMW draw path and keep the remaining unresolved semantics explicitly blocked.
 3. Validate selected generated shader permutations with an actual GLES compiler where the toolchain is available, then use the result as the RenderCommand submission gate.
 4. Keep the material execution ABI authoritative: CTAB float/vector values arrive through SHIFT.MaterialConstantPayload/1.
 5. Keep the desktop reference renderer as the golden oracle: embedded VS→PS execution, sampler2D/samplerCube resources, UV families and skin inputs must agree with RenderCommand.
 6. Keep explicit SkinPose deformation and SkinnedMeshReference as the CPU oracle, and expose the same payload through RenderCommand.
 7. Drive the GLES 3.1 skinning ABI directly from RenderCommand, run the explicit RenderCommand ↔ GLES parity gate, then cross-check shader-driven skinning against the CPU reference.
 8. Expand reference execution toward real BMW permutations: TEXCOORD5+ families, remaining D3D9 control flow, exact sampler state and lighting/blend semantics.
-9. Prove the exact MEB vertex stream packing for real BMW meshes, especially COLOR0/1.
+9. Validate the source-correlated MEB vertex descriptor triplets against real BMW meshes and close any remaining non-COLOR packing gaps.
 10. Decode BAB animation payload from multiple clips sharing one skeleton, using corpus and byte-diff evidence.
 11. Implement SGB scene semantics and track assembly after the vehicle path is stable.
 12. Port the proven IR/render boundary to Android.
@@ -190,6 +190,10 @@ GLES 3.1 skinning contract. The parity gate verifies attribute locations and
 formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
+
+## Phase 83: MEB -> D3D9 COLOR source ABI
+
+Phase 83 closes the 460/461 declaration blocker. The repository's MEB reader encodes property IDs as three DWORDs `(Type, Usage, Channel)`. The recovered `LoadBinaryMeshFromResource` reads the same 12-byte descriptor as Type/Usage/Channel and resolves the first two through the original D3D9 lookup tables. Source code separately proves Usage 6 is `Colour`, Type 4 is `D3DDECLTYPE_D3DCOLOR` and `FUN_008310c0` gives BGRA source memory order. Thus 460 and 461 are `(4,6,0)` and `(4,6,1)` respectively. The verified ABI now propagates through `MEB property_layouts -> VertexLayout -> StaticDraw/RenderCommand -> desktop reference`.
 
 ## Phase 82: direct PE image resolver
 
