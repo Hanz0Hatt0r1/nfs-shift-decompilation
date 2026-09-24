@@ -364,3 +364,81 @@ def test_validate_vertex_program_accepts_proven_skin_inputs():
     ])
     result = validate_vertex_program_inputs(program)
     assert result["valid"] is True
+
+
+def _sampler2d_pixel_program(sampler_type="sampler2D"):
+    return ShaderProgram(
+        offset=0,
+        end=0,
+        stage="pixel",
+        major=3,
+        minor=0,
+        instructions=[
+            Instruction(
+                0, 66, "TEX", 0, 4, 0, False,
+                [
+                    _dst(8, 0),
+                    _src(1, 0),
+                    Operand(
+                        token=0x80000000,
+                        kind="source",
+                        reg_type=10,
+                        index=0,
+                        swizzle="xyzw",
+                        source_modifier=0,
+                    ),
+                ],
+            ),
+        ],
+        inputs=[{"usage": "TEXCOORD", "index": 0, "register": "v0"}],
+        outputs=[{"usage": "COLOR", "index": 0, "register": "oC0"}],
+        samplers=[0],
+        constants=[],
+        temps=[],
+        unsupported_opcodes=[],
+        sampler_types={0: sampler_type},
+    )
+
+
+def test_reference_shader_executes_external_sampler2d_image():
+    program = _sampler2d_pixel_program("sampler2D")
+    result = execute_shader(
+        program,
+        inputs={0: (0.0, 0.0, 0.0, 1.0)},
+        textures={0: {
+            "format": "SHIFT.ReferenceTexture/1",
+            "source_format": "RGBA32",
+            "width": 1,
+            "height": 1,
+            "pixels": bytes((70, 80, 90, 255)),
+        }},
+    )
+    assert result["status"] == "executed"
+    assert result["color"] == [70 / 255.0, 80 / 255.0, 90 / 255.0, 1.0]
+
+
+def test_reference_shader_rejects_cube_sampler_resource_without_cube_implementation():
+    program = _sampler2d_pixel_program("samplerCube")
+    result = execute_shader(
+        program,
+        inputs={0: (0.0, 0.0, 0.0, 1.0)},
+        textures={0: {
+            "format": "SHIFT.ReferenceTexture/1",
+            "source_format": "RGBA32",
+            "width": 1,
+            "height": 1,
+            "pixels": bytes((70, 80, 90, 255)),
+        }},
+    )
+    assert result["status"] == "error"
+    assert "reference resource type samplerCube for s0 is not implemented" in result["blocking_reasons"][0]
+
+
+def test_reference_shader_reports_missing_external_sampler_image():
+    program = _sampler2d_pixel_program("sampler2D")
+    result = execute_shader(
+        program,
+        inputs={0: (0.0, 0.0, 0.0, 1.0)},
+    )
+    assert result["status"] == "error"
+    assert "texture sampler s0 (sampler2D) has no reference image" in result["blocking_reasons"][0]
