@@ -701,3 +701,11 @@ undocumented bodywork lighting, envmap, material-constant or FXO behavior. The
 next step is to feed the already-proven `BMT -> bodywork.fx -> FXO` selection
 into the RenderCommand shader-reference path and supply the explicit external
 environment/shadow resources.
+
+## Phase 159: split BFF shader probe
+
+The BMW material toolchain now exposes a compact diagnostic for the actual
+split-archive layout: primary BMW BFF plus supplemental `RENDER.bff`. It keeps
+BMT/MEB provenance separate from bodywork FX/FXO provenance and reports the
+selected permutation identity and linked shader presence without fabricating
+runtime-global samplers.
