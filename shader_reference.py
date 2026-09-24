@@ -339,6 +339,7 @@ class ReferenceShaderState:
             "blocking_reasons": [],
             "unsupported": [],
             "color": self.outputs.get(0),
+            "outputs": {str(k): list(v) for k, v in sorted(self.outputs.items())},
             "depth": self.depth,
             "temps": {str(k): list(v) for k, v in sorted(self.temps.items())},
         }
