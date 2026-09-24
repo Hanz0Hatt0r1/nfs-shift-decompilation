@@ -176,7 +176,7 @@ def test_runtime_render_contract_blocks_missing_external_texture_object(monkeypa
         lambda *args, **kwargs: {"format": "SHIFT.LinkedShaderPair/1"},
     )
     monkeypatch.setattr(
-        contract,
+        bmw_runtime_shader_select,
         "select_runtime_shader",
         lambda material, runtime: {
             "format": "SHIFT.BMWRuntimeShaderSelection/1",
