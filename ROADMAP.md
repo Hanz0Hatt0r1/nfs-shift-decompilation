@@ -42,7 +42,7 @@ the original BFF archives at runtime.
 4. Finish the material execution boundary: serialize CTAB float/vector constants into deterministic RenderCommand payloads and make the reference renderer consume that exact payload.
 5. Execute the embedded VS before PS in the desktop reference path and link varyings by semantic key while preserving explicit blockers for unresolved vertex ABI.
 6. Expand reference execution toward real BMW permutations: COLOR0/1 exact packing, TEXCOORD5+ families, blend indices/weights, renderer-global samplers, remaining D3D9 relative addressing/control flow and exact shader math must be evidence-backed, not guessed.
-6. Resolve the remaining COLOR0/COLOR1 byte-order/type ambiguity and prove the exact MEB vertex declaration for real BMW meshes.
+7. Resolve the remaining COLOR0/COLOR1 byte-order/type ambiguity and prove the exact MEB vertex declaration for real BMW meshes.
 7. Complete deterministic static BMW reference rendering with real lighting/blend semantics and all required external resources.
 8. Use explicit SkinPose + bind-pose checks to validate real skinned vehicle geometry.
 9. Reverse engineer BAB animation payload from multiple clips sharing one skeleton, using the corpus and byte-diff evidence tools.
@@ -84,3 +84,8 @@ The reference shader executor consumes the serialized payload when it is present
 ## Phase 54: vertex-shader reference execution
 
 The desktop reference path now has an explicit VS->PS execution boundary: the embedded vertex ShaderProgram/1 executes against the known MEB semantic inputs, its POSITION output drives clip-space rasterization, and VS outputs are matched to pixel inputs by semantic key before perspective-correct interpolation. The next rendering gap is expanding the proven vertex/material ABI without guessing unresolved MEB COLOR bytes, additional TEXCOORD families or renderer-global resources.
+
+
+## Phase 55: alternate MEB TEXCOORD family
+
+Phase 55 closes the known 230..234 UVW semantic gap across the desktop renderer and standalone vertex adapter. The next execution milestone is the proven skin-input path (`BLENDWEIGHT0`/`BLENDINDICES0`) or the unresolved COLOR0/1 channel-order/type evidence, followed by renderer-global samplers and the remaining shader control-flow/lighting surface.
