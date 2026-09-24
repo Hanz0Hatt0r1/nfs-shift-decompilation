@@ -188,12 +188,17 @@ def analyze_meb_d3d9_color_bridge(
     source_report: str | Path | Mapping[str, Any],
     *,
     runtime_report: str | Path | Mapping[str, Any] | None = None,
+    resource_reports: Iterable[str | Path | Mapping[str, Any]] | None = None,
     source_text: str | bytes | None = None,
 ) -> dict[str, Any]:
     """Build the conservative 460/461 -> D3D9 color candidate report."""
     meb = _load_json(meb_report)
     source = _load_json(source_report)
     runtime = _load_json(runtime_report) if runtime_report is not None else None
+    loaded_resource_reports = [
+        _load_json(item)
+        for item in (resource_reports or [])
+    ]
 
     if source.get("format") != SOURCE_FORMAT:
         source_format_status = "mismatch"
@@ -231,6 +236,60 @@ def analyze_meb_d3d9_color_bridge(
 
     runtime_rows = _runtime_color_types(runtime)
 
+    resource_rows: dict[str, dict[str, Any]] = {
+        pid: {
+            "status": "not-supplied",
+            "reports": [],
+        }
+        for pid in SUPPORTED_PROPERTIES
+    }
+    for index, report in enumerate(loaded_resource_reports):
+        pid = str(report.get("property_id") or "")
+        row = resource_rows.get(pid)
+        if row is None:
+            for target in resource_rows.values():
+                target["status"] = "mismatch" if target["status"] == "not-supplied" else target["status"]
+            continue
+        source_info = report.get("source")
+        property_descriptor = source_info.get("property_descriptor") if isinstance(source_info, Mapping) else None
+        payload_range_status = source_info.get("payload_range_status") if isinstance(source_info, Mapping) else None
+        descriptor_range_status = source_info.get("descriptor_range_status") if isinstance(source_info, Mapping) else None
+        payload_match_status = source_info.get("decoded_stream_matches_payload_status") if isinstance(source_info, Mapping) else None
+        payload_sha = source_info.get("payload_raw_bytes_sha256") if isinstance(source_info, Mapping) else None
+        raw_sha = report.get("raw_bytes_sha256")
+        coherent = (
+            report.get("format") == "SHIFT.ColorABIEvidence/1"
+            and isinstance(source_info, Mapping)
+            and source_info.get("kind") == "bff-meb"
+            and isinstance(source_info.get("resource"), str)
+            and isinstance(source_info.get("resource_sha256"), str)
+            and len(source_info.get("resource_sha256")) == 64
+            and isinstance(property_descriptor, Mapping)
+            and str(property_descriptor.get("id")) == pid
+            and descriptor_range_status == "observed"
+            and payload_range_status == "observed"
+            and payload_match_status == "observed"
+            and isinstance(payload_sha, str)
+            and len(payload_sha) == 64
+            and payload_sha == raw_sha
+        )
+        row["reports"].append({
+            "index": index,
+            "resource": source_info.get("resource") if isinstance(source_info, Mapping) else None,
+            "resource_sha256": source_info.get("resource_sha256") if isinstance(source_info, Mapping) else None,
+            "descriptor": property_descriptor,
+            "descriptor_range_status": descriptor_range_status,
+            "payload_range": source_info.get("payload_range") if isinstance(source_info, Mapping) else None,
+            "payload_sha256": payload_sha,
+            "raw_bytes_sha256": raw_sha,
+            "decoded_stream_matches_payload_status": payload_match_status,
+            "status": "observed" if coherent else "mismatch",
+        })
+        if not coherent:
+            row["status"] = "mismatch"
+        elif row["status"] == "not-supplied":
+            row["status"] = "observed"
+
     candidates = [
         {
             **row,
@@ -250,6 +309,7 @@ def analyze_meb_d3d9_color_bridge(
             "meb_storage": meb_row,
             "candidate_types": candidates,
             "runtime_color_type_observation": runtime_rows,
+            "resource_provenance": resource_rows[pid],
             "property_to_type": {
                 "status": "not-proven",
                 "reason": (
@@ -267,6 +327,7 @@ def analyze_meb_d3d9_color_bridge(
         "source_evidence": source_rows,
         "source_linkage": link_rows,
         "runtime_color_type_observation": runtime_rows,
+        "resource_provenance": resource_rows,
         "source_integrity": {
             "source_report_format": source.get("format"),
             "source_text_sha256": source_hash,
@@ -297,12 +358,14 @@ def write_bridge_report(
     output: str | Path,
     *,
     runtime_report: str | Path | Mapping[str, Any] | None = None,
+    resource_reports: Iterable[str | Path | Mapping[str, Any]] | None = None,
     source_text: str | bytes | None = None,
 ) -> dict[str, Any]:
     report = analyze_meb_d3d9_color_bridge(
         meb_report,
         source_report,
         runtime_report=runtime_report,
+        resource_reports=resource_reports,
         source_text=source_text,
     )
     Path(output).write_text(
@@ -326,6 +389,12 @@ def main(argv: list[str] | None = None) -> int:
         help="optional SHIFT.D3D9DeclarationInstanceEvidence/1 JSON report",
     )
     parser.add_argument(
+        "--resource-report",
+        action="append",
+        default=[],
+        help="optional real BFF-backed SHIFT.ColorABIEvidence/1 report; repeat for 460 and 461",
+    )
+    parser.add_argument(
         "--source-text",
         help="optional SHIFT.exe.c text used to verify source-report SHA-256",
     )
@@ -340,6 +409,7 @@ def main(argv: list[str] | None = None) -> int:
         args.source_report,
         args.output,
         runtime_report=args.runtime_report,
+        resource_reports=args.resource_report,
         source_text=source_text,
     )
     return 0
