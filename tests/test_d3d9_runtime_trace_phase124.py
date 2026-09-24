@@ -33,7 +33,7 @@ def test_runtime_trace_tracks_shader_objects_and_pair_identity(tmp_path):
         {'event': 'set_pixel_shader', 'frame': 4, 'shader_ptr': '0x20'},
         {'event': 'draw_indexed_primitive', 'frame': 4, 'primitive_count': 1, 'start_index': 0, 'base_vertex_index': 0},
     ]
-    trace.write_text('\\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
+    trace.write_text('\n'.join(json.dumps(row) for row in rows), encoding='utf-8')
     report = build_runtime_binding_evidence(load_events(trace))
     assert report['trace']['shader_object_count'] == 2
     assert report['trace']['decoded_shader_count'] == 2
