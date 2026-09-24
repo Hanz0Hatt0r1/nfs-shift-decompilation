@@ -25,6 +25,16 @@ def get_bmw_paint_contract() -> dict[str, Any]:
 
 def validate_material_binding(binding: Mapping[str, Any]) -> dict[str, Any]:
     reasons=[]; checks=[]
+    shader = str(binding.get('shader') or binding.get('shader_path') or '').replace('\\','/').rsplit('/', 1)[-1].lower()
+    expected_shader = PAINT_CONTRACT['shader'].lower()
+    if shader and shader != expected_shader:
+        reasons.append(f'shader:path-mismatch')
+    elif not shader:
+        reasons.append('shader:path-missing')
+    observed_specializations = set(binding.get('specializations') or binding.get('specialization_flags') or [])
+    missing_specializations = sorted(set(PAINT_CONTRACT['specializations']) - observed_specializations)
+    if missing_specializations:
+        reasons.append('specializations:missing:' + ','.join(missing_specializations))
     textures=list(binding.get('textures') or binding.get('bindings') or [])
     for expected in PAINT_CONTRACT['samplers']:
         matches=[row for row in textures if row.get('sampler')==expected['fx_sampler'] or row.get('name')==expected['fx_sampler'] or row.get('material_parameter')==expected['parameter']]
