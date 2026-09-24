@@ -39,7 +39,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 try:
     from meb_format import MEBError, read_meb, mesh_summary
-    from shift_importer import BFF, BFFError
+    from shift_importer import BFF
     from color_abi import build_color_abi_evidence
 except ImportError as exc:
     raise SystemExit(
