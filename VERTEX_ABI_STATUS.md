@@ -167,3 +167,10 @@ The recovered renderer groups declaration records by Stream id. The Stream/Type/
 ## Phase 93: declaration instance integrity
 
 Точная форма `D3DDECL_END` теперь фиксируется как отдельное наблюдение, а chain проверяет внутреннюю согласованность runtime report, а не доверяет его полю `status`. Это снижает риск ложного `observed` при импорте внешних memory-dump evidence.
+
+
+## Phase 94: runtime memory declaration evidence
+
+SHIFT.D3D9MemoryDeclarationEvidence/1 теперь связывает сырой loaded-memory dump с recovered 8-byte D3D9 declaration instance через явный адресный диапазон, little-endian marker, SHA-256 полного dump/slice и exact raw bytes. Declaration array автоматически ограничивается точным D3DDECL_END sentinel; дополнительные bytes после него не считаются частью ABI.
+
+Chain-level validation перепроверяет slice hash и структуру вложенного declaration report, поэтому внешний JSON не может одним полем status=match скрыть повреждённые bytes. Provenance фиксирует источник, но остаётся not-authenticated: сам факт наличия dump не является независимой проверкой его происхождения. MEB 460/461 -> Type ordinal остаётся not-proven.

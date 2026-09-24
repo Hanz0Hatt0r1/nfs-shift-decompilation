@@ -3,10 +3,13 @@
 This module intentionally joins already-proven evidence reports instead of
 reconstructing facts a second time. It checks that the recovered Type tables,
 STREAM topology, 8-byte declaration record and canonicalizer all agree on the
-same declaration ABI. MEB 460/461 -> Type remains explicitly unresolved.
+same declaration ABI. Optional runtime-memory evidence is accepted only when
+its address/range metadata, hashes and complete declaration array are coherent.
+MEB 460/461 -> Type remains explicitly unresolved.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
@@ -45,6 +48,55 @@ def _source_signature(report: Mapping[str, Any]) -> dict[str, Any]:
         if source.get(key) is not None
     }
 
+
+def _runtime_memory_proven(report: Mapping[str, Any]) -> bool:
+    if report.get("format") != "SHIFT.D3D9MemoryDeclarationEvidence/1":
+        return False
+    if report.get("status") != "match" or report.get("endianness") != "little":
+        return False
+    memory = report.get("memory")
+    provenance = report.get("provenance")
+    raw_bytes = report.get("bytes")
+    extraction = report.get("extraction")
+    boundary = report.get("evidence_boundary")
+    instance = report.get("declaration_instance")
+    if not all(isinstance(value, Mapping) for value in (
+        memory, provenance, raw_bytes, extraction, boundary, instance
+    )):
+        return False
+    if boundary.get("runtime_memory_dump") != "supplied":
+        return False
+    if boundary.get("runtime_declaration_array") != "observed":
+        return False
+    if not extraction.get("complete_array"):
+        return False
+    source_sha256 = provenance.get("source_sha256")
+    slice_sha256 = provenance.get("slice_sha256")
+    if not all(
+        isinstance(value, str) and len(value) == 64
+        for value in (source_sha256, slice_sha256)
+    ):
+        return False
+    hex_value = raw_bytes.get("hex")
+    length = raw_bytes.get("length")
+    if not isinstance(hex_value, str) or not isinstance(length, int):
+        return False
+    try:
+        decoded = bytes.fromhex(hex_value)
+    except ValueError:
+        return False
+    if len(decoded) != length or memory.get("slice_length") != length:
+        return False
+    if hashlib.sha256(decoded).hexdigest() != slice_sha256:
+        return False
+    if instance.get("status") != "match":
+        return False
+    return (
+        instance.get("record_stride") == EXPECTED_RECORD_STRIDE
+        and _status(instance, "semantic_links", "d3dvertexelement9_shape", "status")
+        == "observed"
+    )
+
 def analyze_d3d9_declaration_chain(
     *,
     type_profile: Mapping[str, Any] | None = None,
@@ -53,6 +105,7 @@ def analyze_d3d9_declaration_chain(
     canonicalizer: Mapping[str, Any] | None = None,
     pe_evidence: Mapping[str, Any] | None = None,
     declaration_instance: Mapping[str, Any] | None = None,
+    runtime_memory_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Join independent evidence reports into one conservative chain result."""
 
@@ -62,6 +115,7 @@ def analyze_d3d9_declaration_chain(
     canonicalizer = canonicalizer or {}
     pe_evidence = pe_evidence or {}
     declaration_instance = declaration_instance or {}
+    runtime_memory_evidence = runtime_memory_evidence or {}
 
     type_validation = _status(type_profile, "validation", "status")
     type_match_count = _status(type_profile, "validation", "match_count")
@@ -74,6 +128,12 @@ def analyze_d3d9_declaration_chain(
     canonicalizer_identity = _status(
         canonicalizer, "canonicalization", "full_record_identity"
     )
+
+    memory_supplied = bool(runtime_memory_evidence)
+    if memory_supplied and not declaration_instance:
+        nested_instance = runtime_memory_evidence.get("declaration_instance")
+        if isinstance(nested_instance, Mapping):
+            declaration_instance = nested_instance
 
     instance_supplied = bool(declaration_instance)
     instance_status = _status(declaration_instance, "status")
@@ -156,6 +216,12 @@ def analyze_d3d9_declaration_chain(
         },
     }
 
+    if memory_supplied:
+        checks["runtime_memory_provenance"] = {
+            "status": "observed" if _runtime_memory_proven(runtime_memory_evidence) else "not-proven",
+            "detail": "the runtime memory slice has coherent address/range provenance, byte hashes and a complete declaration array",
+        }
+
     if instance_supplied:
         instance_check_status = (
             "observed"
@@ -184,6 +250,8 @@ def analyze_d3d9_declaration_chain(
     ]
     if instance_supplied:
         required_keys.append("declaration_instance")
+    if memory_supplied:
+        required_keys.append("runtime_memory_provenance")
     required_keys = tuple(required_keys)
     blocking = [
         key for key in required_keys if checks[key]["status"] != "observed"
@@ -213,6 +281,10 @@ def analyze_d3d9_declaration_chain(
             "record_fields_observed": observed_fields,
             "record_fields_expected": total_fields,
             "pe_type_profile_status": pe_validation if pe_available else "not-supplied",
+            "runtime_memory_status": (
+                runtime_memory_evidence.get("status", "not-supplied")
+                if memory_supplied else "not-supplied"
+            ),
         },
         "evidence_boundary": {
             "source_backed": all(
@@ -228,7 +300,9 @@ def analyze_d3d9_declaration_chain(
             ),
             "pe_file_backed_validation": pe_validation if pe_available else "not-supplied",
             "runtime_memory_dump": (
-                "observed" if instance_supplied and instance_status == "match" else "not-supplied"
+                "observed"
+                if memory_supplied and _runtime_memory_proven(runtime_memory_evidence)
+                else ("not-proven" if memory_supplied else "not-supplied")
             ),
             "runtime_declaration_instance": (
                 "observed" if instance_supplied and instance_status == "match" else (
@@ -245,6 +319,16 @@ def analyze_d3d9_declaration_chain(
             "stream_record": _source_signature(stream_record),
             "canonicalizer": _source_signature(canonicalizer),
         },
+        "runtime_memory_evidence": (
+            {
+                "format": runtime_memory_evidence.get("format"),
+                "status": runtime_memory_evidence.get("status"),
+                "memory": runtime_memory_evidence.get("memory"),
+                "provenance": runtime_memory_evidence.get("provenance"),
+                "extraction": runtime_memory_evidence.get("extraction"),
+            }
+            if memory_supplied else None
+        ),
     }
 
 def analyze_d3d9_declaration_chain_files(
@@ -255,6 +339,7 @@ def analyze_d3d9_declaration_chain_files(
     *,
     pe_evidence_path: str | Path | None = None,
     declaration_instance_path: str | Path | None = None,
+    runtime_memory_evidence_path: str | Path | None = None,
 ) -> dict[str, Any]:
     def load(path: str | Path) -> dict[str, Any]:
         value = json.loads(Path(path).read_text(encoding="utf-8"))
@@ -270,5 +355,10 @@ def analyze_d3d9_declaration_chain_files(
         pe_evidence=None if pe_evidence_path is None else load(pe_evidence_path),
         declaration_instance=(
             None if declaration_instance_path is None else load(declaration_instance_path)
+        ),
+        runtime_memory_evidence=(
+            None
+            if runtime_memory_evidence_path is None
+            else load(runtime_memory_evidence_path)
         ),
     )
