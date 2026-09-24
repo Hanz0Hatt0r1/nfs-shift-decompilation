@@ -523,3 +523,6 @@ CLI-цепочка:
         declaration-chain.json \
         --runtime-memory-evidence declaration-memory.json \
         --declaration-sentinel-evidence declaration-sentinel.json
+
+
+Patch note: sentinel source scanner hardened against Ghidra variable-name variants; it now matches the actual uploaded snapshot where the sentinel index is local_14, while preserving the exact six-field checks.
