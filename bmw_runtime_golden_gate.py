@@ -9,6 +9,7 @@ from typing import Any
 from bmw_runtime_parity import validate_files as validate_runtime_parity_files
 from bmw_runtime_draw_correlation import correlate_runtime_draw
 from bmw_vertex_input_parity import validate_bmw_vertex_input_parity
+from render_command_constant_parity import validate_render_command_constant_parity
 
 FORMAT = "SHIFT.BMWRuntimeGoldenGate/1"
 
@@ -38,6 +39,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
 
     command = material.get('render_command')
     command_status = 'not-supplied'
+    constant_parity = None
     integrity = runtime.get('integrity') or {}
     if integrity.get('status') != 'observed':
         reasons.append('runtime-trace:integrity-not-proven')
@@ -68,6 +70,8 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     if parity.get('matched_frame_count') and not runtime_frames:
         reasons.append('runtime-frame:matched-frame-missing')
     if isinstance(command, dict):
+        constant_parity = validate_render_command_constant_parity(command)
+        reasons.extend(constant_parity.get('blocking_reasons') or [])
         command_status = 'ready' if command.get('ready') is True else 'blocked'
         if command.get('ready') is not True:
             reasons.extend(command.get('blocking_reasons') or ['render-command:not-ready'])
@@ -83,6 +87,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
         'runtime_parity': parity,
         'runtime_draw_correlation': draw_correlation,
         'vertex_input_parity': vertex_input_parity,
+        'render_command_constant_parity': constant_parity,
         'render_command': {'status': command_status},
         'golden_requirements': {
             'shader_identity': 'required',
@@ -94,6 +99,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
             'declaration_parity': 'required',
             'vertex_input_parity': 'required',
             'draw_correlation': 'required',
+            'render_command_constant_parity': 'required',
         },
     }
 
