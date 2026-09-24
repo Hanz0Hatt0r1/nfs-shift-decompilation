@@ -1,7 +1,8 @@
-"""Evidence tools for unresolved SHIFT MEB color property ABI (460/461).
+"""Evidence tools for the source-correlated SHIFT MEB color property ABI (460/461).
 
-The exact declaration/channel order remains unresolved. This module produces
-deterministic candidate interpretations and hashes; it never selects one.
+The declaration/channel order is now source-proven under the repository's
+three-DWORD MEB property descriptor convention. Candidate interpretations remain
+available for forensic comparisons.
 """
 from __future__ import annotations
 
@@ -206,7 +207,7 @@ def compare_color_candidate(
 def aggregate_color_abi_evidence(
     reports: Iterable[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Aggregate multiple COLOR evidence reports without selecting an ABI candidate."""
+    """Aggregate COLOR evidence reports while preserving the source-proven selection."""
     rows = list(reports)
     by_property: dict[str, list[dict[str, Any]]] = {"460": [], "461": []}
     invalid: list[str] = []
