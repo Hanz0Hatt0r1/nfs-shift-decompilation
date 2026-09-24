@@ -325,3 +325,8 @@ Together with Phase 97, this gives a source-backed creation-to-bind path without
 ## Phase 100: declaration count boundary
 
 Phase 100 formalizes the recovered declaration-count helper FUN_0082ea90. It walks 8-byte records using the first WORD (Stream) and stops counting when Stream >= 0xff; FUN_00830f80 then allocates count * 8 + 8 bytes for declaration creation. The report deliberately does not equate that one-field stop rule with the full D3DDECL_END sentinel.
+
+
+## Phase 101: exact D3DDECL_END producer
+
+Phase 101 formalizes the producer-side terminator in FUN_008587e0. The source writes Stream=0xffff, Offset=0, Type=0x11, Method=0, Usage=0, UsageIndex=0 at the record immediately after the parsed declaration elements. This closes the exact sentinel semantics that Phase 100 intentionally left separate from the one-field Stream >= 0xff count rule.
