@@ -34,19 +34,26 @@ def normalize_material_binding(binding: Mapping[str, Any]) -> dict[str, Any]:
         or selected_fxo.get("specialization_matched")
         or []
     )
+    raw_texture_rows = list(binding.get("textures") or [])
+    if not raw_texture_rows and binding.get("bindings"):
+        raw_texture_rows = list(binding.get("bindings") or [])
     textures = []
-    for row in binding.get("textures") or []:
+    external_samplers = list(binding.get("external_samplers") or [])
+    for row in raw_texture_rows:
         item = dict(row)
         if item.get("texture") is None and item.get("ref") is not None:
             item["texture"] = item.get("ref")
         if item.get("sampler") is None:
             item["sampler"] = item.get("name")
-        textures.append(item)
+        if item.get("binding") == "external-or-specialised" and not binding.get("external_samplers"):
+            external_samplers.append(item)
+        else:
+            textures.append(item)
     return {
         "shader": shader_value,
         "specializations": list(specializations),
         "textures": textures,
-        "external_samplers": list(binding.get("external_samplers") or []),
+        "external_samplers": external_samplers,
     }
 
 
