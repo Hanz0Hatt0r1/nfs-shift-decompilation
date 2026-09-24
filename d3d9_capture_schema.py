@@ -11,6 +11,8 @@ EVENT_SPECS = {
     'set_stream_source': {'pointer':'vertex_buffer_ptr'},
     'set_indices': {'pointer':'index_buffer_ptr'},
     'set_texture': {'pointer':'texture_ptr', 'allow_null': True},
+    'present_screenshot': {},
+    'present_screenshot_failed': {},
     'create_vertex_shader': {'pointer':'shader_ptr'},
     'create_pixel_shader': {'pointer':'shader_ptr'},
     'set_vertex_shader': {'pointer':'shader_ptr'},
@@ -47,6 +49,12 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
     if event == 'set_texture':
         if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
             reasons.append('texture:stage-invalid')
+    if event == 'present_screenshot':
+        if row.get('path') is not None and not isinstance(row.get('path'), str):
+            reasons.append('screenshot:path-invalid')
+    if event == 'present_screenshot_failed':
+        if row.get('reason') is not None and not isinstance(row.get('reason'), str):
+            reasons.append('screenshot:reason-invalid')
         if row.get('texture_ptr') not in (None, ''):
             status = row.get('resource_descriptor_status')
             if status is not None and status not in {'observed', 'type-only', 'null'}:
