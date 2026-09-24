@@ -11,46 +11,43 @@
     "base": "param_1 + 0x1c",
     "stride": 8,
     "pointer_array": "*(int *)(*(int *)(param_1 + 0x24) + 8)",
-    "pointer_stride": 4
+    "pointer_stride": 4,
+    "d3d9vertexelement9_shape": "observed"
   },
   "fields": {
-    "stream_ordinal": {
+    "stream": {
       "offset": 0,
       "width": 2,
-      "source_lines": [
-        933765,
-        933766
-      ]
+      "source_line": 933766,
+      "initial_value": 0
     },
-    "running_offset": {
+    "offset": {
       "offset": 2,
       "width": 2,
-      "source_line": 933768
+      "source_line": 933767,
+      "source_symbol": "local_48"
     },
-    "type_code": {
+    "type": {
       "offset": 4,
       "width": 1,
       "type_lookup_line": 933779,
       "type_to_code_line": 933799,
-      "record_write_line": 933800,
-      "ordinal_exclusive_limit": 17,
-      "ordinal_limit_line": 933804
+      "record_write_line": 933800
     },
-    "reserved": {
+    "method": {
       "offset": 5,
       "width": 1,
-      "source_line": 933777
+      "source_line": 933768,
+      "initial_value": 0
     },
-    "usage_code": {
+    "usage": {
       "offset": 6,
       "width": 1,
       "usage_lookup_line": 933815,
       "usage_to_code_line": 933835,
-      "record_write_line": 933836,
-      "ordinal_exclusive_limit": 9,
-      "ordinal_limit_line": 933840
+      "record_write_line": 933836
     },
-    "channel": {
+    "usage_index": {
       "offset": 7,
       "width": 1,
       "xml_read_line": 933842,
@@ -60,8 +57,9 @@
   "semantic_chain": {
     "xml_type_to_record_type_code": "observed",
     "xml_usage_to_record_usage_code": "observed",
-    "xml_channel_to_record_channel": "observed",
     "usage_code_6_name": "Colour",
-    "meb_460_461_to_type_code": "not-proven"
+    "meb_460_461_to_type_code": "not-proven",
+    "d3dvertexelement9_shape": "observed",
+    "xml_channel_to_record_usage_index": "observed"
   }
 }
