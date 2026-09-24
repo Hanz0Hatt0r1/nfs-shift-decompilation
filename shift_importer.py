@@ -1680,6 +1680,33 @@ def cmd_d3d9_usage_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_memory_table_evidence(args: argparse.Namespace) -> int:
+    """Decode D3D9 lookup-table bytes from a raw loaded-memory window."""
+    from d3d9_memory_table_evidence import analyze_d3d9_memory_tables_file
+
+    report = analyze_d3d9_memory_tables_file(
+        args.input,
+        int(args.base_address, 0),
+        include_channel_layout_hint=args.include_channel_layout_hint,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "type_table_status": report["tables"]["type_code"]["status"],
+        "type_name_pointer_count": len(report["type_name_pointers"]),
+        "decoded_type_name_count": sum(
+            item["status"] == "decoded" for item in report["type_name_pointers"]
+        ),
+        "meb_460_461_mapping": report["conclusions"]["meb_460_461_to_type_code"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1996,6 +2023,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9UsageSemanticsEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_usage_evidence)
+
+    p = sp.add_parser("source-d3d9-memory-evidence", help="decode D3D9 tables from a raw memory dump")
+    p.add_argument("input", help="raw loaded-memory window")
+    p.add_argument("base_address", help="virtual address of the first dump byte, e.g. 0xB90000")
+    p.add_argument("output", help="SHIFT.D3D9MemoryTableEvidence/1 JSON output")
+    p.add_argument("--include-channel-layout-hint", action="store_true")
+    p.set_defaults(fn=cmd_d3d9_memory_table_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")

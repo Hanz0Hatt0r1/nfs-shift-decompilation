@@ -119,3 +119,8 @@ The full supplied source snapshot is recorded without including the game source 
 ## Phase 80: recovered Usage semantics
 
 The recovered XML stream loader iterates a fixed usage domain `0..8` and resolves the usage name through `PTR_s_Position_00b901a8`. Source-visible entries are `Position`, `Weights`, `Normal`, an opaque `DAT_00b1d188` entry, `Tangent`, `Binormal`, `Colour`, `Depth`, and `Indices`. Usage code `6 -> Colour` is now machine-readable. This does not resolve the separate Type table, so COLOR0/1 remain ambiguous.
+
+
+## Phase 81: raw memory table evidence
+
+`d3d9_memory_table_evidence.py` provides an input path for the data missing from the recovered C export: a raw memory window plus its virtual base address. The tool decodes `DAT_00b90088`, `DAT_00b900d8`, usage tables, and the 17-entry `PTR_DAT_00b901d0` pointer table without inventing initializer values. Resolved printable C strings are reported as evidence; unresolved pointers remain unresolved.

@@ -453,3 +453,53 @@ uint __fastcall FUN_008587e0(int param_1,int param_2)
     assert result["switch"]["usage_exclusive_limit"] == 9
     assert result["usages"][6]["source_name"] == "Colour"
     assert result["usages"][6]["status"] == "observed"
+
+
+def test_d3d9_memory_table_evidence_decodes_tables_and_type_name_pointers():
+    import struct
+
+    from d3d9_memory_table_evidence import (
+        analyze_d3d9_memory_tables,
+        TYPE_NAME_POINTER_TABLE_ADDRESS,
+    )
+
+    base = 0x00B90000
+    data = bytearray(0x500)
+
+    def put_words(address, words):
+        offset = address - base
+        struct.pack_into("<" + "I" * len(words), data, offset, *words)
+
+    put_words(0x00B90088, list(range(20)))
+    put_words(0x00B900D8, [10] * 17)
+    put_words(0x00B9011C, list(range(9)))
+    put_words(0x00B90140, [100 + i for i in range(14)])
+
+    string_addresses = [base + 0x300 + i * 16 for i in range(17)]
+    put_words(TYPE_NAME_POINTER_TABLE_ADDRESS, string_addresses)
+    for ordinal, address in enumerate(string_addresses):
+        payload = f"Type{ordinal}".encode("ascii") + b"\x00"
+        data[address - base : address - base + len(payload)] = payload
+
+    result = analyze_d3d9_memory_tables(bytes(data), base)
+    assert result["tables"]["type_code"]["complete"] is True
+    assert result["tables"]["type_code"]["values"][:17] == list(range(17))
+    assert result["tables"]["size"]["complete"] is True
+    assert result["tables"]["usage"]["values"] == list(range(9))
+    assert result["tables"]["usage_index"]["values"][0] == 100
+    assert len(result["type_name_pointers"]) == 17
+    assert result["type_name_pointers"][0]["string"] == "Type0"
+    assert result["type_name_pointers"][16]["string"] == "Type16"
+    assert result["type_name_pointers"][16]["status"] == "decoded"
+    assert result["proven_type_code_prefix"]["status"] == "decoded"
+    assert result["conclusions"]["meb_460_461_to_type_code"]["status"] == "not-proven"
+
+
+def test_d3d9_memory_table_evidence_fails_closed_for_partial_dump():
+    from d3d9_memory_table_evidence import analyze_d3d9_memory_tables
+
+    result = analyze_d3d9_memory_tables(b"\\x00" * 16, 0x00B90000)
+    assert result["tables"]["type_code"]["status"] == "out-of-range"
+    assert result["tables"]["size"]["status"] == "out-of-range"
+    assert result["type_name_pointers"][0]["status"] == "unavailable"
+    assert result["proven_type_code_prefix"]["status"] == "partial"
