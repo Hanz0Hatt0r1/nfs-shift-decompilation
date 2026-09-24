@@ -335,3 +335,66 @@ def test_d3d9_table_shape_evidence_is_conservative_without_xml_bounds():
     result = analyze_d3d9_table_shapes("undefined DAT_00b90088;")
     assert result["xml_stream"]["status"] == "not-proven"
     assert result["conclusions"]["type_table_initializer_bytes"]["status"] == "opaque"
+
+
+def test_d3d9_usage_evidence_recovers_colour_usage_6_and_known_names():
+    from d3d9_usage_evidence import analyze_d3d9_usage_semantics
+
+    source = r'''
+uint __fastcall FUN_008587e0(int param_1,int param_2)
+{
+  local_5c = 0;
+  do {
+    pbVar17 = (&PTR_s_Position_00b901a8)[local_5c];
+    switch(local_5c) {
+    case 0:
+      pcVar23 = "Position";
+      break;
+    case 1:
+      pcVar23 = "Weights";
+      break;
+    case 2:
+      pcVar23 = "Normal";
+      break;
+    case 3:
+      pcVar23 = &DAT_00b1d188;
+      break;
+    case 4:
+      pcVar23 = "Tangent";
+      break;
+    case 5:
+      pcVar23 = "Binormal";
+      break;
+    case 6:
+      pcVar23 = "Colour";
+      break;
+    case 7:
+      pcVar23 = "Depth";
+      break;
+    case 8:
+      pcVar23 = "Indices";
+      break;
+    }
+  } while (local_5c < 9);
+}
+'''
+    result = analyze_d3d9_usage_semantics(source)
+    assert result["switch"]["status"] == "observed"
+    assert result["switch"]["usage_exclusive_limit"] == 9
+    assert result["switch"]["pointer_array"] == "PTR_s_Position_00b901a8"
+    by_code = {row["usage_code"]: row for row in result["usages"]}
+    assert by_code[0]["source_name"] == "Position"
+    assert by_code[6]["source_name"] == "Colour"
+    assert by_code[6]["status"] == "observed"
+    assert by_code[3]["status"] == "observed"
+    assert by_code[3]["source_symbol"] == "DAT_00b1d188"
+    assert result["semantic_links"]["usage_6_to_colour"]["status"] == "observed"
+    assert result["semantic_links"]["usage_6_to_meb_colour_properties"]["status"] == "not-proven"
+
+
+def test_d3d9_usage_evidence_fails_closed_without_usage_switch():
+    from d3d9_usage_evidence import analyze_d3d9_usage_semantics
+
+    result = analyze_d3d9_usage_semantics("void f(void) {}")
+    assert result["switch"]["status"] == "not-found"
+    assert result["usages"][6]["status"] == "not-found"
