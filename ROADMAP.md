@@ -124,3 +124,6 @@ The desktop reference renderer can now consume a ready SkinnedDraw after explici
 ## Phase 62: skinned VS→PS reference
 
 The desktop shader reference now accepts a transformed neutral mesh from an explicit SkinPose and runs it through the same embedded VS→PS path as static material draws. This proves the local chain without introducing animation decoding or inverse-bind inference.
+
+
+Phase 63 adds a `SHIFT.RenderCommand/1` adapter for `SHIFT.SkinnedDraw/1`. The command preserves the common vertex/material/resource submission ABI plus an explicit `SHIFT.Skinning/1` payload containing SkinPose and bind-palette metadata. The next step is to connect this command to the existing GLES 3.1 skinning contract and keep the desktop reference path as the oracle.
