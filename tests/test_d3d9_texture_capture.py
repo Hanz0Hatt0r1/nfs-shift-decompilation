@@ -58,3 +58,44 @@ def test_runtime_trace_keeps_texture_bindings_on_frame():
         {"stage": 0, "texture_ptr": "0x1111", "line": None},
         {"stage": 3, "texture_ptr": "0x3333", "line": None},
     ]
+
+def test_set_texture_schema_accepts_resource_descriptor():
+    row = {
+        "event": "set_texture",
+        "frame": 2,
+        "event_index": 3,
+        "stage": 3,
+        "texture_ptr": "0x300",
+        "resource_descriptor_status": "observed",
+        "resource_type": 3,
+        "resource_type_name": "cube_texture",
+        "width": 256,
+        "height": 256,
+        "format": 21,
+        "pool": 1,
+        "level_count": 9,
+    }
+    assert validate_capture_event(row) == []
+
+
+def test_runtime_trace_preserves_resource_descriptor():
+    events = [{
+        "event": "set_texture",
+        "frame": 2,
+        "event_index": 3,
+        "stage": 3,
+        "texture_ptr": "0x300",
+        "resource_descriptor_status": "observed",
+        "resource_type": 3,
+        "resource_type_name": "cube_texture",
+        "width": 256,
+        "height": 256,
+        "format": 21,
+        "pool": 1,
+        "level_count": 9,
+    }]
+    report = build_runtime_binding_evidence(events)
+    descriptor = report["frames"][0]["texture_bindings"][0]["resource_descriptor"]
+    assert descriptor["resource_type_name"] == "cube_texture"
+    assert descriptor["width"] == 256
+    assert descriptor["level_count"] == 9

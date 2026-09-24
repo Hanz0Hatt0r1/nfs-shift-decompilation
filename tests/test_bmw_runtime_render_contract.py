@@ -100,7 +100,7 @@ def _runtime():
             ],
             "texture_bindings": [
                 {"stage": 0, "texture_ptr": "0x300"},
-                {"stage": 3, "texture_ptr": "0x400"},
+                {"stage": 3, "texture_ptr": "0x400", "resource_descriptor": {"resource_type_name": "cube_texture", "width": 128, "height": 128, "level_count": 8}},
             ],
             "draws": [{"primitive_count": 1}],
         }],
@@ -160,6 +160,7 @@ def test_runtime_render_contract_builds_stage_specific_inputs(monkeypatch, tmp_p
         0: "0x300",
         3: "0x400",
     }
+    assert report["external_textures"][1]["resource_descriptor"]["resource_type_name"] == "cube_texture"
     assert report["shader"]["linked_shader_pair"]["format"] == "SHIFT.LinkedShaderPair/1"
 
 

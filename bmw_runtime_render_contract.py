@@ -104,9 +104,20 @@ def _texture_requirements(
         register = row["d3d9_sampler_register"]
         texture_ptr = latest.get(register)
         status = "bound-object" if texture_ptr else "contents-not-supplied"
+        descriptor = {}
+        for event in frame.get("texture_bindings") or []:
+            if not isinstance(event, Mapping):
+                continue
+            try:
+                event_stage = int(event.get("stage"))
+            except (TypeError, ValueError):
+                continue
+            if event_stage == register and isinstance(event.get("resource_descriptor"), Mapping):
+                descriptor = dict(event["resource_descriptor"])
         requirements.append({
             **row,
             "texture_ptr": texture_ptr,
+            "resource_descriptor": descriptor,
             "status": status,
         })
         if not texture_ptr:

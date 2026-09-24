@@ -47,6 +47,21 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
     if event == 'set_texture':
         if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
             reasons.append('texture:stage-invalid')
+        if row.get('texture_ptr') not in (None, ''):
+            status = row.get('resource_descriptor_status')
+            if status is not None and status not in {'observed', 'type-only', 'null'}:
+                reasons.append('texture:descriptor-status-invalid')
+            for key in ('resource_type', 'width', 'height', 'format', 'pool', 'level_count', 'depth'):
+                if row.get(key) is not None and not isinstance(row.get(key), int):
+                    reasons.append(f'texture:{key}-invalid')
+            if isinstance(row.get('width'), int) and row['width'] < 0:
+                reasons.append('texture:width-invalid')
+            if isinstance(row.get('height'), int) and row['height'] < 0:
+                reasons.append('texture:height-invalid')
+            if isinstance(row.get('depth'), int) and row['depth'] < 0:
+                reasons.append('texture:depth-invalid')
+            if isinstance(row.get('level_count'), int) and row['level_count'] <= 0:
+                reasons.append('texture:level-count-invalid')
     if event in {'set_stream_source'}:
         if not isinstance(row.get('stream'), int) or int(row.get('stream')) < 0:
             reasons.append('stream:invalid')

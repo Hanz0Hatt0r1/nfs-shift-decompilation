@@ -753,3 +753,10 @@ object bindings for the captured frame.
 
 The contract distinguishes shader readiness from image readiness: runtime
 texture pointers are evidence of bound objects, not their resource contents.
+
+## Phase 168: D3D9 texture resource descriptors
+
+The capture producer now enriches SetTexture events with best-effort GPU resource
+metadata. Runtime trace and BMW runtime render contract preserve these
+descriptors, making captured s0/s3 state self-describing before resource-content
+snapshotting is implemented.
