@@ -22,8 +22,9 @@ def _vec4(value: Iterable[float] | None, *, default_w: float = 1.0) -> tuple[flo
     row = [float(x) for x in (value or [])]
     if not row:
         row = [0.0, 0.0, 0.0]
+    source_len = len(row)
     row = (row + [0.0] * 4)[:4]
-    if len(list(value or [])) == 3:
+    if source_len == 3:
         row[3] = default_w
     return tuple(row)  # type: ignore[return-value]
 
