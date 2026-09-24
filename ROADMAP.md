@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 72. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 73. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -42,7 +42,7 @@ the original BFF archives at runtime.
 4. Keep the material execution ABI authoritative: CTAB float/vector values arrive through SHIFT.MaterialConstantPayload/1.
 5. Keep the desktop reference renderer as the golden oracle: embedded VS→PS execution, sampler2D/samplerCube resources, UV families and skin inputs must agree with RenderCommand.
 6. Keep explicit SkinPose deformation and SkinnedMeshReference as the CPU oracle, and expose the same payload through RenderCommand.
-7. Drive the GLES 3.1 skinning ABI directly from RenderCommand, then cross-check shader-driven skinning against the CPU reference.
+7. Drive the GLES 3.1 skinning ABI directly from RenderCommand, run the explicit RenderCommand ↔ GLES parity gate, then cross-check shader-driven skinning against the CPU reference.
 8. Expand reference execution toward real BMW permutations: TEXCOORD5+ families, remaining D3D9 control flow, exact sampler state and lighting/blend semantics.
 9. Prove the exact MEB vertex stream packing for real BMW meshes, especially COLOR0/1.
 10. Decode BAB animation payload from multiple clips sharing one skeleton, using corpus and byte-diff evidence.
@@ -182,3 +182,11 @@ source declaration linkage is still not proven.
 
 The evidence report now names the coupled D3D9 candidates explicitly and retains
 `selection=not-selected`.
+
+## Phase 73: RenderCommand ↔ GLES skinning parity
+
+The neutral skinned RenderCommand is now cross-checkable against the generated
+GLES 3.1 skinning contract. The parity gate verifies attribute locations and
+formats, four influences, SkinPose identity (including deterministic matrix
+hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
+machine-readable backend blocker; no alternate payload is synthesized silently.
