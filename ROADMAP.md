@@ -160,3 +160,8 @@ The color investigation now has a direct archive path: BFF entry → MEB decoder
 ## Phase 69: COLOR evidence corpus
 
 The COLOR ABI investigation now supports corpus-level aggregation of `SHIFT.ColorABIEvidence/1` reports. The aggregator groups reports by property 460/461, tracks unique candidate hashes, computes cross-report candidate stability and averaged channel statistics, and explicitly keeps `selection` at `not-selected`. This provides a reproducible gate for deciding whether external declaration/channel-order evidence is strong enough to change the MEB ABI.
+
+
+## Phase 70: BFF corpus COLOR evidence
+
+The unresolved 460/461 investigation can now scan the actual BFF corpus directly. Every decoded MEB color stream contributes a provenance-tagged evidence report, while corpus aggregation measures candidate consistency and never selects an ABI automatically.
