@@ -1660,6 +1660,26 @@ def cmd_d3d9_table_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_usage_evidence(args: argparse.Namespace) -> int:
+    """Analyze the recovered XML STREAM Usage table."""
+    from d3d9_usage_evidence import analyze_d3d9_usage_semantics_file
+
+    report = analyze_d3d9_usage_semantics_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "usage_exclusive_limit": report["switch"]["usage_exclusive_limit"],
+        "usage_6_to_colour": report["semantic_links"]["usage_6_to_colour"]["status"],
+        "usage_6_to_meb_colour_properties": report["semantic_links"]["usage_6_to_meb_colour_properties"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1971,6 +1991,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9TypeTableShapeEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_table_evidence)
+
+    p = sp.add_parser("source-d3d9-usage-evidence", help="analyze XML STREAM Usage semantics in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9UsageSemanticsEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_usage_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
