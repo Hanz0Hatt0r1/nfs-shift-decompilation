@@ -625,6 +625,116 @@ class BFF:
             )
         return out
 
+    def extract_entry_to_file(
+        self,
+        entry: Entry,
+        output_path: str | os.PathLike[str],
+        type2: str = "lzx",
+        *,
+        chunk_size: int = 1024 * 1024,
+    ) -> Path:
+        """Extract one entry directly to disk without retaining the decoded file in RAM."""
+        out_path = Path(output_path)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        self._fp.seek(entry.offset)
+
+        if entry.type == 0:
+            remaining = entry.uncompressed_size
+            with out_path.open("wb") as out:
+                while remaining:
+                    chunk = self._fp.read(min(chunk_size, remaining))
+                    if not chunk:
+                        raise ValueError(f"{entry.path}: truncated raw payload")
+                    out.write(chunk)
+                    remaining -= len(chunk)
+            return out_path
+
+        if entry.type == 1:
+            decoder = zlib.decompressobj()
+            remaining = entry.compressed_size
+            with out_path.open("wb") as out:
+                while remaining:
+                    chunk = self._fp.read(min(chunk_size, remaining))
+                    if not chunk:
+                        raise ValueError(f"{entry.path}: truncated zlib payload")
+                    remaining -= len(chunk)
+                    decoded = decoder.decompress(chunk)
+                    if decoded:
+                        out.write(decoded)
+                tail = decoder.flush()
+                if tail:
+                    out.write(tail)
+            size = out_path.stat().st_size
+            if size != entry.uncompressed_size:
+                raise ValueError(
+                    f"{entry.path}: decoded {size} bytes, expected {entry.uncompressed_size}"
+                )
+            return out_path
+
+        if entry.type == 2:
+            if type2 == "raw":
+                remaining = entry.compressed_size
+                with out_path.open("wb") as out:
+                    while remaining:
+                        chunk = self._fp.read(min(chunk_size, remaining))
+                        if not chunk:
+                            raise ValueError(f"{entry.path}: truncated raw XMem payload")
+                        out.write(chunk)
+                        remaining -= len(chunk)
+                return out_path
+
+            state = LZXState(17)
+            state.reset()
+            compressed_remaining = entry.compressed_size
+            decoded_total = 0
+
+            def read_exact(size: int) -> bytes:
+                nonlocal compressed_remaining
+                if size > compressed_remaining:
+                    raise ValueError(f"{entry.path}: XMem block exceeds compressed payload")
+                data = self._fp.read(size)
+                if len(data) != size:
+                    raise ValueError(f"{entry.path}: truncated XMem payload")
+                compressed_remaining -= size
+                return data
+
+            with out_path.open("wb") as out:
+                while decoded_total < entry.uncompressed_size:
+                    high = read_exact(1)[0]
+                    if high == 0xFF:
+                        header = read_exact(4)
+                        dst_size = int.from_bytes(header[:2], "big")
+                        src_size = int.from_bytes(header[2:], "big")
+                        suffix = 5
+                    else:
+                        low = read_exact(1)[0]
+                        dst_size = 0x8000
+                        src_size = (high << 8) | low
+                        suffix = 0
+                    if src_size == 0 or dst_size == 0:
+                        raise ValueError(f"{entry.path}: invalid zero-sized XMem block")
+                    payload = read_exact(src_size)
+                    decoded = state.process(payload, dst_size)
+                    if len(decoded) != dst_size:
+                        raise ValueError(f"{entry.path}: LZX decoder returned wrong block size")
+                    out.write(decoded)
+                    decoded_total += len(decoded)
+                    if suffix:
+                        read_exact(suffix)
+
+            if compressed_remaining:
+                raise ValueError(
+                    f"{entry.path}: {compressed_remaining} trailing compressed bytes remain"
+                )
+            if decoded_total != entry.uncompressed_size:
+                raise ValueError(
+                    f"{entry.path}: decoded {decoded_total} bytes, expected {entry.uncompressed_size}"
+                )
+            return out_path
+
+        raise ValueError(f"{entry.path}: unsupported BFF compression type {entry.type}")
+
+
 
 # ---------------------------------------------------------------------------
 # Classification / dependency hints
