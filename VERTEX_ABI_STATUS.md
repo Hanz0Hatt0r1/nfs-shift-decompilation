@@ -128,4 +128,4 @@ The recovered XML stream loader iterates a fixed usage domain `0..8` and resolve
 
 ## Phase 83: STREAM declaration record semantics
 
-The recovered loader constructs a fixed 8-byte record for each XML `STREAM` entry. Source evidence shows the matched D3D9 primitive Type code written at offset `+4`, the matched Usage code at `+6`, and the XML Channel byte at `+7`; the record is indexed through a 4-byte pointer array. This is a source-level ABI observation and does not assign MEB property ids 460/461 to any Type ordinal.
+The recovered loader constructs a fixed 8-byte record for each XML `STREAM` entry whose six fields match the documented `D3DVERTEXELEMENT9` order: `Stream` (WORD), `Offset` (WORD), `Type` (BYTE), `Method` (BYTE), `Usage` (BYTE), `UsageIndex` (BYTE). Source evidence shows `Stream=0`, a running `Offset`, the resolved D3D9 `Type` at `+4`, `Method=0`, the resolved `Usage` at `+6`, and the XML `Channel` at `+7`. Microsoft documents the same field order and meanings for `D3DVERTEXELEMENT9`. citeturn687322search0 This is a source-level ABI observation and does not assign MEB property ids 460/461 to any Type ordinal.
