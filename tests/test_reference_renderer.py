@@ -720,3 +720,189 @@ def test_reference_renderer_executes_material_constant_tint(tmp_path):
     pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
     assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
     assert (100, 25, 50) in pixels
+
+
+def _two_texture_add_shader_program():
+    def operand(kind, reg_type, index, *, swizzle="xyzw", write_mask=None):
+        return {
+            "token": 0x80000000,
+            "kind": kind,
+            "reg_type": reg_type,
+            "index": index,
+            "swizzle": swizzle,
+            "source_modifier": 0,
+            "write_mask": write_mask,
+        }
+
+    return {
+        "schema": "SHIFT.ShaderProgram/1",
+        "stage": "pixel",
+        "shader_model": [3, 0],
+        "offset": 0,
+        "end": 0,
+        "inputs": [{"usage": "TEXCOORD", "index": 0, "register": "v0"}],
+        "outputs": [{"usage": "COLOR", "index": 0, "register": "oC0"}],
+        "samplers": [0, 1],
+        "constants": [],
+        "temps": [0, 1],
+        "unsupported_opcodes": [],
+        "instructions": [
+            {
+                "offset": 0,
+                "opcode": 66,
+                "name": "TEX",
+                "token": 0,
+                "length": 4,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    operand("dest", 0, 0, write_mask="xyzw"),
+                    operand("source", 1, 0),
+                    operand("source", 10, 0),
+                ],
+                "predicate": None,
+            },
+            {
+                "offset": 16,
+                "opcode": 66,
+                "name": "TEX",
+                "token": 0,
+                "length": 4,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    operand("dest", 0, 1, write_mask="xyzw"),
+                    operand("source", 1, 0),
+                    operand("source", 10, 1),
+                ],
+                "predicate": None,
+            },
+            {
+                "offset": 32,
+                "opcode": 2,
+                "name": "ADD",
+                "token": 0,
+                "length": 4,
+                "controls": 0,
+                "predicated": False,
+                "operands": [
+                    operand("dest", 8, 0, write_mask="xyzw"),
+                    operand("source", 0, 0),
+                    operand("source", 0, 1),
+                ],
+                "predicate": None,
+            },
+        ],
+        "const_ints": [],
+        "const_bools": [],
+        "sampler_types": {"0": "sampler2D", "1": "sampler2D"},
+    }
+
+
+def test_reference_renderer_executes_multiple_shader_texture_samplers(tmp_path):
+    from reference_renderer import render_textured_render_command
+
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _two_texture_add_shader_program()
+    command["submeshes"][0]["textures"] = [
+        {
+            "resource": "material",
+            "resource_binding_id": "tb_diffuse",
+            "texture_id": "tex_diffuse",
+            "sampler_id": "smp_diffuse",
+            "d3d9_sampler_register": 0,
+            "sampler_state": {
+                "format": "SHIFT.SamplerState/1",
+                "min_filter": "POINT",
+                "mag_filter": "POINT",
+                "address_u": "CLAMP_TO_EDGE",
+                "address_v": "CLAMP_TO_EDGE",
+                "ready": True,
+            },
+        },
+        {
+            "resource": "material",
+            "resource_binding_id": "tb_specular",
+            "texture_id": "tex_specular",
+            "sampler_id": "smp_specular",
+            "d3d9_sampler_register": 1,
+            "sampler_state": {
+                "format": "SHIFT.SamplerState/1",
+                "min_filter": "POINT",
+                "mag_filter": "POINT",
+                "address_u": "CLAMP_TO_EDGE",
+                "address_v": "CLAMP_TO_EDGE",
+                "ready": True,
+            },
+        },
+    ]
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+    }
+    image0 = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((100, 40, 20, 255)),
+    }
+    image1 = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((30, 10, 5, 255)),
+    }
+    out = tmp_path / "multi-texture.ppm"
+    result = render_textured_render_command(
+        command,
+        mesh,
+        image0,
+        out,
+        shader_reference=True,
+        texture_images={0: image0, 1: image1},
+        width=24,
+        height=24,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert result["format"] == "SHIFT.TexturedStaticDrawReference/1"
+    assert (130, 50, 25) in pixels
+
+
+def test_reference_renderer_rejects_missing_second_texture(tmp_path):
+    from reference_renderer import render_textured_render_command
+    command = _render_command_ready()
+    command["submeshes"][0]["shader"]["pixel_program"] = _two_texture_add_shader_program()
+    mesh = {
+        **_triangle(),
+        "uv_layers": {"130": [(0.0, 0.0), (0.0, 0.0), (0.0, 0.0)]},
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((1, 2, 3, 255)),
+    }
+    try:
+        render_textured_render_command(
+            command,
+            mesh,
+            image,
+            tmp_path / "missing-second.ppm",
+            shader_reference=True,
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "missing texture images for samplers: s1" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
