@@ -2204,3 +2204,172 @@ def test_reference_renderer_vertex_output_register_types_do_not_collide(tmp_path
     )
     assert clips[0] == (-0.5, 0.0, 0.0, 1.0)
     assert varyings[0][("TEXCOORD", 0)] == (0.25, 0.5, 0.0, 1.0)
+
+
+def _skinned_render_command_reference_fixture():
+    return {
+        "format": "SHIFT.RenderCommand/1",
+        "ready": True,
+        "draw_kind": "skinned",
+        "blocking_reasons": [],
+        "mesh": {
+            "vertex_count": 3,
+            "triangle_count": 1,
+            "vertex_layout": {
+                "format": "SHIFT.VertexLayout/1",
+                "buffer_stride": 32,
+                "attributes": [
+                    {
+                        "property_id": "200",
+                        "location": 0,
+                        "offset": 0,
+                        "stride": 32,
+                    },
+                    {
+                        "property_id": "310",
+                        "location": 1,
+                        "offset": 12,
+                        "stride": 32,
+                    },
+                    {
+                        "property_id": "580",
+                        "location": 2,
+                        "offset": 28,
+                        "stride": 32,
+                    },
+                ],
+            },
+        },
+        "world_matrix": None,
+        "submeshes": [{
+            "first_index": 0,
+            "index_count": 3,
+            "shader": {
+                "vertex": "vertex-source",
+                "pixel": "pixel-source",
+                "vertex_program": _vertex_passthrough_program(),
+                "pixel_program": _textured_tex_shader_program(),
+                "validation": None,
+            },
+            "textures": [],
+            "uniforms": {
+                "format": "SHIFT.MaterialUniformBinding/1",
+                "bindings": [],
+            },
+            "constant_payload": None,
+            "constant_commands": [],
+        }],
+        "resource_plan": {
+            "format": "SHIFT.RenderResources/1",
+            "texture_count": 0,
+            "sampler_count": 0,
+            "external_sampler_count": 0,
+        },
+        "skinning": {
+            "format": "SHIFT.Skinning/1",
+            "influences": 4,
+            "weights": {
+                "property_id": "310",
+                "target_location": 1,
+                "format": "FLOAT32x4",
+            },
+            "indices": {
+                "property_id": "580",
+                "target_location": 2,
+                "format": "UINT8x4",
+            },
+            "bind_skeleton": {
+                "format": "SHIFT.BonePalette/1",
+                "bone_count": 1,
+                "matrix_layout": "3x4-row-major",
+                "matrix_space": "local-bind",
+                "local_matrices_3x4": [
+                    [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                ],
+            },
+            "skin_pose": {
+                "format": "SHIFT.SkinPose/1",
+                "matrix_space": "skinning",
+                "matrix_layout": "3x4-row-major",
+                "bone_count": 1,
+                "matrices_3x4": [
+                    [1, 0, 0, 0.35, 0, 1, 0, 0, 0, 0, 1, 0],
+                ],
+                "source": "synthetic",
+                "frame": 14,
+            },
+        },
+    }
+
+
+def test_reference_renderer_consumes_skinned_render_command_end_to_end(tmp_path):
+    from reference_renderer import render_skinned_render_command_reference
+
+    command = _skinned_render_command_reference_fixture()
+    mesh = {
+        "vertices": [
+            (-0.6, -0.5, 0.0),
+            (0.6, -0.5, 0.0),
+            (0.0, 0.6, 0.0),
+        ],
+        "indices": [0, 1, 2],
+        "uv_layers": {"130": [(0.0, 0.0)] * 3},
+        "bone_weights": [(1.0, 0.0, 0.0, 0.0)] * 3,
+        "bone_indices": [(0, 0, 0, 0)] * 3,
+    }
+    image = {
+        "format": "SHIFT.ReferenceTexture/1",
+        "source_format": "RGBA32",
+        "width": 1,
+        "height": 1,
+        "pixels": bytes((70, 110, 170, 255)),
+    }
+    out = tmp_path / "skinned-command.ppm"
+    result = render_skinned_render_command_reference(
+        command,
+        mesh,
+        out,
+        image=image,
+        width=32,
+        height=32,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+        texture_images={0: image},
+    )
+    assert result["format"] == "SHIFT.SkinnedRenderCommandReference/1"
+    assert result["shader_reference"] is True
+    assert result["skinning"]["frame"] == 14
+    assert result["render_command_contract"]["format"] == "SHIFT.RenderCommand/1"
+    assert result["render_command_contract"]["validation"]["valid"] is True
+    body = out.read_bytes().split(b"\n", 3)[3]
+    pixels = [tuple(body[i:i + 3]) for i in range(0, len(body), 3)]
+    assert (70, 110, 170) in pixels
+
+
+def test_reference_renderer_rejects_non_skinned_render_command(tmp_path):
+    from reference_renderer import render_skinned_render_command_reference
+
+    command = _skinned_render_command_reference_fixture()
+    command["draw_kind"] = "static"
+    with pytest.raises(ValueError, match="not a skinned draw"):
+        render_skinned_render_command_reference(
+            command,
+            {
+                "vertices": [(0, 0, 0)],
+                "indices": [],
+                "bone_weights": [(1, 0, 0, 0)],
+                "bone_indices": [(0, 0, 0, 0)],
+            },
+            tmp_path / "invalid.ppm",
+            image={
+                "format": "SHIFT.ReferenceTexture/1",
+                "source_format": "RGBA32",
+                "width": 1,
+                "height": 1,
+                "pixels": bytes((1, 2, 3, 255)),
+            },
+        )
