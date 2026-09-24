@@ -224,6 +224,9 @@ def analyze_d3d9_stream_record_semantics(source: str | bytes) -> dict[str, Any]:
             "stride": RECORD_STRIDE,
             "pointer_array": OBSERVATIONS["record_pointer_array"],
             "pointer_array_stride": 4 if markers["pointer_array_stride"] else None,
+            "field_offsets": {
+                name: spec["offset"] for name, spec in FIELDS.items()
+            },
             "status": "observed" if markers["pointer_array_stride"] else "not-proven",
         },
         "fields": field_rows,
