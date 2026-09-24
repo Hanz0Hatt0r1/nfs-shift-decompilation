@@ -724,3 +724,12 @@ sampler-ABI preflight identifies 16 pixel programs with the complete paint set:
 This narrows the next task from "find a bodywork shader" to exact VS/PS
 permutation selection and execution. Runtime draw identity, the actual s0 shadow
 resource and s3 environment cube remain explicit gates.
+
+## Phase 163: exact runtime shader permutation selection
+
+Static BMW paint shader analysis currently leaves multiple bodywork FXO programs
+with identical sampler/vertex interface evidence. Phase 163 adds an exact
+runtime selector that matches captured D3D9 VS/PS shader identity back to the
+static FXO candidate set and requires the same MEB resource identity.
+
+This is the bridge from "shader candidate corpus" to one executable permutation.
