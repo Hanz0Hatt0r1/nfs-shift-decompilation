@@ -42,8 +42,12 @@ def _golden():
             "triangle_count": 1,
             "color460_descriptor": {"words": [4, 6, 0]},
             "primitives": [
-                {"first_index": 0, "index_count": 3, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 0, "index_count": 150, "material": "vehicles/BMW_M3_E36/BMW_M3_E36_BADGING.mtx"},
                 {"first_index": 150, "index_count": 6294, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 6444, "index_count": 7386, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 13830, "index_count": 612, "material": "vehicles/BMW_M3_E36/GENERIC_WINDOWS.mtx"},
+                {"first_index": 14442, "index_count": 576, "material": "vehicles/BMW_M3_E36/GENERIC_GLOSS_BLACK.mtx"},
+                {"first_index": 15018, "index_count": 84, "material": "vehicles/BMW_M3_E36/BMW_M3_E36_LIGHTSGLASS.mtx"},
             ],
             "skinning": {"skinned": False},
         },
