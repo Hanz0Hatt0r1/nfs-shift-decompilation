@@ -143,3 +143,7 @@ def test_material_binding_includes_linked_shader_pair():
     assert linked["vertex_input_locations"] == {0: 0}
     assert "layout(location=0) out vec4 out_1;" in linked["vertex_glsl"]
     assert "layout(location=0) in vec4 in_0;" in linked["pixel_glsl"]
+    identity = r["permutation_identity"]
+    assert identity is not None
+    assert identity["format"] == "SHIFT.ShaderPermutationIdentity/1"
+    assert len(identity["identity_sha256"]) == 64
