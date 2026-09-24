@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 static render
 
-Baseline `main` is at phase 137. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
+Baseline `main` is at phase 138. The phase-71 CI workflow completed successfully for both Python and native regression jobs.
 
 The immediate target is a deterministic pipeline:
 
@@ -553,3 +553,10 @@ Next: compare this contract directly against the material binding emitted by the
 `bmw_m3_paint_contract.py` now normalizes the actual `draw_packets.compile_material()` shape before validating the M3 paint contract. Nested shader refs, texture `ref` paths, emitted sampler registers, selected-FXO specialization flags and external samplers are preserved without synthetic remapping.
 
 Next: run the real `bmw_m3_e36_paint.bmt` through the full linker and require the normalized binding to pass the documented contract before generating the first real material command.
+
+
+## Phase 138: enforce BMW M3 paint contract
+
+The exact `BMW_M3_E36_PAINT.mtx` now carries `SHIFT.BMWM3PaintMaterialContract/1` validation inside `compile_material()`. The check covers `bodywork.fx`, M3 specialization flags, s1/s2/s4 material samplers, s3/s0 external samplers, texture identities, and filter/address/sRGB state. Paint-contract blockers propagate into `StaticDraw/1`.
+
+Next: run the actual M3 BMT/FXO/texture records through this path and verify the emitted material contract without synthetic substitution. The remaining blocker is actual runtime capture for same-instance proof.
