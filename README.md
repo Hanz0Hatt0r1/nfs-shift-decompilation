@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 123** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 124** — импортёр умеет распаковывать MEB непосредственно на диск, а supplied 1.02 corpus дал массовое доказательство `MEB 460 -> D3D9 Type 4 / D3DCOLOR, Usage 6, Channel 0`. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -651,3 +651,8 @@ A thin `SHIFT.BMWReferenceRender/1` adapter now turns the exact BMW material sli
 ## Phase 123: shader permutation identity
 
 Shader selections now carry a stable content-derived permutation identity independent of FXO blob offsets. This strengthens the BMW golden path so a `unique` shader selection is tied to a reproducible VS/PS byte pair rather than a heuristic score alone.
+
+
+## Phase 124: D3D9 shader runtime lifecycle
+
+The runtime evidence bridge now records VS/PS shader object creation and binding in addition to declaration/stream/index state. When both shader stages are available, it derives the same content-based permutation identity used by the offline material linker.
