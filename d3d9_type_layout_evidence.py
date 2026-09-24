@@ -115,7 +115,7 @@ def analyze_d3d9_type_layout_tables(source: str | bytes) -> dict[str, Any]:
         ),
     }
 
-    sentinel_written = " = 0x11;" in text and " + 4 + local_68 * 8" in text
+    sentinel_written = "+ 4 + local_68 * 8) = 0x11;" in text
 
     return {
         "format": FORMAT,
