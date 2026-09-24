@@ -44,6 +44,7 @@ def _setup(monkeypatch, tmp_path, *, include_bmt=True, meb_payload=b"meb"):
     monkeypatch.setattr(intake, "BFF", lambda path: FakeBFF(entries, payloads))
     monkeypatch.setattr(intake, "EXPECTED_SIZE", archive_path.stat().st_size)
     monkeypatch.setattr(intake, "EXPECTED_MEB_SHA256", intake._sha256(meb_payload))
+    monkeypatch.setattr(intake, "EXPECTED_MEB_SIZE", len(meb_payload))
     return archive_path
 
 
