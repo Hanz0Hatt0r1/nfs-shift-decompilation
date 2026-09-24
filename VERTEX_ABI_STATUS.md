@@ -144,3 +144,8 @@ The renderer uses the declaration Type byte at offset `+4` as the common key for
 ## Phase 86: Type semantic validation profile
 
 The recovered D3D9 Type switch is now paired with a validation-only semantic profile. The profile expects the documented packed sizes/components for Type `0..16` and can compare them against real `DAT_00b8eef0`/`DAT_00b8ef38` bytes when a memory dump is supplied. Missing values stay unavailable; mismatches are surfaced rather than repaired. `MEB 460/461 -> Type` remains a separate unresolved linkage.
+
+
+## Phase 87: Stream-group topology
+
+The recovered renderer groups declaration records by Stream id. The Stream/Type/Usage/Channel input arrays are carried separately; each element resolves its Type and Usage through the recovered ordinal tables, writes Channel as UsageIndex, and is appended to a per-stream record list. The same Type byte indexes `DAT_00b8eef0` to grow the per-stream byte-size accumulator. This provides source-backed topology for future MEB→STREAM correlation, without asserting a property mapping.
