@@ -8,6 +8,7 @@ from typing import Any, Iterable
 from vertex_layout import build_layout_from_summary
 from bab_format import build_bab_bas_skeleton
 from static_draw import build_static_draw_contract
+from bmw_m3_paint_contract import validate_material_binding
 
 SCHEMA = "SHIFT.DrawPacket/1"
 
@@ -256,6 +257,13 @@ def compile_material(
 
     texture_bindings: list[dict[str, Any]] = []
     reflected_bindings = list((material_binding or {}).get("bindings", []) or [])
+
+    bmw_paint_contract = None
+    bmw_paint_contract_reasons: list[str] = []
+    normalized_material_ref = norm_ref(material_ref)
+    is_bmw_m3_paint = normalized_material_ref.endswith(
+        "/bmw_m3_e36/bmw_m3_e36_paint.mtx"
+    )
     for param in texture_params:
         tref = param["ref"]
         texture_hits = resolve_ref(
@@ -320,6 +328,31 @@ def compile_material(
         texture_bindings.append(binding)
 
 
+    if is_bmw_m3_paint:
+        selected_fxo = (material_binding or {}).get("selected_fxo") or {}
+        specializations = list(
+            material.get("specializations")
+            or (material_binding or {}).get("specializations")
+            or selected_fxo.get("specialization_matched")
+            or []
+        )
+        external_sampler_bindings = [
+            dict(row)
+            for row in reflected_bindings
+            if row.get("binding") == "external-or-specialised"
+        ]
+        bmw_paint_contract = validate_material_binding({
+            "shader": shader_ref,
+            "specializations": specializations,
+            "textures": texture_bindings,
+            "external_samplers": external_sampler_bindings,
+        })
+        bmw_paint_contract_reasons = list(
+            bmw_paint_contract.get("blocking_reasons") or []
+        )
+        if bmw_paint_contract_reasons:
+            bmw_paint_contract_reasons.insert(0, "paint-contract:not-ready")
+
     return {
         "ref": material_ref,
         "resolved": hits,
@@ -361,6 +394,8 @@ def compile_material(
         },
         "shaderparams": params,
         "textures": texture_bindings,
+        "paint_contract": bmw_paint_contract,
+        "blocking_reasons": list(dict.fromkeys(bmw_paint_contract_reasons)),
     }
 
 
