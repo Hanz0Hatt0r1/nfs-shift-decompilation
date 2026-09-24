@@ -803,3 +803,10 @@ when the runtime contract is incomplete or an external sampler has no content.
 
 The first authentic bodywork image therefore only needs a real game capture;
 all offline conversion layers are now in place.
+
+## Phase 172: runtime snapshot manifest slimming
+
+Runtime texture snapshot metadata in the one-command capture pipeline is now
+kept outside the report payload. The JSON stores only frame/stage/pointer/path
+and decoded dimensions/format; pixel contents remain in the captured PPM files
+and are converted on demand to ReferenceTexture/1 or ReferenceCubeTexture/1.
