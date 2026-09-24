@@ -1788,3 +1788,87 @@ def test_reference_renderer_rejects_cube_sampler_without_cube_resource(tmp_path)
         assert "external sampler s3 requires ReferenceCubeTexture/1 resource" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def _ready_skinned_draw_for_reference():
+    return {
+        "format": "SHIFT.SkinnedDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "skin_pose": {
+            "format": "SHIFT.SkinPose/1",
+            "matrix_space": "skinning",
+            "bone_count": 1,
+            "matrices_3x4": [
+                [1, 0, 0, 0.4, 0, 1, 0, 0, 0, 0, 1, 0],
+            ],
+            "source": "synthetic",
+            "frame": 3,
+        },
+        "submeshes": [{
+            "first_index": 0,
+            "index_count": 3,
+            "material": {},
+        }],
+    }
+
+
+def test_reference_renderer_renders_explicit_skinned_draw(tmp_path):
+    from reference_renderer import render_skinned_draw_reference
+
+    draw = _ready_skinned_draw_for_reference()
+    mesh = {
+        "vertices": [
+            (-0.7, -0.5, 0.0),
+            (0.7, -0.5, 0.0),
+            (0.0, 0.7, 0.0),
+        ],
+        "indices": [0, 1, 2],
+        "bone_indices": [(0, 0, 0, 0)] * 3,
+        "bone_weights": [(1.0, 0.0, 0.0, 0.0)] * 3,
+    }
+    out = tmp_path / "skinned.ppm"
+    result = render_skinned_draw_reference(
+        draw,
+        mesh,
+        out,
+        width=48,
+        height=48,
+        mvp=[
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+        ],
+    )
+    assert result["format"] == "SHIFT.SkinnedDrawReference/1"
+    assert result["skinning"]["format"] == "SHIFT.SkinnedMeshReference/1"
+    assert result["skinning"]["frame"] == 3
+    assert result["skinning"]["vertex_count"] == 3
+    assert result["skinning"]["influence_validation"]["valid"] is True
+    assert out.exists()
+
+
+def test_reference_renderer_skinned_draw_rejects_unready_pose(tmp_path):
+    from reference_renderer import render_skinned_draw_reference
+
+    draw = _ready_skinned_draw_for_reference()
+    draw["ready"] = False
+    draw["blocking_reasons"] = ["skin-pose:palette-incomplete"]
+    mesh = {
+        "vertices": [(0, 0, 0)],
+        "bone_indices": [(0, 0, 0, 0)],
+        "bone_weights": [(1, 0, 0, 0)],
+    }
+    try:
+        render_skinned_draw_reference(
+            draw,
+            mesh,
+            tmp_path / "bad-skinned.ppm",
+            width=8,
+            height=8,
+        )
+    except ValueError as exc:
+        assert "palette-incomplete" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")

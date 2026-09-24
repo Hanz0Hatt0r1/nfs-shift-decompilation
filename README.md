@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline находится на **phase 59**. В рабочей ветке развивается **phase 60: explicit CPU skinned-mesh reference**.
+> **Текущий статус:** mainline развивается через **phase 61** — explicit SkinPose → skinned reference render. Импорт/IR, material linking, shader IR, VS→PS reference, external samplers и cubemap decode уже собраны в единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -215,8 +215,8 @@ CI запускает полный Python suite и отдельную native reg
 
 Ближайшие задачи:
 
-- **Phase 60** — explicit CPU skinned-mesh reference.
-- **Phase 61+** — свести skinned mesh reference с embedded VS execution и RenderCommand.
+- **Phase 61** — skinned draw проходит через desktop reference rasterizer после explicit SkinPose.
+- **Phase 62+** — свести transformed skinned mesh с embedded VS/PS execution и RenderCommand.
 - Доказать `COLOR0/1` type + channel order.
 - Расширить real BMW shader coverage: remaining varyings, opcodes и control flow.
 - Довести material/light/blend semantics до воспроизводимого golden render.

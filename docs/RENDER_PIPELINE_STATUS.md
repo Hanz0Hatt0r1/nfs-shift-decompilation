@@ -116,3 +116,8 @@ The texture reference layer can now ingest complete six-face DDS cubemaps direct
 ## Phase 60: skinned mesh CPU reference
 
 The skinning stack now has an explicit mesh-level reference contract: `SHIFT.SkinnedDraw/1` + `SHIFT.SkinPose/1` → `SHIFT.SkinnedMeshReference/1`. Four-influence POSITION deformation and direction-stream transformation are covered independently from BAB animation decoding. The next integration step is to feed this transformed mesh into the same VS→PS reference raster path used by static DrawCommand execution.
+
+
+## Phase 61: skinned reference render
+
+The desktop renderer now has a dedicated `render_skinned_draw_reference()` entry point. It consumes a ready SkinnedDraw, materializes `SHIFT.SkinnedMeshReference/1`, then uses the same geometry/raster contract as StaticDraw. This is the bridge needed before adding skinned VS/PS shader execution on top of the transformed mesh.

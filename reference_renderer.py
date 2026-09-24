@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from render_command import validate_render_command
+from skinned_reference import skin_mesh_reference
 from static_draw import build_static_draw_contract
 from texture_reference import sample_texture_2d
 from shader_reference import (
@@ -1083,6 +1084,52 @@ def render_render_command_json(
     result["sha256"] = hashlib.sha256(Path(output).read_bytes()).hexdigest()
     result["command"] = str(command_path)
     result["mesh"] = str(mesh_path)
+    return result
+
+
+def render_skinned_draw_reference(
+    draw: dict[str, Any],
+    mesh: dict[str, Any],
+    output: str | Path,
+    *,
+    width: int = 512,
+    height: int = 512,
+    mvp: list[list[float]] | None = None,
+    normalize_weights: bool = False,
+    strict_indices: bool = True,
+) -> dict[str, Any]:
+    """Apply an explicit SkinPose and render the resulting mesh with the geometry oracle."""
+    if draw.get("format") != "SHIFT.SkinnedDraw/1":
+        raise ValueError("draw packet is not SHIFT.SkinnedDraw/1")
+    skinned_mesh = skin_mesh_reference(
+        draw,
+        mesh,
+        normalize_weights=normalize_weights,
+        strict_indices=strict_indices,
+    )
+    static_draw = {
+        "format": "SHIFT.StaticDraw/1",
+        "ready": True,
+        "blocking_reasons": [],
+        "world_matrix": None,
+        "submeshes": draw.get("submeshes", []) or [],
+    }
+    result = render_static_draw(
+        static_draw,
+        skinned_mesh["mesh"],
+        output,
+        width=width,
+        height=height,
+        mvp=mvp,
+    )
+    result["format"] = "SHIFT.SkinnedDrawReference/1"
+    result["skinning"] = {
+        "format": skinned_mesh["format"],
+        "frame": skinned_mesh.get("frame"),
+        "vertex_count": skinned_mesh["vertex_count"],
+        "influence_validation": skinned_mesh["influence_validation"],
+        "streams": skinned_mesh["streams"],
+    }
     return result
 
 def render_draw_packet(

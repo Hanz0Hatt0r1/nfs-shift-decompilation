@@ -114,3 +114,8 @@ Phase 59 closes the decoder-side half of `environmentMap/s3`: complete DDS cubem
 `SHIFT.SkinnedMeshReference/1` turns a ready `SHIFT.SkinnedDraw/1` plus an explicit `SHIFT.SkinPose/1` into a transformed neutral mesh. POSITION is linearly blended from the four declared influences; known direction streams NORMAL/TANGENT/BINORMAL use the direction-only transform and normalization already covered by the CPU skinning reference. UV, color, blend weights and blend indices remain unchanged from the input mesh.
 
 The phase intentionally does not infer animation frames, parent-composed transforms or inverse-bind matrices. It is a render adapter, not a BAB decoder.
+
+
+## Phase 61: skinned reference render
+
+The desktop reference renderer can now consume a ready SkinnedDraw after explicit SkinPose deformation. The next step is to feed that transformed mesh through the existing VS→PS shader reference path so skinning, material constants, textures and shader semantics can be validated together without deriving pose data from BAB/BAS.
