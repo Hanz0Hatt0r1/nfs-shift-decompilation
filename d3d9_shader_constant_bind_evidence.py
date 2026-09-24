@@ -14,14 +14,14 @@ ROWS = {
 
 def _body(source: str, function: str) -> tuple[int | None, int | None, str]:
     lines = source.splitlines()
-    start = next((i for i, line in enumerate(lines, 1) if re.search(rf'\\b{re.escape(function)}\\(', line)), None)
+    start = next((i for i, line in enumerate(lines, 1) if re.search(rf'\b{re.escape(function)}\s*\(', line)), None)
     if start is None:
         return None, None, ''
     depth = 0; seen = False; body = []
     for index in range(start, len(lines) + 1):
         line = lines[index - 1]; body.append(line)
         depth += line.count('{'); depth -= line.count('}') ; seen |= '{' in line
-        if seen and depth == 0: return start, index, '\\n'.join(body)
+        if seen and depth == 0: return start, index, '\n'.join(body)
     return start, None, '\\n'.join(body)
 
 def analyze_d3d9_shader_constant_bind(source: str) -> dict[str, Any]:
