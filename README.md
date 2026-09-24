@@ -2,7 +2,7 @@
 
 Инструментальный проект для поэтапной реконструкции форматов, зависимостей и runtime-границ **Need for Speed: SHIFT** с прицелом на воспроизводимый Android renderer.
 
-> **Текущий статус:** mainline развивается через **phase 90** — source-backed D3D9 Type/STREAM/declaration-chain evidence. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
+> **Текущий статус:** mainline развивается через **phase 91** — source-backed D3D9 declaration chain плюс decoder реального 8-byte declaration instance. RenderCommand, VS→PS reference, skinning, external samplers, cubemap decode и machine-readable declaration evidence образуют единый исследовательский конвейер.
 
 Проект не пытается сразу переписать игру. Он строит проверяемый конвейер:
 
@@ -413,3 +413,11 @@ CLI:
     python shift_importer.py validate-d3d9-declaration-chain \\
         type-profile.json stream-topology.json stream-record.json canonicalizer.json \\
         declaration-chain.json --pe-evidence pe-evidence.json
+
+## Phase 91 — raw D3D9 declaration instance
+
+Добавлен `SHIFT.D3D9DeclarationInstanceEvidence/1` для декодирования реального буфера 8-байтных declaration records. Декодер расшифровывает `Stream/Offset/Type/Method/Usage/UsageIndex`, сверяет Type с recovered profile, выделяет `D3DDECLTYPE_UNUSED` (`0x11`), обнаруживает ненулевой Method и нецелый буфер. Никакие Usage или MEB 460/461 значения не синтезируются.
+
+CLI:
+
+    python shift_importer.py decode-d3d9-declaration declaration.bin declaration.json --count 32
