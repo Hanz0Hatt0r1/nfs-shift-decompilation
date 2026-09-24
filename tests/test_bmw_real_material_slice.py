@@ -35,7 +35,7 @@ def _golden():
         "format": "SHIFT.BMWGoldenAssetManifest/1",
         "golden": {
             "resource": slicer.TARGET_MEB,
-            "resource_sha256": "9" * 64,
+            "resource_sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c",
         },
         "mesh": {
             "vertex_count": 4,
@@ -104,7 +104,10 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
         vertex_count=4,
         triangle_count=1,
         property_descriptors=[{"id":"200","words":[2,0,0]},{"id":"460","words":[4,6,0]}],
-        primitives=[SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx")],
+        primitives=[
+            SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/bmw_m3_e36_badging.mtx"),
+            SimpleNamespace(first_index=150,index_count=6294,material="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"),
+        ],
     )
     monkeypatch.setattr(slicer, "read_meb", lambda data: mesh)
     monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":m.property_descriptors,"primitives":[{"first_index":0,"index_count":3,"material":m.primitives[0].material}]})
@@ -150,6 +153,7 @@ def test_real_bmw_material_slice_blocks_non_paint_primitive(monkeypatch, tmp_pat
     monkeypatch.setattr(slicer, "read_meb", lambda data: mesh)
     monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":[],"primitives":[]})
     monkeypatch.setattr(slicer, "mesh_to_jsonable", lambda m: {"format":"SHIFT.MEB"})
+    monkeypatch.setattr(slicer, "parse_bmt_material", lambda data: {"material":{"name":"BMW_M3_E36_BADGING","shader":"bodywork.fx","shaderparams":[]}})
     report=slicer.build_real_bmw_material_slice(primary,golden_path,primitive_index=0)
     assert report["ready"] is False
     assert "material-slice:primitive-not-bmw-paint" in report["blocking_reasons"]
