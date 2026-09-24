@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from bmw_material_from_bff import TARGET_BMT, TARGET_MEB, build_real_bmw_material_binding
+from bmw_material_slice_golden_gate import validate_bmw_material_slice_golden
 from bmw_m3_paint_asset_contract import validate_bmw_paint_asset
 from draw_packets import build_index, compile_material, norm_ref
-from material_linker import link_material
 from meb_format import mesh_summary, mesh_to_jsonable, read_meb
 from renderer_resources import build_resource_index
 from resource_formats import parse_bmt_material, parse_dds_metadata
@@ -104,10 +104,28 @@ def build_real_bmw_material_slice(
         texture_bindings=[dict(x) for x in compiled_material.get('textures') or [] if x.get('binding_source')=='fxo-ctab']
         resources=build_resource_index(texture_records,texture_bindings)
         render_command=build_render_command(static_draw,resources)
+        slice_preview = {
+            'format': 'SHIFT.BMWMaterialSlice/1',
+            'ready': False,
+            'primitive_index': primitive_index,
+            'material_ref': primitive.material,
+            'golden_identity': golden.get('golden') or {},
+            'mesh': packet['mesh'],
+            'paint_contract': binding_report.get('paint_contract'),
+            'paint_shader_gate': binding_report.get('paint_shader_gate'),
+            'static_draw': static_draw,
+            'render_command': render_command,
+        }
+        slice_golden_gate = validate_bmw_material_slice_golden(
+            golden,
+            slice_preview,
+            primitive_index=primitive_index,
+        )
+        reasons.extend(slice_golden_gate.get('blocking_reasons') or [])
         reasons.extend(compiled_material.get('blocking_reasons') or [])
         reasons.extend(static_draw.get('blocking_reasons') or [])
         reasons.extend(render_command.get('blocking_reasons') or [])
-        ready=bool(binding_report.get('ready') and asset_contract.get('ready') and static_draw.get('ready') and render_command.get('ready') and not reasons)
+        ready=bool(binding_report.get('ready') and asset_contract.get('ready') and slice_golden_gate.get('ready') and static_draw.get('ready') and render_command.get('ready') and not reasons)
         return {
             'format':FORMAT,
             'source_format':'SHIFT.RealBMWMaterialSliceEvidence/1',
@@ -118,6 +136,7 @@ def build_real_bmw_material_slice(
             'material_ref':primitive.material,
             'golden_identity':golden.get('golden') or {},
             'asset_contract':asset_contract,
+            'slice_golden_gate':slice_golden_gate,
             'material_binding':binding,
             'paint_contract':binding_report.get('paint_contract'),
             'paint_shader_gate':binding_report.get('paint_shader_gate'),
