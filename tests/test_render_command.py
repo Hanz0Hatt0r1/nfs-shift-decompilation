@@ -574,3 +574,34 @@ def test_render_command_validation_rejects_constant_payload_shape():
     validation = validate_render_command(result)
     assert validation["valid"] is False
     assert "uniform-payload:register-width-invalid:3" in validation["blocking_reasons"]
+
+
+def test_render_command_preserves_external_sampler_requirements():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["external_samplers"] = [{
+        "sampler": "sShadowMap_f1_0",
+        "sampler_type": "sampler2D",
+        "d3d9_sampler_register": 0,
+        "binding": "external-or-specialised",
+    }]
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is True
+    external = result["submeshes"][0]["external_samplers"]
+    assert external[0]["d3d9_sampler_register"] == 0
+    assert external[0]["sampler_type"] == "sampler2D"
+    assert result["resource_plan"]["external_sampler_count"] == 1
+
+
+def test_render_command_rejects_external_sampler_collision_with_material():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["external_samplers"] = [{
+        "sampler": "shadow",
+        "sampler_type": "sampler2D",
+        "d3d9_sampler_register": 1,
+        "binding": "external-or-specialised",
+    }]
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "external-sampler:collides-with-material:1" in result["blocking_reasons"]
