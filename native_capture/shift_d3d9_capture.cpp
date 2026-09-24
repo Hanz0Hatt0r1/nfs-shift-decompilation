@@ -328,6 +328,68 @@ HRESULT STDMETHODCALLTYPE hook_set_indices(
 }
 
 
+
+const char* d3d_resource_type_name(D3DRESOURCETYPE type) {
+    switch (type) {
+    case D3DRTYPE_TEXTURE: return "texture2d";
+    case D3DRTYPE_VOLUMETEXTURE: return "volume_texture";
+    case D3DRTYPE_CUBETEXTURE: return "cube_texture";
+    default: return "other";
+    }
+}
+
+void append_texture_descriptor_json(
+    std::ostringstream& out,
+    IDirect3DBaseTexture9* texture) {
+    if (!texture) {
+        out << ",\"resource_descriptor_status\":\"null\"";
+        return;
+    }
+
+    const D3DRESOURCETYPE type = texture->GetType();
+    out << ",\"resource_type\":" << static_cast<unsigned>(type)
+        << ",\"resource_type_name\":\""
+        << d3d_resource_type_name(type) << "\"";
+
+    D3DSURFACE_DESC surface{};
+    HRESULT hr = E_FAIL;
+    if (type == D3DRTYPE_TEXTURE) {
+        hr = static_cast<IDirect3DTexture9*>(texture)->GetLevelDesc(0, &surface);
+    } else if (type == D3DRTYPE_CUBETEXTURE) {
+        hr = static_cast<IDirect3DCubeTexture9*>(texture)->GetLevelDesc(0, &surface);
+    }
+    if (SUCCEEDED(hr)) {
+        out << ",\"resource_descriptor_status\":\"observed\""
+            << ",\"width\":" << surface.Width
+            << ",\"height\":" << surface.Height
+            << ",\"format\":" << static_cast<unsigned>(surface.Format)
+            << ",\"mip_levels\":" << surface.Pool;
+        // Pool is intentionally not exposed as mip_levels; replace with the
+        // actual base-texture level count below.
+    } else {
+        out << ",\"resource_descriptor_status\":\"type-only\"";
+    }
+
+    if (type == D3DRTYPE_TEXTURE) {
+        out << ",\"level_count\":"
+            << static_cast<unsigned>(static_cast<IDirect3DTexture9*>(texture)->GetLevelCount());
+    } else if (type == D3DRTYPE_CUBETEXTURE) {
+        out << ",\"level_count\":"
+            << static_cast<unsigned>(static_cast<IDirect3DCubeTexture9*>(texture)->GetLevelCount());
+    } else if (type == D3DRTYPE_VOLUMETEXTURE) {
+        D3DVOLUME_DESC volume{};
+        if (SUCCEEDED(static_cast<IDirect3DVolumeTexture9*>(texture)->GetLevelDesc(0, &volume))) {
+            out << ",\"resource_descriptor_status\":\"observed\""
+                << ",\"width\":" << volume.Width
+                << ",\"height\":" << volume.Height
+                << ",\"depth\":" << volume.Depth
+                << ",\"format\":" << static_cast<unsigned>(volume.Format)
+                << ",\"level_count\":"
+                << static_cast<unsigned>(static_cast<IDirect3DVolumeTexture9*>(texture)->GetLevelCount());
+        }
+    }
+}
+
 HRESULT STDMETHODCALLTYPE hook_set_texture(
     IDirect3DDevice9* self,
     DWORD stage,
@@ -340,6 +402,7 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
         f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"stage\":" << stage;
+        append_texture_descriptor_json(f, texture);
         writer().write_event("set_texture", f.str());
     }
     return hr;
