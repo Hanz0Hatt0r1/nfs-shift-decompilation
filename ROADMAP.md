@@ -191,6 +191,10 @@ formats, four influences, SkinPose identity (including deterministic matrix
 hash), bind-palette identity and readiness/blockers. A mismatch is a hard,
 machine-readable backend blocker; no alternate payload is synthesized silently.
 
+## Phase 79: D3D9 lookup-table shape evidence
+
+Phase 79 records symbol-address spans, 4-byte table indexing, the 17-entry XML type ordinal domain and the exact declaration/type lookup callsite. The report intentionally labels adjacent-address capacity as a layout hint because Ghidra emitted the global initializers as opaque `undefined` objects.
+
 ## Phase 78: D3D9 primitive type semantics
 
 Phase 78 formalizes the recovered declaration conversion switch in FUN_00854e70. All 17 codes 0..16 are observed and aligned with the D3D9 D3DDECLTYPE numeric table, with source behaviors retained per case. Type code 4 is explicitly tied to the packed-color helper, but MEB 460/461 -> type code 4 remains a separate unresolved linkage.

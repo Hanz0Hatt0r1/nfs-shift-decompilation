@@ -1,0 +1,106 @@
+{
+  "format": "SHIFT.D3D9TypeTableShapeSnapshot/1",
+  "source": {
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "bytes": 38993813,
+    "line_count": 1471366
+  },
+  "globals": {
+    "DAT_00b90088": {
+      "address": "0x00b90088",
+      "declaration_line": 660880
+    },
+    "DAT_00b900d8": {
+      "address": "0x00b900d8",
+      "declaration_line": 660881
+    },
+    "DAT_00b9011c": {
+      "address": "0x00b9011c",
+      "declaration_line": 660882
+    },
+    "DAT_00b90140": {
+      "address": "0x00b90140",
+      "declaration_line": 660883
+    },
+    "DAT_00b90178": {
+      "address": "0x00b90178",
+      "declaration_line": 660884
+    },
+    "PTR_DAT_00b901d0": {
+      "address": "0x00b901d0",
+      "declaration_line": 660918
+    }
+  },
+  "spans": [
+    {
+      "from": "DAT_00b90088",
+      "to": "DAT_00b900d8",
+      "byte_span": 80,
+      "dword_slots_hint": 20
+    },
+    {
+      "from": "DAT_00b900d8",
+      "to": "DAT_00b9011c",
+      "byte_span": 68,
+      "dword_slots_hint": 17
+    },
+    {
+      "from": "DAT_00b9011c",
+      "to": "DAT_00b90140",
+      "byte_span": 36,
+      "dword_slots_hint": 9
+    },
+    {
+      "from": "DAT_00b90140",
+      "to": "DAT_00b90178",
+      "byte_span": 56,
+      "dword_slots_hint": 14
+    }
+  ],
+  "getters": {
+    "FUN_00853c20": {
+      "table": "DAT_00b90088",
+      "line": 929417,
+      "access_line": 929420,
+      "byte_stride": 4
+    },
+    "FUN_00853c30": {
+      "table": "DAT_00b900d8",
+      "line": 929425,
+      "access_line": 929428,
+      "byte_stride": 4
+    },
+    "FUN_00853c40": {
+      "table": "DAT_00b9011c",
+      "line": 929433,
+      "access_line": 929436,
+      "byte_stride": 4
+    },
+    "FUN_00853c50": {
+      "table": "DAT_00b90140",
+      "line": 929441,
+      "access_line": 929444,
+      "byte_stride": 4
+    },
+    "FUN_00853c60": {
+      "table": "DAT_00b90178",
+      "line": 929449,
+      "access_line": 929452,
+      "byte_stride": 4
+    }
+  },
+  "xml_stream": {
+    "pointer_table_lookup_line": 933779,
+    "type_to_code_line": 933799,
+    "type_ordinal_loop_limit_line": 933804,
+    "type_ordinal_exclusive_limit": 17,
+    "usage_loop_limit_line": 933840,
+    "usage_exclusive_limit": 9
+  },
+  "conclusion": {
+    "type_table_initializer": "opaque",
+    "type_ordinal_domain": "17 observed XML ordinals",
+    "meb_460_461_to_type_code": "not-proven"
+  }
+}
