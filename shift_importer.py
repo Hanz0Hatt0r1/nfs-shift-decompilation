@@ -2467,6 +2467,27 @@ def cmd_bmw_real_material_slice(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_bff_intake(args: argparse.Namespace) -> int:
+    """Verify the exact retail BMW M3 BFF intake before material extraction."""
+    from bmw_bff_intake import validate_bmw_bff
+
+    report = validate_bmw_bff(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+
 def cmd_bmw_material_from_bff(args: argparse.Namespace) -> int:
     """Build a real BMW M3 MaterialBinding directly from retail BFF archives."""
     from bmw_material_from_bff import build_real_bmw_material_binding
@@ -3201,6 +3222,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--primitive-index", type=int, default=1)
     p.add_argument("--supplemental-bff", action="append", default=[], help="additional BFF archives")
     p.set_defaults(fn=cmd_bmw_real_material_slice)
+
+    p = sp.add_parser("bmw-bff-intake", help="verify the exact BMW M3 BFF archive and target entries")
+    p.add_argument("input", help="primary BMW_M3_E36.bff")
+    p.add_argument("output", help="SHIFT.BMWBFFIntakeEvidence/1 JSON")
+    p.set_defaults(fn=cmd_bmw_bff_intake)
 
     p = sp.add_parser("bmw-material-from-bff", help="build real BMW M3 MaterialBinding/1 from retail BFF archives")
     p.add_argument("input", help="primary BMW_M3_E36.bff")
