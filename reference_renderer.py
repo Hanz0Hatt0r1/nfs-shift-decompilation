@@ -280,19 +280,33 @@ def rasterize_textured_mesh(
     uv_rows = [tuple(float(x) for x in uv) for uv in uvs]
     if len(uv_rows) != len(verts):
         raise ValueError("UV vertex count must match vertex count")
-    layer_rows: dict[int, list[tuple[float, ...]]] = {0: uv_rows}
+    uv_candidates: dict[int, dict[int, list[tuple[float, ...]]]] = {}
     for key, rows in (uv_layers or {}).items():
         try:
             layer_id = int(str(key))
         except (TypeError, ValueError):
             raise ValueError(f"invalid UV layer key {key!r}")
-        if 130 <= layer_id <= 134:
+        if 130 <= layer_id <= 134 or 230 <= layer_id <= 234:
+            semantic_index = layer_id - 130 if layer_id < 200 else layer_id - 230
             parsed = [tuple(float(x) for x in row) for row in rows]
             if len(parsed) != len(verts):
                 raise ValueError(
                     f"UV layer {layer_id} vertex count {len(parsed)} != {len(verts)}"
                 )
-            layer_rows[layer_id - 130] = parsed
+            uv_candidates.setdefault(semantic_index, {})[layer_id] = parsed
+
+    layer_rows: dict[int, list[tuple[float, ...]]] = {}
+    for semantic_index, candidates in sorted(uv_candidates.items()):
+        property_ids = sorted(candidates)
+        if len(property_ids) > 1:
+            raise ValueError(
+                f"TEXCOORD{semantic_index} has conflicting MEB UV families: "
+                + " and ".join(str(value) for value in property_ids)
+            )
+        layer_rows[semantic_index] = candidates[property_ids[0]]
+
+    if 0 not in layer_rows:
+        layer_rows[0] = uv_rows
     if any(len(uv) < 2 for uv in uv_rows):
         raise ValueError("each UV row must contain at least two components")
     semantic_data = {
@@ -524,9 +538,16 @@ def render_textured_static_draw(
             "draw packet is not ready: " + ", ".join(draw.get("blocking_reasons", []))
         )
     uv_layers = mesh.get("uv_layers") or {}
-    uvs = uv_layers.get("130") or uv_layers.get(130) or mesh.get("uvs") or []
+    uvs = (
+        uv_layers.get("130")
+        or uv_layers.get(130)
+        or uv_layers.get("230")
+        or uv_layers.get(230)
+        or mesh.get("uvs")
+        or []
+    )
     if not uvs:
-        raise ValueError("mesh has no UV0 (property 130)")
+        raise ValueError("mesh has no UV0 (property 130 or 230)")
     vertices = mesh.get("vertices") or []
     indices = mesh.get("indices") or []
     draw_indices: list[int] = []
