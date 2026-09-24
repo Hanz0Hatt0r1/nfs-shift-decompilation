@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from bmw_golden_gate import validate_bmw_golden_gate
 
@@ -112,7 +113,9 @@ def test_bmw_golden_gate_accepts_ready_paint_contract():
 
 def test_bmw_golden_gate_blocks_missing_bmw_paint_shader_gate():
     golden=_golden()
+    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
     packet=_packet()
+    packet["submeshes"][0]["material"]["ref"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
     packet["submeshes"][0]["material"]["paint_shader_gate"] = None
     report=validate_bmw_golden_gate(golden,packet)
     assert report["ready"] is False
@@ -121,6 +124,7 @@ def test_bmw_golden_gate_blocks_missing_bmw_paint_shader_gate():
 
 def test_bmw_golden_gate_requires_shader_gate_only_for_exact_m3_paint():
     golden=_golden()
+    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
     packet=_packet()
     packet["submeshes"][0]["material"]["ref"]="vehicles/bmw/bmw_m3_badging.mtx"
     packet["submeshes"][0]["material"].pop("paint_shader_gate", None)
