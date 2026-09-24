@@ -1,0 +1,88 @@
+{
+  "format": "SHIFT.D3D9TypeSwitchSnapshot/1",
+  "source": {
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "bytes": 38993813,
+    "line_count": 1471366
+  },
+  "function": "FUN_00854e70",
+  "switch_line": 930764,
+  "cases": [
+    {
+      "type_code": 0,
+      "case_line": 930765
+    },
+    {
+      "type_code": 1,
+      "case_line": 930766
+    },
+    {
+      "type_code": 2,
+      "case_line": 930767
+    },
+    {
+      "type_code": 3,
+      "case_line": 930768
+    },
+    {
+      "type_code": 4,
+      "case_line": 930771
+    },
+    {
+      "type_code": 5,
+      "case_line": 930779
+    },
+    {
+      "type_code": 6,
+      "case_line": 930802
+    },
+    {
+      "type_code": 7,
+      "case_line": 930828
+    },
+    {
+      "type_code": 8,
+      "case_line": 930855
+    },
+    {
+      "type_code": 9,
+      "case_line": 930878
+    },
+    {
+      "type_code": 10,
+      "case_line": 930904
+    },
+    {
+      "type_code": 11,
+      "case_line": 930931
+    },
+    {
+      "type_code": 12,
+      "case_line": 930962
+    },
+    {
+      "type_code": 13,
+      "case_line": 930993
+    },
+    {
+      "type_code": 14,
+      "case_line": 931021
+    },
+    {
+      "type_code": 15,
+      "case_line": 931043
+    },
+    {
+      "type_code": 16,
+      "case_line": 931071
+    }
+  ],
+  "meb_mapping": {
+    "status": "not-proven",
+    "properties": [
+      460,
+      461
+    ]
+  }
+}

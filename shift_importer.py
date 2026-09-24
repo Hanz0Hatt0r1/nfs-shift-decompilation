@@ -1614,6 +1614,28 @@ def cmd_d3d9_source_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_d3d9_type_evidence(args: argparse.Namespace) -> int:
+    """Analyze the recovered primitive-type switch for D3D9 semantics."""
+    from d3d9_type_semantics import analyze_d3d9_type_semantics_file
+
+    report = analyze_d3d9_type_semantics_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "function": report["function"],
+        "enum_alignment": report["enum_alignment"]["status"],
+        "observed_case_count": report["enum_alignment"].get("observed_case_count", 0),
+        "missing_cases": report["enum_alignment"].get("missing_cases", []),
+        "meb_property_mapping": report["meb_property_mapping"]["status"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     inputs = list(iter_bffs(Path(args.input)))
     if not inputs:
@@ -1915,6 +1937,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
     p.add_argument("output", help="SHIFT.D3D9SourceVertexEvidence/1 JSON output")
     p.set_defaults(fn=cmd_d3d9_source_evidence)
+
+    p = sp.add_parser("source-d3d9-type-evidence", help="analyze the D3D9 primitive type switch in SHIFT.exe.c")
+    p.add_argument("input", help="recovered SHIFT.exe Ghidra C source")
+    p.add_argument("output", help="SHIFT.D3D9TypeSemanticsEvidence/1 JSON output")
+    p.set_defaults(fn=cmd_d3d9_type_evidence)
 
     p = sp.add_parser("validate", help="decode/validate every resource")
     p.add_argument("input", help="BFF file or directory")
