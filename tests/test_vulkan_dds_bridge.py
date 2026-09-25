@@ -83,7 +83,7 @@ def test_dds_bridge_emits_vulkan_packets_and_provenance(tmp_path):
     )
 
     assert result["format"] == FORMAT_BRIDGE
-    assert result["ready"] is True
+    assert result["ready"] is True, result
     assert result["packets"]["textures"]["path"] == "textures.svtp"
     assert result["packets"]["environment_cube"]["path"] == "environment_cube.svcp"
     assert result["provenance"]["path"] == "dds_sources.json"
