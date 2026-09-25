@@ -218,6 +218,7 @@ def test_runtime_shader_join_uses_exact_material_draw_range():
     assert report["ready"] is True
     assert report["matched_draw_count"] == 1
     assert report["candidate_frames"][0]["draw_index"] == 1
+    assert report["expected_draw_range"] == {"first_index": 150, "index_count": 6294}
 
 
 def test_runtime_shader_join_blocks_when_material_draw_range_has_no_runtime_match():
