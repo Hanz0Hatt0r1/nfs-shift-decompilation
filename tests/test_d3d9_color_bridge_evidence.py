@@ -43,6 +43,30 @@ def _source_report():
                 "source_line": 400,
                 "detail": "Type ordinal indexes table",
             },
+            {
+                "id": "binary-descriptor-triple-semantics",
+                "status": "observed",
+                "function": "FUN_009340C0",
+                "address": "0x009340C0",
+                "source_line": 500,
+                "detail": "Binary mesh loader consumes [Type, Usage, Channel] triples",
+            },
+            {
+                "id": "binary-mesh-loader-identity",
+                "status": "observed",
+                "function": "FUN_009340C0",
+                "address": "0x009340C0",
+                "source_line": 520,
+                "detail": "MEB descriptor triple is consumed by the binary mesh loader",
+            },
+            {
+                "id": "meb-extension-registration",
+                "status": "observed",
+                "function": "FUN_00859800",
+                "address": "0x00859800",
+                "source_line": 540,
+                "detail": "MEB extension registration path",
+            },
         ],
         "linkage": {
             "xml_colour_to_type_4": {

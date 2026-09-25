@@ -95,8 +95,10 @@ def build_vulkan_cube_packet(
         state = matching[0].get("sampler_state") or {}
         min_filter = str(state.get("min_filter") or "LINEAR").upper()
         mag_filter = str(state.get("mag_filter") or "LINEAR").upper()
+        aliases = {"CLAMP": "CLAMP_TO_EDGE", "CLAMPTOEDGE": "CLAMP_TO_EDGE"}
         address = {
-            str(state.get(key) or "CLAMP_TO_EDGE").upper()
+            aliases.get(str(state.get(key) or "CLAMP_TO_EDGE").upper(),
+                        str(state.get(key) or "CLAMP_TO_EDGE").upper())
             for key in ("address_u", "address_v", "address_w")
         }
         if min_filter not in {"LINEAR", "NEAREST"} or mag_filter not in {"LINEAR", "NEAREST"}:

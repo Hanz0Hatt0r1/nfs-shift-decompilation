@@ -44,4 +44,4 @@ def test_sampler_state_translation_is_explicit():
 
 def test_sampler_state_blocks_border_address_mode():
     result = translate_sampler_state(3, {1: 4})
-    assert result["ready"] is True is False
+    assert result["ready"] is False

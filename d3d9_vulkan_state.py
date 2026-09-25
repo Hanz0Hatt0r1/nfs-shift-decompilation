@@ -146,6 +146,10 @@ def translate_sampler_state(
             blockers.append(
                 f"d3d9-vulkan-state:unsupported-{name}:s{sampler_register}:{value}"
             )
+        elif name.startswith("address_") and value == 4:
+            blockers.append(
+                f"d3d9-vulkan-state:border-address-requires-proven-color:s{sampler_register}:{name}"
+            )
 
     return {
         "format": FORMAT,
