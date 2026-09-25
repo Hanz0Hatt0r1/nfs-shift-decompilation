@@ -139,6 +139,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     assert report["static_draw"]["ready"] is True
     assert report["slice_golden_gate"]["ready"] is True
     assert report["source_format"]=="SHIFT.RealBMWMaterialSliceEvidence/1"
+    assert "texture_sources" in report
 
 
 def test_real_bmw_material_slice_blocks_non_paint_primitive(monkeypatch, tmp_path):
