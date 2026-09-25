@@ -63,3 +63,19 @@ def test_matrix_build_keeps_helper_order_and_intermediate_shapes():
         "FUN_00401610",
         "FUN_00401d10",
     ]
+
+
+def test_matrix_build_scales_rate_ratio_by_camera_data_268c():
+    result = describe_camera_view_matrix_build(
+        orientation_quaternion=[1, 0, 0, 0],
+        position=[0, 0, 0],
+        near_z=1,
+        far_z=3,
+        input_scalar=2,
+        helper_00900b10=4,
+        helper_00900c40=2,
+        camera_data_268c=4,
+    )
+    assert result["rate_ratio"]["ratio"] == 2.0
+    assert result["rate_ratio"]["scaled_ratio"] == 0.5
+    assert result["projection_state_constants"]["+0x5c"] == 0.0
