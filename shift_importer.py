@@ -1496,6 +1496,46 @@ def cmd_sgb_runtime(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_camera_runtime(args: argparse.Namespace) -> int:
+    """Decode camera configuration XML while preserving the runtime object boundary."""
+    from camera_runtime import parse_camera_xml
+
+    data = Path(args.input).read_bytes()
+    report = parse_camera_xml(data, source_name=str(args.input))
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": "decoded",
+        "object_count": report["object_count"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_camera_catalog(args: argparse.Namespace) -> int:
+    """Emit the source-backed camera property-registration catalog."""
+    from camera_runtime import property_catalog
+
+    report = property_catalog()
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "static_camera_properties": len(report["static_camera"]),
+        "tracking_camera_properties": len(report["tracking_camera"]),
+        "area_registrations": len(report["area_registrations"]),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_flat_runtime(args: argparse.Namespace) -> int:
     """Decode a copied runtime FLAT tree body."""
     from flat_runtime import parse_flat_runtime
@@ -3230,6 +3270,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.SGBRuntime/1 JSON output")
     p.add_argument("--allow-partial", action="store_true", help="return blockers instead of raising on malformed chunk records")
     p.set_defaults(fn=cmd_sgb_runtime)
+
+    p = sp.add_parser("camera-runtime", help="decode CameraConfig/TrackCameraMan XML runtime boundaries")
+    p.add_argument("input", help="camera XML file")
+    p.add_argument("output", help="SHIFT.CameraRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_camera_runtime)
+
+    p = sp.add_parser("camera-catalog", help="emit source-backed camera property registration evidence")
+    p.add_argument("output", help="camera property catalog JSON output")
+    p.set_defaults(fn=cmd_camera_catalog)
 
     p = sp.add_parser("flat-runtime", help="decode a copied runtime FLAT tree body")
     p.add_argument("input", help="FLAT body starting at the bytes passed to FUN_0068a8b0")
