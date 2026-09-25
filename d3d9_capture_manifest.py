@@ -51,6 +51,7 @@ def build_capture_manifest(
     *,
     events: Iterable[Mapping[str, Any]] | None = None,
     producer_binary: str | Path | None = None,
+    retail_executable: str | Path | None = None,
 ) -> dict[str, Any]:
     capture = Path(capture_path)
     if not capture.is_file():
@@ -79,6 +80,16 @@ def build_capture_manifest(
             "size": producer_path.stat().st_size if producer_path.is_file() else None,
         }
 
+    retail = None
+    if retail_executable is not None:
+        retail_path = Path(retail_executable)
+        retail = {
+            "path": str(retail_path),
+            "exists": retail_path.is_file(),
+            "sha256": _sha256_file(retail_path) if retail_path.is_file() else None,
+            "size": retail_path.stat().st_size if retail_path.is_file() else None,
+        }
+
     blockers = []
     if not schema.get("ready"):
         blockers.extend(
@@ -104,6 +115,7 @@ def build_capture_manifest(
             "size": capture.stat().st_size,
         },
         "producer": producer,
+        "retail_executable": retail,
         "schema": {
             "format": schema["format"],
             "status": schema["status"],
@@ -126,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("capture")
     parser.add_argument("output")
     parser.add_argument("--producer-binary")
+    parser.add_argument("--retail-executable")
     args = parser.parse_args(argv)
 
     try:
@@ -150,6 +163,7 @@ def main(argv: list[str] | None = None) -> int:
         args.capture,
         events=events,
         producer_binary=args.producer_binary,
+        retail_executable=args.retail_executable,
     )
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
