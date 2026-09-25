@@ -41,7 +41,7 @@ def validate_bmw_vertex_input_parity(
         None,
     ) or {}
     runtime_state = runtime_frame
-    draw_index = candidate.get('draw_index')
+    draw_index = candidate.get('draw_index') if candidate.get('source') == 'draw-snapshot' else None
     if draw_index is not None:
         runtime_state = next(
             (
