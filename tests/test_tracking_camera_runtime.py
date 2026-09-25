@@ -13,9 +13,10 @@ def test_tracking_data_defaults_preserve_sentinels_and_units():
     result = tracking_data_defaults()
     assert result["writes"]["+0x00"] == 0x3F800000
     assert result["writes"]["+0x44"] == 0
-    assert result["writes"]["+0x48"] == 0xFFFFFFFF
-    assert result["writes"]["+0x4c"] == 0
-    assert result["writes"]["+0x98"] == 0x3F800000
+    assert result["writes"]["+0x48"] == 0x3F800000
+    assert result["writes"]["+0x50"] == 0xFFFFFFFF
+    assert result["writes"]["+0x54"] == 0xFFFFFFFF
+    assert result["writes"]["+0x60"] == 0x3F800000
 
 
 def test_tracking_constructor_sets_exact_spline_defaults():
