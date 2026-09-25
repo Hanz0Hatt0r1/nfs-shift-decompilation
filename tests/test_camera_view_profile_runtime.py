@@ -64,6 +64,18 @@ def test_catalog_contains_exact_projection_and_camera_flag_offsets():
     assert fields["AllowCycle"] == 0xAF
 
 
+def test_profile_loader_uses_render_cockpit_for_ce10_and_hide_car_for_cdf0():
+    _, result = load_camera_profile(
+        CameraViewState(),
+        requested_profile_id=7,
+        resolved_profile=PROFILE,
+        group_id=7,
+        suppress_history_update=True,
+    )
+    assert result["actions"][10]["action"] == "FUN_0080ce10"
+    assert result["actions"][11]["action"] == "FUN_0080cdf0"
+
+
 def test_profile_loader_copies_projection_state_and_vectors():
     state, result = load_camera_profile(
         CameraViewState(),
@@ -97,9 +109,10 @@ def test_profile_selection_records_selector_and_history_path():
             last_fallback_profile_id=4,
         ),
         profile_id=9,
-        profile=PROFILE,
+        service_current_id=1,
     )
-    assert state.selected_profile_id == 7
+    assert state.selector_profile_id == 9
+    assert state.selected_profile_id == 1
     assert result["selector_profile_id"] == 9
     assert result["history_value_used"] == 4
 
