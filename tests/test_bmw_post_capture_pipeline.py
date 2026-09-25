@@ -41,6 +41,16 @@ def test_post_capture_pipeline_writes_blocked_stage_reports(monkeypatch, tmp_pat
     monkeypatch.setattr(pipeline, "load_events", lambda path: [])
     monkeypatch.setattr(pipeline, "build_runtime_binding_evidence", lambda *a, **k: runtime)
     monkeypatch.setattr(pipeline, "select_runtime_shader", lambda *a, **k: selection)
+    monkeypatch.setattr(
+        pipeline,
+        "preflight_bmw_runtime",
+        lambda *a, **k: {
+            "format": "SHIFT.BMWRuntimeCapturePreflight/1",
+            "status": "ready",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    )
 
     result = pipeline.run_pipeline(primary, render, capture, tmp_path / "out")
 
@@ -105,3 +115,60 @@ def test_post_capture_pipeline_blocks_before_render_without_same_instance_gate(m
         "runtime-same-instance:draw:same-frame-indexed-draw-not-observed"
     ]
     assert json.loads((tmp_path / "out" / "pipeline_result.json").read_text())["ready"] is False
+
+
+def test_post_capture_pipeline_blocks_on_preflight_before_same_instance(monkeypatch, tmp_path):
+    import bmw_post_capture_pipeline as pipeline
+
+    primary = tmp_path / "BMW_M3_E36.bff"
+    render = tmp_path / "RENDER.bff"
+    capture = tmp_path / "capture.jsonl"
+    primary.write_bytes(b"primary")
+    render.write_bytes(b"render")
+    capture.write_text("{}", encoding="utf-8")
+
+    material = {"format": "SHIFT.RealBMWMaterialBindingEvidence/1", "status": "ready"}
+    mesh = {"format": "SHIFT.MEBEvidence", "property_descriptors": [], "vertices": []}
+    runtime = {
+        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
+        "status": "observed",
+        "frames": [],
+        "same_instance_gate": {
+            "status": "proven",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    }
+    selection = {
+        "format": "SHIFT.BMWRuntimeShaderSelection/1",
+        "status": "match",
+        "ready": True,
+        "blocking_reasons": [],
+    }
+    preflight = {
+        "format": "SHIFT.BMWRuntimeCapturePreflight/1",
+        "status": "partial",
+        "ready": False,
+        "blocking_reasons": ["runtime:draw-snapshot-alignment-not-proven"],
+    }
+
+    monkeypatch.setattr(pipeline, "build_real_bmw_material_binding", lambda *a, **k: material)
+    monkeypatch.setattr(pipeline, "_load_target_mesh", lambda *a, **k: (mesh, b"meb"))
+    monkeypatch.setattr(pipeline, "load_events", lambda path: [])
+    monkeypatch.setattr(pipeline, "build_runtime_binding_evidence", lambda *a, **k: runtime)
+    monkeypatch.setattr(pipeline, "preflight_bmw_runtime", lambda *a, **k: preflight)
+    monkeypatch.setattr(pipeline, "select_runtime_shader", lambda *a, **k: selection)
+    monkeypatch.setattr(
+        pipeline,
+        "build_runtime_render_contract",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("render contract must not run")),
+    )
+
+    result = pipeline.run_pipeline(primary, render, capture, tmp_path / "out")
+
+    assert result["ready"] is False
+    assert result["stages"]["runtime_capture_preflight"] == "partial"
+    assert result["stages"]["runtime_render_contract"] == "not-run"
+    assert result["blocking_reasons"] == [
+        "runtime-capture-preflight:runtime:draw-snapshot-alignment-not-proven"
+    ]
