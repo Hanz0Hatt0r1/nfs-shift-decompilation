@@ -174,3 +174,8 @@ if(GLSLANG_VALIDATOR)
 else()
   message(STATUS "glslangValidator not found; samplerCube target will not be built")
 endif()
+
+if(Vulkan_FOUND)
+  add_executable(shift_vulkan_bundle_runner src/vulkan_bundle_runner.cpp)
+  target_link_libraries(shift_vulkan_bundle_runner PRIVATE Vulkan::Vulkan)
+endif()
