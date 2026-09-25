@@ -81,7 +81,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     matched_state_count = 0
     for candidate in matched_candidates:
         frame_id = candidate.get('frame')
-        draw_index = candidate.get('draw_index')
+        draw_index = candidate.get('draw_index') if candidate.get('source') == 'draw-snapshot' else None
         state = None
         if draw_index is not None:
             state = next(
