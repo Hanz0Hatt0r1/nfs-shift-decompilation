@@ -10,12 +10,14 @@ from pathlib import Path
 
 
 FORMAT = "SHIFT.BMWRenderCheckpointVerifier/1"
+TARGET_RESOURCE = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
+SCENE_FORMAT = "SHIFT.BMWM3RenderDemoScene/1"
 
 
 def _png_size(data: bytes) -> tuple[int, int]:
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError("screenshot is not a PNG")
-    if data[12:16] != b"IHDR" or len(data) < 24:
+    if len(data) < 24 or data[12:16] != b"IHDR":
         raise ValueError("PNG is missing a valid IHDR chunk")
     width, height = struct.unpack(">II", data[16:24])
     if width <= 0 or height <= 0:
@@ -23,32 +25,42 @@ def _png_size(data: bytes) -> tuple[int, int]:
     return width, height
 
 
-def verify(scene_path: str | Path, *, repo_root: str | Path | None = None) -> dict[str, object]:
+def verify(
+    scene_path: str | Path,
+    *,
+    repo_root: str | Path | None = None,
+) -> dict[str, object]:
     scene_file = Path(scene_path).resolve()
     root = Path(repo_root).resolve() if repo_root is not None else scene_file.parents[2]
     scene = json.loads(scene_file.read_text(encoding="utf-8"))
 
-    screenshot = root / str(scene["screenshot"]["path"])
-    expected_sha = str(scene["screenshot"]["sha256"])
-    expected_width = int(scene["screenshot"]["width"])
-    expected_height = int(scene["screenshot"]["height"])
+    expected = scene.get("screenshot") or {}
+    screenshot = root / str(expected.get("path") or "")
+    expected_sha = str(expected.get("sha256") or "")
+    expected_width = int(expected.get("width") or 0)
+    expected_height = int(expected.get("height") or 0)
 
-    data = screenshot.read_bytes()
-    width, height = _png_size(data)
-    actual_sha = hashlib.sha256(data).hexdigest()
-
-    checks = {
-        "format": scene.get("format") == "SHIFT.BMWM3RenderDemoScene/1",
+    checks: dict[str, bool] = {
+        "format": scene.get("format") == SCENE_FORMAT,
         "ready": scene.get("ready") is True,
-        "target_resource": scene.get("source", {}).get("resource")
-        == "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
-        "screenshot_exists": screenshot.exists(),
-        "dimensions": (width, height) == (expected_width, expected_height),
-        "sha256": actual_sha == expected_sha,
+        "target_resource": scene.get("source", {}).get("resource") == TARGET_RESOURCE,
+        "screenshot_exists": screenshot.is_file(),
     }
 
+    width = height = None
+    actual_sha = None
+    if checks["screenshot_exists"]:
+        data = screenshot.read_bytes()
+        width, height = _png_size(data)
+        actual_sha = hashlib.sha256(data).hexdigest()
+        checks["dimensions"] = (width, height) == (expected_width, expected_height)
+        checks["sha256"] = actual_sha == expected_sha
+    else:
+        checks["dimensions"] = False
+        checks["sha256"] = False
+
     failed = [name for name, ok in checks.items() if not ok]
-    result = {
+    return {
         "format": FORMAT,
         "status": "verified" if not failed else "blocked",
         "ready": not failed,
@@ -67,16 +79,11 @@ def verify(scene_path: str | Path, *, repo_root: str | Path | None = None) -> di
         },
         "blocking_reasons": failed,
     }
-    return result
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "scene",
-        type=Path,
-        help="BMW render demo scene manifest",
-    )
+    parser.add_argument("scene", type=Path, help="BMW render demo scene manifest")
     parser.add_argument(
         "--repo-root",
         type=Path,
