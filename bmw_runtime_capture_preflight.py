@@ -116,10 +116,19 @@ def preflight_bmw_runtime(
 
     same_instance = runtime_report.get("same_instance_gate") or {}
     integrity = runtime_report.get("integrity") or {}
+    proven_draws = {
+        (candidate.get("frame"), candidate.get("draw_index"))
+        for candidate in (same_instance.get("candidate_frames") or [])
+    }
+    proven_paint_draws = [
+        candidate
+        for candidate in paint_draws
+        if (candidate.get("frame"), candidate.get("draw_index")) in proven_draws
+    ]
     ready = bool(
         integrity.get("status") == "observed"
         and same_instance.get("ready") is True
-        and paint_draws
+        and proven_paint_draws
     )
     return {
         "format": FORMAT,
@@ -138,6 +147,7 @@ def preflight_bmw_runtime(
         },
         "resource_draw_candidates": resource_draws,
         "paint_draw_candidates": paint_draws,
+        "proven_paint_draw_candidates": proven_paint_draws,
         "blocking_reasons": (
             []
             if ready
@@ -156,6 +166,11 @@ def preflight_bmw_runtime(
                     + (
                         ["runtime:target-paint-draw-not-observed"]
                         if not paint_draws
+                        else []
+                    )
+                    + (
+                        ["runtime:target-paint-draw-not-same-instance"]
+                        if paint_draws and not proven_paint_draws
                         else []
                     )
                 )
