@@ -530,6 +530,7 @@ void create_image(
     uint32_t width,
     uint32_t height,
     uint32_t layers,
+    VkFormat format,
     VkImageCreateFlags flags,
     VkImageUsageFlags usage,
     Image& out) {
@@ -538,7 +539,7 @@ void create_image(
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.flags = flags;
     info.imageType = VK_IMAGE_TYPE_2D;
-    info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    info.format = format;
     info.extent = {width, height, 1};
     info.mipLevels = 1;
     info.arrayLayers = layers;
@@ -566,7 +567,7 @@ void create_image(
     view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view.image = out.handle;
     view.viewType = layers == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-    view.format = VK_FORMAT_R8G8B8A8_UNORM;
+    view.format = format;
     view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     view.subresourceRange.levelCount = 1;
     view.subresourceRange.layerCount = layers;
@@ -784,7 +785,7 @@ int main(int argc, char** argv) {
 
             textures[i].record = record;
             create_image(
-                ctx, record.width, record.height, 1, 0,
+                ctx, record.width, record.height, 1, VK_FORMAT_R8G8B8A8_UNORM, 0,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 textures[i].image);
             textures[i].sampler = sampler_for_mode(ctx, record.sampler_mode);
@@ -806,6 +807,7 @@ int main(int argc, char** argv) {
             cube.header = cube_packet.header;
             create_image(
                 ctx, cube.header.width, cube.header.height, 6,
+                VK_FORMAT_R8G8B8A8_UNORM,
                 VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 cube.image);
@@ -938,6 +940,7 @@ int main(int argc, char** argv) {
                 ctx.device, &set1_alloc, &set1),
                 "vkAllocateDescriptorSets set1 failed");
 
+            std::map<uint32_t, VkDescriptorImageInfo> image_infos_by_register;
             std::vector<VkDescriptorImageInfo> image_infos;
             std::vector<VkWriteDescriptorSet> writes;
             image_infos.reserve(sampled_bindings.size());
@@ -948,25 +951,36 @@ int main(int argc, char** argv) {
                 info.sampler = texture.sampler;
                 info.imageView = texture.image.view;
                 info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                image_infos.push_back(info);
+                if (!image_infos_by_register.emplace(texture.record.register_index, info).second) {
+                    throw std::runtime_error("duplicate 2D sampler register");
+                }
             }
             if (has_cube) {
                 VkDescriptorImageInfo info{};
                 info.sampler = cube.sampler;
                 info.imageView = cube.image.view;
                 info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                image_infos.push_back(info);
+                if (!image_infos_by_register.emplace(cube.header.register_index, info).second) {
+                    throw std::runtime_error("cube sampler register collides with 2D resource");
+                }
             }
 
-            size_t image_index = 0;
             for (const auto& item : sampled_bindings) {
+                auto found = image_infos_by_register.find(item.first);
+                if (found == image_infos_by_register.end()) {
+                    throw std::runtime_error("descriptor register has no resource");
+                }
+                image_infos.push_back(found->second);
+            }
+            for (size_t image_index = 0; image_index < sampled_bindings.size(); ++image_index) {
+                auto item = std::next(sampled_bindings.begin(), static_cast<std::ptrdiff_t>(image_index));
                 VkWriteDescriptorSet write{};
                 write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 write.dstSet = set1;
-                write.dstBinding = item.first;
+                write.dstBinding = item->first;
                 write.descriptorCount = 1;
                 write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                write.pImageInfo = &image_infos[image_index++];
+                write.pImageInfo = &image_infos[image_index];
                 writes.push_back(write);
             }
             vkUpdateDescriptorSets(
@@ -979,7 +993,7 @@ int main(int argc, char** argv) {
 
         create_color_image:
         create_image(
-            ctx, kRenderWidth, kRenderHeight, 1, 0,
+            ctx, kRenderWidth, kRenderHeight, 1, VK_FORMAT_R8G8B8A8_UNORM, 0,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             color);
 
@@ -992,7 +1006,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("VK_FORMAT_D32_SFLOAT depth attachment unsupported");
         }
         create_image(
-            ctx, kRenderWidth, kRenderHeight, 1, 0,
+            ctx, kRenderWidth, kRenderHeight, 1, depth_format, 0,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             depth);
 
@@ -1267,6 +1281,7 @@ int main(int argc, char** argv) {
             for (uint32_t face = 0; face < 6; ++face) {
                 VkBufferImageCopy copy{};
                 copy.bufferOffset =
+                    static_cast<VkDeviceSize>(sizeof(CubeHeader)) +
                     static_cast<VkDeviceSize>(face) * cube.header.face_bytes;
                 copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 copy.imageSubresource.baseArrayLayer = face;
