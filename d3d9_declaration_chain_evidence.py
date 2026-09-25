@@ -5,7 +5,7 @@ reconstructing facts a second time. It checks that the recovered Type tables,
 STREAM topology, 8-byte declaration record and canonicalizer all agree on the
 same declaration ABI. Optional runtime-memory evidence is accepted only when
 its address/range metadata, hashes and complete declaration array are coherent.
-MEB 460/461 -> Type remains explicitly unresolved.
+MEB 460/461 can now be resolved when the joined color bridge carries the exact descriptor-triple evidence and source-backed Type-4 packed-color path.
 """
 from __future__ import annotations
 
@@ -434,14 +434,24 @@ def analyze_d3d9_declaration_chain(
             )
             if isinstance(row, Mapping) and row.get("code") is not None
         ]
+        bridge_verified = (
+            bridge_format == "SHIFT.MEBD3D9ColorBridgeEvidence/1"
+            and meb_color_bridge_evidence.get("verified_abi") is True
+            and bridge_mapping_status == "observed"
+            and bridge_storage_ok
+            and bridge_candidate_codes == [4, 8]
+        )
+        bridge_ambiguous = (
+            bridge_format == "SHIFT.MEBD3D9ColorBridgeEvidence/1"
+            and bridge_mapping_status == "not-proven"
+            and bridge_candidate_status == "ambiguous"
+            and bridge_storage_ok
+            and bridge_candidate_codes == [4, 8]
+        )
         checks["meb_color_bridge"] = {
             "status": (
                 "observed"
-                if bridge_format == "SHIFT.MEBD3D9ColorBridgeEvidence/1"
-                and bridge_mapping_status == "not-proven"
-                and bridge_candidate_status == "ambiguous"
-                and bridge_storage_ok
-                and bridge_candidate_codes == [4, 8]
+                if bridge_verified or bridge_ambiguous
                 else (
                     "mismatch"
                     if bridge_mapping_status == "mismatch"
@@ -449,8 +459,9 @@ def analyze_d3d9_declaration_chain(
                 )
             ),
             "detail": (
-                "MEB COLOR0/COLOR1 are constrained to D3D9 Type 4/8 candidates "
-                "without selecting a property-to-Type identity"
+                "MEB COLOR0/COLOR1 resolve to D3D9 Type 4 through exact descriptor-triple evidence and the source-backed Type-4 packed-color path"
+                if bridge_verified
+                else "MEB COLOR0/COLOR1 are constrained to D3D9 Type 4/8 candidates without selecting a property-to-Type identity"
             ),
         }
 
@@ -702,7 +713,11 @@ def analyze_d3d9_declaration_chain(
     ]
     pe_validation = _status(pe_evidence, "type_profile_validation", "validation", "status")
     pe_available = bool(pe_evidence)
-    meb_status = "not-proven"
+    meb_status = (
+        "observed"
+        if meb_color_bridge_supplied and meb_color_bridge_evidence.get("verified_abi") is True
+        else "not-proven"
+    )
 
     return {
         "format": FORMAT,
@@ -880,7 +895,11 @@ def analyze_d3d9_declaration_chain(
         ),
         "meb_property_mapping": {
             "status": meb_status,
-            "detail": "No joined evidence in this chain assigns MEB properties 460/461 to a D3D9 Type ordinal.",
+            "detail": (
+                "Joined color evidence assigns MEB properties 460/461 to D3D9 Type 4."
+                if meb_status == "observed"
+                else "No joined evidence in this chain assigns MEB properties 460/461 to a D3D9 Type ordinal."
+            ),
         },
         "source_signatures": {
             "stream_topology": _source_signature(stream_topology),
