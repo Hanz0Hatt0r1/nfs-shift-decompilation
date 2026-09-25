@@ -231,6 +231,7 @@ def test_runtime_render_contract_uses_selected_draw_snapshot(monkeypatch, tmp_pa
             "selected": {
                 "frame": 9,
                 "draw_index": 1,
+                "source": "draw-snapshot",
                 "candidate_file": "RENDER.bff::render/shaders/cache/render_shaders_bodywork_test.fxo",
                 "candidate_program_offset": 128,
             },
