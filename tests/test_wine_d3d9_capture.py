@@ -6,7 +6,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INJECTOR = ROOT / "tools" / "inject_wine_d3d9_capture.py"
 
-
 FIXTURE_MAIN = """#include "initguid.h"
 #include "d3d9_private.h"
 
@@ -16,7 +15,7 @@ IDirect3D9 * WINAPI DECLSPEC_HOTPATCH Direct3DCreate9(UINT sdk_version)
 }
 """
 
-FIXTURE_PRIVATE = '#include "d3d9.h"\n#include "wine/wined3d.h"\n'
+FIXTURE_PRIVATE = '#include "d3d9.h"\\n#include "wine/wined3d.h"\\n'
 
 FIXTURE_MAKEFILE = """MODULE    = d3d9.dll
 IMPORTLIB = d3d9
@@ -32,6 +31,7 @@ FIXTURE_DEVICE = r'''
 static HRESULT WINAPI d3d9_device_CreateVertexDeclaration(IDirect3DDevice9Ex *iface,
         const D3DVERTEXELEMENT9 *elements, IDirect3DVertexDeclaration9 **declaration)
 {
+    HRESULT hr;
     if (SUCCEEDED(hr = d3d9_vertex_declaration_create(device, elements, &object)))
         *declaration = &object->IDirect3DVertexDeclaration9_iface;
     return hr;
@@ -48,6 +48,7 @@ static HRESULT WINAPI d3d9_device_SetVertexDeclaration(IDirect3DDevice9Ex *iface
 static HRESULT WINAPI d3d9_device_SetStreamSource(IDirect3DDevice9Ex *iface,
         UINT stream_idx, IDirect3DVertexBuffer9 *buffer, UINT offset, UINT stride)
 {
+    HRESULT hr;
     wined3d_mutex_unlock();
 
     return hr;
@@ -87,6 +88,7 @@ static HRESULT WINAPI d3d9_device_SetVertexShader(IDirect3DDevice9Ex *iface,
 static HRESULT WINAPI d3d9_device_SetVertexShaderConstantF(IDirect3DDevice9Ex *iface,
         UINT reg_idx, const float *data, UINT count)
 {
+    HRESULT hr;
     wined3d_mutex_unlock();
 
     return hr;
@@ -110,6 +112,7 @@ static HRESULT WINAPI d3d9_device_SetPixelShader(IDirect3DDevice9Ex *iface,
 static HRESULT WINAPI d3d9_device_SetPixelShaderConstantF(IDirect3DDevice9Ex *iface,
         UINT reg_idx, const float *data, UINT count)
 {
+    HRESULT hr;
     wined3d_mutex_unlock();
 
     return hr;
@@ -136,11 +139,11 @@ static void shift_fixture_sentinel(void) {}
 '''
 
 
-def _make_tree(tmp_path: Path) -> Path:
+def make_tree(tmp_path: Path) -> Path:
     source = tmp_path / "wine"
     d3d9 = source / "dlls" / "d3d9"
     d3d9.mkdir(parents=True)
-    (source / "configure").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    (source / "configure").write_text("#!/bin/sh\\nexit 0\\n", encoding="utf-8")
     (d3d9 / "d3d9_main.c").write_text(FIXTURE_MAIN, encoding="utf-8")
     (d3d9 / "d3d9_private.h").write_text(FIXTURE_PRIVATE, encoding="utf-8")
     (d3d9 / "Makefile.in").write_text(FIXTURE_MAKEFILE, encoding="utf-8")
@@ -148,8 +151,8 @@ def _make_tree(tmp_path: Path) -> Path:
     return source
 
 
-def test_check_only_and_full_injection(tmp_path: Path) -> None:
-    source = _make_tree(tmp_path)
+def test_wine_d3d9_injector(tmp_path: Path) -> None:
+    source = make_tree(tmp_path)
 
     subprocess.run(
         ["python3", str(INJECTOR), str(source), "--check-only"],
@@ -162,9 +165,10 @@ def test_check_only_and_full_injection(tmp_path: Path) -> None:
         check=True,
     )
 
-    device = (source / "dlls" / "d3d9" / "device.c").read_text(encoding="utf-8")
+    device = source / "dlls" / "d3d9" / "device.c"
+    patched = device.read_text(encoding="utf-8")
 
-    markers = [
+    expected = [
         "shift_capture_create_vertex_declaration(",
         "shift_capture_set_vertex_declaration(",
         "shift_capture_set_stream_source(",
@@ -179,8 +183,9 @@ def test_check_only_and_full_injection(tmp_path: Path) -> None:
         "shift_capture_draw_indexed_primitive(",
         "shift_capture_present(",
     ]
-    for marker in markers:
-        assert device.count(marker) == 1, marker
+
+    for marker in expected:
+        assert patched.count(marker) == 1, marker
 
     makefile = (source / "dlls" / "d3d9" / "Makefile.in").read_text(encoding="utf-8")
     assert "\tshift_d3d9_capture.c \\\n" in makefile
@@ -190,14 +195,13 @@ def test_check_only_and_full_injection(tmp_path: Path) -> None:
 
     producer = source / "dlls" / "d3d9" / "shift_d3d9_capture.c"
     header = source / "dlls" / "d3d9" / "shift_d3d9_capture.h"
-    assert producer.read_text(encoding="utf-8") == (ROOT / "wine_capture" / producer.name).read_text(encoding="utf-8")
-    assert header.read_text(encoding="utf-8") == (ROOT / "wine_capture" / header.name).read_text(encoding="utf-8")
+    assert producer.read_text(encoding="utf-8") == (ROOT / "wine_capture" / "shift_d3d9_capture.c").read_text(encoding="utf-8")
+    assert header.read_text(encoding="utf-8") == (ROOT / "wine_capture" / "shift_d3d9_capture.h").read_text(encoding="utf-8")
 
-    before = device
+    before = patched
     subprocess.run(
         ["python3", str(INJECTOR), str(source)],
         cwd=ROOT,
         check=True,
     )
-    after = (source / "dlls" / "d3d9" / "device.c").read_text(encoding="utf-8")
-    assert after == before
+    assert device.read_text(encoding="utf-8") == before
