@@ -286,6 +286,7 @@ def build_runtime_binding_evidence(
                         constant_state[stage][str(start + offset)] = [float(x) for x in chunk]
 
             snapshot = {
+                "format": "SHIFT.D3D9DrawStateSnapshot/1",
                 "frame": frame.get("frame"),
                 "draw_index": len(frame["draws"]) - 1,
                 "draw": dict(draw),
