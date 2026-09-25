@@ -75,3 +75,21 @@ def test_capture_manifest_blocks_noncontiguous_event_indices(tmp_path):
     assert report["ready"] is False
     assert report["integrity"]["event_index"]["status"] == "invalid"
     assert "capture-integrity:event-index-not-contiguous" in report["blocking_reasons"]
+
+
+def test_capture_manifest_cli_rejects_invalid_trace(tmp_path):
+    import subprocess
+    import sys
+
+    capture = tmp_path / "capture.jsonl"
+    output = tmp_path / "manifest.json"
+    capture.write_text("{not-json}\n", encoding="utf-8")
+    proc = subprocess.run(
+        [sys.executable, "d3d9_capture_manifest.py", str(capture), str(output)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 2
+    assert '"ready": false' in proc.stdout
+    assert "capture-read:ValueError" in proc.stdout
