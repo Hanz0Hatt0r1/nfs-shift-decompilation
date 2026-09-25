@@ -39,7 +39,7 @@ def test_bmw_m3_test_scene_explicitly_separates_geometry_preview_from_runtime_pr
     assert scene["renderer"]["mode"] == "geometry-preview"
     assert scene["renderer"]["material_execution"] is False
     assert scene["renderer"]["runtime_capture_required"] is False
-    assert scene["screenshots"]["artifacts_are_external"] is True
+    assert scene["screenshot_policy"]["artifacts_external"] is True
 
 
 def test_bmw_m3_test_scene_pins_external_screenshot_hashes():
