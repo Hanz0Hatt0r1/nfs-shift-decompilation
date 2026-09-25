@@ -40,8 +40,10 @@ The following components now consume the same `(frame, draw_index)` state:
 - `bmw_runtime_golden_gate.py`.
 
 When a runtime report contains draw snapshots, frame-level shader identity is never
-used as a fallback for a draw-local state. Reports produced before the snapshot
-contract remain readable through the explicit legacy frame-aggregate path.
+used as a fallback for a draw-local state in that same frame. Reports produced
+before the snapshot contract remain readable through the explicit legacy
+frame-aggregate path, including mixed reports where only some frames contain
+snapshots.
 
 ## Regression coverage
 
