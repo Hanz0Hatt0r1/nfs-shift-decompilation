@@ -125,3 +125,14 @@ def test_verified_color_bridge_resolves_color_layout_without_changing_default():
 def test_vertex_layout_module_signature_is_valid():
     import vertex_layout
     assert callable(vertex_layout.build_vertex_layout)
+
+
+def test_vertex_abi_status_table_is_immutable():
+    import vertex_layout
+    assert vertex_layout.ABI_STATUS["ambiguous-declaration-and-channel-order"] == "ambiguous"
+    try:
+        vertex_layout.ABI_STATUS["ambiguous-declaration-and-channel-order"] = "unknown"
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("ABI_STATUS must be immutable")

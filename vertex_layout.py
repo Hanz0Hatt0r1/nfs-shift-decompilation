@@ -1,4 +1,5 @@
 from __future__ import annotations
+from types import MappingProxyType
 from typing import Iterable
 
 from meb_format import PROP_NAMES
@@ -7,13 +8,14 @@ from meb_format import PROP_NAMES
 # MEB properties are stored as separate contiguous payloads. These descriptors
 # preserve the physical source ABI while also defining a deterministic target
 # interleaved layout for Android/OpenGL.
-ABI_STATUS = {
+ABI_STATUS = MappingProxyType({
     "exact": "proven",
     "derived-from-stride": "inferred",
     "ambiguous-declaration-and-channel-order": "ambiguous",
+    "ambiguous-channel-order": "ambiguous",
     "verified": "proven",
     "unknown": "unknown",
-}
+})
 
 EVIDENCE_BASIS = {
     "200": "12-byte MEB payload decoded as FLOAT32x3; POSITION0 semantic confirmed by shader declaration corpus",

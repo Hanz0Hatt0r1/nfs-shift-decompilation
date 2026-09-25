@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 231. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 234. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1210,3 +1210,8 @@ The bundle interface validator now verifies descriptor stage compatibility with 
 native Vulkan layout: c14 must be vertex, c15 must be fragment, and set 1 sampled
 textures must currently be fragment-stage resources. Unsupported stage use is a hard
 pre-native blocker.
+
+
+## Phase 234: immutable vertex ABI status
+
+VertexLayout ABI-status mapping is now immutable process-wide data, preventing cross-test/runtime mutation from changing established COLOR confidence values. No ABI selection semantics change.
