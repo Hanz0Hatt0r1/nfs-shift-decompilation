@@ -18,7 +18,7 @@ def _header(kind_offset=44, source_offset=52, aux_offset=60, count=0):
 def test_object_kind_dispatch_is_reconstructed():
     payload = bytearray(_header())
     payload += b"\0\0\0\0"
-    payload += b"OBJECT\0"
+    payload += b"\0\0\0\0"\n    payload += b"OBJECT\0"
     payload += b"SOURCE\0"
     payload += b"AUX\0"
     result = parse_sgb_object_payload(bytes(payload))
@@ -29,7 +29,7 @@ def test_object_kind_dispatch_is_reconstructed():
 def test_hierarchy_child_record_size_is_36_bytes():
     payload = bytearray(_header(count=2))
     payload += b"\0\0\0\0"
-    payload += b"HIERARCHY\0"
+    payload += b"\0\0\0\0"\n    payload += b"HIERARCHY\0"
     payload += b"SRC\0"
     payload += b"AUX\0"
     payload += struct.pack("<18I", *range(18))
@@ -43,7 +43,7 @@ def test_hierarchy_child_record_size_is_36_bytes():
 def test_hierarchy_truncation_blocks_non_strict():
     payload = bytearray(_header(count=2))
     payload += b"\0\0\0\0"
-    payload += b"HIERARCHY\0SRC\0AUX\0"
+    payload += b"\0\0\0\0"\n    payload += b"HIERARCHY\0SRC\0AUX\0"
     payload += struct.pack("<9I", *range(9))
     result = parse_sgb_object_payload(bytes(payload), strict=False)
     assert result["decoded"] is False
