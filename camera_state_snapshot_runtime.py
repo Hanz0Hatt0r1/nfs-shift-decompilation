@@ -41,7 +41,7 @@ def snapshot_camera_state(
     *,
     group_restore_value: int | None = None,
 ) -> dict[str, Any]:
-    """Model FUN_0080e040's six-word rollback/update snapshot."""
+    """Model FUN_0080e040's exact six-dword rollback/update snapshot."""
     restore_group = (
         state.group_restore_value
         if group_restore_value is None
@@ -51,14 +51,16 @@ def snapshot_camera_state(
         "format": FORMAT,
         "version": 1,
         "snapshot": {
-            "camera_source": state.camera_source,
-            "mode": int(state.mode),
-            "buffer_sub_index": int(state.sub_index),
-            "camera_id": int(state.camera_id),
-            "active_group": int(state.active_group),
-            "group_restore_value": restore_group,
-            "buffer_index": int(state.active_buffer_index),
-            "buffer_sub_flag": int(state.sub_flag),
+            "word0_camera_source": state.camera_source,
+            "word1_mode": int(state.mode),
+            "word2_buffer_sub_index": int(state.sub_index),
+            "word3_camera_id": int(state.camera_id),
+            "word4_active_group": int(state.active_group),
+            "word5_group_restore_value": restore_group,
+        },
+        "source_context": {
+            "active_buffer_index": int(state.active_buffer_index),
+            "active_buffer_sub_flag": int(state.sub_flag),
         },
         "evidence": {
             "snapshot_function": "FUN_0080e040",
