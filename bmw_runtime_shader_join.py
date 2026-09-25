@@ -141,7 +141,7 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
                 identity = frame.get('shader_permutation_identity') or {}
             same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
             binding = current_state.get('vertex_declaration') or {}
-            same_resource, _resource_status = match_resource_identity(
+            same_resource, resource_identity_status = match_resource_identity(
                 binding,
                 expected_sha256=expected_resource_sha,
                 expected_path=expected_resource,
@@ -189,6 +189,7 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
             'vertex_shader': state.get('vertex_shader'),
             'pixel_shader': state.get('pixel_shader'),
             'identity_sha256': identity.get('identity_sha256'),
+            'resource_identity_status': resource_identity_status,
             'sampler_mismatches': sampler_mismatches,
         })
         if sampler_mismatches:
