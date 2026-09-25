@@ -3,9 +3,9 @@
 This roadmap tracks the runtime-oriented path from verified resource parsing to a
 minimal reproducible render of one real SHIFT vehicle.
 
-## Current milestone: BMW M3 static render
+## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 170. Native and Windows D3D9 capture-producer CI are green; the Python suite still carries 38 historical baseline failures unrelated to the current runtime-capture work.
+Current `main` is at Phase 183. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -59,6 +59,25 @@ the original BFF archives at runtime.
 - Regression fixtures should cover both positive resolution and unresolved/ambiguous
   cases.
 
+
+## Phase 183: draw-local D3D9 runtime state snapshots
+
+SHIFT.D3D9RuntimeBindingEvidence/1 now records a `draw_snapshots` entry at every
+DrawIndexedPrimitive event. Each snapshot freezes the declaration, stream sources,
+index binding, vertex/pixel shader bindings, constant writes and texture bindings
+that were active at the exact draw boundary.
+
+The strict same_instance_gate consumes these draw-local snapshots instead of
+using only the final state accumulated for the frame. This closes a false-correlation
+case where the game can bind one declaration, issue another draw, and later restore
+the original declaration in the same frame.
+
+Existing frame-level fields remain available for compatibility and diagnostics.
+The new gate requirement is explicit as indexed_draw_state_snapshot=true.
+
+The remaining external gate is unchanged: obtain one authentic retail BMW M3 D3D9
+capture and prove MEB/resource identity, declaration match, indexed draw, exact
+VS/PS permutation, constants and sampler resources on the same draw instance.
 
 ## Phase 44: renderer submission baseline
 
