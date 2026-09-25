@@ -1301,7 +1301,6 @@ int main(int argc, char** argv) {
             for (uint32_t face = 0; face < 6; ++face) {
                 VkBufferImageCopy copy{};
                 copy.bufferOffset =
-                    static_cast<VkDeviceSize>(sizeof(CubeHeader)) +
                     static_cast<VkDeviceSize>(face) * cube.header.face_bytes;
                 copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 copy.imageSubresource.baseArrayLayer = face;
