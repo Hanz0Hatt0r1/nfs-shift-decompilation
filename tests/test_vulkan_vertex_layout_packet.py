@@ -105,7 +105,7 @@ def test_vulkan_packet_defers_unresolved_color1():
         "components": 4, "normalized": True, "element_size": 4,
         "abi_status": "ambiguous",
     })
-    report = export_vulkan_geometry_packet(command, _mesh(), __import__("pathlib").Path("/tmp/phase209-color1.svpk"))
+    report = export_vulkan_geometry_packet(command, _mesh(), tmp_path / "color1.svpk")
     assert "461" in report["deferred_properties"]
 
 
