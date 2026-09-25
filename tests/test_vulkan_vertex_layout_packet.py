@@ -95,7 +95,7 @@ def test_vulkan_packet_contains_all_supported_attributes(tmp_path):
     assert raw[vertex_base + 44:vertex_base + 48] == bytes([0, 1, 2, 3])
 
 
-def test_vulkan_packet_defers_unresolved_color1():
+def test_vulkan_packet_defers_unresolved_color1(tmp_path):
     command = _command()
     command["mesh"]["vertex_layout"]["buffer_stride"] = 56
     command["mesh"]["vertex_layout"]["attributes"].append({
