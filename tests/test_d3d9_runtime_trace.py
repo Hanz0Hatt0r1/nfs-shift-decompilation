@@ -172,6 +172,8 @@ def test_draw_snapshot_normalizes_active_stream_and_texture_bindings():
     ])
     report = build_runtime_binding_evidence(events)
     snapshot = report["frames"][0]["draw_snapshots"][0]
+    assert snapshot["format"] == "SHIFT.D3D9DrawStateSnapshot/1"
+    assert report["trace"]["draw_snapshot_schema_status"] == "valid"
     assert {row["stream"]: row["vertex_buffer_ptr"] for row in snapshot["active_stream_sources"]} == {
         0: "0x300",
         1: "0x200",
