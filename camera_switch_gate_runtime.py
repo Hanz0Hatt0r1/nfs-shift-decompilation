@@ -6,21 +6,21 @@ without rebuilding the active controller. Otherwise it clears the dirty byte,
 snapshots the current state, invokes the switch preparation path, and reports
 that a transition is required.
 
-The exact semantic names of the integer mode/request fields remain contextual.
+The mode is held at +0x26a8; for mode 1 the request is compared against the active camera buffer's +0xe4 field and byte +0xf2. The camera id is held at +0x26a0.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
 
-FORMAT = "SHIFT.CameraSwitchGateRuntime/1"
+FORMAT = "SHIFT.CameraSwitchGateRuntime/2"
 
 
 @dataclass(frozen=True)
 class CameraSwitchState:
     mode: int
-    sub_index: int = -1
-    sub_flag: int = 0
+    active_buffer_sub_index: int = -1
+    active_buffer_sub_flag: int = 0
     camera_id: int = -1
     dirty: bool = False
 
@@ -41,8 +41,8 @@ def evaluate_switch_gate(
 
     equivalent = (
         mode == state.mode
-        and (mode != 1 or sub_index == state.sub_index)
-        and sub_flag == state.sub_flag
+        and (mode != 1 or sub_index == state.active_buffer_sub_index)
+        and sub_flag == state.active_buffer_sub_flag
         and camera_id == state.camera_id
         and not state.dirty
     )
@@ -56,8 +56,8 @@ def evaluate_switch_gate(
             "state_preserved": True,
             "state_after": {
                 "mode": state.mode,
-                "sub_index": state.sub_index,
-                "sub_flag": state.sub_flag,
+                "active_buffer_sub_index": state.active_buffer_sub_index,
+                "active_buffer_sub_flag": state.active_buffer_sub_flag,
                 "camera_id": state.camera_id,
                 "dirty": state.dirty,
             },
@@ -75,21 +75,21 @@ def evaluate_switch_gate(
         "state_preserved": False,
         "state_after": {
             "mode": state.mode,
-            "sub_index": state.sub_index,
-            "sub_flag": state.sub_flag,
+            "active_buffer_sub_index": state.active_buffer_sub_index,
+            "active_buffer_sub_flag": state.active_buffer_sub_flag,
             "camera_id": state.camera_id,
             "dirty": False,
         },
         "previous_state_snapshot": {
             "mode": state.mode,
-            "sub_index": state.sub_index,
-            "sub_flag": state.sub_flag,
+            "active_buffer_sub_index": state.active_buffer_sub_index,
+            "active_buffer_sub_flag": state.active_buffer_sub_flag,
             "camera_id": state.camera_id,
         },
         "requested": {
             "mode": mode,
-            "sub_index": sub_index,
-            "sub_flag": sub_flag,
+            "requested_buffer_sub_index": sub_index,
+            "requested_buffer_sub_flag": sub_flag,
             "camera_id": camera_id,
         },
         "evidence": {

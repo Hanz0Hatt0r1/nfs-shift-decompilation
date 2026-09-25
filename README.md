@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 261.**
+> **Current mainline: Phase 262.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -44,6 +44,8 @@
 > **Camera runtime:** Phases 254–257 reconstruct CameraConfig/TrackCameraMan loading, spline-reference maintenance, proven class-registration prefixes and Trackside Camera minimum-score selection. The nested score function and camera behavior remain unresolved; renderer and RENDER.bff are untouched.
 
 > **Camera activation:** Phase 260 reconstructs the central `FUN_0080e1b0` state transition from selected camera id to active runtime camera, including invalid-id handling, repeat-selection no-op, object lookup failure, tracking/static activation modes and previous-group deactivation. Renderer and `RENDER.bff` remain untouched.
+
+> **Camera state:** Phase 262 aligns `CameraSwitchGateRuntime/2` with the actual active camera-buffer fields (`+0xe4`, byte `+0xf2`) and reconstructs `FUN_0080cd40`/`FUN_0080e040` buffer swap and rollback snapshots. Renderer and `RENDER.bff` remain untouched.
 
 > **Linux/Vulkan direction:** Phase 203 establishes Linux as the primary renderer lab. Vulkan is the native backend target, while the software reference renderer remains the deterministic oracle.
 
@@ -144,7 +146,7 @@ Weak or unresolved behavior remains explicitly marked as `unknown`, `inferred`, 
 | RenderCommand | ✅ | resources, constants, vertex ABI, readiness and blockers |
 | Desktop renderer | 🟢 | geometry, textures, multi-sampler, cube maps, VS→PS linkage and captured shader execution |
 | Skinning | 🟢 | explicit SkinPose, CPU LBS oracle and GLES ABI |
-| Camera / TrackCameraMan | 🟡 | config, spline reload, class registration, selection, activation and switch gate |
+| Camera / TrackCameraMan | 🟡 | config, spline reload, class registration, selection, activation, switch gate and state snapshot |
 | D3D9 runtime capture | 🟢 | declarations, streams, indices, shaders, constants, textures and resource descriptors |
 | BMW post-capture pipeline | 🟢 | one-command evidence → shader selection → render contract → offline render |
 | Android runtime | ⏳ | follows stabilization of the desktop/runtime boundary |

@@ -1534,6 +1534,53 @@ def cmd_camera_view_defaults(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_state_snapshot(args: argparse.Namespace) -> int:
+    """Emit a camera-manager snapshot or double-buffer swap report."""
+    from camera_state_snapshot_runtime import (
+        CameraBufferState,
+        CameraManagerState,
+        begin_camera_buffer_swap,
+        complete_camera_buffer_update,
+        snapshot_camera_state,
+    )
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    if args.action == "snapshot":
+        state = CameraManagerState(
+            active_buffer_index=payload.get("active_buffer_index", 0),
+            camera_source=payload.get("camera_source"),
+            mode=payload.get("mode", 0),
+            sub_index=payload.get("sub_index", -1),
+            camera_id=payload.get("camera_id", -1),
+            active_group=payload.get("active_group", -1),
+            group_restore_value=payload.get("group_restore_value"),
+            sub_flag=payload.get("sub_flag", 0),
+        )
+        result = snapshot_camera_state(state)
+    elif args.action == "swap":
+        state = CameraBufferState(index=payload.get("active_buffer_index", 0))
+        result = begin_camera_buffer_swap(
+            state,
+            update_in_progress=bool(payload.get("update_in_progress", False)),
+        )
+    else:
+        state = CameraBufferState(index=payload.get("active_buffer_index", 0))
+        result = complete_camera_buffer_update(state)
+
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "action": args.action,
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_switch_gate(args: argparse.Namespace) -> int:
     """Evaluate the recovered CameraManager switch-request fast path."""
     from camera_switch_gate_runtime import CameraSwitchState, evaluate_switch_gate
@@ -1542,8 +1589,8 @@ def cmd_camera_switch_gate(args: argparse.Namespace) -> int:
     state_data = payload.get("state", payload)
     state = CameraSwitchState(
         mode=state_data["mode"],
-        sub_index=state_data.get("sub_index", -1),
-        sub_flag=state_data.get("sub_flag", 0),
+        active_buffer_sub_index=state_data.get("active_buffer_sub_index", state_data.get("sub_index", -1)),
+        active_buffer_sub_flag=state_data.get("active_buffer_sub_flag", state_data.get("sub_flag", 0)),
         camera_id=state_data.get("camera_id", -1),
         dirty=bool(state_data.get("dirty", False)),
     )
@@ -3438,9 +3485,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.CameraViewDefaultRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_view_defaults)
 
+    p = sp.add_parser("camera-state-snapshot", help="emit camera-manager snapshot or double-buffer transition")
+    p.add_argument("action", choices=["snapshot", "swap", "complete"])
+    p.add_argument("input", help="JSON camera manager/buffer state")
+    p.add_argument("output", help="SHIFT.CameraStateSnapshotRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_camera_state_snapshot)
+
     p = sp.add_parser("camera-switch-gate", help="evaluate recovered CameraManager switch fast path")
     p.add_argument("input", help="JSON switch request/state")
-    p.add_argument("output", help="SHIFT.CameraSwitchGateRuntime/1 JSON output")
+    p.add_argument("output", help="SHIFT.CameraSwitchGateRuntime/2 JSON output")
     p.set_defaults(fn=cmd_camera_switch_gate)
 
     p = sp.add_parser("camera-activation", help="apply recovered camera activation state transition")

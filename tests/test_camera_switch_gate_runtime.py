@@ -4,7 +4,7 @@ from camera_switch_gate_runtime import CameraSwitchState, evaluate_switch_gate
 
 
 def test_matching_clean_state_is_fast_path():
-    state = CameraSwitchState(mode=2, sub_index=-1, sub_flag=0, camera_id=7, dirty=False)
+    state = CameraSwitchState(mode=2, active_buffer_sub_index=-1, active_buffer_sub_flag=0, camera_id=7, dirty=False)
     result = evaluate_switch_gate(
         state,
         requested_mode=2,
@@ -17,7 +17,7 @@ def test_matching_clean_state_is_fast_path():
 
 
 def test_mode_one_requires_sub_index_match():
-    state = CameraSwitchState(mode=1, sub_index=4, sub_flag=0, camera_id=-1, dirty=False)
+    state = CameraSwitchState(mode=1, active_buffer_sub_index=4, active_buffer_sub_flag=0, camera_id=-1, dirty=False)
     result = evaluate_switch_gate(
         state,
         requested_mode=1,
@@ -29,7 +29,7 @@ def test_mode_one_requires_sub_index_match():
 
 
 def test_non_mode_one_ignores_sub_index_for_gate():
-    state = CameraSwitchState(mode=2, sub_index=4, sub_flag=0, camera_id=7, dirty=False)
+    state = CameraSwitchState(mode=2, active_buffer_sub_index=4, active_buffer_sub_flag=0, camera_id=7, dirty=False)
     result = evaluate_switch_gate(
         state,
         requested_mode=2,
@@ -41,7 +41,7 @@ def test_non_mode_one_ignores_sub_index_for_gate():
 
 
 def test_dirty_state_forces_transition():
-    state = CameraSwitchState(mode=3, sub_index=-1, sub_flag=0, camera_id=7, dirty=True)
+    state = CameraSwitchState(mode=3, active_buffer_sub_index=-1, active_buffer_sub_flag=0, camera_id=7, dirty=True)
     result = evaluate_switch_gate(
         state,
         requested_mode=3,
@@ -54,7 +54,7 @@ def test_dirty_state_forces_transition():
 
 
 def test_different_flag_or_camera_id_forces_transition():
-    state = CameraSwitchState(mode=2, sub_index=-1, sub_flag=0, camera_id=7, dirty=False)
+    state = CameraSwitchState(mode=2, active_buffer_sub_index=-1, active_buffer_sub_flag=0, camera_id=7, dirty=False)
     for flag, camera_id in [(1, 7), (0, 8)]:
         result = evaluate_switch_gate(
             state,
