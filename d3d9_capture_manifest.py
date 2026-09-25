@@ -130,8 +130,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--producer-binary")
     args = parser.parse_args(argv)
 
+    try:
+        from d3d9_runtime_trace import load_events
+        events = load_events(args.capture)
+    except (OSError, ValueError) as exc:
+        print(
+            json.dumps(
+                {
+                    "format": FORMAT,
+                    "status": "blocked",
+                    "ready": False,
+                    "blocking_reasons": [f"capture-read:{type(exc).__name__}:{exc}"],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 2
+
     report = build_capture_manifest(
         args.capture,
+        events=events,
         producer_binary=args.producer_binary,
     )
     Path(args.output).write_text(
