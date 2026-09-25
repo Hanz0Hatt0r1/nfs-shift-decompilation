@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 230.**
+> **Current mainline: Phase 231.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -695,3 +695,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Phase 230:** native Vulkan texture C++ now compiles without the literal newline corruption, and COLOR ABI promotion is guarded by the complete 460/461 descriptor pair plus source-backed Type-4 evidence.
+
+
+> **Vulkan stage gate:** Phase 231 validates reflected SPIR-V descriptor stages before native execution: VS c14, PS c15, and fragment-only set-1 sampled textures for the current native executor.

@@ -104,12 +104,26 @@ def validate_bmw_vulkan_interface(
             blockers.append(
                 f"vulkan-interface:unsupported-descriptor-set:{set_index}"
             )
+        shader_stage = str(descriptor.get("stage") or "")
+        if set_index == 0:
+            expected_stage = {14: "vertex", 15: "fragment"}.get(binding)
+            if expected_stage is not None and shader_stage != expected_stage:
+                status = "mismatch"
+                blockers.append(
+                    f"vulkan-interface:set0-stage-mismatch:{binding}:{shader_stage or 'missing'}"
+                )
+        elif set_index == 1 and shader_stage != "fragment":
+            status = "mismatch"
+            blockers.append(
+                f"vulkan-interface:set1-stage-unsupported:{binding}:{shader_stage or 'missing'}"
+            )
+
         descriptor_checks.append({
             "set": set_index,
             "binding": binding,
             "descriptor_type": descriptor_type,
             "resource_type": resource_type,
-            "shader_stage": descriptor.get("stage"),
+            "shader_stage": shader_stage,
             "shader_path": descriptor.get("shader_path"),
             "status": status,
         })
