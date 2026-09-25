@@ -17,6 +17,7 @@ from typing import Any
 from bff_meb_render import find_meb_entry
 from bmw_material_from_bff import build_real_bmw_material_binding
 from bmw_runtime_render_contract import build_runtime_render_contract
+from bmw_runtime_capture_preflight import preflight_bmw_runtime
 from bmw_runtime_shader_select import select_runtime_shader
 from bmw_runtime_shader_render import render_runtime_shader
 from d3d9_runtime_trace import build_runtime_binding_evidence, load_events
@@ -80,6 +81,13 @@ def run_pipeline(
     )
     _write(out / "runtime_binding.json", runtime)
 
+    preflight = preflight_bmw_runtime(
+        runtime,
+        expected_resource_sha=__import__("hashlib").sha256(meb_bytes).hexdigest(),
+        expected_resource_path=TARGET_MEB,
+    )
+    _write(out / "runtime_capture_preflight.json", preflight)
+
     selection = select_runtime_shader(
         material,
         runtime,
@@ -95,6 +103,7 @@ def run_pipeline(
             "material_binding": material.get("status"),
             "runtime_trace": runtime.get("status"),
             "runtime_same_instance_gate": (runtime.get("same_instance_gate") or {}).get("status", "not-proven"),
+            "runtime_capture_preflight": preflight.get("status"),
             "shader_selection": selection.get("status"),
             "runtime_render_contract": "not-run",
             "shader_render": "not-run",
