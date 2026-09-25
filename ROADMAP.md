@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 239. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 240. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1230,3 +1230,8 @@ The real DDS→Vulkan bridge now catches decoder and packet-builder errors and r
 ## Phase 239: real BMW material DDS to Vulkan integration
 
 The real BMW material slice now preserves exact DDS source provenance. The Vulkan adapter can consume supplied BFFs, resolve material DDS references by exact normalized path and recorded archive name, verify source SHA-256, and feed the existing DDS-to-Vulkan bridge. No automatic environment-map or shadow-map selection is introduced.
+
+
+## Phase 240: BMW DDS/Vulkan adapter hardening
+
+The material-slice Vulkan adapter now preserves fail-closed DDS extraction failures and removes ephemeral extraction paths from persistent provenance. Exact BFF archive/path/SHA remains the authoritative resource identity.
