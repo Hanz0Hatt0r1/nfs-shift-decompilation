@@ -1,0 +1,69 @@
+{
+  "format": "SHIFT.BMWM3TestScene/2",
+  "status": "ready",
+  "ready": true,
+  "source": {
+    "archive": "BMW_M3_E36.bff",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "vhf_resource": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "kit": "00",
+    "lod": "A",
+    "selection": {
+      "include_generic": true,
+      "include_lightglows": false
+    }
+  },
+  "vehicle": {
+    "golden_body_meb": {
+      "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+      "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+    },
+    "part_count": 27
+  },
+  "renderer": {
+    "format": "SHIFT.VHFSceneReferenceRender/1",
+    "mode": "geometry-preview",
+    "material_execution": false,
+    "runtime_capture_required": false
+  },
+  "cameras": [
+    {
+      "name": "front_three_quarter_low",
+      "yaw_deg": -32,
+      "pitch_deg": -21
+    },
+    {
+      "name": "rear_three_quarter_low",
+      "yaw_deg": 148,
+      "pitch_deg": -18
+    },
+    {
+      "name": "high_front_three_quarter",
+      "yaw_deg": -18,
+      "pitch_deg": -32
+    },
+    {
+      "name": "driver_side_low",
+      "yaw_deg": -88,
+      "pitch_deg": -16
+    }
+  ],
+  "screenshots": {
+    "status": "presentation-mock",
+    "artifact_boundary": "synthetic-presentation-only",
+    "geometry_source": "real BMW M3 E36 scene definition above",
+    "renderer_evidence": false,
+    "runtime_proof": false,
+    "filenames": [
+      "01_front_three_quarter_low.png",
+      "02_rear_three_quarter_low.png",
+      "03_high_front_three_quarter.png",
+      "04_driver_side_low.png"
+    ]
+  },
+  "notes": [
+    "Scene identity is pinned to the supplied BMW_M3_E36.bff and exact body MEB SHA-256.",
+    "Camera set is new for V2; geometry selection remains the existing KIT00/LODA VHF path.",
+    "Screenshot files generated from this chat are presentation mockups and are not repository renderer output or runtime evidence."
+  ]
+}
