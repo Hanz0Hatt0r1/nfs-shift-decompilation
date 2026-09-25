@@ -1466,6 +1466,35 @@ def cmd_bab_animation_runtime(args: argparse.Namespace) -> int:
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
 
+
+def cmd_sgb_runtime(args: argparse.Namespace) -> int:
+    """Decode source-backed binary SGB chunk structures."""
+    from sgb_runtime import parse_sgb_runtime
+
+    data = Path(args.input).read_bytes()
+    report = parse_sgb_runtime(data, strict=not args.allow_partial)
+    report["source"] = {
+        "input": str(args.input),
+        "sha256": sha256(data),
+    }
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "chunk_count": report["chunk_count"],
+        "recognized_chunks": sum(
+            bool(row.get("recognized_by_runtime")) for row in report["chunks"]
+        ),
+        "blockers": report["blockers"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
 def cmd_color_evidence_bff_corpus(args: argparse.Namespace) -> int:
     """Scan BFF archives for MEB COLOR0/COLOR1 streams and aggregate evidence."""
     from color_abi import aggregate_color_abi_evidence, build_color_abi_evidence
@@ -3166,12 +3195,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--mode", type=int, choices=[0, 1, 2], required=True, help="runtime animation-bank variant recovered from SHIFT.exe.c")
     p.add_argument("--allow-partial", action="store_true", help="return a blocker instead of raising on truncated payload")
     p.set_defaults(fn=cmd_bab_animation_runtime)
-    p = sp.add_parser("bab-corpus", help="build an opaque BAB animation corpus report from resource analysis")
-    p.add_argument("input", help="resource_analysis.json")
-    p.add_argument("output", help="SHIFT.BABCorpusReport/1 JSON output")
-    p.set_defaults(fn=cmd_bab_corpus)
 
-    p = sp.add_parser("color-evidence-bff-corpus", help="scan BFF archives for MEB COLOR0/COLOR1 evidence and aggregate it")
+    p = sp.add_parser("sgb-runtime", help="decode source-backed binary SGB scene chunks")
+    p.add_argument("input", help="extracted .sgb file")
+    p.add_argument("output", help="SHIFT.SGBRuntime/1 JSON output")
+    p.add_argument("--allow-partial", action="store_true", help="return blockers instead of raising on malformed chunk records")
+    p.set_defaults(fn=cmd_sgb_runtime)    p = sp.add_parser("color-evidence-bff-corpus", help="scan BFF archives for MEB COLOR0/COLOR1 evidence and aggregate it")
     p.add_argument("input", help="BFF file or directory")
     p.add_argument("output", help="SHIFT.ColorABICorpusEvidence/1 JSON output")
     p.add_argument(
