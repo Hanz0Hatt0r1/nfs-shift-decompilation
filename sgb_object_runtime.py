@@ -89,7 +89,7 @@ def parse_sgb_object_payload(
     kind = _string(data, base_offset, end, _i32(data, base_offset))
     source = _string(data, base_offset, end, _i32(data, base_offset + 4))
     aux = _string(data, base_offset, end, _i32(data, base_offset + 8))
-    words = [_u32(data, base_offset + 4 * i) for i in range(10)]
+    words = [_u32(data, base_offset + 4 * i) for i in range(9)]
     mode = struct.unpack_from("<b", data, base_offset + 32)[0]
     hierarchy_type = struct.unpack_from("<B", data, base_offset + 35)[0]
     hierarchy_count = struct.unpack_from("<B", data, base_offset + 34)[0]
@@ -107,6 +107,7 @@ def parse_sgb_object_payload(
         "end_offset": end,
         "size": end - base_offset,
         "header_words": words,
+        "branch_word_9": _u32(data, base_offset + 36) if base_offset + 40 <= end else None,
         "kind": kind,
         "source_string": source,
         "aux_string": aux,
