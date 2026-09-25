@@ -235,7 +235,6 @@ int main(int argc, char** argv) {
         check(vkCreateImage(ctx.device, &image_info, nullptr, &image), "vkCreateImage failed");
 
         VkMemoryRequirements image_requirements{};
-        VkMemoryRequirements image_requirements{};
         vkGetImageMemoryRequirements(ctx.device, image, &image_requirements);
         VkMemoryAllocateInfo image_alloc{};
         image_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
