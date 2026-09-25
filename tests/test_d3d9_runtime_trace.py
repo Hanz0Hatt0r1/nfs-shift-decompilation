@@ -126,3 +126,35 @@ def test_same_instance_gate_requires_indexed_draw_in_same_frame():
     report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
     assert report["same_instance_gate"]["ready"] is False
     assert "draw:same-frame-indexed-draw-not-observed" in report["same_instance_gate"]["blocking_reasons"]
+
+
+def test_same_instance_gate_uses_state_at_exact_draw_boundary():
+    events = load_events_from_rows([
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x1111","bytes_hex":"0000000004000a00ffff000011000000"},
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x2222","bytes_hex":"0000000000001100ffff000000000000"},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x1111","resource_sha256":"abc","resource_path":"vehicles/bmw/body.meb"},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x2222","resource_sha256":"other","resource_path":"vehicles/other/body.meb"},
+        {"event":"draw_indexed_primitive","frame":7,"primitive_count":1,"start_index":0,"base_vertex_index":0},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x1111","resource_sha256":"abc","resource_path":"vehicles/bmw/body.meb"},
+    ])
+    meb={"resource":"vehicles/bmw/body.meb","resource_sha256":"abc","property_descriptors":[{"id":"460","words":[4,6,0]}]}
+    report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
+    assert len(report["frames"][0]["draw_snapshots"]) == 1
+    snapshot = report["frames"][0]["draw_snapshots"][0]
+    assert snapshot["vertex_declaration"]["declaration_ptr"] == "0x2222"
+    assert report["same_instance_gate"]["ready"] is False
+    assert "descriptor:bound-instance-no-match" in report["same_instance_gate"]["blocking_reasons"]
+
+
+def test_same_instance_gate_candidate_records_draw_index():
+    events = load_events_from_rows([
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x1111","bytes_hex":"0000000004000a00ffff000011000000"},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x1111","resource_sha256":"abc","resource_path":"vehicles/bmw/body.meb"},
+        {"event":"draw_indexed_primitive","frame":7,"primitive_count":1,"start_index":0,"base_vertex_index":0},
+    ])
+    meb={"resource":"vehicles/bmw/body.meb","resource_sha256":"abc","property_descriptors":[{"id":"460","words":[4,6,0]}]}
+    report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
+    assert report["same_instance_gate"]["ready"] is True
+    candidate = report["same_instance_gate"]["candidate_frames"][0]
+    assert candidate["draw_index"] == 0
+    assert candidate["draw"]["start_index"] == 0
