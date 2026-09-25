@@ -109,12 +109,13 @@ def test_profile_selection_records_selector_and_history_path():
             last_fallback_profile_id=4,
         ),
         profile_id=9,
-        service_current_id=1,
+        service_current_id=9,
     )
     assert state.selector_profile_id == 9
     assert state.selected_profile_id == 1
     assert result["selector_profile_id"] == 9
     assert result["history_value_used"] == 4
+    assert result["status"] == "service-profile-diff"
 
 
 def test_cockpit_flag_unchanged_is_no_op():
@@ -143,3 +144,23 @@ def test_cockpit_flag_reload_marks_camera_data_dirty():
     )
     assert result["actions"][1]["action"] == "FUN_0081c920(-2,0)"
     assert result["actions"][3]["action"] == "FUN_0080cd40(manager)"
+
+
+def test_profile_selection_uses_service_history_when_selector_matches_service_id():
+    _, result = select_camera_profile(
+        CameraViewState(last_service_profile_id=7, last_fallback_profile_id=4),
+        profile_id=9,
+        service_current_id=9,
+    )
+    assert result["history_value_used"] == 7
+    assert result["status"] == "service-current-profile"
+
+
+def test_profile_selection_does_not_reload_when_both_service_and_selector_are_minus_one():
+    _, result = select_camera_profile(
+        CameraViewState(last_service_profile_id=7, last_fallback_profile_id=4),
+        profile_id=-1,
+        service_current_id=-1,
+    )
+    assert result["status"] == "no-profile-reload"
+    assert result["history_value_used"] is None
