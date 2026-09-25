@@ -152,11 +152,17 @@ def test_material_slice_can_bridge_exact_bff_dds_into_vulkan_packet(monkeypatch,
     )
 
     assert result["format"] == "SHIFT.BMWMaterialSliceVulkan/1"
-    assert result["ready"] is True, result
+    assert result["blocking_reasons"] == [], result["blocking_reasons"]
+    assert result["ready"] is True, result["blocking_reasons"]
     assert result["bundle"]["artifacts"]["textures"]["path"] == "textures.svtp"
     assert result["dds_bridge"]["ready"] is True
+    assert result["dds_bridge"]["blocking_reasons"] == []
     assert result["source"]["dds_sources"][0]["source_sha256"] == hashlib.sha256(dds_payload).hexdigest()
     assert "temporary_path" not in result["source"]["dds_sources"][0]
+    assert "shift_bmw_dds_" not in result["dds_bridge"]["decoded_sources"][0]["source_path"]
+    persisted = json.loads((tmp_path / "out" / "dds_sources.json").read_text(encoding="utf-8"))
+    assert "shift_bmw_dds_" not in persisted["sources"][0]["source_path"]
+    assert result["source"]["dds_source_bffs"] == [source.name]
     assert (tmp_path / "out" / "textures.svtp").is_file()
 
 
@@ -198,3 +204,4 @@ def test_material_slice_blocks_when_exact_bff_dds_sha_mismatches(monkeypatch, tm
         reason.startswith("bmw-material-vulkan:dds-source-sha256-mismatch:")
         for reason in result["blocking_reasons"]
     )
+    assert result["dds_bridge"]["ready"] is False
