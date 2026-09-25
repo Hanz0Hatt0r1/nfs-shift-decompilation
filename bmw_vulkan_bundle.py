@@ -11,6 +11,7 @@ from vulkan_constant_packet import build_vulkan_constant_packet
 from vulkan_cube_packet import build_vulkan_cube_packet
 from vulkan_geometry_packet import export_vulkan_geometry_packet
 from vulkan_texture_packet import build_vulkan_texture_packet
+from vulkan_sampler_contract import write_sampler_metadata, build_sampler_contract_report
 
 FORMAT = "SHIFT.BMWVulkanBundle/1"
 TARGET_MEB = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
@@ -148,6 +149,19 @@ def build_bmw_vulkan_bundle(
 
     shader_rows = _shader_sources(selected, out)
 
+    sampler_report = build_sampler_contract_report(selected)
+    sampler_contract_path = out / "sampler_contracts.json"
+    sampler_report = write_sampler_contract_report(sampler_report, sampler_contract_path)
+    sampler_metadata_path = out / "sampler_contracts.meta.json"
+    if texture_report is not None:
+        sampler_metadata = write_sampler_metadata(
+            sampler_report,
+            texture_path,
+            sampler_metadata_path,
+        )
+    else:
+        sampler_metadata = None
+
     artifacts = {
         "geometry": {
             "path": str(geometry_path.relative_to(out)),
@@ -173,6 +187,20 @@ def build_bmw_vulkan_bundle(
             "register": 3,
         },
         "shaders": shader_rows,
+        "sampler_contracts": {
+            "path": str(sampler_contract_path.relative_to(out)),
+            "sha256": _hash(sampler_contract_path),
+            "ready": bool(sampler_report.get("ready")),
+            "blocking_reasons": sampler_report.get("blocking_reasons") or [],
+            "metadata_path": (
+                str(sampler_metadata_path.relative_to(out))
+                if sampler_metadata is not None else None
+            ),
+            "metadata_sha256": (
+                sampler_metadata.get("sha256")
+                if sampler_metadata is not None else None
+            ),
+        },
     }
 
     blockers = list(constants.get("blocking_reasons") or [])
