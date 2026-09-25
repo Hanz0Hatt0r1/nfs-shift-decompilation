@@ -158,7 +158,13 @@ def test_runtime_capture_preflight_reports_missing_runtime_components():
     report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
     candidate = report["paint_draw_candidates"][0]
     assert candidate["state_complete"] is False
-    assert candidate["missing_components"] == ["vertex_shader", "pixel_shader", "streams", "indices"]
+    assert candidate["missing_components"] == [
+        "draw-snapshot-schema",
+        "vertex_shader",
+        "pixel_shader",
+        "streams",
+        "indices",
+    ]
 
 
 def test_runtime_capture_preflight_rejects_paint_range_on_different_draw():
