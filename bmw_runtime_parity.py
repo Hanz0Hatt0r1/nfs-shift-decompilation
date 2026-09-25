@@ -9,6 +9,7 @@ from typing import Any, Mapping
 
 from bmw_runtime_shader_join import _runtime_draw_states, join_runtime_shader
 from d3d9_declaration_instance import decode_d3d9_declaration_records
+from d3d9_usage_map import build_d3d9_usage_map
 
 FORMAT = "SHIFT.BMWRuntimeParity/1"
 
@@ -182,19 +183,44 @@ def validate_runtime_parity(material_slice: Mapping[str, Any], runtime_report: M
         'declaration_parity':{'status':decl_status,'checks':declaration_checks,'declaration_ptr':declaration_ptr},
     }
 
-def validate_files(material_path: str | Path, runtime_path: str | Path, *, usage_map_path: str | Path | None = None, require_constant_values: bool = False) -> dict[str, Any]:
+def validate_files(
+    material_path: str | Path,
+    runtime_path: str | Path,
+    *,
+    usage_map_path: str | Path | None = None,
+    pe_evidence_path: str | Path | None = None,
+    require_constant_values: bool = False,
+) -> dict[str, Any]:
     material=json.loads(Path(material_path).read_text(encoding='utf-8'))
     runtime=json.loads(Path(runtime_path).read_text(encoding='utf-8'))
     raw=json.loads(Path(usage_map_path).read_text(encoding='utf-8')) if usage_map_path else None
+    if raw is None and pe_evidence_path:
+        pe = json.loads(Path(pe_evidence_path).read_text(encoding='utf-8'))
+        usage_map_report = build_d3d9_usage_map(pe)
+        raw = usage_map_report.get('usage_map') if usage_map_report.get('ready') else None
     if isinstance(raw, dict) and isinstance(raw.get('usage_map'), dict):
         raw = raw.get('usage_map')
     usage_map={int(k):int(v) for k,v in raw.items()} if isinstance(raw,dict) else None
-    return validate_runtime_parity(material,runtime,usage_map=usage_map,require_constant_values=require_constant_values)
+    report = validate_runtime_parity(
+        material,
+        runtime,
+        usage_map=usage_map,
+        require_constant_values=require_constant_values,
+    )
+    if pe_evidence_path and usage_map is None:
+        report['blocking_reasons'] = list(
+            dict.fromkeys(
+                list(report.get('blocking_reasons') or [])
+                + ['declaration:pe-usage-map-not-ready']
+            )
+        )
+        report['ready'] = False
+    return report
 
 def main() -> int:
     ap=argparse.ArgumentParser(description='Validate BMW runtime shader, constant and D3D9 declaration parity')
-    ap.add_argument('material_slice'); ap.add_argument('runtime_report'); ap.add_argument('output'); ap.add_argument('--usage-map'); ap.add_argument('--require-constant-values', action='store_true')
-    args=ap.parse_args(); report=validate_files(args.material_slice,args.runtime_report,usage_map_path=args.usage_map,require_constant_values=args.require_constant_values)
+    ap.add_argument('material_slice'); ap.add_argument('runtime_report'); ap.add_argument('output'); ap.add_argument('--usage-map'); ap.add_argument('--pe-evidence'); ap.add_argument('--require-constant-values', action='store_true')
+    args=ap.parse_args(); report=validate_files(args.material_slice,args.runtime_report,usage_map_path=args.usage_map,pe_evidence_path=args.pe_evidence,require_constant_values=args.require_constant_values)
     Path(args.output).write_text(json.dumps(report,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
     print(json.dumps({'format':report['format'],'status':report['status'],'ready':report['ready'],'blocking_reasons':report['blocking_reasons']},ensure_ascii=False,indent=2))
     return 0 if report['ready'] else 2
