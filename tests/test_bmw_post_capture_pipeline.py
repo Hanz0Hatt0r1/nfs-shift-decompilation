@@ -102,6 +102,16 @@ def test_post_capture_pipeline_blocks_before_render_without_same_instance_gate(m
     monkeypatch.setattr(pipeline, "select_runtime_shader", lambda *a, **k: selection)
     monkeypatch.setattr(
         pipeline,
+        "preflight_bmw_runtime",
+        lambda *a, **k: {
+            "format": "SHIFT.BMWRuntimeCapturePreflight/1",
+            "status": "ready",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    )
+    monkeypatch.setattr(
+        pipeline,
         "build_runtime_render_contract",
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("render contract must not run")),
     )
