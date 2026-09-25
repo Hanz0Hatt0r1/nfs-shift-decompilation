@@ -86,6 +86,15 @@ def test_mode_two_with_feedback_flag_records_c230_reissue_and_12050_branch():
     assert mode_action["post_reissue_branches"][0]["action"].startswith("FUN_00812050")
 
 
+def test_mode_one_successful_view_check_leaves_feedback_flag_cleared():
+    result = describe_camera_controller_update(
+        _instances(mode=1), elapsed_u32=100, feedback_flag=True, timer=1.0
+    )
+    assert result["feedback_flag_after_observed_mode1_fallback"] is False
+    mode_action = result["instances"][0]["actions"][1]
+    assert mode_action["fallback"]["action"] == "no FUN_0080c230 fallback"
+
+
 def test_mode_one_clears_feedback_and_sets_it_after_failed_view_check():
     result = describe_camera_controller_update(
         _instances(mode=1), elapsed_u32=100, feedback_flag=True, timer=1.0
