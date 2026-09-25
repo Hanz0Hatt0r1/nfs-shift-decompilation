@@ -63,48 +63,30 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
     candidates: list[dict[str, Any]] = []
     for frame, state, source in _runtime_draw_states(runtime_report):
         if source == 'draw-snapshot':
-            draw = state.get('draw') or {}
-            draw_index = state.get('draw_index')
+            draw_rows = [(state.get('draw_index'), state.get('draw'))]
         else:
-            draws = state.get('draws') or []
-            for draw_index, draw in enumerate(draws):
-                try:
-                    start_index = int(draw.get('start_index'))
-                    primitive_count = int(draw.get('primitive_count'))
-                except (TypeError, ValueError):
-                    continue
-                row = {
-                    'frame': frame.get('frame'),
-                    'draw_index': draw_index,
-                    'source': source,
-                    'start_index': start_index,
-                    'primitive_count': primitive_count,
-                    'base_vertex_index': draw.get('base_vertex_index'),
-                    'start_index_match': start_index == expected_first,
-                    'primitive_count_match': expected_primitive_count is not None and primitive_count == expected_primitive_count,
-                }
-                candidates.append(row)
-                if row['start_index_match'] and row['primitive_count_match']:
-                    matched.append(row)
-            continue
-        try:
-            start_index = int(draw.get('start_index'))
-            primitive_count = int(draw.get('primitive_count'))
-        except (TypeError, ValueError):
-            continue
-        row = {
-            'frame': frame.get('frame'),
-            'draw_index': draw_index,
-            'source': source,
-            'start_index': start_index,
-            'primitive_count': primitive_count,
-            'base_vertex_index': draw.get('base_vertex_index'),
-            'start_index_match': start_index == expected_first,
-            'primitive_count_match': expected_primitive_count is not None and primitive_count == expected_primitive_count,
-        }
-        candidates.append(row)
-        if row['start_index_match'] and row['primitive_count_match']:
-            matched.append(row)
+            draw_rows = list(enumerate(state.get('draws') or []))
+        for draw_index, draw in draw_rows:
+            if not isinstance(draw, Mapping):
+                continue
+            try:
+                start_index = int(draw.get('start_index'))
+                primitive_count = int(draw.get('primitive_count'))
+            except (TypeError, ValueError):
+                continue
+            row = {
+                'frame': frame.get('frame'),
+                'draw_index': draw_index,
+                'source': source,
+                'start_index': start_index,
+                'primitive_count': primitive_count,
+                'base_vertex_index': draw.get('base_vertex_index'),
+                'start_index_match': start_index == expected_first,
+                'primitive_count_match': expected_primitive_count is not None and primitive_count == expected_primitive_count,
+            }
+            candidates.append(row)
+            if row['start_index_match'] and row['primitive_count_match']:
+                matched.append(row)
     if not candidates:
         reasons.append('runtime:draw-not-captured')
     elif not matched:
