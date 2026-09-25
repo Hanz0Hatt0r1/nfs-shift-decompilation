@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 210. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 211. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1108,3 +1108,13 @@ Vulkan installation.
 The native backend remains independent of BFF/MEB parsing. The next stage is connecting
 the RenderCommand shader interface and material constants to Vulkan descriptor/push
 constant state.
+
+
+## Phase 211: Vulkan shader translation
+
+SHIFT.ShaderProgram/1 can now emit a Vulkan GLSL 450 target while retaining the
+existing GLSL ES 3.1 target. LinkedShaderPair/1 carries both stage source forms.
+shader_backend.py adds optional glslangValidator Vulkan-target compilation/linking.
+
+The D3D9 float constant bank remains the explicit UBO binding 14 contract. Native
+Vulkan descriptor/resource upload is the next stage.
