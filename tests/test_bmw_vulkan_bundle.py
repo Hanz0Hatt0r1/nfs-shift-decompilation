@@ -6,8 +6,10 @@ from bmw_vulkan_bundle import TARGET_MEB, build_bmw_vulkan_bundle
 
 def _command():
     return {
-        "format": "SHIFT.RenderCommand/1",
-        "mesh": {
+        "format": "SHIFT.RenderBinding/1",
+        "render_commands": [{
+            "format": "SHIFT.RenderCommand/1",
+            "mesh": {
             "ref": TARGET_MEB,
             "resolved": {"resource_sha256": "a" * 64},
             "vertex_count": 3,
@@ -31,8 +33,8 @@ def _command():
                 }],
             },
         },
-        "submeshes": [{
-            "shader": {
+            "submeshes": [{
+                "shader": {
                 "vertex": "#version 450\nvoid main(){}",
                 "pixel": "#version 450\nvoid main(){}",
             },
@@ -40,8 +42,17 @@ def _command():
             "constant_payload": {"format": "SHIFT.MaterialConstantPayload/1", "registers": [], "ready": True},
             "textures": [],
             "external_samplers": [],
-            "first_index": 0,
-            "index_count": 3,
+                "first_index": 0,
+                "index_count": 3,
+            }, {
+                "shader": {"vertex": "unused", "pixel": "unused"},
+                "constant_commands": [],
+                "constant_payload": {"format": "SHIFT.MaterialConstantPayload/1", "registers": [], "ready": True},
+                "textures": [],
+                "external_samplers": [],
+                "first_index": 0,
+                "index_count": 3,
+            }],
         }],
     }
 
@@ -55,7 +66,7 @@ def _mesh():
 
 
 def test_bmw_vulkan_bundle_prepares_geometry_constants_and_shaders(tmp_path):
-    result = build_bmw_vulkan_bundle(_command(), _mesh(), tmp_path)
+    result = build_bmw_vulkan_bundle(_command(), _mesh(), tmp_path, command_index=0, submesh_index=1)
 
     assert result["format"] == "SHIFT.BMWVulkanBundle/1"
     assert result["ready"] is True
