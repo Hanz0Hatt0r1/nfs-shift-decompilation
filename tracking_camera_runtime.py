@@ -79,7 +79,7 @@ def describe_tracking_camera_constructor() -> dict[str, Any]:
             "+0xf0": 0,
             "+0xf4": 0,
             "+0xf8": 0xFFFFFFFF,
-            "+0xfc": 0,
+            "+0xfc": 0xFFFFFFFF,
             "+0x100": 0,
             "+0x101": 0,
             "+0x104": 0,
