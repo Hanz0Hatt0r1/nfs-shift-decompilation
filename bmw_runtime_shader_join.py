@@ -130,13 +130,13 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
                 identity = frame.get('shader_permutation_identity') or {}
             same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
             binding = current_state.get('vertex_declaration') or {}
-        frame_sha = binding.get('resource_sha256')
-        frame_path = binding.get('resource_path')
-        same_resource = False
-        if expected_resource_sha and frame_sha:
-            same_resource = str(frame_sha) == str(expected_resource_sha)
-        elif expected_resource and frame_path:
-            same_resource = str(frame_path).replace('\\', '/').strip('/').lower() == expected_resource.replace('\\', '/').strip('/').lower()
+            frame_sha = binding.get('resource_sha256')
+            frame_path = binding.get('resource_path')
+            same_resource = False
+            if expected_resource_sha and frame_sha:
+                same_resource = str(frame_sha) == str(expected_resource_sha)
+            elif expected_resource and frame_path:
+                same_resource = str(frame_path).replace('\\', '/').strip('/').lower() == expected_resource.replace('\\', '/').strip('/').lower()
             if same_id and same_resource:
                 if legacy_draw_index is not None:
                     current_state = {**current_state, "draw_index": legacy_draw_index, "draw": (current_state.get("draws") or [])[legacy_draw_index]}
