@@ -55,7 +55,7 @@ def build_vulkan_constant_layout(render_command: Mapping[str, Any]) -> dict[str,
                 "descriptor_binding": STAGE_BINDINGS[stage],
                 "registers": sorted(stage_ranges[stage]),
                 "buffer_size": MAX_REGISTERS * REGISTER_BYTES,
-                "register_offset": lambda register: register * REGISTER_BYTES,
+                "register_offset_formula": "register_index * 16",
             }
             for stage in stage_ranges
         },

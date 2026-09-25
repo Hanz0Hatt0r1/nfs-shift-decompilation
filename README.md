@@ -662,3 +662,6 @@ See [NOTICE.md](NOTICE.md).
 
  
 > **Vulkan shader path:** Phase 211 adds GLSL 450 emission and optional Vulkan-targeted glslang compilation for LinkedShaderPair/1. Both GLSL ES 3.1 and Vulkan stage sources are retained; native Vulkan descriptor upload remains next.
+
+
+> **Vulkan constant upload:** Phase 213 adds SHIFT.VulkanConstantPacket/1 and a native descriptor upload checkpoint. D3D9 c-register banks are kept separate: VS at binding 14 and PS at binding 15. Ambiguous stage mapping is fail-closed.
