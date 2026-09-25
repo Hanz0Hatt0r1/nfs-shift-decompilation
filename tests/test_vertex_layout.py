@@ -136,3 +136,8 @@ def test_vertex_abi_status_table_is_immutable():
         pass
     else:
         raise AssertionError("ABI_STATUS must be immutable")
+
+
+def test_color1_channel_order_status_is_ambiguous():
+    r = build_vertex_layout(["461"])
+    assert r["attributes"][0]["abi_status"] == "ambiguous"
