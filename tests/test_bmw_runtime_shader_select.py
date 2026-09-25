@@ -60,7 +60,7 @@ def test_select_runtime_shader_matches_exact_identity_and_resource():
             })],
         },
     )
-    assert report["status"] == "match", report
+    assert report["status"] == "match"
     assert report["ready"] is True
     assert report["selected"]["candidate_file"].endswith("a.fxo")
     assert report["selected"]["score"] == 100
