@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 204. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 205. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1052,3 +1052,10 @@ with 4-byte/4-component storage. Usage ordinal 6 (Colour) maps to numeric D3D9 U
 For the real BMW MEB descriptors [4,6,0] and [4,6,1], this closes the static executable
 mapping to Type 4 + Usage COLOR (10) + Channel 0/1. The authentic runtime same-instance
 declaration/draw proof remains an external gate.
+
+
+## Phase 205: PE-backed D3D9 ABI propagation
+
+The supplied retail SHIFT.exe is now consumed as an optional executable evidence layer. The PE analyzer exposes decoded Type, size, component, Usage, UsageIndex and Channel tables plus decoded Type names. Its normalized COLOR ABI validates Type 4 as RGBA32 / D3DDECLTYPE_D3DCOLOR and Usage ordinal 6 (Colour) as numeric D3D9 Usage 10.
+
+The MEB COLOR bridge can consume this PE report and fail closed on conflicting values. This closes the static executable ABI layer; authentic same-instance runtime declaration and indexed-draw correlation remain the external gate.
