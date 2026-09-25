@@ -93,18 +93,14 @@ def build_pose_basis(
 def describe_external_source_state(
     *,
     external_id: Any,
-    source_position: Sequence[float],
-    source_orientation: Sequence[float],
-    source_fov: float,
-    source_position_valid: bool = True,
+    opaque_position_output: Sequence[float],
+    opaque_orientation_scalar: float,
+    global_angle_offset: float,
+    source_vtable_fov_result: float,
     service_object_present: bool = True,
-    global_angle_offset: float = 0.0,
-    helper_90285a_value: float = 0.0,
-    source_vtable_fov_result: float = 0.0,
 ) -> dict[str, Any]:
-    """Trace FUN_0081b170 without inventing vtable-return semantics."""
-    position = _vec3(source_position, "source_position")
-    orientation = _vec3(source_orientation, "source_orientation")
+    """Trace FUN_0081b170 without assigning semantics to source-vtable outputs."""
+    position = _vec3(opaque_position_output, "opaque_position_output")
     if not service_object_present:
         return {
             "format": FORMAT,
@@ -114,6 +110,9 @@ def describe_external_source_state(
             "actions": [],
         }
 
+    orientation_x = float(global_angle_offset) - float(global_angle_offset)
+    _ = orientation_x  # keeps the source helper result boundary explicit
+
     return {
         "format": FORMAT,
         "version": 1,
@@ -122,9 +121,11 @@ def describe_external_source_state(
         "writes": {
             "+0x4c": 0,
             "+0x50": external_id,
-            "+0x10": list(position),
-            "+0x1c": float(source_orientation[0]) - float(global_angle_offset),
-            "+0x20": float(helper_90285a_value),
+            "+0x10": position[0],
+            "+0x14": position[1],
+            "+0x18": position[2],
+            "+0x1c": float(global_angle_offset) - float(global_angle_offset),
+            "+0x20": float(opaque_orientation_scalar),
             "+0x24": 0.0,
             "+0x34": float(source_vtable_fov_result),
         },
@@ -147,7 +148,7 @@ def describe_external_source_state(
             },
             {
                 "action": "FUN_0090285a",
-                "result": float(helper_90285a_value),
+                "result": float(opaque_orientation_scalar),
             },
             {
                 "action": "FUN_009024d0",
@@ -162,14 +163,14 @@ def describe_external_source_state(
             "function": "FUN_0081b170",
             "external_id": "+0x50",
             "active_flag": "+0x4c",
-            "position": "+0x10",
+            "position": "+0x10/+0x14/+0x18 from opaque source-vtable output",
             "orientation": "+0x1c/+0x20/+0x24",
             "fov": "+0x34",
             "service_source": "manager +0x2580",
         },
         "limitations": [
             "source vtable +0x1c/+0x20/+0x34 meanings remain opaque",
-            "FUN_0090285a/FUN_009024d0 are preserved as helper results",
+            "FUN_0090285a/FUN_009024d0 results are kept as raw helper values",
         ],
     }
 
