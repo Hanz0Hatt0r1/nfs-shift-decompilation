@@ -1334,3 +1334,8 @@ camera_switch_gate_runtime.py reconstructs the fast-path equality and dirty-stat
 ## Phase 262: CameraManager state snapshot and double-buffer transition
 
 camera_switch_gate_runtime.py v2 now binds the switch fast path to the actual active camera-buffer fields used by FUN_0080d3d0. camera_state_snapshot_runtime.py reconstructs FUN_0080e040's rollback snapshot and FUN_0080cd40's guarded 0/1 camera-data buffer swap, including exact copy directions for camera, static-camera and tracking-camera state blocks.
+
+
+## Phase 262: CameraManager state snapshot and double-buffer transition
+
+The CameraSwitchGate contract is versioned to /2 so its mode-1 comparison explicitly references the active camera buffer's +0xe4 dword and +0xf2 byte. camera_state_snapshot_runtime.py reconstructs FUN_0080e040's exact six-dword rollback snapshot and FUN_0080cd40's guarded 0/1 buffer flip, with exact copy directions for camera, static-camera and tracking-camera state.
