@@ -1516,6 +1516,25 @@ def cmd_camera_runtime(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_defaults(args: argparse.Namespace) -> int:
+    """Emit the recovered static/tracking camera-data default initializer."""
+    from camera_default_state_runtime import camera_default_state
+
+    report = camera_default_state(args.kind)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "kind": report["kind"],
+        "field_count": len(report["fields"]),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_trackside_camera_selection(args: argparse.Namespace) -> int:
     """Apply source-backed Trackside Camera minimum-score selection to a score list."""
     from trackside_camera_selection_runtime import select_min_score_values
@@ -3329,6 +3348,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="camera XML file")
     p.add_argument("output", help="SHIFT.CameraRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_runtime)
+
+    p = sp.add_parser("camera-defaults", help="emit recovered camera-data default state")
+    p.add_argument("kind", choices=["static", "tracking"])
+    p.add_argument("output", help="SHIFT.CameraDefaultStateRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_camera_defaults)
 
     p = sp.add_parser("trackside-camera-selection", help="apply Trackside Camera minimum-score selection")
     p.add_argument("input", help="JSON object containing scores array and optional query")
