@@ -36,6 +36,8 @@ def test_attachment_resolver_preserves_slot_and_index_when_invoked():
     assert result["status"] == "resolved"
     assert result["attached_index"] == 7
     assert result["actions"][0]["slot"] == "+0x04"
+    assert result["actions"][0]["arguments"]["output"] == "param + 0x24"
+    assert result["actions"][0]["arguments"]["context"] == "param + 0x0c"
 
 
 def test_view_reset_has_exact_lifecycle_order():
