@@ -152,7 +152,17 @@ def build_bmw_vulkan_from_material_slice(
         "path": str(source_path.relative_to(Path(output_dir))),
         "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
     }
-    return result
+    bundle_result = dict(result)
+    bundle_result.pop("format", None)
+    return {
+        "format": FORMAT,
+        "status": result["status"],
+        "ready": result["ready"],
+        "blocking_reasons": result["blocking_reasons"],
+        "bundle": bundle_result,
+        "source": source_record,
+        "artifacts": result.get("artifacts", {}),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
