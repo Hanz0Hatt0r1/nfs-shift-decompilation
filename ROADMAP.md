@@ -1344,3 +1344,7 @@ The CameraSwitchGate contract is versioned to /2 so its mode-1 comparison explic
 ## Phase 263: Camera command dispatch
 
 camera_command_runtime.py reconstructs the four observed branches of FUN_0080e650, including exact positional argument order into FUN_0080de00, FUN_0080e1b0 and FUN_0080d520. Unknown command kinds remain explicit blockers/unsupported rather than guessed.
+
+## Phase 264: Camera event stream boundary
+
+camera_event_stream_runtime.py reconstructs FUN_0080c710 channel filtering (`event+0x5` vs manager +0x580), low-byte event type dispatch, and the type-5 payload boundary at event+0xc into FUN_0080e650. Other known event targets stay opaque.

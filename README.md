@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 263.**
+> **Current mainline: Phase 264.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -49,6 +49,7 @@
 
 > **Camera command dispatch:** Phase 263 reconstructs `FUN_0080e650` command kinds 1/2/3/4 and their exact callees, preserving unknown kinds as unsupported. Renderer and `RENDER.bff` remain untouched.
 
+> **Camera event stream:** Phase 264 reconstructs the channel filter and event-type dispatch in `FUN_0080c710`; event type `5` is now linked directly into the Phase 263 camera-command parser. Renderer and `RENDER.bff` remain untouched.
 > **Linux/Vulkan direction:** Phase 203 establishes Linux as the primary renderer lab. Vulkan is the native backend target, while the software reference renderer remains the deterministic oracle.
 
 > **SHIFT.exe PE evidence:** `SHIFT.MEBD3D9DescriptorTripleEvidence/1` is now joined into the main color bridge. Exact MEB descriptors `[4,6,0]`/`[4,6,1]` plus the source-backed Type-4 packed-color path resolve the static color declaration to D3D9 Type 4 (`D3DCOLOR`, BGRA memory / RGBA shader order); runtime same-instance proof remains separate.
@@ -148,7 +149,7 @@ Weak or unresolved behavior remains explicitly marked as `unknown`, `inferred`, 
 | RenderCommand | ✅ | resources, constants, vertex ABI, readiness and blockers |
 | Desktop renderer | 🟢 | geometry, textures, multi-sampler, cube maps, VS→PS linkage and captured shader execution |
 | Skinning | 🟢 | explicit SkinPose, CPU LBS oracle and GLES ABI |
-| Camera / TrackCameraMan | 🟡 | config, spline reload, class registration, selection, activation, switch gate, snapshots and command dispatch |
+| Camera / TrackCameraMan | 🟡 | config, spline reload, class registration, selection, activation, switch gate, snapshots, commands and event stream |
 | D3D9 runtime capture | 🟢 | declarations, streams, indices, shaders, constants, textures and resource descriptors |
 | BMW post-capture pipeline | 🟢 | one-command evidence → shader selection → render contract → offline render |
 | Android runtime | ⏳ | follows stabilization of the desktop/runtime boundary |
