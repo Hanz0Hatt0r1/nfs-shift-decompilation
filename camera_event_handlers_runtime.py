@@ -18,7 +18,6 @@ def describe_event_type_0(
     *,
     argument_a: Any,
     argument_b: int,
-    slot_index: int,
 ) -> dict[str, Any]:
     """Trace FUN_0080b910."""
     return {
@@ -33,7 +32,7 @@ def describe_event_type_0(
             },
             {
                 "action": "FUN_0080de00",
-                "slot_index": int(slot_index),
+                "slot_index": 0,
                 "arguments": {
                     "group": argument_a,
                     "sub_index": int(argument_b),
