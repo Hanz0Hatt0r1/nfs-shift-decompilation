@@ -1282,3 +1282,8 @@ scene_node_runtime.py. It reconstructs SCENE object dispatch, NODE flags and
 resource metadata, TRANSFORM fields, LIGHT type/angle conversion, partition
 child-reference lists, and explicit boundaries around still-opaque SGB chunk
 payloads. Rendering is not part of this phase.
+
+
+## Phase 250: binary SGB runtime chunk grammar
+
+The source-backed binary SGB decoder now reconstructs the top-level 16-byte header and the runtime handlers for NODE, PART, SUMM, OCCL and FLAT chunks. NODE fixed fields/flags, PART partition bounds and child-object tables, and the 56-byte SUMM/OCCL record shape are preserved. NODE object payloads and FLAT bodies remain explicit opaque boundaries until FUN_0069bc50/FUN_0069a6c0 and FUN_0068a8b0 are normalized.
