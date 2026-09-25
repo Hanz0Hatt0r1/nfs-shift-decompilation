@@ -258,7 +258,10 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
                 row["raw_body_sha256"] = hashlib.sha256(body).hexdigest()
                 row["raw_body_hex_prefix"] = body[:96].hex()
                 row["decoder"] = "FUN_006a48d0 -> FUN_0068a8b0"
-                row["decoded"] = False
+                from flat_runtime import parse_flat_runtime
+                flat = parse_flat_runtime(body, strict=strict)
+                row["flat_runtime"] = flat
+                row["decoded"] = flat["ready"]
             elif tag == "END ":
                 row["decoder"] = "FUN_006a5270"
         except SGBRuntimeDecodeError as exc:
