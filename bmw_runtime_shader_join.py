@@ -72,7 +72,9 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
     expected_samplers = _expected_sampler_registers(material_slice)
     matches = []
     for frame, state, state_source in _runtime_draw_states(runtime_report):
-        identity = state.get('shader_permutation_identity') or (frame.get('shader_permutation_identity') or {} if state_source == 'frame-aggregate' else {})
+        identity = state.get('shader_permutation_identity') or {}
+        if not identity and state_source == 'frame-aggregate':
+            identity = frame.get('shader_permutation_identity') or {}
         same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
         binding = state.get('vertex_declaration') or {}
         frame_sha = binding.get('resource_sha256')
