@@ -16,3 +16,37 @@ target_link_libraries(shift_vulkan_probe PRIVATE Vulkan::Vulkan)
 
 add_executable(shift_vulkan_headless_clear src/vulkan_headless_clear.cpp)
 target_link_libraries(shift_vulkan_headless_clear PRIVATE Vulkan::Vulkan)
+
+find_program(GLSLANG_VALIDATOR NAMES glslangValidator)
+
+if(GLSLANG_VALIDATOR)
+  set(SHIFT_VULKAN_SHADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/triangle.vert.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert
+            -o ${SHIFT_VULKAN_SHADER_DIR}/triangle.vert.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/triangle.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/triangle.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag
+    VERBATIM
+  )
+  add_custom_target(shift_vulkan_triangle_shaders
+    DEPENDS
+      ${SHIFT_VULKAN_SHADER_DIR}/triangle.vert.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/triangle.frag.spv
+  )
+  add_executable(shift_vulkan_headless_triangle src/vulkan_headless_triangle.cpp)
+  add_dependencies(shift_vulkan_headless_triangle shift_vulkan_triangle_shaders)
+  target_link_libraries(shift_vulkan_headless_triangle PRIVATE Vulkan::Vulkan)
+else()
+  message(STATUS "glslangValidator not found; headless triangle target will not be built")
+endif()
