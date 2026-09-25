@@ -31,7 +31,7 @@ def test_shader_identity_validator_rejects_malformed_payload_hash():
 
 def test_shader_identity_validator_requires_identity_hash():
     identity = {"format": "SHIFT.ShaderPermutationIdentity/1"}
-    assert "identity_sha256:invalid" in validate_shader_permutation_identity(identity)
+    assert "identity_sha256:missing" in validate_shader_permutation_identity(identity)
 
 
 def test_shader_identity_validator_accepts_self_consistent_full_payload():
