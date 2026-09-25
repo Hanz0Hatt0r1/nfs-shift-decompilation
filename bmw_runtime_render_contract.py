@@ -108,7 +108,7 @@ def _texture_requirements(
     external: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[str]]:
     latest: dict[int, Any] = {}
-    for row in frame.get("texture_bindings") or []:
+    for row in (frame.get("active_texture_bindings") or frame.get("texture_bindings") or []):
         if not isinstance(row, Mapping):
             continue
         stage = int(row.get("stage"))
@@ -120,7 +120,7 @@ def _texture_requirements(
         texture_ptr = latest.get(register)
         status = "bound-object" if texture_ptr else "contents-not-supplied"
         descriptor = {}
-        for event in frame.get("texture_bindings") or []:
+        for event in (frame.get("active_texture_bindings") or frame.get("texture_bindings") or []):
             if not isinstance(event, Mapping):
                 continue
             try:
@@ -131,7 +131,7 @@ def _texture_requirements(
                 descriptor = dict(event["resource_descriptor"])
         snapshot_paths: list[str] = []
         snapshot_status = "not-supplied"
-        for event in frame.get("texture_bindings") or []:
+        for event in (frame.get("active_texture_bindings") or frame.get("texture_bindings") or []):
             if not isinstance(event, Mapping):
                 continue
             try:
