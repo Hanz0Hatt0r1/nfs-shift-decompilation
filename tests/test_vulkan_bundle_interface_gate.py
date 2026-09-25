@@ -34,7 +34,6 @@ def _write_texture_packet(tmp_path, registers):
     data.extend((len(registers)).to_bytes(4, "little"))
     data.extend((1).to_bytes(4, "little"))
     data.extend((0).to_bytes(4, "little"))
-    data.extend(b"\0\0\0\0")
     for register in registers:
         data.extend(int(register).to_bytes(4, "little"))
         data.extend((1).to_bytes(4, "little"))
