@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 from typing import Any, Mapping
 
-from bmw_runtime_shader_join import join_runtime_shader
+from bmw_runtime_shader_join import _runtime_draw_states, join_runtime_shader
 from d3d9_declaration_instance import decode_d3d9_declaration_records
 
 FORMAT = "SHIFT.BMWRuntimeParity/1"
@@ -55,9 +55,24 @@ def validate_runtime_parity(material_slice: Mapping[str, Any], runtime_report: M
     reasons=list(join.get('blocking_reasons') or [])
     if not join.get('matched_frame_count'):
         return {'format':FORMAT,'status':'not-found','ready':False,'blocking_reasons':list(dict.fromkeys(reasons)),'shader_join':join,'constant_parity':{'status':'not-proven'},'declaration_parity':{'status':'not-proven'}}
-    frame=join['candidate_frames'][0]
-    runtime_frame=next((f for f in runtime_report.get('frames') or [] if f.get('frame')==frame.get('frame')), None) or {}
-    identity=runtime_frame.get('shader_permutation_identity') or {}
+    candidate=join['candidate_frames'][0]
+    runtime_frame=next((f for f in runtime_report.get('frames') or [] if f.get('frame')==candidate.get('frame')), None) or {}
+    runtime_state=runtime_frame
+    draw_index=candidate.get('draw_index')
+    if draw_index is not None:
+        runtime_state = next(
+            (
+                state for frame_row, state, source in _runtime_draw_states(runtime_report)
+                if frame_row.get('frame') == candidate.get('frame')
+                and source == 'draw-snapshot'
+                and state.get('draw_index') == draw_index
+            ),
+            None,
+        )
+        if runtime_state is None:
+            reasons.append(f"runtime:draw-snapshot-missing:{candidate.get('frame')}:{draw_index}")
+            runtime_state = {}
+    identity=runtime_state.get('shader_permutation_identity') or {}
 
     constant_rows=_constant_requirements(material_slice)
     constant_checks=[]
@@ -69,7 +84,7 @@ def validate_runtime_parity(material_slice: Mapping[str, Any], runtime_report: M
     constant_status='match' if not any(x['status']=='mismatch' for x in constant_checks) else 'mismatch'
     constant_value_checks = []
     writes_by_stage: dict[str, dict[int, list[float]]] = {'vertex': {}, 'pixel': {}}
-    for write in runtime_frame.get('constant_writes') or []:
+    for write in runtime_state.get('constant_writes') or []:
         stage = str(write.get('stage') or '').lower()
         start = write.get('start_register')
         values = write.get('values') or []
@@ -129,12 +144,12 @@ def validate_runtime_parity(material_slice: Mapping[str, Any], runtime_report: M
         if mismatched_values:
             reasons.append(f"constant-values:{req['stage']}:{req['name'] or req['register_index']}:mismatch")
     constant_value_status = (
-        'not-required' if not require_constant_values and not (runtime_frame.get('constant_writes') or [])
+        'not-required' if not require_constant_values and not (runtime_state.get('constant_writes') or [])
         else ('match' if constant_value_checks and not any(x['status'] != 'match' for x in constant_value_checks)
               else ('not-captured' if any(x['status'] == 'not-captured' for x in constant_value_checks) else 'mismatch'))
     )
 
-    declaration=runtime_frame.get('vertex_declaration') or {}
+    declaration=runtime_state.get('vertex_declaration') or {}
     declaration_ptr=declaration.get('declaration_ptr')
     declarations=runtime_report.get('declarations') or []
     object_row=next((x for x in declarations if x.get('pointer')==declaration_ptr), None)
