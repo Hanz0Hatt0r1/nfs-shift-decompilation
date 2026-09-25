@@ -1262,3 +1262,14 @@ The `BMWMaterialSliceVulkan/1` public result now exposes the exact `VulkanDDSRes
 The retail SHIFT.exe decompilation now provides a source-backed runtime grammar for the BAB animation tail. bab_animation_runtime.py reconstructs the common FUN_00680690 bank prefix, runtime bank variants 0/1/2, channel dispatcher FUN_00684320, and ten serialized channel types. Uniform frame channels, timed keyframes and quaternion slerp are represented explicitly; type 6 Euler-to-quaternion conversion remains axis/order unresolved. The importer exposes this as bab-animation-runtime and keeps truncation/trailing bytes as explicit blockers.
 
 Rendering is intentionally unchanged in this phase. The next decompilation target is SGB scene semantics (NODE/FLAT/SUMM) and track assembly from source/runtime evidence.
+
+
+## Phase 248: animation TRACK/node runtime semantics
+
+The retail SHIFT.exe source now has a machine-readable TRACK/node contract in
+animation_track_runtime.py. It reconstructs usage targets 0..3, the ten
+Sampled/Keyed/Fixed forms, Vec3/Quat/f32 attachment constraints, duplicate
+transform-slot rejection, XML hexadecimal float-word encoding, base-transform
+defaults, exact-name node mapping, node-count validation, and duration
+compatibility. XML form names are intentionally kept separate from numeric BAB
+channel ids. Rendering remains outside this phase.
