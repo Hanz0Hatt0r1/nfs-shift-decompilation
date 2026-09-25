@@ -22,10 +22,17 @@ def test_direction_counters_increment_or_decrement_together():
     assert inactive["values"] == {"+0x2bc": -1.0, "+0x2c0": -1.0}
 
 
-def test_input_rate_values_are_converted_from_degrees():
-    result = set_input_rate_values(pitch_rate=180.0, yaw_rate=90.0)
-    assert abs(result["result"]["pitch_rate_radians"] - 3.14159256) < 1e-6
-    assert abs(result["result"]["yaw_rate_radians"] - 1.57079628) < 1e-6
+def test_input_rate_values_convert_all_four_state_fields_from_degrees():
+    result = set_input_rate_values(
+        rate_0x2b8=180.0,
+        rate_0x700=90.0,
+        rate_0x2c0=45.0,
+        rate_0x2c4=30.0,
+    )
+    assert abs(result["result"]["first_vector_radians"][0] - 3.14159256) < 1e-6
+    assert abs(result["result"]["first_vector_radians"][1] - 1.57079628) < 1e-6
+    assert abs(result["result"]["second_vector_radians"][0] - 0.78539814) < 1e-6
+    assert abs(result["result"]["second_vector_radians"][1] - 0.52359876) < 1e-6
 
 
 def test_velocity_seed_requires_active_profile():
@@ -53,10 +60,11 @@ def test_input_axes_apply_service_output_and_direction_adjustment():
         service_axis1=7,
         accumulator_0x2c0=1,
         counter_0x2bc=2,
+        counter_0x700=6,
         reverse_direction=False,
     )
     assert result["raw_action_axes"] == [4.0, 5.0]
-    assert result["result_axes"] == [2.0, -5.0]
+    assert result["result_axes"] == [2.0, 1.0]
 
 
 def test_input_shake_rates_use_positive_and_negative_global_rates():
