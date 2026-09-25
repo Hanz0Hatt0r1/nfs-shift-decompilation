@@ -40,12 +40,8 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
         "record_bytes": LEAF_SIZE,
         "raw_u32": words,
         "runtime_index": words[15],
-        "runtime_links": {
-            "tree": words[12],
-            "record": words[13],
-            "external": words[14],
-            "index": words[15],
-        },
+        "index_word": words[15],
+        "runtime_generated_links": False,
     }
 
 
