@@ -30,20 +30,19 @@ def _runtime_identity(frame: Mapping[str, Any]) -> Mapping[str, Any] | None:
     return identity if isinstance(identity, Mapping) else None
 
 
-def _same_resource(material_input: Mapping[str, Any], frame: Mapping[str, Any]) -> bool | None:
+def _resource_identity(material_input: Mapping[str, Any], frame: Mapping[str, Any]) -> tuple[bool | None, str]:
     provenance = material_input.get("provenance") or {}
     mesh = provenance.get("mesh_entry") if isinstance(provenance, Mapping) else None
     binding = frame.get("vertex_declaration") or frame.get("binding") or {}
     if not isinstance(mesh, Mapping) or not isinstance(binding, Mapping):
-        return None
+        return None, "identity-input-missing"
     expected_sha = mesh.get("sha256") or mesh.get("resource_sha256")
     expected_path = mesh.get("path")
-    matched, _status = match_resource_identity(
+    return match_resource_identity(
         binding,
         expected_sha256=expected_sha,
         expected_path=expected_path,
     )
-    return matched
 
 def _candidate_identity_matches(
     candidate: Mapping[str, Any],
@@ -218,8 +217,8 @@ def select_runtime_shader(
             identity = _runtime_identity(frame)
         if identity is None:
             continue
-        same_resource = _same_resource(material_input, state)
-        if require_same_resource and same_resource is not True:
+        resource_match, resource_identity_status = _resource_identity(material_input, state)
+        if require_same_resource and resource_match is not True:
             continue
         texture_ok, _missing_texture_stages = _texture_stage_status(
             state, expected_external_stages
@@ -242,7 +241,8 @@ def select_runtime_shader(
                 "candidate_program_offset": candidate.get("program_offset"),
                 "score": score,
                 "evidence": evidence,
-                "same_meb_resource": same_resource,
+                "same_meb_resource": resource_match,
+                "resource_identity_status": resource_identity_status,
                 "external_texture_stages": expected_external_stages,
                 "external_texture_types": expected_external_types,
                 "identity_sha256": identity.get("identity_sha256"),
