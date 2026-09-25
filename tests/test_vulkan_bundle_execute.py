@@ -8,6 +8,8 @@ def test_native_vulkan_bundle_executor_contract():
     assert "geometry.svpk" in source
     assert "constants.svcp" in source
     assert "textures.svtp" in source
+    assert "samplers.svss" in source
+    assert "SHIFT.VulkanBundleExecution/1" in source
     assert "environment_cube.svcp" in source
     assert "vkCmdDrawIndexed" in source
     assert "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER" in source
@@ -15,6 +17,9 @@ def test_native_vulkan_bundle_executor_contract():
     assert "VK_IMAGE_VIEW_TYPE_CUBE" in source
     assert "VK_FORMAT_D32_SFLOAT" in source
     assert "SHIFT.VulkanBundleExecution/1" in source
+    assert "find_sampler_record" in source
+    assert "VK_FORMAT_R8G8B8A8_SRGB" in source
+    assert "sampler_for_record" in source
 
 
 def test_vulkan_bundle_runner_contract():
