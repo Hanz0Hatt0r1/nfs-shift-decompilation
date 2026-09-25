@@ -1141,3 +1141,14 @@ also uses set 1 for sampled textures, keeping set 0 reserved for VS/PS constants
 
 The checkpoint currently supports the proven nearest/linear REPEAT/CLAMP subset and
 uses a synthetic s1 texture shader. Real BMW DDS ingestion and samplerCube remain next.
+
+
+## Phase 214: Vulkan texture descriptors
+
+SHIFT.VulkanTexturePacket/1 now serializes RenderCommand 2D sampler resources as
+RGBA8 base-level images plus explicit sampler modes. Native Vulkan uploads those images,
+creates combined-image-sampler descriptors in set 1 and preserves the D3D9 sampler register
+as the binding. ShaderProgram Vulkan emission uses set 1 for texture samplers.
+
+This phase is a synthetic sampled-texture checkpoint. Real BMW DDS ingestion and the
+samplerCube/environment resource remain next.
