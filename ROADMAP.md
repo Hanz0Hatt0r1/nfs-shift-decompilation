@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 184. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 185. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -74,6 +74,21 @@ the original declaration in the same frame.
 
 Existing frame-level fields remain available for compatibility and diagnostics.
 The new gate requirement is explicit as indexed_draw_state_snapshot=true.
+
+The remaining external gate is unchanged: obtain one authentic retail BMW M3 D3D9
+capture and prove MEB/resource identity, declaration match, indexed draw, exact
+VS/PS permutation, constants and sampler resources on the same draw instance.
+## Phase 185: versioned draw-state snapshot contract
+
+`SHIFT.D3D9DrawStateSnapshot/1` now defines the exact state captured at each
+`DrawIndexedPrimitive` boundary. The snapshot keeps forensic binding history while
+also exposing normalized active stream and texture bindings plus latest constant
+register state.
+
+`d3d9_draw_snapshot_schema.py` validates generated snapshots during runtime report
+construction. Invalid snapshots cannot become same-instance proof candidates.
+Downstream BMW runtime consumers therefore share one explicit draw-state contract
+instead of independently interpreting frame-level event history.
 
 The remaining external gate is unchanged: obtain one authentic retail BMW M3 D3D9
 capture and prove MEB/resource identity, declaration match, indexed draw, exact
