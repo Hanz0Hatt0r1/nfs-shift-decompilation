@@ -36,6 +36,28 @@ def _expected_sampler_registers(material_slice: Mapping[str, Any]) -> dict[int, 
         }
     return out
 
+def _runtime_draw_states(runtime_report: Mapping[str, Any]):
+    """Yield the exact runtime state used by each draw.
+
+    Current captures contain draw_snapshots. Legacy fixtures without them are
+    accepted for compatibility, but an available snapshot set always wins so
+    frame-level post-draw state can never be substituted for draw-local state.
+    """
+    frames = [
+        frame for frame in (runtime_report.get("frames") or [])
+        if isinstance(frame, Mapping)
+    ]
+    has_snapshots = any(bool(frame.get("draw_snapshots")) for frame in frames)
+    for frame in frames:
+        snapshots = frame.get("draw_snapshots") or []
+        if has_snapshots:
+            for snapshot in snapshots:
+                if isinstance(snapshot, Mapping):
+                    yield frame, snapshot, "draw-snapshot"
+        else:
+            yield frame, frame, "frame-aggregate"
+
+
 def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mapping[str, Any]) -> dict[str, Any]:
     reasons: list[str] = []
     if runtime_report.get('format') != 'SHIFT.D3D9RuntimeBindingEvidence/1':
@@ -48,12 +70,11 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
     expected_resource = str(golden_identity.get('resource') or '')
     expected_resource_sha = golden_identity.get('resource_sha256')
     expected_samplers = _expected_sampler_registers(material_slice)
-    frame_rows = runtime_report.get('frames') or []
     matches = []
-    for frame in frame_rows:
-        identity = frame.get('shader_permutation_identity') or {}
+    for frame, state, state_source in _runtime_draw_states(runtime_report):
+        identity = state.get('shader_permutation_identity') or frame.get('shader_permutation_identity') or {}
         same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
-        binding = frame.get('vertex_declaration') or {}
+        binding = state.get('vertex_declaration') or {}
         frame_sha = binding.get('resource_sha256')
         frame_path = binding.get('resource_path')
         same_resource = False
@@ -62,12 +83,13 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
         elif expected_resource and frame_path:
             same_resource = str(frame_path).replace('\\', '/').strip('/').lower() == expected_resource.replace('\\', '/').strip('/').lower()
         if same_id and same_resource:
-            matches.append(frame)
+            matches.append((frame, state, state_source))
+
     if expected_id and not matches:
         reasons.append('runtime:shader-or-resource-instance-not-found')
     candidate_rows = []
-    for frame in matches:
-        identity = frame.get('shader_permutation_identity') or {}
+    for frame, state, state_source in matches:
+        identity = state.get('shader_permutation_identity') or frame.get('shader_permutation_identity') or {}
         pixel = identity.get('payload', {}).get('pixel', {})
         runtime_samplers = {int(k): str(v) for k, v in (pixel.get('sampler_types') or {}).items()}
         sampler_mismatches = []
@@ -82,17 +104,26 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
         expected_set = set(expected_samplers)
         unexpected = sorted(runtime_set - expected_set)
         if unexpected:
-            # External renderer-global samplers are legitimate only when the material slice records them.
             sampler_mismatches.append({'reason': 'unexpected-runtime-samplers', 'registers': unexpected})
+        state_draw_index = state.get('draw_index') if state_source == 'draw-snapshot' else None
         candidate_rows.append({
             'frame': frame.get('frame'),
-            'vertex_shader': frame.get('vertex_shader'),
-            'pixel_shader': frame.get('pixel_shader'),
+            'draw_index': state_draw_index,
+            'draw': state.get('draw'),
+            'source': state_source,
+            'vertex_shader': state.get('vertex_shader'),
+            'pixel_shader': state.get('pixel_shader'),
             'identity_sha256': identity.get('identity_sha256'),
             'sampler_mismatches': sampler_mismatches,
         })
         if sampler_mismatches:
-            reasons.append(f"runtime:sampler-contract:{frame.get('frame')}")
+            suffix = (
+                f"{frame.get('frame')}:{state_draw_index}"
+                if state_source == 'draw-snapshot'
+                else str(frame.get('frame'))
+            )
+            reasons.append(f"runtime:sampler-contract:{suffix}")
+    matched_frames = {row.get('frame') for row in candidate_rows}
     ready = bool(expected_id and matches and not reasons)
     return {
         'format': FORMAT,
@@ -101,7 +132,9 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
         'blocking_reasons': list(dict.fromkeys(reasons)),
         'material_identity': expected,
         'candidate_frames': candidate_rows,
-        'matched_frame_count': len(matches),
+        'matched_frame_count': len(matched_frames),
+        'matched_draw_count': len(candidate_rows),
+        'state_source': 'draw-snapshot' if any(row.get('source') == 'draw-snapshot' for row in candidate_rows) else ('frame-aggregate' if candidate_rows else 'none'),
     }
 
 def validate_files(material_slice_path: str | Path, runtime_report_path: str | Path) -> dict[str, Any]:
