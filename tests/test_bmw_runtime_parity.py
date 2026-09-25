@@ -78,3 +78,56 @@ def test_bmw_runtime_parity_requires_explicit_usage_map():
     report = validate_runtime_parity(_material(), _runtime(), usage_map=None)
     assert report['ready'] is False
     assert 'declaration:usage-map-missing' in report['blocking_reasons']
+
+def test_runtime_parity_can_derive_usage_map_from_pe_evidence(tmp_path):
+    import json
+    from bmw_runtime_parity import validate_files
+
+    material_path = tmp_path / "material.json"
+    runtime_path = tmp_path / "runtime.json"
+    pe_path = tmp_path / "pe.json"
+    material_path.write_text(json.dumps(_material()), encoding="utf-8")
+    runtime_path.write_text(json.dumps(_runtime()), encoding="utf-8")
+    pe_path.write_text(
+        json.dumps({
+            "format": "SHIFT.PEImageEvidence/1",
+            "decoded_tables": {
+                "usage": [{"ordinal": i, "value": 10 + i} for i in range(9)]
+            },
+        }),
+        encoding="utf-8",
+    )
+    report = validate_files(
+        material_path,
+        runtime_path,
+        pe_evidence_path=pe_path,
+    )
+    assert report["ready"] is True
+    assert report["declaration_parity"]["status"] == "match"
+
+
+def test_runtime_parity_blocks_partial_pe_usage_map(tmp_path):
+    import json
+    from bmw_runtime_parity import validate_files
+
+    material_path = tmp_path / "material.json"
+    runtime_path = tmp_path / "runtime.json"
+    pe_path = tmp_path / "pe.json"
+    material_path.write_text(json.dumps(_material()), encoding="utf-8")
+    runtime_path.write_text(json.dumps(_runtime()), encoding="utf-8")
+    pe_path.write_text(
+        json.dumps({
+            "format": "SHIFT.PEImageEvidence/1",
+            "decoded_tables": {
+                "usage": [{"ordinal": 0, "value": 10}],
+            },
+        }),
+        encoding="utf-8",
+    )
+    report = validate_files(
+        material_path,
+        runtime_path,
+        pe_evidence_path=pe_path,
+    )
+    assert report["ready"] is False
+    assert "declaration:pe-usage-map-not-ready" in report["blocking_reasons"]
