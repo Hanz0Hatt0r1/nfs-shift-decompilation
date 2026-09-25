@@ -85,10 +85,13 @@ def test_cockpit_large_first_input_wraps_and_small_second_can_blend():
         current_8c=0.0,
         target_84=1.0,
         target_88=2.0,
+        wrap_seed_after_88_helper=None,
     )
     assert result["predicates"]["abs_input_c_gt_0.1"] is True
     assert result["predicates"]["blend_used"] is False
-    assert result["state_after"]["+0x88"] < 0.5
+    assert result["state_after"]["+0x88"] == 0.45999999999999996
+    assert result["actions"][0]["action"] == "FUN_0081b610"
+    assert result["actions"][0]["after"] is None
 
 
 def test_cockpit_both_small_inputs_use_steering_blend():
