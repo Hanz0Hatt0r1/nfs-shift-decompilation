@@ -59,6 +59,13 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
     expected_primitive_count = expected_count // 3 if expected_count >= 0 and expected_count % 3 == 0 else None
     if expected_count >= 0 and expected_primitive_count is None:
         reasons.append('material:index-range-not-triangle-list')
+
+    golden_identity = material_slice.get('golden_identity') or {}
+    expected_resource_sha = str(golden_identity.get('resource_sha256') or '').strip().lower() or None
+    expected_resource_path = golden_identity.get('resource')
+    if expected_resource_path:
+        expected_resource_path = str(expected_resource_path).replace('\\', '/').strip('/').lower()
+
     matched: list[dict[str, Any]] = []
     candidates: list[dict[str, Any]] = []
     for frame, state, source in _runtime_draw_states(runtime_report):
@@ -74,6 +81,20 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
                 primitive_count = int(draw.get('primitive_count'))
             except (TypeError, ValueError):
                 continue
+            binding = state.get('vertex_declaration') or {}
+            actual_resource_sha = str(binding.get('resource_sha256') or '').strip().lower() or None
+            actual_resource_path = str(binding.get('resource_path') or '').replace('\\', '/').strip('/').lower() or None
+            if expected_resource_sha:
+                resource_match = actual_resource_sha == expected_resource_sha
+                resource_status = 'exact-sha-match' if resource_match else (
+                    'sha-missing' if not actual_resource_sha else 'sha-mismatch'
+                )
+            elif expected_resource_path:
+                resource_match = actual_resource_path == expected_resource_path
+                resource_status = 'path-match' if resource_match else 'path-mismatch'
+            else:
+                resource_match = True
+                resource_status = 'identity-not-supplied'
             row = {
                 'frame': frame.get('frame'),
                 'draw_index': draw_index,
@@ -81,11 +102,13 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
                 'start_index': start_index,
                 'primitive_count': primitive_count,
                 'base_vertex_index': draw.get('base_vertex_index'),
+                'resource_identity_status': resource_status,
+                'resource_match': resource_match,
                 'start_index_match': start_index == expected_first,
                 'primitive_count_match': expected_primitive_count is not None and primitive_count == expected_primitive_count,
             }
             candidates.append(row)
-            if row['start_index_match'] and row['primitive_count_match']:
+            if row['resource_match'] and row['start_index_match'] and row['primitive_count_match']:
                 matched.append(row)
     if not candidates:
         reasons.append('runtime:draw-not-captured')
