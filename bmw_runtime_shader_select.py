@@ -212,7 +212,7 @@ def select_runtime_shader(
         }
 
     matches: list[dict[str, Any]] = []
-    for frame, state, state_source in _runtime_draw_states(runtime_report):
+    for frame, state, state_source in _runtime_draw_states(runtime_report, reject_invalid_snapshots=True):
         identity = _runtime_identity(state)
         if identity is None and state_source == 'frame-aggregate':
             identity = _runtime_identity(frame)
