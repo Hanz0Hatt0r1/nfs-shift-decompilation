@@ -1516,6 +1516,33 @@ def cmd_camera_runtime(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_spline_rebase(args: argparse.Namespace) -> int:
+    """Rebase tracking-camera spline references across a runtime reload."""
+    from camera_spline_reload_runtime import rebase_tracking_camera_spline_ids
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    result = rebase_tracking_camera_spline_ids(
+        payload.get("existing_cameras", []),
+        payload.get("newly_loaded_cameras", []),
+        old_spline_count=payload["old_spline_count"],
+        new_spline_count=payload["new_spline_count"],
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "old_spline_count": result["old_spline_count"],
+        "new_spline_count": result["new_spline_count"],
+        "existing_cameras": len(result["existing_cameras"]),
+        "newly_loaded_cameras": len(result["newly_loaded_cameras"]),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_catalog(args: argparse.Namespace) -> int:
     """Emit the source-backed camera property-registration catalog."""
     from camera_runtime import property_catalog
@@ -3275,6 +3302,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="camera XML file")
     p.add_argument("output", help="SHIFT.CameraRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_runtime)
+
+    p = sp.add_parser("camera-spline-rebase", help="rebase tracking-camera spline references across a reload")
+    p.add_argument("input", help="JSON with old_spline_count, new_spline_count and camera arrays")
+    p.add_argument("output", help="SHIFT.CameraSplineReloadRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_camera_spline_rebase)
 
     p = sp.add_parser("camera-catalog", help="emit source-backed camera property registration evidence")
     p.add_argument("output", help="camera property catalog JSON output")
