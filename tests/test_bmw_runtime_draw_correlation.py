@@ -87,3 +87,58 @@ def test_runtime_draw_correlation_returns_exact_snapshot_draw_index():
     assert report['ready'] is True
     assert report['matches'][0]['draw_index'] == 4
     assert report['matches'][0]['source'] == 'draw-snapshot'
+
+
+def test_runtime_draw_correlation_requires_golden_meb_identity_when_supplied():
+    material = _material()
+    material["golden_identity"] = {
+        "resource": "vehicles/bmw/body.meb",
+        "resource_sha256": "bmw-sha",
+    }
+    runtime = {
+        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
+        "frames": [{
+            "frame": 7,
+            "draw_snapshots": [{
+                "format": "SHIFT.D3D9DrawStateSnapshot/1",
+                "frame": 7,
+                "draw_index": 0,
+                "draw": {"start_index": 150, "primitive_count": 2098, "base_vertex_index": 0},
+                "vertex_declaration": {
+                    "resource_sha256": "other-sha",
+                    "resource_path": "vehicles/other/body.meb",
+                },
+            }],
+        }],
+    }
+    report = correlate_runtime_draw(material, runtime)
+    assert report["ready"] is False
+    assert report["matches"] == []
+    assert report["candidates"][0]["resource_identity_status"] == "sha-mismatch"
+
+
+def test_runtime_draw_correlation_accepts_exact_golden_meb_identity():
+    material = _material()
+    material["golden_identity"] = {
+        "resource": "vehicles/bmw/body.meb",
+        "resource_sha256": "BMW-SHA",
+    }
+    runtime = {
+        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
+        "frames": [{
+            "frame": 7,
+            "draw_snapshots": [{
+                "format": "SHIFT.D3D9DrawStateSnapshot/1",
+                "frame": 7,
+                "draw_index": 0,
+                "draw": {"start_index": 150, "primitive_count": 2098, "base_vertex_index": 0},
+                "vertex_declaration": {
+                    "resource_sha256": "bmw-sha",
+                    "resource_path": "vehicles/bmw/body.meb",
+                },
+            }],
+        }],
+    }
+    report = correlate_runtime_draw(material, runtime)
+    assert report["ready"] is True
+    assert report["matches"][0]["resource_identity_status"] == "exact-sha-match"
