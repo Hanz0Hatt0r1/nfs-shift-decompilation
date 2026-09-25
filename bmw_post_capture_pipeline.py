@@ -116,6 +116,14 @@ def run_pipeline(
         _write(out / "pipeline_result.json", result)
         return result
 
+    if preflight.get("ready") is not True:
+        result["blocking_reasons"] = [
+            "runtime-capture-preflight:" + str(reason)
+            for reason in (preflight.get("blocking_reasons") or ["not-ready"])
+        ]
+        _write(out / "pipeline_result.json", result)
+        return result
+
     same_instance = runtime.get("same_instance_gate") or {}
     if same_instance.get("ready") is not True:
         result["blocking_reasons"] = [
