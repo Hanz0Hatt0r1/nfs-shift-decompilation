@@ -23,6 +23,7 @@ def test_external_source_disabled_id_keeps_state_setup_but_marks_disabled():
         external_id=0,
         opaque_position_output=[1, 2, 3],
         opaque_orientation_scalar=7,
+        helper_9024d0_result=3,
         global_angle_offset=1,
         source_vtable_fov_result=2,
     )
@@ -36,11 +37,12 @@ def test_external_source_active_preserves_opaque_helper_results():
         external_id=4,
         opaque_position_output=[1, 2, 3],
         opaque_orientation_scalar=7.0,
+        helper_9024d0_result=4.0,
         global_angle_offset=1.5,
         source_vtable_fov_result=2.5,
     )
     assert result["status"] == "active"
-    assert result["writes"]["+0x1c"] == 0.0
+    assert result["writes"]["+0x1c"] == 2.5
     assert result["writes"]["+0x20"] == 7.0
     assert result["writes"]["+0x34"] == 2.5
 
