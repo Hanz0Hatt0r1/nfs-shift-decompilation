@@ -134,7 +134,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     monkeypatch.setattr(slicer, "build_render_command", lambda *a, **k: {"format":"SHIFT.RenderCommand/1","ready":True,"blocking_reasons":[],"mesh":{"vertex_layout":{"format":"SHIFT.VertexLayout/1"},"vertex_count":4,"attributes":[]},"submeshes":[{"first_index":150,"index_count":6294,"shader":{"vertex":"void main(){}","pixel":"void main(){}"}}],"resource_plan":{"format":"SHIFT.RenderResources/1","texture_count":0,"sampler_count":0,"external_sampler_count":0}})
     report=slicer.build_real_bmw_material_slice(primary, golden_path)
     assert report["format"]=="SHIFT.BMWMaterialSlice/1"
-    assert report["ready"] is True
+    assert report["ready"] is True, report
     assert report["render_command"]["ready"] is True
     assert report["static_draw"]["ready"] is True
     assert report["slice_golden_gate"]["ready"] is True
