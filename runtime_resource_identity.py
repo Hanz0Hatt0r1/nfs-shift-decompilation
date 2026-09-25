@@ -24,6 +24,9 @@ def match_resource_identity(
     if expected_sha256:
         expected_sha = str(expected_sha256).strip().lower()
         if not actual_sha:
+            normalized_expected_path = normalize_resource_path(expected_path)
+            if normalized_expected_path and actual_path == normalized_expected_path:
+                return False, "path-match-sha-missing"
             return False, "sha-missing"
         if str(actual_sha).strip().lower() == expected_sha:
             return True, "exact-sha-match"
