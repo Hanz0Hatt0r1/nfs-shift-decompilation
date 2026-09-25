@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 185. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 186. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -74,6 +74,23 @@ the original declaration in the same frame.
 
 Existing frame-level fields remain available for compatibility and diagnostics.
 The new gate requirement is explicit as indexed_draw_state_snapshot=true.
+
+The remaining external gate is unchanged: obtain one authentic retail BMW M3 D3D9
+capture and prove MEB/resource identity, declaration match, indexed draw, exact
+VS/PS permutation, constants and sampler resources on the same draw instance.
+## Phase 186: BMW runtime capture preflight
+
+`SHIFT.BMWRuntimeCapturePreflight/1` now provides a deterministic preflight for an
+external D3D9 capture. It locates draws bound to the exact BMW M3 body MEB and
+matches the two documented paint primitive ranges: `(150, 6294)` and
+`(6444, 7386)`.
+
+The preflight is diagnostic only. It reports resource-backed draw candidates,
+paint candidates, shader identity and the existing integrity/same-instance state,
+but it cannot replace the strict proof gate.
+
+`bmw_post_capture_pipeline.py` now emits `runtime_capture_preflight.json` before
+shader execution and records the preflight stage in `pipeline_result.json`.
 
 The remaining external gate is unchanged: obtain one authentic retail BMW M3 D3D9
 capture and prove MEB/resource identity, declaration match, indexed draw, exact
