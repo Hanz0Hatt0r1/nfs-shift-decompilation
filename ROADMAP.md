@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 211. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 212. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1118,3 +1118,12 @@ shader_backend.py adds optional glslangValidator Vulkan-target compilation/linki
 
 The D3D9 float constant bank remains the explicit UBO binding 14 contract. Native
 Vulkan descriptor/resource upload is the next stage.
+
+ 
+## Phase 212: Vulkan stage-specific constant ABI
+
+The Vulkan target now keeps SHIFT's vertex and pixel D3D9 c-register banks distinct:
+set 0 binding 14 for vertex and binding 15 for pixel. The new
+SHIFT.VulkanConstantBufferLayout/1 derives this mapping from RenderCommand constant
+commands with a 16-byte register stride and 256-register bound. Native constant upload
+is the next step; no material image is claimed yet.
