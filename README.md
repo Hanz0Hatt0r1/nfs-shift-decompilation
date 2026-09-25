@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 254.**
+> **Current mainline: Phase 257.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -40,6 +40,8 @@
 > **BMW capture preflight:** `SHIFT.BMWRuntimeCapturePreflight/1` locates exact target-MEB and paint-range draw candidates before shader execution; it is diagnostic and does not replace the strict same-instance gate.
 
 > **Camera runtime:** Phase 254 reconstructs CameraConfig and TrackCameraMan loader paths, registered Trackside Cams/Splines/Areas groups, class/id/data XML object boundaries and static/tracking/area property registrations. Camera behavior remains unresolved and renderer/RENDER.bff are unchanged.
+
+> **Camera runtime:** Phases 254–257 reconstruct CameraConfig/TrackCameraMan loading, spline-reference maintenance, proven class-registration prefixes and Trackside Camera minimum-score selection. The nested score function and camera behavior remain unresolved; renderer and RENDER.bff are untouched.
 
 > **Linux/Vulkan direction:** Phase 203 establishes Linux as the primary renderer lab. Vulkan is the native backend target, while the software reference renderer remains the deterministic oracle.
 
@@ -140,7 +142,7 @@ Weak or unresolved behavior remains explicitly marked as `unknown`, `inferred`, 
 | RenderCommand | ✅ | resources, constants, vertex ABI, readiness and blockers |
 | Desktop renderer | 🟢 | geometry, textures, multi-sampler, cube maps, VS→PS linkage and captured shader execution |
 | Skinning | 🟢 | explicit SkinPose, CPU LBS oracle and GLES ABI |
-| Camera / TrackCameraMan | 🟡 | CameraConfig loader paths, XML object boundary and property-registration evidence |
+| Camera / TrackCameraMan | 🟡 | config loading, spline reload rebasing, class registration and Trackside Camera selection reduction |
 | D3D9 runtime capture | 🟢 | declarations, streams, indices, shaders, constants, textures and resource descriptors |
 | BMW post-capture pipeline | 🟢 | one-command evidence → shader selection → render contract → offline render |
 | Android runtime | ⏳ | follows stabilization of the desktop/runtime boundary |
