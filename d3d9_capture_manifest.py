@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from d3d9_capture_schema import validate_capture_events
+from d3d9_runtime_trace_integrity import validate_runtime_trace_integrity
 
 FORMAT = "SHIFT.D3D9RuntimeCaptureManifest/1"
 
@@ -67,6 +68,7 @@ def build_capture_manifest(
 
     rows = list(events or [])
     schema = validate_capture_events(rows)
+    integrity = validate_runtime_trace_integrity(rows)
     producer = None
     if producer_binary is not None:
         producer_path = Path(producer_binary)
@@ -82,6 +84,11 @@ def build_capture_manifest(
         blockers.extend(
             "capture-schema:" + str(reason.get("reason"))
             for reason in schema.get("blocking_reasons") or []
+        )
+    if integrity.get("status") not in {"observed", "not-supplied"}:
+        blockers.extend(
+            "capture-integrity:" + str(reason.get("reason"))
+            for reason in integrity.get("blocking_reasons") or []
         )
 
     return {
@@ -103,6 +110,11 @@ def build_capture_manifest(
             "format": schema["format"],
             "status": schema["status"],
             "event_count": schema["event_count"],
+        },
+        "integrity": {
+            "format": integrity["format"],
+            "status": integrity["status"],
+            "event_index": integrity.get("event_index") or {},
         },
         "statistics": _stats(rows),
     }
