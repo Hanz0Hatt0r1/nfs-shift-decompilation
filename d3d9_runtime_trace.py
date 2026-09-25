@@ -57,6 +57,23 @@ def _norm(value: Any) -> str | None:
     return None if value is None else str(value).replace("\\", "/").strip("/").lower()
 
 
+def _same_resource_identity(
+    binding: Mapping[str, Any],
+    identity: Mapping[str, Any],
+) -> bool | None:
+    expected_sha = identity.get("resource_sha256")
+    actual_sha = binding.get("resource_sha256")
+    if expected_sha:
+        if not actual_sha:
+            return False
+        return str(actual_sha).strip().lower() == str(expected_sha).strip().lower()
+    expected_path = identity.get("resource_path")
+    actual_path = binding.get("resource_path")
+    if expected_path and actual_path:
+        return _norm(actual_path) == _norm(expected_path)
+    return None
+
+
 def load_events(path: str | Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for line_no, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
@@ -388,10 +405,7 @@ def build_runtime_binding_evidence(
         frame_same_resource = None
         if frame_binding and meb_resource is not None:
             identity = correlation["resource_identity"] or {}
-            if frame_binding.get("resource_sha256") and identity.get("resource_sha256"):
-                frame_same_resource = frame_binding["resource_sha256"] == identity["resource_sha256"]
-            elif frame_binding.get("resource_path") and identity.get("resource_path"):
-                frame_same_resource = _norm(frame_binding["resource_path"]) == _norm(identity["resource_path"])
+            frame_same_resource = _same_resource_identity(frame_binding, identity)
 
         shader_pair_identity = None
         vs = frame.get("vertex_shader") or {}
@@ -434,10 +448,7 @@ def build_runtime_binding_evidence(
             same_resource = None
             if binding and meb_resource is not None:
                 identity = correlation["resource_identity"] or {}
-                if binding.get("resource_sha256") and identity.get("resource_sha256"):
-                    same_resource = binding["resource_sha256"] == identity["resource_sha256"]
-                elif binding.get("resource_path") and identity.get("resource_path"):
-                    same_resource = _norm(binding["resource_path"]) == _norm(identity["resource_path"])
+                same_resource = _same_resource_identity(binding, identity)
 
             binding_ptr = binding.get("declaration_ptr")
             bound_decl = declarations.get(binding_ptr) if binding_ptr else None
