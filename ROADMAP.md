@@ -956,3 +956,15 @@ compatible.
 The external evidence gate is unchanged: an authentic retail D3D9 capture proving
 one BMW M3 draw instance is still required before a full runtime render can be
 claimed.
+
+## Phase 191: capture provenance and event-stream continuity
+
+`SHIFT.D3D9RuntimeCaptureManifest/1` now records a SHA-256 fingerprint of the
+capture artifact, optional producer binary fingerprint, schema statistics and an
+explicitly unverified authenticity state. The manifest never upgrades a capture
+to authentic by itself.
+
+Runtime integrity now checks native event_index continuity. A complete producer
+stream must have contiguous indices; legacy fixtures with no event_index remain
+accepted. The BMW post-capture pipeline emits the provenance manifest before
+runtime correlation and treats structural manifest failures as blocking.
