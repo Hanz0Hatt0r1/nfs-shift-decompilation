@@ -1615,6 +1615,29 @@ def cmd_camera_switch_gate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_event_stream(args: argparse.Namespace) -> int:
+    """Decode the source-backed camera event stream/channel dispatch."""
+    from camera_event_stream_runtime import dispatch_camera_event_stream
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    events = payload["events"] if isinstance(payload, dict) else payload
+    active_channel = payload.get("active_channel", 0) if isinstance(payload, dict) else args.channel
+    result = dispatch_camera_event_stream(events, active_channel=active_channel)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "active_channel": result["active_channel"],
+        "accepted_count": result["accepted_count"],
+        "filtered_count": result["filtered_count"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_command(args: argparse.Namespace) -> int:
     """Decode the source-backed camera command dispatch record."""
     from camera_command_runtime import dispatch_camera_command
@@ -3516,6 +3539,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="JSON switch request/state")
     p.add_argument("output", help="SHIFT.CameraSwitchGateRuntime/2 JSON output")
     p.set_defaults(fn=cmd_camera_switch_gate)
+
+    p = sp.add_parser("camera-event-stream", help="decode recovered camera event channel dispatch")
+    p.add_argument("input", help="JSON object containing events and active_channel")
+    p.add_argument("output", help="SHIFT.CameraEventStreamRuntime/1 JSON output")
+    p.add_argument("--channel", type=int, default=0, help="fallback active channel for JSON arrays")
+    p.set_defaults(fn=cmd_camera_event_stream)
 
     p = sp.add_parser("camera-command", help="decode recovered camera command dispatch")
     p.add_argument("input", help="JSON command array or object containing command")
