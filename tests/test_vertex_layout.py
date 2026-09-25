@@ -69,6 +69,11 @@ def test_vertex_layout_uses_consistent_unknown_abi_schema():
 
 
 def test_verified_color_bridge_resolves_color_layout_without_changing_default():
+    import vertex_layout
+    from pathlib import Path
+    assert Path(vertex_layout.__file__).resolve() == (Path(__file__).resolve().parents[1] / "vertex_layout.py")
+    assert vertex_layout.D3DDECLTYPES["460"]["confidence"] == "ambiguous-declaration-and-channel-order"
+    assert vertex_layout.D3DDECLTYPES["461"]["confidence"] == "ambiguous-channel-order"
     bridge = {
         "format": "SHIFT.MEBD3D9ColorBridgeEvidence/1",
         "verified_abi": True,
