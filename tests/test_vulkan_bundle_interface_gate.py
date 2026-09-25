@@ -128,3 +128,17 @@ def test_interface_gate_rejects_vertex_stage_texture_descriptor(tmp_path):
     result = validate_bmw_vulkan_interface(tmp_path, report)
     assert result["ready"] is False
     assert "vulkan-interface:set1-stage-unsupported:1:vertex" in result["blocking_reasons"]
+
+
+def test_interface_gate_rejects_duplicate_reflected_descriptor(tmp_path):
+    _manifest(tmp_path)
+    _write_texture_packet(tmp_path, [1])
+    report = _report([
+        {"set": 1, "binding": 1, "descriptor_type": "combined-image-sampler",
+         "resource_type": "sampler2D", "stage": "fragment"},
+        {"set": 1, "binding": 1, "descriptor_type": "combined-image-sampler",
+         "resource_type": "sampler2D", "stage": "fragment"},
+    ])
+    result = validate_bmw_vulkan_interface(tmp_path, report)
+    assert result["ready"] is False
+    assert "vulkan-interface:duplicate-reflected-descriptor" in result["blocking_reasons"]
