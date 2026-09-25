@@ -6,6 +6,7 @@ from typing import Any, Mapping
 from bmw_bff_intake import EXPECTED_MEB_SHA256
 from bmw_runtime_shader_join import _runtime_draw_states
 from d3d9_draw_snapshot_schema import validate_draw_snapshot, validate_draw_snapshot_alignment
+from runtime_resource_identity import match_resource_identity
 
 FORMAT = "SHIFT.BMWRuntimeCapturePreflight/1"
 TARGET_MEB = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
@@ -15,29 +16,16 @@ PAINT_RANGES = (
 )
 
 
-def _norm(value: Any) -> str:
-    return str(value or "").replace("\\", "/").strip("/").lower()
-
-
 def _resource_identity(
     binding: Mapping[str, Any],
     expected_resource_sha: str | None,
     expected_resource_path: str,
-) -> tuple[bool, str]:
-    actual_sha = binding.get("resource_sha256")
-    actual_path = binding.get("resource_path")
-    if expected_resource_sha:
-        if not actual_sha:
-            if actual_path and _norm(actual_path) == _norm(expected_resource_path):
-                return False, "path-match-sha-missing"
-            return False, "sha-missing"
-        if str(actual_sha).strip().lower() == str(expected_resource_sha).strip().lower():
-            return True, "exact-sha-match"
-        return False, "sha-mismatch"
-    if actual_path and _norm(actual_path) == _norm(expected_resource_path):
-        return True, "path-match"
-    return False, "path-mismatch"
-
+) -> tuple[bool | None, str]:
+    return match_resource_identity(
+        binding,
+        expected_sha256=expected_resource_sha,
+        expected_path=expected_resource_path,
+    )
 
 def _draw_rows(
     frame: Mapping[str, Any],
