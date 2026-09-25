@@ -71,7 +71,7 @@ struct Image {
 
 struct GeometryPacket {
     PacketHeader header{};
-    PacketAttribute attribute{};
+    std::vector<PacketAttribute> attributes;
     std::vector<uint8_t> vertex_bytes;
     std::vector<uint32_t> indices;
 };
@@ -302,25 +302,57 @@ GeometryPacket parse_packet(const std::string& path) {
     GeometryPacket packet{};
     std::memcpy(&packet.header, data.data(), sizeof(packet.header));
     if (std::memcmp(packet.header.magic, "SVGP", 4) != 0 ||
-        packet.header.version != 1) {
+        (packet.header.version != 1 && packet.header.version != 2)) {
         throw std::runtime_error("unsupported SHIFT Vulkan geometry packet");
     }
     if (packet.header.vertex_count == 0 ||
         packet.header.index_count == 0 ||
         packet.header.stride == 0 ||
-        packet.header.attribute_count != 1) {
+        packet.header.attribute_count == 0 ||
+        packet.header.attribute_count > 16) {
         throw std::runtime_error("invalid geometry packet counts/stride/attribute count");
     }
-    std::memcpy(
-        &packet.attribute,
-        data.data() + sizeof(packet.header),
-        sizeof(packet.attribute));
 
-    if (packet.attribute.format != 1 ||
-        packet.attribute.location > 15 ||
-        packet.attribute.offset + 12 > packet.header.stride ||
-        packet.attribute.stride != packet.header.stride) {
-        throw std::runtime_error("unsupported POSITION vertex attribute");
+    const size_t attribute_bytes =
+        static_cast<size_t>(packet.header.attribute_count) * sizeof(PacketAttribute);
+    if (sizeof(packet.header) + attribute_bytes > data.size()) {
+        throw std::runtime_error("geometry packet attribute table is truncated");
+    }
+    packet.attributes.resize(packet.header.attribute_count);
+    std::memcpy(
+        packet.attributes.data(),
+        data.data() + sizeof(packet.header),
+        attribute_bytes);
+
+    auto format_size = [](uint32_t format) -> uint32_t {
+        switch (format) {
+            case 1: return 8;
+            case 2: return 12;
+            case 3: return 16;
+            case 4: return 4;
+            case 5: return 4;
+            default: return 0;
+        }
+    };
+
+    bool position_seen = false;
+    for (const PacketAttribute& attribute : packet.attributes) {
+        const uint32_t bytes = format_size(attribute.format);
+        if (bytes == 0 ||
+            attribute.location > 15 ||
+            attribute.offset + bytes > packet.header.stride ||
+            attribute.stride != packet.header.stride) {
+            throw std::runtime_error("unsupported Vulkan vertex attribute");
+        }
+        if (attribute.location == 0) {
+            if (attribute.format != 2 || position_seen) {
+                throw std::runtime_error("POSITION0 must be exactly one FLOAT3 attribute at location 0");
+            }
+            position_seen = true;
+        }
+    }
+    if (!position_seen) {
+        throw std::runtime_error("geometry packet has no POSITION0 at location 0");
     }
     if (packet.header.index_count % 3 != 0) {
         throw std::runtime_error("geometry packet is not triangle-list data");
@@ -331,7 +363,7 @@ GeometryPacket parse_packet(const std::string& path) {
     const uint64_t index_bytes =
         static_cast<uint64_t>(packet.header.index_count) * sizeof(uint32_t);
     const uint64_t required =
-        sizeof(packet.header) + sizeof(packet.attribute) +
+        sizeof(packet.header) + attribute_bytes +
         vertex_bytes + index_bytes;
     if (required != data.size() ||
         vertex_bytes > std::numeric_limits<size_t>::max() ||
@@ -340,7 +372,7 @@ GeometryPacket parse_packet(const std::string& path) {
     }
 
     const size_t vertex_offset =
-        sizeof(packet.header) + sizeof(packet.attribute);
+        sizeof(packet.header) + attribute_bytes;
     const size_t index_offset =
         vertex_offset + static_cast<size_t>(vertex_bytes);
     packet.vertex_bytes.assign(
@@ -621,18 +653,37 @@ int main(int argc, char** argv) {
         binding.stride = packet.header.stride;
         binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-        VkVertexInputAttributeDescription attribute{};
-        attribute.location = packet.attribute.location;
-        attribute.binding = 0;
-        attribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-        attribute.offset = packet.attribute.offset;
+        auto vk_format = [](uint32_t format) -> VkFormat {
+            switch (format) {
+                case 1: return VK_FORMAT_R32G32_SFLOAT;
+                case 2: return VK_FORMAT_R32G32B32_SFLOAT;
+                case 3: return VK_FORMAT_R32G32B32A32_SFLOAT;
+                case 4: return VK_FORMAT_R8G8B8A8_UNORM;
+                case 5: return VK_FORMAT_R8G8B8A8_UINT;
+                default: return VK_FORMAT_UNDEFINED;
+            }
+        };
+
+        std::vector<VkVertexInputAttributeDescription> attributes;
+        attributes.reserve(packet.attributes.size());
+        for (const PacketAttribute& input : packet.attributes) {
+            VkVertexInputAttributeDescription output{};
+            output.location = input.location;
+            output.binding = 0;
+            output.format = vk_format(input.format);
+            output.offset = input.offset;
+            if (output.format == VK_FORMAT_UNDEFINED) {
+                throw std::runtime_error("geometry packet contains unknown Vulkan attribute format");
+            }
+            attributes.push_back(output);
+        }
 
         VkPipelineVertexInputStateCreateInfo vertex_input{};
         vertex_input.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertex_input.vertexBindingDescriptionCount = 1;
         vertex_input.pVertexBindingDescriptions = &binding;
-        vertex_input.vertexAttributeDescriptionCount = 1;
-        vertex_input.pVertexAttributeDescriptions = &attribute;
+        vertex_input.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+        vertex_input.pVertexAttributeDescriptions = attributes.data();
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly{};
         input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -820,7 +871,7 @@ int main(int argc, char** argv) {
         std::cout << "  \"vertex_count\": " << packet.header.vertex_count << ",\n";
         std::cout << "  \"index_count\": " << packet.header.index_count << ",\n";
         std::cout << "  \"stride\": " << packet.header.stride << ",\n";
-        std::cout << "  \"position_location\": " << packet.attribute.location << ",\n";
+        std::cout << "  \"attribute_count\": " << packet.attributes.size() << ",\n";
         std::cout << "  \"depth_format\": " << static_cast<int>(depth_format) << ",\n";
         std::cout << "  \"output\": \"" << output << "\"\n";
         std::cout << "}\n";
