@@ -1130,3 +1130,25 @@ SHIFT.VulkanConstantPacket/1 bridge rejects stage-ambiguous registers and preser
 The checkpoint proves actual constant buffer upload and descriptor binding. The next
 step is to combine the same descriptor path with a translated ShaderProgram and then
 with real RenderCommand material resources.
+
+ 
+## Phase 214: Vulkan texture descriptors
+
+RenderCommand sampler resources now have a versioned SHIFT.VulkanTexturePacket/1
+handoff. Vulkan uploads RGBA8 images and binds combined image samplers in descriptor
+set 1 using the original D3D9 sampler register as the binding. Vulkan shader emission
+also uses set 1 for sampled textures, keeping set 0 reserved for VS/PS constants.
+
+The checkpoint currently supports the proven nearest/linear REPEAT/CLAMP subset and
+uses a synthetic s1 texture shader. Real BMW DDS ingestion and samplerCube remain next.
+
+
+## Phase 214: Vulkan texture descriptors
+
+SHIFT.VulkanTexturePacket/1 now serializes RenderCommand 2D sampler resources as
+RGBA8 base-level images plus explicit sampler modes. Native Vulkan uploads those images,
+creates combined-image-sampler descriptors in set 1 and preserves the D3D9 sampler register
+as the binding. ShaderProgram Vulkan emission uses set 1 for texture samplers.
+
+This phase is a synthetic sampled-texture checkpoint. Real BMW DDS ingestion and the
+samplerCube/environment resource remain next.

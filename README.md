@@ -665,3 +665,9 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Vulkan constant upload:** Phase 213 adds SHIFT.VulkanConstantPacket/1 and a native descriptor upload checkpoint. D3D9 c-register banks are kept separate: VS at binding 14 and PS at binding 15. Ambiguous stage mapping is fail-closed.
+
+ 
+> **Vulkan textures:** Phase 214 adds SHIFT.VulkanTexturePacket/1 and a native RGBA8 image/sampler upload path. D3D9 sampler registers are preserved as Vulkan descriptor-set-1 bindings; set 0 remains dedicated to VS/PS constants.
+
+
+> **Vulkan textures:** Phase 214 adds a real RGBA8 image/sampler descriptor path. D3D9 sampler registers are preserved as Vulkan set 1 bindings; set 0 remains reserved for VS/PS constants. The current smoke shader exercises s1.
