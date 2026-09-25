@@ -68,12 +68,10 @@ def test_invalid_magic_rejected():
 
 
 def test_node_object_payload_is_decoded_when_bounded():
-    object_header = struct.pack("<10I", 44, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-    object_data = object_header + b"OBJECT\0"
-    # Node record points at the object payload relative to the NODE chunk.
+    object_header = struct.pack("<9I", 40, 48, 56, 0, 0, 0, 0, 0, 0)
+    object_data = object_header + b"\0\0\0\0" + b"OBJECT\0SOURCE\0AUX\0"
     node_record = struct.pack("<IIIIIIII", 32, 0, 48, 0, 0, 1, 0, 44)
-    payload = struct.pack("<I", 1) + node_record
-    payload += object_data
+    payload = struct.pack("<I", 1) + node_record + object_data
     data = _header() + _chunk("NODE", payload) + _chunk("END ", b"")
     row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
     assert row["object_payload"]["decoded"] is True
