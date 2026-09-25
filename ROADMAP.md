@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 195. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 196. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -995,3 +995,20 @@ only when an actual PE image supplies the table bytes.
 `SHIFT.D3D9UsageMap/1` converts the decoded PE Usage table into the exact ordinal
 map consumed by declaration parity. The map is ready only when all nine ordinals
 are present, and it explicitly disallows inference.
+
+
+## Phase 196: BMW M3 KIT00 test scene
+
+A reproducible BMW M3 test scene is now defined at
+`tests/scenes/bmw_m3_e36_kit00_test_scene.json` and rendered by
+`bmw_test_scene.py`. It pins the supplied `BMW_M3_E36.bff` by SHA-256, uses the
+real `vehicles/bmw_m3_e36/bmw_m3_e36.vhf` scene with KIT00/LODA selection, and
+covers 27 renderable vehicle parts on the geometry-preview path.
+
+Four deterministic camera views are tracked externally at 1600x900:
+front-left, rear-right, side and front. Their SHA-256 values are stored in the scene
+manifest. The screenshots use a neutral presentation layer for readability; the
+underlying vehicle geometry is unchanged.
+
+This checkpoint does not claim final `bodywork.fx` material execution or an
+authentic retail D3D9 runtime capture.
