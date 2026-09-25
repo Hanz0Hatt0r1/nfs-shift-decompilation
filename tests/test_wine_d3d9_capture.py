@@ -127,7 +127,7 @@ static HRESULT WINAPI d3d9_device_DrawIndexedPrimitive(IDirect3DDevice9Ex *iface
     return D3D_OK;
 }
 
-static HRESULT WINAPI d3d9_device_Present(IDirect3DDevice9Ex *iface,
+static HRESULT WINAPI DECLSPEC_HOTPATCH d3d9_device_Present(IDirect3DDevice9Ex *iface,
         const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override, const RGNDATA *dirty_region)
 {
     wined3d_mutex_unlock();
