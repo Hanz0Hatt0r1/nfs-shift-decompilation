@@ -104,8 +104,8 @@ def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str,
         if cursor + 48 > end:
             raise SGBRuntimeDecodeError(f"PART record {index} header exceeds chunk")
         partition_id = _i32(data, cursor)
-        bbox_min = [_f32(data, cursor + 8), _f32(data, cursor + 12), _f32(data, cursor + 16)]
-        bbox_max = [_f32(data, cursor + 20), _f32(data, cursor + 24), _f32(data, cursor + 28)]
+        bbox_min = [_f32(data, cursor + 4), _f32(data, cursor + 8), _f32(data, cursor + 12)]
+        bbox_max = [_f32(data, cursor + 16), _f32(data, cursor + 20), _f32(data, cursor + 24)]
         fixed_flag = _u32(data, cursor + 28)
         fixed_quad = [_i32(data, cursor + 28 + 4 * i) for i in range(4)]
         child_count = _u32(data, cursor + 44)
