@@ -15,10 +15,10 @@ def test_base_reset_uses_exact_vtable_and_reset_helper():
 
 def test_base_constructor_keeps_projection_raw_bits():
     result = describe_refcounted_base_constructor()
-    assert result["writes"]["+0x44"] == 0x3F490FDB
-    assert result["writes"]["+0x48"] == 0x3FAAAAAB
-    assert result["writes"]["+0x4c"] == 0x3DCCCCCD
-    assert result["writes"]["+0x50"] == 0x443B8000
+    assert result["writes"]["+0x34"] == 0x3F490FDB
+    assert result["writes"]["+0x38"] == 0x3FAAAAAB
+    assert result["writes"]["+0x3c"] == 0x3DCCCCCD
+    assert result["writes"]["+0x40"] == 0x443B8000
 
 
 def test_base_copy_has_exactly_thirteen_dwords():
