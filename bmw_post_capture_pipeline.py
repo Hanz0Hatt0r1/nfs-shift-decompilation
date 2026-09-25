@@ -94,6 +94,7 @@ def run_pipeline(
         "stages": {
             "material_binding": material.get("status"),
             "runtime_trace": runtime.get("status"),
+            "runtime_same_instance_gate": (runtime.get("same_instance_gate") or {}).get("status", "not-proven"),
             "shader_selection": selection.get("status"),
             "runtime_render_contract": "not-run",
             "shader_render": "not-run",
@@ -103,6 +104,15 @@ def run_pipeline(
 
     if not selection.get("ready"):
         result["blocking_reasons"] = list(selection.get("blocking_reasons") or [])
+        _write(out / "pipeline_result.json", result)
+        return result
+
+    same_instance = runtime.get("same_instance_gate") or {}
+    if same_instance.get("ready") is not True:
+        result["blocking_reasons"] = [
+            "runtime-same-instance:" + str(reason)
+            for reason in (same_instance.get("blocking_reasons") or ["not-proven"])
+        ]
         _write(out / "pipeline_result.json", result)
         return result
 
