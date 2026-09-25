@@ -1118,3 +1118,15 @@ shader_backend.py adds optional glslangValidator Vulkan-target compilation/linki
 
 The D3D9 float constant bank remains the explicit UBO binding 14 contract. Native
 Vulkan descriptor/resource upload is the next stage.
+
+
+## Phase 213: Vulkan D3D9 constant upload
+
+The native Vulkan path now creates descriptor-backed 4096-byte VS/PS constant banks at
+set 0 bindings 14 and 15 and binds them to a synthetic offscreen draw. The Python
+SHIFT.VulkanConstantPacket/1 bridge rejects stage-ambiguous registers and preserves the
+16-byte D3D9 c-register layout.
+
+The checkpoint proves actual constant buffer upload and descriptor binding. The next
+step is to combine the same descriptor path with a translated ShaderProgram and then
+with real RenderCommand material resources.
