@@ -53,6 +53,10 @@ def test_runtime_capture_preflight_finds_exact_bmw_paint_draw():
     runtime = _runtime(same_instance_ready=True)
     runtime["frames"] = [{
         "frame": 7,
+        "draws": [
+            {"start_index": 0, "primitive_count": 50, "base_vertex_index": 0},
+            {"start_index": 150, "primitive_count": 2098, "base_vertex_index": 0},
+        ],
         "draw_snapshots": [
             _snapshot("abc", 0, 50, draw_index=0),
             _snapshot("abc", 150, 2098, draw_index=1),
