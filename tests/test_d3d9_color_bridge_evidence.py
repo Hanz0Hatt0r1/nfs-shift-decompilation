@@ -341,7 +341,7 @@ def test_bridge_accepts_exact_pe_backed_color_abi():
         pe_evidence=pe,
     )
     assert result["pe_color_abi"]["status"] == "observed"
-    assert result["pe_color_abi"]["type_4"]["d3d9_type"] == "D3DECLTYPE_D3DCOLOR"
+    assert result["pe_color_abi"]["type_4"]["d3d9_type"] == "D3DDECLTYPE_D3DCOLOR"
     assert result["pe_color_abi"]["usage_6"]["numeric_d3d9_usage"] == 10
     assert result["meb_property_mapping"]["status"] == "observed"
 
