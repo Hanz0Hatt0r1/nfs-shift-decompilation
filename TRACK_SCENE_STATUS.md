@@ -5,3 +5,8 @@ The existing SHIFT.SGB parser is a verified container boundary: 16-byte header, 
 Phase 6 adds SHIFT.TrackScene/1 aggregation on top of that boundary. Path-like references inside chunk payloads are recovered as provenance records with byte offsets and encoding; supported resource kinds include MEB geometry, BMT/MTX materials, DDS textures, CSM collision meshes, VHF scene sources and FX/FXO shader resources.
 
 Track placement is intentionally not inferred. The current scene manifest reports placement.status=unknown until the NODE/FLAT/SUMM payload grammar is proven against real SGB samples.
+
+
+## Phase 250/251: binary SGB and embedded object runtime
+
+The binary SGB container now has a source-backed runtime decoder for NODE, PART, SUMM, OCCL and FLAT boundaries. NODE payload offsets are further decoded through FUN_0069bc50/FUN_0069a6c0 for OBJECT/HIERARCHY/DAMAGE dispatch. Unresolved FLAT body semantics and deeper object field names remain explicitly opaque.
