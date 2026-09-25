@@ -481,18 +481,22 @@ def build_runtime_binding_evidence(
                     else []
                 )
                 + (
+                    # This is intentionally diagnostic only. Proof is never
+                    # taken from frame-level aggregate state: a valid BMW
+                    # declaration can be bound before/after a different draw.
                     ["descriptor:bound-instance-no-match"]
                     if usage_ordinal_map is not None
                     and not same_instance_candidates
                     and any(
                         x["binding"].get("same_meb_resource") is True
+                        and x["binding"].get("bound_declaration_valid") is True
                         for x in frame_rows
                     )
-                    and any(
-                        x.get("bound_declaration_valid") is True
-                        for x in valid_bound_frames
+                    and not any(
+                        snapshot.get("descriptor_matches")
+                        for frame in frame_rows
+                        for snapshot in (frame.get("draw_snapshots") or [])
                     )
-                    and not any(x.get("descriptor_matches") for x in valid_bound_frames)
                     else []
                 )
                 + (
@@ -504,8 +508,14 @@ def build_runtime_binding_evidence(
                         for x in frame_rows
                     )
                     and not any(
-                        x.get("indexed_draw_present") is True
-                        for x in valid_bound_frames
+                        frame.get("draw_snapshots")
+                        and any(
+                            snapshot.get("vertex_declaration", {}).get("resource_sha256")
+                            and snapshot.get("same_meb_resource") is True
+                            and snapshot.get("bound_declaration_valid") is True
+                            for snapshot in frame.get("draw_snapshots") or []
+                        )
+                        for frame in frame_rows
                     )
                     else []
                 )
