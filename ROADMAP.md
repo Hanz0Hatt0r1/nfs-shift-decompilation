@@ -1292,3 +1292,8 @@ The source-backed binary SGB decoder now reconstructs the top-level 16-byte head
 ## Phase 251: embedded SGB object runtime
 
 The NODE eighth field is now followed into the recovered FUN_0069bc50/FUN_0069a6c0 object parser. The new sgb_object_runtime.py reconstructs OBJECT/HIERARCHY/DAMAGE dispatch, the common header string offsets, hierarchy count/type bytes, and the 9-dword HIERARCHY child record copy order. sgb_runtime.py now attaches these reports to NODE records using bounded payload ranges. Unknown transform/material semantics remain raw.
+
+
+## Phase 252: FLAT tree runtime
+
+The binary SGB decoder now follows FLAT into the runtime tree copied by FUN_0068a8b0. flat_runtime.py reconstructs the 0x20-byte tree header, direct-record count at +0x18, low-24-bit node span and high-byte runtime marker at +0x1c, 0x40-byte leaf records, recursive child trees, and the leaf +0x3c index used by FUN_006af780. Leaf payload semantics remain raw.
