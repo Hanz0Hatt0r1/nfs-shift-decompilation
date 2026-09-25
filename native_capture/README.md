@@ -96,3 +96,30 @@ For PortProton/Wine, force the local native proxy with:
     WINEDLLOVERRIDES="d3d9=n"
 
 For the first diagnostic run, leave screenshot and texture snapshots disabled and inspect the JSONL event counts after the game starts. If no JSONL file is created, the next diagnostic is Wine DLL-load tracing with `WINEDEBUG=+loaddll`.
+
+### Linux → Windows (32-bit) cross-build
+
+On Linux, do not use the `MinGW Makefiles` generator. That generator is only
+available when CMake itself is running on Windows. Use Ninja (or Unix Makefiles)
+with the supplied i686 MinGW toolchain:
+
+    cmake -S native_capture -B native_capture/build-mingw \
+      -G Ninja \
+      -DCMAKE_TOOLCHAIN_FILE=native_capture/toolchains/mingw-i686.cmake
+
+    cmake --build native_capture/build-mingw -j"$(nproc)"
+
+The resulting proxy is:
+
+    native_capture/build-mingw/d3d9.dll
+
+Check that the DLL is a 32-bit PE and that the MinGW runtime is not a DLL
+dependency:
+
+    file native_capture/build-mingw/d3d9.dll
+    objdump -p native_capture/build-mingw/d3d9.dll | grep -Ei 'libgcc|libstdc|winpthread'
+
+The second command should produce no matches.
+
+The cross compiler must be installed as `i686-w64-mingw32-g++`. On
+Debian/Ubuntu this is normally provided by the `g++-mingw-w64-i686` package.
