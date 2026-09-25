@@ -103,3 +103,19 @@ Build and run the synthetic constant checkpoint with:
     cmake -S native_vulkan -B native_vulkan/build
     cmake --build native_vulkan/build --config Release
     ./native_vulkan/build/shift_vulkan_constant_upload       out/constants.svcp       out/constants.ppm       native_vulkan/build/shaders
+
+
+## Texture descriptor upload
+
+Phase 214 maps D3D9 sampler registers to Vulkan descriptor set 1. Generate a texture
+packet from a RenderCommand with:
+
+    python vulkan_texture_packet.py render_command.json textures.json out/textures.svtp
+
+Run the native checkpoint with:
+
+    ./native_vulkan/build/shift_vulkan_texture_upload       out/textures.svtp       out/textured.ppm       native_vulkan/build/shaders
+
+The current smoke shader samples s1 and therefore the packet must contain sampler
+register s1. Additional packet registers are upload-capable but are not consumed by
+the fixed smoke shader.
