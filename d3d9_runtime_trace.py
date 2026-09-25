@@ -438,6 +438,8 @@ def build_runtime_binding_evidence(
             bound_decl = declarations.get(binding_ptr) if binding_ptr else None
             bound_decl_decoded = (bound_decl or {}).get("decoded") or {}
             bound_decl_valid = bool(bound_decl and bound_decl_decoded.get("status") == "match")
+            snapshot_schema_reasons = validate_draw_snapshot(snapshot)
+            snapshot_schema_valid = not snapshot_schema_reasons
             frame_candidate = {
                 "frame": frame.get("frame"),
                 "draw_index": snapshot.get("draw_index"),
@@ -448,10 +450,12 @@ def build_runtime_binding_evidence(
                 "declaration_decode_status": bound_decl_decoded.get("status"),
                 "bound_declaration_valid": bound_decl_valid,
                 "indexed_draw_present": True,
+                "snapshot_schema_status": "valid" if snapshot_schema_valid else "invalid",
+                "snapshot_schema_blocking_reasons": snapshot_schema_reasons,
                 "descriptor_matches": [],
             }
 
-            if bound_decl_valid and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
+            if snapshot_schema_valid and bound_decl_valid and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
                 bound_records = bound_decl_decoded.get("records", [])
                 for descriptor in meb_resource.get("property_descriptors", []):
                     if not isinstance(descriptor, Mapping):
@@ -477,9 +481,9 @@ def build_runtime_binding_evidence(
                             "record_indices": [record.get("index") for record in matched_records],
                         })
 
-            if bound_decl_valid and same_resource is True:
+            if snapshot_schema_valid and bound_decl_valid and same_resource is True:
                 valid_bound_frames.append(frame_candidate)
-            if frame_candidate["descriptor_matches"]:
+            if snapshot_schema_valid and frame_candidate["descriptor_matches"]:
                 same_instance_candidates.append(frame_candidate)
 
     return {
