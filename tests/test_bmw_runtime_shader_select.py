@@ -372,3 +372,28 @@ def test_select_runtime_shader_returns_exact_draw_index():
     assert report["ready"] is True
     assert report["selected"]["draw_index"] == 4
     assert report["selected"]["source"] == "draw-snapshot"
+
+
+def test_select_runtime_shader_rejects_malformed_versioned_snapshot():
+    runtime = {
+        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
+        "frames": [{
+            "frame": 17,
+            "draw_snapshots": [{
+                "format": "SHIFT.D3D9DrawStateSnapshot/999",
+                "frame": 17,
+                "draw_index": 0,
+                "draw": {"start_index": 0, "primitive_count": 1, "base_vertex_index": 0},
+                "vertex_declaration": {
+                    "resource_sha256": "m" * 64,
+                    "resource_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+                },
+                "shader_permutation_identity": {
+                    "identity_sha256": "i" * 64,
+                },
+            }],
+        }],
+    }
+    report = select_runtime_shader(_material(), runtime)
+    assert report["ready"] is False
+    assert report["matches"] == []
