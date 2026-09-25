@@ -124,7 +124,7 @@ def _texture_stage_status(
     if not stages:
         return True, []
     latest: dict[int, Any] = {}
-    for row in frame.get("texture_bindings") or []:
+    for row in (frame.get("active_texture_bindings") or frame.get("texture_bindings") or []):
         if not isinstance(row, Mapping):
             continue
         try:
@@ -146,7 +146,7 @@ def _texture_stage_contract(
     if not stages:
         return True, []
     latest: dict[int, Mapping[str, Any]] = {}
-    for row in frame.get("texture_bindings") or []:
+    for row in (frame.get("active_texture_bindings") or frame.get("texture_bindings") or []):
         if not isinstance(row, Mapping):
             continue
         try:
