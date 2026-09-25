@@ -13,11 +13,13 @@ def _dds_header(width=4, height=4, *, fourcc=b"", caps2=0):
         124, 0, height, width, 0, 0, 1,
         *([0] * 11),
         32, pf_flags, pf_fourcc, 0,
-        0, 0, 0, 0,
+        0,
         caps2, 0, 0, 0, 0,
     )
     header = struct.pack("<31I", *values)
     assert len(header) == 124
+    assert struct.unpack_from("<I", header, 108)[0] == 0
+    assert struct.unpack_from("<I", header, 112)[0] == caps2
     return b"DDS " + header
 
 
