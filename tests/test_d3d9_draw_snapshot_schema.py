@@ -1,4 +1,8 @@
-from d3d9_draw_snapshot_schema import validate_draw_snapshot, validate_draw_snapshots
+from d3d9_draw_snapshot_schema import (
+    validate_draw_snapshot,
+    validate_draw_snapshots,
+    validate_draw_snapshot_alignment,
+)
 
 
 def _snapshot():
