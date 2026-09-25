@@ -13,6 +13,5 @@ The Python runner:
 The native executable consumes only binary bundle artifacts and does not parse BFF,
 MEB, BMT or RenderCommand JSON.
 
-The native renderer uses neutral raster state. Retail blend/raster state, shader
-semantic completeness and runtime-derived resource contents remain separate evidence
-and parity work.
+The native renderer uses neutral raster state. Retail blend/raster state, shader semantic
+completeness and runtime-derived resource contents remain separate evidence and parity work.
