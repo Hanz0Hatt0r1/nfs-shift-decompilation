@@ -276,3 +276,31 @@ def test_runtime_capture_preflight_normalizes_exact_sha_case_and_whitespace():
     runtime["frames"] = [{"frame": 7, "draw_snapshots": [snapshot]}]
     report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
     assert report["paint_draw_candidates"][0]["draw_index"] == 0
+
+
+def test_runtime_capture_preflight_exposes_path_match_without_sha_as_diagnostic():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["frames"] = [{
+        "frame": 7,
+        "draw_snapshots": [{
+            **_snapshot("abc", 150, 2098, draw_index=0),
+            "vertex_declaration": {
+                "declaration_ptr": "0x1",
+                "resource_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+            },
+        }],
+    }]
+    report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
+    assert report["resource_draw_candidates"] == []
+    assert report["resource_identity_diagnostics"][0]["resource_identity_status"] == "path-match-sha-missing"
+    assert "runtime:target-paint-draw-not-observed" in report["blocking_reasons"]
+
+
+def test_runtime_capture_preflight_reports_sha_mismatch_diagnostic():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["frames"] = [{
+        "frame": 7,
+        "draw_snapshots": [_snapshot("wrong", 150, 2098, draw_index=0)],
+    }]
+    report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
+    assert report["resource_identity_diagnostics"][0]["resource_identity_status"] == "sha-mismatch"
