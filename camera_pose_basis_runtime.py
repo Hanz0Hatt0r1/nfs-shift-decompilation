@@ -95,6 +95,7 @@ def describe_external_source_state(
     external_id: Any,
     opaque_position_output: Sequence[float],
     opaque_orientation_scalar: float,
+    helper_9024d0_result: float,
     global_angle_offset: float,
     source_vtable_fov_result: float,
     service_object_present: bool = True,
@@ -110,9 +111,6 @@ def describe_external_source_state(
             "actions": [],
         }
 
-    orientation_x = float(global_angle_offset) - float(global_angle_offset)
-    _ = orientation_x  # keeps the source helper result boundary explicit
-
     return {
         "format": FORMAT,
         "version": 1,
@@ -124,7 +122,7 @@ def describe_external_source_state(
             "+0x10": position[0],
             "+0x14": position[1],
             "+0x18": position[2],
-            "+0x1c": float(global_angle_offset) - float(global_angle_offset),
+            "+0x1c": float(helper_9024d0_result) - float(global_angle_offset),
             "+0x20": float(opaque_orientation_scalar),
             "+0x24": 0.0,
             "+0x34": float(source_vtable_fov_result),
@@ -152,7 +150,7 @@ def describe_external_source_state(
             },
             {
                 "action": "FUN_009024d0",
-                "result": float(global_angle_offset),
+                "result": float(helper_9024d0_result),
             },
             {
                 "action": "source slot +0x34()",
