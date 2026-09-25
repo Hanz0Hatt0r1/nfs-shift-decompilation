@@ -1,5 +1,27 @@
 from d3d9_runtime_pe_semantic_parity import validate_runtime_against_pe
-from tests.test_d3d9_pe_semantic_map import _report
+
+
+def _report():
+    return {
+        "format": "SHIFT.PEImageEvidence/1",
+        "image": {"image_base": "0x00400000", "machine": "0x014c"},
+        "decoded_tables": {
+            "type_code": [{"ordinal": i, "value": i} for i in range(20)],
+            "type_size": [
+                {"ordinal": i, "value": value}
+                for i, value in enumerate([4,8,12,16,4,4,4,8,4,4,8,4,8,4,4,4,8,0])
+            ],
+            "type_components": [
+                {"ordinal": i, "value": value}
+                for i, value in enumerate([1,2,3,4,4,4,2,4,4,2,4,2,4,3,3,2,4,0])
+            ],
+            "usage": [
+                {"ordinal": i, "value": value}
+                for i, value in enumerate([0,1,3,5,6,7,10,12,2])
+            ],
+        },
+        "type_name_pointers": [{"ordinal": 4, "string": "RGBA32"}],
+    }
 
 
 def _runtime(records):
