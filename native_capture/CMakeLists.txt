@@ -19,9 +19,11 @@ if (MSVC)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # PortProton/Wine only needs the proxy itself. Avoid requiring the MinGW
   # libgcc/libstdc++/winpthread DLLs next to the retail game executable.
+  # Force the complete MinGW runtime into the proxy so winpthread does not
+  # remain a DLL dependency alongside the retail game executable.
   target_link_options(shift_d3d9_capture PRIVATE
+    -static
     -static-libgcc
     -static-libstdc++
-    "-Wl,-Bstatic,-lwinpthread,-Bdynamic"
   )
 endif()
