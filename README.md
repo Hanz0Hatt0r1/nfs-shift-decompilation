@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 249.**
+> **Current mainline: Phase 250.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -754,3 +754,8 @@ the opaque SGB chunk grammar. It captures NODE resource/variation flags,
 TRANSFORM position/orientation/scale, LIGHT types and angle conversion, and
 partition child-reference parsing. Renderer and RENDER.bff work remain outside
 this phase.
+
+
+## Binary SGB runtime
+
+Phase 250 adds sgb_runtime.py and the sgb-runtime CLI. It reconstructs the runtime-visible SGB header and the NODE, PART, SUMM, OCCL and FLAT chunk boundaries/fields from the retail SHIFT.exe.c. Unproven object payload and flat-body semantics remain preserved as opaque data. No renderer or RENDER.bff changes are included.
