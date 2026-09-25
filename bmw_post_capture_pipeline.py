@@ -54,6 +54,8 @@ def run_pipeline(
     *,
     usage_map: dict[int, int] | None = None,
     snapshot_root: str | Path | None = None,
+    producer_binary: str | Path | None = None,
+    retail_executable: str | Path | None = None,
     allow_resource_mismatch: bool = False,
     render_width: int = 1200,
     render_height: int = 800,
@@ -71,7 +73,12 @@ def run_pipeline(
     _write(out / "mesh.json", mesh)
 
     events = load_events(runtime_capture)
-    capture_manifest = build_capture_manifest(runtime_capture, events=events)
+    capture_manifest = build_capture_manifest(
+        runtime_capture,
+        events=events,
+        producer_binary=producer_binary,
+        retail_executable=retail_executable,
+    )
     _write(out / "runtime_capture_manifest.json", capture_manifest)
     if capture_manifest.get("ready") is not True:
         result = {
@@ -207,6 +214,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output_dir")
     parser.add_argument("--usage-map")
     parser.add_argument("--snapshot-root")
+    parser.add_argument("--producer-binary")
+    parser.add_argument("--retail-executable")
     parser.add_argument("--allow-resource-mismatch", action="store_true")
     parser.add_argument("--width", type=int, default=1200)
     parser.add_argument("--height", type=int, default=800)
@@ -224,6 +233,8 @@ def main(argv: list[str] | None = None) -> int:
         args.output_dir,
         usage_map=usage_map,
         snapshot_root=args.snapshot_root,
+        producer_binary=args.producer_binary,
+        retail_executable=args.retail_executable,
         allow_resource_mismatch=args.allow_resource_mismatch,
         render_width=args.width,
         render_height=args.height,
