@@ -68,3 +68,30 @@ def build_shader_permutation_identity(data: bytes, *, vertex_offset: int, pixel_
         'canonical_sha256': hashlib.sha256(canonical).hexdigest(),
         'payload': payload,
     }
+
+def validate_shader_permutation_identity(identity: Any) -> list[str]:
+    """Validate the structural contract without recomputing opaque byte content."""
+    reasons: list[str] = []
+    if not isinstance(identity, dict):
+        return ["identity:invalid"]
+    if identity.get("format") != FORMAT:
+        reasons.append("format:invalid")
+    identity_sha = identity.get("identity_sha256")
+    if not isinstance(identity_sha, str) or len(identity_sha) != 64:
+        reasons.append("identity_sha256:invalid")
+    pair_sha = identity.get("pair_byte_sha256")
+    if pair_sha is not None and (not isinstance(pair_sha, str) or len(pair_sha) != 64):
+        reasons.append("pair_byte_sha256:invalid")
+    payload = identity.get("payload")
+    if not isinstance(payload, dict):
+        reasons.append("payload:missing")
+        return list(dict.fromkeys(reasons))
+    for stage in ("vertex", "pixel"):
+        stage_payload = payload.get(stage)
+        if not isinstance(stage_payload, dict):
+            reasons.append(f"payload:{stage}:missing")
+            continue
+        byte_sha = stage_payload.get("byte_sha256")
+        if not isinstance(byte_sha, str) or len(byte_sha) != 64:
+            reasons.append(f"payload:{stage}:byte_sha256:invalid")
+    return list(dict.fromkeys(reasons))
