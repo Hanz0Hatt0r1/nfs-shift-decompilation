@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 200.**
+> **Current mainline: Phase 204.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -39,7 +39,9 @@
 >
 > **BMW capture preflight:** `SHIFT.BMWRuntimeCapturePreflight/1` locates exact target-MEB and paint-range draw candidates before shader execution; it is diagnostic and does not replace the strict same-instance gate.
 
-> **COLOR ABI bridge:** `SHIFT.MEBD3D9DescriptorTripleEvidence/1` is now joined into the main color bridge. Exact MEB descriptors `[4,6,0]`/`[4,6,1]` plus the source-backed Type-4 packed-color path resolve the static color declaration to D3D9 Type 4 (`D3DCOLOR`, BGRA memory / RGBA shader order); runtime same-instance proof remains separate.
+> **Linux/Vulkan direction:** Phase 203 establishes Linux as the primary renderer lab. Vulkan is the native backend target, while the software reference renderer remains the deterministic oracle.
+
+> **SHIFT.exe PE evidence:** `SHIFT.MEBD3D9DescriptorTripleEvidence/1` is now joined into the main color bridge. Exact MEB descriptors `[4,6,0]`/`[4,6,1]` plus the source-backed Type-4 packed-color path resolve the static color declaration to D3D9 Type 4 (`D3DCOLOR`, BGRA memory / RGBA shader order); runtime same-instance proof remains separate.
 
 ---
 
@@ -47,7 +49,7 @@
 
 This project reconstructs the **observable formats, contracts, dependencies and runtime boundaries** of *Need for Speed: SHIFT* as deterministic, machine-readable intermediate representations.
 
-The long-term target is a renderer that consumes this reconstructed IR without depending on the original game runtime, with an eventual Android/GLES implementation.
+The long-term target is a renderer that consumes this reconstructed IR without depending on the original game runtime, with a Linux/Vulkan renderer as the primary native target; Android is deferred until the decompilation and desktop/runtime boundary are substantially complete.
 
 ### Core rule
 
@@ -90,7 +92,9 @@ Weak or unresolved behavior remains explicitly marked as `unknown`, `inferred`, 
                  │                 │
                  └────────┬────────┘
                           ▼
-                    Android runtime
+                 Vulkan runtime
+
+             Android runtime (later)
 
              PARALLEL RUNTIME EVIDENCE
                           │

@@ -3,9 +3,9 @@
 This roadmap tracks the runtime-oriented path from verified resource parsing to a
 minimal reproducible render of one real SHIFT vehicle.
 
-## Current milestone: BMW M3 runtime draw correlation
+## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 200. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 204. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -32,7 +32,8 @@ the original BFF archives at runtime.
 | Skinning | bind-pose verified contract | explicit SkinPose, CPU reference, GLES ABI, bind-pose equivalence check; animated pose decoding remains |
 | BAB animation payload | evidence tooling | corpus fingerprints and byte-level differential analysis; keyframe grammar still unproven |
 | SGB scene graph | later | one track section assembles from IR |
-| Android runtime | later | renderer consumes IR without importer dependencies |
+| Linux Vulkan renderer | bootstrap | native Vulkan backend starts from RenderCommand/1; headless submission is next |
+| Android runtime | deferred | renderer consumes the proven IR/backend boundary after decompilation |
 
 ## Execution order
 
@@ -47,8 +48,9 @@ the original BFF archives at runtime.
 9. Prove the exact MEB vertex stream packing for real BMW meshes, especially COLOR0/1.
 10. Decode BAB animation payload from multiple clips sharing one skeleton, using corpus and byte-diff evidence.
 11. Implement SGB scene semantics and track assembly after the vehicle path is stable.
-12. Port the proven IR/render boundary to Android.
-13. Only then expand into physics, input, camera, audio and gameplay systems.
+12. Build the Linux Vulkan backend from RenderCommand/1 and keep the software renderer as its oracle.
+13. Complete decompilation/runtime coverage and only then port the proven renderer boundary to Android.
+14. Only then expand into physics, input, camera, audio and gameplay systems.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
@@ -1028,3 +1030,25 @@ the target BMW draw.
 
 The regression suite covers both successful promotion and fail-closed partial
 descriptor sets.
+
+
+## Phase 203: Linux Vulkan renderer bootstrap
+
+Android is intentionally deferred until the decompilation and desktop/runtime renderer
+boundary is substantially complete. Linux is now the primary native renderer laboratory
+and Vulkan is the native backend target.
+
+Phase 203 added an optional headless Vulkan loader/device/queue probe. The software
+reference renderer remains the deterministic oracle; the Vulkan path must consume the
+same RenderCommand/1 contract.
+
+## Phase 204: supplied SHIFT.exe PE/D3D9 evidence
+
+The supplied retail SHIFT.exe was inspected directly. Its recovered D3D9 tables are
+file-backed and match the existing Type profile for all 17 meaningful declaration
+types. Type ordinal 4 is internally named RGBA32 and corresponds to D3DDECLTYPE_D3DCOLOR
+with 4-byte/4-component storage. Usage ordinal 6 (Colour) maps to numeric D3D9 Usage 10.
+
+For the real BMW MEB descriptors [4,6,0] and [4,6,1], this closes the static executable
+mapping to Type 4 + Usage COLOR (10) + Channel 0/1. The authentic runtime same-instance
+declaration/draw proof remains an external gate.
