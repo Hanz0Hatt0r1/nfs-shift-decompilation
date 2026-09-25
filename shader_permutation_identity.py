@@ -100,4 +100,19 @@ def validate_shader_permutation_identity(identity: Any) -> list[str]:
             not isinstance(byte_sha, str) or len(byte_sha) != 64
         ):
             reasons.append(f"payload:{stage}:byte_sha256:invalid")
+
+    required_payload = all(isinstance(payload.get(stage), dict) for stage in ("vertex", "pixel"))
+    if required_payload and isinstance(identity.get("identity_sha256"), str):
+        canonical = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        canonical_sha = hashlib.sha256(canonical).hexdigest()
+        declared_canonical = identity.get("canonical_sha256")
+        if declared_canonical is not None and declared_canonical != canonical_sha:
+            reasons.append("canonical_sha256:mismatch")
+        if identity.get("identity_sha256") != canonical_sha:
+            reasons.append("identity_sha256:mismatch")
     return list(dict.fromkeys(reasons))
