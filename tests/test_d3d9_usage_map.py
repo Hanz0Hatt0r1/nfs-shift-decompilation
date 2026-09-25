@@ -35,3 +35,60 @@ def test_usage_map_rejects_wrong_pe_evidence_format():
         assert "SHIFT.PEImageEvidence/1" in str(exc)
     else:
         raise AssertionError("wrong evidence format was accepted")
+
+
+def test_usage_map_cli_writes_ready_map(tmp_path):
+    import json
+    import subprocess
+    import sys
+
+    source = tmp_path / "pe.json"
+    output = tmp_path / "usage.json"
+    source.write_text(
+        json.dumps({
+            "format": "SHIFT.PEImageEvidence/1",
+            "decoded_tables": {
+                "usage": [{"ordinal": i, "value": 200 + i} for i in range(9)]
+            },
+            "conclusions": {"usage_table_status": "decoded"},
+        }),
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        [sys.executable, "d3d9_usage_map.py", str(source), str(output)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["ready"] is True
+    assert report["usage_map"]["6"] == 206
+
+
+def test_usage_map_cli_returns_blocked_for_partial_map(tmp_path):
+    import json
+    import subprocess
+    import sys
+
+    source = tmp_path / "pe.json"
+    output = tmp_path / "usage.json"
+    source.write_text(
+        json.dumps({
+            "format": "SHIFT.PEImageEvidence/1",
+            "decoded_tables": {
+                "usage": [{"ordinal": 0, "value": 200}]
+            },
+        }),
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        [sys.executable, "d3d9_usage_map.py", str(source), str(output)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 2
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["ready"] is False
+    assert "usage-map:missing-ordinal:6" in report["blocking_reasons"]
