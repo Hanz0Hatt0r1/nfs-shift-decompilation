@@ -40,3 +40,30 @@ def test_draw_snapshot_schema_reports_batch_blockers():
     assert report["blocking_reasons"] == [
         {"index": 0, "reason": "draw:start_index:invalid"}
     ]
+
+
+def test_draw_snapshot_alignment_accepts_exact_indexed_sequence():
+    draws = [
+        {"primitive_count": 2, "start_index": 4, "base_vertex_index": 0},
+        {"primitive_count": 3, "start_index": 10, "base_vertex_index": 1},
+    ]
+    snapshots = [
+        {**_snapshot(), "draw_index": 0, "draw": draws[0]},
+        {**_snapshot(), "draw_index": 1, "draw": draws[1]},
+    ]
+    report = validate_draw_snapshot_alignment(draws, snapshots)
+    assert report["ready"] is True
+    assert report["blocking_reasons"] == []
+
+
+def test_draw_snapshot_alignment_rejects_count_and_identity_mismatch():
+    draws = [{"primitive_count": 2, "start_index": 4, "base_vertex_index": 0}]
+    snapshots = [
+        {**_snapshot(), "draw_index": 7, "draw": {"primitive_count": 9, "start_index": 4, "base_vertex_index": 0}},
+        {**_snapshot(), "draw_index": 1, "draw": draws[0]},
+    ]
+    report = validate_draw_snapshot_alignment(draws, snapshots)
+    assert report["ready"] is False
+    assert "count:mismatch:1:2" in report["blocking_reasons"]
+    assert "draw_index:mismatch:0:7" in report["blocking_reasons"]
+    assert "draw:primitive_count:mismatch:0:2:9" in report["blocking_reasons"]
