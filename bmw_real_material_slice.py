@@ -118,7 +118,11 @@ def build_real_bmw_material_slice(
                 'resolved':{'path':TARGET_MEB,'archive':meb_archive.path.name,'resource_sha256':_sha256(meb_bytes)},
                 'vertex_count':mesh.vertex_count,
                 'triangle_count':mesh.triangle_count,
-                'vertex_layout':build_layout_from_summary(mesh_summary_data, color_abi_evidence=color_abi),
+                'vertex_layout':(
+                    build_layout_from_summary(mesh_summary_data, color_abi_evidence=color_abi)
+                    if color_abi is not None
+                    else build_layout_from_summary(mesh_summary_data)
+                ),
                 'property_descriptors':mesh.property_descriptors,
                 'skinning':mesh_summary_data.get('skinning') or {},
             },
