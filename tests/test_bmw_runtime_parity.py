@@ -92,7 +92,7 @@ def test_runtime_parity_can_derive_usage_map_from_pe_evidence(tmp_path):
         json.dumps({
             "format": "SHIFT.PEImageEvidence/1",
             "decoded_tables": {
-                "usage": [{"ordinal": i, "value": 10 + i} for i in range(9)]
+                "usage": [{"ordinal": i, "value": 10 if i == 6 else 20 + i} for i in range(9)]
             },
         }),
         encoding="utf-8",
