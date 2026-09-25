@@ -84,3 +84,51 @@ def test_runner_blocks_missing_native_executable(monkeypatch, tmp_path):
     )
     assert result["status"] == "blocked"
     assert result["native"]["status"] == "executable-missing"
+
+
+def test_vulkan_runner_blocks_sampler_metadata_packet_hash_mismatch(tmp_path):
+    from vulkan_bundle_run import run_bmw_vulkan_bundle
+    _bundle(tmp_path)
+    metadata = {
+        "format": "SHIFT.VulkanSamplerMetadata/1",
+        "version": 1,
+        "packet": {"path": "textures.svtp", "sha256": "0" * 64},
+        "sampler_contract": {
+            "format": "SHIFT.VulkanSamplerContract/1",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    }
+    (tmp_path / "sampler_contracts.meta.json").write_text(
+        json.dumps(metadata), encoding="utf-8"
+    )
+    result = run_bmw_vulkan_bundle(
+        tmp_path,
+        executable=tmp_path / "missing-executable",
+        validator=None,
+        prepare_only=True,
+    )
+    assert result["status"] == "blocked"
+    assert "vulkan-runner:sampler-metadata-packet-sha256-mismatch" in result["blocking_reasons"]
+
+
+def test_vulkan_runner_allows_legacy_bundle_without_sampler_sidecar(tmp_path, monkeypatch):
+    _bundle(tmp_path)
+    monkeypatch.setattr(
+        "vulkan_bundle_run.compile_bmw_vulkan_bundle",
+        lambda root, validator=None: {
+            "format": "SHIFT.VulkanBundleSPIRV/1",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    )
+    monkeypatch.setattr(
+        "vulkan_bundle_run.validate_bmw_vulkan_interface",
+        lambda root, report: {"format": "SHIFT.BMWVulkanInterfaceGate/1", "ready": True, "blocking_reasons": []},
+    )
+    result = run_bmw_vulkan_bundle(
+        tmp_path,
+        executable=tmp_path / "missing-executable",
+        prepare_only=True,
+    )
+    assert result["status"] == "ready"
