@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 235. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 236. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1220,3 +1220,8 @@ VertexLayout ABI-status mapping is now immutable process-wide data, preventing c
 ## Phase 235: real DDS to Vulkan resource bridge
 
 The existing DDS decoder now feeds the Vulkan texture/cubemap packet builders directly, preserving source and decoded hashes as deterministic provenance. Ordinary material registers are taken from the RenderCommand; the proven BMW environment cube remains s3. The bridge fails closed on missing, mismatched, or unsupported resources.
+
+
+## Phase 236: fail-closed DDS to Vulkan resource bridge
+
+The real DDS→Vulkan bridge now catches decoder and packet-builder errors and reports explicit blockers. Incompatible resources are not double-counted as missing mappings. Retail resource selection remains evidence-bound.
