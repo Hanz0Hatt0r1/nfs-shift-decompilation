@@ -214,6 +214,9 @@ def analyze_d3d9_pe_image(
 
     type_size_values = _decode_u32_hex_table(tables['type_size_table']['hex'], 17)
     type_component_values = _decode_u32_hex_table(tables['type_component_table']['hex'], 17)
+    usage_values = _decode_u32_hex_table(tables['usage_table']['hex'], 9)
+    usage_index_values = _decode_u32_hex_table(tables['usage_index_table']['hex'], 14)
+    channel_values = _decode_u32_hex_table(tables['channel_table']['hex'], 22)
     type_profile_validation = validate_type_tables(type_size_values, type_component_values)
 
     pointer_entries: list[dict[str, Any]] = []
@@ -256,6 +259,20 @@ def analyze_d3d9_pe_image(
             for section in image.sections
         ],
         "tables": tables,
+        "decoded_tables": {
+            "usage": [
+                {"ordinal": ordinal, "value": value}
+                for ordinal, value in enumerate(usage_values)
+            ],
+            "usage_index": [
+                {"ordinal": ordinal, "value": value}
+                for ordinal, value in enumerate(usage_index_values)
+            ],
+            "channel": [
+                {"ordinal": ordinal, "value": value}
+                for ordinal, value in enumerate(channel_values)
+            ],
+        },
         "type_name_pointers": pointer_entries,
         "type_profile_validation": type_profile_validation,
         "conclusions": {
@@ -263,6 +280,12 @@ def analyze_d3d9_pe_image(
             "file_backed_type_name_pointer_table": tables["type_name_pointer_table"]["file_backed"],
             "file_backed_type_size_table": tables["type_size_table"]["file_backed"],
             "file_backed_type_component_table": tables["type_component_table"]["file_backed"],
+            "file_backed_usage_table": tables["usage_table"]["file_backed"],
+            "usage_table_status": (
+                "decoded"
+                if all(value is not None for value in usage_values)
+                else "partial"
+            ),
             "meb_460_461_to_type_code": {
                 "status": "not-proven",
                 "detail": "a PE image can expose the declaration-table bytes, but this adapter does not assign MEB properties to type codes automatically",
