@@ -14,7 +14,7 @@ from shader_ir import parse_shader_blobs
 from shader_permutation_identity import build_shader_permutation_identity
 from d3d9_capture_schema import validate_capture_event
 from d3d9_runtime_trace_integrity import validate_runtime_trace_integrity
-from d3d9_draw_snapshot_schema import validate_draw_snapshot
+from d3d9_draw_snapshot_schema import validate_draw_snapshot, validate_draw_snapshots
 
 FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
 EVENTS = {
@@ -450,6 +450,7 @@ def build_runtime_binding_evidence(
                 "declaration_decode_status": bound_decl_decoded.get("status"),
                 "bound_declaration_valid": bound_decl_valid,
                 "indexed_draw_present": True,
+                "draw_snapshot_schema": "SHIFT.D3D9DrawStateSnapshot/1",
                 "snapshot_schema_status": "valid" if snapshot_schema_valid else "invalid",
                 "snapshot_schema_blocking_reasons": snapshot_schema_reasons,
                 "descriptor_matches": [],
@@ -486,6 +487,13 @@ def build_runtime_binding_evidence(
             if snapshot_schema_valid and frame_candidate["descriptor_matches"]:
                 same_instance_candidates.append(frame_candidate)
 
+    all_snapshots = [
+        snapshot
+        for frame in frame_rows
+        for snapshot in (frame.get("draw_snapshots") or [])
+    ]
+    draw_snapshot_validation = validate_draw_snapshots(all_snapshots)
+
     return {
         "format": FORMAT,
         "status": "observed" if declarations and frame_rows else "partial",
@@ -499,6 +507,7 @@ def build_runtime_binding_evidence(
             "constant_write_count": sum(len(x.get("constant_writes", [])) for x in frame_rows),
             "frame_count": len(frame_rows),
             "source": "external-runtime-capture",
+            "draw_snapshot_schema_status": draw_snapshot_validation["status"],
         },
         "declarations": list(declarations.values()),
         "shaders": list(shaders.values()),
