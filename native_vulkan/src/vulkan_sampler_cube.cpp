@@ -657,9 +657,9 @@ int main(int argc, char** argv) {
         std::cout << "  \"output\": \"" << output << "\"\n";
         std::cout << "}\n";
 
-        VkSampler sampler = cube_sampler;
+        VkSampler sampler_handle = cube_sampler;
         if (command) vkFreeCommandBuffers(context.device,context.command_pool,1,&command);
-        if (sampler) vkDestroySampler(context.device,sampler,nullptr);
+        if (sampler_handle) vkDestroySampler(context.device,sampler_handle,nullptr);
         if (readback.buffer) vkDestroyBuffer(context.device,readback.buffer,nullptr);
         if (readback.memory) vkFreeMemory(context.device,readback.memory,nullptr);
         if (pipeline) vkDestroyPipeline(context.device,pipeline,nullptr);
