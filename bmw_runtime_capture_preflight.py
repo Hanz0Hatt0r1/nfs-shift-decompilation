@@ -5,7 +5,7 @@ from typing import Any, Mapping
 
 from bmw_bff_intake import EXPECTED_MEB_SHA256
 from bmw_runtime_shader_join import _runtime_draw_states
-from d3d9_draw_snapshot_schema import validate_draw_snapshot
+from d3d9_draw_snapshot_schema import validate_draw_snapshot, validate_draw_snapshot_alignment
 
 FORMAT = "SHIFT.BMWRuntimeCapturePreflight/1"
 TARGET_MEB = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
@@ -89,6 +89,19 @@ def preflight_bmw_runtime(
     resource_draws: list[dict[str, Any]] = []
     resource_identity_diagnostics: list[dict[str, Any]] = []
     paint_draws: list[dict[str, Any]] = []
+    snapshot_alignment_reports: list[dict[str, Any]] = []
+    for frame in runtime_report.get("frames") or []:
+        snapshots = frame.get("draw_snapshots") or []
+        if not snapshots:
+            continue
+        alignment = validate_draw_snapshot_alignment(
+            frame.get("draws") or [],
+            snapshots,
+        )
+        snapshot_alignment_reports.append({
+            "frame": frame.get("frame"),
+            **alignment,
+        })
 
     for frame, state, source in _runtime_draw_states(runtime_report):
         binding = state.get("vertex_declaration") or {}
@@ -172,11 +185,16 @@ def preflight_bmw_runtime(
         for candidate in proven_paint_draws
         if candidate.get("state_complete") is True
     ]
+    snapshot_alignment_ready = all(
+        report.get("ready") is True
+        for report in snapshot_alignment_reports
+    )
     ready = bool(
         integrity.get("status") == "observed"
         and same_instance.get("ready") is True
         and proven_paint_draws
         and len(complete_proven_paint_draws) == len(proven_paint_draws)
+        and snapshot_alignment_ready
     )
     return {
         "format": FORMAT,
@@ -193,9 +211,15 @@ def preflight_bmw_runtime(
             "integrity_status": integrity.get("status"),
             "same_instance_status": same_instance.get("status"),
             "same_instance_ready": same_instance.get("ready") is True,
+            "draw_snapshot_alignment_status": (
+                "valid"
+                if snapshot_alignment_ready
+                else ("invalid" if snapshot_alignment_reports else "not-supplied")
+            ),
         },
         "resource_draw_candidates": resource_draws,
         "resource_identity_diagnostics": resource_identity_diagnostics,
+        "snapshot_alignment": snapshot_alignment_reports,
         "paint_draw_candidates": paint_draws,
         "proven_paint_draw_candidates": proven_paint_draws,
         "blocking_reasons": (
@@ -226,6 +250,13 @@ def preflight_bmw_runtime(
                     + (
                         ["runtime:target-paint-draw-state-incomplete"]
                         if proven_paint_draws and len(complete_proven_paint_draws) != len(proven_paint_draws)
+                        else []
+                    )
+                    + (
+                        [
+                            "runtime:draw-snapshot-alignment-not-proven"
+                        ]
+                        if snapshot_alignment_reports and not snapshot_alignment_ready
                         else []
                     )
                 )
