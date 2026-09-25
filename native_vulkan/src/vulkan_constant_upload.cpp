@@ -572,7 +572,7 @@ int main(int argc, char** argv) {
         check(vkMapMemory(ctx.device, staging.memory, 0, rgba.size(), 0, &mapped),
               "vkMapMemory(staging) failed");
         std::memcpy(rgba.data(), mapped, rgba.size());
-        vkUnmapMemory(ctx.device, vertex_constants.memory);
+        vkUnmapMemory(ctx.device, staging.memory);
         write_ppm(output, rgba);
 
         VkPhysicalDeviceProperties props{};
