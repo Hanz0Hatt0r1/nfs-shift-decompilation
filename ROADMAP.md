@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 211. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 216. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1159,3 +1159,10 @@ samplerCube/environment resource remain next.
 The Linux Vulkan backend now has a dedicated SHIFT.VulkanCubeTexturePacket/1 boundary for BMW environmentMap. A complete ReferenceCubeTexture/1 is uploaded to a VK_IMAGE_CREATE_CUBE_COMPATIBLE image with six explicit face layers and exposed as set 1 / binding 3. The smoke shader samples s3 as samplerCube.
 
 Real BMW environment-map content/orientation remains tied to runtime resource evidence.
+
+
+## Phase 216: BMW Vulkan bundle
+
+bmw_vulkan_bundle.py now prepares one exact BMW RenderCommand submesh into a reproducible SHIFT.BMWVulkanBundle/1 directory. It creates the Vulkan geometry and constant packets, optionally packages material 2D textures and the s3 environment cube, copies Vulkan shader source, and records artifact hashes plus external runtime sampler requirements.
+
+This remains a preparation boundary. Native BMW shader execution and real runtime resource contents are not claimed.
