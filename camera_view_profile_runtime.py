@@ -36,6 +36,7 @@ class CameraProfile:
 
 @dataclass(frozen=True)
 class CameraViewState:
+    selector_profile_id: int = -1  # +0xc0
     selected_profile_id: int = -1  # +0xc4
     selected_profile_object: Any = None  # +0x80
     last_service_profile_id: int = 0  # +0xc8
@@ -172,6 +173,7 @@ def load_camera_profile(
     )
     if resolved_profile is None:
         return CameraViewState(
+            selector_profile_id=state.selector_profile_id,
             selected_profile_id=profile_id,
             selected_profile_object=None,
             last_service_profile_id=state.last_service_profile_id,
@@ -207,11 +209,11 @@ def load_camera_profile(
         {"action": "copy +0x94 -> +0xe4", "field": "SpeedShakeOrientationalExtents"},
         {
             "action": "FUN_0080ce10",
-            "arguments": {"group": group_id, "profile_flag": resolved_profile.render_cockpit},
+            "arguments": {"group": group_id, "value": int(resolved_profile.render_cockpit)},
         },
         {
             "action": "FUN_0080cdf0",
-            "arguments": {"group": group_id, "enabled": not resolved_profile.hide_car},
+            "arguments": {"group": group_id, "value": not resolved_profile.hide_car},
         },
         {"action": "write +0xd1", "value": 1},
     ]
@@ -241,7 +243,7 @@ def load_camera_profile(
             "action": "FUN_0080cdf0",
             "arguments": {
                 "group": group_id,
-                "enabled": bool(resolved_profile.allow_cycle),
+                "value": not bool(resolved_profile.hide_car_rear_look),
             },
         })
 
