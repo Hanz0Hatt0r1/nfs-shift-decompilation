@@ -17,6 +17,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from meb_d3d9_descriptor_triple_evidence import analyze_meb_d3d9_descriptor_triple
+
 
 FORMAT = "SHIFT.MEBD3D9ColorBridgeEvidence/1"
 SOURCE_FORMAT = "SHIFT.D3D9SourceVertexEvidence/1"
@@ -235,6 +237,9 @@ def analyze_meb_d3d9_color_bridge(
     }
 
     runtime_rows = _runtime_color_types(runtime)
+    descriptor_triple = analyze_meb_d3d9_descriptor_triple(meb, source)
+    descriptor_properties = descriptor_triple.get("properties") or {}
+    type4_source_observed = source_rows["type_4_packed_color"].get("status") == "observed"
 
     resource_rows: dict[str, dict[str, Any]] = {
         pid: {
@@ -308,23 +313,60 @@ def analyze_meb_d3d9_color_bridge(
         required_checks = [source_format_status, meb_row["status"]]
         if source_hash is not None:
             required_checks.append("observed" if source_hash_verified else "mismatch")
+
+        descriptor_row = descriptor_properties.get(pid) or {}
+        descriptor_mapping_status = (descriptor_row.get("d3d9_type_mapping") or {}).get("status", "not-proven")
+        property_mapping_status = (
+            "observed"
+            if descriptor_mapping_status == "match" and type4_source_observed
+            else "mismatch"
+            if descriptor_mapping_status == "mismatch"
+            else "not-proven"
+        )
+        selected_type = None
+        if property_mapping_status == "observed":
+            selected_type = next(
+                (row for row in candidates if int(row.get("code", -1)) == 4),
+                None,
+            )
+
         properties[pid] = {
             "semantic": SUPPORTED_PROPERTIES[pid]["semantic"],
             "stream_name": SUPPORTED_PROPERTIES[pid]["stream_name"],
             "meb_storage": meb_row,
             "candidate_types": candidates,
             "runtime_color_type_observation": runtime_rows,
-            "resource_provenance": resource_rows[pid],
+            "descriptor_triple_evidence": descriptor_row,
             "property_to_type": {
-                "status": "not-proven",
+                "status": property_mapping_status,
+                "selected": selected_type,
                 "reason": (
-                    "MEB 460/461 storage constrains the type to 4-byte normalized candidates "
-                    "(D3DCOLOR=4 or UBYTE4N=8), while the recovered source proves a separate "
-                    "Type-4 packed-color path but does not expose the MEB-property-to-Type bridge"
+                    "Exact MEB descriptor triple matches source-backed [Type, UsageOrdinal, Channel] "
+                    "semantics, and source case 4 is the packed-color conversion path"
+                    if property_mapping_status == "observed"
+                    else "descriptor triple does not yet establish the MEB property-to-Type mapping"
                 ),
             },
             "status": _status_from_checks(required_checks),
         }
+
+    mapping_statuses = [
+        row["property_to_type"]["status"]
+        for row in properties.values()
+    ]
+    if "mismatch" in mapping_statuses:
+        mapping_status = "mismatch"
+    elif all(status == "observed" for status in mapping_statuses):
+        mapping_status = "observed"
+    else:
+        mapping_status = "not-proven"
+
+    verified_abi = (
+        mapping_status == "observed"
+        and descriptor_triple.get("verified_abi") is True
+        and type4_source_observed
+        and source_format_status == "observed"
+    )
 
     return {
         "format": FORMAT,
@@ -334,6 +376,7 @@ def analyze_meb_d3d9_color_bridge(
         "runtime_color_type_observation": runtime_rows,
         "resource_provenance": resource_rows,
         "resource_errors": resource_errors,
+        "descriptor_triple_evidence": descriptor_triple,
         "source_integrity": {
             "source_report_format": source.get("format"),
             "source_text_sha256": source_hash,
@@ -342,19 +385,31 @@ def analyze_meb_d3d9_color_bridge(
             "literal_property_ids_are_not_mapping_evidence": True,
         },
         "d3d9_candidates": {
-            "status": "ambiguous",
+            "status": "resolved" if verified_abi else "ambiguous",
             "types": candidates,
-            "basis": "D3D9 type semantics + current 4-byte normalized MEB storage",
-        },
-        "meb_property_mapping": {
-            "status": "not-proven",
-            "reason": (
-                "No source-backed or runtime-correlated evidence ties MEB property 460/461 "
-                "to a specific D3D9 declaration record Type byte."
+            "selected_type": {
+                "code": 4,
+                "name": "D3DCOLOR",
+                "memory_order": "BGRA",
+                "shader_order": "RGBA",
+            } if verified_abi else None,
+            "basis": (
+                "Exact MEB 460/461 descriptor triples [4,6,0]/[4,6,1] plus source-backed "
+                "binary loader Type semantics and the observed Type-4 packed-color path"
+                if verified_abi
+                else "D3D9 type semantics + current 4-byte normalized MEB storage"
             ),
         },
-        "selection": "not-selected",
-        "verified_abi": False,
+        "meb_property_mapping": {
+            "status": mapping_status,
+            "reason": (
+                "MEB 460/461 are source-backed Type-4 packed-color descriptors"
+                if verified_abi
+                else "MEB 460/461 do not yet have a complete source-backed Type mapping"
+            ),
+        },
+        "selection": "resolved" if verified_abi else "not-selected",
+        "verified_abi": verified_abi,
     }
 
 

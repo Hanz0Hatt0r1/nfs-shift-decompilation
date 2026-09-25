@@ -281,3 +281,35 @@ def test_color_bridge_keeps_resource_provenance_independent_per_property():
     assert result["resource_provenance"]["461"]["status"] == "observed"
     assert len(result["resource_provenance"]["460"]["reports"]) == 1
     assert len(result["resource_provenance"]["461"]["reports"]) == 1
+
+
+def test_bridge_promotes_exact_descriptor_triple_to_type4():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([
+            _color("460"),
+            _color("461"),
+        ]),
+        _source_report(),
+    )
+    assert result["descriptor_triple_evidence"]["d3d9_type_mapping"]["status"] == "match"
+    assert result["properties"]["460"]["property_to_type"]["status"] == "observed"
+    assert result["properties"]["461"]["property_to_type"]["status"] == "observed"
+    assert result["d3d9_candidates"]["status"] == "resolved"
+    assert result["d3d9_candidates"]["selected_type"]["code"] == 4
+    assert result["d3d9_candidates"]["selected_type"]["name"] == "D3DCOLOR"
+    assert result["d3d9_candidates"]["selected_type"]["memory_order"] == "BGRA"
+    assert result["meb_property_mapping"]["status"] == "observed"
+    assert result["selection"] == "resolved"
+    assert result["verified_abi"] is True
+
+
+def test_bridge_does_not_promote_without_both_color_descriptors():
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460")]),
+        _source_report(),
+    )
+    assert result["properties"]["460"]["property_to_type"]["status"] == "not-proven"
+    assert result["d3d9_candidates"]["status"] == "ambiguous"
+    assert result["meb_property_mapping"]["status"] == "not-proven"
+    assert result["selection"] == "not-selected"
+    assert result["verified_abi"] is False
