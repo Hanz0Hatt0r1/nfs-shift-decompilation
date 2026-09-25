@@ -39,6 +39,8 @@ def _position_attribute(command: dict[str, Any]) -> dict[str, Any]:
     if len(rows) != 1:
         raise ValueError("RenderCommand must expose exactly one POSITION0 property 200")
     row = dict(rows[0])
+    if int(row.get("location", -1)) != 0:
+        raise ValueError("Phase 208 Vulkan geometry shader requires POSITION0 at location 0")
     if str(row.get("android", "")).upper().replace("_", "") not in {"FLOAT32X3", "F32X3"} and str(row.get("storage", "")).upper().replace("_", "") not in {"FLOAT32X3", "F32X3"}:
         if str(row.get("d3d9", "")).upper() != "FLOAT3":
             raise ValueError("POSITION0 does not have a proven FLOAT3 representation")
@@ -118,14 +120,18 @@ def export_vulkan_geometry_packet(
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    selected_indices = normalized_indices[first_index:first_index + index_count]
+    if len(selected_indices) != index_count:
+        raise ValueError("failed to materialize selected submesh index range")
+
     header = HEADER.pack(
         MAGIC,
         VERSION,
         len(vertices),
-        len(normalized_indices),
+        len(selected_indices),
         stride,
         1,
-        first_index,
+        0,
         float(center[0]),
         float(center[1]),
         float(center[2]),
@@ -137,7 +143,7 @@ def export_vulkan_geometry_packet(
         0,
         stride,
     )
-    index_blob = struct.pack(f"<{len(normalized_indices)}I", *normalized_indices)
+    index_blob = struct.pack(f"<{len(selected_indices)}I", *selected_indices)
     output_path.write_bytes(header + attribute + vertex_blob + index_blob)
 
     return {
@@ -147,7 +153,8 @@ def export_vulkan_geometry_packet(
         "command_ready": bool(command.get("ready")),
         "command_blocking_reasons": list(command.get("blocking_reasons", []) or []),
         "submesh_index": submesh_index,
-        "first_index": first_index,
+        "source_first_index": first_index,
+        "first_index": 0,
         "index_count": index_count,
         "vertex_count": len(vertices),
         "source_index_count": len(normalized_indices),
