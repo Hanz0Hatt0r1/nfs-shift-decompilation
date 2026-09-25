@@ -55,13 +55,21 @@ def update_input_direction_counters(
 
 def set_input_rate_values(
     *,
-    pitch_rate: Any,
-    yaw_rate: Any,
+    rate_0x2b8: Any,
+    rate_0x700: Any,
+    rate_0x2c0: Any,
+    rate_0x2c4: Any,
 ) -> dict[str, Any]:
-    """Trace FUN_0081b6e0's conversion of stored degrees to radians."""
+    """Trace FUN_0081b6e0's four independent degree-to-radian conversions."""
     result = {
-        "pitch_rate_radians": float(pitch_rate) * DEG_TO_RAD,
-        "yaw_rate_radians": float(yaw_rate) * DEG_TO_RAD,
+        "first_vector_radians": [
+            float(rate_0x2b8) * DEG_TO_RAD,
+            float(rate_0x700) * DEG_TO_RAD,
+        ],
+        "second_vector_radians": [
+            float(rate_0x2c0) * DEG_TO_RAD,
+            float(rate_0x2c4) * DEG_TO_RAD,
+        ],
     }
     return {
         "format": FORMAT,
@@ -70,10 +78,8 @@ def set_input_rate_values(
         "result": result,
         "evidence": {
             "function": "FUN_0081b6e0",
-            "pitch_source": "+0x2b8",
-            "pitch_multiplier_source": "+0x2c4",
-            "yaw_source": "+0x2c0",
-            "yaw_multiplier_source": "+0x2c4",
+            "first_vector_sources": ["+0x2b8", "+0x700"],
+            "second_vector_sources": ["+0x2c0", "+0x2c4"],
         },
     }
 
@@ -134,6 +140,7 @@ def resolve_view_input_axes(
     service_axis1: float = 0.0,
     accumulator_0x2c0: float = 0.0,
     counter_0x2bc: float = 0.0,
+    counter_0x700: float = 0.0,
     reverse_direction: bool = False,
 ) -> dict[str, Any]:
     """Reproduce FUN_0081bcd0's explicit input/service/accumulator arithmetic."""
@@ -146,9 +153,9 @@ def resolve_view_input_axes(
     hooked1 = float(service_axis1)
     adjusted0 = hooked0 - float(accumulator_0x2c0)
     if reverse_direction:
-        adjusted1 = hooked1 - float(counter_0x2bc)
+        adjusted1 = hooked1 - float(counter_0x700)
     else:
-        adjusted1 = float(counter_0x2bc) - hooked1
+        adjusted1 = float(counter_0x700) - hooked1
 
     zero = adjusted0 == 0.0 and adjusted1 == 0.0
     return {
