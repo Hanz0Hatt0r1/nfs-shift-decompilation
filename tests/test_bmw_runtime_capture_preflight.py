@@ -122,3 +122,27 @@ def test_runtime_capture_preflight_cli_writes_blocked_report(tmp_path):
     assert report["format"] == "SHIFT.BMWRuntimeCapturePreflight/1"
     assert report["ready"] is False
     assert "runtime:same-instance-not-proven" in report["blocking_reasons"]
+
+
+def test_runtime_capture_preflight_reports_missing_runtime_components():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["frames"] = [{
+        "frame": 7,
+        "draw_snapshots": [{
+            "format": "SHIFT.D3D9DrawStateSnapshot/1",
+            "frame": 7,
+            "draw_index": 1,
+            "draw": {"start_index": 150, "primitive_count": 2098, "base_vertex_index": 0},
+            "vertex_declaration": {"declaration_ptr": "0x1", "resource_sha256": "abc"},
+            "vertex_shader": {},
+            "pixel_shader": {},
+            "stream_sources": [],
+            "active_stream_sources": [],
+            "index_binding": {},
+            "shader_permutation_identity": {"identity_sha256": "shader-id"},
+        }],
+    }]
+    report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
+    candidate = report["paint_draw_candidates"][0]
+    assert candidate["state_complete"] is False
+    assert candidate["missing_components"] == ["vertex_shader", "pixel_shader", "streams", "indices"]
