@@ -23,6 +23,8 @@ def test_post_capture_pipeline_writes_blocked_stage_reports(monkeypatch, tmp_pat
     runtime = {
         "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
         "status": "observed",
+        "integrity": {"status": "not-supplied"},
+        "same_instance_gate": {"status": "not-proven", "ready": False, "blocking_reasons": ["draw:not-observed"]},
         "frames": [],
     }
     selection = {
@@ -47,6 +49,7 @@ def test_post_capture_pipeline_writes_blocked_stage_reports(monkeypatch, tmp_pat
     assert (tmp_path / "out" / "material_binding.json").exists()
     assert (tmp_path / "out" / "mesh.json").exists()
     assert (tmp_path / "out" / "runtime_binding.json").exists()
+    assert (tmp_path / "out" / "runtime_capture_preflight.json").exists()
     assert (tmp_path / "out" / "runtime_shader_selection.json").exists()
     assert (tmp_path / "out" / "pipeline_result.json").exists()
 
