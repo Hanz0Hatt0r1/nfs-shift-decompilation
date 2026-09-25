@@ -268,3 +268,18 @@ def test_runtime_shader_join_rejects_malformed_versioned_snapshot():
     report = join_runtime_shader(material, runtime)
     assert report["ready"] is False
     assert report["candidate_frames"] == []
+
+def test_runtime_shader_join_rejects_incomplete_current_format_snapshot():
+    material = _material()
+    runtime = _runtime()
+    runtime["frames"][0]["draw_snapshots"] = [{
+        "format": "SHIFT.D3D9DrawStateSnapshot/1",
+        "frame": 17,
+        "draw_index": 0,
+        "draw": {"start_index": 0, "primitive_count": 1, "base_vertex_index": 0},
+        "vertex_declaration": {"resource_sha256": "abc"},
+        "shader_permutation_identity": {"identity_sha256": "shader-id"},
+    }]
+    report = join_runtime_shader(material, runtime)
+    assert report["ready"] is False
+    assert report["candidate_frames"] == []
