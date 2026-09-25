@@ -11,9 +11,12 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
     frame_state: dict[str, dict[str, Any]] = {}
     blockers: list[dict[str, Any]] = []
     event_count = 0
+    observed_event_indices: list[int] = []
 
     for line_index, raw in enumerate(events, 1):
         row = dict(raw); event_count += 1
+        if 'event_index' in row and isinstance(row.get('event_index'), int):
+            observed_event_indices.append(row['event_index'])
         frame_key = str(row.get('frame', 'unknown'))
         state = frame_state.setdefault(frame_key, {'declaration': False, 'vertex_shader': False, 'pixel_shader': False, 'stream': False, 'indices': False, 'draws': 0})
         event = row.get('event')
@@ -46,6 +49,19 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
             missing = [key for key, present in [('declaration', state['declaration']), ('vertex_shader', state['vertex_shader']), ('pixel_shader', state['pixel_shader']), ('stream', state['stream']), ('indices', state['indices'])] if not present]
             if missing: blockers.append({'line': row.get('_line', line_index), 'reason': 'draw-state-incomplete', 'frame': row.get('frame'), 'missing': missing})
 
+    if observed_event_indices:
+        expected_indices = list(range(
+            observed_event_indices[0],
+            observed_event_indices[0] + len(observed_event_indices),
+        ))
+        if observed_event_indices != expected_indices:
+            blockers.append({
+                'line': None,
+                'reason': 'event-index-not-contiguous',
+                'first': observed_event_indices[0],
+                'last': observed_event_indices[-1],
+            })
+
     frames = []
     for frame_key, state in frame_state.items():
         frames.append({'frame': None if frame_key == 'unknown' else frame_key, **state, 'status': 'observed' if state['draws'] and not blockers else 'partial'})
@@ -56,6 +72,18 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
         'event_count': event_count,
         'created_declaration_count': len(created_declarations),
         'created_shader_count': len(created_shaders),
+        'event_index': {
+            'status': (
+                'valid' if not observed_event_indices or not any(
+                    reason.get('reason') == 'event-index-not-contiguous'
+                    for reason in blockers
+                    if isinstance(reason, dict)
+                ) else 'invalid'
+            ),
+            'observed_count': len(observed_event_indices),
+            'first': observed_event_indices[0] if observed_event_indices else None,
+            'last': observed_event_indices[-1] if observed_event_indices else None,
+        },
         'frames': sorted(frames, key=lambda row: str(row['frame'])),
         'blocking_reasons': blockers,
     }
