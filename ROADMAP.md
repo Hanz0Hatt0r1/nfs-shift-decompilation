@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 196. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 200. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1012,3 +1012,19 @@ underlying vehicle geometry is unchanged.
 
 This checkpoint does not claim final `bodywork.fx` material execution or an
 authentic retail D3D9 runtime capture.
+
+## Phase 200: MEB COLOR descriptor-to-Type bridge
+
+The main d3d9_color_bridge_evidence.py path now consumes the existing
+SHIFT.MEBD3D9DescriptorTripleEvidence/1 result. When both BMW color descriptors
+match the source-backed binary loader record shape [Type ordinal, Usage ordinal,
+Channel] and the source observes the Type-4 packed-color conversion path, the
+static ABI is resolved to D3D9 Type 4 (D3DCOLOR in the renderer's D3D9 type
+table), with BGRA memory order and RGBA shader order.
+
+This is a static evidence resolution only. The renderer still requires a real
+same-instance D3D9 capture to prove that the resolved declaration was bound to
+the target BMW draw.
+
+The regression suite covers both successful promotion and fail-closed partial
+descriptor sets.
