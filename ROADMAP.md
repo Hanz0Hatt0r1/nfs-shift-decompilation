@@ -1302,3 +1302,20 @@ The binary SGB decoder now follows FLAT into the runtime tree copied by FUN_0068
 ## Phase 253: MATRIX runtime semantics
 
 The recovered scene/object MATRIX parser is now isolated in matrix_runtime.py. It reconstructs Offset as vec3, Orientation input-to-runtime quaternion reordering, optional Scale defaulting to 1.0, and a deterministic 4x4 conversion. Parent composition and alternate axis conventions remain outside the contract.
+
+
+## Phase 254: Camera configuration and TrackCameraMan runtime
+
+camera_runtime.py now reconstructs the CameraConfig/TrackCameraMan loader paths, the Trackside Cams/Splines/Areas XML registration boundary, class/id/data object construction boundary, and static/tracking/area property-registration evidence. Camera behavior remains explicit rather than guessed.
+
+## Phase 255: TrackCameraMan spline reload references
+
+camera_spline_reload_runtime.py reconstructs FUN_00811ae0 handling of pre/post spline counts, stale SplineID/TargetSplineID invalidation, and rebasing of newly loaded tracking-camera references. The opaque runtime marker remains unresolved.
+
+## Phase 256: Camera class registration hierarchy
+
+camera_runtime.py now exposes the proven camera/area inheritance prefixes from the executable's class initialization records. Common unresolved base objects remain explicitly marked partial.
+
+## Phase 257: Trackside Camera selection reduction
+
+trackside_camera_selection_runtime.py reconstructs FUN_008119b0's minimum-score scan: zero-based collection indices, FLT_MAX initialization, -1 empty result, and immediate return on a negative score. FUN_008154d0 remains a separate unresolved score function.
