@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from runtime_resource_identity import match_resource_identity
+from d3d9_draw_snapshot_schema import validate_draw_snapshot
 
 FORMAT = "SHIFT.BMWRuntimeShaderJoin/1"
 
@@ -93,8 +94,12 @@ def _runtime_draw_states(runtime_report: Mapping[str, Any]):
         snapshots = frame.get("draw_snapshots") or []
         if snapshots:
             for snapshot in snapshots:
-                if isinstance(snapshot, Mapping):
-                    yield frame, snapshot, "draw-snapshot"
+                if not isinstance(snapshot, Mapping):
+                    continue
+                if snapshot.get("format") is not None:
+                    if validate_draw_snapshot(snapshot):
+                        continue
+                yield frame, snapshot, "draw-snapshot"
         else:
             yield frame, frame, "frame-aggregate"
 
