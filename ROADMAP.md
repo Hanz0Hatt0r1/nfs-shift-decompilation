@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 216. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 217. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1166,3 +1166,10 @@ Real BMW environment-map content/orientation remains tied to runtime resource ev
 bmw_vulkan_bundle.py now prepares one exact BMW RenderCommand submesh into a reproducible SHIFT.BMWVulkanBundle/1 directory. It creates the Vulkan geometry and constant packets, optionally packages material 2D textures and the s3 environment cube, copies Vulkan shader source, and records artifact hashes plus external runtime sampler requirements.
 
 This remains a preparation boundary. Native BMW shader execution and real runtime resource contents are not claimed.
+
+
+## Phase 217: BMW Vulkan bundle SPIR-V gate
+
+vulkan_bundle_spirv.py compiles the copied Vulkan vertex/pixel shader sources from a BMW Vulkan bundle into SPIR-V when glslangValidator is available, records the resulting hashes and fails closed on compiler errors. Validator absence is reported explicitly. The bundle report now preserves the exact selected RenderCommand mesh identity and counts after RenderBinding selection.
+
+The next backend step is native execution of the compiled bundle artifacts, while real BMW same-instance runtime evidence remains a separate external gate.
