@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from bmw_material_from_bff import TARGET_MEB
+from bmw_runtime_shader_join import _runtime_draw_states
 from meb_format import read_meb
 from shader_backend import translate_pair_blob
 from shift_importer import BFF
@@ -38,13 +39,27 @@ def _selected_candidate(material_input: Mapping[str, Any], selection: Mapping[st
 def _runtime_frame(runtime_report: Mapping[str, Any], selection: Mapping[str, Any]) -> Mapping[str, Any]:
     selected = selection.get("selected") or {}
     selected_frame = selected.get("frame")
+    selected_draw = selected.get("draw_index")
     frames = [frame for frame in (runtime_report.get("frames") or []) if isinstance(frame, Mapping)]
     matches = [frame for frame in frames if frame.get("frame") == selected_frame]
     if len(matches) != 1:
         raise ValueError(
             f"selected runtime frame {selected_frame!r} must resolve exactly once; found {len(matches)}"
         )
-    return matches[0]
+    if selected_draw is None:
+        return matches[0]
+    snapshot_matches = [
+        state
+        for frame, state, source in _runtime_draw_states(runtime_report)
+        if frame.get("frame") == selected_frame
+        and source == "draw-snapshot"
+        and state.get("draw_index") == selected_draw
+    ]
+    if len(snapshot_matches) != 1:
+        raise ValueError(
+            f"selected runtime draw {selected_frame!r}:{selected_draw!r} must resolve exactly once; found {len(snapshot_matches)}"
+        )
+    return snapshot_matches[0]
 
 
 def _constant_banks(frame: Mapping[str, Any]) -> dict[str, dict[str, dict[int, list[float]]]]:
