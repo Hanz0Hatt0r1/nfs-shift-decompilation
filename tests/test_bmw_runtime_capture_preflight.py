@@ -304,3 +304,23 @@ def test_runtime_capture_preflight_reports_sha_mismatch_diagnostic():
     }]
     report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
     assert report["resource_identity_diagnostics"][0]["resource_identity_status"] == "sha-mismatch"
+
+
+def test_runtime_capture_preflight_blocks_snapshot_alignment_mismatch():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["same_instance_gate"]["candidate_frames"] = [{"frame": 7, "draw_index": 0}]
+    runtime["frames"] = [{
+        "frame": 7,
+        "draws": [
+            {"start_index": 150, "primitive_count": 2098, "base_vertex_index": 0},
+            {"start_index": 6444, "primitive_count": 2462, "base_vertex_index": 0},
+        ],
+        "draw_snapshots": [
+            _snapshot("abc", 150, 2098, draw_index=0),
+        ],
+    }]
+    report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
+    assert report["paint_draw_candidates"][0]["draw_index"] == 0
+    assert report["runtime"]["draw_snapshot_alignment_status"] == "invalid"
+    assert report["ready"] is False
+    assert "runtime:draw-snapshot-alignment-not-proven" in report["blocking_reasons"]
