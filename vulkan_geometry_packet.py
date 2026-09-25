@@ -103,13 +103,20 @@ def _attribute_format(row: dict[str, Any]) -> int:
     normalized = bool(row.get("normalized"))
     property_id = str(row.get("property_id") or "")
 
-    if storage in {"FLOAT32X2", "F32X2"} and components == 2:
+    explicit_format = row.get("format")
+    if isinstance(explicit_format, int):
+        if explicit_format in {
+            FORMAT_FLOAT2, FORMAT_FLOAT3, FORMAT_FLOAT4,
+            FORMAT_UNORM8X4, FORMAT_UINT8X4,
+        }:
+            return explicit_format
+    if storage in {"FLOAT32X2", "F32X2"} and components in {0, 2}:
         return FORMAT_FLOAT2
-    if storage in {"FLOAT32X3", "F32X3"} and components == 3:
+    if storage in {"FLOAT32X3", "F32X3"} and components in {0, 3}:
         return FORMAT_FLOAT3
-    if storage in {"FLOAT32X4", "F32X4"} and components == 4:
+    if storage in {"FLOAT32X4", "F32X4"} and components in {0, 4}:
         return FORMAT_FLOAT4
-    if storage in {"UINT8X4", "UBYTE4"} and components == 4:
+    if (storage.startswith("UINT8X4") or storage in {"UBYTE4", "UBYTE4N"}) and components in {0, 4}:
         if property_id == "460":
             if not normalized:
                 raise ValueError("COLOR0 must remain normalized in Vulkan packet")
