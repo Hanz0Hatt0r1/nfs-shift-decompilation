@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 208.**
+> **Current mainline: Phase 209.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -653,3 +653,6 @@ See [NOTICE.md](NOTICE.md).
 
  
 > **RenderCommand → Vulkan geometry:** Phase 208 introduces SHIFT.VulkanGeometryPacket/1. Python materializes a selected RenderCommand triangle-list into a native handoff; Vulkan consumes only that packet, uploads vertex/index buffers and performs a depth-tested offscreen draw. POSITION0 is the first supported attribute.
+
+
+> **Vulkan VertexLayout v2:** Phase 209 carries multiple proven/inferred vertex attributes into the native packet and maps them to Vulkan formats. COLOR0 receives an explicit executable-backed BGRA→RGBA repack; unresolved COLOR1 remains deferred. The native geometry shader still consumes POSITION0 only.

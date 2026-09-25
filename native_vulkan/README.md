@@ -78,3 +78,14 @@ Then render it with:
 
 The packet is generated from SHIFT.RenderCommand/1 and neutral mesh data. The
 native Vulkan process does not parse BFF or MEB JSON.
+
+
+## VertexLayout packet v2
+
+Phase 209 upgrades the geometry packet to version 2. The packet can carry multiple
+RenderCommand vertex attributes with explicit location/format/offset/stride metadata.
+The native backend maps these codes to Vulkan vertex formats while keeping the shader
+contract independent.
+
+COLOR0 is explicitly repacked from BGRA source bytes to RGBA normalized bytes using the
+executable-backed D3DCOLOR evidence. Unresolved COLOR1 is kept out of the packet.

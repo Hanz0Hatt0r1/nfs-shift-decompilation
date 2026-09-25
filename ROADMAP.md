@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 208. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 209. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1083,3 +1083,15 @@ depth testing, submits vkCmdDrawIndexed and writes an offscreen PPM.
 
 Only POSITION0 is enabled in this phase. The next backend stage is full proven
 VertexLayout attribute translation, followed by RenderCommand shader/material state.
+
+
+## Phase 209: Vulkan VertexLayout attribute packing
+
+SHIFT.VulkanGeometryPacket/1 now has version 2 support for multiple vertex attributes.
+The Python bridge packs proven/inferred neutral MEB streams into one interleaved buffer
+and records explicit Vulkan format codes. The native Vulkan backend maps the descriptors
+to VkVertexInputAttributeDescription entries and remains compatible with version 1.
+
+POSITION0 remains the only shader-consumed input in the geometry checkpoint; extra
+attributes are physically bound but not yet consumed by the shader. COLOR0 receives an
+evidence-backed BGRA-to-RGBA repack; unresolved COLOR1 remains deferred.

@@ -63,7 +63,7 @@ def test_export_vulkan_geometry_packet_materializes_selected_submesh(tmp_path):
     raw = output.read_bytes()
     assert len(raw) == HEADER.size + ATTRIBUTE.size + (4 * 12) + (3 * 4)
     header = HEADER.unpack_from(raw)
-    assert header[:7] == (b"SVGP", 1, 4, 3, 12, 1, 0)
+    assert header[:7] == (b"SVGP", 2, 4, 3, 12, 1, 0)
     attribute = ATTRIBUTE.unpack_from(raw, HEADER.size)
     assert attribute == (0, 1, 0, 12)
 
