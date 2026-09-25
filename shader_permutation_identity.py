@@ -83,15 +83,21 @@ def validate_shader_permutation_identity(identity: Any) -> list[str]:
     if pair_sha is not None and (not isinstance(pair_sha, str) or len(pair_sha) != 64):
         reasons.append("pair_byte_sha256:invalid")
     payload = identity.get("payload")
+    if payload is None:
+        return list(dict.fromkeys(reasons))
     if not isinstance(payload, dict):
-        reasons.append("payload:missing")
+        reasons.append("payload:invalid")
         return list(dict.fromkeys(reasons))
     for stage in ("vertex", "pixel"):
         stage_payload = payload.get(stage)
+        if stage_payload is None:
+            continue
         if not isinstance(stage_payload, dict):
-            reasons.append(f"payload:{stage}:missing")
+            reasons.append(f"payload:{stage}:invalid")
             continue
         byte_sha = stage_payload.get("byte_sha256")
-        if not isinstance(byte_sha, str) or len(byte_sha) != 64:
+        if byte_sha is not None and (
+            not isinstance(byte_sha, str) or len(byte_sha) != 64
+        ):
             reasons.append(f"payload:{stage}:byte_sha256:invalid")
     return list(dict.fromkeys(reasons))
