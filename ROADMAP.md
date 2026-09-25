@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 206. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 207. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1066,3 +1066,8 @@ The MEB COLOR bridge can consume this PE report and fail closed on conflicting v
 The Linux Vulkan backend now has a real offscreen GPU submission checkpoint. The headless target creates a Vulkan device and graphics queue, clears an R8G8B8A8 image, copies it to host-visible staging memory and writes a P6 PPM. No window system is required.
 
 This is intentionally a transfer-only checkpoint: no shader/SPIR-V or BMW semantics are claimed yet. The software reference renderer remains the oracle for the upcoming RenderCommand/Vulkan stages.
+
+
+## Phase 207: headless Vulkan graphics pipeline
+
+A Linux Vulkan target now builds a minimal SPIR-V graphics pipeline when glslangValidator is available. It renders a triangle into an offscreen R8G8B8A8 image and exports a deterministic PPM. This proves shader-module creation, render-pass/pipeline setup and indexed-free vertex generation before the backend is connected to real RenderCommand vertex/index buffers.

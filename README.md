@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 206.**
+> **Current mainline: Phase 207.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -647,3 +647,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Vulkan headless checkpoint:** Phase 206 adds a real Linux Vulkan offscreen image submission path. It creates a device/queue, clears an R8G8B8A8 image, copies it through a staging buffer and emits a deterministic PPM without a window system. Shader and RenderCommand execution remain the next stages.
+
+
+> **Vulkan graphics checkpoint:** Phase 207 adds an optional headless SPIR-V triangle pipeline. When `glslangValidator` is available, Linux can compile the shader pair, create a real Vulkan graphics pipeline and export an offscreen PPM. BMW RenderCommand integration is the next backend stage.
