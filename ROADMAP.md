@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 187. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 190. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -930,3 +930,29 @@ remains a diagnostic blocker.
 
 The external evidence gate is unchanged: no authentic retail D3D9 capture is
 present in the supplied evidence set, so no full BMW runtime render is claimed.
+
+## Phase 188: exact MEB identity enforcement
+
+BMW runtime preflight defaults to the known retail body MEB SHA-256. When an exact
+SHA is supplied, a path-only binding is diagnostic but cannot become a resource
+candidate or proof. Identity diagnostics distinguish exact match, SHA mismatch and
+missing SHA.
+
+## Phase 189: draw/snapshot alignment integrity
+
+The runtime evidence contract now validates that draws[index] and
+draw_snapshots[index] have the same draw identity and parameters. Standalone BMW
+preflight repeats this check for externally supplied reports, so reordered or
+truncated snapshots remain blocked.
+
+## Phase 190: unified BMW runtime hard gates
+
+The BMW post-capture pipeline now requires capture preflight before runtime render
+contract construction. Draw correlation also binds exact range matches to the
+material golden MEB identity when that identity is present, preventing same-range
+foreign-mesh false positives. Legacy fixtures without golden identity remain
+compatible.
+
+The external evidence gate is unchanged: an authentic retail D3D9 capture proving
+one BMW M3 draw instance is still required before a full runtime render can be
+claimed.
