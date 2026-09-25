@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <stdexcept>
@@ -1377,9 +1378,9 @@ int main(int argc, char** argv) {
             "map readback failed");
         std::memcpy(rgba.data(), mapped, rgba.size());
         vkUnmapMemory(ctx.device, readback.memory);
-        output.parent_path().empty()
-            ? void()
-            : std::filesystem::create_directories(output.parent_path());
+        if (!output.parent_path().empty()) {
+            std::filesystem::create_directories(output.parent_path());
+        }
         write_ppm(output, rgba);
 
         VkPhysicalDeviceProperties props{};
