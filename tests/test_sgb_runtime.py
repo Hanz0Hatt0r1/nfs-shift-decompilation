@@ -30,7 +30,7 @@ def test_part_record_uses_partition_id_and_variable_child_table():
     data = _header() + _chunk("PART", payload) + _chunk("END ", b"")
     row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
     assert row["partition_id"] == 7
-    assert row["aabbox_min"] == [-1.0, -2.0, -3.0]
+    assert row["aabbox_min"] == [ -1.0, -2.0, -3.0]
     assert row["aabbox_max"] == [1.0, 2.0, 3.0]
     assert row["fixed_quad"] == [10, 11, 12, 13]
     assert row["child_object_indices"] == [99, 100]
