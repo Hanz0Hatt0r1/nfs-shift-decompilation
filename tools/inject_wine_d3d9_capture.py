@@ -45,7 +45,7 @@ def patch_function(text: str, name: str, transform) -> str:
 
 def function_body(text: str, name: str) -> str:
     pattern = re.compile(
-        rf"(static\\s+(?:HRESULT|void|ULONG|BOOL)\\s+WINAPI\\s+{re.escape(name)}\\b.*?)(?=\\nstatic\\s+)",
+        rf"(static\s+(?:HRESULT|void|ULONG|BOOL)\s+WINAPI\s+{re.escape(name)}\b.*?)(?=\nstatic\s+)",
         re.DOTALL,
     )
     matches = list(pattern.finditer(text))
