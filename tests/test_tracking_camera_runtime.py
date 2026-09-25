@@ -22,7 +22,7 @@ def test_tracking_data_defaults_preserve_sentinels_and_units():
 def test_tracking_constructor_sets_exact_spline_defaults():
     result = describe_tracking_camera_constructor()
     assert result["writes"]["+0xf8"] == 0xFFFFFFFF
-    assert result["writes"]["+0xfc"] == 0
+    assert result["writes"]["+0xfc"] == 0xFFFFFFFF
     assert result["writes"]["+0x100"] == 0
     assert result["writes"]["+0x108"] == 0
 
