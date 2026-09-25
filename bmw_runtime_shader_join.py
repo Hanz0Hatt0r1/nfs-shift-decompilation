@@ -47,10 +47,9 @@ def _runtime_draw_states(runtime_report: Mapping[str, Any]):
         frame for frame in (runtime_report.get("frames") or [])
         if isinstance(frame, Mapping)
     ]
-    has_snapshots = any(bool(frame.get("draw_snapshots")) for frame in frames)
     for frame in frames:
         snapshots = frame.get("draw_snapshots") or []
-        if has_snapshots:
+        if snapshots:
             for snapshot in snapshots:
                 if isinstance(snapshot, Mapping):
                     yield frame, snapshot, "draw-snapshot"
