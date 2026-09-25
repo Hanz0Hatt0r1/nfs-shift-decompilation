@@ -414,8 +414,11 @@ def to_glsl(
     lines.append('ivec4 a0=ivec4(0);')
     lines.append('bvec4 predicate=bvec4(false);')
     for s in program.samplers:
-        sampler_type=program.sampler_types.get(s,'sampler2D')
-        lines.append(f'layout(binding={s}) uniform {sampler_type} tex{s};')
+        sampler_type = program.sampler_types.get(s, 'sampler2D')
+        if target == "vulkan":
+            lines.append(f'layout(set=1,binding={s}) uniform {sampler_type} tex{s};')
+        else:
+            lines.append(f'layout(binding={s}) uniform {sampler_type} tex{s};')
     input_locations = input_locations or {}
     output_locations = output_locations or {}
     for x in program.inputs:
