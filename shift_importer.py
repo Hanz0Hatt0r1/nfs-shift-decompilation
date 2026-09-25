@@ -1615,6 +1615,38 @@ def cmd_camera_switch_gate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_event_record(args: argparse.Namespace) -> int:
+    """Build an evidence-backed camera event record."""
+    from camera_event_record_runtime import build_camera_command_event, build_type3_camera_event
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    if args.event_type == 5:
+        command = payload["command"] if isinstance(payload, dict) else payload
+        result = build_camera_command_event(command, channel=args.channel)
+    else:
+        if not isinstance(payload, dict):
+            raise ValueError("type-3 event input must be an object")
+        result = build_type3_camera_event(
+            payload["first"],
+            payload["second"],
+            channel=args.channel,
+            byte_parameter=payload.get("byte_parameter", 0),
+        )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "type": result["header"]["type"],
+        "channel": result["header"]["channel"],
+        "payload_dword_count": result["header"]["payload_dword_count"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_event_stream(args: argparse.Namespace) -> int:
     """Decode the source-backed camera event stream/channel dispatch."""
     from camera_event_stream_runtime import dispatch_camera_event_stream
@@ -3539,6 +3571,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="JSON switch request/state")
     p.add_argument("output", help="SHIFT.CameraSwitchGateRuntime/2 JSON output")
     p.set_defaults(fn=cmd_camera_switch_gate)
+
+    p = sp.add_parser("camera-event-record", help="build recovered camera event record layout")
+    p.add_argument("event_type", type=int, choices=[3, 5])
+    p.add_argument("input", help="JSON event payload")
+    p.add_argument("output", help="SHIFT.CameraEventRecordRuntime/1 JSON output")
+    p.add_argument("--channel", type=int, default=0)
+    p.set_defaults(fn=cmd_camera_event_record)
 
     p = sp.add_parser("camera-event-stream", help="decode recovered camera event channel dispatch")
     p.add_argument("input", help="JSON object containing events and active_channel")
