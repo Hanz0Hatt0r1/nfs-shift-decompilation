@@ -251,3 +251,28 @@ def test_runtime_capture_preflight_reports_invalid_snapshot_schema():
     assert candidate["state_complete"] is False
     assert "draw-snapshot-schema" in candidate["missing_components"]
     assert "format:invalid" in candidate["snapshot_schema_blocking_reasons"]
+
+
+def test_runtime_capture_preflight_does_not_downgrade_exact_sha_to_path():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["same_instance_gate"]["candidate_frames"] = [{"frame": 7, "draw_index": 0}]
+    snapshot = _snapshot("abc", 150, 2098, draw_index=0)
+    snapshot["vertex_declaration"].pop("resource_sha256")
+    runtime["frames"] = [{"frame": 7, "draw_snapshots": [snapshot]}]
+    report = preflight_bmw_runtime(
+        runtime,
+        expected_resource_sha="abc",
+        expected_resource_path="vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    )
+    assert report["resource_draw_candidates"] == []
+    assert report["paint_draw_candidates"] == []
+    assert "runtime:target-paint-draw-not-observed" in report["blocking_reasons"]
+
+
+def test_runtime_capture_preflight_normalizes_exact_sha_case_and_whitespace():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["same_instance_gate"]["candidate_frames"] = [{"frame": 7, "draw_index": 0}]
+    snapshot = _snapshot(" ABC ", 150, 2098, draw_index=0)
+    runtime["frames"] = [{"frame": 7, "draw_snapshots": [snapshot]}]
+    report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
+    assert report["paint_draw_candidates"][0]["draw_index"] == 0
