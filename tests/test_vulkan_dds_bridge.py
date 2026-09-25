@@ -135,3 +135,30 @@ def test_dds_bridge_requires_all_material_2d_registers(tmp_path):
     )
     assert result["ready"] is False
     assert "dds-bridge:missing-2d-ds:s2" in result["blocking_reasons"]
+
+
+def test_dds_bridge_reports_decode_failures_instead_of_raising(tmp_path):
+    bad = tmp_path / "bad.dds"
+    bad.write_bytes(b"not-dds")
+    result = bridge_bmw_dds_resources(
+        _command(),
+        {"1": str(bad)},
+        tmp_path / "out",
+        environment_cube_dds=None,
+    )
+    assert result["ready"] is False
+    assert any(reason.startswith("dds-bridge:decode-failed:s1:") for reason in result["blocking_reasons"])
+
+
+def test_dds_bridge_does_not_double-report_incompatible_2d_resource_as_missing(tmp_path):
+    cube = tmp_path / "bad-kind.dds"
+    _write_cube(cube)
+    result = bridge_bmw_dds_resources(
+        _command(),
+        {"1": str(cube)},
+        tmp_path / "out",
+        environment_cube_dds=None,
+    )
+    assert result["ready"] is False
+    assert "dds-bridge:cubemap-supplied-to-2d-register:s1" in result["blocking_reasons"]
+    assert "dds-bridge:missing-2d-ds:s1" not in result["blocking_reasons"]
