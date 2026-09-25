@@ -78,10 +78,10 @@ def describe_camera_offset_blend(
     *,
     transformed_point: Sequence[float],
     direction: Sequence[float],
-    prior_matrix_quaternion: Sequence[float],
+    helper_004011f0_result: Sequence[float],
     depth_w: float,
     blend_source: float,
-    camera_offset: float,
+    tracking_error_magnitude: float,
     tracking_error_frequency: float,
     tracking_lag_smoothening: float,
     tracking_error_correction_speed: float,
@@ -99,8 +99,8 @@ def describe_camera_offset_blend(
         raise ValueError("transformed_point requires three values")
     if len(direction) != 3:
         raise ValueError("direction requires three values")
-    if len(prior_matrix_quaternion) != 4:
-        raise ValueError("prior_matrix_quaternion requires four values")
+    if len(helper_004011f0_result) != 4:
+        raise ValueError("helper_004011f0_result requires four values")
 
     point = [float(v) for v in transformed_point]
     dirv = [float(v) for v in direction]
@@ -117,14 +117,14 @@ def describe_camera_offset_blend(
         ]
 
     mix_factor = 1.0 - float(tracking_lag_smoothening)
-    blend = [
+    weighted_point = [
         normalized_point[i] * mix_factor
         for i in range(4)
     ]
-    prior = [float(v) for v in prior_matrix_quaternion]
+    helper_result = [float(v) for v in helper_004011f0_result]
     if blended_quaternion is None:
         blended = [
-            prior[i] * f + blend[i]
+            helper_result[i] + weighted_point[i]
             for i in range(4)
         ]
     else:
@@ -170,6 +170,7 @@ def describe_camera_offset_blend(
         "operation": "camera-offset-blend",
         "normalized_point": normalized_point,
         "blended_quaternion": blended,
+        "helper_004011f0_result": helper_result,
         "timer": {
             "before": float(current_308),
             "after": timer,
