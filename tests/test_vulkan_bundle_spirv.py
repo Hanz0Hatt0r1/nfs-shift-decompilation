@@ -14,6 +14,24 @@ def _binding():
                 "resolved": {"resource_sha256": "a" * 64},
                 "vertex_count": 3,
                 "triangle_count": 1,
+                "vertex_layout": {
+                    "format": "SHIFT.VertexLayout/1",
+                    "buffer_stride": 12,
+                    "attributes": [{
+                        "property_id": "200",
+                        "usage": "POSITION",
+                        "usage_index": 0,
+                        "location": 0,
+                        "offset": 0,
+                        "stride": 12,
+                        "storage": "FLOAT32x3",
+                        "android": "FLOAT32x3",
+                        "components": 3,
+                        "normalized": False,
+                        "element_size": 12,
+                        "abi_status": "proven",
+                    }],
+                },
             },
             "submeshes": [{
                 "shader": {
