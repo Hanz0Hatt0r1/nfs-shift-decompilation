@@ -19,6 +19,7 @@ from d3d9_draw_snapshot_schema import (
     validate_draw_snapshots,
     validate_draw_snapshot_alignment,
 )
+from runtime_resource_identity import match_resource_identity
 
 FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
 EVENTS = {
@@ -61,18 +62,12 @@ def _same_resource_identity(
     binding: Mapping[str, Any],
     identity: Mapping[str, Any],
 ) -> bool | None:
-    expected_sha = identity.get("resource_sha256")
-    actual_sha = binding.get("resource_sha256")
-    if expected_sha:
-        if not actual_sha:
-            return False
-        return str(actual_sha).strip().lower() == str(expected_sha).strip().lower()
-    expected_path = identity.get("resource_path")
-    actual_path = binding.get("resource_path")
-    if expected_path and actual_path:
-        return _norm(actual_path) == _norm(expected_path)
-    return None
-
+    matched, _status = match_resource_identity(
+        binding,
+        expected_sha256=identity.get("resource_sha256"),
+        expected_path=identity.get("resource_path"),
+    )
+    return matched
 
 def load_events(path: str | Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
