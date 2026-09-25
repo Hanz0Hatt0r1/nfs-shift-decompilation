@@ -467,7 +467,11 @@ def build_runtime_binding_evidence(
                 )
                 + (
                     ["declaration:bound-instance-not-valid"]
-                    if any(x["binding"].get("same_meb_resource") is True for x in frame_rows)
+                    if any(
+                        x["binding"].get("same_meb_resource") is True
+                        and x["binding"].get("bound_declaration_valid") is not True
+                        for x in frame_rows
+                    )
                     and not valid_bound_frames
                     else []
                 )
@@ -498,10 +502,6 @@ def build_runtime_binding_evidence(
                     and any(
                         x["binding"].get("same_meb_resource") is True
                         for x in frame_rows
-                    )
-                    and any(
-                        x.get("bound_declaration_valid") is True
-                        for x in valid_bound_frames
                     )
                     and not any(
                         x.get("indexed_draw_present") is True
