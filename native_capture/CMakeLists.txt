@@ -16,4 +16,12 @@ set_target_properties(shift_d3d9_capture PROPERTIES OUTPUT_NAME "d3d9" PREFIX ""
 
 if (MSVC)
   target_compile_options(shift_d3d9_capture PRIVATE /FI"${CMAKE_CURRENT_SOURCE_DIR}/capture_helpers.h")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # PortProton/Wine only needs the proxy itself. Avoid requiring the MinGW
+  # libgcc/libstdc++/winpthread DLLs next to the retail game executable.
+  target_link_options(shift_d3d9_capture PRIVATE
+    -static-libgcc
+    -static-libstdc++
+    "-Wl,-Bstatic,-lwinpthread,-Bdynamic"
+  )
 endif()
