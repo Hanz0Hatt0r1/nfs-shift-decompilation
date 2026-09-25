@@ -13,3 +13,6 @@ endif()
 
 add_executable(shift_vulkan_probe src/vulkan_probe.cpp)
 target_link_libraries(shift_vulkan_probe PRIVATE Vulkan::Vulkan)
+
+add_executable(shift_vulkan_headless_clear src/vulkan_headless_clear.cpp)
+target_link_libraries(shift_vulkan_headless_clear PRIVATE Vulkan::Vulkan)
