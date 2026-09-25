@@ -387,8 +387,15 @@ def to_glsl(
     input_locations: dict[int, int] | None = None,
     output_locations: dict[int, int] | None = None,
     constant_binding: int = 14,
+    target: str = "gles",
 )->str:
-    lines=['#version 310 es','precision highp float;','precision highp int;']
+    if target not in {"gles", "vulkan"}:
+        raise ValueError("unsupported GLSL target")
+    lines = (
+        ['#version 450']
+        if target == "vulkan"
+        else ['#version 310 es','precision highp float;','precision highp int;']
+    )
     for i in program.temps: lines.append(f'vec4 r{i}=vec4(0.0);')
     if not 0 <= constant_binding <= 31:
         raise ValueError("constant UBO binding must fit the GLES implementation range")

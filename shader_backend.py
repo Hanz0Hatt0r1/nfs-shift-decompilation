@@ -104,6 +104,101 @@ def validate_linked_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
         "link": link,
     }
 
+
+
+
+def validate_vulkan_glsl_pair(vertex_glsl: str, pixel_glsl: str) -> dict:
+    """Compile and link Vulkan-targeted GLSL with glslangValidator when available."""
+    validator = shutil.which("glslangValidator")
+    if validator is None:
+        return {
+            "format": "SHIFT.VulkanShaderValidation/1",
+            "status": "unavailable",
+            "validator": None,
+            "stages": {"vertex": {"valid": None}, "pixel": {"valid": None}},
+            "link": {"valid": None, "returncode": None, "stdout": "", "stderr": ""},
+        }
+
+    with tempfile.TemporaryDirectory(prefix="shift-vulkan-glsl-") as td:
+        root = Path(td)
+        vertex_path = root / "shader.vert"
+        pixel_path = root / "shader.frag"
+        vertex_path.write_text(vertex_glsl, encoding="utf-8")
+        pixel_path.write_text(pixel_glsl, encoding="utf-8")
+        stages = {}
+        for stage, path, flag in (
+            ("vertex", vertex_path, "vert"),
+            ("pixel", pixel_path, "frag"),
+        ):
+            proc = subprocess.run(
+                [validator, "-V", "-S", flag, str(path)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            stages[stage] = {
+                "valid": proc.returncode == 0,
+                "returncode": proc.returncode,
+                "stdout": proc.stdout,
+                "stderr": proc.stderr,
+            }
+
+        stage_valid = all(value["valid"] for value in stages.values())
+        link = {"valid": None, "returncode": None, "stdout": "", "stderr": ""}
+        if stage_valid:
+            linked = subprocess.run(
+                [validator, "-V", "-l", str(vertex_path), str(pixel_path)],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            link = {
+                "valid": linked.returncode == 0,
+                "returncode": linked.returncode,
+                "stdout": linked.stdout,
+                "stderr": linked.stderr,
+            }
+
+    valid = stage_valid and link["valid"] is True
+    reasons = []
+    if not valid:
+        reasons.extend(
+            f"vulkan-shader:{stage}-compile-failed"
+            for stage, item in stages.items()
+            if item.get("valid") is False
+        )
+        if link.get("valid") is False:
+            reasons.append("vulkan-shader:stage-link-failed")
+    return {
+        "format": "SHIFT.VulkanShaderValidation/1",
+        "status": "valid" if valid else "invalid",
+        "validator": validator,
+        "stages": stages,
+        "link": link,
+        "blocking_reasons": reasons,
+    }
+
+
+def validate_linked_shader_pair_vulkan(linked_pair: dict) -> dict:
+    """Validate a SHIFT.LinkedShaderPair/1 using Vulkan GLSL -> SPIR-V compilation."""
+    if linked_pair.get("format") != "SHIFT.LinkedShaderPair/1":
+        return {
+            "format": "SHIFT.VulkanShaderValidation/1",
+            "status": "invalid",
+            "validator": None,
+            "blocking_reasons": ["linked-shader:invalid-format"],
+        }
+    vertex_glsl = str(linked_pair.get("vulkan_vertex_glsl") or "")
+    pixel_glsl = str(linked_pair.get("vulkan_pixel_glsl") or "")
+    if not vertex_glsl or not pixel_glsl:
+        return {
+            "format": "SHIFT.VulkanShaderValidation/1",
+            "status": "invalid",
+            "validator": None,
+            "blocking_reasons": ["linked-shader:vulkan-source-missing"],
+        }
+    return validate_vulkan_glsl_pair(vertex_glsl, pixel_glsl)
+
 def validate_linked_shader_pair(linked_pair: dict) -> dict:
     """Validate a SHIFT.LinkedShaderPair/1 payload through the local GLES compiler."""
     if linked_pair.get("format") != "SHIFT.LinkedShaderPair/1":
@@ -165,6 +260,17 @@ def translate_pair(
             output_locations=linkage["vertex_output_locations"],
         ),
         "pixel_glsl": to_glsl(pixel, input_locations=linkage["pixel_input_locations"]),
+        "vulkan_vertex_glsl": to_glsl(
+            vertex,
+            input_locations=input_linkage["input_locations"],
+            output_locations=linkage["vertex_output_locations"],
+            target="vulkan",
+        ),
+        "vulkan_pixel_glsl": to_glsl(
+            pixel,
+            input_locations=linkage["pixel_input_locations"],
+            target="vulkan",
+        ),
     }
 
 
