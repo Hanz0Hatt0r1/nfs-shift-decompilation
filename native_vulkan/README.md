@@ -89,3 +89,17 @@ contract independent.
 
 COLOR0 is explicitly repacked from BGRA source bytes to RGBA normalized bytes using the
 executable-backed D3DCOLOR evidence. Unresolved COLOR1 is kept out of the packet.
+
+
+## D3D9 constant descriptor upload
+
+Phase 213 uses SHIFT.VulkanConstantPacket/1 to provide two 4096-byte c-register banks:
+
+    VS -> set 0 / binding 14
+    PS -> set 0 / binding 15
+
+Build and run the synthetic constant checkpoint with:
+
+    cmake -S native_vulkan -B native_vulkan/build
+    cmake --build native_vulkan/build --config Release
+    ./native_vulkan/build/shift_vulkan_constant_upload       out/constants.svcp       out/constants.ppm       native_vulkan/build/shaders
