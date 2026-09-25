@@ -206,3 +206,82 @@ def test_runtime_render_contract_blocks_missing_external_texture_object(monkeypa
     assert report["ready"] is True
     assert report["reference_render_ready"] is False
     assert "runtime:texture-object-not-bound:s3" in report["blocking_reasons"]
+
+
+def test_runtime_render_contract_uses_selected_draw_snapshot(monkeypatch, tmp_path):
+    monkeypatch.setattr(contract, "BFF", FakeArchive)
+    monkeypatch.setattr(
+        contract,
+        "read_meb",
+        lambda data: SimpleNamespace(vertex_properties=["200"], vertex_count=3, triangle_count=1),
+    )
+    monkeypatch.setattr(
+        contract,
+        "translate_pair_blob",
+        lambda *args, **kwargs: {"format": "SHIFT.LinkedShaderPair/1"},
+    )
+    monkeypatch.setattr(
+        bmw_runtime_shader_select,
+        "select_runtime_shader",
+        lambda material, runtime: {
+            "format": "SHIFT.BMWRuntimeShaderSelection/1",
+            "status": "match",
+            "ready": True,
+            "blocking_reasons": [],
+            "selected": {
+                "frame": 9,
+                "draw_index": 1,
+                "candidate_file": "RENDER.bff::render/shaders/cache/render_shaders_bodywork_test.fxo",
+                "candidate_program_offset": 128,
+            },
+        },
+    )
+    runtime = _runtime()
+    runtime["frames"][0]["constant_writes"] = [{
+        "stage": "pixel",
+        "start_register": 5,
+        "vector4f_count": 1,
+        "values": [99.0, 99.0, 99.0, 99.0],
+    }]
+    runtime["frames"][0]["texture_bindings"] = [{"stage": 0, "texture_ptr": "0x900"}]
+    runtime["frames"][0]["draw_snapshots"] = [
+        {
+            "frame": 9,
+            "draw_index": 0,
+            "vertex_shader": {"shader_ptr": "0xdead"},
+            "pixel_shader": {"shader_ptr": "0xbeef"},
+            "constant_writes": [{
+                "stage": "pixel",
+                "start_register": 5,
+                "vector4f_count": 1,
+                "values": [1.0, 1.0, 1.0, 1.0],
+            }],
+            "texture_bindings": [{"stage": 0, "texture_ptr": "0x100"}],
+            "draw": {"primitive_count": 1},
+        },
+        {
+            "frame": 9,
+            "draw_index": 1,
+            "vertex_shader": {"shader_ptr": "0x200"},
+            "pixel_shader": {"shader_ptr": "0x300"},
+            "constant_writes": [{
+                "stage": "pixel",
+                "start_register": 5,
+                "vector4f_count": 1,
+                "values": [2.0, 3.0, 4.0, 5.0],
+            }],
+            "texture_bindings": [{"stage": 0, "texture_ptr": "0x400"}],
+            "draw": {"primitive_count": 2},
+        },
+    ]
+
+    report = contract.build_runtime_render_contract(
+        _material_input(),
+        runtime,
+        primary_bff=tmp_path / "BMW_M3_E36.bff",
+        render_bff=tmp_path / "RENDER.bff",
+    )
+
+    assert report["constants"]["pixel"]["c"][5] == [2.0, 3.0, 4.0, 5.0]
+    assert report["external_textures"][0]["texture_ptr"] == "0x400"
+    assert report["frame"]["indexed_draw_count"] == 1
