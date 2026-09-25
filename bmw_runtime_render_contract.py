@@ -263,9 +263,14 @@ def build_runtime_render_contract(
         },
         "frame": {
             "frame": frame.get("frame"),
+            "draw_index": frame.get("draw_index"),
             "texture_binding_count": len(frame.get("texture_bindings") or []),
             "constant_write_count": len(frame.get("constant_writes") or []),
-            "indexed_draw_count": len(frame.get("draws") or []),
+            "indexed_draw_count": (
+                1
+                if frame.get("draw_index") is not None
+                else len(frame.get("draws") or [])
+            ),
         },
         "boundary": {
             "external_texture_contents": "not-supplied",
