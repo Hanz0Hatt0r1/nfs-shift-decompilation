@@ -246,3 +246,25 @@ def test_runtime_shader_join_blocks_when_material_draw_range_has_no_runtime_matc
     assert report["ready"] is False
     assert report["matched_draw_count"] == 0
     assert "runtime:shader-or-resource-instance-not-found" in report["blocking_reasons"]
+
+
+def test_runtime_shader_join_rejects_malformed_versioned_snapshot():
+    material = _material()
+    runtime = _runtime()
+    runtime["frames"][0]["draw_snapshots"] = [{
+        "format": "SHIFT.D3D9DrawStateSnapshot/999",
+        "frame": 17,
+        "draw_index": 0,
+        "draw": {"start_index": 0, "primitive_count": 1, "base_vertex_index": 0},
+        "vertex_declaration": {
+            "declaration_ptr": "0x1",
+            "resource_sha256": "abc",
+            "resource_path": "vehicles/bmw/body.meb",
+        },
+        "shader_permutation_identity": {
+            "identity_sha256": "shader-id",
+        },
+    }]
+    report = join_runtime_shader(material, runtime)
+    assert report["ready"] is False
+    assert report["candidate_frames"] == []
