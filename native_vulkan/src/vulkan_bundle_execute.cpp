@@ -58,6 +58,26 @@ struct TextureRecord {
     uint32_t pixel_bytes;
     uint32_t sampler_mode;
 };
+struct SamplerHeader {
+    char magic[4];
+    uint32_t version;
+    uint32_t count;
+    uint32_t descriptor_set;
+    uint32_t reserved;
+};
+struct SamplerRecord {
+    uint32_t register_index;
+    uint32_t min_filter;
+    uint32_t mag_filter;
+    uint32_t mip_filter;
+    uint32_t address_u;
+    uint32_t address_v;
+    uint32_t address_w;
+    uint32_t srgb;
+    uint32_t anisotropy;
+    uint32_t submesh_index;
+    float lod_bias;
+};
 struct CubeHeader {
     char magic[4];
     uint32_t version;
@@ -74,6 +94,8 @@ static_assert(sizeof(GeometryAttribute) == 16);
 static_assert(sizeof(ConstantHeader) == 28);
 static_assert(sizeof(TextureHeader) == 20);
 static_assert(sizeof(TextureRecord) == 24);
+static_assert(sizeof(SamplerHeader) == 20);
+static_assert(sizeof(SamplerRecord) == 44);
 static_assert(sizeof(CubeHeader) == 28);
 
 namespace {
@@ -156,6 +178,11 @@ struct TexturePacket {
     TextureHeader header{};
     std::vector<TextureRecord> records;
     std::vector<uint8_t> bytes;
+};
+
+struct SamplerPacket {
+    SamplerHeader header{};
+    std::vector<SamplerRecord> records;
 };
 
 struct CubePacket {
@@ -442,6 +469,42 @@ TexturePacket load_texture_packet(const std::filesystem::path& path) {
     return packet;
 }
 
+SamplerPacket load_sampler_packet(const std::filesystem::path& path) {
+    const auto data = read_bytes(path);
+    if (data.size() < sizeof(SamplerHeader)) {
+        throw std::runtime_error("sampler packet truncated");
+    }
+    SamplerPacket packet{};
+    std::memcpy(&packet.header, data.data(), sizeof(packet.header));
+    if (std::memcmp(packet.header.magic, "SVSS", 4) != 0 ||
+        packet.header.version != 1 ||
+        packet.header.descriptor_set != 1 ||
+        packet.header.count > 16) {
+        throw std::runtime_error("unsupported sampler packet");
+    }
+    const size_t bytes = static_cast<size_t>(packet.header.count) * sizeof(SamplerRecord);
+    if (data.size() != sizeof(SamplerHeader) + bytes) {
+        throw std::runtime_error("sampler packet size mismatch");
+    }
+    packet.records.resize(packet.header.count);
+    if (bytes) {
+        std::memcpy(packet.records.data(), data.data() + sizeof(SamplerHeader), bytes);
+    }
+    for (const auto& record : packet.records) {
+        if (record.register_index > 15 ||
+            record.min_filter < 1 || record.min_filter > 2 ||
+            record.mag_filter < 1 || record.mag_filter > 2 ||
+            record.mip_filter != 0 ||
+            record.address_u < 1 || record.address_u > 2 ||
+            record.address_v < 1 || record.address_v > 2 ||
+            record.address_w < 1 || record.address_w > 2 ||
+            record.anisotropy != 1) {
+            throw std::runtime_error("invalid sampler packet record");
+        }
+    }
+    return packet;
+}
+
 CubePacket load_cube_packet(const std::filesystem::path& path) {
     const auto data = read_bytes(path);
     if (data.size() < sizeof(CubeHeader)) {
@@ -595,6 +658,36 @@ void create_image(
           "vkCreateImageView failed");
 }
 
+const SamplerRecord* find_sampler_record(
+    const SamplerPacket* packet,
+    uint32_t register_index) {
+    if (!packet) return nullptr;
+    for (const auto& record : packet->records) {
+        if (record.register_index == register_index) return &record;
+    }
+    return nullptr;
+}
+
+VkSampler sampler_for_record(Context& ctx, const SamplerRecord& state) {
+    VkSamplerCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    info.magFilter = state.mag_filter == 2 ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    info.minFilter = state.min_filter == 2 ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    info.addressModeU = state.address_u == 2 ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE :
+                                               VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    info.addressModeV = state.address_v == 2 ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE :
+                                               VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    info.addressModeW = state.address_w == 2 ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE :
+                                               VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    info.mipLodBias = state.lod_bias;
+    info.maxLod = 1.0f;
+    VkSampler sampler = VK_NULL_HANDLE;
+    check(vkCreateSampler(ctx.device, &info, nullptr, &sampler),
+          "vkCreateSampler sampler packet failed");
+    return sampler;
+}
+
 VkSampler sampler_for_mode(Context& ctx, uint32_t mode) {
     const bool linear = mode == 2 || mode == 4;
     const bool clamp = mode == 3 || mode == 4;
@@ -691,6 +784,8 @@ int main(int argc, char** argv) {
                     root / "vulkan_render.ppm";
 
     Context ctx{};
+    SamplerPacket sampler_packet{};
+    const SamplerPacket* sampler_state = nullptr;
     Buffer vertex_buffer{};
     Buffer index_buffer{};
     Buffer vertex_constants{};
@@ -722,6 +817,12 @@ int main(int argc, char** argv) {
         TexturePacket texture_packet{};
         const bool has_textures =
             std::filesystem::is_regular_file(root / "textures.svtp");
+        const bool has_sampler_packet =
+            std::filesystem::is_regular_file(root / "samplers.svss");
+        if (has_sampler_packet) {
+            sampler_packet = load_sampler_packet(root / "samplers.svss");
+            sampler_state = &sampler_packet;
+        }
         if (has_textures) {
             texture_packet = load_texture_packet(root / "textures.svtp");
         }
@@ -804,11 +905,19 @@ int main(int argc, char** argv) {
             vkUnmapMemory(ctx.device, textures[i].staging.memory);
 
             textures[i].record = record;
+            const SamplerRecord* state = find_sampler_record(
+                sampler_state, record.register_index);
+            const VkFormat texture_format =
+                (state != nullptr && state->srgb != 0)
+                    ? VK_FORMAT_R8G8B8A8_SRGB
+                    : VK_FORMAT_R8G8B8A8_UNORM;
             create_image(
-                ctx, record.width, record.height, 1, VK_FORMAT_R8G8B8A8_UNORM, 0,
+                ctx, record.width, record.height, 1, texture_format, 0,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 textures[i].image);
-            textures[i].sampler = sampler_for_mode(ctx, record.sampler_mode);
+            textures[i].sampler = state
+                ? sampler_for_record(ctx, *state)
+                : sampler_for_mode(ctx, record.sampler_mode);
         }
 
         if (has_cube) {
