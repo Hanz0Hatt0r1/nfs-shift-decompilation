@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 247.**
+> **Current mainline: Phase 248.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -736,3 +736,12 @@ Run it on an extracted BAB resource with a runtime mode recovered from the sourc
     python shift_importer.py bab-animation-runtime animation/example.bab out/example.bab.runtime.json --mode 0
 
 This phase does not modify the renderer or RENDER.bff workflow.
+
+
+## Animation TRACK/node runtime
+
+Phase 248 reconstructs the source-backed XML animation track contract without
+assuming that XML track-form names equal BAB numeric channel IDs. It captures
+translation/rotation/scale/weight usage, sampled/keyed/fixed forms, attachment
+constraints, exact node-name mapping, transform defaults, and hexadecimal
+float-word preservation. Renderer code and RENDER.bff are not part of this phase.
