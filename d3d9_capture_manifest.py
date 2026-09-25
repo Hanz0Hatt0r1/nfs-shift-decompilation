@@ -85,11 +85,9 @@ def build_capture_manifest(
             "capture-schema:" + str(reason.get("reason"))
             for reason in schema.get("blocking_reasons") or []
         )
-    if integrity.get("status") not in {"observed", "not-supplied"}:
-        blockers.extend(
-            "capture-integrity:" + str(reason.get("reason"))
-            for reason in integrity.get("blocking_reasons") or []
-        )
+    for reason in integrity.get("blocking_reasons") or []:
+        if str(reason.get("reason")) in {"event-index-partial", "event-index-not-contiguous"}:
+            blockers.append("capture-integrity:" + str(reason.get("reason")))
 
     return {
         "format": FORMAT,
