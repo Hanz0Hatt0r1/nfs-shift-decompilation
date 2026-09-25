@@ -79,7 +79,11 @@ def _draw_matches_range(draw: Mapping[str, Any], expected: tuple[int, int]) -> b
     return start_index == expected_first and primitive_count == expected_count // 3
 
 
-def _runtime_draw_states(runtime_report: Mapping[str, Any]):
+def _runtime_draw_states(
+    runtime_report: Mapping[str, Any],
+    *,
+    reject_invalid_snapshots: bool = False,
+):
     """Yield the exact runtime state used by each draw.
 
     Current captures contain draw_snapshots. Legacy fixtures without them are
@@ -96,7 +100,7 @@ def _runtime_draw_states(runtime_report: Mapping[str, Any]):
             for snapshot in snapshots:
                 if not isinstance(snapshot, Mapping):
                     continue
-                if snapshot.get("format") is not None:
+                if reject_invalid_snapshots and snapshot.get("format") is not None:
                     if validate_draw_snapshot(snapshot):
                         continue
                 yield frame, snapshot, "draw-snapshot"
@@ -118,7 +122,7 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
     expected_samplers = _expected_sampler_registers(material_slice)
     expected_draw_range = _expected_draw_range(material_slice)
     matches = []
-    for frame, state, state_source in _runtime_draw_states(runtime_report):
+    for frame, state, state_source in _runtime_draw_states(runtime_report, reject_invalid_snapshots=True):
         states = [(state, None)]
         if state_source == 'frame-aggregate' and expected_draw_range is not None:
             states = [
