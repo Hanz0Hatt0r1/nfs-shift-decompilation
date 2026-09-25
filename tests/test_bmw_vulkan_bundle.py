@@ -84,7 +84,7 @@ def test_bmw_vulkan_bundle_prepares_geometry_constants_and_shaders(tmp_path):
 
 def test_bmw_vulkan_bundle_requires_exact_bmw_m3_mesh_reference(tmp_path):
     command = _command()
-    command["mesh"]["ref"] = "vehicles/other/body.meb"
+    command["render_commands"][0]["mesh"]["ref"] = "vehicles/other/body.meb"
     try:
         build_bmw_vulkan_bundle(command, _mesh(), tmp_path)
     except ValueError as error:
@@ -95,7 +95,7 @@ def test_bmw_vulkan_bundle_requires_exact_bmw_m3_mesh_reference(tmp_path):
 
 def test_bmw_vulkan_bundle_blocks_missing_material_textures(tmp_path):
     command = _command()
-    command["submeshes"][0]["textures"] = [{
+    command["render_commands"][0]["submeshes"][0]["textures"] = [{
         "d3d9_sampler_register": 1,
         "resource_binding_id": 1,
         "texture_id": 2,
