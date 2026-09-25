@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from bmw_m3_paint_asset_contract import PAINT_MTX, validate_bmw_paint_asset
+from bmw_m3_paint_asset_contract import validate_bmw_paint_asset
 
 FORMAT = "SHIFT.BMWGoldenRenderGate/1"
 
@@ -144,7 +144,7 @@ def validate_bmw_golden_gate(
             )
 
         material_ref = _material_ref(submesh)
-        if expected_path == "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb" and material_ref == _norm(PAINT_MTX):
+        if material_ref.endswith("/bmw_m3_e36/bmw_m3_e36_paint.mtx"):
             paint_shader_gate = material.get("paint_shader_gate")
             if not isinstance(paint_shader_gate, dict):
                 reasons.append(f"paint-shader:{index}:missing")

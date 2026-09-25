@@ -5,6 +5,7 @@ import json
 import pytest
 
 import bmw_real_material_slice as slicer
+import bmw_material_slice_golden_gate as slice_gate
 
 
 class FakeEntry:
@@ -99,6 +100,7 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     golden_path=tmp_path/"golden.json"
     golden_path.write_text(json.dumps(_golden()), encoding="utf-8")
     monkeypatch.setattr(slicer, "validate_bmw_paint_asset", lambda golden: {"ready":True,"blocking_reasons":[]})
+    monkeypatch.setattr(slice_gate, "validate_bmw_paint_asset", lambda golden: {"ready":True,"blocking_reasons":[]})
     mesh=SimpleNamespace(
         name="BMW_M3_E36_KIT00_BODY_LODA",
         vertex_count=4,

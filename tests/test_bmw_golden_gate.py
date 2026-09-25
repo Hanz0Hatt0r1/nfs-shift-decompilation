@@ -124,7 +124,7 @@ def test_bmw_golden_gate_blocks_missing_bmw_paint_shader_gate():
 
 def test_bmw_golden_gate_requires_shader_gate_only_for_exact_m3_paint():
     golden=_golden()
-    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
+    golden["mesh"]["primitives"][0]["material"]="vehicles/bmw/bmw_m3_badging.mtx"
     packet=_packet()
     packet["submeshes"][0]["material"]["ref"]="vehicles/bmw/bmw_m3_badging.mtx"
     packet["submeshes"][0]["material"].pop("paint_shader_gate", None)
