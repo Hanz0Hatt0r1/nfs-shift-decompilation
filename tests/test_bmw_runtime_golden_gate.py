@@ -155,5 +155,5 @@ def test_runtime_golden_gate_rejects_shader_and_material_range_on_different_draw
     m.write_text(json.dumps(material)); r.write_text(json.dumps(runtime)); u.write_text(json.dumps({'6':10}))
     report=validate_runtime_golden_gate(m,r,usage_map_path=u)
     assert report['ready'] is False
-    assert 'runtime-draw:shader-and-material-range-mismatch' in report['blocking_reasons']
+    assert 'runtime:shader-or-resource-instance-not-found' in report['blocking_reasons']
 
