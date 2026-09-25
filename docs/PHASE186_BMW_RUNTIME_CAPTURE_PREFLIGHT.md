@@ -16,10 +16,13 @@ the documented BMW M3 paint primitive ranges before shader execution begins.
 - frame and draw identity;
 - captured shader identity when present;
 - runtime integrity and same-instance status;
-- explicit blocking reasons.
+- explicit blocking reasons;
+- draw-state completeness and missing runtime components for each candidate.
 
 The preflight is diagnostic. It does not replace `same_instance_gate` and does not
-promote a render to ready on resource/range evidence alone.
+promote a render to ready on resource/range evidence alone. `proven_paint_draw_candidates`
+is the exact intersection of a paint-range candidate with the strict same-instance
+candidate set; paint-range matches on a different draw remain blocked.
 
 ## Pipeline integration
 
