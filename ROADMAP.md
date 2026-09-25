@@ -1152,3 +1152,10 @@ as the binding. ShaderProgram Vulkan emission uses set 1 for texture samplers.
 
 This phase is a synthetic sampled-texture checkpoint. Real BMW DDS ingestion and the
 samplerCube/environment resource remain next.
+
+
+## Phase 215: Vulkan samplerCube / environmentMap
+
+The Linux Vulkan backend now has a dedicated SHIFT.VulkanCubeTexturePacket/1 boundary for BMW environmentMap. A complete ReferenceCubeTexture/1 is uploaded to a VK_IMAGE_CREATE_CUBE_COMPATIBLE image with six explicit face layers and exposed as set 1 / binding 3. The smoke shader samples s3 as samplerCube.
+
+Real BMW environment-map content/orientation remains tied to runtime resource evidence.
