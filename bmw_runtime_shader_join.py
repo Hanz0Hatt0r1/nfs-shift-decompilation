@@ -162,7 +162,7 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
         unexpected = sorted(runtime_set - expected_set)
         if unexpected:
             sampler_mismatches.append({'reason': 'unexpected-runtime-samplers', 'registers': unexpected})
-        state_draw_index = state.get('draw_index') if state_source == 'draw-snapshot' else None
+        state_draw_index = state.get('draw_index')
         candidate_rows.append({
             'frame': frame.get('frame'),
             'draw_index': state_draw_index,
