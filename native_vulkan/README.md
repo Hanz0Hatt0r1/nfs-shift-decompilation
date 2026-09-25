@@ -119,3 +119,16 @@ Run the native checkpoint with:
 The current smoke shader samples s1 and therefore the packet must contain sampler
 register s1. Additional packet registers are upload-capable but are not consumed by
 the fixed smoke shader.
+
+
+## samplerCube / environmentMap
+
+Phase 215 maps the BMW environment contract to Vulkan descriptor set 1, binding 3. Generate a cube packet with:
+
+    python vulkan_cube_packet.py render_command.json environment_cube.json out/environment.svcp
+
+Run:
+
+    ./native_vulkan/build/shift_vulkan_sampler_cube out/environment.svcp out/environment.ppm native_vulkan/build/shaders
+
+The smoke shader samples s3 as samplerCube. The packet keeps the explicit face order px/nx/py/ny/pz/nz and rejects non-clamp addressing.

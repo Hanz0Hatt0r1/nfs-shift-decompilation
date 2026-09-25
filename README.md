@@ -671,3 +671,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Vulkan textures:** Phase 214 adds a real RGBA8 image/sampler descriptor path. D3D9 sampler registers are preserved as Vulkan set 1 bindings; set 0 remains reserved for VS/PS constants. The current smoke shader exercises s1.
+
+
+> **Vulkan samplerCube:** Phase 215 adds a dedicated SHIFT.VulkanCubeTexturePacket/1 path for BMW environmentMap/s3. Six explicit RGBA8 faces are uploaded into a cube-compatible image and bound at Vulkan set 1/binding 3; actual BMW cube content/orientation remains a runtime evidence gate.
