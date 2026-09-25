@@ -407,8 +407,7 @@ int main(int argc, char** argv) {
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
-    Image dummy{};
-    Image color{};
+        Image color{};
     Buffer staging{};
     VkCommandBuffer command = VK_NULL_HANDLE;
 
