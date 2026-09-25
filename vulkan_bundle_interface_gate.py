@@ -49,6 +49,12 @@ def validate_bmw_vulkan_interface(
         blockers.extend(report.get("blocking_reasons") or ["vulkan-interface:spirv-not-ready"])
 
     descriptors = _descriptor_rows(report)
+    descriptor_keys = [
+        (int(row.get("set", -1)), int(row.get("binding", -1)), str(row.get("shader_stage") or ""))
+        for row in descriptors
+    ]
+    if len(descriptor_keys) != len(set(descriptor_keys)):
+        blockers.append("vulkan-interface:duplicate-reflected-descriptor")
     provided_2d: set[int] = set()
     texture_packet = root / "textures.svtp"
     if texture_packet.is_file():
