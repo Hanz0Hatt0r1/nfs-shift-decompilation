@@ -292,6 +292,10 @@ def analyze_meb_d3d9_color_bridge(
     descriptor_triple = analyze_meb_d3d9_descriptor_triple(meb, source)
     descriptor_properties = descriptor_triple.get("properties") or {}
     type4_source_observed = source_rows["type_4_packed_color"].get("status") == "observed"
+    descriptor_pair_complete = all(
+        (descriptor_properties.get(pid) or {}).get("d3d9_type_mapping", {}).get("status") == "match"
+        for pid in SUPPORTED_PROPERTIES
+    )
 
     resource_rows: dict[str, dict[str, Any]] = {
         pid: {
@@ -372,7 +376,7 @@ def analyze_meb_d3d9_color_bridge(
         descriptor_mapping_status = (descriptor_row.get("d3d9_type_mapping") or {}).get("status", "not-proven")
         property_mapping_status = (
             "observed"
-            if descriptor_mapping_status == "match" and type4_source_observed
+            if descriptor_pair_complete and descriptor_mapping_status == "match" and type4_source_observed
             else "mismatch"
             if descriptor_mapping_status == "mismatch"
             else "not-proven"

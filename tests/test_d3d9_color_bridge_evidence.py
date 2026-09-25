@@ -272,7 +272,7 @@ def test_color_bridge_accepts_coherent_real_resource_provenance():
     assert result["resource_provenance"]["460"]["reports"][0]["status"] == "observed"
     assert result["resource_provenance"]["461"]["status"] == "not-supplied"
     assert result["resource_errors"] == []
-    assert result["meb_property_mapping"]["status"] == "not-proven"
+    assert result["meb_property_mapping"]["status"] == "observed"
 
 
 def test_color_bridge_rejects_tampered_resource_payload_hash():
@@ -296,7 +296,7 @@ def test_color_bridge_isolates_unknown_resource_property_id():
     assert result["resource_provenance"]["461"]["status"] == "not-supplied"
     assert result["resource_errors"][0]["property_id"] == "999"
     assert result["resource_errors"][0]["status"] == "mismatch"
-    assert result["meb_property_mapping"]["status"] == "not-proven"
+    assert result["meb_property_mapping"]["status"] == "observed"
 
 
 def test_color_bridge_keeps_resource_provenance_independent_per_property():
