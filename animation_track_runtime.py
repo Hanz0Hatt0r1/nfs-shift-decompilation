@@ -21,10 +21,10 @@ FORMAT = "SHIFT.AnimationTrackRuntime/1"
 TRACK_FORMS: dict[str, dict[str, Any]] = {
     "SampledVec3f": {"value_type": "vec3", "storage": "sampled", "parser": "FUN_00a671f0", "attachment": "FUN_00a63810"},
     "SampledQuatf": {"value_type": "quat", "storage": "sampled", "parser": "FUN_00a67320", "attachment": "FUN_00a63bd0"},
-    "Sampledf32": {"value_type": "f32", "storage": "sampled", "parser": "FUN_00a66560", "attachment": "FUN_00a657b0"},
+    "Sampledf32": {"value_type": "f32", "storage": "sampled", "parser": "FUN_00a66560", "attachment": "FUN_00a65670"},
     "KeyedVec3f": {"value_type": "vec3", "storage": "keyed", "parser": "FUN_00a66c60", "attachment": "FUN_00a63e70"},
     "KeyedQuatf": {"value_type": "quat", "storage": "keyed", "parser": "FUN_00a66da0", "attachment": "FUN_00a64190"},
-    "Keyedf32": {"value_type": "f32", "storage": "keyed", "parser": "FUN_00a66640", "attachment": "FUN_00a65820"},
+    "Keyedf32": {"value_type": "f32", "storage": "keyed", "parser": "FUN_00a66640", "attachment": "FUN_00a65810"},
     "FixedVec3f": {"value_type": "vec3", "storage": "fixed", "parser": "FUN_00a66f60", "attachment": "FUN_00a643d0"},
     "FixedQuatf": {"value_type": "quat", "storage": "fixed", "parser": "FUN_00a66f00", "attachment": "FUN_00a64540"},
     "FixedEulerf": {
@@ -141,7 +141,7 @@ def validate_track_binding(
             "slot_attachers": {
                 "vec3": "FUN_00a63810/FUN_00a63e70/FUN_00a643d0",
                 "quat": "FUN_00a63bd0/FUN_00a64190/FUN_00a64540",
-                "f32": "FUN_00a657b0/FUN_00a65820/FUN_00a65950",
+                "f32": "FUN_00a65670/FUN_00a65810/FUN_00a65950",
             },
         },
     }
