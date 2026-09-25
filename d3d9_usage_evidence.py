@@ -102,8 +102,12 @@ def analyze_d3d9_usage_semantics(source: str | bytes) -> dict[str, Any]:
         rows.append(
             {
                 "usage_code": code,
+                "usage_ordinal": code,
                 "source_name": expected_name,
                 "status": "observed" if observed else "not-found",
+                "numeric_d3d9_usage": None,
+                "numeric_d3d9_usage_status": "not-proven",
+                "numeric_d3d9_usage_source": "DAT_00b9011c[usage_ordinal] via FUN_00853c40",
                 "source_line": (
                     text.count("\n", 0, case_offset) + 1
                     if case_offset >= 0
