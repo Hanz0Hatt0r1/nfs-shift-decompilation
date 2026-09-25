@@ -118,3 +118,29 @@ def test_runtime_golden_gate_requires_same_instance_gate(tmp_path):
     report=validate_runtime_golden_gate(m,r,usage_map_path=u)
     assert report['ready'] is False
     assert 'runtime-same-instance:not-proven' in report['blocking_reasons']
+
+
+def test_runtime_golden_gate_rejects_shader_and_material_range_on_different_draws(tmp_path):
+    material = _material()
+    runtime = _runtime()
+    runtime['frames'][0]['draws'] = [
+        {'start_index': 150, 'primitive_count': 2098, 'base_vertex_index': 0},
+    ]
+    runtime['frames'][0]['draw_snapshots'] = [{
+        'frame': 1,
+        'draw_index': 1,
+        'vertex_declaration': {'declaration_ptr': '0x1', 'resource_sha256': 'sha', 'create_known': True},
+        'vertex_shader': {'shader_ptr': '0x2', 'create_known': True},
+        'pixel_shader': {'shader_ptr': '0x3', 'create_known': True},
+        'stream_sources': [{'stream': 0}],
+        'index_binding': {'index_buffer_ptr': '0x4'},
+        'draw': {'start_index': 0, 'primitive_count': 1, 'base_vertex_index': 0},
+        'constant_writes': [{'stage': 'pixel', 'start_register': 5, 'vector4f_count': 1, 'values': [1.0, 2.0, 3.0, 4.0]}],
+        'texture_bindings': [],
+        'shader_permutation_identity': {'identity_sha256': 'shader-id', 'payload': {'vertex': {'inputs': [{'register': 'v0', 'usage': 'COLOR', 'index': 0}], 'constants': []}, 'pixel': {'constants': [5], 'sampler_types': {}}}},
+    }]
+    m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'
+    m.write_text(json.dumps(material)); r.write_text(json.dumps(runtime)); u.write_text(json.dumps({'6':10}))
+    report=validate_runtime_golden_gate(m,r,usage_map_path=u)
+    assert report['ready'] is False
+    assert 'runtime-draw:shader-and-material-range-mismatch' in report['blocking_reasons']
