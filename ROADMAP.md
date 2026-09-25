@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 220. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 221. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1187,3 +1187,16 @@ spirv_reflection.py now extracts the descriptor set/binding interface required b
 ## Phase 220: Vulkan bundle interface gate
 
 vulkan_bundle_interface_gate.py now compares reflected SPIR-V descriptors with the resource packets present in a BMW Vulkan bundle. It validates set 0 constant bindings 14/15 and set 1 sampler2D/samplerCube resource availability, blocking unsupported descriptor sets/types or missing resources before native pipeline creation.
+
+
+## Phase 221: end-to-end native Vulkan bundle execution
+
+The Linux pipeline now has a Python runner that requires both the SPIR-V compile gate
+and the Vulkan bundle interface gate before launching a native executor. The native
+executor consumes geometry, constant, 2D texture and samplerCube packets plus compiled
+vertex/pixel SPIR-V, constructs Vulkan descriptor sets and an offscreen depth-tested
+pipeline, submits vkCmdDrawIndexed and writes a PPM.
+
+This is the first code-level end-to-end native bundle path. Actual GPU execution remains
+environment-dependent; the current development container lacks Vulkan headers and
+glslangValidator.
