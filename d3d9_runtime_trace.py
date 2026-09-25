@@ -254,7 +254,8 @@ def build_runtime_binding_evidence(
             # frame-level aggregate is insufficient for same-instance proof:
             # later state changes in the same frame must not retroactively
             # change which declaration/shaders/buffers were used by this draw.
-            frame["draw_snapshots"].append({
+            snapshot = {
+                "frame": frame.get("frame"),
                 "draw_index": len(frame["draws"]) - 1,
                 "draw": dict(draw),
                 "vertex_declaration": dict(frame["vertex_declaration"] or {}),
@@ -264,7 +265,28 @@ def build_runtime_binding_evidence(
                 "index_binding": dict(frame["index_binding"] or {}),
                 "texture_bindings": [dict(x) for x in frame["texture_bindings"]],
                 "constant_writes": [dict(x) for x in frame["constant_writes"]],
-            })
+            }
+            vs = snapshot["vertex_shader"]
+            ps = snapshot["pixel_shader"]
+            vsp = shaders.get(vs.get("shader_ptr")) if vs.get("shader_ptr") else None
+            psp = shaders.get(ps.get("shader_ptr")) if ps.get("shader_ptr") else None
+            vraw = bytes.fromhex(vsp["raw_bytes_hex"]) if vsp and vsp.get("raw_bytes_hex") else None
+            praw = bytes.fromhex(psp["raw_bytes_hex"]) if psp and psp.get("raw_bytes_hex") else None
+            if vraw and praw:
+                try:
+                    snapshot["shader_permutation_identity"] = build_shader_permutation_identity(
+                        vraw + praw,
+                        vertex_offset=0,
+                        pixel_offset=len(vraw),
+                    )
+                except Exception as exc:
+                    snapshot["shader_permutation_identity"] = {
+                        "status": "error",
+                        "error": f"{type(exc).__name__}: {exc}",
+                    }
+            else:
+                snapshot["shader_permutation_identity"] = None
+            frame["draw_snapshots"].append(snapshot)
 
     correlation: dict[str, Any] = {
         "status": "not-supplied",
