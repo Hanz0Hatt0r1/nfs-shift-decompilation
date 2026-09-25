@@ -23,3 +23,9 @@ def test_vulkan_bundle_runner_contract():
     assert "validate_bmw_vulkan_interface" in source
     assert "shift_vulkan_bundle_execute" in source
     assert "vulkan_interface.json" in source
+
+
+def test_native_bundle_cube_staging_offset_excludes_packet_header():
+    source = Path("native_vulkan/src/vulkan_bundle_execute.cpp").read_text(encoding="utf-8")
+    assert "copy.bufferOffset =\n                    static_cast<VkDeviceSize>(face) * cube.header.face_bytes;" in source
+    assert "sizeof(CubeHeader)) +" not in source
