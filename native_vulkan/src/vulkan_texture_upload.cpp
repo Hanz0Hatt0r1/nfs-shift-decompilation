@@ -67,6 +67,12 @@ struct Buffer {
     VkBuffer handle = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
 };
+\nstruct Image {
+    VkImage handle = VK_NULL_HANDLE;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+};
+
 
 struct Texture {
     VkImage image = VK_NULL_HANDLE;
