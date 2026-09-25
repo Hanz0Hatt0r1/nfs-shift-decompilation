@@ -1615,6 +1615,27 @@ def cmd_camera_switch_gate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_command(args: argparse.Namespace) -> int:
+    """Decode the source-backed camera command dispatch record."""
+    from camera_command_runtime import dispatch_camera_command
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    command = payload["command"] if isinstance(payload, dict) else payload
+    result = dispatch_camera_command(command)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "kind": result["kind"],
+        "operation": result["operation"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_activation(args: argparse.Namespace) -> int:
     """Apply the recovered FUN_0080e1b0 camera activation transition."""
     from camera_activation_runtime import CameraActivationState, activate_camera
@@ -3495,6 +3516,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="JSON switch request/state")
     p.add_argument("output", help="SHIFT.CameraSwitchGateRuntime/2 JSON output")
     p.set_defaults(fn=cmd_camera_switch_gate)
+
+    p = sp.add_parser("camera-command", help="decode recovered camera command dispatch")
+    p.add_argument("input", help="JSON command array or object containing command")
+    p.add_argument("output", help="SHIFT.CameraCommandRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_camera_command)
 
     p = sp.add_parser("camera-activation", help="apply recovered camera activation state transition")
     p.add_argument("input", help="JSON activation request/state")
