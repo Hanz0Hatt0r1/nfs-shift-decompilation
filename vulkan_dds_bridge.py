@@ -81,6 +81,7 @@ def bridge_bmw_dds_resources(
     decoded_textures: dict[int, dict[str, Any]] = {}
     source_records: list[dict[str, Any]] = []
     blockers: list[str] = []
+    supplied_material_registers: set[int] = set()
 
     for register_text, value in texture_map.items():
         register = int(register_text)
@@ -89,7 +90,14 @@ def bridge_bmw_dds_resources(
                 f"dds-bridge:unbound-material-register:s{register}"
             )
             continue
-        image = _decode_file(value)
+        supplied_material_registers.add(register)
+        try:
+            image = _decode_file(value)
+        except (OSError, ValueError, TypeError) as error:
+            blockers.append(
+                f"dds-bridge:decode-failed:s{register}:{type(error).__name__}"
+            )
+            continue
         if image.get("format") == CUBE_FORMAT:
             blockers.append(
                 f"dds-bridge:cubemap-supplied-to-2d-register:s{register}"
@@ -110,7 +118,7 @@ def bridge_bmw_dds_resources(
             "height": image.get("height"),
         })
 
-    missing_2d = sorted(material_registers - set(decoded_textures))
+    missing_2d = sorted(material_registers - supplied_material_registers)
     if missing_2d:
         blockers.extend(
             f"dds-bridge:missing-2d-ds:s{register}"
@@ -121,11 +129,16 @@ def bridge_bmw_dds_resources(
     texture_path = None
     if decoded_textures:
         texture_path = out / "textures.svtp"
-        texture_report = build_vulkan_texture_packet(
-            command,
-            decoded_textures,
-            texture_path,
-        )
+        try:
+            texture_report = build_vulkan_texture_packet(
+                command,
+                decoded_textures,
+                texture_path,
+            )
+        except (OSError, ValueError, TypeError) as error:
+            blockers.append(
+                f"dds-bridge:texture-packet-failed:{type(error).__name__}"
+            )
 
     cube_report = None
     cube_path = None
@@ -136,31 +149,44 @@ def bridge_bmw_dds_resources(
                 for register in sorted(cube_registers)
             )
         else:
-            image = _decode_file(environment_cube_dds)
-            if image.get("format") != CUBE_FORMAT:
+            try:
+                image = _decode_file(environment_cube_dds)
+            except (OSError, ValueError, TypeError) as error:
+                blockers.append(
+                    f"dds-bridge:environment-cube-decode-failed:{type(error).__name__}"
+                )
+                image = None
+            if image is not None and image.get("format") != CUBE_FORMAT:
                 blockers.append("dds-bridge:environment-cube-not-cubemap")
-            elif cube_registers != {3}:
+            elif image is not None and cube_registers != {3}:
                 blockers.append(
                     "dds-bridge:only the proven BMW environment cube register s3 is supported"
                 )
-            else:
+            elif image is not None:
                 cube_path = out / "environment_cube.svcp"
-                cube_report = build_vulkan_cube_packet(
-                    command,
-                    image,
-                    cube_path,
-                    register=3,
-                )
-                source_records.append({
-                    "kind": "cube",
-                    "register": 3,
-                    "source_path": image["_source_path"],
-                    "source_sha256": image["_source_sha256"],
-                    "decoded_pixel_sha256": image["_decoded_pixel_sha256"],
-                    "source_format": image.get("source_format"),
-                    "width": image.get("width"),
-                    "height": image.get("height"),
-                })
+                try:
+                    cube_report = build_vulkan_cube_packet(
+                        command,
+                        image,
+                        cube_path,
+                        register=3,
+                    )
+                except (OSError, ValueError, TypeError) as error:
+                    blockers.append(
+                        f"dds-bridge:cube-packet-failed:{type(error).__name__}"
+                    )
+                    cube_report = None
+                if cube_report is not None:
+                    source_records.append({
+                        "kind": "cube",
+                        "register": 3,
+                        "source_path": image["_source_path"],
+                        "source_sha256": image["_source_sha256"],
+                        "decoded_pixel_sha256": image["_decoded_pixel_sha256"],
+                        "source_format": image.get("source_format"),
+                        "width": image.get("width"),
+                        "height": image.get("height"),
+                    })
 
     provenance_path = out / "dds_sources.json"
     provenance = {
