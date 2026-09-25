@@ -507,16 +507,7 @@ def build_runtime_binding_evidence(
                         x["binding"].get("same_meb_resource") is True
                         for x in frame_rows
                     )
-                    and not any(
-                        frame.get("draw_snapshots")
-                        and any(
-                            snapshot.get("vertex_declaration", {}).get("resource_sha256")
-                            and snapshot.get("same_meb_resource") is True
-                            and snapshot.get("bound_declaration_valid") is True
-                            for snapshot in frame.get("draw_snapshots") or []
-                        )
-                        for frame in frame_rows
-                    )
+                    and not valid_bound_frames
                     else []
                 )
             )),
