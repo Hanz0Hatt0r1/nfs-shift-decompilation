@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 207.**
+> **Current mainline: Phase 208.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -650,3 +650,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Vulkan graphics checkpoint:** Phase 207 adds an optional headless SPIR-V triangle pipeline. When `glslangValidator` is available, Linux can compile the shader pair, create a real Vulkan graphics pipeline and export an offscreen PPM. BMW RenderCommand integration is the next backend stage.
+
+ 
+> **RenderCommand → Vulkan geometry:** Phase 208 introduces SHIFT.VulkanGeometryPacket/1. Python materializes a selected RenderCommand triangle-list into a native handoff; Vulkan consumes only that packet, uploads vertex/index buffers and performs a depth-tested offscreen draw. POSITION0 is the first supported attribute.

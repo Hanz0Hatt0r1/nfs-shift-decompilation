@@ -63,3 +63,18 @@ staging buffer and writes a P6 PPM.
 
 This phase intentionally has no shader or BMW semantics yet. It proves the native
 offscreen resource/submission boundary that the later RenderCommand backend will use.
+
+ 
+## RenderCommand geometry bridge
+
+Phase 208 adds SHIFT.VulkanGeometryPacket/1 as the first native handoff format.
+Generate it with:
+
+    python vulkan_geometry_packet.py render_command.json mesh.json out/mesh.svpk
+
+Then render it with:
+
+    ./native_vulkan/build/shift_vulkan_render_geometry       out/mesh.svpk       out/mesh.ppm       native_vulkan/build/shaders
+
+The packet is generated from SHIFT.RenderCommand/1 and neutral mesh data. The
+native Vulkan process does not parse BFF or MEB JSON.
