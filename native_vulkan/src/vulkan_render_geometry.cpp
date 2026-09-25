@@ -356,9 +356,8 @@ GeometryPacket parse_packet(const std::string& path) {
             throw std::runtime_error("geometry packet index exceeds vertex count");
         }
     }
-    if (packet.header.first_index + packet.header.index_count >
-        packet.header.index_count) {
-        throw std::runtime_error("geometry packet first_index is invalid");
+    if (packet.header.first_index != 0) {
+        throw std::runtime_error("geometry packet must start at index 0");
     }
     return packet;
 }
@@ -468,6 +467,8 @@ int main(int argc, char** argv) {
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkShaderModule vertex_shader = VK_NULL_HANDLE;
     VkShaderModule fragment_shader = VK_NULL_HANDLE;
+
+    void* mapped = nullptr;
 
     try {
         const GeometryPacket packet = parse_packet(packet_path);
