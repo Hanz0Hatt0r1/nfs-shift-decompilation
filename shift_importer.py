@@ -3493,7 +3493,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sp.add_parser("camera-switch-gate", help="evaluate recovered CameraManager switch fast path")
     p.add_argument("input", help="JSON switch request/state")
-    p.add_argument("output", help="SHIFT.CameraSwitchGateRuntime/1 JSON output")
+    p.add_argument("output", help="SHIFT.CameraSwitchGateRuntime/2 JSON output")
     p.set_defaults(fn=cmd_camera_switch_gate)
 
     p = sp.add_parser("camera-activation", help="apply recovered camera activation state transition")
