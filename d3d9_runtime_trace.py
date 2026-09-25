@@ -14,6 +14,7 @@ from shader_ir import parse_shader_blobs
 from shader_permutation_identity import build_shader_permutation_identity
 from d3d9_capture_schema import validate_capture_event
 from d3d9_runtime_trace_integrity import validate_runtime_trace_integrity
+from d3d9_draw_snapshot_schema import validate_draw_snapshot
 
 FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
 EVENTS = {
@@ -319,6 +320,12 @@ def build_runtime_binding_evidence(
                     }
             else:
                 snapshot["shader_permutation_identity"] = None
+            snapshot_reasons = validate_draw_snapshot(snapshot)
+            if snapshot_reasons:
+                blockers.extend(
+                    {"line": row.get("_line"), "reason": f"draw-snapshot:{reason}"}
+                    for reason in snapshot_reasons
+                )
             frame["draw_snapshots"].append(snapshot)
 
     correlation: dict[str, Any] = {
