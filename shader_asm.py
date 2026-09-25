@@ -391,6 +391,8 @@ def to_glsl(
 )->str:
     if target not in {"gles", "vulkan"}:
         raise ValueError("unsupported GLSL target")
+    if target == "vulkan" and program.stage == "pixel":
+        constant_binding = int(constant_binding) + 1
     lines = (
         ['#version 450']
         if target == "vulkan"
