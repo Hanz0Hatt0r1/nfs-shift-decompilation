@@ -99,3 +99,32 @@ def test_interface_gate_blocks_unsupported_set(tmp_path):
     result = validate_bmw_vulkan_interface(tmp_path, report)
     assert result["ready"] is False
     assert "vulkan-interface:unsupported-descriptor-set:2" in result["blocking_reasons"]
+
+
+def test_interface_gate_rejects_constant_binding_used_by_wrong_stage(tmp_path):
+    _manifest(tmp_path)
+    report = _report([{
+        "set": 0,
+        "binding": 14,
+        "descriptor_type": "uniform-buffer",
+        "resource_type": "uniform-block",
+        "stage": "fragment",
+    }])
+    result = validate_bmw_vulkan_interface(tmp_path, report)
+    assert result["ready"] is False
+    assert "vulkan-interface:set0-stage-mismatch:14:fragment" in result["blocking_reasons"]
+
+
+def test_interface_gate_rejects_vertex_stage_texture_descriptor(tmp_path):
+    _manifest(tmp_path)
+    _write_texture_packet(tmp_path, [1])
+    report = _report([{
+        "set": 1,
+        "binding": 1,
+        "descriptor_type": "combined-image-sampler",
+        "resource_type": "sampler2D",
+        "stage": "vertex",
+    }])
+    result = validate_bmw_vulkan_interface(tmp_path, report)
+    assert result["ready"] is False
+    assert "vulkan-interface:set1-stage-unsupported:1:vertex" in result["blocking_reasons"]
