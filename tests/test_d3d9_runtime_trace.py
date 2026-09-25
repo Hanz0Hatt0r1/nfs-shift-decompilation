@@ -158,3 +158,25 @@ def test_same_instance_gate_candidate_records_draw_index():
     candidate = report["same_instance_gate"]["candidate_frames"][0]
     assert candidate["draw_index"] == 0
     assert candidate["draw"]["start_index"] == 0
+
+
+def test_draw_snapshot_normalizes_active_stream_and_texture_bindings():
+    events = load_events_from_rows([
+        {"event":"set_stream_source","frame":4,"stream":0,"vertex_buffer_ptr":"0x100","offset_in_bytes":0,"stride":32},
+        {"event":"set_stream_source","frame":4,"stream":1,"vertex_buffer_ptr":"0x200","offset_in_bytes":4,"stride":16},
+        {"event":"set_stream_source","frame":4,"stream":0,"vertex_buffer_ptr":"0x300","offset_in_bytes":8,"stride":36},
+        {"event":"set_texture","frame":4,"stage":0,"texture_ptr":"0x500"},
+        {"event":"set_texture","frame":4,"stage":0,"texture_ptr":None},
+        {"event":"set_texture","frame":4,"stage":3,"texture_ptr":"0x700"},
+        {"event":"draw_indexed_primitive","frame":4,"primitive_count":2,"start_index":12,"base_vertex_index":0},
+    ])
+    report = build_runtime_binding_evidence(events)
+    snapshot = report["frames"][0]["draw_snapshots"][0]
+    assert {row["stream"]: row["vertex_buffer_ptr"] for row in snapshot["active_stream_sources"]} == {
+        0: "0x300",
+        1: "0x200",
+    }
+    assert {row["stage"]: row["texture_ptr"] for row in snapshot["active_texture_bindings"]} == {
+        0: None,
+        3: "0x700",
+    }
