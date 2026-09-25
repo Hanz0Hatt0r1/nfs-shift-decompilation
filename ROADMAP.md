@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 190. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 195. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -968,3 +968,30 @@ Runtime integrity now checks native event_index continuity. A complete producer
 stream must have contiguous indices; legacy fixtures with no event_index remain
 accepted. The BMW post-capture pipeline emits the provenance manifest before
 runtime correlation and treats structural manifest failures as blocking.
+
+## Phase 192: shader identity contract hardening
+
+`SHIFT.ShaderPermutationIdentity/1` now has a structural validator. Full payloads
+with an explicit `canonical_sha256` are self-consistency checked against the
+canonical payload hash; compact legacy identities remain valid when they carry an
+opaque identity or pair hash.
+
+## Phase 193: shared runtime resource identity policy
+
+Runtime consumers share `SHIFT.RuntimeResourceIdentity/1` semantics. Exact SHA
+matching is never downgraded to path-only matching; missing or mismatched hashes
+remain explicit diagnostics. Shader join, selection, draw correlation and the
+same-instance gate use the same policy.
+
+## Phase 194: raw D3D9 usage/channel table decoding
+
+`SHIFT.PEImageEvidence/1` now decodes the raw DWORD entries of the D3D9 Usage,
+UsageIndex and Channel tables when they are file-backed. The source-side evidence
+continues to identify usage ordinal 6 as `Colour`; numeric D3D9 Usage is populated
+only when an actual PE image supplies the table bytes.
+
+## Phase 195: PE-derived D3D9 Usage map
+
+`SHIFT.D3D9UsageMap/1` converts the decoded PE Usage table into the exact ordinal
+map consumed by declaration parity. The map is ready only when all nine ordinals
+are present, and it explicitly disallows inference.
