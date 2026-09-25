@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from runtime_resource_identity import match_resource_identity
+
 FORMAT = "SHIFT.BMWRuntimeShaderJoin/1"
 
 def _identity_from_material(material_slice: Mapping[str, Any]) -> Mapping[str, Any] | None:
@@ -130,13 +132,12 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
                 identity = frame.get('shader_permutation_identity') or {}
             same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
             binding = current_state.get('vertex_declaration') or {}
-            frame_sha = binding.get('resource_sha256')
-            frame_path = binding.get('resource_path')
-            same_resource = False
-            if expected_resource_sha and frame_sha:
-                same_resource = str(frame_sha) == str(expected_resource_sha)
-            elif expected_resource and frame_path:
-                same_resource = str(frame_path).replace('\\', '/').strip('/').lower() == expected_resource.replace('\\', '/').strip('/').lower()
+            same_resource, _resource_status = match_resource_identity(
+                binding,
+                expected_sha256=expected_resource_sha,
+                expected_path=expected_resource,
+            )
+            same_resource = same_resource is True
             if same_id and same_resource:
                 if legacy_draw_index is not None:
                     current_state = {**current_state, "draw_index": legacy_draw_index, "draw": (current_state.get("draws") or [])[legacy_draw_index]}
