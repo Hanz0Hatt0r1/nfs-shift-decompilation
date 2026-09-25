@@ -91,3 +91,34 @@ def test_runtime_capture_preflight_prefers_draw_snapshots():
     report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
     assert report["paint_draw_candidates"] == []
     assert report["resource_draw_candidates"][0]["source"] == "draw-snapshot"
+
+
+def test_runtime_capture_preflight_cli_writes_blocked_report(tmp_path):
+    import json
+    import subprocess
+    import sys
+
+    runtime_path = tmp_path / "runtime.json"
+    output_path = tmp_path / "preflight.json"
+    runtime_path.write_text(
+        json.dumps(_runtime(same_instance_ready=False)),
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "bmw_runtime_capture_preflight.py",
+            str(runtime_path),
+            str(output_path),
+            "--resource-sha256",
+            "abc",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 2
+    report = json.loads(output_path.read_text(encoding="utf-8"))
+    assert report["format"] == "SHIFT.BMWRuntimeCapturePreflight/1"
+    assert report["ready"] is False
+    assert "runtime:same-instance-not-proven" in report["blocking_reasons"]
