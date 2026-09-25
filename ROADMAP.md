@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 246. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 247. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1255,3 +1255,10 @@ The `BMWMaterialSliceVulkan/1` public result now exposes the exact `VulkanDDSRes
 ## Phase 246: sampler sidecar integrity gate
 
 `vulkan_bundle_run.py` now validates `sampler_contracts.meta.json` against the exact `textures.svtp` SHA and sampler-contract schema before native execution. Legacy bundles without the sidecar remain accepted.
+
+
+## Phase 247: BAB animation runtime reconstruction
+
+The retail SHIFT.exe decompilation now provides a source-backed runtime grammar for the BAB animation tail. bab_animation_runtime.py reconstructs the common FUN_00680690 bank prefix, runtime bank variants 0/1/2, channel dispatcher FUN_00684320, and ten serialized channel types. Uniform frame channels, timed keyframes and quaternion slerp are represented explicitly; type 6 Euler-to-quaternion conversion remains axis/order unresolved. The importer exposes this as bab-animation-runtime and keeps truncation/trailing bytes as explicit blockers.
+
+Rendering is intentionally unchanged in this phase. The next decompilation target is SGB scene semantics (NODE/FLAT/SUMM) and track assembly from source/runtime evidence.

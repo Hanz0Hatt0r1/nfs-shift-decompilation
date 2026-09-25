@@ -1429,6 +1429,43 @@ def cmd_bab_payload_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bab_animation_runtime(args: argparse.Namespace) -> int:
+    """Decode the recovered runtime animation bank from an extracted BAB file."""
+    from bab_animation_runtime import parse_bab_animation_payload
+    from bab_format import parse_bab
+
+    data = Path(args.input).read_bytes()
+    bab = parse_bab(data, preserve_tail=True)
+    payload_offset = int(bab["animation_payload_offset"])
+    report = parse_bab_animation_payload(
+        data[payload_offset:],
+        mode=args.mode,
+        strict=not args.allow_partial,
+    )
+    report["source"] = {
+        "input": str(args.input),
+        "sha256": sha256(data),
+        "animation_payload_offset": payload_offset,
+        "animation_payload_size": len(data) - payload_offset,
+        "bab_header_name": bab["header"].get("name"),
+    }
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "mode": report["mode"],
+        "consumed_bytes": report.get("consumed_bytes", 0),
+        "trailing_bytes": report.get("trailing_bytes", 0),
+        "blockers": report.get("blockers", []),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
 def cmd_color_evidence_bff_corpus(args: argparse.Namespace) -> int:
     """Scan BFF archives for MEB COLOR0/COLOR1 streams and aggregate evidence."""
     from color_abi import aggregate_color_abi_evidence, build_color_abi_evidence
@@ -3123,6 +3160,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.BABPayloadByteComparison/1 JSON output")
     p.set_defaults(fn=cmd_bab_payload_diff)
 
+    p = sp.add_parser("bab-animation-runtime", help="decode the recovered BAB runtime animation bank from an extracted .bab")
+    p.add_argument("input", help="extracted .bab file")
+    p.add_argument("output", help="SHIFT.BABAnimationRuntime/1 JSON output")
+    p.add_argument("--mode", type=int, choices=[0, 1, 2], required=True, help="runtime animation-bank variant recovered from SHIFT.exe.c")
+    p.add_argument("--allow-partial", action="store_true", help="return a blocker instead of raising on truncated payload")
+    p.set_defaults(fn=cmd_bab_animation_runtime)
     p = sp.add_parser("bab-corpus", help="build an opaque BAB animation corpus report from resource analysis")
     p.add_argument("input", help="resource_analysis.json")
     p.add_argument("output", help="SHIFT.BABCorpusReport/1 JSON output")
