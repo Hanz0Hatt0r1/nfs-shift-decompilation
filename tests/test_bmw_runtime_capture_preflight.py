@@ -170,3 +170,22 @@ def test_runtime_capture_preflight_rejects_paint_range_on_different_draw():
     assert report["proven_paint_draw_candidates"] == []
     assert report["ready"] is False
     assert "runtime:target-paint-draw-not-same-instance" in report["blocking_reasons"]
+
+
+def test_runtime_capture_preflight_defaults_to_exact_retail_meb_sha():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["same_instance_gate"]["candidate_frames"] = [{"frame": 7, "draw_index": 1}]
+    runtime["frames"] = [{
+        "frame": 7,
+        "draw_snapshots": [
+            _snapshot(
+                "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c",
+                150,
+                2098,
+                draw_index=1,
+            ),
+        ],
+    }]
+    report = preflight_bmw_runtime(runtime)
+    assert report["target"]["resource_sha256"] == "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+    assert report["target"]["resource_identity_mode"] == "exact-sha256"
