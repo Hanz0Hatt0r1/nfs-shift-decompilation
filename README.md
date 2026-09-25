@@ -259,6 +259,20 @@ set SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR=C:\path\capture\
 
 ---
 
+# BMW runtime capture preflight
+
+Для быстрой проверки внешнего capture без запуска полного render pipeline:
+
+```bash
+python bmw_runtime_capture_preflight.py \
+  runtime_binding.json \
+  runtime_capture_preflight.json \
+  --resource-sha256 960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c
+```
+
+Команда ищет exact target-MEB draw и документированные paint ranges. Результат
+диагностический и не заменяет strict same-instance gate.
+
 # One-command BMW post-capture pipeline
 
 Once a real runtime JSONL trace exists:
