@@ -25,7 +25,11 @@
 > **Draw-local shader join:** runtime shader selection, parity and the render contract now consume the same `(frame, draw_index)` snapshot. Frame-level shader state is retained only for compatibility with legacy reports that have no snapshots.
 
 > **Versioned draw state:** `SHIFT.D3D9DrawStateSnapshot/1` adds normalized active stream/texture bindings and latest constant-register state to each exact draw boundary; malformed snapshots are blocked from proof.
-> **Capture preflight:** BMW paint candidates now expose snapshot schema validity, active texture stages and populated constant-state stages; `ready` also requires complete declaration/VS/PS/stream/index state on the proven draw.> **Runtime hard gates:** exact MEB SHA identity, draw/snapshot alignment and BMW capture preflight are now mandatory before runtime render execution.
+> **Capture preflight:** BMW paint candidates now expose snapshot schema validity, active texture stages and populated constant-state stages; `ready` also requires complete declaration/VS/PS/stream/index state on the proven draw.
+>
+> **Runtime hard gates:** exact MEB SHA identity, draw/snapshot alignment and BMW capture preflight are now mandatory before runtime render execution.
+
+> **Capture provenance:** `SHIFT.D3D9RuntimeCaptureManifest/1` fingerprints the capture artifact and checks event-stream continuity while keeping authenticity explicitly unverified.
 
 
 >
