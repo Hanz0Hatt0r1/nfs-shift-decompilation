@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -193,15 +194,23 @@ Packet parse_packet(const std::string& path) {
 
     packet.records.resize(packet.header.texture_count);
     std::memcpy(packet.records.data(), data.data() + sizeof(PacketHeader), records_bytes);
+    bool sampler_s1_seen = false;
     for (const auto& record : packet.records) {
+        const uint64_t expected_bytes =
+            static_cast<uint64_t>(record.width) * static_cast<uint64_t>(record.height) * 4u;
         if (record.register_index > 15 ||
             record.width == 0 || record.height == 0 ||
-            record.pixel_bytes != record.width * record.height * 4u ||
+            expected_bytes > std::numeric_limits<uint32_t>::max() ||
+            record.pixel_bytes != static_cast<uint32_t>(expected_bytes) ||
             record.pixel_offset < pixel_base ||
             static_cast<uint64_t>(record.pixel_offset) + record.pixel_bytes > data.size() ||
             record.sampler_mode < 1 || record.sampler_mode > 4) {
             throw std::runtime_error("invalid texture packet record");
         }
+        if (record.register_index == 1) sampler_s1_seen = true;
+    }
+    if (!sampler_s1_seen) {
+        throw std::runtime_error("Phase 214 texture shader requires sampler register s1");
     }
     packet.bytes = data;
     return packet;
