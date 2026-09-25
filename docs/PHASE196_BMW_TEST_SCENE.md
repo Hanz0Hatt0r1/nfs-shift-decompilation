@@ -33,7 +33,8 @@ The scene has four fixed views:
 | front | 0° | -8° |
 
 Generated screenshots are 1600×900 and use a neutral studio presentation layer around
-the existing geometry-preview raster. The vehicle geometry itself is sourced from
+the existing geometry-preview raster. The artifact set contains four deterministic views
+and a contact sheet; their SHA-256 values are pinned in the scene manifest. The vehicle geometry itself is sourced from
 the supplied BFF/VHF/MEB assets.
 
 ## Reproduction
@@ -54,3 +55,11 @@ render hashes.
 This is a geometry-preview scene. It does not claim final `bodywork.fx` material
 execution, authentic retail D3D9 runtime execution, or resolution of the remaining
 COLOR0/COLOR1 runtime ABI questions.
+
+## Render artifacts
+
+- front_left: `43a8cbc47315a4236f6eb1a87b89569d2760ce183475131021228701e787886a`
+- rear_right: `1db293487454261752c8ee3be3aa7112883ddf487a1aa21add6d52faa917fc96`
+- side: `0e80ab9ec108e35d3ff0833de9da5bc6a7887f1d8990dda390a5da2edc1befcd`
+- front: `a1f086f5001c0a009b645457b92497b2166b6f5ba0db3f085cd5788204bc73fa`
+- contact sheet: `467954384480188b01e690873bd9d19be046356f865666f813701dfc569fcf53`
