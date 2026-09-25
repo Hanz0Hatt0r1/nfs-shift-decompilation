@@ -43,6 +43,7 @@ def test_orientation_assist_builds_first_cross_from_normalized_direction():
         helper_4a7820=1.0,
         helper_900c40=0.5,
         helper_900b10=0.25,
+        helper_7bdb0_output=[1, 2, 3, 4],
     )
     assert result["vectors"]["vehicle_direction_normalized"] == (1.0, 0.0, 0.0)
     assert result["vectors"]["first_cross"] == (0.0, 0.0, 1.0)
