@@ -73,7 +73,7 @@ def corrective_response(
         sign = signed_unit(x)
         candidate = -sign * overshoot * float(gain) - float(bias) * float(bias_scale)
         candidate_sign = signed_unit(candidate)
-        accepted = not math.isnan(candidate) and candidate_sign != 0.0 and candidate_sign != sign
+        accepted = not math.isnan(candidate) and candidate_sign != sign
         result = candidate if accepted else 0.0
     return {
         "format": FORMAT,
