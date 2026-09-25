@@ -15,6 +15,7 @@ FORMAT = "SHIFT.BMWRuntimeShaderSelection/1"
 
 from bmw_runtime_shader_join import _runtime_draw_states
 from runtime_resource_identity import match_resource_identity
+from shader_permutation_identity import validate_shader_permutation_identity
 
 
 def _candidate_rows(material_input: Mapping[str, Any]) -> list[Mapping[str, Any]]:
@@ -216,6 +217,8 @@ def select_runtime_shader(
         if identity is None and state_source == 'frame-aggregate':
             identity = _runtime_identity(frame)
         if identity is None:
+            continue
+        if identity.get("format") is not None and validate_shader_permutation_identity(identity):
             continue
         resource_match, resource_identity_status = _resource_identity(material_input, state)
         if require_same_resource and resource_match is not True:
