@@ -277,7 +277,7 @@ A source-backed bridge is now formalized between the MEB property descriptor and
 
 With exact MEB descriptors preserved, the validator requires 460 = `[4,6,0]` and 461 = `[4,6,1]`. When both exact triples and all source-side prerequisites are present, `d3d9_type_mapping.status` and `meb_property_mapping.status` become `match`, resolving both MEB color properties to D3D9 Type code 4. This is no longer based on decimal-ID coincidence; it compares the actual descriptor words.
 
-Remaining runtime task: prove that the same resolved Type-4 records are the records used by the renderer for a concrete mesh instance, and recover the D3D9 Usage byte from the opaque usage table rather than assuming the internal ordinal 6 is the final Usage value.
+Remaining runtime task: prove that the same resolved Type-4 records are the records used by the renderer for a concrete mesh instance, and keep the decoded D3D9 Usage byte tied to the supplied SHIFT.exe PE evidence. For the supplied executable, Usage ordinal 6 is now directly decoded as numeric Usage 10.
 
 ## Phase 112: portable MEB evidence collection
 
@@ -300,3 +300,10 @@ The large raw bundle is intentionally not committed; only its SHA-256 and aggreg
 ## Phase 124: D3D9 shader runtime lifecycle
 
 The recovered `SHIFT.exe.c` now has a concrete source snapshot for `FUN_0084f000` (source SHA-256 `512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9`, lines 925759–925892). One state flush applies `SetPixelShader` at vtable offset `0x1ac`, `SetVertexShader` at `0x170`, `SetVertexDeclaration` at `0x15c`, `SetStreamSource` at `0x190` and `SetIndices` at `0x1a0`. This is source-static evidence; a concrete runtime frame is still required for same-instance attribution.
+
+
+## Phase 205: exact executable ABI
+
+The supplied SHIFT.exe provides file-backed declaration lookup tables. Type ordinal 4 is RGBA32 / D3DDECLTYPE_D3DCOLOR (4 bytes, 4 components), and Usage ordinal 6 is Colour / numeric D3D9 Usage 10.
+
+The repository's PE evidence and COLOR bridge can now consume these values directly. This does not establish which declaration was bound at a particular DrawIndexedPrimitive; that remains a runtime evidence question.

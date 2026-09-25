@@ -150,6 +150,55 @@ def _source_linkage(source: Mapping[str, Any], linkage_id: str) -> dict[str, Any
     }
 
 
+def _pe_color_constraint(pe: Mapping[str, Any] | None) -> dict[str, Any]:
+    if not pe:
+        return {
+            "status": "not-supplied",
+            "type_4": {},
+            "usage_6": {},
+        }
+    if pe.get("format") != "SHIFT.PEImageEvidence/1":
+        return {
+            "status": "mismatch",
+            "reason": "input is not SHIFT.PEImageEvidence/1",
+        }
+
+    color_abi = (pe.get("conclusions") or {}).get("d3d9_color_abi")
+    if not isinstance(color_abi, Mapping):
+        return {
+            "status": "not-proven",
+            "reason": "PE report does not expose the normalized D3D9 color ABI result",
+        }
+
+    type4 = color_abi.get("type_4")
+    usage6 = color_abi.get("usage_6")
+    type_ok = (
+        isinstance(type4, Mapping)
+        and type4.get("ordinal") == 4
+        and type4.get("internal_name") == "RGBA32"
+        and type4.get("size_bytes") == 4
+        and type4.get("components") == 4
+        and type4.get("d3d9_type") == "D3DDECLTYPE_D3DCOLOR"
+    )
+    usage_ok = (
+        isinstance(usage6, Mapping)
+        and usage6.get("ordinal") == 6
+        and usage6.get("source_name") == "Colour"
+        and usage6.get("numeric_d3d9_usage") == 10
+    )
+    status = str(color_abi.get("status"))
+    return {
+        "status": "observed" if status == "observed" and type_ok and usage_ok else "mismatch",
+        "reason": (
+            "file-backed SHIFT.exe Type 4 and Usage 6 values agree with the normalized COLOR ABI"
+            if status == "observed" and type_ok and usage_ok
+            else "file-backed SHIFT.exe COLOR ABI does not satisfy the expected Type 4 / Usage 6 contract"
+        ),
+        "type_4": dict(type4) if isinstance(type4, Mapping) else {},
+        "usage_6": dict(usage6) if isinstance(usage6, Mapping) else {},
+    }
+
+
 def _runtime_color_types(runtime: Mapping[str, Any] | None) -> dict[str, Any]:
     if not runtime:
         return {
@@ -189,6 +238,7 @@ def analyze_meb_d3d9_color_bridge(
     meb_report: str | Path | Mapping[str, Any],
     source_report: str | Path | Mapping[str, Any],
     *,
+    pe_evidence: str | Path | Mapping[str, Any] | None = None,
     runtime_report: str | Path | Mapping[str, Any] | None = None,
     resource_reports: Iterable[str | Path | Mapping[str, Any]] | None = None,
     source_text: str | bytes | None = None,
@@ -196,7 +246,9 @@ def analyze_meb_d3d9_color_bridge(
     """Build the conservative 460/461 -> D3D9 color candidate report."""
     meb = _load_json(meb_report)
     source = _load_json(source_report)
+    pe = _load_json(pe_evidence) if pe_evidence is not None else None
     runtime = _load_json(runtime_report) if runtime_report is not None else None
+    pe_evidence = None
     loaded_resource_reports = [
         _load_json(item)
         for item in (resource_reports or [])
@@ -237,6 +289,7 @@ def analyze_meb_d3d9_color_bridge(
     }
 
     runtime_rows = _runtime_color_types(runtime)
+    pe_color = _pe_color_constraint(pe)
     descriptor_triple = analyze_meb_d3d9_descriptor_triple(meb, source)
     descriptor_properties = descriptor_triple.get("properties") or {}
     type4_source_observed = source_rows["type_4_packed_color"].get("status") == "observed"
@@ -313,6 +366,8 @@ def analyze_meb_d3d9_color_bridge(
         required_checks = [source_format_status, meb_row["status"]]
         if source_hash is not None:
             required_checks.append("observed" if source_hash_verified else "mismatch")
+        if pe is not None:
+            required_checks.append(pe_color["status"])
 
         descriptor_row = descriptor_properties.get(pid) or {}
         descriptor_mapping_status = (descriptor_row.get("d3d9_type_mapping") or {}).get("status", "not-proven")
@@ -336,6 +391,7 @@ def analyze_meb_d3d9_color_bridge(
             "meb_storage": meb_row,
             "candidate_types": candidates,
             "runtime_color_type_observation": runtime_rows,
+            "pe_color_abi": pe_color,
             "descriptor_triple_evidence": descriptor_row,
             "property_to_type": {
                 "status": property_mapping_status,
@@ -374,6 +430,7 @@ def analyze_meb_d3d9_color_bridge(
         "source_evidence": source_rows,
         "source_linkage": link_rows,
         "runtime_color_type_observation": runtime_rows,
+        "pe_color_abi": pe_color,
         "resource_provenance": resource_rows,
         "resource_errors": resource_errors,
         "descriptor_triple_evidence": descriptor_triple,
@@ -418,6 +475,7 @@ def write_bridge_report(
     source_report: str | Path | Mapping[str, Any],
     output: str | Path,
     *,
+    pe_evidence: str | Path | Mapping[str, Any] | None = None,
     runtime_report: str | Path | Mapping[str, Any] | None = None,
     resource_reports: Iterable[str | Path | Mapping[str, Any]] | None = None,
     source_text: str | bytes | None = None,
@@ -425,6 +483,7 @@ def write_bridge_report(
     report = analyze_meb_d3d9_color_bridge(
         meb_report,
         source_report,
+        pe_evidence=pe_evidence,
         runtime_report=runtime_report,
         resource_reports=resource_reports,
         source_text=source_text,
@@ -445,6 +504,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("meb_report", help="SHIFT.MEB JSON report")
     parser.add_argument("source_report", help="SHIFT.D3D9SourceVertexEvidence/1 JSON report")
     parser.add_argument("output", help="SHIFT.MEBD3D9ColorBridgeEvidence/1 JSON output")
+    parser.add_argument(
+        "--pe-evidence",
+        help="optional SHIFT.PEImageEvidence/1 generated from the exact retail SHIFT.exe",
+    )
     parser.add_argument(
         "--runtime-report",
         help="optional SHIFT.D3D9DeclarationInstanceEvidence/1 JSON report",
@@ -469,6 +532,7 @@ def main(argv: list[str] | None = None) -> int:
         args.meb_report,
         args.source_report,
         args.output,
+        pe_evidence=args.pe_evidence,
         runtime_report=args.runtime_report,
         resource_reports=args.resource_report,
         source_text=source_text,
