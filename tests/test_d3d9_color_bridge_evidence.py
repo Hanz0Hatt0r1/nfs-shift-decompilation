@@ -313,3 +313,63 @@ def test_bridge_does_not_promote_without_both_color_descriptors():
     assert result["meb_property_mapping"]["status"] == "not-proven"
     assert result["selection"] == "not-selected"
     assert result["verified_abi"] is False
+
+def test_bridge_accepts_exact_pe_backed_color_abi():
+    pe = {
+        "format": "SHIFT.PEImageEvidence/1",
+        "conclusions": {
+            "d3d9_color_abi": {
+                "status": "observed",
+                "type_4": {
+                    "ordinal": 4,
+                    "internal_name": "RGBA32",
+                    "size_bytes": 4,
+                    "components": 4,
+                    "d3d9_type": "D3DDECLTYPE_D3DCOLOR",
+                },
+                "usage_6": {
+                    "ordinal": 6,
+                    "source_name": "Colour",
+                    "numeric_d3d9_usage": 10,
+                },
+            }
+        },
+    }
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460"), _color("461")]),
+        _source_report(),
+        pe_evidence=pe,
+    )
+    assert result["pe_color_abi"]["status"] == "observed"
+    assert result["pe_color_abi"]["type_4"]["d3d9_type"] == "D3DECLTYPE_D3DCOLOR"
+    assert result["pe_color_abi"]["usage_6"]["numeric_d3d9_usage"] == 10
+    assert result["meb_property_mapping"]["status"] == "observed"
+
+
+def test_bridge_rejects_invalid_pe_color_abi():
+    pe = {
+        "format": "SHIFT.PEImageEvidence/1",
+        "conclusions": {
+            "d3d9_color_abi": {
+                "status": "observed",
+                "type_4": {
+                    "ordinal": 4,
+                    "internal_name": "WRONG",
+                    "size_bytes": 4,
+                    "components": 4,
+                    "d3d9_type": "D3DDECLTYPE_FLOAT4",
+                },
+                "usage_6": {
+                    "ordinal": 6,
+                    "source_name": "Colour",
+                    "numeric_d3d9_usage": 10,
+                },
+            }
+        },
+    }
+    result = analyze_meb_d3d9_color_bridge(
+        _meb([_color("460"), _color("461")]),
+        _source_report(),
+        pe_evidence=pe,
+    )
+    assert result["pe_color_abi"]["status"] == "mismatch"
