@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 241. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 242. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1240,3 +1240,8 @@ The material-slice Vulkan adapter now preserves fail-closed DDS extraction failu
 ## Phase 241: material-slice to native Vulkan smoke
 
 The automated Linux Vulkan smoke now exercises the full synthetic material-slice adapter before SPIR-V compilation, descriptor validation and native llvmpipe rendering. The test remains non-retail; exact BFF DDS provenance is covered separately.
+
+
+## Phase 242: DDS/Vulkan readiness reconciliation
+
+Final `BMWMaterialSliceVulkan/1` readiness is now derived from the final merged blocker set. Synthetic DXT1 DDS fixtures encode the standard 124-byte DDS header fields at the correct caps/caps2 offsets.
