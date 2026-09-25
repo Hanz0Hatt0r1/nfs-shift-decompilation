@@ -199,3 +199,15 @@ def test_same_instance_gate_rejects_invalid_draw_snapshot():
         if isinstance(reason, dict)
     )
     assert not report["same_instance_gate"]["candidate_frames"]
+
+
+def test_same_instance_gate_does_not_downgrade_exact_meb_sha_to_path():
+    events = load_events_from_rows([
+        {"event":"create_vertex_declaration","frame":7,"declaration_ptr":"0x1111","bytes_hex":"0000000004000a00ffff000011000000"},
+        {"event":"set_vertex_declaration","frame":7,"declaration_ptr":"0x1111","resource_path":"vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"},
+        {"event":"draw_indexed_primitive","frame":7,"primitive_count":1,"start_index":0,"base_vertex_index":0},
+    ])
+    meb={"resource":"vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb","resource_sha256":"abc","property_descriptors":[{"id":"460","words":[4,6,0]}]}
+    report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
+    assert report["same_instance_gate"]["ready"] is False
+    assert not report["same_instance_gate"]["candidate_frames"]
