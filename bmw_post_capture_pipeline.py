@@ -20,6 +20,7 @@ from bmw_runtime_render_contract import build_runtime_render_contract
 from bmw_runtime_capture_preflight import preflight_bmw_runtime
 from bmw_runtime_shader_select import select_runtime_shader
 from bmw_runtime_shader_render import render_runtime_shader
+from d3d9_capture_manifest import build_capture_manifest
 from d3d9_runtime_trace import build_runtime_binding_evidence, load_events
 from meb_format import mesh_to_jsonable, read_meb
 from shift_importer import BFF
@@ -70,6 +71,29 @@ def run_pipeline(
     _write(out / "mesh.json", mesh)
 
     events = load_events(runtime_capture)
+    capture_manifest = build_capture_manifest(runtime_capture, events=events)
+    _write(out / "runtime_capture_manifest.json", capture_manifest)
+    if capture_manifest.get("ready") is not True:
+        result = {
+            "format": FORMAT,
+            "status": "blocked",
+            "ready": False,
+            "stages": {
+                "material_binding": material.get("status"),
+                "runtime_capture_manifest": capture_manifest.get("status"),
+                "runtime_trace": "not-run",
+                "runtime_same_instance_gate": "not-proven",
+                "runtime_capture_preflight": "not-run",
+                "shader_selection": "not-run",
+                "runtime_render_contract": "not-run",
+                "shader_render": "not-run",
+            },
+            "blocking_reasons": list(capture_manifest.get("blocking_reasons") or ["runtime-capture-manifest:not-ready"]),
+            "output_dir": str(out),
+        }
+        _write(out / "pipeline_result.json", result)
+        return result
+
     runtime = build_runtime_binding_evidence(
         events,
         meb_resource={
@@ -101,6 +125,7 @@ def run_pipeline(
         "ready": False,
         "stages": {
             "material_binding": material.get("status"),
+            "runtime_capture_manifest": capture_manifest.get("status"),
             "runtime_trace": runtime.get("status"),
             "runtime_same_instance_gate": (runtime.get("same_instance_gate") or {}).get("status", "not-proven"),
             "runtime_capture_preflight": preflight.get("status"),
