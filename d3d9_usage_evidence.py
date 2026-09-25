@@ -7,7 +7,7 @@ whose string initializers were not emitted by the Ghidra C export.
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Mapping
 
 
 FORMAT = "SHIFT.D3D9UsageSemanticsEvidence/1"
@@ -60,7 +60,11 @@ def _case_block(switch_text: str, case: int) -> tuple[str, int] | None:
     return switch_text[start.start():end], start.start()
 
 
-def analyze_d3d9_usage_semantics(source: str | bytes) -> dict[str, Any]:
+def analyze_d3d9_usage_semantics(
+    source: str | bytes,
+    *,
+    pe_evidence: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     if isinstance(source, bytes):
         raw = source
         text = source.decode("utf-8", errors="replace")
@@ -118,6 +122,26 @@ def analyze_d3d9_usage_semantics(source: str | bytes) -> dict[str, Any]:
         )
 
     by_code = {row["usage_code"]: row for row in rows}
+    if pe_evidence is not None:
+        decoded = pe_evidence.get("decoded_tables") if isinstance(pe_evidence, Mapping) else None
+        usage_rows = decoded.get("usage") if isinstance(decoded, Mapping) else None
+        if isinstance(usage_rows, list):
+            by_ordinal = {
+                int(item.get("ordinal")): item.get("value")
+                for item in usage_rows
+                if isinstance(item, Mapping)
+                and isinstance(item.get("ordinal"), int)
+                and isinstance(item.get("value"), int)
+            }
+            for row in rows:
+                ordinal = row["usage_ordinal"]
+                if ordinal not in by_ordinal:
+                    continue
+                row["numeric_d3d9_usage"] = by_ordinal[ordinal]
+                row["numeric_d3d9_usage_status"] = "decoded"
+                row["numeric_d3d9_usage_source"] = (
+                    "SHIFT.PEImageEvidence/1:decoded_tables.usage"
+                )
     return {
         "format": FORMAT,
         "functions": FUNCTIONS,
