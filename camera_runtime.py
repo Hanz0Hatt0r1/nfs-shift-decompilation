@@ -118,6 +118,19 @@ CAMERA_CLASS_BASES = {
     "CTrackingCamData": "CStaticCamData",
 }
 
+# These classes point at the same non-camera base object DAT_00bfa608 in the
+# executable's registration records. The class name for that base is not resolved
+# by the current evidence, so chains terminating here remain partial.
+UNRESOLVED_CAMERA_BASE_CLASSES = {
+    "CStaticCamData",
+    "CCamArea",
+    "CCamSplineNode",
+    "CCamSpline",
+    "CCameraConfig",
+    "CTrackCameraMan",
+    "CCameraObj",
+}
+
 CAMERA_CLASS_REGISTRATIONS = {
     "CTrackCameraMan": "FUN_00a8ced0",
     "CStaticCamera": "FUN_00a8cf90",
@@ -317,7 +330,7 @@ def resolve_camera_class_chain(class_name: str, *, max_depth: int = 32) -> dict[
         "chain": chain,
         "resolved_links": max(0, len(chain) - 1),
         "terminated_at": chain[-1],
-        "fully_resolved": not cycle and chain[-1] not in CAMERA_CLASS_BASES,
+        "fully_resolved": not cycle and chain[-1] not in CAMERA_CLASS_BASES and chain[-1] not in UNRESOLVED_CAMERA_BASE_CLASSES,
         "cycle": cycle,
         "evidence": {
             "resolver": "FUN_006408f0",
@@ -340,6 +353,7 @@ def property_catalog() -> dict[str, Any]:
         "runtime_class_names": list(RUNTIME_CLASS_NAMES),
         "camera_class_bases": dict(CAMERA_CLASS_BASES),
         "camera_class_registrations": dict(CAMERA_CLASS_REGISTRATIONS),
+        "unresolved_camera_base_classes": sorted(UNRESOLVED_CAMERA_BASE_CLASSES),
         "evidence": {
             "static_camera_data_registration": "FUN_008156b0",
             "tracking_camera_data_registration": "FUN_0081ebc0",
