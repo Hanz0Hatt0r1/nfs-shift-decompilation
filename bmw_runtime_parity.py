@@ -58,7 +58,7 @@ def validate_runtime_parity(material_slice: Mapping[str, Any], runtime_report: M
     candidate=join['candidate_frames'][0]
     runtime_frame=next((f for f in runtime_report.get('frames') or [] if f.get('frame')==candidate.get('frame')), None) or {}
     runtime_state=runtime_frame
-    draw_index=candidate.get('draw_index')
+    draw_index=candidate.get('draw_index') if candidate.get('source') == 'draw-snapshot' else None
     if draw_index is not None:
         runtime_state = next(
             (
