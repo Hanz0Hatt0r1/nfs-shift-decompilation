@@ -25,8 +25,10 @@ def _same_resource(
     expected_resource_path: str,
 ) -> bool:
     actual_sha = binding.get("resource_sha256")
-    if expected_resource_sha and actual_sha:
-        return str(actual_sha) == str(expected_resource_sha)
+    if expected_resource_sha:
+        if not actual_sha:
+            return False
+        return str(actual_sha).strip().lower() == str(expected_resource_sha).strip().lower()
     actual_path = binding.get("resource_path")
     return bool(actual_path and _norm(actual_path) == _norm(expected_resource_path))
 
