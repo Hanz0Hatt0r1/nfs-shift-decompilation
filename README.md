@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 211.**
+> **Current mainline: Phase 216.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -674,3 +674,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Vulkan samplerCube:** Phase 215 adds a dedicated SHIFT.VulkanCubeTexturePacket/1 path for BMW environmentMap/s3. Six explicit RGBA8 faces are uploaded into a cube-compatible image and bound at Vulkan set 1/binding 3; actual BMW cube content/orientation remains a runtime evidence gate.
+
+
+> **BMW Vulkan bundle:** Phase 216 packages one exact M3 RenderCommand submesh into geometry/constants/texture/cube handoffs and preserves Vulkan shader source plus hashes. It is preparation-only; native BMW material execution remains the next stage.
