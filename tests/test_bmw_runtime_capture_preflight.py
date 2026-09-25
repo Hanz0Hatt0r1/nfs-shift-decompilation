@@ -189,3 +189,49 @@ def test_runtime_capture_preflight_defaults_to_exact_retail_meb_sha():
     report = preflight_bmw_runtime(runtime)
     assert report["target"]["resource_sha256"] == "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
     assert report["target"]["resource_identity_mode"] == "exact-sha256"
+
+
+def test_runtime_capture_preflight_reports_active_resource_state():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["same_instance_gate"]["candidate_frames"] = [{"frame": 7, "draw_index": 1}]
+    snapshot = _snapshot(
+        "abc", 150, 2098, draw_index=1
+    )
+    snapshot.update({
+        "vertex_shader": {"shader_ptr": "0x10"},
+        "pixel_shader": {"shader_ptr": "0x20"},
+        "stream_sources": [{"stream": 0}],
+        "active_stream_sources": [{"stream": 0}],
+        "index_binding": {"index_buffer_ptr": "0x30"},
+        "constant_writes": [],
+        "constant_state": {"vertex": {"4": [1.0, 0.0, 0.0, 1.0]}, "pixel": {}},
+        "texture_bindings": [{"stage": 0, "texture_ptr": "0x40"}],
+        "active_texture_bindings": [{"stage": 0, "texture_ptr": "0x40"}, {"stage": 3, "texture_ptr": "0x43"}],
+    })
+    runtime["frames"] = [{"frame": 7, "draw_snapshots": [snapshot]}]
+    report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
+    candidate = report["paint_draw_candidates"][0]
+    assert candidate["state_complete"] is True
+    assert candidate["snapshot_schema_status"] == "valid"
+    assert candidate["active_texture_stages"] == [0, 3]
+    assert candidate["constant_state_stages"] == ["vertex"]
+
+
+def test_runtime_capture_preflight_reports_invalid_snapshot_schema():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["frames"] = [{
+        "frame": 7,
+        "draw_snapshots": [{
+            "format": "SHIFT.D3D9DrawStateSnapshot/999",
+            "frame": 7,
+            "draw_index": 1,
+            "draw": {"start_index": 150, "primitive_count": 2098, "base_vertex_index": 0},
+            "vertex_declaration": {"declaration_ptr": "0x1", "resource_sha256": "abc"},
+        }],
+    }]
+    report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
+    candidate = report["paint_draw_candidates"][0]
+    assert candidate["snapshot_schema_status"] == "invalid"
+    assert candidate["state_complete"] is False
+    assert "draw-snapshot-schema" in candidate["missing_components"]
+    assert "format:invalid" in candidate["snapshot_schema_blocking_reasons"]
