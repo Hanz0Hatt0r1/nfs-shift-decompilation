@@ -2,15 +2,18 @@ from bmw_runtime_capture_preflight import preflight_bmw_runtime
 
 
 def _runtime(report_status="observed", same_instance_ready=False):
+    gate = {
+        "status": "proven" if same_instance_ready else "not-proven",
+        "ready": same_instance_ready,
+        "blocking_reasons": [] if same_instance_ready else ["draw:same-frame-indexed-draw-not-observed"],
+    }
+    if same_instance_ready:
+        gate["candidate_frames"] = [{"frame": 7, "draw_index": 1}]
     return {
         "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
         "status": report_status,
         "integrity": {"status": "observed"},
-        "same_instance_gate": {
-            "status": "proven" if same_instance_ready else "not-proven",
-            "ready": same_instance_ready,
-            "blocking_reasons": [] if same_instance_ready else ["draw:same-frame-indexed-draw-not-observed"],
-        },
+        "same_instance_gate": gate,
         "frames": [],
     }
 
