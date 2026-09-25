@@ -23,14 +23,14 @@ def test_camera_snapshot_keeps_six_runtime_values_distinct():
     )
     result = snapshot_camera_state(state)
     snap = result["snapshot"]
-    assert snap["camera_source"] == "opaque-camera-source"
-    assert snap["mode"] == 3
-    assert snap["buffer_sub_index"] == 12
-    assert snap["camera_id"] == 8
-    assert snap["active_group"] == 4
-    assert snap["group_restore_value"] == 6
-    assert snap["buffer_index"] == 1
-    assert snap["buffer_sub_flag"] == 1
+    assert snap["word0_camera_source"] == "opaque-camera-source"
+    assert snap["word1_mode"] == 3
+    assert snap["word2_buffer_sub_index"] == 12
+    assert snap["word3_camera_id"] == 8
+    assert snap["word4_active_group"] == 4
+    assert snap["word5_group_restore_value"] == 6
+    assert result["source_context"]["active_buffer_index"] == 1
+    assert result["source_context"]["active_buffer_sub_flag"] == 1
 
 
 def test_buffer_swap_toggles_between_the_two_runtime_buffers():
