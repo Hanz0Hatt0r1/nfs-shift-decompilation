@@ -15,7 +15,7 @@ IDirect3D9 * WINAPI DECLSPEC_HOTPATCH Direct3DCreate9(UINT sdk_version)
 }
 """
 
-FIXTURE_PRIVATE = '#include "d3d9.h"\\n#include "wine/wined3d.h"\\n'
+FIXTURE_PRIVATE = '#include "d3d9.h"\n#include "wine/wined3d.h"\n'
 
 FIXTURE_MAKEFILE = """MODULE    = d3d9.dll
 IMPORTLIB = d3d9
@@ -143,7 +143,7 @@ def make_tree(tmp_path: Path) -> Path:
     source = tmp_path / "wine"
     d3d9 = source / "dlls" / "d3d9"
     d3d9.mkdir(parents=True)
-    (source / "configure").write_text("#!/bin/sh\\nexit 0\\n", encoding="utf-8")
+    (source / "configure").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     (d3d9 / "d3d9_main.c").write_text(FIXTURE_MAIN, encoding="utf-8")
     (d3d9 / "d3d9_private.h").write_text(FIXTURE_PRIVATE, encoding="utf-8")
     (d3d9 / "Makefile.in").write_text(FIXTURE_MAKEFILE, encoding="utf-8")
@@ -188,7 +188,7 @@ def test_wine_d3d9_injector(tmp_path: Path) -> None:
         assert patched.count(marker) == 1, marker
 
     makefile = (source / "dlls" / "d3d9" / "Makefile.in").read_text(encoding="utf-8")
-    assert "\tshift_d3d9_capture.c \\\n" in makefile
+    assert "\tshift_d3d9_capture.c \\n" in makefile
 
     private = (source / "dlls" / "d3d9" / "d3d9_private.h").read_text(encoding="utf-8")
     assert '#include "shift_d3d9_capture.h"' in private
