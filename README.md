@@ -14,13 +14,15 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 183.**
+> **Current mainline: Phase 184.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
 > **Current external gate:** obtain one real retail D3D9 capture containing the target BMW M3 body draw and prove the same-instance chain from MEB resource → declaration → indexed draw → VS/PS → constants → sampler resources.
 >
 > **Draw-local runtime proof:** `SHIFT.D3D9RuntimeBindingEvidence/1` now freezes declaration, stream, index, shader, constant and texture state at each `DrawIndexedPrimitive` boundary. The strict same-instance gate consumes these snapshots rather than the final state of the whole frame.
+
+> **Draw-local shader join:** runtime shader selection, parity and the render contract now consume the same `(frame, draw_index)` snapshot. Frame-level shader state is retained only for compatibility with legacy reports that have no snapshots.
 
 ---
 
