@@ -69,9 +69,9 @@ def describe_orientation_assist(
     first_normalized_vector: Sequence[float] | None = None,
     first_norm_clamp: float | None = None,
     quaternion_output: Sequence[float] | None = None,
+    helper_4a7820: float = 0.0,
     helper_900c40: float = 0.0,
     helper_900b10: float = 0.0,
-    helper_7bdb0_output: Sequence[float] | None = None,
 ) -> dict[str, Any]:
     """Trace FUN_0081cd70 with exact vector stages and opaque helper boundaries."""
     direction = _vec3(inputs.vehicle_direction, "vehicle_direction")
@@ -134,6 +134,8 @@ def describe_orientation_assist(
         },
     ]
 
+    local48, local44, local40 = neg_velocity
+
     if clamped_norm > 0.001:
         actions.append({
             "action": "normalize first cross vector",
@@ -149,6 +151,9 @@ def describe_orientation_assist(
             "result": quaternion_output,
         })
 
+        q = tuple(float(v) for v in quaternion_output) if quaternion_output is not None else (0.0, 0.0, 0.0, 0.0)
+        if len(q) != 4:
+            raise ValueError("quaternion_output requires four values")
         angle = float(inputs.angle_sample)
         angle_clamped = min(
             1.5707964,
@@ -159,12 +164,24 @@ def describe_orientation_assist(
             max(0.0, abs(angle_clamped) / 0.27925268),
         )
         blend = (
-            1.0 - normalized_abs
-        ) * ((normalized_abs) ** 2) + normalized_abs * (
-            1.0 - (normalized_abs - 1.0) ** 2
+            (1.0 - normalized_abs) * (normalized_abs * normalized_abs)
+            + normalized_abs * (1.0 - (normalized_abs - 1.0) * (normalized_abs - 1.0))
         )
-        phase = helper_900c40 * clamped_norm
-        damped = helper_900b10 * phase
+        local24 = (
+            float(helper_4a7820)
+            * blend
+            * 0.27925267815589905
+            * 0.5
+        )
+        local18 = float(helper_900c40)
+        mix_x = local18 * q[0]
+        mix_y = local18 * q[2]
+        mix_z = local18 * q[1]
+        # Source fields local54/local50/local4c are the first, third and
+        # second float components returned by FUN_0047bdb0.
+        local48 = float(helper_900b10) * local48 + mix_x
+        local44 = float(helper_900b10) * local44 + mix_y
+        local40 = float(helper_900b10) * local40 + mix_z
         actions.extend([
             {
                 "action": "FUN_0040f3e0",
@@ -181,33 +198,36 @@ def describe_orientation_assist(
             {
                 "action": "FUN_004a7820",
                 "argument": angle_clamped,
-                "result": None,
+                "result": helper_4a7820,
+            },
+            {
+                "action": "FUN_00900c40",
+                "result": helper_900c40,
+                "purpose": "quaternion contribution scalar",
+            },
+            {
+                "action": "FUN_00900b10",
+                "result": helper_900b10,
+                "purpose": "velocity damping scalar",
             },
             {
                 "action": "damping blend",
                 "blend": blend,
-                "helper_900c40": helper_900c40,
-                "helper_900b10": helper_900b10,
-                "result_scalar": damped,
+                "angle_amplitude": local24,
             },
         ])
     else:
-        damped = 0.0
+        local24 = 0.0
+        local18 = 0.0
         actions.append({
             "action": "skip first quaternion build",
             "condition": "clamped_norm <= 0.001",
         })
 
-    adjusted = (
-        neg_velocity[0] * damped,
-        neg_velocity[1] * damped,
-        neg_velocity[2] * damped,
-    )
-
     second_cross = (
-        -adjusted[1],
+        local40 * -1.0,
         0.0,
-        adjusted[0],
+        local48 * -1.0,
     )
     second_normed, second_norm = normalize3(second_cross)
 
@@ -282,6 +302,7 @@ def describe_orientation_assist(
             "second_cross_unit": second_normed,
         },
         "first_norm_clamp": clamped_norm,
+    "damped_velocity": [local48, local44, local40],
         "output_basis": output_basis,
         "actions": actions,
         "evidence": {
