@@ -1,0 +1,68 @@
+{
+  "format": "SHIFT.BMWM3TestScene/1",
+  "status": "ready",
+  "ready": true,
+  "source": {
+    "archive": "BMW_M3_E36.bff",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "vhf_resource": "vehicles/bmw_m3_e36/bmw_m3_e36.vhf",
+    "kit": "00",
+    "lod": "A",
+    "selection": {
+      "include_generic": true,
+      "include_lightglows": false
+    }
+  },
+  "renderer": {
+    "format": "SHIFT.VHFSceneReferenceRender/1",
+    "mode": "geometry-preview",
+    "material_execution": false,
+    "runtime_capture_required": false
+  },
+  "vehicle": {
+    "part_count": 27,
+    "golden_body_meb": {
+      "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+      "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+    }
+  },
+  "cameras": [
+    {
+      "name": "front_left",
+      "yaw_deg": -28,
+      "pitch_deg": -15,
+      "screenshot": "01_front_left.png"
+    },
+    {
+      "name": "rear_right",
+      "yaw_deg": 152,
+      "pitch_deg": -12,
+      "screenshot": "02_rear_right.png"
+    },
+    {
+      "name": "side",
+      "yaw_deg": -90,
+      "pitch_deg": -10,
+      "screenshot": "03_side.png"
+    },
+    {
+      "name": "front",
+      "yaw_deg": 0,
+      "pitch_deg": -8,
+      "screenshot": "04_front.png"
+    }
+  ],
+  "screenshots": {
+    "resolution": [
+      1600,
+      900
+    ],
+    "mode": "neutral-studio-geometry-preview",
+    "artifacts_are_external": true
+  },
+  "notes": [
+    "Scene uses the supplied retail BMW_M3_E36.bff and the repository VHF scene assembly path.",
+    "Screenshots are geometry-preview evidence only; they do not claim final BMW bodywork.fx material execution.",
+    "Authentic retail D3D9 runtime capture remains a separate external proof gate."
+  ]
+}
