@@ -43,7 +43,6 @@ def _source_report():
                 "source_line": 400,
                 "detail": "Type ordinal indexes table",
             },
-        ],
             {
                 "id": "binary-descriptor-triple-semantics",
                 "status": "observed",
@@ -68,6 +67,7 @@ def _source_report():
                 "source_line": 540,
                 "detail": "MEB extension registration path",
             },
+        ],
         "linkage": {
             "xml_colour_to_type_4": {
                 "status": "not-proven",
