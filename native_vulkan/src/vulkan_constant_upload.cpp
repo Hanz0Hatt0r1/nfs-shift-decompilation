@@ -188,12 +188,13 @@ ConstantPacket parse_packet(const std::string& path) {
 void create_buffer(
     Context& ctx,
     VkDeviceSize size,
+    VkBufferUsageFlags usage,
     Buffer& out) {
 
     VkBufferCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     info.size = size;
-    info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    info.usage = usage;
     check(vkCreateBuffer(ctx.device, &info, nullptr, &out.handle), "vkCreateBuffer failed");
 
     VkMemoryRequirements requirements{};
@@ -319,8 +320,8 @@ int main(int argc, char** argv) {
     try {
         const ConstantPacket packet = parse_packet(packet_path);
         ctx = create_context();
-        create_buffer(ctx, 4096, vertex_constants);
-        create_buffer(ctx, 4096, pixel_constants);
+        create_buffer(ctx, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vertex_constants);
+        create_buffer(ctx, 4096, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, pixel_constants);
         create_image(ctx, color);
 
         void* mapped = nullptr;
@@ -510,7 +511,11 @@ int main(int argc, char** argv) {
             ctx.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline),
             "vkCreateGraphicsPipelines failed");
 
-        create_buffer(ctx, 256u * 256u * 4u, staging);
+        create_buffer(
+            ctx,
+            256u * 256u * 4u,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            staging);
 
         VkCommandBufferAllocateInfo cmd_alloc{};
         cmd_alloc.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
