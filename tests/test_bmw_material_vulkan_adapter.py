@@ -112,7 +112,7 @@ def _tiny_dds():
         124, 0, 4, 4, 0, 0, 1,
         *([0] * 11),
         32, 0x4, struct.unpack("<I", b"DXT1")[0], 0,
-        0, 0, 0, 0, 0,
+        0, 0, 0, 0,
         0x1000, 0, 0, 0, 0,
     )
     return b"DDS " + header + struct.pack("<HHI", 0xF800, 0x07E0, 0)
