@@ -39,7 +39,7 @@ def _selected_candidate(material_input: Mapping[str, Any], selection: Mapping[st
 def _runtime_frame(runtime_report: Mapping[str, Any], selection: Mapping[str, Any]) -> Mapping[str, Any]:
     selected = selection.get("selected") or {}
     selected_frame = selected.get("frame")
-    selected_draw = selected.get("draw_index")
+    selected_draw = selected.get("draw_index") if selected.get("source") == "draw-snapshot" else None
     frames = [frame for frame in (runtime_report.get("frames") or []) if isinstance(frame, Mapping)]
     matches = [frame for frame in frames if frame.get("frame") == selected_frame]
     if len(matches) != 1:
