@@ -86,6 +86,13 @@ def _meb(properties):
         "format": "SHIFT.MEB",
         "vertex_properties": [row["id"] for row in properties],
         "property_layouts": properties,
+        "property_descriptors": [
+            {
+                "id": row["id"],
+                "words": [4, 6, 0 if row["id"] == "460" else 1],
+            }
+            for row in properties
+        ],
     }
 
 

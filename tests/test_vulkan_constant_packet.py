@@ -58,7 +58,7 @@ def test_constant_packet_roundtrip_with_unique_stage_registers(tmp_path):
     assert HEADER.unpack_from(raw)[:4] == (b"SVCP", 1, 256, 16)
     body = HEADER.size
     assert struct.unpack_from("<4f", raw, body) == pytest.approx((0.1, 0.2, 0.0, 0.0))
-    assert struct.unpack_from("<4f", raw, body + 4096 + 16) == (0.2, 0.4, 0.6, 1.0)
+    assert struct.unpack_from("<4f", raw, body + 4096 + 16) == pytest.approx((0.2, 0.4, 0.6, 1.0))
 
 
 def test_constant_packet_rejects_unknown_stage(tmp_path):
