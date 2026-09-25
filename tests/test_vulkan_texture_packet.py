@@ -99,6 +99,8 @@ def test_vulkan_texture_native_contract():
     assert "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL" in source
     assert "vkUpdateDescriptorSets" in source
     assert "vkCmdBindDescriptorSets" in source
+    assert "1,1,&set" in source
+    assert "setLayoutCount=2" in source
     assert "SHIFT.VulkanTextureUpload/1" in source
     assert "shift_vulkan_texture_upload" in cmake
     assert "texture.vert.spv" in cmake
