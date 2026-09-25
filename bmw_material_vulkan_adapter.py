@@ -449,6 +449,7 @@ def build_bmw_vulkan_from_material_slice(
         "bundle": bundle_result,
         "source": source_record,
         "artifacts": result.get("artifacts", {}),
+        "dds_bridge": result.get("dds_bridge"),
     }
 
 
