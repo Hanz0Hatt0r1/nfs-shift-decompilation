@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 209. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 210. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1095,3 +1095,16 @@ to VkVertexInputAttributeDescription entries and remains compatible with version
 POSITION0 remains the only shader-consumed input in the geometry checkpoint; extra
 attributes are physically bound but not yet consumed by the shader. COLOR0 receives an
 evidence-backed BGRA-to-RGBA repack; unresolved COLOR1 remains deferred.
+
+
+## Phase 210: Linux Vulkan RenderCommand runner
+
+vulkan_render_command.py now provides one Linux command path from RenderBinding/1 to
+the native Vulkan geometry executable. It selects a RenderCommand/submesh, builds and
+hashes the VulkanGeometryPacket/1 handoff, optionally executes the native backend and
+hashes the PPM result. prepare-only mode preserves deterministic validation without a
+Vulkan installation.
+
+The native backend remains independent of BFF/MEB parsing. The next stage is connecting
+the RenderCommand shader interface and material constants to Vulkan descriptor/push
+constant state.
