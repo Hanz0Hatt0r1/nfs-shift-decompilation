@@ -13,7 +13,7 @@ def _dds_header(width=4, height=4, *, fourcc=b"", caps2=0):
         124, 0, height, width, 0, 0, 1,
         *([0] * 11),
         32, pf_flags, pf_fourcc, 0,
-        0, 0, 0, 0, 0,
+        0, 0, 0, 0,
         0x1000, caps2, 0, 0, 0,
     )
     header = struct.pack("<31I", *values)
