@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 240.**
+> **Current mainline: Phase 241.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -713,3 +713,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Phase 240:** the BMW material→DDS→Vulkan adapter now propagates extraction blockers even when no packet is produced and sanitizes temporary paths from persistent DDS provenance.
+
+
+> **Phase 241:** Linux Vulkan CI now enters through the `BMWMaterialSliceVulkan/1` adapter, retaining the mixed sampler2D/samplerCube/constants native smoke. Exact BFF DDS extraction remains separately tested through the Phase 239/240 provenance path.

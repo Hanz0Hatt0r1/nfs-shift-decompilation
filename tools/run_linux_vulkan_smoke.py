@@ -9,7 +9,8 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from bmw_vulkan_bundle import TARGET_MEB, build_bmw_vulkan_bundle
+from bmw_vulkan_bundle import TARGET_MEB
+from bmw_material_vulkan_adapter import build_bmw_vulkan_from_material_slice
 from vulkan_bundle_run import run_bmw_vulkan_bundle
 
 VERTEX_GLSL = """#version 450
@@ -127,13 +128,22 @@ def main():
     root = Path(args.output_dir)
     root.mkdir(parents=True, exist_ok=True)
     bundle_dir = root / "bundle"
-    build_bmw_vulkan_bundle(
-        {"format": "SHIFT.RenderBinding/1", "render_commands": [render_command()]},
-        mesh(),
+    material_slice = {
+        "format": "SHIFT.BMWRealMaterialSlice/1",
+        "render_command": render_command(),
+        "mesh": mesh(),
+    }
+    adapter_result = build_bmw_vulkan_from_material_slice(
+        material_slice,
         bundle_dir,
         textures={"1": texture()},
         environment_cube=cube(),
     )
+    if not adapter_result["ready"]:
+        raise SystemExit(
+            "material-slice adapter blocked: "
+            + ", ".join(adapter_result["blocking_reasons"])
+        )
     result = run_bmw_vulkan_bundle(
         bundle_dir,
         executable=args.executable,

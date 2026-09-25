@@ -6,6 +6,8 @@ def test_linux_vulkan_workflow_and_smoke_contract():
     assert "mesa-vulkan-drivers" in workflow
     assert "glslang-tools" in workflow
     assert "shift_vulkan_bundle_execute" in smoke
+    assert "build_bmw_vulkan_from_material_slice" in smoke
+    assert "SHIFT.BMWRealMaterialSlice/1" in smoke
     assert "sampler2D" in smoke
     assert "samplerCube" in smoke
     assert "P6" in smoke
