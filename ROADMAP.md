@@ -1273,3 +1273,12 @@ transform-slot rejection, XML hexadecimal float-word encoding, base-transform
 defaults, exact-name node mapping, node-count validation, and duration
 compatibility. XML form names are intentionally kept separate from numeric BAB
 channel ids. Rendering remains outside this phase.
+
+
+## Phase 249: scene NODE/partition runtime semantics
+
+The source-backed scene XML object layer is now represented by
+scene_node_runtime.py. It reconstructs SCENE object dispatch, NODE flags and
+resource metadata, TRANSFORM fields, LIGHT type/angle conversion, partition
+child-reference lists, and explicit boundaries around still-opaque SGB chunk
+payloads. Rendering is not part of this phase.
