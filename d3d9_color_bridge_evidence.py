@@ -248,7 +248,6 @@ def analyze_meb_d3d9_color_bridge(
     source = _load_json(source_report)
     pe = _load_json(pe_evidence) if pe_evidence is not None else None
     runtime = _load_json(runtime_report) if runtime_report is not None else None
-    pe_evidence = None
     loaded_resource_reports = [
         _load_json(item)
         for item in (resource_reports or [])
