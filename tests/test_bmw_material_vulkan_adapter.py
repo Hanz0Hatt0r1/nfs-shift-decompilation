@@ -1,4 +1,6 @@
+import hashlib
 import json
+import struct
 
 from bmw_vulkan_bundle import TARGET_MEB
 from bmw_material_vulkan_adapter import build_bmw_vulkan_from_material_slice
@@ -81,3 +83,118 @@ def test_material_slice_rejects_missing_vulkan_shader_source(tmp_path):
     result = build_bmw_vulkan_from_material_slice(payload, tmp_path)
     assert result["ready"] is False
     assert "bmw-material-vulkan:vulkan-pixel-source-missing:0" in result["blocking_reasons"]
+
+
+
+class FakeDDSEntry:
+    def __init__(self, path):
+        self.path = path
+        self.index = 7
+
+
+class FakeDDSArchive:
+    def __init__(self, path, payload):
+        self.path = Path(path)
+        self.entries = [FakeDDSEntry("render/textures/diffuse.dds")]
+        self.payload = payload
+
+    def extract_entry(self, entry):
+        return self.payload
+
+    def close(self):
+        pass
+
+
+def _tiny_dds():
+    header = struct.pack(
+        "<31I",
+        124, 0, 4, 4, 0, 0, 1,
+        *([0] * 11),
+        32, 0x4, struct.unpack("<I", b"DXT1")[0], 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+    )
+    return b"DDS " + header + struct.pack("<HHI", 0xF800, 0x07E0, 0)
+
+
+def test_material_slice_can_bridge_exact_bff_dds_into_vulkan_packet(monkeypatch, tmp_path):
+    source = tmp_path / "Textures.bff"
+    source.write_bytes(b"fixture-bff")
+    dds_payload = _tiny_dds()
+    monkeypatch.setattr(
+        "bmw_material_vulkan_adapter.BFF",
+        lambda path: FakeDDSArchive(source, dds_payload),
+    )
+
+    payload = _slice()
+    payload["render_command"]["submeshes"][0]["textures"] = [{
+        "sampler": "diffuseMap",
+        "d3d9_sampler_register": 1,
+        "ref": "render/textures/diffuse.dds",
+        "sampler_state": {
+            "min_filter": "LINEAR",
+            "mag_filter": "LINEAR",
+            "address_u": "REPEAT",
+            "address_v": "REPEAT",
+        },
+    }]
+    payload["texture_sources"] = [{
+        "archive": source.name,
+        "path": "render/textures/diffuse.dds",
+        "sha256": hashlib.sha256(dds_payload).hexdigest(),
+        "analysis": {"format": "DDS", "width": 4, "height": 4},
+    }]
+
+    result = build_bmw_vulkan_from_material_slice(
+        payload,
+        tmp_path / "out",
+        source_bffs=[source],
+    )
+
+    assert result["format"] == "SHIFT.BMWMaterialSliceVulkan/1"
+    assert result["ready"] is True, result
+    assert result["bundle"]["artifacts"]["textures"]["path"] == "textures.svtp"
+    assert result["dds_bridge"]["ready"] is True
+    assert result["source"]["dds_sources"][0]["source_sha256"] == hashlib.sha256(dds_payload).hexdigest()
+    assert "temporary_path" not in result["source"]["dds_sources"][0]
+    assert (tmp_path / "out" / "textures.svtp").is_file()
+
+
+def test_material_slice_blocks_when_exact_bff_dds_sha_mismatches(monkeypatch, tmp_path):
+    source = tmp_path / "Textures.bff"
+    source.write_bytes(b"fixture-bff")
+    dds_payload = _tiny_dds()
+    monkeypatch.setattr(
+        "bmw_material_vulkan_adapter.BFF",
+        lambda path: FakeDDSArchive(source, dds_payload),
+    )
+
+    payload = _slice()
+    payload["render_command"]["submeshes"][0]["textures"] = [{
+        "sampler": "diffuseMap",
+        "d3d9_sampler_register": 1,
+        "ref": "render/textures/diffuse.dds",
+        "sampler_state": {
+            "min_filter": "LINEAR",
+            "mag_filter": "LINEAR",
+            "address_u": "REPEAT",
+            "address_v": "REPEAT",
+        },
+    }]
+    payload["texture_sources"] = [{
+        "archive": source.name,
+        "path": "render/textures/diffuse.dds",
+        "sha256": "0" * 64,
+    }]
+
+    result = build_bmw_vulkan_from_material_slice(
+        payload,
+        tmp_path / "out",
+        source_bffs=[source],
+    )
+
+    assert result["ready"] is False
+    assert any(
+        reason.startswith("bmw-material-vulkan:dds-source-sha256-mismatch:")
+        for reason in result["blocking_reasons"]
+    )
