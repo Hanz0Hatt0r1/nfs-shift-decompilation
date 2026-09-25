@@ -37,6 +37,14 @@ def test_present_capture_hook_is_opt_in_and_frame_cadenced(tmp_path):
     assert 'write_backbuffer_ppm' in source
 
 
+def test_d3d9_proxy_reports_startup_path():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+    assert 'proxy_direct3dcreate9' in source
+    assert 'proxy_system_d3d9_load_failed' in source
+    assert 'proxy_system_d3d9_ready' in source
+    assert 'g_proxy_entry_reported.compare_exchange_strong' in source
+
+
 def test_runtime_trace_accepts_present_screenshot_events():
     from d3d9_runtime_trace import build_runtime_binding_evidence
 

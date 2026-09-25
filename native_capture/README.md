@@ -86,3 +86,13 @@ The hook runs before `Present`, uses a system-memory surface and currently
 supports A8R8G8B8, X8R8G8B8 and R5G6B5 backbuffers. Screenshot capture is
 optional and failure is reported as a separate JSONL event; it does not change
 normal D3D9 rendering behavior.
+
+### Proxy startup diagnostics
+
+The first call through the local proxy emits a `proxy_direct3dcreate9` event. A failed system-runtime load emits `proxy_system_d3d9_load_failed`; a successful system-runtime load emits `proxy_system_d3d9_ready`. These events distinguish a missing/unused proxy from a later capture failure.
+
+For PortProton/Wine, force the local native proxy with:
+
+    WINEDLLOVERRIDES="d3d9=n"
+
+For the first diagnostic run, leave screenshot and texture snapshots disabled and inspect the JSONL event counts after the game starts. If no JSONL file is created, the next diagnostic is Wine DLL-load tracing with `WINEDEBUG=+loaddll`.

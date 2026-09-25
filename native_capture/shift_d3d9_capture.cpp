@@ -91,6 +91,7 @@ DrawIndexedPrimitiveFn g_real_draw_indexed_primitive = nullptr;
 std::mutex g_hook_mutex;
 std::atomic<unsigned long long> g_event_index{0};
 std::atomic<unsigned long long> g_frame{0};
+std::atomic<bool> g_proxy_entry_reported{false};
 
 struct CaptureWriter {
     std::mutex mutex;
@@ -901,7 +902,18 @@ bool ensure_system_d3d9() {
 
 extern "C" __declspec(dllexport)
 IDirect3D9* WINAPI Direct3DCreate9(UINT sdk_version) {
-    if (!ensure_system_d3d9()) return nullptr;
+    bool expected = false;
+    if (g_proxy_entry_reported.compare_exchange_strong(expected, true)) {
+        writer().write_event("proxy_direct3dcreate9",
+                             "sdk_version=" + std::to_string(sdk_version));
+    }
+    if (!ensure_system_d3d9()) {
+        writer().write_event("proxy_system_d3d9_load_failed",
+                             "error_code=" + std::to_string(GetLastError()));
+        return nullptr;
+    }
+    writer().write_event("proxy_system_d3d9_ready",
+                         "sdk_version=" + std::to_string(sdk_version));
     IDirect3D9* d3d = g_real_direct3d_create9(sdk_version);
     if (d3d) patch_direct3d9(d3d);
     return d3d;
