@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 220.**
+> **Current mainline: Phase 222.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -686,3 +686,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Vulkan bundle interface gate:** Phase 220 validates reflected SPIR-V descriptors against the actual geometry/constants/2D/cube packets before native pipeline creation. Missing `sN` resources or unsupported descriptor interfaces are fail-closed.
+
+
+> **BMW material → Vulkan:** Phase 222 adds an adapter from the existing real BMW material-slice report to `SHIFT.BMWVulkanBundle/1`, preserving exact M3 MEB identity, Vulkan shader sources and source provenance. No additional archive parser is introduced.
