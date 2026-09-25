@@ -25,6 +25,7 @@ def _snapshot(resource_sha, start_index, primitive_count, draw_index=0, source="
         "draw_index": draw_index,
         "source": source,
         "vertex_declaration": {
+            "declaration_ptr": "0x1",
             "resource_sha256": resource_sha,
             "resource_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
         },
@@ -33,6 +34,15 @@ def _snapshot(resource_sha, start_index, primitive_count, draw_index=0, source="
             "primitive_count": primitive_count,
             "base_vertex_index": 0,
         },
+        "vertex_shader": {"shader_ptr": "0x10"},
+        "pixel_shader": {"shader_ptr": "0x20"},
+        "stream_sources": [{"stream": 0}],
+        "active_stream_sources": [{"stream": 0}],
+        "index_binding": {"index_buffer_ptr": "0x30"},
+        "constant_writes": [],
+        "constant_state": {"vertex": {}, "pixel": {}},
+        "texture_bindings": [],
+        "active_texture_bindings": [],
         "shader_permutation_identity": {
             "identity_sha256": "shader-id",
         },
