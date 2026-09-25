@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 260.**
+> **Current mainline: Phase 261.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -144,7 +144,7 @@ Weak or unresolved behavior remains explicitly marked as `unknown`, `inferred`, 
 | RenderCommand | ✅ | resources, constants, vertex ABI, readiness and blockers |
 | Desktop renderer | 🟢 | geometry, textures, multi-sampler, cube maps, VS→PS linkage and captured shader execution |
 | Skinning | 🟢 | explicit SkinPose, CPU LBS oracle and GLES ABI |
-| Camera / TrackCameraMan | 🟡 | config loading, spline reload, class registration, selection and activation state |
+| Camera / TrackCameraMan | 🟡 | config, spline reload, class registration, selection, activation and switch gate |
 | D3D9 runtime capture | 🟢 | declarations, streams, indices, shaders, constants, textures and resource descriptors |
 | BMW post-capture pipeline | 🟢 | one-command evidence → shader selection → render contract → offline render |
 | Android runtime | ⏳ | follows stabilization of the desktop/runtime boundary |
