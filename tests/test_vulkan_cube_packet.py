@@ -84,7 +84,7 @@ def test_cube_packet_rejects_non_clamp_sampler(tmp_path):
     command = _command()
     command["submeshes"][0]["external_samplers"][0]["sampler_state"]["address_w"] = "Wrap"
     try:
-        build_vulkan_cube_packet(_command(), _cube(), tmp_path / "bad.svcp")
+        build_vulkan_cube_packet(command, _cube(), tmp_path / "bad.svcp")
     except ValueError as error:
         assert "CLAMP_TO_EDGE" in str(error)
     else:
