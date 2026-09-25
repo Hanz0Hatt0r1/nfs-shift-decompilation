@@ -1348,3 +1348,7 @@ camera_command_runtime.py reconstructs the four observed branches of FUN_0080e65
 ## Phase 264: Camera event stream boundary
 
 camera_event_stream_runtime.py reconstructs FUN_0080c710 channel filtering (`event+0x5` vs manager +0x580), low-byte event type dispatch, and the type-5 payload boundary at event+0xc into FUN_0080e650. Other known event targets stay opaque.
+
+## Phase 265: Camera event record layout
+
+camera_event_record_runtime.py reconstructs the exact type-5 camera-command event header/payload layout from FUN_0080b9b0 and the type-3 producer field writes from FUN_0080ccb0. Raw dword bits are preserved; semantic meanings of payload words remain unresolved.
