@@ -69,7 +69,7 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
 
     matched: list[dict[str, Any]] = []
     candidates: list[dict[str, Any]] = []
-    for frame, state, source in _runtime_draw_states(runtime_report):
+    for frame, state, source in _runtime_draw_states(runtime_report, reject_invalid_snapshots=True):
         if source == 'draw-snapshot':
             draw_rows = [(state.get('draw_index'), state.get('draw'))]
         else:
