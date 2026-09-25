@@ -71,7 +71,7 @@ def test_runtime_golden_gate_ready_with_usage_map_and_command(tmp_path):
     m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'
     m.write_text(json.dumps(_material())); r.write_text(json.dumps(_runtime())); u.write_text(json.dumps({'6':10}))
     report=validate_runtime_golden_gate(m,r,usage_map_path=u)
-    assert report['ready'] is True
+    assert report['ready'] is True, report
     assert report['status'] == 'ready'
 
 

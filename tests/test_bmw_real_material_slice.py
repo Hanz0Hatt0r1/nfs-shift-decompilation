@@ -43,8 +43,8 @@ def _golden():
             "triangle_count": 1,
             "color460_descriptor": {"words": [4, 6, 0]},
             "primitives": [
-                {"first_index": 0, "index_count": 3, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
-                {"first_index": 3, "index_count": 3, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 0, "index_count": 150, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 150, "index_count": 6294, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
             ],
             "skinning": {"skinned": False},
         },
