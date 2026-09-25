@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 222. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 226. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1192,3 +1192,8 @@ vulkan_bundle_interface_gate.py now compares reflected SPIR-V descriptors with t
 ## Phase 222: BMW material slice to Vulkan bundle
 
 bmw_material_vulkan_adapter.py now bridges an existing SHIFT BMW real-material slice into SHIFT.BMWVulkanBundle/1. It requires the exact KIT00 body MEB and explicit Vulkan VS/PS source fields, preserves material-slice provenance and delegates geometry/constants/resource packet generation to the existing Vulkan bundle builder.
+
+
+## Phase 226: retail research input manifest
+
+retail_research_manifest.py fingerprints real local SHIFT research inputs by path, size and SHA-256, with optional expected-hash enforcement. It is identity-only and keeps proprietary retail binary/archive content outside the repository.
