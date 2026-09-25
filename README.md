@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 195.**
+> **Current mainline: Phase 196.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -32,6 +32,8 @@
 > **Capture provenance:** `SHIFT.D3D9RuntimeCaptureManifest/1` fingerprints the capture artifact and checks event-stream continuity while keeping authenticity explicitly unverified.
 
 > **PE Usage mapping:** `SHIFT.PEImageEvidence/1` can now decode the recovered Usage table and emit `SHIFT.D3D9UsageMap/1`; numeric Usage remains unproven until actual PE bytes are supplied.
+
+> **BMW M3 test scene:** `tests/scenes/bmw_m3_e36_kit00_test_scene.json` pins the supplied `BMW_M3_E36.bff` to KIT00/LODA and four deterministic 1600×900 geometry-preview views; the screenshot bundle is kept external to the repository.
 
 
 >
