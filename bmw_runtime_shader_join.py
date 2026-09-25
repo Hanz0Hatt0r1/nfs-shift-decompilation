@@ -8,6 +8,7 @@ from typing import Any, Mapping
 
 from runtime_resource_identity import match_resource_identity
 from d3d9_draw_snapshot_schema import validate_draw_snapshot
+from shader_permutation_identity import validate_shader_permutation_identity
 
 FORMAT = "SHIFT.BMWRuntimeShaderJoin/1"
 
@@ -139,6 +140,8 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
             identity = current_state.get('shader_permutation_identity') or {}
             if not identity and state_source == 'frame-aggregate':
                 identity = frame.get('shader_permutation_identity') or {}
+            if identity.get("format") is not None and validate_shader_permutation_identity(identity):
+                continue
             same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
             binding = current_state.get('vertex_declaration') or {}
             same_resource, resource_identity_status = match_resource_identity(
