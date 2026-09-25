@@ -44,6 +44,21 @@ def _draw_rows(
     ]
 
 
+def _candidate_completeness(state: Mapping[str, Any]) -> tuple[bool, list[str]]:
+    missing: list[str] = []
+    binding = state.get("vertex_declaration") or {}
+    if not binding.get("declaration_ptr"):
+        missing.append("vertex-declaration")
+    for key in ("vertex_shader", "pixel_shader"):
+        if not (state.get(key) or {}).get("shader_ptr"):
+            missing.append(key)
+    if not (state.get("active_stream_sources") or state.get("stream_sources")):
+        missing.append("streams")
+    if not state.get("index_binding"):
+        missing.append("indices")
+    return not missing, missing
+
+
 def preflight_bmw_runtime(
     runtime_report: Mapping[str, Any],
     *,
@@ -69,6 +84,7 @@ def preflight_bmw_runtime(
                 primitive_count = int(draw.get("primitive_count"))
             except (TypeError, ValueError):
                 continue
+            complete, missing_components = _candidate_completeness(state)
             row = {
                 "frame": frame.get("frame"),
                 "draw_index": draw_index,
@@ -79,6 +95,8 @@ def preflight_bmw_runtime(
                 "shader_identity": (
                     (state.get("shader_permutation_identity") or {}).get("identity_sha256")
                 ),
+                "state_complete": complete,
+                "missing_components": missing_components,
             }
             if same_resource:
                 resource_draws.append(row)
