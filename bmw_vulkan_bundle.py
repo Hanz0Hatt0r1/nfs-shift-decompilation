@@ -43,7 +43,7 @@ def _shader_sources(command: Mapping[str, Any], output: Path) -> list[dict[str, 
     for index, submesh in enumerate(command.get("submeshes", []) or []):
         shader = submesh.get("shader") or {}
         for stage in ("vertex", "pixel"):
-            source = shader.get(stage)
+            source = shader.get(f"vulkan_{stage}_glsl") or shader.get(stage)
             if not source:
                 continue
             target = output / "shaders" / f"submesh_{index}.{stage}.glsl"
@@ -73,12 +73,16 @@ def build_bmw_vulkan_bundle(
     command_source = _load(render_command) if isinstance(render_command, (str, Path)) else dict(render_command)
     mesh_source = _load(mesh) if isinstance(mesh, (str, Path)) else dict(mesh)
 
-    if command_source.get("format") != "SHIFT.RenderCommand/1":
-        raise ValueError("render command must be SHIFT.RenderCommand/1")
+    input_format = command_source.get("format")
+    if input_format not in {"SHIFT.RenderBinding/1", "SHIFT.RenderCommand/1"}:
+        raise ValueError("input must be SHIFT.RenderBinding/1 or SHIFT.RenderCommand/1")
     if mesh_source.get("format") not in {"SHIFT.MEB", None}:
         raise ValueError("mesh must be neutral SHIFT.MEB JSON")
 
-    commands = command_source.get("render_commands") or []
+    if input_format == "SHIFT.RenderCommand/1":
+        commands = [command_source]
+    else:
+        commands = command_source.get("render_commands") or []
     if command_index < 0 or command_index >= len(commands):
         raise ValueError(f"command index out of range: {command_index}")
     selected_command = commands[command_index]
