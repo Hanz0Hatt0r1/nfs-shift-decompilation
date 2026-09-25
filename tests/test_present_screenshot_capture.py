@@ -70,3 +70,11 @@ def test_runtime_trace_accepts_present_screenshot_events():
         "line": None,
     }]
     assert report["frames"][1]["screenshot_events"][0]["event"] == "present_screenshot_failed"
+
+
+
+def test_mingw_d3d9_proxy_static_runtime_linking():
+    cmake = Path("native_capture/CMakeLists.txt").read_text(encoding="utf-8")
+    assert '-static-libgcc' in cmake
+    assert '-static-libstdc++' in cmake
+    assert '-Wl,-Bstatic,-lwinpthread,-Bdynamic' in cmake
