@@ -49,3 +49,41 @@ def test_runtime_draw_correlation_uses_explicit_submesh_index_when_slice_contain
     assert report['ready'] is True
     assert report['primitive_index'] == 1
     assert report['matches'][0]['frame'] == 7
+
+
+def test_runtime_draw_correlation_prefers_draw_snapshots_over_frame_aggregate():
+    runtime = {
+        'format': 'SHIFT.D3D9RuntimeBindingEvidence/1',
+        'frames': [{
+            'frame': 7,
+            'draws': [{'start_index': 150, 'primitive_count': 2098}],
+            'draw_snapshots': [{
+                'frame': 7,
+                'draw_index': 0,
+                'draw': {'start_index': 0, 'primitive_count': 1, 'base_vertex_index': 0},
+            }],
+        }],
+    }
+    report = correlate_runtime_draw(_material(), runtime)
+    assert report['ready'] is False
+    assert 'runtime:draw-range-not-found' in report['blocking_reasons']
+    assert report['candidates'][0]['source'] == 'draw-snapshot'
+
+
+def test_runtime_draw_correlation_returns_exact_snapshot_draw_index():
+    runtime = {
+        'format': 'SHIFT.D3D9RuntimeBindingEvidence/1',
+        'frames': [{
+            'frame': 7,
+            'draws': [{'start_index': 150, 'primitive_count': 2098}],
+            'draw_snapshots': [{
+                'frame': 7,
+                'draw_index': 4,
+                'draw': {'start_index': 150, 'primitive_count': 2098, 'base_vertex_index': 2},
+            }],
+        }],
+    }
+    report = correlate_runtime_draw(_material(), runtime)
+    assert report['ready'] is True
+    assert report['matches'][0]['draw_index'] == 4
+    assert report['matches'][0]['source'] == 'draw-snapshot'
