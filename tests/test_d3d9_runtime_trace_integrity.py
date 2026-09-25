@@ -41,3 +41,34 @@ def test_runtime_trace_integrity_rejects_shader_pointer_reuse_with_new_bytes():
     events=_complete_events()+[{'event':'create_vertex_shader','frame':1,'shader_ptr':'0x2','bytes_hex':'cc'}]
     report=validate_runtime_trace_integrity(events)
     assert any(x['reason']=='shader-pointer-reused-with-different-bytes' for x in report['blocking_reasons'])
+
+def test_runtime_trace_integrity_accepts_contiguous_event_indices():
+    events = [
+        dict(event, event_index=index)
+        for index, event in enumerate(_complete_events(), start=10)
+    ]
+    report = validate_runtime_trace_integrity(events)
+    assert report["event_index"]["status"] == "valid"
+    assert report["event_index"]["first"] == 10
+    assert report["event_index"]["last"] == 18
+
+
+def test_runtime_trace_integrity_rejects_missing_event_index_in_sequence():
+    events = [
+        dict(event, event_index=index)
+        for index, event in enumerate(_complete_events())
+    ]
+    events[-1]["event_index"] = 10
+    report = validate_runtime_trace_integrity(events)
+    assert report["status"] == "partial"
+    assert report["event_index"]["status"] == "invalid"
+    assert any(
+        x["reason"] == "event-index-not-contiguous"
+        for x in report["blocking_reasons"]
+    )
+
+
+def test_runtime_trace_integrity_keeps_legacy_no_event_index_fixtures_valid():
+    report = validate_runtime_trace_integrity(_complete_events())
+    assert report["event_index"]["status"] == "valid"
+    assert report["event_index"]["observed_count"] == 0
