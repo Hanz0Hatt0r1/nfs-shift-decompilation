@@ -212,8 +212,9 @@ def analyze_d3d9_pe_image(
             "hex": None if raw is None else raw.hex(),
         }
 
-    type_size_values = _decode_u32_hex_table(tables['type_size_table']['hex'], 17)
-    type_component_values = _decode_u32_hex_table(tables['type_component_table']['hex'], 17)
+    type_code_values = _decode_u32_hex_table(tables['type_code_table']['hex'], 20)
+    type_size_values = _decode_u32_hex_table(tables['type_size_table']['hex'], 18)
+    type_component_values = _decode_u32_hex_table(tables['type_component_table']['hex'], 18)
     usage_values = _decode_u32_hex_table(tables['usage_table']['hex'], 9)
     usage_index_values = _decode_u32_hex_table(tables['usage_index_table']['hex'], 14)
     channel_values = _decode_u32_hex_table(tables['channel_table']['hex'], 22)
@@ -236,6 +237,12 @@ def analyze_d3d9_pe_image(
                 entry["string"] = string_value
                 entry["status"] = "decoded"
         pointer_entries.append(entry)
+
+    decoded_type_names = {
+        int(item["ordinal"]): item["string"]
+        for item in pointer_entries
+        if item.get("status") == "decoded" and item.get("string") is not None
+    }
 
     return {
         "format": FORMAT,
@@ -274,6 +281,10 @@ def analyze_d3d9_pe_image(
             ],
         },
         "type_name_pointers": pointer_entries,
+        "type_names": [
+            {"ordinal": ordinal, "name": decoded_type_names.get(ordinal)}
+            for ordinal in range(17)
+        ],
         "type_profile_validation": type_profile_validation,
         "conclusions": {
             "file_backed_type_table": tables["type_code_table"]["file_backed"],
@@ -286,6 +297,41 @@ def analyze_d3d9_pe_image(
                 if all(value is not None for value in usage_values)
                 else "partial"
             ),
+            "type_table_status": (
+                "decoded"
+                if all(value is not None for value in type_code_values)
+                else "partial"
+            ),
+            "decoded_type_name_count": len(decoded_type_names),
+            "d3d9_color_abi": {
+                "status": (
+                    "observed"
+                    if (
+                        len(type_code_values) >= 5
+                        and type_code_values[4] == 4
+                        and len(type_size_values) >= 5
+                        and type_size_values[4] == 4
+                        and len(type_component_values) >= 5
+                        and type_component_values[4] == 4
+                        and decoded_type_names.get(4) == "RGBA32"
+                        and len(usage_values) >= 7
+                        and usage_values[6] == 10
+                    )
+                    else "not-proven"
+                ),
+                "type_4": {
+                    "ordinal": 4,
+                    "internal_name": decoded_type_names.get(4),
+                    "size_bytes": type_size_values[4] if len(type_size_values) > 4 else None,
+                    "components": type_component_values[4] if len(type_component_values) > 4 else None,
+                    "d3d9_type": "D3DDECLTYPE_D3DCOLOR",
+                },
+                "usage_6": {
+                    "ordinal": 6,
+                    "source_name": "Colour",
+                    "numeric_d3d9_usage": usage_values[6] if len(usage_values) > 6 else None,
+                },
+            },
             "meb_460_461_to_type_code": {
                 "status": "not-proven",
                 "detail": "a PE image can expose the declaration-table bytes, but this adapter does not assign MEB properties to type codes automatically",
