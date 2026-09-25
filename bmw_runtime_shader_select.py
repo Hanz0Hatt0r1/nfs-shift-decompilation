@@ -14,6 +14,7 @@ from typing import Any, Mapping
 FORMAT = "SHIFT.BMWRuntimeShaderSelection/1"
 
 from bmw_runtime_shader_join import _runtime_draw_states
+from runtime_resource_identity import match_resource_identity
 
 
 def _candidate_rows(material_input: Mapping[str, Any]) -> list[Mapping[str, Any]]:
@@ -36,18 +37,13 @@ def _same_resource(material_input: Mapping[str, Any], frame: Mapping[str, Any]) 
     if not isinstance(mesh, Mapping) or not isinstance(binding, Mapping):
         return None
     expected_sha = mesh.get("sha256") or mesh.get("resource_sha256")
-    actual_sha = binding.get("resource_sha256")
-    if expected_sha and actual_sha:
-        return str(expected_sha) == str(actual_sha)
     expected_path = mesh.get("path")
-    actual_path = binding.get("resource_path")
-    if expected_path and actual_path:
-        return (
-            str(expected_path).replace("\\", "/").strip("/").lower()
-            == str(actual_path).replace("\\", "/").strip("/").lower()
-        )
-    return None
-
+    matched, _status = match_resource_identity(
+        binding,
+        expected_sha256=expected_sha,
+        expected_path=expected_path,
+    )
+    return matched
 
 def _candidate_identity_matches(
     candidate: Mapping[str, Any],
