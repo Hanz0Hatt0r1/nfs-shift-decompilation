@@ -1319,3 +1319,8 @@ camera_runtime.py now exposes the proven camera/area inheritance prefixes from t
 ## Phase 257: Trackside Camera selection reduction
 
 trackside_camera_selection_runtime.py reconstructs FUN_008119b0's minimum-score scan: zero-based collection indices, FLT_MAX initialization, -1 empty result, and immediate return on a negative score. FUN_008154d0 remains a separate unresolved score function.
+
+
+## Phase 260: Camera activation state transition
+
+camera_activation_runtime.py reconstructs FUN_0080e1b0 from selected camera id to active runtime state: effective group fallback, prior-group deactivation, negative-id/no-op/lookup-failure paths, tracking/static activation modes, and active camera update. Callback bodies and camera behavior remain outside the contract.

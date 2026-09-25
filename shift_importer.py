@@ -1534,6 +1534,39 @@ def cmd_camera_view_defaults(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_activation(args: argparse.Namespace) -> int:
+    """Apply the recovered FUN_0080e1b0 camera activation transition."""
+    from camera_activation_runtime import CameraActivationState, activate_camera
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    state = CameraActivationState(
+        active_group=payload.get("active_group", -1),
+        active_camera_id=payload.get("active_camera_id", -1),
+    )
+    result = activate_camera(
+        state,
+        param_1=payload["param_1"],
+        param_2=payload["param_2"],
+        param_3=payload["param_3"],
+        camera_found=bool(payload.get("camera_found", True)),
+        is_tracking_camera=bool(payload.get("is_tracking_camera", False)),
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "changed": result["changed"],
+        "selected_camera_id": result["selected_camera_id"],
+        "activation_mode": result["activation_mode"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_defaults(args: argparse.Namespace) -> int:
     """Emit the recovered static/tracking camera-data default initializer."""
     from camera_default_state_runtime import camera_default_state
@@ -3370,6 +3403,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = sp.add_parser("camera-view-defaults", help="emit recovered CCameraView projection defaults")
     p.add_argument("output", help="SHIFT.CameraViewDefaultRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_view_defaults)
+
+    p = sp.add_parser("camera-activation", help="apply recovered camera activation state transition")
+    p.add_argument("input", help="JSON activation request/state")
+    p.add_argument("output", help="SHIFT.CameraActivationRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_camera_activation)
 
     p = sp.add_parser("camera-defaults", help="emit recovered camera-data default state")
     p.add_argument("kind", choices=["static", "tracking"])
