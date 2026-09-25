@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 242.**
+> **Current mainline: Phase 244.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -719,3 +719,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Phase 242:** the material→DDS→Vulkan adapter recomputes final readiness from blocking reasons, and synthetic DDS fixtures now encode `caps`/`caps2` at their actual header offsets.
+
+
+> **Phase 244:** `BMWMaterialSliceVulkan/1` now exposes the exact DDS bridge result directly at top level, matching the nested bundle report.
