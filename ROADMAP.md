@@ -1329,3 +1329,8 @@ camera_activation_runtime.py reconstructs FUN_0080e1b0 from selected camera id t
 ## Phase 261: CameraManager switch-request gate
 
 camera_switch_gate_runtime.py reconstructs the fast-path equality and dirty-state gate in FUN_0080d3d0. Matching clean requests are preserved as a no-op; mismatched or dirty requests clear the dirty state and require a transition while retaining the current integer mode/index fields without inventing higher-level names.
+
+
+## Phase 262: CameraManager state snapshot and double-buffer transition
+
+camera_switch_gate_runtime.py v2 now binds the switch fast path to the actual active camera-buffer fields used by FUN_0080d3d0. camera_state_snapshot_runtime.py reconstructs FUN_0080e040's rollback snapshot and FUN_0080cd40's guarded 0/1 camera-data buffer swap, including exact copy directions for camera, static-camera and tracking-camera state blocks.
