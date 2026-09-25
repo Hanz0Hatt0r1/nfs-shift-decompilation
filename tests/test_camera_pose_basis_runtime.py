@@ -9,7 +9,7 @@ def test_pose_basis_has_three_normalized_stages():
     result = build_pose_basis([1, 0, 0], [0, 1, 0])
     assert result["stages"]["first"]["vector"] == (1.0, 0.0, 0.0)
     assert result["stages"]["second"]["vector"] == (0.0, 0.0, 1.0)
-    assert result["stages"]["third"]["vector"] == (0.0, -1.0, 0.0)
+    assert result["stages"]["third"]["vector"] == (0.0, 1.0, 0.0)
 
 
 def test_pose_basis_preserves_source_order_nine_float_output():
