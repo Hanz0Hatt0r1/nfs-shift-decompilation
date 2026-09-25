@@ -43,7 +43,9 @@ def _shader_sources(command: Mapping[str, Any], output: Path) -> list[dict[str, 
     for index, submesh in enumerate(command.get("submeshes", []) or []):
         shader = submesh.get("shader") or {}
         for stage in ("vertex", "pixel"):
-            source = shader.get(stage)
+            source = shader.get(
+                f"vulkan_{stage}_glsl"
+            ) or shader.get(stage)
             if not source:
                 continue
             target = output / "shaders" / f"submesh_{index}.{stage}.glsl"
