@@ -87,8 +87,15 @@ def test_mode_two_with_feedback_flag_records_c230_reissue_and_12050_branch():
 
 
 def test_mode_one_successful_view_check_leaves_feedback_flag_cleared():
+    instances = _instances(mode=1)
+    instances = [
+        CameraControllerInstance(
+            **{**instance.__dict__, "view_check_sub_index": True}
+        )
+        for instance in instances
+    ]
     result = describe_camera_controller_update(
-        _instances(mode=1), elapsed_u32=100, feedback_flag=True, timer=1.0
+        instances, elapsed_u32=100, feedback_flag=True, timer=1.0
     )
     assert result["feedback_flag_after_observed_mode1_fallback"] is False
     mode_action = result["instances"][0]["actions"][1]
