@@ -147,6 +147,8 @@ def describe_camera_controller_update(
                 }
             row["actions"].append(mode23)
         elif mode == 1:
+            # Source unconditionally clears +0x82e before FUN_0081bf00.
+            shared_flag = False
             mode1: dict[str, Any] = {
                 "mode": 1,
                 "actions": ["+0x82e = 0"],
