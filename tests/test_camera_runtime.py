@@ -92,7 +92,7 @@ def test_proven_tracking_camera_inheritance_chain_is_exposed():
     report = resolve_camera_class_chain("CTrackingCamera")
     assert report["chain"] == ["CTrackingCamera", "CStaticCamera", "CBaseCamera", "CCameraObj"]
     assert report["resolved_links"] == 3
-    assert report["fully_resolved"] is True
+    assert report["fully_resolved"] is False
 
 
 def test_area_subclasses_keep_their_known_base_prefix():
@@ -102,10 +102,10 @@ def test_area_subclasses_keep_their_known_base_prefix():
     assert resolve_camera_class_chain("COBBArea")["chain"] == ["COBBArea", "CCamArea"]
 
 
-def test_unknown_camera_base_is_not_guessed():
+def test_unresolved_base_is_explicitly_marked():
     from camera_runtime import resolve_camera_class_chain
 
     report = resolve_camera_class_chain("CCamSpline")
     assert report["chain"] == ["CCamSpline"]
-    assert report["fully_resolved"] is True
-    assert "CCamSpline" not in report["camera_class_bases"] if "camera_class_bases" in report else True
+    assert report["fully_resolved"] is False
+    assert "CCamSpline" in report["evidence"]["class_initializers"]
