@@ -300,3 +300,75 @@ def test_select_runtime_shader_reads_nested_resource_descriptor_type():
         {"format": "SHIFT.D3D9RuntimeBindingEvidence/1", "frames": [frame]},
     )
     assert report["status"] == "match"
+
+
+def test_select_runtime_shader_does_not_cross_correlate_frame_draws():
+    runtime = {
+        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
+        "frames": [{
+            "frame": 17,
+            "vertex_declaration": {
+                "resource_sha256": "m" * 64,
+                "resource_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+            },
+            "shader_permutation_identity": {
+                "identity_sha256": "i" * 64,
+            },
+            "draw_snapshots": [
+                {
+                    "frame": 17,
+                    "draw_index": 0,
+                    "vertex_declaration": {
+                        "resource_sha256": "m" * 64,
+                        "resource_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+                    },
+                    "shader_permutation_identity": {"identity_sha256": "not-the-bmw-shader"},
+                    "texture_bindings": [],
+                },
+                {
+                    "frame": 17,
+                    "draw_index": 1,
+                    "vertex_declaration": {
+                        "resource_sha256": "other",
+                        "resource_path": "vehicles/other/body.meb",
+                    },
+                    "shader_permutation_identity": {"identity_sha256": "i" * 64},
+                    "texture_bindings": [],
+                },
+            ],
+        }],
+    }
+    report = select_runtime_shader(_material(), runtime)
+    assert report["status"] == "not-found"
+    assert report["ready"] is False
+    assert report["blocking_reasons"] == [
+        "runtime:exact-shader-and-resource-instance-not-found"
+    ]
+
+
+def test_select_runtime_shader_returns_exact_draw_index():
+    identity = {
+        "format": "SHIFT.ShaderPermutationIdentity/1",
+        "identity_sha256": "i" * 64,
+    }
+    runtime = {
+        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
+        "frames": [{
+            "frame": 17,
+            "draw_snapshots": [{
+                "frame": 17,
+                "draw_index": 4,
+                "vertex_declaration": {
+                    "resource_sha256": "m" * 64,
+                    "resource_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+                },
+                "shader_permutation_identity": identity,
+                "texture_bindings": [],
+            }],
+        }],
+    }
+    report = select_runtime_shader(_material(), runtime)
+    assert report["status"] == "match"
+    assert report["ready"] is True
+    assert report["selected"]["draw_index"] == 4
+    assert report["selected"]["source"] == "draw-snapshot"
