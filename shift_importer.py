@@ -1516,6 +1516,33 @@ def cmd_camera_runtime(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_trackside_camera_selection(args: argparse.Namespace) -> int:
+    """Apply source-backed Trackside Camera minimum-score selection to a score list."""
+    from trackside_camera_selection_runtime import select_min_score_values
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or not isinstance(payload.get("scores"), list):
+        raise ValueError("input must be an object containing a scores array")
+    result = select_min_score_values(
+        payload["scores"],
+        query=payload.get("query"),
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "selected_index": result["selected_index"],
+        "selected_score": result["selected_score"],
+        "evaluated_count": result["evaluated_count"],
+        "early_exit_on_negative_score": result["early_exit_on_negative_score"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_spline_rebase(args: argparse.Namespace) -> int:
     """Rebase tracking-camera spline references across a runtime reload."""
     from camera_spline_reload_runtime import rebase_tracking_camera_spline_ids
@@ -3302,6 +3329,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="camera XML file")
     p.add_argument("output", help="SHIFT.CameraRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_runtime)
+
+    p = sp.add_parser("trackside-camera-selection", help="apply Trackside Camera minimum-score selection")
+    p.add_argument("input", help="JSON object containing scores array and optional query")
+    p.add_argument("output", help="SHIFT.TracksideCameraSelectionRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_trackside_camera_selection)
 
     p = sp.add_parser("camera-spline-rebase", help="rebase tracking-camera spline references across a reload")
     p.add_argument("input", help="JSON with old_spline_count, new_spline_count and camera arrays")
