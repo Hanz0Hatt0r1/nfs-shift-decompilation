@@ -1,0 +1,47 @@
+name: linux-vulkan
+on:
+  push:
+    paths:
+      - ".github/workflows/linux-vulkan.yml"
+      - "native_vulkan/**"
+      - "*.py"
+      - "tools/**"
+      - "tests/**"
+  pull_request:
+    paths:
+      - ".github/workflows/linux-vulkan.yml"
+      - "native_vulkan/**"
+      - "*.py"
+      - "tools/**"
+      - "tests/**"
+jobs:
+  vulkan-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Vulkan software stack
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libvulkan-dev glslang-tools mesa-vulkan-drivers vulkan-tools
+      - name: Show Vulkan devices
+        run: vulkaninfo --summary
+      - name: Configure
+        run: cmake -S native_vulkan -B native_vulkan/build
+      - name: Build
+        run: cmake --build native_vulkan/build --config Release --parallel
+      - name: Headless Vulkan probe
+        run: native_vulkan/build/shift_vulkan_probe
+      - name: Headless clear
+        run: |
+          mkdir -p out/vulkan
+          native_vulkan/build/shift_vulkan_headless_clear out/vulkan/clear.ppm > out/vulkan/clear.json
+      - name: Headless triangle
+        run: |
+          native_vulkan/build/shift_vulkan_headless_triangle out/vulkan/triangle.ppm native_vulkan/build/shaders > out/vulkan/triangle.json
+      - name: Mixed-resource bundle
+        run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-vulkan-smoke
+          path: out/vulkan
