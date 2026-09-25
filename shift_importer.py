@@ -1516,6 +1516,24 @@ def cmd_camera_runtime(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_view_defaults(args: argparse.Namespace) -> int:
+    """Emit the recovered CCameraView projection defaults."""
+    from camera_view_default_runtime import camera_view_default_state
+
+    report = camera_view_default_state()
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "fields": len(report["fields"]),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_defaults(args: argparse.Namespace) -> int:
     """Emit the recovered static/tracking camera-data default initializer."""
     from camera_default_state_runtime import camera_default_state
@@ -3348,6 +3366,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="camera XML file")
     p.add_argument("output", help="SHIFT.CameraRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_runtime)
+
+    p = sp.add_parser("camera-view-defaults", help="emit recovered CCameraView projection defaults")
+    p.add_argument("output", help="SHIFT.CameraViewDefaultRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_camera_view_defaults)
 
     p = sp.add_parser("camera-defaults", help="emit recovered camera-data default state")
     p.add_argument("kind", choices=["static", "tracking"])
