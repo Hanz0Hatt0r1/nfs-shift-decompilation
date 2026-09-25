@@ -12,6 +12,9 @@ def test_shift_exe_pe_evidence_exposes_full_type_usage_abi():
     # The compact fixture is evidence-backed and intentionally exercises the same
     # normalized fields emitted by the real PE analyzer.
     assert report["tables"]["type_code"]["values"][:17] == list(range(17))
+    assert report["decoded_tables"]["type_code"][4] == {"ordinal": 4, "value": 4}
+    assert report["decoded_tables"]["type_size"][4] == {"ordinal": 4, "value": 4}
+    assert report["decoded_tables"]["type_components"][4] == {"ordinal": 4, "value": 4}
     assert report["tables"]["type_size"]["values"][4] == 4
     assert report["tables"]["type_components"]["values"][4] == 4
     assert report["type_names"][4] == "RGBA32"
