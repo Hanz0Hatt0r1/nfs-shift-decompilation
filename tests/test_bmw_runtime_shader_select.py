@@ -65,6 +65,7 @@ def test_select_runtime_shader_matches_exact_identity_and_resource():
     assert report["selected"]["candidate_file"].endswith("a.fxo")
     assert report["selected"]["score"] == 100
     assert "identity_sha256" in report["selected"]["evidence"]
+    assert report["selected"]["resource_identity_status"] == "exact-sha-match"
 
 
 def test_select_runtime_shader_falls_back_to_exact_pair_byte_hash():
