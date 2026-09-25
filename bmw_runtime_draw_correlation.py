@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from bmw_runtime_shader_join import _runtime_draw_states
+
 FORMAT = "SHIFT.BMWRuntimeDrawCorrelation/1"
 
 def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Mapping[str, Any]) -> dict[str, Any]:
@@ -59,25 +61,50 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
         reasons.append('material:index-range-not-triangle-list')
     matched: list[dict[str, Any]] = []
     candidates: list[dict[str, Any]] = []
-    for frame in runtime_report.get('frames') or []:
-        for draw_index, draw in enumerate(frame.get('draws') or []):
-            try:
-                start_index = int(draw.get('start_index'))
-                primitive_count = int(draw.get('primitive_count'))
-            except (TypeError, ValueError):
-                continue
-            row = {
-                'frame': frame.get('frame'),
-                'draw_index': draw_index,
-                'start_index': start_index,
-                'primitive_count': primitive_count,
-                'base_vertex_index': draw.get('base_vertex_index'),
-                'start_index_match': start_index == expected_first,
-                'primitive_count_match': expected_primitive_count is not None and primitive_count == expected_primitive_count,
-            }
-            candidates.append(row)
-            if row['start_index_match'] and row['primitive_count_match']:
-                matched.append(row)
+    for frame, state, source in _runtime_draw_states(runtime_report):
+        if source == 'draw-snapshot':
+            draw = state.get('draw') or {}
+            draw_index = state.get('draw_index')
+        else:
+            draws = state.get('draws') or []
+            for draw_index, draw in enumerate(draws):
+                try:
+                    start_index = int(draw.get('start_index'))
+                    primitive_count = int(draw.get('primitive_count'))
+                except (TypeError, ValueError):
+                    continue
+                row = {
+                    'frame': frame.get('frame'),
+                    'draw_index': draw_index,
+                    'source': source,
+                    'start_index': start_index,
+                    'primitive_count': primitive_count,
+                    'base_vertex_index': draw.get('base_vertex_index'),
+                    'start_index_match': start_index == expected_first,
+                    'primitive_count_match': expected_primitive_count is not None and primitive_count == expected_primitive_count,
+                }
+                candidates.append(row)
+                if row['start_index_match'] and row['primitive_count_match']:
+                    matched.append(row)
+            continue
+        try:
+            start_index = int(draw.get('start_index'))
+            primitive_count = int(draw.get('primitive_count'))
+        except (TypeError, ValueError):
+            continue
+        row = {
+            'frame': frame.get('frame'),
+            'draw_index': draw_index,
+            'source': source,
+            'start_index': start_index,
+            'primitive_count': primitive_count,
+            'base_vertex_index': draw.get('base_vertex_index'),
+            'start_index_match': start_index == expected_first,
+            'primitive_count_match': expected_primitive_count is not None and primitive_count == expected_primitive_count,
+        }
+        candidates.append(row)
+        if row['start_index_match'] and row['primitive_count_match']:
+            matched.append(row)
     if not candidates:
         reasons.append('runtime:draw-not-captured')
     elif not matched:
