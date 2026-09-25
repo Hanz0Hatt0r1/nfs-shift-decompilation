@@ -1495,6 +1495,35 @@ def cmd_sgb_runtime(args: argparse.Namespace) -> int:
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
 
+
+def cmd_flat_runtime(args: argparse.Namespace) -> int:
+    """Decode a copied runtime FLAT tree body."""
+    from flat_runtime import parse_flat_runtime
+
+    data = Path(args.input).read_bytes()
+    report = parse_flat_runtime(
+        data,
+        strict=not args.allow_partial,
+        max_depth=args.max_depth,
+    )
+    report["source"] = {"input": str(args.input), "sha256": sha256(data)}
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "tree_nodes": report["stats"]["tree_nodes"],
+        "leaf_records": report["stats"]["leaf_records"],
+        "max_depth": report["stats"]["max_depth"],
+        "blockers": report["blockers"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
 def cmd_color_evidence_bff_corpus(args: argparse.Namespace) -> int:
     """Scan BFF archives for MEB COLOR0/COLOR1 streams and aggregate evidence."""
     from color_abi import aggregate_color_abi_evidence, build_color_abi_evidence
@@ -3200,17 +3229,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="extracted .sgb file")
     p.add_argument("output", help="SHIFT.SGBRuntime/1 JSON output")
     p.add_argument("--allow-partial", action="store_true", help="return blockers instead of raising on malformed chunk records")
-    p.set_defaults(fn=cmd_sgb_runtime)    p = sp.add_parser("color-evidence-bff-corpus", help="scan BFF archives for MEB COLOR0/COLOR1 evidence and aggregate it")
-    p.add_argument("input", help="BFF file or directory")
-    p.add_argument("output", help="SHIFT.ColorABICorpusEvidence/1 JSON output")
-    p.add_argument(
-        "--fail-on-error",
-        action="store_true",
-        help="return non-zero when any MEB resource fails to decode",
-    )
-    p.set_defaults(fn=cmd_color_evidence_bff_corpus)
+    p.set_defaults(fn=cmd_sgb_runtime)
 
-    p = sp.add_parser("color-evidence-corpus", help="aggregate multiple COLOR ABI evidence JSON reports without selecting an ABI")
+    p = sp.add_parser("flat-runtime", help="decode a copied runtime FLAT tree body")
+    p.add_argument("input", help="FLAT body starting at the bytes passed to FUN_0068a8b0")
+    p.add_argument("output", help="SHIFT.FLATRuntime/1 JSON output")
+    p.add_argument("--allow-partial", action="store_true")
+    p.add_argument("--max-depth", type=int, default=64)
+    p.set_defaults(fn=cmd_flat_runtime)    p = sp.add_parser("color-evidence-corpus", help="aggregate multiple COLOR ABI evidence JSON reports without selecting an ABI")
     p.add_argument("input", nargs="+", help="evidence JSON file(s) or directories")
     p.add_argument("output", help="SHIFT.ColorABICorpusEvidence/1 JSON output")
     p.set_defaults(fn=cmd_color_evidence_corpus)

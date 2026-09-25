@@ -76,3 +76,14 @@ def test_node_object_payload_is_decoded_when_bounded():
     row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
     assert row["object_payload"]["decoded"] is True
     assert row["object_payload"]["report"]["kind"]["text"] == "OBJECT"
+
+
+def test_flat_chunk_decodes_embedded_runtime_tree():
+    leaf = struct.pack("<15I", *([0] * 15)) + struct.pack("<I", 5)
+    flat_body = struct.pack("<7I", 0, 0, 0, 0, 0, 0, 1)
+    flat_body += struct.pack("<I", 0x1000000 | (0x20 + 0x40)) + leaf
+    data = _header() + _chunk("FLAT", struct.pack("<I", 1) + flat_body) + _chunk("END ", b"")
+    flat = parse_sgb_runtime(data)["chunks"][0]["flat_runtime"]
+    assert flat["ready"] is True
+    assert flat["stats"]["leaf_records"] == 1
+    assert flat["root"]["records"][0]["index_word"] == 5
