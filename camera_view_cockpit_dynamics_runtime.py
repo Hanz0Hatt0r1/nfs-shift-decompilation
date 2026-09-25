@@ -103,6 +103,7 @@ def cockpit_update(
     target_84: float,
     target_88: float,
     limit_after_84_helper: float | None = None,
+    wrap_seed_after_88_helper: float | None = None,
 ) -> dict[str, Any]:
     """Reproduce the arithmetic branches for profile +0xb8 != 0."""
     dt = float(delta)
@@ -120,14 +121,20 @@ def cockpit_update(
 
     if not first_small:
         v88 -= dt * 2.0 * c
-        wrapped = normalize_angle_with_pi(v88, seed=math.pi)
+        wrapped = (
+            normalize_angle_with_pi(v88, seed=float(wrap_seed_after_88_helper))
+            if wrap_seed_after_88_helper is not None
+            else None
+        )
         actions.append({
             "action": "FUN_0081b610",
             "before": v88,
             "after": wrapped,
+            "helper_seed": wrap_seed_after_88_helper,
             "reason": "abs(input_c) > 0.1",
         })
-        v88 = wrapped
+        if wrapped is not None:
+            v88 = wrapped
 
     blend_used = False
     if second_small:
