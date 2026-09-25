@@ -254,6 +254,36 @@ def build_runtime_binding_evidence(
             # frame-level aggregate is insufficient for same-instance proof:
             # later state changes in the same frame must not retroactively
             # change which declaration/shaders/buffers were used by this draw.
+            active_streams = {}
+            for stream_row in frame["stream_sources"]:
+                try:
+                    active_streams[int(stream_row.get("stream"))] = dict(stream_row)
+                except (TypeError, ValueError):
+                    continue
+
+            active_textures = {}
+            for texture_row in frame["texture_bindings"]:
+                try:
+                    active_textures[int(texture_row.get("stage"))] = dict(texture_row)
+                except (TypeError, ValueError):
+                    continue
+
+            constant_state = {"vertex": {}, "pixel": {}}
+            for write in frame["constant_writes"]:
+                stage = str(write.get("stage") or "").lower()
+                if stage not in constant_state:
+                    continue
+                try:
+                    start = int(write.get("start_register"))
+                    count = int(write.get("vector4f_count"))
+                    values = list(write.get("values") or [])
+                except (TypeError, ValueError):
+                    continue
+                for offset in range(count):
+                    chunk = values[offset * 4:(offset + 1) * 4]
+                    if len(chunk) == 4:
+                        constant_state[stage][str(start + offset)] = [float(x) for x in chunk]
+
             snapshot = {
                 "frame": frame.get("frame"),
                 "draw_index": len(frame["draws"]) - 1,
@@ -262,9 +292,12 @@ def build_runtime_binding_evidence(
                 "vertex_shader": dict(frame["vertex_shader"] or {}),
                 "pixel_shader": dict(frame["pixel_shader"] or {}),
                 "stream_sources": [dict(x) for x in frame["stream_sources"]],
+                "active_stream_sources": [active_streams[key] for key in sorted(active_streams)],
                 "index_binding": dict(frame["index_binding"] or {}),
                 "texture_bindings": [dict(x) for x in frame["texture_bindings"]],
+                "active_texture_bindings": [active_textures[key] for key in sorted(active_textures)],
                 "constant_writes": [dict(x) for x in frame["constant_writes"]],
+                "constant_state": constant_state,
             }
             vs = snapshot["vertex_shader"]
             ps = snapshot["pixel_shader"]
