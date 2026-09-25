@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 183. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 184. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -74,6 +74,25 @@ the original declaration in the same frame.
 
 Existing frame-level fields remain available for compatibility and diagnostics.
 The new gate requirement is explicit as indexed_draw_state_snapshot=true.
+
+The remaining external gate is unchanged: obtain one authentic retail BMW M3 D3D9
+capture and prove MEB/resource identity, declaration match, indexed draw, exact
+VS/PS permutation, constants and sampler resources on the same draw instance.
+## Phase 184: draw-local runtime shader/state correlation
+
+`SHIFT.D3D9RuntimeBindingEvidence/1` now records the draw-local shader permutation
+identity alongside each `DrawIndexedPrimitive` snapshot. The BMW runtime shader
+join, exact shader selector, runtime parity, vertex-input parity, render contract
+and runtime golden gate now consume the same `(frame, draw_index)` state.
+
+When draw snapshots are present, frame-level shader identity is never substituted
+for a draw snapshot. This closes a cross-draw false correlation where one draw
+provides the BMW MEB resource while another draw in the same frame provides the
+BMW VS/PS pair or sampler state.
+
+Legacy reports without draw snapshots remain readable through an explicit
+frame-aggregate compatibility path; newly captured runtime evidence uses the
+draw-local contract.
 
 The remaining external gate is unchanged: obtain one authentic retail BMW M3 D3D9
 capture and prove MEB/resource identity, declaration match, indexed draw, exact
