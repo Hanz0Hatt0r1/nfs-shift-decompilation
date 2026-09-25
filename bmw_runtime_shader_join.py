@@ -166,6 +166,14 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
         candidate_rows.append({
             'frame': frame.get('frame'),
             'draw_index': state_draw_index,
+            'expected_draw_range': (
+                {
+                    'first_index': expected_draw_range[0],
+                    'index_count': expected_draw_range[1],
+                }
+                if expected_draw_range is not None
+                else None
+            ),
             'draw': state.get('draw'),
             'source': state_source,
             'vertex_shader': state.get('vertex_shader'),
@@ -191,6 +199,14 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
         'candidate_frames': candidate_rows,
         'matched_frame_count': len(matched_frames),
         'matched_draw_count': len(candidate_rows),
+        'expected_draw_range': (
+            {
+                'first_index': expected_draw_range[0],
+                'index_count': expected_draw_range[1],
+            }
+            if expected_draw_range is not None
+            else None
+        ),
         'state_source': 'draw-snapshot' if any(row.get('source') == 'draw-snapshot' for row in candidate_rows) else ('frame-aggregate' if candidate_rows else 'none'),
     }
 
