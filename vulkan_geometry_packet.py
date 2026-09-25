@@ -15,10 +15,14 @@ from typing import Any
 
 FORMAT = "SHIFT.VulkanGeometryPacket/1"
 MAGIC = b"SVGP"
-VERSION = 1
+VERSION = 2
 HEADER = struct.Struct("<4sIIIIII4f")
 ATTRIBUTE = struct.Struct("<IIII")
-FORMAT_FLOAT3 = 1
+FORMAT_FLOAT2 = 1
+FORMAT_FLOAT3 = 2
+FORMAT_FLOAT4 = 3
+FORMAT_UNORM8X4 = 4
+FORMAT_UINT8X4 = 5
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -69,6 +73,133 @@ def _bounds(vertices: list[list[float]]) -> tuple[list[float], float]:
     return center, 1.6 / extent
 
 
+
+
+
+def _source_values(mesh: dict[str, Any], property_id: str) -> list[Any] | None:
+    field_map = {
+        "200": "vertices",
+        "220": "normals",
+        "240": "tangents",
+        "250": "tangents2",
+        "310": "bone_weights",
+        "580": "bone_indices",
+        "460": "colors",
+        "461": "colors2",
+    }
+    field = field_map.get(property_id)
+    if field is not None:
+        value = mesh.get(field)
+        return value if isinstance(value, list) else None
+    uv_value = (mesh.get("uv_layers") or {}).get(property_id)
+    if isinstance(uv_value, list):
+        return uv_value
+    return None
+
+
+def _attribute_format(row: dict[str, Any]) -> int:
+    storage = str(row.get("android") or row.get("storage") or "").upper().replace("_", "").replace("-", "")
+    components = int(row.get("components", 0) or 0)
+    normalized = bool(row.get("normalized"))
+    property_id = str(row.get("property_id") or "")
+
+    if storage in {"FLOAT32X2", "F32X2"} and components == 2:
+        return FORMAT_FLOAT2
+    if storage in {"FLOAT32X3", "F32X3"} and components == 3:
+        return FORMAT_FLOAT3
+    if storage in {"FLOAT32X4", "F32X4"} and components == 4:
+        return FORMAT_FLOAT4
+    if storage in {"UINT8X4", "UBYTE4"} and components == 4:
+        if property_id == "460":
+            if not normalized:
+                raise ValueError("COLOR0 must remain normalized in Vulkan packet")
+            return FORMAT_UNORM8X4
+        if property_id == "580" and not normalized:
+            return FORMAT_UINT8X4
+        if normalized:
+            return FORMAT_UNORM8X4
+        return FORMAT_UINT8X4
+    raise ValueError(
+        f"RenderCommand property {property_id} has unsupported Vulkan source storage {storage!r}"
+    )
+
+
+def _pack_attribute_vertex(blob: bytearray, base: int, row: dict[str, Any], value: Any) -> None:
+    property_id = str(row.get("property_id") or "")
+    fmt = _attribute_format(row)
+    offset = int(row.get("offset", 0))
+    position = base + offset
+
+    if fmt == FORMAT_FLOAT2:
+        if not isinstance(value, (list, tuple)) or len(value) < 2:
+            raise ValueError(f"property {property_id} vertex does not contain float2")
+        struct.pack_into("<2f", blob, position, float(value[0]), float(value[1]))
+        return
+    if fmt == FORMAT_FLOAT3:
+        if not isinstance(value, (list, tuple)) or len(value) < 3:
+            raise ValueError(f"property {property_id} vertex does not contain float3")
+        struct.pack_into(
+            "<3f", blob, position,
+            float(value[0]), float(value[1]), float(value[2])
+        )
+        return
+    if fmt == FORMAT_FLOAT4:
+        if not isinstance(value, (list, tuple)) or len(value) < 4:
+            raise ValueError(f"property {property_id} vertex does not contain float4")
+        struct.pack_into(
+            "<4f", blob, position,
+            float(value[0]), float(value[1]), float(value[2]), float(value[3])
+        )
+        return
+
+    if not isinstance(value, (list, tuple)) or len(value) < 4:
+        raise ValueError(f"property {property_id} vertex does not contain four bytes")
+    raw = [max(0, min(255, int(value[i]))) for i in range(4)]
+    if property_id == "460":
+        # The executable-backed COLOR0 ABI is D3DCOLOR: source bytes are BGRA,
+        # while the Vulkan normalized vertex value is consumed as RGBA.
+        raw = [raw[2], raw[1], raw[0], raw[3]]
+    blob[position:position + 4] = bytes(raw)
+
+
+def _build_attributes(command: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+    rows = ((command.get("mesh") or {}).get("vertex_layout") or {}).get("attributes") or []
+    if not rows:
+        raise ValueError("RenderCommand contains no vertex attributes")
+    result: list[dict[str, Any]] = []
+    deferred: list[str] = []
+    for raw in rows:
+        row = dict(raw)
+        pid = str(row.get("property_id") or "")
+        try:
+            fmt = _attribute_format(row)
+        except (TypeError, ValueError) as exc:
+            if pid != "200" and str(row.get("abi_status")) in {"ambiguous", "unknown"}:
+                deferred.append(pid)
+                continue
+            raise exc
+        source = row.get("abi_status")
+        if pid == "461" and source != "proven":
+            deferred.append(pid)
+            continue
+        if pid != "200" and source not in {"proven", "inferred"}:
+            deferred.append(pid)
+            continue
+        result.append({
+            "property_id": pid,
+            "location": int(row.get("location")),
+            "offset": int(row.get("offset", 0)),
+            "stride": int(row.get("stride") or ((command.get("mesh") or {}).get("vertex_layout") or {}).get("buffer_stride", 0)),
+            "format": fmt,
+            "element_size": int(row.get("element_size") or 0),
+            "abi_status": source,
+        })
+    positions = [x for x in result if x["property_id"] == "200" and x["location"] == 0]
+    if len(positions) != 1:
+        raise ValueError("Vulkan packet requires exactly one proven POSITION0 at location 0")
+    return result, sorted(set(deferred))
+
+
 def export_vulkan_geometry_packet(
     render_command: dict[str, Any] | str | Path,
     mesh: dict[str, Any] | str | Path,
@@ -84,7 +215,15 @@ def export_vulkan_geometry_packet(
     if mesh_data.get("vertices") is None or mesh_data.get("indices") is None:
         raise ValueError("mesh JSON must contain vertices and indices")
 
-    vertex_attribute = _position_attribute(command)
+    vertex_attributes, deferred_properties = _build_attributes(command)
+    layout = (command.get("mesh") or {}).get("vertex_layout") or {}
+    stride = int(layout.get("buffer_stride", 0) or 0)
+    if stride <= 0:
+        stride = max(
+            int(row["offset"]) + int(row["element_size"])
+            for row in vertex_attributes
+        )
+
     vertices = _vertices(mesh_data)
     indices = mesh_data["indices"]
     if not isinstance(indices, list) or not indices:
@@ -110,12 +249,27 @@ def export_vulkan_geometry_packet(
     if index_count % 3 != 0:
         raise ValueError("geometry packet requires a triangle-list index count")
 
+    if len(vertices) != int((command.get("mesh") or {}).get("vertex_count") or len(vertices)):
+        raise ValueError("mesh vertex_count disagrees with RenderCommand")
+
+    sources = {
+        row["property_id"]: _source_values(mesh_data, row["property_id"])
+        for row in vertex_attributes
+    }
+    for row in vertex_attributes:
+        source = sources[row["property_id"]]
+        if not isinstance(source, list) or len(source) != len(vertices):
+            raise ValueError(
+                f"RenderCommand attribute {row['property_id']} has no complete neutral mesh source"
+            )
+
     center, scale = _bounds(vertices)
 
-    stride = 12
     vertex_blob = bytearray(len(vertices) * stride)
-    for index, position in enumerate(vertices):
-        struct.pack_into("<3f", vertex_blob, index * stride, *position)
+    for index in range(len(vertices)):
+        base = index * stride
+        for row in vertex_attributes:
+            _pack_attribute_vertex(vertex_blob, base, row, sources[row["property_id"]][index])
 
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -130,24 +284,28 @@ def export_vulkan_geometry_packet(
         len(vertices),
         len(selected_indices),
         stride,
-        1,
+        len(vertex_attributes),
         0,
         float(center[0]),
         float(center[1]),
         float(center[2]),
         float(scale),
     )
-    attribute = ATTRIBUTE.pack(
-        int(vertex_attribute.get("location", 0)),
-        FORMAT_FLOAT3,
-        0,
-        stride,
+    attribute_blob = b"".join(
+        ATTRIBUTE.pack(
+            int(row["location"]),
+            int(row["format"]),
+            int(row["offset"]),
+            int(row["stride"]),
+        )
+        for row in vertex_attributes
     )
     index_blob = struct.pack(f"<{len(selected_indices)}I", *selected_indices)
-    output_path.write_bytes(header + attribute + vertex_blob + index_blob)
+    output_path.write_bytes(header + attribute_blob + vertex_blob + index_blob)
 
     return {
         "format": FORMAT,
+        "version": VERSION,
         "output": str(output_path),
         "command_format": command.get("format"),
         "command_ready": bool(command.get("ready")),
@@ -159,20 +317,8 @@ def export_vulkan_geometry_packet(
         "vertex_count": len(vertices),
         "source_index_count": len(normalized_indices),
         "vertex_stride": stride,
-        "attributes": [
-            {
-                "location": int(vertex_attribute.get("location", 0)),
-                "property_id": "200",
-                "format": "FLOAT3",
-                "offset": 0,
-                "stride": stride,
-            }
-        ],
-        "deferred_properties": [
-            str(row.get("property_id"))
-            for row in ((command.get("mesh") or {}).get("vertex_layout") or {}).get("attributes") or []
-            if str(row.get("property_id")) != "200"
-        ],
+        "attributes": vertex_attributes,
+        "deferred_properties": deferred_properties,
         "normalization": {
             "center": center,
             "scale": scale,
