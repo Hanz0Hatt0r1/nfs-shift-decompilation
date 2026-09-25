@@ -62,3 +62,16 @@ def test_capture_manifest_blocks_invalid_capture_schema(tmp_path):
     report = build_capture_manifest(capture, events=events)
     assert report["ready"] is False
     assert "capture-schema:stream:invalid" in report["blocking_reasons"]
+
+
+def test_capture_manifest_blocks_noncontiguous_event_indices(tmp_path):
+    capture = tmp_path / "capture.jsonl"
+    capture.write_text("capture", encoding="utf-8")
+    events = [
+        {"event": "draw_indexed_primitive", "frame": 1, "event_index": 10, "primitive_count": 1, "start_index": 0, "base_vertex_index": 0},
+        {"event": "draw_indexed_primitive", "frame": 1, "event_index": 12, "primitive_count": 1, "start_index": 3, "base_vertex_index": 0},
+    ]
+    report = build_capture_manifest(capture, events=events)
+    assert report["ready"] is False
+    assert report["integrity"]["event_index"]["status"] == "invalid"
+    assert "capture-integrity:event-index-not-contiguous" in report["blocking_reasons"]
