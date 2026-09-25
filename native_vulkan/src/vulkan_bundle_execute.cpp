@@ -314,6 +314,15 @@ Geometry load_geometry(const std::filesystem::path& path) {
         data.data() + sizeof(GeometryHeader),
         attribute_bytes);
 
+    if (geometry.header.version == 1) {
+        if (geometry.header.attribute_count != 1 ||
+            geometry.attributes[0].format != 1) {
+            throw std::runtime_error("invalid version-1 geometry packet");
+        }
+        // Version 1 used format code 1 for FLOAT3. Version 2 reserves code 1 for FLOAT2.
+        geometry.attributes[0].format = 2;
+    }
+
     const size_t vertices_offset =
         sizeof(GeometryHeader) + attribute_bytes;
     const size_t indices_offset = vertices_offset + vertex_bytes;
@@ -327,9 +336,22 @@ Geometry load_geometry(const std::filesystem::path& path) {
         index_bytes);
 
     bool position_seen = false;
+    auto attribute_size = [](uint32_t format) -> uint32_t {
+        switch (format) {
+            case 1: return 8;
+            case 2: return 12;
+            case 3: return 16;
+            case 4: return 4;
+            case 5: return 4;
+            default: return 0;
+        }
+    };
     for (const auto& attribute : geometry.attributes) {
-        if (attribute.location > 15 ||
-            attribute.offset >= geometry.header.stride ||
+        const uint32_t size = attribute_size(attribute.format);
+        if (size == 0 ||
+            attribute.location > 15 ||
+            attribute.offset > geometry.header.stride ||
+            size > geometry.header.stride - attribute.offset ||
             attribute.stride != geometry.header.stride) {
             throw std::runtime_error("invalid vertex attribute");
         }
@@ -338,9 +360,6 @@ Geometry load_geometry(const std::filesystem::path& path) {
                 throw std::runtime_error("POSITION0 must be exactly FLOAT3 at location 0");
             }
             position_seen = true;
-        }
-        if (attribute.offset > geometry.header.stride - 4) {
-            throw std::runtime_error("vertex attribute offset is out of range");
         }
     }
     if (!position_seen) {
