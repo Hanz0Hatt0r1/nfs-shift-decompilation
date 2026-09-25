@@ -13,6 +13,8 @@ from typing import Any, Mapping
 
 FORMAT = "SHIFT.BMWRuntimeShaderSelection/1"
 
+from bmw_runtime_shader_join import _runtime_draw_states
+
 
 def _candidate_rows(material_input: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     if isinstance(material_input.get("material_binding"), Mapping):
@@ -214,20 +216,18 @@ def select_runtime_shader(
         }
 
     matches: list[dict[str, Any]] = []
-    for frame in runtime_report.get("frames") or []:
-        if not isinstance(frame, Mapping):
-            continue
-        identity = _runtime_identity(frame)
+    for frame, state, state_source in _runtime_draw_states(runtime_report):
+        identity = _runtime_identity(state) or _runtime_identity(frame)
         if identity is None:
             continue
-        same_resource = _same_resource(material_input, frame)
+        same_resource = _same_resource(material_input, state)
         if require_same_resource and same_resource is not True:
             continue
         texture_ok, _missing_texture_stages = _texture_stage_status(
-            frame, expected_external_stages
+            state, expected_external_stages
         )
         type_ok, _texture_type_reasons = _texture_stage_contract(
-            frame, expected_external_stages, expected_external_types
+            state, expected_external_stages, expected_external_types
         )
         if not texture_ok or not type_ok:
             continue
@@ -237,6 +237,8 @@ def select_runtime_shader(
                 continue
             matches.append({
                 "frame": frame.get("frame"),
+                "draw_index": state.get("draw_index") if state_source == "draw-snapshot" else None,
+                "source": state_source,
                 "candidate_index": candidate_index,
                 "candidate_file": candidate.get("file"),
                 "candidate_program_offset": candidate.get("program_offset"),
