@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from bmw_bff_intake import EXPECTED_MEB_SHA256
 from bmw_runtime_shader_join import _runtime_draw_states
 
 FORMAT = "SHIFT.BMWRuntimeCapturePreflight/1"
@@ -62,7 +63,7 @@ def _candidate_completeness(state: Mapping[str, Any]) -> tuple[bool, list[str]]:
 def preflight_bmw_runtime(
     runtime_report: Mapping[str, Any],
     *,
-    expected_resource_sha: str | None = None,
+    expected_resource_sha: str | None = EXPECTED_MEB_SHA256,
     expected_resource_path: str = TARGET_MEB,
 ) -> dict[str, Any]:
     if runtime_report.get("format") != "SHIFT.D3D9RuntimeBindingEvidence/1":
@@ -137,6 +138,7 @@ def preflight_bmw_runtime(
         "target": {
             "resource": expected_resource_path,
             "resource_sha256": expected_resource_sha,
+            "resource_identity_mode": "exact-sha256" if expected_resource_sha else "path-only",
             "paint_ranges": [dict(row) for row in PAINT_RANGES],
         },
         "runtime": {
