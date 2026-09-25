@@ -194,6 +194,44 @@ def _extract_exact_material_dds(
     return dds_map, provenance, blockers
 
 
+def _sanitize_dds_bridge_provenance(
+    dds_bridge: Mapping[str, Any],
+    bundle_dir: Path,
+    *,
+    texture_provenance: Iterable[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    sanitized = json.loads(json.dumps(dds_bridge))
+    by_register = {
+        int(row["register"]): str(row["reference"])
+        for row in texture_provenance
+        if row.get("register") is not None and row.get("reference")
+    }
+    for row in sanitized.get("decoded_sources") or []:
+        register = row.get("register")
+        if row.get("kind") == "2d" and register is not None:
+            row["source_path"] = by_register.get(int(register), f"material-sampler:s{register}")
+        elif row.get("kind") == "cube":
+            row["source_path"] = "environment-cube:s3"
+    provenance = sanitized.get("provenance") or {}
+    provenance_file = provenance.get("path")
+    if provenance_file:
+        path = bundle_dir / str(provenance_file)
+        if path.is_file():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            for row in data.get("sources") or []:
+                register = row.get("register")
+                if row.get("kind") == "2d" and register is not None:
+                    row["source_path"] = by_register.get(int(register), f"material-sampler:s{register}")
+                elif row.get("kind") == "cube":
+                    row["source_path"] = "environment-cube:s3"
+            path.write_text(
+                json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            provenance["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+    sanitized["provenance"] = provenance
+    return sanitized
+
 def _merge_dds_bridge_into_bundle(
     bundle: dict[str, Any],
     dds_bridge: Mapping[str, Any],
@@ -337,7 +375,7 @@ def build_bmw_vulkan_from_material_slice(
         )
 
         dds_bridge = None
-        if source_dds_map or environment_cube_dds is not None:
+        if source_dds_map or dds_blockers or environment_cube_dds is not None:
             if dds_blockers:
                 dds_bridge = {
                     "format": "SHIFT.VulkanDDSResourceBridge/1",
@@ -355,6 +393,11 @@ def build_bmw_vulkan_from_material_slice(
                         source_dds_map,
                         bundle_dir,
                         environment_cube_dds=environment_cube_dds,
+                    )
+                    dds_bridge = _sanitize_dds_bridge_provenance(
+                        dds_bridge,
+                        bundle_dir,
+                        texture_provenance=dds_provenance,
                     )
                 except (OSError, ValueError, TypeError) as error:
                     dds_bridge = {
@@ -382,7 +425,7 @@ def build_bmw_vulkan_from_material_slice(
         "target_meb": TARGET_MEB,
         "submesh_index": submesh_index,
         "dds_sources": dds_provenance,
-        "dds_source_bffs": [str(path) for path in source_bff_list],
+        "dds_source_bffs": [path.name for path in source_bff_list],
     }
     source_path = Path(output_dir) / "material_slice_source.json"
     source_path.write_text(
