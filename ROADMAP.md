@@ -1297,3 +1297,8 @@ The NODE eighth field is now followed into the recovered FUN_0069bc50/FUN_0069a6
 ## Phase 252: FLAT tree runtime
 
 The binary SGB decoder now follows FLAT into the runtime tree copied by FUN_0068a8b0. flat_runtime.py reconstructs the 0x20-byte tree header, direct-record count at +0x18, low-24-bit node span and high-byte runtime marker at +0x1c, 0x40-byte leaf records, recursive child trees, and the leaf +0x3c index used by FUN_006af780. Leaf payload semantics remain raw.
+
+
+## Phase 253: MATRIX runtime semantics
+
+The recovered scene/object MATRIX parser is now isolated in matrix_runtime.py. It reconstructs Offset as vec3, Orientation input-to-runtime quaternion reordering, optional Scale defaulting to 1.0, and a deterministic 4x4 conversion. Parent composition and alternate axis conventions remain outside the contract.
