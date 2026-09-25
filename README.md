@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 248.**
+> **Current mainline: Phase 249.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -745,3 +745,12 @@ assuming that XML track-form names equal BAB numeric channel IDs. It captures
 translation/rotation/scale/weight usage, sampled/keyed/fixed forms, attachment
 constraints, exact node-name mapping, transform defaults, and hexadecimal
 float-word preservation. Renderer code and RENDER.bff are not part of this phase.
+
+
+## Scene NODE/partition runtime
+
+Phase 249 reconstructs the source-backed SCENE object layer independently from
+the opaque SGB chunk grammar. It captures NODE resource/variation flags,
+TRANSFORM position/orientation/scale, LIGHT types and angle conversion, and
+partition child-reference parsing. Renderer and RENDER.bff work remain outside
+this phase.
