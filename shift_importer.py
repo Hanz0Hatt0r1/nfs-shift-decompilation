@@ -1410,6 +1410,25 @@ def cmd_bab_corpus(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bab_payload_diff(args: argparse.Namespace) -> int:
+    """Compare two opaque BAB animation payloads byte-for-byte."""
+    from bab_payload_diff import compare_bab_payload_bytes
+
+    a = Path(args.first).read_bytes()
+    b = Path(args.second).read_bytes()
+    result = compare_bab_payload_bytes(a, b)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({
+        "size_delta": result["size_delta"],
+        "overlap_equal_ratio": result["overlap_equal_ratio"],
+        "equal_prefix_bytes": result["equal_prefix_bytes"],
+        "equal_suffix_bytes": result["equal_suffix_bytes"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_bab_animation_runtime(args: argparse.Namespace) -> int:
     """Decode the recovered runtime animation bank from an extracted BAB file."""
     from bab_animation_runtime import parse_bab_animation_payload
@@ -1446,7 +1465,6 @@ def cmd_bab_animation_runtime(args: argparse.Namespace) -> int:
         "blockers": report.get("blockers", []),
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
-
 
 def cmd_color_evidence_bff_corpus(args: argparse.Namespace) -> int:
     """Scan BFF archives for MEB COLOR0/COLOR1 streams and aggregate evidence."""
