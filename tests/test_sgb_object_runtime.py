@@ -5,7 +5,7 @@ import pytest
 from sgb_object_runtime import SGBObjectDecodeError, parse_sgb_object_payload
 
 
-def _header(kind_offset=40, source_offset=48, aux_offset=56, count=0):
+def _header(kind_offset=44, source_offset=52, aux_offset=60, count=0):
     words = [kind_offset, source_offset, aux_offset, 0, 0, 0, 0, 0, 0, 0]
     raw = struct.pack("<10I", *words)
     # byte 34 is hierarchy count; byte 35 is hierarchy type.
