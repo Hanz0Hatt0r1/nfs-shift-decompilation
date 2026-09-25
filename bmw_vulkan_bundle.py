@@ -11,6 +11,7 @@ from vulkan_constant_packet import build_vulkan_constant_packet
 from vulkan_cube_packet import build_vulkan_cube_packet
 from vulkan_geometry_packet import export_vulkan_geometry_packet
 from vulkan_texture_packet import build_vulkan_texture_packet
+from vulkan_sampler_packet import build_vulkan_sampler_packet
 from vulkan_sampler_contract import write_sampler_metadata, build_sampler_contract_report
 
 FORMAT = "SHIFT.BMWVulkanBundle/1"
@@ -122,6 +123,12 @@ def build_bmw_vulkan_bundle(
             texture_path,
         )
 
+    sampler_packet = None
+    sampler_packet_path = None
+    if texture_report is not None:
+        sampler_packet_path = out / "samplers.svss"
+        sampler_packet = build_vulkan_sampler_packet(selected, sampler_packet_path)
+
     cube_report = None
     cube_path = None
     has_s3_cube = any(
@@ -186,6 +193,13 @@ def build_bmw_vulkan_bundle(
             "ready": True,
             "register": 3,
         },
+        "samplers": None if sampler_packet is None else {
+            "path": str(sampler_packet_path.relative_to(out)),
+            "sha256": _hash(sampler_packet_path),
+            "ready": bool(sampler_packet.get("ready")),
+            "record_count": sampler_packet.get("record_count"),
+            "blocking_reasons": sampler_packet.get("blocking_reasons") or [],
+        },
         "shaders": shader_rows,
         "sampler_contracts": {
             "path": str(sampler_contract_path.relative_to(out)),
@@ -204,6 +218,8 @@ def build_bmw_vulkan_bundle(
     }
 
     blockers = list(constants.get("blocking_reasons") or [])
+    if sampler_packet is not None:
+        blockers.extend(sampler_packet.get("blocking_reasons") or [])
     if textures is None and selected["submeshes"][0].get("textures"):
         blockers.append("bmw-vulkan-bundle:material-textures-not-supplied")
     if has_s3_cube and environment_cube is None:
