@@ -46,3 +46,20 @@ machine-specific graphics stack.
 3. MEB interleaving/repack decisions stay in the neutral renderer layer.
 4. Vulkan resource creation must use explicit descriptor/buffer/image contracts.
 5. No undocumented game semantics are inferred by the Vulkan backend.
+
+
+## Headless image checkpoint
+
+After the bootstrap probe, the native backend can execute a real Vulkan transfer-only
+image checkpoint without a window system:
+
+    cmake -S native_vulkan -B native_vulkan/build
+    cmake --build native_vulkan/build --config Release
+    ./native_vulkan/build/shift_vulkan_headless_clear out/shift_vulkan_headless.ppm
+
+The executable creates a Vulkan device and graphics queue, allocates an offscreen
+R8G8B8A8 image, clears it through the Vulkan command buffer, copies it to a host-visible
+staging buffer and writes a P6 PPM.
+
+This phase intentionally has no shader or BMW semantics yet. It proves the native
+offscreen resource/submission boundary that the later RenderCommand backend will use.
