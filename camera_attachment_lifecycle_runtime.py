@@ -40,17 +40,20 @@ def resolve_attachment_result(
                 {
                     "action": "invoke resolver function pointer",
                     "slot": str(resolver_slot),
-                    "arguments": [
-                        "output + 0x18" if resolver_slot == "+0x00" else "output + 0x24",
-                        index,
-                        resolver_arguments[0],
-                    ],
+                    "arguments": {
+                        "output": "param + 0x18" if resolver_slot == "+0x00" else "param + 0x24",
+                        "index": "param + 0x10",
+                        "context": "param + 0x08" if resolver_slot == "+0x00" else "param + 0x0c",
+                        "context_value": resolver_arguments[0],
+                    },
                 },
             ],
             "output": output,
             "evidence": {
                 "helper": "FUN_0081b680" if resolver_slot == "+0x00" else "FUN_0081b6b0",
-                "index_field": "+0x10" if resolver_slot == "+0x04" else "+0x10",
+                "index_field": "+0x10",
+                "output_field": "+0x18" if resolver_slot == "+0x00" else "+0x24",
+                "context_field": "+0x08" if resolver_slot == "+0x00" else "+0x0c",
             },
             "limitations": [
                 "the resolver's written three-float values are external to this boundary",
