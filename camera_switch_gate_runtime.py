@@ -82,8 +82,8 @@ def evaluate_switch_gate(
         },
         "previous_state_snapshot": {
             "mode": state.mode,
-            "sub_index": state.sub_index,
-            "sub_flag": state.sub_flag,
+            "active_buffer_sub_index": state.active_buffer_sub_index,
+            "active_buffer_sub_flag": state.active_buffer_sub_flag,
             "camera_id": state.camera_id,
         },
         "requested": {
