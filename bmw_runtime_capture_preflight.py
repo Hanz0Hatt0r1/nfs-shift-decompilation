@@ -150,10 +150,16 @@ def preflight_bmw_runtime(
         for candidate in paint_draws
         if (candidate.get("frame"), candidate.get("draw_index")) in proven_draws
     ]
+    complete_proven_paint_draws = [
+        candidate
+        for candidate in proven_paint_draws
+        if candidate.get("state_complete") is True
+    ]
     ready = bool(
         integrity.get("status") == "observed"
         and same_instance.get("ready") is True
         and proven_paint_draws
+        and len(complete_proven_paint_draws) == len(proven_paint_draws)
     )
     return {
         "format": FORMAT,
@@ -197,6 +203,11 @@ def preflight_bmw_runtime(
                     + (
                         ["runtime:target-paint-draw-not-same-instance"]
                         if paint_draws and not proven_paint_draws
+                        else []
+                    )
+                    + (
+                        ["runtime:target-paint-draw-state-incomplete"]
+                        if proven_paint_draws and len(complete_proven_paint_draws) != len(proven_paint_draws)
                         else []
                     )
                 )
