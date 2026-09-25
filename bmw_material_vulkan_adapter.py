@@ -404,6 +404,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output_dir")
     parser.add_argument("--textures")
     parser.add_argument("--environment-cube")
+    parser.add_argument("--source-bff", action="append", default=[])
+    parser.add_argument("--environment-cube-dds")
     parser.add_argument("--submesh-index", type=int, default=0)
     args = parser.parse_args(argv)
     result = build_bmw_vulkan_from_material_slice(
@@ -411,6 +413,8 @@ def main(argv: list[str] | None = None) -> int:
         args.output_dir,
         textures=args.textures,
         environment_cube=args.environment_cube,
+        source_bffs=args.source_bff,
+        environment_cube_dds=args.environment_cube_dds,
         submesh_index=args.submesh_index,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
