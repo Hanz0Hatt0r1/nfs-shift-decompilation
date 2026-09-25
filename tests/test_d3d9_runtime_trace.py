@@ -194,7 +194,8 @@ def test_same_instance_gate_rejects_invalid_draw_snapshot():
     report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
     assert report["same_instance_gate"]["ready"] is False
     assert any(
-        reason.startswith("draw-snapshot:draw:start_index:invalid")
+        str(reason.get("reason", "")).startswith("draw-snapshot:draw:start_index:invalid")
         for reason in (report["blocking_reasons"] or [])
+        if isinstance(reason, dict)
     )
     assert not report["same_instance_gate"]["candidate_frames"]
