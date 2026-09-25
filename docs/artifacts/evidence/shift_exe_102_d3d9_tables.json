@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.D3D9ExecutableEvidence/1",
+  "source": {
+    "filename": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "bytes": 8801792,
+    "machine": "0x014c",
+    "image_base": "0x00400000",
+    "timestamp": "0x4af2ddcf"
+  },
+  "tables": {
+    "type_code": {
+      "address": "0x00b90088",
+      "values": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,16,16,0]
+    },
+    "type_size": {
+      "address": "0x00b8eef0",
+      "values": [4,8,12,16,4,4,4,8,4,4,8,4,8,4,4,4,8,0]
+    },
+    "type_components": {
+      "address": "0x00b8ef38",
+      "values": [1,2,3,4,4,4,2,4,4,2,4,2,4,3,3,2,4,0]
+    },
+    "usage": {
+      "address": "0x00b9011c",
+      "values": [0,1,3,5,6,7,10,12,2]
+    },
+    "usage_index": {
+      "address": "0x00b90140",
+      "values": [0,1,8,2,3,3,4,5,3,0,0,0,0,0]
+    },
+    "channel": {
+      "address": "0x00b90178",
+      "values": [2,3,4,5,6,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    }
+  },
+  "type_names": [
+    "F32","F32Vec2","F32Vec3","F32Vec4","RGBA32","U8Vec4","S16Vec2","S16Vec4",
+    "U8Vec4N","S16Vec2N","S16Vec4N","U16Vec2N","U16Vec4N","U10Vec3","U10Vec3N",
+    "F16Vec2","F16Vec4"
+  ],
+  "semantic_observations": {
+    "type_4": {
+      "internal_exe_name": "RGBA32",
+      "d3d9_type": "D3DDECLTYPE_D3DCOLOR",
+      "element_size_bytes": 4,
+      "source_components": 4
+    },
+    "usage_6": {
+      "source_name": "Colour",
+      "numeric_d3d9_usage": 10
+    },
+    "meb_color_descriptors": {
+      "460": [4,6,0],
+      "461": [4,6,1]
+    }
+  }
+}
