@@ -50,7 +50,11 @@ def build_pose_basis(
     first, first_len = _normalize(first_vector)
     second_raw = _af90_cross(first, second_vector)
     second, second_len = _normalize(second_raw)
-    third_raw = _af90_cross(first, second)
+    third_raw = (
+        first[1] * second[2] - first[2] * second[1],
+        second[0] * first[2] - first[0] * second[2],
+        second[1] * first[0] - first[1] * second[0],
+    )
     third, third_len = _normalize(third_raw)
 
     basis = [
