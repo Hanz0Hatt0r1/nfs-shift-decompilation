@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.h>
+#include <cstdint>
 
 #include <cstdlib>
 #include <iostream>
@@ -25,6 +26,8 @@ const char* result_name(VkResult result) {
         default: return "VK_RESULT_UNKNOWN";
     }
 }
+
+// Phase 224: compile-verified Vulkan probe API includes.
 
 bool has_graphics_or_compute_queue(VkPhysicalDevice device) {
     std::uint32_t count = 0;

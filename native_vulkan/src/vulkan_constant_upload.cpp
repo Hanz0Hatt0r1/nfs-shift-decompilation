@@ -328,7 +328,7 @@ int main(int argc, char** argv) {
         check(vkMapMemory(ctx.device, vertex_constants.memory, 0, 4096, 0, &mapped),
               "vkMapMemory(vertex constants) failed");
         std::memcpy(mapped, packet.vertex.data(), 4096);
-        vkUnmapMemory(ctx.device);
+        vkUnmapMemory(ctx.device, vertex_constants.memory);
         check(vkMapMemory(ctx.device, pixel_constants.memory, 0, 4096, 0, &mapped),
               "vkMapMemory(pixel constants) failed");
         std::memcpy(mapped, packet.pixel.data(), 4096);
@@ -572,7 +572,7 @@ int main(int argc, char** argv) {
         check(vkMapMemory(ctx.device, staging.memory, 0, rgba.size(), 0, &mapped),
               "vkMapMemory(staging) failed");
         std::memcpy(rgba.data(), mapped, rgba.size());
-        vkUnmapMemory(ctx.device);
+        vkUnmapMemory(ctx.device, staging.memory);
         write_ppm(output, rgba);
 
         VkPhysicalDeviceProperties props{};
