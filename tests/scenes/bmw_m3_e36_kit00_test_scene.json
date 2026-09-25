@@ -59,8 +59,7 @@
       "width": 1600,
       "height": 900,
       "sha256": "43a8cbc47315a4236f6eb1a87b89569d2760ce183475131021228701e787886a",
-      "mode": "neutral-studio-geometry-preview-v2",
-      "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/01_front_left.png"
+      "mode": "neutral-studio-geometry-preview-v2"
     },
     {
       "name": "02_rear_right",
@@ -68,8 +67,7 @@
       "width": 1600,
       "height": 900,
       "sha256": "1db293487454261752c8ee3be3aa7112883ddf487a1aa21add6d52faa917fc96",
-      "mode": "neutral-studio-geometry-preview-v2",
-      "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/02_rear_right.png"
+      "mode": "neutral-studio-geometry-preview-v2"
     },
     {
       "name": "03_side",
@@ -77,8 +75,7 @@
       "width": 1600,
       "height": 900,
       "sha256": "0e80ab9ec108e35d3ff0833de9da5bc6a7887f1d8990dda390a5da2edc1befcd",
-      "mode": "neutral-studio-geometry-preview-v2",
-      "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/03_side.png"
+      "mode": "neutral-studio-geometry-preview-v2"
     },
     {
       "name": "04_front",
@@ -86,8 +83,7 @@
       "width": 1600,
       "height": 900,
       "sha256": "a1f086f5001c0a009b645457b92497b2166b6f5ba0db3f085cd5788204bc73fa",
-      "mode": "neutral-studio-geometry-preview-v2",
-      "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/04_front.png"
+      "mode": "neutral-studio-geometry-preview-v2"
     }
   ],
   "notes": [
@@ -99,8 +95,7 @@
     "path": "00_contact_sheet.png",
     "width": 1600,
     "height": 920,
-    "sha256": "a7b7f22efb9fbc4d6cd3b80c8d70c4efc39e160a6e06e09f5e4c3b3b0a6db9c0",
-    "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/00_contact_sheet.png"
+    "sha256": "467954384480188b01e690873bd9d19be046356f865666f813701dfc569fcf53"
   },
   "screenshot_policy": {
     "artifacts_external": true,
