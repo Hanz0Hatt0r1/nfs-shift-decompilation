@@ -10,3 +10,8 @@ Track placement is intentionally not inferred. The current scene manifest report
 ## Phase 250/251: binary SGB and embedded object runtime
 
 The binary SGB container now has a source-backed runtime decoder for NODE, PART, SUMM, OCCL and FLAT boundaries. NODE payload offsets are further decoded through FUN_0069bc50/FUN_0069a6c0 for OBJECT/HIERARCHY/DAMAGE dispatch. Unresolved FLAT body semantics and deeper object field names remain explicitly opaque.
+
+
+## Phase 252: FLAT runtime tree
+
+SGB FLAT payloads now decode through the recovered runtime tree container: 0x20-byte headers, direct leaf count, 24-bit span, recursive subtrees and 0x40-byte leaf records. Leaf semantics are retained raw until the vtable-backed consumers are normalized.
