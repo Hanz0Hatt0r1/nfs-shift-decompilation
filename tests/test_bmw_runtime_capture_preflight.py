@@ -146,3 +146,24 @@ def test_runtime_capture_preflight_reports_missing_runtime_components():
     candidate = report["paint_draw_candidates"][0]
     assert candidate["state_complete"] is False
     assert candidate["missing_components"] == ["vertex_shader", "pixel_shader", "streams", "indices"]
+
+
+def test_runtime_capture_preflight_rejects_paint_range_on_different_draw():
+    runtime = _runtime(same_instance_ready=True)
+    runtime["same_instance_gate"]["candidate_frames"] = [{
+        "frame": 7,
+        "draw_index": 0,
+        "declaration_ptr": "0x1",
+    }]
+    runtime["frames"] = [{
+        "frame": 7,
+        "draw_snapshots": [
+            _snapshot("abc", 0, 50, draw_index=0),
+            _snapshot("abc", 150, 2098, draw_index=1),
+        ],
+    }]
+    report = preflight_bmw_runtime(runtime, expected_resource_sha="abc")
+    assert report["paint_draw_candidates"][0]["draw_index"] == 1
+    assert report["proven_paint_draw_candidates"] == []
+    assert report["ready"] is False
+    assert "runtime:target-paint-draw-not-same-instance" in report["blocking_reasons"]
