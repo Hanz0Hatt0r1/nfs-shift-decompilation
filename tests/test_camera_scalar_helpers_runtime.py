@@ -72,3 +72,26 @@ def test_corrective_response_is_zero_inside_dead_zone():
         bias_scale=1.0,
     )
     assert result["result"] == 0.0
+
+
+def test_corrective_response_accepts_exact_zero_candidate_as_sign_change():
+    result = corrective_response(
+        value=5.0,
+        bias=4.0,
+        threshold=3.0,
+        gain=1.0,
+        bias_scale=0.5,
+    )
+    assert result["candidate"] == -4.0
+    assert result["accepted"] is True
+
+def test_corrective_response_accepts_zero_candidate_when_bias_cancels():
+    result = corrective_response(
+        value=5.0,
+        bias=-4.0,
+        threshold=3.0,
+        gain=1.0,
+        bias_scale=0.5,
+    )
+    assert result["candidate"] == 0.0
+    assert result["accepted"] is True
