@@ -14,6 +14,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from spirv_reflection import reflect_spirv_file
+
 FORMAT = "SHIFT.VulkanBundleSPIRV/1"
 
 
@@ -82,15 +84,29 @@ def compile_bmw_vulkan_bundle(
             check=False,
         )
         ok = proc.returncode == 0 and output.is_file() and output.stat().st_size > 0
+        reflection = None
+        reflection_ok = False
+        if ok:
+            reflection = reflect_spirv_file(
+                output,
+                stage=stage,
+            )
+            reflection_ok = bool(reflection.get("ready"))
+            if not reflection_ok:
+                blockers.extend(
+                    f"vulkan-bundle-spirv:reflection:{reason}"
+                    for reason in reflection.get("blocking_reasons") or ["invalid"]
+                )
         results.append({
             "path": relative,
             "stage": stage,
-            "status": "compiled" if ok else "failed",
+            "status": "compiled" if ok and reflection_ok else ("failed" if not ok else "reflection-failed"),
             "spirv_path": str(output.relative_to(root)) if ok else None,
             "spirv_sha256": hashlib.sha256(output.read_bytes()).hexdigest() if ok else None,
             "returncode": proc.returncode,
             "stdout": proc.stdout,
             "stderr": proc.stderr,
+            "reflection": reflection,
         })
         if not ok:
             blockers.append(f"vulkan-bundle-spirv:compile-failed:{relative}")

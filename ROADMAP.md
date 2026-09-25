@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 218. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 219. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1177,3 +1177,8 @@ loads geometry/constants/resource packets.
 General arbitrary-shader execution is intentionally blocked at this boundary until
 SPIR-V reflection can derive exact mixed sampler2D/samplerCube descriptor interfaces.
 The individual Vulkan resource checkpoints remain authoritative meanwhile.
+
+
+## Phase 219: SPIR-V descriptor reflection
+
+spirv_reflection.py now extracts the descriptor set/binding interface required by the native Vulkan bundle runner, including sampler2D/samplerCube and uniform-buffer classification. It detects descriptor-type collisions and fails closed on unsupported forms. The next stage is using this reflection result to construct the native mixed-resource descriptor set automatically.
