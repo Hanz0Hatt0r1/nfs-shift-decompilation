@@ -11,7 +11,9 @@ def test_defaults_initialize_exactly_two_interleaved_profiles():
     assert result["profile_count"] == 2
     assert result["profiles"][0][0x20] == 0x3F800000
     assert result["profiles"][0][0x88] == 0x3F490FF9
-    assert result["profiles"][1][0x10] == 0x3F800000
+    assert result["profiles"][1][0x14] == 0
+    assert result["profiles"][1][0x30] == 0
+    assert result["profiles"][1][0x8C] == 0x3F490FF9
     assert result["profiles"][1][0xA4] == 0x3FAAA993
 
 
