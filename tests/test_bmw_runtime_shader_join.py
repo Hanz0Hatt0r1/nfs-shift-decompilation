@@ -47,6 +47,7 @@ def test_runtime_shader_join_requires_shader_and_resource_identity():
     report = join_runtime_shader(_material(), _runtime())
     assert report['ready'] is True
     assert report['matched_frame_count'] == 1
+    assert report['candidate_frames'][0]['resource_identity_status'] == 'exact-sha-match'
 
 
 def test_runtime_shader_join_blocks_same_shader_on_wrong_resource():
