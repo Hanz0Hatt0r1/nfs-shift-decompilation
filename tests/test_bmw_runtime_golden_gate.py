@@ -120,7 +120,7 @@ def test_runtime_golden_gate_requires_same_instance_gate(tmp_path):
     assert 'runtime-same-instance:not-proven' in report['blocking_reasons']
 
 
-def def test_runtime_golden_gate_rejects_shader_and_material_range_on_different_draws(tmp_path):
+def test_runtime_golden_gate_rejects_shader_and_material_range_on_different_draws(tmp_path):
     material = _material()
     runtime = _runtime()
     runtime['frames'][0]['draws'] = [
