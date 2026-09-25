@@ -29,7 +29,7 @@ def test_mode_one_requires_sub_index_match():
 
 
 def test_non_mode_one_ignores_sub_index_for_gate():
-    state = CameraSwitchState(mode=2, sub_index=4, sub_flag=0, camera_id=7, dirty=False)
+    state = CameraSwitchState(mode=2, active_buffer_sub_index=4, active_buffer_sub_flag=0, camera_id=7, dirty=False)
     result = evaluate_switch_gate(
         state,
         requested_mode=2,
