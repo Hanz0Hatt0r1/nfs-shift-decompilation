@@ -17,7 +17,6 @@ def test_target_acquisition_stops_at_first_rtti_and_handle_match():
     )
     assert result["status"] == "attached"
     assert result["selected_candidate"] == 2
-    assert result["actions"][-1]["action"] == "candidate linked-list scan" or True
     assert any(a["action"] == "FUN_00812970" for a in result["actions"][-1]["actions"])
 
 
