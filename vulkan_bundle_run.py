@@ -15,6 +15,38 @@ from vulkan_bundle_spirv import compile_bmw_vulkan_bundle, write_compile_report
 FORMAT = "SHIFT.BMWVulkanRunner/1"
 
 
+def _validate_sampler_sidecar(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    metadata_path = root / "sampler_contracts.meta.json"
+    if not metadata_path.is_file():
+        return None, []
+    blockers: list[str] = []
+    try:
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return None, [f"vulkan-runner:sampler-metadata-invalid-json:{type(error).__name__}"]
+    if not isinstance(metadata, dict) or metadata.get("format") != "SHIFT.VulkanSamplerMetadata/1":
+        return metadata if isinstance(metadata, dict) else None, [
+            "vulkan-runner:sampler-metadata-invalid-format"
+        ]
+    packet_path = root / str((metadata.get("packet") or {}).get("path") or "textures.svtp")
+    expected_sha = str((metadata.get("packet") or {}).get("sha256") or "")
+    if not packet_path.is_file():
+        blockers.append("vulkan-runner:sampler-metadata-packet-missing")
+    elif len(expected_sha) != 64 or hashlib.sha256(packet_path.read_bytes()).hexdigest() != expected_sha:
+        blockers.append("vulkan-runner:sampler-metadata-packet-sha256-mismatch")
+    contract = metadata.get("sampler_contract")
+    if not isinstance(contract, dict) or contract.get("format") != "SHIFT.VulkanSamplerContract/1":
+        blockers.append("vulkan-runner:sampler-contract-invalid-format")
+    elif contract.get("ready") is not True:
+        blockers.extend(
+            str(reason) for reason in contract.get("blocking_reasons") or [
+                "vulkan-runner:sampler-contract-not-ready"
+            ]
+        )
+    return metadata, list(dict.fromkeys(blockers))
+
+
+
 def run_bmw_vulkan_bundle(
     bundle_dir: str | Path,
     *,
@@ -39,6 +71,8 @@ def run_bmw_vulkan_bundle(
         encoding="utf-8",
     )
 
+    sampler_metadata, sampler_blockers = _validate_sampler_sidecar(root)
+
     result: dict[str, Any] = {
         "format": FORMAT,
         "status": "compiled" if compile_report.get("ready") else "blocked",
@@ -46,6 +80,15 @@ def run_bmw_vulkan_bundle(
         "gates": {
             "spirv": compile_report,
             "interface": None,
+            "sampler": {
+                "status": "not-supplied" if sampler_metadata is None else (
+                    "ready" if not sampler_blockers else "blocked"
+                ),
+                "metadata_path": (
+                    str(root / "sampler_contracts.meta.json")
+                    if sampler_metadata is not None else None
+                ),
+            },
         },
         "native": {
             "status": "not-run",
@@ -56,7 +99,7 @@ def run_bmw_vulkan_bundle(
             "spirv_report": {
                 "path": str(spirv_report_path),
                 "sha256": hashlib.sha256(spirv_report_path.read_bytes()).hexdigest(),
-            }
+            },
         },
     }
 
@@ -66,6 +109,20 @@ def run_bmw_vulkan_bundle(
             ["vulkan-runner:spirv-not-ready"]
         )
         return result
+
+    if sampler_metadata is not None:
+        sampler_metadata_path = root / "sampler_contracts.meta.json"
+        result["artifacts"]["sampler_metadata"] = {
+            "path": str(sampler_metadata_path),
+            "sha256": hashlib.sha256(sampler_metadata_path.read_bytes()).hexdigest(),
+        }
+        result["gates"]["sampler"]["metadata_sha256"] = (
+            result["artifacts"]["sampler_metadata"]["sha256"]
+        )
+        if sampler_blockers:
+            result["status"] = "blocked"
+            result["blocking_reasons"] = sampler_blockers
+            return result
 
     interface = validate_bmw_vulkan_interface(root, compile_report)
     interface_path = root / "vulkan_interface.json"
