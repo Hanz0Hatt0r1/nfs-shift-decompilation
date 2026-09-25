@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-FORMAT = "SHIFT.CameraSwitchGateRuntime/1"
+FORMAT = "SHIFT.CameraSwitchGateRuntime/2"
 
 
 @dataclass(frozen=True)
