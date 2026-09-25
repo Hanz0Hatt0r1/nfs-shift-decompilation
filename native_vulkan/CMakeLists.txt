@@ -81,3 +81,34 @@ if(GLSLANG_VALIDATOR)
 else()
   message(STATUS "glslangValidator not found; geometry shader target will not be built")
 endif()
+
+if(GLSLANG_VALIDATOR)
+  add_executable(shift_vulkan_constant_upload src/vulkan_constant_upload.cpp)
+  target_link_libraries(shift_vulkan_constant_upload PRIVATE Vulkan::Vulkan)
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/constants.vert.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/constants.vert
+            -o ${SHIFT_VULKAN_SHADER_DIR}/constants.vert.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/constants.vert
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/constants.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/constants.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/constants.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/constants.frag
+    VERBATIM
+  )
+  add_custom_target(shift_vulkan_constant_shaders
+    DEPENDS
+      ${SHIFT_VULKAN_SHADER_DIR}/constants.vert.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/constants.frag.spv
+  )
+  add_dependencies(shift_vulkan_constant_upload shift_vulkan_constant_shaders)
+else()
+  message(STATUS "glslangValidator not found; constant upload target will not be built")
+endif()
