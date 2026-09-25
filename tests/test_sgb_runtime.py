@@ -71,7 +71,7 @@ def test_node_object_payload_is_decoded_when_bounded():
     object_header = struct.pack("<10I", 44, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     object_data = object_header + b"OBJECT\0"
     # Node record points at the object payload relative to the NODE chunk.
-    node_record = struct.pack("<IIIIIIII", 32, 0, 48, 0, 0, 1, 0, 40)
+    node_record = struct.pack("<IIIIIIII", 32, 0, 48, 0, 0, 1, 0, 44)
     payload = struct.pack("<I", 1) + node_record
     payload += object_data
     data = _header() + _chunk("NODE", payload) + _chunk("END ", b"")
