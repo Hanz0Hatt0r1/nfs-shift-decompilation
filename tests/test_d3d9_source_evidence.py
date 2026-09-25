@@ -880,3 +880,15 @@ uint __fastcall FUN_00859800(int param_1,int param_2)
     assert result["linkage"]["meb_descriptor_triple_to_binary_record"]["status"] == "not-proven"
     assert result["meb_source_identity"]["extension_registration_status"] == "not-found"
     assert result["meb_source_identity"]["binary_loader_status"] == "not-found"
+
+
+def test_d3d9_pe_evidence_decodes_usage_and_channel_tables_without_interpreting_them():
+    from d3d9_pe_evidence import analyze_d3d9_pe_image
+
+    report = analyze_d3d9_pe_image(_make_minimal_pe32())
+    assert report["conclusions"]["usage_table_status"] == "decoded"
+    assert report["conclusions"]["file_backed_usage_table"] is True
+    assert report["decoded_tables"]["usage"][0] == {"ordinal": 0, "value": 0}
+    assert report["decoded_tables"]["usage"][6] == {"ordinal": 6, "value": 6}
+    assert report["decoded_tables"]["usage"][8] == {"ordinal": 8, "value": 8}
+    assert len(report["decoded_tables"]["channel"]) == 22
