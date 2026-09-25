@@ -84,3 +84,28 @@ def test_property_catalog_preserves_overlapping_runtime_offsets():
 def test_invalid_camera_xml_is_rejected():
     with pytest.raises(ValueError):
         parse_camera_xml("<root>")
+
+
+def test_proven_tracking_camera_inheritance_chain_is_exposed():
+    from camera_runtime import resolve_camera_class_chain
+
+    report = resolve_camera_class_chain("CTrackingCamera")
+    assert report["chain"] == ["CTrackingCamera", "CStaticCamera", "CBaseCamera", "CCameraObj"]
+    assert report["resolved_links"] == 3
+    assert report["fully_resolved"] is False
+
+
+def test_area_subclasses_keep_their_known_base_prefix():
+    from camera_runtime import resolve_camera_class_chain
+
+    assert resolve_camera_class_chain("CSphereArea")["chain"] == ["CSphereArea", "CCamArea"]
+    assert resolve_camera_class_chain("COBBArea")["chain"] == ["COBBArea", "CCamArea"]
+
+
+def test_unresolved_base_is_explicitly_marked():
+    from camera_runtime import resolve_camera_class_chain
+
+    report = resolve_camera_class_chain("CCamSpline")
+    assert report["chain"] == ["CCamSpline"]
+    assert report["fully_resolved"] is False
+    assert "CCamSpline" in report["evidence"]["class_initializers"]

@@ -103,6 +103,53 @@ AREA_PROPERTY_REGISTRATIONS = (
     },
 )
 
+# Proven class-object inheritance links recovered from the static initialization
+# functions near FUN_00a8ced0..FUN_00a8d800. Links whose base object is not a
+# camera-class symbol are intentionally omitted rather than guessed.
+CAMERA_CLASS_BASES = {
+    "CCameraView": "CBaseCamera",
+    "CBaseCamera": "CCameraObj",
+    "CFreeCamera": "CCameraObj",
+    "CAttachedCamera": "CBaseCamera",
+    "CStaticCamera": "CBaseCamera",
+    "CTrackingCamera": "CStaticCamera",
+    "CSphereArea": "CCamArea",
+    "COBBArea": "CCamArea",
+    "CTrackingCamData": "CStaticCamData",
+}
+
+# These classes point at the same non-camera base object DAT_00bfa608 in the
+# executable's registration records. The class name for that base is not resolved
+# by the current evidence, so chains terminating here remain partial.
+UNRESOLVED_CAMERA_BASE_CLASSES = {
+    "CStaticCamData",
+    "CCamArea",
+    "CCamSplineNode",
+    "CCamSpline",
+    "CCameraConfig",
+    "CTrackCameraMan",
+    "CCameraObj",
+}
+
+CAMERA_CLASS_REGISTRATIONS = {
+    "CTrackCameraMan": "FUN_00a8ced0",
+    "CStaticCamera": "FUN_00a8cf90",
+    "CStaticCamData": "FUN_00a8d020",
+    "CBaseCamera": "FUN_00a8d190",
+    "CFreeCamera": "FUN_00a8d220",
+    "CAttachedCamera": "FUN_00a8d2a0",
+    "CCamArea": "FUN_00a8d370",
+    "CSphereArea": "FUN_00a8d3f0",
+    "COBBArea": "FUN_00a8d480",
+    "CTrackingCamera": "FUN_00a8d510",
+    "CTrackingCamData": "FUN_00a8d5a0",
+    "CCamSplineNode": "FUN_00a8d650",
+    "CCamSpline": "FUN_00a8d6e0",
+    "CCameraConfig": "FUN_00a8d770",
+    "CCameraObj": "FUN_00a8d800",
+    "CCameraView": "FUN_00a8cdb0",
+}
+
 RUNTIME_CLASS_NAMES = (
     "CBaseCamera",
     "CCameraConfig",
@@ -239,6 +286,7 @@ def parse_camera_xml(data: str | bytes, *, source_name: str = "<memory>") -> dic
         "root_tag": root.tag,
         "object_count": len(objects),
         "objects": objects,
+        "class_hierarchy": [resolve_camera_class_chain(row["class"]) for row in objects if row.get("class")],
         "runtime_boundary": {
             "elements_container": "elements",
             "required_attributes": ["class", "id"],
@@ -252,10 +300,42 @@ def parse_camera_xml(data: str | bytes, *, source_name: str = "<memory>") -> dic
             },
         },
         "limitations": [
-            "class inheritance is preserved as raw names; FUN_006408f0 resolution is not emulated",
+            "class inheritance resolution is limited to the proven camera-class prefix exported by resolve_camera_class_chain()",
             "camera behavior and transforms are not synthesized from XML values",
             "the executable type_code numbers are retained but not turned into a new ABI",
         ],
+    }
+
+
+def resolve_camera_class_chain(class_name: str, *, max_depth: int = 32) -> dict[str, Any]:
+    """Resolve the proven prefix of a camera/area class inheritance chain."""
+    if max_depth <= 0:
+        raise ValueError("max_depth must be positive")
+    current = str(class_name)
+    chain = [current]
+    seen = {current}
+    cycle = False
+    for _ in range(max_depth - 1):
+        base = CAMERA_CLASS_BASES.get(current)
+        if base is None:
+            break
+        if base in seen:
+            cycle = True
+            break
+        chain.append(base)
+        seen.add(base)
+        current = base
+    return {
+        "class_name": str(class_name),
+        "chain": chain,
+        "resolved_links": max(0, len(chain) - 1),
+        "terminated_at": chain[-1],
+        "fully_resolved": not cycle and chain[-1] not in CAMERA_CLASS_BASES and chain[-1] not in UNRESOLVED_CAMERA_BASE_CLASSES,
+        "cycle": cycle,
+        "evidence": {
+            "resolver": "FUN_006408f0",
+            "class_initializers": dict(CAMERA_CLASS_REGISTRATIONS),
+        },
     }
 
 
@@ -271,6 +351,9 @@ def property_catalog() -> dict[str, Any]:
             for row in AREA_PROPERTY_REGISTRATIONS
         ],
         "runtime_class_names": list(RUNTIME_CLASS_NAMES),
+        "camera_class_bases": dict(CAMERA_CLASS_BASES),
+        "camera_class_registrations": dict(CAMERA_CLASS_REGISTRATIONS),
+        "unresolved_camera_base_classes": sorted(UNRESOLVED_CAMERA_BASE_CLASSES),
         "evidence": {
             "static_camera_data_registration": "FUN_008156b0",
             "tracking_camera_data_registration": "FUN_0081ebc0",
