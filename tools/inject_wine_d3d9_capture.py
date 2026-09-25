@@ -43,6 +43,17 @@ def patch_function(text: str, name: str, transform) -> str:
     return text[:match.start(1)] + patched + text[match.end(1):]
 
 
+def function_body(text: str, name: str) -> str:
+    pattern = re.compile(
+        rf"(static\\s+(?:HRESULT|void|ULONG|BOOL)\\s+WINAPI\\s+{re.escape(name)}\\b.*?)(?=\\nstatic\\s+)",
+        re.DOTALL,
+    )
+    matches = list(pattern.finditer(text))
+    if len(matches) != 1:
+        raise PatchError(f"{name}: expected one function, found {len(matches)}")
+    return matches[0].group(1)
+
+
 def patch_device(device: Path) -> None:
     text = device.read_text(encoding="utf-8")
 
@@ -193,7 +204,7 @@ def patch_device(device: Path) -> None:
     )
 
     for name, transform in transforms:
-        if f"shift_capture_" in text[text.find(name):text.find(name) + 5000]:
+        if "shift_capture_" in function_body(text, name):
             continue
         text = patch_function(text, name, transform)
 
