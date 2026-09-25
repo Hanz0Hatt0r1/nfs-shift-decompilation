@@ -5,7 +5,7 @@ reconstructing facts a second time. It checks that the recovered Type tables,
 STREAM topology, 8-byte declaration record and canonicalizer all agree on the
 same declaration ABI. Optional runtime-memory evidence is accepted only when
 its address/range metadata, hashes and complete declaration array are coherent.
-MEB 460/461 -> Type remains explicitly unresolved.
+MEB 460/461 can now be resolved when the joined color bridge carries the exact descriptor-triple evidence and source-backed Type-4 packed-color path.
 """
 from __future__ import annotations
 
