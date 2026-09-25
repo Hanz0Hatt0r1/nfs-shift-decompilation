@@ -220,14 +220,28 @@ def test_runtime_shader_join_uses_exact_material_draw_range():
     assert report["candidate_frames"][0]["draw_index"] == 1
 
 
-def test_runtime_shader_join_blocks_invalid_material_draw_range():
+def test_runtime_shader_join_blocks_when_material_draw_range_has_no_runtime_match():
     material = _material()
     material["primitive_index"] = 1
     material["render_command"] = {
         "submeshes": [{"index": 1, "first_index": 151, "index_count": 6294}]
     }
-    report = join_runtime_shader(_material(), {
-        "format": "SHIFT.D3D9RuntimeBindingEvidence/1",
-        "frames": [],
-    })
+    runtime = _runtime()
+    runtime["frames"][0]["draw_snapshots"] = [{
+        "frame": 17,
+        "draw_index": 0,
+        "draw": {"start_index": 150, "primitive_count": 2098, "base_vertex_index": 0},
+        "vertex_declaration": {
+            "resource_sha256": "abc",
+            "resource_path": "vehicles/bmw/body.meb",
+        },
+        "shader_permutation_identity": {
+            "identity_sha256": "shader-id",
+            "payload": {"pixel": {"sampler_types": {"1": "sampler2D"}}},
+        },
+        "texture_bindings": [{"stage": 1, "texture_ptr": "0x31"}],
+    }]
+    report = join_runtime_shader(material, runtime)
     assert report["ready"] is False
+    assert report["matched_draw_count"] == 0
+    assert "runtime:shader-or-resource-instance-not-found" in report["blocking_reasons"]
