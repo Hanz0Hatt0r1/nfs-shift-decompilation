@@ -75,3 +75,36 @@ def validate_draw_snapshots(snapshots: list[Mapping[str, Any]]) -> dict[str, Any
         "snapshots": rows,
         "blocking_reasons": blockers,
     }
+
+
+def validate_draw_snapshot_alignment(
+    draws: list[Mapping[str, Any]],
+    snapshots: list[Mapping[str, Any]],
+) -> dict[str, Any]:
+    reasons: list[str] = []
+    if len(draws) != len(snapshots):
+        reasons.append(f"count:mismatch:{len(draws)}:{len(snapshots)}")
+    for index, draw in enumerate(draws):
+        if index >= len(snapshots):
+            break
+        snapshot = snapshots[index]
+        if snapshot.get("draw_index") != index:
+            reasons.append(
+                f"draw_index:mismatch:{index}:{snapshot.get('draw_index')}"
+            )
+        snapshot_draw = snapshot.get("draw")
+        if not isinstance(snapshot_draw, Mapping):
+            reasons.append(f"draw:missing:{index}")
+            continue
+        for key in ("primitive_count", "start_index", "base_vertex_index"):
+            if snapshot_draw.get(key) != draw.get(key):
+                reasons.append(
+                    f"draw:{key}:mismatch:{index}:{draw.get(key)}:{snapshot_draw.get(key)}"
+                )
+    return {
+        "status": "valid" if not reasons else "invalid",
+        "ready": not reasons,
+        "draw_count": len(draws),
+        "snapshot_count": len(snapshots),
+        "blocking_reasons": list(dict.fromkeys(reasons)),
+    }
