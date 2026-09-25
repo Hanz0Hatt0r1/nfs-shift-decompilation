@@ -236,6 +236,18 @@ def _merge_dds_bridge_into_bundle(
     merged["artifacts"] = artifacts
     merged["dds_bridge"] = dds_bridge
 
+    external = []
+    for row in merged.get("external_samplers") or []:
+        normalized = dict(row)
+        if (
+            cube_packet
+            and int(normalized.get("d3d9_sampler_register", -1)) == 3
+            and str(normalized.get("sampler_type") or "") == "samplerCube"
+        ):
+            normalized["status"] = "provided-via-dds-bridge"
+        external.append(normalized)
+    merged["external_samplers"] = external
+
     # The base bundle emits these blockers when its resources were intentionally
     # deferred. The DDS bridge becomes authoritative for the supplied material
     # textures/cube, while any remaining bridge blockers stay fail-closed.
