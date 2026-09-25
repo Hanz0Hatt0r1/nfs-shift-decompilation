@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 223. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 230. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1197,3 +1197,8 @@ bmw_material_vulkan_adapter.py now bridges an existing SHIFT BMW real-material s
 ## Phase 223: Linux Vulkan CI smoke
 
 Automated Ubuntu CI now installs Mesa Vulkan software support, builds the native backend, runs probe/clear/triangle checkpoints and executes a synthetic mixed-resource BMW-style bundle through SPIR-V compilation, descriptor/resource validation and native Vulkan rendering. This is backend integration coverage, not BMW visual parity.
+
+
+## Phase 230: CI reconciliation and strict COLOR pair gate
+
+The native Vulkan texture source now compiles without the literal newline corruption. COLOR ABI promotion requires the complete 460/461 descriptor pair plus source-backed Type-4 packed-color evidence; single-property partial evidence remains not-proven.
