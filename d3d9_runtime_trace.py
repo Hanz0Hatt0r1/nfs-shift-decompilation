@@ -14,7 +14,11 @@ from shader_ir import parse_shader_blobs
 from shader_permutation_identity import build_shader_permutation_identity
 from d3d9_capture_schema import validate_capture_event
 from d3d9_runtime_trace_integrity import validate_runtime_trace_integrity
-from d3d9_draw_snapshot_schema import validate_draw_snapshot, validate_draw_snapshots
+from d3d9_draw_snapshot_schema import (
+    validate_draw_snapshot,
+    validate_draw_snapshots,
+    validate_draw_snapshot_alignment,
+)
 
 FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
 EVENTS = {
@@ -452,6 +456,7 @@ def build_runtime_binding_evidence(
                 "bound_declaration_valid": bound_decl_valid,
                 "indexed_draw_present": True,
                 "draw_snapshot_schema": "SHIFT.D3D9DrawStateSnapshot/1",
+                "draw_snapshot_alignment": True,
                 "snapshot_schema_status": "valid" if snapshot_schema_valid else "invalid",
                 "snapshot_schema_blocking_reasons": snapshot_schema_reasons,
                 "descriptor_matches": [],
@@ -494,6 +499,26 @@ def build_runtime_binding_evidence(
         for snapshot in (frame.get("draw_snapshots") or [])
     ]
     draw_snapshot_validation = validate_draw_snapshots(all_snapshots)
+    draw_snapshot_alignment = {
+        str(frame.get("frame")): validate_draw_snapshot_alignment(
+            frame.get("draws") or [],
+            frame.get("draw_snapshots") or [],
+        )
+        for frame in frame_rows
+    }
+    alignment_blockers = [
+        {
+            "frame": frame_key,
+            "reason": reason,
+        }
+        for frame_key, report in draw_snapshot_alignment.items()
+        for reason in report.get("blocking_reasons") or []
+    ]
+    if alignment_blockers:
+        blockers.extend(
+            {"line": None, "reason": f"draw-snapshot-alignment:{item['frame']}:{item['reason']}"}
+            for item in alignment_blockers
+        )
 
     return {
         "format": FORMAT,
@@ -509,6 +534,7 @@ def build_runtime_binding_evidence(
             "frame_count": len(frame_rows),
             "source": "external-runtime-capture",
             "draw_snapshot_schema_status": draw_snapshot_validation["status"],
+            "draw_snapshot_alignment_status": "valid" if not alignment_blockers else "invalid",
         },
         "declarations": list(declarations.values()),
         "shaders": list(shaders.values()),
