@@ -155,6 +155,45 @@ def _parse_fixed14(data: bytes, start: int, end: int, count: int, kind: str) -> 
     return rows
 
 
+
+def _attach_node_objects(
+    data: bytes,
+    chunk_start: int,
+    chunk_end: int,
+    records: list[dict[str, Any]],
+) -> None:
+    from sgb_object_runtime import parse_sgb_object_payload
+
+    offsets = sorted({
+        start + int(row["object_payload"]["relative_offset"])
+        for row in records
+        if row["object_payload"]["relative_offset"]
+    })
+    next_for: dict[int, int] = {}
+    for index, value in enumerate(offsets):
+        next_for[value] = offsets[index + 1] if index + 1 < len(offsets) else chunk_end
+    for row in records:
+        rel = int(row["object_payload"]["relative_offset"])
+        absolute = chunk_start + rel if rel else None
+        if absolute is None:
+            continue
+        end = next_for.get(absolute, chunk_end)
+        try:
+            row["object_payload"]["report"] = parse_sgb_object_payload(
+                data,
+                base_offset=absolute,
+                end_offset=end,
+                strict=strict,
+            )
+            row["object_payload"]["decoded"] = bool(
+                row["object_payload"]["report"].get("decoded")
+            )
+        except Exception as exc:
+            row["object_payload"]["decoded"] = False
+            row["object_payload"]["decode_error"] = f"{type(exc).__name__}: {exc}"
+            if strict:
+                raise
+
 def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
     if len(data) < 16 or data[:4] != MAGIC:
         raise SGBRuntimeDecodeError("not a SHIFT SGB resource")
@@ -205,6 +244,7 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
                 row["record_count"] = count
             if tag == "NODE":
                 row["records"] = _parse_node(data, cursor, chunk_end, count)
+                _attach_node_objects(data, cursor, chunk_end, row["records"])
                 row["decoder"] = "FUN_006a4b40"
             elif tag == "PART":
                 row["records"] = _parse_part(data, cursor, chunk_end, count)
