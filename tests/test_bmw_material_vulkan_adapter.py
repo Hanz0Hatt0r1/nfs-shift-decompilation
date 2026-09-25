@@ -157,6 +157,10 @@ def test_material_slice_can_bridge_exact_bff_dds_into_vulkan_packet(monkeypatch,
     assert result["dds_bridge"]["ready"] is True
     assert result["source"]["dds_sources"][0]["source_sha256"] == hashlib.sha256(dds_payload).hexdigest()
     assert "temporary_path" not in result["source"]["dds_sources"][0]
+    assert "shift_bmw_dds_" not in result["dds_bridge"]["decoded_sources"][0]["source_path"]
+    persisted = json.loads((tmp_path / "out" / "dds_sources.json").read_text(encoding="utf-8"))
+    assert "shift_bmw_dds_" not in persisted["sources"][0]["source_path"]
+    assert result["source"]["dds_source_bffs"] == [source.name]
     assert (tmp_path / "out" / "textures.svtp").is_file()
 
 
