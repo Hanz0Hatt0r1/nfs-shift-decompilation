@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation
 
-Current `main` is at Phase 186. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 187. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -916,3 +916,17 @@ captured sampler contents are available.
 
 Incomplete captures remain fail-closed while preserving every intermediate
 artifact for diagnosis.
+
+## Phase 187: capture preflight state completeness
+
+SHIFT.BMWRuntimeCapturePreflight/1 now validates each draw snapshot against the
+versioned SHIFT.D3D9DrawStateSnapshot/1 contract and exposes schema status,
+active texture stages and populated constant-state stages.
+
+A preflight can only be ready when the target BMW paint draw intersects the strict
+same-instance proof and its draw state contains the declaration, VS/PS, streams and
+indices needed by the next shader/render stage. Missing or malformed snapshot state
+remains a diagnostic blocker.
+
+The external evidence gate is unchanged: no authentic retail D3D9 capture is
+present in the supplied evidence set, so no full BMW runtime render is claimed.
