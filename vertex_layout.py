@@ -68,7 +68,13 @@ for i, pid in enumerate(("130", "131", "132", "133", "134", "230", "231", "232",
     SEMANTICS[pid] = ("TEXCOORD", i % 5)
 
 
-def build_vertex_layout(\n    properties: Iterable[str | dict],\n    *,\n    repack_interleaved: bool = True,\n    color_abi_evidence: dict | None = None,\n) -> dict:\n    rows = []
+def build_vertex_layout(
+    properties: Iterable[str | dict],
+    *,
+    repack_interleaved: bool = True,
+    color_abi_evidence: dict | None = None,
+) -> dict:
+    rows = []
     offset = 0
     for location, value in enumerate(properties):
         pid = str(value.get("id")) if isinstance(value, dict) else str(value)

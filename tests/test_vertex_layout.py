@@ -115,3 +115,8 @@ def test_verified_color_bridge_resolves_color_layout_without_changing_default():
     assert resolved_rows["460"]["channel_order_candidates"] == ["BGRA"]
     assert resolved_rows["460"]["android_candidates"] == ["UINT8x4_BGRA"]
     assert resolved_rows["461"]["d3d9"] == "D3DCOLOR"
+
+
+def test_vertex_layout_module_signature_is_valid():
+    import vertex_layout
+    assert callable(vertex_layout.build_vertex_layout)
