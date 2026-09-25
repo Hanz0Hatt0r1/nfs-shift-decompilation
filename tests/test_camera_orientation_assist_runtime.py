@@ -39,6 +39,8 @@ def test_orientation_assist_builds_first_cross_from_normalized_direction():
             negative_velocity=[0, 1, 0],
             angle_sample=0.2,
         ),
+        quaternion_output=[1, 2, 3, 4],
+        helper_4a7820=1.0,
         helper_900c40=0.5,
         helper_900b10=0.25,
     )
@@ -71,7 +73,9 @@ def test_orientation_assist_keeps_final_output_helpers_opaque():
             negative_velocity=[0, 1, 0],
         ),
         quaternion_output=[1, 0, 0, 0],
-        helper_7bdb0_output=[1, 2, 3, 4],
+        helper_4a7820=1.0,
+        helper_900c40=0.5,
+        helper_900b10=0.25,
     )
     assert any(x["action"] == "FUN_004f8040" for x in result["actions"])
     assert any(x["action"] == "FUN_00449930" for x in result["actions"])
