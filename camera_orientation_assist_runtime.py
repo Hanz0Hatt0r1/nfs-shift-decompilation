@@ -72,6 +72,7 @@ def describe_orientation_assist(
     helper_4a7820: float = 0.0,
     helper_900c40: float = 0.0,
     helper_900b10: float = 0.0,
+    helper_7bdb0_output: Sequence[float] | None = None,
 ) -> dict[str, Any]:
     """Trace FUN_0081cd70 with exact vector stages and opaque helper boundaries."""
     direction = _vec3(inputs.vehicle_direction, "vehicle_direction")
@@ -255,7 +256,7 @@ def describe_orientation_assist(
                 "action": "FUN_0047bdb0",
                 "arguments": {
                     "axis": second_normed,
-                    "reference": adjusted,
+                    "reference": [-local48, -local44, -local40],
                 },
                 "result": helper_7bdb0_output,
             },
@@ -302,7 +303,7 @@ def describe_orientation_assist(
             "second_cross_unit": second_normed,
         },
         "first_norm_clamp": clamped_norm,
-    "damped_velocity": [local48, local44, local40],
+        "damped_velocity": [local48, local44, local40],
         "output_basis": output_basis,
         "actions": actions,
         "evidence": {
