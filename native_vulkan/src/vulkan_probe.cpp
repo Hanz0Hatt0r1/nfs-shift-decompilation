@@ -27,6 +27,8 @@ const char* result_name(VkResult result) {
     }
 }
 
+// Phase 224: compile-verified Vulkan probe API includes.
+
 bool has_graphics_or_compute_queue(VkPhysicalDevice device) {
     std::uint32_t count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &count, nullptr);
