@@ -52,17 +52,60 @@
       "screenshot": "04_front.png"
     }
   ],
-  "screenshots": {
-    "resolution": [
-      1600,
-      900
-    ],
-    "mode": "neutral-studio-geometry-preview",
-    "artifacts_are_external": true
-  },
+  "screenshots": [
+    {
+      "name": "01_front_left",
+      "path": "01_front_left.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "43a8cbc47315a4236f6eb1a87b89569d2760ce183475131021228701e787886a",
+      "mode": "neutral-studio-geometry-preview-v2",
+      "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/01_front_left.png"
+    },
+    {
+      "name": "02_rear_right",
+      "path": "02_rear_right.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "1db293487454261752c8ee3be3aa7112883ddf487a1aa21add6d52faa917fc96",
+      "mode": "neutral-studio-geometry-preview-v2",
+      "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/02_rear_right.png"
+    },
+    {
+      "name": "03_side",
+      "path": "03_side.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "0e80ab9ec108e35d3ff0833de9da5bc6a7887f1d8990dda390a5da2edc1befcd",
+      "mode": "neutral-studio-geometry-preview-v2",
+      "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/03_side.png"
+    },
+    {
+      "name": "04_front",
+      "path": "04_front.png",
+      "width": 1600,
+      "height": 900,
+      "sha256": "a1f086f5001c0a009b645457b92497b2166b6f5ba0db3f085cd5788204bc73fa",
+      "mode": "neutral-studio-geometry-preview-v2",
+      "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/04_front.png"
+    }
+  ],
   "notes": [
     "Scene uses the supplied retail BMW_M3_E36.bff and the repository VHF scene assembly path.",
     "Screenshots are geometry-preview evidence only; they do not claim final BMW bodywork.fx material execution.",
     "Authentic retail D3D9 runtime capture remains a separate external proof gate."
-  ]
+  ],
+  "contact_sheet": {
+    "path": "00_contact_sheet.png",
+    "width": 1600,
+    "height": 920,
+    "sha256": "a7b7f22efb9fbc4d6cd3b80c8d70c4efc39e160a6e06e09f5e4c3b3b0a6db9c0",
+    "artifact": "sandbox:/mnt/data/bmw_m3_e36_kit00_test_scene/00_contact_sheet.png"
+  },
+  "screenshot_policy": {
+    "artifacts_external": true,
+    "presentation": "neutral-studio-gamma-0.62-contrast-1.06",
+    "geometry_unchanged": true,
+    "material_execution": false
+  }
 }
