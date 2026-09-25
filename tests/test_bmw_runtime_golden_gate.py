@@ -134,7 +134,7 @@ def test_runtime_golden_gate_rejects_shader_and_material_range_on_different_draw
         'pixel_shader': {'shader_ptr': '0x3', 'create_known': True},
         'stream_sources': [{'stream': 0}],
         'index_binding': {'index_buffer_ptr': '0x4'},
-        'draw': {'start_index': 0, 'primitive_count': 1, 'base_vertex_index': 0},
+        'draw': {'start_index': 150, 'primitive_count': 2098, 'base_vertex_index': 0},
         'constant_writes': [{'stage': 'pixel', 'start_register': 5, 'vector4f_count': 1, 'values': [1.0, 2.0, 3.0, 4.0]}],
         'texture_bindings': [],
         'shader_permutation_identity': {'identity_sha256': 'shader-id', 'payload': {'vertex': {'inputs': [{'register': 'v0', 'usage': 'COLOR', 'index': 0}], 'constants': []}, 'pixel': {'constants': [5], 'sampler_types': {}}}},
