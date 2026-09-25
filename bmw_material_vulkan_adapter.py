@@ -297,7 +297,8 @@ def _merge_dds_bridge_into_bundle(
             continue
         base_blockers.append(reason)
     merged["blocking_reasons"] = list(dict.fromkeys(base_blockers))
-    merged["status"] = "ready" if not merged["blocking_reasons"] else "partial"
+    merged["ready"] = not merged["blocking_reasons"]
+    merged["status"] = "ready" if merged["ready"] else "partial"
 
     manifest = bundle_dir / "bundle_manifest.json"
     manifest.write_text(

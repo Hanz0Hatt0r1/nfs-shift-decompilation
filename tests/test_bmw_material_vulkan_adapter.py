@@ -112,8 +112,8 @@ def _tiny_dds():
         124, 0, 4, 4, 0, 0, 1,
         *([0] * 11),
         32, 0x4, struct.unpack("<I", b"DXT1")[0], 0,
-        0, 0, 0, 0,
         0, 0, 0, 0, 0,
+        0x1000, 0, 0, 0, 0,
     )
     return b"DDS " + header + struct.pack("<HHI", 0xF800, 0x07E0, 0)
 
@@ -206,3 +206,25 @@ def test_material_slice_blocks_when_exact_bff_dds_sha_mismatches(monkeypatch, tm
         for reason in result["blocking_reasons"]
     )
     assert result["dds_bridge"]["ready"] is False
+
+
+def test_adapter_merge_recomputes_ready_from_final_blockers(tmp_path):
+    from bmw_material_vulkan_adapter import _merge_dds_bridge_into_bundle
+    bundle = {
+        "ready": True,
+        "status": "ready",
+        "blocking_reasons": [],
+        "artifacts": {},
+        "external_samplers": [],
+    }
+    bridge = {
+        "format": "SHIFT.VulkanDDSResourceBridge/1",
+        "ready": False,
+        "blocking_reasons": ["dds-bridge:test-blocker"],
+        "packets": {"textures": None, "environment_cube": None},
+        "provenance": None,
+    }
+    merged = _merge_dds_bridge_into_bundle(bundle, bridge, tmp_path)
+    assert merged["ready"] is False
+    assert merged["status"] == "partial"
+    assert merged["blocking_reasons"] == ["dds-bridge:test-blocker"]
