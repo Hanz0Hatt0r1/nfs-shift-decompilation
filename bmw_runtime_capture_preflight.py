@@ -144,3 +144,44 @@ def preflight_bmw_runtime(
             )
         ),
     }
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(
+        description="Preflight an external BMW M3 D3D9 runtime capture"
+    )
+    parser.add_argument("runtime_report")
+    parser.add_argument("output")
+    parser.add_argument("--resource-sha256")
+    parser.add_argument("--resource-path", default=TARGET_MEB)
+    args = parser.parse_args(argv)
+
+    report = preflight_bmw_runtime(
+        json.loads(__import__("pathlib").Path(args.runtime_report).read_text(encoding="utf-8")),
+        expected_resource_sha=args.resource_sha256,
+        expected_resource_path=args.resource_path,
+    )
+    __import__("pathlib").Path(args.output).write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(
+        json.dumps(
+            {
+                "format": report["format"],
+                "status": report["status"],
+                "ready": report["ready"],
+                "blocking_reasons": report["blocking_reasons"],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0 if report["ready"] else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
