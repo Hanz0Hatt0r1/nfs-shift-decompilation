@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 207. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 208. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1071,3 +1071,15 @@ This is intentionally a transfer-only checkpoint: no shader/SPIR-V or BMW semant
 ## Phase 207: headless Vulkan graphics pipeline
 
 A Linux Vulkan target now builds a minimal SPIR-V graphics pipeline when glslangValidator is available. It renders a triangle into an offscreen R8G8B8A8 image and exports a deterministic PPM. This proves shader-module creation, render-pass/pipeline setup and indexed-free vertex generation before the backend is connected to real RenderCommand vertex/index buffers.
+
+ 
+## Phase 208: RenderCommand Vulkan geometry
+
+The Linux backend now has a neutral binary handoff from SHIFT.RenderCommand/1 to
+native Vulkan. vulkan_geometry_packet.py validates POSITION0, materializes one
+selected triangle-list submesh and records unresolved/deferred vertex properties.
+The Vulkan executable consumes only this packet, creates vertex/index buffers, enables
+depth testing, submits vkCmdDrawIndexed and writes an offscreen PPM.
+
+Only POSITION0 is enabled in this phase. The next backend stage is full proven
+VertexLayout attribute translation, followed by RenderCommand shader/material state.
