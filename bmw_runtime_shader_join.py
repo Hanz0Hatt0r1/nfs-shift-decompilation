@@ -13,6 +13,34 @@ def _identity_from_material(material_slice: Mapping[str, Any]) -> Mapping[str, A
     selection = material_slice.get('shader_selection') or {}
     return selection.get('permutation_identity') or material.get('permutation_identity')
 
+def _expected_draw_range(material_slice: Mapping[str, Any]) -> tuple[int, int] | None:
+    command = material_slice.get("render_command") or {}
+    submeshes = command.get("submeshes") or []
+    if not submeshes:
+        return None
+    primitive_index = material_slice.get("primitive_index")
+    if primitive_index is None and len(submeshes) == 1:
+        primitive_index = 0
+    if primitive_index is None:
+        return None
+    try:
+        primitive_index = int(primitive_index)
+    except (TypeError, ValueError):
+        return None
+    rows = [
+        row for row in submeshes
+        if isinstance(row, Mapping) and int(row.get("index", -1)) == primitive_index
+    ]
+    if len(rows) != 1 and primitive_index < len(submeshes) and not rows:
+        rows = [submeshes[primitive_index]]
+    if len(rows) != 1:
+        return None
+    try:
+        return int(rows[0].get("first_index")), int(rows[0].get("index_count"))
+    except (TypeError, ValueError):
+        return None
+
+
 def _expected_sampler_registers(material_slice: Mapping[str, Any]) -> dict[int, dict[str, Any]]:
     out: dict[int, dict[str, Any]] = {}
     for row in material_slice.get('textures') or []:
@@ -35,6 +63,18 @@ def _expected_sampler_registers(material_slice: Mapping[str, Any]) -> dict[int, 
             'source': 'external',
         }
     return out
+
+def _draw_matches_range(draw: Mapping[str, Any], expected: tuple[int, int]) -> bool:
+    try:
+        start_index = int(draw.get("start_index"))
+        primitive_count = int(draw.get("primitive_count"))
+    except (TypeError, ValueError):
+        return False
+    expected_first, expected_count = expected
+    if expected_count % 3 != 0:
+        return False
+    return start_index == expected_first and primitive_count == expected_count // 3
+
 
 def _runtime_draw_states(runtime_report: Mapping[str, Any]):
     """Yield the exact runtime state used by each draw.
@@ -69,13 +109,27 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
     expected_resource = str(golden_identity.get('resource') or '')
     expected_resource_sha = golden_identity.get('resource_sha256')
     expected_samplers = _expected_sampler_registers(material_slice)
+    expected_draw_range = _expected_draw_range(material_slice)
     matches = []
     for frame, state, state_source in _runtime_draw_states(runtime_report):
-        identity = state.get('shader_permutation_identity') or {}
-        if not identity and state_source == 'frame-aggregate':
-            identity = frame.get('shader_permutation_identity') or {}
-        same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
-        binding = state.get('vertex_declaration') or {}
+        states = [(state, None)]
+        if state_source == 'frame-aggregate' and expected_draw_range is not None:
+            states = [
+                (state, draw_index)
+                for draw_index, draw in enumerate(state.get("draws") or [])
+                if isinstance(draw, Mapping)
+                and _draw_matches_range(draw, expected_draw_range)
+            ]
+        elif state_source == 'draw-snapshot' and expected_draw_range is not None:
+            draw = state.get("draw") or {}
+            if not _draw_matches_range(draw, expected_draw_range):
+                states = []
+        for current_state, legacy_draw_index in states:
+            identity = current_state.get('shader_permutation_identity') or {}
+            if not identity and state_source == 'frame-aggregate':
+                identity = frame.get('shader_permutation_identity') or {}
+            same_id = bool(expected_id and identity.get('identity_sha256') == expected_id)
+            binding = current_state.get('vertex_declaration') or {}
         frame_sha = binding.get('resource_sha256')
         frame_path = binding.get('resource_path')
         same_resource = False
@@ -83,8 +137,10 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
             same_resource = str(frame_sha) == str(expected_resource_sha)
         elif expected_resource and frame_path:
             same_resource = str(frame_path).replace('\\', '/').strip('/').lower() == expected_resource.replace('\\', '/').strip('/').lower()
-        if same_id and same_resource:
-            matches.append((frame, state, state_source))
+            if same_id and same_resource:
+                if legacy_draw_index is not None:
+                    current_state = {**current_state, "draw_index": legacy_draw_index, "draw": (current_state.get("draws") or [])[legacy_draw_index]}
+                matches.append((frame, current_state, state_source))
 
     if expected_id and not matches:
         reasons.append('runtime:shader-or-resource-instance-not-found')
