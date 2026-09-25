@@ -196,7 +196,11 @@ def load_camera_profile(
         }
 
     actions: list[dict[str, Any]] = [
-        {"action": "write +0xc4", "value": profile_id},
+        (
+            {"action": "write +0xc4", "value": profile_id}
+            if int(requested_profile_id) != -2
+            else {"action": "keep +0xc4", "value": profile_id}
+        ),
         {"action": "write +0x80", "value": resolved_profile.profile_id},
         {"action": "copy +0x54 -> +0x34", "field": "FOV", "value": resolved_profile.fov_bits_or_value},
         {"action": "copy +0x60 -> +0x38", "field": "AspectRatio", "value": resolved_profile.aspect_ratio_bits_or_value},
@@ -288,56 +292,66 @@ def select_camera_profile(
     state: CameraViewState,
     *,
     profile_id: int,
-    profile: CameraProfile | None,
+    service_current_id: int,
 ) -> tuple[CameraViewState, dict[str, Any]]:
-    """Trace FUN_0081caa0's history-aware profile selection."""
-    if service_profile_matches(
-        service_current_id=state.selected_profile_id,
-        selected_profile_id=int(profile_id),
-    ):
-        history = state.last_service_profile_id
-        reason = "service-current-profile"
-    elif service_profile_differs(
-        service_current_id=state.selected_profile_id,
-        selected_profile_id=int(profile_id),
-    ):
-        history = state.last_fallback_profile_id
-        reason = "fallback-profile"
-    else:
-        history = state.last_service_profile_id
-        reason = "no-service-id-difference"
+    """Trace FUN_0081caa0's history-aware selection without inventing a load result."""
+    selector = int(profile_id)
+    service_id = int(service_current_id)
 
-    loaded, result = load_camera_profile(
-        state,
-        requested_profile_id=int(history),
-        resolved_profile=profile,
-        suppress_history_update=True,
-        group_id=int(profile_id),
+    updated_state = CameraViewState(
+        selector_profile_id=selector,
+        selected_profile_id=state.selected_profile_id,
+        selected_profile_object=state.selected_profile_object,
+        last_service_profile_id=state.last_service_profile_id,
+        last_fallback_profile_id=state.last_fallback_profile_id,
+        render_cockpit=state.render_cockpit,
     )
-    return loaded, {
+
+    actions: list[dict[str, Any]] = [{"action": "write +0xc0", "value": selector}]
+    if service_profile_matches(
+        service_current_id=service_id,
+        selected_profile_id=selector,
+    ):
+        history = int(state.last_service_profile_id)
+        actions.extend([
+            {"action": "FUN_0081c020 -> true"},
+            {"action": "FUN_0081c920", "profile_id": history},
+        ])
+        status = "service-current-profile"
+    elif service_profile_differs(
+        service_current_id=service_id,
+        selected_profile_id=selector,
+    ):
+        history = int(state.last_fallback_profile_id)
+        actions.extend([
+            {"action": "FUN_0081c050 -> true"},
+            {"action": "FUN_0081c920", "profile_id": history},
+        ])
+        status = "service-profile-diff"
+    else:
+        history = None
+        actions.append({"action": "FUN_0081c050 -> false"})
+        status = "no-profile-reload"
+
+    return updated_state, {
         "format": FORMAT,
         "version": 1,
-        "status": "selected",
-        "selector_profile_id": int(profile_id),
-        "selector_reason": reason,
-        "history_value_used": int(history),
-        "actions": [
-            {
-                "action": "write +0xc0",
-                "value": int(profile_id),
-            },
-            {
-                "action": "FUN_0081c920",
-                "profile_id": int(history),
-            },
-            *result["actions"],
-        ],
+        "status": status,
+        "selector_profile_id": selector,
+        "service_current_id": service_id,
+        "history_value_used": history,
+        "actions": actions,
         "evidence": {
             "function": "FUN_0081caa0",
             "selector_field": "+0xc0",
             "service-match": "FUN_0081c020",
             "service-diff": "FUN_0081c050",
+            "history_true": "+0xc8",
+            "history_false": "+0xcc",
         },
+        "limitations": [
+            "FUN_0081c920 resolves the historical profile id through the manager",
+        ],
     }
 
 
