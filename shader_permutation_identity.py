@@ -77,9 +77,9 @@ def validate_shader_permutation_identity(identity: Any) -> list[str]:
     if identity.get("format") != FORMAT:
         reasons.append("format:invalid")
     identity_sha = identity.get("identity_sha256")
-    if not isinstance(identity_sha, str) or len(identity_sha) != 64:
-        reasons.append("identity_sha256:invalid")
     pair_sha = identity.get("pair_byte_sha256")
+    if identity_sha is None and pair_sha is None and identity.get("payload") is None:
+        reasons.append("identity_sha256:missing")
     if pair_sha is not None and (not isinstance(pair_sha, str) or len(pair_sha) != 64):
         reasons.append("pair_byte_sha256:invalid")
     payload = identity.get("payload")
