@@ -7,10 +7,10 @@ from camera_event_handlers_runtime import (
 
 
 def test_type_zero_writes_outer_camera_command_field_then_static_switch():
-    result = describe_event_type_0(argument_a=7, argument_b=3, slot_index=2)
+    result = describe_event_type_0(argument_a=7, argument_b=3)
     assert result["actions"][0]["value"] == 7
     assert result["actions"][1]["action"] == "FUN_0080de00"
-    assert result["actions"][1]["slot_index"] == 2
+    assert result["actions"][1]["slot_index"] == 0
 
 
 def test_type_one_falls_back_to_static_handler_outside_modes_two_and_three():
