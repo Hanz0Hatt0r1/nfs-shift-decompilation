@@ -475,6 +475,7 @@ def write_bridge_report(
     source_report: str | Path | Mapping[str, Any],
     output: str | Path,
     *,
+    pe_evidence: str | Path | Mapping[str, Any] | None = None,
     runtime_report: str | Path | Mapping[str, Any] | None = None,
     resource_reports: Iterable[str | Path | Mapping[str, Any]] | None = None,
     source_text: str | bytes | None = None,
