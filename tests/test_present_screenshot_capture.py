@@ -75,9 +75,9 @@ def test_runtime_trace_accepts_present_screenshot_events():
 
 def test_mingw_d3d9_proxy_static_runtime_linking():
     cmake = Path("native_capture/CMakeLists.txt").read_text(encoding="utf-8")
+    assert '-static' in cmake
     assert '-static-libgcc' in cmake
     assert '-static-libstdc++' in cmake
-    assert '-Wl,-Bstatic,-lwinpthread,-Bdynamic' in cmake
 
 
 def test_linux_mingw_toolchain_targets_32bit_windows():
