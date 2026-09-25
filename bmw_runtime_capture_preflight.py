@@ -5,6 +5,7 @@ from typing import Any, Mapping
 
 from bmw_bff_intake import EXPECTED_MEB_SHA256
 from bmw_runtime_shader_join import _runtime_draw_states
+from d3d9_draw_snapshot_schema import validate_draw_snapshot
 
 FORMAT = "SHIFT.BMWRuntimeCapturePreflight/1"
 TARGET_MEB = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
@@ -45,8 +46,16 @@ def _draw_rows(
     ]
 
 
-def _candidate_completeness(state: Mapping[str, Any]) -> tuple[bool, list[str]]:
+def _candidate_completeness(
+    state: Mapping[str, Any],
+    source: str,
+) -> tuple[bool, list[str], list[str]]:
     missing: list[str] = []
+    schema_reasons: list[str] = []
+    if source == "draw-snapshot":
+        schema_reasons = validate_draw_snapshot(state)
+        if schema_reasons:
+            missing.append("draw-snapshot-schema")
     binding = state.get("vertex_declaration") or {}
     if not binding.get("declaration_ptr"):
         missing.append("vertex-declaration")
@@ -57,7 +66,7 @@ def _candidate_completeness(state: Mapping[str, Any]) -> tuple[bool, list[str]]:
         missing.append("streams")
     if not state.get("index_binding"):
         missing.append("indices")
-    return not missing, missing
+    return not missing, missing, schema_reasons
 
 
 def preflight_bmw_runtime(
@@ -85,7 +94,9 @@ def preflight_bmw_runtime(
                 primitive_count = int(draw.get("primitive_count"))
             except (TypeError, ValueError):
                 continue
-            complete, missing_components = _candidate_completeness(state)
+            complete, missing_components, schema_reasons = _candidate_completeness(state, source)
+            active_textures = state.get("active_texture_bindings") or state.get("texture_bindings") or []
+            constant_state = state.get("constant_state") or {}
             row = {
                 "frame": frame.get("frame"),
                 "draw_index": draw_index,
@@ -98,6 +109,19 @@ def preflight_bmw_runtime(
                 ),
                 "state_complete": complete,
                 "missing_components": missing_components,
+                "snapshot_schema_status": "valid" if not schema_reasons else "invalid",
+                "snapshot_schema_blocking_reasons": schema_reasons,
+                "active_texture_stages": sorted(
+                    {
+                        int(row.get("stage"))
+                        for row in active_textures
+                        if isinstance(row, Mapping) and str(row.get("stage", "")).lstrip("-").isdigit()
+                    }
+                ),
+                "constant_state_stages": sorted(
+                    key for key, value in constant_state.items()
+                    if isinstance(value, Mapping) and value
+                ),
             }
             if same_resource:
                 resource_draws.append(row)
