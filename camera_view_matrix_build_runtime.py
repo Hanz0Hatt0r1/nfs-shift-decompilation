@@ -78,6 +78,7 @@ def describe_camera_view_matrix_build(
     input_scalar: float,
     helper_00900b10: float = 0.0,
     helper_00900c40: float = 1.0,
+    camera_data_268c: float = 1.0,
     converted_matrix: Sequence[float] | None = None,
     transformed_matrix: Sequence[float] | None = None,
     final_matrix: Sequence[float] | None = None,
@@ -96,6 +97,8 @@ def describe_camera_view_matrix_build(
         helper_00900b10=helper_00900b10,
         helper_00900c40=helper_00900c40,
     )
+    camera_scale = float(camera_data_268c)
+    scaled_ratio = ratio["ratio"] / camera_scale
 
     return {
         "format": FORMAT,
@@ -109,7 +112,27 @@ def describe_camera_view_matrix_build(
             "input_scalar": float(input_scalar),
         },
         "depth": depth,
-        "rate_ratio": ratio,
+        "rate_ratio": {
+            **ratio,
+            "camera_data_268c": camera_scale,
+            "scaled_ratio": scaled_ratio,
+        },
+        "projection_state_constants": {
+            "+0x60_expression": "rate_ratio / camera-data +0x268c",
+            "+0x5c": 0.0,
+            "+0x58": 0.0,
+            "+0x54": 0.0,
+            "+0x50": 0.0,
+            "+0x48": 0.0,
+            "+0x44": 0.0,
+            "+0x40": 0.0,
+            "+0x3c": 0.0,
+            "depth_far_over_span": depth["far_over_span"],
+            "depth_one": 1.0,
+            "depth_zero": 0.0,
+            "depth_minus_near_far_over_span": depth["minus_near_times_far_over_span"],
+            "+0x18_local": ratio["ratio"],
+        },
         "helper_boundaries": {
             "FUN_008207c0": {
                 "orientation_output": q,
