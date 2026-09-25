@@ -324,6 +324,15 @@ GeometryPacket parse_packet(const std::string& path) {
         data.data() + sizeof(packet.header),
         attribute_bytes);
 
+    if (packet.header.version == 1) {
+        if (packet.header.attribute_count != 1 ||
+            packet.attributes[0].format != 1) {
+            throw std::runtime_error("invalid version-1 Vulkan geometry attribute");
+        }
+        // Phase 208 used format code 1 for FLOAT3. Version 2 reserves code 1 for FLOAT2.
+        packet.attributes[0].format = 2;
+    }
+
     auto format_size = [](uint32_t format) -> uint32_t {
         switch (format) {
             case 1: return 8;
