@@ -178,7 +178,38 @@ def build_real_bmw_material_slice(
             'render_command':render_command,
             'color_abi_evidence':color_abi,
             'resources':resources,
-            'provenance':{**binding_report.get('provenance',{}),'mesh_entry':{'archive':meb_archive.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},'primitive':{'first_index':primitive.first_index,'index_count':primitive.index_count}},
+            'provenance':{
+                **binding_report.get('provenance',{}),
+                'mesh_entry':{
+                    'archive':meb_archive.path.name,
+                    'path':meb_entry.path,
+                    'index':meb_entry.index,
+                    'sha256':_sha256(meb_bytes),
+                    'size':len(meb_bytes),
+                },
+                'primitive':{
+                    'first_index':primitive.first_index,
+                    'index_count':primitive.index_count,
+                },
+                'dds_sources':[
+                    {
+                        'archive':row['archive'],
+                        'path':row['path'],
+                        'sha256':row['sha256'],
+                        'analysis':row['analysis'],
+                    }
+                    for row in texture_records
+                ],
+            },
+            'texture_sources':[
+                {
+                    'archive':row['archive'],
+                    'path':row['path'],
+                    'sha256':row['sha256'],
+                    'analysis':row['analysis'],
+                }
+                for row in texture_records
+            ],
             'boundary':{'runtime_instance_attribution':'not-proven','raw_binaries_committed':False},
         }
     finally:
