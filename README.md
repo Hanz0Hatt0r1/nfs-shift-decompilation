@@ -668,3 +668,6 @@ See [NOTICE.md](NOTICE.md).
 
  
 > **Vulkan textures:** Phase 214 adds SHIFT.VulkanTexturePacket/1 and a native RGBA8 image/sampler upload path. D3D9 sampler registers are preserved as Vulkan descriptor-set-1 bindings; set 0 remains dedicated to VS/PS constants.
+
+
+> **Vulkan textures:** Phase 214 adds a real RGBA8 image/sampler descriptor path. D3D9 sampler registers are preserved as Vulkan set 1 bindings; set 0 remains reserved for VS/PS constants. The current smoke shader exercises s1.
