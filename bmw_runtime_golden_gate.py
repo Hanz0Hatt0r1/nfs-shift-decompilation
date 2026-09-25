@@ -22,6 +22,20 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
     reasons = list(parity.get('blocking_reasons') or [])
     reasons.extend(draw_correlation.get('blocking_reasons') or [])
 
+    # The shader/parity join and the material draw-range join must identify the
+    # same runtime draw. Matching only by frame would reintroduce the exact
+    # cross-draw ambiguity that Phase 184 removed downstream.
+    parity_draws = {
+        (row.get('frame'), row.get('draw_index'))
+        for row in (parity.get('shader_join', {}).get('candidate_frames') or [])
+    }
+    draw_matches = {
+        (row.get('frame'), row.get('draw_index'))
+        for row in (draw_correlation.get('matches') or [])
+    }
+    if parity_draws and draw_matches and not parity_draws.intersection(draw_matches):
+        reasons.append('runtime-draw:shader-and-material-range-mismatch')
+
     # Vertex-input parity is evaluated below only when an explicit Usage map is supplied by the caller.
     if usage_map_path:
         usage_raw = json.loads(Path(usage_map_path).read_text(encoding='utf-8'))
