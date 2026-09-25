@@ -235,7 +235,8 @@ int main(int argc, char** argv) {
         check(vkCreateImage(ctx.device, &image_info, nullptr, &image), "vkCreateImage failed");
 
         VkMemoryRequirements image_requirements{};
-        vkGetImageMemoryRequirements(ctx.device, image);
+        VkMemoryRequirements image_requirements{};
+        vkGetImageMemoryRequirements(ctx.device, image, &image_requirements);
         VkMemoryAllocateInfo image_alloc{};
         image_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         image_alloc.allocationSize = image_requirements.size;
@@ -476,7 +477,7 @@ int main(int argc, char** argv) {
               "vkMapMemory failed");
         std::vector<uint8_t> rgba(static_cast<size_t>(staging_size));
         std::memcpy(rgba.data(), mapped, rgba.size());
-        vkUnmapMemory(ctx.device);
+        vkUnmapMemory(ctx.device, staging_memory);
 
         write_ppm(output, rgba, width, height);
 
