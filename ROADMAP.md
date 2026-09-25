@@ -1287,3 +1287,8 @@ payloads. Rendering is not part of this phase.
 ## Phase 250: binary SGB runtime chunk grammar
 
 The source-backed binary SGB decoder now reconstructs the top-level 16-byte header and the runtime handlers for NODE, PART, SUMM, OCCL and FLAT chunks. NODE fixed fields/flags, PART partition bounds and child-object tables, and the 56-byte SUMM/OCCL record shape are preserved. NODE object payloads and FLAT bodies remain explicit opaque boundaries until FUN_0069bc50/FUN_0069a6c0 and FUN_0068a8b0 are normalized.
+
+
+## Phase 251: embedded SGB object runtime
+
+The NODE eighth field is now followed into the recovered FUN_0069bc50/FUN_0069a6c0 object parser. The new sgb_object_runtime.py reconstructs OBJECT/HIERARCHY/DAMAGE dispatch, the common header string offsets, hierarchy count/type bytes, and the 9-dword HIERARCHY child record copy order. sgb_runtime.py now attaches these reports to NODE records using bounded payload ranges. Unknown transform/material semantics remain raw.
