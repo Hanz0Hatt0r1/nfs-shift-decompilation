@@ -66,3 +66,52 @@ def test_vertex_layout_uses_consistent_unknown_abi_schema():
     from vertex_layout import property_abi
     abi = property_abi("999")
     assert abi["abi_status"] == "unknown"
+
+
+def test_verified_color_bridge_resolves_color_layout_without_changing_default():
+    bridge = {
+        "format": "SHIFT.MEBD3D9ColorBridgeEvidence/1",
+        "verified_abi": True,
+        "properties": {
+            "460": {
+                "property_to_type": {
+                    "status": "observed",
+                    "selected": {
+                        "code": 4,
+                        "name": "D3DCOLOR",
+                        "memory_order": "BGRA",
+                        "shader_order": "RGBA",
+                    },
+                },
+            },
+            "461": {
+                "property_to_type": {
+                    "status": "observed",
+                    "selected": {
+                        "code": 4,
+                        "name": "D3DCOLOR",
+                        "memory_order": "BGRA",
+                        "shader_order": "RGBA",
+                    },
+                },
+            },
+        },
+    }
+
+    default = build_vertex_layout(["460", "461"])
+    resolved = build_vertex_layout(
+        ["460", "461"],
+        color_abi_evidence=bridge,
+    )
+
+    default_rows = {row["property_id"]: row for row in default["attributes"]}
+    resolved_rows = {row["property_id"]: row for row in resolved["attributes"]}
+
+    assert default_rows["460"]["abi_status"] == "ambiguous"
+    assert default_rows["461"]["abi_status"] == "ambiguous"
+    assert resolved_rows["460"]["abi_status"] == "proven"
+    assert resolved_rows["461"]["abi_status"] == "proven"
+    assert resolved_rows["460"]["d3d9"] == "D3DCOLOR"
+    assert resolved_rows["460"]["channel_order_candidates"] == ["BGRA"]
+    assert resolved_rows["460"]["android_candidates"] == ["UINT8x4_BGRA"]
+    assert resolved_rows["461"]["d3d9"] == "D3DCOLOR"

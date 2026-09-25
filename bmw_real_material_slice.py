@@ -37,6 +37,7 @@ def build_real_bmw_material_slice(
     primitive_index: int = 1,
     supplemental_bffs: Iterable[str | Path] = (),
     shader_source_file: str | Path | None = None,
+    color_abi_report: str | Path | None = None,
 ) -> dict[str, Any]:
     binding_report=build_real_bmw_material_binding(
         bff_path,
@@ -44,6 +45,11 @@ def build_real_bmw_material_slice(
         shader_source_file=shader_source_file,
     )
     golden=json.loads(Path(golden_manifest_path).read_text(encoding='utf-8'))
+    color_abi = None
+    if color_abi_report is not None:
+        color_abi = json.loads(Path(color_abi_report).read_text(encoding="utf-8"))
+        if not isinstance(color_abi, dict):
+            raise ValueError("color ABI report must be a JSON object")
     asset_contract=validate_bmw_paint_asset(golden)
     reasons=list(binding_report.get('blocking_reasons') or [])+list(asset_contract.get('blocking_reasons') or [])
     primary=Path(bff_path)
@@ -112,7 +118,7 @@ def build_real_bmw_material_slice(
                 'resolved':{'path':TARGET_MEB,'archive':meb_archive.path.name,'resource_sha256':_sha256(meb_bytes)},
                 'vertex_count':mesh.vertex_count,
                 'triangle_count':mesh.triangle_count,
-                'vertex_layout':build_layout_from_summary(mesh_summary_data),
+                'vertex_layout':build_layout_from_summary(mesh_summary_data, color_abi_evidence=color_abi),
                 'property_descriptors':mesh.property_descriptors,
                 'skinning':mesh_summary_data.get('skinning') or {},
             },
@@ -166,6 +172,7 @@ def build_real_bmw_material_slice(
             'packet':packet,
             'static_draw':static_draw,
             'render_command':render_command,
+            'color_abi_evidence':color_abi,
             'resources':resources,
             'provenance':{**binding_report.get('provenance',{}),'mesh_entry':{'archive':meb_archive.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},'primitive':{'first_index':primitive.first_index,'index_count':primitive.index_count}},
             'boundary':{'runtime_instance_attribution':'not-proven','raw_binaries_committed':False},

@@ -11,6 +11,7 @@ ABI_STATUS = {
     "exact": "proven",
     "derived-from-stride": "inferred",
     "ambiguous-declaration-and-channel-order": "ambiguous",
+    "verified": "proven",
     "unknown": "unknown",
 }
 
@@ -67,8 +68,7 @@ for i, pid in enumerate(("130", "131", "132", "133", "134", "230", "231", "232",
     SEMANTICS[pid] = ("TEXCOORD", i % 5)
 
 
-def build_vertex_layout(properties: Iterable[str | dict], *, repack_interleaved: bool = True) -> dict:
-    rows = []
+def build_vertex_layout(\n    properties: Iterable[str | dict],\n    *,\n    repack_interleaved: bool = True,\n    color_abi_evidence: dict | None = None,\n) -> dict:\n    rows = []
     offset = 0
     for location, value in enumerate(properties):
         pid = str(value.get("id")) if isinstance(value, dict) else str(value)
@@ -86,7 +86,35 @@ def build_vertex_layout(properties: Iterable[str | dict], *, repack_interleaved:
             continue
 
         usage, index = SEMANTICS.get(pid, ("UNKNOWN", 0))
-        abi_status = ABI_STATUS.get(info.get("confidence", "unknown"), "unknown")
+        effective_info = dict(info)
+        if pid in {"460", "461"} and isinstance(color_abi_evidence, dict):
+            bridge_props = color_abi_evidence.get("properties") or {}
+            bridge_row = bridge_props.get(pid) if isinstance(bridge_props, dict) else None
+            mapping = bridge_row.get("property_to_type") if isinstance(bridge_row, dict) else None
+            selected = mapping.get("selected") if isinstance(mapping, dict) else None
+            if (
+                color_abi_evidence.get("format") == "SHIFT.MEBD3D9ColorBridgeEvidence/1"
+                and color_abi_evidence.get("verified_abi") is True
+                and isinstance(mapping, dict)
+                and mapping.get("status") == "observed"
+                and isinstance(selected, dict)
+                and int(selected.get("code", -1)) == 4
+            ):
+                effective_info.update({
+                    "d3d9": "D3DCOLOR",
+                    "confidence": "verified",
+                    "channel_order_candidates": [str(selected.get("memory_order") or "BGRA")],
+                    "android_candidates": ["UINT8x4_BGRA"],
+                    "source_evidence": {
+                        "kind": "SHIFT.MEBD3D9ColorBridgeEvidence/1",
+                        "status": "verified",
+                        "d3d9_type_code": 4,
+                        "d3d9_type": "D3DCOLOR",
+                        "memory_order": str(selected.get("memory_order") or "BGRA"),
+                        "shader_order": str(selected.get("shader_order") or "RGBA"),
+                    },
+                })
+        abi_status = ABI_STATUS.get(effective_info.get("confidence", "unknown"), "unknown")
         row = {
             "property_id": pid,
             "name": PROP_NAMES.get(pid, "unknown"),
@@ -95,7 +123,7 @@ def build_vertex_layout(properties: Iterable[str | dict], *, repack_interleaved:
             "location": location,
             "abi_status": abi_status,
             "evidence_basis": EVIDENCE_BASIS.get(pid, "no evidence recorded"),
-            **info,
+            **effective_info,
         }
         if isinstance(value, dict):
             for k in ("payload_offset", "stride", "bytes"):
@@ -137,9 +165,13 @@ def build_vertex_layout(properties: Iterable[str | dict], *, repack_interleaved:
     return result
 
 
-def build_layout_from_summary(summary: dict) -> dict:
+def build_layout_from_summary(
+    summary: dict,
+    *,
+    color_abi_evidence: dict | None = None,
+) -> dict:
     layouts = summary.get("property_layouts") or summary.get("vertex_properties") or []
-    return build_vertex_layout(layouts)
+    return build_vertex_layout(layouts, color_abi_evidence=color_abi_evidence)
 
 
 def property_abi(property_id: str) -> dict:
