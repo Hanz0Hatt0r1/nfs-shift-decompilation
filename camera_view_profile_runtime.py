@@ -163,7 +163,7 @@ def load_camera_profile(
     suppress_history_update: bool = False,
     manager_group: Any = None,
     group_id: int = -1,
-    active_group: int = -1,
+    service_current_id: int = -1,
 ) -> tuple[CameraViewState, dict[str, Any]]:
     """Trace FUN_0081c920's field copies and conditional history updates."""
     profile_id = (
@@ -223,7 +223,7 @@ def load_camera_profile(
     if not suppress_history_update:
         if (
             service_profile_matches(
-                service_current_id=int(group_id),
+                service_current_id=int(service_current_id),
                 selected_profile_id=profile_id,
             )
             and resolved_profile.hide_car_rear_look
@@ -231,7 +231,7 @@ def load_camera_profile(
             service_history = profile_id
             actions.append({"action": "write +0xc8", "value": profile_id})
         elif service_profile_differs(
-            service_current_id=int(group_id),
+            service_current_id=int(service_current_id),
             selected_profile_id=profile_id,
         ):
             fallback_history = profile_id
