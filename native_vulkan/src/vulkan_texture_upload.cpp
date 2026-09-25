@@ -397,6 +397,7 @@ int main(int argc, char** argv) {
 
     Context ctx{};
     std::vector<Texture> textures;
+    VkDescriptorSetLayout empty_set_layout = VK_NULL_HANDLE;
     VkDescriptorSetLayout set_layout = VK_NULL_HANDLE;
     VkDescriptorPool pool = VK_NULL_HANDLE;
     VkDescriptorSet set = VK_NULL_HANDLE;
@@ -429,6 +430,12 @@ int main(int argc, char** argv) {
             binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
             bindings.push_back(binding);
         }
+        VkDescriptorSetLayoutCreateInfo empty_set_info{};
+        empty_set_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        check(vkCreateDescriptorSetLayout(
+            ctx.device, &empty_set_info, nullptr, &empty_set_layout),
+            "vkCreateDescriptorSetLayout(empty set) failed");
+
         VkDescriptorSetLayoutCreateInfo set_info{};
         set_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         set_info.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -597,10 +604,14 @@ int main(int argc, char** argv) {
         blend.attachmentCount=1;
         blend.pAttachments=&blend_attachment;
 
+        VkDescriptorSetLayout pipeline_sets[2] = {
+            empty_set_layout,
+            set_layout,
+        };
         VkPipelineLayoutCreateInfo layout{};
         layout.sType=VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        layout.setLayoutCount=1;
-        layout.pSetLayouts=&set_layout;
+        layout.setLayoutCount=2;
+        layout.pSetLayouts=pipeline_sets;
         check(vkCreatePipelineLayout(ctx.device,&layout,nullptr,&pipeline_layout),
               "vkCreatePipelineLayout failed");
 
@@ -669,7 +680,7 @@ int main(int argc, char** argv) {
         vkCmdBeginRenderPass(command,&pass,VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,pipeline);
         vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,pipeline_layout,
-                                0,1,&set,0,nullptr);
+                                1,1,&set,0,nullptr);
         vkCmdDraw(command,3,1,0,0);
         vkCmdEndRenderPass(command);
 
@@ -712,6 +723,7 @@ int main(int argc, char** argv) {
         if (pipeline_layout) vkDestroyPipelineLayout(ctx.device,pipeline_layout,nullptr);
         if (pool) vkDestroyDescriptorPool(ctx.device,pool,nullptr);
         if (set_layout) vkDestroyDescriptorSetLayout(ctx.device,set_layout,nullptr);
+        if (empty_set_layout) vkDestroyDescriptorSetLayout(ctx.device,empty_set_layout,nullptr);
         if (framebuffer) vkDestroyFramebuffer(ctx.device,framebuffer,nullptr);
         if (render_pass) vkDestroyRenderPass(ctx.device,render_pass,nullptr);
         if (vert) vkDestroyShaderModule(ctx.device,vert,nullptr);
