@@ -18,7 +18,8 @@ def _header(kind_offset=40, source_offset=48, aux_offset=56, count=0):
 def test_object_kind_dispatch_is_reconstructed():
     payload = bytearray(_header())
     payload += b"\0\0\0\0"
-    payload += b"\0\0\0\0"\n    payload += b"OBJECT\0"
+    payload += b"\0\0\0\0"
+    payload += b"OBJECT\0"
     payload += b"SOURCE\0"
     payload += b"AUX\0"
     result = parse_sgb_object_payload(bytes(payload))
