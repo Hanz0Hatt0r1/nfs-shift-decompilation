@@ -21,13 +21,13 @@ FORMAT = "SHIFT.CameraOffsetClipRuntime/1"
 def compute_tracking_offset_scalar(
     *,
     camera_fov: float,
-    tracking_magnitude: float,
+    tracking_lag: float,
     helper_9030d0: float,
     helper_902770: float,
 ) -> dict[str, Any]:
     """Reproduce the nested scalar replacement sequence in FUN_00820bc0."""
     half_fov = float(camera_fov) * 0.5
-    scaled = float(helper_9030d0) * abs(float(tracking_magnitude))
+    scaled = float(helper_9030d0) * abs(float(tracking_lag))
     resolved = float(helper_902770)
     offset_scalar = resolved * 2.0
     return {
@@ -41,7 +41,7 @@ def compute_tracking_offset_scalar(
         "evidence": {
             "function": "FUN_00820bc0",
             "fov_source": "+0x34",
-            "tracking_magnitude": "+0x128",
+            "tracking_lag": "+0x128",
             "helper_a": "FUN_009030d0",
             "helper_b": "FUN_00902770",
         },
@@ -82,9 +82,9 @@ def describe_camera_offset_blend(
     depth_w: float,
     blend_source: float,
     camera_offset: float,
-    tracking_frequency: float,
-    tracking_correction_speed: float,
-    tracking_ratio: float,
+    tracking_error_frequency: float,
+    tracking_lag_smoothening: float,
+    tracking_error_correction_speed: float,
     current_300: float,
     current_304: float,
     current_308: float,
@@ -116,7 +116,7 @@ def describe_camera_offset_blend(
             1.0,
         ]
 
-    mix_factor = 1.0 - float(tracking_correction_speed)
+    mix_factor = 1.0 - float(tracking_lag_smoothening)
     blend = [
         normalized_point[i] * mix_factor
         for i in range(4)
@@ -138,12 +138,12 @@ def describe_camera_offset_blend(
     updated_304 = float(current_304)
     if timer < 0.0:
         updated_304 = float(helper_eb20_reset)
-        timer = 1.0 / float(tracking_ratio) if float(tracking_ratio) != 0.0 else 0.0
+        timer = 1.0 / float(tracking_error_correction_speed) if float(tracking_error_correction_speed) != 0.0 else 0.0
         timer_reset = True
 
     local_1c = 1.0
-    if float(tracking_frequency) != 0.0 and float(delta) != 0.0:
-        local_1c = max(1.0, 1.0 / (float(tracking_frequency) * float(delta)))
+    if float(tracking_error_frequency) != 0.0 and float(delta) != 0.0:
+        local_1c = max(1.0, 1.0 / (float(tracking_error_frequency) * float(delta)))
 
     inverse_factor = 1.0 / local_1c
     blended_scalar = (
@@ -193,10 +193,11 @@ def describe_camera_offset_blend(
             "function": "FUN_00820bc0",
             "matrix_position": "+0x2f0..+0x2fc",
             "timer_state": "+0x300/+0x304/+0x308",
-            "tracking_frequency": "+0x12c",
-            "tracking_correction_speed": "+0x130",
-            "tracking_ratio": "+0x134",
-            "tracking_magnitude": "+0x138",
+            "tracking_lag": "+0x128",
+            "tracking_lag_smoothening": "+0x12c",
+            "tracking_error_frequency": "+0x130",
+            "tracking_error_correction_speed": "+0x134",
+            "tracking_error_magnitude": "+0x138",
             "blend_helper": "FUN_00902e40",
         },
         "limitations": [
