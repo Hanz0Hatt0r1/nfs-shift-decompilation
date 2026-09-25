@@ -29,21 +29,34 @@ def analyze_d3d9_stream_topology(source: str | bytes) -> dict[str, Any]:
                 "meb_property_mapping": {"status":"not-proven"}}
 
     inputs = {
-        "stream_array": {"status": "observed" if _has(text,
-            "*(int *)(local_28 + 0x44)",
-            "*(int *)(*(int *)(local_28 + 0x44) + local_70 * 4)", start=start) else "not-found"},
-        "type_ordinal_array": {"status": "observed" if _has(text,
-            "*(int *)(local_28 + 0x3c)",
-            "FUN_00853c20(*(int *)(*(int *)(local_28 + 0x3c) + local_70 * 4))",
-            "*(int *)(uVar3 + 0x70)",
-            "FUN_00853c20(*(int *)(*(int *)(uVar3 + 0x70) + local_8 * 4))", start=start) else "not-found"},
+        "stream_array": {"status": "observed" if (
+            _has(text,
+                "*(int *)(local_28 + 0x44)",
+                "*(int *)(*(int *)(local_28 + 0x44) + local_70 * 4)", start=start)
+            or _has(text,
+                "*(int *)(uVar3 + 0x6c)",
+                "*(int *)(*(int *)(uVar3 + 0x6c) + local_8 * 4)", start=start)
+        ) else "not-found"},
+        "type_ordinal_array": {"status": "observed" if (
+            _has(text,
+                "*(int *)(local_28 + 0x3c)",
+                "FUN_00853c20(*(int *)(*(int *)(local_28 + 0x3c) + local_70 * 4))", start=start)
+            or _has(text,
+                "*(int *)(uVar3 + 0x70)",
+                "FUN_00853c20(*(int *)(*(int *)(uVar3 + 0x70) + local_8 * 4))", start=start)
+        ) else "not-found"},
         "usage_ordinal_array": {"status": "observed" if _any(text,
             "*(int *)(local_28 + 0x40)", "FUN_00853c40((int)local_6c)",
-            "FUN_00853c40(local_5c)", "*(int *)(uVar3 + 0x74)", start=start) else "not-found"},
-        "channel_array": {"status": "observed" if _any(text,
-            "*(int *)(local_28 + 0x48)", "*(int *)(*(int *)(local_28 + 0x48) + iVar12 * 4)",
-            "*(undefined1 *)(*(int *)(local_28 + 0x48)", "*(int *)(uVar3 + 0x78)",
-            "*(undefined1 *)(*(int *)(uVar3 + 0x78) + uVar11 * 4)", start=start) else "not-found"},
+            "FUN_00853c40(local_5c)", "*(int *)(uVar3 + 0x74)",
+            "FUN_00853c40(*(int *)(*(int *)(uVar3 + 0x74) + uVar11 * 4))", start=start) else "not-found"},
+        "channel_array": {"status": "observed" if (
+            _any(text,
+                "*(int *)(local_28 + 0x48)", "*(int *)(*(int *)(local_28 + 0x48) + iVar12 * 4)",
+                "*(undefined1 *)(*(int *)(local_28 + 0x48)", start=start)
+            or _any(text,
+                "*(int *)(uVar3 + 0x78)",
+                "*(undefined1 *)(*(int *)(uVar3 + 0x78) + uVar11 * 4)", start=start)
+        ) else "not-found"},
     }
 
     stream_group = _any(text,

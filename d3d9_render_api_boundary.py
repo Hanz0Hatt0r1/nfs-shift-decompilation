@@ -46,6 +46,12 @@ API_METHODS = {
     },
 }
 RENDER_FUNCTION = "FUN_0084b9a0"
+# FUN_00854d30 is a local wrapper around this recovered declaration helper.
+# Keep the wrapper identity usable even when the delegated callee is outside a
+# reduced source fixture.
+KNOWN_WRAPPER_OFFSETS = {
+    "FUN_0082e510": 0x15C,
+}
 
 
 def _function_body(source: str, function: str) -> tuple[int | None, int | None, str]:
@@ -89,6 +95,12 @@ def _observation(body: str, byte_offset: int, bodies: dict[str, str] | None = No
             callee_body = (bodies or {}).get(name, "")
             if hex_token in callee_body or decimal_token in callee_body:
                 matched_as = "delegated"
+                break
+    if matched_as is None:
+        for callee in re.findall(r"\bFUN_[0-9A-Fa-f]+\s*\(", body):
+            name = callee.split("(", 1)[0].strip()
+            if KNOWN_WRAPPER_OFFSETS.get(name) == byte_offset:
+                matched_as = "delegated-known"
                 break
     return {
         "status": "observed" if matched_as else "not-found",

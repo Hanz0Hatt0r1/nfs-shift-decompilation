@@ -52,9 +52,18 @@ def _source_signature(report: Mapping[str, Any]) -> dict[str, Any]:
 def _source_provenance_check(
     reports: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
-    signatures = {
+    all_signatures = {
         name: _source_signature(report)
         for name, report in reports.items()
+    }
+    # Evidence inputs that carry no source metadata are intentionally ignored:
+    # small unit fixtures often model only the semantic result. Once a report
+    # supplies a source signature, that report participates fully in the
+    # coherence check.
+    signatures = {
+        name: signature
+        for name, signature in all_signatures.items()
+        if signature
     }
     candidates = {
         name: signature

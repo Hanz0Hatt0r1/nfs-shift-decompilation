@@ -45,6 +45,13 @@ def build_usage_ordinal_bridge(material_slice: Mapping[str, Any], runtime_report
             evidence_rows.append(row)
             if len(usages)==1:
                 observations.setdefault(usage_ordinal,[]).append(usages[0])
+            elif len(usages)>1:
+                conflicts.append({
+                    'usage_ordinal': usage_ordinal,
+                    'runtime_usages': usages,
+                    'property_id': str(descriptor.get('id')),
+                    'frame': frame.get('frame'),
+                })
     mapping={}; conflicts=[]; unmapped=[]
     for ordinal, usages in sorted(observations.items()):
         unique=sorted(set(usages))

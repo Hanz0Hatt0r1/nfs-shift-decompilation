@@ -12,11 +12,20 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
         raise ValueError('input is not SHIFT.D3D9RuntimeBindingEvidence/1')
     reasons: list[str] = []
     primitive_index = material_slice.get('primitive_index')
-    try:
-        primitive_index = int(primitive_index)
-    except (TypeError, ValueError):
-        reasons.append('material:primitive-index-invalid')
-        primitive_index = 0
+    if primitive_index is None:
+        submeshes = (material_slice.get('render_command') or {}).get('submeshes') or []
+        if len(submeshes) == 1:
+            # Older single-primitive slices predate the explicit primitive_index field.
+            primitive_index = 0
+        else:
+            reasons.append('material:primitive-index-invalid')
+            primitive_index = 0
+    else:
+        try:
+            primitive_index = int(primitive_index)
+        except (TypeError, ValueError):
+            reasons.append('material:primitive-index-invalid')
+            primitive_index = 0
     command = material_slice.get('render_command') or {}
     submeshes = command.get('submeshes') or []
     if primitive_index < 0:

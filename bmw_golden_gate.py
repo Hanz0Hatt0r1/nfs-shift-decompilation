@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from bmw_m3_paint_asset_contract import validate_bmw_paint_asset
+from bmw_m3_paint_asset_contract import PAINT_MTX, validate_bmw_paint_asset
 
 FORMAT = "SHIFT.BMWGoldenRenderGate/1"
 
@@ -68,19 +68,40 @@ def validate_bmw_golden_gate(
 
     submeshes = draw_packet.get("submeshes") or []
     expected_primitives = mesh.get("primitives") or []
-    if expected_primitives and len(submeshes) != len(expected_primitives):
-        reasons.append("draw:primitive-count-mismatch")
     primitive_mismatches = []
-    for index, expected in enumerate(expected_primitives[:len(submeshes)]):
-        observed = submeshes[index] or {}
-        if int(observed.get("first_index", -1)) != int(expected.get("first_index", -2)):
-            primitive_mismatches.append(index)
-        if int(observed.get("index_count", -1)) != int(expected.get("index_count", -2)):
-            primitive_mismatches.append(index)
-        expected_material = _norm(expected.get("material"))
-        observed_material = _material_ref(observed)
-        if expected_material and observed_material != expected_material:
-            primitive_mismatches.append(index)
+    if expected_primitives:
+        if len(submeshes) == len(expected_primitives):
+            # Full-mesh packet: preserve the strict positional primitive contract.
+            for index, expected in enumerate(expected_primitives):
+                observed = submeshes[index] or {}
+                if int(observed.get("first_index", -1)) != int(expected.get("first_index", -2)):
+                    primitive_mismatches.append(index)
+                if int(observed.get("index_count", -1)) != int(expected.get("index_count", -2)):
+                    primitive_mismatches.append(index)
+                expected_material = _norm(expected.get("material"))
+                observed_material = _material_ref(observed)
+                if expected_material and observed_material != expected_material:
+                    primitive_mismatches.append(index)
+        elif submeshes:
+            # A renderer-facing material slice may contain one or more selected
+            # primitives from a larger golden mesh. Match each observed primitive
+            # by its exact draw range and material, without inventing an index.
+            for observed_index, observed in enumerate(submeshes):
+                observed = observed or {}
+                observed_first = int(observed.get("first_index", -1))
+                observed_count = int(observed.get("index_count", -1))
+                observed_material = _material_ref(observed)
+                matches = [
+                    expected_index
+                    for expected_index, expected in enumerate(expected_primitives)
+                    if observed_first == int(expected.get("first_index", -2))
+                    and observed_count == int(expected.get("index_count", -2))
+                    and observed_material == _norm(expected.get("material"))
+                ]
+                if len(matches) != 1:
+                    primitive_mismatches.append(observed_index)
+        else:
+            reasons.append("draw:primitive-count-mismatch")
     if primitive_mismatches:
         reasons.append("draw:primitive-definition-mismatch")
 
@@ -123,7 +144,7 @@ def validate_bmw_golden_gate(
             )
 
         material_ref = _material_ref(submesh)
-        if material_ref.endswith("/bmw_m3_e36/bmw_m3_e36_paint.mtx"):
+        if expected_path == "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb" and material_ref == _norm(PAINT_MTX):
             paint_shader_gate = material.get("paint_shader_gate")
             if not isinstance(paint_shader_gate, dict):
                 reasons.append(f"paint-shader:{index}:missing")

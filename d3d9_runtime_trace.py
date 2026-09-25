@@ -347,7 +347,7 @@ def build_runtime_binding_evidence(
             "indexed_draw_present": draw_present,
             "descriptor_matches": [],
         }
-        if bound_decl_valid and draw_present and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
+        if bound_decl_valid and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
             bound_records = bound_decl_decoded.get("records", [])
             for descriptor in meb_resource.get("property_descriptors", []):
                 if not isinstance(descriptor, Mapping):
@@ -448,6 +448,21 @@ def build_runtime_binding_evidence(
                     else []
                 )
                 + (
+                    ["descriptor:bound-instance-no-match"]
+                    if usage_ordinal_map is not None
+                    and not same_instance_candidates
+                    and any(
+                        x["binding"].get("same_meb_resource") is True
+                        for x in frame_rows
+                    )
+                    and any(
+                        x.get("bound_declaration_valid") is True
+                        for x in valid_bound_frames
+                    )
+                    and not any(x.get("descriptor_matches") for x in valid_bound_frames)
+                    else []
+                )
+                + (
                     ["draw:same-frame-indexed-draw-not-observed"]
                     if usage_ordinal_map is not None
                     and not same_instance_candidates
@@ -460,20 +475,6 @@ def build_runtime_binding_evidence(
                         for x in valid_bound_frames
                     )
                     and not any(
-                        x.get("indexed_draw_present") is True
-                        for x in valid_bound_frames
-                    )
-                    else []
-                )
-                + (
-                    ["descriptor:bound-instance-no-match"]
-                    if usage_ordinal_map is not None
-                    and not same_instance_candidates
-                    and any(
-                        x["binding"].get("same_meb_resource") is True
-                        for x in frame_rows
-                    )
-                    and any(
                         x.get("indexed_draw_present") is True
                         for x in valid_bound_frames
                     )

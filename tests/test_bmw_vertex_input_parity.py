@@ -14,7 +14,7 @@ def _material(property_id='200', usage='POSITION', usage_index=0, location=0):
     }
 
 
-def _runtime(usage=0, type_code=1, shader_inputs=None):
+def _runtime(usage=0, type_code=2, shader_inputs=None):
     return {
         'format':'SHIFT.D3D9RuntimeBindingEvidence/1',
         'frames':[{'frame':1,
