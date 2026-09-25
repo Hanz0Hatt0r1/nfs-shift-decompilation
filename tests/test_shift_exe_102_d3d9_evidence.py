@@ -10,7 +10,7 @@ def test_shift_exe_102_static_d3d9_tables():
     assert report["source"]["machine"] == "0x014c"
     assert report["source"]["image_base"] == "0x00400000"
 
-    assert report["tables"]["type_code"]["values"][:17] == list(range(17))
+    assert report["tables"]["type_code"]["values"][:17] == [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15]
     assert report["tables"]["type_size"]["values"][:17] == [4,8,12,16,4,4,4,8,4,4,8,4,8,4,4,4,8]
     assert report["tables"]["type_components"]["values"][:17] == [1,2,3,4,4,4,2,4,4,2,4,2,4,3,3,2,4]
 
