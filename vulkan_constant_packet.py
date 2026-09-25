@@ -35,24 +35,40 @@ def build_vulkan_constant_packet(
 
     for submesh in command.get("submeshes", []) or []:
         payload = submesh.get("constant_payload") or {}
-        for row in payload.get("registers", []) or []:
-            stage = str(next(
-                (
-                    c.get("stage")
-                    for c in submesh.get("constant_commands", []) or []
-                    if int(c.get("register_index", -1)) == int(row.get("register_index", -1))
-                ),
-                "pixel",
-            )).lower()
-            if stage not in banks:
-                blockers.append(f"constant-packet:unsupported-stage:{stage}")
+        command_stage_by_register: dict[int, set[str]] = {}
+        for command_row in submesh.get("constant_commands", []) or []:
+            try:
+                register = int(command_row.get("register_index"))
+            except (TypeError, ValueError):
                 continue
+            stage = str(command_row.get("stage") or "").lower()
+            command_stage_by_register.setdefault(register, set()).add(stage)
+
+        for row in payload.get("registers", []) or []:
             try:
                 register = int(row.get("register_index"))
                 values = [float(v) for v in row.get("values")]
             except (TypeError, ValueError):
                 blockers.append("constant-packet:invalid-register")
                 continue
+            stages = {
+                stage for stage in command_stage_by_register.get(register, set())
+                if stage in banks
+            }
+            invalid_stages = command_stage_by_register.get(register, set()) - banks.keys()
+            if invalid_stages:
+                blockers.append(
+                    f"constant-packet:unsupported-stage:{sorted(invalid_stages)[0]}"
+                )
+                continue
+            if len(stages) != 1:
+                blockers.append(
+                    f"constant-packet:stage-ambiguous:{register}"
+                    if stages
+                    else f"constant-packet:stage-missing:{register}"
+                )
+                continue
+            stage = next(iter(stages))
             if register < 0 or register >= MAX_REGISTERS or len(values) != 4:
                 blockers.append(f"constant-packet:invalid-register:{stage}:{register}")
                 continue
