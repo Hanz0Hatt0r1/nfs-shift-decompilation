@@ -78,16 +78,23 @@ def build_bmw_vulkan_bundle(
     if mesh_source.get("format") not in {"SHIFT.MEB", None}:
         raise ValueError("mesh must be neutral SHIFT.MEB JSON")
 
-    commands = command_source.get("submeshes") or []
+    commands = command_source.get("render_commands") or []
     if command_index < 0 or command_index >= len(commands):
         raise ValueError(f"command index out of range: {command_index}")
+    selected_command = commands[command_index]
+    if not isinstance(selected_command, Mapping):
+        raise ValueError(f"render command {command_index} is not an object")
+
+    submeshes = selected_command.get("submeshes") or []
+    if submesh_index < 0 or submesh_index >= len(submeshes):
+        raise ValueError(f"submesh index out of range: {submesh_index}")
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    selected = dict(command_source)
-    selected["submeshes"] = [dict(commands[command_index])]
-    if (command_source.get("mesh") or {}).get("ref") != TARGET_MEB:
+    selected = dict(selected_command)
+    selected["submeshes"] = [dict(submeshes[submesh_index])]
+    if (selected.get("mesh") or {}).get("ref") != TARGET_MEB:
         raise ValueError("BMW Vulkan bundle requires the exact M3 KIT00 body MEB reference")
 
     geometry_path = out / "geometry.svpk"
