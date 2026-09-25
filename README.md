@@ -289,6 +289,20 @@ set SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR=C:\path\capture\
 
 ---
 
+## Wine-native D3D9 producer
+
+The preferred runtime capture path is now a modified 32-bit Wine 10.0
+d3d9.dll rather than the experimental MinGW proxy. The integration lives under
+[wine_capture](wine_capture/README.md) and is injected reproducibly into a clean
+Wine source tree.
+
+Build the Wine-side producer:
+
+    tools/build_wine_d3d9_capture.sh /path/to/wine-10.0
+
+Then place the generated PE d3d9.dll beside the retail SHIFT executable and
+enable it with WINEDLLOVERRIDES="d3d9=n" plus SHIFT_D3D9_CAPTURE.
+
 # BMW runtime capture preflight
 
 Для быстрой проверки внешнего capture без запуска полного render pipeline:
