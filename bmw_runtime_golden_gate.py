@@ -8,6 +8,7 @@ from typing import Any
 
 from bmw_runtime_parity import validate_files as validate_runtime_parity_files
 from bmw_runtime_draw_correlation import correlate_runtime_draw
+from bmw_runtime_shader_join import _runtime_draw_states
 from bmw_vertex_input_parity import validate_bmw_vertex_input_parity
 from render_command_constant_parity import validate_render_command_constant_parity
 
@@ -50,32 +51,47 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
             'runtime-same-instance:' + str(reason)
             for reason in (same_instance_gate.get('blocking_reasons') or ['not-proven'])
         )
-    matched_frame_ids = {
-        row.get('frame')
-        for row in (parity.get('shader_join', {}).get('candidate_frames') or [])
-    }
-    runtime_frames = [
-        frame for frame in runtime.get('frames') or []
-        if frame.get('frame') in matched_frame_ids
-    ]
-    for frame in runtime_frames:
+    matched_candidates = parity.get('shader_join', {}).get('candidate_frames') or []
+    runtime_states = list(_runtime_draw_states(runtime))
+    matched_state_count = 0
+    for candidate in matched_candidates:
+        frame_id = candidate.get('frame')
+        draw_index = candidate.get('draw_index')
+        state = None
+        if draw_index is not None:
+            state = next(
+                (
+                    snapshot
+                    for frame, snapshot, source in runtime_states
+                    if frame.get('frame') == frame_id
+                    and source == 'draw-snapshot'
+                    and snapshot.get('draw_index') == draw_index
+                ),
+                None,
+            )
+        else:
+            state = next((frame for frame in runtime.get('frames') or [] if frame.get('frame') == frame_id), None)
+        if state is None:
+            reasons.append(f"runtime-frame:{frame_id}:matched-state-missing")
+            continue
+        matched_state_count += 1
         missing = []
-        binding = frame.get('vertex_declaration') or {}
+        binding = state.get('vertex_declaration') or {}
         if not binding.get('create_known'):
             missing.append('declaration')
         for key in ('vertex_shader', 'pixel_shader'):
-            if not (frame.get(key) or {}).get('create_known'):
+            if not (state.get(key) or {}).get('create_known'):
                 missing.append(key)
-        if not frame.get('stream_sources'):
+        if not state.get('stream_sources'):
             missing.append('stream')
-        if not frame.get('index_binding'):
+        if not state.get('index_binding'):
             missing.append('indices')
-        if not frame.get('draws'):
+        if not state.get('draw') and not state.get('draws'):
             missing.append('draw')
         if missing:
-            reasons.append(f"runtime-frame:{frame.get('frame')}:state-incomplete")
-    if parity.get('matched_frame_count') and not runtime_frames:
-        reasons.append('runtime-frame:matched-frame-missing')
+            reasons.append(f"runtime-frame:{frame_id}:{draw_index if draw_index is not None else 'aggregate'}:state-incomplete")
+    if parity.get('matched_frame_count') and not matched_state_count:
+        reasons.append('runtime-frame:matched-state-missing')
     if isinstance(command, dict):
         constant_parity = validate_render_command_constant_parity(command)
         reasons.extend(constant_parity.get('blocking_reasons') or [])
