@@ -12,11 +12,14 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
     blockers: list[dict[str, Any]] = []
     event_count = 0
     observed_event_indices: list[int] = []
+    event_index_field_count = 0
 
     for line_index, raw in enumerate(events, 1):
         row = dict(raw); event_count += 1
-        if 'event_index' in row and isinstance(row.get('event_index'), int):
-            observed_event_indices.append(row['event_index'])
+        if 'event_index' in row:
+            event_index_field_count += 1
+            if isinstance(row.get('event_index'), int):
+                observed_event_indices.append(row['event_index'])
         frame_key = str(row.get('frame', 'unknown'))
         state = frame_state.setdefault(frame_key, {'declaration': False, 'vertex_shader': False, 'pixel_shader': False, 'stream': False, 'indices': False, 'draws': 0})
         event = row.get('event')
@@ -49,6 +52,13 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
             missing = [key for key, present in [('declaration', state['declaration']), ('vertex_shader', state['vertex_shader']), ('pixel_shader', state['pixel_shader']), ('stream', state['stream']), ('indices', state['indices'])] if not present]
             if missing: blockers.append({'line': row.get('_line', line_index), 'reason': 'draw-state-incomplete', 'frame': row.get('frame'), 'missing': missing})
 
+    if event_index_field_count and event_index_field_count != event_count:
+        blockers.append({
+            'line': None,
+            'reason': 'event-index-partial',
+            'observed': event_index_field_count,
+            'event_count': event_count,
+        })
     if observed_event_indices:
         expected_indices = list(range(
             observed_event_indices[0],
@@ -74,11 +84,18 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
         'created_shader_count': len(created_shaders),
         'event_index': {
             'status': (
-                'valid' if not observed_event_indices or not any(
-                    reason.get('reason') == 'event-index-not-contiguous'
-                    for reason in blockers
-                    if isinstance(reason, dict)
-                ) else 'invalid'
+                'valid'
+                if not event_index_field_count
+                else (
+                    'valid'
+                    if event_index_field_count == event_count
+                    and not any(
+                        reason.get('reason') in {'event-index-not-contiguous', 'event-index-partial'}
+                        for reason in blockers
+                        if isinstance(reason, dict)
+                    )
+                    else 'invalid'
+                )
             ),
             'observed_count': len(observed_event_indices),
             'first': observed_event_indices[0] if observed_event_indices else None,
