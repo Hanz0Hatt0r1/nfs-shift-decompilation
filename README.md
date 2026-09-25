@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 253.**
+> **Current mainline: Phase 254.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -38,6 +38,8 @@
 
 >
 > **BMW capture preflight:** `SHIFT.BMWRuntimeCapturePreflight/1` locates exact target-MEB and paint-range draw candidates before shader execution; it is diagnostic and does not replace the strict same-instance gate.
+
+> **Camera runtime:** Phase 254 reconstructs CameraConfig and TrackCameraMan loader paths, registered Trackside Cams/Splines/Areas groups, class/id/data XML object boundaries and static/tracking/area property registrations. Camera behavior remains unresolved and renderer/RENDER.bff are unchanged.
 
 > **Linux/Vulkan direction:** Phase 203 establishes Linux as the primary renderer lab. Vulkan is the native backend target, while the software reference renderer remains the deterministic oracle.
 
@@ -138,6 +140,7 @@ Weak or unresolved behavior remains explicitly marked as `unknown`, `inferred`, 
 | RenderCommand | ✅ | resources, constants, vertex ABI, readiness and blockers |
 | Desktop renderer | 🟢 | geometry, textures, multi-sampler, cube maps, VS→PS linkage and captured shader execution |
 | Skinning | 🟢 | explicit SkinPose, CPU LBS oracle and GLES ABI |
+| Camera / TrackCameraMan | 🟡 | CameraConfig loader paths, XML object boundary and property-registration evidence |
 | D3D9 runtime capture | 🟢 | declarations, streams, indices, shaders, constants, textures and resource descriptors |
 | BMW post-capture pipeline | 🟢 | one-command evidence → shader selection → render contract → offline render |
 | Android runtime | ⏳ | follows stabilization of the desktop/runtime boundary |
