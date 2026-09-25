@@ -107,7 +107,7 @@ def build_runtime_binding_evidence(
     shaders: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
-        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "screenshot_events": [], "draws": [],
+        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
     })
     blockers: list[dict[str, Any]] = []
 
@@ -243,11 +243,27 @@ def build_runtime_binding_evidence(
                 "line": row.get("_line"),
             })
         elif event == "draw_indexed_primitive":
-            frame["draws"].append({
+            draw = {
                 "primitive_count": row.get("primitive_count"),
                 "start_index": row.get("start_index"),
                 "base_vertex_index": row.get("base_vertex_index"),
                 "line": row.get("_line"),
+            }
+            frame["draws"].append(draw)
+            # Freeze the complete D3D9 state at the exact draw boundary. A
+            # frame-level aggregate is insufficient for same-instance proof:
+            # later state changes in the same frame must not retroactively
+            # change which declaration/shaders/buffers were used by this draw.
+            frame["draw_snapshots"].append({
+                "draw_index": len(frame["draws"]) - 1,
+                "draw": dict(draw),
+                "vertex_declaration": dict(frame["vertex_declaration"] or {}),
+                "vertex_shader": dict(frame["vertex_shader"] or {}),
+                "pixel_shader": dict(frame["pixel_shader"] or {}),
+                "stream_sources": [dict(x) for x in frame["stream_sources"]],
+                "index_binding": dict(frame["index_binding"] or {}),
+                "texture_bindings": [dict(x) for x in frame["texture_bindings"]],
+                "constant_writes": [dict(x) for x in frame["constant_writes"]],
             })
 
     correlation: dict[str, Any] = {
@@ -301,14 +317,15 @@ def build_runtime_binding_evidence(
     frame_rows: list[dict[str, Any]] = []
     for frame_key in sorted(frames, key=_sort_key):
         frame = frames[frame_key]
-        binding = frame["vertex_declaration"]
-        same_resource = None
-        if binding and meb_resource is not None:
+        frame_binding = frame["vertex_declaration"]
+        frame_same_resource = None
+        if frame_binding and meb_resource is not None:
             identity = correlation["resource_identity"] or {}
-            if binding.get("resource_sha256") and identity.get("resource_sha256"):
-                same_resource = binding["resource_sha256"] == identity["resource_sha256"]
-            elif binding.get("resource_path") and identity.get("resource_path"):
-                same_resource = _norm(binding["resource_path"]) == _norm(identity["resource_path"])
+            if frame_binding.get("resource_sha256") and identity.get("resource_sha256"):
+                frame_same_resource = frame_binding["resource_sha256"] == identity["resource_sha256"]
+            elif frame_binding.get("resource_path") and identity.get("resource_path"):
+                frame_same_resource = _norm(frame_binding["resource_path"]) == _norm(identity["resource_path"])
+
         shader_pair_identity = None
         vs = frame.get("vertex_shader") or {}
         ps = frame.get("pixel_shader") or {}
@@ -324,72 +341,84 @@ def build_runtime_binding_evidence(
                     pixel_offset=len(vraw),
                 )
             except Exception as exc:
-                shader_pair_identity = {
-                    "status": "error",
-                    "error": f"{type(exc).__name__}: {exc}",
-                }
-        binding_ptr = (binding or {}).get("declaration_ptr")
-        bound_decl = declarations.get(binding_ptr) if binding_ptr else None
-        bound_decl_decoded = (bound_decl or {}).get("decoded") or {}
-        bound_decl_valid = bool(
-            bound_decl
-            and bound_decl_decoded.get("status") == "match"
-        )
+                shader_pair_identity = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
 
-        draw_present = bool(frame.get("draws"))
-        frame_candidate = {
-            "frame": frame.get("frame"),
-            "declaration_ptr": binding_ptr,
-            "same_meb_resource": same_resource,
-            "declaration_create_known": bool(binding and binding.get("create_known")),
-            "declaration_decode_status": bound_decl_decoded.get("status"),
-            "bound_declaration_valid": bound_decl_valid,
-            "indexed_draw_present": draw_present,
-            "descriptor_matches": [],
-        }
-        if bound_decl_valid and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
-            bound_records = bound_decl_decoded.get("records", [])
-            for descriptor in meb_resource.get("property_descriptors", []):
-                if not isinstance(descriptor, Mapping):
-                    continue
-                words = descriptor.get("words")
-                if not isinstance(words, list) or len(words) < 3:
-                    continue
-                type_ordinal, usage_ordinal, channel = map(int, words[:3])
-                runtime_usage = usage_ordinal_map.get(usage_ordinal)
-                matched_records = [
-                    record for record in bound_records
-                    if record.get("type") == type_ordinal
-                    and record.get("usage") == runtime_usage
-                    and record.get("usage_index") == channel
-                ]
-                if matched_records:
-                    frame_candidate["descriptor_matches"].append({
-                        "property_id": str(descriptor.get("id")),
-                        "type_ordinal": type_ordinal,
-                        "usage_ordinal": usage_ordinal,
-                        "runtime_usage": runtime_usage,
-                        "channel": channel,
-                        "record_indices": [record.get("index") for record in matched_records],
-                    })
-        if bound_decl_valid and same_resource is True:
-            valid_bound_frames.append(frame_candidate)
-        if (
-            frame_candidate["descriptor_matches"]
-            and draw_present
-        ):
-            same_instance_candidates.append(frame_candidate)
-
+        # Observational frame summary remains available for compatibility.
         frame_rows.append({
             **frame,
             "shader_permutation_identity": shader_pair_identity,
             "binding": {
-                "status": "observed" if binding and binding.get("create_known") else ("partial" if binding else "not-observed"),
-                "same_meb_resource": same_resource,
-                "declaration_decode_status": bound_decl_decoded.get("status"),
-                "bound_declaration_valid": bound_decl_valid,
+                "status": "observed" if frame_binding and frame_binding.get("create_known") else ("partial" if frame_binding else "not-observed"),
+                "same_meb_resource": frame_same_resource,
+                "declaration_decode_status": (
+                    (declarations.get(_ptr((frame_binding or {}).get("declaration_ptr")) if frame_binding else None) or {}).get("decoded", {}) or {}
+                ).get("status"),
+                "bound_declaration_valid": bool(
+                    frame_binding
+                    and (declarations.get(_ptr(frame_binding.get("declaration_ptr"))) or {}).get("decoded", {}).get("status") == "match"
+                ),
             },
         })
+
+        # Same-instance proof is now draw-local. State observed after a draw
+        # cannot be used to authenticate that earlier draw.
+        for snapshot in frame.get("draw_snapshots") or []:
+            binding = snapshot.get("vertex_declaration") or {}
+            same_resource = None
+            if binding and meb_resource is not None:
+                identity = correlation["resource_identity"] or {}
+                if binding.get("resource_sha256") and identity.get("resource_sha256"):
+                    same_resource = binding["resource_sha256"] == identity["resource_sha256"]
+                elif binding.get("resource_path") and identity.get("resource_path"):
+                    same_resource = _norm(binding["resource_path"]) == _norm(identity["resource_path"])
+
+            binding_ptr = binding.get("declaration_ptr")
+            bound_decl = declarations.get(binding_ptr) if binding_ptr else None
+            bound_decl_decoded = (bound_decl or {}).get("decoded") or {}
+            bound_decl_valid = bool(bound_decl and bound_decl_decoded.get("status") == "match")
+            frame_candidate = {
+                "frame": frame.get("frame"),
+                "draw_index": snapshot.get("draw_index"),
+                "draw": dict(snapshot.get("draw") or {}),
+                "declaration_ptr": binding_ptr,
+                "same_meb_resource": same_resource,
+                "declaration_create_known": bool(binding.get("create_known")),
+                "declaration_decode_status": bound_decl_decoded.get("status"),
+                "bound_declaration_valid": bound_decl_valid,
+                "indexed_draw_present": True,
+                "descriptor_matches": [],
+            }
+
+            if bound_decl_valid and usage_ordinal_map is not None and same_resource is True and meb_resource is not None:
+                bound_records = bound_decl_decoded.get("records", [])
+                for descriptor in meb_resource.get("property_descriptors", []):
+                    if not isinstance(descriptor, Mapping):
+                        continue
+                    words = descriptor.get("words")
+                    if not isinstance(words, list) or len(words) < 3:
+                        continue
+                    type_ordinal, usage_ordinal, channel = map(int, words[:3])
+                    runtime_usage = usage_ordinal_map.get(usage_ordinal)
+                    matched_records = [
+                        record for record in bound_records
+                        if record.get("type") == type_ordinal
+                        and record.get("usage") == runtime_usage
+                        and record.get("usage_index") == channel
+                    ]
+                    if matched_records:
+                        frame_candidate["descriptor_matches"].append({
+                            "property_id": str(descriptor.get("id")),
+                            "type_ordinal": type_ordinal,
+                            "usage_ordinal": usage_ordinal,
+                            "runtime_usage": runtime_usage,
+                            "channel": channel,
+                            "record_indices": [record.get("index") for record in matched_records],
+                        })
+
+            if bound_decl_valid and same_resource is True:
+                valid_bound_frames.append(frame_candidate)
+            if frame_candidate["descriptor_matches"]:
+                same_instance_candidates.append(frame_candidate)
 
     return {
         "format": FORMAT,
