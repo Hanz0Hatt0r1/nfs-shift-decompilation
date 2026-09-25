@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from bmw_runtime_shader_join import _runtime_draw_states
+from runtime_resource_identity import match_resource_identity
 
 FORMAT = "SHIFT.BMWRuntimeDrawCorrelation/1"
 
@@ -82,19 +83,13 @@ def correlate_runtime_draw(material_slice: Mapping[str, Any], runtime_report: Ma
             except (TypeError, ValueError):
                 continue
             binding = state.get('vertex_declaration') or {}
-            actual_resource_sha = str(binding.get('resource_sha256') or '').strip().lower() or None
-            actual_resource_path = str(binding.get('resource_path') or '').replace('\\', '/').strip('/').lower() or None
-            if expected_resource_sha:
-                resource_match = actual_resource_sha == expected_resource_sha
-                resource_status = 'exact-sha-match' if resource_match else (
-                    'sha-missing' if not actual_resource_sha else 'sha-mismatch'
-                )
-            elif expected_resource_path:
-                resource_match = actual_resource_path == expected_resource_path
-                resource_status = 'path-match' if resource_match else 'path-mismatch'
-            else:
+            resource_match, resource_status = match_resource_identity(
+                binding,
+                expected_sha256=expected_resource_sha,
+                expected_path=expected_resource_path,
+            )
+            if resource_match is None:
                 resource_match = True
-                resource_status = 'identity-not-supplied'
             row = {
                 'frame': frame.get('frame'),
                 'draw_index': draw_index,
