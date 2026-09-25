@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 252.**
+> **Current mainline: Phase 253.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -769,3 +769,8 @@ Phase 251 follows NODE object_payload references into the source-backed OBJECT/H
 ## FLAT tree runtime
 
 Phase 252 adds flat_runtime.py and the flat-runtime CLI. It reconstructs the runtime FLAT tree layout used after SGB FLAT payload ingestion, including recursive node spans and 0x40-byte leaf records. Unresolved leaf meanings remain raw. Renderer and RENDER.bff work remain deferred.
+
+
+## MATRIX runtime
+
+Phase 253 adds a shared source-backed MATRIX contract for scene/object transforms: Offset, Orientation reordering and optional Scale. It is used as a neutral runtime primitive and does not modify the renderer or RENDER.bff workflow.
