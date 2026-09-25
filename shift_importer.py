@@ -3619,7 +3619,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.FLATRuntime/1 JSON output")
     p.add_argument("--allow-partial", action="store_true")
     p.add_argument("--max-depth", type=int, default=64)
-    p.set_defaults(fn=cmd_flat_runtime)    p = sp.add_parser("color-evidence-corpus", help="aggregate multiple COLOR ABI evidence JSON reports without selecting an ABI")
+    p.set_defaults(fn=cmd_flat_runtime)
+
+    p = sp.add_parser("color-evidence-corpus", help="aggregate multiple COLOR ABI evidence JSON reports without selecting an ABI")
     p.add_argument("input", nargs="+", help="evidence JSON file(s) or directories")
     p.add_argument("output", help="SHIFT.ColorABICorpusEvidence/1 JSON output")
     p.set_defaults(fn=cmd_color_evidence_corpus)
