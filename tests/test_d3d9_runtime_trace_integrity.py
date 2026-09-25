@@ -72,3 +72,16 @@ def test_runtime_trace_integrity_keeps_legacy_no_event_index_fixtures_valid():
     report = validate_runtime_trace_integrity(_complete_events())
     assert report["event_index"]["status"] == "valid"
     assert report["event_index"]["observed_count"] == 0
+
+
+def test_runtime_trace_integrity_rejects_partial_event_index_metadata():
+    events = [
+        dict(_complete_events()[0], event_index=0),
+        *_complete_events()[1:],
+    ]
+    report = validate_runtime_trace_integrity(events)
+    assert report["event_index"]["status"] == "invalid"
+    assert any(
+        x["reason"] == "event-index-partial"
+        for x in report["blocking_reasons"]
+    )
