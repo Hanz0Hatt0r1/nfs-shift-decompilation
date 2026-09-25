@@ -78,3 +78,10 @@ def test_mingw_d3d9_proxy_static_runtime_linking():
     assert '-static-libgcc' in cmake
     assert '-static-libstdc++' in cmake
     assert '-Wl,-Bstatic,-lwinpthread,-Bdynamic' in cmake
+
+
+def test_linux_mingw_toolchain_targets_32bit_windows():
+    toolchain = Path("native_capture/toolchains/mingw-i686.cmake").read_text(encoding="utf-8")
+    assert "set(CMAKE_SYSTEM_NAME Windows)" in toolchain
+    assert "set(CMAKE_SYSTEM_PROCESSOR x86)" in toolchain
+    assert "i686-w64-mingw32-g++" in toolchain
