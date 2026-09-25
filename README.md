@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 234.**
+> **Current mainline: Phase 235.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -701,3 +701,6 @@ See [NOTICE.md](NOTICE.md).
 
 
 > **Phase 234:** VertexLayout ABI status mapping is now immutable, eliminating cross-test/runtime mutation as a source of confidence-state drift.
+
+
+> **Phase 235:** the existing DDS decoder now feeds the native Vulkan texture/cubemap packet builders with source and decoded-pixel provenance; real BMW resource selection remains a separate evidence-bound step.
