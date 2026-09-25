@@ -107,7 +107,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
         for key in ('vertex_shader', 'pixel_shader'):
             if not (state.get(key) or {}).get('create_known'):
                 missing.append(key)
-        if not state.get('stream_sources'):
+        if not (state.get('active_stream_sources') or state.get('stream_sources')):
             missing.append('stream')
         if not state.get('index_binding'):
             missing.append('indices')
