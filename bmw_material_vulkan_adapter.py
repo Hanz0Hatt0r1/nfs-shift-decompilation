@@ -113,9 +113,9 @@ def _extract_exact_material_dds(
     provenance: list[dict[str, Any]] = []
     blockers: list[str] = []
 
+    source_bff_list = [Path(path) for path in source_bffs]
     archives: list[tuple[Path, Any]] = []
-    for raw_path in source_bffs:
-        path = Path(raw_path)
+    for path in source_bff_list:
         try:
             archives.append((path, BFF(path)))
         except Exception as error:
@@ -186,7 +186,6 @@ def _extract_exact_material_dds(
                 "path": getattr(entry, "path", ref),
                 "source_sha256": digest,
                 "expected_sha256": expected,
-                "temporary_path": str(target),
             })
     finally:
         for _, archive in archives:
@@ -300,16 +299,17 @@ def build_bmw_vulkan_from_material_slice(
 
     bundle_dir = Path(output_dir)
     bundle_dir.mkdir(parents=True, exist_ok=True)
+    source_bff_list = [Path(path) for path in source_bffs]
     source_dds_map: dict[str, str] = {}
     dds_provenance: list[dict[str, Any]] = []
     dds_blockers: list[str] = []
 
     with TemporaryDirectory(prefix="shift_bmw_dds_") as temp_dir:
-        if source_bffs:
+        if source_bff_list:
             source_dds_map, dds_provenance, dds_blockers = _extract_exact_material_dds(
                 payload,
                 command,
-                source_bffs,
+                source_bff_list,
                 Path(temp_dir),
                 submesh_index=submesh_index,
             )
@@ -370,7 +370,7 @@ def build_bmw_vulkan_from_material_slice(
         "target_meb": TARGET_MEB,
         "submesh_index": submesh_index,
         "dds_sources": dds_provenance,
-        "dds_source_bffs": [str(Path(path)) for path in source_bffs],
+        "dds_source_bffs": [str(path) for path in source_bff_list],
     }
     source_path = Path(output_dir) / "material_slice_source.json"
     source_path.write_text(
