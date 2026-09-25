@@ -267,6 +267,18 @@ def analyze_d3d9_pe_image(
         ],
         "tables": tables,
         "decoded_tables": {
+            "type_code": [
+                {"ordinal": ordinal, "value": value}
+                for ordinal, value in enumerate(type_code_values)
+            ],
+            "type_size": [
+                {"ordinal": ordinal, "value": value}
+                for ordinal, value in enumerate(type_size_values)
+            ],
+            "type_components": [
+                {"ordinal": ordinal, "value": value}
+                for ordinal, value in enumerate(type_component_values)
+            ],
             "usage": [
                 {"ordinal": ordinal, "value": value}
                 for ordinal, value in enumerate(usage_values)
