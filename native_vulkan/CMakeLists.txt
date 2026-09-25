@@ -51,10 +51,9 @@ else()
   message(STATUS "glslangValidator not found; headless triangle target will not be built")
 endif()
 
-add_executable(shift_vulkan_render_geometry src/vulkan_render_geometry.cpp)
-target_link_libraries(shift_vulkan_render_geometry PRIVATE Vulkan::Vulkan)
-
 if(GLSLANG_VALIDATOR)
+  add_executable(shift_vulkan_render_geometry src/vulkan_render_geometry.cpp)
+  target_link_libraries(shift_vulkan_render_geometry PRIVATE Vulkan::Vulkan)
   add_custom_command(
     OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/geometry.vert.spv
     COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
@@ -80,5 +79,5 @@ if(GLSLANG_VALIDATOR)
   )
   add_dependencies(shift_vulkan_render_geometry shift_vulkan_geometry_shaders)
 else()
-  message(STATUS "glslangValidator not found; geometry shader target will not be buildable")
+  message(STATUS "glslangValidator not found; geometry shader target will not be built")
 endif()
