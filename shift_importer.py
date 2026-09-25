@@ -1534,6 +1534,40 @@ def cmd_camera_view_defaults(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_camera_switch_gate(args: argparse.Namespace) -> int:
+    """Evaluate the recovered CameraManager switch-request fast path."""
+    from camera_switch_gate_runtime import CameraSwitchState, evaluate_switch_gate
+
+    payload = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    state_data = payload.get("state", payload)
+    state = CameraSwitchState(
+        mode=state_data["mode"],
+        sub_index=state_data.get("sub_index", -1),
+        sub_flag=state_data.get("sub_flag", 0),
+        camera_id=state_data.get("camera_id", -1),
+        dirty=bool(state_data.get("dirty", False)),
+    )
+    result = evaluate_switch_gate(
+        state,
+        requested_mode=payload["requested_mode"],
+        requested_sub_index=payload.get("requested_sub_index", -1),
+        requested_sub_flag=payload.get("requested_sub_flag", 0),
+        requested_camera_id=payload.get("requested_camera_id", -1),
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "transition_required": result["transition_required"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_camera_activation(args: argparse.Namespace) -> int:
     """Apply the recovered FUN_0080e1b0 camera activation transition."""
     from camera_activation_runtime import CameraActivationState, activate_camera
@@ -3403,6 +3437,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = sp.add_parser("camera-view-defaults", help="emit recovered CCameraView projection defaults")
     p.add_argument("output", help="SHIFT.CameraViewDefaultRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_view_defaults)
+
+    p = sp.add_parser("camera-switch-gate", help="evaluate recovered CameraManager switch fast path")
+    p.add_argument("input", help="JSON switch request/state")
+    p.add_argument("output", help="SHIFT.CameraSwitchGateRuntime/1 JSON output")
+    p.set_defaults(fn=cmd_camera_switch_gate)
 
     p = sp.add_parser("camera-activation", help="apply recovered camera activation state transition")
     p.add_argument("input", help="JSON activation request/state")

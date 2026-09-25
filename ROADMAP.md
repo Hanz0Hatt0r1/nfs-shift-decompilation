@@ -1324,3 +1324,8 @@ trackside_camera_selection_runtime.py reconstructs FUN_008119b0's minimum-score 
 ## Phase 260: Camera activation state transition
 
 camera_activation_runtime.py reconstructs FUN_0080e1b0 from selected camera id to active runtime state: effective group fallback, prior-group deactivation, negative-id/no-op/lookup-failure paths, tracking/static activation modes, and active camera update. Callback bodies and camera behavior remain outside the contract.
+
+
+## Phase 261: CameraManager switch-request gate
+
+camera_switch_gate_runtime.py reconstructs the fast-path equality and dirty-state gate in FUN_0080d3d0. Matching clean requests are preserved as a no-op; mismatched or dirty requests clear the dirty state and require a transition while retaining the current integer mode/index fields without inventing higher-level names.
