@@ -150,7 +150,7 @@ def test_dds_bridge_reports_decode_failures_instead_of_raising(tmp_path):
     assert any(reason.startswith("dds-bridge:decode-failed:s1:") for reason in result["blocking_reasons"])
 
 
-def test_dds_bridge_does_not_double-report_incompatible_2d_resource_as_missing(tmp_path):
+def test_dds_bridge_does_not_double_report_incompatible_2d_resource_as_missing(tmp_path):
     cube = tmp_path / "bad-kind.dds"
     _write_cube(cube)
     result = bridge_bmw_dds_resources(
