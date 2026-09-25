@@ -143,3 +143,34 @@ if(GLSLANG_VALIDATOR)
 else()
   message(STATUS "glslangValidator not found; texture upload target will not be built")
 endif()
+
+if(GLSLANG_VALIDATOR)
+  add_executable(shift_vulkan_sampler_cube src/vulkan_sampler_cube.cpp)
+  target_link_libraries(shift_vulkan_sampler_cube PRIVATE Vulkan::Vulkan)
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/cube.vert.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.vert
+            -o ${SHIFT_VULKAN_SHADER_DIR}/cube.vert.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.vert
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${SHIFT_VULKAN_SHADER_DIR}/cube.frag.spv
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${SHIFT_VULKAN_SHADER_DIR}
+    COMMAND ${GLSLANG_VALIDATOR} -V
+            ${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.frag
+            -o ${SHIFT_VULKAN_SHADER_DIR}/cube.frag.spv
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.frag
+    VERBATIM
+  )
+  add_custom_target(shift_vulkan_cube_shaders
+    DEPENDS
+      ${SHIFT_VULKAN_SHADER_DIR}/cube.vert.spv
+      ${SHIFT_VULKAN_SHADER_DIR}/cube.frag.spv
+  )
+  add_dependencies(shift_vulkan_sampler_cube shift_vulkan_cube_shaders)
+else()
+  message(STATUS "glslangValidator not found; samplerCube target will not be built")
+endif()
