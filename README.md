@@ -270,7 +270,7 @@ python bmw_runtime_capture_preflight.py \
   --resource-sha256 960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c
 ```
 
-Команда ищет exact target-MEB draw и документированные paint ranges. Результат
+Команда по умолчанию проверяет exact retail M3 MEB SHA, ищет target-MEB draw и документированные paint ranges. Результат
 диагностический и не заменяет strict same-instance gate.
 
 # One-command BMW post-capture pipeline
