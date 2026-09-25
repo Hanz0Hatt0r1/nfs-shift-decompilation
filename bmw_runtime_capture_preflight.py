@@ -19,18 +19,24 @@ def _norm(value: Any) -> str:
     return str(value or "").replace("\\", "/").strip("/").lower()
 
 
-def _same_resource(
+def _resource_identity(
     binding: Mapping[str, Any],
     expected_resource_sha: str | None,
     expected_resource_path: str,
-) -> bool:
+) -> tuple[bool, str]:
     actual_sha = binding.get("resource_sha256")
+    actual_path = binding.get("resource_path")
     if expected_resource_sha:
         if not actual_sha:
-            return False
-        return str(actual_sha).strip().lower() == str(expected_resource_sha).strip().lower()
-    actual_path = binding.get("resource_path")
-    return bool(actual_path and _norm(actual_path) == _norm(expected_resource_path))
+            if actual_path and _norm(actual_path) == _norm(expected_resource_path):
+                return False, "path-match-sha-missing"
+            return False, "sha-missing"
+        if str(actual_sha).strip().lower() == str(expected_resource_sha).strip().lower():
+            return True, "exact-sha-match"
+        return False, "sha-mismatch"
+    if actual_path and _norm(actual_path) == _norm(expected_resource_path):
+        return True, "path-match"
+    return False, "path-mismatch"
 
 
 def _draw_rows(
@@ -81,11 +87,12 @@ def preflight_bmw_runtime(
         raise ValueError("input is not SHIFT.D3D9RuntimeBindingEvidence/1")
 
     resource_draws: list[dict[str, Any]] = []
+    resource_identity_diagnostics: list[dict[str, Any]] = []
     paint_draws: list[dict[str, Any]] = []
 
     for frame, state, source in _runtime_draw_states(runtime_report):
         binding = state.get("vertex_declaration") or {}
-        same_resource = _same_resource(
+        same_resource, resource_identity_status = _resource_identity(
             binding,
             expected_resource_sha,
             expected_resource_path,
@@ -106,6 +113,7 @@ def preflight_bmw_runtime(
                 "start_index": start_index,
                 "primitive_count": primitive_count,
                 "same_target_resource": same_resource,
+                "resource_identity_status": resource_identity_status,
                 "shader_identity": (
                     (state.get("shader_permutation_identity") or {}).get("identity_sha256")
                 ),
@@ -125,6 +133,13 @@ def preflight_bmw_runtime(
                     if isinstance(value, Mapping) and value
                 ),
             }
+            if not same_resource:
+                diagnostic_row = {
+                    key: value for key, value in row.items()
+                    if key in ("frame", "draw_index", "source", "start_index", "primitive_count",
+                               "resource_identity_status", "shader_identity")
+                }
+                resource_identity_diagnostics.append(diagnostic_row)
             if same_resource:
                 resource_draws.append(row)
                 index_count = primitive_count * 3
@@ -180,6 +195,7 @@ def preflight_bmw_runtime(
             "same_instance_ready": same_instance.get("ready") is True,
         },
         "resource_draw_candidates": resource_draws,
+        "resource_identity_diagnostics": resource_identity_diagnostics,
         "paint_draw_candidates": paint_draws,
         "proven_paint_draw_candidates": proven_paint_draws,
         "blocking_reasons": (
