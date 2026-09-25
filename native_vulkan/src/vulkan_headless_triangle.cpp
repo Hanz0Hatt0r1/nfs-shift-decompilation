@@ -283,12 +283,19 @@ int main(int argc, char** argv) {
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &color_ref;
 
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        VkSubpassDependency dependencies[2]{};
+        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[0].dstSubpass = 0;
+        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        dependencies[1].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
         VkRenderPassCreateInfo render_pass_info{};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -296,8 +303,8 @@ int main(int argc, char** argv) {
         render_pass_info.pAttachments = &color_attachment;
         render_pass_info.subpassCount = 1;
         render_pass_info.pSubpasses = &subpass;
-        render_pass_info.dependencyCount = 1;
-        render_pass_info.pDependencies = &dependency;
+        render_pass_info.dependencyCount = 2;
+        render_pass_info.pDependencies = dependencies;
         check(vkCreateRenderPass(ctx.device, &render_pass_info, nullptr, &render_pass),
               "vkCreateRenderPass failed");
 
