@@ -217,7 +217,9 @@ def select_runtime_shader(
 
     matches: list[dict[str, Any]] = []
     for frame, state, state_source in _runtime_draw_states(runtime_report):
-        identity = _runtime_identity(state) or _runtime_identity(frame)
+        identity = _runtime_identity(state)
+        if identity is None and state_source == 'frame-aggregate':
+            identity = _runtime_identity(frame)
         if identity is None:
             continue
         same_resource = _same_resource(material_input, state)
