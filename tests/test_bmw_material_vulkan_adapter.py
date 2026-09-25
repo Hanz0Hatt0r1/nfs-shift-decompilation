@@ -157,6 +157,7 @@ def test_material_slice_can_bridge_exact_bff_dds_into_vulkan_packet(monkeypatch,
     assert result["ready"] is True, result["blocking_reasons"]
     assert result["bundle"]["artifacts"]["textures"]["path"] == "textures.svtp"
     assert result["dds_bridge"]["ready"] is True
+    assert result["dds_bridge"] == result["bundle"]["dds_bridge"]
     assert result["dds_bridge"]["blocking_reasons"] == []
     assert result["source"]["dds_sources"][0]["source_sha256"] == hashlib.sha256(dds_payload).hexdigest()
     assert "temporary_path" not in result["source"]["dds_sources"][0]
@@ -206,6 +207,7 @@ def test_material_slice_blocks_when_exact_bff_dds_sha_mismatches(monkeypatch, tm
         for reason in result["blocking_reasons"]
     )
     assert result["dds_bridge"]["ready"] is False
+    assert result["dds_bridge"]["status"] == "blocked"
 
 
 def test_adapter_merge_recomputes_ready_from_final_blockers(tmp_path):
