@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from bmw_runtime_shader_join import join_runtime_shader
+from bmw_runtime_shader_join import _runtime_draw_states, join_runtime_shader
 from bmw_meb_descriptor_parity import validate_meb_descriptor_parity
 
 FORMAT = "SHIFT.BMWVertexInputParity/1"
@@ -35,12 +35,27 @@ def validate_bmw_vertex_input_parity(
             'physical_layout': {'status': 'not-comparable-by-design'},
         }
 
-    frame = join['candidate_frames'][0]
+    candidate = join['candidate_frames'][0]
     runtime_frame = next(
-        (f for f in runtime_report.get('frames') or [] if f.get('frame') == frame.get('frame')),
+        (f for f in runtime_report.get('frames') or [] if f.get('frame') == candidate.get('frame')),
         None,
     ) or {}
-    declaration = runtime_frame.get('vertex_declaration') or {}
+    runtime_state = runtime_frame
+    draw_index = candidate.get('draw_index')
+    if draw_index is not None:
+        runtime_state = next(
+            (
+                state for frame_row, state, source in _runtime_draw_states(runtime_report)
+                if frame_row.get('frame') == candidate.get('frame')
+                and source == 'draw-snapshot'
+                and state.get('draw_index') == draw_index
+            ),
+            None,
+        )
+        if runtime_state is None:
+            reasons.append(f"vertex-input:draw-snapshot-missing:{candidate.get('frame')}:{draw_index}")
+            runtime_state = {}
+    declaration = runtime_state.get('vertex_declaration') or {}
     pointer = declaration.get('declaration_ptr')
     declaration_rows = runtime_report.get('declarations') or []
     declaration_obj = next((x for x in declaration_rows if x.get('pointer') == pointer), None)
@@ -54,7 +69,7 @@ def validate_bmw_vertex_input_parity(
         key = (str(attr.get('usage')).upper(), int(attr.get('usage_index', 0)))
         attrs_by_semantic.setdefault(key, []).append(attr)
     checks = []
-    shader_inputs = _shader_inputs(runtime_frame)
+    shader_inputs = _shader_inputs(runtime_state)
     if not declaration_obj or not records:
         reasons.append('vertex-input:declaration-instance-missing')
     if not shader_inputs:
