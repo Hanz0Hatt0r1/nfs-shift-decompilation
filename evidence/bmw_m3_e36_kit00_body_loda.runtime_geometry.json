@@ -35,22 +35,22 @@
       "index": 1,
       "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx",
       "triangle_count": 2098,
-      "runtime_ib": "0x27b395e0",
+      "runtime_ib": "0x27b39560",
       "representative": {
-        "draw_index": 119,
-        "call": 73758870,
-        "prim_count": 2462
+        "draw_index": 120,
+        "call": 73758892,
+        "prim_count": 2098
       }
     },
     {
       "index": 2,
       "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx",
       "triangle_count": 2462,
-      "runtime_ib": "0x27b39560",
+      "runtime_ib": "0x27b395e0",
       "representative": {
-        "draw_index": 120,
-        "call": 73758892,
-        "prim_count": 2098
+        "draw_index": 119,
+        "call": 73758870,
+        "prim_count": 2462
       }
     },
     {
