@@ -167,3 +167,13 @@ can additionally create a small `bmw_unique.trace` for subsequent analysis.
 This stage establishes runtime draw/resource-instance evidence only. Do not call
 it exact VB/IB byte parity unless independent raw payload evidence is available.
 
+
+
+## apitrace buffer blob recovery
+
+Use `extract_apitrace_bmw_buffer_blobs.py` on the compact Phase 349 trace. The
+tool parses the version-6 binary trace, follows the fake `memcpy` emitted by
+D3D9 buffer Unlock and extracts the TYPE_BLOB payload. It filters by the
+verified BMW resource creation/lifetime records. Treat extracted bytes as
+runtime evidence; promote them to MEB parity only through the existing explicit
+byte comparator.
