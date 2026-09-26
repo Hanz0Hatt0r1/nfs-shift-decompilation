@@ -7,7 +7,8 @@ from typing import Any, Mapping, Sequence
 
 FORMAT = "SHIFT.SplineBasePrimitivesRuntime/1"
 WRAP_PERIOD = 8.0
-CURSOR_DWORD_COUNT = 25
+CURSOR_SNAPSHOT_DWORD_COUNT = 25
+CURSOR_DWORD_COUNT = 26
 CURSOR_INDEX_OFFSET = 0x64
 
 
@@ -50,9 +51,9 @@ def sample_spline_slot(
     """Trace FUN_00813550's slot selector and cursor normalization."""
     if int(source_slot) not in (0, 1):
         raise ValueError("source_slot must be 0 or 1")
-    if len(resolved_words) != CURSOR_DWORD_COUNT:
-        raise ValueError("resolved_words requires 25 dwords")
-    words = list(resolved_words)
+    if len(resolved_words) != CURSOR_SNAPSHOT_DWORD_COUNT:
+        raise ValueError("resolved_words requires exactly 25 snapshot dwords")
+    words = list(resolved_words) + [0]
     words[CURSOR_INDEX_OFFSET // 4] = 0
     return {
         "format": FORMAT,
@@ -118,7 +119,7 @@ def advance_spline_cursor(
 ) -> dict[str, Any]:
     """Trace FUN_008136d0/FUN_00813710 cursor copy and index update."""
     if len(cursor_words) != CURSOR_DWORD_COUNT:
-        raise ValueError("cursor_words requires exactly 25 dwords")
+        raise ValueError("cursor_words requires exactly 26 dwords")
     if direction not in ("forward", "backward"):
         raise ValueError("direction must be forward or backward")
 
