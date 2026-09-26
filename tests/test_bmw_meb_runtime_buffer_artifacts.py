@@ -47,7 +47,7 @@ def _tiny_meb() -> bytes:
     blob += struct.pack("<III", 2, 0, 0)
     blob += b"\x01\x02\x03\x04\x05\x06\x07\x08"
     blob += struct.pack("<III", 4, 6, 0)
-    blob += b"\x10\x11\x12\x13"
+    blob += b"\x10\x11\x12\x13\x14\x15\x16\x17"
     blob += b"mat\0"
     while len(blob) % 4:
         blob += b"\0"
@@ -75,7 +75,7 @@ def test_index_buffers_preserve_exact_uint16_little_endian_order():
     assert primitives == [full]
 
 
-def test_build_artifact_report_is_self_consistent_on_real_meditated_layout():
+def test_build_artifact_report_is_self_consistent_on_synthetic_meb_layout():
     meb = _tiny_meb()
     report, vertex, indices, primitives = build_artifact_report(
         meb,
@@ -89,7 +89,7 @@ def test_build_artifact_report_is_self_consistent_on_real_meditated_layout():
     assert report["index"]["byte_size"] == 6
     assert vertex == (
         b"\x01\x02\x03\x04\x10\x11\x12\x13"
-        b"\x05\x06\x07\x08\x00\x00\x00\x00"
+        b"\x05\x06\x07\x08\x14\x15\x16\x17"
     )
     assert indices == struct.pack("<3H", 0, 1, 0)
     assert primitives == [indices]
