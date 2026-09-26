@@ -576,8 +576,6 @@ def extract(
                 continue
             seen_resources.add(marker)
             payload = dict(resource)
-            if bucket == "ib":
-                lifecycle = {}
             payload["lifecycle"] = (
                 state.lifecycle.get("ib", {})
                 .get(resource["pointer"], Lifecycle())
