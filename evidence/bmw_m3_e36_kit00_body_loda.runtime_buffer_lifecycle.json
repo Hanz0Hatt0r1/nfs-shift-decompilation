@@ -1,0 +1,112 @@
+{
+  "format": "SHIFT.BMWM3RuntimeBufferLifecycleParity/1",
+  "status": "match",
+  "ready": true,
+  "resource": {
+    "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+  },
+  "geometry": {
+    "frame": 30444,
+    "target_draw_count": 28,
+    "runtime_vertex_buffer": "0x27b39460",
+    "runtime_vertex_buffer_bytes": 269800,
+    "target_draw_calls": [
+      73758870,
+      73758892,
+      73759350,
+      73765284,
+      73765756,
+      73765784,
+      73766186,
+      73766241,
+      73766269,
+      73780940,
+      73781412,
+      73781440,
+      73781842,
+      73781897,
+      73781925
+    ],
+    "note": "Representative calls above are the checked draw instances; the frame contains 28 total target draws."
+  },
+  "creation_lifecycle": {
+    "vertex_buffer": {
+      "pointer": "0x27b39460",
+      "create_call": 62523671,
+      "length": 269800,
+      "usage": "0x0",
+      "fvf": "0x0",
+      "pool": "D3DPOOL_MANAGED",
+      "precedes_target_draws": true
+    },
+    "index_buffers": [
+      {
+        "primitive_index": 0,
+        "pointer": "0x27b394e0",
+        "create_call": 62523673,
+        "length": 300,
+        "format": "D3DFMT_INDEX16",
+        "pool": "D3DPOOL_MANAGED",
+        "precedes_target_draws": true
+      },
+      {
+        "primitive_index": 1,
+        "pointer": "0x27b39560",
+        "create_call": 62523675,
+        "length": 12588,
+        "format": "D3DFMT_INDEX16",
+        "pool": "D3DPOOL_MANAGED",
+        "precedes_target_draws": true
+      },
+      {
+        "primitive_index": 2,
+        "pointer": "0x27b395e0",
+        "create_call": 62523677,
+        "length": 14772,
+        "format": "D3DFMT_INDEX16",
+        "pool": "D3DPOOL_MANAGED",
+        "precedes_target_draws": true
+      },
+      {
+        "primitive_index": 3,
+        "pointer": "0x27b39660",
+        "create_call": 62523679,
+        "length": 1224,
+        "format": "D3DFMT_INDEX16",
+        "pool": "D3DPOOL_MANAGED",
+        "precedes_target_draws": true
+      },
+      {
+        "primitive_index": 4,
+        "pointer": "0x27b396e0",
+        "create_call": 62523681,
+        "length": 1152,
+        "format": "D3DFMT_INDEX16",
+        "pool": "D3DPOOL_MANAGED",
+        "precedes_target_draws": true
+      },
+      {
+        "primitive_index": 5,
+        "pointer": "0x27b39760",
+        "create_call": 62523683,
+        "length": 168,
+        "format": "D3DFMT_INDEX16",
+        "pool": "D3DPOOL_MANAGED",
+        "precedes_target_draws": true
+      }
+    ]
+  },
+  "source": {
+    "resource_create_log": "shift_resources.txt",
+    "resource_create_log_sha256": "e8f5e76fd9439e5149b0296a31c7097002242ac3f425a9869e1d965498151124",
+    "resource_create_log_size": 4062714,
+    "geometry_evidence": "evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json"
+  },
+  "boundary": {
+    "runtime_pointer_to_create_instance": "proven",
+    "created_buffer_size_parity": "proven",
+    "raw_runtime_vb_ib_bytes": "not-captured",
+    "runtime_declaration_identity": "separate-gate"
+  }
+}
