@@ -1491,3 +1491,7 @@ For a real .trace, `--auto-trim` can produce a small `bmw_unique.trace` containi
 ## Wine removal
 
 The Wine-specific runtime capture path, build/injection helpers, tests, launcher, and documentation were removed. On Linux, the supported research path for the current runtime trace is apitrace; native D3D9 capture code remains an independent alternative. BMW MEB extraction and byte-parity tooling remain unchanged.
+
+### Phase 348 operational note
+
+Use the known BMW runtime geometry evidence as a hard filter when extracting the same apitrace capture; this avoids treating unrelated 3,550-vertex draws as BMW evidence.
