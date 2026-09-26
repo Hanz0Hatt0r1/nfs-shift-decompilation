@@ -13,7 +13,7 @@
   "primitive_count": 6,
   "unique_bmt_count": 5,
   "unique_shader_count": 3,
-  "unique_texture_count": 10,
+  "unique_texture_count": 11,
   "material_reference_use_count": {
     "vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt": 1,
     "vehicles/bmw_m3_e36/bmw_m3_e36_lightsglass.bmt": 1,
