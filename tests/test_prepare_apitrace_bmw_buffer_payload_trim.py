@@ -137,3 +137,19 @@ def test_missing_fake_memcpy_blocks_trim(monkeypatch):
             "unlock_call": 130,
         }
     ]
+
+
+def test_fake_memcpy_calls_are_discovered_from_bounded_dump(monkeypatch):
+    monkeypatch.setattr(
+        mod,
+        "_dump_calls",
+        lambda trace, apitrace, first, last: (
+            "120 IDirect3DIndexBuffer9::Unlock(this = 0x200, pLength = 12) = D3D_OK\\n"
+            "121 memcpy(dest = 0x1, src = 0x2, n = 12) = 0\\n"
+            "122 IDirect3DDevice9::DrawIndexedPrimitive(...) = D3D_OK\\n"
+            "123 memcpy(dest = 0x3, src = 0x4, n = 8) = 0\\n"
+        ),
+    )
+    assert mod._fake_memcpy_calls_near_unlock(
+        Path("/tmp/SHIFT.trace"), "apitrace", 120, 4
+    ) == [121, 123]
