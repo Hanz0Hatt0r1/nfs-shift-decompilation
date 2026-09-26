@@ -150,3 +150,20 @@ Use `bmw-bff-intake` to preflight the real M3 archive. It verifies the archive s
 ## BMW runtime buffer candidates
 
 Use `bmw_meb_runtime_buffer_artifacts.py` to reproduce the expected BMW VB/IB byte candidates from the retail BFF. The vertex candidate preserves raw MEB property bytes in deterministic interleaved property order; INDEX16 candidates are emitted per primitive. Do not promote these artifacts to runtime identity without the bounded Phase 344 Lock/Unlock capture.
+
+## apitrace-only BMW extraction on Linux
+
+When the only working runtime capture source is an apitrace D3D9 `.trace`,
+use `tools/extract_apitrace_unique_bmw.py`. It streams
+`apitrace dump --call-nos=true --arg-names=true` directly from the trace, so a
+multi-gigabyte text dump does not need to be created first.
+
+The extractor filters the known BMW body signature (3,550 vertices and the six
+known primitive counts), deduplicates draw bindings by declaration/stream/index
+resource instance, tracks pointer reuse across `Release`, and emits a compact
+call set plus representative draw records. With a real `.trace`, `--auto-trim`
+can additionally create a small `bmw_unique.trace` for subsequent analysis.
+
+This stage establishes runtime draw/resource-instance evidence only. Do not call
+it exact VB/IB byte parity unless independent raw payload evidence is available.
+
