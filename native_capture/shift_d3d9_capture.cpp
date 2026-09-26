@@ -28,6 +28,8 @@ constexpr std::size_t D3D9_VTABLE_COUNT = 119;
 constexpr std::size_t IDIRECT3D9_VTABLE_COUNT = 17;
 
 constexpr std::size_t SLOT_PRESENT = 17;
+constexpr std::size_t SLOT_CREATE_TEXTURE = 23;
+constexpr std::size_t SLOT_CREATE_CUBE_TEXTURE = 25;
 constexpr std::size_t SLOT_SET_TEXTURE = 65;
 constexpr std::size_t SLOT_DRAW_INDEXED_PRIMITIVE = 82;
 constexpr std::size_t SLOT_CREATE_VERTEX_SHADER = 91;
@@ -56,6 +58,10 @@ using SetIndicesFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, IDirect3DIndexBuffer9*);
 using SetTextureFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, DWORD, IDirect3DBaseTexture9*);
+using CreateTextureFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DTexture9**, HANDLE*);
+using CreateCubeTextureFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DCubeTexture9**, HANDLE*);
 using CreateVertexShaderFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const DWORD*, IDirect3DVertexShader9**);
 using SetVertexShaderFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -77,6 +83,8 @@ CreateDeviceFn g_real_create_device = nullptr;
 PresentFn g_real_present = nullptr;
 CreateVertexDeclarationFn g_real_create_vertex_declaration = nullptr;
 SetVertexDeclarationFn g_real_set_vertex_declaration = nullptr;
+CreateTextureFn g_real_create_texture = nullptr;
+CreateCubeTextureFn g_real_create_cube_texture = nullptr;
 SetStreamSourceFn g_real_set_stream_source = nullptr;
 SetIndicesFn g_real_set_indices = nullptr;
 SetTextureFn g_real_set_texture = nullptr;
@@ -453,6 +461,10 @@ void append_texture_snapshot_json(
     out << ",\"snapshot_status\":\"unsupported-resource-type\"";
 }
 
+void append_texture_descriptor_json(
+    std::ostringstream& out,
+    IDirect3DBaseTexture9* texture);
+
 void patch_object_vtable(
     void* object,
     std::size_t count,
@@ -531,6 +543,62 @@ HRESULT STDMETHODCALLTYPE hook_present(
         ? g_real_present(self, src, dst, override_window, dirty_region)
         : E_FAIL;
     if (SUCCEEDED(hr)) g_frame.fetch_add(1);
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_create_texture(
+    IDirect3DDevice9* self,
+    UINT width,
+    UINT height,
+    UINT levels,
+    DWORD usage,
+    D3DFORMAT format,
+    D3DPOOL pool,
+    IDirect3DTexture9** out_texture,
+    HANDLE* shared_handle) {
+    const HRESULT hr = g_real_create_texture
+        ? g_real_create_texture(self, width, height, levels, usage, format, pool, out_texture, shared_handle)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && out_texture && *out_texture) {
+        std::ostringstream f;
+        f << "\"texture_ptr\":" << CaptureWriter::ptr(*out_texture)
+          << ",\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"width\":" << width
+          << ",\"height\":" << height
+          << ",\"levels\":" << levels
+          << ",\"usage\":" << usage
+          << ",\"format\":" << static_cast<unsigned>(format)
+          << ",\"pool\":" << static_cast<unsigned>(pool);
+        append_texture_descriptor_json(f, *out_texture);
+        writer().write_event("create_texture", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_create_cube_texture(
+    IDirect3DDevice9* self,
+    UINT edge_length,
+    UINT levels,
+    DWORD usage,
+    D3DFORMAT format,
+    D3DPOOL pool,
+    IDirect3DCubeTexture9** out_texture,
+    HANDLE* shared_handle) {
+    const HRESULT hr = g_real_create_cube_texture
+        ? g_real_create_cube_texture(self, edge_length, levels, usage, format, pool, out_texture, shared_handle)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && out_texture && *out_texture) {
+        std::ostringstream f;
+        f << "\"texture_ptr\":" << CaptureWriter::ptr(*out_texture)
+          << ",\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"edge_length\":" << edge_length
+          << ",\"levels\":" << levels
+          << ",\"usage\":" << usage
+          << ",\"format\":" << static_cast<unsigned>(format)
+          << ",\"pool\":" << static_cast<unsigned>(pool);
+        append_texture_descriptor_json(f, *out_texture);
+        writer().write_event("create_cube_texture", f.str());
+    }
     return hr;
 }
 
@@ -834,6 +902,12 @@ void patch_device(IDirect3DDevice9* device) {
     patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_PRESENT,
                         reinterpret_cast<void*>(&hook_present),
                         reinterpret_cast<void**>(&g_real_present));
+    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_TEXTURE,
+                        reinterpret_cast<void*>(&hook_create_texture),
+                        reinterpret_cast<void**>(&g_real_create_texture));
+    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_CUBE_TEXTURE,
+                        reinterpret_cast<void*>(&hook_create_cube_texture),
+                        reinterpret_cast<void**>(&g_real_create_cube_texture));
     patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_VERTEX_DECLARATION,
                         reinterpret_cast<void*>(&hook_create_vertex_declaration),
                         reinterpret_cast<void**>(&g_real_create_vertex_declaration));
