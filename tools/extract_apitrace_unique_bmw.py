@@ -612,7 +612,6 @@ def extract(
         command = [
             apitrace,
             "trim",
-            "--auto",
             f"--calls={callset_arg}",
             "-o",
             str(trimmed_path),
