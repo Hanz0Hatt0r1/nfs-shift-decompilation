@@ -15,6 +15,7 @@ EVENT_SPECS = {
     'create_cube_texture': {'pointer':'texture_ptr'},
     'create_vertex_buffer': {'pointer':'vertex_buffer_ptr'},
     'create_index_buffer': {'pointer':'index_buffer_ptr'},
+    'buffer_payload': {'pointer':'buffer_ptr'},
     'texture_payload': {'pointer':'texture_ptr'},
     'present_screenshot': {},
     'present_screenshot_failed': {},
@@ -81,6 +82,23 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
                 reasons.append(f'create-index-buffer:{key}-invalid')
         if isinstance(row.get('length'), int) and row['length'] <= 0:
             reasons.append('create-index-buffer:length-invalid')
+    if event == 'buffer_payload':
+        if row.get('resource_type_name') not in {'vertex_buffer', 'index_buffer'}:
+            reasons.append('buffer-payload:resource-type-invalid')
+        for key in ('offset', 'requested_size', 'buffer_length', 'captured_byte_size', 'flags'):
+            if not isinstance(row.get(key), int):
+                reasons.append(f'buffer-payload:{key}-invalid')
+        for key in ('offset', 'requested_size', 'buffer_length', 'captured_byte_size'):
+            if isinstance(row.get(key), int) and row[key] < 0:
+                reasons.append(f'buffer-payload:{key}-negative')
+        if isinstance(row.get('buffer_length'), int) and row['buffer_length'] <= 0:
+            reasons.append('buffer-payload:buffer-length-invalid')
+        if isinstance(row.get('captured_byte_size'), int) and row['captured_byte_size'] <= 0:
+            reasons.append('buffer-payload:byte-size-invalid')
+        if row.get('snapshot_status') not in {'captured', 'capture-failed'}:
+            reasons.append('buffer-payload:status-invalid')
+        if row.get('payload_path') is not None and not isinstance(row.get('payload_path'), str):
+            reasons.append('buffer-payload:path-invalid')
     if event == 'texture_payload':
         resource_type_name = row.get('resource_type_name')
         if resource_type_name == 'cube_texture' and row.get('face') is None:
