@@ -233,6 +233,8 @@ def build_runtime_binding_evidence(
                 "byte_size": row.get("byte_size"),
                 "snapshot_status": row.get("snapshot_status"),
                 "payload_path": row.get("payload_path"),
+                "face": row.get("face"),
+                "face_name": row.get("face_name"),
                 "event_index": row.get("event_index"),
                 "line": row.get("_line"),
             })
