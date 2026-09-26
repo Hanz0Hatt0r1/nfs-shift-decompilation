@@ -63,10 +63,14 @@ def early_boundary_result(
     proposed_distance: float,
     normalized_progress: float,
     reverse: bool,
+    external_scalar: float,
+    spline_loop_flag: bool,
     endpoint_handler_result: float | None,
 ) -> dict[str, Any] | None:
     """Trace FUN_008222f0's explicit spline-boundary early exits."""
     if float(spline_length) == 0.0:
+        return None
+    if float(external_scalar) != 0.0 or bool(spline_loop_flag):
         return None
     if reverse and float(normalized_progress) < 0.0:
         value = (
@@ -139,6 +143,8 @@ def advance_spline_cursor(
             proposed_distance=initial_offset,
             normalized_progress=normalized_progress,
             reverse=reverse,
+            external_scalar=float(cursor.external_scalar),
+            spline_loop_flag=False,
             endpoint_handler_result=(
                 reverse_endpoint_result if reverse else forward_endpoint_result
             ),
@@ -181,7 +187,7 @@ def advance_spline_cursor(
             position = [float(v) for v in sample["position"]]
             if len(position) != 3:
                 raise ValueError("sampler position requires three values")
-            denominator = float(sample.get("state_14", 1.0))
+            denominator = float(sample.get("denominator", 1.0))
             if denominator == 0.0:
                 raise ValueError("sampler state_14 must be non-zero")
 
@@ -206,7 +212,7 @@ def advance_spline_cursor(
                     y=position[1],
                     z=position[2],
                     state_14=float(sample.get("state_10", state.state_14)),
-                    segment_t=trial_t,
+                    segment_t=float(sample.get("segment_t_out", trial_t)),
                     remainder=step_sign * remainder_after,
                     sample_scalar=float(sample.get("param3_out", param3)),
                 )
@@ -235,9 +241,8 @@ def advance_spline_cursor(
         )
 
     terminalized = False
-    if boundary_callback_enabled:
-        if state.boundary_mode:
-            p = min(1.0, max(0.0, state.progress))
+    if boundary_callback_enabled and state.boundary_mode and state.external_scalar == 0.0:
+        p = min(1.0, max(0.0, state.progress))
             state = replace(state, progress=p, remainder=0.0)
             terminalized = True
 
