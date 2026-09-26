@@ -1510,3 +1510,17 @@ binary format directly. It follows per-thread call nesting, recognizes fake
 `memcpy` calls emitted by D3D9 `Unlock`, reads their TYPE_BLOB payloads and
 writes the raw bytes for the seven verified BMW VB/IB resource instances.
 Exact MEB byte parity remains a separate explicit comparator stage.
+
+## Phase 351: direct BMW apitrace byte parity
+
+The direct apitrace BLOB workflow now proves the seven BMW body buffer uploads
+byte-for-byte against the MEB-derived artifacts: one 269,800-byte stride-76
+vertex buffer plus six INDEX16 buffers of 300, 12,588, 14,772, 1,224, 1,152
+and 168 bytes. The verified capture reports 7/7 matches with no blockers.
+
+The parity verifier also resolves relative payload paths from the evidence
+manifest itself rather than from the unrelated geometry-report location, with a
+regression test covering that provenance boundary.
+
+This promotes raw runtime VB/IB bytes and MEB byte parity from candidate evidence
+to proven evidence for the captured BMW M3 E36 body resource instances.
