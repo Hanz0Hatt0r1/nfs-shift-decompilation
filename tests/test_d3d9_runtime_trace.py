@@ -296,3 +296,51 @@ def test_runtime_trace_links_cube_texture_creation():
     texture = report["frames"][0]["texture_bindings"][0]
     assert texture["resource_creation"]["resource_type"] == "cube_texture"
     assert texture["resource_creation"]["edge_length"] == 128
+
+
+def test_runtime_trace_preserves_texture_payload_at_draw_boundary():
+    events = load_events_from_rows([
+        {
+            "event": "create_texture",
+            "frame": 7,
+            "texture_ptr": "0x100",
+            "width": 8,
+            "height": 8,
+            "levels": 4,
+            "usage": 0,
+            "format": 827611204,
+            "pool": 1,
+        },
+        {
+            "event": "texture_payload",
+            "frame": 7,
+            "texture_ptr": "0x100",
+            "resource_type_name": "texture2d",
+            "level": 0,
+            "width": 8,
+            "height": 8,
+            "pitch": 16,
+            "format": 827611204,
+            "pool": 1,
+            "byte_size": 32,
+            "snapshot_status": "captured",
+            "payload_path": "textures/a.bin",
+        },
+        {
+            "event": "set_texture",
+            "frame": 7,
+            "stage": 2,
+            "texture_ptr": "0x100",
+        },
+        {
+            "event": "draw_indexed_primitive",
+            "frame": 7,
+            "primitive_count": 1,
+            "start_index": 0,
+            "base_vertex_index": 0,
+        },
+    ])
+    report = build_runtime_binding_evidence(events)
+    snapshot = report["frames"][0]["draw_snapshots"][0]
+    assert snapshot["texture_payloads"][0]["payload_path"] == "textures/a.bin"
+    assert report["trace"]["texture_payload_event_count"] == 1
