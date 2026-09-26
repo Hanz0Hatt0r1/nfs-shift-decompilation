@@ -96,3 +96,21 @@ def test_texture_snapshot_inventory_converts_real_ppm(tmp_path):
     assert snapshot["reference_format"] == "SHIFT.ReferenceTexture/1"
     assert snapshot["source_path"] == str(ppm)
     assert "reference_resource" not in snapshot
+
+
+def test_texture_snapshot_inventory_reads_native_snapshot_paths(tmp_path):
+    ppm = tmp_path / "s1.ppm"
+    ppm.write_bytes(b"P6\n1 1\n255\n" + bytes((1, 2, 3)))
+    report = pipeline._texture_snapshot_inventory({
+        "frames": [{
+            "frame": 4,
+            "texture_bindings": [{
+                "stage": 1,
+                "texture_ptr": "0x101",
+                "snapshot_paths": [str(ppm)],
+            }],
+        }]
+    })
+    assert report["capture_snapshot_count"] == 1
+    assert report["converted_snapshot_count"] == 1
+    assert report["snapshots"][0]["stage"] == 1
