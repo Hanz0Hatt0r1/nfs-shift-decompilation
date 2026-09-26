@@ -182,3 +182,47 @@ def test_capture_schema_rejects_face_on_2d_payload():
         "payload_path": "2d/0x100_l0.bin",
     }
     assert "texture-payload:2d-face-unexpected" in validate_capture_event(row)
+
+
+def test_capture_schema_accepts_buffer_creation_events():
+    assert validate_capture_event({
+        "event": "create_vertex_buffer",
+        "frame": 1,
+        "vertex_buffer_ptr": "0x100",
+        "length": 269800,
+        "usage": 0,
+        "fvf": 0,
+        "pool": 1,
+    }) == []
+    assert validate_capture_event({
+        "event": "create_index_buffer",
+        "frame": 1,
+        "index_buffer_ptr": "0x200",
+        "length": 300,
+        "usage": 0,
+        "format": 101,
+        "pool": 1,
+    }) == []
+
+
+def test_capture_schema_rejects_zero_length_buffer_creation():
+    reasons = validate_capture_event({
+        "event": "create_vertex_buffer",
+        "frame": 1,
+        "vertex_buffer_ptr": "0x100",
+        "length": 0,
+        "usage": 0,
+        "fvf": 0,
+        "pool": 1,
+    })
+    assert "create-vertex-buffer:length-invalid" in reasons
+    reasons = validate_capture_event({
+        "event": "create_index_buffer",
+        "frame": 1,
+        "index_buffer_ptr": "0x200",
+        "length": 0,
+        "usage": 0,
+        "format": 101,
+        "pool": 1,
+    })
+    assert "create-index-buffer:length-invalid" in reasons
