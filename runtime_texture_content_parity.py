@@ -108,6 +108,105 @@ def _extract_expected_textures(primary_bff: str | Path) -> dict[str, dict[str, A
     return result
 
 
+
+
+
+def _dds_base_level_payload(dds_bytes: bytes) -> tuple[bytes, str]:
+    if len(dds_bytes) < 128 or dds_bytes[:4] != b"DDS ":
+        raise ValueError("not a DDS file")
+    width = int.from_bytes(dds_bytes[16:20], "little")
+    height = int.from_bytes(dds_bytes[12:16], "little")
+    fourcc = int.from_bytes(dds_bytes[84:88], "little").to_bytes(4, "little").decode("ascii", "replace").rstrip("\x00")
+    rgb_bits = int.from_bytes(dds_bytes[88:92], "little")
+    if fourcc in {"DXT1", "DXT3", "DXT5"}:
+        block_bytes = {"DXT1": 8, "DXT3": 16, "DXT5": 16}[fourcc]
+        blocks_x = max(1, (width + 3) // 4)
+        blocks_y = max(1, (height + 3) // 4)
+        size = blocks_x * blocks_y * block_bytes
+        return dds_bytes[128:128 + size], fourcc
+    pf_flags = int.from_bytes(dds_bytes[80:84], "little")
+    if not fourcc and (pf_flags & 0x40) and rgb_bits == 32:
+        size = width * height * 4
+        return dds_bytes[128:128 + size], "RGBA32"
+    raise ValueError(f"unsupported DDS base level format: {fourcc or 'RGBA32'}")
+
+
+def compare_raw_payload_to_dds(
+    payload_path: str | Path,
+    dds_bytes: bytes,
+) -> dict[str, Any]:
+    path = Path(payload_path)
+    if not path.is_file():
+        return {
+            "status": "missing",
+            "ready": False,
+            "path": str(path),
+            "blocking_reasons": ["raw-payload:file-not-found"],
+        }
+    observed = path.read_bytes()
+    expected, source_format = _dds_base_level_payload(dds_bytes)
+    observed_sha = hashlib.sha256(observed).hexdigest()
+    expected_sha = hashlib.sha256(expected).hexdigest()
+    length_match = len(observed) == len(expected)
+    byte_match = observed == expected
+    reasons = []
+    if not length_match:
+        reasons.append(f"raw-payload:length-mismatch:{len(observed)}:{len(expected)}")
+    if not byte_match:
+        reasons.append(f"raw-payload:sha256-mismatch:{observed_sha}:{expected_sha}")
+    return {
+        "status": "match" if not reasons else "mismatch",
+        "ready": not reasons,
+        "path": str(path),
+        "observed_byte_size": len(observed),
+        "expected_byte_size": len(expected),
+        "observed_sha256": observed_sha,
+        "expected_sha256": expected_sha,
+        "dds_source_format": source_format,
+        "blocking_reasons": reasons,
+    }
+
+
+def _texture_payload_candidates(
+    snapshot: Mapping[str, Any],
+    texture_ptr: str,
+    creation_event_index: int | None = None,
+) -> list[Mapping[str, Any]]:
+    rows = []
+    for row in snapshot.get("texture_payloads") or []:
+        if not isinstance(row, Mapping):
+            continue
+        if str(row.get("texture_ptr") or "").lower() != str(texture_ptr).lower():
+            continue
+        if int(row.get("level", -1)) != 0:
+            continue
+        if row.get("snapshot_status") != "captured":
+            continue
+        if not row.get("payload_path"):
+            continue
+        if creation_event_index is not None:
+            try:
+                if int(row.get("event_index", -1)) <= int(creation_event_index):
+                    continue
+            except (TypeError, ValueError):
+                continue
+        rows.append(row)
+    return sorted(rows, key=lambda row: int(row.get("event_index", -1)))
+
+
+def _extract_expected_texture_payloads(primary_bff: str | Path) -> dict[str, bytes]:
+    result: dict[str, bytes] = {}
+    with BFF(primary_bff) as archive:
+        for row in PAINT_TEXTURES:
+            hits = [entry for entry in archive.entries if entry.path.lower() == row["path"].lower()]
+            if len(hits) != 1:
+                raise ValueError(
+                    f"expected one DDS entry for {row['path']!r}, found {len(hits)}"
+                )
+            result[row["parameter"]] = archive.extract_entry(hits[0])
+    return result
+
+
 def compare_snapshot_to_expected(snapshot_path: str | Path, expected: Mapping[str, Any]) -> dict[str, Any]:
     path = Path(snapshot_path)
     if not path.is_file():
@@ -171,12 +270,14 @@ def build_bmw_paint_runtime_texture_parity(
 ) -> dict[str, Any]:
     snapshot = _find_draw_snapshot(runtime_report, frame, draw_index)
     expected = _extract_expected_textures(primary_bff)
+    expected_payloads = _extract_expected_texture_payloads(primary_bff)
     rows = []
     blockers = []
 
     for row in PAINT_TEXTURES:
         expected_row = expected[row["parameter"]]
         binding = _active_texture(snapshot, int(row["register"]))
+        pointers = binding.get("texture_ptr") if isinstance(binding, Mapping) else None
         if binding is None:
             result = {
                 "parameter": row["parameter"],
@@ -187,7 +288,6 @@ def build_bmw_paint_runtime_texture_parity(
                 "expected": expected_row,
             }
         else:
-            pointers = binding.get("texture_ptr")
             paths = list(binding.get("snapshot_paths") or [])
             if not pointers:
                 result = {
@@ -223,9 +323,7 @@ def build_bmw_paint_runtime_texture_parity(
                     "expected": expected_row,
                 }
             else:
-                comparisons = [
-                    compare_snapshot_to_expected(paths[0], expected_row)
-                ]
+                comparisons = [compare_snapshot_to_expected(paths[0], expected_row)]
                 ready = comparisons[0]["ready"]
                 result = {
                     "parameter": row["parameter"],
@@ -237,6 +335,39 @@ def build_bmw_paint_runtime_texture_parity(
                     "comparisons": comparisons,
                     "expected": expected_row,
                 }
+
+            creation_event_index = None
+            if isinstance(binding.get("resource_creation"), Mapping):
+                try:
+                    creation_event_index = int(binding["resource_creation"].get("event_index"))
+                except (TypeError, ValueError):
+                    creation_event_index = None
+            payload_candidates = (
+                _texture_payload_candidates(snapshot, str(pointers), creation_event_index)
+                if pointers
+                else []
+            )
+            if payload_candidates:
+                raw = compare_raw_payload_to_dds(
+                    payload_candidates[-1]["payload_path"],
+                    expected_payloads[row["parameter"]],
+                )
+                result["raw_payload_comparison"] = {
+                    **raw,
+                    "event_index": payload_candidates[-1].get("event_index"),
+                }
+                result["raw_payload_path"] = payload_candidates[-1].get("payload_path")
+                if raw["ready"]:
+                    result["ready"] = True
+                    result["status"] = "match"
+                    result["blocking_reasons"] = []
+                    result["content_identity_method"] = "raw-dds-base-level"
+                else:
+                    result["ready"] = False
+                    result["status"] = "mismatch"
+                    blockers.extend(raw.get("blocking_reasons") or [])
+            elif "comparisons" in result:
+                result["content_identity_method"] = "ppm-rgb"
         rows.append(result)
         blockers.extend(result.get("blocking_reasons") or [])
 
@@ -258,7 +389,14 @@ def build_bmw_paint_runtime_texture_parity(
         "blocking_reasons": list(dict.fromkeys(blockers)),
         "boundary": {
             "runtime_pointer_to_creation_instance": "consumed-when-present",
-            "runtime_to_retail_dds_rgb_content": "proven" if not blockers else "not-proven",
+            "runtime_to_retail_dds_content": (
+                "proven-by-raw-base-level" if all(
+                    (row.get("raw_payload_comparison") or {}).get("ready")
+                    for row in rows
+                    if row.get("raw_payload_comparison") is not None
+                ) and any(row.get("raw_payload_comparison") is not None for row in rows)
+                else ("proven-by-ppm-rgb" if not blockers else "not-proven")
+            ),
             "runtime_to_retail_dds_alpha": "not-observed-for-ppm",
         },
     }
