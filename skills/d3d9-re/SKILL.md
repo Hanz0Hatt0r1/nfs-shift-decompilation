@@ -145,3 +145,4 @@ The D3D9 same-instance gate requires `indexed_draw_present=true` in the bound fr
 ## BMW BFF intake
 
 Use `bmw-bff-intake` to preflight the real M3 archive. It verifies the archive size, SHIFT BFF structure, exact BMT/MEB target entries and extracted body-MEB SHA without writing raw payloads.
+\n## BMW runtime buffer candidates\n\nUse `bmw_meb_runtime_buffer_artifacts.py` to reproduce the expected BMW VB/IB\nbyte candidates from the retail BFF. The vertex candidate preserves raw MEB\nproperty bytes in deterministic interleaved property order; INDEX16 candidates\nare emitted per primitive. Do not promote these artifacts to runtime identity\nwithout the bounded Phase 344 Lock/Unlock capture.\n
