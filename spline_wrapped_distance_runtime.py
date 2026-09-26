@@ -9,13 +9,14 @@ FORMAT = "SHIFT.SplineWrappedDistanceRuntime/1"
 PERIOD = 8.0
 
 
-def _trunc_int(value: float) -> int:
-    """Match the source's float->int truncation used before * 8.0."""
-    return int(float(value))
+def _abs_int(value: float) -> int:
+    """Match (x ^ (x >> 31)) - (x >> 31) from the source."""
+    integer = int(float(value))
+    return abs(integer)
 
 
 def wrapped_y(value: float, wrap_index: float) -> float:
-    return float(value) - float(_trunc_int(wrap_index)) * PERIOD
+    return float(value) - float(_abs_int(wrap_index)) * PERIOD
 
 
 def wrapped_distance(
@@ -49,7 +50,7 @@ def wrapped_distance(
         "wrap_period": PERIOD,
         "evidence": {
             "function": "FUN_00813750",
-            "y_expression": "value - trunc(wrap_index) * 8.0",
+            "y_expression": "value - abs(int(wrap_index)) * 8.0",
         },
     }
 
