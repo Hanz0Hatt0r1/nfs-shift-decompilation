@@ -32,6 +32,7 @@ _DRAW_RE = re.compile(
     r"primCount = (?P<prim_count>\d+)\)"
 )
 
+
 def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as fp:
@@ -42,27 +43,38 @@ def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
             digest.update(chunk)
     return digest.hexdigest()
 
+
 def _mesh_doc(document: Mapping[str, Any]) -> Mapping[str, Any]:
     mesh = document.get("mesh")
     return mesh if isinstance(mesh, Mapping) else document
 
+
 def build_expectations(document: Mapping[str, Any]) -> dict[str, Any]:
     mesh = _mesh_doc(document)
-    golden = document.get("golden")
-    golden = golden if isinstance(golden, Mapping) else {}
+    golden = document.get("golden") if isinstance(document.get("golden"), Mapping) else {}
 
-    resource = str(golden.get("resource") or document.get("resource") or TARGET_RESOURCE).replace("\\", "/")
-    resource_sha = str(golden.get("resource_sha256") or document.get("resource_sha256") or TARGET_SHA256).lower()
+    resource = str(
+        golden.get("resource")
+        or document.get("resource")
+        or document.get("root_relative_path")
+        or TARGET_RESOURCE
+    ).replace("\\", "/")
+    resource_sha = str(
+        golden.get("resource_sha256")
+        or document.get("resource_sha256")
+        or document.get("source_sha256")
+        or TARGET_SHA256
+    ).lower()
+
     vertex_count = int(mesh.get("vertex_count", 0))
-
     layouts = list(mesh.get("property_layouts") or [])
+    stride_parts = []
     if layouts:
-        stride_parts = []
         for row in layouts:
-            value = int(row.get("stride", 0) or 0)
-            if value <= 0:
+            stride_value = int(row.get("stride", 0) or 0)
+            if stride_value <= 0:
                 raise ValueError(f"invalid property stride: {row}")
-            stride_parts.append({"id": str(row.get("id")), "stride": value})
+            stride_parts.append({"id": str(row.get("id")), "stride": stride_value})
         vertex_stride = sum(row["stride"] for row in stride_parts)
     else:
         vertex_stride = int(mesh.get("vertex_stride", 0) or 0)
@@ -91,6 +103,7 @@ def build_expectations(document: Mapping[str, Any]) -> dict[str, Any]:
     declared_index_count = int(mesh.get("index_count", index_count) or index_count)
     if declared_index_count != index_count:
         raise ValueError("mesh index_count conflicts with primitive index ranges")
+
     return {
         "resource": resource,
         "resource_sha256": resource_sha,
@@ -103,24 +116,29 @@ def build_expectations(document: Mapping[str, Any]) -> dict[str, Any]:
         "primitives": primitive_rows,
     }
 
+
 def parse_draw_evidence(text: str) -> list[dict[str, Any]]:
     stream_vb = None
     stream_stride = None
     index_buffer = None
     draws = []
+
     for line_number, line in enumerate(text.splitlines(), 1):
         stream_match = _STREAM_RE.search(line)
         if stream_match and int(stream_match.group("stream")) == 0:
             stream_vb = stream_match.group("vb").lower()
             stream_stride = int(stream_match.group("stride"))
             continue
+
         index_match = _INDEX_RE.search(line)
         if index_match:
             index_buffer = index_match.group("ib").lower()
             continue
+
         draw_match = _DRAW_RE.search(line)
         if not draw_match:
             continue
+
         draws.append({
             "draw_index": len(draws),
             "line": line_number,
@@ -137,6 +155,7 @@ def parse_draw_evidence(text: str) -> list[dict[str, Any]]:
         })
     return draws
 
+
 def correlate(expected: Mapping[str, Any], draws: list[Mapping[str, Any]]) -> dict[str, Any]:
     blockers = []
     target_draws = [
@@ -146,7 +165,8 @@ def correlate(expected: Mapping[str, Any], draws: list[Mapping[str, Any]]) -> di
         and draw.get("start_index") == 0
         and draw.get("num_vertices") == expected["vertex_count"]
         and draw.get("stride") == expected["vertex_stride"]
-        and draw.get("vb") and draw.get("ib")
+        and draw.get("vb")
+        and draw.get("ib")
     ]
 
     expected_counts = [int(row["triangle_count"]) for row in expected["primitives"]]
@@ -158,9 +178,12 @@ def correlate(expected: Mapping[str, Any], draws: list[Mapping[str, Any]]) -> di
     for primitive in expected["primitives"]:
         candidates = observed.get(int(primitive["triangle_count"]), [])
         if not candidates:
-            blockers.append(f"geometry:missing-primitive-triangle-count:{primitive['triangle_count']}")
+            blockers.append(
+                f"geometry:missing-primitive-triangle-count:{primitive['triangle_count']}"
+            )
             correlations.append({**primitive, "status": "missing", "runtime_draws": []})
             continue
+
         correlations.append({
             **primitive,
             "status": "match",
@@ -208,14 +231,22 @@ def correlate(expected: Mapping[str, Any], draws: list[Mapping[str, Any]]) -> di
         },
     }
 
-def validate_repacked_artifact(path: Path, expected_size: int, label: str, expected_sha256: str | None) -> dict[str, Any]:
+
+def validate_repacked_artifact(
+    path: Path,
+    expected_size: int,
+    label: str,
+    expected_sha256: str | None,
+) -> dict[str, Any]:
     actual_size = path.stat().st_size
     actual_sha256 = sha256_file(path)
     blockers = []
+
     if actual_size != expected_size:
         blockers.append(f"{label}:size-mismatch:{actual_size}:{expected_size}")
     if expected_sha256 and actual_sha256.lower() != expected_sha256.lower():
         blockers.append(f"{label}:sha256-mismatch:{actual_sha256}:{expected_sha256}")
+
     return {
         "path": str(path),
         "size": actual_size,
@@ -225,13 +256,26 @@ def validate_repacked_artifact(path: Path, expected_size: int, label: str, expec
         "blocking_reasons": blockers,
     }
 
-def build_report(summary_path: Path, geometry_path: Path, *, repacked_vb: Path | None = None,
-                 repacked_ib16: Path | None = None, expected_vb_sha256: str | None = None,
-                 expected_ib16_sha256: str | None = None) -> dict[str, Any]:
-    expected = build_expectations(json.loads(summary_path.read_text(encoding="utf-8")))
+
+def build_report(
+    summary_path: Path,
+    geometry_path: Path,
+    *,
+    repacked_vb: Path | None = None,
+    repacked_ib16: Path | None = None,
+    expected_vb_sha256: str | None = None,
+    expected_ib16_sha256: str | None = None,
+) -> dict[str, Any]:
+    expected = build_expectations(
+        json.loads(summary_path.read_text(encoding="utf-8"))
+    )
     if expected["vertex_count"] <= 0:
         raise ValueError("vertex_count must be positive")
-    report = correlate(expected, parse_draw_evidence(geometry_path.read_text(encoding="utf-8", errors="replace")))
+
+    geometry_text = geometry_path.read_text(encoding="utf-8", errors="replace")
+    draws = parse_draw_evidence(geometry_text)
+    report = correlate(expected, draws)
+
     artifacts = {}
     for label, path, size, sha in (
         ("repacked_vertex_buffer", repacked_vb, expected["vertex_buffer_bytes"], expected_vb_sha256),
@@ -240,13 +284,19 @@ def build_report(summary_path: Path, geometry_path: Path, *, repacked_vb: Path |
         if path is not None:
             artifacts[label] = validate_repacked_artifact(path, size, label, sha)
             report["blocking_reasons"].extend(artifacts[label]["blocking_reasons"])
+
     report["blocking_reasons"] = list(dict.fromkeys(report["blocking_reasons"]))
     report["ready"] = not report["blocking_reasons"]
     report["status"] = "match" if report["ready"] else "blocked"
-    report["source"] = {"summary": summary_path.name, "geometry_dump": geometry_path.name, "draw_count": len(parse_draw_evidence(geometry_path.read_text(encoding="utf-8", errors="replace")))}
+    report["source"] = {
+        "summary": summary_path.name,
+        "geometry_dump": geometry_path.name,
+        "draw_count": len(draws),
+    }
     if artifacts:
         report["repacked_artifacts"] = artifacts
     return report
+
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
@@ -258,13 +308,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--expected-vb-sha256")
     ap.add_argument("--expected-ib16-sha256")
     args = ap.parse_args(argv)
-    report = build_report(args.summary, args.geometry, repacked_vb=args.repacked_vb,
-                          repacked_ib16=args.repacked_ib16, expected_vb_sha256=args.expected_vb_sha256,
-                          expected_ib16_sha256=args.expected_ib16_sha256)
+
+    report = build_report(
+        args.summary,
+        args.geometry,
+        repacked_vb=args.repacked_vb,
+        repacked_ib16=args.repacked_ib16,
+        expected_vb_sha256=args.expected_vb_sha256,
+        expected_ib16_sha256=args.expected_ib16_sha256,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    args.output.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
