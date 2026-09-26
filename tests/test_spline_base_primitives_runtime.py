@@ -75,3 +75,4 @@ def test_cursor_can_return_through_wrap_helper_at_zero():
     )
     assert result["status"] == "helper-wrapped"
     assert result["helper"] == "FUN_007025a0"
+    assert result["segment_index"] is None
