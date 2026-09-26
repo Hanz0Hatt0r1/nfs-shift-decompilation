@@ -27,3 +27,35 @@ def test_capture_schema_reports_multiple_invalid_events():
     assert report['ready'] is False
     assert report['event_count']==2
     assert len(report['blocking_reasons'])>=1
+
+def test_capture_schema_rejects_invalid_create_texture():
+    row = {
+        "event": "create_texture",
+        "frame": 1,
+        "texture_ptr": "0x1",
+        "width": 0,
+        "height": 32,
+        "levels": 0,
+        "usage": 0,
+        "format": 21,
+        "pool": 1,
+    }
+    reasons = validate_capture_event(row)
+    assert "create-texture:width-invalid" in reasons
+    assert "create-texture:levels-invalid" in reasons
+
+
+def test_capture_schema_rejects_invalid_create_cube_texture():
+    row = {
+        "event": "create_cube_texture",
+        "frame": 1,
+        "texture_ptr": "0x2",
+        "edge_length": 0,
+        "levels": 0,
+        "usage": 0,
+        "format": 21,
+        "pool": 1,
+    }
+    reasons = validate_capture_event(row)
+    assert "create-cube-texture:edge-length-invalid" in reasons
+    assert "create-cube-texture:levels-invalid" in reasons
