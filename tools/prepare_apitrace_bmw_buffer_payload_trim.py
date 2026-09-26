@@ -21,6 +21,7 @@ LOCK_RE = re.compile(
     r"(?P<method>Lock|Unlock|GetDesc)\("
 )
 THIS_RE = re.compile(r"\bthis\s*=\s*(0x[0-9a-fA-F]+)")
+FAKE_MEMCPY_RE = re.compile(r"^(?P<call>\d+)\s+memcpy\s*\(")
 CREATE_RE = re.compile(r"^\s*(\d+)\s+IDirect3D(?:VertexBuffer9|IndexBuffer9)::")
 PTR_RE = r"(?:NULL|0x[0-9a-fA-F]+)"
 
@@ -84,6 +85,23 @@ def _dump_calls(
     return result.stdout
 
 
+def _fake_memcpy_calls_near_unlock(
+    trace: Path,
+    apitrace: str,
+    unlock_call: int,
+    window: int = 4,
+) -> list[int]:
+    first = max(0, unlock_call - max(1, window))
+    last = unlock_call + max(1, window)
+    text = _dump_calls(trace, apitrace, first, last)
+    calls: list[int] = []
+    for line in text.splitlines():
+        match = FAKE_MEMCPY_RE.match(line)
+        if match:
+            calls.append(int(match.group("call")))
+    return sorted(set(calls))
+
+
 def _fallback_lifecycle_calls(
     trace: Path,
     apitrace: str,
@@ -128,6 +146,7 @@ def build_callset(
     resources = []
     fallback_queries = []
     missing_payload_pairs = []
+    missing_fake_memcpy = []
 
     for kind, resource in _resource_rows(report):
         creation = (resource.get("creation") or {}).get("call")
@@ -209,6 +228,26 @@ def build_callset(
                 }
             )
 
+        fake_memcpy_calls: dict[int, list[int]] = {}
+        for unlock_call in unlocks:
+            if trace is None:
+                candidates: list[int] = []
+            else:
+                candidates = _fake_memcpy_calls_near_unlock(
+                    trace, apitrace, unlock_call
+                )
+            fake_memcpy_calls[unlock_call] = candidates
+            if not candidates:
+                missing_fake_memcpy.append(
+                    {
+                        "kind": kind,
+                        "pointer": pointer,
+                        "creation_call": creation,
+                        "unlock_call": unlock_call,
+                    }
+                )
+            callset.update(candidates)
+
         callset.add(creation)
         callset.update(active)
         resources.append(
@@ -218,6 +257,9 @@ def build_callset(
                 "creation_call": creation,
                 "lock_calls": sorted(locks),
                 "unlock_calls": sorted(unlocks),
+                "fake_memcpy_calls_by_unlock": {
+                    str(k): sorted(v) for k, v in sorted(fake_memcpy_calls.items())
+                },
                 "active_lifecycle_calls": sorted(active),
                 "payload_pair_observed": payload_pair_ok,
             }
@@ -231,8 +273,12 @@ def build_callset(
         "callset_count": len(callset),
         "fallback_queries": fallback_queries,
         "missing_payload_pairs": missing_payload_pairs,
+        "missing_fake_memcpy": missing_fake_memcpy,
         "ready_for_payload_trim": (
-            len(resources) == 7 and not fallback_queries and not missing_payload_pairs
+            len(resources) == 7
+            and not fallback_queries
+            and not missing_payload_pairs
+            and not missing_fake_memcpy
         ),
     }
 
@@ -327,13 +373,14 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    if plan["missing_payload_pairs"] and not args.allow_missing_payload_pairs:
+    if (plan["missing_payload_pairs"] or plan["missing_fake_memcpy"]) and not args.allow_missing_payload_pairs:
         print(
             json.dumps(
                 {
                     "status": "blocked",
                     "reason": "missing-active-lock-unlock-pair",
                     "missing_payload_pairs": plan["missing_payload_pairs"],
+                    "missing_fake_memcpy": plan["missing_fake_memcpy"],
                     "callset": str(callset_file),
                 },
                 ensure_ascii=False,

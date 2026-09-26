@@ -53,3 +53,18 @@ The final trim uses apitrace's supported \`--calls=@file\` syntax. citetur
 This phase establishes that the compact trace contains the D3D9 buffer upload
 calls necessary for payload recovery. It does not assume that text dumping is a
 byte extractor; exact byte identity remains a separate check.
+
+## Fake memcpy payload calls
+
+An apitrace D3D9 buffer Unlock emits a separate fake `memcpy` call. The fake
+call carries the mapped bytes as a `TYPE_BLOB`. Therefore a trim callset that
+contains only the outer Unlock would discard the payload.
+
+Phase 349 now performs a bounded dump around each active Unlock and adds the
+corresponding fake `memcpy` call numbers to the callset. The plan records them
+as `fake_memcpy_calls_by_unlock` and blocks `ready_for_payload_trim` when an
+active Unlock has no discovered fake memcpy call.
+
+This keeps the full-trace scan out of the workflow while preserving the actual
+payload-bearing calls needed by Phase 350.
+
