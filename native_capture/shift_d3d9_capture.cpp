@@ -21,15 +21,19 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace {
 
 constexpr std::size_t D3D9_VTABLE_COUNT = 119;
 constexpr std::size_t IDIRECT3D9_VTABLE_COUNT = 17;
+constexpr std::size_t TEXTURE_VTABLE_COUNT = 22;
 
 constexpr std::size_t SLOT_PRESENT = 17;
 constexpr std::size_t SLOT_CREATE_TEXTURE = 23;
 constexpr std::size_t SLOT_CREATE_CUBE_TEXTURE = 25;
+constexpr std::size_t SLOT_TEXTURE_LOCK_RECT = 19;
+constexpr std::size_t SLOT_TEXTURE_UNLOCK_RECT = 20;
 constexpr std::size_t SLOT_SET_TEXTURE = 65;
 constexpr std::size_t SLOT_DRAW_INDEXED_PRIMITIVE = 82;
 constexpr std::size_t SLOT_CREATE_VERTEX_SHADER = 91;
@@ -62,6 +66,10 @@ using CreateTextureFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DTexture9**, HANDLE*);
 using CreateCubeTextureFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DCubeTexture9**, HANDLE*);
+using TextureLockRectFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DTexture9*, UINT, D3DLOCKED_RECT*, const RECT*, DWORD);
+using TextureUnlockRectFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DTexture9*, UINT);
 using CreateVertexShaderFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const DWORD*, IDirect3DVertexShader9**);
 using SetVertexShaderFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -85,6 +93,8 @@ CreateVertexDeclarationFn g_real_create_vertex_declaration = nullptr;
 SetVertexDeclarationFn g_real_set_vertex_declaration = nullptr;
 CreateTextureFn g_real_create_texture = nullptr;
 CreateCubeTextureFn g_real_create_cube_texture = nullptr;
+TextureLockRectFn g_real_texture_lock_rect = nullptr;
+TextureUnlockRectFn g_real_texture_unlock_rect = nullptr;
 SetStreamSourceFn g_real_set_stream_source = nullptr;
 SetIndicesFn g_real_set_indices = nullptr;
 SetTextureFn g_real_set_texture = nullptr;
@@ -470,6 +480,165 @@ void patch_object_vtable(
     std::size_t count,
     std::size_t slot,
     void* hook,
+    void** original_out);
+struct TextureLockState {
+    UINT level = 0;
+    D3DLOCKED_RECT locked{};
+    D3DSURFACE_DESC desc{};
+    bool capture = false;
+};
+
+std::mutex g_texture_lock_state_mutex;
+std::unordered_map<void*, TextureLockState> g_texture_lock_states;
+std::atomic<unsigned long long> g_texture_payload_sequence{0};
+
+bool texture_payload_capture_enabled() {
+    return env_enabled("SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS");
+}
+
+std::string texture_payload_dir() {
+    const char* directory = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR");
+    std::string value = (directory && *directory) ? directory : ".";
+    if (!value.empty() && value.back() != '\\' && value.back() != '/') value.push_back('\\');
+    return value;
+}
+
+std::size_t texture_payload_byte_size(const D3DSURFACE_DESC& desc, LONG pitch) {
+    if (pitch <= 0) return 0;
+    if (desc.Format == D3DFMT_DXT1 ||
+        desc.Format == D3DFMT_DXT3 ||
+        desc.Format == D3DFMT_DXT5) {
+        const std::size_t block_rows = std::max<UINT>(1, (desc.Height + 3) / 4);
+        return static_cast<std::size_t>(pitch) * block_rows;
+    }
+    return static_cast<std::size_t>(pitch) * desc.Height;
+}
+
+std::string texture_payload_path(IDirect3DTexture9* texture, UINT level) {
+    std::ostringstream path;
+    path << texture_payload_dir()
+         << "shift_d3d9_texture_payload_"
+         << CaptureWriter::ptr(texture).substr(1, CaptureWriter::ptr(texture).size() - 2)
+         << "_l" << level
+         << "_" << g_texture_payload_sequence.fetch_add(1)
+         << ".bin";
+    return path.str();
+}
+
+void emit_texture_payload(
+    IDirect3DTexture9* texture,
+    const TextureLockState& state,
+    const std::string& path,
+    std::size_t byte_size,
+    const char* status) {
+    std::ostringstream f;
+    f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
+      << ",\"resource_type_name\":\"texture2d\""
+      << ",\"level\":" << state.level
+      << ",\"width\":" << state.desc.Width
+      << ",\"height\":" << state.desc.Height
+      << ",\"pitch\":" << state.locked.Pitch
+      << ",\"format\":" << static_cast<unsigned>(state.desc.Format)
+      << ",\"pool\":" << static_cast<unsigned>(state.desc.Pool)
+      << ",\"byte_size\":" << byte_size
+      << ",\"snapshot_status\":" << CaptureWriter::quote(status)
+      << ",\"payload_path\":" << CaptureWriter::quote(path);
+    writer().write_event("texture_payload", f.str());
+}
+
+HRESULT STDMETHODCALLTYPE hook_texture_lock_rect(
+    IDirect3DTexture9* self,
+    UINT level,
+    D3DLOCKED_RECT* locked,
+    const RECT* rect,
+    DWORD flags) {
+    const HRESULT hr = g_real_texture_lock_rect
+        ? g_real_texture_lock_rect(self, level, locked, rect, flags)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && locked && texture_payload_capture_enabled() &&
+        level == 0 && !(flags & D3DLOCK_READONLY)) {
+        TextureLockState state{};
+        state.level = level;
+        state.locked = *locked;
+        IDirect3DSurface9* surface = nullptr;
+        if (SUCCEEDED(self->GetSurfaceLevel(level, &surface))) {
+            state.capture = SUCCEEDED(surface->GetDesc(&state.desc));
+            surface->Release();
+        }
+        std::lock_guard<std::mutex> lock(g_texture_lock_state_mutex);
+        if (state.capture && state.locked.pBits) {
+            g_texture_lock_states[self] = state;
+        }
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_texture_unlock_rect(
+    IDirect3DTexture9* self,
+    UINT level) {
+    TextureLockState state{};
+    bool captured = false;
+    {
+        std::lock_guard<std::mutex> lock(g_texture_lock_state_mutex);
+        const auto it = g_texture_lock_states.find(self);
+        if (it != g_texture_lock_states.end() && it->second.level == level) {
+            state = it->second;
+            g_texture_lock_states.erase(it);
+            captured = state.capture && state.locked.pBits;
+        }
+    }
+
+    std::vector<unsigned char> payload;
+    std::string path;
+    if (captured) {
+        const std::size_t byte_size = texture_payload_byte_size(state.desc, state.locked.Pitch);
+        if (byte_size > 0) {
+            payload.assign(
+                static_cast<const unsigned char*>(state.locked.pBits),
+                static_cast<const unsigned char*>(state.locked.pBits) + byte_size);
+            path = texture_payload_path(self, level);
+        }
+    }
+
+    const HRESULT hr = g_real_texture_unlock_rect
+        ? g_real_texture_unlock_rect(self, level)
+        : E_FAIL;
+
+    if (captured && SUCCEEDED(hr) && !payload.empty()) {
+        std::ofstream output(path, std::ios::binary);
+        if (output.is_open()) {
+            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
+            if (output.good()) {
+                emit_texture_payload(self, state, path, payload.size(), "captured");
+                return hr;
+            }
+        }
+        emit_texture_payload(self, state, path, payload.size(), "capture-failed");
+    }
+    return hr;
+}
+
+void patch_texture_object(IDirect3DTexture9* texture) {
+    if (!texture) return;
+    patch_object_vtable(
+        texture,
+        TEXTURE_VTABLE_COUNT,
+        SLOT_TEXTURE_LOCK_RECT,
+        reinterpret_cast<void*>(&hook_texture_lock_rect),
+        reinterpret_cast<void**>(&g_real_texture_lock_rect));
+    patch_object_vtable(
+        texture,
+        TEXTURE_VTABLE_COUNT,
+        SLOT_TEXTURE_UNLOCK_RECT,
+        reinterpret_cast<void*>(&hook_texture_unlock_rect),
+        reinterpret_cast<void**>(&g_real_texture_unlock_rect));
+}
+
+void patch_object_vtable(
+    void* object,
+    std::size_t count,
+    std::size_t slot,
+    void* hook,
     void** original_out) {
 
     if (!object || slot >= count) return;
@@ -571,6 +740,7 @@ HRESULT STDMETHODCALLTYPE hook_create_texture(
           << ",\"pool\":" << static_cast<unsigned>(pool);
         append_texture_descriptor_json(f, *out_texture);
         writer().write_event("create_texture", f.str());
+        patch_texture_object(*out_texture);
     }
     return hr;
 }

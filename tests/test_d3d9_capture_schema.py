@@ -59,3 +59,45 @@ def test_capture_schema_rejects_invalid_create_cube_texture():
     reasons = validate_capture_event(row)
     assert "create-cube-texture:edge-length-invalid" in reasons
     assert "create-cube-texture:levels-invalid" in reasons
+
+
+def test_capture_schema_accepts_texture_payload():
+    row = {
+        "event": "texture_payload",
+        "frame": 3,
+        "texture_ptr": "0x100",
+        "resource_type_name": "texture2d",
+        "level": 0,
+        "width": 8,
+        "height": 8,
+        "pitch": 16,
+        "format": 827611204,
+        "pool": 1,
+        "byte_size": 32,
+        "snapshot_status": "captured",
+        "payload_path": "textures/0x100_l0.bin",
+    }
+    assert validate_capture_event(row) == []
+
+
+def test_capture_schema_rejects_invalid_texture_payload():
+    row = {
+        "event": "texture_payload",
+        "frame": 3,
+        "texture_ptr": "0x100",
+        "level": -1,
+        "width": 0,
+        "height": 0,
+        "pitch": 0,
+        "format": 0,
+        "pool": 0,
+        "byte_size": 0,
+        "snapshot_status": "bad",
+    }
+    reasons = validate_capture_event(row)
+    assert "texture-payload:level-invalid" in reasons
+    assert "texture-payload:width-invalid" in reasons
+    assert "texture-payload:height-invalid" in reasons
+    assert "texture-payload:pitch-invalid" in reasons
+    assert "texture-payload:byte-size-invalid" in reasons
+    assert "texture-payload:status-invalid" in reasons

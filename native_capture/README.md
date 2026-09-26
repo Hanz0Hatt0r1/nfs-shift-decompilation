@@ -147,3 +147,20 @@ creation metadata. The Python runtime trace joins these events to later
 This establishes the runtime pointer -> D3D9 creation-instance boundary. It
 does not identify the original SHIFT DDS archive resource by itself; that
 identity still requires resource-content evidence.
+
+
+### Optional raw texture payload capture
+
+Set `SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS=1` to capture level-0 write-side
+`IDirect3DTexture9::LockRect/UnlockRect` payloads into separate binary files.
+The JSONL stream emits `texture_payload` with the texture pointer, dimensions,
+pitch, D3D format, byte count, level and file path.
+
+Set `SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR` to choose the payload directory.
+
+Payload capture is intentionally opt-in because managed-texture uploads can
+be numerous. The current hook covers 2D `IDirect3DTexture9` objects and writes
+the locked memory before the original `UnlockRect` call invalidates it.
+
+This is a raw level-0 surface payload, not a DDS file header. It is therefore
+suitable for block-level comparison with the decoded archive DDS base level.
