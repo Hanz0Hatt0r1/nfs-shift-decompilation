@@ -31,6 +31,7 @@ EVENTS = {
     "set_texture",
     "create_texture",
     "create_cube_texture",
+    "texture_payload",
     "present_screenshot",
     "present_screenshot_failed",
     "draw_indexed_primitive",
@@ -138,7 +139,7 @@ def build_runtime_binding_evidence(
     }
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
-        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
+        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "texture_payloads": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
     })
     blockers: list[dict[str, Any]] = []
 
@@ -219,6 +220,22 @@ def build_runtime_binding_evidence(
             binding["snapshot_status"] = row.get("snapshot_status")
             binding["snapshot_paths"] = list(row.get("snapshot_paths") or [])
             frame["texture_bindings"].append(binding)
+        elif event == "texture_payload":
+            frame["texture_payloads"].append({
+                "texture_ptr": _ptr(row.get("texture_ptr")),
+                "resource_type_name": row.get("resource_type_name"),
+                "level": row.get("level"),
+                "width": row.get("width"),
+                "height": row.get("height"),
+                "pitch": row.get("pitch"),
+                "format": row.get("format"),
+                "pool": row.get("pool"),
+                "byte_size": row.get("byte_size"),
+                "snapshot_status": row.get("snapshot_status"),
+                "payload_path": row.get("payload_path"),
+                "event_index": row.get("event_index"),
+                "line": row.get("_line"),
+            })
         elif event in {"present_screenshot", "present_screenshot_failed"}:
             frame["screenshot_events"].append({
                 "event": event,
@@ -338,6 +355,7 @@ def build_runtime_binding_evidence(
                 "index_binding": dict(frame["index_binding"] or {}),
                 "texture_bindings": [dict(x) for x in frame["texture_bindings"]],
                 "active_texture_bindings": [active_textures[key] for key in sorted(active_textures)],
+                "texture_payloads": [dict(x) for x in frame["texture_payloads"]],
                 "constant_writes": [dict(x) for x in frame["constant_writes"]],
                 "constant_state": constant_state,
             }
@@ -562,6 +580,7 @@ def build_runtime_binding_evidence(
             "decoded_shader_count": sum(1 for x in shaders.values() if x.get("decoded")),
             "texture_object_count": len(texture_resources),
             "texture_set_binding_count": sum(len(x.get("texture_bindings", [])) for x in frame_rows),
+            "texture_payload_event_count": sum(len(x.get("texture_payloads", [])) for x in frame_rows),
             "constant_write_count": sum(len(x.get("constant_writes", [])) for x in frame_rows),
             "frame_count": len(frame_rows),
             "source": "external-runtime-capture",
