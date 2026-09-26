@@ -153,6 +153,15 @@ def build_callset(
                 active = _fallback_lifecycle_calls(
                     trace, apitrace, str(pointer), creation, lock_window
                 )
+                if not active:
+                    fallback_queries.append(
+                        {
+                            "kind": kind,
+                            "pointer": pointer,
+                            "creation_call": creation,
+                            "reason": "bounded-lifecycle-lookup-found-no-lock-unlock",
+                        }
+                    )
 
         locks = []
         unlocks = []
