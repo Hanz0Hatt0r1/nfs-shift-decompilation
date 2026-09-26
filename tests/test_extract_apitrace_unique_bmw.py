@@ -112,3 +112,19 @@ def test_runtime_geometry_evidence_filters_false_positive_bindings(tmp_path: Pat
     assert summary["unique_geometry_bindings"] == 3
     assert summary["target_vertex_buffer_pointer"] == "0xaaa"
     assert summary["target_index_buffer_pointers"] == {2098: "0xbbb", 2462: "0xccc"}
+
+def test_trim_command_uses_supported_callset_file(tmp_path: Path, monkeypatch):
+    dump = tmp_path / "garage.txt"
+    out = tmp_path / "out"
+    _write_dump(dump)
+    import tools.extract_apitrace_unique_bmw as mod
+
+    seen = {}
+
+    def fake_run(command, check):
+        seen["command"] = command
+
+    monkeypatch.setattr(mod.subprocess, "run", fake_run)
+    summary = extract(dump, out, progress_every=0, auto_trim=True)
+    assert summary["trim_status"] == "unsupported-for-text-dump"
+
