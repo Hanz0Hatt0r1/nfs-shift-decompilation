@@ -294,6 +294,7 @@ def describe_bulk_sync(
         "scalar_window_result": scalar_window_result,
         "evidence": {
             "function": "FUN_008176f0",
+            "neighbor_selector": "FUN_00816c00",
             "first_base": "+0x358",
             "first_cursor": "+0x35c",
             "second_base": "+0x360",
