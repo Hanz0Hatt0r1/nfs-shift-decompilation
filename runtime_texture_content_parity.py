@@ -191,6 +191,13 @@ def compare_raw_payload_chain_to_dds(
 
     level_rows = []
     blockers: list[str] = []
+    for row in payload_rows:
+        try:
+            level = int(row.get("level"))
+        except (TypeError, ValueError):
+            continue
+        if level >= len(expected_levels):
+            blockers.append(f"raw-payload:unexpected-level:l{level}")
     for level in sorted(observed):
         row = observed[level]
         path = Path(str(row.get("payload_path") or ""))
@@ -537,6 +544,7 @@ def build_bmw_paint_runtime_texture_parity(
                 else:
                     result["ready"] = False
                     result["status"] = "mismatch"
+                    result["blocking_reasons"] = list(raw_chain.get("blocking_reasons") or [])
                     blockers.extend(raw_chain.get("blocking_reasons") or [])
             elif "comparisons" in result:
                 result["content_identity_method"] = "ppm-rgb"
