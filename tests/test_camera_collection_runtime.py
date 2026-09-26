@@ -74,7 +74,7 @@ def test_collection_xml_deserializer_tracks_static_camera_inheritance():
         elements=[{"class": "StaticCamera", "secondary": "a"}],
         factory_results=["camera"],
         application_results=[True],
-        inheritance_results=[[STATIC_CAMERA_TYPE]] if False else [["DAT_00c25e70"]],
+        inheritance_results=[["DAT_00c25e70"]],
     )
     assert result["status"] == "loaded"
     assert result["entries"][0]["is_static_camera_derived"] is True
