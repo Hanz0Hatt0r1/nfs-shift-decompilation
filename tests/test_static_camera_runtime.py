@@ -64,3 +64,25 @@ def test_static_interpolation_reproduces_component_blend():
         alpha=0.25,
     )
     assert result["value"] == [1.5, 12.5, 3.5]
+
+
+def test_static_camera_record_lookup_copies_snapshot_and_zeroes_aux():
+    result = resolve_static_camera_record(
+        source_pointer="record0",
+        record_helper_success=True,
+        record_snapshot={0x10: 1, 0x64: 7},
+    )
+    assert result["status"] == "resolved"
+    assert result["actions"][1]["action"] == "FUN_00812a00"
+    assert result["actions"][2] == {"action": "write +0x64", "value": 0}
+
+
+def test_static_camera_blend_uses_absolute_wrap_counts_times_eight():
+    result = blend_static_camera_records(
+        first_value=[1, 10, 3],
+        second_value=[3, 20, 5],
+        alpha=0.25,
+        first_wrap_count=-1,
+        second_wrap_count=2,
+    )
+    assert result["value"] == [1.5, 2.5, 3.5]

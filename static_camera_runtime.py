@@ -228,3 +228,83 @@ def interpolate_static_camera_records(
             "the rounded-Y helper values are caller-supplied",
         ],
     }
+
+
+
+def resolve_static_camera_record(
+    *,
+    source_pointer: Any | None,
+    record_helper_success: bool,
+    record_snapshot: Mapping[int, Any] | None = None,
+) -> dict[str, Any]:
+    """Reproduce FUN_00813550's indexed record lookup/copy boundary."""
+    if source_pointer in (None, 0) or not record_helper_success:
+        return {
+            "format": FORMAT,
+            "version": 1,
+            "operation": "static-camera-record-lookup",
+            "status": "unavailable",
+            "output": None,
+            "actions": [
+                {
+                    "action": "FUN_00702540",
+                    "result": False,
+                }
+            ],
+        }
+    snapshot = dict(record_snapshot or {})
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "operation": "static-camera-record-lookup",
+        "status": "resolved",
+        "output": snapshot,
+        "actions": [
+            {"action": "FUN_00702540", "result": True},
+            {"action": "FUN_00812a00", "source": "local record snapshot"},
+            {"action": "write +0x64", "value": 0},
+        ],
+        "evidence": {
+            "function": "FUN_00813550",
+            "source_selection": "this + param_2*4",
+            "record_copy": "FUN_00812a00",
+            "output_aux": "+0x64",
+        },
+    }
+
+
+def blend_static_camera_records(
+    *,
+    first_value: Sequence[float],
+    second_value: Sequence[float],
+    alpha: float,
+    first_wrap_count: int = 0,
+    second_wrap_count: int = 0,
+) -> dict[str, Any]:
+    """Reproduce FUN_008135b0's exact three-component blend."""
+    if len(first_value) != 3 or len(second_value) != 3:
+        raise ValueError("first_value and second_value require three values")
+    t = float(alpha)
+    a = list(map(float, first_value))
+    b = list(map(float, second_value))
+    first_y = a[1] - abs(int(first_wrap_count)) * 8.0
+    second_y = b[1] - abs(int(second_wrap_count)) * 8.0
+    value = [
+        (1.0 - t) * a[0] + t * b[0],
+        (1.0 - t) * first_y + t * second_y,
+        (1.0 - t) * a[2] + t * b[2],
+    ]
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "operation": "static-camera-blend",
+        "alpha": t,
+        "value": value,
+        "evidence": {
+            "function": "FUN_008135b0",
+            "first_record": "index 0",
+            "second_record": "index 1",
+            "y_wrap_period": 8.0,
+            "y_wrap_operation": "subtract abs(integer_count) * 8",
+        },
+    }
