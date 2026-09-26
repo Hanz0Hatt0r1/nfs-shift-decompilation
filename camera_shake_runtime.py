@@ -109,7 +109,7 @@ def advance_shake_state(
 ) -> ShakeState:
     """Reproduce FUN_00823be0 countdown/reseed transition."""
     dt = float(delta)
-    if dt < 0.0:
+    if dt <= 0.0:
         return state
 
     new_time = state.time - state.rate * dt
