@@ -11,7 +11,7 @@ def test_global_init_resets_double_buffer_and_dirty_fields():
     assert result["writes"]["+0x2574"] == 0xFFFFFFFF
     assert result["writes"]["+0x269c"] == 0
     assert result["writes"]["+0x269d"] == 0
-    assert result["writes"]["+0x2688"] if "+0x2688" in result["writes"] else True
+    assert result["actions"][2]["condition"] == "+0x2688 == 0"
 
 
 def test_slot_init_clears_both_views_and_reselects_profile_minus_one():
