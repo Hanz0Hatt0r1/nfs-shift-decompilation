@@ -43,7 +43,7 @@ def test_autozoom_clamps_desired_value_and_limits_step():
 
 def test_speed_fov_blend_clamps_normalized_t():
     result = compute_speed_fov_blend(
-        current_fov=1,
+        distance=15,
         speed=15,
         fov_min_speed=0,
         fov_max_speed=10,
