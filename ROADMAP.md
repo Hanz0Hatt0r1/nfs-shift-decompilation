@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 247. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 337. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1352,3 +1352,23 @@ camera_event_stream_runtime.py reconstructs FUN_0080c710 channel filtering (`eve
 ## Phase 265: Camera event record layout
 
 camera_event_record_runtime.py reconstructs the exact type-5 camera-command event header/payload layout from FUN_0080b9b0 and the type-3 producer field writes from FUN_0080ccb0. Raw dword bits are preserved; semantic meanings of payload words remain unresolved.
+
+
+## Phase 337: BMW runtime texture resource parity
+
+Phase 337 joins the exact BMW paint texture pointers from the draw-local runtime
+witness to the latest successful D3D9 texture creation event before each target
+draw. The new gate then compares runtime dimensions, mip count and known D3D9
+formats with the exact retail DDS metadata when the BFF is supplied.
+
+The supplied `shift_resources.txt` corpus shows an important distinction:
+s2 and s4 have runtime creation shapes compatible with the small archived paint
+specular/common-blank resources, while the s1 pointer used by the BMW paint draw
+is a 1024×1024 DXT1 runtime object despite the archived `common_paint.dds`
+entry being only 184 bytes. s1 is therefore treated as a generated/transformed
+candidate pending runtime content capture rather than being mislabeled as the
+raw archive DDS.
+
+The native capture producer and runtime parser now preserve the creation-instance
+boundary. Pixel-level identity still requires captured sampler surfaces; matching
+dimensions or formats alone is not considered byte identity.
