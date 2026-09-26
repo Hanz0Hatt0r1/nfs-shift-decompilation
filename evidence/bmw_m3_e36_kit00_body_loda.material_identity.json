@@ -1,0 +1,74 @@
+{
+  "format": "SHIFT.BMWM3MEBPrimitiveMaterialParity/1",
+  "status": "match",
+  "ready": true,
+  "resource": {
+    "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+  },
+  "archive": "BMW_M3_E36.bff",
+  "primitive_count": 6,
+  "unique_material_reference_count": 5,
+  "material_reference_use_count": {
+    "vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt": 1,
+    "vehicles/bmw_m3_e36/bmw_m3_e36_lightsglass.bmt": 1,
+    "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt": 2,
+    "vehicles/bmw_m3_e36/generic_gloss_black.bmt": 1,
+    "vehicles/bmw_m3_e36/generic_windows.bmt": 1
+  },
+  "primitive_correlations": [
+    {
+      "index": 0,
+      "mtx": "vehicles/BMW_M3_E36/BMW_M3_E36_BADGING.mtx",
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt",
+      "bff_entry_index": 862,
+      "bff_type": 2,
+      "triangle_count": 50
+    },
+    {
+      "index": 1,
+      "mtx": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx",
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "bff_entry_index": 858,
+      "bff_type": 2,
+      "triangle_count": 2098
+    },
+    {
+      "index": 2,
+      "mtx": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx",
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "bff_entry_index": 858,
+      "bff_type": 2,
+      "triangle_count": 2462
+    },
+    {
+      "index": 3,
+      "mtx": "vehicles/BMW_M3_E36/GENERIC_WINDOWS.mtx",
+      "bmt": "vehicles/bmw_m3_e36/generic_windows.bmt",
+      "bff_entry_index": 855,
+      "bff_type": 2,
+      "triangle_count": 204
+    },
+    {
+      "index": 4,
+      "mtx": "vehicles/BMW_M3_E36/GENERIC_GLOSS_BLACK.mtx",
+      "bmt": "vehicles/bmw_m3_e36/generic_gloss_black.bmt",
+      "bff_entry_index": 853,
+      "bff_type": 2,
+      "triangle_count": 192
+    },
+    {
+      "index": 5,
+      "mtx": "vehicles/BMW_M3_E36/BMW_M3_E36_LIGHTSGLASS.mtx",
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_lightsglass.bmt",
+      "bff_entry_index": 850,
+      "bff_type": 2,
+      "triangle_count": 28
+    }
+  ],
+  "boundary": {
+    "identity_only": true,
+    "bmt_payload_decoded": false,
+    "shader_texture_semantics_proven": false
+  }
+}
