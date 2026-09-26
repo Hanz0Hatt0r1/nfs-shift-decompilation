@@ -489,7 +489,7 @@ struct TextureLockState {
 };
 
 std::mutex g_texture_lock_state_mutex;
-std::unordered_map<void*, TextureLockState> g_texture_lock_states;
+std::unordered_map<void*, std::unordered_map<UINT, TextureLockState>> g_texture_lock_states;
 std::atomic<unsigned long long> g_texture_payload_sequence{0};
 
 bool texture_payload_capture_enabled() {
@@ -556,7 +556,7 @@ HRESULT STDMETHODCALLTYPE hook_texture_lock_rect(
         ? g_real_texture_lock_rect(self, level, locked, rect, flags)
         : E_FAIL;
     if (SUCCEEDED(hr) && locked && texture_payload_capture_enabled() &&
-        level == 0 && !(flags & D3DLOCK_READONLY)) {
+        !(flags & D3DLOCK_READONLY)) {
         TextureLockState state{};
         state.level = level;
         state.locked = *locked;
@@ -567,7 +567,7 @@ HRESULT STDMETHODCALLTYPE hook_texture_lock_rect(
         }
         std::lock_guard<std::mutex> lock(g_texture_lock_state_mutex);
         if (state.capture && state.locked.pBits) {
-            g_texture_lock_states[self] = state;
+            g_texture_lock_states[self][level] = state;
         }
     }
     return hr;
@@ -581,10 +581,16 @@ HRESULT STDMETHODCALLTYPE hook_texture_unlock_rect(
     {
         std::lock_guard<std::mutex> lock(g_texture_lock_state_mutex);
         const auto it = g_texture_lock_states.find(self);
-        if (it != g_texture_lock_states.end() && it->second.level == level) {
-            state = it->second;
-            g_texture_lock_states.erase(it);
-            captured = state.capture && state.locked.pBits;
+        if (it != g_texture_lock_states.end()) {
+            const auto level_it = it->second.find(level);
+            if (level_it != it->second.end()) {
+                state = level_it->second;
+                it->second.erase(level_it);
+                if (it->second.empty()) {
+                    g_texture_lock_states.erase(it);
+                }
+                captured = state.capture && state.locked.pBits;
+            }
         }
     }
 
