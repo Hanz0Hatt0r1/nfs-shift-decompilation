@@ -131,13 +131,18 @@ def build_runtime_binding_evidence(
         for row in texture_lifecycle.get("resources") or []
         if isinstance(row, Mapping) and row.get("texture_ptr")
     }
+    texture_bindings_by_index = {
+        int(row["source_index"]): row
+        for row in texture_lifecycle.get("bindings") or []
+        if isinstance(row, Mapping) and row.get("source_index") is not None
+    }
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
         "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
     })
     blockers: list[dict[str, Any]] = []
 
-    for row in rows:
+    for source_index, row in enumerate(rows):
         frame_key = str(row.get("frame", "unknown"))
         frame = frames[frame_key]
         frame["frame"] = row.get("frame")
@@ -201,15 +206,16 @@ def build_runtime_binding_evidence(
             }
             if descriptor:
                 binding["resource_descriptor"] = descriptor
+            lifecycle_binding = texture_bindings_by_index.get(source_index)
             if binding["texture_ptr"] is None:
                 binding["resource_creation_status"] = "null"
-            else:
-                creation = texture_resources.get(binding["texture_ptr"])
-                binding["resource_creation_status"] = (
-                    "observed" if creation is not None else "not-observed"
-                )
-                if creation is not None:
+            elif lifecycle_binding and lifecycle_binding.get("resource_creation_status") == "observed":
+                binding["resource_creation_status"] = "observed"
+                creation = lifecycle_binding.get("resource_creation")
+                if isinstance(creation, Mapping):
                     binding["resource_creation"] = dict(creation)
+            else:
+                binding["resource_creation_status"] = "not-observed"
             binding["snapshot_status"] = row.get("snapshot_status")
             binding["snapshot_paths"] = list(row.get("snapshot_paths") or [])
             frame["texture_bindings"].append(binding)
