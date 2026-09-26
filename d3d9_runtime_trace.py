@@ -31,6 +31,8 @@ EVENTS = {
     "set_texture",
     "create_texture",
     "create_cube_texture",
+    "create_vertex_buffer",
+    "create_index_buffer",
     "texture_payload",
     "buffer_payload",
     "present_screenshot",
