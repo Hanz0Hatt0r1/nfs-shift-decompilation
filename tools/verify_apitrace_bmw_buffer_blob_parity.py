@@ -53,7 +53,11 @@ def compare(actual_path: Path, expected_path: Path, label: str) -> dict[str, Any
     }
 
 
-def build_report(evidence: Mapping[str, Any], expected_dir: Path) -> dict[str, Any]:
+def build_report(
+    evidence: Mapping[str, Any],
+    expected_dir: Path,
+    evidence_base_dir: Path | None = None,
+) -> dict[str, Any]:
     records = evidence.get("buffers") or []
     if not isinstance(records, list):
         return {
@@ -88,7 +92,7 @@ def build_report(evidence: Mapping[str, Any], expected_dir: Path) -> dict[str, A
     else:
         runtime_path = Path(str(vb[0]["payload_path"]))
         if not runtime_path.is_absolute():
-            runtime_path = Path(evidence.get("source", {}).get("geometry_report", ".")).parent / runtime_path
+            runtime_path = (evidence_base_dir or Path(".")).resolve() / runtime_path
         expected_path = expected_dir / "vertex_buffer.meb-order.bin"
         try:
             results.append(compare(runtime_path, expected_path, "vertex-buffer"))
@@ -107,7 +111,7 @@ def build_report(evidence: Mapping[str, Any], expected_dir: Path) -> dict[str, A
         for row in sorted(ib, key=lambda item: int(item["blob_size"])):
             runtime_path = Path(str(row["payload_path"]))
             if not runtime_path.is_absolute():
-                runtime_path = Path(evidence.get("source", {}).get("geometry_report", ".")).parent / runtime_path
+                runtime_path = (evidence_base_dir or Path(".")).resolve() / runtime_path
             size = int(row["blob_size"])
             expected_path = expected_by_size[size]
             label = f"index-buffer:{size}-bytes"
@@ -158,7 +162,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     evidence = json.loads(args.buffer_blob_evidence.read_text(encoding="utf-8"))
-    result = build_report(evidence, args.expected_dir.resolve())
+    result = build_report(
+        evidence,
+        args.expected_dir.resolve(),
+        args.buffer_blob_evidence.parent.resolve(),
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
