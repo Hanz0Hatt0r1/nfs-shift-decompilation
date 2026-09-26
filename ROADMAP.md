@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 338. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 339. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1382,3 +1382,15 @@ complete material texture snapshots without requiring a hidden environment
 override.
 
 The explicit stage filter remains available for smaller diagnostic captures.
+
+
+## Phase 339: raw D3D9 texture payload capture
+
+The native capture producer now supports opt-in level-0 write-side LockRect/UnlockRect
+payload capture for 2D textures. Captured bytes are stored separately and referenced
+by a versioned `texture_payload` event with pointer, dimensions, pitch, format and
+byte count.
+
+This creates a direct compressed-surface comparison boundary for later BMW DDS
+parity. PPM remains the visual/RGB checkpoint; raw payloads are the preferred proof
+for DXT base-level identity. Cube textures remain on the existing six-face PPM path.
