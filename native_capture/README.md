@@ -214,3 +214,18 @@ pointer. JSONL emits a `buffer_payload` event with buffer pointer, kind,
 requested/full sizes, flags and payload path.
 
 The capture is opt-in because particle and dynamic mesh buffers can be large.
+
+
+### Reproducible BMW buffer capture
+
+`tools/run_bmw_d3d9_buffer_capture.sh` enables the raw VB/IB capture contract in
+one Linux/Wine invocation. It forces `WINEDLLOVERRIDES=d3d9=n`, enables
+`SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS=1`, writes payloads below
+`<output>/buffer_payloads` and keeps screenshots/texture snapshots disabled by
+default.
+
+Example:
+
+    tools/run_bmw_d3d9_buffer_capture.sh --prefix "$WINEPREFIX" --output-dir /tmp/shift-bmw-capture -- /path/to/SHIFT.exe
+
+Use Phase 346 intake on the resulting JSONL plus payload directory.

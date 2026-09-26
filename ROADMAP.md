@@ -1479,3 +1479,8 @@ For the BMW body the candidate vertex buffer is 3,550 vertices × 76 bytes = 269
 ## Phase 346: BMW buffer capture intake
 
 Added `bmw_runtime_buffer_capture_intake.py` to make the Phase 344/345 geometry byte-proof workflow reproducible in one command. The intake validates the real D3D9 JSONL capture, resolves payload files relative to the capture directory, generates MEB-derived expected VB/IB candidates, runs exact byte parity and emits one combined report. Exit code 0 is reserved for a fully matched runtime VB plus all six target INDEX16 buffers with no runtime blockers.
+
+
+## Phase 347: reproducible BMW D3D9 capture launcher
+
+Added `tools/run_bmw_d3d9_buffer_capture.sh` for a deterministic Linux/Wine capture invocation. It forces the local d3d9 proxy, enables only raw VB/IB payload capture, keeps screenshot/texture snapshots off by default, and writes JSONL plus binary payloads into a single handoff directory for Phase 346 intake.
