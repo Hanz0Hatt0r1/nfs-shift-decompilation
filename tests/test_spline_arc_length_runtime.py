@@ -36,6 +36,8 @@ def test_forward_boundary_uses_16120_callback_boundary():
         proposed_distance=50,
         normalized_progress=1.25,
         reverse=False,
+        external_scalar=0.0,
+        spline_loop_flag=False,
         endpoint_handler_result=17.5,
     )
     assert result["action"] == "FUN_00816120"
@@ -48,8 +50,9 @@ def test_cursor_advance_accepts_sampler_step_and_updates_position():
     def sampler(segment_index, t, param3, mode):
         return {
             "position": [1.0, 0.0, 0.0],
-            "state_10": 0.5,
-            "state_14": 1.0,
+            "state_10_out": 0.5,
+            "segment_t_out": t,
+            "denominator": 1.0,
             "param3_out": param3,
         }
 
@@ -73,8 +76,9 @@ def test_cursor_advance_refines_a_too_large_step():
     def sampler(segment_index, t, param3, mode):
         return {
             "position": [2.0 * t, 0.0, 0.0],
-            "state_10": 0.0,
-            "state_14": 1.0,
+            "state_10_out": 0.0,
+            "segment_t_out": t,
+            "denominator": 1.0,
             "param3_out": param3,
         }
 
