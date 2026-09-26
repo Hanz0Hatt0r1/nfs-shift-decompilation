@@ -33,6 +33,8 @@ constexpr std::size_t CUBE_TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t SLOT_PRESENT = 17;
 constexpr std::size_t SLOT_CREATE_TEXTURE = 23;
 constexpr std::size_t SLOT_CREATE_CUBE_TEXTURE = 25;
+constexpr std::size_t SLOT_CREATE_VERTEX_BUFFER = 26;
+constexpr std::size_t SLOT_CREATE_INDEX_BUFFER = 27;
 constexpr std::size_t SLOT_TEXTURE_LOCK_RECT = 19;
 constexpr std::size_t SLOT_TEXTURE_UNLOCK_RECT = 20;
 constexpr std::size_t SLOT_SET_TEXTURE = 65;
@@ -67,6 +69,10 @@ using CreateTextureFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, UINT, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DTexture9**, HANDLE*);
 using CreateCubeTextureFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, UINT, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DCubeTexture9**, HANDLE*);
+using CreateVertexBufferFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, UINT, DWORD, DWORD, D3DPOOL, IDirect3DVertexBuffer9**, HANDLE*);
+using CreateIndexBufferFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, UINT, DWORD, D3DFORMAT, D3DPOOL, IDirect3DIndexBuffer9**, HANDLE*);
 using TextureLockRectFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DTexture9*, UINT, D3DLOCKED_RECT*, const RECT*, DWORD);
 using TextureUnlockRectFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -98,6 +104,8 @@ CreateVertexDeclarationFn g_real_create_vertex_declaration = nullptr;
 SetVertexDeclarationFn g_real_set_vertex_declaration = nullptr;
 CreateTextureFn g_real_create_texture = nullptr;
 CreateCubeTextureFn g_real_create_cube_texture = nullptr;
+CreateVertexBufferFn g_real_create_vertex_buffer = nullptr;
+CreateIndexBufferFn g_real_create_index_buffer = nullptr;
 TextureLockRectFn g_real_texture_lock_rect = nullptr;
 TextureUnlockRectFn g_real_texture_unlock_rect = nullptr;
 CubeTextureLockRectFn g_real_cube_texture_lock_rect = nullptr;
@@ -875,6 +883,54 @@ HRESULT STDMETHODCALLTYPE hook_present(
     return hr;
 }
 
+HRESULT STDMETHODCALLTYPE hook_create_vertex_buffer(
+    IDirect3DDevice9* self,
+    UINT length,
+    DWORD usage,
+    DWORD fvf,
+    D3DPOOL pool,
+    IDirect3DVertexBuffer9** out_buffer,
+    HANDLE* shared_handle) {
+    const HRESULT hr = g_real_create_vertex_buffer
+        ? g_real_create_vertex_buffer(self, length, usage, fvf, pool, out_buffer, shared_handle)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && out_buffer && *out_buffer) {
+        std::ostringstream f;
+        f << "\"vertex_buffer_ptr\":" << CaptureWriter::ptr(*out_buffer)
+          << ",\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"length\":" << length
+          << ",\"usage\":" << usage
+          << ",\"fvf\":" << fvf
+          << ",\"pool\":" << static_cast<unsigned>(pool);
+        writer().write_event("create_vertex_buffer", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_create_index_buffer(
+    IDirect3DDevice9* self,
+    UINT length,
+    DWORD usage,
+    D3DFORMAT format,
+    D3DPOOL pool,
+    IDirect3DIndexBuffer9** out_buffer,
+    HANDLE* shared_handle) {
+    const HRESULT hr = g_real_create_index_buffer
+        ? g_real_create_index_buffer(self, length, usage, format, pool, out_buffer, shared_handle)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && out_buffer && *out_buffer) {
+        std::ostringstream f;
+        f << "\"index_buffer_ptr\":" << CaptureWriter::ptr(*out_buffer)
+          << ",\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"length\":" << length
+          << ",\"usage\":" << usage
+          << ",\"format\":" << static_cast<unsigned>(format)
+          << ",\"pool\":" << static_cast<unsigned>(pool);
+        writer().write_event("create_index_buffer", f.str());
+    }
+    return hr;
+}
+
 HRESULT STDMETHODCALLTYPE hook_create_texture(
     IDirect3DDevice9* self,
     UINT width,
@@ -1239,6 +1295,12 @@ void patch_device(IDirect3DDevice9* device) {
     patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_CUBE_TEXTURE,
                         reinterpret_cast<void*>(&hook_create_cube_texture),
                         reinterpret_cast<void**>(&g_real_create_cube_texture));
+    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_VERTEX_BUFFER,
+                        reinterpret_cast<void*>(&hook_create_vertex_buffer),
+                        reinterpret_cast<void**>(&g_real_create_vertex_buffer));
+    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_INDEX_BUFFER,
+                        reinterpret_cast<void*>(&hook_create_index_buffer),
+                        reinterpret_cast<void**>(&g_real_create_index_buffer));
     patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_VERTEX_DECLARATION,
                         reinterpret_cast<void*>(&hook_create_vertex_declaration),
                         reinterpret_cast<void**>(&g_real_create_vertex_declaration));
