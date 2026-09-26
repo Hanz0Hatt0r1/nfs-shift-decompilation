@@ -1,6 +1,4 @@
-from pathlib import Path
 import json
-import struct
 
 import tools.extract_apitrace_bmw_buffer_blobs as mod
 
@@ -34,15 +32,23 @@ def blob(value: bytes) -> bytes:
     return bytes([mod.TYPE_BLOB]) + uvarint(len(value)) + value
 
 
-def call_enter(call_no: int, sig_id: int, name: str, arg_names: list[str], args: dict[int, bytes], *, fake=False) -> bytes:
-    out = bytearray([mod.EVENT_ENTER])
-    out += uvarint(0)  # thread id
+def call_enter(
+    call_no: int,
+    sig_id: int,
+    name: str,
+    arg_names: list[str],
+    args: dict[int, bytes],
+    *,
+    fake: bool = False,
+) -> bytes:
+    del call_no
+    out = bytearray([mod.EVENT_ENTER, 0])
     out += uvarint(sig_id)
-        out += string(name)
-        out += uvarint(len(arg_names))
-        for arg_name in arg_names:
-            out += string(arg_name)
-    for index, value in args.items():
+    out += string(name)
+    out += uvarint(len(arg_names))
+    for arg_name in arg_names:
+        out += string(arg_name)
+    for index, value in sorted(args.items()):
         out += bytes([mod.CALL_ARG]) + uvarint(index) + value
     if fake:
         out += bytes([mod.CALL_FLAGS]) + uvarint(mod.FLAG_FAKE)
@@ -58,26 +64,31 @@ def synthetic_trace() -> bytes:
     out = bytearray()
     out += uvarint(mod.TRACE_VERSION)
     out += uvarint(mod.TRACE_VERSION)
-    out += uvarint(0)  # properties terminator
+    out += uvarint(0)
 
-    # call 0: Unlock(this=0x100)
+    # apitrace emits the fake memcpy immediately before the real Unlock.
     out += call_enter(
-        0, 0, "IDirect3DVertexBuffer9::Unlock", ["this"],
-        {0: opaque(0x100)},
-    )
-
-    # call 1: nested fake memcpy(dest, src=TYPE_BLOB, n)
-    out += call_enter(
-        1, 1, "memcpy", ["dest", "src", "n"],
+        0,
+        1,
+        "memcpy",
+        ["dest", "src", "n"],
         {0: opaque(0x200), 1: blob(b"ABCDEFGH"), 2: uint(8)},
         fake=True,
     )
-    out += leave(1)
     out += leave(0)
+
+    out += call_enter(
+        1,
+        2,
+        "IDirect3DVertexBuffer9::Unlock",
+        ["this"],
+        {0: opaque(0x100)},
+    )
+    out += leave(1)
     return bytes(out)
 
 
-def geometry_report(tmp_path: Path) -> Path:
+def geometry_report(tmp_path):
     path = tmp_path / "geometry.json"
     path.write_text(
         json.dumps(
@@ -88,15 +99,15 @@ def geometry_report(tmp_path: Path) -> Path:
                         {
                             "pointer": "0x100",
                             "creation": {
-                                "call": 0,
+                                "call": 99,
                                 "raw": (
-                                    "0 IDirect3DDevice9::CreateVertexBuffer("
+                                    "99 IDirect3DDevice9::CreateVertexBuffer("
                                     "Length = 8) = D3D_OK"
                                 ),
                             },
                             "lifecycle": {
                                 "lock_calls": [],
-                                "unlock_calls": [0],
+                                "unlock_calls": [1],
                                 "release_calls": [],
                             },
                             "derived_bytes_if_num_vertices_times_stride": 8,
@@ -111,14 +122,17 @@ def geometry_report(tmp_path: Path) -> Path:
     return path
 
 
-def test_extracts_fake_memcpy_type_blob(monkeypatch, tmp_path: Path):
-    data = synthetic_trace()
-    monkeypatch.setattr(mod, "read_trace_bytes", lambda trace, limit: data)
-
+def test_extracts_fake_memcpy_type_blob(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        mod,
+        "read_trace_bytes",
+        lambda trace, limit: synthetic_trace(),
+    )
     report = geometry_report(tmp_path)
     out = tmp_path / "out"
+
     summary = mod.extract(
-        Path("/tmp/bmw_buffer_payload.trace"),
+        tmp_path / "bmw_buffer_payload.trace",
         report,
         out,
     )
@@ -126,6 +140,7 @@ def test_extracts_fake_memcpy_type_blob(monkeypatch, tmp_path: Path):
     assert summary["payload_records"] == 1
     assert summary["unique_payload_blobs"] == 1
     assert summary["full_buffer_candidates"] == 1
+
     payloads = list((out / "buffer_payloads").glob("*.bin"))
     assert len(payloads) == 1
     assert payloads[0].read_bytes() == b"ABCDEFGH"
@@ -135,14 +150,14 @@ def test_extracts_fake_memcpy_type_blob(monkeypatch, tmp_path: Path):
     )
     row = evidence["buffers"][0]
     assert row["buffer_pointer"] == "0x100"
-    assert row["unlock_call"] == 0
-    assert row["fake_memcpy_call"] == 1
+    assert row["unlock_call"] == 1
+    assert row["fake_memcpy_call"] == 0
     assert row["blob_size"] == 8
     assert row["n_matches_blob_size"] is True
     assert row["full_buffer_candidate"] is True
 
 
-def test_rejects_invalid_trace_magic(tmp_path: Path):
+def test_invalid_trace_magic_is_rejected(tmp_path):
     path = tmp_path / "bad.trace"
     path.write_bytes(b"not-an-apitrace")
     try:
