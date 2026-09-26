@@ -16,6 +16,7 @@ import hashlib
 import json
 import re
 import struct
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 
