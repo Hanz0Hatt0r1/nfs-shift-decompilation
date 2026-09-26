@@ -144,3 +144,44 @@ def test_bmw_paint_parity_rejects_multiple_snapshot_paths(monkeypatch):
     )
     assert report["ready"] is False
     assert "runtime:texture-snapshot-ambiguous:s1" in report["blocking_reasons"]
+
+
+def _dds_dxt1(width, height, base_payload):
+    header = bytearray(128)
+    header[0:4] = b"DDS "
+    header[12:16] = int(height).to_bytes(4, "little")
+    header[16:20] = int(width).to_bytes(4, "little")
+    header[84:88] = int.from_bytes(b"DXT1", "little").to_bytes(4, "little")
+    return bytes(header) + bytes(base_payload)
+
+
+def test_compare_raw_payload_to_dds_base_level_exact(tmp_path):
+    payload = b"01234567"
+    dds = _dds_dxt1(4, 4, payload)
+    raw = tmp_path / "texture.bin"
+    raw.write_bytes(payload)
+    report = parity.compare_raw_payload_to_dds(raw, dds)
+    assert report["ready"] is True
+    assert report["status"] == "match"
+    assert report["dds_source_format"] == "DXT1"
+
+
+def test_compare_raw_payload_to_dds_rejects_length_and_content_mismatch(tmp_path):
+    dds = _dds_dxt1(4, 4, b"01234567")
+    raw = tmp_path / "texture.bin"
+    raw.write_bytes(b"012345")
+    report = parity.compare_raw_payload_to_dds(raw, dds)
+    assert report["ready"] is False
+    assert any(reason.startswith("raw-payload:length-mismatch") for reason in report["blocking_reasons"])
+    assert any(reason.startswith("raw-payload:sha256-mismatch") for reason in report["blocking_reasons"])
+
+
+def test_texture_payload_candidates_are_ordered_by_event_index():
+    rows = parity._texture_payload_candidates({
+        "texture_payloads": [
+            {"texture_ptr": "0x100", "level": 0, "snapshot_status": "captured", "payload_path": "late.bin", "event_index": 20},
+            {"texture_ptr": "0x100", "level": 1, "snapshot_status": "captured", "payload_path": "mip.bin", "event_index": 30},
+            {"texture_ptr": "0x100", "level": 0, "snapshot_status": "captured", "payload_path": "early.bin", "event_index": 10},
+        ],
+    }, "0x100")
+    assert [row["payload_path"] for row in rows] == ["early.bin", "late.bin"]
