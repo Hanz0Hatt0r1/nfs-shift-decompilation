@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 341. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 342. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1421,3 +1421,17 @@ being correlated with the wrong draw.
 
 The next texture-resource gap is raw cube-texture payload capture for the s3
 environment object.
+
+## Phase 342: D3D9 cube texture payload capture
+
+The native D3D9 producer now captures write-side full-surface cube texture payloads
+through IDirect3DCubeTexture9::LockRect(face, level, ...). Payload events reuse
+the versioned texture_payload schema and add explicit face/face-name fields.
+
+The lock state is keyed by texture pointer + face + mip level, while runtime trace
+retains the ordered records in the same top-level and draw-local payload collections.
+
+This closes the capture boundary for cube resources. The supplied BMW s3 object is
+a runtime-global 256x256 A16B16G16R16F render-target cube in D3DPOOL_DEFAULT, so raw
+LockRect parity is not currently claimed and no static retail environment DDS has been
+established.
