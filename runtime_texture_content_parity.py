@@ -310,7 +310,7 @@ def _texture_payload_candidates(
             event_index = int(row.get("event_index", -1))
         except (TypeError, ValueError):
             continue
-        if level < 0 or row.get("snapshot_status") != "captured" or not row.get("payload_path"):
+        if level != 0 or row.get("snapshot_status") != "captured" or not row.get("payload_path"):
             continue
         if creation_event_index is not None and event_index <= creation_event_index:
             continue
