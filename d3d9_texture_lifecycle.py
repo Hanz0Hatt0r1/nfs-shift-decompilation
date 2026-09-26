@@ -74,6 +74,7 @@ def build_texture_lifecycle(events: Iterable[Mapping[str, Any]]) -> dict[str, An
         elif event == "set_texture":
             pointer = _ptr(row.get("texture_ptr"))
             binding = {
+                "source_index": event_index,
                 "stage": int(row["stage"]),
                 "texture_ptr": pointer,
                 "frame": row.get("frame"),
