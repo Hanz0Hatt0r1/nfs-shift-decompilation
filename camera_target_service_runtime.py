@@ -89,7 +89,7 @@ def find_and_assign_tracking_target(
             "format": FORMAT,
             "version": 1,
             "operation": "target-acquire",
-            "status": "fallback-string-target",
+            "status": "fallback-selector",
             "actions": actions + [
                 {"action": "FUN_00811570"},
                 {"action": "write +0xd8"},
@@ -128,7 +128,7 @@ def find_and_assign_tracking_target(
         "format": FORMAT,
         "version": 1,
         "operation": "target-acquire",
-        "status": "fallback-string-target",
+        "status": "fallback-selector",
         "actions": actions,
         "evidence": {
             "function": "FUN_00812aa0",
