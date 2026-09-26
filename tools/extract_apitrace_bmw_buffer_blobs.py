@@ -369,26 +369,86 @@ def extract(
         )
     reader.properties()
 
-    stacks: dict[int, list[dict]] = defaultdict(list)
     last_lock: dict[str, int] = {}
+    pending_fake_memcpy: dict | None = None
     records = []
     dedup = {}
+
+    def record_payload(fake: dict, unlock: dict) -> None:
+        nonlocal pending_fake_memcpy
+        blob = fake["args"].get(1)
+        buffer_ptr = pointer(unlock["args"].get(0))
+        unlock_name = unlock["name"]
+        if not (
+            isinstance(blob, bytes)
+            and unlock_name in {
+                "IDirect3DVertexBuffer9::Unlock",
+                "IDirect3DIndexBuffer9::Unlock",
+            }
+            and buffer_ptr in allowed
+            and fake["call"] + 1 == unlock["call"]
+        ):
+            return
+
+        candidates = [
+            row for row in allowed[buffer_ptr]
+            if unlock["call"] in row["unlock_calls"]
+        ]
+        if not candidates:
+            return
+
+        row = candidates[0]
+        sha = hashlib.sha256(blob).hexdigest()
+        payload_dir = output_dir / "buffer_payloads"
+        payload_dir.mkdir(parents=True, exist_ok=True)
+        filename = (
+            f"{row['kind']}_{buffer_ptr[2:]}_"
+            f"{unlock['call']}_{fake['call']}_{sha[:16]}.bin"
+        )
+        path = payload_dir / filename
+        if sha not in dedup:
+            path.write_bytes(blob)
+            dedup[sha] = path
+        else:
+            path = dedup[sha]
+
+        expected = row["expected_size"]
+        records.append(
+            {
+                "fake_memcpy_call": fake["call"],
+                "unlock_call": unlock["call"],
+                "lock_call": last_lock.get(buffer_ptr),
+                "thread": unlock["thread"],
+                "buffer_kind": row["kind"],
+                "buffer_pointer": buffer_ptr,
+                "creation_call": row["creation_call"],
+                "blob_size": len(blob),
+                "expected_buffer_size": expected,
+                "full_buffer_candidate": (
+                    expected is not None and len(blob) == expected
+                ),
+                "blob_sha256": sha,
+                "payload_path": str(path),
+                "n_argument": fake["args"].get(2),
+                "n_matches_blob_size": fake["args"].get(2) == len(blob),
+                "dest_pointer": pointer(fake["args"].get(0)),
+            }
+        )
 
     while reader.pos < len(data):
         event = reader.byte()
         if event == EVENT_ENTER:
             thread_id = reader.uint() if semantic_version >= 4 else 0
+            call_no = getattr(reader, "_call_no", 0)
             name, _ = reader.function_sig()
             frame = {
-                "call": getattr(reader, "_call_no", 0),
+                "call": call_no,
                 "thread": thread_id,
                 "name": name,
                 "args": {},
                 "fake": False,
-                "parent": stacks[thread_id][-1] if stacks[thread_id] else None,
             }
-            reader._call_no = frame["call"] + 1
-            stacks[thread_id].append(frame)
+            reader._call_no = call_no + 1
 
             while True:
                 detail = reader.byte()
@@ -410,75 +470,35 @@ def extract(
                         f"unknown call detail {detail} for {name}"
                     )
 
-            if name.endswith("::Lock"):
+            # fakeMemcpy is emitted immediately before the real Unlock call.
+            if (
+                pending_fake_memcpy is not None
+                and frame["call"] != pending_fake_memcpy["call"] + 1
+            ):
+                pending_fake_memcpy = None
+
+            if name == "memcpy" and frame["fake"]:
+                blob = frame["args"].get(1)
+                pending_fake_memcpy = (
+                    frame if isinstance(blob, bytes) else None
+                )
+            elif name.endswith("::Lock"):
                 ptr = pointer(frame["args"].get(0))
                 if ptr:
                     last_lock[ptr] = frame["call"]
-            elif name.endswith("::Release"):
+                pending_fake_memcpy = None
+            elif name.endswith("::Unlock"):
+                if pending_fake_memcpy is not None:
+                    record_payload(pending_fake_memcpy, frame)
                 ptr = pointer(frame["args"].get(0))
                 if ptr:
                     last_lock.pop(ptr, None)
+                pending_fake_memcpy = None
+            else:
+                pending_fake_memcpy = None
 
-            if name == "memcpy" and frame["fake"]:
-                parent = frame["parent"]
-                blob = frame["args"].get(1)
-                unlock_call = parent["call"] if parent else None
-                unlock_name = parent["name"] if parent else None
-                buffer_ptr = (
-                    pointer(parent["args"].get(0)) if parent else None
-                )
-                if (
-                    isinstance(blob, bytes)
-                    and unlock_name in {
-                        "IDirect3DVertexBuffer9::Unlock",
-                        "IDirect3DIndexBuffer9::Unlock",
-                    }
-                    and unlock_call is not None
-                    and buffer_ptr in allowed
-                ):
-                    candidates = [
-                        row for row in allowed[buffer_ptr]
-                        if unlock_call in row["unlock_calls"]
-                    ]
-                    if candidates:
-                        row = candidates[0]
-                        sha = hashlib.sha256(blob).hexdigest()
-                        payload_dir = output_dir / "buffer_payloads"
-                        payload_dir.mkdir(parents=True, exist_ok=True)
-                        filename = (
-                            f"{row['kind']}_{buffer_ptr[2:]}_"
-                            f"{unlock_call}_{frame['call']}_{sha[:16]}.bin"
-                        )
-                        path = payload_dir / filename
-                        if sha not in dedup:
-                            path.write_bytes(blob)
-                            dedup[sha] = path
-                        else:
-                            path = dedup[sha]
-                        expected = row["expected_size"]
-                        records.append(
-                            {
-                                "fake_memcpy_call": frame["call"],
-                                "unlock_call": unlock_call,
-                                "lock_call": last_lock.get(buffer_ptr),
-                                "thread": thread_id,
-                                "buffer_kind": row["kind"],
-                                "buffer_pointer": buffer_ptr,
-                                "creation_call": row["creation_call"],
-                                "blob_size": len(blob),
-                                "expected_buffer_size": expected,
-                                "full_buffer_candidate": (
-                                    expected is not None and len(blob) == expected
-                                ),
-                                "blob_sha256": sha,
-                                "payload_path": str(path),
-                                "n_argument": frame["args"].get(2),
-                                "n_matches_blob_size": (
-                                    frame["args"].get(2) == len(blob)
-                                ),
-                                "dest_pointer": pointer(frame["args"].get(0)),
-                            }
-                        )
+            # The enter event has already consumed the call's details. The
+            # following leave event is parsed only to consume/validate it.
             continue
 
         if event == EVENT_LEAVE:
@@ -502,10 +522,6 @@ def extract(
                     raise TraceFormatError(
                         f"unknown leave detail {detail} for call {call_no}"
                     )
-            for stack in stacks.values():
-                if stack and stack[-1]["call"] == call_no:
-                    stack.pop()
-                    break
             continue
 
         raise TraceFormatError(

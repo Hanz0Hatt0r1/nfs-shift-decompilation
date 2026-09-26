@@ -16,7 +16,7 @@ blob bytes for the seven verified BMW buffer instances.
     └── buffer_payloads/
         └── *.bin
 
-Each payload record preserves the fake memcpy call, enclosing Unlock call,
+Each payload record preserves the fake memcpy call, the immediately following Unlock call,
 resource creation call, buffer pointer, payload size and SHA-256. A payload is
 marked a full-buffer candidate only when its byte count equals the verified
 D3D9 creation length.
