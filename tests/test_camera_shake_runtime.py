@@ -66,9 +66,10 @@ def test_advance_reseeds_and_resets_time_when_countdown_expires():
     assert advanced.first_current == (1, 0, 0)
 
 
-def test_negative_delta_is_ignored():
+def test_non_positive_delta_is_ignored():
     state = ShakeState(time=1.0, rate=2.0)
     assert advance_shake_state(state, delta=-1.0) == state
+    assert advance_shake_state(state, delta=0.0) == state
 
 
 def test_interpolation_uses_smoothstep_and_amplitude():
