@@ -13,6 +13,7 @@ EVENT_SPECS = {
     'set_texture': {'pointer':'texture_ptr', 'allow_null': True},
     'create_texture': {'pointer':'texture_ptr'},
     'create_cube_texture': {'pointer':'texture_ptr'},
+    'texture_payload': {'pointer':'texture_ptr'},
     'present_screenshot': {},
     'present_screenshot_failed': {},
     'create_vertex_shader': {'pointer':'shader_ptr'},
@@ -66,6 +67,24 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
             reasons.append('create-cube-texture:edge-length-invalid')
         if isinstance(row.get('levels'), int) and row['levels'] <= 0:
             reasons.append('create-cube-texture:levels-invalid')
+    if event == 'texture_payload':
+        for key in ('level', 'width', 'height', 'pitch', 'format', 'pool', 'byte_size'):
+            if not isinstance(row.get(key), int):
+                reasons.append(f'texture-payload:{key}-invalid')
+        if isinstance(row.get('level'), int) and row['level'] < 0:
+            reasons.append('texture-payload:level-invalid')
+        if isinstance(row.get('width'), int) and row['width'] <= 0:
+            reasons.append('texture-payload:width-invalid')
+        if isinstance(row.get('height'), int) and row['height'] <= 0:
+            reasons.append('texture-payload:height-invalid')
+        if isinstance(row.get('pitch'), int) and row['pitch'] <= 0:
+            reasons.append('texture-payload:pitch-invalid')
+        if isinstance(row.get('byte_size'), int) and row['byte_size'] <= 0:
+            reasons.append('texture-payload:byte-size-invalid')
+        if row.get('payload_path') is not None and not isinstance(row.get('payload_path'), str):
+            reasons.append('texture-payload:path-invalid')
+        if row.get('snapshot_status') is not None and row.get('snapshot_status') not in {'captured', 'capture-failed'}:
+            reasons.append('texture-payload:status-invalid')
     if event == 'set_texture':
         if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
             reasons.append('texture:stage-invalid')
