@@ -17,14 +17,16 @@ def test_string_parser_uses_length_15_gate_and_vec_callback():
     result = describe_string_property_parse(
         target="vec_a",
         text_value="0;0;0;123456",
+        helper_811390_result=12,
     )
-    assert result["length"] == 12
+    assert result["helper_811390_result"] == 12
     assert result["callback"] == "FUN_00823560"
     result = describe_string_property_parse(
         target="vec_a",
-        text_value="123456789012345",
+        text_value="anything",
+        helper_811390_result=15,
     )
-    assert result["length"] == 15
+    assert result["helper_811390_result"] == 15
     assert result["callback"] == "FUN_00823590"
 
 
@@ -83,3 +85,4 @@ def test_cached_config_only_refreshes_when_selector_changes():
     )
     assert miss["status"] == "refreshed"
     assert miss["snapshot"].parameter == 5
+    assert miss["snapshot"].source_selector == 5
