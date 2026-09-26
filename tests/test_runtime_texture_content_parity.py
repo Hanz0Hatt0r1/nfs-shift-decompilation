@@ -111,3 +111,36 @@ def test_pipeline_snapshot_inventory_reads_snapshot_paths():
         "converted_snapshot_count": 0,
         "snapshots": [],
     }
+
+
+def test_bmw_paint_parity_rejects_multiple_snapshot_paths(monkeypatch):
+    snapshot = {
+        "frames": [{
+            "frame": 9,
+            "draw_snapshots": [{
+                "draw_index": 3,
+                "active_texture_bindings": [
+                    {"stage": 1, "texture_ptr": "0x100", "snapshot_paths": ["a.ppm", "b.ppm"]},
+                    {"stage": 2, "texture_ptr": "0x200", "snapshot_paths": []},
+                    {"stage": 4, "texture_ptr": "0x400", "snapshot_paths": []},
+                ],
+            }],
+        }],
+    }
+    expected = {
+        key: {
+            "parameter": key, "register": register, "path": key,
+            "archive": "b", "entry_index": register, "source_sha256": "a",
+            "source_size": 1, "width": 1, "height": 1, "decoded_rgba_sha256": "a",
+            "decoded_rgb_sha256": "a", "decoded_alpha_observable": True,
+        }
+        for key, register in (
+            ("diffuseTexture", 1), ("specularTexture", 2), ("scratchControlTexture", 4)
+        )
+    }
+    monkeypatch.setattr(parity, "_extract_expected_textures", lambda _bff: expected)
+    report = parity.build_bmw_paint_runtime_texture_parity(
+        snapshot, frame=9, draw_index=3, primary_bff="BMW_M3_E36.bff"
+    )
+    assert report["ready"] is False
+    assert "runtime:texture-snapshot-ambiguous:s1" in report["blocking_reasons"]
