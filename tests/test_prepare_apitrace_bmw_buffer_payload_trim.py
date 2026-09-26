@@ -1,6 +1,6 @@
-import json
 from pathlib import Path
 
+import tools.prepare_apitrace_bmw_buffer_payload_trim as mod
 from tools.prepare_apitrace_bmw_buffer_payload_trim import build_callset
 
 
@@ -35,18 +35,17 @@ def _report(tmp_path: Path) -> dict:
     }
 
 
-def test_active_creation_lifecycle_is_filtered_by_release(tmp_path: Path):
-    plan = build_callset(_report(tmp_path))
-    assert plan["callset"] == [10, 20, 30, 100, 105, 110, 115]
+def test_active_creation_lifecycle_is_filtered_by_release():
+    plan = build_callset(_report(Path(".")))
+    assert plan["callset"] == [10, 20, 30, 100, 101, 105, 110, 111, 115]
     assert plan["ready_for_payload_trim"] is False
-    # Only the first lock/unlock belongs to the active creation lifetime.
     assert plan["resources"][0]["lock_calls"] == [101]
     assert plan["resources"][0]["unlock_calls"] == [105]
     assert plan["resources"][1]["lock_calls"] == [111]
     assert plan["resources"][1]["unlock_calls"] == [115]
 
 
-def test_geometry_reports_with_complete_lifetimes_are_ready():
+def test_complete_lifetimes_are_ready_and_include_fake_memcpy(monkeypatch):
     report = {
         "format": "SHIFT.APITRACEUniqueBMWGeometry/1",
         "callset": [],
@@ -55,7 +54,11 @@ def test_geometry_reports_with_complete_lifetimes_are_ready():
                 {
                     "pointer": "0x100",
                     "creation": {"call": 100},
-                    "lifecycle": {"lock_calls": [101], "unlock_calls": [102], "release_calls": []},
+                    "lifecycle": {
+                        "lock_calls": [101],
+                        "unlock_calls": [102],
+                        "release_calls": [],
+                    },
                 }
             ],
             "index_buffers": [
@@ -63,13 +66,74 @@ def test_geometry_reports_with_complete_lifetimes_are_ready():
                     {
                         "pointer": hex(0x200 + i),
                         "creation": {"call": 110 + i},
-                        "lifecycle": {"lock_calls": [120 + i], "unlock_calls": [130 + i], "release_calls": []},
+                        "lifecycle": {
+                            "lock_calls": [120 + i],
+                            "unlock_calls": [130 + i],
+                            "release_calls": [],
+                        },
                     }
                     for i in range(6)
                 ]
             ],
         },
     }
-    plan = build_callset(report)
+
+    monkeypatch.setattr(
+        mod,
+        "_fake_memcpy_calls_near_unlock",
+        lambda trace, apitrace, unlock_call, window=4: [unlock_call + 1],
+    )
+    plan = build_callset(report, trace=Path("/tmp/SHIFT.trace"))
     assert plan["ready_for_payload_trim"] is True
-    assert plan["callset_count"] == 21
+    assert plan["callset_count"] == 35
+    assert plan["resources"][0]["fake_memcpy_calls_by_unlock"] == {"102": [103]}
+    assert plan["resources"][6]["fake_memcpy_calls_by_unlock"] == {"130": [131]}
+
+
+def test_missing_fake_memcpy_blocks_trim(monkeypatch):
+    report = {
+        "format": "SHIFT.APITRACEUniqueBMWGeometry/1",
+        "callset": [],
+        "resources": {
+            "vertex_buffers": [
+                {
+                    "pointer": "0x100",
+                    "creation": {"call": 100},
+                    "lifecycle": {
+                        "lock_calls": [101],
+                        "unlock_calls": [102],
+                        "release_calls": [],
+                    },
+                }
+            ],
+            "index_buffers": [
+                {
+                    "pointer": "0x200",
+                    "creation": {"call": 110},
+                    "lifecycle": {
+                        "lock_calls": [120],
+                        "unlock_calls": [130],
+                        "release_calls": [],
+                    },
+                }
+            ],
+        },
+    }
+
+    monkeypatch.setattr(
+        mod,
+        "_fake_memcpy_calls_near_unlock",
+        lambda trace, apitrace, unlock_call, window=4: (
+            [] if unlock_call == 130 else [unlock_call + 1]
+        ),
+    )
+    plan = build_callset(report, trace=Path("/tmp/SHIFT.trace"))
+    assert plan["ready_for_payload_trim"] is False
+    assert plan["missing_fake_memcpy"] == [
+        {
+            "kind": "index_buffer",
+            "pointer": "0x200",
+            "creation_call": 110,
+            "unlock_call": 130,
+        }
+    ]
