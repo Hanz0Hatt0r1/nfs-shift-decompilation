@@ -28,6 +28,7 @@ namespace {
 constexpr std::size_t D3D9_VTABLE_COUNT = 119;
 constexpr std::size_t IDIRECT3D9_VTABLE_COUNT = 17;
 constexpr std::size_t TEXTURE_VTABLE_COUNT = 22;
+constexpr std::size_t CUBE_TEXTURE_VTABLE_COUNT = 22;
 
 constexpr std::size_t SLOT_PRESENT = 17;
 constexpr std::size_t SLOT_CREATE_TEXTURE = 23;
@@ -70,6 +71,10 @@ using TextureLockRectFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DTexture9*, UINT, D3DLOCKED_RECT*, const RECT*, DWORD);
 using TextureUnlockRectFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DTexture9*, UINT);
+using CubeTextureLockRectFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DCubeTexture9*, D3DCUBEMAP_FACES, UINT, D3DLOCKED_RECT*, const RECT*, DWORD);
+using CubeTextureUnlockRectFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DCubeTexture9*, D3DCUBEMAP_FACES, UINT);
 using CreateVertexShaderFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const DWORD*, IDirect3DVertexShader9**);
 using SetVertexShaderFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -95,6 +100,8 @@ CreateTextureFn g_real_create_texture = nullptr;
 CreateCubeTextureFn g_real_create_cube_texture = nullptr;
 TextureLockRectFn g_real_texture_lock_rect = nullptr;
 TextureUnlockRectFn g_real_texture_unlock_rect = nullptr;
+CubeTextureLockRectFn g_real_cube_texture_lock_rect = nullptr;
+CubeTextureUnlockRectFn g_real_cube_texture_unlock_rect = nullptr;
 SetStreamSourceFn g_real_set_stream_source = nullptr;
 SetIndicesFn g_real_set_indices = nullptr;
 SetTextureFn g_real_set_texture = nullptr;
@@ -492,6 +499,17 @@ std::mutex g_texture_lock_state_mutex;
 std::unordered_map<void*, std::unordered_map<UINT, TextureLockState>> g_texture_lock_states;
 std::atomic<unsigned long long> g_texture_payload_sequence{0};
 
+struct CubeTextureLockState {
+    D3DCUBEMAP_FACES face = D3DCUBEMAP_FACE_POSITIVE_X;
+    UINT level = 0;
+    D3DLOCKED_RECT locked{};
+    D3DSURFACE_DESC desc{};
+    bool capture = false;
+};
+
+std::mutex g_cube_texture_lock_state_mutex;
+std::unordered_map<void*, std::unordered_map<std::uint64_t, CubeTextureLockState>> g_cube_texture_lock_states;
+
 bool texture_payload_capture_enabled() {
     return env_enabled("SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS");
 }
@@ -544,6 +562,142 @@ void emit_texture_payload(
       << ",\"snapshot_status\":" << CaptureWriter::quote(status)
       << ",\"payload_path\":" << CaptureWriter::quote(path);
     writer().write_event("texture_payload", f.str());
+}
+
+std::uint64_t cube_lock_key(D3DCUBEMAP_FACES face, UINT level) {
+    return (static_cast<std::uint64_t>(static_cast<unsigned>(face)) << 32) |
+           static_cast<std::uint64_t>(level);
+}
+
+std::string cube_texture_payload_path(
+    IDirect3DCubeTexture9* texture,
+    D3DCUBEMAP_FACES face,
+    UINT level) {
+    std::ostringstream path;
+    path << texture_payload_dir()
+         << "shift_d3d9_cube_payload_"
+         << CaptureWriter::ptr(texture).substr(1, CaptureWriter::ptr(texture).size() - 2)
+         << "_" << cube_face_name(face)
+         << "_l" << level
+         << "_" << g_texture_payload_sequence.fetch_add(1)
+         << ".bin";
+    return path.str();
+}
+
+void emit_cube_texture_payload(
+    IDirect3DCubeTexture9* texture,
+    const CubeTextureLockState& state,
+    const std::string& path,
+    std::size_t byte_size,
+    const char* status) {
+    std::ostringstream f;
+    f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
+      << ",\"resource_type_name\":\"cube_texture\""
+      << ",\"face\":" << static_cast<unsigned>(state.face)
+      << ",\"face_name\":" << CaptureWriter::quote(cube_face_name(state.face))
+      << ",\"level\":" << state.level
+      << ",\"width\":" << state.desc.Width
+      << ",\"height\":" << state.desc.Height
+      << ",\"pitch\":" << state.locked.Pitch
+      << ",\"format\":" << static_cast<unsigned>(state.desc.Format)
+      << ",\"pool\":" << static_cast<unsigned>(state.desc.Pool)
+      << ",\"byte_size\":" << byte_size
+      << ",\"snapshot_status\":" << CaptureWriter::quote(status)
+      << ",\"payload_path\":" << CaptureWriter::quote(path);
+    writer().write_event("texture_payload", f.str());
+}
+
+HRESULT STDMETHODCALLTYPE hook_cube_texture_lock_rect(
+    IDirect3DCubeTexture9* self,
+    D3DCUBEMAP_FACES face,
+    UINT level,
+    D3DLOCKED_RECT* locked,
+    const RECT* rect,
+    DWORD flags) {
+    const HRESULT hr = g_real_cube_texture_lock_rect
+        ? g_real_cube_texture_lock_rect(self, face, level, locked, rect, flags)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && locked && texture_payload_capture_enabled() &&
+        !rect && !(flags & D3DLOCK_READONLY)) {
+        CubeTextureLockState state{};
+        state.face = face;
+        state.level = level;
+        state.locked = *locked;
+        state.capture = SUCCEEDED(self->GetLevelDesc(level, &state.desc));
+        if (state.capture && state.locked.pBits) {
+            std::lock_guard<std::mutex> lock(g_cube_texture_lock_state_mutex);
+            g_cube_texture_lock_states[self][cube_lock_key(face, level)] = state;
+        }
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_cube_texture_unlock_rect(
+    IDirect3DCubeTexture9* self,
+    D3DCUBEMAP_FACES face,
+    UINT level) {
+    CubeTextureLockState state{};
+    bool captured = false;
+    {
+        std::lock_guard<std::mutex> lock(g_cube_texture_lock_state_mutex);
+        const auto it = g_cube_texture_lock_states.find(self);
+        if (it != g_cube_texture_lock_states.end()) {
+            const auto level_it = it->second.find(cube_lock_key(face, level));
+            if (level_it != it->second.end()) {
+                state = level_it->second;
+                it->second.erase(level_it);
+                if (it->second.empty()) {
+                    g_cube_texture_lock_states.erase(it);
+                }
+                captured = state.capture && state.locked.pBits;
+            }
+        }
+    }
+
+    std::vector<unsigned char> payload;
+    std::string path;
+    if (captured) {
+        const std::size_t byte_size = texture_payload_byte_size(state.desc, state.locked.Pitch);
+        if (byte_size > 0) {
+            payload.assign(
+                static_cast<const unsigned char*>(state.locked.pBits),
+                static_cast<const unsigned char*>(state.locked.pBits) + byte_size);
+            path = cube_texture_payload_path(self, face, level);
+        }
+    }
+
+    const HRESULT hr = g_real_cube_texture_unlock_rect
+        ? g_real_cube_texture_unlock_rect(self, face, level)
+        : E_FAIL;
+
+    if (captured && SUCCEEDED(hr) && !payload.empty()) {
+        std::ofstream output(path, std::ios::binary);
+        if (output.is_open()) {
+            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
+            if (output.good()) {
+                emit_cube_texture_payload(self, state, path, payload.size(), "captured");
+                return hr;
+            }
+        }
+        emit_cube_texture_payload(self, state, path, payload.size(), "capture-failed");
+    }
+    return hr;
+}
+
+void patch_cube_texture_object(IDirect3DCubeTexture9* texture) {
+    if (!texture) return;
+    patch_object_vtable(
+        texture,
+        CUBE_TEXTURE_VTABLE_COUNT,
+        SLOT_TEXTURE_LOCK_RECT,
+        reinterpret_cast<void*>(&hook_cube_texture_lock_rect),
+        reinterpret_cast<void**>(&g_real_cube_texture_lock_rect));
+    patch_object_vtable(
+        texture,
+        CUBE_TEXTURE_VTABLE_COUNT,
+        SLOT_TEXTURE_UNLOCK_RECT,
+        reinterpret_cast<void*>(&hook_cube_texture_unlock_rect),
+        reinterpret_cast<void**>(&g_real_cube_texture_unlock_rect));
 }
 
 HRESULT STDMETHODCALLTYPE hook_texture_lock_rect(
@@ -774,6 +928,7 @@ HRESULT STDMETHODCALLTYPE hook_create_cube_texture(
           << ",\"pool\":" << static_cast<unsigned>(pool);
         append_texture_descriptor_json(f, *out_texture);
         writer().write_event("create_cube_texture", f.str());
+        patch_cube_texture_object(*out_texture);
     }
     return hr;
 }

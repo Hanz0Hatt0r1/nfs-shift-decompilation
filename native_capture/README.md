@@ -166,3 +166,19 @@ the locked memory before the original `UnlockRect` call invalidates it.
 
 This is a raw texture surface payload, not a DDS file header. It is therefore
 suitable for level-by-level comparison with the decoded archive DDS mip chain.
+
+### Cube texture raw payload capture
+
+When SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS=1 is enabled, successful
+write-side IDirect3DCubeTexture9::LockRect(face, level, ...) calls are captured with the same
+texture_payload event used by 2D textures. Cube records additionally carry
+face and face_name (px/nx/py/ny/pz/nz).
+
+The cube lock state is keyed by texture object, face and mip level. This preserves
+independent face/mip uploads and prevents one cube face from overwriting another
+in-flight lock.
+
+Cube payload capture is subject to the same full-surface rule: sub-rectangle and
+read-only locks are not promoted to complete surface evidence. Render-target cube
+textures in D3DPOOL_DEFAULT remain dependent on the existing face-level PPM
+readback path when LockRect is unavailable.
