@@ -194,3 +194,23 @@ trace joins later stream/index bindings to the observed creation instance.
 The current producer does not capture raw VB/IB bytes yet. This lifecycle event is
 the prerequisite for a future lock/payload comparison against reconstructed MEB
 vertex and INDEX16 data.
+
+    
+### Optional raw vertex/index buffer payload capture
+
+Set `SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS=1` to capture full-surface
+`IDirect3DVertexBuffer9::Lock/Unlock` and
+`IDirect3DIndexBuffer9::Lock/Unlock` contents into standalone binary files.
+
+Set `SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR` to select the output directory.
+
+Only locks with offset 0 and size 0 (whole buffer) or size equal to the queried
+buffer length are promoted to full-buffer payload evidence. The lock must also
+have a successful `GetDesc`. Partial locks and descriptor failures are not
+treated as complete VB/IB payloads.
+
+The payload is copied before the original Unlock call invalidates the lock
+pointer. JSONL emits a `buffer_payload` event with buffer pointer, kind,
+requested/full sizes, flags and payload path.
+
+The capture is opt-in because particle and dynamic mesh buffers can be large.

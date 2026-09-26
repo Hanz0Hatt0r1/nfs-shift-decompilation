@@ -1,0 +1,55 @@
+{
+  "format": "SHIFT.BMWM3RuntimeBufferPayloadParity/1",
+  "status": "not-observed",
+  "ready": false,
+  "resource": {
+    "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+  },
+  "runtime_geometry": {
+    "frame": 30444,
+    "vertex_buffer_ptr": "0x27b39460",
+    "vertex_buffer_bytes": 269800,
+    "index_buffer_ptrs": [
+      "0x27b394e0",
+      "0x27b39560",
+      "0x27b395e0",
+      "0x27b39660",
+      "0x27b396e0",
+      "0x27b39760"
+    ],
+    "index_buffer_bytes": [
+      300,
+      12588,
+      14772,
+      1224,
+      1152,
+      168
+    ]
+  },
+  "capture": {
+    "producer_feature": "SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS",
+    "event_name": "buffer_payload",
+    "full_buffer_rule": "Offset=0 and Size=0 or Size=GetDesc.Size",
+    "partial_locks": "not-promoted",
+    "payload_copy_timing": "before-Unlock"
+  },
+  "current_corpus": {
+    "shift_resources_buffer_payload_events": 0,
+    "mesh_buffer_history_target_vb_events": 0,
+    "raw_runtime_vb_bytes": "not-observed",
+    "raw_runtime_ib_bytes": "not-observed"
+  },
+  "boundary": {
+    "pointer_to_create_instance": "proven",
+    "creation_size_parity": "proven",
+    "raw_runtime_vb_bytes": "not-proven",
+    "raw_runtime_ib_bytes": "not-proven"
+  },
+  "source": {
+    "resource_create_log": "shift_resources.txt",
+    "resource_create_log_sha256": "e8f5e76fd9439e5149b0296a31c7097002242ac3f425a9869e1d965498151124",
+    "frame_dump": "frame_30444.txt",
+    "frame_dump_sha256": "aefd4116c55b07559e5508b21aa838f2cac0186f0e482cbf62500033f7362f29"
+  }
+}

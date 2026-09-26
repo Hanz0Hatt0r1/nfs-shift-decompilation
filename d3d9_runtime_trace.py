@@ -31,7 +31,10 @@ EVENTS = {
     "set_texture",
     "create_texture",
     "create_cube_texture",
+    "create_vertex_buffer",
+    "create_index_buffer",
     "texture_payload",
+    "buffer_payload",
     "present_screenshot",
     "present_screenshot_failed",
     "draw_indexed_primitive",
@@ -141,7 +144,7 @@ def build_runtime_binding_evidence(
     index_buffers: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
-        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "texture_payloads": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
+        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "texture_payloads": [], "buffer_payloads": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
         "vertex_buffer_creations": [], "index_buffer_creations": [],
     })
     blockers: list[dict[str, Any]] = []
@@ -275,6 +278,20 @@ def build_runtime_binding_evidence(
             binding["snapshot_status"] = row.get("snapshot_status")
             binding["snapshot_paths"] = list(row.get("snapshot_paths") or [])
             frame["texture_bindings"].append(binding)
+        elif event == "buffer_payload":
+            frame["buffer_payloads"].append({
+                "buffer_ptr": _ptr(row.get("buffer_ptr")),
+                "resource_type_name": row.get("resource_type_name"),
+                "offset": row.get("offset"),
+                "requested_size": row.get("requested_size"),
+                "buffer_length": row.get("buffer_length"),
+                "captured_byte_size": row.get("captured_byte_size"),
+                "flags": row.get("flags"),
+                "snapshot_status": row.get("snapshot_status"),
+                "payload_path": row.get("payload_path"),
+                "event_index": row.get("event_index"),
+                "line": row.get("_line"),
+            })
         elif event == "texture_payload":
             frame["texture_payloads"].append({
                 "texture_ptr": _ptr(row.get("texture_ptr")),
@@ -414,6 +431,7 @@ def build_runtime_binding_evidence(
                 "texture_bindings": [dict(x) for x in frame["texture_bindings"]],
                 "active_texture_bindings": [active_textures[key] for key in sorted(active_textures)],
                 "texture_payloads": [dict(x) for x in frame["texture_payloads"]],
+                "buffer_payloads": [dict(x) for x in frame["buffer_payloads"]],
                 "constant_writes": [dict(x) for x in frame["constant_writes"]],
                 "constant_state": constant_state,
             }
@@ -647,6 +665,7 @@ def build_runtime_binding_evidence(
                 for payload in (x.get("texture_payloads") or [])
                 if isinstance(payload, Mapping) and payload.get("level") is not None
             ),
+            "buffer_payload_event_count": sum(len(x.get("buffer_payloads", [])) for x in frame_rows),
             "constant_write_count": sum(len(x.get("constant_writes", [])) for x in frame_rows),
             "frame_count": len(frame_rows),
             "source": "external-runtime-capture",
@@ -663,6 +682,11 @@ def build_runtime_binding_evidence(
             payload
             for frame in frame_rows
             for payload in (frame.get("texture_payloads") or [])
+        ],
+        "buffer_payloads": [
+            payload
+            for frame in frame_rows
+            for payload in (frame.get("buffer_payloads") or [])
         ],
         "frames": frame_rows,
         "meb_correlation": correlation,

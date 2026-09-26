@@ -226,3 +226,37 @@ def test_capture_schema_rejects_zero_length_buffer_creation():
         "pool": 1,
     })
     assert "create-index-buffer:length-invalid" in reasons
+
+
+def test_capture_schema_accepts_vertex_buffer_payload():
+    row = {
+        "event": "buffer_payload",
+        "frame": 3,
+        "buffer_ptr": "0x100",
+        "resource_type_name": "vertex_buffer",
+        "offset": 0,
+        "requested_size": 0,
+        "buffer_length": 269800,
+        "captured_byte_size": 269800,
+        "flags": 0,
+        "snapshot_status": "captured",
+        "payload_path": "buffers/vb.bin",
+    }
+    assert validate_capture_event(row) == []
+
+
+def test_capture_schema_rejects_buffer_payload_with_invalid_kind():
+    row = {
+        "event": "buffer_payload",
+        "frame": 3,
+        "buffer_ptr": "0x100",
+        "resource_type_name": "texture2d",
+        "offset": 0,
+        "requested_size": 0,
+        "buffer_length": 10,
+        "captured_byte_size": 10,
+        "flags": 0,
+        "snapshot_status": "captured",
+        "payload_path": "x.bin",
+    }
+    assert "buffer-payload:resource-type-invalid" in validate_capture_event(row)

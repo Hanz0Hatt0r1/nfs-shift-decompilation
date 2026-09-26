@@ -580,3 +580,53 @@ def test_runtime_trace_preserves_buffer_creation_before_set_order():
     report = build_runtime_binding_evidence(events)
     stream = report["frames"][0]["stream_sources"][0]
     assert stream["resource_creation_status"] == "not-observed"
+
+
+def test_runtime_trace_preserves_buffer_payload_at_draw_boundary():
+    events = load_events_from_rows([
+        {
+            "event": "create_vertex_buffer",
+            "frame": 7,
+            "event_index": 10,
+            "vertex_buffer_ptr": "0x100",
+            "length": 16,
+            "usage": 0,
+            "fvf": 0,
+            "pool": 1,
+        },
+        {
+            "event": "buffer_payload",
+            "frame": 7,
+            "event_index": 11,
+            "buffer_ptr": "0x100",
+            "resource_type_name": "vertex_buffer",
+            "offset": 0,
+            "requested_size": 0,
+            "buffer_length": 16,
+            "captured_byte_size": 16,
+            "flags": 0,
+            "snapshot_status": "captured",
+            "payload_path": "vb.bin",
+        },
+        {
+            "event": "set_stream_source",
+            "frame": 7,
+            "event_index": 12,
+            "stream": 0,
+            "vertex_buffer_ptr": "0x100",
+            "offset_in_bytes": 0,
+            "stride": 4,
+        },
+        {
+            "event": "draw_indexed_primitive",
+            "frame": 7,
+            "event_index": 13,
+            "primitive_count": 1,
+            "start_index": 0,
+            "base_vertex_index": 0,
+        },
+    ])
+    report = build_runtime_binding_evidence(events)
+    assert report["trace"]["buffer_payload_event_count"] == 1
+    assert report["buffer_payloads"][0]["buffer_ptr"] == "0x100"
+    assert report["frames"][0]["draw_snapshots"][0]["buffer_payloads"][0]["payload_path"] == "vb.bin"

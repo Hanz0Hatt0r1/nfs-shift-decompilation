@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 343. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 344. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1451,3 +1451,19 @@ before the checked draw calls.
 Raw runtime VB/IB bytes remain unproven. The next geometry capture step is raw
 buffer payload capture followed by byte-level comparison with the reconstructed
 MEB vertex/index streams.
+
+    
+## Phase 344: raw BMW D3D9 VB/IB payload capture
+
+The native capture producer now supports opt-in full-surface Lock/Unlock payload
+capture for IDirect3DVertexBuffer9 and IDirect3DIndexBuffer9 objects. Runtime trace
+retains these payload events at top level and at each draw snapshot.
+
+The capture rejects partial locks as complete-buffer evidence and copies the bytes
+before the original Unlock call. bmw_runtime_buffer_payload_parity.py can compare
+the captured BMW body vertex buffer against the canonical stride-76 MEB packing and
+each runtime INDEX16 buffer against the exact corresponding MEB index slice.
+
+The historical supplied capture still has no raw BMW VB/IB payload events, so this
+phase closes the instrumentation and comparison boundary without promoting raw
+runtime byte parity yet.
