@@ -541,7 +541,7 @@ void emit_texture_payload(
       << ",\"format\":" << static_cast<unsigned>(state.desc.Format)
       << ",\"pool\":" << static_cast<unsigned>(state.desc.Pool)
       << ",\"byte_size\":" << byte_size
-      << ",\"snapshot_status\":\""<< CaptureWriter::quote(status) <<"\""
+      << ",\"snapshot_status\":" << CaptureWriter::quote(status)
       << ",\"payload_path\":" << CaptureWriter::quote(path);
     writer().write_event("texture_payload", f.str());
 }
