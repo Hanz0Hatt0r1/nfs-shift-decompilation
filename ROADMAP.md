@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 342. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 343. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1435,3 +1435,19 @@ This closes the capture boundary for cube resources. The supplied BMW s3 object 
 a runtime-global 256x256 A16B16G16R16F render-target cube in D3DPOOL_DEFAULT, so raw
 LockRect parity is not currently claimed and no static retail environment DDS has been
 established.
+    
+## Phase 343: BMW D3D9 buffer lifecycle parity
+
+The native D3D9 capture producer now records successful CreateVertexBuffer and
+CreateIndexBuffer calls. Runtime trace associates later SetStreamSource and
+SetIndices bindings with the exact observed creation instance.
+
+The BMW M3 frame-30444 geometry evidence is additionally correlated with the
+resource creation log: the 3,550-vertex stride-76 stream requires 269,800 bytes,
+and the six INDEX16 primitive buffers require 300, 12,588, 14,772, 1,224, 1,152
+and 168 bytes respectively. These exact pointers and creation sizes are observed
+before the checked draw calls.
+
+Raw runtime VB/IB bytes remain unproven. The next geometry capture step is raw
+buffer payload capture followed by byte-level comparison with the reconstructed
+MEB vertex/index streams.
