@@ -62,6 +62,16 @@ not converted into inferred evidence. The Python capture schema and runtime
 trace remain authoritative validation stages.
 
 ### Texture stage capture
+### Texture snapshot defaults
+
+When `SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT=1` is enabled and no explicit
+`SHIFT_D3D9_CAPTURE_TEXTURE_STAGES` is supplied, the producer now captures
+all BMW paint sampler stages `s0..s4`. This includes the material-owned
+diffuse/specular stages s1/s2 as well as the renderer-global s0/s3 and the
+scratch-control s4.
+
+Use `SHIFT_D3D9_CAPTURE_TEXTURE_STAGES` to narrow the set for diagnostic runs.
+
 
 The producer also records `IDirect3DDevice9::SetTexture` as
 `set_texture` events with zero-based sampler `stage` and the bound
