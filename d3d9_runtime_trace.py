@@ -137,9 +137,12 @@ def build_runtime_binding_evidence(
         for row in texture_lifecycle.get("bindings") or []
         if isinstance(row, Mapping) and row.get("source_index") is not None
     }
+    vertex_buffers: dict[str, dict[str, Any]] = {}
+    index_buffers: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
         "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "texture_payloads": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
+        "vertex_buffer_creations": [], "index_buffer_creations": [],
     })
     blockers: list[dict[str, Any]] = []
 
@@ -148,6 +151,40 @@ def build_runtime_binding_evidence(
         frame = frames[frame_key]
         frame["frame"] = row.get("frame")
         event = row["event"]
+        if event == "create_vertex_buffer":
+            pointer = _ptr(row.get("vertex_buffer_ptr"))
+            if not pointer:
+                blockers.append({"line": row.get("_line"), "reason": "vertex-buffer-pointer-missing"})
+                continue
+            resource = {
+                "vertex_buffer_ptr": pointer,
+                "length": int(row.get("length")),
+                "usage": int(row.get("usage")),
+                "fvf": int(row.get("fvf")),
+                "pool": int(row.get("pool")),
+                "frame": row.get("frame"),
+                "event_index": row.get("event_index", source_index),
+                "line": row.get("_line"),
+            }
+            vertex_buffers[pointer] = resource
+            frame["vertex_buffer_creations"].append(dict(resource))
+        elif event == "create_index_buffer":
+            pointer = _ptr(row.get("index_buffer_ptr"))
+            if not pointer:
+                blockers.append({"line": row.get("_line"), "reason": "index-buffer-pointer-missing"})
+                continue
+            resource = {
+                "index_buffer_ptr": pointer,
+                "length": int(row.get("length")),
+                "usage": int(row.get("usage")),
+                "format": int(row.get("format")),
+                "pool": int(row.get("pool")),
+                "frame": row.get("frame"),
+                "event_index": row.get("event_index", source_index),
+                "line": row.get("_line"),
+            }
+            index_buffers[pointer] = resource
+            frame["index_buffer_creations"].append(dict(resource))
         if event == "create_vertex_declaration":
             pointer = _ptr(row.get("declaration_ptr"))
             decoded = _decode_declaration(row)
@@ -172,18 +209,36 @@ def build_runtime_binding_evidence(
                 "declaration_sha256": declarations.get(pointer, {}).get("raw_bytes_sha256") if pointer else None,
             }
         elif event == "set_stream_source":
-            frame["stream_sources"].append({
+            pointer = _ptr(row.get("vertex_buffer_ptr"))
+            binding = {
                 "stream": row.get("stream"),
-                "vertex_buffer_ptr": _ptr(row.get("vertex_buffer_ptr")),
+                "vertex_buffer_ptr": pointer,
                 "offset_in_bytes": row.get("offset_in_bytes"),
                 "stride": row.get("stride"),
                 "line": row.get("_line"),
-            })
+            }
+            if pointer is None:
+                binding["resource_creation_status"] = "null"
+            elif pointer in vertex_buffers:
+                binding["resource_creation_status"] = "observed"
+                binding["resource_creation"] = dict(vertex_buffers[pointer])
+            else:
+                binding["resource_creation_status"] = "not-observed"
+            frame["stream_sources"].append(binding)
         elif event == "set_indices":
-            frame["index_binding"] = {
-                "index_buffer_ptr": _ptr(row.get("index_buffer_ptr")),
+            pointer = _ptr(row.get("index_buffer_ptr"))
+            binding = {
+                "index_buffer_ptr": pointer,
                 "line": row.get("_line"),
             }
+            if pointer is None:
+                binding["resource_creation_status"] = "null"
+            elif pointer in index_buffers:
+                binding["resource_creation_status"] = "observed"
+                binding["resource_creation"] = dict(index_buffers[pointer])
+            else:
+                binding["resource_creation_status"] = "not-observed"
+            frame["index_binding"] = binding
         elif event == "set_texture":
             binding = {
                 "stage": row.get("stage"),
@@ -583,6 +638,8 @@ def build_runtime_binding_evidence(
             "decoded_shader_count": sum(1 for x in shaders.values() if x.get("decoded")),
             "texture_object_count": len(texture_resources),
             "texture_set_binding_count": sum(len(x.get("texture_bindings", [])) for x in frame_rows),
+            "vertex_buffer_object_count": len(vertex_buffers),
+            "index_buffer_object_count": len(index_buffers),
             "texture_payload_event_count": sum(len(x.get("texture_payloads", [])) for x in frame_rows),
             "texture_payload_level_count": sum(
                 1
@@ -600,6 +657,8 @@ def build_runtime_binding_evidence(
         "shaders": list(shaders.values()),
         "textures": list(texture_resources.values()),
         "texture_lifecycle": texture_lifecycle,
+        "vertex_buffers": list(vertex_buffers.values()),
+        "index_buffers": list(index_buffers.values()),
         "texture_payloads": [
             payload
             for frame in frame_rows
