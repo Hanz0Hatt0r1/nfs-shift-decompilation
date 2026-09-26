@@ -1,0 +1,279 @@
+{
+  "boundary": {
+    "bmt_numeric_parameter_witness": "proven",
+    "draw_local_state": "proven-from-frame-dump",
+    "exact_dds_texture_object_identity": "not-proven",
+    "exact_shader_permutation": "not-proven",
+    "raw_runtime_vb_ib_bytes": "not-claimed",
+    "shader_object_pointer": "observed"
+  },
+  "draws": [
+    {
+      "bmt": "vehicles/bmw_m3_e36/generic_gloss_black.bmt",
+      "call": 73765284,
+      "index_buffer": "0x27b396e0",
+      "material": "GENERIC_GLOSS_BLACK",
+      "pixel_shader": "0x363f5f88",
+      "primitive_count": 192,
+      "shader": "render/shaders/vehicles_basic.fx",
+      "technique": "VehicleBasic",
+      "vertex_shader": "0x363f6288",
+      "witness_registers": {
+        "fresnelFactor": {"register": 8, "stage": "vertex", "value": [0.42, 0.0, 0.0, 0.0]},
+        "maxSpecPower": {"register": 26, "stage": "pixel", "value": [8192.0, 0.0, 0.0, 0.0]}
+      }
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "call": 73765756,
+      "index_buffer": "0x27b39560",
+      "material": "BMW_M3_E36_PAINT",
+      "pixel_shader": "0x38105408",
+      "primitive_count": 2098,
+      "shader": "render/shaders/bodywork.fx",
+      "technique": "Bodywork",
+      "vertex_shader": "0x38105708",
+      "witness_registers": {
+        "primerBasis": {"register": 32, "stage": "pixel", "value": [0.129412, 0.129412, 0.129412, 1.0]},
+        "metalBasis": {"register": 33, "stage": "pixel", "value": [0.035294, 0.035294, 0.035294, 1.0]},
+        "dirtBasis": {"register": 34, "stage": "pixel", "value": [0.137255, 0.133333, 0.121569, 1.0]}
+      },
+      "sampler_bindings": [
+        {"kind": "material", "parameter": "diffuseTexture", "register": 1, "texture_ptr": "0x27a12120"},
+        {"kind": "material", "parameter": "specularTexture", "register": 2, "texture_ptr": "0x369b59f8"},
+        {"kind": "material", "parameter": "scratchControlTexture", "register": 4, "texture_ptr": "0x37ac3450"},
+        {"kind": "external", "parameter": "sShadowMap_f1_0", "register": 0, "texture_ptr": "0xceeeeb0"},
+        {"kind": "external", "parameter": "environmentMap", "register": 3, "texture_ptr": "0x2cf0e6a8"}
+      ]
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "call": 73765784,
+      "index_buffer": "0x27b395e0",
+      "material": "BMW_M3_E36_PAINT",
+      "pixel_shader": "0x38105408",
+      "primitive_count": 2462,
+      "shader": "render/shaders/bodywork.fx",
+      "technique": "Bodywork",
+      "vertex_shader": "0x38105708",
+      "witness_registers": {
+        "primerBasis": {"register": 32, "stage": "pixel", "value": [0.129412, 0.129412, 0.129412, 1.0]},
+        "metalBasis": {"register": 33, "stage": "pixel", "value": [0.035294, 0.035294, 0.035294, 1.0]},
+        "dirtBasis": {"register": 34, "stage": "pixel", "value": [0.137255, 0.133333, 0.121569, 1.0]}
+      },
+      "sampler_bindings": [
+        {"kind": "material", "parameter": "diffuseTexture", "register": 1, "texture_ptr": "0x27a12120"},
+        {"kind": "material", "parameter": "specularTexture", "register": 2, "texture_ptr": "0x369b59f8"},
+        {"kind": "material", "parameter": "scratchControlTexture", "register": 4, "texture_ptr": "0x37ac3450"},
+        {"kind": "external", "parameter": "sShadowMap_f1_0", "register": 0, "texture_ptr": "0xceeeeb0"},
+        {"kind": "external", "parameter": "environmentMap", "register": 3, "texture_ptr": "0x2cf0e6a8"}
+      ]
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt",
+      "call": 73766186,
+      "index_buffer": "0x27b394e0",
+      "material": "BMW_M3_E36_BADGING",
+      "pixel_shader": "0x379d0498",
+      "primitive_count": 50,
+      "shader": "render/shaders/vehicles_basic.fx",
+      "technique": "VehicleBasic_Translucent",
+      "vertex_shader": "0x379d0798",
+      "witness_registers": {
+        "fresnelFactor": {"register": 8, "stage": "vertex", "value": [0.15, 0.0, 0.0, 0.0]},
+        "maxSpecPower": {"register": 27, "stage": "pixel", "value": [100.0, 0.0, 0.0, 0.0]},
+        "globalSpecularFactor": {"register": 28, "stage": "pixel", "value": [1.5, 0.0, 0.0, 0.0]},
+        "globalEMapFactor": {"register": 29, "stage": "pixel", "value": [0.75, 0.0, 0.0, 0.0]}
+      }
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/generic_windows.bmt",
+      "call": 73766241,
+      "index_buffer": "0x27b39660",
+      "material": "GENERIC_WINDOWS",
+      "pixel_shader": "0x368dc800",
+      "primitive_count": 204,
+      "shader": "render/shaders/glass.fx",
+      "technique": "Glass",
+      "vertex_shader": "0x368dcb00",
+      "witness_registers": {
+        "crackColour": {"register": 26, "stage": "pixel", "value": [0.678431, 0.8, 0.8, 0.9]},
+        "dirtBasis": {"register": 27, "stage": "pixel", "value": [0.6, 0.576471, 0.537255, 0.5]},
+        "crackUVoffset": {"register": 28, "stage": "pixel", "value": [0.0, 0.0, 3.0, 5.0]},
+        "crackStrength": {"register": 32, "stage": "pixel", "value": [4.0, 0.0, 0.0, 0.0]},
+        "damageStartCracks": {"register": 33, "stage": "pixel", "value": [0.18, 0.0, 0.0, 0.0]},
+        "damageCrackSlope": {"register": 34, "stage": "pixel", "value": [50.0, 0.0, 0.0, 0.0]},
+        "crackFinalScale": {"register": 35, "stage": "pixel", "value": [0.98, 0.0, 0.0, 0.0]}
+      }
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_lightsglass.bmt",
+      "call": 73766269,
+      "index_buffer": "0x27b39760",
+      "material": "BMW_M3_E36_LIGHTSGLASS",
+      "pixel_shader": "0x368da400",
+      "primitive_count": 28,
+      "shader": "render/shaders/glass.fx",
+      "technique": "Glass",
+      "vertex_shader": "0x368da700",
+      "witness_registers": {
+        "crackColour": {"register": 26, "stage": "pixel", "value": [0.678431, 0.8, 0.8, 0.9]},
+        "dirtBasis": {"register": 27, "stage": "pixel", "value": [0.501961, 0.482353, 0.45098, 0.5]},
+        "crackUVoffset": {"register": 28, "stage": "pixel", "value": [0.0, 0.0, 7.0, 14.0]},
+        "crackStrength": {"register": 32, "stage": "pixel", "value": [25.0, 0.0, 0.0, 0.0]},
+        "damageStartCracks": {"register": 33, "stage": "pixel", "value": [0.01, 0.0, 0.0, 0.0]},
+        "damageCrackSlope": {"register": 34, "stage": "pixel", "value": [100.0, 0.0, 0.0, 0.0]}
+      }
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/generic_gloss_black.bmt",
+      "call": 73780940,
+      "index_buffer": "0x27b396e0",
+      "material": "GENERIC_GLOSS_BLACK",
+      "pixel_shader": "0x363f5f88",
+      "primitive_count": 192,
+      "shader": "render/shaders/vehicles_basic.fx",
+      "technique": "VehicleBasic",
+      "vertex_shader": "0x363f6288",
+      "witness_registers": {
+        "fresnelFactor": {"register": 8, "stage": "vertex", "value": [0.42, 0.0, 0.0, 0.0]},
+        "maxSpecPower": {"register": 26, "stage": "pixel", "value": [8192.0, 0.0, 0.0, 0.0]}
+      }
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "call": 73781412,
+      "index_buffer": "0x27b39560",
+      "material": "BMW_M3_E36_PAINT",
+      "pixel_shader": "0x38105408",
+      "primitive_count": 2098,
+      "shader": "render/shaders/bodywork.fx",
+      "technique": "Bodywork",
+      "vertex_shader": "0x38105708",
+      "witness_registers": {
+        "primerBasis": {"register": 32, "stage": "pixel", "value": [0.129412, 0.129412, 0.129412, 1.0]},
+        "metalBasis": {"register": 33, "stage": "pixel", "value": [0.035294, 0.035294, 0.035294, 1.0]},
+        "dirtBasis": {"register": 34, "stage": "pixel", "value": [0.137255, 0.133333, 0.121569, 1.0]}
+      },
+      "sampler_bindings": [
+        {"kind": "material", "parameter": "diffuseTexture", "register": 1, "texture_ptr": "0x27a12120"},
+        {"kind": "material", "parameter": "specularTexture", "register": 2, "texture_ptr": "0x369b59f8"},
+        {"kind": "material", "parameter": "scratchControlTexture", "register": 4, "texture_ptr": "0x37ac3450"},
+        {"kind": "external", "parameter": "sShadowMap_f1_0", "register": 0, "texture_ptr": "0xceeeeb0"},
+        {"kind": "external", "parameter": "environmentMap", "register": 3, "texture_ptr": "0x2cf0e6a8"}
+      ]
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "call": 73781440,
+      "index_buffer": "0x27b395e0",
+      "material": "BMW_M3_E36_PAINT",
+      "pixel_shader": "0x38105408",
+      "primitive_count": 2462,
+      "shader": "render/shaders/bodywork.fx",
+      "technique": "Bodywork",
+      "vertex_shader": "0x38105708",
+      "witness_registers": {
+        "primerBasis": {"register": 32, "stage": "pixel", "value": [0.129412, 0.129412, 0.129412, 1.0]},
+        "metalBasis": {"register": 33, "stage": "pixel", "value": [0.035294, 0.035294, 0.035294, 1.0]},
+        "dirtBasis": {"register": 34, "stage": "pixel", "value": [0.137255, 0.133333, 0.121569, 1.0]}
+      },
+      "sampler_bindings": [
+        {"kind": "material", "parameter": "diffuseTexture", "register": 1, "texture_ptr": "0x27a12120"},
+        {"kind": "material", "parameter": "specularTexture", "register": 2, "texture_ptr": "0x369b59f8"},
+        {"kind": "material", "parameter": "scratchControlTexture", "register": 4, "texture_ptr": "0x37ac3450"},
+        {"kind": "external", "parameter": "sShadowMap_f1_0", "register": 0, "texture_ptr": "0xceeeeb0"},
+        {"kind": "external", "parameter": "environmentMap", "register": 3, "texture_ptr": "0x2cf0e6a8"}
+      ]
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt",
+      "call": 73781842,
+      "index_buffer": "0x27b394e0",
+      "material": "BMW_M3_E36_BADGING",
+      "pixel_shader": "0x379d0498",
+      "primitive_count": 50,
+      "shader": "render/shaders/vehicles_basic.fx",
+      "technique": "VehicleBasic_Translucent",
+      "vertex_shader": "0x379d0798",
+      "witness_registers": {
+        "fresnelFactor": {"register": 8, "stage": "vertex", "value": [0.15, 0.0, 0.0, 0.0]},
+        "maxSpecPower": {"register": 27, "stage": "pixel", "value": [100.0, 0.0, 0.0, 0.0]},
+        "globalSpecularFactor": {"register": 28, "stage": "pixel", "value": [1.5, 0.0, 0.0, 0.0]},
+        "globalEMapFactor": {"register": 29, "stage": "pixel", "value": [0.75, 0.0, 0.0, 0.0]}
+      }
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/generic_windows.bmt",
+      "call": 73781897,
+      "index_buffer": "0x27b39660",
+      "material": "GENERIC_WINDOWS",
+      "pixel_shader": "0x368dc800",
+      "primitive_count": 204,
+      "shader": "render/shaders/glass.fx",
+      "technique": "Glass",
+      "vertex_shader": "0x368dcb00",
+      "witness_registers": {
+        "crackColour": {"register": 26, "stage": "pixel", "value": [0.678431, 0.8, 0.8, 0.9]},
+        "dirtBasis": {"register": 27, "stage": "pixel", "value": [0.6, 0.576471, 0.537255, 0.5]},
+        "crackUVoffset": {"register": 28, "stage": "pixel", "value": [0.0, 0.0, 3.0, 5.0]},
+        "crackStrength": {"register": 32, "stage": "pixel", "value": [4.0, 0.0, 0.0, 0.0]},
+        "damageStartCracks": {"register": 33, "stage": "pixel", "value": [0.18, 0.0, 0.0, 0.0]},
+        "damageCrackSlope": {"register": 34, "stage": "pixel", "value": [50.0, 0.0, 0.0, 0.0]},
+        "crackFinalScale": {"register": 35, "stage": "pixel", "value": [0.98, 0.0, 0.0, 0.0]}
+      }
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_lightsglass.bmt",
+      "call": 73781925,
+      "index_buffer": "0x27b39760",
+      "material": "BMW_M3_E36_LIGHTSGLASS",
+      "pixel_shader": "0x368da400",
+      "primitive_count": 28,
+      "shader": "render/shaders/glass.fx",
+      "technique": "Glass",
+      "vertex_shader": "0x368da700",
+      "witness_registers": {
+        "crackColour": {"register": 26, "stage": "pixel", "value": [0.678431, 0.8, 0.8, 0.9]},
+        "dirtBasis": {"register": 27, "stage": "pixel", "value": [0.501961, 0.482353, 0.45098, 0.5]},
+        "crackUVoffset": {"register": 28, "stage": "pixel", "value": [0.0, 0.0, 7.0, 14.0]},
+        "crackStrength": {"register": 32, "stage": "pixel", "value": [25.0, 0.0, 0.0, 0.0]},
+        "damageStartCracks": {"register": 33, "stage": "pixel", "value": [0.01, 0.0, 0.0, 0.0]},
+        "damageCrackSlope": {"register": 34, "stage": "pixel", "value": [100.0, 0.0, 0.0, 0.0]}
+      }
+    }
+  ],
+  "format": "SHIFT.BMWM3RuntimeMaterialWitness/1",
+  "frame": 30444,
+  "matched_draw_count": 12,
+  "material_match_count": {
+    "BMW_M3_E36_BADGING": 2,
+    "BMW_M3_E36_LIGHTSGLASS": 2,
+    "BMW_M3_E36_PAINT": 4,
+    "GENERIC_GLOSS_BLACK": 2,
+    "GENERIC_WINDOWS": 2
+  },
+  "ready": true,
+  "resource": {
+    "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+  },
+  "source": {
+    "path": "frame_30444.txt",
+    "sha256": "aefd4116c55b07559e5508b21aa838f2cac0186f0e482cbf62500033f7362f29",
+    "size": 3842697,
+    "trace_sha256": "116b5fed58c79d4e73c7903cf08625abb74b33ce8818b0535c00c67f19ec965d"
+  },
+  "status": "observed",
+  "target_draw_count": 28,
+  "target_stream": {
+    "num_vertices": 3550,
+    "pointer": "0x27b39460",
+    "stride": 76
+  },
+  "validation": {
+    "blocking_reasons": [],
+    "ready": true,
+    "status": "match"
+  }
+}
