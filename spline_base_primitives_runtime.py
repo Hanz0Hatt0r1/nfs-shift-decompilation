@@ -135,7 +135,7 @@ def advance_spline_cursor(
                 "operation": "cursor-advance",
                 "status": "helper-wrapped",
                 "words": words,
-                "segment_index": updated,
+                "segment_index": None,
                 "helper": helper,
             }
     else:
@@ -148,7 +148,7 @@ def advance_spline_cursor(
                 "operation": "cursor-advance",
                 "status": "helper-wrapped",
                 "words": words,
-                "segment_index": updated,
+                "segment_index": None,
                 "helper": helper,
             }
 
