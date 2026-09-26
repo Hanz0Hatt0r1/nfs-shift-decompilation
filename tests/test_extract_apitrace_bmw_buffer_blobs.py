@@ -166,3 +166,61 @@ def test_invalid_trace_magic_is_rejected(tmp_path):
         assert "Snappy trace" in str(exc)
     else:
         raise AssertionError("invalid trace was accepted")
+
+
+def test_extracts_all_bmw_blobs_directly_from_source(monkeypatch, tmp_path):
+    report = tmp_path / "geometry.json"
+    report.write_text(
+        json.dumps(
+            {
+                "format": "SHIFT.APITRACEUniqueBMWGeometry/1",
+                "resources": {
+                    "vertex_buffers": [
+                        {
+                            "pointer": "0x100",
+                            "creation": {"call": 10, "raw": "Length = 8"},
+                            "lifecycle": {"lock_calls": [11], "unlock_calls": [13], "release_calls": []},
+                            "derived_bytes_if_num_vertices_times_stride": 8,
+                        }
+                    ],
+                    "index_buffers": [
+                        {
+                            "pointer": "0x200",
+                            "creation": {"call": 20, "raw": "Length = 4"},
+                            "lifecycle": {"lock_calls": [21], "unlock_calls": [23], "release_calls": []},
+                        }
+                    ],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fake_run(args, *, cwd, **kwargs):
+        cwd_path = __import__("pathlib").Path(cwd)
+        (cwd_path / "blob_call12.bin").write_bytes(b"ABCDEFGH")
+        (cwd_path / "blob_call22.bin").write_bytes(b"WXYZ")
+        return type("Result", (), {
+            "stdout": (
+                '12 memcpy(dest = 0x1, src = blob("blob_call12.bin"), n = 8) // fake\n'
+                "13 IDirect3DVertexBuffer9::Unlock(this = 0x100) = D3D_OK\n"
+                '22 memcpy(dest = 0x2, src = blob("blob_call22.bin"), n = 4) // fake\n'
+                "23 IDirect3DIndexBuffer9::Unlock(this = 0x200) = D3D_OK\n"
+            )
+        })()
+
+    monkeypatch.setattr(mod.subprocess, "run", fake_run)
+    out = tmp_path / "out"
+    summary = mod.extract_from_source(
+        tmp_path / "SHIFT.trace",
+        report,
+        out,
+        apitrace="apitrace",
+    )
+
+    assert summary["payload_records"] == 2
+    assert summary["unique_payload_blobs"] == 2
+    assert summary["full_buffer_candidates"] == 2
+    assert summary["kinds"] == {"vertex_buffer": 1, "index_buffer": 1}
+    payloads = sorted((out / "buffer_payloads").glob("*.bin"))
+    assert [p.read_bytes() for p in payloads] == [b"ABCDEFGH", b"WXYZ"]
