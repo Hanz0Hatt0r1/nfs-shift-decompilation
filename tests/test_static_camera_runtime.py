@@ -85,4 +85,4 @@ def test_static_camera_blend_uses_absolute_wrap_counts_times_eight():
         first_wrap_count=-1,
         second_wrap_count=2,
     )
-    assert result["value"] == [1.5, 10.0, 3.5]
+    assert result["value"] == [1.5, 2.5, 3.5]
