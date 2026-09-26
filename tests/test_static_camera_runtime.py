@@ -9,6 +9,7 @@ from static_camera_runtime import (
     describe_static_camera_reset,
     set_static_camera_runtime_pair,
     set_static_camera_function_bindings,
+    copy_static_camera_runtime_payload,
 )
 
 
@@ -119,3 +120,15 @@ def test_static_camera_function_bindings_preserve_all_four_offsets():
         slot_380=1, slot_384=2, slot_388=3, slot_34c=4
     )
     assert result["writes"] == {"+0x380":1, "+0x384":2, "+0x388":3, "+0x34c":4}
+
+
+def test_static_camera_runtime_copy_uses_base_then_plus_48_payload():
+    result = copy_static_camera_runtime_payload(
+        destination="dst",
+        source="src",
+    )
+    assert [a["action"] for a in result["actions"]] == [
+        "FUN_0081af70",
+        "FUN_00815620",
+    ]
+    assert result["actions"][1]["destination"] == "dst+0x48"
