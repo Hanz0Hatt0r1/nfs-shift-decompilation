@@ -556,7 +556,7 @@ HRESULT STDMETHODCALLTYPE hook_texture_lock_rect(
         ? g_real_texture_lock_rect(self, level, locked, rect, flags)
         : E_FAIL;
     if (SUCCEEDED(hr) && locked && texture_payload_capture_enabled() &&
-        !(flags & D3DLOCK_READONLY)) {
+        !rect && !(flags & D3DLOCK_READONLY)) {
         TextureLockState state{};
         state.level = level;
         state.locked = *locked;
