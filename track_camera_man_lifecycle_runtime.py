@@ -215,6 +215,7 @@ def register_tracking_input_slot(
 def resolve_target_from_attachment(
     *,
     target_attachment: Any | None,
+    target_attachment_count_nonzero: bool = True,
     service_candidates: Sequence[Mapping[str, Any]],
     target_compare_result_by_candidate: Mapping[int, bool] | None = None,
 ) -> dict[str, Any]:
@@ -225,7 +226,7 @@ def resolve_target_from_attachment(
     is stored at +0xe8. Otherwise the selected camera config index is obtained
     through FUN_00811570 and stored at +0xd8.
     """
-    if target_attachment not in (None, 0):
+    if target_attachment not in (None, 0) and bool(target_attachment_count_nonzero):
         compares = target_compare_result_by_candidate or {}
         for ordinal, candidate in enumerate(service_candidates):
             matches = bool(compares.get(ordinal, candidate.get("matches_attachment", False)))
@@ -263,6 +264,7 @@ def resolve_target_from_attachment(
                     "evidence": {
                         "function": "FUN_00812aa0",
                         "attachment_field": "+0xd4",
+            "attachment_count_field": "short(*(int *)(+0xd4 - 4))",
                         "stored_target": "+0xe8",
                     },
                 }
