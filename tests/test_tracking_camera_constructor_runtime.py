@@ -24,9 +24,10 @@ def test_constructor_has_seven_nested_7f6690_blocks():
 def test_constructor_preserves_mode_and_sentinel_defaults():
     result = tracking_camera_constructor_layout()
     assert result["raw_initializers"]["+0x244"] == 0x7FFFFFFF
-    assert result["raw_initializers"]["+0x2b4"] == 0xFFFFFFFF
-    assert result["raw_initializers"]["+0x2d0"] == 0xFFFFFFFF
-    assert result["defaults"]["+0x2f0"] == 0x3F800000
+    assert result["raw_initializers"]["+0x2c0"] == 0xFFFFFFFF
+    assert result["raw_initializers"]["+0x2c4"] == 0xFFFFFFFF
+    assert result["raw_initializers"]["+0x2d0"] == 0x3F800000
+    assert result["sentinels"]["+0x37c"] == 0xFFFFFFFF
 
 
 def test_constructor_copies_exact_16_global_camera_dwords():
