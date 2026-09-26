@@ -288,7 +288,7 @@ std::string capture_texture_snapshot_dir() {
 bool texture_snapshot_stage_enabled(DWORD stage) {
     if (!env_enabled("SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT")) return false;
     const char* stages = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_STAGES");
-    std::string list = (stages && *stages) ? stages : "0,3,4";
+    std::string list = (stages && *stages) ? stages : "0,1,2,3,4";
     std::size_t begin = 0;
     while (begin < list.size()) {
         std::size_t end = list.find(',', begin);
