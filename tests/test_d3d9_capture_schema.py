@@ -143,3 +143,42 @@ def test_capture_schema_rejects_invalid_cube_texture_face():
     }
     reasons = validate_capture_event(row)
     assert "texture-payload:face-invalid" in reasons
+
+
+def test_capture_schema_requires_cube_face_for_cube_payload():
+    row = {
+        "event": "texture_payload",
+        "frame": 3,
+        "texture_ptr": "0x200",
+        "resource_type_name": "cube_texture",
+        "level": 0,
+        "width": 256,
+        "height": 256,
+        "pitch": 1024,
+        "format": 113,
+        "pool": 0,
+        "byte_size": 65536,
+        "snapshot_status": "captured",
+        "payload_path": "cube/0x200_l0.bin",
+    }
+    assert "texture-payload:cube-face-missing" in validate_capture_event(row)
+
+
+def test_capture_schema_rejects_face_on_2d_payload():
+    row = {
+        "event": "texture_payload",
+        "frame": 3,
+        "texture_ptr": "0x100",
+        "resource_type_name": "texture2d",
+        "face": 0,
+        "level": 0,
+        "width": 8,
+        "height": 8,
+        "pitch": 16,
+        "format": 21,
+        "pool": 1,
+        "byte_size": 32,
+        "snapshot_status": "captured",
+        "payload_path": "2d/0x100_l0.bin",
+    }
+    assert "texture-payload:2d-face-unexpected" in validate_capture_event(row)
