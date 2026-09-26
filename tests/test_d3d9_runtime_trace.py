@@ -344,3 +344,66 @@ def test_runtime_trace_preserves_texture_payload_at_draw_boundary():
     snapshot = report["frames"][0]["draw_snapshots"][0]
     assert snapshot["texture_payloads"][0]["payload_path"] == "textures/a.bin"
     assert report["trace"]["texture_payload_event_count"] == 1
+
+
+def test_runtime_trace_exports_ordered_global_texture_payload_events():
+    events = load_events_from_rows([
+        {
+            "event": "create_texture",
+            "frame": 1,
+            "event_index": 10,
+            "texture_ptr": "0x100",
+            "width": 4,
+            "height": 4,
+            "levels": 3,
+            "usage": 0,
+            "format": 827611204,
+            "pool": 1,
+        },
+        {
+            "event": "texture_payload",
+            "frame": 1,
+            "event_index": 11,
+            "texture_ptr": "0x100",
+            "resource_type_name": "texture2d",
+            "level": 0,
+            "width": 4,
+            "height": 4,
+            "pitch": 8,
+            "format": 827611204,
+            "pool": 1,
+            "byte_size": 8,
+            "snapshot_status": "captured",
+            "payload_path": "l0.bin",
+        },
+        {
+            "event": "texture_payload",
+            "frame": 1,
+            "event_index": 12,
+            "texture_ptr": "0x100",
+            "resource_type_name": "texture2d",
+            "level": 1,
+            "width": 2,
+            "height": 2,
+            "pitch": 8,
+            "format": 827611204,
+            "pool": 1,
+            "byte_size": 8,
+            "snapshot_status": "captured",
+            "payload_path": "l1.bin",
+        },
+        {
+            "event": "draw_indexed_primitive",
+            "frame": 1,
+            "event_index": 13,
+            "primitive_count": 1,
+            "start_index": 0,
+            "base_vertex_index": 0,
+        },
+    ])
+    report = build_runtime_binding_evidence(events)
+    assert report["trace"]["texture_payload_event_count"] == 2
+    assert [row["level"] for row in report["texture_payloads"]] == [0, 1]
+    snapshot = report["frames"][0]["draw_snapshots"][0]
+    assert snapshot["draw"]["event_index"] == 13
+    assert [row["level"] for row in snapshot["texture_payloads"]] == [0, 1]
