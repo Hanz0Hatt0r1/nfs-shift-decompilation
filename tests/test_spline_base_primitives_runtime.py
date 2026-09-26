@@ -25,6 +25,7 @@ def test_spline_slot_sampler_uses_only_slots_zero_and_one():
     result = sample_spline_slot(source_slot=1, resolved_words=words)
     assert result["source_slot"] == 1
     assert result["words"][0x64 // 4] == 0
+    assert len(result["words"]) == 26
 
 
 def test_spline_position_interpolation_corrects_y_wrap_before_blend():
@@ -42,19 +43,19 @@ def test_spline_position_interpolation_corrects_y_wrap_before_blend():
 
 def test_forward_cursor_increments_plus_64_segment_index():
     result = advance_spline_cursor(
-        cursor_words=list(range(25)),
+        cursor_words=list(range(26)),
         current_segment_index=3,
         next_segment_index=4,
         direction="forward",
         wrap_helper_changed=False,
     )
     assert result["segment_index"] == 4
-    assert result["words"][25 - 1] == 4
+    assert result["words"][25] == 4
 
 
 def test_backward_cursor_decrements_plus_64_segment_index():
     result = advance_spline_cursor(
-        cursor_words=list(range(25)),
+        cursor_words=list(range(26)),
         current_segment_index=3,
         next_segment_index=2,
         direction="backward",
@@ -66,7 +67,7 @@ def test_backward_cursor_decrements_plus_64_segment_index():
 
 def test_cursor_can_return_through_wrap_helper_at_zero():
     result = advance_spline_cursor(
-        cursor_words=list(range(25)),
+        cursor_words=list(range(26)),
         current_segment_index=0,
         next_segment_index=7,
         direction="forward",
