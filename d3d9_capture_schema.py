@@ -68,6 +68,10 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
         if isinstance(row.get('levels'), int) and row['levels'] <= 0:
             reasons.append('create-cube-texture:levels-invalid')
     if event == 'texture_payload':
+        if row.get('face') is not None and (not isinstance(row.get('face'), int) or row.get('face') < 0 or row.get('face') > 5):
+            reasons.append('texture-payload:face-invalid')
+        if row.get('face_name') is not None and not isinstance(row.get('face_name'), str):
+            reasons.append('texture-payload:face-name-invalid')
         for key in ('level', 'width', 'height', 'pitch', 'format', 'pool', 'byte_size'):
             if not isinstance(row.get(key), int):
                 reasons.append(f'texture-payload:{key}-invalid')
