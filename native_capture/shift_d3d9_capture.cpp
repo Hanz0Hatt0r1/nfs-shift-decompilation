@@ -561,17 +561,6 @@ void emit_buffer_payload(
     const std::string& path,
     const std::vector<unsigned char>& payload,
     const char* status) {
-    const auto digest = [&]() {
-        std::ostringstream s;
-        s << std::hex << std::setfill('0');
-        const auto* bytes = payload.data();
-        // Compact FNV-independent provenance is not used: emit SHA-256 through
-        // the existing Python evidence pipeline rather than bundling a second
-        // crypto implementation into the proxy.
-        (void)bytes;
-        return std::string();
-    }();
-    (void)digest;
     std::ostringstream f;
     f << "\"buffer_ptr\":" << CaptureWriter::ptr(buffer)
       << ",\"resource_type_name\":" << CaptureWriter::quote(state.kind)
@@ -659,14 +648,33 @@ HRESULT STDMETHODCALLTYPE hook_vertex_buffer_unlock(IDirect3DVertexBuffer9* self
             captured = state.active && state.bits;
         }
     }
+
+    std::vector<unsigned char> payload;
+    std::string path;
+    if (captured) {
+        const std::size_t byte_size = state.buffer_length;
+        if (byte_size > 0) {
+            payload.assign(
+                static_cast<const unsigned char*>(state.bits),
+                static_cast<const unsigned char*>(state.bits) + byte_size);
+            const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
+            path = buffer_payload_path("vertex", self, state.offset, sequence);
+        }
+    }
+
     const HRESULT hr = g_real_vertex_buffer_unlock
         ? g_real_vertex_buffer_unlock(self)
         : E_FAIL;
-    if (captured && SUCCEEDED(hr)) {
-        const std::size_t byte_size = state.buffer_length;
-        const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
-        const std::string path = buffer_payload_path("vertex", self, state.offset, sequence);
-        capture_buffer_payload(self, state, path, byte_size);
+    if (captured && SUCCEEDED(hr) && !payload.empty()) {
+        std::ofstream output(path, std::ios::binary);
+        if (output.is_open()) {
+            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
+            emit_buffer_payload(
+                self, state, path, payload,
+                output.good() ? "captured" : "capture-failed");
+        } else {
+            emit_buffer_payload(self, state, path, payload, "capture-failed");
+        }
     }
     return hr;
 }
@@ -714,14 +722,33 @@ HRESULT STDMETHODCALLTYPE hook_index_buffer_unlock(IDirect3DIndexBuffer9* self) 
             captured = state.active && state.bits;
         }
     }
+
+    std::vector<unsigned char> payload;
+    std::string path;
+    if (captured) {
+        const std::size_t byte_size = state.buffer_length;
+        if (byte_size > 0) {
+            payload.assign(
+                static_cast<const unsigned char*>(state.bits),
+                static_cast<const unsigned char*>(state.bits) + byte_size);
+            const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
+            path = buffer_payload_path("index", self, state.offset, sequence);
+        }
+    }
+
     const HRESULT hr = g_real_index_buffer_unlock
         ? g_real_index_buffer_unlock(self)
         : E_FAIL;
-    if (captured && SUCCEEDED(hr)) {
-        const std::size_t byte_size = state.buffer_length;
-        const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
-        const std::string path = buffer_payload_path("index", self, state.offset, sequence);
-        capture_buffer_payload(self, state, path, byte_size);
+    if (captured && SUCCEEDED(hr) && !payload.empty()) {
+        std::ofstream output(path, std::ios::binary);
+        if (output.is_open()) {
+            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
+            emit_buffer_payload(
+                self, state, path, payload,
+                output.good() ? "captured" : "capture-failed");
+        } else {
+            emit_buffer_payload(self, state, path, payload, "capture-failed");
+        }
     }
     return hr;
 }
