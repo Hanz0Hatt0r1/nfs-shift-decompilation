@@ -210,12 +210,23 @@ def build_bmw_paint_runtime_texture_parity(
                     "blocking_reasons": [f"runtime:texture-snapshot-not-supplied:s{row['register']}"],
                     "expected": expected_row,
                 }
+            elif len(paths) != 1:
+                result = {
+                    "parameter": row["parameter"],
+                    "register": row["register"],
+                    "texture_ptr": pointers,
+                    "resource_creation_status": binding.get("resource_creation_status"),
+                    "status": "ambiguous",
+                    "ready": False,
+                    "blocking_reasons": [f"runtime:texture-snapshot-ambiguous:s{row['register']}"],
+                    "snapshot_paths": paths,
+                    "expected": expected_row,
+                }
             else:
                 comparisons = [
-                    compare_snapshot_to_expected(path, expected_row)
-                    for path in paths
+                    compare_snapshot_to_expected(paths[0], expected_row)
                 ]
-                ready = any(item["ready"] for item in comparisons)
+                ready = comparisons[0]["ready"]
                 result = {
                     "parameter": row["parameter"],
                     "register": row["register"],
