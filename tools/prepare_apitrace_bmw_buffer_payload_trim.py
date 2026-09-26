@@ -48,6 +48,8 @@ def _active_lifecycle_calls(resource: dict) -> list[int]:
         call for call in lifecycle.get("release_calls") or []
         if isinstance(call, int) and call > creation
     ]
+    # A pointer may have belonged to an earlier resource lifetime. Only a
+    # Release after this creation can terminate the current instance.
     stop = min(releases) if releases else None
     if stop is not None:
         values = [call for call in values if call < stop]
