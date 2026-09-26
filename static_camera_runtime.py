@@ -61,6 +61,97 @@ def static_camera_defaults() -> dict[str, Any]:
     }
 
 
+
+def describe_static_camera_constructor() -> dict[str, Any]:
+    """Reproduce FUN_00814f60's derived StaticCamera initialization."""
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "operation": "static-camera-constructor",
+        "actions": [
+            {"action": "FUN_0081aeb0"},
+            {"action": "write vtable", "value": "PTR_FUN_00b15d60"},
+            {"action": "FUN_00814460", "target": "+0x48"},
+            {"action": "FUN_00675c60", "target": "+0x140"},
+            {"action": "FUN_00812c00", "target": "+0x260..+0x278"},
+            {"action": "FUN_00823a80", "target": "+0x84", "rate_bits": 0x40C00000},
+            {"action": "FUN_00823ab0", "target": "+0x84", "target_bits": [0x3C23D70A, 0x3C23D70A, 0x3BA3D70A]},
+            {"action": "FUN_00823a80", "target": "+0xD8", "rate_bits": 0x41800000},
+            {"action": "FUN_00823ab0", "target": "+0xD8", "target_bits": [0x3C23D70A, 0x3C23D70A, 0x3BA3D70A]},
+        ],
+        "writes": {
+            "+0x3c": 0x3F000000,
+            "+0x48..+0x60": [0] * 7,
+            "+0x260..+0x278": [0] * 7,
+        },
+        "shake": {
+            "+0x84": {"rate": 0x40C00000, "target": [0x3C23D70A, 0x3C23D70A, 0x3BA3D70A]},
+            "+0xD8": {"rate": 0x41800000, "target": [0x3C23D70A, 0x3C23D70A, 0x3BA3D70A]},
+        },
+        "evidence": {"function": "FUN_00814f60"},
+    }
+
+
+def describe_static_camera_reset() -> dict[str, Any]:
+    """Reproduce FUN_00815070."""
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "operation": "static-camera-reset",
+        "actions": [
+            {"action": "FUN_00813f70"},
+            {"action": "FUN_00886930", "condition": "param_1 & 1"},
+        ],
+        "evidence": {"function": "FUN_00815070"},
+    }
+
+
+def set_static_camera_runtime_pair(
+    *,
+    pair_a: Sequence[Any],
+    pair_b: Sequence[Any],
+    target_pair_a_offset: str = "+0x324/+0x328",
+    target_pair_b_offset: str = "+0x32c/+0x330",
+) -> dict[str, Any]:
+    if len(pair_a) != 2 or len(pair_b) != 2:
+        raise ValueError("each runtime pair requires exactly two values")
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "operation": "runtime-pair-set",
+        "writes": {
+            target_pair_a_offset: list(pair_a),
+            target_pair_b_offset: list(pair_b),
+        },
+        "evidence": {
+            "functions": ["FUN_00815ee0", "FUN_00815f00"],
+        },
+    }
+
+
+def set_static_camera_function_bindings(
+    *,
+    slot_380: Any,
+    slot_384: Any,
+    slot_388: Any,
+    slot_34c: Any,
+) -> dict[str, Any]:
+    """Trace FUN_00815f20/F30/F40/FE0 setters."""
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "operation": "function-binding-set",
+        "writes": {
+            "+0x380": slot_380,
+            "+0x384": slot_384,
+            "+0x388": slot_388,
+            "+0x34c": slot_34c,
+        },
+        "evidence": {
+            "functions": ["FUN_00815f20", "FUN_00815f30", "FUN_00815f40", "FUN_00815fe0"],
+        },
+    }
+
 def copy_config_record(
     source_words: Mapping[int, Any],
 ) -> dict[str, Any]:
