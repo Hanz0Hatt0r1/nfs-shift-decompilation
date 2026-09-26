@@ -1467,3 +1467,10 @@ each runtime INDEX16 buffer against the exact corresponding MEB index slice.
 The historical supplied capture still has no raw BMW VB/IB payload events, so this
 phase closes the instrumentation and comparison boundary without promoting raw
 runtime byte parity yet.
+
+
+## Phase 345: reproducible BMW runtime buffer artifacts
+
+Added `bmw_meb_runtime_buffer_artifacts.py` to reproduce the expected BMW VB/IB byte candidates directly from the retail M3 BFF. The producer preserves raw MEB property payload bytes, interleaves them in deterministic MEB property order, emits the complete little-endian INDEX16 stream and one binary per primitive, and records SHA-256/size provenance in a manifest.
+
+For the BMW body the candidate vertex buffer is 3,550 vertices × 76 bytes = 269,800 bytes. The six primitive INDEX16 candidates are 300, 12,588, 14,772, 1,224, 1,152 and 168 bytes. These remain reconstructed candidates until bounded Phase 344 runtime payload capture proves exact byte identity.
