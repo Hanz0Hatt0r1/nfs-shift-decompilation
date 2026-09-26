@@ -56,5 +56,5 @@ def test_final_matrix_row_uses_vector_w_directly_in_dot_term():
         0,0,0,0,
         0,0,0,2,
     ]
-    result = transform_matrix_rows_by_vector(matrix, [0,0,0,3])
-    assert result[12:16] == [0.0, 0.0, 0.0, 2.0]
+    result = transform_matrix_rows_by_vector(matrix, [0,0,1,3])
+    assert result[12:16] == [0.0, 0.0, -6.0, 2.0]
