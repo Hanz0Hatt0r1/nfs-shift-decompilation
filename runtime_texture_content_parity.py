@@ -290,6 +290,7 @@ def _texture_payload_candidates(
     snapshot: Mapping[str, Any],
     texture_ptr: str,
     creation_event_index: int | None = None,
+    draw_event_index: int | None = None,
 ) -> list[Mapping[str, Any]]:
     rows = []
     for row in snapshot.get("texture_payloads") or []:
@@ -297,20 +298,58 @@ def _texture_payload_candidates(
             continue
         if str(row.get("texture_ptr") or "").lower() != str(texture_ptr).lower():
             continue
-        if int(row.get("level", -1)) != 0:
+        try:
+            level = int(row.get("level"))
+            event_index = int(row.get("event_index", -1))
+        except (TypeError, ValueError):
             continue
-        if row.get("snapshot_status") != "captured":
+        if level < 0 or row.get("snapshot_status") != "captured" or not row.get("payload_path"):
             continue
-        if not row.get("payload_path"):
+        if creation_event_index is not None and event_index <= creation_event_index:
             continue
-        if creation_event_index is not None:
-            try:
-                if int(row.get("event_index", -1)) <= int(creation_event_index):
-                    continue
-            except (TypeError, ValueError):
-                continue
+        if draw_event_index is not None and event_index > draw_event_index:
+            continue
         rows.append(row)
     return sorted(rows, key=lambda row: int(row.get("event_index", -1)))
+
+
+def _runtime_texture_payload_candidates(
+    runtime_report: Mapping[str, Any],
+    snapshot: Mapping[str, Any],
+    texture_ptr: str,
+    creation_event_index: int | None = None,
+    draw_event_index: int | None = None,
+) -> list[Mapping[str, Any]]:
+    sources = [
+        row
+        for row in (snapshot.get("texture_payloads") or [])
+        if isinstance(row, Mapping)
+    ]
+    sources.extend(
+        row
+        for row in (runtime_report.get("texture_payloads") or [])
+        if isinstance(row, Mapping)
+    )
+    unique: dict[tuple[int, str], Mapping[str, Any]] = {}
+    for row in sources:
+        if str(row.get("texture_ptr") or "").lower() != str(texture_ptr).lower():
+            continue
+        try:
+            level = int(row.get("level"))
+            event_index = int(row.get("event_index", -1))
+        except (TypeError, ValueError):
+            continue
+        if level < 0 or row.get("snapshot_status") != "captured" or not row.get("payload_path"):
+            continue
+        if creation_event_index is not None and event_index <= creation_event_index:
+            continue
+        if draw_event_index is not None and event_index > draw_event_index:
+            continue
+        unique[(level, str(row.get("payload_path")))] = row
+    return sorted(
+        unique.values(),
+        key=lambda row: (int(row.get("level", -1)), int(row.get("event_index", -1)))
+    )
 
 
 def _extract_expected_texture_payloads(primary_bff: str | Path) -> dict[str, bytes]:
@@ -461,8 +500,19 @@ def build_bmw_paint_runtime_texture_parity(
                     creation_event_index = int(binding["resource_creation"].get("event_index"))
                 except (TypeError, ValueError):
                     creation_event_index = None
+            draw_event_index = None
+            try:
+                draw_event_index = int((snapshot.get("draw") or {}).get("event_index"))
+            except (TypeError, ValueError):
+                draw_event_index = None
             payload_candidates = (
-                _texture_payload_candidates(snapshot, str(pointers), creation_event_index)
+                _runtime_texture_payload_candidates(
+                    runtime_report,
+                    snapshot,
+                    str(pointers),
+                    creation_event_index,
+                    draw_event_index,
+                )
                 if pointers
                 else []
             )
