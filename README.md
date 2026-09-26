@@ -20,6 +20,8 @@
 >
 > **Current external gate:** obtain one real retail D3D9 capture containing the target BMW M3 body draw and prove the same-instance chain from MEB resource → declaration → indexed draw → VS/PS → constants → sampler resources.
 
+> **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.
+
 > **Linux/apitrace path:** when apitrace is the available runtime capture source, `tools/extract_apitrace_unique_bmw.py` streams the .trace directly, extracts the known BMW body draw signatures and deduplicates runtime resource instances without first creating a multi-gigabyte text dump. `--auto-trim` can emit a compact trace for subsequent inspection.
 >
 > **Draw-local runtime proof:** `SHIFT.D3D9RuntimeBindingEvidence/1` now freezes declaration, stream, index, shader, constant and texture state at each `DrawIndexedPrimitive` boundary. The strict same-instance gate consumes these snapshots rather than the final state of the whole frame.

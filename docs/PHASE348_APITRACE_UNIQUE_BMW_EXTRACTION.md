@@ -79,3 +79,18 @@ The next proof remains:
 
 If \`bmw_unique.trace\` is produced successfully, it can be used as the compact
 source for the next extraction stage without re-running the game.
+
+## Exact BMW runtime filter
+
+Pass the already verified frame-30444 geometry evidence when the trace is that same capture:
+
+    python tools/extract_apitrace_unique_bmw.py \
+      /path/to/shift.trace \
+      /path/to/bmw-apitrace-evidence \
+      --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json \
+      --auto-trim
+
+With this evidence file the extractor requires the known BMW vertex-buffer pointer and
+per-primitive index-buffer pointers before a target draw is accepted. This removes
+same-signature draws from unrelated meshes while keeping the pointer/instance gate
+explicit.
