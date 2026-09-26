@@ -62,11 +62,13 @@ def test_cursor_advance_accepts_sampler_step_and_updates_position():
         param3=1,
         distance_delta=1,
         boundary_callback_enabled=False,
-        reverse_or_zero_flag=False,
         sampler=sampler,
         max_outer_steps=1,
     )
     assert state.x == 1.0
+    assert state.state_10 == 0.0
+    assert state.segment_t == 0.0
+    assert state.state_14 == 0.0
     assert result["accepted_steps"] == 1
 
 
