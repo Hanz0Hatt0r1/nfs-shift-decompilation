@@ -59,8 +59,8 @@
       "triangle_count": 204,
       "runtime_ib": "0x27b39660",
       "representative": {
-        "draw_index": 656,
-        "call": 73781920,
+        "draw_index": 362,
+        "call": 73766241,
         "prim_count": 204
       }
     },
