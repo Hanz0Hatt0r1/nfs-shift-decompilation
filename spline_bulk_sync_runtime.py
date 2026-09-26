@@ -142,14 +142,85 @@ def rebase_referenced_spline(
         ],
         "evidence": {
             "function": "FUN_008176f0",
-            "destination_base_field": "+0x358" if destination_base else "+0x360",
-            "destination_cursor_field": "+0x35c" if destination_base else "+0x364",
+            "destination_base_field": "+0x358",
+            "destination_cursor_field": "+0x35c",
             "saved_pointer": "collection entry +4/+7",
             "saved_count": "collection entry +5/+8",
             "saved_length": "collection entry +6/+9",
         },
     }
 
+
+
+def normalize_spline_scalar_window(
+    values: Sequence[float],
+) -> dict[str, Any]:
+    """Reproduce the scalar extrema/boundary search in FUN_008176f0.
+
+    The source computes the global maximum across +0x1c of every record,
+    then finds the first descending edge from the left and the first descending
+    edge from the right. When the inclusive span exceeds three records, the
+    whole span's +0x1c values are overwritten with that global maximum.
+    """
+    vals = [float(v) for v in values]
+    n = len(vals)
+    if n == 0:
+        return {
+            "format": FORMAT,
+            "version": 1,
+            "operation": "scalar-window-normalize",
+            "status": "empty",
+            "global_max": -1.0,
+            "left": -1,
+            "right": -1,
+            "written_indices": [],
+            "values_after": [],
+            "evidence": {"function": "FUN_008176f0"},
+        }
+
+    global_max = max(vals)
+
+    left = -1
+    for i in range(n):
+        if vals[i] < -1.0:
+            left = i
+            break
+        if i > 0 and vals[i] < vals[i - 1]:
+            left = i
+            break
+
+    right = -1
+    for i in range(n - 1, -1, -1):
+        if vals[i] < -1.0:
+            right = i
+            break
+        if i < n - 1 and vals[i] < vals[i + 1]:
+            right = i
+            break
+
+    after = list(vals)
+    written: list[int] = []
+    if left != -1 and right != -1 and (right - left + 1) > 3:
+        for i in range(left, right + 1):
+            after[i] = global_max
+            written.append(i)
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "operation": "scalar-window-normalize",
+        "status": "updated" if written else "unchanged",
+        "global_max": global_max,
+        "left": left,
+        "right": right,
+        "written_indices": written,
+        "values_after": after,
+        "evidence": {
+            "function": "FUN_008176f0",
+            "source_offset": "+0x1c",
+            "global_extrema": "max",
+            "minimum_span": 4,
+        },
+    }
 
 def describe_bulk_sync(
     *,
