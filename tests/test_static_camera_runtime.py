@@ -4,6 +4,10 @@ from static_camera_runtime import (
     interpolate_static_camera_records,
     reset_static_camera_state,
     static_camera_defaults,
+    describe_static_camera_constructor,
+    describe_static_camera_reset,
+    set_static_camera_function_bindings,
+    set_static_camera_runtime_pair,
     static_camera_property_registration,
 )
 
@@ -64,3 +68,29 @@ def test_static_interpolation_reproduces_component_blend():
         alpha=0.25,
     )
     assert result["value"] == [1.5, 12.5, 3.5]
+
+
+def test_static_camera_constructor_sets_exact_shake_rates_and_targets():
+    result = describe_static_camera_constructor()
+    assert result["writes"]["+0x3c"] == 0x3F000000
+    assert result["shake"]["+0x84"]["rate"] == 0x40C00000
+    assert result["shake"]["+0xD8"]["rate"] == 0x41800000
+    assert result["shake"]["+0x84"]["target"] == [0x3C23D70A, 0x3C23D70A, 0x3BA3D70A]
+
+def test_static_camera_reset_delegates_to_13f70():
+    result = describe_static_camera_reset()
+    assert result["actions"][0]["action"] == "FUN_00813f70"
+
+def test_static_camera_runtime_setters_preserve_exact_offsets():
+    result = set_static_camera_runtime_pair(
+        pair_a=["a", "b"],
+        pair_b=["c", "d"],
+    )
+    assert result["writes"]["+0x324/+0x328"] == ["a", "b"]
+    assert result["writes"]["+0x32c/+0x330"] == ["c", "d"]
+
+def test_static_camera_function_bindings_preserve_all_four_offsets():
+    result = set_static_camera_function_bindings(
+        slot_380=1, slot_384=2, slot_388=3, slot_34c=4
+    )
+    assert result["writes"] == {"+0x380":1, "+0x384":2, "+0x388":3, "+0x34c":4}
