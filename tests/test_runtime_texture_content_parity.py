@@ -400,3 +400,54 @@ def test_runtime_global_payloads_ignore_payload_after_draw(tmp_path):
         draw_event_index=50,
     )
     assert rows == []
+
+
+def test_compare_raw_payload_chain_blocks_unexpected_level(tmp_path):
+    dds = _dds_dxt1_chain(4, 4, [b"ABCDEFGH", b"IJKLMNOP"])
+    path = tmp_path / "l5.bin"
+    path.write_bytes(b"QRSTUVWX")
+    report = parity.compare_raw_payload_chain_to_dds([{
+        "level": 5,
+        "event_index": 9,
+        "snapshot_status": "captured",
+        "payload_path": str(path),
+    }], dds)
+    assert report["ready"] is False
+    assert "raw-payload:unexpected-level:l5" in report["blocking_reasons"]
+
+
+def test_raw_payload_mismatch_replaces_ppm_missing_blocker(tmp_path, monkeypatch):
+    payload = tmp_path / "bad.bin"
+    payload.write_bytes(b"BADBYTES")
+    dds = _dds_dxt1_chain(4, 4, [b"ABCDEFGH"])
+    monkeypatch.setattr(parity, "_extract_expected_texture_payloads", lambda _bff: {
+        "diffuseTexture": dds,
+        "specularTexture": dds,
+        "scratchControlTexture": dds,
+    })
+    snapshot = {
+        "frames": [{
+            "frame": 9,
+            "draw_snapshots": [{
+                "draw_index": 3,
+                "active_texture_bindings": [
+                    {"stage": 1, "texture_ptr": "0x100", "snapshot_paths": [], "resource_creation": {"event_index": 1}},
+                    {"stage": 2, "texture_ptr": "0x200", "snapshot_paths": [], "resource_creation": {"event_index": 1}},
+                    {"stage": 4, "texture_ptr": "0x400", "snapshot_paths": [], "resource_creation": {"event_index": 1}},
+                ],
+                "texture_payloads": [{
+                    "texture_ptr": "0x100",
+                    "level": 0,
+                    "event_index": 2,
+                    "snapshot_status": "captured",
+                    "payload_path": str(payload),
+                }],
+            }],
+        }],
+    }
+    report = parity.build_bmw_paint_runtime_texture_parity(
+        snapshot, frame=9, draw_index=3, primary_bff="BMW_M3_E36.bff"
+    )
+    diffuse = next(row for row in report["textures"] if row["parameter"] == "diffuseTexture")
+    assert diffuse["status"] == "mismatch"
+    assert all("runtime:texture-snapshot-not-supplied:s1" != reason for reason in diffuse["blocking_reasons"])
