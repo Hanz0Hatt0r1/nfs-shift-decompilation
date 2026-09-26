@@ -564,23 +564,213 @@ def extract(
     return evidence["summary"]
 
 
+def extract_from_source(
+    trace: Path,
+    geometry_report: Path,
+    output_dir: Path,
+    *,
+    apitrace: str = "apitrace",
+) -> dict:
+    """Extract BMW upload blobs directly from the original trace.
+
+    apitrace trim does not reliably preserve fake memcpy calls. This path
+    uses one bounded apitrace dump --blobs pass over the original trace,
+    then correlates each fake memcpy with its following Unlock.
+    """
+    allowed = geometry_identities(geometry_report)
+    targets = []
+    for ptr, rows in allowed.items():
+        for row in rows:
+            for unlock in row["unlock_calls"]:
+                if unlock > row["creation_call"]:
+                    targets.append((unlock - 1, ptr, unlock))
+    if not targets:
+        raise TraceFormatError("geometry report contains no BMW Unlock calls")
+
+    first = min(call for call, _, _ in targets)
+    last = max(call for _, _, call in targets)
+    target_by_fake = {call: (ptr, unlock) for call, ptr, unlock in targets}
+
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="bmw_apitrace_blobs_") as tmp:
+        result = subprocess.run(
+            [
+                apitrace,
+                "dump",
+                f"--calls={first}-{last}",
+                "--call-nos=true",
+                "--arg-names=true",
+                "--blobs",
+                str(trace),
+            ],
+            cwd=tmp,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+
+        memcpy_re = re.compile(
+            r'^(?P<call>\d+)\s+memcpy\('
+            r'.*?src\s*=\s*blob\("(?P<blob>[^"]+)"\)'
+            r'.*?n\s*=\s*(?P<n>\d+)'
+        )
+        unlock_re = re.compile(
+            r"^(?P<call>\d+)\s+"
+            r"IDirect3D(?:VertexBuffer9|IndexBuffer9)::Unlock\("
+            r"this\s*=\s*(?P<ptr>0x[0-9a-fA-F]+)"
+        )
+
+        pending = None
+        pairs = []
+        for line in result.stdout.splitlines():
+            m = memcpy_re.match(line)
+            if m:
+                call = int(m.group("call"))
+                pending = (
+                    {
+                        "call": call,
+                        "blob": m.group("blob"),
+                        "n": int(m.group("n")),
+                    }
+                    if call in target_by_fake
+                    else None
+                )
+                continue
+
+            m = unlock_re.match(line)
+            if m:
+                unlock = int(m.group("call"))
+                ptr = m.group("ptr").lower()
+                if pending is not None and pending["call"] + 1 == unlock:
+                    target = target_by_fake.get(pending["call"])
+                    if target and target[0].lower() == ptr and target[1] == unlock:
+                        pairs.append(
+                            {
+                                "fake_memcpy_call": pending["call"],
+                                "unlock_call": unlock,
+                                "buffer_pointer": ptr,
+                                "blob": pending["blob"],
+                                "n_argument": pending["n"],
+                            }
+                        )
+                pending = None
+                continue
+
+            if line.strip():
+                pending = None
+
+        if len(pairs) != len(targets):
+            raise TraceFormatError(
+                f"expected {len(targets)} BMW memcpy/Unlock pairs, found {len(pairs)}"
+            )
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        payload_dir = output_dir / "buffer_payloads"
+        payload_dir.mkdir(parents=True, exist_ok=True)
+        records = []
+        dedup = {}
+        for pair in sorted(pairs, key=lambda item: item["fake_memcpy_call"]):
+            blob_path = Path(tmp) / pair["blob"]
+            blob = blob_path.read_bytes()
+            ptr = pair["buffer_pointer"]
+            candidates = [
+                row for row in allowed[ptr]
+                if pair["unlock_call"] in row["unlock_calls"]
+            ]
+            if not candidates:
+                raise TraceFormatError(
+                    f"BMW resource identity disappeared for {ptr} unlock {pair['unlock_call']}"
+                )
+            row = candidates[0]
+            sha = hashlib.sha256(blob).hexdigest()
+            path = dedup.get(sha)
+            if path is None:
+                path = payload_dir / (
+                    f"{row['kind']}_{ptr[2:]}_{pair['unlock_call']}_"
+                    f"{pair['fake_memcpy_call']}_{sha[:16]}.bin"
+                )
+                path.write_bytes(blob)
+                dedup[sha] = path
+            expected = row["expected_size"]
+            records.append(
+                {
+                    "fake_memcpy_call": pair["fake_memcpy_call"],
+                    "unlock_call": pair["unlock_call"],
+                    "buffer_kind": row["kind"],
+                    "buffer_pointer": ptr,
+                    "creation_call": row["creation_call"],
+                    "blob_size": len(blob),
+                    "expected_buffer_size": expected,
+                    "full_buffer_candidate": expected is not None and len(blob) == expected,
+                    "blob_sha256": sha,
+                    "payload_path": str(path),
+                    "n_argument": pair["n_argument"],
+                    "n_matches_blob_size": pair["n_argument"] == len(blob),
+                }
+            )
+
+        evidence = {
+            "format": FORMAT,
+            "source": {
+                "trace": str(trace),
+                "trace_size_bytes": trace.stat().st_size,
+                "geometry_report": str(geometry_report),
+                "extraction": "apitrace dump --blobs over bounded BMW call range",
+                "call_range": [first, last],
+            },
+            "buffers": records,
+            "summary": {
+                "payload_records": len(records),
+                "unique_payload_blobs": len(dedup),
+                "full_buffer_candidates": sum(bool(r["full_buffer_candidate"]) for r in records),
+                "kinds": {
+                    kind: sum(1 for r in records if r["buffer_kind"] == kind)
+                    for kind in ("vertex_buffer", "index_buffer")
+                },
+            },
+            "evidence_boundary": {
+                "fake_memcpy_blob": "observed",
+                "runtime_buffer_identity": "observed",
+                "exact_vb_bytes": "candidate-only",
+                "exact_ib_bytes": "candidate-only",
+                "meb_byte_parity": "not-run",
+            },
+        }
+        (output_dir / "buffer_blob_evidence.json").write_text(
+            json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return evidence["summary"]
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("trace", type=Path)
     parser.add_argument("geometry_report", type=Path)
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--source-trace", type=Path, help="extract directly from the original trace with apitrace dump --blobs")
+    parser.add_argument("--apitrace", default="apitrace")
     parser.add_argument(
         "--max-decompressed-bytes",
         type=int,
         default=128 * 1024 * 1024,
     )
     args = parser.parse_args(argv)
-    result = extract(
-        args.trace.expanduser().resolve(),
-        args.geometry_report.expanduser().resolve(),
-        args.output_dir.expanduser().resolve(),
-        max_decompressed_bytes=max(1, args.max_decompressed_bytes),
-    )
+    if args.source_trace:
+        result = extract_from_source(
+            args.source_trace.expanduser().resolve(),
+            args.geometry_report.expanduser().resolve(),
+            args.output_dir.expanduser().resolve(),
+            apitrace=args.apitrace,
+        )
+    else:
+        result = extract(
+            args.trace.expanduser().resolve(),
+            args.geometry_report.expanduser().resolve(),
+            args.output_dir.expanduser().resolve(),
+            max_decompressed_bytes=max(1, args.max_decompressed_bytes),
+        )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
