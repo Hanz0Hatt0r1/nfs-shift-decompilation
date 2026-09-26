@@ -277,6 +277,7 @@ def build_bmw_paint_runtime_texture_parity(
     for row in PAINT_TEXTURES:
         expected_row = expected[row["parameter"]]
         binding = _active_texture(snapshot, int(row["register"]))
+        pointers = binding.get("texture_ptr") if isinstance(binding, Mapping) else None
         if binding is None:
             result = {
                 "parameter": row["parameter"],
@@ -287,7 +288,6 @@ def build_bmw_paint_runtime_texture_parity(
                 "expected": expected_row,
             }
         else:
-            pointers = binding.get("texture_ptr")
             paths = list(binding.get("snapshot_paths") or [])
             if not pointers:
                 result = {
@@ -360,6 +360,7 @@ def build_bmw_paint_runtime_texture_parity(
                 if raw["ready"]:
                     result["ready"] = True
                     result["status"] = "match"
+                    result["blocking_reasons"] = []
                     result["content_identity_method"] = "raw-dds-base-level"
                 else:
                     result["ready"] = False
