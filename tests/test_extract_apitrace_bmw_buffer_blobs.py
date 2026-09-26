@@ -38,7 +38,6 @@ def call_enter(call_no: int, sig_id: int, name: str, arg_names: list[str], args:
     out = bytearray([mod.EVENT_ENTER])
     out += uvarint(0)  # thread id
     out += uvarint(sig_id)
-    if sig_id not in (1,):
         out += string(name)
         out += uvarint(len(arg_names))
         for arg_name in arg_names:
