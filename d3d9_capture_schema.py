@@ -13,6 +13,8 @@ EVENT_SPECS = {
     'set_texture': {'pointer':'texture_ptr', 'allow_null': True},
     'create_texture': {'pointer':'texture_ptr'},
     'create_cube_texture': {'pointer':'texture_ptr'},
+    'create_vertex_buffer': {'pointer':'vertex_buffer_ptr'},
+    'create_index_buffer': {'pointer':'index_buffer_ptr'},
     'texture_payload': {'pointer':'texture_ptr'},
     'present_screenshot': {},
     'present_screenshot_failed': {},
@@ -67,6 +69,18 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
             reasons.append('create-cube-texture:edge-length-invalid')
         if isinstance(row.get('levels'), int) and row['levels'] <= 0:
             reasons.append('create-cube-texture:levels-invalid')
+    if event == 'create_vertex_buffer':
+        for key in ('length', 'usage', 'fvf', 'pool'):
+            if not isinstance(row.get(key), int):
+                reasons.append(f'create-vertex-buffer:{key}-invalid')
+        if isinstance(row.get('length'), int) and row['length'] <= 0:
+            reasons.append('create-vertex-buffer:length-invalid')
+    if event == 'create_index_buffer':
+        for key in ('length', 'usage', 'format', 'pool'):
+            if not isinstance(row.get(key), int):
+                reasons.append(f'create-index-buffer:{key}-invalid')
+        if isinstance(row.get('length'), int) and row['length'] <= 0:
+            reasons.append('create-index-buffer:length-invalid')
     if event == 'texture_payload':
         resource_type_name = row.get('resource_type_name')
         if resource_type_name == 'cube_texture' and row.get('face') is None:
