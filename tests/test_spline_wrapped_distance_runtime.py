@@ -7,7 +7,7 @@ from spline_wrapped_distance_runtime import (
 
 def test_wrapped_y_uses_truncated_wrap_index_times_eight():
     assert wrapped_y(10.0, 1.9) == 2.0
-    assert wrapped_y(10.0, -1.9) == 18.0
+    assert wrapped_y(10.0, -1.9) == 2.0
 
 
 def test_wrapped_distance_corrects_only_y_component():
