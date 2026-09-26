@@ -83,6 +83,7 @@ def test_register_rejects_index_six_plus_one_and_zero():
 def test_target_resolution_stops_on_first_service_match():
     result = resolve_target_from_attachment(
         target_attachment="handle",
+        target_attachment_count_nonzero=True,
         service_candidates=[
             {"name": "a", "matches_attachment": False},
             {"name": "b", "matches_attachment": True},
@@ -100,3 +101,14 @@ def test_target_resolution_falls_back_to_selected_camera_index():
     )
     assert result["status"] == "camera-config-fallback"
     assert any(a["action"] == "FUN_00811570" for a in result["actions"])
+
+
+def test_target_resolution_uses_camera_index_when_attachment_count_is_zero():
+    result = resolve_target_from_attachment(
+        target_attachment="handle",
+        target_attachment_count_nonzero=False,
+        service_candidates=[
+            {"name": "a", "matches_attachment": True},
+        ],
+    )
+    assert result["status"] == "camera-config-fallback"
