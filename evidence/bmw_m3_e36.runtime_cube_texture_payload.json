@@ -1,0 +1,45 @@
+{
+  "format": "SHIFT.BMWM3RuntimeCubeTexturePayload/1",
+  "status": "partial",
+  "ready": false,
+  "resource": {
+    "mesh_path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "mesh_sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+  },
+  "material": {
+    "name": "BMW_M3_E36_PAINT",
+    "parameter": "environmentMap",
+    "register": 3
+  },
+  "runtime_object": {
+    "texture_ptr": "0x2cf0e6a8",
+    "create_call": 50790033,
+    "resource_type": "cube_texture",
+    "edge_length": 256,
+    "levels": 9,
+    "format": "D3DFMT_A16B16G16R16F",
+    "pool": "D3DPOOL_DEFAULT",
+    "usage": "D3DUSAGE_RENDERTARGET"
+  },
+  "capture_path": {
+    "raw_payload_event": "texture_payload",
+    "face_count": 6,
+    "mip_capture_supported": true,
+    "lockable_write_surface_required": true,
+    "current_payload_status": "not-observed"
+  },
+  "static_source": {
+    "environment_dds_path": null,
+    "status": "not-established"
+  },
+  "boundary": {
+    "pointer_to_create_instance": "proven",
+    "face_mip_payload_capture": "instrumented-not-observed",
+    "retail_environment_dds_identity": "not-proven",
+    "pixel_content_identity": "not-proven"
+  },
+  "source": {
+    "resource_create_log": "shift_resources.txt",
+    "resource_create_log_sha256": "e8f5e76fd9439e5149b0296a31c7097002242ac3f425a9869e1d965498151124"
+  }
+}
