@@ -8,7 +8,7 @@ This matters because apitrace's D3D9 tracer records mapped buffer contents when 
 buffer is unlocked; the generated trace therefore carries the upload bytes even
 though ordinary \`apitrace dump\` output does not print them as a large text blob.
 The upstream D3D9 tracer explicitly copies mapped buffer memory during \`Unlock\`.
-See the apitrace D3D9 tracer implementation. citeturn175388search0
+See the apitrace D3D9 tracer implementation in the upstream apitrace repository.
 
 ## Command
 
