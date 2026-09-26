@@ -1501,3 +1501,12 @@ The Wine-specific runtime capture path, build/injection helpers, tests, launcher
 ### Phase 348 operational note
 
 Use the known BMW runtime geometry evidence as a hard filter when extracting the same apitrace capture; this avoids treating unrelated 3,550-vertex draws as BMW evidence.
+
+
+## Phase 350: raw BMW buffer blob recovery from apitrace
+
+Added `tools/extract_apitrace_bmw_buffer_blobs.py` to parse the compact apitrace
+binary format directly. It follows per-thread call nesting, recognizes fake
+`memcpy` calls emitted by D3D9 `Unlock`, reads their TYPE_BLOB payloads and
+writes the raw bytes for the seven verified BMW VB/IB resource instances.
+Exact MEB byte parity remains a separate explicit comparator stage.
