@@ -237,7 +237,7 @@ def test_bmw_paint_parity_accepts_raw_payload_without_ppm(tmp_path, monkeypatch)
         }
 
     def fake_dds(_bff):
-        return {parameter: parity._dds_for_test(token) for parameter, token in tokens.items()}
+        return {parameter: _dds_for_test(token) for parameter, token in tokens.items()}
 
     monkeypatch.setattr(parity, "_extract_expected_textures", lambda _bff: expected)
     monkeypatch.setattr(parity, "_extract_expected_texture_payloads", fake_dds)
