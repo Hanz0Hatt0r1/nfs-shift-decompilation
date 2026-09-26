@@ -117,7 +117,7 @@ def run_intake(
                 "proven" if intake_ready else "not-proven"
             ),
             "raw_runtime_ib_bytes": (
-                "proven" if result.get("ready") else "not-proven"
+                "proven" if intake_ready else "not-proven"
             ),
         },
     }
