@@ -97,7 +97,7 @@ def test_payload_rows_obey_creation_and_draw_boundaries(tmp_path):
 
 def test_build_report_matches_vb_and_ib_payloads(tmp_path):
     vb = b"VB_BYTES"
-    ib = b"IB0" * 2 + b"IB1" * 3
+    ib = b"IB0" * 4
     vb_path = tmp_path / "vb.bin"
     ib_path = tmp_path / "ib.bin"
     vb_path.write_bytes(vb)
@@ -176,3 +176,19 @@ def test_build_report_stays_unready_without_runtime_payload(tmp_path):
     )
     assert report["ready"] is False
     assert report["matched_vertex_buffer"] is False
+
+
+def test_partial_payload_is_not_accepted_as_full_buffer(tmp_path):
+    payload = tmp_path / "partial.bin"
+    payload.write_bytes(b"short")
+    rows = parity._payload_rows({
+        "buffer_payloads": [{
+            "buffer_ptr": "0x100",
+            "resource_type_name": "vertex_buffer",
+            "offset": 4,
+            "snapshot_status": "captured",
+            "payload_path": str(payload),
+            "event_index": 20,
+        }]
+    }, "0x100", kind="vertex_buffer", creation_event_index=10, draw_event_index=30)
+    assert rows == []
