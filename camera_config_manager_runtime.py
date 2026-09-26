@@ -108,33 +108,33 @@ def serialize_camera_config_list(
     entries: Sequence[Any],
     funcpropdata: Any = None,
 ) -> dict[str, Any]:
-    """Reproduce FUN_00810530."""
+    """Reproduce FUN_00810530's per-entry serializer order."""
+    actions: list[dict[str, Any]] = []
+    for index, entry in enumerate(entries):
+        actions.extend([
+            {
+                "action": "entry.vtable +0x04",
+                "index": index,
+                "result": entry,
+            },
+            {
+                "action": "FUN_00640dd0",
+                "index": index,
+                "funcpropdata": funcpropdata,
+            },
+        ])
     return {
         "format": FORMAT,
         "version": 1,
         "operation": "camera-config-list-save",
         "source_list": "+0x44",
         "count": len(entries),
-        "actions": [
-            {
-                "action": "entry.vtable +0x04",
-                "index": index,
-                "result": entry,
-            }
-            for index, entry in enumerate(entries)
-        ]
-        + [
-            {
-                "action": "FUN_00640dd0",
-                "index": index,
-                "funcpropdata": funcpropdata,
-            }
-            for index, entry in enumerate(entries)
-        ],
+        "actions": actions,
         "evidence": {
             "function": "FUN_00810530",
             "xml_elements": "param_2+0x84.elements",
             "funcpropdata_bytes": 0x50,
+            "per_entry_order": "vtable +0x04 -> FUN_00640dd0",
         },
     }
 
