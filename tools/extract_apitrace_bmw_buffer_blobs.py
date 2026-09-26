@@ -131,6 +131,7 @@ class Reader:
         self.struct_sigs = {}
         self.enum_sigs = set()
         self.bitmask_sigs = set()
+        self.backtrace_frames = set()
 
     def byte(self) -> int:
         if self.pos >= len(self.data):
@@ -202,12 +203,11 @@ class Reader:
 
     def backtrace(self) -> None:
         count = self.uint()
-        seen = set()
         for _ in range(count):
             frame_id = self.uint()
-            if frame_id in seen:
+            if frame_id in self.backtrace_frames:
                 continue
-            seen.add(frame_id)
+            self.backtrace_frames.add(frame_id)
             while True:
                 detail = self.byte()
                 if detail == 0:
