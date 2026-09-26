@@ -431,6 +431,7 @@ def build_runtime_binding_evidence(
                 "texture_bindings": [dict(x) for x in frame["texture_bindings"]],
                 "active_texture_bindings": [active_textures[key] for key in sorted(active_textures)],
                 "texture_payloads": [dict(x) for x in frame["texture_payloads"]],
+                "buffer_payloads": [dict(x) for x in frame["buffer_payloads"]],
                 "constant_writes": [dict(x) for x in frame["constant_writes"]],
                 "constant_state": constant_state,
             }
