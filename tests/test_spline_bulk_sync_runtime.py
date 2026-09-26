@@ -5,6 +5,7 @@ from spline_bulk_sync_runtime import (
     append_referenced_spline,
     copy_spline_records,
     describe_bulk_sync,
+    normalize_spline_scalar_window,
     rebase_referenced_spline,
 )
 
@@ -100,3 +101,25 @@ def test_bulk_sync_updates_both_cursors_for_active_entries():
     assert result["first_cursor"] == 2
     assert result["second_cursor"] == 1
     assert result["scalar_window_result"]["min"] == 1
+
+
+def test_scalar_window_finds_global_max_and_left_right_descents():
+    result = normalize_spline_scalar_window([10, 9, 8, 7, 7, 6, 5])
+    assert result["global_max"] == 10.0
+    assert result["left"] == 1
+    assert result["right"] == 5
+    assert result["written_indices"] == [1,2,3,4,5]
+    assert result["values_after"] == [10.0,10.0,10.0,10.0,10.0,10.0,5.0]
+
+
+def test_scalar_window_does_not_write_when_span_is_three_or_less():
+    result = normalize_spline_scalar_window([3, 2, 1])
+    assert result["written_indices"] == []
+    assert result["values_after"] == [3.0,2.0,1.0]
+
+
+def test_scalar_window_keeps_values_when_no_descending_edges_exist():
+    result = normalize_spline_scalar_window([1,2,3,4,5])
+    assert result["left"] == -1
+    assert result["right"] == -1
+    assert result["status"] == "unchanged"
