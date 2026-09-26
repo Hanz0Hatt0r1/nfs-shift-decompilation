@@ -81,13 +81,13 @@ def test_complete_lifetimes_are_ready_and_include_fake_memcpy(monkeypatch):
     monkeypatch.setattr(
         mod,
         "_fake_memcpy_calls_near_unlock",
-        lambda trace, apitrace, unlock_call, window=4: [unlock_call + 1],
+        lambda trace, apitrace, unlock_call, window=4: [unlock_call - 1],
     )
     plan = build_callset(report, trace=Path("/tmp/SHIFT.trace"))
     assert plan["ready_for_payload_trim"] is True
     assert plan["callset_count"] == 35
-    assert plan["resources"][0]["fake_memcpy_calls_by_unlock"] == {"102": [103]}
-    assert plan["resources"][6]["fake_memcpy_calls_by_unlock"] == {"130": [131]}
+    assert plan["resources"][0]["fake_memcpy_calls_by_unlock"] == {"102": [101]}
+    assert plan["resources"][6]["fake_memcpy_calls_by_unlock"] == {"130": [129]}
 
 
 def test_missing_fake_memcpy_blocks_trim(monkeypatch):
@@ -144,12 +144,13 @@ def test_fake_memcpy_calls_are_discovered_from_bounded_dump(monkeypatch):
         mod,
         "_dump_calls",
         lambda trace, apitrace, first, last: (
+            "117 memcpy(dest = 0x3, src = 0x4, n = 8) = 0\\n"
+            "118 IDirect3DDevice9::Lock(...) = D3D_OK\\n"
+            "119 memcpy(dest = 0x1, src = 0x2, n = 12) = 0\\n"
             "120 IDirect3DIndexBuffer9::Unlock(this = 0x200, pLength = 12) = D3D_OK\\n"
-            "121 memcpy(dest = 0x1, src = 0x2, n = 12) = 0\\n"
-            "122 IDirect3DDevice9::DrawIndexedPrimitive(...) = D3D_OK\\n"
-            "123 memcpy(dest = 0x3, src = 0x4, n = 8) = 0\\n"
+            "121 memcpy(dest = 0x5, src = 0x6, n = 8) = 0\\n"
         ),
     )
     assert mod._fake_memcpy_calls_near_unlock(
         Path("/tmp/SHIFT.trace"), "apitrace", 120, 4
-    ) == [121, 123]
+    ) == [119]
