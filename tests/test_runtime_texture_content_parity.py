@@ -185,3 +185,13 @@ def test_texture_payload_candidates_are_ordered_by_event_index():
         ],
     }, "0x100")
     assert [row["payload_path"] for row in rows] == ["early.bin", "late.bin"]
+
+
+def test_texture_payload_candidates_ignore_payload_from_previous_pointer_lifetime():
+    rows = parity._texture_payload_candidates({
+        "texture_payloads": [
+            {"texture_ptr": "0x100", "level": 0, "snapshot_status": "captured", "payload_path": "old.bin", "event_index": 10},
+            {"texture_ptr": "0x100", "level": 0, "snapshot_status": "captured", "payload_path": "current.bin", "event_index": 30},
+        ],
+    }, "0x100", creation_event_index=20)
+    assert [row["payload_path"] for row in rows] == ["current.bin"]
