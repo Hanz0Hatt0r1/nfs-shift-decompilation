@@ -83,12 +83,13 @@ def run_intake(
     result_blockers = list(dict.fromkeys(
         runtime_blockers + list(parity.get("blocking_reasons") or [])
     ))
+    intake_ready = bool(parity.get("ready")) and not runtime_blockers
     result = {
         "format": FORMAT,
         "status": "match" if parity.get("ready") and not runtime_blockers else (
             "blocked" if result_blockers else "partial"
         ),
-        "ready": bool(parity.get("ready")) and not runtime_blockers,
+        "ready": intake_ready,
         "source": {
             "capture_jsonl": str(Path(capture_jsonl).resolve()),
             "payload_dir": str(Path(payload_dir).resolve()),
@@ -113,7 +114,7 @@ def run_intake(
         "blocking_reasons": result_blockers,
         "evidence_boundary": {
             "raw_runtime_vb_bytes": (
-                "proven" if result.get("ready") else "not-proven"
+                "proven" if intake_ready else "not-proven"
             ),
             "raw_runtime_ib_bytes": (
                 "proven" if result.get("ready") else "not-proven"
