@@ -31,13 +31,13 @@ def test_target_selector_matches_entry_vtable_id():
 def test_autozoom_clamps_desired_value_and_limits_step():
     result = compute_autozoom_update(
         current_zoom=1,
-        distance=100,
+        distance=10000,
         update_enabled=True,
         write_initial_zoom=False,
         previous_zoom=0.5,
         delta=0.2,
     )
-    assert result["desired"] == 3.5 if False else 0.35
+    assert result["desired"] == 0.35
     assert result["value"] == 0.55
 
 
