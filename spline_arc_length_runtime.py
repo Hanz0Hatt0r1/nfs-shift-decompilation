@@ -110,7 +110,6 @@ def advance_spline_cursor(
     param3: float,
     distance_delta: float,
     boundary_callback_enabled: bool,
-    reverse_or_zero_flag: bool,
     sampler: Callable[[float, float, float, float], Mapping[str, Any]],
     finished_predicate: Callable[[SplineCursor], bool] | None = None,
     reverse_endpoint_result: float | None = None,
@@ -189,7 +188,7 @@ def advance_spline_cursor(
                 raise ValueError("sampler position requires three values")
             denominator = float(sample.get("denominator", 1.0))
             if denominator == 0.0:
-                raise ValueError("sampler state_14 must be non-zero")
+                raise ValueError("sampler denominator must be non-zero")
 
             dx = position[0] - state.x
             dy = position[1] - state.y
@@ -211,7 +210,6 @@ def advance_spline_cursor(
                     x=position[0],
                     y=position[1],
                     z=position[2],
-                    state_14=float(sample.get("state_10", state.state_14)),
                     segment_t=float(sample.get("segment_t_out", trial_t)),
                     remainder=step_sign * remainder_after,
                     sample_scalar=float(sample.get("param3_out", param3)),
