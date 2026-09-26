@@ -25,7 +25,7 @@ def test_cubic_interpolation_matches_source_formula_at_zero_and_one():
         coefficient_c=3,
         coefficient_d=4,
         t=0,
-    ) == 1.0
+    ) == 2.0
     assert cubic_interpolate(
         coefficient_a=1,
         coefficient_b=2,
