@@ -625,8 +625,7 @@ HRESULT STDMETHODCALLTYPE hook_vertex_buffer_lock(
         state.flags = flags;
         state.bits = *bits;
         state.full_surface = have_desc
-            ? should_capture_full_buffer(offset, size, desc.Size)
-            : (buffer_payload_capture_enabled() && offset == 0 && size > 0);
+            && should_capture_full_buffer(offset, size, desc.Size);
         state.active = state.full_surface;
         if (state.active) {
             std::lock_guard<std::mutex> lock(g_buffer_lock_state_mutex);
@@ -699,8 +698,7 @@ HRESULT STDMETHODCALLTYPE hook_index_buffer_lock(
         state.flags = flags;
         state.bits = *bits;
         state.full_surface = have_desc
-            ? should_capture_full_buffer(offset, size, desc.Size)
-            : (buffer_payload_capture_enabled() && offset == 0 && size > 0);
+            && should_capture_full_buffer(offset, size, desc.Size);
         state.active = state.full_surface;
         if (state.active) {
             std::lock_guard<std::mutex> lock(g_buffer_lock_state_mutex);
