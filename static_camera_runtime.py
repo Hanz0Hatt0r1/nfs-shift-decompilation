@@ -152,6 +152,38 @@ def set_static_camera_function_bindings(
         },
     }
 
+
+def copy_static_camera_runtime_payload(
+    *,
+    destination: str,
+    source: str,
+) -> dict[str, Any]:
+    """Reproduce FUN_00815eb0's two-stage StaticCamera copy path."""
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "operation": "static-camera-runtime-copy",
+        "actions": [
+            {
+                "action": "FUN_0081af70",
+                "destination": destination,
+                "source": source,
+            },
+            {
+                "action": "FUN_00815620",
+                "destination": f"{destination}+0x48",
+                "source": f"{source}+0x48",
+            },
+        ],
+        "evidence": {
+            "function": "FUN_00815eb0",
+            "base_copy": "FUN_0081af70",
+            "camera_data_copy": "FUN_00815620",
+            "camera_data_offset": "+0x48",
+        },
+    }
+
+
 def copy_config_record(
     source_words: Mapping[int, Any],
 ) -> dict[str, Any]:
