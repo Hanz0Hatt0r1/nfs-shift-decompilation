@@ -170,6 +170,7 @@ def compare_raw_payload_to_dds(
 def _texture_payload_candidates(
     snapshot: Mapping[str, Any],
     texture_ptr: str,
+    creation_event_index: int | None = None,
 ) -> list[Mapping[str, Any]]:
     rows = []
     for row in snapshot.get("texture_payloads") or []:
@@ -183,6 +184,12 @@ def _texture_payload_candidates(
             continue
         if not row.get("payload_path"):
             continue
+        if creation_event_index is not None:
+            try:
+                if int(row.get("event_index", -1)) <= int(creation_event_index):
+                    continue
+            except (TypeError, ValueError):
+                continue
         rows.append(row)
     return sorted(rows, key=lambda row: int(row.get("event_index", -1)))
 
@@ -329,7 +336,17 @@ def build_bmw_paint_runtime_texture_parity(
                     "expected": expected_row,
                 }
 
-            payload_candidates = _texture_payload_candidates(snapshot, str(pointers)) if pointers else []
+            creation_event_index = None
+            if isinstance(binding.get("resource_creation"), Mapping):
+                try:
+                    creation_event_index = int(binding["resource_creation"].get("event_index"))
+                except (TypeError, ValueError):
+                    creation_event_index = None
+            payload_candidates = (
+                _texture_payload_candidates(snapshot, str(pointers), creation_event_index)
+                if pointers
+                else []
+            )
             if payload_candidates:
                 raw = compare_raw_payload_to_dds(
                     payload_candidates[-1]["payload_path"],
