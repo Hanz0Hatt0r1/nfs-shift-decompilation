@@ -37,10 +37,12 @@ def test_constructor_preserves_raw_camera_selection_state():
 def test_buffer_copy_requires_two_distinct_indices():
     result = describe_camera_manager_buffer_copy(old_buffer=0, new_buffer=1)
     copies = {c["name"]: c for c in result["copies"]}
-    assert copies["camera-data"]["source"] == 0x20
-    assert copies["camera-data"]["destination"] == 0xBE0
-    assert copies["static-camera"]["source"] == 0x17A0
-    assert copies["tracking-camera"]["source"] == 0x1CA0
+    assert copies["camera-data"]["source"] == 0xBE0
+    assert copies["camera-data"]["destination"] == 0x20
+    assert copies["static-camera"]["source"] == 0x1A20
+    assert copies["static-camera"]["destination"] == 0x17A0
+    assert copies["tracking-camera"]["source"] == 0x2100
+    assert copies["tracking-camera"]["destination"] == 0x1CA0
 
 
 def test_buffer_copy_rejects_same_index():
