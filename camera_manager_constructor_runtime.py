@@ -159,22 +159,22 @@ def describe_camera_manager_buffer_copy(
         "copies": [
             {
                 "name": "camera-data",
-                "source": 0xBE0 if old_index else 0x20,
-                "destination": 0x20 if old_index else 0xBE0,
+                "source": 0x20 if old_index else 0xBE0,
+                "destination": 0xBE0 if old_index else 0x20,
                 "stride": 0xBC0,
                 "helper": "FUN_0081e6c0",
             },
             {
                 "name": "static-camera",
-                "source": 0x1A20 if old_index else 0x17A0,
-                "destination": 0x17A0 if old_index else 0x1A20,
+                "source": 0x17A0 if old_index else 0x1A20,
+                "destination": 0x1A20 if old_index else 0x17A0,
                 "stride": 0x280,
                 "helper": "FUN_00815eb0",
             },
             {
                 "name": "tracking-camera",
-                "source": 0x2100 if old_index else 0x1CA0,
-                "destination": 0x1CA0 if old_index else 0x2100,
+                "source": 0x1CA0 if old_index else 0x2100,
+                "destination": 0x2100 if old_index else 0x1CA0,
                 "stride": 0x460,
                 "helper": "FUN_00815eb0",
             },
