@@ -105,11 +105,7 @@ normal D3D9 rendering behavior.
 
 The first call through the local proxy emits a `proxy_direct3dcreate9` event. A failed system-runtime load emits `proxy_system_d3d9_load_failed`; a successful system-runtime load emits `proxy_system_d3d9_ready`. These events distinguish a missing/unused proxy from a later capture failure.
 
-For PortProton/Wine, force the local native proxy with:
-
-    WINEDLLOVERRIDES="d3d9=n"
-
-For the first diagnostic run, leave screenshot and texture snapshots disabled and inspect the JSONL event counts after the game starts. If no JSONL file is created, the next diagnostic is Wine DLL-load tracing with `WINEDEBUG=+loaddll`.
+For the first diagnostic run, leave screenshot and texture snapshots disabled and inspect the JSONL event counts after the game starts.
 
 ### Linux → Windows (32-bit) cross-build
 
