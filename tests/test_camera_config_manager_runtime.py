@@ -107,3 +107,13 @@ def test_reset_matches_exact_order():
         "FUN_004f0050",
         "FUN_006383f0",
     ]
+
+
+def test_save_serializer_keeps_vtable_and_writer_adjacent_per_entry():
+    result = serialize_camera_config_list(entries=["a", "b"])
+    assert [a["action"] for a in result["actions"]] == [
+        "entry.vtable +0x04",
+        "FUN_00640dd0",
+        "entry.vtable +0x04",
+        "FUN_00640dd0",
+    ]
