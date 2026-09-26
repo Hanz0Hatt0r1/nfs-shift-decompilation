@@ -305,6 +305,7 @@ def build_runtime_binding_evidence(
                 "primitive_count": row.get("primitive_count"),
                 "start_index": row.get("start_index"),
                 "base_vertex_index": row.get("base_vertex_index"),
+                "event_index": row.get("event_index"),
                 "line": row.get("_line"),
             }
             frame["draws"].append(draw)
@@ -581,6 +582,12 @@ def build_runtime_binding_evidence(
             "texture_object_count": len(texture_resources),
             "texture_set_binding_count": sum(len(x.get("texture_bindings", [])) for x in frame_rows),
             "texture_payload_event_count": sum(len(x.get("texture_payloads", [])) for x in frame_rows),
+            "texture_payload_level_count": sum(
+                1
+                for x in frame_rows
+                for payload in (x.get("texture_payloads") or [])
+                if isinstance(payload, Mapping) and payload.get("level") is not None
+            ),
             "constant_write_count": sum(len(x.get("constant_writes", [])) for x in frame_rows),
             "frame_count": len(frame_rows),
             "source": "external-runtime-capture",
@@ -591,6 +598,11 @@ def build_runtime_binding_evidence(
         "shaders": list(shaders.values()),
         "textures": list(texture_resources.values()),
         "texture_lifecycle": texture_lifecycle,
+        "texture_payloads": [
+            payload
+            for frame in frame_rows
+            for payload in (frame.get("texture_payloads") or [])
+        ],
         "frames": frame_rows,
         "meb_correlation": correlation,
         "evidence_boundary": {
