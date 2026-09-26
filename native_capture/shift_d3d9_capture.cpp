@@ -604,7 +604,7 @@ void emit_cube_texture_payload(
       << ",\"byte_size\":" << byte_size
       << ",\"snapshot_status\":" << CaptureWriter::quote(status)
       << ",\"payload_path\":" << CaptureWriter::quote(path);
-    writer().write_event("cube_texture_payload", f.str());
+    writer().write_event("texture_payload", f.str());
 }
 
 HRESULT STDMETHODCALLTYPE hook_cube_texture_lock_rect(
