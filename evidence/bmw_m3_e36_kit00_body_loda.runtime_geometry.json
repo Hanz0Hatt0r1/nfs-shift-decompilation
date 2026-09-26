@@ -1,0 +1,101 @@
+{
+  "format": "SHIFT.BMWM3MEBRuntimeGeometryParity/1",
+  "status": "match",
+  "ready": true,
+  "resource": {
+    "archive": "Pakfiles/Vehicles/BMW_M3_E36.bff",
+    "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c",
+    "decoded_size": 300764
+  },
+  "source": {
+    "kind": "apitrace geometry dump",
+    "frame": 30444,
+    "dump": "geometry_30444.txt"
+  },
+  "runtime_stream": {
+    "vertex_buffer": "0x27b39460",
+    "stride": 76,
+    "derived_vertex_buffer_bytes": 269800,
+    "observed_target_draw_count": 28
+  },
+  "primitive_correlations": [
+    {
+      "index": 0,
+      "material": "vehicles/BMW_M3_E36/BMW_M3_E36_BADGING.mtx",
+      "triangle_count": 50,
+      "runtime_ib": "0x27b394e0",
+      "representative": {
+        "draw_index": 139,
+        "call": 73759350,
+        "prim_count": 50
+      }
+    },
+    {
+      "index": 1,
+      "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx",
+      "triangle_count": 2098,
+      "runtime_ib": "0x27b395e0",
+      "representative": {
+        "draw_index": 119,
+        "call": 73758870,
+        "prim_count": 2462
+      }
+    },
+    {
+      "index": 2,
+      "material": "vehicles/BMW_M3_E36/BMW_M3_E36_PAINT.mtx",
+      "triangle_count": 2462,
+      "runtime_ib": "0x27b39560",
+      "representative": {
+        "draw_index": 120,
+        "call": 73758892,
+        "prim_count": 2098
+      }
+    },
+    {
+      "index": 3,
+      "material": "vehicles/BMW_M3_E36/GENERIC_WINDOWS.mtx",
+      "triangle_count": 204,
+      "runtime_ib": "0x27b39660",
+      "representative": {
+        "draw_index": 656,
+        "call": 73781920,
+        "prim_count": 204
+      }
+    },
+    {
+      "index": 4,
+      "material": "vehicles/BMW_M3_E36/GENERIC_GLOSS_BLACK.mtx",
+      "triangle_count": 192,
+      "runtime_ib": "0x27b396e0",
+      "representative": {
+        "draw_index": 118,
+        "call": 73758848,
+        "prim_count": 192
+      }
+    },
+    {
+      "index": 5,
+      "material": "vehicles/BMW_M3_E36/BMW_M3_E36_LIGHTSGLASS.mtx",
+      "triangle_count": 28,
+      "runtime_ib": "0x27b39760",
+      "representative": {
+        "draw_index": 363,
+        "call": 73766269,
+        "prim_count": 28
+      }
+    }
+  ],
+  "coverage": {
+    "triangle_counts": {
+      "28": 2,
+      "50": 6,
+      "192": 6,
+      "204": 2,
+      "2098": 6,
+      "2462": 6
+    },
+    "primitive_count": 6
+  }
+}
