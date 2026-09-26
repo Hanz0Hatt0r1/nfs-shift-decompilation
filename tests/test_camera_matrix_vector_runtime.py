@@ -47,3 +47,14 @@ def test_signed_counter_toward_zero_returns_source_sign_byte():
     assert (positive["after"], positive["output"]) == (1, 1)
     assert (negative["after"], negative["output"]) == (-1, 0)
     assert zero["changed"] is False
+
+
+def test_final_matrix_row_uses_vector_w_directly_in_dot_term():
+    matrix = [
+        0,0,0,0,
+        0,0,0,0,
+        0,0,0,0,
+        0,0,0,2,
+    ]
+    result = transform_matrix_rows_by_vector(matrix, [0,0,0,3])
+    assert result[12:16] == [0.0, 0.0, 0.0, 2.0]
