@@ -98,8 +98,14 @@ def _fake_memcpy_calls_near_unlock(
     for line in text.splitlines():
         match = FAKE_MEMCPY_RE.match(line)
         if match:
-            calls.append(int(match.group("call")))
-    return sorted(set(calls))
+            call = int(match.group("call"))
+            if call < unlock_call:
+                calls.append(call)
+    # D3D9's generated wrapper emits trace::fakeMemcpy immediately before
+    # serializing the real Unlock call. Prefer that exact predecessor over
+    # unrelated memcpy calls in the bounded window.
+    predecessors = [call for call in calls if call == unlock_call - 1]
+    return predecessors or ([max(calls)] if calls else [])
 
 
 def _fallback_lifecycle_calls(
