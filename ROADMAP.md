@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 339. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 340. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1394,3 +1394,14 @@ byte count.
 This creates a direct compressed-surface comparison boundary for later BMW DDS
 parity. PPM remains the visual/RGB checkpoint; raw payloads are the preferred proof
 for DXT base-level identity. Cube textures remain on the existing six-face PPM path.
+
+
+## Phase 340: raw DDS base-level parity
+
+The runtime texture-content gate now supports direct level-0 byte equality for raw
+D3D9 texture payloads captured by Phase 339. DXT1/DXT3/DXT5 payloads are compared
+against the corresponding compressed base-level bytes in the exact retail DDS.
+
+The comparator applies the current texture object's creation-event boundary before
+accepting a payload, preventing pointer reuse from authenticating an earlier object
+lifetime. PPM RGB comparison remains available as a secondary content check.
