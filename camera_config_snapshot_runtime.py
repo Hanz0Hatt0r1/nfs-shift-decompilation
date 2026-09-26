@@ -42,13 +42,14 @@ def describe_string_property_parse(
     *,
     target: str,
     text_value: str,
+    helper_811390_result: int,
 ) -> dict[str, Any]:
-    """Trace FUN_00823640 including its callback selection."""
+    """Trace FUN_00823640 including the opaque FUN_00811390 gate."""
     vector = parse_semicolon_vec3(text_value)
-    length = len(str(text_value))
+    gate = int(helper_811390_result)
     callback = (
         "FUN_00823560"
-        if length != 15
+        if gate != 15
         else ("FUN_00823590" if target == "vec_a" else "FUN_008235b0")
     )
     return {
@@ -57,7 +58,7 @@ def describe_string_property_parse(
         "operation": "string-property-parse",
         "target": target,
         "input": text_value,
-        "length": length,
+        "helper_811390_result": gate,
         "vector": vector,
         "callback": callback,
         "evidence": {
@@ -160,7 +161,6 @@ def camera_config_snapshot_defaults() -> dict[str, Any]:
         "+0xad": 0,
         "+0xae": 0,
         "+0xaf": 1,
-        "+0xb1": 0,
         "+0xc5": 0,
         "+0x100": 0,
     }
@@ -196,11 +196,14 @@ def refresh_cached_config(
             "returned_object": "+0xec",
             "snapshot": snapshot,
         }
-    updated = update_config_snapshot(
-        snapshot,
-        first_text=first_text,
-        second_text=second_text,
-        parameter=parameter,
+    updated = replace(
+        update_config_snapshot(
+            snapshot,
+            first_text=first_text,
+            second_text=second_text,
+            parameter=parameter,
+        ),
+        source_selector=int(requested_selector),
     )
     return {
         "format": FORMAT,
