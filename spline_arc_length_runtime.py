@@ -241,8 +241,8 @@ def advance_spline_cursor(
     terminalized = False
     if boundary_callback_enabled and state.boundary_mode and state.external_scalar == 0.0:
         p = min(1.0, max(0.0, state.progress))
-            state = replace(state, progress=p, remainder=0.0)
-            terminalized = True
+        state = replace(state, progress=p, remainder=0.0)
+        terminalized = True
 
     return state, {
         "format": FORMAT,

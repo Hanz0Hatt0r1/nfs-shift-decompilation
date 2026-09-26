@@ -17,6 +17,8 @@ Captured events are JSONL and match SHIFT.D3D9RuntimeCaptureSchema/1.
 - SetTexture
 - CreateTexture
 - CreateCubeTexture
+- CreateVertexBuffer
+- CreateIndexBuffer
 - CreateVertexShader
 - SetVertexShader
 - SetVertexShaderConstantF
@@ -182,3 +184,13 @@ Cube payload capture is subject to the same full-surface rule: sub-rectangle and
 read-only locks are not promoted to complete surface evidence. Render-target cube
 textures in D3DPOOL_DEFAULT remain dependent on the existing face-level PPM
 readback path when LockRect is unavailable.
+    
+### Buffer object lifecycle
+
+Successful `CreateVertexBuffer` and `CreateIndexBuffer` calls are emitted with
+the returned D3D9 buffer pointer and creation size/format metadata. The runtime
+trace joins later stream/index bindings to the observed creation instance.
+
+The current producer does not capture raw VB/IB bytes yet. This lifecycle event is
+the prerequisite for a future lock/payload comparison against reconstructed MEB
+vertex and INDEX16 data.

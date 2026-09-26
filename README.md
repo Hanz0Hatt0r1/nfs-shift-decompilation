@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 342.**
+> **Current mainline: Phase 343.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -33,6 +33,8 @@
 > **Mipmap parity:** Phase 341 extends raw texture evidence to the complete available mip-chain. Every captured level is byte-compared against the corresponding DDS level; missing higher levels are reported as `partial`, while any captured-level mismatch remains a hard blocker.
 
 > **Cube payload capture:** Phase 342 extends raw D3D9 payload capture to IDirect3DCubeTexture9::LockRect(face, level, ...), preserving face×mip identity in the same ordered texture_payload contract. The runtime s3 environment object remains a runtime-global resource; no retail DDS identity is inferred without a matching static source.
+
+> **BMW buffer lifecycle:** Phase 343 correlates the frame-30444 BMW VB/IB pointers with exact D3D9 CreateVertexBuffer/CreateIndexBuffer instances and MEB-derived byte sizes. Raw runtime VB/IB bytes remain a separate capture boundary.
 
 > **Draw-local shader join:** runtime shader selection, parity and the render contract now consume the same `(frame, draw_index)` snapshot. Frame-level shader state is retained only for compatibility with legacy reports that have no snapshots.
 

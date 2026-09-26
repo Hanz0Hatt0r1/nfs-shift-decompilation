@@ -80,7 +80,7 @@ def describe_track_camera_load(
     actions.extend([
         {
             "action": "build path",
-            "components": [r"Cameras\", "localCams", ".xml"],
+            "components": ["Cameras\\", "localCams", ".xml"],
         },
         {
             "action": "FUN_00811ae0",

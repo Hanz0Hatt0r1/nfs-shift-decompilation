@@ -11,7 +11,7 @@ from vulkan_constant_packet import build_vulkan_constant_packet
 from vulkan_cube_packet import build_vulkan_cube_packet
 from vulkan_geometry_packet import export_vulkan_geometry_packet
 from vulkan_texture_packet import build_vulkan_texture_packet
-from vulkan_sampler_contract import write_sampler_metadata, build_sampler_contract_report
+from vulkan_sampler_contract import write_sampler_metadata, build_sampler_contract_report, write_sampler_contract_report
 
 FORMAT = "SHIFT.BMWVulkanBundle/1"
 TARGET_MEB = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
