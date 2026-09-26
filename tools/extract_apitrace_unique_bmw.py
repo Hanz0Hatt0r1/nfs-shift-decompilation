@@ -60,6 +60,29 @@ def _integer(text: str, *names: str) -> int | None:
     return None
 
 
+def _load_runtime_geometry(path: Path) -> tuple[str | None, int | None, dict[int, str]]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    stream = data.get("runtime_stream") or {}
+    vertex_pointer = stream.get("vertex_buffer")
+    vertex_count = stream.get("vertex_count")
+    if vertex_count is None:
+        vertex_count = data.get("geometry", {}).get("vertex_count")
+    primitive_to_ib: dict[int, str] = {}
+    for row in data.get("primitive_correlations") or []:
+        try:
+            primitive = int(row["triangle_count"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        pointer = row.get("runtime_ib")
+        if pointer:
+            primitive_to_ib[primitive] = str(pointer)
+    return (
+        str(vertex_pointer) if vertex_pointer else None,
+        int(vertex_count) if vertex_count is not None else None,
+        primitive_to_ib,
+    )
+
+
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as fp:
@@ -417,6 +440,7 @@ def extract(
     include_textures: bool = False,
     progress_every: int = 5_000_000,
     auto_trim: bool = False,
+    target_runtime_geometry: Path | None = None,
 ) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     state = State()
@@ -430,6 +454,15 @@ def extract(
     source_kind = (
         "trace" if input_path.suffix.lower() == ".trace" else "text_dump"
     )
+    target_vb_pointer: str | None = None
+    target_vertex_count = 3550
+    target_ib_pointers: dict[int, str] = {}
+    if target_runtime_geometry is not None:
+        target_vb_pointer, evidence_vertex_count, target_ib_pointers = (
+            _load_runtime_geometry(target_runtime_geometry)
+        )
+        if evidence_vertex_count is not None:
+            target_vertex_count = evidence_vertex_count
 
     for line in _source_lines(input_path, apitrace):
         line_count += 1
@@ -458,6 +491,15 @@ def extract(
             prim = int(dm.group(5))
             if nv != target_vertex_count or prim not in primitive_set:
                 continue
+            stream0 = state.streams.get(0)
+            stream0_pointer = stream0.pointer if stream0 else None
+            if target_vb_pointer and stream0_pointer != target_vb_pointer:
+                continue
+            expected_ib = target_ib_pointers.get(prim)
+            if expected_ib:
+                index_pointer = state.indices.pointer if state.indices else None
+                if index_pointer != expected_ib:
+                    continue
 
             target_counts[prim] += 1
             target_draw_calls.append(call)
@@ -608,7 +650,6 @@ def extract(
         trim_report["status"] = "not-found"
     elif auto_trim:
         trimmed_path = output_dir / "bmw_unique.trace"
-        callset_arg = ",".join(str(call) for call in representative_calls)
         command = [
             apitrace,
             "trim",
@@ -644,6 +685,13 @@ def extract(
             "draw_calls": draw_count,
             "target_vertex_count": target_vertex_count,
             "target_primitive_counts": sorted(primitive_set),
+            "target_runtime_geometry": (
+                str(target_runtime_geometry)
+                if target_runtime_geometry is not None
+                else None
+            ),
+            "target_vertex_buffer_pointer": target_vb_pointer,
+            "target_index_buffer_pointers": dict(sorted(target_ib_pointers.items())),
             "target_draw_count": sum(target_counts.values()),
             "target_draw_counts_by_primitive": dict(
                 sorted(target_counts.items())
@@ -752,6 +800,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--include-textures", action="store_true")
     parser.add_argument("--progress-every", type=int, default=5_000_000)
     parser.add_argument(
+        "--target-runtime-geometry",
+        type=Path,
+        help=(
+            "Existing BMW runtime geometry evidence JSON. When supplied, "
+            "use its vertex-buffer and primitive index-buffer pointers as hard filters."
+        ),
+    )
+    parser.add_argument(
         "--auto-trim",
         action="store_true",
         help=(
@@ -771,6 +827,11 @@ def main(argv: list[str] | None = None) -> int:
         include_textures=args.include_textures,
         progress_every=max(0, args.progress_every),
         auto_trim=args.auto_trim,
+        target_runtime_geometry=(
+            args.target_runtime_geometry.expanduser().resolve()
+            if args.target_runtime_geometry
+            else None
+        ),
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0
