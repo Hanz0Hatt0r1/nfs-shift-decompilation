@@ -407,3 +407,59 @@ def test_runtime_trace_exports_ordered_global_texture_payload_events():
     snapshot = report["frames"][0]["draw_snapshots"][0]
     assert snapshot["draw"]["event_index"] == 13
     assert [row["level"] for row in snapshot["texture_payloads"]] == [0, 1]
+
+
+def test_runtime_trace_preserves_cube_face_payload_metadata():
+    events = load_events_from_rows([
+        {
+            "event": "create_cube_texture",
+            "frame": 7,
+            "event_index": 10,
+            "texture_ptr": "0x200",
+            "edge_length": 256,
+            "levels": 2,
+            "usage": 0,
+            "format": 113,
+            "pool": 0,
+        },
+        {
+            "event": "texture_payload",
+            "frame": 7,
+            "event_index": 11,
+            "texture_ptr": "0x200",
+            "resource_type_name": "cube_texture",
+            "face": 2,
+            "face_name": "py",
+            "level": 1,
+            "width": 128,
+            "height": 128,
+            "pitch": 512,
+            "format": 113,
+            "pool": 0,
+            "byte_size": 65536,
+            "snapshot_status": "captured",
+            "payload_path": "cube/0x200_py_l1.bin",
+        },
+        {
+            "event": "set_texture",
+            "frame": 7,
+            "event_index": 12,
+            "stage": 3,
+            "texture_ptr": "0x200",
+        },
+        {
+            "event": "draw_indexed_primitive",
+            "frame": 7,
+            "event_index": 13,
+            "primitive_count": 1,
+            "start_index": 0,
+            "base_vertex_index": 0,
+        },
+    ])
+    report = build_runtime_binding_evidence(events)
+    snapshot = report["frames"][0]["draw_snapshots"][0]
+    payload = snapshot["texture_payloads"][0]
+    assert payload["face"] == 2
+    assert payload["face_name"] == "py"
+    assert payload["level"] == 1
+    assert payload["payload_path"] == "cube/0x200_py_l1.bin"
