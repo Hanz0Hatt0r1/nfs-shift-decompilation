@@ -89,12 +89,13 @@ def build_report(geometry_evidence: Mapping[str, Any], resource_create_log: str)
         })
 
     creates = parse_buffer_creations(resource_create_log)
-    draw_calls = [
-        int(match.group("call"))
-        for line in resource_create_log.splitlines()
-        if (match := _DRAW_RE.match(line))
+    target_draw_calls = [
+        int((primitive.get("representative") or {}).get("call", -1))
+        for primitive in primitive_rows
+        if isinstance(primitive, Mapping)
+        and int((primitive.get("representative") or {}).get("call", -1)) >= 0
     ]
-    target_draw_call = max(draw_calls, default=-1)
+    target_draw_call = max(target_draw_calls, default=-1)
     blockers: list[str] = []
 
     vb_creation = _latest_before(creates["vertex"], vb_pointer, target_draw_call)
