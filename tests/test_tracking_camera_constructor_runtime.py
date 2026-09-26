@@ -27,6 +27,8 @@ def test_constructor_preserves_mode_and_sentinel_defaults():
     assert result["raw_initializers"]["+0x2c0"] == 0xFFFFFFFF
     assert result["raw_initializers"]["+0x2c4"] == 0xFFFFFFFF
     assert result["raw_initializers"]["+0x2d0"] == 0x3F800000
+    assert result["raw_initializers"]["+0x2f0"] == 0
+    assert result["raw_initializers"]["+0x30c"] == 0x3F800000
     assert result["sentinels"]["+0x37c"] == 0xFFFFFFFF
 
 
