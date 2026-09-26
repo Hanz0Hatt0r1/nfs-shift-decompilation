@@ -11,6 +11,8 @@ EVENT_SPECS = {
     'set_stream_source': {'pointer':'vertex_buffer_ptr'},
     'set_indices': {'pointer':'index_buffer_ptr'},
     'set_texture': {'pointer':'texture_ptr', 'allow_null': True},
+    'create_texture': {'pointer':'texture_ptr'},
+    'create_cube_texture': {'pointer':'texture_ptr'},
     'present_screenshot': {},
     'present_screenshot_failed': {},
     'create_vertex_shader': {'pointer':'shader_ptr'},
@@ -46,6 +48,24 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
         raw = row.get('bytes_hex')
         if not isinstance(raw, str) or len(raw) % 2 or not _HEX_RE.fullmatch(raw):
             reasons.append('shader-bytes:invalid-hex')
+    if event == 'create_texture':
+        for key in ('width', 'height', 'levels', 'usage', 'format', 'pool'):
+            if not isinstance(row.get(key), int):
+                reasons.append(f'create-texture:{key}-invalid')
+        if isinstance(row.get('width'), int) and row['width'] <= 0:
+            reasons.append('create-texture:width-invalid')
+        if isinstance(row.get('height'), int) and row['height'] <= 0:
+            reasons.append('create-texture:height-invalid')
+        if isinstance(row.get('levels'), int) and row['levels'] <= 0:
+            reasons.append('create-texture:levels-invalid')
+    if event == 'create_cube_texture':
+        for key in ('edge_length', 'levels', 'usage', 'format', 'pool'):
+            if not isinstance(row.get(key), int):
+                reasons.append(f'create-cube-texture:{key}-invalid')
+        if isinstance(row.get('edge_length'), int) and row['edge_length'] <= 0:
+            reasons.append('create-cube-texture:edge-length-invalid')
+        if isinstance(row.get('levels'), int) and row['levels'] <= 0:
+            reasons.append('create-cube-texture:levels-invalid')
     if event == 'set_texture':
         if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
             reasons.append('texture:stage-invalid')
