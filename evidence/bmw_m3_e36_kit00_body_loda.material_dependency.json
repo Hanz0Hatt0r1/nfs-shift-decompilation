@@ -1,0 +1,177 @@
+{
+  "format": "SHIFT.BMWM3MaterialDependencyParity/1",
+  "status": "match",
+  "ready": true,
+  "resource": {
+    "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+  },
+  "archives": [
+    "BMW_M3_E36.bff",
+    "RENDER.bff"
+  ],
+  "primitive_count": 6,
+  "unique_bmt_count": 5,
+  "unique_shader_count": 3,
+  "unique_texture_count": 11,
+  "material_reference_use_count": {
+    "vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt": 1,
+    "vehicles/bmw_m3_e36/bmw_m3_e36_lightsglass.bmt": 1,
+    "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt": 2,
+    "vehicles/bmw_m3_e36/generic_gloss_black.bmt": 1,
+    "vehicles/bmw_m3_e36/generic_windows.bmt": 1
+  },
+  "materials": [
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt",
+      "entry_index": 862,
+      "name": "BMW_M3_E36_BADGING",
+      "shader": "render/shaders/vehicles_basic.fx",
+      "shader_entry_index": 683,
+      "textures": [
+        "vehicles/textures/bmw_m3_e36_badging_diffuse.dds",
+        "vehicles/textures/bmw_m3_e36_badging_specular.dds",
+        "vehicles/textures/bmw_m3_e36_badging_normals.dds"
+      ]
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "entry_index": 858,
+      "name": "BMW_M3_E36_PAINT",
+      "shader": "render/shaders/bodywork.fx",
+      "shader_entry_index": 12,
+      "textures": [
+        "vehicles/textures/common_paint.dds",
+        "vehicles/textures/common_paint_specular.dds",
+        "vehicles/textures/common_blank.dds"
+      ]
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/generic_windows.bmt",
+      "entry_index": 855,
+      "name": "GENERIC_WINDOWS",
+      "shader": "render/shaders/glass.fx",
+      "shader_entry_index": 628,
+      "textures": [
+        "vehicles/textures/common_glass01_diffuse.dds",
+        "vehicles/textures/common_blank.dds",
+        "vehicles/textures/common_glass_cracks_01_normals.dds"
+      ]
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/generic_gloss_black.bmt",
+      "entry_index": 853,
+      "name": "GENERIC_GLOSS_BLACK",
+      "shader": "render/shaders/vehicles_basic.fx",
+      "shader_entry_index": 683,
+      "textures": [
+        "vehicles/textures/common_black.dds",
+        "vehicles/textures/common_white.dds"
+      ]
+    },
+    {
+      "bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_lightsglass.bmt",
+      "entry_index": 850,
+      "name": "BMW_M3_E36_LIGHTSGLASS",
+      "shader": "render/shaders/glass.fx",
+      "shader_entry_index": 628,
+      "textures": [
+        "vehicles/textures/bmw_m3_e36_lightsglass_diffuse.dds",
+        "vehicles/textures/common_blank.dds",
+        "vehicles/textures/common_glass_cracks_01_normals.dds"
+      ]
+    }
+  ],
+  "resolution": {
+    "render/shaders/vehicles_basic.fx": {
+      "archive": "RENDER.bff",
+      "entry_index": 683,
+      "type": 2,
+      "uncompressed_size": 49561
+    },
+    "render/shaders/bodywork.fx": {
+      "archive": "RENDER.bff",
+      "entry_index": 12,
+      "type": 2,
+      "uncompressed_size": 68276
+    },
+    "render/shaders/glass.fx": {
+      "archive": "RENDER.bff",
+      "entry_index": 628,
+      "type": 2,
+      "uncompressed_size": 57281
+    },
+    "vehicles/textures/bmw_m3_e36_badging_diffuse.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 861,
+      "type": 2,
+      "uncompressed_size": 87536
+    },
+    "vehicles/textures/bmw_m3_e36_badging_specular.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 860,
+      "type": 2,
+      "uncompressed_size": 87536
+    },
+    "vehicles/textures/bmw_m3_e36_badging_normals.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 859,
+      "type": 2,
+      "uncompressed_size": 43832
+    },
+    "vehicles/textures/common_paint.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 857,
+      "type": 2,
+      "uncompressed_size": 184
+    },
+    "vehicles/textures/common_paint_specular.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 856,
+      "type": 2,
+      "uncompressed_size": 240
+    },
+    "vehicles/textures/common_blank.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 848,
+      "type": 0,
+      "uncompressed_size": 152
+    },
+    "vehicles/textures/common_glass01_diffuse.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 854,
+      "type": 2,
+      "uncompressed_size": 1520
+    },
+    "vehicles/textures/common_glass_cracks_01_normals.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 847,
+      "type": 2,
+      "uncompressed_size": 1398256
+    },
+    "vehicles/textures/common_black.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 852,
+      "type": 2,
+      "uncompressed_size": 184
+    },
+    "vehicles/textures/common_white.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 851,
+      "type": 2,
+      "uncompressed_size": 184
+    },
+    "vehicles/textures/bmw_m3_e36_lightsglass_diffuse.dds": {
+      "archive": "BMW_M3_E36.bff",
+      "entry_index": 849,
+      "type": 2,
+      "uncompressed_size": 11088
+    }
+  },
+  "boundary": {
+    "payload_decoded": true,
+    "dependency_resolution": true,
+    "shader_execution_proven": false,
+    "runtime_same_instance_proven": false
+  }
+}
