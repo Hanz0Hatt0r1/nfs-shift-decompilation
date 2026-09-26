@@ -8,7 +8,13 @@ def _geometry():
         "resource": {
             "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
             "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c",
-        }
+        },
+        "source": {"frame": 30444},
+        "runtime_stream": {
+            "vertex_buffer": "0x100",
+            "stride": 76,
+            "derived_vertex_buffer_bytes": 269800,
+        },
     }
 
 
@@ -96,7 +102,7 @@ def test_payload_rows_obey_creation_and_draw_boundaries(tmp_path):
 
 
 def test_build_report_matches_vb_and_ib_payloads(tmp_path):
-    vb = b"VB_BYTES"
+    vb = b"VB_BYTES" * (269800 // len(b"VB_BYTES"))
     ib = b"IB0" * 4
     vb_path = tmp_path / "vb.bin"
     ib_path = tmp_path / "ib.bin"
@@ -150,7 +156,7 @@ def test_build_report_matches_vb_and_ib_payloads(tmp_path):
 def test_build_report_stays_unready_without_runtime_payload(tmp_path):
     expected_vb = tmp_path / "vb.bin"
     expected_ib = tmp_path / "ib.bin"
-    expected_vb.write_bytes(b"v")
+    expected_vb.write_bytes(b"v" * 269800)
     expected_ib.write_bytes(b"i")
     runtime = {
         "frames": [{
