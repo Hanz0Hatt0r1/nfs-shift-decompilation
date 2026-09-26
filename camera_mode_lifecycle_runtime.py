@@ -144,6 +144,11 @@ def leave_camera_mode(
             "mode_reset": "FUN_00816570",
             "inactive_mode": INACTIVE_MODE,
             "entry_reset": "FUN_00818250",
+            "leave_variants": [
+                "FUN_00818400",
+                "FUN_008184e0",
+                "FUN_008185d0",
+            ],
         },
     }
 
