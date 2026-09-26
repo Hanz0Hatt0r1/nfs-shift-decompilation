@@ -131,6 +131,125 @@ def _dds_base_level_payload(dds_bytes: bytes) -> tuple[bytes, str]:
     raise ValueError(f"unsupported DDS base level format: {fourcc or 'RGBA32'}")
 
 
+def _dds_mip_level_payloads(dds_bytes: bytes) -> tuple[list[bytes], str]:
+    if len(dds_bytes) < 128 or dds_bytes[:4] != b"DDS ":
+        raise ValueError("not a DDS file")
+    width = int.from_bytes(dds_bytes[16:20], "little")
+    height = int.from_bytes(dds_bytes[12:16], "little")
+    mipmaps = int.from_bytes(dds_bytes[28:32], "little") or 1
+    fourcc = (
+        int.from_bytes(dds_bytes[84:88], "little")
+        .to_bytes(4, "little")
+        .decode("ascii", "replace")
+        .rstrip("\x00")
+    )
+    rgb_bits = int.from_bytes(dds_bytes[88:92], "little")
+    pf_flags = int.from_bytes(dds_bytes[80:84], "little")
+    payload = dds_bytes[128:]
+    levels: list[bytes] = []
+    offset = 0
+    level_width = width
+    level_height = height
+    for _level in range(mipmaps):
+        if fourcc in {"DXT1", "DXT3", "DXT5"}:
+            block_bytes = {"DXT1": 8, "DXT3": 16, "DXT5": 16}[fourcc]
+            blocks_x = max(1, (level_width + 3) // 4)
+            blocks_y = max(1, (level_height + 3) // 4)
+            size = blocks_x * blocks_y * block_bytes
+        elif not fourcc and (pf_flags & 0x40) and rgb_bits == 32:
+            size = level_width * level_height * 4
+        else:
+            raise ValueError(
+                f"unsupported DDS mip format: {fourcc or 'RGBA32'}"
+            )
+        end = offset + size
+        if end > len(payload):
+            raise ValueError("DDS mip payload is truncated")
+        levels.append(payload[offset:end])
+        offset = end
+        level_width = max(1, level_width // 2)
+        level_height = max(1, level_height // 2)
+    return levels, fourcc or "RGBA32"
+
+
+def compare_raw_payload_chain_to_dds(
+    payload_rows: list[Mapping[str, Any]],
+    dds_bytes: bytes,
+) -> dict[str, Any]:
+    expected_levels, source_format = _dds_mip_level_payloads(dds_bytes)
+    observed: dict[int, Mapping[str, Any]] = {}
+    for row in payload_rows:
+        try:
+            level = int(row.get("level"))
+        except (TypeError, ValueError):
+            continue
+        if level < 0 or level >= len(expected_levels):
+            continue
+        existing = observed.get(level)
+        if existing is None or int(row.get("event_index", -1)) > int(existing.get("event_index", -1)):
+            observed[level] = row
+
+    level_rows = []
+    blockers: list[str] = []
+    for level in sorted(observed):
+        row = observed[level]
+        path = Path(str(row.get("payload_path") or ""))
+        if not path.is_file():
+            item = {
+                "level": level,
+                "status": "missing",
+                "ready": False,
+                "payload_path": str(path),
+                "blocking_reasons": ["raw-payload:file-not-found"],
+            }
+        else:
+            raw = path.read_bytes()
+            expected = expected_levels[level]
+            observed_sha = hashlib.sha256(raw).hexdigest()
+            expected_sha = hashlib.sha256(expected).hexdigest()
+            length_match = len(raw) == len(expected)
+            byte_match = raw == expected
+            reasons = []
+            if not length_match:
+                reasons.append(
+                    f"raw-payload:length-mismatch:l{level}:{len(raw)}:{len(expected)}"
+                )
+            if not byte_match:
+                reasons.append(
+                    f"raw-payload:sha256-mismatch:l{level}:{observed_sha}:{expected_sha}"
+                )
+            item = {
+                "level": level,
+                "status": "match" if not reasons else "mismatch",
+                "ready": not reasons,
+                "payload_path": str(path),
+                "observed_byte_size": len(raw),
+                "expected_byte_size": len(expected),
+                "observed_sha256": observed_sha,
+                "expected_sha256": expected_sha,
+                "dds_source_format": source_format,
+                "blocking_reasons": reasons,
+            }
+        level_rows.append(item)
+        blockers.extend(item.get("blocking_reasons") or [])
+
+    expected_count = len(expected_levels)
+    observed_levels = sorted(observed)
+    complete = observed_levels == list(range(expected_count))
+    ready = bool(level_rows) and not blockers
+    return {
+        "status": "match" if ready else ("mismatch" if level_rows else "not-observed"),
+        "ready": ready,
+        "coverage_status": "complete" if complete else ("partial" if level_rows else "none"),
+        "expected_level_count": expected_count,
+        "observed_level_count": len(observed_levels),
+        "observed_levels": observed_levels,
+        "missing_levels": [level for level in range(expected_count) if level not in observed],
+        "levels": level_rows,
+        "blocking_reasons": list(dict.fromkeys(blockers)),
+    }
+
+
 def compare_raw_payload_to_dds(
     payload_path: str | Path,
     dds_bytes: bytes,
@@ -348,24 +467,27 @@ def build_bmw_paint_runtime_texture_parity(
                 else []
             )
             if payload_candidates:
-                raw = compare_raw_payload_to_dds(
-                    payload_candidates[-1]["payload_path"],
+                raw_chain = compare_raw_payload_chain_to_dds(
+                    payload_candidates,
                     expected_payloads[row["parameter"]],
                 )
-                result["raw_payload_comparison"] = {
-                    **raw,
-                    "event_index": payload_candidates[-1].get("event_index"),
-                }
-                result["raw_payload_path"] = payload_candidates[-1].get("payload_path")
-                if raw["ready"]:
+                result["raw_payload_comparison"] = raw_chain
+                result["raw_payload_path"] = raw_chain.get("levels", [{}])[-1].get("payload_path") if raw_chain.get("levels") else None
+                if raw_chain["ready"]:
                     result["ready"] = True
                     result["status"] = "match"
                     result["blocking_reasons"] = []
-                    result["content_identity_method"] = "raw-dds-base-level"
+                    result["content_identity_method"] = (
+                        "raw-dds-mip-chain-complete"
+                        if raw_chain["coverage_status"] == "complete"
+                        else "raw-dds-mip-chain-partial"
+                    )
+                    if raw_chain["coverage_status"] == "partial":
+                        result["coverage_status"] = "partial"
                 else:
                     result["ready"] = False
                     result["status"] = "mismatch"
-                    blockers.extend(raw.get("blocking_reasons") or [])
+                    blockers.extend(raw_chain.get("blocking_reasons") or [])
             elif "comparisons" in result:
                 result["content_identity_method"] = "ppm-rgb"
         rows.append(result)
@@ -390,12 +512,26 @@ def build_bmw_paint_runtime_texture_parity(
         "boundary": {
             "runtime_pointer_to_creation_instance": "consumed-when-present",
             "runtime_to_retail_dds_content": (
-                "proven-by-raw-base-level" if all(
+                "proven-by-raw-mip-chain-complete"
+                if rows
+                and all(
                     (row.get("raw_payload_comparison") or {}).get("ready")
+                    and (row.get("raw_payload_comparison") or {}).get("coverage_status") == "complete"
                     for row in rows
                     if row.get("raw_payload_comparison") is not None
-                ) and any(row.get("raw_payload_comparison") is not None for row in rows)
-                else ("proven-by-ppm-rgb" if not blockers else "not-proven")
+                )
+                and all(row.get("raw_payload_comparison") is not None for row in rows)
+                else (
+                    "proven-by-raw-mip-chain-partial"
+                    if rows
+                    and all(
+                        (row.get("raw_payload_comparison") or {}).get("ready")
+                        for row in rows
+                        if row.get("raw_payload_comparison") is not None
+                    )
+                    and any(row.get("raw_payload_comparison") is not None for row in rows)
+                    else ("proven-by-ppm-rgb" if not blockers else "not-proven")
+                )
             ),
             "runtime_to_retail_dds_alpha": "not-observed-for-ppm",
         },
