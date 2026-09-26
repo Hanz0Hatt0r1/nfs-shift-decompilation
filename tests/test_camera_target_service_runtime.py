@@ -47,7 +47,7 @@ def test_target_acquisition_falls_back_to_string_when_no_match():
         target_handle_nonempty=True,
         candidates=[],
     )
-    assert result["status"] == "fallback-string-target"
+    assert result["status"] == "fallback-selector"
 
 
 def test_runtime_properties_match_needs_reset_and_is_shaking():
