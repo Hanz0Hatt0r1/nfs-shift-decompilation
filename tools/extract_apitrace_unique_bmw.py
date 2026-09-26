@@ -650,10 +650,15 @@ def extract(
         trim_report["status"] = "not-found"
     elif auto_trim:
         trimmed_path = output_dir / "bmw_unique.trace"
+        callset_file = output_dir / "callset.txt"
+        callset_file.write_text(
+            "\n".join(str(call) for call in sorted(callset)) + "\n",
+            encoding="utf-8",
+        )
         command = [
             apitrace,
             "trim",
-            f"--calls={callset_arg}",
+            f"--calls=@{callset_file}",
             "-o",
             str(trimmed_path),
             str(input_path),
