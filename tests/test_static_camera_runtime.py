@@ -29,12 +29,13 @@ def test_static_camera_copy_preserves_special_d8_reset():
     source = {offset: offset for offset in (
         list(range(0x10, 0x30, 4))
         + [0x60]
-        + list(range(0x64, 0xC8, 4))
+        + list(range(0x64, 0xC9, 4))
         + [0xCC, 0xD0, 0xDC]
         + list(range(0xE0, 0xF0, 4))
     )}
     result = copy_static_camera_state(source)
     assert result["special_writes"]["+0xd8"] == 0xFFFFFFFF
+    assert "+0xc8" in result["copied_offsets"]
     assert "+0xcc" in result["copied_offsets"]
     assert "+0xdc" in result["copied_offsets"]
 
