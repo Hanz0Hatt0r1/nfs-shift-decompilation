@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 340. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 341. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -1405,3 +1405,19 @@ against the corresponding compressed base-level bytes in the exact retail DDS.
 The comparator applies the current texture object's creation-event boundary before
 accepting a payload, preventing pointer reuse from authenticating an earlier object
 lifetime. PPM RGB comparison remains available as a secondary content check.
+
+
+## Phase 341: complete and partial DDS mip-chain parity
+
+Runtime texture payload evidence now covers every captured write-side 2D texture
+mip level. The reference comparator splits exact retail DDS payloads into the
+same mip levels and performs byte equality for every captured level.
+
+The result distinguishes complete coverage from partial coverage: a partial chain
+is valid evidence for the observed subset, while any captured-level mismatch blocks
+identity. Payload selection is bounded by the current texture object's CreateTexture
+event and the target draw event, preventing pointer reuse or future writes from
+being correlated with the wrong draw.
+
+The next texture-resource gap is raw cube-texture payload capture for the s3
+environment object.
