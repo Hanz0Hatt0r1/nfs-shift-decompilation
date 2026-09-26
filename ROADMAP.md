@@ -1490,7 +1490,7 @@ For a real .trace, `--auto-trim` can produce a small `bmw_unique.trace` containi
 
 ## Phase 349: lock-aware BMW apitrace payload trim
 
-Added `tools/prepare_apitrace_bmw_buffer_payload_trim.py`. It reuses the verified BMW VB/IB creation instances from the Phase 348 report, retains the active Lock/Unlock/GetDesc calls for those instances, emits a dedicated payload callset, and can create a compact `bmw_buffer_payload.trace` with the installed apitrace `--calls=@file` syntax.
+Added `tools/prepare_apitrace_bmw_buffer_payload_trim.py`. It reuses the verified BMW VB/IB creation instances from the Phase 348 report, retains the active Lock/Unlock/GetDesc calls for those instances, emits a dedicated payload callset, and can create a compact `bmw_buffer_payload.trace` with the installed apitrace `--calls=@file` syntax. It also discovers and includes the separate fake `memcpy` calls emitted inside buffer Unlock processing, because those calls carry the actual TYPE_BLOB payload.
 
 This avoids another full 74-million-line dump pass. The trimmed trace becomes the input to the next buffer-content recovery stage; exact VB/IB byte parity remains explicitly unproven until those bytes are recovered and compared with the MEB candidates.
 
