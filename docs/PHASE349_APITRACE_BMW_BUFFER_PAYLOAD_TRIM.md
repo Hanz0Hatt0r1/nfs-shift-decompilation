@@ -68,3 +68,7 @@ active Unlock has no discovered fake memcpy call.
 This keeps the full-trace scan out of the workflow while preserving the actual
 payload-bearing calls needed by Phase 350.
 
+
+## Payload call placement
+
+For D3D9 buffers, the generated apitrace wrapper emits the internal `memcpy` fake call immediately before the real `Unlock` call. The payload-trim planner therefore keeps the exact `Unlock-1` call when present, rather than retaining arbitrary nearby memcpy calls.
