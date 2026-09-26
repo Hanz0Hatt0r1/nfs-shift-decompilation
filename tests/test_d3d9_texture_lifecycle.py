@@ -96,3 +96,30 @@ def test_texture_lifecycle_preserves_cube_identity():
     assert report["ready"] is True
     assert report["resources"][0]["resource_type"] == "cube_texture"
     assert report["resources"][0]["edge_length"] == 128
+
+
+def test_texture_lifecycle_does_not_use_future_creation_for_earlier_bind():
+    events = [
+        {
+            "event": "set_texture",
+            "frame": 7,
+            "event_index": 10,
+            "stage": 1,
+            "texture_ptr": "0x300",
+        },
+        {
+            "event": "create_texture",
+            "frame": 7,
+            "event_index": 11,
+            "texture_ptr": "0x300",
+            "width": 64,
+            "height": 64,
+            "levels": 1,
+            "usage": 0,
+            "format": 21,
+            "pool": 1,
+        },
+    ]
+    report = build_texture_lifecycle(events)
+    assert report["bindings"][0]["resource_creation_status"] == "not-observed"
+    assert report["ready"] is False
