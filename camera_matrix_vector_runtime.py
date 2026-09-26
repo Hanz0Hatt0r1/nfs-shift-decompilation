@@ -31,7 +31,7 @@ def transform_matrix_rows_by_vector(
             m[base + 0] * v[0]
             + m[base + 1] * v[1]
             + m[base + 2] * v[2]
-            + m[base + 3] * v[3] * (1.0 if row == 3 else 0.0)
+            + (v[3] if row == 3 else 0.0)
         )
         out[base + 0] = m[base + 0] - dot2 * v[0]
         out[base + 1] = m[base + 1] - dot2 * v[1]
