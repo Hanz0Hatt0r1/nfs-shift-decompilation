@@ -285,3 +285,118 @@ def test_bmw_paint_parity_accepts_raw_payload_without_ppm(tmp_path, monkeypatch)
     assert report["ready"] is True
     assert report["matched_texture_count"] == 3
     assert all(row["content_identity_method"] == "raw-dds-base-level" for row in report["textures"])
+
+
+def _dds_dxt1_chain(width, height, levels):
+    header = bytearray(128)
+    header[0:4] = b"DDS "
+    header[12:16] = int(height).to_bytes(4, "little")
+    header[16:20] = int(width).to_bytes(4, "little")
+    header[28:32] = int(len(levels)).to_bytes(4, "little")
+    header[84:88] = int.from_bytes(b"DXT1", "little").to_bytes(4, "little")
+    return bytes(header) + b"".join(levels)
+
+
+def test_compare_raw_payload_chain_is_complete_when_all_mips_match(tmp_path):
+    levels = [b"ABCDEFGH", b"IJKLMNOP", b"QRSTUVWX"]
+    dds = _dds_dxt1_chain(4, 4, levels)
+    rows = []
+    for level, payload in enumerate(levels):
+        path = tmp_path / f"l{level}.bin"
+        path.write_bytes(payload)
+        rows.append({
+            "level": level,
+            "event_index": level + 2,
+            "snapshot_status": "captured",
+            "payload_path": str(path),
+        })
+    report = parity.compare_raw_payload_chain_to_dds(rows, dds)
+    assert report["ready"] is True
+    assert report["coverage_status"] == "complete"
+    assert report["observed_levels"] == [0, 1, 2]
+    assert report["missing_levels"] == []
+    assert all(item["status"] == "match" for item in report["levels"])
+
+
+def test_compare_raw_payload_chain_is_partial_when_higher_mips_are_missing(tmp_path):
+    levels = [b"ABCDEFGH", b"IJKLMNOP", b"QRSTUVWX"]
+    dds = _dds_dxt1_chain(4, 4, levels)
+    path = tmp_path / "l0.bin"
+    path.write_bytes(levels[0])
+    report = parity.compare_raw_payload_chain_to_dds([{
+        "level": 0,
+        "event_index": 2,
+        "snapshot_status": "captured",
+        "payload_path": str(path),
+    }], dds)
+    assert report["ready"] is True
+    assert report["coverage_status"] == "partial"
+    assert report["observed_levels"] == [0]
+    assert report["missing_levels"] == [1, 2]
+
+
+def test_compare_raw_payload_chain_blocks_on_any_captured_mip_mismatch(tmp_path):
+    levels = [b"ABCDEFGH", b"IJKLMNOP", b"QRSTUVWX"]
+    dds = _dds_dxt1_chain(4, 4, levels)
+    paths = []
+    for level, payload in enumerate((levels[0], b"BADBYTES", levels[2])):
+        path = tmp_path / f"l{level}.bin"
+        path.write_bytes(payload)
+        paths.append(path)
+    rows = [
+        {
+            "level": level,
+            "event_index": level + 2,
+            "snapshot_status": "captured",
+            "payload_path": str(path),
+        }
+        for level, path in enumerate(paths)
+    ]
+    report = parity.compare_raw_payload_chain_to_dds(rows, dds)
+    assert report["ready"] is False
+    assert report["coverage_status"] == "complete"
+    assert any(reason.startswith("raw-payload:sha256-mismatch:l1") for reason in report["blocking_reasons"])
+
+
+def test_runtime_global_payloads_are_used_when_draw_snapshot_is_from_later_frame(tmp_path):
+    path = tmp_path / "l0.bin"
+    path.write_bytes(b"ABCDEFGH")
+    snapshot = {
+        "draw": {"event_index": 50},
+        "texture_payloads": [],
+    }
+    runtime_report = {
+        "texture_payloads": [{
+            "texture_ptr": "0x100",
+            "level": 0,
+            "event_index": 20,
+            "snapshot_status": "captured",
+            "payload_path": str(path),
+        }],
+    }
+    rows = parity._runtime_texture_payload_candidates(
+        runtime_report, snapshot, "0x100", creation_event_index=10, draw_event_index=50
+    )
+    assert len(rows) == 1
+    assert rows[0]["payload_path"] == str(path)
+
+
+def test_runtime_global_payloads_ignore_payload_after_draw(tmp_path):
+    path = tmp_path / "late.bin"
+    path.write_bytes(b"ABCDEFGH")
+    rows = parity._runtime_texture_payload_candidates(
+        {
+            "texture_payloads": [{
+                "texture_ptr": "0x100",
+                "level": 0,
+                "event_index": 60,
+                "snapshot_status": "captured",
+                "payload_path": str(path),
+            }]
+        },
+        {"draw": {"event_index": 50}, "texture_payloads": []},
+        "0x100",
+        creation_event_index=10,
+        draw_event_index=50,
+    )
+    assert rows == []
