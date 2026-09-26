@@ -124,7 +124,7 @@ def compute_autozoom_update(
 
 def compute_speed_fov_blend(
     *,
-    current_fov: float,
+    distance: float,
     speed: float,
     fov_min_speed: float,
     fov_max_speed: float,
@@ -147,7 +147,7 @@ def compute_speed_fov_blend(
     if shake_span == 0.0:
         shake_t = 1.0
     else:
-        shake_t = (float(current_fov) - float(shake_min_speed)) / shake_span
+        shake_t = (float(distance) - float(shake_min_speed)) / shake_span
         shake_t = max(0.0, min(1.0, shake_t))
 
     return {
@@ -156,6 +156,7 @@ def compute_speed_fov_blend(
         "operation": "speed-fov-blend",
         "fov_t": fov_t,
         "fov_value": float(fov_min) * (1.0 - fov_t) + float(fov_max) * fov_t,
+        "distance": float(distance),
         "shake_t": shake_t,
         "shake_scale": float(shake_min_scale) * (1.0 - shake_t)
         + float(shake_max_scale) * shake_t,
@@ -280,7 +281,7 @@ def describe_tracking_camera_update(
         })
 
     if fov_blend is not None and service_available and not cockpit_query_result:
-        blend = compute_speed_fov_blend(**dict(fov_blend), current_fov=current_fov, speed=speed)
+        blend = compute_speed_fov_blend(**dict(fov_blend), distance=math.sqrt(sum(v * v for v in direction)), speed=speed)
         actions.append({
             "action": "speed-dependent FOV/shake blend",
             "result": blend,
