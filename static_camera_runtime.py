@@ -84,7 +84,7 @@ def copy_static_camera_state(
     source: Mapping[int, Any],
 ) -> dict[str, Any]:
     """Reproduce FUN_00813300's field-by-field copy boundary."""
-    copy_offsets = list(range(0x10, 0x30, 4)) + [0x60] + list(range(0x64, 0xC8, 4))
+    copy_offsets = list(range(0x10, 0x30, 4)) + [0x60] + list(range(0x64, 0xC9, 4))
     copy_offsets += [0xCC, 0xD0, 0xDC] + list(range(0xE0, 0xF0, 4))
     missing = [offset for offset in copy_offsets if offset not in source]
     if missing:
