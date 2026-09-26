@@ -17,6 +17,7 @@ from typing import Any, Mapping
 from bmw_material_from_bff import build_real_bmw_material_binding
 from bmw_runtime_render_contract import build_runtime_render_contract
 from bmw_runtime_shader_select import select_runtime_shader
+from runtime_texture_content_parity import build_bmw_paint_runtime_texture_parity
 from d3d9_runtime_trace import build_runtime_binding_evidence, load_events
 from ppm_svg_snapshot import read_ppm
 from runtime_texture_reference import ppm_to_reference_texture
@@ -69,7 +70,7 @@ def _texture_snapshot_inventory(runtime_report: Mapping[str, Any]) -> dict[str, 
         for binding in frame.get("texture_bindings") or []:
             if not isinstance(binding, Mapping):
                 continue
-            paths = binding.get("resource_snapshot_paths") or []
+            paths = binding.get("snapshot_paths") or binding.get("resource_snapshot_paths") or []
             for path in paths:
                 if isinstance(path, str):
                     rows.append({
@@ -139,6 +140,23 @@ def build_pipeline(
     )
 
     snapshots = _texture_snapshot_inventory(runtime)
+    texture_content_parity = None
+    selected = selection.get("selected") or {}
+    if selection.get("ready") is True and selected.get("source") == "draw-snapshot" and selected.get("draw_index") is not None:
+        try:
+            texture_content_parity = build_bmw_paint_runtime_texture_parity(
+                runtime,
+                frame=int(selected["frame"]),
+                draw_index=int(selected["draw_index"]),
+                primary_bff=primary,
+            )
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            texture_content_parity = {
+                "format": "SHIFT.RuntimeTextureContentParity/1",
+                "status": "error",
+                "ready": False,
+                "blocking_reasons": [f"runtime:texture-content-parity-error:{type(exc).__name__}:{exc}"],
+            }
     ready = (
         material.get("ready") is True
         and selection.get("ready") is True
@@ -147,6 +165,8 @@ def build_pipeline(
     blockers = []
     for report in (material, runtime, selection, contract):
         blockers.extend(report.get("blocking_reasons") or [])
+    if isinstance(texture_content_parity, Mapping):
+        blockers.extend(texture_content_parity.get("blocking_reasons") or [])
     if require_same_instance and runtime.get("same_instance_gate", {}).get("ready") is not True:
         blockers.extend(
             "runtime-same-instance:" + str(reason)
@@ -171,6 +191,7 @@ def build_pipeline(
         "shader_selection": selection,
         "runtime_render_contract": contract,
         "texture_snapshots": snapshots,
+        "texture_content_parity": texture_content_parity,
         "next_gate": {
             "shader_execution": (
                 "ready"
@@ -224,6 +245,11 @@ def main(argv: list[str] | None = None) -> int:
         "shader_selection_status": report["shader_selection"].get("status"),
         "reference_render_ready": report["runtime_render_contract"].get("reference_render_ready"),
         "texture_snapshot_count": report["texture_snapshots"]["converted_snapshot_count"],
+        "texture_content_parity_status": (
+            (report["texture_content_parity"] or {}).get("status")
+            if report.get("texture_content_parity") is not None
+            else "not-selected"
+        ),
         "blocking_reasons": report["blocking_reasons"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
