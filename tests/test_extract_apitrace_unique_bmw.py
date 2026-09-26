@@ -84,3 +84,31 @@ def test_auto_trim_is_explicitly_trace_only(tmp_path: Path):
 
     assert summary["trim_status"] == "unsupported-for-text-dump"
     assert not (out / "bmw_unique.trace").exists()
+
+def test_runtime_geometry_evidence_filters_false_positive_bindings(tmp_path: Path):
+    dump = tmp_path / "garage.txt"
+    out = tmp_path / "out"
+    _write_dump(dump)
+    evidence = tmp_path / "runtime_geometry.json"
+    evidence.write_text(
+        """{
+          "runtime_stream": {"vertex_buffer": "0xaaa", "stride": 76},
+          "primitive_correlations": [
+            {"triangle_count": 2098, "runtime_ib": "0xbbb"},
+            {"triangle_count": 2462, "runtime_ib": "0xccc"}
+          ]
+        }""",
+        encoding="utf-8",
+    )
+
+    summary = extract(
+        dump,
+        out,
+        progress_every=0,
+        target_runtime_geometry=evidence,
+    )
+
+    assert summary["target_draw_count"] == 4
+    assert summary["unique_geometry_bindings"] == 3
+    assert summary["target_vertex_buffer_pointer"] == "0xaaa"
+    assert summary["target_index_buffer_pointers"] == {2098: "0xbbb", 2462: "0xccc"}
