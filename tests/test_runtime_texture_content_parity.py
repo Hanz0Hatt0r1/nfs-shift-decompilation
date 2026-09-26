@@ -146,6 +146,16 @@ def test_bmw_paint_parity_rejects_multiple_snapshot_paths(monkeypatch):
     assert "runtime:texture-snapshot-ambiguous:s1" in report["blocking_reasons"]
 
 
+
+
+def _dds_for_test(payload):
+    header = bytearray(128)
+    header[0:4] = b"DDS "
+    header[12:16] = (4).to_bytes(4, "little")
+    header[16:20] = (4).to_bytes(4, "little")
+    header[84:88] = int.from_bytes(b"DXT1", "little").to_bytes(4, "little")
+    return bytes(header) + bytes(payload)
+
 def _dds_dxt1(width, height, base_payload):
     header = bytearray(128)
     header[0:4] = b"DDS "
@@ -195,3 +205,83 @@ def test_texture_payload_candidates_ignore_payload_from_previous_pointer_lifetim
         ],
     }, "0x100", creation_event_index=20)
     assert [row["payload_path"] for row in rows] == ["current.bin"]
+
+
+def test_bmw_paint_parity_accepts_raw_payload_without_ppm(tmp_path, monkeypatch):
+    tokens = {
+        "diffuseTexture": b"ABCDEFGH",
+        "specularTexture": b"IJKLMNOP",
+        "scratchControlTexture": b"QRSTUVWX",
+    }
+    expected = {}
+    for parameter, register in (
+        ("diffuseTexture", 1),
+        ("specularTexture", 2),
+        ("scratchControlTexture", 4),
+    ):
+        expected[parameter] = {
+            "parameter": parameter,
+            "register": register,
+            "path": f"{parameter}.dds",
+            "archive": "BMW_M3_E36.bff",
+            "entry_index": register,
+            "source_sha256": "x" * 64,
+            "source_size": 136,
+            "width": 4,
+            "height": 4,
+            "mipmaps": 1,
+            "fourcc": "DXT1",
+            "decoded_rgba_sha256": "r" * 64,
+            "decoded_rgb_sha256": "g" * 64,
+            "decoded_alpha_observable": True,
+        }
+
+    def fake_dds(_bff):
+        return {parameter: parity._dds_for_test(token) for parameter, token in tokens.items()}
+
+    monkeypatch.setattr(parity, "_extract_expected_textures", lambda _bff: expected)
+    monkeypatch.setattr(parity, "_extract_expected_texture_payloads", fake_dds)
+
+    paths = {}
+    for parameter, token in tokens.items():
+        path = tmp_path / f"{parameter}.bin"
+        path.write_bytes(token)
+        paths[parameter] = path
+
+    snapshot = {
+        "frames": [{
+            "frame": 9,
+            "draw_snapshots": [{
+                "draw_index": 3,
+                "active_texture_bindings": [
+                    {
+                        "stage": 1, "texture_ptr": "0x100",
+                        "snapshot_paths": [],
+                        "resource_creation": {"event_index": 10},
+                    },
+                    {
+                        "stage": 2, "texture_ptr": "0x200",
+                        "snapshot_paths": [],
+                        "resource_creation": {"event_index": 20},
+                    },
+                    {
+                        "stage": 4, "texture_ptr": "0x400",
+                        "snapshot_paths": [],
+                        "resource_creation": {"event_index": 30},
+                    },
+                ],
+                "texture_payloads": [
+                    {"texture_ptr": "0x100", "level": 0, "snapshot_status": "captured", "payload_path": str(paths["diffuseTexture"]), "event_index": 11},
+                    {"texture_ptr": "0x200", "level": 0, "snapshot_status": "captured", "payload_path": str(paths["specularTexture"]), "event_index": 21},
+                    {"texture_ptr": "0x400", "level": 0, "snapshot_status": "captured", "payload_path": str(paths["scratchControlTexture"]), "event_index": 31},
+                ],
+            }],
+        }],
+    }
+
+    report = parity.build_bmw_paint_runtime_texture_parity(
+        snapshot, frame=9, draw_index=3, primary_bff="BMW_M3_E36.bff"
+    )
+    assert report["ready"] is True
+    assert report["matched_texture_count"] == 3
+    assert all(row["content_identity_method"] == "raw-dds-base-level" for row in report["textures"])
