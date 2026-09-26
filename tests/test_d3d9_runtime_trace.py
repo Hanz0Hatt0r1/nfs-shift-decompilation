@@ -211,3 +211,88 @@ def test_same_instance_gate_does_not_downgrade_exact_meb_sha_to_path():
     report=build_runtime_binding_evidence(events,meb_resource=meb,usage_ordinal_map={6:10})
     assert report["same_instance_gate"]["ready"] is False
     assert not report["same_instance_gate"]["candidate_frames"]
+
+
+def test_runtime_trace_exposes_created_texture_identity_on_set_texture():
+    events = load_events_from_rows([
+        {
+            "event": "create_texture",
+            "frame": 7,
+            "texture_ptr": "0x100",
+            "width": 64,
+            "height": 32,
+            "levels": 1,
+            "usage": 0,
+            "format": 21,
+            "pool": 1,
+        },
+        {
+            "event": "set_texture",
+            "frame": 7,
+            "stage": 1,
+            "texture_ptr": "0x100",
+        },
+        {
+            "event": "draw_indexed_primitive",
+            "frame": 7,
+            "primitive_count": 1,
+            "start_index": 0,
+            "base_vertex_index": 0,
+        },
+    ])
+    report = build_runtime_binding_evidence(events)
+    snapshot = report["frames"][0]["draw_snapshots"][0]
+    texture = snapshot["active_texture_bindings"][0]
+    assert report["texture_lifecycle"]["ready"] is True
+    assert report["textures"][0]["resource_type"] == "texture2d"
+    assert texture["resource_creation_status"] == "observed"
+    assert texture["resource_creation"]["texture_ptr"] == "0x100"
+
+
+def test_runtime_trace_preserves_unknown_texture_pointer_as_not_observed():
+    events = load_events_from_rows([
+        {
+            "event": "set_texture",
+            "frame": 7,
+            "stage": 3,
+            "texture_ptr": "0xdead",
+        },
+        {
+            "event": "draw_indexed_primitive",
+            "frame": 7,
+            "primitive_count": 1,
+            "start_index": 0,
+            "base_vertex_index": 0,
+        },
+    ])
+    report = build_runtime_binding_evidence(events)
+    snapshot = report["frames"][0]["draw_snapshots"][0]
+    texture = snapshot["active_texture_bindings"][0]
+    assert report["texture_lifecycle"]["ready"] is False
+    assert texture["resource_creation_status"] == "not-observed"
+    assert "resource_creation" not in texture
+
+
+def test_runtime_trace_links_cube_texture_creation():
+    events = load_events_from_rows([
+        {
+            "event": "create_cube_texture",
+            "frame": 7,
+            "texture_ptr": "0x200",
+            "edge_length": 128,
+            "levels": 8,
+            "usage": 0,
+            "format": 21,
+            "pool": 1,
+        },
+        {
+            "event": "set_texture",
+            "frame": 7,
+            "stage": 3,
+            "texture_ptr": "0x200",
+        },
+    ])
+    report = build_runtime_binding_evidence(events)
+    texture = report["frames"][0]["texture_bindings"][0]
+    assert texture["resource_creation"]["resource_type"] == "cube_texture"
+    assert texture["resource_creation"]["edge_length"] == 128

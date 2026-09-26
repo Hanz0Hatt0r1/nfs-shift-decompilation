@@ -15,6 +15,8 @@ Captured events are JSONL and match SHIFT.D3D9RuntimeCaptureSchema/1.
 - SetStreamSource
 - SetIndices
 - SetTexture
+- CreateTexture
+- CreateCubeTexture
 - CreateVertexShader
 - SetVertexShader
 - SetVertexShaderConstantF
@@ -123,3 +125,15 @@ The second command should produce no matches.
 
 The cross compiler must be installed as `i686-w64-mingw32-g++`. On
 Debian/Ubuntu this is normally provided by the `g++-mingw-w64-i686` package.
+
+
+### Texture object lifecycle
+
+Successful `IDirect3DDevice9::CreateTexture` and
+`CreateCubeTexture` calls are emitted with the returned texture pointer and
+creation metadata. The Python runtime trace joins these events to later
+`set_texture` bindings in event order.
+
+This establishes the runtime pointer -> D3D9 creation-instance boundary. It
+does not identify the original SHIFT DDS archive resource by itself; that
+identity still requires resource-content evidence.
