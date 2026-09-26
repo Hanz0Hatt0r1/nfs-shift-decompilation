@@ -14,13 +14,17 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 265.**
+> **Current mainline: Phase 337.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
 > **Current external gate:** obtain one real retail D3D9 capture containing the target BMW M3 body draw and prove the same-instance chain from MEB resource → declaration → indexed draw → VS/PS → constants → sampler resources.
 >
 > **Draw-local runtime proof:** `SHIFT.D3D9RuntimeBindingEvidence/1` now freezes declaration, stream, index, shader, constant and texture state at each `DrawIndexedPrimitive` boundary. The strict same-instance gate consumes these snapshots rather than the final state of the whole frame.
+
+> **BMW runtime texture lifecycle:** Phase 336 adds `CreateTexture/CreateCubeTexture` object-lifecycle evidence; Phase 337 correlates the draw-local BMW paint texture pointers with the latest creation instance and compares runtime resource shape against retail DDS metadata without treating pointer equality as DDS provenance.
+
+> **BMW texture finding:** the supplied runtime paint `s1` object is `1024×1024 DXT1`, while the archived `common_paint.dds` entry is only 184 bytes. The project therefore treats s1 as a generated/transformed candidate pending captured-content identity; no direct DDS attribution is made.
 
 > **Draw-local shader join:** runtime shader selection, parity and the render contract now consume the same `(frame, draw_index)` snapshot. Frame-level shader state is retained only for compatibility with legacy reports that have no snapshots.
 

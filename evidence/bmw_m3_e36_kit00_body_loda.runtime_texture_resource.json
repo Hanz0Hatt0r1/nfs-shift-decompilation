@@ -1,0 +1,161 @@
+{
+  "format": "SHIFT.BMWM3RuntimeTextureResourceParity/1",
+  "status": "observed",
+  "ready": false,
+  "resource": {
+    "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+  },
+  "frame": 30444,
+  "target_draws": [
+    {
+      "call": 73765756,
+      "draw_index": 348,
+      "primitive_count": 2098
+    },
+    {
+      "call": 73765784,
+      "draw_index": 349,
+      "primitive_count": 2462
+    },
+    {
+      "call": 73781412,
+      "draw_index": 642,
+      "primitive_count": 2098
+    },
+    {
+      "call": 73781440,
+      "draw_index": 643,
+      "primitive_count": 2462
+    }
+  ],
+  "source": {
+    "resource_create_log": "shift_resources.txt",
+    "resource_create_log_sha256": "e8f5e76fd9439e5149b0296a31c7097002242ac3f425a9869e1d965498151124",
+    "draw_dump": "frame_30444.txt",
+    "draw_dump_sha256": "aefd4116c55b07559e5508b21aa838f2cac0186f0e482cbf62500033f7362f29"
+  },
+  "runtime_objects": [
+    {
+      "parameter": "diffuseTexture",
+      "register": 1,
+      "texture_ptr": "0x27a12120",
+      "latest_create": {
+        "call": 63238146,
+        "width": 1024,
+        "height": 1024,
+        "levels": 11,
+        "format": "D3DFMT_DXT1",
+        "pool": "D3DPOOL_MANAGED"
+      },
+      "earlier_reuse": {
+        "call": 2231068,
+        "width": 64,
+        "height": 32,
+        "levels": 7,
+        "format": "D3DFMT_DXT5",
+        "pool": "D3DPOOL_MANAGED"
+      },
+      "static_archive": {
+        "path": "vehicles/textures/common_paint.dds",
+        "entry_index": 857,
+        "source_sha256": "8950a54d0a1227970cf73c937c2c47ee6a0886b28a8fd142f4235ce24911d63f",
+        "source_size": 184
+      },
+      "classification": "generated-or-transformed-candidate",
+      "status": "metadata-mismatch-observed"
+    },
+    {
+      "parameter": "specularTexture",
+      "register": 2,
+      "texture_ptr": "0x369b59f8",
+      "latest_create": {
+        "call": 50673622,
+        "width": 8,
+        "height": 8,
+        "levels": 4,
+        "format": "D3DFMT_DXT5",
+        "pool": "D3DPOOL_MANAGED"
+      },
+      "static_archive": {
+        "path": "vehicles/textures/common_paint_specular.dds",
+        "entry_index": 856,
+        "source_sha256": "5154d913ec64a41a3a50275637e5cec53e161e3b175ef03d2bb28e9bf8ae5ece",
+        "source_size": 240
+      },
+      "classification": "direct-dds-compatible-candidate",
+      "status": "shape-observed"
+    },
+    {
+      "parameter": "scratchControlTexture",
+      "register": 4,
+      "texture_ptr": "0x37ac3450",
+      "latest_create": {
+        "call": 50671965,
+        "width": 4,
+        "height": 4,
+        "levels": 3,
+        "format": "D3DFMT_DXT1",
+        "pool": "D3DPOOL_MANAGED"
+      },
+      "earlier_reuse": {
+        "call": 47750648,
+        "width": 128,
+        "height": 128,
+        "levels": 8,
+        "format": "D3DFMT_L8",
+        "pool": "D3DPOOL_MANAGED"
+      },
+      "static_archive": {
+        "path": "vehicles/textures/common_blank.dds",
+        "entry_index": 848,
+        "source_sha256": "d23aa870868134d514030b37b788b975f7d2f0c3d5ed903a64f68c2edcc09c3d",
+        "source_size": 152
+      },
+      "classification": "direct-dds-compatible-candidate",
+      "status": "shape-observed"
+    }
+  ],
+  "external_objects": [
+    {
+      "register": 0,
+      "texture_ptr": "0xceeeeb0",
+      "create": {
+        "call": 19167,
+        "width": 2048,
+        "height": 8192,
+        "levels": 1,
+        "format": "D3DFMT_D16",
+        "pool": "D3DPOOL_DEFAULT"
+      },
+      "classification": "renderer-global-shadow"
+    },
+    {
+      "register": 3,
+      "texture_ptr": "0x2cf0e6a8",
+      "create": {
+        "call": 50790033,
+        "width": 256,
+        "height": 256,
+        "levels": 9,
+        "format": "D3DFMT_A16B16G16R16F",
+        "pool": "D3DPOOL_DEFAULT",
+        "usage": "D3DUSAGE_RENDERTARGET"
+      },
+      "classification": "renderer-global-environment-cube"
+    }
+  ],
+  "boundary": {
+    "pointer_to_creation_instance": "proven-by-ordered-create-log",
+    "static_dds_source_identity": "proven-by-BFF-entry-hash",
+    "creation_shape_to_static_dds": "partial",
+    "runtime_pixel_content_identity": "not-observed",
+    "runtime_dds_path_identity": "not-proven"
+  },
+  "blocking_reasons": [
+    "static-dds-header-decode-not-embedded-in-evidence",
+    "runtime:texture-snapshot-not-supplied:s1",
+    "runtime:texture-snapshot-not-supplied:s2",
+    "runtime:texture-snapshot-not-supplied:s4"
+  ]
+}
