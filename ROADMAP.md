@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 344. The Python, native and Windows D3D9 capture-producer CI paths are green on the last completed baseline; the current work strengthens runtime same-instance proof without requiring a capture to exist in CI.
+Current `main` is at Phase 348. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -1482,6 +1482,12 @@ Added `bmw_runtime_buffer_capture_intake.py` to make the Phase 344/345 geometry 
 
 
 
+## Phase 348: streaming apitrace BMW extraction
+
+Added `tools/extract_apitrace_unique_bmw.py` for the Linux workflow where apitrace is the confirmed runtime capture source. The extractor streams `apitrace dump` directly from a .trace, filters the known BMW body draw signature (3,550 vertices and the six primitive counts), deduplicates declaration/stream/index bindings by creation instance, and emits a compact relevant-call set.
+
+For a real .trace, `--auto-trim` can produce a small `bmw_unique.trace` containing representative target calls, avoiding a permanent multi-gigabyte text dump. This phase proves runtime draw/resource-instance evidence only; exact VB/IB byte parity still requires independent payload evidence.
+
 ## Wine removal
 
-The Wine-specific runtime capture path, build/injection helpers, tests, and documentation were removed. The project now relies on the independent native D3D9 capture path for runtime evidence; BMW MEB extraction and byte-parity tooling remain unchanged.
+The Wine-specific runtime capture path, build/injection helpers, tests, launcher, and documentation were removed. On Linux, the supported research path for the current runtime trace is apitrace; native D3D9 capture code remains an independent alternative. BMW MEB extraction and byte-parity tooling remain unchanged.
