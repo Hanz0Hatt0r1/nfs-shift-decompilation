@@ -23,11 +23,16 @@ def _sha(data: bytes) -> str:
 
 def _creation_index(snapshot: Mapping[str, Any], kind: str, pointer: str) -> int | None:
     key = "vertex_buffer" if kind == "vertex_buffer" else "index_buffer"
-    binding = (
-        (snapshot.get("active_stream_sources") or [])[0]
-        if kind == "vertex_buffer" and snapshot.get("active_stream_sources")
-        else snapshot.get("index_binding")
-    )
+    if kind == "vertex_buffer":
+        binding = next(
+            (
+                row for row in snapshot.get("active_stream_sources") or []
+                if isinstance(row, Mapping) and int(row.get("stream", -1)) == 0
+            ),
+            None,
+        )
+    else:
+        binding = snapshot.get("index_binding")
     if not isinstance(binding, Mapping) or str(binding.get(key + "_ptr") or "").lower() != pointer.lower():
         return None
     creation = binding.get("resource_creation")
@@ -72,7 +77,14 @@ def _payload_rows(
     return sorted(rows, key=lambda row: int(row.get("event_index", -1)))
 
 
-def _target_draws(runtime_report: Mapping[str, Any]) -> list[tuple[Mapping[str, Any], Mapping[str, Any]]]:
+def _target_draws(
+    runtime_report: Mapping[str, Any],
+    *,
+    target_vb: str,
+    target_stride: int,
+    target_num_vertices: int,
+    target_frame: int | None = None,
+) -> list[tuple[Mapping[str, Any], Mapping[str, Any]]]:
     out = []
     for frame in runtime_report.get("frames") or []:
         if not isinstance(frame, Mapping):
@@ -88,11 +100,17 @@ def _target_draws(runtime_report: Mapping[str, Any]) -> list[tuple[Mapping[str, 
             )
             if not isinstance(stream0, Mapping):
                 continue
-            if str(stream0.get("vertex_buffer_ptr") or "").lower() != TARGET_VB:
+            if target_frame is not None:
+                try:
+                    if int(frame.get("frame")) != target_frame:
+                        continue
+                except (TypeError, ValueError):
+                    continue
+            if str(stream0.get("vertex_buffer_ptr") or "").lower() != target_vb.lower():
                 continue
-            if int(stream0.get("stride", -1)) != 76 or int(draw.get("base_vertex_index", -1)) != 0:
+            if int(stream0.get("stride", -1)) != target_stride or int(draw.get("base_vertex_index", -1)) != 0:
                 continue
-            if int(draw.get("num_vertices", -1)) != 3550:
+            if int(draw.get("num_vertices", -1)) != target_num_vertices:
                 continue
             out.append((frame, snapshot))
     return out
@@ -165,7 +183,29 @@ def build_report(
 
     vb_expected = _read(expected_vb)
     ib_expected = _read(expected_ib16)
-    target_draws = _target_draws(runtime_report)
+    runtime_stream = geometry_evidence.get("runtime_stream") or {}
+    target_vb = str(runtime_stream.get("vertex_buffer") or TARGET_VB)
+    target_stride = int(runtime_stream.get("stride") or 76)
+    derived_vb_bytes = int(runtime_stream.get("derived_vertex_buffer_bytes") or 0)
+    target_num_vertices = (
+        derived_vb_bytes // target_stride
+        if derived_vb_bytes > 0 and target_stride > 0
+        else 3550
+    )
+    source = geometry_evidence.get("source") or {}
+    target_frame = None
+    try:
+        if source.get("frame") is not None:
+            target_frame = int(source["frame"])
+    except (TypeError, ValueError):
+        target_frame = None
+    target_draws = _target_draws(
+        runtime_report,
+        target_vb=target_vb,
+        target_stride=target_stride,
+        target_num_vertices=target_num_vertices,
+        target_frame=target_frame,
+    )
     if not target_draws:
         return {
             "format": FORMAT,
@@ -256,6 +296,12 @@ def build_report(
         "status": "match" if ready else ("partial" if results and not blockers else "blocked"),
         "ready": ready,
         "resource": {"path": TARGET_MEB, "sha256": TARGET_SHA256},
+        "target": {
+            "frame": target_frame,
+            "vertex_buffer_ptr": target_vb,
+            "vertex_stride": target_stride,
+            "vertex_count": target_num_vertices,
+        },
         "target_draw_count": len(target_draws),
         "matched_vertex_buffer": complete_vertex,
         "matched_index_buffer_count": len(matched_ibs),
