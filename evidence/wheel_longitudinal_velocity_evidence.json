@@ -1,0 +1,33 @@
+{
+  "format": "SHIFT.WheelLongitudinalVelocityEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe.c",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "function_lines": {
+    "FUN_00755f80": 751033,
+    "FUN_00763570": 757513
+  },
+  "wheel_layout": {
+    "base": "0x400",
+    "stride": "0xA80",
+    "count": 4
+  },
+  "shared_physics": {
+    "pose": "0xD4",
+    "velocity": "0x48"
+  },
+  "single_wheel": {
+    "localization": "FUN_007af0a0",
+    "component": "local_vector.x",
+    "reconstruction": "FUN_007af010",
+    "state_update": "velocity -= reconstructed_vector"
+  },
+  "rear_average": {
+    "guard_object_flag": "0x3EE0",
+    "guard_mode": "0x3EB8",
+    "guard_global": "0xC1286E",
+    "formula": "(rear_left + rear_right) * 0.5",
+    "writes": [2, 3]
+  },
+  "status": "source-backed scalar/vector kinematic handoff"
+}
