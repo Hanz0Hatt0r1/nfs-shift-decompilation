@@ -25,6 +25,7 @@ from rigid_body_sdf_runtime import (
 )
 from vehicle_cdf_runtime import parse_cdf
 from sdf_constraint_solver_runtime import describe_sdf_sparse_solver_contract, validate_sdf_solver_contract
+from sdf_constraint_solver_frame_runtime import describe_sdf_solver_frame_contract, validate_sdf_solver_frame_profile
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -72,6 +73,10 @@ def build_profile(
         constraint_count=sdf_constraint_solver_graph.get("constraint_count")
     )
     sdf_solver_validation = validate_sdf_solver_contract(sdf_constraint_solver_graph)
+    sdf_solver_frame = describe_sdf_solver_frame_contract(
+        solver_scalar_count=sdf_constraint_solver_graph.get("solver_scalar_count"),
+        body_count=sdf_report.get("topology", {}).get("body_count"),
+    )
 
     blockers: list[str] = []
     for name, report in (
@@ -92,6 +97,14 @@ def build_profile(
     blockers.extend(f"sdf-constraint-order:{reason}" for reason in sdf_constraint_order.get("unresolved") or [])
     blockers.extend(f"sdf-constraint-solver:{reason}" for reason in sdf_constraint_solver_graph.get("unresolved") or [])
     blockers.extend(f"sdf-solver-contract:{reason}" for reason in sdf_solver_validation.get("errors") or [])
+    sdf_frame_validation = validate_sdf_solver_frame_profile({
+        "summary": {
+            "sdf_solver_scalar_count": sdf_constraint_solver_graph.get("solver_scalar_count"),
+            "sdf_constraint_solver_graph_ready": sdf_constraint_solver_graph.get("ready") is True,
+            "sdf_sparse_solver_contract_ready": sdf_solver_contract.get("ready") is True,
+        }
+    })
+    blockers.extend(f"sdf-solver-frame:{reason}" for reason in sdf_frame_validation.get("errors") or [])
 
     return {
         "format": FORMAT,
@@ -148,6 +161,8 @@ def build_profile(
             "sdf_solver_scalar_count": sdf_constraint_solver_graph.get("solver_scalar_count", sdf_constraint_solver_graph.get("constraint_count", 0)),
             "sdf_sparse_solver_contract_ready": sdf_solver_contract.get("ready") is True,
             "sdf_sparse_solver_validation_ready": sdf_solver_validation.get("ready") is True,
+            "sdf_solver_frame_contract_ready": sdf_solver_frame.get("ready") is True,
+            "sdf_solver_frame_validation_ready": sdf_frame_validation.get("ready") is True,
         },
         "details": {
             "cdf": cdf_report,
@@ -162,6 +177,8 @@ def build_profile(
             "sdf_constraint_solver_graph": sdf_constraint_solver_graph,
             "sdf_sparse_solver_contract": sdf_solver_contract,
             "sdf_sparse_solver_validation": sdf_solver_validation,
+            "sdf_solver_frame": sdf_solver_frame,
+            "sdf_solver_frame_validation": sdf_frame_validation,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
