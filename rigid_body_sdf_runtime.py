@@ -85,34 +85,42 @@ def parse_sdf(data: str | bytes, *, strict: bool = False) -> dict[str, Any]:
             records.append(current)
             continue
 
-        assignment = _ASSIGN_RE.match(stripped)
-        if assignment is None:
-            warnings.append(f"line:{line_no}:unparsed:{original.strip()}")
-            if strict:
-                raise ValueError(warnings[-1])
-            continue
-
         if current is None:
             warnings.append(f"line:{line_no}:property-before-section")
             if strict:
                 raise ValueError(warnings[-1])
             continue
 
-        key = assignment.group(1).strip()
-        raw = assignment.group(2).strip()
-        value, shape = _value(raw)
-        schema = BODY_KEYS if current["section"] == "BODY" else CONSTRAINT_KEYS
-        expected_shape = schema.get(key)
+        # Real SDF lines pack multiple key=value assignments on one line.
+        matches = list(re.finditer(r"(?<!\\s)([A-Za-z_][A-Za-z0-9_&]*)\\s*=", stripped))
+        if not matches:
+            warnings.append(f"line:{line_no}:unparsed:{original.strip()}")
+            if strict:
+                raise ValueError(warnings[-1])
+            continue
 
-        current["entries"].append({
-            "name": key,
-            "raw": raw,
-            "value": value,
-            "parsed_shape": shape,
-            "line": line_no,
-            "recognized_by_loader": expected_shape is not None,
-            "loader_shape": expected_shape,
-        })
+        schema = BODY_KEYS if current["section"] == "BODY" else CONSTRAINT_KEYS
+        for index, match in enumerate(matches):
+            key = match.group(1).strip()
+            value_start = match.end()
+            value_end = matches[index + 1].start() if index + 1 < len(matches) else len(stripped)
+            raw = stripped[value_start:value_end].strip()
+            if not raw:
+                warnings.append(f"line:{line_no}:empty-value:{key}")
+                if strict:
+                    raise ValueError(warnings[-1])
+                continue
+            value, shape = _value(raw)
+            expected_shape = schema.get(key)
+            current["entries"].append({
+                "name": key,
+                "raw": raw,
+                "value": value,
+                "parsed_shape": shape,
+                "line": line_no,
+                "recognized_by_loader": expected_shape is not None,
+                "loader_shape": expected_shape,
+            })
 
     counts = {section: 0 for section in SECTIONS}
     for record in records:
