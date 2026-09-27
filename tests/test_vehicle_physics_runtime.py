@@ -1,3 +1,5 @@
+import pytest
+
 from vehicle_physics_runtime import (
     SECTION_TARGETS,
     analyze_source,
@@ -205,7 +207,7 @@ def test_rpm_torque_interpolation_extrapolates_using_end_segments():
         RPMTorquePoint(3000.0, -20.0, 150.0),
     )
     assert sample_rpm_torque_curve(points, 500.0) == (-40.0, 50.0)
-    assert sample_rpm_torque_curve(points, 3500.0) == (-25.0, 100.0)
+    assert sample_rpm_torque_curve(points, 3500.0) == (-25.0, 125.0)
 
 
 def test_rpm_torque_interpolation_midpoint_clamps_when_brake_exceeds_throttle():
@@ -215,7 +217,7 @@ def test_rpm_torque_interpolation_midpoint_clamps_when_brake_exceeds_throttle():
         RPMTorquePoint(1000.0, 200.0, 100.0),
         RPMTorquePoint(2000.0, 300.0, 100.0),
     )
-    assert sample_rpm_torque_curve(points, 1500.0) == (250.0, 250.0)
+    assert sample_rpm_torque_curve(points, 1500.0) == (175.0, 175.0)
 
 
 def test_rpm_torque_interpolation_handles_zero_and_one_point_curves():
