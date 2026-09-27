@@ -184,8 +184,9 @@ def parse_turbo_bbf(
 def parse_turbo_tbf(
     data: str | bytes,
     *,
-    boost_time_upgrade_nodes: Sequence[ModifierNode] = (),
-    max_boost_upgrade_nodes: Sequence[ModifierNode] = (),
+    turbo1_size_upgrade_nodes: Sequence[ModifierNode] = (),
+    turbo2_size_upgrade_nodes: Sequence[ModifierNode] = (),
+    strict: bool = False,
 ) -> dict[str, Any]:
     text = data.decode("utf-8", "replace") if isinstance(data, bytes) else str(data)
     entries, warnings = _flat_entries(text)
@@ -233,16 +234,28 @@ def parse_turbo_tbf(
             }
         turbo_rows.append(row_data)
 
-    boost_time = float(
-        values.get("Boost Time", 0.0)
-    )
-    max_boost = float(
-        values.get("Max Boost", 0.0)
-    )
-    if boost_time_upgrade_nodes:
-        boost_time = float(evaluate_modifier_chain(boost_time, 0, tuple(boost_time_upgrade_nodes))["result"])
-    if max_boost_upgrade_nodes:
-        max_boost = float(evaluate_modifier_chain(max_boost, 0, tuple(max_boost_upgrade_nodes))["result"])
+    if strict and warnings:
+        raise ValueError(warnings[0])
+
+    size_after_upgrade: list[float] = []
+    for index, nodes in enumerate(
+        (turbo1_size_upgrade_nodes, turbo2_size_upgrade_nodes), start=1
+    ):
+        raw_size = 0.0
+        if index <= len(turbo_rows):
+            size_field = turbo_rows[index - 1]["fields"].get("Size")
+            if size_field is not None:
+                raw_size = float(size_field["value"])
+        if nodes:
+            raw_size = float(evaluate_modifier_chain(
+                raw_size, 0, tuple(nodes)
+            )["result"])
+        size_after_upgrade.append(raw_size)
+        if index <= len(turbo_rows):
+            turbo_rows[index - 1]["postload"] = {
+                "size_after_upgrade": raw_size,
+                "modifier_nodes": len(nodes),
+            }
 
     return {
         "format": FORMAT,
@@ -255,9 +268,9 @@ def parse_turbo_tbf(
         "turbos": turbo_rows,
         "postload": {
             "file_open_flag": 1,
-            "boost_time_after_upgrade": boost_time,
-            "max_boost_after_upgrade": max_boost,
-            "return_scalar": boost_time + max_boost + 1.0,
+            "turbo1_size_after_upgrade": size_after_upgrade[0],
+            "turbo2_size_after_upgrade": size_after_upgrade[1],
+            "return_scalar": size_after_upgrade[0] + size_after_upgrade[1] + 1.0,
         },
         "source": {
             "file": ".\\Source\\Vehicle\\Turbo.cpp",

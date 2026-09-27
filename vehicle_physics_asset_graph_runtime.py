@@ -14,7 +14,12 @@ from typing import Any, Mapping, Sequence
 
 from engine_edf_runtime import parse_engine_edf
 from gearbox_gdf_runtime import parse_gdf
-from rigid_body_sdf_runtime import compile_sdf_runtime_topology, parse_sdf, resolve_sdf_body_references
+from rigid_body_sdf_runtime import (
+    compile_sdf_runtime_topology,
+    describe_sdf_constraint_runtime_lowering,
+    parse_sdf,
+    resolve_sdf_body_references,
+)
 from vehicle_cdf_runtime import parse_cdf
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
@@ -55,6 +60,7 @@ def build_profile(
     sdf_report = parse_sdf(Path(sdf).read_bytes(), strict=strict)
     sdf_graph = resolve_sdf_body_references(sdf_report)
     sdf_runtime_topology = compile_sdf_runtime_topology(sdf_report)
+    sdf_constraint_runtime = describe_sdf_constraint_runtime_lowering(sdf_report)
 
     blockers: list[str] = []
     for name, report in (
@@ -70,6 +76,7 @@ def build_profile(
         )
     blockers.extend(f"sdf-graph:{reason}" for reason in sdf_graph.get("unresolved") or [])
     blockers.extend(f"sdf-runtime:{reason}" for reason in sdf_runtime_topology.get("unresolved") or [])
+    blockers.extend(f"sdf-constraint-runtime:{reason}" for reason in sdf_constraint_runtime.get("unresolved") or [])
 
     return {
         "format": FORMAT,
@@ -117,6 +124,8 @@ def build_profile(
             "sdf_constraint_count": sdf_graph.get("edge_count", 0),
             "sdf_runtime_topology_ready": sdf_runtime_topology.get("ready") is True,
             "sdf_runtime_constraint_count": sdf_runtime_topology.get("constraint_count", 0),
+            "sdf_constraint_runtime_lowering_ready": sdf_constraint_runtime.get("ready") is True,
+            "sdf_constraint_runtime_record_count": sdf_constraint_runtime.get("record_count", 0),
         },
         "details": {
             "cdf": cdf_report,
@@ -125,6 +134,7 @@ def build_profile(
             "sdf": sdf_report,
             "sdf_reference_graph": sdf_graph,
             "sdf_runtime_topology": sdf_runtime_topology,
+            "sdf_constraint_runtime": sdf_constraint_runtime,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {

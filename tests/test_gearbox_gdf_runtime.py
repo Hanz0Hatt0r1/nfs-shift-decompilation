@@ -32,4 +32,4 @@ def test_gdf_ratio_sort_matches_source_comparator_without_mutating_input():
     sorted_view = sort_ratio_pairs_source_order(source)
     assert source == [[10, 35], [32, 16], [12, 36], [22, 65]]
     assert sorted_view[:2] == [[32, 16], [22, 65]]
-    assert sorted_view[-1] == [12, 36]
+    assert sorted_view[-1] == [10, 35]

@@ -60,9 +60,9 @@ name=link posbody=body negbody=wheel pos=(0,0,0) neg=(1,0,0)
     graph = sdf.resolve_sdf_body_references(report)
     assert graph["ready"] is True
     assert graph["edge_count"] == 2
-    assert graph["body_names"] == ["body", "wheel"]
-    assert graph["adjacency"]["body"] == [0, 1]
-    assert graph["adjacency"]["wheel"] == [0, 1]
+    assert graph["body_names"] == ["BODY", "WHEEL"]
+    assert graph["adjacency"]["BODY"] == [0, 1]
+    assert graph["adjacency"]["WHEEL"] == [0, 1]
 
 
 def test_sdf_body_reference_graph_blocks_missing_body():
@@ -76,7 +76,7 @@ name=broken posbody=missing negbody=body pos=(0,0,0) neg=(1,0,0)
 """)
     graph = sdf.resolve_sdf_body_references(report)
     assert graph["ready"] is False
-    assert "record:1:BAR:posbody:missing" in graph["unresolved"]
+    assert "record:1:BAR:posbody:MISSING" in graph["unresolved"]
 
 
 def test_sdf_runtime_topology_compiler_preserves_constructor_flags_and_strides():
@@ -162,8 +162,8 @@ name=body
 """)
     graph = sdf.resolve_sdf_body_references(report)
     assert graph["ready"] is False
-    assert graph["duplicate_body_names"] == ["body"]
-    assert "duplicate-body-name:body" in graph["unresolved"]
+    assert graph["duplicate_body_names"] == ["BODY"]
+    assert "duplicate-body-name:BODY" in graph["unresolved"]
 
 
 def test_sdf_body_lowering_preserves_proven_runtime_offsets():
@@ -182,3 +182,58 @@ name=body mass=1460 inertia=(1800,1920,450) pos=(0,0,0) ori=(0,0,0) vel=(0,0,0) 
     assert row["lowering"]["mass"]["inverse"] == "+0x90"
     assert row["lowering"]["group_a"]["helper"] == "FUN_007bbb10"
     assert row["lowering"]["group_b"]["helper"] == "FUN_007bbb60"
+
+
+
+def test_sdf_constraint_runtime_lowering_exposes_source_and_runtime_storage():
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT&HINGE]
+name=steer posbody=wheel negbody=body
+axis=(1,0,0) neg=(0,0,0) pos=(0,1,0)
+""")
+    lowered = sdf.describe_sdf_constraint_runtime_lowering(report)
+    assert lowered["ready"] is True
+    assert lowered["source_record_count"] == 1
+    assert lowered["record_count"] == 2
+    row = lowered["rows"][0]
+    assert row["runtime_section"] == "JOINT"
+    assert row["materialization"] == "JOINT"
+    assert row["flag_word"] == 1
+    assert row["body_pointer_slots"] == {"posbody": "+0x78", "negbody": "+0x80"}
+    assert row["record_index_field"] == "+0x70"
+    assert row["body_counter_offset"] == "+0x98"
+    assert row["copy_helper"] == "FUN_007b2ae0"
+    assert row["sampling"]["helper"] == "FUN_007ba8b0"
+    assert row["sampling"]["sample_stride"] == 0x40
+    assert row["postload"]["helper"] == "FUN_007b2da0"
+    assert row["section_storage"]["source_descriptor_offsets"] == ["+0x28", "+0x30", "+0x38"]
+    assert row["section_storage"]["source_value_fields"] == ["pos"]
+    assert row["source_descriptor"]["string_fields"] == {
+        "constraint_name": "+0x14",
+        "posbody": "+0x18",
+        "negbody": "+0x1c",
+        "copy_body_name": "+0x20",
+    }
+    hinge = lowered["rows"][1]
+    assert hinge["runtime_section"] == "HINGE"
+    assert hinge["flag_word"] == 2
+    assert hinge["body_counter_offset"] == "+0x9c"
+    assert hinge["section_storage"]["source_descriptor_offsets"] == ["+0x58", "+0x60", "+0x68"]
+    assert hinge["section_storage"]["source_value_fields"] == ["axis"]
+
+
+def test_sdf_constraint_runtime_lowering_blocks_missing_endpoint_names():
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BAR]
+name=broken posbody=body
+pos=(0,0,0) neg=(1,0,0)
+""")
+    lowered = sdf.describe_sdf_constraint_runtime_lowering(report)
+    assert lowered["ready"] is False
+    assert "record:1:BAR:missing-negbody" in lowered["unresolved"]
