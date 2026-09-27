@@ -14,7 +14,7 @@ def _build_real_shape_sdf() -> str:
     ]
     for name in bodies:
         lines.append(
-            f"[BODY]\\nname={name} mass=(1.0) inertia=(1.0,1.0,1.0) "
+            f"[BODY]\nname={name} mass=(1.0) inertia=(1.0,1.0,1.0) "
             "pos=(0,0,0) ori=(0,0,0)"
         )
     wheel_pairs = [
@@ -25,7 +25,7 @@ def _build_real_shape_sdf() -> str:
     ]
     for posbody, negbody, axis in wheel_pairs:
         lines.append(
-            "[JOINT&HINGE]\\n"
+            "[JOINT&HINGE]\n"
             f"posbody={posbody} negbody={negbody} pos={posbody} "
             f"axis=({axis},0,0)"
         )
@@ -37,11 +37,11 @@ def _build_real_shape_sdf() -> str:
     ]
     for index, target in enumerate(bar_targets):
         lines.append(
-            "[BAR]\\n"
+            "[BAR]\n"
             f"name=bar_{index} posbody=body negbody={target} "
             "pos=(0,0,0) neg=(1,0,0)"
         )
-    return "\\n".join(lines)
+    return "\n".join(lines)
 
 
 def test_real_bmw_shape_maps_to_28_constraint_records_and_40_scalars():
@@ -94,8 +94,8 @@ def test_real_bmw_shape_validation_is_explicit():
 
 def test_solver_domain_blocks_when_topology_cannot_resolve_body_reference():
     report = parse_sdf(
-        "[BODY]\\nname=body mass=(1) inertia=(1,1,1) pos=(0,0,0) ori=(0,0,0)\\n"
-        "[BAR]\\nname=x posbody=body negbody=missing pos=(0,0,0) neg=(1,0,0)"
+        "[BODY]\nname=body mass=(1) inertia=(1,1,1) pos=(0,0,0) ori=(0,0,0)\n"
+        "[BAR]\nname=x posbody=body negbody=missing pos=(0,0,0) neg=(1,0,0)"
     )
     solver = runtime.build_solver_domain(report)
     assert solver["ready"] is False
