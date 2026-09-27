@@ -67,6 +67,9 @@ Reconstruct FUN_0075489c's spring-element force-construction boundary: +0x100/+0
 ## Phase 367: wheel thermal integrator runtime
 
 Reconstruct FUN_00755a60's four-wheel three-node thermal integrator: exact 0x400/0x150 call topology, three temperature nodes, shared reservoir transfers, shape/steering fractions, wear floor and final bounded output. Physical units and side-effect semantics remain unresolved. Renderer and RENDER.bff remain untouched.
+## Phase 368: wheel longitudinal velocity runtime
+
+Reconstruct FUN_00755f80 and its four-wheel caller FUN_00763570: exact 0x400/0xA80 wheel topology, local-frame first-component extraction, reconstructed-vector subtraction from shared body velocity, and the guarded rear-pair averaging branch. Transform semantics remain externalized. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
