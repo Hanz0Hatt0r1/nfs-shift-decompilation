@@ -4,8 +4,8 @@
   "archive": {
     "filename": "BMW_M3_E36.bff",
     "size_bytes": 18934688,
-    "sha256": "8d2a6f7d4e5c8eaf7f1c4cb7c98f7f4f6c6f5d8b0c6e7b9a8a3c1e2f5c8f2f1a",
-    "note": "archive size is source-verified; SHA-256 placeholder must be replaced by measured archive hash before treating as stable archive identity"
+    "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "note": "archive SHA-256 measured from the user-supplied file in the local runtime"
   },
   "sdf_entry": {
     "index": 1091,
