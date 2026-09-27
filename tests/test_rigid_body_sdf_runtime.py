@@ -141,11 +141,13 @@ name=b posbody=body negbody=wheel axis=(0,0,1) neg=(0,0,0) pos=(0,0,1)
 """)
     result = sdf.describe_sdf_pre_physx_build(report)
     assert result["ready"] is True
-    assert result["counts"]["constraints"] == 3
-    assert result["allocations"]["constraint_index_matrix_elements"] == 9
-    assert result["allocations"]["constraint_index_matrix_bytes"] == 72
-    assert result["allocations"]["constraint_index_row_pointer_bytes"] == 12
-    assert result["allocations"]["solver_initial_vector_bytes"] == 24
+    assert result["counts"]["constraint_records"] == 3
+    assert result["counts"]["solver_scalar_nodes"] == 6
+    assert result["allocations"]["constraint_index_matrix_elements"] == 36
+    assert result["allocations"]["constraint_index_matrix_bytes"] == 288
+    assert result["allocations"]["constraint_index_row_pointer_bytes"] == 24
+    assert result["allocations"]["solver_initial_vector_bytes"] == 48
+    assert result["allocations"]["per_body_constraint_index_vector_bytes"] == 24
     assert result["allocations"]["per_joint_resolved_samples"] == 2
     assert result["allocations"]["per_hinge_resolved_samples"] == 2
     assert result["allocations"]["per_bar_resolved_samples"] == 2
@@ -344,6 +346,33 @@ name=b0 posbody=a negbody=c pos=(0,0,0) neg=(1,0,0)
     result = sdf.compile_sdf_constraint_solver_graph_from_report(report)
     assert result["ready"] is True
     assert result["source_constraint_order"] == [0, 2, 1]
-    assert result["constraint_count"] == 3
-    assert result["allocations"]["forward_table_bytes"] == 32
-    assert result["allocations"]["reverse_table_bytes"] == 24
+    assert result["constraint_record_count"] == 3
+    assert result["solver_scalar_count"] == 6
+    assert result["constraint_count"] == 6
+    assert result["allocations"]["forward_table_bytes"] == 56
+    assert result["allocations"]["reverse_table_bytes"] == 48
+
+
+def test_sdf_scalar_connectivity_expands_constraint_blocks_into_solver_nodes():
+    report = sdf.parse_sdf("""
+[BODY]
+name=a
+[BODY]
+name=b
+[JOINT]
+name=j0 posbody=a negbody=b axis=(1,0,0)
+[BAR]
+name=b0 posbody=a negbody=b pos=(0,0,0) neg=(1,0,0)
+""")
+    scalar = sdf.build_sdf_scalar_connectivity_matrix(report)
+    assert scalar["ready"] is True
+    assert scalar["constraint_record_count"] == 2
+    assert scalar["solver_scalar_count"] == 4
+    assert scalar["ordered_block_widths"] == [3, 1]
+    assert scalar["scalar_block_offsets"] == [0, 3]
+    assert scalar["matrix"] == [
+        [0.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.0, 1.0],
+        [1.0, 1.0, 1.0, 0.0],
+    ]
