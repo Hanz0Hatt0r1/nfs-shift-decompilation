@@ -33,8 +33,9 @@ The registered spring fields are:
 ## Recovered force boundary
 
 Upstream transform helpers prepare the world-space vectors. After that boundary,
-the function computes a projection of the spring direction onto a body-relative
-vector.
+the function derives a relative vector first. Type 0 uses the transformed configured
+Spring Direction as-is; Types 1 and 2 copy and normalize the derived relative vector.
+The projection is the dot product between that direction and the same relative vector.
 
 The activation gate is exact:
 
@@ -42,11 +43,11 @@ collision_length <= 0 || collision_length <= abs(projection)
 
 For types 0 and 1:
 
-body_projection = dot(normalized_direction, body_relative_vector)
+body_projection = dot(direction_used, body_relative_vector)
 
 response = SpringParamsA * projection + body_projection * SpringParamsB
 
-force = normalized_direction * response
+force = direction_used * response
 
 When collision_length > 0, the source suppresses this force for either sign
 crossing:
@@ -59,7 +60,7 @@ projection < 0 && response > 0
 
 Type 2 uses a vector response instead:
 
-force = body_relative_vector * SpringParamsB + normalized_direction * (SpringParamsA * projection)
+force = body_relative_vector * SpringParamsB + direction_used * (SpringParamsA * projection)
 
 The resulting vector is passed to FUN_007baa70 together with the prepared spring
 head anchor.
