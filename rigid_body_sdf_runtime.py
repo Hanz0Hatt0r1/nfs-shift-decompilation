@@ -190,7 +190,7 @@ def resolve_sdf_body_references(
 ) -> dict[str, Any]:
     """Resolve posbody/negbody names into a neutral SDF connectivity graph."""
     ordered_body_names = [
-        str(entry.get("value"))
+        str(entry.get("value")).upper()
         for record in report.get("records") or []
         if record.get("section") == "BODY"
         for entry in record.get("entries") or []
@@ -216,7 +216,7 @@ def resolve_sdf_body_references(
         for field, body in (("posbody", posbody), ("negbody", negbody)):
             if body is None:
                 continue
-            name = str(body)
+            name = str(body).upper()
             if name not in body_names:
                 unresolved.append(
                     f"record:{record_index}:{record.get('section')}:{field}:{name}"
