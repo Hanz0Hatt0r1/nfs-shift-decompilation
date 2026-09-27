@@ -1,0 +1,10 @@
+{
+  "format":"SHIFT.VehicleRateResponseRuntime/1","version":1,
+  "source":{"file":"SHIFT.exe.c","geometry_line":754456,"response_line":753509,"apply_line":760210},
+  "machine_code":{"apply_initial_sqrt":"body +0x78,+0x80,+0x88","speed_gate":5.0,
+                  "speed_factor":"(speed-5)/15 clamped [0,1]"},
+  "response":{"angle_limits":{"DAT_00c128cc < 2":0.69813174,"otherwise":0.95993114},
+              "response_angle":0.5235988},
+  "outputs":{"accumulator":"+0x50 only","x_z":"unchanged"},
+  "status":"machine-code-backed arithmetic reconstruction"
+}
