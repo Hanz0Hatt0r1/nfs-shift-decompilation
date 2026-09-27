@@ -52,6 +52,7 @@ def test_hierarchy_truncation_blocks_non_strict():
     result = parse_sgb_object_payload(payload, strict=False)
     assert result["decoded"] is False
     assert result["status"] == "blocked"
+    assert result["blockers"]
 
 
 def test_invalid_bounds_raise():
