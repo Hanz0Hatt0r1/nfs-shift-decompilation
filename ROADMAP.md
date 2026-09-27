@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 390: body accumulator runtime
+
+`FUN_007bb8d0` is now represented as a source-backed per-body accumulator lifecycle: hinge sample refresh, primary/secondary accumulator reset, and reconstruction of the `+0x158` pointer table from the `+0x15c` row-index vector. Next target: the body accumulator update routines that populate and consume these regions.
+
 ## Phase 389: per-frame solver lifecycle
 
 `FUN_007b3f40` and `FUN_007b4110` are now represented as a frame execution contract: builtin/provider reset dispatch, constraint transform refresh, scalar-to-body accumulator projection, and final provider/builtin sparse-solver dispatch. The next target is the provider-independent body accumulator state and its source update routines.
