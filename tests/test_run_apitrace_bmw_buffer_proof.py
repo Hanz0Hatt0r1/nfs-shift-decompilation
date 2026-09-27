@@ -1,9 +1,10 @@
+import json
 from pathlib import Path
 
 from tools.run_apitrace_bmw_buffer_proof import run_pipeline
 
 
-def _geometry(path: Path):
+def _geometry():
     return {
         "format": "SHIFT.BMWM3MEBRuntimeGeometryParity/1",
         "status": "match",
@@ -35,8 +36,7 @@ def test_pipeline_writes_expected_outputs_and_proof(monkeypatch, tmp_path):
     out = tmp_path / "out"
     trace.write_bytes(b"trace")
     bff.write_bytes(b"bff")
-    geometry.write_text('{"format":"SHIFT.BMWM3MEBRuntimeGeometryParity/1","status":"match","ready":true,"resource":{"path":"vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb","sha256":"960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"},"runtime_stream":{"vertex_buffer":"0x27b39460","stride":76,"derived_vertex_buffer_bytes":269800},"primitive_correlations":[{"status":"match","triangle_count":50,"runtime_ib":"0x27b394e0"},{"status":"match","triangle_count":2098,"runtime_ib":"0x27b39560"},{"status":"match","triangle_count":2462,"runtime_ib":"0x27b395e0"},{"status":"match","triangle_count":204,"runtime_ib":"0x27b39660"},{"status":"match","triangle_count":192,"runtime_ib":"0x27b396e0"},{"status":"match","triangle_count":28,"runtime_ib":"0x27b39760"}]}
-', encoding="utf-8")
+    geometry.write_text(json.dumps(_geometry()) + "\n", encoding="utf-8")
 
     def fake_extract_from_source(trace, geometry_report, output_dir, *, apitrace):
         extracted = Path(output_dir)
@@ -44,16 +44,18 @@ def test_pipeline_writes_expected_outputs_and_proof(monkeypatch, tmp_path):
         payload_dir = extracted / "buffer_payloads"
         payload_dir.mkdir()
         sizes = [269800, 300, 12588, 14772, 1224, 1152, 168]
+        ib_pointers = [
+            "0x27b394e0", "0x27b39560", "0x27b395e0",
+            "0x27b39660", "0x27b396e0", "0x27b39760",
+        ]
         records = []
         for i, size in enumerate(sizes):
             path = payload_dir / f"{i}.bin"
-            path.write_bytes((b"V" if i == 0 else bytes([i - 1])) * size)
+            payload = (b"V" if i == 0 else bytes([i - 1])) * size
+            path.write_bytes(payload)
             records.append({
                 "buffer_kind": "vertex_buffer" if i == 0 else "index_buffer",
-                "buffer_pointer": "0x27b39460" if i == 0 else [
-                    "0x27b394e0","0x27b39560","0x27b395e0",
-                    "0x27b39660","0x27b396e0","0x27b39760"
-                ][i - 1],
+                "buffer_pointer": "0x27b39460" if i == 0 else ib_pointers[i - 1],
                 "blob_size": size,
                 "full_buffer_candidate": True,
                 "payload_path": str(path),
@@ -68,7 +70,7 @@ def test_pipeline_writes_expected_outputs_and_proof(monkeypatch, tmp_path):
             "buffers": records,
         }
         (extracted / "buffer_blob_evidence.json").write_text(
-            __import__("json").dumps(evidence, indent=2) + "\n",
+            json.dumps(evidence, indent=2) + "\n",
             encoding="utf-8",
         )
         return {"payload_records": 7, "full_buffer_candidates": 7}
@@ -87,9 +89,7 @@ def test_pipeline_writes_expected_outputs_and_proof(monkeypatch, tmp_path):
             p.write_bytes(bytes([i]) * size)
             primitive_paths.append(p)
         return {
-            "manifest": {
-                "format": "SHIFT.BMWM3RuntimeBufferArtifacts/1"
-            },
+            "manifest": {"format": "SHIFT.BMWM3RuntimeBufferArtifacts/1"},
             "directory": expected,
             "vertex": vertex,
             "index": index,
@@ -104,15 +104,10 @@ def test_pipeline_writes_expected_outputs_and_proof(monkeypatch, tmp_path):
         fake_artifacts,
     )
 
-    # The parity verifier compares exact bytes. The fake extractor/artifact writer
-    # deliberately uses the same payload contents for the seven objects.
-    from tools.run_apitrace_bmw_buffer_proof import _load_json
-    evidence = _load_json(out / "extracted" / "buffer_blob_evidence.json") if (out / "extracted" / "buffer_blob_evidence.json").exists() else None
-    assert evidence is None
-
     result = run_pipeline(trace, geometry, bff, out, apitrace="apitrace")
     assert result["ready"] is True
     assert result["byte_parity"]["matches"] == 7
+    assert result["geometry_proof"]["ready"] is True
     assert (out / "runtime_geometry_proof.json").is_file()
     assert (out / "pipeline_result.json").is_file()
 
