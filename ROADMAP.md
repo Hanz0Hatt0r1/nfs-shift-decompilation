@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 391: body-state projection and coupling
+
+`FUN_007bc680` is now represented as a source-backed execution contract covering residual-body transforms, JOINT/HINGE/BAR primary accumulation, the shared `FUN_007bbb80` stage, and HINGE-HINGE / BAR-BAR same-type matrix coupling. The next target is the numerical side effects inside those coupling helpers.
+
 ## Phase 390: body accumulator runtime
 
 `FUN_007bb8d0` is now represented as a source-backed per-body accumulator lifecycle: hinge sample refresh, primary/secondary accumulator reset, and reconstruction of the `+0x158` pointer table from the `+0x15c` row-index vector. Next target: the body accumulator update routines that populate and consume these regions.
