@@ -1,0 +1,37 @@
+{
+  "format": "SHIFT.SpringHelperRuntimeEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe",
+  "source_decompiled_path": "SHIFT.exe.c",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "function": "FUN_007555b0",
+  "virtual_address": "0x7555b0",
+  "caller": {
+    "function": "FUN_00755950",
+    "virtual_address": "0x755950",
+    "return_consume_instruction": "fstp qword ptr [edx+0x548]"
+  },
+  "state_offsets": {
+    "previous_gap": "0x250",
+    "current_gap": "0x248",
+    "crossing_flag": "0x260",
+    "trigger_value": "0x258"
+  },
+  "coefficient_offsets": [
+    "0x1d0", "0x1d8", "0x1e0", "0x1e8", "0x1f0",
+    "0x1f8", "0x200", "0x208", "0x210",
+    "0x218", "0x220", "0x228", "0x230", "0x238", "0x240"
+  ],
+  "branch_constants": {
+    "hard_stop_value": -80000.0,
+    "hard_stop_virtual_address": "0xb09048"
+  },
+  "verified_instruction_facts": [
+    "0x7555b3 loads current +0x248 and 0x7555b9 stores it to +0x250 before recalculation",
+    "0x7556e3 stores the selected gap expression to +0x248",
+    "0x75570a stores the transition-trigger value path to +0x258",
+    "0x755703 sets +0x260 on the current-nonnegative/previous-negative transition",
+    "0x75598e stores the helper's live x87 result from ST0 to runtime +0x548"
+  ],
+  "status": "binary-backed finite-value arithmetic reconstruction"
+}
