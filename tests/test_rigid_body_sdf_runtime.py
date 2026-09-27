@@ -60,7 +60,7 @@ name=link posbody=body negbody=wheel pos=(0,0,0) neg=(1,0,0)
     graph = sdf.resolve_sdf_body_references(report)
     assert graph["ready"] is True
     assert graph["edge_count"] == 2
-    assert graph["body_names"] == ["body", "wheel"]
+    assert graph["body_names"] == ["BODY", "WHEEL"]
     assert graph["adjacency"]["body"] == [0, 1]
     assert graph["adjacency"]["wheel"] == [0, 1]
 
@@ -76,7 +76,7 @@ name=broken posbody=missing negbody=body pos=(0,0,0) neg=(1,0,0)
 """)
     graph = sdf.resolve_sdf_body_references(report)
     assert graph["ready"] is False
-    assert "record:1:BAR:posbody:missing" in graph["unresolved"]
+    assert "record:1:BAR:posbody:MISSING" in graph["unresolved"]
 
 
 def test_sdf_runtime_topology_compiler_preserves_constructor_flags_and_strides():
@@ -162,7 +162,7 @@ name=body
 """)
     graph = sdf.resolve_sdf_body_references(report)
     assert graph["ready"] is False
-    assert graph["duplicate_body_names"] == ["body"]
+    assert graph["duplicate_body_names"] == ["BODY"]
     assert "duplicate-body-name:body" in graph["unresolved"]
 
 
