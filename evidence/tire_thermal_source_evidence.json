@@ -1,0 +1,33 @@
+{
+  "format": "SHIFT.TireThermalSourceEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe.c",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "function": "FUN_00760b50",
+  "source_line": 756009,
+  "called_by": "FUN_00770e80",
+  "per_wheel_object_stride": "0xA80",
+  "wheel_indices": [0, 1, 2, 3],
+  "fields": {
+    "spin_measure_source": "0x350",
+    "spin_heat_scale": "0x858",
+    "accumulated_heat_scale": "0x898",
+    "speed_transfer_base": "0x8a0",
+    "speed_transfer_rate": "0x8a8",
+    "temperature_state": "0x888",
+    "reference_temperature": "0x890",
+    "thermal_tolerance": "0x878",
+    "failure_gain_state": "0x868",
+    "failure_gain_base": "0x870",
+    "thermal_reserve": "0x8b0",
+    "reserve_gain_for_later_state": "0x8b8",
+    "reserve_depletion_capacity": "0x8c0",
+    "reserve_floor": "0x8c8"
+  },
+  "constants": {
+    "kelvin_bias": 273.16,
+    "failure_random_weight": 0.25,
+    "failure_random_base": 0.75
+  },
+  "status": "exact arithmetic boundary; physical units and final derived-state semantics unresolved"
+}
