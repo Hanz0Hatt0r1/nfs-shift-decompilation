@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 405: real BMW M3 solver scalar domain
+
+The real `aarm_multilink.sdf` intake is now lowered through the source-backed `FUN_0073150/FUN_007b1b60` topology and ordering contracts into a deterministic 28-record, 40-scalar solver domain. Each runtime record receives an exact scalar base/end range; the retail 40×40 matrix and row-pointer storage shape is validated from the same domain. A standalone verifier can reproduce the result directly from `BMW_M3_E36.bff`. Next target: populate/cross-check actual coefficient values from a captured solver frame.
+
 ## Phase 404: real BMW M3 physics intake evidence
 
 The supplied `BMW_M3_E36.bff` was decoded with the project's native XMem/LZX backend. The real archive entry `vehicles/physics/suspension/aarm_multilink.sdf` is recorded with measured archive/resource hashes, compression sizes, 11 bodies, 4 JOINT&HINGE records, 20 BAR records and a 40-scalar solver domain. No raw game resource is committed. Next target: feed this real 40-scalar topology into the assembled matrix/storage pipeline and compare captured runtime values.
