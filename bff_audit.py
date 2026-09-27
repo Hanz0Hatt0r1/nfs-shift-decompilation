@@ -22,7 +22,7 @@ FORMAT = "SHIFT.BFFArchiveAudit/1"
 
 
 def _norm_path(value: str) -> str:
-    return value.replace("\", "/").strip("/")
+    return value.replace(chr(92), "/").strip("/")
 
 
 def _extension(path: str) -> str:
