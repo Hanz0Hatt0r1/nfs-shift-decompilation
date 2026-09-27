@@ -38,10 +38,11 @@ def describe_sdf_body_state_projection_contract() -> dict[str, Any]:
                     "d5": "sample[+0x20]*body[+0x18] - body[+0x20]*sample[+0x18]",
                 },
                 "output_components": [
-                    "+0x150[index] += sign * d4",
-                    "+0x158[index] += sign * d6",
-                    "+0x160[index] += sign * d2",
+                    "lane0 = sign * d4",
+                    "lane1 = sign * d6",
+                    "lane2 = sign * d2",
                 ],
+                "destination_layout": "opaque; do not alias to body +0x158 pointer-table storage",
                 "sign_source": "sample +0x34: zero => add, nonzero => subtract",
             },
             "HINGE": {
@@ -67,8 +68,9 @@ def describe_sdf_body_state_projection_contract() -> dict[str, Any]:
                     "d4": "sample[+0x20]*body[+0x18] - body[+0x20]*sample[+0x18]",
                 },
                 "output_components": [
-                    "+0x150[index] += sign * d3",
+                    "primary lane = sign * d3",
                 ],
+                "destination_layout": "opaque; do not alias to body +0x158 pointer-table storage",
                 "sign_source": "sample +0x34: zero => add, nonzero => subtract with +0x48 correction term",
             },
         },
@@ -139,6 +141,7 @@ def describe_sdf_body_state_projection_contract() -> dict[str, Any]:
         },
         "limitations": [
             "Accumulator channels remain storage coordinates; no unsupported force/torque units are assigned.",
+            "JOINT/HINGE destination slots remain opaque until the direct function-body slice is available.",
             "FUN_007bbb80, FUN_007bb250 and FUN_007bb6c0 retain their concrete numerical side effects outside this metadata contract.",
             "Provider-specific solver behavior remains separate.",
         ],
