@@ -80,7 +80,7 @@ GlobalUpgrades=0x8
 
 
 def test_tbf_size_modifiers_apply_after_source_conversion():
-    nodes = (ModifierNode(0.0, 2.0, 0, 0, additive=True),)
+    nodes = (ModifierNode(2.0, 2.0, 0, 0, additive=True),)
     report = parse_turbo_tbf(
         "Turbo1 Size=100\nTurbo2 Size=50\n",
         turbo1_size_upgrade_nodes=nodes,
