@@ -1,14 +1,14 @@
 # Форматный статус SHIFT importer
 
-## Проверено на реальных ресурсах
+## Поддержка и верификация
 
 | Формат | Результат |
 |---|---|
-| BFF v3 | Разбор таблицы/имён/типов/смещений |
-| Type 0/1 | Raw + zlib |
-| Type 2 | XMem/LZX, включая persistent LZX Huffman state между блоками |
-| Type 3 | OodleLZ_Decompress через внешний runtime при наличии библиотеки |
-| X12d==2 | RC4 для record table, name table и каждого payload; потоковый extractor сохраняет RC4 state по сегменту |
+| BFF v3 | Реальные архивы: разбор таблицы/имён/типов/смещений |
+| Type 0/1 | Реальные ресурсы: Raw + zlib |
+| Type 2 | Реальные ресурсы: XMem/LZX, включая persistent LZX Huffman state между блоками |
+| Type 3 | Реализовано: OodleLZ_Decompress через внешний runtime; синтетический dispatch-test |
+| X12d==2 | Реализовано и покрыто синтетическим тестом: RC4 для record table, name table и каждого payload |
 | Reflection XML | Классы, наследование, typed properties, вложенные Fct |
 | BMLY/BML | HEAD/ELMT/ATTR/COLL/NUMB/BOOL/STRS |
 | BMT | Дерево material/shaderparam/value + DDS refs |
