@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 403: retail SDF matrix storage
+
+`sdf_constraint_matrix_assembly_runtime.py` now reproduces the retail matrix storage layout initialized by `FUN_007b3820`, including `scalar_count*scalar_count*8` matrix storage, `+0x158` row pointers and `+0x15c` row-index offsets. The helpers also materialize/read cells through the same `row_ptr[row][column]` addressing and validate the logical/storage views. Next target: validate the assembled matrix against captured runtime values.
+
 ## Phase 402: end-to-end SDF matrix assembly
 
 All recovered JOINT/HINGE/BAR coupling kernels are exposed through one source-faithful lower-triangle assembler, with an explicit derived symmetric view and a solver-ready stage applying `FUN_007b2210`. Next target: feed real M3 E36 SDF samples into the assembled matrix and compare solver rows against captured runtime values.
