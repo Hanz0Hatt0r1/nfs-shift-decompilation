@@ -51,6 +51,8 @@ def test_vehicle_physics_graph_joins_all_four_resource_boundaries(tmp_path):
     assert report["summary"]["sdf_matrix_assembly_ready"] is True
     assert report["summary"]["sdf_matrix_storage_ready"] is True
     assert report["summary"]["sdf_real_solver_domain_ready"] is True
+    assert report["summary"]["sdf_matrix_seed_write_ready"] is True
+    assert report["summary"]["sdf_matrix_seed_write_count"] == 25
     assert report["summary"]["sdf_real_solver_scalar_count"] == 5
     assert report["summary"]["sdf_constraint_shared_body_pair_count"] == 1
     assert report["load_graph"]["chassis"]["runtime_loader"] == "FUN_0074d640 -> FUN_007be420"
