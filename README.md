@@ -14,15 +14,17 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 376.**
+> **Current mainline: Phase 382.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
-> **Current external gate:** obtain one real retail D3D9 capture containing the target BMW M3 body draw and prove the same-instance chain from MEB resource → declaration → indexed draw → VS/PS → constants → sampler resources.
+> **Current physics gate:** extract the BMW M3 CDF/EDF/GDF/SDF resources from `BMW_M3_E36.bff`, preserve source-backed schema/provenance, and advance the PhysX boundary without relying on the monolithic capture.
 
 > **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.
 
 > **Linux/apitrace path:** when apitrace is the available runtime capture source, `tools/extract_apitrace_unique_bmw.py` streams the .trace directly, extracts the known BMW body draw signatures and deduplicates runtime resource instances without first creating a multi-gigabyte text dump. `--auto-trim` can emit a compact trace for subsequent inspection.
+
+> **Physics bundle:** `python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics` extracts the real CDF/EDF/GDF/SDF resources and produces one neutral `SHIFT.VehiclePhysicsAssetGraph/1` profile. The bundle preserves identity and provenance without committing retail payloads.
 >
 > **Single-frame handoff:** `tools/extract_apitrace_single_frame.py --auto-bmw` finds the frame with the strongest BMW target-draw coverage and creates `single_frame.trace` plus a provenance manifest for upload and independent runtime-state analysis.
 >
@@ -74,7 +76,7 @@
 > **Camera event record:** Phase 265 reconstructs the binary event record boundary used by `FUN_0080b9b0` (type 5, channel byte, six dword payload) and the separate type-3 producer `FUN_0080ccb0`.
 > **Linux/Vulkan direction:** Phase 203 establishes Linux as the primary renderer lab. Vulkan is the native backend target, while the software reference renderer remains the deterministic oracle.
 
-> **Physics runtime:** Phases 357–380 reconstruct the PhysX/PhysicsSystem startup boundary, PhysicsParticipant spawn modes, the CSM collision-record boundary, scene-query dispatch, vehicle-physics asset roots, concrete HDV property tables, external engine/EDF loading, the 6-variable driveline solver boundary, the tyre/TBC slip-curve runtime, the per-wheel thermal-state update, the four-wheel wheel-kinematics handoff, the spring gap/transition state boundary, the spring force-construction boundary, the four-wheel three-node thermal integrator, the four-wheel longitudinal-velocity extraction boundary, and the wheel contact-angle factor helper, the collision query/cache contract, the first collision-response response kernel, the common body-load accumulation boundary, and the proven producer of the response-kernel input vector, the auxiliary contact-response kernel, the exact body point-transform helpers, the shared matrix-vector transform boundary, and the vehicle rate/response kernel chain. The caller-side x87 value at runtime +0x548 remains explicitly unresolved. The caller-side x87 value at runtime +0x548 remains explicitly unresolved. Renderer and `RENDER.bff` remain untouched on this track.
+> **Physics runtime:** Phases 357–382 reconstruct the PhysX/PhysicsSystem startup boundary, PhysicsParticipant spawn modes, the CSM collision-record boundary, scene-query dispatch, vehicle-physics asset roots, concrete HDV property tables, external engine/EDF loading, the 6-variable driveline solver boundary, the tyre/TBC slip-curve runtime, the per-wheel thermal-state update, the four-wheel wheel-kinematics handoff, the spring gap/transition state boundary, the spring force-construction boundary, the four-wheel three-node thermal integrator, the four-wheel longitudinal-velocity extraction boundary, and the wheel contact-angle factor helper, the collision query/cache contract, the first collision-response response kernel, the common body-load accumulation boundary, and the proven producer of the response-kernel input vector, the auxiliary contact-response kernel, the exact body point-transform helpers, the shared matrix-vector transform boundary, and the vehicle rate/response kernel chain. The caller-side x87 value at runtime +0x548 remains explicitly unresolved. The caller-side x87 value at runtime +0x548 remains explicitly unresolved. Renderer and `RENDER.bff` remain untouched on this track.
 
 > **SHIFT.exe PE evidence:** `SHIFT.MEBD3D9DescriptorTripleEvidence/1` is now joined into the main color bridge. Exact MEB descriptors `[4,6,0]`/`[4,6,1]` plus the source-backed Type-4 packed-color path resolve the static color declaration to D3D9 Type 4 (`D3DCOLOR`, BGRA memory / RGBA shader order); runtime same-instance proof remains separate.
 
