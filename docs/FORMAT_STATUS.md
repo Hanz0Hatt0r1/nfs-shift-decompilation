@@ -7,6 +7,8 @@
 | BFF v3 | Разбор таблицы/имён/типов/смещений |
 | Type 0/1 | Raw + zlib |
 | Type 2 | XMem/LZX, включая persistent LZX Huffman state между блоками |
+| Type 3 | OodleLZ_Decompress через внешний runtime при наличии библиотеки |
+| X12d==2 | RC4 для record table, name table и каждого payload; потоковый extractor сохраняет RC4 state по сегменту |
 | Reflection XML | Классы, наследование, typed properties, вложенные Fct |
 | BMLY/BML | HEAD/ELMT/ATTR/COLL/NUMB/BOOL/STRS |
 | BMT | Дерево material/shaderparam/value + DDS refs |
@@ -20,6 +22,10 @@
 ## Что ещё не является игровым runtime
 
 Это уже полноценный importer/IR слой, но не готовый Android-порт игры. Пока отсутствуют: точная реконструкция FXO shader bytecode; IMB skeletal animation; SGB scenegraph semantics; полный runtime vehicle/track dependency resolution; замена/порт PhysX 2.x dynamics; Android renderer/audio/input/game loop.
+
+## Ограничения BFF вариантов
+
+`X12d==1` остаётся явно неподдерживаемым вариантом; canonical `nfsshift.bms 0.2.5` также останавливается на таком архиве. Для Type 3 Oodle библиотека намеренно не поставляется в репозитории: задайте `SHIFT_OODLE_LIB` на установленный совместимый runtime.
 
 ## Важный принцип
 
