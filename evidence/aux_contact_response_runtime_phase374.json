@@ -1,0 +1,42 @@
+{
+  "format": "SHIFT.AuxContactResponseRuntime/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "function": "FUN_00758fc0",
+    "line": 753230,
+    "caller": "FUN_00766510"
+  },
+  "record": {
+    "active_flag": "0x00",
+    "gain": "0x38",
+    "scale": "0x40",
+    "directional_curve": "0x48",
+    "point": "0x68"
+  },
+  "caller_instances": [
+    "0x37d8",
+    "0x3858"
+  ],
+  "transform_chain": [
+    "FUN_007aefb0(body + 0xd4, record + 0x68, local_78)",
+    "FUN_007537b0(body, local_78, local_a8)",
+    "FUN_007af0a0(body + 0xd4, local_a8, local_28)"
+  ],
+  "gate": "record.active && relative.z < 0",
+  "response": {
+    "x": 0.0,
+    "y": "FUN_00755340(record + 0x48, relative.x, relative.z) * (record + 0x38) * relative.z^2",
+    "z": "(record + 0x40) * relative.z^2"
+  },
+  "application": {
+    "transform": "FUN_007aefb0(body + 0xd4, local_response, local_90)",
+    "consumer": "FUN_007baa70",
+    "application_point": "local_78"
+  },
+  "unresolved": [
+    "physical names and units",
+    "FUN_007537b0 semantics",
+    "FUN_00755340 physical interpretation"
+  ]
+}
