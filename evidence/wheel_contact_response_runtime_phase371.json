@@ -1,0 +1,56 @@
+{
+  "format": "SHIFT.WheelContactResponseRuntime/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "consumer": "FUN_00766510",
+    "consumer_line": 759370,
+    "curve_packer": "FUN_00752f10",
+    "curve_packer_line": 748873,
+    "directional_factor": "FUN_00755340",
+    "directional_factor_line": 750619,
+    "response_builder": "FUN_007551e0",
+    "response_builder_line": 750568
+  },
+  "state": {
+    "query_scalar": "0x38e0",
+    "query_limit": "0x38e8",
+    "depth_slope": "0x3910",
+    "base_offset": "0x3908",
+    "directional_curve": "0x3918",
+    "response_table": "0x3950",
+    "response_output": "0x39d0"
+  },
+  "query_scalar": {
+    "clamp": "[0, +0x38e8]",
+    "response_gain": "(+0x3910 * clamped + +0x3908) * FUN_00755340(+0x3918, local_60, local_50)"
+  },
+  "directional_factor": {
+    "angle": "atan2(local_60, -local_50)",
+    "angle_gate": "abs(angle) < stored +0x08",
+    "angular": "1 + (1 - cos(angle * stored +0x10)) * stored +0x18",
+    "ratio": "(local_50^2 / (local_60^2 + local_50^2))^4",
+    "factor": "angular * (1 - (1 - ratio) * stored +0x00)"
+  },
+  "response_builder": {
+    "component_vectors": {
+      "0": {"le_zero":"0x00","gt_zero":"0x18"},
+      "1": {"le_zero":"0x48","gt_zero":"0x30"},
+      "2": {"le_zero":"0x78","gt_zero":"0x60"}
+    },
+    "component_scales": ["0x90","0x98","0xa0"],
+    "component_square": true,
+    "auxiliary_negated_if_positive": true
+  },
+  "caller_boundary": {
+    "response_input": "local_200",
+    "application": "FUN_007baa70 after body-local/world transform",
+    "gain_storage": "0x39d0"
+  },
+  "unresolved": [
+    "physical names and units of 0x38e0/0x38e8/0x39d0",
+    "producer of local_200",
+    "physical meaning of response vectors and auxiliary scalars",
+    "FUN_007baa70 semantics"
+  ]
+}
