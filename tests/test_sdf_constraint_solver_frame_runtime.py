@@ -134,7 +134,7 @@ def test_builtin_diagonal_reset_distinguishes_zero_and_nonzero_runtime_flags():
             "block_widths": [3, 2, 1],
             "solver_base_index_by_record": {0: 0, 1: 3, 2: 5},
         },
-        runtime_flag_by_record={0: 0, 1: 0x10, 2: 0},
+        runtime_flag_by_record={0: 0, 1: 0x1, 2: 0},
     )
     assert result["scalar_nodes"] == [3, 4]
     assert result["selected_records"][0]["runtime_flag"] == 0x10
