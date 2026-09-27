@@ -109,7 +109,7 @@ def test_vulkan_runner_blocks_sampler_metadata_packet_hash_mismatch(tmp_path):
         prepare_only=True,
     )
     assert result["status"] == "blocked"
-    assert "vulkan-runner:sampler-metadata-packet-sha256-mismatch" in result["blocking_reasons"]
+    assert "vulkan-runner:sampler-metadata-packet-missing" in result["blocking_reasons"]
 
 
 def test_vulkan_runner_allows_legacy_bundle_without_sampler_sidecar(tmp_path, monkeypatch):

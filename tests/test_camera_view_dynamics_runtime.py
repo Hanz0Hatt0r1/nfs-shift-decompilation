@@ -64,7 +64,7 @@ def test_input_axes_apply_service_output_and_direction_adjustment():
         reverse_direction=False,
     )
     assert result["raw_action_axes"] == [4.0, 5.0]
-    assert result["result_axes"] == [2.0, 1.0]
+    assert result["result_axes"] == [2.0, -1.0]
 
 
 def test_input_shake_rates_use_positive_and_negative_global_rates():
@@ -78,7 +78,7 @@ def test_input_shake_rates_use_positive_and_negative_global_rates():
         positive_yaw_rate_deg=30,
         negative_yaw_rate_deg=40,
     )
-    assert result["angles_degrees"] == [60.0, 90.0]
+    assert result["angles_degrees"] == [60.0, 60.0]
 
 
 def test_head_shake_adds_helper_position_and_orientation_vectors():

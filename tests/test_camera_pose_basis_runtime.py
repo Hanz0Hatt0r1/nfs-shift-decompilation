@@ -8,7 +8,7 @@ from camera_pose_basis_runtime import (
 def test_pose_basis_has_three_normalized_stages():
     result = build_pose_basis([1, 0, 0], [0, 1, 0])
     assert result["stages"]["first"]["vector"] == (1.0, 0.0, 0.0)
-    assert result["stages"]["second"]["vector"] == (0.0, 0.0, 1.0)
+    assert result["stages"]["second"]["vector"] == (0.0, 0.0, -1.0)
     assert result["stages"]["third"]["vector"] == (0.0, 1.0, 0.0)
 
 

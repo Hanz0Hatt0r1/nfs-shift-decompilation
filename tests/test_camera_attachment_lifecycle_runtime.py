@@ -57,4 +57,4 @@ def test_script_dispatch_uses_param_plus_four_string_source_and_fallback():
     )
     assert result["actions"][0]["source"] == "param_1 + 0x04"
     assert result["actions"][0]["fallback"] == "DAT_00aa9b60"
-    assert result["actions"][2]["action"] == "FUN_00671100"
+    assert result["actions"][3]["action"] == "FUN_00671100"

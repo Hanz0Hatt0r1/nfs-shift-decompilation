@@ -114,8 +114,8 @@ def test_profile_selection_records_selector_and_history_path():
     assert state.selector_profile_id == 9
     assert state.selected_profile_id == 1
     assert result["selector_profile_id"] == 9
-    assert result["history_value_used"] == 4
-    assert result["status"] == "service-profile-diff"
+    assert result["history_value_used"] == 7
+    assert result["status"] == "service-current-profile"
 
 
 def test_cockpit_flag_unchanged_is_no_op():

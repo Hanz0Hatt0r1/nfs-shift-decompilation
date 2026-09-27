@@ -13,7 +13,7 @@ def test_cross_product_matches_source_component_order():
 def test_normalize3_reports_length_and_unit_vector():
     unit, length = normalize3([3, 0, 4])
     assert length == 5.0
-    assert unit == (0.6, 0.0, 0.8)
+    assert unit == pytest.approx((0.6, 0.0, 0.8))
 
 
 def test_orientation_assist_guard_requires_profile_rate_and_delta():

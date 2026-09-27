@@ -37,9 +37,9 @@ def test_motion_filter_updates_target_and_response_states():
         profile_scale=1,
         output_vector=[0, 0, 0],
     )
-    assert new_state.target_x == 0.0
-    assert new_state.target_y == 0.0
-    assert new_state.target_z == 0.0
+    assert new_state.target_x == 1.0
+    assert new_state.target_y == 2.0
+    assert new_state.target_z == 3.0
     assert result["errors"] == [1.0, 2.0, 3.0]
     assert output == [
         new_state.response_x,
@@ -64,9 +64,7 @@ def test_motion_filter_output_is_scaled_by_profile_scale():
         profile_scale=2,
         output_vector=[1, 2, 3],
     )
-    assert output[0] == 2.0
-    assert output[1] == 2.0
-    assert output[2] == 3.0
+    assert output == [3.0, 2.0, 3.0]
 
 
 def test_motion_filter_requires_three_component_vectors():

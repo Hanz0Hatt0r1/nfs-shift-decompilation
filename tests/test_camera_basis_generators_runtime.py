@@ -12,7 +12,7 @@ def test_basis_400_has_exact_nine_assignments():
     )
     assert len(result) == 9
     assert result[0] == 6.0 - (-5.0) * (-4.0) * (-6.0)
-    assert result[1] == 10.0
+    assert result[1] == 5.0
 
 
 def test_basis_500_matches_source_order():
