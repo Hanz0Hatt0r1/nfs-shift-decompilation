@@ -47,7 +47,7 @@ def test_type_specific_direction_and_projection_sources_are_explicit():
     ) == Vec3(0.0, 1.0, 0.0)
     assert direction_for_type(
         1, (0.0, 3.0, 4.0), (1.0, 0.0, 0.0)
-    ).y == pytest.approx(0.6)
+    ) == Vec3(0.0, 0.6, 0.8)
     assert compute_projection(
         (2.0, 0.0, 0.0), (0.0, 3.0, 4.0), spring_type=0
     ) == pytest.approx(0.0)
