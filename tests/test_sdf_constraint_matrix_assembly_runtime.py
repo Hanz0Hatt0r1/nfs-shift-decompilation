@@ -155,3 +155,38 @@ def test_retail_matrix_storage_rejects_invalid_row_index_length():
 def test_retail_matrix_storage_rejects_non_square_matrix():
     with pytest.raises(ValueError, match="square"):
         runtime.flatten_retail_matrix([[1, 2], [3]])
+
+
+def test_solver_ready_matrix_exposes_retail_storage_after_identity_reset():
+    result = runtime.build_solver_ready_matrix(
+        3,
+        contributions=[
+            {
+                "kind": "seed",
+                "row_base": 0,
+                "column_base": 0,
+                "block": (
+                    (1, 1, 0),
+                    (1, 1, 1),
+                    (0, 1, 1),
+                ),
+            },
+        ],
+        rhs=[5, 6, 7],
+        selected_identity_nodes=[1],
+    )
+    assert result["format"] == "SHIFT.SDFSolverReadyMatrix/2"
+    assert result["matrix"][1] == [0.0, 1.0, 0.0]
+    assert result["rhs"] == [5.0, 0.0, 7.0]
+    retail = result["retail_storage"]
+    assert retail["row_indices"] == [0, 3, 6]
+    assert retail["row_pointers"] == [0, 24, 48]
+    assert retail["matrix_pool"][4] == 1.0
+    assert retail["matrix_pool"][1] == 0.0
+    assert retail["matrix_pool"][3] == 0.0
+
+
+def test_assembly_contract_exposes_identity_reset_as_late_stage():
+    report = runtime.describe_sdf_constraint_matrix_assembly_contract()
+    assert report["assembly_order"][-1] == "BAR kernel"
+    assert report["limitations"][1].startswith("Coefficient values")
