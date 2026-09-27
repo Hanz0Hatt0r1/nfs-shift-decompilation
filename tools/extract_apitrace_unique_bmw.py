@@ -400,6 +400,16 @@ def update(
 
 def _geometry_resources(state: State, draw_call: int) -> dict:
     resources: dict[str, dict] = {}
+    declaration = state.decl
+    if declaration and declaration.pointer and declaration.pointer != "NULL":
+        creation = state.active_creation("decl", declaration.pointer, draw_call)
+        resources["vertex_declaration"] = {
+            "pointer": declaration.pointer,
+            "binding_call": declaration.call,
+            "creation": creation.json() if creation else None,
+            "same_instance": creation is not None,
+        }
+
     stream0 = state.streams.get(0)
     if stream0 and stream0.pointer and stream0.pointer != "NULL":
         creation = state.active_creation("vb", stream0.pointer, draw_call)
@@ -594,6 +604,7 @@ def extract(
     )
 
     resources_index: dict[str, list] = {
+        "vertex_declarations": [],
         "vertex_buffers": [],
         "index_buffers": [],
     }
@@ -602,6 +613,7 @@ def extract(
 
     for row in unique_rows:
         for bucket, key_name in [
+            ("vertex_declarations", "vertex_declaration"),
             ("vertex_buffers", "vertex_buffer"),
             ("index_buffers", "index_buffer"),
         ]:
@@ -626,6 +638,8 @@ def extract(
                 else state.lifecycle.get("vb", {})
                 .get(resource["pointer"], Lifecycle())
                 .json()
+                if bucket == "vertex_buffers"
+                else None
             )
             resources_index[bucket].append(payload)
             if creation.get("call") is not None:

@@ -64,6 +64,19 @@ def test_pointer_reuse_after_release_is_not_deduplicated(tmp_path: Path):
         (out / "unique_bmw_geometry.json").read_text(encoding="utf-8")
     )
     rows = report["geometry"]
+    assert rows[0]["resources"]["vertex_declaration"] == {
+        "pointer": "0xddd",
+        "binding_call": 4,
+        "creation": {
+            "kind": "decl",
+            "call": 3,
+            "pointer": "0xddd",
+            "raw": "3 IDirect3DDevice9::CreateVertexDeclaration(pVertexElements = NULL, ppDecl = 0xddd) = S_OK",
+        },
+        "same_instance": True,
+    }
+    assert len(report["resources"]["vertex_declarations"]) == 1
+
     reused = [
         row for row in rows
         if row["resources"].get("index_buffer", {}).get("pointer") == "0xbbb"
