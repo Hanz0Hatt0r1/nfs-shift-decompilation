@@ -331,8 +331,8 @@ def compile_sdf_runtime_topology(
 ) -> dict[str, Any]:
     """Lower parsed SDF records into the proven FUN_007b3150 topology boundary.
 
-    This does not create PhysX objects. It records body indices, section flags,
-    endpoint references and the runtime record stride used for each allocation.
+    JOINT&HINGE is materialized into two runtime records: one JOINT and one
+    HINGE. The returned order matches the source construction arrays.
     """
     body_records = records_by_type(report, "BODY")
     body_index = {
@@ -344,12 +344,22 @@ def compile_sdf_runtime_topology(
         for index, record in enumerate(body_records)
     }
 
+    materializations = {
+        "JOINT": ("JOINT",),
+        "HINGE": ("HINGE",),
+        "BAR": ("BAR",),
+        "JOINT&HINGE": ("JOINT", "HINGE"),
+    }
+    strides = {"JOINT": 0xA0, "HINGE": 0xA0, "BAR": 0xB8}
+
     constraints: list[dict[str, Any]] = []
     unresolved: list[str] = []
-    for record_index, record in enumerate(report.get("records") or []):
-        section = str(record.get("section", "")).upper()
-        if section not in {"JOINT", "HINGE", "BAR", "JOINT&HINGE"}:
+    for source_record_index, record in enumerate(report.get("records") or []):
+        source_section = str(record.get("section", "")).upper()
+        runtime_sections = materializations.get(source_section)
+        if runtime_sections is None:
             continue
+
         values = {
             str(entry.get("name")): entry.get("value")
             for entry in record.get("entries") or []
@@ -359,21 +369,15 @@ def compile_sdf_runtime_topology(
         posbody_key = "" if posbody is None else str(posbody).upper()
         negbody_key = "" if negbody is None else str(negbody).upper()
         if posbody_key and posbody_key not in body_index:
-            unresolved.append(f"record:{record_index}:posbody:{posbody}")
+            unresolved.append(
+                f"record:{source_record_index}:posbody:{posbody}"
+            )
         if negbody_key and negbody_key not in body_index:
-            unresolved.append(f"record:{record_index}:negbody:{negbody}")
+            unresolved.append(
+                f"record:{source_record_index}:negbody:{negbody}"
+            )
 
-        flags = {
-            "joint": section in {"JOINT", "JOINT&HINGE"},
-            "hinge": section in {"HINGE", "JOINT&HINGE"},
-            "bar": section == "BAR",
-        }
-        flag_word = (
-            (SDF_FLAG_JOINT if flags["joint"] else 0)
-            | (SDF_FLAG_HINGE if flags["hinge"] else 0)
-            | (SDF_FLAG_BAR if flags["bar"] else 0)
-        )
-        vectors = {}
+        vectors: dict[str, Any] = {}
         for key in ("axis", "neg", "pos"):
             value = values.get(key)
             if isinstance(value, list) and len(value) == 3:
@@ -381,27 +385,43 @@ def compile_sdf_runtime_topology(
         if isinstance(values.get("pos"), str):
             vectors["pos_body_anchor_name"] = str(values["pos"])
 
-        constraints.append({
-            "record_index": record_index,
-            "section": section,
-            "flags": flags,
-            "flag_word": flag_word,
-            "posbody": posbody,
-            "negbody": negbody,
-            "posbody_index": body_index.get(posbody_key),
-            "negbody_index": body_index.get(negbody_key),
-            "vectors": vectors,
-            "runtime_stride": 0xB8 if section == "BAR" else 0xA0,
-            "body_pointer_slots": {
-                "posbody": "+0x78",
-                "negbody": "+0x80",
-            },
-            "source_constructor": "FUN_007b3150",
-        })
+        for materialization in runtime_sections:
+            flag_word = {
+                "JOINT": SDF_FLAG_JOINT,
+                "HINGE": SDF_FLAG_HINGE,
+                "BAR": SDF_FLAG_BAR,
+            }[materialization]
+            constraints.append({
+                "source_record_index": source_record_index,
+                "source_section": source_section,
+                "section": materialization,
+                "flags": {
+                    "joint": materialization == "JOINT",
+                    "hinge": materialization == "HINGE",
+                    "bar": materialization == "BAR",
+                },
+                "flag_word": flag_word,
+                "posbody": posbody,
+                "negbody": negbody,
+                "posbody_index": body_index.get(posbody_key),
+                "negbody_index": body_index.get(negbody_key),
+                "vectors": dict(vectors),
+                "runtime_stride": strides[materialization],
+                "body_pointer_slots": {
+                    "posbody": "+0x78",
+                    "negbody": "+0x80",
+                },
+                "source_constructor": "FUN_007b3150",
+                "array_slot": {
+                    "JOINT": "+0x1c",
+                    "HINGE": "+0x24",
+                    "BAR": "+0x2c",
+                }[materialization],
+            })
 
     return {
-        "format": "SHIFT.SDFRuntimeTopology/1",
-        "version": 1,
+        "format": "SHIFT.SDFRuntimeTopology/2",
+        "version": 2,
         "status": "compiled" if not unresolved else "blocked",
         "ready": not unresolved,
         "body_count": len(body_records),
@@ -420,6 +440,7 @@ def compile_sdf_runtime_topology(
             "joint_flag": "byte +0x10 & 1",
             "hinge_flag": "byte +0x10 & 2",
             "bar_flag": "byte +0x10 & 4",
+            "joint_hinge_materialization": "JOINT&HINGE source record emits JOINT then HINGE runtime records",
             "posbody_runtime_slot": "+0x78",
             "negbody_runtime_slot": "+0x80",
             "bar_endpoint_vectors": ["+0x28", "+0x30", "+0x38", "+0x40", "+0x48", "+0x50"],
@@ -429,6 +450,8 @@ def compile_sdf_runtime_topology(
             "Anchor semantics are preserved as source vectors/names; no coordinate-system naming is inferred.",
         ],
     }
+
+
 
 
 
