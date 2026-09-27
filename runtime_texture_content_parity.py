@@ -50,7 +50,12 @@ def _rgb_sha256(image: Mapping[str, Any]) -> str:
 
 
 def _find_draw_snapshot(runtime_report: Mapping[str, Any], frame: int, draw_index: int) -> Mapping[str, Any]:
-    for current_frame in runtime_report.get("frames") or []:
+    # Accept both the full capture report ({frames:[...]}) and a single-frame
+    # snapshot object ({frame, draw_snapshots:[...]}).
+    frame_rows = runtime_report.get("frames")
+    if frame_rows is None and runtime_report.get("frame") == frame:
+        frame_rows = [runtime_report]
+    for current_frame in frame_rows or []:
         if not isinstance(current_frame, Mapping) or current_frame.get("frame") != frame:
             continue
         for snapshot in current_frame.get("draw_snapshots") or []:
