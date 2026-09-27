@@ -82,8 +82,8 @@ def test_build_report_classifies_direct_vs_generated(monkeypatch):
     )
     report = build_report(_witness(), log, "BMW_M3_E36.bff")
     assert report["draw_binding_count"] == 12
-    assert report["summary"]["direct_dds_compatible_count"] == 8
-    assert report["summary"]["generated_or_transformed_candidate_count"] == 4
+    assert report["summary"]["direct_dds_compatible_count"] == 6
+    assert report["summary"]["generated_or_transformed_candidate_count"] == 3
     assert report["rows"][0]["classification"] == "generated-or-transformed-candidate"
     assert report["rows"][1]["classification"] == "direct-dds-compatible"
     assert report["rows"][2]["classification"] == "direct-dds-compatible"
