@@ -13,7 +13,7 @@ from wheel_kinematics_runtime import (
     WHEEL_STATE_STRIDE,
     build_pair_adjustment_observation,
     build_wheel_kinematics_contract,
-    evaluate_wheel_spring_helper,
+    evaluate_wheel_spring_gap,
     normalize_relative_vector,
     prepare_wheel_kinematic_observation,
 )
@@ -82,25 +82,20 @@ def test_invalid_wheel_index_and_zero_length_close_fail():
 
 
 
-def test_fun_00755950_chain_reaches_decoded_spring_helper():
-    from spring_helper_runtime import SpringHelperCoefficients
-
-    coeffs = SpringHelperCoefficients(
-        c_1d0=10.0, c_1d8=1.0, c_1e0=2.0, c_1e8=100.0,
-        c_1f0=0.0, c_1f8=3.0, c_200=4.0, c_208=50.0,
-        c_210=5.0, c_218=1.0, c_220=2.0, c_228=3.0,
-        c_230=4.0, c_238=2.0, c_240=5.0,
-    )
-    step = evaluate_wheel_spring_helper(
+def test_fun_00755950_chain_reaches_decoded_spring_gap_helper():
+    step = evaluate_wheel_spring_gap(
+        spring_type=0,
         distance_reference=8.0,
         relative_length=5.0,
+        lower_boundary=2.0,
+        upper_boundary=5.0,
         projection_input=-1.0,
         previous_gap=-0.5,
-        coefficients=coeffs,
     )
     assert step.displacement == 3.0
-    assert step.velocity_projection == 1.0
-    assert step.crossing_triggered is True
+    assert step.current_gap == 2.0
+    assert step.transition_triggered is True
+    assert step.trigger_value == 1.0
 
 
 def test_final_transform_boundary_is_preserved_without_semantic_guess():
