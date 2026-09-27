@@ -539,6 +539,162 @@ def build_sdf_constraint_connectivity_matrix(
     }
 
 
+def optimize_sdf_constraint_order(
+    report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Recover FUN_007b1b60's constraint permutation heuristic."""
+    connectivity = build_sdf_constraint_connectivity_matrix(report)
+    if connectivity.get("ready") is not True:
+        return {
+            "format": "SHIFT.SDFConstraintOrder/1",
+            "version": 1,
+            "status": "blocked",
+            "ready": False,
+            "order": [],
+            "position_by_node": [],
+            "unresolved": list(connectivity.get("unresolved") or []),
+            "evidence": {"source_function": "FUN_007b1b60"},
+        }
+
+    matrix = connectivity["matrix"]
+    widths = [int(value) for value in connectivity["node_widths"]]
+    n = len(widths)
+    pairs = [
+        (int(item["left"]), int(item["right"]))
+        for item in connectivity["shared_body_pairs"]
+    ]
+
+    order = list(range(n))
+    position_by_node = list(range(n))
+
+    def block_offsets(current_order: Sequence[int]) -> list[int]:
+        offsets = [0] * n
+        cursor = 0
+        for node in current_order:
+            offsets[node] = cursor
+            cursor += widths[node]
+        return offsets
+
+    def cost(offsets: Sequence[int]) -> int:
+        return sum((offsets[left] - offsets[right]) ** 2 for left, right in pairs)
+
+    offsets = block_offsets(order)
+    initial_cost = cost(offsets)
+    best_cost = initial_cost
+    best_position = list(position_by_node)
+    improvement_count = 0
+    pass_count = 0
+
+    while True:
+        improved_this_pass = False
+        pass_count += 1
+        for node in range(max(0, n - 1)):
+            phase = 0
+            while phase < 2:
+                current_position = position_by_node[node]
+                if phase == 0:
+                    if current_position == 0:
+                        phase = 1
+                        continue
+                    other = order[current_position - 1]
+                    order[current_position - 1], order[current_position] = (
+                        order[current_position],
+                        order[current_position - 1],
+                    )
+                    position_by_node[node] -= 1
+                    position_by_node[other] += 1
+                else:
+                    if current_position >= n - 1:
+                        phase += 1
+                        continue
+                    other = order[current_position + 1]
+                    order[current_position], order[current_position + 1] = (
+                        order[current_position + 1],
+                        order[current_position],
+                    )
+                    position_by_node[node] += 1
+                    position_by_node[other] -= 1
+
+                candidate_cost = cost(block_offsets(order))
+                if candidate_cost < best_cost:
+                    best_cost = candidate_cost
+                    best_position = list(position_by_node)
+                    improvement_count += 1
+                    improved_this_pass = True
+                    continue
+
+                position_by_node = list(best_position)
+                order = [0] * n
+                for candidate_node, candidate_position in enumerate(position_by_node):
+                    order[candidate_position] = candidate_node
+                phase += 1
+
+        if not improved_this_pass:
+            break
+
+    return {
+        "format": "SHIFT.SDFConstraintOrder/1",
+        "version": 1,
+        "status": "optimized",
+        "ready": True,
+        "constraint_count": n,
+        "order": order,
+        "position_by_node": best_position,
+        "block_widths": widths,
+        "block_offsets": block_offsets(order),
+        "initial_cost": initial_cost,
+        "final_cost": best_cost,
+        "improvement_count": improvement_count,
+        "pass_count": pass_count,
+        "connectivity": connectivity,
+        "evidence": {
+            "source_function": "FUN_007b1b60",
+            "pair_rule": "constraints sharing posbody/negbody are paired",
+            "joint_block_width": 3,
+            "hinge_block_width": 2,
+            "bar_block_width": 1,
+            "objective": "sum((block_offset[left] - block_offset[right])^2)",
+            "search": "repeated accepted adjacent left/right moves until no improvement",
+        },
+        "limitations": [
+            "The upstream FUN_007b2010/FUN_007ba2b0 matrix population is represented by its proven endpoint-sharing relation, not by unknown coefficient values.",
+        ],
+    }
+
+
+def compile_sdf_constraint_solver_graph_from_report(
+    report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Build connectivity, recover source constraint order, then apply FUN_007b1360."""
+    ordering = optimize_sdf_constraint_order(report)
+    if ordering.get("ready") is not True:
+        return {
+            "format": "SHIFT.SDFConstraintSolverGraph/2",
+            "version": 2,
+            "status": "blocked",
+            "ready": False,
+            "ordering": ordering,
+            "unresolved": list(ordering.get("unresolved") or []),
+        }
+
+    matrix = ordering["connectivity"]["matrix"]
+    order = ordering["order"]
+    ordered_matrix = [
+        [matrix[original_row][original_column] for original_column in order]
+        for original_row in order
+    ]
+    graph = compile_sdf_constraint_solver_graph(ordered_matrix)
+    return {
+        **graph,
+        "format": "SHIFT.SDFConstraintSolverGraph/2",
+        "version": 2,
+        "ordering": ordering,
+        "source_constraint_order": order,
+    }
+
+
+
+
 def compile_sdf_constraint_solver_graph(
     matrix: Sequence[Sequence[float | int]],
 ) -> dict[str, Any]:
