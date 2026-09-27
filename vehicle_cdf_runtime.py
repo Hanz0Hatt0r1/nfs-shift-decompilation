@@ -48,7 +48,6 @@ def _map(*specs: CDFPropertySpec) -> dict[str, CDFPropertySpec]:
 GENERAL = _map(
     _spec("Rules", "FUN_007a65e0", 0x14, shape="scalar32"),
     _spec("GarageDisplayFlags", "FUN_007a65e0", 0x18, shape="scalar32"),
-    _spec("FeelerFlags", "FUN_007a65e0", shape="scalar32"),
     _spec("Mass", "FUN_007a75a0", 0x1c, shape="scalar64"),
     _spec("Inertia", "FUN_007a75a0", 0x30, 0x44, 0x58, shape="tuple3"),
     _spec("DriftInertia", "FUN_007a75a0", 0x78, 0x8c, 0xa0, shape="tuple3"),
@@ -95,7 +94,6 @@ for i in range(5):
         f"AdjustableUpgradeLevel_{i}", "FUN_007a65e0", 0x2364 + i * 4, shape="scalar32"
     )
 GENERAL["UpgradedTyre"] = _spec("UpgradedTyre", "FUN_007a63e0", shape="string")
-GENERAL["Notes"] = _spec("Notes", "FUN_007a63e0", shape="string")
 
 
 for _i, _name in enumerate(("Undertray00", "Undertray01", "Undertray02", "Undertray03")):
