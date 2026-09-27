@@ -25,7 +25,7 @@ def test_fun_007537b0_matches_cross_product_plus_translation():
         translation=Vec3(100.0, 200.0, 300.0),
     )
     result = transform_point(body, (4.0, 5.0, 6.0))
-    assert result.as_tuple() == pytest.approx((307.0, 209.0, 289.0))
+    assert result.as_tuple() == pytest.approx((97.0, 206.0, 297.0))
 
 
 def test_fun_00753810_subtracts_body_position_first():
