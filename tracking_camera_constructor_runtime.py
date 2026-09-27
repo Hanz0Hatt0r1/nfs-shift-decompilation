@@ -105,6 +105,7 @@ def tracking_camera_constructor_layout() -> dict[str, Any]:
             "+0x130",
         ],
         "raw_initializers": raw,
+        "sentinels": {key: value for key, value in raw.items() if value in (0xFFFFFFFF, 0x7FFFFFFF)},
         "byte_initializers": {
             "+0x238": 0,
             "+0x240": 0,
