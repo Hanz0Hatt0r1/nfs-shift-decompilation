@@ -13,7 +13,7 @@ from tire_model_runtime import (
 
 def test_tbc_layout_and_scope_dispatch_are_frozen():
     c = build_curve_contract()
-    assert c["functions"]["load_tbc"] == "FUN_007a10f0"
+    assert c["functions"]["load_tbc"] == "FUN_007a32a0"
     assert c["functions"]["build_curve"] == "FUN_007a07c0"
     assert c["functions"]["evaluate_curve"] == "FUN_007a0c00"
     assert SLIP_CURVE_OBJECT["record_stride"] == 0x38
@@ -84,7 +84,7 @@ def test_precompiled_curve_uses_segment_clamp():
 def test_source_evidence_on_recovered_source(tmp_path):
     src = tmp_path / "SHIFT.exe.c"
     src.write_bytes(
-        b"""FUN_007a10f0
+        b"""FUN_007a32a0
 FUN_007a07c0
 FUN_007a0c00(*(int *)(iVar9 + 0x6e0),0,0x3ff00000,0.0001)
 "[SLIPCURVE]"
