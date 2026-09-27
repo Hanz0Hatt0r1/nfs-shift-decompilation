@@ -27,7 +27,8 @@ def test_type1_tracking_camera_temporarily_rebases_spline_id_by_count():
         shared_type_object="funcpropdata",
     )
     row = result["serialized"][0]
-    assert row["temporary_subtraction"] == 1
+    assert result["non_type1_count"] == 1
+    assert row["temporary_subtraction"] == result["non_type1_count"]
     assert row["serialized_spline_id"] == 6
     assert row["restored_spline_id"] == 7
 
