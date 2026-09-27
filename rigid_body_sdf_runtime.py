@@ -282,6 +282,8 @@ def resolve_sdf_body_references(
                 unresolved.append(
                     f"record:{record_index}:{record.get('section')}:{field}:{name}"
                 )
+        posbody_key = "" if posbody is None else str(posbody).upper()
+        negbody_key = "" if negbody is None else str(negbody).upper()
         edges.append({
             "record_index": record_index,
             "section": record.get("section"),
