@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 396: body-frame preparation
+
+`FUN_007ba7e0` is reconstructed as `FUN_007af0a0 → component-wise coefficient scaling → FUN_007aefb0`, with exact body offsets and float32 boundaries. The resulting vector is stored at `+0x30/+0x38/+0x40`.
+
 ## Phase 395: body-state primitives
 
 `FUN_007ba860` now exposes exact coefficient/reciprocal storage and `FUN_007ba9e0` exposes exact world-point-to-body accumulator algebra. Next target is the non-opaque transform stage `FUN_007ba7e0`.

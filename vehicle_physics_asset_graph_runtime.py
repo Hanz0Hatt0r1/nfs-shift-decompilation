@@ -35,6 +35,7 @@ from sdf_body_impulse_runtime import describe_sdf_body_impulse_primitives
 from sdf_body_solver_export_runtime import describe_sdf_body_solver_export_contract
 from sdf_body_tensor_runtime import describe_sdf_body_tensor_contract
 from sdf_body_state_primitives_runtime import describe_sdf_body_state_primitives
+from sdf_body_frame_runtime import describe_sdf_body_frame_contract
 from sdf_body_state_projection_runtime import describe_sdf_body_state_projection_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
@@ -95,6 +96,7 @@ def build_profile(
     sdf_body_solver_export = describe_sdf_body_solver_export_contract()
     sdf_body_tensor = describe_sdf_body_tensor_contract()
     sdf_body_state_primitives = describe_sdf_body_state_primitives()
+    sdf_body_frame = describe_sdf_body_frame_contract()
     sdf_body_state_projection = describe_sdf_body_state_projection_contract()
 
     blockers: list[str] = []
@@ -190,6 +192,7 @@ def build_profile(
             "sdf_body_solver_export_ready": sdf_body_solver_export.get("ready") is True,
             "sdf_body_tensor_ready": sdf_body_tensor.get("ready") is True,
             "sdf_body_state_primitives_ready": sdf_body_state_primitives.get("ready") is True,
+            "sdf_body_frame_ready": sdf_body_frame.get("ready") is True,
             "sdf_body_state_projection_contract_ready": sdf_body_state_projection.get("ready") is True,
         },
         "details": {
@@ -213,6 +216,7 @@ def build_profile(
             "sdf_body_solver_export": sdf_body_solver_export,
             "sdf_body_tensor": sdf_body_tensor,
             "sdf_body_state_primitives": sdf_body_state_primitives,
+            "sdf_body_frame": sdf_body_frame,
             "sdf_body_state_projection": sdf_body_state_projection,
         },
         "blockers": list(dict.fromkeys(blockers)),
