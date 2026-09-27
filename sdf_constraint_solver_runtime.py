@@ -34,6 +34,7 @@ def describe_sdf_sparse_solver_contract(
         "status": "execution-contract",
         "ready": True,
         "constraint_count": count,
+        "solver_scalar_count": count,
         "function": "FUN_007b0f20",
         "inputs": {
             "graph_this": {
@@ -129,6 +130,7 @@ def validate_sdf_solver_contract(report: Mapping[str, Any]) -> dict[str, Any]:
         "ready": not errors,
         "status": "validated" if not errors else "blocked",
         "constraint_count": graph_count,
+        "solver_scalar_count": graph_count,
         "errors": list(dict.fromkeys(errors)),
         "evidence": {
             "solver": "FUN_007b0f20",
