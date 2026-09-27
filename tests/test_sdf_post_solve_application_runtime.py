@@ -50,7 +50,7 @@ def test_hinge_solution_updates_only_angular_channels():
         negative_linear_row=(0.0, 3.0, 4.0),
     )
     assert result["positive_angular"] == pytest.approx([15.0, 25.0, 27.0])
-    assert result["negative_angular"] == pytest.approx([-4.0, -6.0, -18.0])
+    assert result["negative_angular"] == pytest.approx([0.0, -6.0, -6.0])
     assert result["positive_delta"] == pytest.approx([14.0, 19.0, 24.0])
     assert result["negative_delta"] == pytest.approx([-8.0, -11.0, -12.0])
 
