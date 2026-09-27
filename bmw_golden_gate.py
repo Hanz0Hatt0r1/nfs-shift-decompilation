@@ -26,9 +26,30 @@ def validate_bmw_golden_gate(
     draw_packet: Mapping[str, Any],
     *,
     material_binding: Mapping[str, Any] | None = None,
+    runtime_geometry_proof: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     reasons: list[str] = []
     golden_meta = golden.get("golden") or {}
+
+    runtime_geometry_summary = None
+    if runtime_geometry_proof is not None:
+        proof_format = runtime_geometry_proof.get("format")
+        proof_ready = runtime_geometry_proof.get("ready") is True
+        if proof_format != "SHIFT.BMWM3RuntimeGeometryProof/1":
+            reasons.append("runtime-geometry-proof:invalid-format")
+        if not proof_ready:
+            proof_reasons = runtime_geometry_proof.get("blocking_reasons") or ["not-ready"]
+            reasons.extend(
+                f"runtime-geometry-proof:{reason}"
+                for reason in proof_reasons
+            )
+        runtime_geometry_summary = {
+            "format": proof_format,
+            "status": runtime_geometry_proof.get("status"),
+            "ready": proof_ready,
+            "blocking_reasons": list(runtime_geometry_proof.get("blocking_reasons") or []),
+        }
+
     mesh = golden.get("mesh") or {}
     packet_mesh = draw_packet.get("mesh") or {}
 
@@ -181,6 +202,7 @@ def validate_bmw_golden_gate(
         },
         "shader_selection": selection_rows,
         "asset_contract": asset_contract,
+        "runtime_geometry_proof": runtime_geometry_summary,
     }
 
 
@@ -189,6 +211,7 @@ def validate_files(
     draw_packet_path: str | Path,
     *,
     material_binding_path: str | Path | None = None,
+    runtime_geometry_proof_path: str | Path | None = None,
 ) -> dict[str, Any]:
     golden = json.loads(Path(golden_path).read_text(encoding="utf-8"))
     packet = json.loads(Path(draw_packet_path).read_text(encoding="utf-8"))
@@ -197,7 +220,17 @@ def validate_files(
         if material_binding_path
         else None
     )
-    return validate_bmw_golden_gate(golden, packet, material_binding=material)
+    runtime_geometry_proof = (
+        json.loads(Path(runtime_geometry_proof_path).read_text(encoding="utf-8"))
+        if runtime_geometry_proof_path
+        else None
+    )
+    return validate_bmw_golden_gate(
+        golden,
+        packet,
+        material_binding=material,
+        runtime_geometry_proof=runtime_geometry_proof,
+    )
 
 
 def main() -> int:
@@ -205,12 +238,14 @@ def main() -> int:
     ap.add_argument("golden")
     ap.add_argument("draw_packet")
     ap.add_argument("--material-binding")
+    ap.add_argument("--runtime-geometry-proof")
     ap.add_argument("-o", "--output")
     args = ap.parse_args()
     report = validate_files(
         args.golden,
         args.draw_packet,
         material_binding_path=args.material_binding,
+        runtime_geometry_proof_path=args.runtime_geometry_proof,
     )
     payload = json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
     if args.output:

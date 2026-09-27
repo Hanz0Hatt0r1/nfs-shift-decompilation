@@ -169,3 +169,38 @@ def test_bmw_golden_gate_reports_exact_asset_contract_from_repo_manifest():
     report=validate_bmw_golden_gate(golden,packet)
     assert report["ready"] is True
     assert report["asset_contract"]["ready"] is True
+
+
+def test_bmw_golden_gate_accepts_ready_runtime_geometry_proof():
+    proof = {
+        "format": "SHIFT.BMWM3RuntimeGeometryProof/1",
+        "status": "proven",
+        "ready": True,
+        "blocking_reasons": [],
+    }
+    report = validate_bmw_golden_gate(_golden(), _packet(), runtime_geometry_proof=proof)
+    assert report["ready"] is True
+    assert report["runtime_geometry_proof"]["ready"] is True
+
+
+def test_bmw_golden_gate_blocks_unready_runtime_geometry_proof():
+    proof = {
+        "format": "SHIFT.BMWM3RuntimeGeometryProof/1",
+        "status": "blocked",
+        "ready": False,
+        "blocking_reasons": ["parity:pointer-metadata-missing"],
+    }
+    report = validate_bmw_golden_gate(_golden(), _packet(), runtime_geometry_proof=proof)
+    assert report["ready"] is False
+    assert "runtime-geometry-proof:parity:pointer-metadata-missing" in report["blocking_reasons"]
+
+
+def test_bmw_golden_gate_rejects_wrong_runtime_geometry_proof_format():
+    proof = {
+        "format": "SHIFT.BMWM3RuntimeGeometryProof/0",
+        "status": "proven",
+        "ready": True,
+    }
+    report = validate_bmw_golden_gate(_golden(), _packet(), runtime_geometry_proof=proof)
+    assert report["ready"] is False
+    assert "runtime-geometry-proof:invalid-format" in report["blocking_reasons"]
