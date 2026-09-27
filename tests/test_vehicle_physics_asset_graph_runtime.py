@@ -21,6 +21,8 @@ def test_vehicle_physics_graph_joins_all_four_resource_boundaries(tmp_path):
         tmp_path,
         "susp.sdf",
         "[BODY]\nname=body mass=(1) inertia=(1,1,1) pos=(0,0,0) ori=(0,0,0)\n"
+        "[BODY]\nname=wheel mass=(1) inertia=(1,1,1) pos=(0,0,0) ori=(0,0,0)\n"
+        "[BODY]\nname=spindle mass=(1) inertia=(1,1,1) pos=(0,0,0) ori=(0,0,0)\n"
         "[JOINT&HINGE]\nposbody=wheel negbody=spindle pos=wheel axis=(1,0,0)\n",
     )
     report = build_profile(cdf=cdf, edf=edf, gdf=gdf, sdf=sdf)
