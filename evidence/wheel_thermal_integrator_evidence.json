@@ -1,0 +1,52 @@
+{
+  "format": "SHIFT.WheelThermalIntegratorEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe.c",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "function_lines": {
+    "FUN_00752fc0": 748915,
+    "FUN_00755a60": 750869,
+    "FUN_00770e80": 765608,
+    "FUN_00760b50": 756009
+  },
+  "call_topology": {
+    "caller": "FUN_00770e80",
+    "callee": "FUN_00755a60",
+    "wheel_base": "this+0x400",
+    "wheel_stride": "0x150",
+    "wheel_count": 4,
+    "caller_expression": "pdVar3=(double*)(this+0x740); FUN_00755a60((int)(pdVar3-0x68), ...); pdVar3 += 0x150/8"
+  },
+  "state_offsets": {
+    "temperature_0": "0x7b0",
+    "temperature_1": "0x7b8",
+    "temperature_2": "0x7c0",
+    "reservoir": "0x7c8",
+    "derived_reservoir": "0x7d8",
+    "wear": "0x7f8",
+    "output": "0x800",
+    "accumulator": "0x850"
+  },
+  "constants": {
+    "kelvin_bias": 273.16,
+    "reservoir_low": 273.16,
+    "reservoir_high": 546.32,
+    "wear_floor": 0.6875,
+    "sqrt_floor_adjustment": 0.25,
+    "final_quadratic_scale": 0.5
+  },
+  "disassembly_constants": {
+    "0xb08e30": 273.16,
+    "0xb08690": 0.6875,
+    "0xb09048": -80000.0,
+    "0xb09078": 546.32,
+    "0xaa9a20": 0.5,
+    "0xaa9af0": 1.0,
+    "0xaa9b08": 0.25,
+    "0xab1688": 3.0,
+    "0xab44b8": 4.0,
+    "0xab4aa0": 6.0,
+    "0xab4d18": 1.5
+  },
+  "status": "source plus instruction-stream backed arithmetic boundary"
+}
