@@ -157,3 +157,45 @@ def test_runtime_golden_gate_rejects_shader_and_material_range_on_different_draw
     assert report['ready'] is False
     assert 'runtime:shader-or-resource-instance-not-found' in report['blocking_reasons']
 
+
+
+def test_runtime_golden_gate_accepts_ready_geometry_proof(tmp_path):
+    m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'; p=tmp_path/'p.json'
+    m.write_text(json.dumps(_material())); r.write_text(json.dumps(_runtime())); u.write_text(json.dumps({'6':10}))
+    p.write_text(json.dumps({
+        'format':'SHIFT.BMWM3RuntimeGeometryProof/1',
+        'status':'proven',
+        'ready':True,
+        'blocking_reasons':[],
+    }))
+    report=validate_runtime_golden_gate(m,r,usage_map_path=u,runtime_geometry_proof_path=p)
+    assert report['ready'] is True
+    assert report['runtime_geometry_proof']['ready'] is True
+
+
+def test_runtime_golden_gate_blocks_unready_geometry_proof(tmp_path):
+    m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'; p=tmp_path/'p.json'
+    m.write_text(json.dumps(_material())); r.write_text(json.dumps(_runtime())); u.write_text(json.dumps({'6':10}))
+    p.write_text(json.dumps({
+        'format':'SHIFT.BMWM3RuntimeGeometryProof/1',
+        'status':'blocked',
+        'ready':False,
+        'blocking_reasons':['parity:pointer-metadata-missing'],
+    }))
+    report=validate_runtime_golden_gate(m,r,usage_map_path=u,runtime_geometry_proof_path=p)
+    assert report['ready'] is False
+    assert 'runtime-geometry-proof:parity:pointer-metadata-missing' in report['blocking_reasons']
+
+
+def test_runtime_golden_gate_rejects_invalid_geometry_proof_format(tmp_path):
+    m=tmp_path/'m.json'; r=tmp_path/'r.json'; u=tmp_path/'u.json'; p=tmp_path/'p.json'
+    m.write_text(json.dumps(_material())); r.write_text(json.dumps(_runtime())); u.write_text(json.dumps({'6':10}))
+    p.write_text(json.dumps({
+        'format':'SHIFT.BMWM3RuntimeGeometryProof/0',
+        'status':'proven',
+        'ready':True,
+        'blocking_reasons':[],
+    }))
+    report=validate_runtime_golden_gate(m,r,usage_map_path=u,runtime_geometry_proof_path=p)
+    assert report['ready'] is False
+    assert 'runtime-geometry-proof:invalid-format' in report['blocking_reasons']
