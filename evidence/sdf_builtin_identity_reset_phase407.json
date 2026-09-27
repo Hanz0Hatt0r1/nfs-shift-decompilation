@@ -1,0 +1,29 @@
+{
+  "format": "SHIFT.SDFBuiltinIdentityResetEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_007b2210",
+    "source_line": 812551
+  },
+  "builtin_path": {
+    "matrix_pool_global": "+0x38",
+    "row_pointers_global": "+0x3c",
+    "rhs_global": "+0x40",
+    "per_body_matrix_pool": "+0x154",
+    "per_body_row_pointers": "+0x158",
+    "per_body_row_indices": "+0x15c"
+  },
+  "operation_order": [
+    "zero selected row",
+    "zero selected column",
+    "set selected diagonal to 1.0",
+    "zero selected RHS"
+  ],
+  "provider_path": {
+    "provider_pointer": "+0x48",
+    "virtual_slot": "+0x1c"
+  },
+  "status": "source-backed-executable"
+}
