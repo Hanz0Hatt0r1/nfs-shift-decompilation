@@ -200,6 +200,8 @@ def build_scene_descriptor_defaults() -> dict[str, Any]:
 def build_physics_system_contract(mission: str | None = None) -> dict[str, Any]:
     """Return the reconstructed startup contract around FUN_007506b0."""
     paths = build_physics_paths(mission) if mission else None
+    provider_registry = build_physics_provider_registry()
+    provider_dispatch = build_physics_provider_dispatch_contract()
     return {
         "format": FORMAT,
         "version": 1,
@@ -211,6 +213,8 @@ def build_physics_system_contract(mission: str | None = None) -> dict[str, Any]:
             "FUN_00710870",
             "FUN_00750080",
         ],
+        "provider_registry": provider_registry,
+        "provider_dispatch": provider_dispatch,
         "physx": {
             "sdk_version": PHYSX_SDK_VERSION,
             "sdk_version_hex": _hex(PHYSX_SDK_VERSION),
