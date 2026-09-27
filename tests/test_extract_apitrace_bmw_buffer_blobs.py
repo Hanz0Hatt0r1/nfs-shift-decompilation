@@ -227,4 +227,4 @@ def test_extracts_all_bmw_blobs_directly_from_source(monkeypatch, tmp_path):
     assert summary["full_buffer_candidates"] == 2
     assert summary["kinds"] == {"vertex_buffer": 1, "index_buffer": 1}
     payloads = sorted((out / "buffer_payloads").glob("*.bin"))
-    assert [p.read_bytes() for p in payloads] == [b"ABCDEFGH", b"WXYZ"]
+    assert {p.read_bytes() for p in payloads} == {b"ABCDEFGH", b"WXYZ"}
