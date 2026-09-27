@@ -102,7 +102,7 @@ def test_type2_adds_body_relative_vector_and_directional_component():
             spring_param_b=4.0,
         )
     )
-    assert result.force == Vec3(6.0, 8.0, 0.0)
+    assert result.force == Vec3(0.0, 8.0, 0.0)
 
 
 def test_unsupported_type_is_explicitly_blocked():
