@@ -70,6 +70,9 @@ Reconstruct FUN_00755a60's four-wheel three-node thermal integrator: exact 0x400
 ## Phase 368: wheel longitudinal velocity runtime
 
 Reconstruct FUN_00755f80 and its four-wheel caller FUN_00763570: exact 0x400/0xA80 wheel topology, local-frame first-component extraction, reconstructed-vector subtraction from shared body velocity, and the guarded rear-pair averaging branch. Transform semantics remain externalized. Renderer and RENDER.bff remain untouched.
+## Phase 369: wheel contact-angle factor runtime
+
+Reconstruct FUN_00758ad0 exactly enough for deterministic runtime use: absolute-value preprocessing against DAT_00c10f94, clamp to [0,6], pi/6 angle conversion, x87 cosine helper, float32 factor constants, and FUN_00765c40 four-wheel storage at +0xA70/+0xA78 with 0x150 stride. Collision query internals remain the next boundary. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
