@@ -58,6 +58,9 @@ the original BFF archives at runtime.
 ## Phase 364: wheel kinematics runtime boundary
 
 Reconstruct FUN_00758b50 as an evidence-backed four-wheel kinematics boundary: the 0x848/0xA80 wheel-state layout, matching 0x400/0xA80 wheel-runtime layout, relative-vector normalization, exact FUN_00755950 scalar handoff, front/rear pair adjustment arithmetic and the final per-wheel transform call topology. The opaque FUN_007555b0 result and downstream tyre/contact force semantics remain unresolved. Renderer and RENDER.bff remain untouched.
+## Phase 365: spring helper x87 runtime
+
+Recover FUN_007555b0's live x87 return ABI and finite-value response path, including the +0x248/+0x250 gap history, transition trigger at +0x260/+0x258, coefficient-side damping branches, the -80000 hard-stop value, and the direct FUN_00755950 -> FUN_007555b0 -> runtime+0x548 handoff. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
