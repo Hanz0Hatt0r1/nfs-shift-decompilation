@@ -1,0 +1,33 @@
+{
+  "format": "SHIFT.SpringGapRuntimeEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe",
+  "source_decompiled_path": "SHIFT.exe.c",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "function": "FUN_007555b0",
+  "virtual_address": "0x7555b0",
+  "caller": {
+    "function": "FUN_00755950",
+    "virtual_address": "0x755950",
+    "caller_instruction_after_call": "fstp qword ptr [runtime+0x548]",
+    "return_semantics": "unresolved"
+  },
+  "state_offsets": {
+    "previous_gap": "0x250",
+    "current_gap": "0x248",
+    "crossing_flag": "0x260",
+    "trigger_value": "0x258"
+  },
+  "boundary_offsets": {
+    "lower_boundary": "0x238",
+    "upper_boundary": "0x240"
+  },
+  "verified_instruction_facts": [
+    "0x7555b3 loads current +0x248 and 0x7555b9 stores it to +0x250 before recalculation",
+    "0x7556e3 stores the selected two-sided gap expression to +0x248",
+    "0x755703 sets +0x260 when current gap is positive and previous gap is negative",
+    "0x75570a stores the passed trigger value at +0x258 on the transition",
+    "0x755950 caller consumes an x87 value with FSTP into runtime +0x548; the recovered C body does not establish a stable named return value"
+  ],
+  "status": "binary/source-backed spring gap and transition-state reconstruction; caller x87 return remains unresolved"
+}

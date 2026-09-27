@@ -80,3 +80,8 @@ This phase does not claim:
 
 The result is a machine-readable wheel-kinematics boundary that later tyre/contact
 decompilation can consume without inventing semantics.
+
+
+## Phase 365 correction
+
+The x87 call chain is decoded separately as SHIFT.SpringHelperRuntime/1. FUN_00755950 consumes the live x87 result of FUN_007555b0 and stores it at runtime +0x548. The helper also maintains +0x248/+0x250 gap history, the crossing flag +0x260 and trigger value +0x258. Phase 364 left this result opaque because the recovered C prototype lost the x87 return type; Phase 365 closes that ABI boundary while leaving physical units and higher-level tyre/contact semantics unresolved.
