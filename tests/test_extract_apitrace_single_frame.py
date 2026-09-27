@@ -19,6 +19,33 @@ def _lines():
     ]
 
 
+def test_parse_pointer_targets_accepts_current_unique_bmw_schema(tmp_path: Path):
+    evidence = tmp_path / "unique_bmw_geometry.json"
+    evidence.write_text(
+        json.dumps(
+            {
+                "geometry": [],
+                "scan": {
+                    "target_vertex_buffer_pointer": "0x27b39460",
+                    "target_index_buffer_pointers": {
+                        "50": "0x27b394e0",
+                        "2098": "0x27b39560",
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    vb, ibs = mod._parse_pointer_targets(evidence)
+
+    assert vb == "0x27b39460"
+    assert ibs == {
+        50: "0x27b394e0",
+        2098: "0x27b39560",
+    }
+
+
 def test_find_bmw_frame_selects_highest_primitive_coverage(monkeypatch, tmp_path: Path):
     trace = tmp_path / "shift.trace"
     trace.write_bytes(b"trace")
