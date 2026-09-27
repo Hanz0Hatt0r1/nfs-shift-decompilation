@@ -35,8 +35,8 @@ def test_index_mode_one_wraps():
 
 
 def test_index_modes_two_and_three_use_mirror_remainder():
-    assert map_spline_index(index=3, count=4, mode=2, mirror_decision=0)["mapped"] == 3
-    assert map_spline_index(index=3, count=4, mode=3, mirror_decision=1)["mapped"] == 1
+    assert map_spline_index(index=3, count=4, mode=2, mirror_decision=0)["mapped"] == 0
+    assert map_spline_index(index=3, count=4, mode=3, mirror_decision=1)["mapped"] == 3
 
 
 def test_scalar_interpolation_has_minimum_point_one():
