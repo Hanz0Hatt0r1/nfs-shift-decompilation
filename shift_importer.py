@@ -3802,6 +3802,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.RenderBinding/1 JSON output")
     p.set_defaults(fn=cmd_render_bindings)
 
+    p = sp.add_parser("bab-corpus", help="build a BAB corpus report from resource_analysis.json")
+    p.add_argument("input", help="resource_analysis.json")
+    p.add_argument("output", help="SHIFT.BABCorpusReport/1 JSON output")
+    p.set_defaults(fn=cmd_bab_corpus)
+
     p = sp.add_parser("bab-payload-diff", help="compare two opaque BAB animation payload files without assigning semantics")
     p.add_argument("first", help="first extracted .bab file")
     p.add_argument("second", help="second extracted .bab file")
