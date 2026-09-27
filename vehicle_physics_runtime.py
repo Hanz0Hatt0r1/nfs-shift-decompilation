@@ -366,6 +366,46 @@ def parse_rpm_torque_points(text: str | bytes, *, strict: bool = False) -> dict[
             "order_line": "0x6e1",
         },
     }
+
+def sample_rpm_torque_curve(
+    points: Sequence[RPMTorquePoint],
+    rpm: float,
+) -> tuple[float, float]:
+    """Reproduce FUN_007becb0's RPMTorque interpolation boundary.
+
+    The source selects a bracketing pair by RPM, linearly interpolates both
+    torque channels, and when the first channel exceeds the second, replaces
+    both with their midpoint.
+    """
+    if not points:
+        return 0.0, 0.0
+    if len(points) == 1:
+        return float(points[0].brake), float(points[0].throttle)
+
+    x = float(rpm)
+    upper = 1
+    while upper < len(points) and x >= float(points[upper].rpm):
+        upper += 1
+
+    if upper <= 1:
+        low_index, high_index = 0, 1
+    elif upper < len(points):
+        low_index, high_index = upper - 1, upper
+    else:
+        low_index, high_index = len(points) - 2, len(points) - 1
+
+    low = points[low_index]
+    high = points[high_index]
+    denominator = float(high.rpm) - float(low.rpm)
+    t = 0.0 if denominator == 0.0 else (x - float(low.rpm)) / denominator
+    brake = (float(high.brake) - float(low.brake)) * t + float(low.brake)
+    throttle = (float(high.throttle) - float(low.throttle)) * t + float(low.throttle)
+    if brake > throttle:
+        midpoint = (brake + throttle) * 0.5
+        brake = midpoint
+        throttle = midpoint
+    return brake, throttle
+
 ENGINE_RPM_TORQUE = {
     "storage_base_offset": 0x1818,
     "entry_stride": 0x20,
@@ -376,7 +416,7 @@ ENGINE_RPM_TORQUE = {
         "component_1 >= component_0",
         "component_2 strictly increases relative to previous component_2",
     ],
-    "status": "source component order and validation branches proven; interpolation/postload semantics remain unresolved",
+    "status": "source component order, validation branches and FUN_007becb0 interpolation proven",
     "text_tuple_order": ["rpm", "brake", "throttle"],
     "storage_order": ["brake", "throttle", "rpm"],
 }
@@ -450,7 +490,7 @@ def build_vehicle_physics_contract() -> dict[str, Any]:
             "physical units for individual HDV properties",
             "full internal variable naming of the 6-variable driveline system",
             "exact meaning of wheel sign state values -1/0/1 beyond observed branch behavior",
-            "exact RPMTorque component semantics and final interpolation formula",
+            "physical meaning of brake/throttle torque channels beyond source labels",
             "concrete cross-file ownership below .cgp/.cdf/.edf/.gdf/.sdf",
         ],
     }
@@ -532,7 +572,7 @@ def main(argv: list[str] | None = None) -> int:
 __all__ = [
     "FORMAT", "GENERAL_PROPERTIES", "ENGINE_PROPERTIES", "WHEEL_PROPERTIES",
     "SUSPENSION_PROPERTIES", "DRIVELINE_PROPERTIES", "SECTION_TARGETS",
-    "ENGINE_RPM_TORQUE", "RPMTorquePoint", "parse_rpm_torque_points", "DRIVELINE_SOLVER", "build_vehicle_physics_contract",
+    "ENGINE_RPM_TORQUE", "RPMTorquePoint", "parse_rpm_torque_points", "sample_rpm_torque_curve", "DRIVELINE_SOLVER", "build_vehicle_physics_contract",
     "validate_contract_shape", "analyze_source",
 ]
 
