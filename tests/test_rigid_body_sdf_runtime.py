@@ -42,3 +42,38 @@ def test_sdf_strict_mode_rejects_malformed_line():
     import pytest
     with pytest.raises(ValueError, match="unparsed"):
         sdf.parse_sdf("[BODY]\nbad line\n", strict=True)
+
+
+def test_sdf_body_reference_graph_resolves_posbody_and_negbody():
+    import rigid_body_sdf_runtime as sdf
+
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT&HINGE]
+posbody=wheel negbody=body pos=wheel axis=(1,0,0)
+[BAR]
+name=link posbody=body negbody=wheel pos=(0,0,0) neg=(1,0,0)
+""")
+    graph = sdf.resolve_sdf_body_references(report)
+    assert graph["ready"] is True
+    assert graph["edge_count"] == 2
+    assert graph["body_names"] == ["body", "wheel"]
+    assert graph["adjacency"]["body"] == [0, 1]
+    assert graph["adjacency"]["wheel"] == [0, 1]
+
+
+def test_sdf_body_reference_graph_blocks_missing_body():
+    import rigid_body_sdf_runtime as sdf
+
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BAR]
+name=broken posbody=missing negbody=body pos=(0,0,0) neg=(1,0,0)
+""")
+    graph = sdf.resolve_sdf_body_references(report)
+    assert graph["ready"] is False
+    assert "record:1:BAR:posbody:missing" in graph["unresolved"]
