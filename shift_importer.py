@@ -5,6 +5,8 @@ Features:
   * BFF v3 parsing (big-endian marker, little-endian fields as used by SHIFT)
   * Type 0 / Type 1 extraction
   * Type 2 XMem/LZX extraction with a pure-Python LZX decoder
+  * Type 3 Oodle extraction via an optional externally supplied Oodle library
+  * X12d==2 RC4 encryption/decryption support
   * resource signature/extension classification
   * manifest generation with compressed/uncompressed hashes
   * extraction preserving logical resource paths
@@ -26,6 +28,7 @@ import struct
 import sys
 import zlib
 import ctypes
+import ctypes.util
 
 from resource_formats import analyze_decoded_resource, parse_bml, parse_reflection_xml, parse_dds_metadata
 from shader_ir import parse_shader_blobs, parse_fx_source
@@ -519,6 +522,197 @@ def xmem_decompress(data: bytes, expected_size: int, *, reset: bool = True) -> b
 
 
 # ---------------------------------------------------------------------------
+# SHIFT BFF encryption / optional Oodle
+# ---------------------------------------------------------------------------
+
+SHIFT_BFF_RC4_KEY = b"@lLy0urRaC3ar3bE"
+
+
+class RC4:
+    """Small stateful RC4 implementation used by SHIFT X12d==2 archives.
+
+    QuickBMS resets the encryption state before each logical BFF segment:
+    record table, name table, and each individual payload.  Keeping this
+    stateful lets the streaming extractor preserve that behavior across
+    chunks.
+    """
+
+    __slots__ = ("s", "i", "j")
+
+    def __init__(self, key: bytes):
+        if not key:
+            raise ValueError("RC4 key must not be empty")
+        self.s = list(range(256))
+        j = 0
+        for i in range(256):
+            j = (j + self.s[i] + key[i % len(key)]) & 0xFF
+            self.s[i], self.s[j] = self.s[j], self.s[i]
+        self.i = 0
+        self.j = 0
+
+    def crypt(self, data: bytes) -> bytes:
+        out = bytearray(len(data))
+        s = self.s
+        i = self.i
+        j = self.j
+        for n, value in enumerate(data):
+            i = (i + 1) & 0xFF
+            j = (j + s[i]) & 0xFF
+            s[i], s[j] = s[j], s[i]
+            out[n] = value ^ s[(s[i] + s[j]) & 0xFF]
+        self.i = i
+        self.j = j
+        return bytes(out)
+
+
+def rc4_crypt(data: bytes, key: bytes = SHIFT_BFF_RC4_KEY) -> bytes:
+    """RC4-transform a single logical segment."""
+
+    return RC4(key).crypt(data)
+
+
+class BFFOodleUnavailable(RuntimeError):
+    """Raised when a Type-3 BFF requires Oodle but no compatible library exists."""
+
+
+_OODLE_DECOMPRESS = None
+_OODLE_LIBRARY = None
+_OODLE_LOAD_ATTEMPTED = False
+
+
+def _oodle_library_candidates() -> list[str]:
+    candidates: list[str] = []
+    env = os.environ.get("SHIFT_OODLE_LIB")
+    if env:
+        candidates.append(env)
+
+    if os.name == "nt":
+        candidates.extend(
+            [
+                "oo2core_9_win64.dll",
+                "oo2core_8_win64.dll",
+                "oo2core_7_win64.dll",
+                "oo2core_6_win64.dll",
+                "oo2core_5_win64.dll",
+                "oo2core_4_win64.dll",
+                "oo2core_3_win64.dll",
+            ]
+        )
+    else:
+        candidates.extend(
+            [
+                "liboo2corelinux64.so",
+                "liboo2corelinux64.so.9",
+                "liboo2corelinux64.so.8",
+                "liboo2corelinux64.so.7",
+                "liboo2corelinux64.so.6",
+            ]
+        )
+        found = ctypes.util.find_library("oo2corelinux64")
+        if found:
+            candidates.append(found)
+
+    # Keep explicit paths/names first while deduplicating the candidate list.
+    return list(dict.fromkeys(candidates))
+
+
+def _load_oodle():
+    """Resolve OodleLZ_Decompress without bundling or redistributing Oodle."""
+
+    global _OODLE_DECOMPRESS, _OODLE_LIBRARY, _OODLE_LOAD_ATTEMPTED
+    if _OODLE_LOAD_ATTEMPTED:
+        return _OODLE_DECOMPRESS
+
+    _OODLE_LOAD_ATTEMPTED = True
+    loader = getattr(ctypes, "WinDLL", ctypes.CDLL) if os.name == "nt" else ctypes.CDLL
+    errors: list[str] = []
+
+    for candidate in _oodle_library_candidates():
+        try:
+            lib = loader(candidate)
+            fn = lib.OodleLZ_Decompress
+            fn.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_size_t,
+                ctypes.c_void_p,
+                ctypes.c_size_t,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_void_p,
+                ctypes.c_size_t,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_size_t,
+                ctypes.c_int,
+            ]
+            fn.restype = ctypes.c_ssize_t
+            _OODLE_LIBRARY = candidate
+            _OODLE_DECOMPRESS = fn
+            return fn
+        except (OSError, AttributeError) as exc:
+            errors.append(f"{candidate}: {exc}")
+
+    return None
+
+
+def oodle_library_path() -> str | None:
+    """Return the loaded Oodle library path/name, if one was found."""
+
+    _load_oodle()
+    return _OODLE_LIBRARY
+
+
+def oodle_available() -> bool:
+    return _load_oodle() is not None
+
+
+def oodle_decompress(data: bytes, expected_size: int) -> bytes:
+    """Decompress a Type-3 BFF payload using an installed Oodle runtime."""
+
+    if expected_size <= 0:
+        raise ValueError(f"invalid Oodle output size: {expected_size}")
+    fn = _load_oodle()
+    if fn is None:
+        candidates = ", ".join(_oodle_library_candidates()) or "<none>"
+        raise BFFOodleUnavailable(
+            "BFF Type 3 requires OodleLZ_Decompress, but no compatible Oodle "
+            f"library was found. Set SHIFT_OODLE_LIB to its path. Tried: {candidates}"
+        )
+
+    src = ctypes.create_string_buffer(data)
+    dst = ctypes.create_string_buffer(expected_size)
+    # OodleLZ_Decompress(
+    #   compBuf, compBufSize, rawBuf, rawLen,
+    #   fuzzSafe, checkCRC, verbosity,
+    #   decBufBase, decBufSize, fpCallback, callbackUserData,
+    #   decoderMemory, decoderMemorySize, threadPhase)
+    result = fn(
+        ctypes.cast(src, ctypes.c_void_p),
+        len(data),
+        ctypes.cast(dst, ctypes.c_void_p),
+        expected_size,
+        1,
+        0,
+        0,
+        None,
+        0,
+        None,
+        None,
+        None,
+        0,
+        0,
+    )
+    if result != expected_size:
+        raise ValueError(
+            f"OodleLZ_Decompress failed ({result}) for {len(data)} compressed "
+            f"bytes; expected {expected_size} decoded bytes"
+        )
+    return dst.raw
+
+
+# ---------------------------------------------------------------------------
 # BFF
 # ---------------------------------------------------------------------------
 
@@ -558,12 +752,22 @@ class BFF:
                 f"{self.path}: record table mismatch x118=0x{self.x118:X}, "
                 f"expected=0x{self.file_count * REC_SIZE:X}"
             )
+        if self.x12d == 1:
+            raise NotImplementedError(
+                f"{self.path}: X12d==1 is not implemented; the canonical "
+                "nfsshift.bms 0.2.5 also rejects this variant"
+            )
+        if self.x12d not in (0, 2):
+            raise ValueError(f"{self.path}: unsupported X12d value {self.x12d}")
 
+        self._encrypted = self.x12d == 2
+        self._encryption_key = SHIFT_BFF_RC4_KEY
         self.records_offset = HEADER_RECORDS_OFFSET
         self.name_base = NAME_BASE_OFFSET + self.x118
         self.name_end = self.name_base + self.x120
         if self.name_end > self._size:
             raise ValueError(f"{self.path}: name table exceeds file size")
+        self._name_table = self._read_name_table()
         self.entries = list(self._read_entries())
 
     def close(self) -> None:
@@ -578,9 +782,26 @@ class BFF:
     def __exit__(self, exc_type, exc, tb):
         self.close()
 
+    def _read_name_table(self) -> bytes:
+        self._fp.seek(self.name_base)
+        table = self._fp.read(self.x120)
+        if len(table) != self.x120:
+            raise ValueError(f"{self.path}: truncated name table")
+        if self._encrypted:
+            table = rc4_crypt(table, self._encryption_key)
+        return table
+
     def _read_entries(self) -> Iterator[Entry]:
         self._fp.seek(self.records_offset)
         records = self._fp.read(self.file_count * REC_SIZE)
+        expected = self.file_count * REC_SIZE
+        if len(records) != expected:
+            raise ValueError(
+                f"{self.path}: truncated record table ({len(records)} of {expected} bytes)"
+            )
+        if self._encrypted:
+            records = rc4_crypt(records, self._encryption_key)
+
         for i in range(self.file_count):
             ro = i * REC_SIZE
             offset = struct.unpack_from("<Q", records, ro + 8)[0]
@@ -589,34 +810,54 @@ class BFF:
             typ = records[ro + 32]
             crc = struct.unpack_from("<I", records, ro + 34)[0]
             ext = struct.unpack_from("<I", records, ro + 38)[0]
-            self._fp.seek(self.name_base + i * NAME_REC_SIZE)
-            name_off = struct.unpack("<Q", self._fp.read(8))[0]
+            no = i * NAME_REC_SIZE
+            if no + NAME_REC_SIZE > len(self._name_table):
+                raise ValueError(f"{self.path}: entry {i} name-record exceeds name table")
+            name_off = struct.unpack_from("<Q", self._name_table, no)[0]
             if not (self.name_base <= name_off < self.name_end):
                 raise ValueError(f"{self.path}: entry {i} has invalid name offset 0x{name_off:X}")
-            self._fp.seek(name_off)
-            nraw = self._fp.read(1)
-            if not nraw:
-                raise ValueError(f"{self.path}: entry {i} missing name length")
-            n = nraw[0]
-            name = self._fp.read(n).decode("utf-8", "replace").replace("\\", "/")
+            table_off = name_off - self.name_base
+            if table_off >= len(self._name_table):
+                raise ValueError(f"{self.path}: entry {i} name offset is outside decoded table")
+            n = self._name_table[table_off]
+            start = table_off + 1
+            end = start + n
+            if end > len(self._name_table):
+                raise ValueError(f"{self.path}: entry {i} name extends beyond name table")
+            name = self._name_table[start:end].decode("utf-8", "replace").replace("\\", "/")
             if offset + zsize > self._size:
                 raise ValueError(f"{self.path}: entry {i} data range outside archive")
             yield Entry(self.path.name, i, name, offset, zsize, size, typ, crc, ext)
 
     def raw_payload(self, entry: Entry) -> bytes:
         self._fp.seek(entry.offset)
-        return self._fp.read(entry.compressed_size)
+        payload = self._fp.read(entry.compressed_size)
+        if len(payload) != entry.compressed_size:
+            raise ValueError(
+                f"{entry.path}: truncated payload ({len(payload)} of {entry.compressed_size} bytes)"
+            )
+        return payload
+
+    def _decrypt_payload(self, payload: bytes) -> bytes:
+        if self._encrypted:
+            return rc4_crypt(payload, self._encryption_key)
+        return payload
 
     def extract_entry(self, entry: Entry, type2: str = "lzx") -> bytes:
         payload = self.raw_payload(entry)
         if entry.type == 0:
-            out = payload[:entry.uncompressed_size]
+            out = self._decrypt_payload(payload[:entry.uncompressed_size])
         elif entry.type == 1:
-            out = zlib.decompress(payload)
+            out = zlib.decompress(self._decrypt_payload(payload))
         elif entry.type == 2:
             if type2 == "raw":
                 return payload
-            out = xmem_decompress(payload, entry.uncompressed_size)
+            out = xmem_decompress(
+                self._decrypt_payload(payload),
+                entry.uncompressed_size,
+            )
+        elif entry.type == 3:
+            out = oodle_decompress(self._decrypt_payload(payload), entry.uncompressed_size)
         else:
             raise ValueError(f"{entry.path}: unsupported BFF compression type {entry.type}")
         if len(out) != entry.uncompressed_size:
@@ -633,24 +874,29 @@ class BFF:
         *,
         chunk_size: int = 1024 * 1024,
     ) -> Path:
-        """Extract one entry directly to disk without retaining the decoded file in RAM."""
+        """Extract one entry directly to disk without retaining decoded data in RAM."""
+
         out_path = Path(output_path)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         self._fp.seek(entry.offset)
 
         if entry.type == 0:
             remaining = entry.uncompressed_size
+            cipher = RC4(self._encryption_key) if self._encrypted else None
             with out_path.open("wb") as out:
                 while remaining:
                     chunk = self._fp.read(min(chunk_size, remaining))
                     if not chunk:
                         raise ValueError(f"{entry.path}: truncated raw payload")
+                    if cipher is not None:
+                        chunk = cipher.crypt(chunk)
                     out.write(chunk)
                     remaining -= len(chunk)
             return out_path
 
         if entry.type == 1:
             decoder = zlib.decompressobj()
+            cipher = RC4(self._encryption_key) if self._encrypted else None
             remaining = entry.compressed_size
             with out_path.open("wb") as out:
                 while remaining:
@@ -658,6 +904,8 @@ class BFF:
                     if not chunk:
                         raise ValueError(f"{entry.path}: truncated zlib payload")
                     remaining -= len(chunk)
+                    if cipher is not None:
+                        chunk = cipher.crypt(chunk)
                     decoded = decoder.decompress(chunk)
                     if decoded:
                         out.write(decoded)
@@ -675,10 +923,13 @@ class BFF:
             if type2 == "raw":
                 remaining = entry.compressed_size
                 with out_path.open("wb") as out:
+                    cipher = RC4(self._encryption_key) if self._encrypted else None
                     while remaining:
                         chunk = self._fp.read(min(chunk_size, remaining))
                         if not chunk:
                             raise ValueError(f"{entry.path}: truncated raw XMem payload")
+                        if cipher is not None:
+                            chunk = cipher.crypt(chunk)
                         out.write(chunk)
                         remaining -= len(chunk)
                 return out_path
@@ -687,6 +938,7 @@ class BFF:
             state.reset()
             compressed_remaining = entry.compressed_size
             decoded_total = 0
+            cipher = RC4(self._encryption_key) if self._encrypted else None
 
             def read_exact(size: int) -> bytes:
                 nonlocal compressed_remaining
@@ -696,6 +948,8 @@ class BFF:
                 if len(data) != size:
                     raise ValueError(f"{entry.path}: truncated XMem payload")
                 compressed_remaining -= size
+                if cipher is not None:
+                    data = cipher.crypt(data)
                 return data
 
             with out_path.open("wb") as out:
@@ -726,6 +980,21 @@ class BFF:
                 raise ValueError(
                     f"{entry.path}: decoded {decoded_total} bytes, expected {entry.uncompressed_size}"
                 )
+            return out_path
+
+        if entry.type == 3:
+            remaining = entry.compressed_size
+            chunks = bytearray()
+            cipher = RC4(self._encryption_key) if self._encrypted else None
+            while remaining:
+                chunk = self._fp.read(min(chunk_size, remaining))
+                if not chunk:
+                    raise ValueError(f"{entry.path}: truncated Oodle payload")
+                remaining -= len(chunk)
+                if cipher is not None:
+                    chunk = cipher.crypt(chunk)
+                chunks += chunk
+            out_path.write_bytes(oodle_decompress(bytes(chunks), entry.uncompressed_size))
             return out_path
 
         raise ValueError(f"{entry.path}: unsupported BFF compression type {entry.type}")
