@@ -890,7 +890,8 @@ def build_sdf_scalar_connectivity_matrix(
         left_start = offsets_by_position[ordered_left]
         left_width = ordered_widths[ordered_left]
         for left_scalar in range(left_start, left_start + left_width):
-            scalar_matrix[left_scalar][left_scalar] = 1.0
+            for right_scalar in range(left_start, left_start + left_width):
+                scalar_matrix[left_scalar][right_scalar] = 1.0
         original_left = order[ordered_left]
         for ordered_right in range(ordered_left + 1, record_count):
             original_right = order[ordered_right]
