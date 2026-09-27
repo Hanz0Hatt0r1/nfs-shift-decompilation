@@ -1,3 +1,5 @@
+import pytest
+
 from static_camera_spline_movement_runtime import (
     SplineCursor,
     move_cursor_backward_segment,
@@ -51,8 +53,8 @@ def test_backward_scan_uses_exact_five_percent_steps():
         initial_score=-1.0,
         score_at=score_at,
     )
-    assert seen == [0.15, 0.10]
-    assert updated.parameter == 0.10
+    assert seen == pytest.approx([0.15, 0.10])
+    assert updated.parameter == pytest.approx(0.10)
     assert result["status"] == "found-positive"
 
 
@@ -69,8 +71,8 @@ def test_forward_scan_uses_exact_five_percent_steps():
         initial_score=-1.0,
         score_at=score_at,
     )
-    assert seen == [0.85, 0.90]
-    assert updated.parameter == 0.90
+    assert seen == pytest.approx([0.85, 0.90])
+    assert updated.parameter == pytest.approx(0.90)
     assert result["status"] == "found-positive"
 
 
