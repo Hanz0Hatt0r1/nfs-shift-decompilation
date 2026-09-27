@@ -99,7 +99,7 @@ def geometry_report(tmp_path):
                         {
                             "pointer": "0x100",
                             "creation": {
-                                "call": 99,
+                                "call": 0,
                                 "raw": (
                                     "99 IDirect3DDevice9::CreateVertexBuffer("
                                     "Length = 8) = D3D_OK"
