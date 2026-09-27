@@ -48,6 +48,7 @@ def _map(*specs: CDFPropertySpec) -> dict[str, CDFPropertySpec]:
 GENERAL = _map(
     _spec("Rules", "FUN_007a65e0", 0x14, shape="scalar32"),
     _spec("GarageDisplayFlags", "FUN_007a65e0", 0x18, shape="scalar32"),
+    _spec("FeelerFlags", "FUN_007a65e0", shape="scalar32"),
     _spec("Mass", "FUN_007a75a0", 0x1c, shape="scalar64"),
     _spec("Inertia", "FUN_007a75a0", 0x30, 0x44, 0x58, shape="tuple3"),
     _spec("DriftInertia", "FUN_007a75a0", 0x78, 0x8c, 0xa0, shape="tuple3"),
@@ -94,6 +95,12 @@ for i in range(5):
         f"AdjustableUpgradeLevel_{i}", "FUN_007a65e0", 0x2364 + i * 4, shape="scalar32"
     )
 GENERAL["UpgradedTyre"] = _spec("UpgradedTyre", "FUN_007a63e0", shape="string")
+GENERAL["Notes"] = _spec("Notes", "FUN_007a63e0", shape="string")
+
+
+for _i, _name in enumerate(("Undertray00", "Undertray01", "Undertray02", "Undertray03")):
+    _base = 0x1f8 + _i * 0x18
+    GENERAL[_name] = _spec(_name, "FUN_007a6a90", _base - 8, _base, _base + 8, shape="tuple3")
 
 
 def _wheel_specs() -> dict[str, CDFPropertySpec]:
@@ -319,7 +326,18 @@ for _name in ("FWLeft", "FWRight", "FWUp", "FWDown", "FWAft", "FWFore", "FWRot")
     FRONTWING[_name] = _spec(_name, "FUN_007c0820/FUN_007c0860", shape="opaque-control")
 
 
-REARWING = {key.replace("FW", "RW", 1): CDFPropertySpec(value.name.replace("FW", "RW", 1), value.helper, value.offsets, value.value_shape) for key, value in FRONTWING.items()}
+REARWING = _map(
+    _spec("RWRange", "FUN_007a75a0", 0x2a0, 0x2b4, 0x2c8, shape="tuple3"),
+    _spec("RWSetting", "FUN_007a75a0", 0x2e8, shape="scalar64"),
+    _spec("RWDragParams", "FUN_007a75a0", 0x18, 0x2c, 0x40, shape="tuple3"),
+    _spec("RWLiftParams", "FUN_007a75a0", 0x54, 0x68, 0x7c, shape="tuple3"),
+    _spec("RWLiftSideways", "FUN_007a6a90", 0x98, shape="scalar64"),
+    _spec("RWPeakYaw", "FUN_007a6a90", 0x290, 0x298, shape="tuple2"),
+    _spec("RWCenter", "FUN_007a6a90", 0x278, 0x280, 0x288, shape="tuple3"),
+)
+for _name in ("RWLeft", "RWRight", "RWUp", "RWDown", "RWAft", "RWFore", "RWRot"):
+    REARWING[_name] = _spec(_name, "FUN_007c0820/FUN_007c0860", shape="opaque-control")
+
 
 
 BODYAERO = _map(
