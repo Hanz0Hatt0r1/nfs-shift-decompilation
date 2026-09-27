@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 387: sparse constraint solver
+
+`FUN_007b0f20` is now represented by a source-backed sparse forward/backward execution contract, including graph/edge record layouts, terminal forward record behavior, reverse traversal, and the provider bypass at `+0x18`. The vehicle physics asset profile validates this contract automatically. Next target: numeric coefficient population in `FUN_007ba2b0`.
+
 ## Phase 386: constraint solver graph
 
 `FUN_007b1b60` endpoint-sharing connectivity and the weighted adjacent-move ordering heuristic are now represented. `FUN_007b1360` is lowered into compact forward/reverse dependency tables with the exact allocation widths, byte-oriented dependency indices and source-initialized solver vector. The remaining boundary is numeric matrix population inside `FUN_007b2010`/`FUN_007ba2b0` and the provider-specific solver consumer.
