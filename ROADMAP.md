@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 352. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 355. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -38,7 +38,7 @@ the original BFF archives at runtime.
 ## Execution order
 
 1. Keep CI green and preserve explicit evidence/regression coverage.
-2. Use the supplied 1.02 corpus to unblock COLOR0 at the D3D9 Type/Usage/Channel level; keep COLOR1 explicitly unresolved because property 461 is absent from the supplied corpus and retain the runtime-instance correlation as the next proof target.
+2. Use the supplied 1.02 corpus to unblock COLOR0 at the D3D9 Type/Usage/Channel level; keep COLOR1 explicitly unresolved because property 461 is absent from the supplied corpus, and use an authentic runtime/apitrace draw-local instance proof to correlate declaration, VB and IB objects at the exact draw boundary.
 3. Validate selected generated shader permutations with an actual GLES compiler where the toolchain is available, then use the result as the RenderCommand submission gate.
 4. Keep the material execution ABI authoritative: CTAB float/vector values arrive through SHIFT.MaterialConstantPayload/1.
 5. Keep the desktop reference renderer as the golden oracle: embedded VS→PS execution, sampler2D/samplerCube resources, UV families and skin inputs must agree with RenderCommand.
@@ -1563,3 +1563,14 @@ Extended `SHIFT.BMWRuntimeGoldenGate/1` with an optional
 proof format and readiness and propagates any blockers. This connects exact
 runtime VB/IB byte identity to the full BMW runtime readiness contract without
 making older runtime captures invalid.
+
+
+## Phase 355: apitrace runtime declaration instance proof
+
+tools/extract_apitrace_unique_bmw.py now exposes the exact vertex-declaration lifecycle for every deduplicated BMW target geometry binding: the declaration pointer, SetVertexDeclaration binding call, CreateVertexDeclaration creation instance and the explicit same-instance result are recorded alongside the existing VB/IB state.
+
+bmw_apitrace_runtime_instance_proof.py consumes that compact evidence and requires every known BMW primitive count to have a draw-local declaration, VB and IB instance whose creation and binding calls occur in the correct order. Pointer reuse is therefore not accepted as proof unless the active creation instance also matches the draw.
+
+The proof intentionally does not infer declaration bytes, MEB identity, shader permutation, constants or textures. Its purpose is to close the runtime object identity boundary that was previously lost between the compact apitrace geometry extractor and the strict D3D9 same-instance gate.
+
+tools/run_apitrace_bmw_buffer_proof.py now emits runtime_draw_instance_proof.json when the compact BMW geometry evidence is available, while keeping byte-parity readiness independent of this additional proof.
