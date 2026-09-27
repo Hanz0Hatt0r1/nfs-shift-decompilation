@@ -23,7 +23,7 @@ from typing import Sequence
 
 FORMAT = "SHIFT.SpringConstraintRuntime/1"
 FUNCTION = "FUN_0075489c"
-SOURCE_FILE = "./Source/Vehicle/spring.cpp"
+SOURCE_FILE = "unresolved-from-recovered-source"
 SOURCE_LINE = 750161
 
 ELEMENT_ARRAY_OFFSET = 0x100
