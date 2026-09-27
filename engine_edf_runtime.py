@@ -15,7 +15,9 @@ from typing import Any, Sequence
 from vehicle_physics_runtime import (
     ENGINE_PROPERTIES,
     RPMTorquePoint,
+    compute_rpm_torque_peak_power,
     parse_rpm_torque_points,
+    sample_rpm_torque_curve,
 )
 
 FORMAT = "SHIFT.EngineEDFRuntime/1"
@@ -125,6 +127,25 @@ def parse_engine_edf(data: str | bytes, *, strict: bool = False) -> dict[str, An
         "rpm_torque": {
             "points": rpm_points,
             "point_count": len(rpm_points),
+            "peak_power_scan": compute_rpm_torque_peak_power(tuple(
+                RPMTorquePoint(point["rpm"], point["brake"], point["throttle"])
+                for point in rpm_points
+            )),
+            "interpolation_examples": [
+                {
+                    "rpm": rpm,
+                    "brake": sample_rpm_torque_curve(
+                        tuple(RPMTorquePoint(point["rpm"], point["brake"], point["throttle"]) for point in rpm_points), rpm
+                    )[0],
+                    "throttle": sample_rpm_torque_curve(
+                        tuple(RPMTorquePoint(point["rpm"], point["brake"], point["throttle"]) for point in rpm_points), rpm
+                    )[1],
+                }
+                for rpm in (
+                    rpm_points[0]["rpm"],
+                    rpm_points[-1]["rpm"],
+                )
+            ] if rpm_points else [],
             "limit": rpm_report["limit"],
             "source_tuple_order": ["rpm", "brake", "throttle"],
             "storage_order": ["brake", "throttle", "rpm"],
