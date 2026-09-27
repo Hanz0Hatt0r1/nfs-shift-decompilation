@@ -79,14 +79,14 @@ def hinge_angular_delta(
     sign: int = 1,
 ) -> dict[str, Any]:
     """Evaluate the direct HINGE angular-state update in FUN_007b4110."""
-    solved = _vec3(solution, name="solution")
     if len(solution) != 2:
         raise ValueError("HINGE solution must contain exactly two scalars")
+    solved = [float(solution[0]), float(solution[1])]
     angular = _vec3(angular_row, name="angular_row")
     linear = _vec3(linear_row, name="linear_row")
     if int(sign) not in (-1, 1):
         raise ValueError("sign must be +1 or -1")
-    s0, s1 = solved[0], solved[1]
+    s0, s1 = solved
     delta = [
         int(sign) * (angular[0] * s0 + linear[0] * s1),
         int(sign) * (angular[1] * s0 + linear[1] * s1),
