@@ -293,3 +293,55 @@ def test_sdf_constraint_solver_graph_rejects_non_square_matrix():
     import pytest
     with pytest.raises(ValueError, match="square"):
         sdf.compile_sdf_constraint_solver_graph([[0, 1], [1]])
+
+
+def test_sdf_constraint_order_recovers_source_weighted_bandwidth_heuristic():
+    report = sdf.parse_sdf("""
+[BODY]
+name=a
+[BODY]
+name=b
+[BODY]
+name=c
+[BODY]
+name=d
+[JOINT]
+name=j0 posbody=a negbody=b axis=(1,0,0)
+[HINGE]
+name=h0 posbody=b negbody=c axis=(0,1,0)
+[BAR]
+name=b0 posbody=c negbody=d pos=(0,0,0) neg=(1,0,0)
+[JOINT]
+name=j1 posbody=a negbody=d axis=(1,0,0)
+""")
+    result = sdf.optimize_sdf_constraint_order(report)
+    assert result["ready"] is True
+    assert result["constraint_count"] == 4
+    assert sorted(result["order"]) == [0, 1, 2, 3]
+    assert result["initial_cost"] == 23
+    assert result["final_cost"] <= result["initial_cost"]
+    assert result["improvement_count"] >= 0
+    assert result["order"] == [0, 1, 3, 2]
+
+
+def test_sdf_constraint_solver_graph_from_report_applies_recovered_order():
+    report = sdf.parse_sdf("""
+[BODY]
+name=a
+[BODY]
+name=b
+[BODY]
+name=c
+[JOINT]
+name=j0 posbody=a negbody=b axis=(1,0,0)
+[HINGE]
+name=h0 posbody=b negbody=c axis=(0,1,0)
+[BAR]
+name=b0 posbody=a negbody=c pos=(0,0,0) neg=(1,0,0)
+""")
+    result = sdf.compile_sdf_constraint_solver_graph_from_report(report)
+    assert result["ready"] is True
+    assert result["source_constraint_order"] == [0, 1, 2]
+    assert result["constraint_count"] == 3
+    assert result["allocations"]["forward_table_bytes"] == 32
+    assert result["allocations"]["reverse_table_bytes"] == 24
