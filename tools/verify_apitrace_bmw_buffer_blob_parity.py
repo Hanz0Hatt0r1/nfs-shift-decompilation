@@ -95,7 +95,15 @@ def build_report(
             runtime_path = (evidence_base_dir or Path(".")).resolve() / runtime_path
         expected_path = expected_dir / "vertex_buffer.meb-order.bin"
         try:
-            results.append(compare(runtime_path, expected_path, "vertex-buffer"))
+            result = compare(runtime_path, expected_path, "vertex-buffer")
+            result.update({
+                "runtime_buffer_pointer": str(vb[0].get("buffer_pointer") or "").lower() or None,
+                "creation_call": vb[0].get("creation_call"),
+                "lock_call": vb[0].get("lock_call"),
+                "unlock_call": vb[0].get("unlock_call"),
+                "fake_memcpy_call": vb[0].get("fake_memcpy_call"),
+            })
+            results.append(result)
         except FileNotFoundError as exc:
             blockers.append(f"file-not-found:{exc}")
 
@@ -116,7 +124,15 @@ def build_report(
             expected_path = expected_by_size[size]
             label = f"index-buffer:{size}-bytes"
             try:
-                results.append(compare(runtime_path, expected_path, label))
+                result = compare(runtime_path, expected_path, label)
+                result.update({
+                    "runtime_buffer_pointer": str(row.get("buffer_pointer") or "").lower() or None,
+                    "creation_call": row.get("creation_call"),
+                    "lock_call": row.get("lock_call"),
+                    "unlock_call": row.get("unlock_call"),
+                    "fake_memcpy_call": row.get("fake_memcpy_call"),
+                })
+                results.append(result)
             except FileNotFoundError as exc:
                 blockers.append(f"file-not-found:{exc}")
 
@@ -142,6 +158,13 @@ def build_report(
             "full_buffer_candidates": len(full),
             "vertex_buffer_candidates": len(vb),
             "index_buffer_candidates": len(ib),
+            "buffer_pointers": sorted(
+                {
+                    str(row.get("buffer_pointer") or "").lower()
+                    for row in full
+                    if row.get("buffer_pointer")
+                }
+            ),
         },
         "matches": matches,
         "results": results,
