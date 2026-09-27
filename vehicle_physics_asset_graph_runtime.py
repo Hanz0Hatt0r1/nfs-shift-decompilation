@@ -49,6 +49,7 @@ from bmw_m3_e36_solver_domain_runtime import build_solver_domain
 from sdf_constraint_matrix_assembly_runtime import materialize_source_seed_matrix
 from sdf_constraint_matrix_assembly_runtime import describe_sdf_constraint_matrix_assembly_contract
 from sdf_constraint_matrix_assembly_runtime import build_retail_matrix_storage
+from sdf_full_frame_runtime import describe_full_frame_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -123,6 +124,11 @@ def build_profile(
     sdf_real_solver_domain = build_solver_domain(sdf_report)
     sdf_matrix_seed_write = materialize_source_seed_matrix(
         sdf_constraint_solver_graph.get("scalar_connectivity", {})
+    )
+    sdf_full_frame = describe_full_frame_contract(
+        solver_scalar_count=sdf_constraint_solver_graph.get("solver_scalar_count"),
+        body_count=sdf_report.get("topology", {}).get("body_count"),
+        runtime_flags_available=False,
     )
 
     blockers: list[str] = []
@@ -232,6 +238,8 @@ def build_profile(
             "sdf_real_solver_scalar_count": sdf_real_solver_domain.get("solver_scalar_count", 0),
             "sdf_matrix_seed_write_ready": sdf_matrix_seed_write.get("ready") is True,
             "sdf_matrix_seed_write_count": sdf_matrix_seed_write.get("write_count", 0),
+            "sdf_full_frame_contract_ready": sdf_full_frame.get("ready") is True,
+            "sdf_full_frame_runtime_ready": sdf_full_frame.get("status") == "runtime-complete",
         },
         "details": {
             "cdf": cdf_report,
@@ -266,6 +274,7 @@ def build_profile(
             "sdf_matrix_storage": sdf_matrix_storage,
             "sdf_real_solver_domain": sdf_real_solver_domain,
             "sdf_matrix_seed_write": sdf_matrix_seed_write,
+            "sdf_full_frame": sdf_full_frame,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
