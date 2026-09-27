@@ -330,3 +330,39 @@ def build_physics_tweaker_contract() -> dict[str, Any]:
         },
         "status": "loader-boundary-reconstructed",
     }
+
+
+def build_physics_provider_registry() -> dict[str, Any]:
+    """Describe the two source-visible physics provider slots returned by FUN_007d2e70."""
+    return {
+        "format": "SHIFT.PhysicsProviderRegistry/1",
+        "version": 1,
+        "selector": {
+            "function": "FUN_007d2e70",
+            "index_zero": "DAT_00c23da8",
+            "index_one": "DAT_00c23dac",
+            "other_indices": "null",
+        },
+        "lifecycle": {
+            "provider_zero_init": "FUN_007d2f70",
+            "provider_zero_shutdown": "FUN_007c6e10",
+            "provider_one_init": "FUN_007cd980",
+            "provider_one_shutdown": "FUN_007cdb00",
+        },
+        "consumer_vtable": {
+            "presence_probe": "+0x14",
+            "reset_allocation_state": "+0x0c",
+            "replace_primary_storage": "+0x04",
+            "replace_aux_storage": "+0x08",
+            "finalize": "+0x2c",
+        },
+        "selection_semantics": {
+            "default_consumer": "FUN_007b3820 probes provider slots from index 0 upward until one accepts the runtime allocation base",
+            "unsupported_selector": "returns null",
+        },
+        "limitations": [
+            "Neither slot is assigned a PhysX class name without direct type evidence.",
+            "Vtable methods are recorded by offset only; argument semantics remain separate targets.",
+        ],
+    }
+
