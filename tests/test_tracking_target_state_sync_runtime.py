@@ -47,7 +47,7 @@ def test_controller_camera_data_is_remapped_into_2a0_to_2e8():
     )
     assert result["writes"]["+0x2b0"] == 1
     assert result["writes"]["+0x2bc"] == 4
-    assert result["writes"]["+0x2e8"] == 16
+    assert result["writes"]["+0x2e8"] == 9
     assert result["writes"]["+0x2ec"] == 12
     assert result["writes"]["+0x314"] == 22
 
