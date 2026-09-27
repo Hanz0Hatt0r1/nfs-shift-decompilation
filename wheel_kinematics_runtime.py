@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from math import sqrt
 from typing import Sequence
 
+from spring_helper_runtime import SpringHelperCoefficients, SpringHelperStep, compute_spring_helper_step
+
 FORMAT = "SHIFT.WheelKinematicsRuntime/1"
 FUNCTION = "FUN_00758b50"
 CALLER = "FUN_0076d100"
@@ -36,6 +38,12 @@ DISTANCE_REFERENCE_OFFSET = 0x138  # runtime +0x538
 DISTANCE_ERROR_OFFSET = 0x128      # runtime +0x528
 PROJECTION_VALUE_OFFSET = 0x130    # runtime +0x530
 HELPER_OUTPUT_OFFSET = 0x148       # runtime +0x548
+
+HELPER_OBJECT_OFFSET = 0x80
+HELPER_CURRENT_GAP_OFFSET = HELPER_OBJECT_OFFSET + 0x248
+HELPER_PREVIOUS_GAP_OFFSET = HELPER_OBJECT_OFFSET + 0x250
+HELPER_CROSSING_FLAG_OFFSET = HELPER_OBJECT_OFFSET + 0x260
+HELPER_TRIGGER_VALUE_OFFSET = HELPER_OBJECT_OFFSET + 0x258
 
 
 @dataclass(frozen=True)
@@ -116,6 +124,25 @@ def prepare_wheel_kinematic_observation(
     )
 
 
+def evaluate_wheel_spring_helper(
+    *,
+    distance_reference: float,
+    relative_length: float,
+    projection_input: float,
+    previous_gap: float,
+    coefficients: SpringHelperCoefficients,
+) -> SpringHelperStep:
+    """Join FUN_00755950 scalar preparation to FUN_007555b0."""
+    displacement = float(distance_reference) - float(relative_length)
+    velocity_projection = -float(projection_input)
+    return compute_spring_helper_step(
+        displacement=displacement,
+        velocity_projection=velocity_projection,
+        previous_gap=previous_gap,
+        coefficients=coefficients,
+    )
+
+
 def compute_pair_delta(
     *,
     source_a_left: float,
@@ -180,17 +207,26 @@ def build_wheel_kinematics_contract() -> dict:
             "stride": WHEEL_RUNTIME_STRIDE,
             "pre_helper": "FUN_00755950",
             "helper": "FUN_007555b0",
+            "helper_object_offset": HELPER_OBJECT_OFFSET,
             "fields": {
                 "distance_reference": DISTANCE_REFERENCE_OFFSET,
                 "distance_error": DISTANCE_ERROR_OFFSET,
                 "projection_value": PROJECTION_VALUE_OFFSET,
                 "helper_output": HELPER_OUTPUT_OFFSET,
+                "helper_current_gap": HELPER_CURRENT_GAP_OFFSET,
+                "helper_previous_gap": HELPER_PREVIOUS_GAP_OFFSET,
+                "helper_crossing_flag": HELPER_CROSSING_FLAG_OFFSET,
+                "helper_trigger_value": HELPER_TRIGGER_VALUE_OFFSET,
             },
             "field_offsets_absolute": {
                 "distance_reference": WHEEL_RUNTIME_BASE + DISTANCE_REFERENCE_OFFSET,
                 "distance_error": WHEEL_RUNTIME_BASE + DISTANCE_ERROR_OFFSET,
                 "projection_value": WHEEL_RUNTIME_BASE + PROJECTION_VALUE_OFFSET,
                 "helper_output": WHEEL_RUNTIME_BASE + HELPER_OUTPUT_OFFSET,
+                "helper_current_gap": WHEEL_RUNTIME_BASE + HELPER_CURRENT_GAP_OFFSET,
+                "helper_previous_gap": WHEEL_RUNTIME_BASE + HELPER_PREVIOUS_GAP_OFFSET,
+                "helper_crossing_flag": WHEEL_RUNTIME_BASE + HELPER_CROSSING_FLAG_OFFSET,
+                "helper_trigger_value": WHEEL_RUNTIME_BASE + HELPER_TRIGGER_VALUE_OFFSET,
             },
         },
         "per_wheel_sequence": [
@@ -198,8 +234,10 @@ def build_wheel_kinematics_contract() -> dict:
             "construct the wheel/vehicle relative vector",
             "normalize the relative vector and retain its length",
             "compute reference_length - relative_length",
-            "store the negated projection input",
-            "call FUN_00755950(runtime_state, wheel_index, relative_length, projection_input)",
+            "store the negated projection input at runtime +0x530",
+            "FUN_00755950 computes displacement=runtime(+0x538)-relative_length",
+            "FUN_00755950 calls FUN_007555b0(helper=runtime+0x80, displacement, -projection_input)",
+            "store helper x87 return at runtime +0x548",
         ],
         "pair_adjustments": {
             "front": {
@@ -249,11 +287,17 @@ __all__ = [
     "DISTANCE_ERROR_OFFSET",
     "PROJECTION_VALUE_OFFSET",
     "HELPER_OUTPUT_OFFSET",
+    "HELPER_OBJECT_OFFSET",
+    "HELPER_CURRENT_GAP_OFFSET",
+    "HELPER_PREVIOUS_GAP_OFFSET",
+    "HELPER_CROSSING_FLAG_OFFSET",
+    "HELPER_TRIGGER_VALUE_OFFSET",
     "WheelKinematicObservation",
     "PairAdjustmentObservation",
     "normalize_relative_vector",
     "prepare_wheel_kinematic_observation",
     "compute_pair_delta",
     "build_pair_adjustment_observation",
+    "evaluate_wheel_spring_helper",
     "build_wheel_kinematics_contract",
 ]
