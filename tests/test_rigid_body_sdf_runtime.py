@@ -405,11 +405,11 @@ name=b0 posbody=a negbody=b pos=(0,0,0) neg=(1,0,0)
     assert scalar["ready"] is True
     assert scalar["constraint_record_count"] == 2
     assert scalar["solver_scalar_count"] == 4
-    assert scalar["ordered_block_widths"] == [3, 1]
-    assert scalar["scalar_block_offsets"] == [0, 3]
+    assert scalar["ordered_block_widths"] == [1, 3]
+    assert scalar["scalar_block_offsets"] == [0, 1]
     assert scalar["matrix"] == [
-        [0.0, 0.0, 0.0, 1.0],
-        [0.0, 0.0, 0.0, 1.0],
-        [0.0, 0.0, 0.0, 1.0],
-        [1.0, 1.0, 1.0, 0.0],
+        [0.0, 1.0, 1.0, 1.0],
+        [1.0, 0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0, 0.0],
     ]
