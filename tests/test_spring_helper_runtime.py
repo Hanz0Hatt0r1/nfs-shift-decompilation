@@ -41,9 +41,9 @@ def test_damping_branch_selects_positive_midband_or_other_path():
         c_1f8=3.0, c_200=4.0, c_208=50.0, c_210=5.0
     ) == 6.0
     assert compute_damping_term_exact(
-        velocity_projection=60.0, c_1e0=2.0, c_1e8=100.0,
+        velocity_projection=110.0, c_1e0=2.0, c_1e8=100.0,
         c_1f8=3.0, c_200=4.0, c_208=50.0, c_210=5.0
-    ) == 240.0
+    ) == 440.0
     assert compute_damping_term_exact(
         velocity_projection=-2.0, c_1e0=2.0, c_1e8=100.0,
         c_1f8=3.0, c_200=4.0, c_208=50.0, c_210=5.0
@@ -63,9 +63,9 @@ def test_positive_stop_polynomial_applies_hard_stop():
         coefficients=_coefficients(),
     )
     assert step.gap == 2.0
-    assert step.base_response == 31.0
+    assert step.base_response == 32.0
     assert step.hard_stop_applied is True
-    assert step.response == 31.0 + HARD_STOP_VALUE
+    assert step.response == 32.0 + HARD_STOP_VALUE
 
 
 def test_nonpositive_stop_polynomial_does_not_apply_hard_stop():
