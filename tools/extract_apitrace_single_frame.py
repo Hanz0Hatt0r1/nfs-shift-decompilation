@@ -102,8 +102,34 @@ def _dump_lines(trace: Path, apitrace: str) -> Iterator[str]:
 
 
 def _parse_pointer_targets(path: Path | None) -> tuple[str | None, dict[int, str]]:
+    """Load runtime geometry pointers from either supported evidence schema."""
     if path is None:
         return None, {}
+
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(data.get("geometry"), list):
+        vertex_pointer: str | None = None
+        primitive_to_ib: dict[int, str] = {}
+        for row in data["geometry"]:
+            if not isinstance(row, dict):
+                continue
+            resources = row.get("resources") or {}
+            vertex = resources.get("vertex_buffer") or {}
+            pointer = vertex.get("pointer")
+            if pointer and vertex_pointer is None:
+                vertex_pointer = str(pointer)
+            index = resources.get("index_buffer") or {}
+            index_pointer = index.get("pointer")
+            if not index_pointer:
+                continue
+            for draw in row.get("draws") or []:
+                if not isinstance(draw, dict):
+                    continue
+                primitive = draw.get("prim_count")
+                if primitive is not None:
+                    primitive_to_ib[int(primitive)] = str(index_pointer)
+        return vertex_pointer, primitive_to_ib
+
     vb, _, ibs = _load_runtime_geometry(path)
     return vb, ibs
 
