@@ -14,7 +14,7 @@ from typing import Any, Mapping, Sequence
 
 from engine_edf_runtime import parse_engine_edf
 from gearbox_gdf_runtime import parse_gdf
-from rigid_body_sdf_runtime import parse_sdf, resolve_sdf_body_references
+from rigid_body_sdf_runtime import compile_sdf_runtime_topology, parse_sdf, resolve_sdf_body_references
 from vehicle_cdf_runtime import parse_cdf
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
@@ -54,6 +54,7 @@ def build_profile(
     gdf_report = parse_gdf(Path(gdf).read_bytes(), strict=strict)
     sdf_report = parse_sdf(Path(sdf).read_bytes(), strict=strict)
     sdf_graph = resolve_sdf_body_references(sdf_report)
+    sdf_runtime_topology = compile_sdf_runtime_topology(sdf_report)
 
     blockers: list[str] = []
     for name, report in (
@@ -68,6 +69,7 @@ def build_profile(
             f"{name}:{reason}" for reason in report.get("warnings") or []
         )
     blockers.extend(f"sdf-graph:{reason}" for reason in sdf_graph.get("unresolved") or [])
+    blockers.extend(f"sdf-runtime:{reason}" for reason in sdf_runtime_topology.get("unresolved") or [])
 
     return {
         "format": FORMAT,
@@ -113,6 +115,8 @@ def build_profile(
             "sdf_body_reference_ready": sdf_graph.get("ready") is True,
             "sdf_body_count": len(sdf_graph.get("body_names", [])),
             "sdf_constraint_count": sdf_graph.get("edge_count", 0),
+            "sdf_runtime_topology_ready": sdf_runtime_topology.get("ready") is True,
+            "sdf_runtime_constraint_count": sdf_runtime_topology.get("constraint_count", 0),
         },
         "details": {
             "cdf": cdf_report,
@@ -120,6 +124,7 @@ def build_profile(
             "gdf": gdf_report,
             "sdf": sdf_report,
             "sdf_reference_graph": sdf_graph,
+            "sdf_runtime_topology": sdf_runtime_topology,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
