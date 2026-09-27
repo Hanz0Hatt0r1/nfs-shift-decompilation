@@ -45,3 +45,32 @@ def test_vehicle_physics_graph_fails_closed_on_malformed_resource(tmp_path):
     report = build_profile(cdf=cdf, edf=edf, gdf=gdf, sdf=sdf)
     assert report["ready"] is False
     assert any(reason.startswith("edf:line:2:") for reason in report["blockers"])
+
+
+def test_asset_graph_can_report_full_engine_edf_summary(tmp_path):
+    from engine_edf_runtime import parse_engine_edf
+
+    report = parse_engine_edf("""
+RPMTorque=(1000,-30,200)
+RPMTorque=(2000,-20,250)
+FuelConsumption=3.9e-5
+EngineInertia=0.300
+IdleRPMLogic=(1000,1050)
+RevLimitAvailable=1
+EngineSound=(0.33,0.8,-1.0)
+""")
+    assert report["ready"] is True
+    assert report["entry_count"] == 7
+    assert report["recognized_entry_count"] == 7
+    assert report["unknown_entry_count"] == 0
+    assert report["rpm_torque"]["point_count"] == 2
+    assert report["entries"][0]["schema"]["offset"] == 0x16D8
+    assert report["entries"][3]["schema"]["width"] == "vec2"
+
+
+def test_asset_graph_retains_unknown_engine_properties():
+    from engine_edf_runtime import parse_engine_edf
+
+    report = parse_engine_edf("[future]\nUnknownKey=123\n")
+    assert report["unknown_entry_count"] == 1
+    assert report["unknown_keys"] == ["UnknownKey"]
