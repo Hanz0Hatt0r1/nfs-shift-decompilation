@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 395: body-state primitives
+
+`FUN_007ba860` now exposes exact coefficient/reciprocal storage and `FUN_007ba9e0` exposes exact world-point-to-body accumulator algebra. Next target is the non-opaque transform stage `FUN_007ba7e0`.
+
 ## Phase 394: body tensor preparation
 
 `FUN_007ba630` is now reconstructed as the exact symmetric `B*diag(D)*Bᵀ` body tensor build, including float32 input behavior, source offsets, mirrored output slots and the reciprocal-diagonal initialization relation from `FUN_007ba860`.
