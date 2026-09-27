@@ -1,52 +1,92 @@
-"""Source-backed export of SDF body accumulators into solver buffers."""
+"""Source-backed export of per-body solver vector/matrix contributions."""
 from __future__ import annotations
 
 from typing import Any, Sequence
 
-FORMAT = "SHIFT.SDFBodySolverExportRuntime/1"
+FORMAT = "SHIFT.SDFBodySolverExportRuntime/2"
 
 SOURCE_OFFSETS = {
-    "primary": "+0x150",
-    "primary_count": "+0xa4",
-    "secondary": "+0x154",
-    "secondary_count": "+0xa8",
+    "solver_vector": "+0x150",
+    "solver_vector_count": "+0xa4",
+    "solver_matrix": "+0x154",
+    "solver_matrix_count": "+0xa8",
 }
 
 
 def describe_sdf_body_solver_export_contract() -> dict[str, Any]:
     return {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "status": "source-backed",
         "ready": True,
         "function": "FUN_007ba570",
         "sources": SOURCE_OFFSETS,
         "destination_arguments": {
-            "primary_destination": "param_1",
-            "secondary_destination": "param_2",
+            "solver_vector_destination": "param_1 (PhysicsSystem +0x40)",
+            "solver_matrix_destination": "param_2 (PhysicsSystem +0x44)",
         },
         "operations": [
             {
                 "source": "+0x150",
                 "count": "+0xa4",
                 "stride": 8,
-                "operation": "destination[i] += source[i]",
+                "operation": "solver_vector_destination[i] += source[i]",
             },
             {
                 "source": "+0x154",
                 "count": "+0xa8",
                 "stride": 8,
-                "operation": "destination[i] += source[i]",
+                "operation": "solver_matrix_destination[i] += source[i]",
             },
         ],
         "order": [
-            "copy primary accumulator",
-            "copy secondary accumulator",
+            "add per-body solver vector contribution",
+            "add per-body solver matrix contribution",
         ],
         "limitations": [
             "Destination buffers are caller-owned and their higher-level role is intentionally unnamed.",
             "No physical units are inferred from the double channels.",
         ],
+    }
+
+
+def export_body_solver_contributions(
+    solver_vector: Sequence[float | int],
+    solver_matrix: Sequence[float | int],
+    solver_vector_destination: Sequence[float | int],
+    solver_matrix_destination: Sequence[float | int],
+) -> dict[str, Any]:
+    """Apply FUN_007ba570's additive transfer into vector and matrix destinations."""
+    if len(solver_vector_destination) < len(solver_vector):
+        raise ValueError("solver vector destination is shorter than solver vector")
+    if len(solver_matrix_destination) < len(solver_matrix):
+        raise ValueError("solver matrix destination is shorter than solver matrix")
+
+    vector_out = [float(value) for value in solver_vector_destination]
+    matrix_out = [float(value) for value in solver_matrix_destination]
+    for index, value in enumerate(solver_vector):
+        vector_out[index] += float(value)
+    for index, value in enumerate(solver_matrix):
+        matrix_out[index] += float(value)
+
+    return {
+        "format": "SHIFT.SDFBodySolverExportResult/2",
+        "version": 2,
+        "status": "applied",
+        "ready": True,
+        "solver_vector": vector_out,
+        "solver_matrix": matrix_out,
+        "source_counts": {
+            "solver_vector": len(solver_vector),
+            "solver_matrix": len(solver_matrix),
+        },
+        "evidence": {
+            "function": "FUN_007ba570",
+            "solver_vector_source": "+0x150",
+            "solver_matrix_source": "+0x154",
+            "solver_vector_count": "+0xa4",
+            "solver_matrix_count": "+0xa8",
+        },
     }
 
 
@@ -56,35 +96,10 @@ def export_body_accumulators(
     primary_destination: Sequence[float | int],
     secondary_destination: Sequence[float | int],
 ) -> dict[str, Any]:
-    """Apply the exact additive buffer transfer performed by FUN_007ba570."""
-    if len(primary_destination) < len(primary):
-        raise ValueError("primary destination is shorter than primary accumulator")
-    if len(secondary_destination) < len(secondary):
-        raise ValueError("secondary destination is shorter than secondary accumulator")
-
-    primary_out = [float(value) for value in primary_destination]
-    secondary_out = [float(value) for value in secondary_destination]
-    for index, value in enumerate(primary):
-        primary_out[index] += float(value)
-    for index, value in enumerate(secondary):
-        secondary_out[index] += float(value)
-
-    return {
-        "format": "SHIFT.SDFBodySolverExportResult/1",
-        "version": 1,
-        "status": "applied",
-        "ready": True,
-        "primary": primary_out,
-        "secondary": secondary_out,
-        "source_counts": {
-            "primary": len(primary),
-            "secondary": len(secondary),
-        },
-        "evidence": {
-            "function": "FUN_007ba570",
-            "primary_source": "+0x150",
-            "secondary_source": "+0x154",
-            "primary_count": "+0xa4",
-            "secondary_count": "+0xa8",
-        },
-    }
+    """Backward-compatible alias for export_body_solver_contributions."""
+    return export_body_solver_contributions(
+        primary,
+        secondary,
+        primary_destination,
+        secondary_destination,
+    )
