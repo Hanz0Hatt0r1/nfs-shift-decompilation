@@ -7,10 +7,10 @@ def test_body_solver_export_contract_matches_retail_offsets_and_order():
     report = runtime.describe_sdf_body_solver_export_contract()
     assert report["ready"] is True
     assert report["function"] == "FUN_007ba570"
-    assert report["sources"]["primary"] == "+0x150"
-    assert report["sources"]["primary_count"] == "+0xa4"
-    assert report["sources"]["secondary"] == "+0x154"
-    assert report["sources"]["secondary_count"] == "+0xa8"
+    assert report["sources"]["solver_vector"] == "+0x150"
+    assert report["sources"]["solver_vector_count"] == "+0xa4"
+    assert report["sources"]["solver_matrix"] == "+0x154"
+    assert report["sources"]["solver_matrix_count"] == "+0xa8"
     assert report["order"] == [
         "copy primary accumulator",
         "copy secondary accumulator",
