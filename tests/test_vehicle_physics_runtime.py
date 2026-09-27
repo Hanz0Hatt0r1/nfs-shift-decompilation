@@ -184,3 +184,43 @@ def test_rpm_torque_limit_is_127_existing_points():
     report = parse_rpm_torque_points(text)
     assert report["point_count"] == 127
     assert "rpm-torque:too-many-points:127" in report["warnings"]
+
+
+def test_rpm_torque_interpolation_matches_linear_bracket():
+    from vehicle_physics_runtime import RPMTorquePoint, sample_rpm_torque_curve
+
+    points = (
+        RPMTorquePoint(1000.0, -30.0, 100.0),
+        RPMTorquePoint(2000.0, -10.0, 200.0),
+    )
+    assert sample_rpm_torque_curve(points, 1500.0) == (-20.0, 150.0)
+
+
+def test_rpm_torque_interpolation_extrapolates_using_end_segments():
+    from vehicle_physics_runtime import RPMTorquePoint, sample_rpm_torque_curve
+
+    points = (
+        RPMTorquePoint(1000.0, -30.0, 100.0),
+        RPMTorquePoint(2000.0, -10.0, 200.0),
+        RPMTorquePoint(3000.0, -20.0, 150.0),
+    )
+    assert sample_rpm_torque_curve(points, 500.0) == (-40.0, 50.0)
+    assert sample_rpm_torque_curve(points, 3500.0) == (-25.0, 100.0)
+
+
+def test_rpm_torque_interpolation_midpoint_clamps_when_brake_exceeds_throttle():
+    from vehicle_physics_runtime import RPMTorquePoint, sample_rpm_torque_curve
+
+    points = (
+        RPMTorquePoint(1000.0, 200.0, 100.0),
+        RPMTorquePoint(2000.0, 300.0, 100.0),
+    )
+    assert sample_rpm_torque_curve(points, 1500.0) == (250.0, 250.0)
+
+
+def test_rpm_torque_interpolation_handles_zero_and_one_point_curves():
+    from vehicle_physics_runtime import RPMTorquePoint, sample_rpm_torque_curve
+
+    assert sample_rpm_torque_curve((), 2000.0) == (0.0, 0.0)
+    point = RPMTorquePoint(1000.0, -30.0, 120.0)
+    assert sample_rpm_torque_curve((point,), 2000.0) == (-30.0, 120.0)
