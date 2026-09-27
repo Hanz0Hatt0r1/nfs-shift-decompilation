@@ -208,7 +208,9 @@ axis=(1,0,0) neg=(0,0,0) pos=(0,1,0)
     assert row["sampling"]["sample_stride"] == [0x40, 0xA0]
     assert row["postload"]["helper"] == ["FUN_007b2da0", "FUN_007b2de0"]
     assert row["section_storage"]["source_descriptor_offsets"]["joint"] == ["+0x28", "+0x30", "+0x38"]
+    assert row["section_storage"]["source_value_fields"]["joint"] == ["pos"]
     assert row["section_storage"]["source_descriptor_offsets"]["hinge"] == ["+0x58", "+0x60", "+0x68"]
+    assert row["section_storage"]["source_value_fields"]["hinge"] == ["axis"]
 
 
 def test_sdf_constraint_runtime_lowering_blocks_missing_endpoint_names():
