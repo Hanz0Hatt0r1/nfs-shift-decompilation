@@ -30,8 +30,7 @@ def advance_reference_record(
     boundary_hit: bool,
 ) -> dict[str, Any]:
     """Reproduce FUN_008136d0."""
-    record = copy_reference_record(source_words)
-    record[0x19] = int(owner_index)
+    record = copy_reference_record(source_words) + [int(owner_index)]
     if int(owner_index) == 0 and bool(boundary_hit):
         return {
             "format": FORMAT,
@@ -76,8 +75,7 @@ def retreat_reference_record(
     boundary_hit: bool,
 ) -> dict[str, Any]:
     """Reproduce FUN_00813710."""
-    record = copy_reference_record(source_words)
-    record[0x19] = int(owner_index)
+    record = copy_reference_record(source_words) + [int(owner_index)]
     if int(owner_index) == 0 and bool(boundary_hit):
         return {
             "format": FORMAT,
