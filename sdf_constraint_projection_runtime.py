@@ -54,8 +54,6 @@ def evaluate_joint_projection(
     side_flag: int = 0,
 ) -> dict[str, Any]:
     """Reproduce the complete scalar projection computed by FUN_007bac60."""
-    if int(side_flag) not in (0, 1):
-        raise ValueError("side_flag must be 0 or 1")
 
     bx, by, bz = _vec3(body_position, name="body_position")
     ax, ay, az = _vec3(body_axis, name="body_axis")
@@ -143,8 +141,6 @@ def evaluate_hinge_projection(
     side_flag: int = 0,
 ) -> dict[str, Any]:
     """Reproduce FUN_007bae40's two scalar projection lanes."""
-    if int(side_flag) not in (0, 1):
-        raise ValueError("side_flag must be 0 or 1")
 
     ax, ay, az = _vec3(body_axis, name="body_axis")
     rx, ry, rz = _vec3(residual_vector, name="residual_vector")
