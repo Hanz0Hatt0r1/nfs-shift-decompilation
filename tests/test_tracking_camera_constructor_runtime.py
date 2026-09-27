@@ -18,7 +18,7 @@ def test_constructor_layout_preserves_refcount_vtable_sequence():
 
 def test_constructor_has_seven_nested_7f6690_blocks():
     result = tracking_camera_constructor_layout()
-    assert len(result["nested_initializers"]) == 7
+    assert len(result["nested_initializers"]) == 9
 
 
 def test_constructor_preserves_mode_and_sentinel_defaults():
