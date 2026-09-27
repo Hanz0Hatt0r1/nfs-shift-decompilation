@@ -185,6 +185,71 @@ def parse_sdf(data: str | bytes, *, strict: bool = False) -> dict[str, Any]:
     }
 
 
+def resolve_sdf_body_references(
+    report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Resolve posbody/negbody names into a neutral SDF connectivity graph."""
+    body_names = {
+        str(entry.get("value"))
+        for record in report.get("records") or []
+        if record.get("section") == "BODY"
+        for entry in record.get("entries") or []
+        if entry.get("name") == "name"
+    }
+    edges: list[dict[str, Any]] = []
+    unresolved: list[str] = []
+    for record_index, record in enumerate(report.get("records") or []):
+        if record.get("section") == "BODY":
+            continue
+        values = {
+            str(entry.get("name")): entry.get("value")
+            for entry in record.get("entries") or []
+        }
+        posbody = values.get("posbody")
+        negbody = values.get("negbody")
+        if posbody is None and negbody is None:
+            continue
+        for field, body in (("posbody", posbody), ("negbody", negbody)):
+            if body is None:
+                continue
+            name = str(body)
+            if name not in body_names:
+                unresolved.append(
+                    f"record:{record_index}:{record.get('section')}:{field}:{name}"
+                )
+        edges.append({
+            "record_index": record_index,
+            "section": record.get("section"),
+            "posbody": None if posbody is None else str(posbody),
+            "negbody": None if negbody is None else str(negbody),
+            "resolved": all(
+                body is None or str(body) in body_names
+                for body in (posbody, negbody)
+            ),
+        })
+
+    adjacency: dict[str, list[int]] = {name: [] for name in sorted(body_names)}
+    for edge_index, edge in enumerate(edges):
+        for body in (edge.get("posbody"), edge.get("negbody")):
+            if body in adjacency:
+                adjacency[body].append(edge_index)
+
+    return {
+        "status": "resolved" if not unresolved else "blocked",
+        "ready": not unresolved,
+        "body_names": sorted(body_names),
+        "edge_count": len(edges),
+        "edges": edges,
+        "unresolved": unresolved,
+        "adjacency": adjacency,
+        "evidence": {
+            "loader": SOURCE_LOADER,
+            "body_reference_fields": ["posbody", "negbody"],
+        },
+    }
+
+
+
 def records_by_type(report: Mapping[str, Any], section: str) -> list[Mapping[str, Any]]:
     wanted = section.strip().upper()
     return [
