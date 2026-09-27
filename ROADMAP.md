@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is advancing through Phase 356. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 359 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -1581,3 +1581,23 @@ tools/run_apitrace_bmw_buffer_proof.py now creates the compact BMW geometry evid
 tools/extract_apitrace_single_frame.py provides a compact handoff from the multi-gigabyte retail apitrace capture to one analyzable frame. The recommended --auto-bmw mode scans the trace stream, finds the frame with the strongest BMW target primitive coverage, records its original call range and uses apitrace auto-trim on that frame. Explicit --frame and --draw-call modes are also available.
 
 The tool writes only single_frame.trace and manifest.json; the original trace and its full text dump are untouched. Auto-trim dependencies remain an explicit evidence boundary rather than being presented as a byte-for-byte slice.
+
+
+## Phase 357: PhysicsSystem / PhysicsParticipant runtime reconstruction
+
+Reconstruct the retail PhysX 2.x startup boundary, Physics Manager layout, PhysicsTweaker
+load hook, PhysicsParticipant configuration and the five observed participant spawn modes.
+The renderer is not part of this phase.
+
+## Phase 358: CSM collision records and PhysX scene queries
+
+Reconstruct the CSM version/record consumer boundary and the four-mode PhysX scene-query
+dispatcher. Stop at opaque record/shape fields where the retail source does not establish
+semantics.
+
+## Phase 359: vehicle physics asset root registry
+
+Reconstruct the exact vehicle physics resource roots emitted by FUN_0074ec30:
+Chassis, Collision, Engines, GearBox, Suspension, Upgrades and Vehicles, and link the
+Chassis root to the participant .cdf construction in FUN_0074d640.
+
