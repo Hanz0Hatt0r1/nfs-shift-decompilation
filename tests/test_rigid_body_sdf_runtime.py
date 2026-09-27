@@ -61,7 +61,7 @@ name=link posbody=body negbody=wheel pos=(0,0,0) neg=(1,0,0)
     assert graph["ready"] is True
     assert graph["edge_count"] == 2
     assert graph["body_names"] == ["BODY", "WHEEL"]
-    assert graph["adjacency"]["body"] == [0, 1]
+    assert graph["adjacency"]["BODY"] == [0, 1]
     assert graph["adjacency"]["wheel"] == [0, 1]
 
 
@@ -163,7 +163,7 @@ name=body
     graph = sdf.resolve_sdf_body_references(report)
     assert graph["ready"] is False
     assert graph["duplicate_body_names"] == ["BODY"]
-    assert "duplicate-body-name:body" in graph["unresolved"]
+    assert "duplicate-body-name:BODY" in graph["unresolved"]
 
 
 def test_sdf_body_lowering_preserves_proven_runtime_offsets():
