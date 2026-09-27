@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is advancing through Phase 355. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 356. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -1574,3 +1574,10 @@ bmw_apitrace_runtime_instance_proof.py consumes that compact evidence and requir
 The proof intentionally does not infer declaration bytes, MEB identity, shader permutation, constants or textures. Its purpose is to close the runtime object identity boundary that was previously lost between the compact apitrace geometry extractor and the strict D3D9 same-instance gate.
 
 tools/run_apitrace_bmw_buffer_proof.py now creates the compact BMW geometry evidence itself before the bounded blob pass and emits runtime_draw_instance_proof.json, while keeping byte-parity readiness independent of this additional proof.
+
+
+## Phase 356: single-frame apitrace handoff
+
+tools/extract_apitrace_single_frame.py provides a compact handoff from the multi-gigabyte retail apitrace capture to one analyzable frame. The recommended --auto-bmw mode scans the trace stream, finds the frame with the strongest BMW target primitive coverage, records its original call range and uses apitrace auto-trim on that frame. Explicit --frame and --draw-call modes are also available.
+
+The tool writes only single_frame.trace and manifest.json; the original trace and its full text dump are untouched. Auto-trim dependencies remain an explicit evidence boundary rather than being presented as a byte-for-byte slice.
