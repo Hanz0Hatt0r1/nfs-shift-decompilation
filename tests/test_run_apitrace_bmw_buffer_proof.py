@@ -73,6 +73,89 @@ def test_pipeline_writes_expected_outputs_and_proof(monkeypatch, tmp_path):
             json.dumps(evidence, indent=2) + "\n",
             encoding="utf-8",
         )
+        ibs = [
+            "0x27b39760",
+            "0x27b394e0",
+            "0x27b396e0",
+            "0x27b39660",
+            "0x27b39560",
+            "0x27b395e0",
+        ]
+        primitives = [28, 50, 192, 204, 2098, 2462]
+        geometry_rows = []
+        for i, (primitive, pointer) in enumerate(zip(primitives, ibs)):
+            draw_call = 100 + i * 10
+            geometry_rows.append({
+                "geometry_key_sha256": f"geometry-{primitive}",
+                "first_draw_call": draw_call,
+                "primitive_counts": [primitive],
+                "draws": [{
+                    "call": draw_call,
+                    "base_vertex_index": 0,
+                    "min_vertex_index": 0,
+                    "num_vertices": 3550,
+                    "start_index": 0,
+                    "prim_count": primitive,
+                }],
+                "state": {
+                    "vertex_declaration": {
+                        "call": draw_call - 3,
+                        "raw": "SetVertexDeclaration(pDecl = 0xddd)",
+                        "pointer": "0xddd",
+                    }
+                },
+                "resources": {
+                    "vertex_declaration": {
+                        "pointer": "0xddd",
+                        "binding_call": draw_call - 3,
+                        "creation": {
+                            "kind": "decl",
+                            "call": 10,
+                            "pointer": "0xddd",
+                            "raw": "CreateVertexDeclaration(ppDecl = 0xddd)",
+                        },
+                        "same_instance": True,
+                    },
+                    "vertex_buffer": {
+                        "pointer": "0x27b39460",
+                        "binding_call": draw_call - 2,
+                        "offset_bytes": 0,
+                        "stride": 76,
+                        "creation": {
+                            "kind": "vb",
+                            "call": 11,
+                            "pointer": "0x27b39460",
+                            "raw": "CreateVertexBuffer(...)",
+                        },
+                        "same_instance": True,
+                    },
+                    "index_buffer": {
+                        "pointer": pointer,
+                        "binding_call": draw_call - 1,
+                        "creation": {
+                            "kind": "ib",
+                            "call": 12 + i,
+                            "pointer": pointer,
+                            "raw": "CreateIndexBuffer(...)",
+                        },
+                        "same_instance": True,
+                    },
+                },
+            })
+        unique = {
+            "format": "SHIFT.APITRACEUniqueBMWGeometry/1",
+            "source": {"path": str(trace), "kind": "trace"},
+            "scan": {
+                "target_vertex_count": 3550,
+                "target_vertex_buffer_pointer": "0x27b39460",
+                "target_index_buffer_pointers": dict(zip(primitives, ibs)),
+            },
+            "geometry": geometry_rows,
+        }
+        (out / "unique_bmw_geometry.json").write_text(
+            json.dumps(unique, indent=2) + "\n",
+            encoding="utf-8",
+        )
         return {"payload_records": 7, "full_buffer_candidates": 7}
 
     def fake_artifacts(bff_path, output_dir):
@@ -108,7 +191,10 @@ def test_pipeline_writes_expected_outputs_and_proof(monkeypatch, tmp_path):
     assert result["ready"] is True
     assert result["byte_parity"]["matches"] == 7
     assert result["geometry_proof"]["ready"] is True
+    assert result["runtime_draw_instance_proof"]["ready"] is True
+    assert result["next_gate"]["runtime_declaration_instance"] == "proven"
     assert (out / "runtime_geometry_proof.json").is_file()
+    assert (out / "runtime_draw_instance_proof.json").is_file()
     assert (out / "pipeline_result.json").is_file()
 
 
