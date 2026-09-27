@@ -1,0 +1,34 @@
+{
+  "format": "SHIFT.SDFRetailMatrixStorageEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "functions": {
+    "FUN_007b3820": {
+      "source_line": 813669,
+      "matrix_bytes": "scalar_count * scalar_count * 8",
+      "row_pointer_bytes": "scalar_count * 4",
+      "row_pointer_formula": "matrix_base + scalar_count*row*8"
+    },
+    "FUN_007b2010": {
+      "source_line": 812385,
+      "operation": "zero every matrix row through row pointers"
+    },
+    "FUN_007bb8d0": {
+      "source_line": 814093,
+      "operation": "rebuild per-body row pointers from +0x15c row-index offsets"
+    }
+  },
+  "offsets": {
+    "global_scalar_count": "+0x34",
+    "global_row_pointers": "+0x3c",
+    "global_matrix_pool": "+0x38",
+    "per_body_vector": "+0x150",
+    "per_body_matrix_pool": "+0x154",
+    "per_body_row_pointers": "+0x158",
+    "per_body_row_indices": "+0x15c"
+  },
+  "status": "source-backed-executable"
+}
