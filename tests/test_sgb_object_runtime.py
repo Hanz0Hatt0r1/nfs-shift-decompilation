@@ -48,8 +48,12 @@ def test_hierarchy_child_record_size_is_36_bytes():
 
 
 def test_hierarchy_truncation_blocks_non_strict():
-    payload = _hierarchy_payload(count=2)[:36 + 36]
-    result = parse_sgb_object_payload(payload, strict=False)
+    payload = bytearray(_hierarchy_payload(count=2))
+    # Keep the proven dispatcher string inside the bounded payload while the
+    # 72-byte child table is deliberately truncated after one record.
+    struct.pack_into("<I", payload, 0, 40)
+    payload[40:50] = b"HIERARCHY\0"
+    result = parse_sgb_object_payload(bytes(payload[:72]), strict=False)
     assert result["decoded"] is False
     assert result["status"] == "blocked"
     assert result["blockers"]
