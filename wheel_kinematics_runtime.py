@@ -213,6 +213,7 @@ def build_wheel_kinematics_contract() -> dict:
                 "distance_error": DISTANCE_ERROR_OFFSET,
                 "projection_value": PROJECTION_VALUE_OFFSET,
                 "helper_output": HELPER_OUTPUT_OFFSET,
+                "helper_return": "x87 ST0",
                 "helper_current_gap": HELPER_CURRENT_GAP_OFFSET,
                 "helper_previous_gap": HELPER_PREVIOUS_GAP_OFFSET,
                 "helper_crossing_flag": HELPER_CROSSING_FLAG_OFFSET,
@@ -266,7 +267,7 @@ def build_wheel_kinematics_contract() -> dict:
             "condition": "pointer non-zero and block+0x11C == 0",
         },
         "status": (
-            "exact wheel-kinematics/control-flow boundary; "
+            "exact wheel-kinematics/control-flow boundary with decoded spring helper; "
             "downstream tyre-force/contact semantics remain unresolved"
         ),
     }
