@@ -72,17 +72,22 @@ def test_type0_and_type1_share_the_same_force_construction():
         result = compute_spring_force(
             SpringElementInput(
                 spring_type=spring_type,
-                direction=Vec3(1.0, 0.0, 0.0),
-                body_relative_vector=Vec3(0.0, 2.0, 0.0),
-                projection=2.0,
+                direction=Vec3(2.0, 0.0, 0.0),
+                body_relative_vector=Vec3(3.0, 0.0, 0.0),
                 collision_length=0.0,
                 spring_param_a=3.0,
                 spring_param_b=4.0,
             )
         )
         assert result.applied is True
-        assert result.force == Vec3(6.0, 8.0, 0.0)
-        assert result.response_scalar == 6.0
+        if spring_type == 0:
+            assert result.projection == 6.0
+            assert result.force == Vec3(84.0, 0.0, 0.0)
+            assert result.response_scalar == 42.0
+        else:
+            assert result.projection == 3.0
+            assert result.force == Vec3(21.0, 0.0, 0.0)
+            assert result.response_scalar == 21.0
 
 
 def test_type2_adds_body_relative_vector_and_directional_component():
@@ -91,7 +96,6 @@ def test_type2_adds_body_relative_vector_and_directional_component():
             spring_type=2,
             direction=Vec3(1.0, 0.0, 0.0),
             body_relative_vector=Vec3(0.0, 2.0, 0.0),
-            projection=2.0,
             collision_length=0.0,
             spring_param_a=3.0,
             spring_param_b=4.0,
@@ -106,7 +110,6 @@ def test_unsupported_type_is_explicitly_blocked():
             spring_type=7,
             direction=Vec3(1.0, 0.0, 0.0),
             body_relative_vector=Vec3(0.0, 1.0, 0.0),
-            projection=1.0,
             collision_length=0.0,
             spring_param_a=1.0,
             spring_param_b=1.0,
