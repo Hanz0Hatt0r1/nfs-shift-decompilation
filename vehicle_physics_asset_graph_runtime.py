@@ -41,6 +41,7 @@ from sdf_constraint_projection_runtime import (
     describe_joint_projection_provenance,
 )
 from sdf_body_state_projection_runtime import describe_sdf_body_state_projection_contract
+from sdf_hinge_matrix_coupling_runtime import describe_hinge_matrix_coupling_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -104,6 +105,7 @@ def build_profile(
     sdf_joint_projection = describe_joint_projection_provenance()
     sdf_hinge_projection = describe_hinge_projection_provenance()
     sdf_body_state_projection = describe_sdf_body_state_projection_contract()
+    sdf_hinge_matrix_coupling = describe_hinge_matrix_coupling_contract()
 
     blockers: list[str] = []
     for name, report in (
@@ -202,6 +204,7 @@ def build_profile(
             "sdf_joint_projection_ready": sdf_joint_projection.get("ready") is True,
             "sdf_hinge_projection_ready": sdf_hinge_projection.get("ready") is True,
             "sdf_body_state_projection_contract_ready": sdf_body_state_projection.get("ready") is True,
+            "sdf_hinge_matrix_coupling_ready": sdf_hinge_matrix_coupling.get("ready") is True,
         },
         "details": {
             "cdf": cdf_report,
@@ -228,6 +231,7 @@ def build_profile(
             "sdf_joint_projection": sdf_joint_projection,
             "sdf_hinge_projection": sdf_hinge_projection,
             "sdf_body_state_projection": sdf_body_state_projection,
+            "sdf_hinge_matrix_coupling": sdf_hinge_matrix_coupling,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {

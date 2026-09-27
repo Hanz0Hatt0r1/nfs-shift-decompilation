@@ -1,0 +1,31 @@
+{
+  "format": "SHIFT.SDFHingeMatrixCouplingEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_007bb250",
+    "source_line": 819302
+  },
+  "sample": {
+    "stride": "0xa0",
+    "scalar_base": "+0x94",
+    "side_flag": "+0x98",
+    "angular_row": "+0x48/+0x50/+0x58",
+    "linear_row": "+0x60/+0x68/+0x70"
+  },
+  "self_block": [
+    "A dot (M A)",
+    "A dot (M B)",
+    "B dot (M B)"
+  ],
+  "pair_block": {
+    "d5": "A_j dot (M A_i)",
+    "d6": "B_j dot (M A_i)",
+    "d8": "A_j dot (M B_i)",
+    "d7": "B_j dot (M B_i)",
+    "same_side": "add",
+    "different_side": "subtract"
+  },
+  "status": "source-backed-executable"
+}

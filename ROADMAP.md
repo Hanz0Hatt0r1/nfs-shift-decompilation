@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 398: HINGE/HINGE matrix coupling
+
+`FUN_007bb250` now has an executable HINGE/HINGE matrix contract: self lower-triangle block, pair `d5/d6/d8/d7` coefficients, zero/nonzero side sign, and exact base-order-dependent storage orientation. Next target: BAR/BAR scalar matrix coupling in `FUN_007bb6c0`.
+
 ## Phase 397: JOINT/HINGE projection equations
 
 Rebased the SDF projection layer against the full local retail `SHIFT.exe.c` snapshot. `FUN_007bac60` is now executable with exact d2/d3/d5 and d4/d6/d7 equations, zero/nonzero side-flag handling and the per-body solver-vector destination at `+0x150`. `FUN_007bae40` now reconstructs both branches, including `FUN_007b1320` cross ordering. The same correction fixes `+0x150/+0x154` naming as solver vector/matrix contribution storage and corrects `FUN_007b4110` to post-solve application.
