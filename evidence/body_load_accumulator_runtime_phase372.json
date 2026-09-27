@@ -1,0 +1,30 @@
+{
+  "format": "SHIFT.BodyLoadAccumulatorRuntime/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "function": "FUN_007baa70",
+    "line": 818986
+  },
+  "storage": {
+    "point_cross_vector": ["0x48", "0x50", "0x58"],
+    "vector_sum": ["0x60", "0x68", "0x70"]
+  },
+  "arithmetic": {
+    "vector_update": "accumulator += param_2",
+    "cross_product": {
+      "x": "param_1.y * param_2.z - param_1.z * param_2.y",
+      "y": "param_1.z * param_2.x - param_1.x * param_2.z",
+      "z": "param_1.x * param_2.y - param_1.y * param_2.x"
+    },
+    "origin_adjustment": false
+  },
+  "related_variant": {
+    "function": "FUN_007ba9e0",
+    "origin_adjustment": "param_1 - body_position"
+  },
+  "unresolved": [
+    "concrete PhysX/engine accumulator type",
+    "physical units"
+  ]
+}
