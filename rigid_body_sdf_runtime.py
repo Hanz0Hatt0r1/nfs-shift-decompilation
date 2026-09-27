@@ -437,14 +437,16 @@ def describe_sdf_constraint_runtime_lowering(
 ) -> dict[str, Any]:
     """Describe the source-backed FUN_007b3150 constraint materialization map.
 
-    The returned contract names storage/call boundaries only; it deliberately
-    does not assign PhysX SDK class names or physical-unit semantics.
+    One source record can materialize more than one runtime record: the retail
+    JOINT&HINGE path emits separate JOINT and HINGE records.
     """
-    section_specs = {
+    materialization_specs = {
         "JOINT": {
+            "runtime_section": "JOINT",
             "flag_bit": SDF_FLAG_JOINT,
             "runtime_stride": 0xA0,
             "body_counter_offset": "+0x98",
+            "array_slot": "+0x1c",
             "source_value_fields": ["pos"],
             "source_descriptor_offsets": ["+0x28", "+0x30", "+0x38"],
             "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
@@ -453,9 +455,11 @@ def describe_sdf_constraint_runtime_lowering(
             "postload_helper": "FUN_007b2da0",
         },
         "HINGE": {
+            "runtime_section": "HINGE",
             "flag_bit": SDF_FLAG_HINGE,
             "runtime_stride": 0xA0,
             "body_counter_offset": "+0x9c",
+            "array_slot": "+0x24",
             "source_value_fields": ["axis"],
             "source_descriptor_offsets": ["+0x58", "+0x60", "+0x68"],
             "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
@@ -464,9 +468,11 @@ def describe_sdf_constraint_runtime_lowering(
             "postload_helper": "FUN_007b2de0",
         },
         "BAR": {
+            "runtime_section": "BAR",
             "flag_bit": SDF_FLAG_BAR,
             "runtime_stride": 0xB8,
             "body_counter_offset": "+0xa0",
+            "array_slot": "+0x2c",
             "source_value_fields": ["pos", "neg"],
             "source_descriptor_offsets": [
                 "+0x28", "+0x30", "+0x38", "+0x40", "+0x48", "+0x50"
@@ -478,28 +484,23 @@ def describe_sdf_constraint_runtime_lowering(
             "sample_stride": 0x60,
             "postload_helper": "FUN_007b2f70",
         },
-        "JOINT&HINGE": {
-            "flag_bit": SDF_FLAG_JOINT | SDF_FLAG_HINGE,
-            "runtime_stride": 0xA0,
-            "body_counter_offset": ["+0x98", "+0x9c"],
-            "source_value_fields": {
-                "joint": ["pos"],
-                "hinge": ["axis"],
-            },
-            "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
-            "sample_helpers": ["FUN_007ba8b0", "FUN_007ba900"],
-            "sample_strides": [0x40, 0xA0],
-            "postload_helpers": ["FUN_007b2da0", "FUN_007b2de0"],
-        },
+    }
+    source_to_materializations = {
+        "JOINT": ("JOINT",),
+        "HINGE": ("HINGE",),
+        "BAR": ("BAR",),
+        "JOINT&HINGE": ("JOINT", "HINGE"),
     }
 
     rows: list[dict[str, Any]] = []
     unresolved: list[str] = []
+    source_record_count = 0
     for record_index, record in enumerate(report.get("records") or []):
-        section = str(record.get("section", "")).upper()
-        spec = section_specs.get(section)
-        if spec is None:
+        source_section = str(record.get("section", "")).upper()
+        materializations = source_to_materializations.get(source_section)
+        if materializations is None:
             continue
+        source_record_count += 1
         values = {
             str(entry.get("name")): entry.get("value")
             for entry in record.get("entries") or []
@@ -508,59 +509,73 @@ def describe_sdf_constraint_runtime_lowering(
         negbody = values.get("negbody")
         for field, body in (("posbody", posbody), ("negbody", negbody)):
             if body is None:
-                unresolved.append(f"record:{record_index}:{section}:missing-{field}")
-        flags = {
-            "joint": bool(int(spec["flag_bit"]) & SDF_FLAG_JOINT),
-            "hinge": bool(int(spec["flag_bit"]) & SDF_FLAG_HINGE),
-            "bar": bool(int(spec["flag_bit"]) & SDF_FLAG_BAR),
-        }
-        rows.append({
-            "record_index": record_index,
-            "section": section,
-            "name": values.get("name"),
-            "posbody": posbody,
-            "negbody": negbody,
-            "flags": flags,
-            "flag_word": spec["flag_bit"],
-            "runtime_stride": spec["runtime_stride"],
-            "body_pointer_slots": {
-                "posbody": "+0x78",
-                "negbody": "+0x80",
-            },
-            "record_index_field": "+0x70",
-            "endpoint_pointer_slots": {
-                "positive": "+0x7c",
-                "negative": "+0x84",
-            },
-            "body_counter_offset": spec["body_counter_offset"],
-            "copy_helper": "FUN_007b2ae0",
-            "source_descriptor": {
-                "common_flag_offset": "+0x10",
-                "common_string_offsets": ["+0x14", "+0x18", "+0x1c", "+0x20"],
-                "common_scalar_offsets": [
-                    "+0x28", "+0x30", "+0x38", "+0x40", "+0x48", "+0x50",
-                    "+0x58", "+0x60", "+0x68"
-                ],
-            },
-            "section_storage": {
-                "source_value_fields": spec["source_value_fields"],
-                "source_descriptor_offsets": spec["source_descriptor_offsets"],
-                "runtime_vector_offsets": spec["runtime_vector_offsets"],
-            },
-            "sampling": {
-                "helper": spec.get("sample_helper") or spec.get("sample_helpers"),
-                "sample_stride": spec.get("sample_stride") or spec.get("sample_strides"),
-            },
-            "postload": {
-                "helper": spec.get("postload_helper") or spec.get("postload_helpers"),
-            },
-        })
+                unresolved.append(
+                    f"record:{record_index}:{source_section}:missing-{field}"
+                )
+
+        for materialization in materializations:
+            spec = materialization_specs[materialization]
+            rows.append({
+                "source_record_index": record_index,
+                "source_section": source_section,
+                "runtime_section": spec["runtime_section"],
+                "materialization": materialization,
+                "name": values.get("name"),
+                "posbody": posbody,
+                "negbody": negbody,
+                "flags": {
+                    "joint": materialization == "JOINT",
+                    "hinge": materialization == "HINGE",
+                    "bar": materialization == "BAR",
+                },
+                "flag_word": spec["flag_bit"],
+                "runtime_stride": spec["runtime_stride"],
+                "array_slot": spec["array_slot"],
+                "body_pointer_slots": {
+                    "posbody": "+0x78",
+                    "negbody": "+0x80",
+                },
+                "record_index_field": "+0x70",
+                "endpoint_pointer_slots": {
+                    "positive": "+0x7c",
+                    "negative": "+0x84",
+                },
+                "body_counter_offset": spec["body_counter_offset"],
+                "copy_helper": "FUN_007b2ae0",
+                "source_descriptor": {
+                    "common_flag_offset": "+0x10",
+                    "string_fields": {
+                        "constraint_name": "+0x14",
+                        "posbody": "+0x18",
+                        "negbody": "+0x1c",
+                        "copy_body_name": "+0x20",
+                    },
+                    "common_string_offsets": ["+0x14", "+0x18", "+0x1c", "+0x20"],
+                    "common_scalar_offsets": [
+                        "+0x28", "+0x30", "+0x38", "+0x40", "+0x48", "+0x50",
+                        "+0x58", "+0x60", "+0x68"
+                    ],
+                },
+                "section_storage": {
+                    "source_value_fields": spec["source_value_fields"],
+                    "source_descriptor_offsets": spec["source_descriptor_offsets"],
+                    "runtime_vector_offsets": spec["runtime_vector_offsets"],
+                },
+                "sampling": {
+                    "helper": spec["sample_helper"],
+                    "sample_stride": spec["sample_stride"],
+                },
+                "postload": {
+                    "helper": spec["postload_helper"],
+                },
+            })
 
     return {
-        "format": "SHIFT.SDFConstraintRuntimeLowering/1",
-        "version": 1,
+        "format": "SHIFT.SDFConstraintRuntimeLowering/2",
+        "version": 2,
         "status": "ready" if not unresolved else "blocked",
         "ready": not unresolved,
+        "source_record_count": source_record_count,
         "record_count": len(rows),
         "rows": rows,
         "unresolved": list(dict.fromkeys(unresolved)),
@@ -577,7 +592,7 @@ def describe_sdf_constraint_runtime_lowering(
         },
         "limitations": [
             "The contract describes retail storage and helper boundaries, not concrete PhysX SDK classes.",
-            "BAR secondary vector source names are intentionally structural because the text loader does not establish gameplay names.",
+            "BAR endpoint source fields retain the exact structural names pos/neg; no gameplay label is inferred.",
             "Returned sample pointers remain opaque runtime allocations; only their proven strides/helpers are recorded.",
         ],
     }
