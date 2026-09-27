@@ -1,0 +1,27 @@
+{
+  "format": "SHIFT.MatrixVectorTransformRuntime/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "function": "FUN_007af0a0",
+    "line": 810279
+  },
+  "matrix_float_offsets": {
+    "row0": ["0x00","0x04","0x08"],
+    "row1": ["0x0c","0x10","0x14"],
+    "row2": ["0x18","0x1c","0x20"]
+  },
+  "conversion": {
+    "input": "double -> float",
+    "output": "float -> double"
+  },
+  "formula": {
+    "x": "m20*z + m00*x + m10*y",
+    "y": "m21*z + m11*y + m01*x",
+    "z": "m22*z + m12*y + m02*x"
+  },
+  "unresolved": [
+    "matrix coordinate convention",
+    "physical semantic of the matrix object"
+  ]
+}
