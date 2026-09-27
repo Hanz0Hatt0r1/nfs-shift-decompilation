@@ -1,0 +1,50 @@
+{
+  "format": "SHIFT.CollisionQueryRuntime/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "query_function_line": 811231,
+    "wheel_caller_line": 759173,
+    "fallback_query_function": "FUN_0074f560"
+  },
+  "query_record": {
+    "double_slots": 7,
+    "position_offset": "0x00",
+    "y_tolerance_offset": "0x18",
+    "max_aux_offset": "0x20",
+    "output_height_offset": "0x28",
+    "cache_handle_offset": "0x30",
+    "param_3": 1,
+    "position_bias": [0.0, 0.15, 0.0],
+    "y_tolerance": 200.35,
+    "max_aux": 9.999999933815813e36
+  },
+  "cache_record": {
+    "allocation_stride": "0x58",
+    "query_point_offset": "0x04",
+    "normal_offset": "0x10",
+    "contact_height_offset": "0x1c",
+    "triangle_a_offset": "0x20",
+    "triangle_b_offset": "0x2c",
+    "triangle_c_offset": "0x38",
+    "valid_offset": "0x44",
+    "hit_count_offset": "0x50"
+  },
+  "observable_behavior": {
+    "hit_returns_record_pointer": true,
+    "hit_writes_normal": true,
+    "hit_writes_contact_height": true,
+    "miss_returns_null": true,
+    "miss_normal": [0.0, 1.0, 0.0],
+    "caller_state_38dc": "returned query handle",
+    "caller_state_38e0_hit": "original_world_y - contact_height",
+    "caller_state_38e0_miss": "state +0x38e8 fallback"
+  },
+  "unresolved": [
+    "PhysX class/type names",
+    "physical units of y_tolerance and contact_height",
+    "semantic name of the caller +0x38e0 scalar",
+    "semantics of record +0x48 and unused tail fields",
+    "exact scene-query implementation below the cache boundary"
+  ]
+}
