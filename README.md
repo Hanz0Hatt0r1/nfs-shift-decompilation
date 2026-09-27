@@ -591,3 +591,13 @@ Phase 252 adds flat_runtime.py and the flat-runtime CLI. It reconstructs the run
 Phase 253 adds a shared source-backed MATRIX contract for scene/object transforms: Offset, Orientation reordering and optional Scale. It is used as a neutral runtime primitive and does not modify the renderer or RENDER.bff workflow.
 
 > **Raw geometry payload capture:** Phase 344 adds opt-in VB/IB Lock/Unlock capture. Full-buffer payloads are copied before Unlock and can be compared byte-for-byte against canonical MEB-derived VB/IB artifacts.
+
+### Extract the last 500 MiB of a trace
+
+For quickly transferring the tail of a large `.trace` file without loading the entire file into memory:
+
+    python tools/extract_trace_tail.py \
+      /path/to/SHIFT.trace \
+      ./SHIFT_tail_500MiB.trace
+
+The utility reads only the requested tail in 1 MiB chunks. Use `--size-mib N` to select another size.
