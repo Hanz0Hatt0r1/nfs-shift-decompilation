@@ -104,6 +104,26 @@ def _dump_lines(trace: Path, apitrace: str) -> Iterator[str]:
 def _parse_pointer_targets(path: Path | None) -> tuple[str | None, dict[int, str]]:
     if path is None:
         return None, {}
+
+    # Accept both the legacy runtime-geometry schema and the current
+    # unique_bmw_geometry.json schema. The latter stores the target pointers
+    # under scan.target_* fields and represents geometry as a list.
+    data = json.loads(path.read_text(encoding="utf-8"))
+    scan = data.get("scan")
+    if isinstance(scan, dict):
+        vb = scan.get("target_vertex_buffer_pointer")
+        raw_ibs = scan.get("target_index_buffer_pointers") or {}
+        ibs: dict[int, str] = {}
+        if isinstance(raw_ibs, dict):
+            for primitive, pointer in raw_ibs.items():
+                try:
+                    primitive_int = int(primitive)
+                except (TypeError, ValueError):
+                    continue
+                if pointer:
+                    ibs[primitive_int] = str(pointer)
+        return (str(vb) if vb else None), ibs
+
     vb, _, ibs = _load_runtime_geometry(path)
     return vb, ibs
 
