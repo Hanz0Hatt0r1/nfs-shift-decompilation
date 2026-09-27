@@ -3,10 +3,12 @@
 
 Pipeline:
   original .trace
+    -> compact BMW draw/state extraction
     -> bounded apitrace --blobs extraction for the known BMW resource instances
     -> deterministic MEB VB/IB reconstruction from the retail BMW BFF
     -> exact 7-object byte parity
     -> SHIFT.BMWM3RuntimeGeometryProof/1
+    -> SHIFT.BMWM3APITRACERuntimeDrawInstanceProof/1
 
 The command never commits or embeds proprietary binary inputs. It writes only
 metadata, hashes and derived local artifacts under the requested output dir.
@@ -30,6 +32,7 @@ from bmw_meb_runtime_buffer_artifacts import (
 from bmw_runtime_geometry_proof import build_report as build_geometry_proof
 from bmw_apitrace_runtime_instance_proof import build_report as build_runtime_instance_proof
 from tools.extract_apitrace_bmw_buffer_blobs import extract_from_source
+from tools.extract_apitrace_unique_bmw import extract as extract_unique_bmw_geometry
 from tools.verify_apitrace_bmw_buffer_blob_parity import build_report as build_byte_parity
 
 FORMAT = "SHIFT.BMWM3APITRACEBufferProofPipeline/1"
@@ -108,10 +111,20 @@ def run_pipeline(
     if not bff_path.is_file():
         raise FileNotFoundError(bff_path)
 
+    unique_geometry_summary = extract_unique_bmw_geometry(
+        trace_path,
+        out,
+        apitrace=apitrace,
+        target_runtime_geometry=geometry_path,
+        include_shaders=True,
+        include_textures=True,
+    )
+    unique_geometry_path = out / "unique_bmw_geometry.json"
+
     blob_dir = out / "extracted"
     extraction_summary = extract_from_source(
         trace_path,
-        geometry_path,
+        unique_geometry_path,
         blob_dir,
         apitrace=apitrace,
     )
@@ -132,7 +145,6 @@ def run_pipeline(
     proof = build_geometry_proof(geometry, parity)
     _write_json(out / "runtime_geometry_proof.json", proof)
 
-    unique_geometry_path = out / "unique_bmw_geometry.json"
     runtime_instance_proof = None
     if unique_geometry_path.is_file():
         runtime_instance_proof = build_runtime_instance_proof(
@@ -160,6 +172,7 @@ def run_pipeline(
             "bff": str(bff_path),
             "apitrace": apitrace,
         },
+        "unique_geometry_extraction": unique_geometry_summary,
         "extraction": extraction_summary,
         "outputs": {
             "buffer_blob_evidence": str(blob_evidence_path),
