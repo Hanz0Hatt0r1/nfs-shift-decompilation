@@ -107,6 +107,7 @@ def bootstrap_named_target_indices(
         "second_block": second,
         "evidence": {
             "function": "FUN_00816f50",
+            "rtti_type": TRACKING_RTTI,
             "first_output_count": FIRST_COUNT,
             "second_output_count": SECOND_COUNT,
         },
