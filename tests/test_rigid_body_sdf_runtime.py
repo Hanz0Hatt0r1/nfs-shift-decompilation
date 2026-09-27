@@ -286,7 +286,9 @@ def test_sdf_constraint_solver_graph_reconstructs_forward_and_reverse_tables():
     assert [row["count"] for row in graph["forward_records"]] == [2, 2, 1, 3]
     assert [row["node"] for row in graph["reverse_records"]] == [2, 1, 0]
     assert graph["forward_records"][1]["items"][0]["dependencies"] == [0]
-    assert graph["reverse_records"][0]["dependencies"] == [0, 1]
+    assert graph["reverse_records"][0]["dependencies"] == []
+    assert graph["reverse_records"][1]["dependencies"] == [2]
+    assert graph["reverse_records"][2]["dependencies"] == [1, 2]
 
 
 def test_sdf_constraint_solver_graph_rejects_non_square_matrix():
