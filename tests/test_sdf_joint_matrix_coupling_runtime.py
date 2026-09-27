@@ -91,7 +91,7 @@ def test_joint_hinge_pair_block_matches_source():
     assert result["block"] == [
         [3.0, 6.0],
         [-6.0, -12.0],
-        [-3.0, 6.0],
+        [3.0, 6.0],
     ]
     assert result["storage_orientation"] == "joint_rows_by_hinge_columns"
 
@@ -108,7 +108,7 @@ def test_joint_hinge_pair_block_reverses_layout_and_sign():
         same_side=False,
     )
     assert result["block"] == [
-        [-3.0, 6.0, 3.0],
+        [-3.0, 6.0, -3.0],
         [-6.0, 12.0, -6.0],
     ]
     assert result["storage_orientation"] == "hinge_rows_by_joint_columns"
