@@ -178,6 +178,17 @@ def test_pipeline_writes_expected_outputs_and_proof(monkeypatch, tmp_path):
             "index": index,
         }
 
+    def fake_unique_geometry(trace, output_dir, **kwargs):
+        return {
+            "status": "observed",
+            "source_kind": "trace",
+            "unique_geometry_bindings": 6,
+        }
+
+    monkeypatch.setattr(
+        "tools.run_apitrace_bmw_buffer_proof.extract_unique_bmw_geometry",
+        fake_unique_geometry,
+    )
     monkeypatch.setattr(
         "tools.run_apitrace_bmw_buffer_proof.extract_from_source",
         fake_extract_from_source,
