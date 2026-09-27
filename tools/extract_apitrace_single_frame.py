@@ -277,6 +277,30 @@ def _run(command: list[str], *, cwd: Path | None = None) -> None:
     subprocess.run(command, cwd=cwd, check=True)
 
 
+def _trim_supports_auto(apitrace: str) -> bool:
+    """Return whether this apitrace build exposes the experimental --auto trim flag."""
+    try:
+        result = subprocess.run(
+            [apitrace, "trim", "--help"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except OSError:
+        return False
+    return "--auto" in result.stdout
+
+
+def _auto_or_exact_option(apitrace: str, *parts: str) -> list[str]:
+    """Build a trim invocation compatible with both old and current apitrace CLIs."""
+    if _trim_supports_auto(apitrace):
+        return ["--auto", *parts]
+    return list(parts)
+
+
 def trim_call_range(
     trace: Path,
     output_trace: Path,
