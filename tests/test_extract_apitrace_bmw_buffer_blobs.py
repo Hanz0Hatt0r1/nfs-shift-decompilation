@@ -130,9 +130,11 @@ def test_extracts_fake_memcpy_type_blob(monkeypatch, tmp_path):
     )
     report = geometry_report(tmp_path)
     out = tmp_path / "out"
+    trace = tmp_path / "bmw_buffer_payload.trace"
+    trace.write_bytes(b"synthetic")
 
     summary = mod.extract(
-        tmp_path / "bmw_buffer_payload.trace",
+        trace,
         report,
         out,
     )
@@ -211,8 +213,10 @@ def test_extracts_all_bmw_blobs_directly_from_source(monkeypatch, tmp_path):
 
     monkeypatch.setattr(mod.subprocess, "run", fake_run)
     out = tmp_path / "out"
+    trace = tmp_path / "SHIFT.trace"
+    trace.write_bytes(b"synthetic")
     summary = mod.extract_from_source(
-        tmp_path / "SHIFT.trace",
+        trace,
         report,
         out,
         apitrace="apitrace",

@@ -6,7 +6,7 @@ from camera_view_input_control_runtime import (
 
 
 def test_low_byte_predicate_uses_only_low_eight_bits():
-    assert low_byte_nonzero(0x100)
+    assert low_byte_nonzero(0x101)
     assert not low_byte_nonzero(0x20000)
 
 

@@ -46,7 +46,7 @@ def test_bootstrap_requires_exact_nine_and_twelve_name_slots():
     assert len(result["second_block"]["outputs"]) == 12
 
 
-def test_bootstrap_records_source_function_and_rtti_marker():
+def test_bootstrap_records_source_function_and_rtti_type():
     result = bootstrap_named_target_indices(
         first_names=[str(i) for i in range(9)],
         second_names=[str(i) for i in range(12)],

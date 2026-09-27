@@ -779,6 +779,8 @@ def extract(
         "unique_geometry_bindings": len(unique_rows),
         "compact_call_count": len(compact_calls),
         "callset_count": len(callset),
+        "target_vertex_buffer_pointer": target_vb_pointer,
+        "target_index_buffer_pointers": dict(sorted(target_ib_pointers.items())),
         "trim_status": trim_report["status"],
         "trim_output": trim_report.get("output"),
     }

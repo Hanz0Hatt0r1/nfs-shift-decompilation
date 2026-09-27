@@ -1,3 +1,5 @@
+import pytest
+
 from camera_orientation_assist_runtime import (
     OrientationAssistInputs,
     cross3,

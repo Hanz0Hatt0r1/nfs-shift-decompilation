@@ -206,10 +206,8 @@ def analyze_source(source_path: str | Path) -> dict[str, Any]:
         "tire_source_tag": '"./Source/Vehicle/tire_manager.cpp"',
     }
     # The decompiler spells source paths with doubled backslashes.
-    source_tag_ok = (
-        "./Source/Vehicle/tire_manager.cpp" in text
-        or (".\Source\Vehicle\tire_manager.cpp" in text)
-    )
+    normalized_text = text.replace("\\", "/")
+    source_tag_ok = "Source/Vehicle/tire_manager.cpp" in normalized_text
     checks = {
         "tbc_loader": "FUN_007a32a0" in text,
         "slipcurve_marker": '"[SLIPCURVE]"' in text,
