@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is advancing through Phase 375 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 376 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -91,6 +91,9 @@ Reconstruct FUN_00758fc0: two caller records at +0x37d8/+0x3858, exact three-tra
 ## Phase 375: body point transform
 
 Reconstruct FUN_007537b0 and FUN_00753810 exactly: angular × point + translation, with FUN_00753810 applying point - body_position first. Body offsets +0x18/+0x20/+0x28, +0x00/+0x08/+0x10, and +0x78/+0x80/+0x88 are frozen while their physical meanings remain unresolved. Renderer and RENDER.bff remain untouched.
+## Phase 376: matrix-vector transform runtime
+
+Reconstruct FUN_007af0a0 exactly as a 3x3 float-matrix × double-vector boundary: input components are cast to float, multiplied by the nine float fields at +0x00..+0x20, and widened back to double. This helper is now shared across the wheel longitudinal, response-input and auxiliary contact-response paths. Matrix coordinate convention remains unnamed. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
