@@ -1,0 +1,47 @@
+{
+  "format": "SHIFT.BMWM3PhysicsIntakeEvidence/1",
+  "version": 1,
+  "archive": {
+    "filename": "BMW_M3_E36.bff",
+    "size_bytes": 18934688,
+    "sha256": "8d2a6f7d4e5c8eaf7f1c4cb7c98f7f4f6c6f5d8b0c6e7b9a8a3c1e2f5c8f2f1a",
+    "note": "archive size is source-verified; SHA-256 placeholder must be replaced by measured archive hash before treating as stable archive identity"
+  },
+  "sdf_entry": {
+    "index": 1091,
+    "path": "vehicles/physics/suspension/aarm_multilink.sdf",
+    "compression_type": 2,
+    "compressed_size": 1110,
+    "uncompressed_size": 5056,
+    "decoded_sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed"
+  },
+  "structure": {
+    "body_count": 11,
+    "joint_hinge_count": 4,
+    "bar_count": 20,
+    "joint_scalar_width": 3,
+    "hinge_scalar_width": 2,
+    "bar_scalar_width": 1,
+    "solver_scalar_count": 40
+  },
+  "bodies": [
+    "body",
+    "fl_spindle",
+    "fr_spindle",
+    "fl_wheel",
+    "fr_wheel",
+    "rl_spindle",
+    "rr_spindle",
+    "rl_wheel",
+    "rr_wheel",
+    "fuel_tank",
+    "driver_head"
+  ],
+  "joint_axes": [
+    [-1.0, 0.0, 0.0],
+    [1.0, 0.0, 0.0],
+    [-1.0, 0.0, 0.0],
+    [1.0, 0.0, 0.0]
+  ],
+  "status": "decoded-from-user-supplied-bff"
+}
