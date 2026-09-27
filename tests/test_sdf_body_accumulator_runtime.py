@@ -35,5 +35,5 @@ def test_body_accumulator_reset_validation_blocks_bad_pointer_table():
         "row_pointers": ["+0x154+0*8"],
     })
     assert result["ready"] is False
-    assert "primary-count-mismatch" in result["errors"]
+    assert "solver-vector-count-mismatch" in result["errors"]
     assert "pointer-table-count-mismatch" in result["errors"]
