@@ -33,13 +33,13 @@ class ThermalIntegratorInputs:
     factor_control: float
     heat_shape: float
     heat_gain: float
-    steering_a: float
-    steering_b_scale: float
+    steering_a_product: float
+    steering_b_product: float
     steering_b_base: float
     steering_b_reference: float
     steering_b_gain: float
     sqrt_input_base: float
-    sqrt_response_scale: float
+    global_constant_c12c24: float
     ambient_coupling_a: float
     ambient_coupling_b: float
     reservoir_temperature: float
@@ -60,6 +60,8 @@ class ThermalIntegratorInputs:
     output_scale: float
     output_bias: float
     output_limit_reference: float
+    wear_enabled: bool
+    global_wear_scale: float
 
 
 @dataclass(frozen=True)
@@ -116,29 +118,6 @@ def compute_shape_factor(*, factor_control: float) -> float:
         if factor < 0.5:
             factor = factor * factor + 0.25
     return 1.0 - factor
-
-
-def compute_steering_terms(
-    *,
-    steering_a: float,
-    steering_b_scale: float,
-    steering_b_base: float,
-    steering_b_reference: float,
-    steering_b_gain: float,
-) -> tuple[float, float]:
-    a = clamp(float(steering_a), -1.0, 1.0)
-    b = (
-        _finite("steering_b_scale", steering_b_scale)
-        * _finite("steering_b_reference", steering_b_reference)
-        + _finite("steering_b_base", steering_b_base)
-    )
-    b = clamp(
-        (b - _finite("steering_b_gain_reference", 0.0))
-        * _finite("steering_b_gain", steering_b_gain),
-        -1.0,
-        1.0,
-    )
-    return a, b
 
 
 def compute_temperature_fractions(
@@ -209,7 +188,10 @@ def compute_grip_output(
         + abs(reservoir_temperature - average_temperature)
         / output_limit_reference
     )
-    limited = 1.0 if temperature_factor <= 1.0 else temperature_factor
+    if temperature_factor != temperature_factor:
+        limited = temperature_factor
+    else:
+        limited = max(1.0, temperature_factor)
     output = (1.0 - 0.5 * limited * limited) * grip_state
     return temperature_factor, limited, output
 
@@ -234,13 +216,17 @@ def integrate_wheel_thermal_state(
         * _finite("heat_gain", inputs.heat_gain)
     )
 
-    steering_a = clamp(inputs.steering_a, -1.0, 1.0)
-    steering_b = (
-        inputs.steering_b_scale * inputs.steering_b_reference
-        + inputs.steering_b_base
-        - _finite("steering_b_reference_offset", inputs.steering_b_reference)
-    ) * inputs.steering_b_gain
-    steering_b = clamp(steering_b, -1.0, 1.0)
+    steering_a = clamp(inputs.steering_a_product, -1.0, 1.0)
+    local_steering_b = (
+        _finite("steering_b_product", inputs.steering_b_product)
+        + _finite("steering_b_base", inputs.steering_b_base)
+    )
+    steering_b = clamp(
+        (local_steering_b - _finite("steering_b_reference", inputs.steering_b_reference))
+        * _finite("steering_b_gain", inputs.steering_b_gain),
+        -1.0,
+        1.0,
+    )
 
     fractions = compute_temperature_fractions(
         steering_a=steering_a,
@@ -248,11 +234,14 @@ def integrate_wheel_thermal_state(
         dt=dt,
     )
 
-    sqrt_argument = _finite("sqrt_input_base", inputs.sqrt_input_base) + 1.0
-    sqrt_argument += KELVIN_BIAS - KELVIN_BIAS
+    sqrt_argument = (
+        _finite("sqrt_input_base", inputs.sqrt_input_base)
+        + 1.0
+        + _finite("global_constant_c12c24", inputs.global_constant_c12c24)
+    )
     sqrt_value = sqrt(max(0.0, sqrt_argument))
     ambient_exchange = (
-        sqrt_value * _finite("sqrt_response_scale", inputs.ambient_coupling_a)
+        sqrt_value * _finite("ambient_coupling_a", inputs.ambient_coupling_a)
         + _finite("ambient_coupling_b", inputs.ambient_coupling_b)
     ) * sqrt_value * dt
     reservoir_exchange = _finite("clamp_reference", inputs.reservoir_scale) * dt
@@ -278,22 +267,21 @@ def integrate_wheel_thermal_state(
     average = sum(temperatures_after) / 3.0
     reservoir_scale = _finite("reservoir_scale", inputs.reservoir_scale)
     d7d8 = reservoir_after * reservoir_scale
-    abrasion_temp = average * _finite("temp_gain_positive", inputs.temp_gain_positive)
+    abrasion_temp = average * _finite("secondary_temperature_scale", inputs.secondary_temperature_scale)
     angular = (
         (abs(steering_b) + abs(steering_a) + 4.0) / 6.0
         * dt
         * abrasion_temp * abrasion_temp
-        * secondary_source
+        * shape_factor
         * _finite("abrasion_scale", inputs.abrasion_scale)
         + _finite("abrasion_accumulator", inputs.abrasion_accumulator)
     )
-    abrasion_after = 0.0
-    if inputs.grip_state > WEAR_FLOOR:
-        abrasion_after = _finite("grip_state", inputs.grip_state) - angular
+    wear_before = _finite("grip_state", inputs.grip_state)
+    abrasion_after = wear_before
+    if inputs.wear_enabled and wear_before > WEAR_FLOOR:
+        abrasion_after = wear_before - _finite("global_wear_scale", inputs.global_wear_scale) * angular
         if abrasion_after < WEAR_FLOOR:
             abrasion_after = WEAR_FLOOR
-    else:
-        abrasion_after = _finite("grip_state", inputs.grip_state)
 
     temperature_factor, limited, output = compute_grip_output(
         average_temperature=average,
@@ -343,6 +331,11 @@ def build_contract() -> dict:
             "grip_output": "0x800",
             "accumulator": "0x850",
         },
+        "wheel_object": {
+            "base": "this+0x400",
+            "stride": "0x150",
+            "caller_expression": "((double*)this+0x740)-0x68"
+        },
         "inputs": {
             "activity": "0x740",
             "spin_measure": "0x350",
@@ -366,6 +359,8 @@ def build_contract() -> dict:
             "temp_alert_threshold": "0x778",
             "abrasion_scale": "0x848",
             "abrasion_accumulator": "0x850",
+            "wear_enabled_flag": "0x798",
+            "global_wear_scale": "FUN_00749340(0xc12c80) * 0xc12f38",
             "wear_state": "0x7f8",
             "output_scale": "0x7d0",
             "output_bias": "0x7e8",
@@ -388,7 +383,7 @@ def build_contract() -> dict:
             "exact runtime event side effects from FUN_0070e2c0",
             "decompiler-aliased parameter-stack behavior around param_3 in the tail",
         ],
-        "status": "source/disassembly-backed arithmetic boundary with conservative unknowns",
+        "status": "source/disassembly-backed three-node thermal arithmetic boundary with conservative unknowns",
     }
 
 
