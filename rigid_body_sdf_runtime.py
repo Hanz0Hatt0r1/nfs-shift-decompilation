@@ -326,6 +326,19 @@ SDF_FLAG_HINGE = 0x02
 SDF_FLAG_BAR = 0x04
 
 
+def sdf_constraint_solver_width(section: str) -> int:
+    """Return the scalar solver-node width used by FUN_007b1b60."""
+    wanted = str(section).upper()
+    if wanted == "JOINT":
+        return 3
+    if wanted == "HINGE":
+        return 2
+    if wanted == "BAR":
+        return 1
+    raise ValueError(f"unsupported SDF solver section: {section}")
+
+
+
 def compile_sdf_runtime_topology(
     report: Mapping[str, Any],
 ) -> dict[str, Any]:
@@ -407,6 +420,7 @@ def compile_sdf_runtime_topology(
                 "negbody_index": body_index.get(negbody_key),
                 "vectors": dict(vectors),
                 "runtime_stride": strides[materialization],
+                "solver_width": sdf_constraint_solver_width(materialization),
                 "body_pointer_slots": {
                     "posbody": "+0x78",
                     "negbody": "+0x80",
@@ -638,6 +652,7 @@ def optimize_sdf_constraint_order(
         "status": "optimized",
         "ready": True,
         "constraint_count": n,
+        "solver_scalar_count": sum(widths),
         "order": order,
         "position_by_node": best_position,
         "block_widths": widths,
@@ -662,205 +677,120 @@ def optimize_sdf_constraint_order(
     }
 
 
-def compile_sdf_constraint_solver_graph_from_report(
+def build_sdf_scalar_connectivity_matrix(
     report: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Build connectivity, recover source constraint order, then apply FUN_007b1360."""
+    """Expand record connectivity into the scalar node domain used by the solver."""
     ordering = optimize_sdf_constraint_order(report)
     if ordering.get("ready") is not True:
         return {
-            "format": "SHIFT.SDFConstraintSolverGraph/2",
-            "version": 2,
+            "format": "SHIFT.SDFScalarConnectivityMatrix/1",
+            "version": 1,
             "status": "blocked",
             "ready": False,
-            "ordering": ordering,
+            "constraint_record_count": ordering.get("constraint_count", 0),
+            "solver_scalar_count": 0,
+            "matrix": [],
             "unresolved": list(ordering.get("unresolved") or []),
+            "evidence": {
+                "source_function": "FUN_007ba2b0",
+                "order_source": "FUN_007b1b60",
+            },
         }
 
-    matrix = ordering["connectivity"]["matrix"]
-    order = ordering["order"]
-    ordered_matrix = [
-        [matrix[original_row][original_column] for original_column in order]
-        for original_row in order
+    record_matrix = ordering["connectivity"]["matrix"]
+    order = list(ordering["order"])
+    widths = [int(value) for value in ordering["block_widths"]]
+    record_count = len(order)
+    ordered_widths = [widths[node] for node in order]
+    offsets_by_position: list[int] = []
+    cursor = 0
+    for width in ordered_widths:
+        offsets_by_position.append(cursor)
+        cursor += width
+    scalar_count = cursor
+
+    scalar_matrix = [
+        [0.0 for _ in range(scalar_count)]
+        for _ in range(scalar_count)
     ]
-    graph = compile_sdf_constraint_solver_graph(ordered_matrix)
+    shared_blocks: list[dict[str, Any]] = []
+    for ordered_left in range(record_count):
+        original_left = order[ordered_left]
+        left_start = offsets_by_position[ordered_left]
+        left_width = ordered_widths[ordered_left]
+        for ordered_right in range(ordered_left + 1, record_count):
+            original_right = order[ordered_right]
+            if float(record_matrix[original_left][original_right]) == 0.0:
+                continue
+            right_start = offsets_by_position[ordered_right]
+            right_width = ordered_widths[ordered_right]
+            shared_blocks.append({
+                "left_record": original_left,
+                "right_record": original_right,
+                "left_scalar_range": [left_start, left_start + left_width],
+                "right_scalar_range": [right_start, right_start + right_width],
+            })
+            for left_scalar in range(left_start, left_start + left_width):
+                for right_scalar in range(right_start, right_start + right_width):
+                    scalar_matrix[left_scalar][right_scalar] = 1.0
+                    scalar_matrix[right_scalar][left_scalar] = 1.0
+
     return {
-        **graph,
-        "format": "SHIFT.SDFConstraintSolverGraph/2",
-        "version": 2,
-        "ordering": ordering,
-        "source_constraint_order": order,
+        "format": "SHIFT.SDFScalarConnectivityMatrix/1",
+        "version": 1,
+        "status": "ready",
+        "ready": True,
+        "constraint_record_count": record_count,
+        "solver_scalar_count": scalar_count,
+        "order": order,
+        "block_widths": widths,
+        "ordered_block_widths": ordered_widths,
+        "scalar_block_offsets": offsets_by_position,
+        "matrix": scalar_matrix,
+        "shared_block_count": len(shared_blocks),
+        "shared_blocks": shared_blocks,
+        "evidence": {
+            "source_function": "FUN_007ba2b0",
+            "order_source": "FUN_007b1b60",
+            "scalar_matrix_rule": "shared runtime constraint records set every cross-product entry of their scalar blocks to 1.0",
+            "joint_width": 3,
+            "hinge_width": 2,
+            "bar_width": 1,
+        },
+        "limitations": [
+            "This exposes the coefficient writes that are proven to be 1.0 before FUN_007b2210 diagonal resets.",
+            "Directional sample transforms, physical Jacobian meaning and provider-specific coefficients remain outside this contract.",
+        ],
     }
 
 
 
 
-def compile_sdf_constraint_solver_graph(
-    matrix: Sequence[Sequence[float | int]],
+def compile_sdf_constraint_solver_graph_from_report(
+    report: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Lower an ordered constraint connectivity matrix through FUN_007b1360.
+    """Build scalar connectivity, recover source order, then apply FUN_007b1360."""
+    scalar = build_sdf_scalar_connectivity_matrix(report)
+    if scalar.get("ready") is not True:
+        return {
+            "format": "SHIFT.SDFConstraintSolverGraph/2",
+            "version": 2,
+            "status": "blocked",
+            "ready": False,
+            "scalar_connectivity": scalar,
+            "unresolved": list(scalar.get("unresolved") or []),
+        }
 
-    The input matrix is assumed to already have the constraint order selected by
-    FUN_007b1b60. The function returns the compact forward/reverse dependency
-    records consumed by FUN_007b0f20.
-    """
-    n = len(matrix)
-    if any(len(row) != n for row in matrix):
-        raise ValueError("constraint connectivity matrix must be square")
-
-    work = [
-        [1.0 if float(value) != 0.0 else 0.0 for value in row]
-        for row in matrix
-    ]
-
-    # First source pass: retain the lower triangle, symmetrize it, and count
-    # records. A temporary 2.0 marks an inferred two-hop relation.
-    edge_record_count = 0
-    for column in range(n):
-        for row in range(column, n):
-            if work[row][column] == 0.0 and column > 0:
-                for via in range(column):
-                    if work[row][via] != 0.0 and work[via][column] != 0.0:
-                        work[row][column] = 2.0
-                        break
-            if work[row][column] != 0.0:
-                edge_record_count += 1
-            work[column][row] = work[row][column]
-
-    # FUN_007b1360 always reserves one terminal forward record per node.
-    edge_record_count += n
-
-    for row in range(n):
-        for column in range(n):
-            if work[row][column] == 2.0:
-                work[row][column] = 0.0
-
-    dependency_byte_count = 0
-    forward_records: list[dict[str, Any]] = []
-    edge_pool: list[dict[str, Any]] = []
-
-    for column in range(n + 1):
-        items: list[dict[str, Any]] = []
-        if column == n:
-            for row in range(n):
-                dependencies = [
-                    via
-                    for via in range(row)
-                    if work[row][via] != 0.0
-                ]
-                item = {
-                    "node": row,
-                    "dependency_count": len(dependencies),
-                    "dependencies": dependencies,
-                }
-                items.append(item)
-                edge_pool.append({
-                    "outer_record": column,
-                    **item,
-                })
-                dependency_byte_count += len(dependencies)
-        else:
-            for row in range(column, n):
-                if work[row][column] == 0.0 and column > 0:
-                    for via in range(column):
-                        if work[row][via] != 0.0 and work[via][column] != 0.0:
-                            work[row][column] = 2.0
-                            break
-                if work[row][column] == 0.0:
-                    continue
-                dependencies = [
-                    via
-                    for via in range(column)
-                    if work[row][via] != 0.0 and work[via][column] != 0.0
-                ]
-                item = {
-                    "node": row,
-                    "dependency_count": len(dependencies),
-                    "dependencies": dependencies,
-                }
-                items.append(item)
-                edge_pool.append({
-                    "outer_record": column,
-                    **item,
-                })
-                dependency_byte_count += len(dependencies)
-                work[column][row] = work[row][column]
-
-        forward_records.append({
-            "count": len(items),
-            "items": items,
-        })
-
-    reverse_records: list[dict[str, Any]] = []
-    for row in range(n - 1, -1, -1):
-        dependencies = [
-            column
-            for column in range(row + 1, n)
-            if work[row][column] != 0.0
-        ]
-        reverse_records.append({
-            "node": row,
-            "dependency_count": len(dependencies),
-            "dependencies": dependencies,
-        })
-        dependency_byte_count += len(dependencies)
-
-    if len(edge_pool) != edge_record_count:
-        # The retail routine's allocation size is deterministic. Expose a
-        # mismatch instead of silently fabricating a compatible layout.
-        raise RuntimeError(
-            f"FUN_007b1360 record-count mismatch: expected {edge_record_count}, "
-            f"built {len(edge_pool)}"
-        )
-
+    graph = compile_sdf_constraint_solver_graph(scalar["matrix"])
     return {
-        "format": "SHIFT.SDFConstraintSolverGraph/1",
-        "version": 1,
-        "status": "compiled",
-        "ready": True,
-        "constraint_count": n,
-        "initial_solution": [1.0] * n,
-        "normalized_matrix": [
-            list(row) for row in work
-        ],
-        "forward_records": forward_records,
-        "reverse_records": reverse_records,
-        "edge_record_pool": edge_pool,
-        "allocations": {
-            "forward_table_bytes": (n + 1) * 8,
-            "reverse_table_bytes": n * 8,
-            "edge_record_bytes": edge_record_count * 8,
-            "dependency_index_bytes": dependency_byte_count,
-            "edge_record_count": edge_record_count,
-            "dependency_index_count": dependency_byte_count,
-        },
-        "storage": {
-            "forward_outer_stride": 8,
-            "reverse_record_stride": 8,
-            "edge_record_stride": 8,
-            "dependency_index_width": 1,
-            "forward_outer_count": n + 1,
-            "reverse_record_count": n,
-            "forward_item_layout": {
-                "node": "byte +0x00",
-                "dependency_count": "byte +0x01",
-                "dependency_pointer": "u32 +0x04",
-            },
-        },
-        "evidence": {
-            "source_function": "FUN_007b1360",
-            "consumer": "FUN_007b0f20",
-            "reset_helper": "FUN_007b10d0",
-            "initial_solution_value": 1.0,
-            "terminal_forward_record": "outer index == constraint_count",
-            "reverse_order": "constraint_count-1 down to 0",
-            "inferred_relation_marker": 2.0,
-            "inferred_relation_cleared_before_output": True,
-        },
-        "limitations": [
-            "The input order must already represent FUN_007b1b60's optimized constraint permutation.",
-            "The actual matrix coefficients remain owned by the upstream FUN_007b2010/FUN_007ba2b0 path.",
-        ],
+        **graph,
+        "format": "SHIFT.SDFConstraintSolverGraph/2",
+        "version": 2,
+        "constraint_record_count": scalar["constraint_record_count"],
+        "solver_scalar_count": scalar["solver_scalar_count"],
+        "scalar_connectivity": scalar,
+        "source_constraint_order": scalar["order"],
     }
 
 
@@ -1038,17 +968,21 @@ def describe_sdf_pre_physx_build(
 ) -> dict[str, Any]:
     """Expose deterministic pre-PhysX allocation/build phases of FUN_007b3820."""
     topology = compile_sdf_runtime_topology(report)
-    constraints = topology["constraint_count"]
+    solver_scalar_count = sum(
+        sdf_constraint_solver_width(row["section"])
+        for row in topology["constraints"]
+    )
     joints = sum(1 for row in topology["constraints"] if row["section"] == "JOINT")
     hinges = sum(1 for row in topology["constraints"] if row["section"] == "HINGE")
     bars = sum(1 for row in topology["constraints"] if row["section"] == "BAR")
     return {
-        "format": "SHIFT.SDFPrePhysXBuildRuntime/2",
-        "version": 2,
+        "format": "SHIFT.SDFPrePhysXBuildRuntime/3",
+        "version": 3,
         "status": "ready" if topology["ready"] else "blocked",
         "ready": topology["ready"],
         "counts": {
-            "constraints": constraints,
+            "constraint_records": topology["constraint_count"],
+            "solver_scalar_nodes": solver_scalar_count,
             "joints": joints,
             "hinges": hinges,
             "bars": bars,
@@ -1058,14 +992,14 @@ def describe_sdf_pre_physx_build(
             "per_joint_resolved_samples": joints * 2,
             "per_hinge_resolved_samples": hinges * 2,
             "per_bar_resolved_samples": bars * 2,
-            "constraint_index_matrix_elements": constraints * constraints,
-            "constraint_index_matrix_bytes": constraints * constraints * 8,
-            "constraint_index_row_pointer_elements": constraints,
-            "constraint_index_row_pointer_bytes": constraints * 4,
-            "solver_initial_vector_elements": constraints,
-            "solver_initial_vector_bytes": constraints * 8,
-            "per_body_constraint_index_vector_elements": constraints,
-            "per_body_constraint_index_vector_bytes": constraints * 4,
+            "constraint_index_matrix_elements": solver_scalar_count * solver_scalar_count,
+            "constraint_index_matrix_bytes": solver_scalar_count * solver_scalar_count * 8,
+            "constraint_index_row_pointer_elements": solver_scalar_count,
+            "constraint_index_row_pointer_bytes": solver_scalar_count * 4,
+            "solver_initial_vector_elements": solver_scalar_count,
+            "solver_initial_vector_bytes": solver_scalar_count * 8,
+            "per_body_constraint_index_vector_elements": solver_scalar_count,
+            "per_body_constraint_index_vector_bytes": solver_scalar_count * 4,
             "body_runtime_stride": 0x170,
             "joint_runtime_stride": 0xA0,
             "hinge_runtime_stride": 0xA0,
@@ -1073,8 +1007,8 @@ def describe_sdf_pre_physx_build(
         },
         "stages": [
             {"function": "FUN_007ba4e0", "purpose": "allocate/reset per-constraint sampled arrays"},
-            {"function": "FUN_007b1b60", "purpose": "derive constraint connectivity and order"},
-            {"function": "FUN_007b2010", "purpose": "clear/fill constraint connectivity matrix"},
+            {"function": "FUN_007b1b60", "purpose": "order runtime constraints and return scalar solver-node count"},
+            {"function": "FUN_007b2010", "purpose": "clear/fill scalar constraint connectivity matrix"},
             {"function": "FUN_007ba8b0", "purpose": "joint endpoint sample generation"},
             {"function": "FUN_007ba900", "purpose": "hinge endpoint sample generation"},
             {"function": "FUN_007ba990", "purpose": "bar endpoint sample generation"},
@@ -1084,8 +1018,7 @@ def describe_sdf_pre_physx_build(
         "topology": topology,
         "evidence": {
             "source_function": "FUN_007b3820",
-            "constraint_count_source": "+0x34",
-            "body_runtime_base": "+0x14 + 0x170 * body_index",
+            "scalar_count_source": "FUN_007b1b60 return stored at +0x34",
             "constraint_matrix_element_size": 8,
             "constraint_row_pointer_size": 4,
             "solver_initial_vector_element_size": 8,
