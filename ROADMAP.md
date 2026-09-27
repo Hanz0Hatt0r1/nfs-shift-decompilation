@@ -106,6 +106,9 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 384: SDF constraint runtime materialization
+
+`FUN_007b3150` is now represented as a source-backed constraint materialization contract: JOINT/HINGE/BAR/JOINT&HINGE flag behavior, runtime record strides, positive/negative body pointer slots, per-body reference counters, record node indices, section-specific vector storage, and the post-load sampling helpers `FUN_007ba8b0`, `FUN_007ba900`, `FUN_007ba990`, `FUN_007b2da0`, `FUN_007b2de0` and `FUN_007b2f70`. The generated vehicle physics asset graph carries this contract alongside the existing CDF/EDF/GDF/SDF topology. PhysX SDK types, ownership and physical units remain unresolved.
 ## Phase 382: vehicle physics resource graph
 
 The current physics stream is now resource-first: BMW M3 CDF/EDF/GDF/SDF resources are
