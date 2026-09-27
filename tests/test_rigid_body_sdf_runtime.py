@@ -77,3 +77,47 @@ name=broken posbody=missing negbody=body pos=(0,0,0) neg=(1,0,0)
     graph = sdf.resolve_sdf_body_references(report)
     assert graph["ready"] is False
     assert "record:1:BAR:posbody:missing" in graph["unresolved"]
+
+
+def test_sdf_runtime_topology_compiler_preserves_constructor_flags_and_strides():
+    import rigid_body_sdf_runtime as sdf
+
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT]
+name=j posbody=body negbody=wheel axis=(1,0,0) neg=(0,0,0) pos=(0,1,0)
+[HINGE]
+name=h posbody=body negbody=wheel axis=(0,1,0) neg=(0,0,0) pos=anchor
+[BAR]
+name=b posbody=body negbody=wheel axis=(0,0,1) neg=(0,0,0) pos=(0,0,1)
+[JOINT&HINGE]
+name=jh posbody=wheel negbody=body axis=(1,1,0) neg=(0,0,0) pos=(0,0,1)
+""")
+    compiled = sdf.compile_sdf_runtime_topology(report)
+    assert compiled["ready"] is True
+    assert compiled["body_count"] == 2
+    assert compiled["constraint_count"] == 4
+    assert compiled["constraints"][0]["flag_word"] == 1
+    assert compiled["constraints"][1]["flag_word"] == 2
+    assert compiled["constraints"][2]["flag_word"] == 4
+    assert compiled["constraints"][3]["flag_word"] == 3
+    assert compiled["constraints"][2]["runtime_stride"] == 0xB8
+    assert compiled["constraints"][0]["runtime_stride"] == 0xA0
+    assert compiled["constraints"][1]["vectors"]["pos_body_anchor_name"] == "anchor"
+
+
+def test_sdf_runtime_topology_blocks_unresolved_constraint_body():
+    import rigid_body_sdf_runtime as sdf
+
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BAR]
+name=broken posbody=missing negbody=body pos=(0,0,0) neg=(1,0,0) axis=(1,0,0)
+""")
+    compiled = sdf.compile_sdf_runtime_topology(report)
+    assert compiled["ready"] is False
+    assert any("posbody:missing" in value for value in compiled["unresolved"])
