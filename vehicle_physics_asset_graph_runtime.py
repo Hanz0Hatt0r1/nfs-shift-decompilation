@@ -46,6 +46,7 @@ from sdf_bar_matrix_coupling_runtime import describe_bar_matrix_coupling_contrac
 from sdf_joint_matrix_coupling_runtime import describe_joint_matrix_coupling_contract
 from sdf_hinge_bar_matrix_coupling_runtime import describe_hinge_bar_matrix_coupling_contract
 from bmw_m3_e36_solver_domain_runtime import build_solver_domain
+from sdf_constraint_matrix_assembly_runtime import materialize_source_seed_matrix
 from sdf_constraint_matrix_assembly_runtime import describe_sdf_constraint_matrix_assembly_contract
 from sdf_constraint_matrix_assembly_runtime import build_retail_matrix_storage
 
@@ -120,6 +121,9 @@ def build_profile(
         sdf_constraint_solver_graph.get("solver_scalar_count", 0)
     )
     sdf_real_solver_domain = build_solver_domain(sdf_report)
+    sdf_matrix_seed_write = materialize_source_seed_matrix(
+        sdf_constraint_solver_graph.get("scalar_connectivity", {})
+    )
 
     blockers: list[str] = []
     for name, report in (
@@ -226,6 +230,8 @@ def build_profile(
             "sdf_matrix_storage_ready": sdf_matrix_storage.get("ready") is True,
             "sdf_real_solver_domain_ready": sdf_real_solver_domain.get("ready") is True,
             "sdf_real_solver_scalar_count": sdf_real_solver_domain.get("solver_scalar_count", 0),
+            "sdf_matrix_seed_write_ready": sdf_matrix_seed_write.get("ready") is True,
+            "sdf_matrix_seed_write_count": sdf_matrix_seed_write.get("write_count", 0),
         },
         "details": {
             "cdf": cdf_report,
@@ -259,6 +265,7 @@ def build_profile(
             "sdf_matrix_assembly": sdf_matrix_assembly,
             "sdf_matrix_storage": sdf_matrix_storage,
             "sdf_real_solver_domain": sdf_real_solver_domain,
+            "sdf_matrix_seed_write": sdf_matrix_seed_write,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
