@@ -15,7 +15,7 @@ FUN_007b3150 materializes each SDF constraint into a runtime record selected by 
 
 A JOINT&HINGE source section is materialized twice: once through the JOINT branch and once through the HINGE branch. The positive and negative body references are stored in runtime record slots +0x78 and +0x80. The record's node/aggregate index is written to +0x70. The post-load sample pointers occupy +0x7c and +0x84.
 
-FUN_007b2ae0 copies the common constraint payload, including the flag byte and string/reference fields: constraint name +0x14, posbody +0x18, negbody +0x1c, copy-body name +0x20. It also copies the double-valued storage from +0x28..+0x68. Section-specific vectors are copied to:
+FUN_007b2ae0 copies the common constraint payload, including the flag byte and string/reference fields: constraint name +0x14, posbody +0x18, negbody +0x1c, and copy-body name +0x20. In the text loader, a string-valued pos field supplies that copy-body name; a tuple-valued pos is stored as the positional vector. It also copies the double-valued storage from +0x28..+0x68. Section-specific vectors are copied to:
 
 - JOINT: source +0x28/+0x30/+0x38 -> runtime +0x88/+0x90/+0x98;
 - HINGE: source +0x58/+0x60/+0x68 -> runtime +0x88/+0x90/+0x98;
