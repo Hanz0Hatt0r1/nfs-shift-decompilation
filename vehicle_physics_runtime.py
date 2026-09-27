@@ -257,6 +257,115 @@ POSTLOAD_CALLS = (
     "FUN_007bf430 x2", "FUN_007bf310 x2",
 )
 
+RPM_TORQUE_LIMIT = 127
+
+@dataclass(frozen=True)
+class RPMTorquePoint:
+    """One EDF RPMTorque tuple in source-file order."""
+    rpm: float
+    brake: float
+    throttle: float
+
+    def as_tuple(self) -> tuple[float, float, float]:
+        return (float(self.rpm), float(self.brake), float(self.throttle))
+
+
+def _iter_rpm_points_with_lines(raw_text: str, points: Sequence[RPMTorquePoint]):
+    index = 0
+    for line_no, line in enumerate(raw_text.splitlines(), 1):
+        line = line.split("//", 1)[0].strip()
+        if not line or not line.startswith("RPMTorque") or "=" not in line:
+            continue
+        raw = line.split("=", 1)[1].strip().strip("()")
+        try:
+            values = [float(part.strip()) for part in raw.split(",")]
+        except ValueError:
+            continue
+        if len(values) != 3 or index >= len(points):
+            continue
+        yield line_no, points[index]
+        index += 1
+
+
+def parse_rpm_torque_points(text: str | bytes, *, strict: bool = False) -> dict[str, Any]:
+    """Parse EDF RPMTorque records using the exact source storage order.
+
+    FUN_007c3280 calls FUN_007a6a90 with the destination pointers ordered as
+    slot+2, slot, slot+1. Thus text order RPM, brake, throttle becomes
+    storage order brake, throttle, RPM.
+    """
+    raw_text = text.decode("utf-8", "replace") if isinstance(text, bytes) else str(text)
+    points: list[RPMTorquePoint] = []
+    warnings: list[str] = []
+    for line_no, line in enumerate(raw_text.splitlines(), 1):
+        line = line.split("//", 1)[0].strip()
+        if not line or not line.startswith("RPMTorque"):
+            continue
+        if "=" not in line:
+            warnings.append(f"line:{line_no}:rpm-torque-missing-equals")
+            continue
+        raw = line.split("=", 1)[1].strip()
+        if raw.startswith("(") and raw.endswith(")"):
+            raw = raw[1:-1]
+        try:
+            values = [float(part.strip()) for part in raw.split(",")]
+        except ValueError:
+            warnings.append(f"line:{line_no}:rpm-torque-invalid-number:{raw}")
+            continue
+        if len(values) != 3:
+            warnings.append(f"line:{line_no}:rpm-torque-arity:{len(values)}")
+            continue
+        point = RPMTorquePoint(values[0], values[1], values[2])
+        if len(points) >= RPM_TORQUE_LIMIT:
+            warnings.append("rpm-torque:too-many-points:127")
+            continue
+        if point.brake > point.throttle:
+            warnings.append(f"line:{line_no}:rpm-torque-brake-greater-than-throttle")
+        if points and point.rpm <= points[-1].rpm:
+            warnings.append(f"line:{line_no}:rpm-torque-curve-out-of-order")
+        points.append(point)
+
+    if strict and warnings:
+        raise ValueError(warnings[0])
+
+    return {
+        "format": "SHIFT.RPMTorqueRuntime/1",
+        "version": 1,
+        "status": "parsed" if not warnings else "parsed-with-warnings",
+        "ready": not warnings,
+        "point_count": len(points),
+        "limit": RPM_TORQUE_LIMIT,
+        "points": [
+            {
+                "line": line_no,
+                "rpm": point.rpm,
+                "brake": point.brake,
+                "throttle": point.throttle,
+                "source_tuple": [point.rpm, point.brake, point.throttle],
+                "storage_order": [point.brake, point.throttle, point.rpm],
+            }
+            for line_no, point in _iter_rpm_points_with_lines(raw_text, points)
+        ],
+        "storage": {
+            "base_offset": 0x1818,
+            "record_stride": 0x20,
+            "component_offsets": {"brake": 0x00, "throttle": 0x08, "rpm": 0x10},
+        },
+        "validation": {
+            "source_brake_greater_than_throttle_check": "brake <= throttle required",
+            "source_rpm_order_check": "strictly increasing RPM",
+            "source_limit_check": "existing_count < 127 before appending",
+        },
+        "warnings": warnings,
+        "evidence": {
+            "loader": "FUN_007c3280",
+            "tuple_reader": "FUN_007a6a90",
+            "source_file": "./Source/Vehicle/vehload.cpp",
+            "too_many_points_line": "0x6dd",
+            "brake_throttle_line": "0x6df",
+            "order_line": "0x6e1",
+        },
+    }
 ENGINE_RPM_TORQUE = {
     "storage_base_offset": 0x1818,
     "entry_stride": 0x20,
@@ -267,7 +376,9 @@ ENGINE_RPM_TORQUE = {
         "component_1 >= component_0",
         "component_2 strictly increases relative to previous component_2",
     ],
-    "status": "point-count, storage stride and validation branches proven; component semantics unresolved",
+    "status": "source component order and validation branches proven; interpolation/postload semantics remain unresolved",
+    "text_tuple_order": ["rpm", "brake", "throttle"],
+    "storage_order": ["brake", "throttle", "rpm"],
 }
 
 DRIVELINE_SOLVER = {
@@ -421,7 +532,7 @@ def main(argv: list[str] | None = None) -> int:
 __all__ = [
     "FORMAT", "GENERAL_PROPERTIES", "ENGINE_PROPERTIES", "WHEEL_PROPERTIES",
     "SUSPENSION_PROPERTIES", "DRIVELINE_PROPERTIES", "SECTION_TARGETS",
-    "ENGINE_RPM_TORQUE", "DRIVELINE_SOLVER", "build_vehicle_physics_contract",
+    "ENGINE_RPM_TORQUE", "RPMTorquePoint", "parse_rpm_torque_points", "DRIVELINE_SOLVER", "build_vehicle_physics_contract",
     "validate_contract_shape", "analyze_source",
 ]
 
