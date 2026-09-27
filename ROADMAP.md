@@ -61,6 +61,9 @@ Reconstruct FUN_00758b50 as an evidence-backed four-wheel kinematics boundary: t
 ## Phase 365: spring helper x87 runtime
 
 Recover FUN_007555b0's exact gap/transition state boundary at +0x248/+0x250/+0x258/+0x260, preserve the caller-side x87 FSTP anomaly at runtime +0x548 as unresolved, and hand the proven state into the next spring-force stage. Renderer and RENDER.bff remain untouched.
+## Phase 366: spring constraint force runtime
+
+Reconstruct FUN_0075489c's spring-element force-construction boundary: +0x100/+0x90 element storage, Spring Type 0/1/2 dispatch, collision-length activation, type-specific direction normalization, exact response-vector formulas and the FUN_007baa70 application boundary. Upstream transform semantics and physical units remain unresolved. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
