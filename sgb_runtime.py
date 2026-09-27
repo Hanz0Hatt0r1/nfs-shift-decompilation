@@ -101,15 +101,15 @@ def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str,
     rows = []
     cursor = start + 12
     for index in range(count):
-        if cursor + 48 > end:
+        if cursor + 52 > end:
             raise SGBRuntimeDecodeError(f"PART record {index} header exceeds chunk")
         partition_id = _i32(data, cursor)
-        bbox_min = [_f32(data, cursor + 4), _f32(data, cursor + 8), _f32(data, cursor + 12)]
-        bbox_max = [_f32(data, cursor + 16), _f32(data, cursor + 20), _f32(data, cursor + 24)]
-        fixed_flag = _u32(data, cursor + 28)
-        fixed_quad = [_i32(data, cursor + 28 + 4 * i) for i in range(4)]
-        child_count = _u32(data, cursor + 44)
-        child_base = cursor + 48
+        bbox_min = [_f32(data, cursor + 8), _f32(data, cursor + 12), _f32(data, cursor + 16)]
+        bbox_max = [_f32(data, cursor + 20), _f32(data, cursor + 24), _f32(data, cursor + 28)]
+        fixed_flag = _u32(data, cursor + 32)
+        fixed_quad = [_i32(data, cursor + 32 + 4 * i) for i in range(4)]
+        child_count = _u32(data, cursor + 48)
+        child_base = cursor + 52
         if child_base + child_count * 4 > end:
             raise SGBRuntimeDecodeError(f"PART child table exceeds chunk at record {index}")
         child_ids = [_i32(data, child_base + 4 * i) for i in range(child_count)]
