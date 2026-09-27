@@ -880,31 +880,36 @@ def describe_sdf_constraint_runtime_lowering(
 def describe_sdf_pre_physx_build(
     report: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Expose the deterministic pre-PhysX allocation/build phases of FUN_007b3820."""
+    """Expose deterministic pre-PhysX allocation/build phases of FUN_007b3820."""
     topology = compile_sdf_runtime_topology(report)
-    bodies = topology["body_count"]
-    joints = sum(1 for row in topology["constraints"] if row["flags"]["joint"])
-    hinges = sum(1 for row in topology["constraints"] if row["flags"]["hinge"])
-    bars = sum(1 for row in topology["constraints"] if row["flags"]["bar"])
+    constraints = topology["constraint_count"]
+    joints = sum(1 for row in topology["constraints"] if row["section"] == "JOINT")
+    hinges = sum(1 for row in topology["constraints"] if row["section"] == "HINGE")
+    bars = sum(1 for row in topology["constraints"] if row["section"] == "BAR")
     return {
-        "format": "SHIFT.SDFPrePhysXBuildRuntime/1",
-        "version": 1,
+        "format": "SHIFT.SDFPrePhysXBuildRuntime/2",
+        "version": 2,
         "status": "ready" if topology["ready"] else "blocked",
         "ready": topology["ready"],
         "counts": {
-            "bodies": bodies,
+            "constraints": constraints,
             "joints": joints,
             "hinges": hinges,
             "bars": bars,
+            "bodies": topology["body_count"],
         },
         "allocations": {
             "per_joint_resolved_samples": joints * 2,
             "per_hinge_resolved_samples": hinges * 2,
             "per_bar_resolved_samples": bars * 2,
-            "body_index_matrix_elements": bodies * bodies,
-            "body_index_matrix_bytes": bodies * bodies * 8,
-            "body_index_vector_elements": bodies,
-            "body_index_vector_bytes": bodies * 4,
+            "constraint_index_matrix_elements": constraints * constraints,
+            "constraint_index_matrix_bytes": constraints * constraints * 8,
+            "constraint_index_row_pointer_elements": constraints,
+            "constraint_index_row_pointer_bytes": constraints * 4,
+            "solver_initial_vector_elements": constraints,
+            "solver_initial_vector_bytes": constraints * 8,
+            "per_body_constraint_index_vector_elements": constraints,
+            "per_body_constraint_index_vector_bytes": constraints * 4,
             "body_runtime_stride": 0x170,
             "joint_runtime_stride": 0xA0,
             "hinge_runtime_stride": 0xA0,
@@ -912,25 +917,31 @@ def describe_sdf_pre_physx_build(
         },
         "stages": [
             {"function": "FUN_007ba4e0", "purpose": "allocate/reset per-constraint sampled arrays"},
-            {"function": "FUN_007b1b60", "purpose": "derive aggregate body/node count"},
-            {"function": "FUN_007b2010", "purpose": "prepare connectivity matrix and index base"},
+            {"function": "FUN_007b1b60", "purpose": "derive constraint connectivity and order"},
+            {"function": "FUN_007b2010", "purpose": "clear/fill constraint connectivity matrix"},
             {"function": "FUN_007ba8b0", "purpose": "joint endpoint sample generation"},
             {"function": "FUN_007ba900", "purpose": "hinge endpoint sample generation"},
             {"function": "FUN_007ba990", "purpose": "bar endpoint sample generation"},
             {"function": "FUN_007b2da0/FUN_007b2de0/FUN_007b2f70", "purpose": "copy generated sample transforms into runtime records"},
-            {"function": "FUN_007b1360", "purpose": "final body-node connectivity setup"},
+            {"function": "FUN_007b1360", "purpose": "build compact forward/reverse solver graph tables"},
         ],
         "topology": topology,
         "evidence": {
             "source_function": "FUN_007b3820",
-            "body_matrix_element_size": 8,
-            "body_index_element_size": 4,
+            "constraint_count_source": "+0x34",
+            "body_runtime_base": "+0x14 + 0x170 * body_index",
+            "constraint_matrix_element_size": 8,
+            "constraint_row_pointer_size": 4,
+            "solver_initial_vector_element_size": 8,
+            "per_body_constraint_index_element_size": 4,
         },
         "limitations": [
             "The selected backend/provider vtable is intentionally unnamed.",
             "This contract stops before claiming PhysX class construction or ownership semantics.",
         ],
     }
+
+
 
 
 
