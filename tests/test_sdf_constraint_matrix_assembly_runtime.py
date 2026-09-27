@@ -59,3 +59,26 @@ def test_assembler_contract_lists_all_recovered_block_types():
 def test_assembler_rejects_non_square_matrix():
     with pytest.raises(ValueError, match="square"):
         runtime.add_block([[0,0],[0]], row_base=0, column_base=0, block=((1,),))
+
+
+def test_build_solver_ready_matrix_applies_identity_constraints_after_assembly():
+    result = runtime.build_solver_ready_matrix(
+        3,
+        [
+            {"kind": "joint", "row_base": 1, "column_base": 0, "block": ((2,), (3,))},
+        ],
+        [7.0, 8.0, 9.0],
+        [1],
+    )
+    assert result["ready"] is True
+    assert result["assembled"]["matrix"] == [
+        [0.0,0.0,0.0],
+        [2.0,0.0,0.0],
+        [3.0,0.0,0.0],
+    ]
+    assert result["matrix"] == [
+        [0.0,0.0,0.0],
+        [0.0,1.0,0.0],
+        [3.0,0.0,0.0],
+    ]
+    assert result["rhs"] == [7.0,0.0,9.0]
