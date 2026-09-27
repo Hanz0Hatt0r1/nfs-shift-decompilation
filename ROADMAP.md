@@ -1617,4 +1617,10 @@ Continue the physics track through tire_manager.cpp. Freeze the TBC loader bound
 bindings, cubic-curve compilation/evaluation and the first derived tyre runtime fields.
 Keep physical units and force-law semantics unresolved unless directly proven by the
 recovered instructions. Renderer and RENDER.bff remain untouched.
+## Phase 362: tyre thermal-state runtime
 
+Continue the physics track into FUN_00760b50: reconstruct the per-wheel thermal state
+update, reserve depletion branch, ambient transfer term, temperature/failure state
+updates and the observed four-wheel call ordering. Keep the traction/contact force law
+separate until its exact consumer chain is proven. Renderer and RENDER.bff remain untouched.
+\n
