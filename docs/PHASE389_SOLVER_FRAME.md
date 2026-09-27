@@ -1,4 +1,4 @@
-# Phase 389 — Per-frame SDF solver lifecycle
+After solve dispatch completes, `FUN_007b4110` consumes the solved scalar vector at PhysicsSystem `+0x40` and applies JOINT/HINGE/BAR responses back into runtime body state.# Phase 389 — Per-frame SDF solver lifecycle
 
 The runtime boundary now continues from static constraint graph construction into the per-frame solver entry `FUN_007b3f40` and body projection stage `FUN_007b4110`.
 
