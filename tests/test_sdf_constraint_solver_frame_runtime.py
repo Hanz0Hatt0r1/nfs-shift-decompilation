@@ -9,7 +9,7 @@ def test_solver_frame_contract_exposes_exact_dispatch_and_projection_widths():
     assert report["ready"] is True
     assert report["entry"] == "FUN_007b3f40"
     assert report["provider_branch"]["provider_absent"]["rhs_clear"] == (
-        "zero 6 doubles at +0x40"
+        "zero scalar_count doubles at +0x40"
     )
     assert report["body_projection"]["JOINT"]["width"] == 3
     assert report["body_projection"]["HINGE"]["width"] == 2
