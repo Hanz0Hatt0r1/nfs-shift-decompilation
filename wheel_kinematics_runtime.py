@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from math import sqrt
 from typing import Sequence
 
-from spring_helper_runtime import SpringHelperCoefficients, SpringHelperStep, compute_spring_helper_step
+from spring_helper_runtime import SpringGapStep, update_spring_gap_state
 
 FORMAT = "SHIFT.WheelKinematicsRuntime/1"
 FUNCTION = "FUN_00758b50"
@@ -124,22 +124,25 @@ def prepare_wheel_kinematic_observation(
     )
 
 
-def evaluate_wheel_spring_helper(
+def evaluate_wheel_spring_gap(
     *,
+    spring_type: int,
     distance_reference: float,
     relative_length: float,
-    projection_input: float,
+    lower_boundary: float,
+    upper_boundary: float,
     previous_gap: float,
-    coefficients: SpringHelperCoefficients,
-) -> SpringHelperStep:
-    """Join FUN_00755950 scalar preparation to FUN_007555b0."""
+    projection_input: float,
+) -> SpringGapStep:
+    """Join FUN_00755950 scalar preparation to the decoded gap-state helper."""
     displacement = float(distance_reference) - float(relative_length)
-    velocity_projection = -float(projection_input)
-    return compute_spring_helper_step(
+    return update_spring_gap_state(
+        spring_type=spring_type,
         displacement=displacement,
-        velocity_projection=velocity_projection,
+        lower_boundary=lower_boundary,
+        upper_boundary=upper_boundary,
         previous_gap=previous_gap,
-        coefficients=coefficients,
+        trigger_value=-float(projection_input),
     )
 
 
@@ -213,7 +216,7 @@ def build_wheel_kinematics_contract() -> dict:
                 "distance_error": DISTANCE_ERROR_OFFSET,
                 "projection_value": PROJECTION_VALUE_OFFSET,
                 "helper_output": HELPER_OUTPUT_OFFSET,
-                "helper_return": "x87 ST0",
+                "helper_return": "unresolved",
                 "helper_current_gap": HELPER_CURRENT_GAP_OFFSET,
                 "helper_previous_gap": HELPER_PREVIOUS_GAP_OFFSET,
                 "helper_crossing_flag": HELPER_CROSSING_FLAG_OFFSET,
@@ -299,6 +302,6 @@ __all__ = [
     "prepare_wheel_kinematic_observation",
     "compute_pair_delta",
     "build_pair_adjustment_observation",
-    "evaluate_wheel_spring_helper",
+    "evaluate_wheel_spring_gap",
     "build_wheel_kinematics_contract",
 ]
