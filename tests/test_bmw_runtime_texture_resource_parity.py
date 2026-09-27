@@ -84,9 +84,12 @@ def test_build_report_classifies_direct_vs_generated(monkeypatch):
     assert report["draw_binding_count"] == 12
     assert report["summary"]["direct_dds_compatible_count"] == 6
     assert report["summary"]["generated_or_transformed_candidate_count"] == 3
-    assert report["rows"][0]["classification"] == "unknown"
-    assert report["rows"][1]["classification"] == "direct-dds-compatible"
-    assert report["rows"][2]["classification"] == "direct-dds-compatible"
+    assert [report["rows"][i]["classification"] for i in range(3)] == [
+        "unknown", "unknown", "unknown"
+    ]
+    assert [report["rows"][i]["classification"] for i in range(3, 6)] == [
+        "direct-dds-compatible", "direct-dds-compatible", "direct-dds-compatible"
+    ]
 
 
 def test_validate_report_requires_all_three_material_parameters():
