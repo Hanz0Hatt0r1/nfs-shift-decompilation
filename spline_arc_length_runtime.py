@@ -63,8 +63,8 @@ def early_boundary_result(
     proposed_distance: float,
     normalized_progress: float,
     reverse: bool,
-    external_scalar: float,
-    spline_loop_flag: bool,
+    external_scalar: float = 0.0,
+    spline_loop_flag: bool = False,
     endpoint_handler_result: float | None,
 ) -> dict[str, Any] | None:
     """Trace FUN_008222f0's explicit spline-boundary early exits."""
