@@ -189,13 +189,17 @@ def resolve_sdf_body_references(
     report: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Resolve posbody/negbody names into a neutral SDF connectivity graph."""
-    body_names = {
+    ordered_body_names = [
         str(entry.get("value"))
         for record in report.get("records") or []
         if record.get("section") == "BODY"
         for entry in record.get("entries") or []
         if entry.get("name") == "name"
-    }
+    ]
+    body_names = set(ordered_body_names)
+    duplicate_names = sorted({
+        name for name in body_names if ordered_body_names.count(name) > 1
+    })
     edges: list[dict[str, Any]] = []
     unresolved: list[str] = []
     for record_index, record in enumerate(report.get("records") or []):
@@ -234,10 +238,14 @@ def resolve_sdf_body_references(
             if body in adjacency:
                 adjacency[body].append(edge_index)
 
+    unresolved = list(dict.fromkeys(
+        unresolved + [f"duplicate-body-name:{name}" for name in duplicate_names]
+    ))
     return {
         "status": "resolved" if not unresolved else "blocked",
         "ready": not unresolved,
         "body_names": sorted(body_names),
+        "duplicate_body_names": duplicate_names,
         "edge_count": len(edges),
         "edges": edges,
         "unresolved": unresolved,
