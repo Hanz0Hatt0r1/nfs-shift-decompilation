@@ -10,6 +10,8 @@ from static_camera_runtime import (
     set_static_camera_runtime_pair,
     set_static_camera_function_bindings,
     copy_static_camera_runtime_payload,
+    resolve_static_camera_record,
+    blend_static_camera_records,
 )
 
 
