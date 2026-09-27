@@ -86,9 +86,11 @@ GENERAL = _map(
     _spec("NumPitstopsRange", "FUN_007a6a90", 0x3c8, 0x3d0, 0x3d8, shape="tuple3"),
     _spec("NumPitstopsSetting", "FUN_007a6a90", 0x4e0, shape="scalar64"),
 )
-for _n, _base in ((f"Pitstop{i}", 0x3e0 + (i - 1) * 0x18) for i in range(1, 9)):
+for _i in range(1, 9):
+    _n = f"Pitstop{_i}"
+    _base = 0x3e0 + (_i - 1) * 0x18
     GENERAL[f"{_n}Range"] = _spec(f"{_n}Range", "FUN_007a6a90", _base, _base + 8, _base + 0x10, shape="tuple3")
-    GENERAL[f"{_n}Setting"] = _spec(f"{_n}Setting", "FUN_007a6a90", 0x4e0 + i * 8, shape="scalar64")
+    GENERAL[f"{_n}Setting"] = _spec(f"{_n}Setting", "FUN_007a6a90", 0x4e8 + (_i - 1) * 8, shape="scalar64")
 for i in range(5):
     GENERAL[f"AdjustableUpgradeLevel_{i}"] = _spec(
         f"AdjustableUpgradeLevel_{i}", "FUN_007a65e0", 0x2364 + i * 4, shape="scalar32"
