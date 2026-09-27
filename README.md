@@ -24,6 +24,8 @@
 
 > **Linux/apitrace path:** when apitrace is the available runtime capture source, `tools/extract_apitrace_unique_bmw.py` streams the .trace directly, extracts the known BMW body draw signatures and deduplicates runtime resource instances without first creating a multi-gigabyte text dump. `--auto-trim` can emit a compact trace for subsequent inspection.
 >
+> **Single-frame handoff:** `tools/extract_apitrace_single_frame.py --auto-bmw` finds the frame with the strongest BMW target-draw coverage and creates `single_frame.trace` plus a provenance manifest for upload and independent runtime-state analysis.
+>
 > **Draw-local runtime proof:** `SHIFT.D3D9RuntimeBindingEvidence/1` now freezes declaration, stream, index, shader, constant and texture state at each `DrawIndexedPrimitive` boundary. The strict same-instance gate consumes these snapshots rather than the final state of the whole frame.
 
 > **BMW runtime texture lifecycle:** Phase 336 adds `CreateTexture/CreateCubeTexture` object-lifecycle evidence; Phase 337 correlates the draw-local BMW paint texture pointers with the latest creation instance and compares runtime resource shape against retail DDS metadata without treating pointer equality as DDS provenance.
