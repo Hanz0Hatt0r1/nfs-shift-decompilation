@@ -1,0 +1,56 @@
+{
+  "format": "SHIFT.SDFConstraintProjectionEvidence/2",
+  "version": 2,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "local_snapshot": "SHIFT.zip!/SHIFT.exe.c"
+  },
+  "functions": {
+    "FUN_007bac60": {
+      "source_line": 819089,
+      "sample_stride": "0x40",
+      "side_flag": "sample +0x34",
+      "scalar_base": "sample +0x30",
+      "destination": "this +0x150 + scalar_base*8"
+    },
+    "FUN_007bae40": {
+      "source_line": 819157,
+      "sample_stride": "0xa0",
+      "side_flag": "sample +0x98",
+      "scalar_base": "sample +0x94",
+      "destination": "this +0x150 + scalar_base*8"
+    },
+    "FUN_007b1320": {
+      "source_line": 811731,
+      "operation": "param1 x param2"
+    }
+  },
+  "global_scales": {
+    "source_line": 763749,
+    "linear_scale": "1.6 * system_value",
+    "quadratic_scale": "(0.8 * system_value)^2"
+  },
+  "joint": {
+    "d2": "sample.z*body.axis.y - sample.y*body.axis.z",
+    "d3": "body.pos.z*sample.x - sample.z*body.pos.x",
+    "d5": "sample.y*body.pos.x - body.pos.y*sample.x",
+    "d4": "(sample.x+body.pos.x)*Q + (body.correction.x+d2)*L + (sample.z*residual.y-sample.y*residual.z) + (body.pos.y*d5-body.pos.z*d3) + linear.x",
+    "d6": "(sample.y+body.pos.y)*Q + (body.correction.y+d3)*L + (sample.x*residual.z-sample.z*residual.x) + (body.pos.z*d2-body.pos.x*d5) + linear.y",
+    "d7": "(sample.z+body.pos.z)*Q + (body.correction.z+d5)*L + (sample.y*residual.x-sample.x*residual.y) + (body.pos.x*d3-body.pos.y*d2) + linear.z"
+  },
+  "hinge": {
+    "tx": "body.axis.x*L + residual.x",
+    "ty": "body.axis.y*L + residual.y",
+    "tz": "body.axis.z*L + residual.z",
+    "c": "body.axis dot (sample.angular x sample.linear)",
+    "u": "body.axis dot sample.angular",
+    "v": "body.axis dot sample.linear",
+    "flag_zero_lane0": "sample.angular dot (tx,ty,tz) - v*c",
+    "flag_zero_lane1": "sample.linear dot (tx,ty,tz) + u*c",
+    "flag_nonzero_q": "t + Q*(sample_frame_offset x transformed_sample_position)",
+    "flag_nonzero_lane0": "sample.angular dot q - v*c",
+    "flag_nonzero_lane1": "sample.linear dot q + u*c"
+  },
+  "status": "source-backed-executable"
+}
