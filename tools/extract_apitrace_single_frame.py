@@ -29,10 +29,6 @@ from tools.extract_apitrace_unique_bmw import (
 
 FORMAT = "SHIFT.APITRACESingleFrameTrace/1"
 DEFAULT_PRIMITIVES = (28, 50, 192, 204, 2098, 2462)
-PRESENT_RE = re.compile(
-    r"^(?P<call>\d+)\s+(?P<iface>\w+)::(?P<method>Present|PresentEx)\("
-)
-
 
 @dataclass
 class FrameCandidate:
@@ -104,6 +100,17 @@ def _parse_pointer_targets(path: Path | None) -> tuple[str | None, dict[int, str
     return vb, ibs
 
 
+def _finalize_frame(
+    current: FrameCandidate,
+    best: FrameCandidate | None,
+) -> FrameCandidate | None:
+    if current.target_draw_calls and (
+        best is None or current.score > best.score
+    ):
+        return current
+    return best
+
+
 def find_bmw_frame(
     trace: Path,
     *,
@@ -124,24 +131,18 @@ def find_bmw_frame(
     for line in _dump_lines(trace, apitrace):
         m = CALL_RE.match(line)
         if not m:
-            present = PRESENT_RE.match(line)
-            if present:
-                call = int(present.group("call"))
-                current.end_call = call
-                if current.target_draw_calls and (
-                    best is None or current.score > best.score
-                ):
-                    best = current
-                frame_count += 1
-                current = FrameCandidate(
-                    index=frame_count,
-                    start_call=call + 1,
-                )
             continue
 
         call = int(m.group("call"))
         iface = m.group("iface")
         method = m.group("method")
+
+        if method in {"Present", "PresentEx"}:
+            current.end_call = call
+            best = _finalize_frame(current, best)
+            frame_count += 1
+            current = FrameCandidate(index=frame_count, start_call=call + 1)
+            continue
 
         if iface == "IDirect3DDevice9" and method == "DrawIndexedPrimitive":
             dm = DRAW_RE.search(line)
@@ -166,11 +167,8 @@ def find_bmw_frame(
 
         update(state, call, iface, method, line)
 
-    if current.target_draw_calls and (
-        best is None or current.score > best.score
-    ):
-        current.end_call = None
-        best = current
+    if current.target_draw_calls:
+        best = _finalize_frame(current, best)
 
     if best is None:
         raise RuntimeError(
@@ -183,6 +181,61 @@ def find_bmw_frame(
         "frame_count_observed": frame_count,
         "target_draw_count": draw_count,
         "selection": "best-frame-by-target-primitive-coverage",
+    }
+
+
+def find_draw_frame(
+    trace: Path,
+    draw_call: int,
+    *,
+    apitrace: str = "apitrace",
+) -> dict:
+    if draw_call < 0:
+        raise ValueError("draw-call must be >= 0")
+
+    state = State()
+    current = FrameCandidate(index=0, start_call=0)
+    frame_count = 0
+    selected: FrameCandidate | None = None
+
+    for line in _dump_lines(trace, apitrace):
+        m = CALL_RE.match(line)
+        if not m:
+            continue
+
+        call = int(m.group("call"))
+        iface = m.group("iface")
+        method = m.group("method")
+
+        if method in {"Present", "PresentEx"}:
+            current.end_call = call
+            if draw_call >= current.start_call and call >= draw_call:
+                if selected is not None:
+                    selected.end_call = call
+                    break
+            frame_count += 1
+            current = FrameCandidate(index=frame_count, start_call=call + 1)
+            continue
+
+        if call == draw_call:
+            selected = current
+            selected.target_draw_calls.append(call)
+
+        update(state, call, iface, method, line)
+
+    if selected is None:
+        raise RuntimeError(f"draw call {draw_call} was not found")
+
+    if selected.end_call is None:
+        raise RuntimeError(
+            f"draw call {draw_call} has no following Present/PresentEx frame boundary"
+        )
+
+    return {
+        "status": "observed",
+        "frame": selected.json(),
+        "frame_count_observed": frame_count,
+        "selection": "exact-draw-call-frame",
     }
 
 
@@ -321,38 +374,22 @@ def extract(
         }
         mode = "frame"
     elif draw_call is not None:
-        scan = find_bmw_frame(
+        scan = find_draw_frame(
             trace_path,
+            draw_call,
             apitrace=apitrace,
-            target_vertex_buffer=vb_pointer,
-            target_index_buffers=ib_pointers,
-            target_vertex_count=3550,
-            primitive_counts=DEFAULT_PRIMITIVES,
         )
-        candidates = scan["frame"]
-        draw = draw_call
-        if not (
-            candidates["start_call"] <= draw
-            and (
-                candidates["end_call"] is None
-                or draw <= candidates["end_call"]
-            )
-        ):
-            raise ValueError(
-                "requested draw-call is not in the automatically selected frame"
-            )
+        selected = scan["frame"]
         command = trim_call_range(
             trace_path,
             output_trace,
-            start_call=candidates["start_call"],
-            end_call=candidates["end_call"]
-            if candidates["end_call"] is not None
-            else draw,
+            start_call=selected["start_call"],
+            end_call=selected["end_call"],
             apitrace=apitrace,
         )
         selection = {
-            **candidates,
-            "requested_draw_call": draw,
+            **scan,
+            "requested_draw_call": draw_call,
         }
         mode = "draw-call"
     else:
