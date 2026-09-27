@@ -166,3 +166,25 @@ def test_joint_matrix_coupling_contract_matches_retail_function():
     assert result["mixed"]["hinge"]["block_shape"] == "3x2"
     assert result["mixed"]["bar"]["block_shape"] == "3x1"
     assert result["sign_rule"] == "equal side flags add; differing flags subtract"
+
+
+def test_joint_self_block_with_off_diagonal_tensor_matches_source():
+    tensor = (
+        (2.0, 1.0, 3.0),
+        (1.0, 4.0, 2.0),
+        (3.0, 2.0, 5.0),
+    )
+    result = runtime.evaluate_joint_self_block(
+        tensor,
+        joint_position=(1.0, 2.0, 3.0),
+        inverse_scalar=2.0,
+    )
+    assert result["intermediates"]["d15"] == 1.0
+    assert result["lower_triangle"] == {
+        "00": 34.0,
+        "10": -1.0,
+        "11": 10.0,
+        "20": -14.0,
+        "21": 1.0,
+        "22": 6.0,
+    }

@@ -1,6 +1,6 @@
 {
   "format": "SHIFT.SDFJointMatrixCouplingEvidence/1",
-  "version": 1,
+  "version": 2,
   "source": {
     "file": "SHIFT.exe.c",
     "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
@@ -34,5 +34,11 @@
     "joint_hinge": "3x2",
     "joint_bar": "3x1"
   },
-  "status": "source-backed-executable"
+  "status": "source-backed-executable",
+  "source_correction": {
+    "function": "FUN_007bbb80",
+    "term": "d15",
+    "formula": "m00*point.y - m02*point.x",
+    "verified_against": "local SHIFT.exe.c"
+  }
 }
