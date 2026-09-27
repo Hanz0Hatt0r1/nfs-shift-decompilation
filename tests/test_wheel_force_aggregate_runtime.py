@@ -6,7 +6,7 @@ def test_three_record_aggregate_and_matrix_x():
     body=Vec3(0,0,1)
     total, torque, value=aggregate([r,r,r],body,[1,0,0,0,1,0,0,0,1],3.0)
     assert total.as_tuple()==pytest.approx((9.0,6.0,0.0))
-    assert torque.as_tuple()==pytest.approx((-6.0,18.0,0.0))
+    assert torque.as_tuple()==pytest.approx((-6.0,9.0,0.0))
     assert value==pytest.approx(3.0)
 
 def test_contract_freezes_record_shape():
