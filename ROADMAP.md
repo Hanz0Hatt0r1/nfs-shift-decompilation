@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 393: solver buffer export
+
+`FUN_007ba570` now has an exact additive transfer contract for primary `+0x150` and secondary +0x154 accumulator regions into two external solver buffers. Next target: the inverse-inertia/body frame preparation immediately feeding `FUN_007bc680`.
+
 ## Phase 392: body accumulator impulse primitives
 
 `FUN_007baa70`/`FUN_007baaf0` are now reduced to exact six-channel algebra: positive `v` and `r×v`, or their negatives. The source offsets `+0x48/+0x50/+0x58` and `+0x60/+0x68/+0x70` are captured and integrated into the vehicle physics asset graph.
