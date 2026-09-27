@@ -94,6 +94,10 @@ Reconstruct FUN_007537b0 and FUN_00753810 exactly: angular × point + translatio
 ## Phase 376: matrix-vector transform runtime
 
 Reconstruct FUN_007af0a0 exactly as a 3x3 float-matrix × double-vector boundary: input components are cast to float, multiplied by the nine float fields at +0x00..+0x20, and widened back to double. This helper is now shared across the wheel longitudinal, response-input and auxiliary contact-response paths. Matrix coordinate convention remains unnamed. Renderer and RENDER.bff remain untouched.
+## Phase 381: vehicle CDF schema and parser
+
+The retail CDF loader boundary is now represented as `SHIFT.VehicleCDFRuntime/1`. The parser preserves sections, raw values and unknown keys while attaching source-backed section handlers, helper functions and destination offsets for GENERAL, aero, suspension, controls, driveline and all four wheel sections. Physical units remain unresolved unless proven by downstream runtime arithmetic.
+
 ## Phase 377–380: surface/contact and vehicle rate response chain
 
 Phase 377 reconstructs FUN_00759210's recursive parent/child surface probe, including its node offsets, projection gate, normalized cross-product direction and same-sign child blending.
