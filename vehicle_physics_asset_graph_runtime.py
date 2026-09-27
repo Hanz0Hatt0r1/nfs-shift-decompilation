@@ -31,6 +31,7 @@ from sdf_constraint_solver_frame_runtime import (
     validate_sdf_solver_frame_profile,
 )
 from sdf_body_accumulator_runtime import describe_sdf_body_accumulator_contract
+from sdf_body_impulse_runtime import describe_sdf_body_impulse_primitives
 from sdf_body_state_projection_runtime import describe_sdf_body_state_projection_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
@@ -87,6 +88,7 @@ def build_profile(
         sdf_constraint_solver_graph.get("scalar_connectivity", {})
     )
     sdf_body_accumulator = describe_sdf_body_accumulator_contract()
+    sdf_body_impulse = describe_sdf_body_impulse_primitives()
     sdf_body_state_projection = describe_sdf_body_state_projection_contract()
 
     blockers: list[str] = []
@@ -178,6 +180,7 @@ def build_profile(
                 sdf_diagonal_reset.get("unique_scalar_nodes") or []
             ),
             "sdf_body_accumulator_contract_ready": sdf_body_accumulator.get("ready") is True,
+            "sdf_body_impulse_primitives_ready": sdf_body_impulse.get("ready") is True,
             "sdf_body_state_projection_contract_ready": sdf_body_state_projection.get("ready") is True,
         },
         "details": {
@@ -197,6 +200,7 @@ def build_profile(
             "sdf_solver_frame_validation": sdf_frame_validation,
             "sdf_builtin_diagonal_reset": sdf_diagonal_reset,
             "sdf_body_accumulator": sdf_body_accumulator,
+            "sdf_body_impulse_primitives": sdf_body_impulse,
             "sdf_body_state_projection": sdf_body_state_projection,
         },
         "blockers": list(dict.fromkeys(blockers)),

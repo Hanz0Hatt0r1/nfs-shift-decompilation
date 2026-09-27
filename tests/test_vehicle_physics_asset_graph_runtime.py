@@ -40,6 +40,7 @@ def test_vehicle_physics_graph_joins_all_four_resource_boundaries(tmp_path):
     assert report["summary"]["sdf_sparse_solver_validation_ready"] is True
     assert "sdf_builtin_diagonal_reset_node_count" in report["summary"]
     assert report["summary"]["sdf_body_state_projection_contract_ready"] is True
+    assert report["summary"]["sdf_body_impulse_primitives_ready"] is True
     assert report["summary"]["sdf_constraint_shared_body_pair_count"] == 1
     assert report["load_graph"]["chassis"]["runtime_loader"] == "FUN_0074d640 -> FUN_007be420"
     assert report["load_graph"]["engine"]["runtime_loader"] == "FUN_007c3280"
