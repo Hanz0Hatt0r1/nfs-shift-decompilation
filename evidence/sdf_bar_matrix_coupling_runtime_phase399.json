@@ -1,0 +1,27 @@
+{
+  "format": "SHIFT.SDFBarMatrixCouplingEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_007bb6c0",
+    "source_line": 819471
+  },
+  "sample": {
+    "array": "+0x168",
+    "stride": "0x60",
+    "point": ["+0x18", "+0x20", "+0x28"],
+    "direction": ["+0x40", "+0x48", "+0x50"],
+    "scalar_base": "+0x30",
+    "side_flag": "+0x34"
+  },
+  "body": {
+    "frame": "+0xb0",
+    "inverse_scalar": "+0x90"
+  },
+  "matrix_storage": {
+    "row_pointers": "+0x158",
+    "address_rule": "row=max(base_i,base_j), column=min(base_i,base_j)"
+  },
+  "status": "source-backed-executable"
+}
