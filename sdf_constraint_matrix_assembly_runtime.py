@@ -109,6 +109,135 @@ def assemble_lower_triangle(
     }
 
 
+
+def build_retail_matrix_storage(
+    scalar_count: int,
+    matrix_base_address: int = 0,
+    row_indices: Sequence[int] | None = None,
+) -> dict[str, Any]:
+    """Reproduce the row-pointer/index layout initialized by retail SDF setup."""
+    n = int(scalar_count)
+    base = int(matrix_base_address)
+    if n < 0:
+        raise ValueError("scalar_count must be non-negative")
+    if row_indices is None:
+        indices = [n * row for row in range(n)]
+    else:
+        indices = [int(value) for value in row_indices]
+        if len(indices) != n:
+            raise ValueError("row_indices length must equal scalar_count")
+        if any(value < 0 or value >= n * n for value in indices):
+            raise ValueError("row_indices must reference matrix double offsets")
+    row_pointers = [base + index * 8 for index in indices]
+    return {
+        "format": "SHIFT.SDFRetailMatrixStorage/1",
+        "version": 1,
+        "status": "materialized",
+        "ready": True,
+        "scalar_count": n,
+        "matrix_base_address": base,
+        "matrix_double_count": n * n,
+        "matrix_bytes": n * n * 8,
+        "row_pointer_count": n,
+        "row_pointer_bytes": n * 4,
+        "row_indices": indices,
+        "row_pointers": row_pointers,
+        "row_stride_doubles": n,
+        "evidence": {
+            "allocation": "FUN_007b3820",
+            "allocation_source_line": 813669,
+            "per_body_rebuild": "FUN_007bb8d0",
+            "per_body_rebuild_source_line": 814093,
+            "row_zeroing": "FUN_007b2010",
+            "row_zeroing_source_line": 812385,
+            "row_pointer_formula": "matrix_base + row_index*8",
+            "canonical_row_index_formula": "scalar_count*row",
+        },
+    }
+
+
+def flatten_retail_matrix(
+    matrix: Sequence[Sequence[float | int]],
+) -> list[float]:
+    """Flatten a square matrix in row-major double order."""
+    n = len(matrix)
+    if any(len(row) != n for row in matrix):
+        raise ValueError("matrix must be square")
+    return [float(value) for row in matrix for value in row]
+
+
+def read_retail_matrix_cell(
+    matrix_pool: Sequence[float | int],
+    *,
+    scalar_count: int,
+    row_index_offset: int,
+    column: int,
+) -> float:
+    """Read one matrix cell through a retail row-index offset."""
+    n = int(scalar_count)
+    row_offset = int(row_index_offset)
+    col = int(column)
+    if n < 0:
+        raise ValueError("scalar_count must be non-negative")
+    if row_offset < 0 or row_offset >= n * n:
+        raise ValueError("row_index_offset is outside matrix pool")
+    if col < 0 or col >= n:
+        raise ValueError("column is outside matrix width")
+    cell = row_offset + col
+    if cell >= len(matrix_pool):
+        raise ValueError("matrix cell is outside matrix pool")
+    return float(matrix_pool[cell])
+
+
+def materialize_retail_matrix(
+    matrix: Sequence[Sequence[float | int]],
+    matrix_base_address: int = 0,
+) -> dict[str, Any]:
+    """Build logical matrix plus retail row-pointer/index representation."""
+    n = len(matrix)
+    layout = build_retail_matrix_storage(n, matrix_base_address)
+    pool = flatten_retail_matrix(matrix)
+    return {
+        "format": "SHIFT.SDFRetailMatrixMaterialization/1",
+        "version": 1,
+        "status": "materialized",
+        "ready": True,
+        "matrix": [[float(value) for value in row] for row in matrix],
+        "matrix_pool": pool,
+        "layout": layout,
+    }
+
+
+def validate_retail_matrix_storage(
+    matrix: Sequence[Sequence[float | int]],
+    layout: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate logical rows against retail row-index/pointer formulas."""
+    n = len(matrix)
+    if any(len(row) != n for row in matrix):
+        return {"ready": False, "errors": ["matrix-not-square"]}
+    indices = [int(value) for value in layout.get("row_indices", [])]
+    pointers = [int(value) for value in layout.get("row_pointers", [])]
+    errors: list[str] = []
+    if len(indices) != n:
+        errors.append("row-index-count-mismatch")
+    if len(pointers) != n:
+        errors.append("row-pointer-count-mismatch")
+    base = int(layout.get("matrix_base_address", 0))
+    for row in range(min(n, len(indices), len(pointers))):
+        expected_index = n * row
+        if indices[row] != expected_index:
+            errors.append(f"row-{row}-index-mismatch")
+        if pointers[row] != base + indices[row] * 8:
+            errors.append(f"row-{row}-pointer-mismatch")
+    return {
+        "format": "SHIFT.SDFRetailMatrixStorageValidation/1",
+        "version": 1,
+        "ready": not errors,
+        "errors": errors,
+        "validated_rows": n,
+    }
+
 def materialize_symmetric_view(
     lower_matrix: Sequence[Sequence[float | int]],
 ) -> list[list[float]]:
