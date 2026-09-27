@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is at Phase 349. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is at Phase 352. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -1524,3 +1524,20 @@ regression test covering that provenance boundary.
 
 This promotes raw runtime VB/IB bytes and MEB byte parity from candidate evidence
 to proven evidence for the captured BMW M3 E36 body resource instances.
+
+
+## Phase 352: BMW runtime geometry proof contract
+
+Added `bmw_runtime_geometry_proof.py` to promote the Phase 351 direct apitrace
+byte-parity result into a strict downstream contract. The gate joins the
+frame-30444 BMW geometry identity with all seven exact runtime VB/IB byte
+comparisons, including the runtime buffer pointers carried by the parity report.
+
+Older parity reports that contain only hashes/sizes are intentionally not accepted
+as the proof contract because they do not authenticate the runtime object
+instance that supplied the compared bytes.
+
+`SHIFT.BMWM3RuntimeGeometryProof/1` records the exact BMW MEB SHA-256,
+the 269,800-byte stride-76 vertex buffer, all six primitive-specific index-buffer
+pointers, and the proven raw-byte/MEB parity boundary. `bmw_golden_gate.py` now
+accepts this contract as an optional strict prerequisite.
