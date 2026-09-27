@@ -502,7 +502,7 @@ def build_bmw_paint_runtime_texture_parity(
                     "expected": expected_row,
                 }
             else:
-                expected_row = expected_metadata(parameter)
+                expected_row = expected_metadata(str(row["parameter"]))
                 comparisons = [compare_snapshot_to_expected(paths[0], expected_row)]
                 ready = comparisons[0]["ready"]
                 result = {
