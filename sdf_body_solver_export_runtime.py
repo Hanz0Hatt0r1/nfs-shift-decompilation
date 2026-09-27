@@ -16,7 +16,7 @@ SOURCE_OFFSETS = {
 def describe_sdf_body_solver_export_contract() -> dict[str, Any]:
     return {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "status": "source-backed",
         "ready": True,
         "function": "FUN_007ba570",
