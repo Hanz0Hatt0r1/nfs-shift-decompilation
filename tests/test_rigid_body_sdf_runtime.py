@@ -182,3 +182,43 @@ name=body mass=1460 inertia=(1800,1920,450) pos=(0,0,0) ori=(0,0,0) vel=(0,0,0) 
     assert row["lowering"]["mass"]["inverse"] == "+0x90"
     assert row["lowering"]["group_a"]["helper"] == "FUN_007bbb10"
     assert row["lowering"]["group_b"]["helper"] == "FUN_007bbb60"
+
+
+
+def test_sdf_constraint_runtime_lowering_exposes_source_and_runtime_storage():
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT&HINGE]
+name=steer posbody=wheel negbody=body
+axis=(1,0,0) neg=(0,0,0) pos=(0,1,0)
+""")
+    lowered = sdf.describe_sdf_constraint_runtime_lowering(report)
+    assert lowered["ready"] is True
+    assert lowered["record_count"] == 1
+    row = lowered["rows"][0]
+    assert row["flag_word"] == 3
+    assert row["body_pointer_slots"] == {"posbody": "+0x78", "negbody": "+0x80"}
+    assert row["record_index_field"] == "+0x70"
+    assert row["body_counter_offset"] == ["+0x98", "+0x9c"]
+    assert row["copy_helper"] == "FUN_007b2ae0"
+    assert row["sampling"]["helper"] == ["FUN_007ba8b0", "FUN_007ba900"]
+    assert row["sampling"]["sample_stride"] == [0x40, 0xA0]
+    assert row["postload"]["helper"] == ["FUN_007b2da0", "FUN_007b2de0"]
+    assert row["section_storage"]["source_descriptor_offsets"]["joint"] == ["+0x28", "+0x30", "+0x38"]
+    assert row["section_storage"]["source_descriptor_offsets"]["hinge"] == ["+0x58", "+0x60", "+0x68"]
+
+
+def test_sdf_constraint_runtime_lowering_blocks_missing_endpoint_names():
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BAR]
+name=broken posbody=body
+pos=(0,0,0) neg=(1,0,0)
+""")
+    lowered = sdf.describe_sdf_constraint_runtime_lowering(report)
+    assert lowered["ready"] is False
+    assert "record:1:BAR:missing-negbody" in lowered["unresolved"]
