@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 386: constraint solver graph
+
+`FUN_007b1b60` endpoint-sharing connectivity and the weighted adjacent-move ordering heuristic are now represented. `FUN_007b1360` is lowered into compact forward/reverse dependency tables with the exact allocation widths, byte-oriented dependency indices and source-initialized solver vector. The remaining boundary is numeric matrix population inside `FUN_007b2010`/`FUN_007ba2b0` and the provider-specific solver consumer.
+
 ## Phase 385: physics provider dispatch
 
 `FUN_007b3820` now exposes the exact `FUN_007d2e70` provider probe order, acceptance argument, accepted-provider storage replacement vtable calls, generic `FUN_007b2010`/`FUN_007b1360` fallback, and the common per-body graph allocation formula. Provider class identity and replacement-storage semantics remain unresolved.
