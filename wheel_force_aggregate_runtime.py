@@ -23,7 +23,7 @@ class Vec3:
     def __post_init__(self) -> None:
         if not all(isfinite(float(v)) for v in (self.x,self.y,self.z)):
             raise ValueError("vector components must be finite")
-    def as_tuple(self): return (self.x,self.y,self.z)
+    def as_tuple(self): return (float(self.x),float(self.y),float(self.z))
 
 @dataclass(frozen=True)
 class AggregateRecord:
@@ -38,7 +38,8 @@ def _scale(v,s): return Vec3(v.x*s,v.y*s,v.z*s)
 def _sub(a,b): return Vec3(a.x-b.x,a.y-b.y,a.z-b.z)
 def _cross(a,b): return Vec3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x)
 
-def aggregate(records: Sequence[AggregateRecord], body_matrix: Sequence[float], body_mass: float):
+def aggregate(records: Sequence[AggregateRecord], body_position: Vec3,
+             body_matrix: Sequence[float], body_mass: float):
     if len(records) != RECORD_COUNT:
         raise ValueError("FUN_00759c90 processes exactly three records")
     if len(body_matrix) != 9:
@@ -49,7 +50,7 @@ def aggregate(records: Sequence[AggregateRecord], body_matrix: Sequence[float], 
         a = _scale(record.vector_a, record.scalar_at_base)
         b = _scale(record.vector_b, record.scalar_at_minus_8)
         summed = _add(a,b)
-        relative_point = _sub(record.point, Vec3(0.0,0.0,0.0))
+        relative_point = _sub(record.point, body_position)
         total = _add(total, summed)
         torque = _add(torque, _cross(relative_point, summed))
     m = tuple(float(x) for x in body_matrix)
@@ -71,7 +72,7 @@ def build_contract():
             "vector at +0xb0 * scalar at +0x00",
             "vector at +0x98 * scalar at -0x08",
             "sum the two vectors",
-            "point at +0xf8 minus body_position",
+            "point at +0xf8 minus body position at body +0x00/+0x08/+0x10",
             "cross(relative_point, summed_vector)",
         ],
         "outputs": [
