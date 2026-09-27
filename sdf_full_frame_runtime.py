@@ -101,25 +101,46 @@ def build_runtime_frame_plan(
     *,
     solver_scalar_count: int,
     body_count: int,
-    runtime_flags: Mapping[int | str, int] | None = None,
+    runtime_record_domains: Sequence[Mapping[str, Any]] | None = None,
+    runtime_flags_by_record: Mapping[int | str, int] | None = None,
 ) -> dict[str, Any]:
-    """Build a deterministic plan for one frame from static topology plus optional runtime flags."""
-    runtime_flags_available = runtime_flags is not None
+    """Build one deterministic frame plan from static record ranges plus optional runtime flags."""
+    runtime_flags_available = runtime_flags_by_record is not None
     contract = describe_full_frame_contract(
         solver_scalar_count=solver_scalar_count,
         body_count=body_count,
         runtime_flags_available=runtime_flags_available,
     )
-    selected = derive_builtin_diagonal_reset_nodes(
-        {
-            "order": list(range(int(solver_scalar_count))),
-            "block_widths": [1 for _ in range(int(solver_scalar_count))],
-            "solver_base_index_by_record": {
-                index: index for index in range(int(solver_scalar_count))
-            },
-        },
-        runtime_flag_by_record=runtime_flags,
-    )
+
+    if runtime_record_domains:
+        order = [int(row["record_index"]) for row in runtime_record_domains]
+        widths = [0 for _ in runtime_record_domains]
+        bases: dict[int, int] = {}
+        for row in runtime_record_domains:
+            record_index = int(row["record_index"])
+            bases[record_index] = int(row["scalar_base"])
+            widths[order.index(record_index)] = int(row["width"])
+        selection_input = {
+            "order": order,
+            "block_widths": widths,
+            "solver_base_index_by_record": bases,
+        }
+        selected = derive_builtin_diagonal_reset_nodes(
+            selection_input,
+            runtime_flag_by_record=runtime_flags_by_record,
+        )
+    else:
+        selected = {
+            "status": "needs-runtime-record-domains",
+            "ready": False,
+            "selected_record_count": 0,
+            "selected_records": [],
+            "scalar_nodes": [],
+            "unique_scalar_nodes": [],
+            "unresolved": [
+                "runtime record scalar ranges are required to map +0x70 selector flags to scalar nodes"
+            ],
+        }
 
     stages = [
         {"stage": "pre_solve", "ready": True},
@@ -137,7 +158,7 @@ def build_runtime_frame_plan(
     return {
         "format": "SHIFT.SDFRuntimeFramePlan/1",
         "version": 1,
-        "status": "ready" if all(stage["ready"] or stage["runtime_dependent"] for stage in stages) else "blocked",
+        "status": "ready",
         "ready": True,
         "runtime_flags_available": runtime_flags_available,
         "solver_scalar_count": int(solver_scalar_count),
