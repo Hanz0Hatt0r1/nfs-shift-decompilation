@@ -144,3 +144,43 @@ def test_source_evidence_fails_closed_for_incomplete_input(tmp_path):
     report = analyze_source(p)
     assert report["ready"] is False
     assert not all(report["checks"].values())
+
+
+
+def test_rpm_torque_source_order_is_rpm_brake_throttle():
+    from vehicle_physics_runtime import parse_rpm_torque_points
+
+    report = parse_rpm_torque_points("""
+RPMTorque=(0,-58.40,-58.00)
+RPMTorque=(250,-33.00,-9.00)
+RPMTorque=(500,-13.70,60.00)
+""")
+    assert report["ready"] is True
+    assert report["point_count"] == 3
+    assert report["points"][0]["source_tuple"] == [0.0, -58.4, -58.0]
+    assert report["points"][0]["storage_order"] == [-58.4, -58.0, 0.0]
+    assert report["storage"]["base_offset"] == 0x1818
+    assert report["storage"]["record_stride"] == 0x20
+
+
+def test_rpm_torque_rejects_brake_above_throttle_and_non_monotonic_rpm():
+    from vehicle_physics_runtime import parse_rpm_torque_points
+
+    report = parse_rpm_torque_points("""
+RPMTorque=(1000,50,40)
+RPMTorque=(900,20,30)
+""")
+    assert report["ready"] is False
+    assert any("brake-greater-than-throttle" in warning for warning in report["warnings"])
+    assert any("curve-out-of-order" in warning for warning in report["warnings"])
+
+
+def test_rpm_torque_limit_is_127_existing_points():
+    from vehicle_physics_runtime import parse_rpm_torque_points
+
+    text = "\n".join(
+        f"RPMTorque=({index},{index},{index + 1})" for index in range(130)
+    )
+    report = parse_rpm_torque_points(text)
+    assert report["point_count"] == 127
+    assert "rpm-torque:too-many-points:127" in report["warnings"]
