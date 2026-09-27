@@ -445,7 +445,7 @@ def describe_sdf_constraint_runtime_lowering(
             "flag_bit": SDF_FLAG_JOINT,
             "runtime_stride": 0xA0,
             "body_counter_offset": "+0x98",
-            "source_vector_fields": ["axis", "neg", "pos"],
+            "source_value_fields": ["pos"],
             "source_descriptor_offsets": ["+0x28", "+0x30", "+0x38"],
             "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
             "sample_helper": "FUN_007ba8b0",
@@ -456,7 +456,7 @@ def describe_sdf_constraint_runtime_lowering(
             "flag_bit": SDF_FLAG_HINGE,
             "runtime_stride": 0xA0,
             "body_counter_offset": "+0x9c",
-            "source_vector_fields": ["axis", "neg", "pos"],
+            "source_value_fields": ["axis"],
             "source_descriptor_offsets": ["+0x58", "+0x60", "+0x68"],
             "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
             "sample_helper": "FUN_007ba900",
@@ -467,7 +467,7 @@ def describe_sdf_constraint_runtime_lowering(
             "flag_bit": SDF_FLAG_BAR,
             "runtime_stride": 0xB8,
             "body_counter_offset": "+0xa0",
-            "source_vector_fields": ["axis", "neg", "pos", "bar_vector_2", "bar_vector_3", "bar_vector_4"],
+            "source_value_fields": ["pos", "neg"],
             "source_descriptor_offsets": [
                 "+0x28", "+0x30", "+0x38", "+0x40", "+0x48", "+0x50"
             ],
@@ -482,8 +482,7 @@ def describe_sdf_constraint_runtime_lowering(
             "flag_bit": SDF_FLAG_JOINT | SDF_FLAG_HINGE,
             "runtime_stride": 0xA0,
             "body_counter_offset": ["+0x98", "+0x9c"],
-            "source_vector_fields": ["axis", "neg", "pos"],
-            "source_descriptor_offsets": {
+            "source_value_fields": {
                 "joint": ["+0x28", "+0x30", "+0x38"],
                 "hinge": ["+0x58", "+0x60", "+0x68"],
             },
@@ -544,7 +543,7 @@ def describe_sdf_constraint_runtime_lowering(
                 ],
             },
             "section_storage": {
-                "source_vector_fields": spec["source_vector_fields"],
+                "source_value_fields": spec["source_value_fields"],
                 "source_descriptor_offsets": spec["source_descriptor_offsets"],
                 "runtime_vector_offsets": spec["runtime_vector_offsets"],
             },
