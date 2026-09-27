@@ -1,0 +1,30 @@
+{
+  "format": "SHIFT.SDFSolverSnapshotParityEvidence/1",
+  "version": 1,
+  "snapshot_schema": {
+    "scalar_count": "solver scalar node count",
+    "row_indices": "retail row-index offsets",
+    "matrix_pool": "flat float64 solver matrix",
+    "rhs": "float64 solver RHS"
+  },
+  "comparison": {
+    "structural": [
+      "scalar_count",
+      "row_indices",
+      "matrix_pool length",
+      "rhs length"
+    ],
+    "numeric": [
+      "matrix cell absolute error",
+      "rhs absolute error"
+    ],
+    "tolerance": "caller supplied absolute tolerance"
+  },
+  "retail_storage_evidence": {
+    "matrix_pool": "+0x38 global / +0x154 per-body",
+    "row_pointers": "+0x3c global / +0x158 per-body",
+    "row_indices": "+0x15c per-body",
+    "rhs": "+0x40"
+  },
+  "status": "source-compatible-neutral-comparator"
+}
