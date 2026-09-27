@@ -3,8 +3,8 @@
 
 The preferred mode is --auto-bmw. It scans the original .trace once, finds the
 frame containing the strongest BMW M3 target-draw signature set, and then uses
-apitrace trim --auto on the exact call range of that frame. This preserves the
-frame-local calls while asking apitrace to add replay dependencies.
+apitrace trim with the exact call range of that frame. This keeps the extraction
+compatible with apitrace builds that do not provide the optional --auto trim mode.
 
 The original multi-gigabyte trace is never rewritten or expanded to a permanent
 text dump. Only the compact output trace and a JSON manifest are written.
@@ -291,7 +291,6 @@ def trim_call_range(
     command = [
         apitrace,
         "trim",
-        "--auto",
         f"--calls={start_call}-{end_call}",
         "-o",
         str(output_trace),
@@ -314,8 +313,7 @@ def trim_frame_number(
     command = [
         apitrace,
         "trim",
-        "--auto",
-        f"--frames={frame}/frame",
+        f"--frames={frame}",
         "-o",
         str(output_trace),
         str(trace),
@@ -354,7 +352,7 @@ def build_manifest(
                 "created" if output_trace.is_file() else "not-created"
             ),
             "resource_replay_dependencies": (
-                "requested-via-auto-trim"
+                "not-automatically-resolved; trim uses the selected frame/call range"
                 if output_trace.is_file()
                 else "not-observed"
             ),
