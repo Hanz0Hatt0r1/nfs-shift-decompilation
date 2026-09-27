@@ -1,0 +1,6 @@
+{
+  "format":"SHIFT.SurfaceProbeRuntime/1","version":1,
+  "source":{"file":"SHIFT.exe.c","function":"FUN_00759210","line":753361},
+  "fields":{"point":["0x8c","0x90","0x94"],"normal":["0x13c","0x140","0x144"],"distance":"0xfc","radius":"0x158","parent":"0x17c","child":"0x180"},
+  "status":"instruction-stream exact recursive surface probe"
+}

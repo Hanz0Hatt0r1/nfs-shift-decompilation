@@ -1,0 +1,6 @@
+{
+  "format":"SHIFT.WheelForceAggregateRuntime/1","version":1,
+  "source":{"file":"SHIFT.exe.c","function":"FUN_00759c90","line":753792},
+  "record":{"base":"this+0x7f0","count":3,"stride":"0x150","vector_a":"+0xb0","vector_b":"+0x98","scalar_a":"+0x00","scalar_b":"-0x08","point":"+0xf8"},
+  "status":"instruction-stream exact three-record aggregate"
+}

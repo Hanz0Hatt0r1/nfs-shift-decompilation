@@ -1,0 +1,6 @@
+{
+  "format":"SHIFT.PhysicsHelper675F0Runtime/1","version":1,
+  "source":{"file":"SHIFT.exe.c","function":"FUN_007675f0","line":759784},
+  "constants":{"distance_limit":200.0,"distance_gate_min":5.0,"speed_gate_min":1.0,"speed_factor_offset":13.888889,"speed_factor_scale":5.5555553,"gap_offset":1.5,"gap_scale":2.5,"force_multiplier":1.5,"negative_submission_scale":-0.05},
+  "status":"outer arithmetic/gating recovered; helper physical semantics remain separate or unresolved"
+}
