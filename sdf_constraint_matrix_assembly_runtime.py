@@ -155,3 +155,46 @@ def describe_sdf_constraint_matrix_assembly_contract() -> dict[str, Any]:
             "Coefficient values remain owned by the individual source-backed kernels.",
         ],
     }
+
+
+def apply_builtin_row_identity_constraints(
+    matrix: Sequence[Sequence[float | int]],
+    rhs: Sequence[float | int],
+    selected_nodes: Sequence[int],
+) -> dict[str, Any]:
+    """Apply the already reconstructed FUN_007b2210 stage after matrix assembly."""
+    from sdf_constraint_solver_frame_runtime import apply_builtin_diagonal_reset
+
+    return apply_builtin_diagonal_reset(matrix, rhs, selected_nodes)
+
+
+def build_solver_ready_matrix(
+    scalar_count: int,
+    contributions: Sequence[Mapping[str, Any]],
+    rhs: Sequence[float | int],
+    selected_identity_nodes: Sequence[int],
+) -> dict[str, Any]:
+    """Assemble source lower-triangle contributions and apply row/column identity resets."""
+    if len(rhs) != int(scalar_count):
+        raise ValueError("rhs length must equal scalar_count")
+    assembled = assemble_lower_triangle(scalar_count, contributions)
+    reset = apply_builtin_row_identity_constraints(
+        assembled["matrix"],
+        rhs,
+        selected_identity_nodes,
+    )
+    return {
+        "format": "SHIFT.SDFSolverReadyMatrix/1",
+        "version": 1,
+        "status": "ready",
+        "ready": True,
+        "assembled": assembled,
+        "identity_reset": reset,
+        "matrix": reset["matrix"],
+        "rhs": reset["rhs"],
+        "selected_identity_nodes": list(reset["nodes"]),
+        "evidence": {
+            "assembly": "FUN_007bbb80/FUN_007bb250/FUN_007bb6c0",
+            "identity_reset": "FUN_007b2210",
+        },
+    }
