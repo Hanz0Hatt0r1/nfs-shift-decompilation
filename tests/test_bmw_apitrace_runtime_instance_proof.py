@@ -88,7 +88,7 @@ def _report() -> dict:
         "source": {"path": "shift.trace", "kind": "trace"},
         "scan": {
             "target_vertex_count": 3550,
-            "target_vertex_buffer_pointer": "0x27b39460",
+            "target_vertex_buffer_pointer": "0xaaa",
             "target_index_buffer_pointers": ibs,
         },
         "geometry": rows,
