@@ -1,0 +1,24 @@
+{
+  "format": "SHIFT.BodyPointTransformRuntime/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "fun_007537b0_line": 749425,
+    "fun_00753810_line": 749442
+  },
+  "fields": {
+    "angular": ["0x18", "0x20", "0x28"],
+    "body_position": ["0x00", "0x08", "0x10"],
+    "translation": ["0x78", "0x80", "0x88"]
+  },
+  "fun_007537b0": {
+    "formula": "angular x point + translation"
+  },
+  "fun_00753810": {
+    "preprocess": "point - body_position",
+    "formula": "angular x relative_point + translation"
+  },
+  "unresolved": [
+    "semantic names and physical units of body fields"
+  ]
+}
