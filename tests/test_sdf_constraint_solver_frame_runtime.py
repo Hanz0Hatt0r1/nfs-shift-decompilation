@@ -46,7 +46,7 @@ def test_solver_frame_profile_validation_blocks_missing_solver_graph():
     assert "solver-graph-not-ready" in result["errors"]
 
 
-def test_builtin_diagonal_reset_derives_odd_base_scalar_blocks():
+def test_builtin_diagonal_reset_requires_runtime_sample_flags():
     import sdf_constraint_solver_frame_runtime as frame
 
     scalar = {
@@ -55,10 +55,28 @@ def test_builtin_diagonal_reset_derives_odd_base_scalar_blocks():
         "solver_base_index_by_record": {0: 0, 1: 3, 2: 5},
     }
     result = frame.derive_builtin_diagonal_reset_nodes(scalar)
-    assert result["scalar_nodes"] == [3, 4, 5]
-    assert result["selected_record_count"] == 2
-    assert result["selected_records"][0]["record_index"] == 1
-    assert result["selected_records"][1]["record_index"] == 2
+    assert result["ready"] is False
+    assert result["status"] == "needs-runtime-flags"
+    assert result["scalar_nodes"] == []
+    assert "runtime sample +0x70 low-bit flags not supplied" in result["unresolved"]
+
+
+def test_builtin_diagonal_reset_uses_runtime_sample_flags_not_base_parity():
+    import sdf_constraint_solver_frame_runtime as frame
+
+    scalar = {
+        "order": [0, 1, 2],
+        "block_widths": [3, 2, 1],
+        "solver_base_index_by_record": {0: 0, 1: 3, 2: 4},
+    }
+    result = frame.derive_builtin_diagonal_reset_nodes(
+        scalar,
+        runtime_flag_by_record={0: 0, 1: 2, 2: 1},
+    )
+    assert result["ready"] is True
+    assert result["scalar_nodes"] == [4]
+    assert result["selected_record_count"] == 1
+    assert result["selected_records"][0]["record_index"] == 2
 
 
 def test_builtin_diagonal_reset_zeroes_rows_columns_and_rhs():
