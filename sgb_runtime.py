@@ -167,7 +167,7 @@ def _attach_node_objects(
     from sgb_object_runtime import parse_sgb_object_payload
 
     offsets = sorted({
-        start + int(row["object_payload"]["relative_offset"])
+        chunk_start + int(row["object_payload"]["relative_offset"])
         for row in records
         if row["object_payload"]["relative_offset"]
     })
