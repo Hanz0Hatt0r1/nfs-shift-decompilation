@@ -1,0 +1,27 @@
+{
+  "format": "SHIFT.WheelContactFactorEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe.c",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "function_lines": {
+    "FUN_00758ad0": 753056,
+    "FUN_00765c40": 759035
+  },
+  "helper": {
+    "threshold_global": "0xc10f94",
+    "clamp_max": 6.0,
+    "pi_numerator": 3.1415927410125732,
+    "pi_denominator": 6.0,
+    "cos_scale": 0.02500000037252903,
+    "cos_bias": 0.9750000238418579,
+    "cos_helper": "FUN_00900b10 / FCOS"
+  },
+  "storage": {
+    "previous_base": "0xa70",
+    "factor_base": "0xa78",
+    "stride": "0x150",
+    "count": 4
+  },
+  "disabled_factor": 1.0,
+  "status": "instruction-stream backed helper and four-wheel storage boundary"
+}
