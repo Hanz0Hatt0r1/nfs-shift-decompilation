@@ -99,11 +99,12 @@ name=jh posbody=wheel negbody=body axis=(1,1,0) neg=(0,0,0) pos=(0,0,1)
     compiled = sdf.compile_sdf_runtime_topology(report)
     assert compiled["ready"] is True
     assert compiled["body_count"] == 2
-    assert compiled["constraint_count"] == 4
+    assert compiled["constraint_count"] == 5
     assert compiled["constraints"][0]["flag_word"] == 1
     assert compiled["constraints"][1]["flag_word"] == 2
     assert compiled["constraints"][2]["flag_word"] == 4
-    assert compiled["constraints"][3]["flag_word"] == 3
+    assert compiled["constraints"][3]["flag_word"] == 1
+    assert compiled["constraints"][4]["flag_word"] == 2
     assert compiled["constraints"][2]["runtime_stride"] == 0xB8
     assert compiled["constraints"][0]["runtime_stride"] == 0xA0
     assert compiled["constraints"][1]["vectors"]["pos_body_anchor_name"] == "anchor"
@@ -140,9 +141,11 @@ name=b posbody=body negbody=wheel axis=(0,0,1) neg=(0,0,0) pos=(0,0,1)
 """)
     result = sdf.describe_sdf_pre_physx_build(report)
     assert result["ready"] is True
-    assert result["allocations"]["body_index_matrix_elements"] == 4
-    assert result["allocations"]["body_index_matrix_bytes"] == 32
-    assert result["allocations"]["body_index_vector_bytes"] == 8
+    assert result["counts"]["constraints"] == 3
+    assert result["allocations"]["constraint_index_matrix_elements"] == 9
+    assert result["allocations"]["constraint_index_matrix_bytes"] == 72
+    assert result["allocations"]["constraint_index_row_pointer_bytes"] == 12
+    assert result["allocations"]["solver_initial_vector_bytes"] == 24
     assert result["allocations"]["per_joint_resolved_samples"] == 2
     assert result["allocations"]["per_hinge_resolved_samples"] == 2
     assert result["allocations"]["per_bar_resolved_samples"] == 2
