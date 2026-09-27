@@ -47,3 +47,12 @@ def test_body_state_primitives_contract_keeps_source_boundaries():
     assert result["coefficient_init"]["function"] == "FUN_007ba860"
     assert result["point_accumulator"]["function"] == "FUN_007ba9e0"
     assert result["point_accumulator"]["relative_point_rule"] == "point - body_origin"
+
+
+def test_body_coefficient_initialization_preserves_double_reciprocal_source():
+    result = runtime.initialize_body_coefficients(
+        (1.0000000596046448, 2.0, 4.0)
+    )
+    assert result["input_double"][0] == pytest.approx(1.0000000596046448)
+    assert result["input_float32"][0] == 1.0
+    assert result["reciprocal"][0] == pytest.approx(1.0 / 1.0000000596046448)
