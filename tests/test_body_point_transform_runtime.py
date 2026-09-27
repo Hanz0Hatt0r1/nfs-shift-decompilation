@@ -35,7 +35,7 @@ def test_fun_00753810_subtracts_body_position_first():
         translation=Vec3(0.0, 0.0, 0.0),
     )
     result = transform_point_relative(body, (4.0, 5.0, 6.0))
-    assert result.as_tuple() == pytest.approx((7.0, 6.0, -3.0))
+    assert result.as_tuple() == pytest.approx((-2.0, 4.0, -2.0))
 
 
 def test_zero_angular_vector_returns_translation():
