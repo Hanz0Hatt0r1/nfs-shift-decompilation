@@ -383,7 +383,7 @@ def compile_sdf_runtime_topology(
             if isinstance(value, list) and len(value) == 3:
                 vectors[key] = [float(component) for component in value]
         if isinstance(values.get("pos"), str):
-            vectors["pos_body_anchor_name"] = str(values["pos"])
+            vectors["copy_body_name"] = str(values["pos"])
 
         for materialization in runtime_sections:
             flag_word = {
@@ -447,7 +447,7 @@ def compile_sdf_runtime_topology(
         },
         "limitations": [
             "PhysX object classes and SDK calls remain opaque.",
-            "Anchor semantics are preserved as source vectors/names; no coordinate-system naming is inferred.",
+            "A string-valued pos is preserved as the source copy-body name; no gameplay anchor semantics are inferred.",
         ],
     }
 
