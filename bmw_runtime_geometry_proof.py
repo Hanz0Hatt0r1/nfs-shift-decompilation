@@ -133,10 +133,11 @@ def _check_parity(parity: Mapping[str, Any]) -> tuple[list[str], dict[str, Any]]
         row = vb_rows[0]
         if _norm_ptr(row.get("runtime_buffer_pointer")) != TARGET_VB:
             reasons.append("parity:vertex-buffer-pointer-metadata-missing-or-mismatch")
-        comparison = row.get("comparison") or {}
+        comparison = row.get("comparison") or row
         if comparison.get("ready") is not True:
             reasons.append("parity:vertex-buffer-byte-comparison-not-ready")
-        if int(comparison.get("observed_byte_size", -1)) != TARGET_VB_SIZE:
+        observed_size = comparison.get("observed_byte_size", comparison.get("runtime_size", -1))
+        if int(observed_size) != TARGET_VB_SIZE:
             reasons.append("parity:vertex-buffer-size-metadata-mismatch")
 
     ib_rows = [
@@ -154,11 +155,11 @@ def _check_parity(parity: Mapping[str, Any]) -> tuple[list[str], dict[str, Any]]
         if not pointer:
             reasons.append("parity:index-buffer-pointer-metadata-missing")
         observed_ptrs.add(pointer)
-        comparison = row.get("comparison") or {}
+        comparison = row.get("comparison") or row
         if comparison.get("ready") is not True:
             reasons.append(f"parity:index-byte-comparison-not-ready:{row.get('label')}")
         try:
-            observed_sizes.add(int(comparison.get("observed_byte_size")))
+            observed_sizes.add(int(comparison.get("observed_byte_size", comparison.get("runtime_size"))))
         except (TypeError, ValueError):
             pass
 
