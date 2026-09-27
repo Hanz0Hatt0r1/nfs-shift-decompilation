@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-from matrix_vector_transform_runtime import Matrix3x3, transform_vector_transpose
+from matrix_vector_transform_runtime import Matrix3x3
+from sdf_body_frame_runtime import transform_vector_transpose
 
 FORMAT = "SHIFT.SDFHingeMatrixCouplingRuntime/1"
 SOURCE_LINE = 819302
