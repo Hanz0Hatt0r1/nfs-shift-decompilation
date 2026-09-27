@@ -12,10 +12,10 @@ import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from engine_edf_runtime import parse_engine_edf
 from gearbox_gdf_runtime import parse_gdf
 from rigid_body_sdf_runtime import parse_sdf
 from vehicle_cdf_runtime import parse_cdf
-from vehicle_physics_runtime import parse_rpm_torque_points
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -50,7 +50,7 @@ def build_profile(
         }
 
     cdf_report = parse_cdf(Path(cdf).read_bytes(), strict=strict)
-    edf_report = parse_rpm_torque_points(Path(edf).read_bytes(), strict=strict)
+    edf_report = parse_engine_edf(Path(edf).read_bytes(), strict=strict)
     gdf_report = parse_gdf(Path(gdf).read_bytes(), strict=strict)
     sdf_report = parse_sdf(Path(sdf).read_bytes(), strict=strict)
 
@@ -99,7 +99,9 @@ def build_profile(
             "cdf_sections": cdf_report.get("section_count", 0),
             "cdf_entries": cdf_report.get("entry_count", 0),
             "cdf_unknown_entries": cdf_report.get("unknown_entry_count", 0),
-            "edf_rpm_torque_points": edf_report.get("point_count", 0),
+            "edf_entries": edf_report.get("entry_count", 0),
+            "edf_unknown_entries": edf_report.get("unknown_entry_count", 0),
+            "edf_rpm_torque_points": edf_report.get("rpm_torque", {}).get("point_count", 0),
             "gdf_gear_ratio_count": gdf_report.get("gear_ratio_count", 0),
             "gdf_final_drive_ratio_count": gdf_report.get("final_drive_ratio_count", 0),
             "sdf_bodies": sdf_report.get("topology", {}).get("body_count", 0),
