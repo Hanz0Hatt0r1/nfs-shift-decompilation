@@ -62,7 +62,7 @@ name=link posbody=body negbody=wheel pos=(0,0,0) neg=(1,0,0)
     assert graph["edge_count"] == 2
     assert graph["body_names"] == ["BODY", "WHEEL"]
     assert graph["adjacency"]["BODY"] == [0, 1]
-    assert graph["adjacency"]["wheel"] == [0, 1]
+    assert graph["adjacency"]["WHEEL"] == [0, 1]
 
 
 def test_sdf_body_reference_graph_blocks_missing_body():
