@@ -1,0 +1,27 @@
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Native/local build trees
+**/build/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+
+# Local runtime captures and large binary traces
+*.trace
+*.trace.gz
+*.trace.zst
+SHIFT_tail_*.trace
+single_frame.trace
+
+# Local capture output
+captures/
+capture/
+artifacts/
