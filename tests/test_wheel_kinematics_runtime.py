@@ -13,6 +13,7 @@ from wheel_kinematics_runtime import (
     WHEEL_STATE_STRIDE,
     build_pair_adjustment_observation,
     build_wheel_kinematics_contract,
+    evaluate_wheel_spring_helper,
     normalize_relative_vector,
     prepare_wheel_kinematic_observation,
 )
