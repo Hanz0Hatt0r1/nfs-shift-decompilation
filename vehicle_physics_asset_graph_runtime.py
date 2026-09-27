@@ -16,7 +16,10 @@ from engine_edf_runtime import parse_engine_edf
 from gearbox_gdf_runtime import parse_gdf
 from rigid_body_sdf_runtime import (
     compile_sdf_runtime_topology,
+    build_sdf_constraint_connectivity_matrix,
+    compile_sdf_constraint_solver_graph_from_report,
     describe_sdf_constraint_runtime_lowering,
+    optimize_sdf_constraint_order,
     parse_sdf,
     resolve_sdf_body_references,
 )
@@ -61,6 +64,9 @@ def build_profile(
     sdf_graph = resolve_sdf_body_references(sdf_report)
     sdf_runtime_topology = compile_sdf_runtime_topology(sdf_report)
     sdf_constraint_runtime = describe_sdf_constraint_runtime_lowering(sdf_report)
+    sdf_constraint_connectivity = build_sdf_constraint_connectivity_matrix(sdf_report)
+    sdf_constraint_order = optimize_sdf_constraint_order(sdf_report)
+    sdf_constraint_solver_graph = compile_sdf_constraint_solver_graph_from_report(sdf_report)
 
     blockers: list[str] = []
     for name, report in (
@@ -77,6 +83,9 @@ def build_profile(
     blockers.extend(f"sdf-graph:{reason}" for reason in sdf_graph.get("unresolved") or [])
     blockers.extend(f"sdf-runtime:{reason}" for reason in sdf_runtime_topology.get("unresolved") or [])
     blockers.extend(f"sdf-constraint-runtime:{reason}" for reason in sdf_constraint_runtime.get("unresolved") or [])
+    blockers.extend(f"sdf-constraint-connectivity:{reason}" for reason in sdf_constraint_connectivity.get("unresolved") or [])
+    blockers.extend(f"sdf-constraint-order:{reason}" for reason in sdf_constraint_order.get("unresolved") or [])
+    blockers.extend(f"sdf-constraint-solver:{reason}" for reason in sdf_constraint_solver_graph.get("unresolved") or [])
 
     return {
         "format": FORMAT,
@@ -126,6 +135,10 @@ def build_profile(
             "sdf_runtime_constraint_count": sdf_runtime_topology.get("constraint_count", 0),
             "sdf_constraint_runtime_lowering_ready": sdf_constraint_runtime.get("ready") is True,
             "sdf_constraint_runtime_record_count": sdf_constraint_runtime.get("record_count", 0),
+            "sdf_constraint_shared_body_pair_count": sdf_constraint_connectivity.get("shared_body_pair_count", 0),
+            "sdf_constraint_order_final_cost": sdf_constraint_order.get("final_cost"),
+            "sdf_constraint_solver_graph_ready": sdf_constraint_solver_graph.get("ready") is True,
+            "sdf_constraint_solver_edge_record_count": sdf_constraint_solver_graph.get("allocations", {}).get("edge_record_count", 0),
         },
         "details": {
             "cdf": cdf_report,
@@ -135,6 +148,9 @@ def build_profile(
             "sdf_reference_graph": sdf_graph,
             "sdf_runtime_topology": sdf_runtime_topology,
             "sdf_constraint_runtime": sdf_constraint_runtime,
+            "sdf_constraint_connectivity": sdf_constraint_connectivity,
+            "sdf_constraint_order": sdf_constraint_order,
+            "sdf_constraint_solver_graph": sdf_constraint_solver_graph,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
