@@ -31,8 +31,9 @@ def test_vehicle_physics_graph_joins_all_four_resource_boundaries(tmp_path):
     assert report["summary"]["edf_rpm_torque_points"] == 2
     assert report["summary"]["gdf_gear_ratio_count"] == 1
     assert report["summary"]["gdf_final_drive_ratio_count"] == 1
-    assert report["summary"]["sdf_bodies"] == 1
+    assert report["summary"]["sdf_bodies"] == 3
     assert report["summary"]["sdf_joint_hinge_count"] == 1
+    assert report["summary"]["sdf_constraint_runtime_record_count"] == 2
     assert report["load_graph"]["chassis"]["runtime_loader"] == "FUN_0074d640 -> FUN_007be420"
     assert report["load_graph"]["engine"]["runtime_loader"] == "FUN_007c3280"
     assert report["load_graph"]["gearbox"]["runtime_loader"] == "FUN_007c2110"
