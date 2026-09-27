@@ -75,36 +75,6 @@ def compute_gap(*, displacement: float, c_238: float, c_240: float) -> float:
     return displacement - c_238
 
 
-def compute_damping_term(
-    *,
-    velocity_projection: float,
-    c_1d8: float,
-    c_1e0: float,
-    c_1f8: float,
-    c_200: float,
-    c_208: float,
-    c_210: float,
-) -> float:
-    """Reproduce the x87 branch selecting the velocity-side coefficient expression."""
-    velocity_projection = _finite("velocity_projection", velocity_projection)
-    if velocity_projection > 0.0 and velocity_projection <= c_1e8_from_branch(c_208):
-        return c_1e0 * velocity_projection
-    if velocity_projection >= c_208:
-        return c_200 * velocity_projection
-    return c_1f8 * velocity_projection + c_210
-
-
-def c_1e8_from_branch(value: float) -> float:
-    """Name-preserving identity for the branch threshold represented by coefficient slot +0x1e8.
-
-    The helper's first positive-velocity comparison is against +0x1e8. The
-    standalone damping helper is therefore kept conservative and uses the
-    caller-supplied +0x1e8 through the full evaluator below. This function
-    exists only to avoid silently introducing a second semantic name.
-    """
-    return _finite("c_1e8", value)
-
-
 def compute_damping_term_exact(
     *,
     velocity_projection: float,
