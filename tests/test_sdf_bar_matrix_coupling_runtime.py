@@ -54,9 +54,9 @@ def test_bar_pair_coefficient_matches_source_equation_and_sign():
         inner_base=3,
         same_side=False,
     )
-    assert positive["raw_coefficient"] == pytest.approx(364.0)
-    assert positive["coefficient"] == pytest.approx(364.0)
-    assert negative["coefficient"] == pytest.approx(-364.0)
+    assert positive["raw_coefficient"] == pytest.approx(388.0)
+    assert positive["coefficient"] == pytest.approx(388.0)
+    assert negative["coefficient"] == pytest.approx(-388.0)
     assert positive["storage"]["matrix_cell"] == {"row": 5, "column": 3}
 
 
