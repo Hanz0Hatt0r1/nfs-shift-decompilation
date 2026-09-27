@@ -1600,4 +1600,14 @@ semantics.
 Reconstruct the exact vehicle physics resource roots emitted by FUN_0074ec30:
 Chassis, Collision, Engines, GearBox, Suspension, Upgrades and Vehicles, and link the
 Chassis root to the participant .cdf construction in FUN_0074d640.
+## Phase 360: vehicle physics details and driveline solver
+
+Reconstruct the exact HDV section dispatch, named property offsets for GENERAL,
+external ENGINE/EDF, SUSPENSION, four wheel blocks and DRIVELINE, plus the proven
+6-variable linear solve in FUN_00764266/FUN_007af310. Stop at unresolved units,
+internal variable identities, interpolation semantics and cross-file payload ownership.
+
+The phase freezes SHIFT.VehiclePhysicsDetailsRuntime/1 and source-evidence markers for
+the retail SHIFT.exe.c fingerprint, with 10 focused regression tests. Renderer and
+RENDER.bff remain untouched.
 
