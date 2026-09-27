@@ -1,0 +1,39 @@
+{
+  "format": "SHIFT.BMWM3SolverDomainEvidence/1",
+  "version": 1,
+  "source": {
+    "archive": "BMW_M3_E36.bff",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "sdf_path": "vehicles/physics/suspension/aarm_multilink.sdf",
+    "sdf_sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed"
+  },
+  "runtime_topology": {
+    "body_count": 11,
+    "source_constraint_count": 24,
+    "runtime_constraint_record_count": 28,
+    "joint_hinge_source_records": 4,
+    "runtime_joint_records": 4,
+    "runtime_hinge_records": 4,
+    "runtime_bar_records": 20,
+    "solver_scalar_count": 40
+  },
+  "solver_widths": {
+    "JOINT": 3,
+    "HINGE": 2,
+    "BAR": 1
+  },
+  "ordering": {
+    "function": "FUN_007b1b60",
+    "initial_cost": 17516,
+    "final_cost": 17296,
+    "improvement_count": 2,
+    "pass_count": 2,
+    "final_order_tail": [25, 24, 27, 26]
+  },
+  "storage": {
+    "matrix_bytes": 12800,
+    "row_pointer_bytes": 160,
+    "row_index_last": 1560
+  },
+  "status": "source-backed-real-asset-topology"
+}
