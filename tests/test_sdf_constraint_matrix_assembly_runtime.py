@@ -47,6 +47,7 @@ def test_assembler_contract_lists_all_recovered_block_types():
     report = runtime.describe_sdf_constraint_matrix_assembly_contract()
     assert report["ready"] is True
     assert report["kernels"] == {
+        "SEED": "FUN_007ba2b0",
         "JOINT": "FUN_007bbb80",
         "HINGE": "FUN_007bb250",
         "BAR": "FUN_007bb6c0",

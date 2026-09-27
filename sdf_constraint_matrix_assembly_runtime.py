@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
+from sdf_constraint_seed_write_runtime import materialize_seed_matrix
 
 FORMAT = "SHIFT.SDFConstraintMatrixAssemblyRuntime/1"
 
@@ -40,6 +41,22 @@ def add_block(
             out[row_index][column_index] += float(value)
     return out
 
+
+
+def materialize_source_seed_matrix(
+    scalar_connectivity: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Materialize the exact 1.0 seed-write layer from FUN_007ba2b0."""
+    matrix = scalar_connectivity.get("matrix")
+    if not isinstance(matrix, Sequence):
+        raise ValueError("scalar_connectivity must provide a matrix")
+    result = materialize_seed_matrix(matrix)
+    result["source_connectivity"] = {
+        "format": scalar_connectivity.get("format"),
+        "solver_scalar_count": scalar_connectivity.get("solver_scalar_count"),
+        "shared_block_count": scalar_connectivity.get("shared_block_count"),
+    }
+    return result
 
 def assemble_lower_triangle(
     scalar_count: int,
@@ -259,6 +276,7 @@ def describe_sdf_constraint_matrix_assembly_contract() -> dict[str, Any]:
         "status": "source-backed-orchestration",
         "ready": True,
         "kernels": {
+            "SEED": "FUN_007ba2b0",
             "JOINT": "FUN_007bbb80",
             "HINGE": "FUN_007bb250",
             "BAR": "FUN_007bb6c0",
@@ -273,6 +291,7 @@ def describe_sdf_constraint_matrix_assembly_contract() -> dict[str, Any]:
             "BAR/BAR 1x1",
         ],
         "assembly_order": [
+            "FUN_007ba2b0 scalar seed",
             "JOINT kernel",
             "HINGE kernel",
             "BAR kernel",

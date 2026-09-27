@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 406: exact SDF scalar seed writes
+
+`FUN_007ba2b0` is now exposed as a dedicated source-backed `1.0` seed-write layer over the 40-scalar BMW domain. The matrix seed can be enumerated cell-by-cell and hashed before numeric constraint coefficients are applied; the real BMW topology yields 700 seeded cells in a 40×40 matrix. Next target: compare this seed/storage layer against a captured solver frame and then lift any remaining numeric coefficient boundaries.
+
 ## Phase 405: real BMW M3 solver scalar domain
 
 The real `aarm_multilink.sdf` intake is now lowered through the source-backed `FUN_0073150/FUN_007b1b60` topology and ordering contracts into a deterministic 28-record, 40-scalar solver domain. Each runtime record receives an exact scalar base/end range; the retail 40×40 matrix and row-pointer storage shape is validated from the same domain. A standalone verifier can reproduce the result directly from `BMW_M3_E36.bff`. Next target: populate/cross-check actual coefficient values from a captured solver frame.
