@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is advancing through Phase 363 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 364 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -55,6 +55,9 @@ the original BFF archives at runtime.
 
 `SHIFT.TireThermalBatchRuntime/1` now reconstructs the observed four-wheel call topology around `FUN_00760b50`: one thermal update per wheel after the main physics passes, using the `0xA80` wheel stride and deterministic FRONTLEFT/FRONTRIGHT/REARLEFT/REARRIGHT ordering. The adapter delegates arithmetic to `SHIFT.TireThermalRuntime/1` and rejects missing or unknown wheel state instead of synthesizing data. Renderer code and `RENDER.bff` remain untouched.
 
+## Phase 364: wheel kinematics runtime boundary
+
+Reconstruct FUN_00758b50 as an evidence-backed four-wheel kinematics boundary: the 0x848/0xA80 wheel-state layout, matching 0x400/0xA80 wheel-runtime layout, relative-vector normalization, exact FUN_00755950 scalar handoff, front/rear pair adjustment arithmetic and the final per-wheel transform call topology. The opaque FUN_007555b0 result and downstream tyre/contact force semantics remain unresolved. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
