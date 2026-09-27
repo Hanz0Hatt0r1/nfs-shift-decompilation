@@ -910,6 +910,10 @@ def build_sdf_scalar_connectivity_matrix(
                     scalar_matrix[left_scalar][right_scalar] = 1.0
                     scalar_matrix[right_scalar][left_scalar] = 1.0
 
+    solver_base_index_by_record = {
+        int(order[position]): int(offsets_by_position[position])
+        for position in range(record_count)
+    }
     return {
         "format": "SHIFT.SDFScalarConnectivityMatrix/1",
         "version": 1,
@@ -921,6 +925,7 @@ def build_sdf_scalar_connectivity_matrix(
         "block_widths": widths,
         "ordered_block_widths": ordered_widths,
         "scalar_block_offsets": offsets_by_position,
+        "solver_base_index_by_record": solver_base_index_by_record,
         "matrix": scalar_matrix,
         "shared_block_count": len(shared_blocks),
         "shared_blocks": shared_blocks,
