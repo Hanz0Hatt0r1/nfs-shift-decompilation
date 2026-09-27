@@ -24,7 +24,7 @@ def test_assemble_lower_triangle_preserves_source_write_direction():
         [0.0,0.0,0.0,0.0,0.0],
         [1.0,2.0,0.0,0.0,0.0],
         [3.0,9.0,0.0,0.0,0.0],
-        [0.0,0.0,6.0,0.0,0.0],
+        [0.0,6.0,0.0,0.0,0.0],
     ]
     assert result["contribution_count"] == 2
     assert result["upper_nonzero_without_lower"] == []
