@@ -1,0 +1,33 @@
+{
+  "format": "SHIFT.SpringConstraintRuntimeEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe.c",
+  "source_file_semantics": "function source-file path unresolved from recovered source; line number retained",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "function_lines": {
+    "FUN_007546a0": 750040,
+    "FUN_0075489c": 750161,
+    "FUN_00754cc0": 750338
+  },
+  "element_storage": {
+    "array": "0x100",
+    "stride": "0x90",
+    "count": "0xa8"
+  },
+  "property_offsets": {
+    "SpringType": "0x10",
+    "SpringDirection": "0x18",
+    "SpringHead": "0x30",
+    "SpringBody": "0x48",
+    "CollisionLength": "0x60",
+    "SpringParamsA": "0x68",
+    "SpringParamsB": "0x70"
+  },
+  "dispatch": {
+    "type_0": "directional force branch using raw configured Spring Direction",
+    "type_1": "directional force branch using normalized derived relative vector",
+    "type_2": "vector force branch using normalized derived relative vector"
+  },
+  "application_helper": "FUN_007baa70",
+  "status": "source-backed force-construction boundary with upstream transform inputs externalized"
+}
