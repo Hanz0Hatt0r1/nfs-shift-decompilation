@@ -1610,4 +1610,11 @@ internal variable identities, interpolation semantics and cross-file payload own
 The phase freezes SHIFT.VehiclePhysicsDetailsRuntime/1 and source-evidence markers for
 the retail SHIFT.exe.c fingerprint, with 10 focused regression tests. Renderer and
 RENDER.bff remain untouched.
+## Phase 361: tyre model and slip-curve runtime
+
+Continue the physics track through tire_manager.cpp. Freeze the TBC loader boundary,
+0x38-byte slip-curve records, 0x610-byte compound records, three per-wheel curve
+bindings, cubic-curve compilation/evaluation and the first derived tyre runtime fields.
+Keep physical units and force-law semantics unresolved unless directly proven by the
+recovered instructions. Renderer and RENDER.bff remain untouched.
 
