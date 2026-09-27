@@ -24,9 +24,9 @@
     "SpringParamsB": "0x70"
   },
   "dispatch": {
-    "type_0": "directional force branch",
-    "type_1": "same non-type-2 force branch",
-    "type_2": "vector force branch"
+    "type_0": "directional force branch using raw configured Spring Direction",
+    "type_1": "directional force branch using normalized derived relative vector",
+    "type_2": "vector force branch using normalized derived relative vector"
   },
   "application_helper": "FUN_007baa70",
   "status": "source-backed force-construction boundary with upstream transform inputs externalized"
