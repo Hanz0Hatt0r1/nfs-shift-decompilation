@@ -108,7 +108,7 @@ The next physics target is the SDK-specific object construction behind `FUN_007b
 
 ## Phase 402: end-to-end SDF matrix assembly
 
-All recovered JOINT/HINGE/BAR coupling kernels are now exposed through a single lower-triangle matrix assembler that preserves retail write direction and keeps symmetric materialization explicitly derived. Next target: feed real M3 E36 SDF samples into the assembled matrix and compare the reconstructed solver rows against captured runtime values.
+All recovered JOINT/HINGE/BAR coupling kernels are now exposed through a single lower-triangle matrix assembler, with an explicit derived symmetric view and a solver-ready matrix stage that applies `FUN_007b2210` row/column identity constraints. Next target: feed real M3 E36 SDF samples into the assembled matrix and compare solver rows against captured runtime values.
 
 ## Phase 401: HINGE/BAR mixed matrix coupling
 
