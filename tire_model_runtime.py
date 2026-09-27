@@ -148,7 +148,7 @@ def evaluate_precompiled_curve(
     if not segments:
         raise ValueError("curve has no compiled segments")
     scaled = (x * maximum_value) / domain if x <= domain else (
-        (extrapolation_base + (extrapolation_slope / maximum_value) * (x - maximum_value) + 1.0)
+        (extrapolation_base + (extrapolation_slope / domain) * (x - domain) + 1.0)
         * maximum_value
     )
     # FUN_00715990 is ROUND(); the retail call path uses non-negative normalized inputs.
