@@ -108,29 +108,27 @@ The next physics target is the SDK-specific object construction behind `FUN_007b
 
 ## Phase 402: end-to-end SDF matrix assembly
 
-All recovered JOINT/HINGE/BAR coupling kernels are now exposed through a single lower-triangle matrix assembler, with an explicit derived symmetric view and a solver-ready matrix stage that applies `FUN_007b2210` row/column identity constraints. Next target: feed real M3 E36 SDF samples into the assembled matrix and compare solver rows against captured runtime values.
+All recovered JOINT/HINGE/BAR coupling kernels are exposed through one source-faithful lower-triangle assembler, with an explicit derived symmetric view and a solver-ready stage applying `FUN_007b2210`. Next target: feed real M3 E36 SDF samples into the assembled matrix and compare solver rows against captured runtime values.
 
 ## Phase 401: HINGE/BAR mixed matrix coupling
 
-`FUN_007bb250` now exposes the remaining HINGE/BAR 2×1 mixed matrix block with exact transformed angular/linear terms, zero/nonzero side sign and scalar-base-dependent 2×1/1×2 storage orientation. Next target: end-to-end matrix assembly validation across all JOINT/HINGE/BAR kernels.
+`FUN_007bb250` exposes the remaining HINGE/BAR 2×1 or 1×2 mixed matrix block with exact transformed rows, side-flag sign and scalar-base-dependent storage orientation.
 
 ## Phase 400: JOINT mixed matrix coupling
 
-`FUN_007bbb80` is now reconstructed as executable JOINT self and mixed matrix coupling: 3×3 JOINT self, 3×3 JOINT/JOINT, 3×2 JOINT/HINGE and 3×1 JOINT/BAR blocks, with exact tensor intermediates, inverse-scalar diagonal corrections, side-flag signs and lower-triangle base-order addressing. Next target: remaining mixed HINGE/BAR coupling paths.
+`FUN_007bbb80` exposes JOINT self, JOINT/JOINT, JOINT/HINGE and JOINT/BAR blocks with exact tensor intermediates, inverse-scalar diagonal terms, side signs and lower-triangle addressing.
 
 ## Phase 399: BAR/BAR matrix coupling
 
-`FUN_007bb6c0` is now reconstructed as an executable scalar coupling kernel: `p×q` body-frame transform, exact self coefficient, pair coefficient, side-flag sign and lower-triangle max/min base addressing. Next target: mixed JOINT/BAR coupling in `FUN_007bbb80`.
+`FUN_007bb6c0` exposes BAR/BAR scalar self and pair coefficients, `p×q` body-frame transformation, inverse-scalar correction, side sign and lower-triangle max/min base addressing.
 
 ## Phase 398: HINGE/HINGE matrix coupling
 
-`FUN_007bb250` now has an executable HINGE/HINGE matrix contract: self lower-triangle block, pair `d5/d6/d8/d7` coefficients, zero/nonzero side sign, and exact base-order-dependent storage orientation. Next target: BAR/BAR scalar matrix coupling in `FUN_007bb6c0`.
+`FUN_007bb250` exposes HINGE/HINGE self and pair blocks, side sign and base-order-dependent 2×2 storage orientation.
 
 ## Phase 397: JOINT/HINGE projection equations
 
-Rebased the SDF projection layer against the full local retail `SHIFT.exe.c` snapshot. `FUN_007bac60` is now executable with exact d2/d3/d5 and d4/d6/d7 equations, zero/nonzero side-flag handling and the per-body solver-vector destination at `+0x150`. `FUN_007bae40` now reconstructs both branches, including `FUN_007b1320` cross ordering. The same correction fixes `+0x150/+0x154` naming as solver vector/matrix contribution storage and corrects `FUN_007b4110` to post-solve application.
-
-`FUN_007bac60` now exposes executable source-backed cross terms and scalar-lane sign handling while removing unsupported destination aliases. `FUN_007bae40` is represented as a source-backed partial branch contract with exact stride/base/flag offsets. Unresolved `d4/d6` and HINGE coefficient/destination semantics remain explicit. Next target: direct coefficient population/coupling writes where source evidence is sufficient.
+`FUN_007bac60` and `FUN_007bae40` are source-backed executable JOINT/HINGE projection kernels with exact scalar equations, side flags and per-body solver-vector destination at `+0x150`. The same phase corrected the solver contribution storage names and the pre/post-solve lifecycle.
 
 ## Phase 396: body-frame preparation
 
