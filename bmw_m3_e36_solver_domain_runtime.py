@@ -45,7 +45,7 @@ def build_solver_domain(
     constraints = list(topology.get("constraints") or [])
     order = [int(value) for value in ordering.get("order") or []]
     widths_by_record = [int(value) for value in ordering.get("block_widths") or []]
-    offsets_by_position = [
+    offsets_by_node = [
         int(value) for value in ordering.get("block_offsets") or []
     ]
     if len(order) != len(constraints):
@@ -64,7 +64,7 @@ def build_solver_domain(
     for position, record_index in enumerate(order):
         constraint = constraints[record_index]
         width = widths_by_record[record_index]
-        scalar_base = offsets_by_position[position]
+        scalar_base = offsets_by_node[record_index]
         records.append({
             "ordered_position": position,
             "runtime_record_index": record_index,
