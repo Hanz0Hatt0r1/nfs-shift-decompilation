@@ -59,7 +59,7 @@ def test_find_draw_frame_rejects_missing_frame_boundary(monkeypatch, tmp_path: P
         mod.find_draw_frame(trace, 3)
 
 
-def test_trim_frame_number_uses_apitrace_auto_frames(monkeypatch, tmp_path: Path):
+def test_trim_frame_number_uses_portable_frameset(monkeypatch, tmp_path: Path):
     trace = tmp_path / "shift.trace"
     output = tmp_path / "single.trace"
     trace.write_bytes(b"trace")
@@ -81,8 +81,7 @@ def test_trim_frame_number_uses_apitrace_auto_frames(monkeypatch, tmp_path: Path
     assert command == [
         "apitrace",
         "trim",
-        "--auto",
-        "--frames=17/frame",
+        "--frames=17",
         "-o",
         str(output),
         str(trace),
@@ -120,3 +119,35 @@ def test_extract_requires_exactly_one_mode(tmp_path: Path):
 
     with pytest.raises(ValueError, match="exactly one"):
         mod.extract(trace, tmp_path / "out")
+
+
+def test_trim_call_range_uses_portable_calls_only(monkeypatch, tmp_path: Path):
+    trace = tmp_path / "shift.trace"
+    output = tmp_path / "single.trace"
+    trace.write_bytes(b"trace")
+    seen = {}
+
+    def fake_run(command, cwd=None):
+        seen["command"] = command
+        output.write_bytes(b"trimmed")
+
+    monkeypatch.setattr(mod, "_run", fake_run)
+
+    command = mod.trim_call_range(
+        trace,
+        output,
+        start_call=100,
+        end_call=200,
+        apitrace="apitrace",
+    )
+
+    assert command == [
+        "apitrace",
+        "trim",
+        "--calls=100-200",
+        "-o",
+        str(output),
+        str(trace),
+    ]
+    assert "--auto" not in command
+    assert seen["command"] == command
