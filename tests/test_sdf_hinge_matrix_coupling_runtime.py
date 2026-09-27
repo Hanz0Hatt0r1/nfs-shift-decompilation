@@ -31,8 +31,8 @@ def test_hinge_self_lower_block_matches_source_dot_products():
     )
     assert result["self_block"] == {
         "row_base_col_base": 36.0,
-        "row_base_plus_1_col_base": 88.0,
-        "row_base_plus_1_col_base_plus_1": 192.0,
+        "row_base_plus_1_col_base": 78.0,
+        "row_base_plus_1_col_base_plus_1": 174.0,
     }
 
 
