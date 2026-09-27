@@ -161,6 +161,8 @@ def _attach_node_objects(
     chunk_start: int,
     chunk_end: int,
     records: list[dict[str, Any]],
+    *,
+    strict: bool,
 ) -> None:
     from sgb_object_runtime import parse_sgb_object_payload
 
