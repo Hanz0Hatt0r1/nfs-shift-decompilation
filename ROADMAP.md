@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 399: BAR/BAR matrix coupling
+
+`FUN_007bb6c0` is now reconstructed as an executable scalar coupling kernel: `p×q` body-frame transform, exact self coefficient, pair coefficient, side-flag sign and lower-triangle max/min base addressing. Next target: mixed JOINT/BAR coupling in `FUN_007bbb80`.
+
 ## Phase 398: HINGE/HINGE matrix coupling
 
 `FUN_007bb250` now has an executable HINGE/HINGE matrix contract: self lower-triangle block, pair `d5/d6/d8/d7` coefficients, zero/nonzero side sign, and exact base-order-dependent storage orientation. Next target: BAR/BAR scalar matrix coupling in `FUN_007bb6c0`.
