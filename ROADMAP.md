@@ -1541,16 +1541,3 @@ instance that supplied the compared bytes.
 the 269,800-byte stride-76 vertex buffer, all six primitive-specific index-buffer
 pointers, and the proven raw-byte/MEB parity boundary. `bmw_golden_gate.py` now
 accepts this contract as an optional strict prerequisite.
-
-
-## Phase 353: one-command BMW apitrace byte-proof pipeline
-
-Added `tools/run_apitrace_bmw_buffer_proof.py` to compose the verified Linux
-apitrace workflow into one command: BMW geometry-filtered lifecycle evidence,
-bounded `apitrace dump --blobs` extraction from the original trace,
-deterministic MEB-derived VB/IB artifacts, exact seven-object byte parity, and
-the `SHIFT.BMWM3RuntimeGeometryProof/1` contract.
-
-The workflow keeps the original multi-gigabyte trace out of any permanent text
-dump path and writes only local evidence metadata plus derived binary artifacts.
-Runtime shader/material same-instance proof remains a separate gate.
