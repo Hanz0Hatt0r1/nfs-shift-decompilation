@@ -13,17 +13,18 @@ def test_create_zero_matrix_builds_solver_domain():
 
 def test_assemble_lower_triangle_preserves_source_write_direction():
     result = runtime.assemble_lower_triangle(
-        4,
+        5,
         [
             {"kind": "joint", "row_base": 2, "column_base": 0, "block": ((1,2),(3,4))},
             {"kind": "hinge", "row_base": 3, "column_base": 1, "block": ((5,), (6,))},
         ],
     )
     assert result["matrix"] == [
-        [0.0,0.0,0.0,0.0],
-        [0.0,0.0,0.0,0.0],
-        [1.0,2.0,0.0,0.0],
-        [0.0,5.0,6.0,0.0],
+        [0.0,0.0,0.0,0.0,0.0],
+        [0.0,0.0,0.0,0.0,0.0],
+        [1.0,2.0,0.0,0.0,0.0],
+        [0.0,5.0,6.0,0.0,0.0],
+        [0.0,0.0,0.0,0.0,0.0],
     ]
     assert result["contribution_count"] == 2
     assert result["upper_nonzero_without_lower"] == []
