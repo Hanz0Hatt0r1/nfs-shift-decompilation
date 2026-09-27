@@ -250,6 +250,117 @@ def resolve_sdf_body_references(
 
 
 
+SDF_FLAG_JOINT = 0x01
+SDF_FLAG_HINGE = 0x02
+SDF_FLAG_BAR = 0x04
+
+
+def compile_sdf_runtime_topology(
+    report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Lower parsed SDF records into the proven FUN_007b3150 topology boundary.
+
+    This does not create PhysX objects. It records body indices, section flags,
+    endpoint references and the runtime record stride used for each allocation.
+    """
+    body_records = records_by_type(report, "BODY")
+    body_index = {
+        str(next(
+            (entry.get("value") for entry in record.get("entries", [])
+             if entry.get("name") == "name"),
+            ""
+        )).upper(): index
+        for index, record in enumerate(body_records)
+    }
+
+    constraints: list[dict[str, Any]] = []
+    unresolved: list[str] = []
+    for record_index, record in enumerate(report.get("records") or []):
+        section = str(record.get("section", "")).upper()
+        if section not in {"JOINT", "HINGE", "BAR", "JOINT&HINGE"}:
+            continue
+        values = {
+            str(entry.get("name")): entry.get("value")
+            for entry in record.get("entries") or []
+        }
+        posbody = values.get("posbody")
+        negbody = values.get("negbody")
+        posbody_key = "" if posbody is None else str(posbody).upper()
+        negbody_key = "" if negbody is None else str(negbody).upper()
+        if posbody_key and posbody_key not in body_index:
+            unresolved.append(f"record:{record_index}:posbody:{posbody}")
+        if negbody_key and negbody_key not in body_index:
+            unresolved.append(f"record:{record_index}:negbody:{negbody}")
+
+        flags = {
+            "joint": section in {"JOINT", "JOINT&HINGE"},
+            "hinge": section in {"HINGE", "JOINT&HINGE"},
+            "bar": section == "BAR",
+        }
+        flag_word = (
+            (SDF_FLAG_JOINT if flags["joint"] else 0)
+            | (SDF_FLAG_HINGE if flags["hinge"] else 0)
+            | (SDF_FLAG_BAR if flags["bar"] else 0)
+        )
+        vectors = {}
+        for key in ("axis", "neg", "pos"):
+            value = values.get(key)
+            if isinstance(value, list) and len(value) == 3:
+                vectors[key] = [float(component) for component in value]
+        if isinstance(values.get("pos"), str):
+            vectors["pos_body_anchor_name"] = str(values["pos"])
+
+        constraints.append({
+            "record_index": record_index,
+            "section": section,
+            "flags": flags,
+            "flag_word": flag_word,
+            "posbody": posbody,
+            "negbody": negbody,
+            "posbody_index": body_index.get(posbody_key),
+            "negbody_index": body_index.get(negbody_key),
+            "vectors": vectors,
+            "runtime_stride": 0xB8 if section == "BAR" else 0xA0,
+            "body_pointer_slots": {
+                "posbody": "+0x78",
+                "negbody": "+0x80",
+            },
+            "source_constructor": "FUN_007b3150",
+        })
+
+    return {
+        "format": "SHIFT.SDFRuntimeTopology/1",
+        "version": 1,
+        "status": "compiled" if not unresolved else "blocked",
+        "ready": not unresolved,
+        "body_count": len(body_records),
+        "body_names": sorted(body_index),
+        "constraint_count": len(constraints),
+        "constraints": constraints,
+        "unresolved": list(dict.fromkeys(unresolved)),
+        "allocation": {
+            "body_stride": 0x170,
+            "joint_stride": 0xA0,
+            "hinge_stride": 0xA0,
+            "bar_stride": 0xB8,
+        },
+        "evidence": {
+            "constructor": "FUN_007b3150",
+            "joint_flag": "byte +0x10 & 1",
+            "hinge_flag": "byte +0x10 & 2",
+            "bar_flag": "byte +0x10 & 4",
+            "posbody_runtime_slot": "+0x78",
+            "negbody_runtime_slot": "+0x80",
+            "bar_endpoint_vectors": ["+0x28", "+0x30", "+0x38", "+0x40", "+0x48", "+0x50"],
+        },
+        "limitations": [
+            "PhysX object classes and SDK calls remain opaque.",
+            "Anchor semantics are preserved as source vectors/names; no coordinate-system naming is inferred.",
+        ],
+    }
+
+
+
 def records_by_type(report: Mapping[str, Any], section: str) -> list[Mapping[str, Any]]:
     wanted = section.strip().upper()
     return [
