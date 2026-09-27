@@ -92,3 +92,20 @@ def test_physics_provider_registry_preserves_two_source_slots_and_vtable_offsets
     assert report["consumer_vtable"]["presence_probe"] == "+0x14"
     assert report["consumer_vtable"]["replace_primary_storage"] == "+0x04"
     assert report["consumer_vtable"]["finalize"] == "+0x2c"
+
+
+def test_physics_provider_dispatch_contract_matches_fun_007b3820():
+    from physics_system_runtime import build_physics_provider_dispatch_contract
+
+    c = build_physics_provider_dispatch_contract()
+    assert c["candidate_order"][0]["slot"] == "DAT_00c23da8"
+    assert c["candidate_order"][1]["slot"] == "DAT_00c23dac"
+    assert c["candidate_order"][0]["acceptance_argument"] == "physics_system+0x3c"
+    assert c["termination"]["after_index_1"] == "selector index 2 returns null"
+    assert c["accepted_provider_rewrite"]["release_old_matrix"]["function"] == "FUN_0064f4b0"
+    assert c["accepted_provider_rewrite"]["replace_row_table"]["vtable_offset"] == "+0x0c"
+    assert c["accepted_provider_rewrite"]["replace_graph_storage"]["vtable_offset"] == "+0x04"
+    assert c["accepted_provider_rewrite"]["replace_aux_storage"]["vtable_offset"] == "+0x08"
+    assert c["accepted_provider_rewrite"]["finalize"]["vtable_offset"] == "+0x2c"
+    assert c["generic_fallback"]["compact_graph_builder"] == "FUN_007b1360"
+    assert c["common_post_provider"]["per_body_runtime_base"].endswith("* 0x170")
