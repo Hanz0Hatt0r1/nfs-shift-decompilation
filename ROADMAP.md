@@ -3,9 +3,9 @@
 This roadmap tracks the runtime-oriented path from verified resource parsing to a
 minimal reproducible render of one real SHIFT vehicle.
 
-## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
+## Current milestone: vehicle physics resource graph + PhysX runtime boundary
 
-Current `main` is advancing through Phase 376 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 382 on the non-rendering physics runtime track; renderer work remains explicitly frozen while the vehicle physics resource graph is completed. The Python and native evidence paths remain covered by CI.
 
 The immediate target is a deterministic pipeline:
 
@@ -33,6 +33,8 @@ the original BFF archives at runtime.
 | BAB animation payload | evidence tooling | corpus fingerprints and byte-level differential analysis; keyframe grammar still unproven |
 | SGB scene graph | later | one track section assembles from IR |
 | Linux Vulkan renderer | bootstrap | native Vulkan backend starts from RenderCommand/1; headless submission is next |
+| Vehicle physics resources | active | CDF/EDF/GDF/SDF extraction, schema, topology and provenance are machine-readable |
+| PhysX runtime replacement | next | replace only proven dynamics boundaries; retain PhysX class/unit unknowns explicitly |
 | Android runtime | deferred | renderer consumes the proven IR/backend boundary after decompilation |
 
 ## Execution order
@@ -98,6 +100,17 @@ Reconstruct FUN_007af0a0 exactly as a 3x3 float-matrix × double-vector boundary
 
 The retail CDF loader boundary is now represented as `SHIFT.VehicleCDFRuntime/1`. The parser preserves sections, raw values and unknown keys while attaching source-backed section handlers, helper functions and destination offsets for GENERAL, aero, suspension, controls, driveline and all four wheel sections. Physical units remain unresolved unless proven by downstream runtime arithmetic.
 
+## Phase 382: vehicle physics resource graph
+
+The current physics stream is now resource-first: BMW M3 CDF/EDF/GDF/SDF resources are
+identified directly in the retail BFF and can be extracted into one neutral profile.
+CDF section/key schema, EDF RPMTorque validation/interpolation, GDF ratio sorting, and
+SDF body-reference topology are represented without assigning unsupported physical units
+or PhysX type names.
+
+`vehicle_physics_bundle.py` is the reproducible entry point. The next boundary is the
+runtime construction path beginning at `FUN_007b3150` and post-load setup around
+`FUN_007bf790`/`FUN_007c3920`.
 ## Phase 377–380: surface/contact and vehicle rate response chain
 
 Phase 377 reconstructs FUN_00759210's recursive parent/child surface probe, including its node offsets, projection gate, normalized cross-product direction and same-sign child blending.
