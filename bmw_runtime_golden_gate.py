@@ -14,12 +14,50 @@ from render_command_constant_parity import validate_render_command_constant_pari
 
 FORMAT = "SHIFT.BMWRuntimeGoldenGate/1"
 
-def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | Path, *, usage_map_path: str | Path | None = None) -> dict[str, Any]:
+def validate_runtime_golden_gate(
+    material_path: str | Path,
+    runtime_path: str | Path,
+    *,
+    usage_map_path: str | Path | None = None,
+    runtime_geometry_proof_path: str | Path | None = None,
+) -> dict[str, Any]:
     material = json.loads(Path(material_path).read_text(encoding='utf-8'))
     runtime = json.loads(Path(runtime_path).read_text(encoding='utf-8'))
-    parity = validate_runtime_parity_files(material_path, runtime_path, usage_map_path=usage_map_path, require_constant_values=True)
+    runtime_geometry_proof = (
+        json.loads(Path(runtime_geometry_proof_path).read_text(encoding='utf-8'))
+        if runtime_geometry_proof_path
+        else None
+    )
+    parity = validate_runtime_parity_files(
+        material_path,
+        runtime_path,
+        usage_map_path=usage_map_path,
+        require_constant_values=True,
+    )
     draw_correlation = correlate_runtime_draw(material, runtime)
+
+    geometry_proof_summary = None
+    geometry_proof_reasons: list[str] = []
+    if runtime_geometry_proof is not None:
+        proof_format = runtime_geometry_proof.get('format')
+        proof_ready = runtime_geometry_proof.get('ready') is True
+        geometry_proof_summary = {
+            'format': proof_format,
+            'status': runtime_geometry_proof.get('status'),
+            'ready': proof_ready,
+            'blocking_reasons': list(runtime_geometry_proof.get('blocking_reasons') or []),
+        }
+        if proof_format != 'SHIFT.BMWM3RuntimeGeometryProof/1':
+            geometry_proof_reasons.append('runtime-geometry-proof:invalid-format')
+        if not proof_ready:
+            proof_reasons = runtime_geometry_proof.get('blocking_reasons') or ['not-ready']
+            geometry_proof_reasons.extend(
+                f'runtime-geometry-proof:{reason}'
+                for reason in proof_reasons
+            )
+
     reasons = list(parity.get('blocking_reasons') or [])
+    reasons.extend(geometry_proof_reasons)
     reasons.extend(draw_correlation.get('blocking_reasons') or [])
 
     # The shader/parity join and the material draw-range join must identify the
@@ -142,6 +180,7 @@ def validate_runtime_golden_gate(material_path: str | Path, runtime_path: str | 
         'runtime_parity': parity,
         'runtime_draw_correlation': draw_correlation,
         'runtime_same_instance_gate': same_instance_gate,
+        'runtime_geometry_proof': geometry_proof_summary,
         'vertex_input_parity': vertex_input_parity,
         'render_command_constant_parity': constant_parity,
         'render_command': {'status': command_status},
@@ -166,8 +205,14 @@ def main() -> int:
     ap.add_argument('runtime_report')
     ap.add_argument('output')
     ap.add_argument('--usage-map')
+    ap.add_argument('--runtime-geometry-proof')
     args = ap.parse_args()
-    report = validate_runtime_golden_gate(args.material_slice, args.runtime_report, usage_map_path=args.usage_map)
+    report = validate_runtime_golden_gate(
+        args.material_slice,
+        args.runtime_report,
+        usage_map_path=args.usage_map,
+        runtime_geometry_proof_path=args.runtime_geometry_proof,
+    )
     Path(args.output).write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     print(json.dumps({'format': report['format'], 'status': report['status'], 'ready': report['ready'], 'blocking_reasons': report['blocking_reasons']}, ensure_ascii=False, indent=2))
     return 0 if report['ready'] else 2

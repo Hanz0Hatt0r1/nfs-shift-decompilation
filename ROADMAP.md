@@ -1554,3 +1554,12 @@ the `SHIFT.BMWM3RuntimeGeometryProof/1` contract.
 The workflow keeps the original multi-gigabyte trace out of any permanent text
 dump path and writes only local evidence metadata plus derived binary artifacts.
 Runtime shader/material same-instance proof remains a separate gate.
+
+
+## Phase 354: runtime golden gate geometry proof
+
+Extended `SHIFT.BMWRuntimeGoldenGate/1` with an optional
+`SHIFT.BMWM3RuntimeGeometryProof/1` input. When supplied, the gate requires the
+proof format and readiness and propagates any blockers. This connects exact
+runtime VB/IB byte identity to the full BMW runtime readiness contract without
+making older runtime captures invalid.
