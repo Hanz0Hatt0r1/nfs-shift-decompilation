@@ -62,7 +62,7 @@ def test_backward_cursor_decrements_plus_64_segment_index():
         wrap_helper_changed=False,
     )
     assert result["segment_index"] == 2
-    assert result["words"][24] == 2
+    assert result["words"][25] == 2
 
 
 def test_cursor_can_return_through_wrap_helper_at_zero():
