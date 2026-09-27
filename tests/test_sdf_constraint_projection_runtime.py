@@ -93,12 +93,12 @@ def test_hinge_projection_flag_nonzero_uses_transformed_position_cross_offset():
         quadratic_scale=2.0,
         side_flag=3,
     )
-    # transformed position x frame offset = (-3, 0, 1), then Q=2.
-    # q = (0,0,0) + 2*(-3,0,1) = (-6,0,2)
-    # c=u=0, v=1, so lanes are A·q=-6 and B·q=0, then negated.
-    assert result["branch_details"]["cross_vector"] == pytest.approx([-3.0, 0.0, 1.0])
-    assert result["raw_lanes"] == pytest.approx([-6.0, 0.0])
-    assert result["lanes"] == pytest.approx([6.0, -0.0])
+    # frame offset x transformed position = (3, 0, -1), then Q=2.
+    # q = (0,0,0) + 2*(3,0,-1) = (6,0,-2)
+    # c=u=0, v=1, so lanes are A·q=6 and B·q=0, then negated.
+    assert result["branch_details"]["cross_vector"] == pytest.approx([3.0, 0.0, -1.0])
+    assert result["raw_lanes"] == pytest.approx([6.0, 0.0])
+    assert result["lanes"] == pytest.approx([-6.0, -0.0])
 
 
 def test_joint_projection_provenance_is_now_complete():
@@ -113,5 +113,5 @@ def test_hinge_projection_provenance_is_now_complete():
     assert report["status"] == "source-backed"
     assert report["destination"] == "this +0x150 + scalar_base*8"
     assert report["cross_helper"]["argument_order"] == (
-        "transformed_sample_position x sample_frame_offset"
+        "sample_frame_offset x transformed_sample_position"
     )
