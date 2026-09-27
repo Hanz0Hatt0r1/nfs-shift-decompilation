@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 404: real BMW M3 physics intake evidence
+
+The supplied `BMW_M3_E36.bff` was decoded with the project's native XMem/LZX backend. The real archive entry `vehicles/physics/suspension/aarm_multilink.sdf` is recorded with measured archive/resource hashes, compression sizes, 11 bodies, 4 JOINT&HINGE records, 20 BAR records and a 40-scalar solver domain. No raw game resource is committed. Next target: feed this real 40-scalar topology into the assembled matrix/storage pipeline and compare captured runtime values.
+
 ## Phase 403: retail SDF matrix storage
 
 `sdf_constraint_matrix_assembly_runtime.py` now reproduces the retail matrix storage layout initialized by `FUN_007b3820`, including `scalar_count*scalar_count*8` matrix storage, `+0x158` row pointers and `+0x15c` row-index offsets. The helpers also materialize/read cells through the same `row_ptr[row][column]` addressing and validate the logical/storage views. Next target: validate the assembled matrix against captured runtime values.
