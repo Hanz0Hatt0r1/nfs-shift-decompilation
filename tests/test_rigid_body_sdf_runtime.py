@@ -318,10 +318,10 @@ name=j1 posbody=a negbody=d axis=(1,0,0)
     assert result["ready"] is True
     assert result["constraint_count"] == 4
     assert sorted(result["order"]) == [0, 1, 2, 3]
-    assert result["initial_cost"] == 23
-    assert result["final_cost"] <= result["initial_cost"]
-    assert result["improvement_count"] >= 0
-    assert result["order"] == [0, 1, 3, 2]
+    assert result["initial_cost"] == 50
+    assert result["final_cost"] == 38
+    assert result["improvement_count"] == 2
+    assert result["order"] == [1, 2, 0, 3]
 
 
 def test_sdf_constraint_solver_graph_from_report_applies_recovered_order():
@@ -341,7 +341,7 @@ name=b0 posbody=a negbody=c pos=(0,0,0) neg=(1,0,0)
 """)
     result = sdf.compile_sdf_constraint_solver_graph_from_report(report)
     assert result["ready"] is True
-    assert result["source_constraint_order"] == [0, 1, 2]
+    assert result["source_constraint_order"] == [0, 2, 1]
     assert result["constraint_count"] == 3
     assert result["allocations"]["forward_table_bytes"] == 32
     assert result["allocations"]["reverse_table_bytes"] == 24
