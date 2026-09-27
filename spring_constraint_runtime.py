@@ -73,7 +73,6 @@ class SpringElementInput:
     spring_type: int
     direction: Vec3
     body_relative_vector: Vec3
-    projection: float
     collision_length: float
     spring_param_a: float
     spring_param_b: float
@@ -167,7 +166,6 @@ def compute_spring_force(
     spring: SpringElementInput,
 ) -> SpringForceResult:
     """Evaluate the source force construction after upstream transforms."""
-    projection = _finite("projection", spring.projection)
     collision_length = _finite("collision_length", spring.collision_length)
     direction = direction_for_type(spring.spring_type, (spring.direction.x, spring.direction.y, spring.direction.z))
     body = spring.body_relative_vector
