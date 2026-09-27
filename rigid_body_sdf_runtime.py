@@ -887,9 +887,11 @@ def build_sdf_scalar_connectivity_matrix(
     ]
     shared_blocks: list[dict[str, Any]] = []
     for ordered_left in range(record_count):
-        original_left = order[ordered_left]
         left_start = offsets_by_position[ordered_left]
         left_width = ordered_widths[ordered_left]
+        for left_scalar in range(left_start, left_start + left_width):
+            scalar_matrix[left_scalar][left_scalar] = 1.0
+        original_left = order[ordered_left]
         for ordered_right in range(ordered_left + 1, record_count):
             original_right = order[ordered_right]
             if float(record_matrix[original_left][original_right]) == 0.0:
@@ -930,7 +932,7 @@ def build_sdf_scalar_connectivity_matrix(
             "bar_width": 1,
         },
         "limitations": [
-            "This exposes the coefficient writes that are proven to be 1.0 before FUN_007b2210 diagonal resets.",
+            "This exposes the coefficient writes proven by FUN_007ba2b0 before FUN_007b2210 resets selected solver rows/columns.",
             "Directional sample transforms, physical Jacobian meaning and provider-specific coefficients remain outside this contract.",
         ],
     }
