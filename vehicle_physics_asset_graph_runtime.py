@@ -24,6 +24,7 @@ from rigid_body_sdf_runtime import (
     resolve_sdf_body_references,
 )
 from vehicle_cdf_runtime import parse_cdf
+from sdf_constraint_solver_runtime import describe_sdf_sparse_solver_contract, validate_sdf_solver_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -67,6 +68,10 @@ def build_profile(
     sdf_constraint_connectivity = build_sdf_constraint_connectivity_matrix(sdf_report)
     sdf_constraint_order = optimize_sdf_constraint_order(sdf_report)
     sdf_constraint_solver_graph = compile_sdf_constraint_solver_graph_from_report(sdf_report)
+    sdf_solver_contract = describe_sdf_sparse_solver_contract(
+        constraint_count=sdf_constraint_solver_graph.get("constraint_count")
+    )
+    sdf_solver_validation = validate_sdf_solver_contract(sdf_constraint_solver_graph)
 
     blockers: list[str] = []
     for name, report in (
@@ -86,6 +91,7 @@ def build_profile(
     blockers.extend(f"sdf-constraint-connectivity:{reason}" for reason in sdf_constraint_connectivity.get("unresolved") or [])
     blockers.extend(f"sdf-constraint-order:{reason}" for reason in sdf_constraint_order.get("unresolved") or [])
     blockers.extend(f"sdf-constraint-solver:{reason}" for reason in sdf_constraint_solver_graph.get("unresolved") or [])
+    blockers.extend(f"sdf-solver-contract:{reason}" for reason in sdf_solver_validation.get("errors") or [])
 
     return {
         "format": FORMAT,
@@ -139,6 +145,8 @@ def build_profile(
             "sdf_constraint_order_final_cost": sdf_constraint_order.get("final_cost"),
             "sdf_constraint_solver_graph_ready": sdf_constraint_solver_graph.get("ready") is True,
             "sdf_constraint_solver_edge_record_count": sdf_constraint_solver_graph.get("allocations", {}).get("edge_record_count", 0),
+            "sdf_sparse_solver_contract_ready": sdf_solver_contract.get("ready") is True,
+            "sdf_sparse_solver_validation_ready": sdf_solver_validation.get("ready") is True,
         },
         "details": {
             "cdf": cdf_report,
@@ -151,6 +159,8 @@ def build_profile(
             "sdf_constraint_connectivity": sdf_constraint_connectivity,
             "sdf_constraint_order": sdf_constraint_order,
             "sdf_constraint_solver_graph": sdf_constraint_solver_graph,
+            "sdf_sparse_solver_contract": sdf_solver_contract,
+            "sdf_sparse_solver_validation": sdf_solver_validation,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
