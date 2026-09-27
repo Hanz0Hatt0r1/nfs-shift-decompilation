@@ -1,9 +1,15 @@
 """Source-backed low-level SDF body state primitives."""
 from __future__ import annotations
 
+import struct
+
 from typing import Any, Mapping, Sequence
 
 FORMAT = "SHIFT.SDFBodyStatePrimitivesRuntime/1"
+
+def _f32(value: float | int) -> float:
+    return struct.unpack("<f", struct.pack("<f", float(value)))[0]
+
 
 COEFFICIENT_OFFSETS = {
     "input": ["+0x128", "+0x12c", "+0x130"],
