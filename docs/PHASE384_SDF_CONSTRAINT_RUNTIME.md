@@ -25,7 +25,7 @@ After sample construction, the source calls FUN_007b2da0, FUN_007b2de0 and FUN_0
 
 ## Implementation
 
-rigid_body_sdf_runtime.py now exposes describe_sdf_constraint_runtime_lowering() as SHIFT.SDFConstraintRuntimeLowering/1.
+rigid_body_sdf_runtime.py now exposes describe_sdf_constraint_runtime_lowering() as SHIFT.SDFConstraintRuntimeLowering/2, with JOINT&HINGE expanded into its two retail runtime records.
 
 vehicle_physics_asset_graph_runtime.py includes that contract in the generated vehicle physics profile so the BFF bundle entry point carries the constraint materialization evidence together with CDF/EDF/GDF/SDF topology.
 
