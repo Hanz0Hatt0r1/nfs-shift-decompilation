@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 397: JOINT/HINGE projection equations
+
+`FUN_007bac60` now exposes executable source-backed cross terms and scalar-lane sign handling while removing unsupported destination aliases. `FUN_007bae40` is represented as a source-backed partial branch contract with exact stride/base/flag offsets. Unresolved `d4/d6` and HINGE coefficient/destination semantics remain explicit. Next target: direct coefficient population/coupling writes where source evidence is sufficient.
+
 ## Phase 396: body-frame preparation
 
 `FUN_007ba7e0` is reconstructed as `FUN_007af0a0 → component-wise coefficient scaling → FUN_007aefb0`, with exact body offsets and float32 boundaries. The resulting vector is stored at `+0x30/+0x38/+0x40`.
