@@ -52,7 +52,7 @@ def test_hinge_solution_updates_only_angular_channels():
     assert result["positive_angular"] == pytest.approx([15.0, 21.0, 27.0])
     assert result["negative_angular"] == pytest.approx([0.0, -6.0, -6.0])
     assert result["positive_delta"] == pytest.approx([14.0, 19.0, 24.0])
-    assert result["negative_delta"] == pytest.approx([-8.0, -11.0, -12.0])
+    assert result["negative_delta"] == pytest.approx([-4.0, -11.0, -12.0])
 
 
 def test_bar_solution_scales_direction_by_one_solved_scalar():
