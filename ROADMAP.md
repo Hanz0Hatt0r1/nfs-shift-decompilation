@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 389: per-frame solver lifecycle
+
+`FUN_007b3f40` and `FUN_007b4110` are now represented as a frame execution contract: builtin/provider reset dispatch, constraint transform refresh, scalar-to-body accumulator projection, and final provider/builtin sparse-solver dispatch. The next target is the provider-independent body accumulator state and its source update routines.
+
 ## Phase 388: solver scalar domain
 
 Resolved `+0x34` as the cumulative scalar solver-node count returned by the `FUN_007b1b60` ordering stage. JOINT/HINGE/BAR widths are 3/2/1, JOINT&HINGE emits two runtime records, and `FUN_007ba2b0` expands shared-body record links into scalar block cross-products. `build_sdf_scalar_connectivity_matrix()` now feeds `FUN_007b1360` in the correct scalar domain.
