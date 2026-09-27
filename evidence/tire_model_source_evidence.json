@@ -1,0 +1,27 @@
+{
+  "format": "SHIFT.TireModelSourceEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe.c",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "functions": {
+    "FUN_007a0490": 799028,
+    "FUN_007a05c0": 799091,
+    "FUN_007a06a0": 799143,
+    "FUN_007a07c0": 799218,
+    "FUN_007a0c00": 799419,
+    "FUN_007a10f0": 799568,
+    "FUN_007572f0": 751703,
+    "FUN_00757318": 752195
+  },
+  "bound_curves": {
+    "LatCurve": "0x6e0",
+    "BrakingCurve": "0x6e4",
+    "TractiveCurve": "0x6e8"
+  },
+  "tbc_record_sizes": {
+    "slip_curve": "0x38",
+    "compound": "0x610",
+    "compiled_curve_segment": "0x28"
+  },
+  "ready": true
+}
