@@ -94,7 +94,7 @@ def parse_sdf(data: str | bytes, *, strict: bool = False) -> dict[str, Any]:
             continue
 
         # Real SDF lines pack multiple key=value assignments on one line.
-        matches = list(re.finditer(r"([A-Za-z_][A-Za-z0-9_&]*)\\s*=", stripped))
+        matches = list(re.finditer(r"([A-Za-z_][A-Za-z0-9_&]*)\s*=", stripped))
         if not matches:
             warnings.append(f"line:{line_no}:unparsed:{original.strip()}")
             if strict:
