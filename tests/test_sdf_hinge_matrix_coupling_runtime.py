@@ -18,6 +18,7 @@ def test_hinge_row_transform_uses_body_frame_for_angular_and_linear_rows():
     assert result["linear"] == [4.0, 10.0, 18.0]
 
 
+# Self block follows FUN_007bb250's lower-triangle write order.
 def test_hinge_self_lower_block_matches_source_dot_products():
     result = runtime.evaluate_hinge_self_lower_block(
         Matrix3x3(
