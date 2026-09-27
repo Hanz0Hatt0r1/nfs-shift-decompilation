@@ -194,7 +194,7 @@ def normalize_spline_scalar_window(
         if vals[i] < -1.0:
             right = i
             break
-        if i < n - 1 and vals[i] < vals[i + 1]:
+        if i < n - 1 and vals[i] > vals[i + 1]:
             right = i
             break
 
