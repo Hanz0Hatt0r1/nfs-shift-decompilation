@@ -62,6 +62,8 @@ class ThermalIntegratorInputs:
     output_limit_reference: float
     wear_enabled: bool
     global_wear_scale: float
+    # The recovered abrasion path references this scalar; absent legacy inputs use unity.
+    average_temperature_scale: float = 1.0
 
 
 @dataclass(frozen=True)
