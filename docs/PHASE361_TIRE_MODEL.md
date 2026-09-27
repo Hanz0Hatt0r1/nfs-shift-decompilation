@@ -6,7 +6,7 @@ primary source is the recovered retail SHIFT.exe.c with SHA-256
 
 ## TBC loading
 
-FUN_007a10f0 is the tyre-manager loader. It scans the TBC resource for [SLIPCURVE]
+FUN_007a32a0 is the tyre-manager loader. It scans the TBC resource for [SLIPCURVE]
 and [COMPOUND] sections, counts both record classes, allocates fixed-size vectors,
 then revisits the file and fills the corresponding records.
 

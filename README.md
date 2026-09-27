@@ -14,7 +14,7 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 361.**
+> **Current mainline: Phase 362.**
 >
 > The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
 >
@@ -74,7 +74,7 @@
 > **Camera event record:** Phase 265 reconstructs the binary event record boundary used by `FUN_0080b9b0` (type 5, channel byte, six dword payload) and the separate type-3 producer `FUN_0080ccb0`.
 > **Linux/Vulkan direction:** Phase 203 establishes Linux as the primary renderer lab. Vulkan is the native backend target, while the software reference renderer remains the deterministic oracle.
 
-> **Physics runtime:** Phases 357–361 reconstruct the PhysX/PhysicsSystem startup boundary, PhysicsParticipant spawn modes, the CSM collision-record boundary, scene-query dispatch, vehicle-physics asset roots, concrete HDV property tables, external engine/EDF loading, the 6-variable driveline solver boundary, and the tyre/TBC slip-curve runtime. Renderer and `RENDER.bff` remain untouched on this track.
+> **Physics runtime:** Phases 357–362 reconstruct the PhysX/PhysicsSystem startup boundary, PhysicsParticipant spawn modes, the CSM collision-record boundary, scene-query dispatch, vehicle-physics asset roots, concrete HDV property tables, external engine/EDF loading, the 6-variable driveline solver boundary, the tyre/TBC slip-curve runtime, and the per-wheel thermal-state update. Renderer and `RENDER.bff` remain untouched on this track.
 
 > **SHIFT.exe PE evidence:** `SHIFT.MEBD3D9DescriptorTripleEvidence/1` is now joined into the main color bridge. Exact MEB descriptors `[4,6,0]`/`[4,6,1]` plus the source-backed Type-4 packed-color path resolve the static color declaration to D3D9 Type 4 (`D3DCOLOR`, BGRA memory / RGBA shader order); runtime same-instance proof remains separate.
 

@@ -9,7 +9,7 @@ from typing import Any
 
 FORMAT = "SHIFT.TireModelRuntime/1"
 SOURCE = "./Source/Vehicle/tire_manager.cpp"
-LOAD_FUNCTION = "FUN_007a10f0"
+LOAD_FUNCTION = "FUN_007a32a0"
 BUILD_CURVE_FUNCTION = "FUN_007a07c0"
 EVAL_CURVE_FUNCTION = "FUN_007a0c00"
 BUILD_RESPONSE_FUNCTION = "FUN_007a06a0"
@@ -114,7 +114,7 @@ SOURCE_LINES = {
     "FUN_007a06a0": 799143,
     "FUN_007a07c0": 799218,
     "FUN_007a0c00": 799419,
-    "FUN_007a10f0": 799568,
+    "FUN_007a32a0": 799568,
     "FUN_007572f0": 751703,
     "FUN_00757318": 752195,
 }
@@ -196,7 +196,7 @@ def analyze_source(source_path: str | Path) -> dict[str, Any]:
     raw = path.read_bytes()
     text = raw.decode("utf-8", errors="ignore")
     needles = {
-        "tbc_loader": 'FUN_007a10f0',
+        "tbc_loader": 'FUN_007a32a0',
         "slipcurve_marker": '"[SLIPCURVE]"',
         "compound_marker": '"[COMPOUND]"',
         "lat_curve": '"LatCurve"',
@@ -211,7 +211,7 @@ def analyze_source(source_path: str | Path) -> dict[str, Any]:
         or (".\Source\Vehicle\tire_manager.cpp" in text)
     )
     checks = {
-        "tbc_loader": "FUN_007a10f0" in text,
+        "tbc_loader": "FUN_007a32a0" in text,
         "slipcurve_marker": '"[SLIPCURVE]"' in text,
         "compound_marker": '"[COMPOUND]"' in text,
         "lat_curve": '"LatCurve"' in text,
