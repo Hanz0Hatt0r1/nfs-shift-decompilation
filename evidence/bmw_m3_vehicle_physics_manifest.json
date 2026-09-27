@@ -63,5 +63,29 @@
     "binary_content_committed": false,
     "retail_text_content_committed": false,
     "identity_and_structure_only": true
+  },
+  "gdf": {
+    "sha256": "4d117fb19474b776b80bba53e9b738c201852c29b94aea6de7f0b9557b8fc0d1",
+    "sections": [
+      "GEAR_RATIOS",
+      "FINAL_DRIVE"
+    ],
+    "gear_ratio_points": 63,
+    "final_drive_ratio_points": 40,
+    "final_drive_bevel_records": 1
+  },
+  "sdf": {
+    "sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed",
+    "sections": [
+      "BODY",
+      "JOINT&HINGE",
+      "BAR"
+    ],
+    "body_count": 11,
+    "joint_hinge_count": 4,
+    "bar_count": 20,
+    "body_stride": "0x170",
+    "joint_hinge_stride": "0xa0",
+    "bar_stride": "0xb8"
   }
 }
