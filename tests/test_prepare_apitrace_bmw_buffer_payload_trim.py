@@ -87,7 +87,7 @@ def test_complete_lifetimes_are_ready_and_include_fake_memcpy(monkeypatch):
     assert plan["ready_for_payload_trim"] is True
     assert plan["callset_count"] == 22
     assert plan["resources"][0]["fake_memcpy_calls_by_unlock"] == {"102": [101]}
-    assert plan["resources"][6]["fake_memcpy_calls_by_unlock"] == {"130": [129]}
+    assert plan["resources"][6]["fake_memcpy_calls_by_unlock"] == {"135": [134]}
 
 
 def test_missing_fake_memcpy_blocks_trim(monkeypatch):
@@ -131,7 +131,7 @@ def test_missing_fake_memcpy_blocks_trim(monkeypatch):
     assert plan["ready_for_payload_trim"] is False
     assert plan["missing_fake_memcpy"] == [
         {
-            "kind": "index_buffer",
+            "kind": "index_buffers",
             "pointer": "0x200",
             "creation_call": 110,
             "unlock_call": 130,
