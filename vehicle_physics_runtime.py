@@ -5,7 +5,7 @@ import hashlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 FORMAT = "SHIFT.VehiclePhysicsDetailsRuntime/1"
 SOURCE_FILE = "./Source/Vehicle/hdvehicle.cpp"
