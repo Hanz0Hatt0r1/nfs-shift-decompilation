@@ -7,10 +7,10 @@ FUN_0075489c, the spring-element force-application loop.
 
 Retail SHIFT.exe.c:
 
-- FUN_0075489c at source line 750161;
+- FUN_0075489c at recovered source line 750161;
 - FUN_00754cc0 at source line 750338 for property registration;
 - FUN_007546a0 at source line 750040 for spring-element construction;
-- verified source SHA-256:
+- verified recovered-source SHA-256:
   512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9.
 
 ## Element layout
