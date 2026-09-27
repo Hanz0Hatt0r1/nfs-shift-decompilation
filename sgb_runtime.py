@@ -246,7 +246,7 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
                 row["record_count"] = count
             if tag == "NODE":
                 row["records"] = _parse_node(data, cursor, chunk_end, count)
-                _attach_node_objects(data, cursor, chunk_end, row["records"])
+                _attach_node_objects(data, cursor, chunk_end, row["records"], strict=strict)
                 row["decoder"] = "FUN_006a4b40"
             elif tag == "PART":
                 row["records"] = _parse_part(data, cursor, chunk_end, count)
