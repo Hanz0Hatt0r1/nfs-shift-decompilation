@@ -124,6 +124,7 @@ def test_compare_solver_captures_blocks_scalar_count_mismatch():
         [0.0, 4.0, 5.0, 0.0],
         [0.0, 0.0, 0.0, 1.0],
     ]
+    observed["row_indices"] = [0, 4, 8, 12]
     result = runtime.compare_solver_captures(expected, observed)
     assert result["ready"] is False
     assert result["status"] == "blocked"
