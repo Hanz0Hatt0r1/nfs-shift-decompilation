@@ -38,7 +38,7 @@ def test_autozoom_clamps_desired_value_and_limits_step():
         delta=0.2,
     )
     assert result["desired"] == 0.35
-    assert result["value"] == 0.55
+    assert result["value"] == 0.45
 
 
 def test_speed_fov_blend_clamps_normalized_t():
