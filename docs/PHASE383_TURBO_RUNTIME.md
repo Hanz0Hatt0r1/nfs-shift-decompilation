@@ -38,9 +38,10 @@ Source-visible conversions:
 - Fuel Percentage × 0.01
 - Inertia/Friction unchanged
 
-After loading, the function applies `FUN_007a6be0` to Boost Time and Max Boost
-and returns their sum plus 1.0. The implementation exposes this value as a raw
-source-derived scalar and does not assign it a gameplay name.
+After loading, the function applies `FUN_007a6be0` to the converted Turbo1 and
+Turbo2 Size values stored at +0x08 and +0x1c. It stores the post-modifier values
+at +0x0c and +0x20 and returns their sum plus 1.0. The implementation exposes
+this value as a raw source-derived scalar and does not assign it a gameplay name.
 
 ## Implementation
 
