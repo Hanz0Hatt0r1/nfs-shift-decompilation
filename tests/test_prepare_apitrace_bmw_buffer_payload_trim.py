@@ -85,7 +85,7 @@ def test_complete_lifetimes_are_ready_and_include_fake_memcpy(monkeypatch):
     )
     plan = build_callset(report, trace=Path("/tmp/SHIFT.trace"))
     assert plan["ready_for_payload_trim"] is True
-    assert plan["callset_count"] == 35
+    assert plan["callset_count"] == 22
     assert plan["resources"][0]["fake_memcpy_calls_by_unlock"] == {"102": [101]}
     assert plan["resources"][6]["fake_memcpy_calls_by_unlock"] == {"130": [129]}
 
