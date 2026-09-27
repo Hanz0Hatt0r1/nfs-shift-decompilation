@@ -19,6 +19,7 @@
 | VHF XML | CAR/NODE/RESOURCE graph |
 | LOD XML | Реальный `tracks.lod`, включая malformed quote, через loose parser |
 | Vehicle CDF | Source-backed section/property schema + lossless parser; physical units intentionally unresolved |
+| Vehicle EDF | Full engine property parser + 41-point RPMTorque validation/interpolation + peak-power scan |\n| Gearbox GDF | GEAR_RATIOS/FINAL_DRIVE parser + source ratio comparator view |\n| Suspension SDF | BODY/JOINT/HINGE/BAR/JOINT&HINGE parser + body reference graph + runtime topology IR |\n| Vehicle physics graph | CDF/EDF/GDF/SDF joined into neutral `SHIFT.VehiclePhysicsAssetGraph/1` |
 
 ## Что ещё не является игровым runtime
 
