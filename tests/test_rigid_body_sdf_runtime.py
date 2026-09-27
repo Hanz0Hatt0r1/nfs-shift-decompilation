@@ -197,20 +197,33 @@ axis=(1,0,0) neg=(0,0,0) pos=(0,1,0)
 """)
     lowered = sdf.describe_sdf_constraint_runtime_lowering(report)
     assert lowered["ready"] is True
-    assert lowered["record_count"] == 1
+    assert lowered["source_record_count"] == 1
+    assert lowered["record_count"] == 2
     row = lowered["rows"][0]
-    assert row["flag_word"] == 3
+    assert row["runtime_section"] == "JOINT"
+    assert row["materialization"] == "JOINT"
+    assert row["flag_word"] == 1
     assert row["body_pointer_slots"] == {"posbody": "+0x78", "negbody": "+0x80"}
     assert row["record_index_field"] == "+0x70"
-    assert row["body_counter_offset"] == ["+0x98", "+0x9c"]
+    assert row["body_counter_offset"] == "+0x98"
     assert row["copy_helper"] == "FUN_007b2ae0"
-    assert row["sampling"]["helper"] == ["FUN_007ba8b0", "FUN_007ba900"]
-    assert row["sampling"]["sample_stride"] == [0x40, 0xA0]
-    assert row["postload"]["helper"] == ["FUN_007b2da0", "FUN_007b2de0"]
-    assert row["section_storage"]["source_descriptor_offsets"]["joint"] == ["+0x28", "+0x30", "+0x38"]
-    assert row["section_storage"]["source_value_fields"]["joint"] == ["pos"]
-    assert row["section_storage"]["source_descriptor_offsets"]["hinge"] == ["+0x58", "+0x60", "+0x68"]
-    assert row["section_storage"]["source_value_fields"]["hinge"] == ["axis"]
+    assert row["sampling"]["helper"] == "FUN_007ba8b0"
+    assert row["sampling"]["sample_stride"] == 0x40
+    assert row["postload"]["helper"] == "FUN_007b2da0"
+    assert row["section_storage"]["source_descriptor_offsets"] == ["+0x28", "+0x30", "+0x38"]
+    assert row["section_storage"]["source_value_fields"] == ["pos"]
+    assert row["source_descriptor"]["string_fields"] == {
+        "constraint_name": "+0x14",
+        "posbody": "+0x18",
+        "negbody": "+0x1c",
+        "copy_body_name": "+0x20",
+    }
+    hinge = lowered["rows"][1]
+    assert hinge["runtime_section"] == "HINGE"
+    assert hinge["flag_word"] == 2
+    assert hinge["body_counter_offset"] == "+0x9c"
+    assert hinge["section_storage"]["source_descriptor_offsets"] == ["+0x58", "+0x60", "+0x68"]
+    assert hinge["section_storage"]["source_value_fields"] == ["axis"]
 
 
 def test_sdf_constraint_runtime_lowering_blocks_missing_endpoint_names():
