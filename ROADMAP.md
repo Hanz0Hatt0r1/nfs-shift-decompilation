@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 407: retail identity-row/column reset
+
+`FUN_007b2210` is now executable against the same retail matrix storage used by the SDF assembler: selected rows and columns are zeroed through row pointers, the diagonal is set to `1.0`, and the RHS entry is cleared. The provider `+0x1c` dispatch boundary remains explicit. `build_solver_ready_matrix()` now exposes both logical and flat retail storage views. Next target: compare a real 40-scalar assembled matrix against captured solver state.
+
 ## Phase 406: exact SDF scalar seed writes
 
 `FUN_007ba2b0` is now exposed as a dedicated source-backed `1.0` seed-write layer over the 40-scalar BMW domain. The matrix seed can be enumerated cell-by-cell and hashed before numeric constraint coefficients are applied; the real BMW topology yields 700 seeded cells in a 40×40 matrix. Next target: compare this seed/storage layer against a captured solver frame and then lift any remaining numeric coefficient boundaries.

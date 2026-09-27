@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
 from sdf_constraint_seed_write_runtime import materialize_seed_matrix
+from sdf_builtin_identity_reset_runtime import apply_identity_resets_to_row_storage
 
 FORMAT = "SHIFT.SDFConstraintMatrixAssemblyRuntime/1"
 
@@ -316,6 +317,44 @@ def apply_builtin_row_identity_constraints(
     return apply_builtin_diagonal_reset(matrix, rhs, selected_nodes)
 
 
+
+def build_retail_solver_ready_storage(
+    matrix: Sequence[Sequence[float | int]],
+    rhs: Sequence[float | int],
+    selected_identity_nodes: Sequence[int],
+    *,
+    matrix_base_address: int = 0,
+) -> dict[str, Any]:
+    """Materialize the logical matrix into retail pool/row-pointer storage and apply FUN_007b2210."""
+    n = len(matrix)
+    materialized = materialize_retail_matrix(matrix, matrix_base_address)
+    reset = apply_identity_resets_to_row_storage(
+        materialized["matrix_pool"],
+        scalar_count=n,
+        row_indices=materialized["layout"]["row_indices"],
+        nodes=selected_identity_nodes,
+        rhs=rhs,
+    )
+    return {
+        "format": "SHIFT.SDFRetailSolverReadyStorage/1",
+        "version": 1,
+        "status": "ready",
+        "ready": True,
+        "scalar_count": n,
+        "matrix_base_address": int(matrix_base_address),
+        "matrix_pool": reset["matrix_pool"],
+        "row_indices": materialized["layout"]["row_indices"],
+        "row_pointers": materialized["layout"]["row_pointers"],
+        "rhs": reset["rhs"],
+        "selected_identity_nodes": reset["nodes"],
+        "logical_matrix": materialized["matrix"],
+        "evidence": {
+            "matrix_storage": "FUN_007b3820/FUN_007bb8d0",
+            "identity_reset": "FUN_007b2210",
+        },
+    }
+
+
 def build_solver_ready_matrix(
     scalar_count: int,
     contributions: Sequence[Mapping[str, Any]],
@@ -331,8 +370,13 @@ def build_solver_ready_matrix(
         rhs,
         selected_identity_nodes,
     )
+    retail_storage = build_retail_solver_ready_storage(
+        reset["matrix"],
+        reset["rhs"],
+        selected_identity_nodes,
+    )
     return {
-        "format": "SHIFT.SDFSolverReadyMatrix/1",
+        "format": "SHIFT.SDFSolverReadyMatrix/2",
         "version": 1,
         "status": "ready",
         "ready": True,
@@ -341,6 +385,7 @@ def build_solver_ready_matrix(
         "matrix": reset["matrix"],
         "rhs": reset["rhs"],
         "selected_identity_nodes": list(reset["nodes"]),
+        "retail_storage": retail_storage,
         "evidence": {
             "assembly": "FUN_007bbb80/FUN_007bb250/FUN_007bb6c0",
             "identity_reset": "FUN_007b2210",

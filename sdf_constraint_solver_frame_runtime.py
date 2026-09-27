@@ -152,19 +152,50 @@ def describe_sdf_solver_frame_contract(
 
 def derive_builtin_diagonal_reset_nodes(
     scalar_connectivity: Mapping[str, Any],
+    runtime_flag_by_record: Mapping[int | str, int] | None = None,
 ) -> dict[str, Any]:
-    """Recover the scalar rows/columns targeted by FUN_007b2210."""
+    """Recover FUN_007b2210 targets from the actual runtime +0x70 low-bit flags."""
     order = [int(value) for value in scalar_connectivity.get("order") or []]
     widths = [int(value) for value in scalar_connectivity.get("block_widths") or []]
     bases = {
         int(key): int(value)
         for key, value in (scalar_connectivity.get("solver_base_index_by_record") or {}).items()
     }
+    flags = {
+        int(key): int(value)
+        for key, value in (runtime_flag_by_record or {}).items()
+    }
+
+    if runtime_flag_by_record is None:
+        return {
+            "format": "SHIFT.SDFBuiltinDiagonalReset/2",
+            "version": 2,
+            "status": "needs-runtime-flags",
+            "ready": False,
+            "selected_record_count": 0,
+            "selected_records": [],
+            "scalar_nodes": [],
+            "unique_scalar_nodes": [],
+            "unresolved": ["runtime sample +0x70 low-bit flags not supplied"],
+            "evidence": {
+                "function": "FUN_007b2210",
+                "selection": "runtime sample +0x70 & 1",
+                "source_line": 814124,
+            },
+        }
+
     selected: list[dict[str, Any]] = []
     scalar_nodes: list[int] = []
+    unresolved: list[str] = []
     for record in order:
+        if record not in flags:
+            unresolved.append(f"missing-runtime-flag:{record}")
+            continue
+        if (flags[record] & 1) == 0:
+            continue
         base = bases.get(record)
-        if base is None or base & 1 == 0:
+        if base is None:
+            unresolved.append(f"missing-scalar-base:{record}")
             continue
         width = widths[record]
         nodes = list(range(base, base + width))
@@ -173,20 +204,24 @@ def derive_builtin_diagonal_reset_nodes(
             "base_index": base,
             "width": width,
             "nodes": nodes,
+            "runtime_flag": flags[record],
         })
         scalar_nodes.extend(nodes)
+
     return {
-        "format": "SHIFT.SDFBuiltinDiagonalReset/1",
-        "version": 1,
-        "status": "derived",
-        "ready": True,
+        "format": "SHIFT.SDFBuiltinDiagonalReset/2",
+        "version": 2,
+        "status": "derived" if not unresolved else "partial",
+        "ready": not unresolved,
         "selected_record_count": len(selected),
         "selected_records": selected,
         "scalar_nodes": scalar_nodes,
         "unique_scalar_nodes": list(dict.fromkeys(scalar_nodes)),
+        "unresolved": unresolved,
         "evidence": {
             "function": "FUN_007b2210",
-            "selection": "runtime constraint +0x70 low bit is set",
+            "selection": "runtime sample +0x70 & 1",
+            "source_line": 814124,
             "base_index_source": "sample +0x30 (JOINT/BAR) or +0x94 (HINGE)",
             "widths": {"JOINT": 3, "HINGE": 2, "BAR": 1},
         },
