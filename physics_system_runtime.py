@@ -332,6 +332,94 @@ def build_physics_tweaker_contract() -> dict[str, Any]:
     }
 
 
+
+def build_physics_provider_dispatch_contract() -> dict[str, Any]:
+    """Describe the exact provider probe/replace chain in FUN_007b3820."""
+    return {
+        "format": "SHIFT.PhysicsProviderDispatch/1",
+        "version": 1,
+        "source": {
+            "constructor": "FUN_007b3820",
+            "selector": "FUN_007d2e70",
+            "accept_probe_vtable_offset": "+0x14",
+        },
+        "candidate_order": [
+            {
+                "selector_index": 0,
+                "slot": "DAT_00c23da8",
+                "acceptance_argument": "physics_system+0x3c",
+            },
+            {
+                "selector_index": 1,
+                "slot": "DAT_00c23dac",
+                "acceptance_argument": "physics_system+0x3c",
+            },
+        ],
+        "termination": {
+            "after_index_1": "selector index 2 returns null",
+            "null_provider": "enter generic FUN_007b2010/FUN_007b1360 fallback",
+            "rejected_provider": "probe next selector index",
+        },
+        "accepted_provider_rewrite": {
+            "release_old_matrix": {
+                "function": "FUN_0064f4b0",
+                "source_slot": "physics_system+0x38",
+            },
+            "free_old_row_table": {
+                "function": "FUN_00886930",
+                "source_slot": "physics_system+0x3c",
+            },
+            "replace_row_table": {
+                "vtable_offset": "+0x0c",
+                "destination": "physics_system+0x3c",
+            },
+            "replace_graph_storage": {
+                "vtable_offset": "+0x04",
+                "destination": "physics_system+0x40",
+            },
+            "replace_aux_storage": {
+                "vtable_offset": "+0x08",
+                "destination": "physics_system+0x44",
+            },
+            "finalize": {
+                "vtable_offset": "+0x2c",
+                "destination": "physics_system+0x48",
+            },
+        },
+        "generic_fallback": {
+            "matrix_rebuild": "FUN_007b2010",
+            "compact_graph_allocation": {
+                "bytes": "node_count * 8",
+                "destination": "physics_system+0x40",
+            },
+            "compact_graph_builder": "FUN_007b1360",
+            "per_body_allocation": {
+                "index_matrix_bytes": "node_count * node_count * 8",
+                "row_storage_bytes": "node_count * 8",
+                "index_vector_bytes": "node_count * 4",
+                "derived_index_rule": "(row_pointer[i] - matrix_base) >> 3",
+            },
+        },
+        "common_post_provider": {
+            "body_output_node_count": "physics_system+0x34",
+            "per_body_runtime_base": "physics_system+0x14 + 0x170 + body_index * 0x170",
+            "per_body_offsets": {
+                "+0xa4": "node_count",
+                "+0xa8": "node_count * node_count",
+                "+0xac": "node_count",
+                "+0x150": "node_count * 8 allocation",
+                "+0x154": "node_count * node_count * 8 allocation",
+                "+0x158": "node_count * 4 allocation",
+                "+0x15c": "node-derived index vector",
+            },
+        },
+        "limitations": [
+            "Provider acceptance is a runtime virtual call; this contract does not synthesize a return value.",
+            "Concrete provider classes and the semantic type of returned storage remain unresolved.",
+        ],
+    }
+
+
 def build_physics_provider_registry() -> dict[str, Any]:
     """Describe the two source-visible physics provider slots returned by FUN_007d2e70."""
     return {
