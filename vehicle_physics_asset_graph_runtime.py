@@ -104,8 +104,10 @@ def build_profile(
             "edf_rpm_torque_points": edf_report.get("rpm_torque", {}).get("point_count", 0),
             "gdf_gear_ratio_count": gdf_report.get("gear_ratio_count", 0),
             "gdf_final_drive_ratio_count": gdf_report.get("final_drive_ratio_count", 0),
+            "gdf_sorted_ratio_count": len(gdf_report.get("sorted_gear_ratios", [])),
             "sdf_bodies": sdf_report.get("topology", {}).get("body_count", 0),
             "sdf_joint_hinge_count": sdf_report.get("topology", {}).get("joint_hinge_count", 0),
+            "sdf_bar_count": sdf_report.get("topology", {}).get("bar_count", 0),
         },
         "details": {
             "cdf": cdf_report,
