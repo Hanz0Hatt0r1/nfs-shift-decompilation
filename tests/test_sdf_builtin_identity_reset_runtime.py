@@ -73,3 +73,18 @@ def test_identity_reset_contract_exposes_provider_boundary():
     assert report["source_line"] == 812551
     assert report["provider_path"]["provider_pointer"] == "physics-system +0x48"
     assert report["provider_path"]["virtual_slot"] == "+0x1c"
+
+
+def test_identity_reset_preserves_unselected_rhs_and_matrix_cells():
+    result = runtime.apply_identity_reset_to_row_storage(
+        [float(i) for i in range(1, 17)],
+        scalar_count=4,
+        row_indices=[0, 4, 8, 12],
+        node=1,
+        rhs=[10, 20, 30, 40],
+    )
+    assert result["rhs"] == [10.0, 0.0, 30.0, 40.0]
+    assert result["matrix_pool"][0] == 1.0
+    assert result["matrix_pool"][2] == 3.0
+    assert result["matrix_pool"][8] == 9.0
+    assert result["matrix_pool"][10] == 11.0
