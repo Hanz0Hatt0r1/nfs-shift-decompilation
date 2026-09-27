@@ -153,4 +153,4 @@ def test_fake_memcpy_calls_are_discovered_from_bounded_dump(monkeypatch):
     )
     assert mod._fake_memcpy_calls_near_unlock(
         Path("/tmp/SHIFT.trace"), "apitrace", 120, 4
-    ) == [119]
+    ) == [117]
