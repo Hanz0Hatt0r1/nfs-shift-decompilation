@@ -406,6 +406,49 @@ def sample_rpm_torque_curve(
         throttle = midpoint
     return brake, throttle
 
+
+RPM_POWER_SCALE = 0.73756105
+RPM_POWER_DIVISOR = 5252.0
+
+
+def compute_rpm_torque_peak_power(
+    points: Sequence[RPMTorquePoint],
+) -> dict[str, float | int | None]:
+    """Reproduce the source's RPMTorque peak-power scan.
+
+    FUN_007c3920/FUN_007c3b00 scans the stored RPM and throttle-torque columns
+    and evaluates rpm * throttle * 0.73756105 / 5252 for each point.
+    """
+    if not points:
+        return {
+            "peak": 1.0,
+            "point_index": None,
+            "rpm": None,
+            "throttle_torque": None,
+        }
+    peak = 1.0
+    peak_index: int | None = None
+    peak_rpm: float | None = None
+    peak_throttle: float | None = None
+    for index, point in enumerate(points):
+        value = (
+            float(point.rpm)
+            * float(point.throttle)
+            * RPM_POWER_SCALE
+            / RPM_POWER_DIVISOR
+        )
+        if peak < value:
+            peak = value
+            peak_index = index
+            peak_rpm = float(point.rpm)
+            peak_throttle = float(point.throttle)
+    return {
+        "peak": peak,
+        "point_index": peak_index,
+        "rpm": peak_rpm,
+        "throttle_torque": peak_throttle,
+    }
+
 ENGINE_RPM_TORQUE = {
     "storage_base_offset": 0x1818,
     "entry_stride": 0x20,
@@ -572,7 +615,7 @@ def main(argv: list[str] | None = None) -> int:
 __all__ = [
     "FORMAT", "GENERAL_PROPERTIES", "ENGINE_PROPERTIES", "WHEEL_PROPERTIES",
     "SUSPENSION_PROPERTIES", "DRIVELINE_PROPERTIES", "SECTION_TARGETS",
-    "ENGINE_RPM_TORQUE", "RPMTorquePoint", "parse_rpm_torque_points", "sample_rpm_torque_curve", "DRIVELINE_SOLVER", "build_vehicle_physics_contract",
+    "ENGINE_RPM_TORQUE", "RPMTorquePoint", "parse_rpm_torque_points", "sample_rpm_torque_curve", "compute_rpm_torque_peak_power", "DRIVELINE_SOLVER", "build_vehicle_physics_contract",
     "validate_contract_shape", "analyze_source",
 ]
 
