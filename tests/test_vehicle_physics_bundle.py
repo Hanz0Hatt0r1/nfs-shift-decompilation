@@ -20,6 +20,8 @@ class FakeBFF:
             Entry("vehicles/physics/engines/bmw_m3_e36.edf", 2),
             Entry("vehicles/physics/gearbox/common.gdf", 3),
             Entry("vehicles/physics/suspension/aarm_multilink.sdf", 4),
+            Entry("vehicles/physics/turbo/gen_lowrpm_33.tbf", 5),
+            Entry("vehicles/physics/turbo/nitrous.bbf", 6),
         ]
 
     def __enter__(self):
@@ -34,6 +36,8 @@ class FakeBFF:
             ".edf": b"RPMTorque=(1000,10,20)\nRPMTorque=(2000,11,21)\n",
             ".gdf": b"[GEAR_RATIOS]\nratio=(10,35)\n",
             ".sdf": b"[BODY]\nname=body mass=(1) inertia=(1,1,1) pos=(0,0,0) ori=(0,0,0)\n",
+            ".tbf": b"Twin Turbo=true\nTurbo1 Size=100\nTurbo1 Engine RPM=6000\n",
+            ".bbf": b"Boost=0.5\nBoost Time=2.0\n",
         }[Path(entry.path).suffix]
 
 
@@ -48,7 +52,7 @@ def test_extract_bundle_resolves_default_vehicle_physics_entries(monkeypatch, tm
     bff.write_bytes(b"fixture")
     result = bundle.extract_bundle(bff, tmp_path / "out")
     assert result["ready"] is True
-    assert set(result["extracted_paths"]) == {"cdf", "edf", "gdf", "sdf"}
+    assert set(result["extracted_paths"]) == {"cdf", "edf", "gdf", "sdf", "tbf", "bbf"}
     assert result["entries"]["cdf"]["archive_path"].endswith("bmw_m3_e36.cdf")
     assert (tmp_path / "out" / "resources" / "bmw_m3_e36.cdf").is_file()
     assert (tmp_path / "out" / "vehicle_physics_asset_graph.json").is_file()
