@@ -432,6 +432,159 @@ def compile_sdf_runtime_topology(
 
 
 
+def describe_sdf_constraint_runtime_lowering(
+    report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Describe the source-backed FUN_007b3150 constraint materialization map.
+
+    The returned contract names storage/call boundaries only; it deliberately
+    does not assign PhysX SDK class names or physical-unit semantics.
+    """
+    section_specs = {
+        "JOINT": {
+            "flag_bit": SDF_FLAG_JOINT,
+            "runtime_stride": 0xA0,
+            "body_counter_offset": "+0x98",
+            "source_vector_fields": ["axis", "neg", "pos"],
+            "source_descriptor_offsets": ["+0x28", "+0x30", "+0x38"],
+            "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
+            "sample_helper": "FUN_007ba8b0",
+            "sample_stride": 0x40,
+            "postload_helper": "FUN_007b2da0",
+        },
+        "HINGE": {
+            "flag_bit": SDF_FLAG_HINGE,
+            "runtime_stride": 0xA0,
+            "body_counter_offset": "+0x9c",
+            "source_vector_fields": ["axis", "neg", "pos"],
+            "source_descriptor_offsets": ["+0x58", "+0x60", "+0x68"],
+            "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
+            "sample_helper": "FUN_007ba900",
+            "sample_stride": 0xA0,
+            "postload_helper": "FUN_007b2de0",
+        },
+        "BAR": {
+            "flag_bit": SDF_FLAG_BAR,
+            "runtime_stride": 0xB8,
+            "body_counter_offset": "+0xa0",
+            "source_vector_fields": ["axis", "neg", "pos", "bar_vector_2", "bar_vector_3", "bar_vector_4"],
+            "source_descriptor_offsets": [
+                "+0x28", "+0x30", "+0x38", "+0x40", "+0x48", "+0x50"
+            ],
+            "runtime_vector_offsets": [
+                "+0x88", "+0x90", "+0x98", "+0xa0", "+0xa8", "+0xb0"
+            ],
+            "sample_helper": "FUN_007ba990",
+            "sample_stride": 0x60,
+            "postload_helper": "FUN_007b2f70",
+        },
+        "JOINT&HINGE": {
+            "flag_bit": SDF_FLAG_JOINT | SDF_FLAG_HINGE,
+            "runtime_stride": 0xA0,
+            "body_counter_offset": ["+0x98", "+0x9c"],
+            "source_vector_fields": ["axis", "neg", "pos"],
+            "source_descriptor_offsets": {
+                "joint": ["+0x28", "+0x30", "+0x38"],
+                "hinge": ["+0x58", "+0x60", "+0x68"],
+            },
+            "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
+            "sample_helpers": ["FUN_007ba8b0", "FUN_007ba900"],
+            "sample_strides": [0x40, 0xA0],
+            "postload_helpers": ["FUN_007b2da0", "FUN_007b2de0"],
+        },
+    }
+
+    rows: list[dict[str, Any]] = []
+    unresolved: list[str] = []
+    for record_index, record in enumerate(report.get("records") or []):
+        section = str(record.get("section", "")).upper()
+        spec = section_specs.get(section)
+        if spec is None:
+            continue
+        values = {
+            str(entry.get("name")): entry.get("value")
+            for entry in record.get("entries") or []
+        }
+        posbody = values.get("posbody")
+        negbody = values.get("negbody")
+        for field, body in (("posbody", posbody), ("negbody", negbody)):
+            if body is None:
+                unresolved.append(f"record:{record_index}:{section}:missing-{field}")
+        flags = {
+            "joint": bool(int(spec["flag_bit"]) & SDF_FLAG_JOINT),
+            "hinge": bool(int(spec["flag_bit"]) & SDF_FLAG_HINGE),
+            "bar": bool(int(spec["flag_bit"]) & SDF_FLAG_BAR),
+        }
+        rows.append({
+            "record_index": record_index,
+            "section": section,
+            "name": values.get("name"),
+            "posbody": posbody,
+            "negbody": negbody,
+            "flags": flags,
+            "flag_word": spec["flag_bit"],
+            "runtime_stride": spec["runtime_stride"],
+            "body_pointer_slots": {
+                "posbody": "+0x78",
+                "negbody": "+0x80",
+            },
+            "record_index_field": "+0x70",
+            "endpoint_pointer_slots": {
+                "positive": "+0x7c",
+                "negative": "+0x84",
+            },
+            "body_counter_offset": spec["body_counter_offset"],
+            "copy_helper": "FUN_007b2ae0",
+            "source_descriptor": {
+                "common_flag_offset": "+0x10",
+                "common_string_offsets": ["+0x14", "+0x18", "+0x1c", "+0x20"],
+                "common_scalar_offsets": [
+                    "+0x28", "+0x30", "+0x38", "+0x40", "+0x48", "+0x50",
+                    "+0x58", "+0x60", "+0x68"
+                ],
+            },
+            "section_storage": {
+                "source_vector_fields": spec["source_vector_fields"],
+                "source_descriptor_offsets": spec["source_descriptor_offsets"],
+                "runtime_vector_offsets": spec["runtime_vector_offsets"],
+            },
+            "sampling": {
+                "helper": spec.get("sample_helper") or spec.get("sample_helpers"),
+                "sample_stride": spec.get("sample_stride") or spec.get("sample_strides"),
+            },
+            "postload": {
+                "helper": spec.get("postload_helper") or spec.get("postload_helpers"),
+            },
+        })
+
+    return {
+        "format": "SHIFT.SDFConstraintRuntimeLowering/1",
+        "version": 1,
+        "status": "ready" if not unresolved else "blocked",
+        "ready": not unresolved,
+        "record_count": len(rows),
+        "rows": rows,
+        "unresolved": list(dict.fromkeys(unresolved)),
+        "evidence": {
+            "constructor": "FUN_007b3150",
+            "body_record_lowering": "FUN_007b3670",
+            "common_copy_helper": "FUN_007b2ae0",
+            "joint_constructor_stage": "FUN_007ba8b0",
+            "hinge_constructor_stage": "FUN_007ba900",
+            "bar_constructor_stage": "FUN_007ba990",
+            "joint_postload": "FUN_007b2da0",
+            "hinge_postload": "FUN_007b2de0",
+            "bar_postload": "FUN_007b2f70",
+        },
+        "limitations": [
+            "The contract describes retail storage and helper boundaries, not concrete PhysX SDK classes.",
+            "BAR secondary vector source names are intentionally structural because the text loader does not establish gameplay names.",
+            "Returned sample pointers remain opaque runtime allocations; only their proven strides/helpers are recorded.",
+        ],
+    }
+
+
+
 def describe_sdf_pre_physx_build(
     report: Mapping[str, Any],
 ) -> dict[str, Any]:
