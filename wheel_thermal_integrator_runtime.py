@@ -47,18 +47,18 @@ class ThermalIntegratorInputs:
     temperature_1: float
     temperature_2: float
     reservoir_scale: float
-    clamp_reference: float
+    reservoir_exchange: float
     temp_reference: float
     temp_gain_negative: float
     temp_gain_positive: float
     temp_alert_threshold: float
     abrasion_scale: float
     abrasion_accumulator: float
-    abrasion_baseline: float
-    abrasion_decay_scale: float
+    wear_event_enabled: bool
     grip_state: float
-    output_scale: float
-    output_bias: float
+    derived_reservoir_scale: float
+    derived_aux_scale: float
+    derived_aux_bias: float
     output_limit_reference: float
     wear_enabled: bool
     global_wear_scale: float
@@ -81,6 +81,10 @@ class ThermalIntegratorStep:
     normalized_temperature_delta: float
     limited_temperature_factor: float
     grip_output: float
+    derived_reservoir_field: float
+    derived_auxiliary_field: float
+    wear_floor_crossed: bool
+    overtemperature_condition: bool
 
 
 def _finite(name: str, value: float) -> float:
@@ -244,7 +248,7 @@ def integrate_wheel_thermal_state(
         sqrt_value * _finite("ambient_coupling_a", inputs.ambient_coupling_a)
         + _finite("ambient_coupling_b", inputs.ambient_coupling_b)
     ) * sqrt_value * dt
-    reservoir_exchange = _finite("clamp_reference", inputs.reservoir_scale) * dt
+    reservoir_exchange = _finite("reservoir_exchange", inputs.reservoir_exchange) * dt
 
     temperatures_after, reservoir_after = update_three_node_temperatures(
         temperatures=(inputs.temperature_0, inputs.temperature_1, inputs.temperature_2),
@@ -265,8 +269,7 @@ def integrate_wheel_thermal_state(
     )
 
     average = sum(temperatures_after) / 3.0
-    reservoir_scale = _finite("reservoir_scale", inputs.reservoir_scale)
-    d7d8 = reservoir_after * reservoir_scale
+    d7d8 = reservoir_after * _finite("derived_reservoir_scale", inputs.derived_reservoir_scale)
     abrasion_temp = average * _finite("secondary_temperature_scale", inputs.secondary_temperature_scale)
     angular = (
         (abs(steering_b) + abs(steering_a) + 4.0) / 6.0
@@ -278,10 +281,12 @@ def integrate_wheel_thermal_state(
     )
     wear_before = _finite("grip_state", inputs.grip_state)
     abrasion_after = wear_before
+    wear_floor_crossed = False
     if inputs.wear_enabled and wear_before > WEAR_FLOOR:
         abrasion_after = wear_before - _finite("global_wear_scale", inputs.global_wear_scale) * angular
         if abrasion_after < WEAR_FLOOR:
             abrasion_after = WEAR_FLOOR
+            wear_floor_crossed = True
 
     temperature_factor, limited, output = compute_grip_output(
         average_temperature=average,
@@ -292,6 +297,9 @@ def integrate_wheel_thermal_state(
         output_limit_reference=_finite("output_limit_reference", inputs.output_limit_reference),
         grip_state=abrasion_after,
     )
+
+    derived_auxiliary = d7d8 * _finite("derived_aux_scale", inputs.derived_aux_scale) + _finite("derived_aux_bias", inputs.derived_aux_bias)
+    overtemperature_condition = average > _finite("temp_alert_threshold", inputs.temp_alert_threshold)
 
     return ThermalIntegratorStep(
         source_heat=source_heat,
@@ -309,6 +317,10 @@ def integrate_wheel_thermal_state(
         normalized_temperature_delta=temperature_factor,
         limited_temperature_factor=limited,
         grip_output=output,
+        derived_reservoir_field=d7d8,
+        derived_auxiliary_field=derived_auxiliary,
+        wear_floor_crossed=wear_floor_crossed,
+        overtemperature_condition=overtemperature_condition,
     )
 
 
@@ -362,8 +374,9 @@ def build_contract() -> dict:
             "wear_enabled_flag": "0x798",
             "global_wear_scale": "FUN_00749340(0xc12c80) * 0xc12f38",
             "wear_state": "0x7f8",
-            "output_scale": "0x7d0",
-            "output_bias": "0x7e8",
+            "derived_reservoir_scale": "0x7d0",
+            "derived_aux_scale": "0x7f0",
+            "derived_aux_bias": "0x7e8",
             "output_limit_reference": "0x790",
         },
         "call_order": [
@@ -400,7 +413,6 @@ __all__ = [
     "ThermalIntegratorStep",
     "compute_source_heat",
     "compute_shape_factor",
-    "compute_steering_terms",
     "compute_temperature_fractions",
     "update_three_node_temperatures",
     "compute_grip_output",
