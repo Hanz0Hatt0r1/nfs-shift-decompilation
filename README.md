@@ -41,7 +41,7 @@
 > **BMW buffer lifecycle:** Phase 343 correlates the frame-30444 BMW VB/IB pointers with exact D3D9 CreateVertexBuffer/CreateIndexBuffer instances and MEB-derived byte sizes. Raw runtime VB/IB bytes remain a separate capture boundary.
 
 > **Draw-local shader join:** runtime shader selection, parity and the render contract now consume the same `(frame, draw_index)` snapshot. Frame-level shader state is retained only for compatibility with legacy reports that have no snapshots.
- > **Apitrace draw-instance proof:** `SHIFT.BMWM3APITRACERuntimeDrawInstanceProof/1` now preserves declaration/VB/IB creation and binding identity at the exact BMW draw; `tools/run_apitrace_bmw_buffer_proof.py` generates this proof automatically alongside the seven-object byte-parity artifacts.
+> **Apitrace draw-instance proof:** `SHIFT.BMWM3APITRACERuntimeDrawInstanceProof/1` now preserves declaration/VB/IB creation and binding identity at the exact BMW draw; `tools/run_apitrace_bmw_buffer_proof.py` generates this proof automatically alongside the seven-object byte-parity artifacts.
 
 > **Versioned draw state:** `SHIFT.D3D9DrawStateSnapshot/1` adds normalized active stream/texture bindings and latest constant-register state to each exact draw boundary; malformed snapshots are blocked from proof.
 > **Capture preflight:** BMW paint candidates now expose snapshot schema validity, active texture stages and populated constant-state stages; `ready` also requires complete declaration/VS/PS/stream/index state on the proven draw.
