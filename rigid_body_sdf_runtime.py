@@ -285,10 +285,10 @@ def resolve_sdf_body_references(
         edges.append({
             "record_index": record_index,
             "section": record.get("section"),
-            "posbody": None if posbody is None else str(posbody),
-            "negbody": None if negbody is None else str(negbody),
+            "posbody": None if posbody is None else posbody_key,
+            "negbody": None if negbody is None else negbody_key,
             "resolved": all(
-                body is None or str(body) in body_names
+                body is None or str(body).upper() in body_names
                 for body in (posbody, negbody)
             ),
         })
