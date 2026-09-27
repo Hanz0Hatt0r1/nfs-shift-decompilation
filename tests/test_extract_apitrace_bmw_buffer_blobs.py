@@ -72,7 +72,7 @@ def synthetic_trace() -> bytes:
         1,
         "memcpy",
         ["dest", "src", "n"],
-        {0: opaque(0x200), 1: blob(b"ABCDEFGH"), 2: uint(8)},
+        {0: opaque(0x100), 1: blob(b"ABCDEFGH"), 2: uint(8)},
         fake=True,
     )
     out += leave(0)
