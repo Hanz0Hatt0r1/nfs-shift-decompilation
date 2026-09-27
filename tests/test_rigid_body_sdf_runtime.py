@@ -107,7 +107,7 @@ name=jh posbody=wheel negbody=body axis=(1,1,0) neg=(0,0,0) pos=(0,0,1)
     assert compiled["constraints"][4]["flag_word"] == 2
     assert compiled["constraints"][2]["runtime_stride"] == 0xB8
     assert compiled["constraints"][0]["runtime_stride"] == 0xA0
-    assert compiled["constraints"][1]["vectors"]["pos_body_anchor_name"] == "anchor"
+    assert compiled["constraints"][1]["vectors"]["copy_body_name"] == "anchor"
 
 
 def test_sdf_runtime_topology_blocks_unresolved_constraint_body():
