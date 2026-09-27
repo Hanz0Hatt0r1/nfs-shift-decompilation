@@ -176,7 +176,7 @@ def evaluate_hinge_projection(
 
         t0, t1, t2 = transform_vector_transpose(body_frame, (sx, sy, sz))
         # FUN_007b1320(&sample_frame_offset, transformed_sample_position, out)
-        # returns transformed_sample_position x sample_frame_offset.
+        # returns sample_frame_offset x transformed_sample_position.
         cx = t2 * oy - t1 * oz
         cy = t0 * oz - t2 * ox
         cz = ox * t1 - t0 * oy
@@ -290,7 +290,7 @@ def describe_hinge_projection_provenance() -> dict[str, Any]:
         "cross_helper": {
             "function": "FUN_007b1320",
             "source_line": CROSS_SOURCE_LINE,
-            "argument_order": "transformed_sample_position x sample_frame_offset",
+            "argument_order": "sample_frame_offset x transformed_sample_position",
         },
     }
 
