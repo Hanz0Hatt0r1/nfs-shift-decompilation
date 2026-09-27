@@ -24,7 +24,7 @@ def test_fun_007af0a0_matches_recovered_component_order():
         7, 8, 9,
     )
     out = transform_vector(m, (10, 20, 30))
-    assert out.as_tuple() == pytest.approx((300, 260, 220))
+    assert out.as_tuple() == pytest.approx((300, 360, 420))
 
 
 def test_identity_matrix_preserves_vector():
