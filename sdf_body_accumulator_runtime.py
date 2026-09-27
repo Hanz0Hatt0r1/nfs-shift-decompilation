@@ -25,7 +25,7 @@ HINGE_SAMPLE = {
 def describe_sdf_body_accumulator_contract() -> dict[str, Any]:
     return {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "status": "storage-contract",
         "ready": True,
         "function": "FUN_007bb8d0",
@@ -73,7 +73,7 @@ def build_sdf_body_accumulator_reset(
         raise ValueError("accumulator counts must be non-negative")
     return {
         "format": "SHIFT.SDFBodyAccumulatorReset/2",
-        "version": 1,
+        "version": 2,
         "status": "ready",
         "ready": True,
         "solver_vector_count": p,
