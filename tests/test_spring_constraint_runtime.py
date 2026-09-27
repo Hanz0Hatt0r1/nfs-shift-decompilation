@@ -41,9 +41,19 @@ def test_contract_freezes_element_storage_and_property_offsets():
     assert c["property_offsets"]["SpringParamsB"] == SPRING_PARAM_B_OFFSET == 0x70
 
 
-def test_direction_normalization_and_projection_are_explicit():
-    assert direction_for_type(1, (0.0, 3.0, 4.0)) == Vec3(0.0, 0.6, 0.8)
-    assert compute_projection((0.0, 3.0, 4.0), (0.0, 3.0, 4.0), spring_type=1) == pytest.approx(5.0)
+def test_type_specific_direction_and_projection_sources_are_explicit():
+    assert direction_for_type(
+        0, (3.0, 4.0, 0.0), (0.0, 1.0, 0.0)
+    ) == Vec3(0.0, 1.0, 0.0)
+    assert direction_for_type(
+        1, (0.0, 3.0, 4.0), (1.0, 0.0, 0.0)
+    ).y == pytest.approx(0.6)
+    assert compute_projection(
+        (2.0, 0.0, 0.0), (0.0, 3.0, 4.0), spring_type=0
+    ) == pytest.approx(0.0)
+    assert compute_projection(
+        (0.0, 3.0, 4.0), (1.0, 0.0, 0.0), spring_type=1
+    ) == pytest.approx(5.0)
 
 
 def test_collision_length_window_matches_source_gate():
@@ -73,7 +83,8 @@ def test_type0_and_type1_share_the_same_force_construction():
         result = compute_spring_force(
             SpringElementInput(
                 spring_type=spring_type,
-                direction=Vec3(2.0, 0.0, 0.0),
+                relative_vector=Vec3(3.0, 0.0, 0.0),
+                spring_direction=Vec3(2.0, 0.0, 0.0),
                 body_relative_vector=Vec3(3.0, 0.0, 0.0),
                 collision_length=0.0,
                 spring_param_a=3.0,
@@ -95,7 +106,8 @@ def test_type2_adds_body_relative_vector_and_directional_component():
     result = compute_spring_force(
         SpringElementInput(
             spring_type=2,
-            direction=Vec3(1.0, 0.0, 0.0),
+            relative_vector=Vec3(0.0, 2.0, 0.0),
+            spring_direction=Vec3(1.0, 0.0, 0.0),
             body_relative_vector=Vec3(0.0, 2.0, 0.0),
             collision_length=0.0,
             spring_param_a=3.0,
@@ -109,7 +121,8 @@ def test_unsupported_type_is_explicitly_blocked():
     result = compute_spring_force(
         SpringElementInput(
             spring_type=7,
-            direction=Vec3(1.0, 0.0, 0.0),
+            relative_vector=Vec3(0.0, 1.0, 0.0),
+            spring_direction=Vec3(1.0, 0.0, 0.0),
             body_relative_vector=Vec3(0.0, 1.0, 0.0),
             collision_length=0.0,
             spring_param_a=1.0,
@@ -122,4 +135,4 @@ def test_unsupported_type_is_explicitly_blocked():
 
 def test_zero_direction_is_rejected():
     with pytest.raises(ValueError):
-        direction_for_type(1, (0.0, 0.0, 0.0))
+        direction_for_type(1, (0.0, 0.0, 0.0), (1.0, 0.0, 0.0))
