@@ -130,7 +130,10 @@ def _wheel_specs() -> dict[str, CDFPropertySpec]:
     out = {}
     for name, base, shape in names:
         arity = {"scalar64": 1, "tuple2": 2, "tuple3": 3}[shape]
-        helper = "FUN_007a75a0" if name in {"BrakeTorque", "BrakeHeating", "RideHeightSetting", "SpringRange", "SpringSetting", "SlowBumpRange", "FastBumpRange"} else "FUN_007a6a90"
+        helper = "FUN_007a75a0" if name in {
+            "BrakeTorque", "BrakeHeating", "SpringMult", "DamperMult",
+            "RideHeightSetting", "SpringRange", "SpringSetting"
+        } else "FUN_007a6a90"
         out[name] = _spec(name, helper, *tuple(base + i * 8 for i in range(arity)), shape=shape)
     return out
 
@@ -203,7 +206,12 @@ def _suspension_specs() -> dict[str, CDFPropertySpec]:
     ]
     for name, a, b, c, setting in range_rows:
         out[name] = _spec(name, "FUN_007a75a0" if "AntiSwayRange" in name else "FUN_007a6a90", a, b, c, shape="tuple3")
-        out[name.replace("Range", "Setting")] = _spec(name.replace("Range", "Setting"), "FUN_007a75a0" if setting in {0x368,0x37c} else "FUN_007a6a90", setting, shape="scalar64")
+        out[name.replace("Range", "Setting")] = _spec(
+            name.replace("Range", "Setting"),
+            "FUN_007a75a0" if setting in {0x368, 0x390, 0x37c, 0x3a4} else "FUN_007a6a90",
+            setting,
+            shape="scalar64",
+        )
     return out
 
 
