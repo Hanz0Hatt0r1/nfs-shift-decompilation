@@ -1,0 +1,35 @@
+{
+  "format": "SHIFT.SDFFullFrameEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "lifecycle": [
+    "FUN_007b3f40",
+    "FUN_007b3ed0",
+    "FUN_007bb8d0",
+    "FUN_007bc680",
+    "FUN_007ba570",
+    "FUN_007b2210",
+    "provider vtable +0x18 or FUN_007b0f20",
+    "FUN_007b4110"
+  ],
+  "static_layers": {
+    "seed": "FUN_007ba2b0",
+    "joint": "FUN_007bbb80",
+    "hinge": "FUN_007bb250",
+    "bar": "FUN_007bb6c0",
+    "retail_storage": "FUN_007b3820/FUN_007bb8d0"
+  },
+  "runtime_dependency": {
+    "identity_selector": "sample +0x70 & 1"
+  },
+  "post_solve": {
+    "solver_vector": "PhysicsSystem +0x40",
+    "joint_width": 3,
+    "hinge_width": 2,
+    "bar_width": 1
+  },
+  "status": "source-backed-static-complete-runtime-selector-explicit"
+}
