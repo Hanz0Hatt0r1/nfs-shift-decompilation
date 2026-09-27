@@ -56,4 +56,4 @@ def test_bootstrap_records_source_function_and_rtti_type():
         candidate_rtti_second=[True] * 12,
     )
     assert result["evidence"]["function"] == "FUN_00816f50"
-    assert result["evidence"]["rtti_type"] == "DAT_00c25fb8"
+    assert result["first_block"]["evidence"]["rtti_type"] == "DAT_00c25fb8"
