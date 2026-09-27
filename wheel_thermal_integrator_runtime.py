@@ -270,7 +270,7 @@ def integrate_wheel_thermal_state(
 
     average = sum(temperatures_after) / 3.0
     d7d8 = reservoir_after * _finite("derived_reservoir_scale", inputs.derived_reservoir_scale)
-    abrasion_temp = average * _finite("secondary_temperature_scale", inputs.secondary_temperature_scale)
+    abrasion_temp = average * _finite("average_temperature_scale", inputs.average_temperature_scale)
     angular = (
         (abs(steering_b) + abs(steering_a) + 4.0) / 6.0
         * dt
@@ -364,7 +364,7 @@ def build_contract() -> dict:
             "ambient_coupling_a": "0x838",
             "ambient_coupling_b": "0x830",
             "reservoir_exchange": "0x840",
-            "secondary_temperature_scale": "0x760",
+            "average_temperature_scale": "0x760",
             "temp_reference": "0x758",
             "temp_gain_negative": "0x768",
             "temp_gain_positive": "0x770",
