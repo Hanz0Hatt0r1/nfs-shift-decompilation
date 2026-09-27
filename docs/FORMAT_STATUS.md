@@ -18,6 +18,7 @@
 | CSM/NXS MESH | Реальные collision vertices/triangle indices → CMES |
 | VHF XML | CAR/NODE/RESOURCE graph |
 | LOD XML | Реальный `tracks.lod`, включая malformed quote, через loose parser |
+| Vehicle CDF | Source-backed section/property schema + lossless parser; physical units intentionally unresolved |
 
 ## Что ещё не является игровым runtime
 
