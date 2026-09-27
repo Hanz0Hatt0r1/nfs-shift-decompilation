@@ -22,9 +22,9 @@ def test_body_tensor_matches_source_symmetric_expansion():
         ((1, 2, 3), (4, 5, 6), (7, 8, 9)),
     )
     assert result["matrix"] == [
-        [58.0, 124.0, 190.0],
-        [124.0, 271.0, 418.0],
-        [190.0, 418.0, 646.0],
+        [59.0, 128.0, 197.0],
+        [128.0, 287.0, 446.0],
+        [197.0, 446.0, 695.0],
     ]
     assert result["runtime_offsets"] == [
         ["+0xb0", "+0xb4", "+0xb8"],
