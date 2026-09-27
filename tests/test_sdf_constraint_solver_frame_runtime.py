@@ -125,3 +125,16 @@ def test_solver_frame_v2_post_solve_preserves_exact_constraint_widths():
     assert report["post_solve_projection"]["BAR"]["vector_source"] == (
         "+0x40/+0x48/+0x50"
     )
+
+
+def test_builtin_diagonal_reset_distinguishes_zero_and_nonzero_runtime_flags():
+    result = frame.derive_builtin_diagonal_reset_nodes(
+        {
+            "order": [0, 1, 2],
+            "block_widths": [3, 2, 1],
+            "solver_base_index_by_record": {0: 0, 1: 3, 2: 5},
+        },
+        runtime_flag_by_record={0: 0, 1: 0x10, 2: 0},
+    )
+    assert result["scalar_nodes"] == [3, 4]
+    assert result["selected_records"][0]["runtime_flag"] == 0x10
