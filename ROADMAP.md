@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is advancing through Phase 370 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 371 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -76,6 +76,9 @@ Reconstruct FUN_00758ad0 exactly enough for deterministic runtime use: absolute-
 ## Phase 370: collision query contract
 
 Freeze the caller-visible FUN_007b0710 query/cache boundary: FUN_00765c40 prepares a seven-double query with the proven +0.15 Y bias, 200.35 tolerance and +0x30 cached-handle slot; FUN_007b0710 returns a source-backed 0x58-byte surface record, writes its normal/contact height on hit, emits (0,1,0) on miss, and FUN_00765c40 stores the returned handle plus the hit/miss scalar at +0x38e0. PhysX class names, physical units and deeper scene-query internals remain unresolved. Renderer and RENDER.bff remain untouched.
+## Phase 371: wheel contact-response kernel
+
+Freeze the first FUN_00766510 response stage after collision query: clamp +0x38e0 to [0,+0x38e8], derive +0x39d0 from +0x3908/+0x3910 and FUN_00755340, reconstruct FUN_00752f10's four-double curve packing, recover FUN_00755340's atan2/cosine/fourth-power ratio arithmetic, and reconstruct FUN_007551e0's sign-selected quadratic response vectors and auxiliary outputs. The producer of local_200, physical units and FUN_007baa70 semantics remain unresolved. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
