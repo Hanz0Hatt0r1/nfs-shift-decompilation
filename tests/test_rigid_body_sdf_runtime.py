@@ -244,6 +244,43 @@ pos=(0,0,0) neg=(1,0,0)
     assert "record:1:BAR:missing-negbody" in lowered["unresolved"]
 
 
+def test_sdf_runtime_topology_exposes_scalar_solver_widths():
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT]
+name=j posbody=body negbody=wheel axis=(1,0,0)
+[HINGE]
+name=h posbody=body negbody=wheel axis=(0,1,0)
+[BAR]
+name=b posbody=body negbody=wheel pos=(0,0,0) neg=(1,0,0)
+""")
+    compiled = sdf.compile_sdf_runtime_topology(report)
+    assert [row["solver_width"] for row in compiled["constraints"]] == [3, 2, 1]
+    ordering = sdf.optimize_sdf_constraint_order(report)
+    assert ordering["solver_scalar_count"] == 6
+    assert sorted(ordering["block_widths"]) == [1, 2, 3]
+
+
+def test_sdf_pre_physx_build_uses_scalar_solver_node_domain():
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT&HINGE]
+name=jh posbody=body negbody=wheel axis=(1,0,0)
+""")
+    result = sdf.describe_sdf_pre_physx_build(report)
+    assert result["counts"]["constraint_records"] == 2
+    assert result["counts"]["solver_scalar_nodes"] == 5
+    assert result["allocations"]["constraint_index_matrix_elements"] == 25
+    assert result["allocations"]["constraint_index_row_pointer_bytes"] == 20
+    assert result["allocations"]["solver_initial_vector_bytes"] == 40
+
+
 def test_sdf_constraint_connectivity_matrix_connects_shared_bodies():
     report = sdf.parse_sdf("""
 [BODY]
