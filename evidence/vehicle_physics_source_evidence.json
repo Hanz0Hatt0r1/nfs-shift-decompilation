@@ -1,0 +1,27 @@
+{
+  "format": "SHIFT.VehiclePhysicsSourceEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe.c",
+  "source_kind": "supplied_recovered_retail_decompilation",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "verification_scope": "phase-360-vehicle-physics-details",
+  "function_lines": {
+    "FUN_007c3b00": 823641,
+    "FUN_007be420": 820602,
+    "FUN_007bc770": 820134,
+    "FUN_007bdb80": 820484,
+    "FUN_007bcdf0": 820255,
+    "FUN_007c3280": 823382,
+    "FUN_007c3920": 823545,
+    "FUN_00764266": 757994,
+    "FUN_007af310": 810425
+  },
+  "property_counts": {
+    "general": 19,
+    "engine": 30,
+    "suspension": 49,
+    "wheel": 45,
+    "driveline": 40
+  },
+  "ready": true
+}
