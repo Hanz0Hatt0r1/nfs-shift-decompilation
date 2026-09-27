@@ -60,7 +60,7 @@ def test_hinge_bar_matrix_contract_matches_retail():
 
 
 def test_hinge_bar_pair_rejects_invalid_body_frame_dimensions():
-    with pytest.raises(ValueError, match="3x3"):
+    with pytest.raises(ValueError, match="exactly three"):
         runtime.evaluate_hinge_bar_pair(
             Matrix3x3(1,0,0,0,1,0,0,0,1),
             hinge_angular=(1,2),
