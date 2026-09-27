@@ -94,6 +94,16 @@ Reconstruct FUN_007537b0 and FUN_00753810 exactly: angular × point + translatio
 ## Phase 376: matrix-vector transform runtime
 
 Reconstruct FUN_007af0a0 exactly as a 3x3 float-matrix × double-vector boundary: input components are cast to float, multiplied by the nine float fields at +0x00..+0x20, and widened back to double. This helper is now shared across the wheel longitudinal, response-input and auxiliary contact-response paths. Matrix coordinate convention remains unnamed. Renderer and RENDER.bff remain untouched.
+## Phase 377–380: surface/contact and vehicle rate response chain
+
+Phase 377 reconstructs FUN_00759210's recursive parent/child surface probe, including its node offsets, projection gate, normalized cross-product direction and same-sign child blending.
+
+Phase 378 reconstructs FUN_00759c90 as an exact three-record aggregate with 0x150-byte stride, body-relative point offsets, cross-product accumulation and the established FUN_007af0a0 matrix boundary.
+
+Phase 379 freezes the source-visible outer arithmetic of FUN_007675f0: distance state filtering, body X/Z speed factor, strict contact gate, quadratic gap shaping and the two FUN_007ba9e0 submission scales.
+
+Phase 380 uses retail machine code to resolve the decompiler's missing sqrt operands in FUN_007682c0 and reconstructs the directly connected FUN_0075ada0 and FUN_007595d0 geometry/response helpers. The resulting response is applied only to body accumulator +0x50. Physical field names and units remain explicitly unresolved.
+
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
