@@ -1573,4 +1573,4 @@ bmw_apitrace_runtime_instance_proof.py consumes that compact evidence and requir
 
 The proof intentionally does not infer declaration bytes, MEB identity, shader permutation, constants or textures. Its purpose is to close the runtime object identity boundary that was previously lost between the compact apitrace geometry extractor and the strict D3D9 same-instance gate.
 
-tools/run_apitrace_bmw_buffer_proof.py now emits runtime_draw_instance_proof.json when the compact BMW geometry evidence is available, while keeping byte-parity readiness independent of this additional proof.
+tools/run_apitrace_bmw_buffer_proof.py now creates the compact BMW geometry evidence itself before the bounded blob pass and emits runtime_draw_instance_proof.json, while keeping byte-parity readiness independent of this additional proof.

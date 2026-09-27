@@ -41,7 +41,7 @@ Those remain separate proof boundaries and are not fabricated from apitrace geom
 
 ## One-command integration
 
-tools/run_apitrace_bmw_buffer_proof.py now writes runtime_draw_instance_proof.json when unique_bmw_geometry.json is available. The existing seven-object raw-buffer parity result and SHIFT.BMWM3RuntimeGeometryProof/1 readiness remain independent, so this new evidence cannot silently turn byte parity into shader/material proof.
+tools/run_apitrace_bmw_buffer_proof.py now creates unique_bmw_geometry.json from the original trace before the bounded blob pass and then writes runtime_draw_instance_proof.json. The existing seven-object raw-buffer parity result and SHIFT.BMWM3RuntimeGeometryProof/1 readiness remain independent, so this new evidence cannot silently turn byte parity into shader/material proof.
 
 ## Usage
 
