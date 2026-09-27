@@ -71,7 +71,8 @@ class Vec3:
 @dataclass(frozen=True)
 class SpringElementInput:
     spring_type: int
-    direction: Vec3
+    relative_vector: Vec3
+    spring_direction: Vec3
     body_relative_vector: Vec3
     collision_length: float
     spring_param_a: float
@@ -109,20 +110,26 @@ def _vec(values: Sequence[float] | Vec3) -> Vec3:
     return Vec3(*(_finite(f"vector[{i}]", value) for i, value in enumerate(values)))
 
 
-def direction_for_type(spring_type: int, direction: Sequence[float]) -> Vec3:
-    raw = _vec(direction)
+def direction_for_type(
+    spring_type: int,
+    relative_vector: Sequence[float],
+    spring_direction: Sequence[float],
+) -> Vec3:
     if spring_type == 0:
-        return raw
-    return raw.normalized()
+        return _vec(spring_direction)
+    return _vec(relative_vector).normalized()
 
 
 def compute_projection(
-    direction: Sequence[float],
     relative_vector: Sequence[float],
+    spring_direction: Sequence[float],
     *,
     spring_type: int = 1,
 ) -> float:
-    return direction_for_type(spring_type, direction).dot(_vec(relative_vector))
+    direction = direction_for_type(
+        spring_type, relative_vector, spring_direction
+    )
+    return direction.dot(_vec(relative_vector))
 
 
 def collision_window_allows(*, collision_length: float, projection: float) -> bool:
@@ -173,9 +180,13 @@ def compute_spring_force(
 ) -> SpringForceResult:
     """Evaluate the source force construction after upstream transforms."""
     collision_length = _finite("collision_length", spring.collision_length)
-    direction = direction_for_type(spring.spring_type, (spring.direction.x, spring.direction.y, spring.direction.z))
-    body = spring.body_relative_vector
-    projection = direction.dot(body)
+    body = _vec(spring.body_relative_vector)
+    relative = _vec(spring.relative_vector)
+    configured_direction = _vec(spring.spring_direction)
+    direction = direction_for_type(
+        spring.spring_type, relative, configured_direction
+    )
+    projection = direction.dot(relative)
 
     if not collision_window_allows(
         collision_length=collision_length,
@@ -278,13 +289,13 @@ def build_spring_constraint_contract() -> dict:
             "SpringParamsB": SPRING_PARAM_B_OFFSET,
         },
         "dispatch": {
-            "type_0": "directional response using transformed raw Spring Direction",
-            "type_1": "directional response using normalized Spring Direction",
-            "type_2": "vector response using normalized Spring Direction",
+            "type_0": "configured Spring Direction is used raw",
+            "type_1": "computed relative vector is normalized and used as direction",
+            "type_2": "computed relative vector is normalized and used as direction",
         },
         "activation_gate": "collision_length <= 0 OR collision_length <= abs(projection)",
         "type_01": {
-            "direction": "type 0 keeps transformed direction raw; type 1 normalizes the transformed direction",
+            "direction": "type 0 keeps transformed configured Spring Direction raw; type 1 uses normalized computed relative vector",
             "body_projection": "dot(direction_used, body_relative_vector)",
             "response_scalar": "spring_param_a*projection + body_projection*spring_param_b",
             "force": "direction_used*response_scalar",
@@ -295,9 +306,10 @@ def build_spring_constraint_contract() -> dict:
             ),
         },
         "type_2": {
+            "relative_vector": "normalized computed relative vector supplies the direction",
             "force": (
                 "body_relative_vector*spring_param_b + "
-                "normalized_direction*(spring_param_a*projection)"
+                "normalized_relative_vector*(spring_param_a*projection)"
             ),
         },
         "application": {
