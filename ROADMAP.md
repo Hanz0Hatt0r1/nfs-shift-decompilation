@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 402: end-to-end SDF matrix assembly
+
+All recovered JOINT/HINGE/BAR coupling kernels are now exposed through a single lower-triangle matrix assembler that preserves retail write direction and keeps symmetric materialization explicitly derived. Next target: feed real M3 E36 SDF samples into the assembled matrix and compare the reconstructed solver rows against captured runtime values.
+
 ## Phase 401: HINGE/BAR mixed matrix coupling
 
 `FUN_007bb250` now exposes the remaining HINGE/BAR 2×1 mixed matrix block with exact transformed angular/linear terms, zero/nonzero side sign and scalar-base-dependent 2×1/1×2 storage orientation. Next target: end-to-end matrix assembly validation across all JOINT/HINGE/BAR kernels.
