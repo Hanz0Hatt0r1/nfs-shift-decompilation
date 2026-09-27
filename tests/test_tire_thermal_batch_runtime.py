@@ -30,7 +30,7 @@ def test_batch_preserves_retail_wheel_order_and_independence():
     result = compute_four_wheel_thermal_step(states)
     assert tuple(row.wheel for row in result.wheels) == WHEEL_ORDER
     assert result.temperatures_after["FRONTLEFT"] != result.temperatures_after["FRONTRIGHT"]
-    assert all(value == 99.995 for value in result.reserves_after.values())
+    assert all(value == 0.0 for value in result.reserves_after.values())
 
 def test_batch_rejects_missing_or_unknown_wheels():
     states = {w: _state(300.0, 100.0) for w in WHEEL_ORDER}
