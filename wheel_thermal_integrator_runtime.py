@@ -183,14 +183,18 @@ def compute_grip_output(
     temp_gain_negative: float,
     temp_gain_positive: float,
     output_limit_reference: float,
+    normalization_reference: float,
     grip_state: float,
-) -> tuple[float, float]:
+) -> tuple[float, float, float]:
     delta = average_temperature - temp_reference
     slope = temp_gain_positive if delta >= 0.0 else temp_gain_negative
+    normalization = _finite("normalization_reference", normalization_reference)
+    scale = _finite("output_limit_reference", output_limit_reference)
+    if normalization == 0.0:
+        raise ValueError("normalization_reference must be non-zero")
     temperature_factor = (
         delta * slope
-        + abs(reservoir_temperature - average_temperature)
-        / output_limit_reference
+        + abs(reservoir_temperature - normalization) * scale / normalization
     )
     if temperature_factor != temperature_factor:
         limited = temperature_factor
@@ -243,7 +247,7 @@ def integrate_wheel_thermal_state(
         + 1.0
         + _finite("global_constant_c12c24", inputs.global_constant_c12c24)
     )
-    sqrt_value = sqrt(max(0.0, sqrt_argument))
+    sqrt_value = sqrt(sqrt_argument)
     ambient_exchange = (
         sqrt_value * _finite("ambient_coupling_a", inputs.ambient_coupling_a)
         + _finite("ambient_coupling_b", inputs.ambient_coupling_b)
@@ -295,6 +299,7 @@ def integrate_wheel_thermal_state(
         temp_gain_negative=inputs.temp_gain_negative,
         temp_gain_positive=inputs.temp_gain_positive,
         output_limit_reference=_finite("output_limit_reference", inputs.output_limit_reference),
+        normalization_reference=local_steering_b,
         grip_state=abrasion_after,
     )
 
@@ -378,6 +383,7 @@ def build_contract() -> dict:
             "derived_aux_scale": "0x7f0",
             "derived_aux_bias": "0x7e8",
             "output_limit_reference": "0x790",
+        "normalization_reference": "0x780 + 0x788*0x738",
         },
         "call_order": [
             "compute ambient Kelvin values",
