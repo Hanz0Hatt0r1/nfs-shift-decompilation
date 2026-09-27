@@ -97,7 +97,13 @@ def _finite(name: str, value: float) -> float:
     return result
 
 
-def _vec(values: Sequence[float]) -> Vec3:
+def _vec(values: Sequence[float] | Vec3) -> Vec3:
+    if isinstance(values, Vec3):
+        return Vec3(
+            _finite("vector[0]", values.x),
+            _finite("vector[1]", values.y),
+            _finite("vector[2]", values.z),
+        )
     if len(values) != 3:
         raise ValueError("vector requires exactly 3 components")
     return Vec3(*(_finite(f"vector[{i}]", value) for i, value in enumerate(values)))
