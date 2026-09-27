@@ -32,6 +32,7 @@ from sdf_constraint_solver_frame_runtime import (
 )
 from sdf_body_accumulator_runtime import describe_sdf_body_accumulator_contract
 from sdf_body_impulse_runtime import describe_sdf_body_impulse_primitives
+from sdf_body_solver_export_runtime import describe_sdf_body_solver_export_contract
 from sdf_body_state_projection_runtime import describe_sdf_body_state_projection_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
@@ -89,6 +90,7 @@ def build_profile(
     )
     sdf_body_accumulator = describe_sdf_body_accumulator_contract()
     sdf_body_impulse = describe_sdf_body_impulse_primitives()
+    sdf_body_solver_export = describe_sdf_body_solver_export_contract()
     sdf_body_state_projection = describe_sdf_body_state_projection_contract()
 
     blockers: list[str] = []
@@ -181,6 +183,7 @@ def build_profile(
             ),
             "sdf_body_accumulator_contract_ready": sdf_body_accumulator.get("ready") is True,
             "sdf_body_impulse_primitives_ready": sdf_body_impulse.get("ready") is True,
+            "sdf_body_solver_export_ready": sdf_body_solver_export.get("ready") is True,
             "sdf_body_state_projection_contract_ready": sdf_body_state_projection.get("ready") is True,
         },
         "details": {
@@ -201,6 +204,7 @@ def build_profile(
             "sdf_builtin_diagonal_reset": sdf_diagonal_reset,
             "sdf_body_accumulator": sdf_body_accumulator,
             "sdf_body_impulse_primitives": sdf_body_impulse,
+            "sdf_body_solver_export": sdf_body_solver_export,
             "sdf_body_state_projection": sdf_body_state_projection,
         },
         "blockers": list(dict.fromkeys(blockers)),
