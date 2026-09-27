@@ -118,7 +118,12 @@ def test_compare_solver_captures_blocks_scalar_count_mismatch():
     observed = _capture()
     observed["scalar_count"] = 4
     observed["rhs"].append(3.0)
-    observed["matrix"].append([0,0,0,0])
+    observed["matrix"] = [
+        [1.0, 2.0, 0.0, 0.0],
+        [2.0, 3.0, 4.0, 0.0],
+        [0.0, 4.0, 5.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
     result = runtime.compare_solver_captures(expected, observed)
     assert result["ready"] is False
     assert result["status"] == "blocked"
