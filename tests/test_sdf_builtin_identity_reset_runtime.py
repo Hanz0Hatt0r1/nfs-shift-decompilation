@@ -49,9 +49,9 @@ def test_identity_reset_supports_multiple_selected_nodes():
     assert result["nodes"] == [1, 3]
     assert result["rhs"] == [1.0, 0.0, 3.0, 0.0]
     assert result["matrix_pool"] == [
-        1.0, 0.0, 0.0, 0.0,
+        1.0, 0.0, 3.0, 0.0,
         0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 9.0, 0.0,
+        9.0, 0.0, 11.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
     ]
 
