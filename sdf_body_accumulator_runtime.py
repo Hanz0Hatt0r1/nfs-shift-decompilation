@@ -35,9 +35,9 @@ def describe_sdf_body_accumulator_contract() -> dict[str, Any]:
             "sample_stride": HINGE_SAMPLE["stride"],
             "condition": "sample +0x98 != 0",
             "transform_call": "FUN_007aefb0",
-            "destination": "negative body +0xd4",
-            "source": "hinge sample +0x78",
-            "sample": "hinge sample +0x84",
+            "matrix_source": "negative body +0xd4",
+            "input_vector": "hinge sample's negative-body vector pointer +0x84",
+            "output": "hinge sample +0x78",
         },
         "reset": {
             "solver_vector": "zero +0xa4 double entries beginning at +0x150",
