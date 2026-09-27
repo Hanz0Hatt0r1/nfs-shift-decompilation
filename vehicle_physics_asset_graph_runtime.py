@@ -50,6 +50,7 @@ from sdf_constraint_matrix_assembly_runtime import materialize_source_seed_matri
 from sdf_constraint_matrix_assembly_runtime import describe_sdf_constraint_matrix_assembly_contract
 from sdf_constraint_matrix_assembly_runtime import build_retail_matrix_storage
 from sdf_full_frame_runtime import describe_full_frame_contract
+from sdf_solver_capture_runtime import describe_sdf_solver_capture_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -130,6 +131,7 @@ def build_profile(
         body_count=sdf_report.get("topology", {}).get("body_count"),
         runtime_flags_available=False,
     )
+    sdf_solver_capture = describe_sdf_solver_capture_contract()
 
     blockers: list[str] = []
     for name, report in (
@@ -240,6 +242,7 @@ def build_profile(
             "sdf_matrix_seed_write_count": sdf_matrix_seed_write.get("write_count", 0),
             "sdf_full_frame_contract_ready": sdf_full_frame.get("ready") is True,
             "sdf_full_frame_runtime_ready": sdf_full_frame.get("status") == "runtime-complete",
+            "sdf_solver_capture_contract_ready": sdf_solver_capture.get("ready") is True,
         },
         "details": {
             "cdf": cdf_report,
@@ -275,6 +278,7 @@ def build_profile(
             "sdf_real_solver_domain": sdf_real_solver_domain,
             "sdf_matrix_seed_write": sdf_matrix_seed_write,
             "sdf_full_frame": sdf_full_frame,
+            "sdf_solver_capture": sdf_solver_capture,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
