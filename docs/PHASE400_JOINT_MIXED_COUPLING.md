@@ -19,3 +19,7 @@ A HINGE contributes a 3×2 block from its angular rows `+0x48/+0x50/+0x58` and l
 A BAR contributes a 3×1 block from point `+0x18/+0x20/+0x28` and direction `+0x40/+0x48/+0x50`, using scalar base `+0x30`. The same equal/different side rule and lower-triangle ordering apply.
 
 All four paths write into the per-body row-pointer table at `+0x158`; this phase deliberately keeps the body tensor and accumulator fields as storage-level constructs.
+
+## Source audit correction
+
+`d15` is `m00*y - m02*x`, matching the retail `FUN_007bbb80` term `m00*point.y - m02*point.x`. A regression uses an off-diagonal tensor so `m01` and `m02` cannot accidentally collapse to the same value.
