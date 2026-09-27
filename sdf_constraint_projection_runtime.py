@@ -162,8 +162,8 @@ def evaluate_hinge_projection(
         + ay * (a2 * b0 - a0 * b2)
         + ax * (a1 * b2 - a2 * b1)
     )
-    axis_a = az * a0 + ax * a1 + ay * a2
-    axis_b = az * b2 + ax * b0 + ay * b1
+    axis_a = ax * a0 + ay * a1 + az * a2
+    axis_b = ax * b0 + ay * b1 + az * b2
 
     branch_details: dict[str, Any]
     if int(side_flag) == 0:
@@ -181,13 +181,9 @@ def evaluate_hinge_projection(
         t0, t1, t2 = transform_vector_transpose(body_frame, (sx, sy, sz))
         # FUN_007b1320(&sample_frame_offset, transformed_sample_position, out)
         # returns transformed_sample_position x sample_frame_offset.
-        cx = t0 * oy - t1 * oz
-        cy = t0 * oz - ox * t2
-        cz = ox * t1 - t1 * oy
-        # Recalculate with the exact helper ordering in source.
         cx = t2 * oy - t1 * oz
         cy = t0 * oz - t2 * ox
-        cz = t0 * oy - t1 * ox
+        cz = ox * t1 - t0 * oy
         qx = tx + quadratic_scale * cx
         qy = ty + quadratic_scale * cy
         qz = tz + quadratic_scale * cz
@@ -197,7 +193,7 @@ def evaluate_hinge_projection(
             "cross_vector": [cx, cy, cz],
         }
 
-    lane0 = a0 * qy + a1 * qx + a2 * qz - axis_b * coupling_scalar
+    lane0 = a0 * qx + a1 * qy + a2 * qz - axis_b * coupling_scalar
     lane1 = qz * b2 + qy * b1 + b0 * qx + axis_a * coupling_scalar
 
     sign = 1.0 if int(side_flag) == 0 else -1.0
