@@ -1,0 +1,28 @@
+{
+  "format": "SHIFT.WheelKinematicsSourceEvidence/1",
+  "version": 1,
+  "source_path": "SHIFT.exe.c",
+  "source_kind": "supplied_recovered_retail_decompilation",
+  "source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "verification_scope": "phase-364-wheel-kinematics-runtime",
+  "function_lines": {
+    "FUN_007555b0": 750726,
+    "FUN_00755950": 750822,
+    "FUN_00758b50": 753071,
+    "FUN_0076d100": 762992,
+    "FUN_00770e80": 765608
+  },
+  "layout": {
+    "wheel_state_base": "0x848",
+    "wheel_state_stride": "0xA80",
+    "wheel_runtime_base": "0x400",
+    "wheel_runtime_stride": "0xA80",
+    "wheel_active_flag": "block+0xF8",
+    "wheel_final_transform_flag": "block+0x11C",
+    "runtime_distance_reference": "+0x538",
+    "runtime_distance_error": "+0x528",
+    "runtime_projection_value": "+0x530",
+    "runtime_helper_output": "+0x548"
+  },
+  "status": "exact control-flow/layout/arithmetic evidence; force and contact semantics remain unresolved"
+}
