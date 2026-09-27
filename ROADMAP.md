@@ -108,6 +108,8 @@ The next physics target is the SDK-specific object construction behind `FUN_007b
 
 ## Phase 397: JOINT/HINGE projection equations
 
+Rebased the SDF projection layer against the full local retail `SHIFT.exe.c` snapshot. `FUN_007bac60` is now executable with exact d2/d3/d5 and d4/d6/d7 equations, zero/nonzero side-flag handling and the per-body solver-vector destination at `+0x150`. `FUN_007bae40` now reconstructs both branches, including `FUN_007b1320` cross ordering. The same correction fixes `+0x150/+0x154` naming as solver vector/matrix contribution storage and corrects `FUN_007b4110` to post-solve application.
+
 `FUN_007bac60` now exposes executable source-backed cross terms and scalar-lane sign handling while removing unsupported destination aliases. `FUN_007bae40` is represented as a source-backed partial branch contract with exact stride/base/flag offsets. Unresolved `d4/d6` and HINGE coefficient/destination semantics remain explicit. Next target: direct coefficient population/coupling writes where source evidence is sufficient.
 
 ## Phase 396: body-frame preparation
