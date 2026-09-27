@@ -55,6 +55,8 @@ def _value(value: str) -> tuple[Any, str]:
         inner = raw[1:-1].strip()
         parts = [] if not inner else [part.strip() for part in inner.split(",")]
         values = [_atom(part) for part in parts]
+        if len(values) == 1:
+            return values[0], "scalar"
         return values, f"tuple{len(values)}"
     if "," in raw:
         values = [_atom(part) for part in raw.split(",")]
