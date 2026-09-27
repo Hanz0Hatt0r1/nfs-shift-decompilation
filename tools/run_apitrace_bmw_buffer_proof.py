@@ -28,6 +28,7 @@ from bmw_meb_runtime_buffer_artifacts import (
     extract_meb_from_bff,
 )
 from bmw_runtime_geometry_proof import build_report as build_geometry_proof
+from bmw_apitrace_runtime_instance_proof import build_report as build_runtime_instance_proof
 from tools.extract_apitrace_bmw_buffer_blobs import extract_from_source
 from tools.verify_apitrace_bmw_buffer_blob_parity import build_report as build_byte_parity
 
@@ -131,6 +132,17 @@ def run_pipeline(
     proof = build_geometry_proof(geometry, parity)
     _write_json(out / "runtime_geometry_proof.json", proof)
 
+    unique_geometry_path = out / "unique_bmw_geometry.json"
+    runtime_instance_proof = None
+    if unique_geometry_path.is_file():
+        runtime_instance_proof = build_runtime_instance_proof(
+            _load_json(unique_geometry_path)
+        )
+        _write_json(
+            out / "runtime_draw_instance_proof.json",
+            runtime_instance_proof,
+        )
+
     blockers: list[str] = []
     if not proof.get("ready"):
         blockers.extend(str(reason) for reason in proof.get("blocking_reasons") or [])
@@ -153,12 +165,29 @@ def run_pipeline(
             "buffer_blob_evidence": str(blob_evidence_path),
             "direct_parity_report": str(out / "direct_parity_report.json"),
             "runtime_geometry_proof": str(out / "runtime_geometry_proof.json"),
+            "runtime_draw_instance_proof": (
+                str(out / "runtime_draw_instance_proof.json")
+                if runtime_instance_proof is not None
+                else None
+            ),
+            "unique_bmw_geometry": (
+                str(unique_geometry_path)
+                if unique_geometry_path.is_file()
+                else None
+            ),
             "expected_manifest": str(out / "expected" / "manifest.json"),
         },
         "byte_parity": parity,
         "geometry_proof": proof,
+        "runtime_draw_instance_proof": runtime_instance_proof,
         "next_gate": {
             "runtime_geometry": "proven" if ready else "not-proven",
+            "runtime_declaration_instance": (
+                "proven"
+                if runtime_instance_proof is not None
+                and runtime_instance_proof.get("ready") is True
+                else "not-proven"
+            ),
             "shader_material_same_instance": "separate-gate",
         },
     }
