@@ -23,7 +23,8 @@ def _build_real_shape_sdf() -> str:
         ("rl_wheel", "rl_spindle", -1.0),
         ("rr_wheel", "rr_spindle", 1.0),
     ]
-    for posbody, negbody, axis in wheel_pairs:
+    # Match the real retail record order: front JOINT&HINGE, all 20 BARs, rear JOINT&HINGE.
+    for posbody, negbody, axis in wheel_pairs[:2]:
         lines.append(
             "[JOINT&HINGE]\n"
             f"posbody={posbody} negbody={negbody} pos={posbody} "
@@ -40,6 +41,12 @@ def _build_real_shape_sdf() -> str:
             "[BAR]\n"
             f"name=bar_{index} posbody=body negbody={target} "
             "pos=(0,0,0) neg=(1,0,0)"
+        )
+    for posbody, negbody, axis in wheel_pairs[2:]:
+        lines.append(
+            "[JOINT&HINGE]\n"
+            f"posbody={posbody} negbody={negbody} pos={posbody} "
+            f"axis=({axis},0,0)"
         )
     return "\n".join(lines)
 
