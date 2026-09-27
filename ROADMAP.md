@@ -64,6 +64,9 @@ Recover FUN_007555b0's exact gap/transition state boundary at +0x248/+0x250/+0x2
 ## Phase 366: spring constraint force runtime
 
 Reconstruct FUN_0075489c's spring-element force-construction boundary: +0x100/+0x90 element storage, Spring Type 0/1/2 dispatch, collision-length activation, type-specific direction normalization, exact response-vector formulas and the FUN_007baa70 application boundary. Upstream transform semantics and physical units remain unresolved. Renderer and RENDER.bff remain untouched.
+## Phase 367: wheel thermal integrator runtime
+
+Reconstruct FUN_00755a60's four-wheel three-node thermal integrator: exact 0x400/0x150 call topology, three temperature nodes, shared reservoir transfers, shape/steering fractions, wear floor and final bounded output. Physical units and side-effect semantics remain unresolved. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
