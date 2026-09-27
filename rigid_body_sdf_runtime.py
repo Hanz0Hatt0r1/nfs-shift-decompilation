@@ -455,6 +455,261 @@ def compile_sdf_runtime_topology(
 
 
 
+def build_sdf_constraint_connectivity_matrix(
+    report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Build the source-visible constraint graph input used before FUN_007b1360.
+
+    FUN_007b1b60 compares every pair of runtime constraints and connects two
+    nodes when they share either endpoint body. JOINT&HINGE has already been
+    split into two runtime nodes by compile_sdf_runtime_topology().
+    """
+    topology = compile_sdf_runtime_topology(report)
+    if topology.get("ready") is not True:
+        return {
+            "format": "SHIFT.SDFConstraintConnectivityMatrix/1",
+            "version": 1,
+            "status": "blocked",
+            "ready": False,
+            "constraint_count": topology.get("constraint_count", 0),
+            "matrix": [],
+            "unresolved": list(topology.get("unresolved") or []),
+            "evidence": {
+                "source_builder": "FUN_007b1b60",
+                "endpoint_fields": ["posbody", "negbody"],
+            },
+        }
+
+    constraints = topology.get("constraints") or []
+    n = len(constraints)
+    matrix = [[0.0 for _ in range(n)] for _ in range(n)]
+    shared_body_pairs: list[dict[str, int | str]] = []
+    for left in range(n):
+        left_bodies = {
+            str(constraints[left].get("posbody")).upper()
+            if constraints[left].get("posbody") is not None else "",
+            str(constraints[left].get("negbody")).upper()
+            if constraints[left].get("negbody") is not None else "",
+        }
+        for right in range(left + 1, n):
+            right_bodies = {
+                str(constraints[right].get("posbody")).upper()
+                if constraints[right].get("posbody") is not None else "",
+                str(constraints[right].get("negbody")).upper()
+                if constraints[right].get("negbody") is not None else "",
+            }
+            shared = sorted((left_bodies & right_bodies) - {""})
+            if not shared:
+                continue
+            matrix[left][right] = 1.0
+            matrix[right][left] = 1.0
+            shared_body_pairs.append({
+                "left": left,
+                "right": right,
+                "shared_body": shared[0],
+            })
+
+    return {
+        "format": "SHIFT.SDFConstraintConnectivityMatrix/1",
+        "version": 1,
+        "status": "ready",
+        "ready": True,
+        "constraint_count": n,
+        "matrix": matrix,
+        "shared_body_pair_count": len(shared_body_pairs),
+        "shared_body_pairs": shared_body_pairs,
+        "node_widths": [
+            3 if row.get("section") == "JOINT"
+            else 2 if row.get("section") == "HINGE"
+            else 1
+            for row in constraints
+        ],
+        "evidence": {
+            "source_builder": "FUN_007b1b60",
+            "endpoint_fields": ["posbody", "negbody"],
+            "joint_block_width": 3,
+            "hinge_block_width": 2,
+            "bar_block_width": 1,
+            "comparison_rule": "any shared posbody/negbody endpoint connects two constraint nodes",
+        },
+        "limitations": [
+            "This reproduces the proven endpoint-sharing graph; the separate FUN_007b1b60 ordering heuristic is not applied here.",
+            "The source writes integer/double matrix values, but only zero/nonzero connectivity is exposed.",
+        ],
+    }
+
+
+def compile_sdf_constraint_solver_graph(
+    matrix: Sequence[Sequence[float | int]],
+) -> dict[str, Any]:
+    """Lower an ordered constraint connectivity matrix through FUN_007b1360.
+
+    The input matrix is assumed to already have the constraint order selected by
+    FUN_007b1b60. The function returns the compact forward/reverse dependency
+    records consumed by FUN_007b0f20.
+    """
+    n = len(matrix)
+    if any(len(row) != n for row in matrix):
+        raise ValueError("constraint connectivity matrix must be square")
+
+    work = [
+        [1.0 if float(value) != 0.0 else 0.0 for value in row]
+        for row in matrix
+    ]
+
+    # First source pass: retain the lower triangle, symmetrize it, and count
+    # records. A temporary 2.0 marks an inferred two-hop relation.
+    edge_record_count = 0
+    for column in range(n):
+        for row in range(column, n):
+            if work[row][column] == 0.0 and column > 0:
+                for via in range(column):
+                    if work[row][via] != 0.0 and work[via][column] != 0.0:
+                        work[row][column] = 2.0
+                        break
+            if work[row][column] != 0.0:
+                edge_record_count += 1
+            work[column][row] = work[row][column]
+
+    # FUN_007b1360 always reserves one terminal forward record per node.
+    edge_record_count += n
+
+    for row in range(n):
+        for column in range(n):
+            if work[row][column] == 2.0:
+                work[row][column] = 0.0
+
+    dependency_byte_count = 0
+    forward_records: list[dict[str, Any]] = []
+    edge_pool: list[dict[str, Any]] = []
+
+    for column in range(n + 1):
+        items: list[dict[str, Any]] = []
+        if column == n:
+            for row in range(n):
+                dependencies = [
+                    via
+                    for via in range(row)
+                    if work[row][via] != 0.0
+                ]
+                item = {
+                    "node": row,
+                    "dependency_count": len(dependencies),
+                    "dependencies": dependencies,
+                }
+                items.append(item)
+                edge_pool.append({
+                    "outer_record": column,
+                    **item,
+                })
+                dependency_byte_count += len(dependencies)
+        else:
+            for row in range(column, n):
+                if work[row][column] == 0.0 and column > 0:
+                    for via in range(column):
+                        if work[row][via] != 0.0 and work[via][column] != 0.0:
+                            work[row][column] = 2.0
+                            break
+                if work[row][column] == 0.0:
+                    continue
+                dependencies = [
+                    via
+                    for via in range(column)
+                    if work[row][via] != 0.0 and work[via][column] != 0.0
+                ]
+                item = {
+                    "node": row,
+                    "dependency_count": len(dependencies),
+                    "dependencies": dependencies,
+                }
+                items.append(item)
+                edge_pool.append({
+                    "outer_record": column,
+                    **item,
+                })
+                dependency_byte_count += len(dependencies)
+                work[column][row] = work[row][column]
+
+        forward_records.append({
+            "count": len(items),
+            "items": items,
+        })
+
+    reverse_records: list[dict[str, Any]] = []
+    for row in range(n - 1, -1, -1):
+        dependencies = [
+            column
+            for column in range(row + 1, n)
+            if work[row][column] != 0.0
+        ]
+        reverse_records.append({
+            "node": row,
+            "dependency_count": len(dependencies),
+            "dependencies": dependencies,
+        })
+        dependency_byte_count += len(dependencies)
+
+    if len(edge_pool) != edge_record_count:
+        # The retail routine's allocation size is deterministic. Expose a
+        # mismatch instead of silently fabricating a compatible layout.
+        raise RuntimeError(
+            f"FUN_007b1360 record-count mismatch: expected {edge_record_count}, "
+            f"built {len(edge_pool)}"
+        )
+
+    return {
+        "format": "SHIFT.SDFConstraintSolverGraph/1",
+        "version": 1,
+        "status": "compiled",
+        "ready": True,
+        "constraint_count": n,
+        "initial_solution": [1.0] * n,
+        "normalized_matrix": [
+            list(row) for row in work
+        ],
+        "forward_records": forward_records,
+        "reverse_records": reverse_records,
+        "edge_record_pool": edge_pool,
+        "allocations": {
+            "forward_table_bytes": (n + 1) * 8,
+            "reverse_table_bytes": n * 8,
+            "edge_record_bytes": edge_record_count * 8,
+            "dependency_index_bytes": dependency_byte_count,
+            "edge_record_count": edge_record_count,
+            "dependency_index_count": dependency_byte_count,
+        },
+        "storage": {
+            "forward_outer_stride": 8,
+            "reverse_record_stride": 8,
+            "edge_record_stride": 8,
+            "dependency_index_width": 1,
+            "forward_outer_count": n + 1,
+            "reverse_record_count": n,
+            "forward_item_layout": {
+                "node": "byte +0x00",
+                "dependency_count": "byte +0x01",
+                "dependency_pointer": "u32 +0x04",
+            },
+        },
+        "evidence": {
+            "source_function": "FUN_007b1360",
+            "consumer": "FUN_007b0f20",
+            "reset_helper": "FUN_007b10d0",
+            "initial_solution_value": 1.0,
+            "terminal_forward_record": "outer index == constraint_count",
+            "reverse_order": "constraint_count-1 down to 0",
+            "inferred_relation_marker": 2.0,
+            "inferred_relation_cleared_before_output": True,
+        },
+        "limitations": [
+            "The input order must already represent FUN_007b1b60's optimized constraint permutation.",
+            "The actual matrix coefficients remain owned by the upstream FUN_007b2010/FUN_007ba2b0 path.",
+        ],
+    }
+
+
+
+
 def describe_sdf_constraint_runtime_lowering(
     report: Mapping[str, Any],
 ) -> dict[str, Any]:
