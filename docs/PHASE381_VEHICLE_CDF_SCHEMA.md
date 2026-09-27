@@ -72,3 +72,13 @@
 Следующий практический шаг — извлечь реальный `vehicles/physics/chassis/bmw_m3_e36.cdf` из `BMW_M3_E36.bff`, прогнать через schema parser и получить полный JSON-профиль физики BMW M3 с provenance по каждому параметру.
 
 После CDF следует связать `cdf -> edf -> gdf -> sdf -> cgp/cdp/cdv/csd` через уже восстановленные Physics Manager roots и `FUN_0074d640`.
+
+## Единая сборка профиля
+
+`vehicle_physics_bundle.py` извлекает из BFF четыре связанных ресурса
+и вызывает `vehicle_physics_asset_graph_runtime.py`:
+
+    python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
+
+Результат содержит identity/provenance по каждому ресурсу и JSON с объединёнными
+CDF/EDF/GDF/SDF деталями. Retail binary/text content в репозиторий не копируется.
