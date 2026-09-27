@@ -237,3 +237,56 @@ pos=(0,0,0) neg=(1,0,0)
     lowered = sdf.describe_sdf_constraint_runtime_lowering(report)
     assert lowered["ready"] is False
     assert "record:1:BAR:missing-negbody" in lowered["unresolved"]
+
+
+def test_sdf_constraint_connectivity_matrix_connects_shared_bodies():
+    report = sdf.parse_sdf("""
+[BODY]
+name=a
+[BODY]
+name=b
+[BODY]
+name=c
+[JOINT]
+name=j0 posbody=a negbody=b axis=(1,0,0)
+[HINGE]
+name=h0 posbody=b negbody=c axis=(0,1,0)
+[BAR]
+name=b0 posbody=a negbody=c pos=(0,0,0) neg=(1,0,0)
+""")
+    graph = sdf.build_sdf_constraint_connectivity_matrix(report)
+    assert graph["ready"] is True
+    assert graph["constraint_count"] == 3
+    assert graph["matrix"] == [
+        [0.0, 1.0, 1.0],
+        [1.0, 0.0, 1.0],
+        [1.0, 1.0, 0.0],
+    ]
+    assert graph["node_widths"] == [3, 2, 1]
+    assert graph["shared_body_pair_count"] == 3
+
+
+def test_sdf_constraint_solver_graph_reconstructs_forward_and_reverse_tables():
+    matrix = [
+        [0.0, 1.0, 1.0],
+        [1.0, 0.0, 1.0],
+        [1.0, 1.0, 0.0],
+    ]
+    graph = sdf.compile_sdf_constraint_solver_graph(matrix)
+    assert graph["ready"] is True
+    assert graph["constraint_count"] == 3
+    assert graph["initial_solution"] == [1.0, 1.0, 1.0]
+    assert graph["allocations"]["forward_table_bytes"] == 32
+    assert graph["allocations"]["reverse_table_bytes"] == 24
+    assert graph["allocations"]["edge_record_count"] == 8
+    assert graph["allocations"]["dependency_index_count"] == 10
+    assert [row["count"] for row in graph["forward_records"]] == [2, 2, 1, 3]
+    assert [row["node"] for row in graph["reverse_records"]] == [2, 1, 0]
+    assert graph["forward_records"][1]["items"][0]["dependencies"] == [0]
+    assert graph["reverse_records"][0]["dependencies"] == [0, 1]
+
+
+def test_sdf_constraint_solver_graph_rejects_non_square_matrix():
+    import pytest
+    with pytest.raises(ValueError, match="square"):
+        sdf.compile_sdf_constraint_solver_graph([[0, 1], [1]])
