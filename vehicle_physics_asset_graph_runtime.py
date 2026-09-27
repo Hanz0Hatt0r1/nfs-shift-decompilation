@@ -145,6 +145,7 @@ def build_profile(
             "sdf_constraint_order_final_cost": sdf_constraint_order.get("final_cost"),
             "sdf_constraint_solver_graph_ready": sdf_constraint_solver_graph.get("ready") is True,
             "sdf_constraint_solver_edge_record_count": sdf_constraint_solver_graph.get("allocations", {}).get("edge_record_count", 0),
+            "sdf_solver_scalar_count": sdf_constraint_solver_graph.get("solver_scalar_count", sdf_constraint_solver_graph.get("constraint_count", 0)),
             "sdf_sparse_solver_contract_ready": sdf_solver_contract.get("ready") is True,
             "sdf_sparse_solver_validation_ready": sdf_solver_validation.get("ready") is True,
         },
