@@ -15,9 +15,17 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Iterator
+
+# When invoked as ``python tools/<script>.py``, Python puts ``tools/`` on
+# sys.path rather than the repository root. Add the root so sibling ``tools``
+# modules remain importable without requiring PYTHONPATH to be set manually.
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from tools.extract_apitrace_unique_bmw import (
     CALL_RE,
