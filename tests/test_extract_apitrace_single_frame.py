@@ -70,6 +70,7 @@ def test_trim_frame_number_uses_portable_frameset(monkeypatch, tmp_path: Path):
         output.write_bytes(b"trimmed")
 
     monkeypatch.setattr(mod, "_run", fake_run)
+    monkeypatch.setattr(mod, "_trim_supports_auto", lambda _apitrace: True)
 
     command = mod.trim_frame_number(
         trace,
@@ -87,6 +88,39 @@ def test_trim_frame_number_uses_portable_frameset(monkeypatch, tmp_path: Path):
         str(trace),
     ]
     assert seen["command"] == command
+
+
+def test_trim_call_range_falls_back_without_auto(monkeypatch, tmp_path: Path):
+    trace = tmp_path / "trace.trace"
+    output = tmp_path / "single.trace"
+    trace.write_bytes(b"trace")
+    seen = {}
+
+    def fake_run(command, cwd=None):
+        seen["command"] = command
+        output.write_bytes(b"trimmed")
+
+    monkeypatch.setattr(mod, "_run", fake_run)
+    monkeypatch.setattr(mod, "_trim_supports_auto", lambda _apitrace: False)
+
+    command = mod.trim_call_range(
+        trace,
+        output,
+        start_call=10,
+        end_call=20,
+        apitrace="apitrace",
+    )
+
+    expected = [
+        "apitrace",
+        "trim",
+        "--calls=10-20",
+        "-o",
+        str(output),
+        str(trace),
+    ]
+    assert command == expected
+    assert seen["command"] == expected
 
 
 def test_extract_auto_bmw_writes_trace_and_manifest(monkeypatch, tmp_path: Path):
