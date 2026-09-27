@@ -284,7 +284,7 @@ def test_bmw_paint_parity_accepts_raw_payload_without_ppm(tmp_path, monkeypatch)
     )
     assert report["ready"] is True
     assert report["matched_texture_count"] == 3
-    assert all(row["content_identity_method"] == "raw-dds-base-level" for row in report["textures"])
+    assert all(row["content_identity_method"] == "raw-dds-mip-chain-complete" for row in report["textures"])
 
 
 def _dds_dxt1_chain(width, height, levels):
