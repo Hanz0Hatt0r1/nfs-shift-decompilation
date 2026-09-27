@@ -74,3 +74,17 @@ def test_asset_graph_retains_unknown_engine_properties():
     report = parse_engine_edf("[future]\nUnknownKey=123\n")
     assert report["unknown_entry_count"] == 1
     assert report["unknown_keys"] == ["UnknownKey"]
+
+
+def test_engine_edf_profile_exposes_rpm_torque_derived_values():
+    from engine_edf_runtime import parse_engine_edf
+
+    report = parse_engine_edf("""
+RPMTorque=(1000,-30,100)
+RPMTorque=(2000,-10,200)
+""")
+    peak = report["rpm_torque"]["peak_power_scan"]
+    assert peak["point_index"] == 1
+    assert peak["rpm"] == 2000.0
+    assert report["rpm_torque"]["interpolation_examples"][0]["throttle"] == 100.0
+    assert report["rpm_torque"]["interpolation_examples"][1]["throttle"] == 200.0
