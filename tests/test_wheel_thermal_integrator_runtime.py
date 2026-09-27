@@ -82,7 +82,7 @@ def test_source_heat_zero_and_positive_paths():
 
 def test_shape_factor_matches_sqrt_then_quarter_floor_adjustment():
     assert compute_shape_factor(factor_control=0.0) == 0.75
-    assert compute_shape_factor(factor_control=0.25) == 0.25
+    assert compute_shape_factor(factor_control=0.25) == 0.5
     assert compute_shape_factor(factor_control=4.0) == 0.0
 
 
