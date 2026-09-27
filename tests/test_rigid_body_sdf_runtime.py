@@ -141,11 +141,13 @@ name=b posbody=body negbody=wheel axis=(0,0,1) neg=(0,0,0) pos=(0,0,1)
 """)
     result = sdf.describe_sdf_pre_physx_build(report)
     assert result["ready"] is True
-    assert result["counts"]["constraints"] == 3
-    assert result["allocations"]["constraint_index_matrix_elements"] == 9
-    assert result["allocations"]["constraint_index_matrix_bytes"] == 72
-    assert result["allocations"]["constraint_index_row_pointer_bytes"] == 12
-    assert result["allocations"]["solver_initial_vector_bytes"] == 24
+    assert result["counts"]["constraint_records"] == 3
+    assert result["counts"]["solver_scalar_nodes"] == 6
+    assert result["allocations"]["constraint_index_matrix_elements"] == 36
+    assert result["allocations"]["constraint_index_matrix_bytes"] == 288
+    assert result["allocations"]["constraint_index_row_pointer_bytes"] == 24
+    assert result["allocations"]["solver_initial_vector_bytes"] == 48
+    assert result["allocations"]["per_body_constraint_index_vector_bytes"] == 24
     assert result["allocations"]["per_joint_resolved_samples"] == 2
     assert result["allocations"]["per_hinge_resolved_samples"] == 2
     assert result["allocations"]["per_bar_resolved_samples"] == 2
@@ -240,6 +242,43 @@ pos=(0,0,0) neg=(1,0,0)
     lowered = sdf.describe_sdf_constraint_runtime_lowering(report)
     assert lowered["ready"] is False
     assert "record:1:BAR:missing-negbody" in lowered["unresolved"]
+
+
+def test_sdf_runtime_topology_exposes_scalar_solver_widths():
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT]
+name=j posbody=body negbody=wheel axis=(1,0,0)
+[HINGE]
+name=h posbody=body negbody=wheel axis=(0,1,0)
+[BAR]
+name=b posbody=body negbody=wheel pos=(0,0,0) neg=(1,0,0)
+""")
+    compiled = sdf.compile_sdf_runtime_topology(report)
+    assert [row["solver_width"] for row in compiled["constraints"]] == [3, 2, 1]
+    ordering = sdf.optimize_sdf_constraint_order(report)
+    assert ordering["solver_scalar_count"] == 6
+    assert sorted(ordering["block_widths"]) == [1, 2, 3]
+
+
+def test_sdf_pre_physx_build_uses_scalar_solver_node_domain():
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT&HINGE]
+name=jh posbody=body negbody=wheel axis=(1,0,0)
+""")
+    result = sdf.describe_sdf_pre_physx_build(report)
+    assert result["counts"]["constraint_records"] == 2
+    assert result["counts"]["solver_scalar_nodes"] == 5
+    assert result["allocations"]["constraint_index_matrix_elements"] == 25
+    assert result["allocations"]["constraint_index_row_pointer_bytes"] == 20
+    assert result["allocations"]["solver_initial_vector_bytes"] == 40
 
 
 def test_sdf_constraint_connectivity_matrix_connects_shared_bodies():
@@ -344,6 +383,33 @@ name=b0 posbody=a negbody=c pos=(0,0,0) neg=(1,0,0)
     result = sdf.compile_sdf_constraint_solver_graph_from_report(report)
     assert result["ready"] is True
     assert result["source_constraint_order"] == [0, 2, 1]
-    assert result["constraint_count"] == 3
-    assert result["allocations"]["forward_table_bytes"] == 32
-    assert result["allocations"]["reverse_table_bytes"] == 24
+    assert result["constraint_record_count"] == 3
+    assert result["solver_scalar_count"] == 6
+    assert result["constraint_count"] == 6
+    assert result["allocations"]["forward_table_bytes"] == 56
+    assert result["allocations"]["reverse_table_bytes"] == 48
+
+
+def test_sdf_scalar_connectivity_expands_constraint_blocks_into_solver_nodes():
+    report = sdf.parse_sdf("""
+[BODY]
+name=a
+[BODY]
+name=b
+[JOINT]
+name=j0 posbody=a negbody=b axis=(1,0,0)
+[BAR]
+name=b0 posbody=a negbody=b pos=(0,0,0) neg=(1,0,0)
+""")
+    scalar = sdf.build_sdf_scalar_connectivity_matrix(report)
+    assert scalar["ready"] is True
+    assert scalar["constraint_record_count"] == 2
+    assert scalar["solver_scalar_count"] == 4
+    assert scalar["ordered_block_widths"] == [1, 3]
+    assert scalar["scalar_block_offsets"] == [0, 1]
+    assert scalar["matrix"] == [
+        [1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0],
+    ]

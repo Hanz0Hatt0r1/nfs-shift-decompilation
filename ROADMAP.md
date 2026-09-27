@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 388: solver scalar domain
+
+Resolved `+0x34` as the cumulative scalar solver-node count returned by the `FUN_007b1b60` ordering stage. JOINT/HINGE/BAR widths are 3/2/1, JOINT&HINGE emits two runtime records, and `FUN_007ba2b0` expands shared-body record links into scalar block cross-products. `build_sdf_scalar_connectivity_matrix()` now feeds `FUN_007b1360` in the correct scalar domain.
+
 ## Phase 387: sparse constraint solver
 
 `FUN_007b0f20` is now represented by a source-backed sparse forward/backward execution contract, including graph/edge record layouts, terminal forward record behavior, reverse traversal, and the provider bypass at `+0x18`. The vehicle physics asset profile validates this contract automatically. Next target: numeric coefficient population in `FUN_007ba2b0`.

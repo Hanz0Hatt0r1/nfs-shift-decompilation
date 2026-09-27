@@ -1,6 +1,6 @@
 # Phase 386 — Constraint solver graph reconstruction
 
-The SDF physics path now reaches the compact graph consumed by `FUN_007b0f20`.
+The SDF physics path now reaches the compact graph consumed by `FUN_007b0f20`. The graph operates in the scalar solver-node domain returned by `FUN_007b1b60`, while the source constraint-record count remains a separate topology value.
 
 ## Connectivity
 
@@ -17,7 +17,7 @@ The recovered ordering stage maintains both a node→position map and a position
 - a forward table with `constraint_count + 1` outer records;
 - a reverse table with `constraint_count` item records in reverse node order.
 
-Each compact item is 8 bytes: node byte, dependency-count byte and a 32-bit pointer/offset to its byte-sized dependency index list. The source also seeds the solver vector with 1.0 for every constraint.
+Each compact item is 8 bytes: node byte, dependency-count byte and a 32-bit pointer/offset to its byte-sized dependency index list. The source also seeds the solver vector with 1.0 for every scalar solver node.
 
 The implementation exposes these structures without assigning undocumented PhysX class names or physical meanings to the coefficient matrix.
 

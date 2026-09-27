@@ -4,7 +4,7 @@
 
 ## Inputs
 
-The solver receives the matrix as a row-pointer array, a writable double vector, and the solver variable count. The graph object contains four pointers at offsets `+0x00`, `+0x04`, `+0x08` and `+0x0c`: forward outer records, reverse outer records, edge-record pool and byte dependency lists.
+The solver receives the matrix as a row-pointer array, a writable double vector, and the scalar solver-node count returned by `FUN_007b1b60`. The graph object contains four pointers at offsets `+0x00`, `+0x04`, `+0x08` and `+0x0c`: forward outer records, reverse outer records, edge-record pool and byte dependency lists.
 
 ## Forward pass
 
