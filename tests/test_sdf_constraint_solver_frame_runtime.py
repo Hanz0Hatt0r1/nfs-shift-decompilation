@@ -79,3 +79,31 @@ def test_builtin_diagonal_reset_zeroes_rows_columns_and_rhs():
         [7.0, 0.0, 9.0],
     ]
     assert result["rhs"] == [10.0, 0.0, 12.0]
+
+
+def test_solver_frame_contract_v2_separates_pre_and_post_solve():
+    report = frame.describe_sdf_solver_frame_contract(
+        solver_scalar_count=5,
+        body_count=3,
+    )
+    assert report["format"] == "SHIFT.SDFConstraintSolverFrameRuntime/2"
+    assert report["pre_solve"]["order"] == [
+        "FUN_007b3ed0",
+        "FUN_007bb8d0 per body",
+        "FUN_007bc680 per body",
+        "FUN_007ba570 per body",
+        "FUN_007b2210 selected scalar rows",
+        "provider vtable +0x18 or FUN_007b0f20",
+    ]
+    assert report["post_solve"]["function"] == "FUN_007b4110"
+    assert report["post_solve"]["source_line"] == 814168
+
+
+def test_solver_frame_v2_post_solve_preserves_exact_constraint_widths():
+    report = frame.describe_sdf_solver_frame_contract(solver_scalar_count=6)
+    assert report["post_solve_projection"]["JOINT"]["width"] == 3
+    assert report["post_solve_projection"]["HINGE"]["width"] == 2
+    assert report["post_solve_projection"]["BAR"]["width"] == 1
+    assert report["post_solve_projection"]["BAR"]["vector_source"] == (
+        "+0x40/+0x48/+0x50"
+    )
