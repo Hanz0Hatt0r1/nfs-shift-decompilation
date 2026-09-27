@@ -8,6 +8,7 @@ from typing import Any, Mapping, Sequence
 
 from shift_importer import BFF
 from vehicle_physics_asset_graph_runtime import build_profile
+from turbo_runtime import parse_turbo_bbf, parse_turbo_tbf
 
 FORMAT = "SHIFT.VehiclePhysicsBundleExtractor/1"
 
@@ -16,6 +17,8 @@ DEFAULT_TARGETS = {
     "edf": "vehicles/physics/engines/bmw_m3_e36.edf",
     "gdf": "vehicles/physics/gearbox/common.gdf",
     "sdf": "vehicles/physics/suspension/aarm_multilink.sdf",
+    "tbf": "vehicles/physics/turbo/gen_lowrpm_33.tbf",
+    "bbf": "vehicles/physics/turbo/nitrous.bbf",
 }
 
 
@@ -51,7 +54,7 @@ def extract_bundle(
     entries: dict[str, Any] = {}
 
     with BFF(bff_path) as archive:
-        for kind in ("cdf", "edf", "gdf", "sdf"):
+        for kind in ("cdf", "edf", "gdf", "sdf", "tbf", "bbf"):
             wanted = targets[kind]
             entry = _find_entry(archive, wanted)
             payload = archive.extract_entry(entry, type2="lzx")
@@ -75,6 +78,16 @@ def extract_bundle(
         sdf=extracted["sdf"],
         strict=strict,
     )
+    turbo_tbf = parse_turbo_tbf(extracted["tbf"].read_bytes(), strict=strict)
+    turbo_bbf = parse_turbo_bbf(extracted["bbf"].read_bytes(), max_value=None)
+    profile = dict(profile)
+    profile["turbo"] = {"tbf": turbo_tbf, "bbf": turbo_bbf}
+    if turbo_tbf.get("ready") is not True:
+        profile["blockers"] = list(profile.get("blockers", [])) + ["turbo-tbf:parse-not-ready"]
+    if turbo_bbf.get("ready") is not True:
+        profile["blockers"] = list(profile.get("blockers", [])) + ["turbo-bbf:parse-not-ready"]
+    profile["ready"] = bool(profile.get("ready")) and turbo_tbf.get("ready") is True and turbo_bbf.get("ready") is True
+    profile["status"] = "ready" if profile["ready"] else "ready-with-warnings"
     result = {
         "format": FORMAT,
         "version": 1,
