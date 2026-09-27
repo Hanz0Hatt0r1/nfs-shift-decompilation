@@ -26,7 +26,6 @@ from rigid_body_sdf_runtime import (
 from vehicle_cdf_runtime import parse_cdf
 from sdf_constraint_solver_runtime import describe_sdf_sparse_solver_contract, validate_sdf_solver_contract
 from sdf_constraint_solver_frame_runtime import (
-    apply_builtin_diagonal_reset,
     derive_builtin_diagonal_reset_nodes,
     describe_sdf_solver_frame_contract,
     validate_sdf_solver_frame_profile,
