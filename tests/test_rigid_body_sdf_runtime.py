@@ -149,3 +149,18 @@ name=b posbody=body negbody=wheel axis=(0,0,1) neg=(0,0,0) pos=(0,0,1)
     assert [stage["function"] for stage in result["stages"][:3]] == [
         "FUN_007ba4e0", "FUN_007b1b60", "FUN_007b2010"
     ]
+
+
+def test_sdf_duplicate_body_names_are_blocked():
+    import rigid_body_sdf_runtime as sdf
+
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=body
+""")
+    graph = sdf.resolve_sdf_body_references(report)
+    assert graph["ready"] is False
+    assert graph["duplicate_body_names"] == ["body"]
+    assert "duplicate-body-name:body" in graph["unresolved"]
