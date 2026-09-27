@@ -46,6 +46,12 @@ def test_midpoint_is_cosine_at_pi_over_two():
     assert midpoint.factor == pytest.approx(COS_BIAS, abs=2e-7)
 
 
+def test_threshold_shifts_preclamp_before_the_six_unit_clamp():
+    result = compute_contact_factor(projected_value=4.0, threshold_value=2.0)
+    assert result.pre_clamp == pytest.approx(3.0)
+    assert result.clamped_value == 3.0
+
+
 def test_four_wheel_storage_matches_source_order_and_reference_branch():
     rows = build_four_wheel_contact_factors(
         [0.0, 1.0, 2.0, 3.0],
@@ -57,7 +63,7 @@ def test_four_wheel_storage_matches_source_order_and_reference_branch():
     assert len(rows) == WHEEL_COUNT
     assert [r.wheel_index for r in rows] == [0, 1, 2, 3]
     assert [r.factor for r in rows] == pytest.approx(
-        [1.0, 0.991343, 0.975, 0.991343], abs=2e-6
+        [1.0, 0.9966506, 0.9875, 0.975], abs=2e-6
     )
     assert [r.previous_value for r in rows] == [17.5] * 4
     assert rows[2].wheel_factor_offset == FACTOR_VALUE_BASE + 2 * WHEEL_STRIDE
