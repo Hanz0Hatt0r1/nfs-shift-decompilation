@@ -1,0 +1,29 @@
+{
+  "format": "SHIFT.WheelContactResponseInputRuntime/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "function": "FUN_00766510",
+    "line": 759553,
+    "transform": "FUN_007af0a0",
+    "consumer": "FUN_007551e0"
+  },
+  "body": {
+    "object_base": "this + 0x33a0",
+    "transform_context": "+0xd4",
+    "source_vector": "+0x18"
+  },
+  "producer_call": {
+    "this_argument": "body + 0xd4",
+    "source_argument": "body + 0x18",
+    "destination": "local_200[3]"
+  },
+  "consumer_call": {
+    "function": "FUN_007551e0",
+    "input": "local_200"
+  },
+  "unresolved": [
+    "FUN_007af0a0 transform semantics",
+    "physical meaning and units of body +0x18"
+  ]
+}
