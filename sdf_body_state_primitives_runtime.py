@@ -29,15 +29,18 @@ def initialize_body_coefficients(
     x, y, z = _vec3(diagonal_values, name="diagonal_values")
     if x == 0.0 or y == 0.0 or z == 0.0:
         raise ValueError("diagonal values must be non-zero for reciprocal storage")
+    fx, fy, fz = (_f32(x), _f32(y), _f32(z))
     return {
         "format": "SHIFT.SDFBodyCoefficientInit/1",
         "version": 1,
         "status": "computed",
         "ready": True,
-        "input_float32": [x, y, z],
+        "input_float32": [fx, fy, fz],
+        "input_double": [x, y, z],
         "reciprocal": [1.0 / x, 1.0 / y, 1.0 / z],
         "storage": COEFFICIENT_OFFSETS,
         "source_function": "FUN_007ba860",
+        "reciprocal_source": "original double input, before float32 storage truncation",
         "next_stage": "FUN_007ba7e0",
     }
 
