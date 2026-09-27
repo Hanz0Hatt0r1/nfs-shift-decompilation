@@ -1,0 +1,67 @@
+{
+  "format": "SHIFT.BMWM3VehiclePhysicsResourceManifest/1",
+  "source_archive": "BMW_M3_E36.bff",
+  "archive_entry_points": [
+    {
+      "path": "vehicles/physics/chassis/bmw_m3_e36.cdf",
+      "entry_index": 1088,
+      "compressed_size": 5358,
+      "uncompressed_size": 24817,
+      "type": 2,
+      "sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d"
+    },
+    {
+      "path": "vehicles/physics/engines/bmw_m3_e36.edf",
+      "entry_index": 1089,
+      "compressed_size": 876,
+      "uncompressed_size": 2529,
+      "type": 2,
+      "sha256": "d7dfbdea98d277e55301e3c25de0fd5ceb31492a724bf73e4b7b8112599881ec"
+    },
+    {
+      "path": "vehicles/physics/gearbox/common.gdf",
+      "entry_index": 1090,
+      "compressed_size": 704,
+      "uncompressed_size": 2720,
+      "type": 2,
+      "sha256": "4d117fb19474b776b80bba53e9b738c201852c29b94aea6de7f0b9557b8fc0d1"
+    },
+    {
+      "path": "vehicles/physics/suspension/aarm_multilink.sdf",
+      "entry_index": 1091,
+      "compressed_size": 1110,
+      "uncompressed_size": 5056,
+      "type": 2,
+      "sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed"
+    }
+  ],
+  "cdf": {
+    "sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d",
+    "active_sections": 13,
+    "active_properties": 372,
+    "schema_recognized_properties": 370,
+    "schema_unknown_properties": [
+      "GENERAL.FeelerFlags",
+      "GENERAL.Notes"
+    ]
+  },
+  "edf": {
+    "sha256": "d7dfbdea98d277e55301e3c25de0fd5ceb31492a724bf73e4b7b8112599881ec",
+    "rpm_torque_points": 41,
+    "rpm_torque_source_tuple": [
+      "rpm",
+      "brake",
+      "throttle"
+    ],
+    "rpm_torque_storage_order": [
+      "brake",
+      "throttle",
+      "rpm"
+    ]
+  },
+  "policy": {
+    "binary_content_committed": false,
+    "retail_text_content_committed": false,
+    "identity_and_structure_only": true
+  }
+}
