@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 411: solver capture diff schema
+
+Added a strict normalized SDF solver-frame capture format and cell-level vector/matrix/storage comparator for the real 40-scalar BMW model. The tooling is capture-dependent by design and does not synthesize runtime values. Next target: use a real captured solver frame for cell-by-cell validation.
+
 ## Phase 410: JOINT tensor source audit
 
 Corrected `FUN_007bbb80` intermediate `d15` to the retail expression `m00*y - m02*x` and added a non-degenerate off-diagonal regression/evidence record. The full-frame Phase 409 contract remains otherwise unchanged.

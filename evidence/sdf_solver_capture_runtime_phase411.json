@@ -1,0 +1,19 @@
+{
+  "format": "SHIFT.SDFSolverCaptureEvidence/1",
+  "version": 1,
+  "source": {
+    "frame_entry": "FUN_007b3f40",
+    "matrix_storage": "PhysicsSystem +0x3c",
+    "rhs_storage": "PhysicsSystem +0x40",
+    "scalar_count_storage": "PhysicsSystem +0x34",
+    "row_index_formula": "scalar_count * row"
+  },
+  "comparison": {
+    "vector": "cell-level abs/relative error",
+    "matrix": "cell-level abs/relative error",
+    "storage": "row-index/pointer shape",
+    "fingerprint": "SHA-256 normalized capture fingerprint"
+  },
+  "status": "capture-schema-only",
+  "real_capture_present": false
+}
