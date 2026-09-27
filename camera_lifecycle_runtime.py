@@ -20,7 +20,7 @@ SLOT_STRIDE = 0x2AA0
 def resolve_lifecycle_timestamp(
     base_timestamp: int,
     *,
-    high_resolution_enabled: bool,
+    high_resolution_enabled: bool = False,
     high_resolution_delta: int = 0,
 ) -> dict[str, Any]:
     """Model the timestamp assignment shared by bc80/bce0/bd50."""

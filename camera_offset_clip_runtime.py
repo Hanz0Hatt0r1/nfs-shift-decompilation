@@ -150,7 +150,9 @@ def describe_camera_offset_blend(
         (1.0 - float(helper_9_02e40)) * updated_304
         + float(current_300) * float(helper_9_02e40)
     )
-    direction_offset = (blended_scalar - 0.5) * float(camera_offset)
+    # The source uses the tracked error magnitude here; the old implementation
+    # referenced an undefined local named camera_offset.
+    direction_offset = (blended_scalar - 0.5) * float(tracking_error_magnitude)
 
     final_point = final_inverse_transformed_point
     if final_point is not None:

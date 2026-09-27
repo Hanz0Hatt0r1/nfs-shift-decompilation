@@ -45,8 +45,9 @@ def describe_string_property_parse(
     helper_811390_result: int,
 ) -> dict[str, Any]:
     """Trace FUN_00823640 including the opaque FUN_00811390 gate."""
-    vector = parse_semicolon_vec3(text_value)
     gate = int(helper_811390_result)
+    # Type-15 dispatch goes directly to the specialized callback.
+    vector = parse_semicolon_vec3(text_value) if gate != 15 else (0.0, 0.0, 0.0)
     callback = (
         "FUN_00823560"
         if gate != 15

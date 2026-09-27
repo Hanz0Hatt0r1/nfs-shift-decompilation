@@ -192,9 +192,13 @@ def build_sampler_contract(binding: dict[str, Any]) -> dict[str, Any]:
         reasons.append("sampler-min-filter:invalid-mip-combination")
     if mag_filter == "ANISOTROPIC":
         reasons.append("sampler-mag-filter:anisotropic-not-valid-for-mag")
+    color_space, color_ready = _color_space(binding)
+    if not color_ready:
+        reasons.append("sampler-color-space:conflict")
     return {
         "format": "SHIFT.SamplerState/1",
         "source": "D3D9-FX",
+        "color_space": color_space,
         "min_filter": min_filter,
         "mag_filter": mag_filter,
         "mip_filter": mip_filter,
