@@ -241,7 +241,7 @@ def build_wheel_kinematics_contract() -> dict:
             "store the negated projection input at runtime +0x530",
             "FUN_00755950 computes displacement=runtime(+0x538)-relative_length",
             "FUN_00755950 calls FUN_007555b0(helper=runtime+0x80, displacement, -projection_input)",
-            "store helper x87 return at runtime +0x548",
+            "caller executes FSTP into runtime +0x548; semantic value remains unresolved",
         ],
         "pair_adjustments": {
             "front": {
@@ -270,7 +270,7 @@ def build_wheel_kinematics_contract() -> dict:
             "condition": "pointer non-zero and block+0x11C == 0",
         },
         "status": (
-            "exact wheel-kinematics/control-flow boundary with decoded spring helper; "
+            "exact wheel-kinematics/control-flow boundary with decoded spring gap helper; "
             "downstream tyre-force/contact semantics remain unresolved"
         ),
     }
