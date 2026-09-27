@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is advancing through Phase 359 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 363 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -51,6 +51,10 @@ the original BFF archives at runtime.
 12. Build the Linux Vulkan backend from RenderCommand/1 and keep the software renderer as its oracle.
 13. Complete decompilation/runtime coverage and only then port the proven renderer boundary to Android.
 14. Only then expand into physics, input, camera, audio and gameplay systems.
+## Phase 363: four-wheel tyre thermal runtime orchestration
+
+`SHIFT.TireThermalBatchRuntime/1` now reconstructs the observed four-wheel call topology around `FUN_00760b50`: one thermal update per wheel after the main physics passes, using the `0xA80` wheel stride and deterministic FRONTLEFT/FRONTRIGHT/REARLEFT/REARRIGHT ordering. The adapter delegates arithmetic to `SHIFT.TireThermalRuntime/1` and rejects missing or unknown wheel state instead of synthesizing data. Renderer code and `RENDER.bff` remain untouched.
+
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
