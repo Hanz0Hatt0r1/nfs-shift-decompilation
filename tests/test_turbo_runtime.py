@@ -92,5 +92,7 @@ def test_tbf_size_modifiers_apply_after_source_conversion():
 
 
 def test_tbf_return_scalar_matches_source_postload_expression():
-    report = parse_turbo_tbf("Boost Time=2\nMax Boost=3\n")
+    report = parse_turbo_tbf("Turbo1 Size=200\nTurbo2 Size=300\n")
+    assert report["postload"]["turbo1_size_after_upgrade"] == pytest.approx(2.0)
+    assert report["postload"]["turbo2_size_after_upgrade"] == pytest.approx(3.0)
     assert report["postload"]["return_scalar"] == pytest.approx(6.0)
