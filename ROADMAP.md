@@ -100,6 +100,12 @@ Reconstruct FUN_007af0a0 exactly as a 3x3 float-matrix × double-vector boundary
 
 The retail CDF loader boundary is now represented as `SHIFT.VehicleCDFRuntime/1`. The parser preserves sections, raw values and unknown keys while attaching source-backed section handlers, helper functions and destination offsets for GENERAL, aero, suspension, controls, driveline and all four wheel sections. Physical units remain unresolved unless proven by downstream runtime arithmetic.
 
+## Phase 383: Turbo resource runtime
+
+Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1`, including exact field offsets, source conversions, active-state timing clamps and the shared upgrade modifier chain. The real BMW archive contains `vehicles/physics/turbo/gen_lowrpm_33.tbf` and `vehicles/physics/turbo/nitrous.bbf`.
+
+The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
+
 ## Phase 382: vehicle physics resource graph
 
 The current physics stream is now resource-first: BMW M3 CDF/EDF/GDF/SDF resources are
