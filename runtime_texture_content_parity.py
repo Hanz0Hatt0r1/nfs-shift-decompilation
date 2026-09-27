@@ -439,10 +439,17 @@ def build_bmw_paint_runtime_texture_parity(
     primary_bff: str | Path,
 ) -> dict[str, Any]:
     snapshot = _find_draw_snapshot(runtime_report, frame, draw_index)
-    expected = _extract_expected_textures(primary_bff)
-    # Raw payload identity is evaluated lazily because snapshot-path tests do
-    # not require reading the archive payloads.
+    expected_metadata_cache: dict[str, dict[str, Any]] | None = None
+    # Raw payload identity is evaluated lazily. This also lets a payload-only
+    # proof operate without requiring the source BFF to be present locally.
     expected_payloads: dict[str, bytes] | None = None
+
+    def expected_metadata(parameter: str) -> dict[str, Any]:
+        nonlocal expected_metadata_cache
+        if expected_metadata_cache is None:
+            expected_metadata_cache = _extract_expected_textures(primary_bff)
+        return expected_metadata_cache[parameter]
+
     rows = []
     blockers = []
 
@@ -495,6 +502,7 @@ def build_bmw_paint_runtime_texture_parity(
                     "expected": expected_row,
                 }
             else:
+                expected_row = expected_metadata(parameter)
                 comparisons = [compare_snapshot_to_expected(paths[0], expected_row)]
                 ready = comparisons[0]["ready"]
                 result = {
