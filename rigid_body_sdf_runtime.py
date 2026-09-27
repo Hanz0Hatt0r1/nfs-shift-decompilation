@@ -185,6 +185,67 @@ def parse_sdf(data: str | bytes, *, strict: bool = False) -> dict[str, Any]:
     }
 
 
+def describe_sdf_body_runtime_lowering(
+    report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Describe FUN_007b3670's proven BODY -> 0x170-byte runtime lowering."""
+    body_records = records_by_type(report, "BODY")
+    rows: list[dict[str, Any]] = []
+    duplicate_names: set[str] = set()
+    seen: set[str] = set()
+
+    for index, record in enumerate(body_records):
+        values = {
+            str(entry.get("name")): entry.get("value")
+            for entry in record.get("entries") or []
+        }
+        raw_name = values.get("name")
+        name = "" if raw_name is None else str(raw_name)
+        normalized = name.upper()
+        if normalized in seen:
+            duplicate_names.add(normalized)
+        seen.add(normalized)
+        rows.append({
+            "index": index,
+            "name": name,
+            "normalized_name": normalized,
+            "runtime_stride": 0x170,
+            "lowering": {
+                "name": {"descriptor": "+0x20", "runtime": "+0x100", "helper": "FUN_007bba90"},
+                "mass": {"descriptor": "+0x120", "runtime": "+0x120", "inverse": "+0x90"},
+                "inertia": {
+                    "descriptor": "+0x128/+0x12c/+0x130",
+                    "runtime": "+0x128/+0x12c/+0x130",
+                    "inverse": "+0x138/+0x140/+0x148",
+                },
+                "group_a": {"descriptor": "+0x108/+0x110/+0x118", "helper": "FUN_007bbb10"},
+                "group_b": {"descriptor": "+0x018/+0x020/+0x028", "helper": "FUN_007bbb60"},
+            },
+            "constructor": "FUN_007b3670",
+        })
+
+    return {
+        "format": "SHIFT.SDFBodyRuntimeLowering/1",
+        "version": 1,
+        "status": "ready" if not duplicate_names else "blocked",
+        "ready": not duplicate_names,
+        "body_count": len(rows),
+        "duplicate_names": sorted(duplicate_names),
+        "runtime_stride": 0x170,
+        "rows": rows,
+        "evidence": {
+            "body_builder": "FUN_007b3670",
+            "mass_inertia_initializer": "FUN_007bba90",
+            "group_a_copy": "FUN_007bbb10",
+            "group_b_copy": "FUN_007bbb60",
+        },
+        "limitations": [
+            "Group A/B semantic names are deliberately not inferred from the decompiler's opaque temporary structure.",
+        ],
+    }
+
+
+
 def resolve_sdf_body_references(
     report: Mapping[str, Any],
 ) -> dict[str, Any]:
