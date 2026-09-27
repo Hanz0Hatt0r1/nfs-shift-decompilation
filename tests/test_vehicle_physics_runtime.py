@@ -224,3 +224,32 @@ def test_rpm_torque_interpolation_handles_zero_and_one_point_curves():
     assert sample_rpm_torque_curve((), 2000.0) == (0.0, 0.0)
     point = RPMTorquePoint(1000.0, -30.0, 120.0)
     assert sample_rpm_torque_curve((point,), 2000.0) == (-30.0, 120.0)
+
+
+def test_rpm_torque_peak_power_scan_matches_source_conversion():
+    from vehicle_physics_runtime import RPMTorquePoint, compute_rpm_torque_peak_power
+
+    points = (
+        RPMTorquePoint(5000.0, -100.0, 300.0),
+        RPMTorquePoint(7000.0, -200.0, 320.0),
+        RPMTorquePoint(7500.0, -226.0, 270.0),
+    )
+    result = compute_rpm_torque_peak_power(points)
+    assert result["point_index"] == 1
+    assert result["rpm"] == 7000.0
+    assert result["throttle_torque"] == 320.0
+    assert result["peak"] == pytest.approx(
+        7000.0 * 320.0 * 0.73756105 / 5252.0
+    )
+
+
+def test_rpm_torque_peak_power_keeps_source_initial_value_for_empty_curve():
+    from vehicle_physics_runtime import compute_rpm_torque_peak_power
+
+    result = compute_rpm_torque_peak_power(())
+    assert result == {
+        "peak": 1.0,
+        "point_index": None,
+        "rpm": None,
+        "throttle_torque": None,
+    }
