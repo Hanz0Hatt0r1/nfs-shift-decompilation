@@ -18,6 +18,7 @@ The element array is at +0x100, stride 0x90, with count at +0xA8.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from math import sqrt
 from typing import Sequence
 
