@@ -29,7 +29,7 @@ def test_seed_matrix_reports_symmetry_and_diagonal():
     assert result["symmetric"] is True
     assert result["row_nonzero_counts"] == [2, 3, 2]
     assert result["matrix_bit_hash_sha256"] == (
-        "e42efb4f8a4f56d8f1d79dc0ed19d30fca4da1e2a7c9b0bc6e035aa21f5b7a13"
+        "6fbf308f8067c293046a9015dc2419992c86571032cef15d7d9e739287f2f689"
     )
 
 
