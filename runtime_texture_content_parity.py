@@ -440,7 +440,9 @@ def build_bmw_paint_runtime_texture_parity(
 ) -> dict[str, Any]:
     snapshot = _find_draw_snapshot(runtime_report, frame, draw_index)
     expected = _extract_expected_textures(primary_bff)
-    expected_payloads = _extract_expected_texture_payloads(primary_bff)
+    # Raw payload identity is evaluated lazily because snapshot-path tests do
+    # not require reading the archive payloads.
+    expected_payloads: dict[str, bytes] | None = None
     rows = []
     blockers = []
 
@@ -529,6 +531,8 @@ def build_bmw_paint_runtime_texture_parity(
                 else []
             )
             if payload_candidates:
+                if expected_payloads is None:
+                    expected_payloads = _extract_expected_texture_payloads(primary_bff)
                 raw_chain = compare_raw_payload_chain_to_dds(
                     payload_candidates,
                     expected_payloads[row["parameter"]],
