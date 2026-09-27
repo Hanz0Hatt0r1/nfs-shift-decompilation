@@ -75,6 +75,7 @@ def serialize_trackside_entries(
             "serialized_spline_id": mutated_spline,
             "target_spline_id": int(entry.target_spline_id),
             "temporary_subtraction": temporary_spline,
+            "rebase_count": count,
             "non_type1_count": count,
             "invalidated": invalidated,
             "restored_spline_id": int(entry.spline_id) if temporary_spline is not None else None,
