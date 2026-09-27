@@ -106,6 +106,14 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 409: unified SDF full-frame contract
+
+The vehicle physics profile now exposes one source-backed frame lifecycle from `FUN_007b3f40` through seed, numeric coupling, runtime `+0x70` identity selection, solve dispatch and `FUN_007b4110` post-solve application. Static layers are complete; identity selection is explicitly capture-dependent rather than inferred. Next target: feed a real captured solver frame, when available, into the 40-scalar storage model for cell-for-cell comparison.
+
+## Phase 408: exact post-solve application
+
+`FUN_007b4110` is reconstructed for JOINT, HINGE and BAR. JOINT/BAR use the recovered `FUN_007baa70`/`FUN_007baaf0` body accumulator helpers; HINGE applies its two solved scalars directly to angular channels. Source ordering and signs are regression-tested.
+
 ## Phase 407: retail identity-row/column reset
 
 `FUN_007b2210` is now executable against the same retail matrix storage used by the SDF assembler: selected rows and columns are zeroed through row pointers, the diagonal is set to `1.0`, and the RHS entry is cleared. The provider `+0x1c` dispatch boundary remains explicit. `build_solver_ready_matrix()` now exposes both logical and flat retail storage views. Next target: compare a real 40-scalar assembled matrix against captured solver state.
