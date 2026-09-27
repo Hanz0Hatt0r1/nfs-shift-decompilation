@@ -26,6 +26,52 @@ def describe_sdf_body_state_projection_contract() -> dict[str, Any]:
             "linear_3": "+0x70",
             "body_frame": "+0xb0",
         },
+        "constraint_projection_equations": {
+            "JOINT": {
+                "source_function": "FUN_007bac60",
+                "sample_stride": 0x40,
+                "scalar_base_field": "+0x30",
+                "body_accumulator_base": "+0x150",
+                "cross_product_terms": {
+                    "d2": "sample[+0x28]*body[+0x20] - sample[+0x20]*body[+0x28]",
+                    "d3": "body[+0x28]*sample[+0x18] - sample[+0x28]*body[+0x18]",
+                    "d5": "sample[+0x20]*body[+0x18] - body[+0x20]*sample[+0x18]",
+                },
+                "output_components": [
+                    "+0x150[index] += sign * d4",
+                    "+0x158[index] += sign * d6",
+                    "+0x160[index] += sign * d2",
+                ],
+                "sign_source": "sample +0x34: zero => add, nonzero => subtract",
+            },
+            "HINGE": {
+                "source_function": "FUN_007bae40",
+                "sample_stride": 0xA0,
+                "scalar_base_field": "+0x94",
+                "body_accumulator_base": "+0x150",
+                "frame_terms": [
+                    "sample rows +0x48/+0x50/+0x58",
+                    "sample rows +0x60/+0x68/+0x70",
+                ],
+                "side_zero": "add transformed velocity terms to primary accumulator",
+                "side_nonzero": "transform sample through body +0xd4 and subtract transformed terms",
+            },
+            "BAR": {
+                "source_function": "FUN_007bb090",
+                "sample_stride": 0x60,
+                "scalar_base_field": "+0x30",
+                "body_accumulator_base": "+0x150",
+                "cross_product_terms": {
+                    "d3": "body[+0x20]*sample[+0x28] - body[+0x28]*sample[+0x20]",
+                    "d5": "body[+0x28]*sample[+0x18] - sample[+0x28]*body[+0x18]",
+                    "d4": "sample[+0x20]*body[+0x18] - body[+0x20]*sample[+0x18]",
+                },
+                "output_components": [
+                    "+0x150[index] += sign * d3",
+                ],
+                "sign_source": "sample +0x34: zero => add, nonzero => subtract with +0x48 correction term",
+            },
+        },
         "pre_coupling": [
             {
                 "function": "FUN_007aefb0",
