@@ -72,8 +72,8 @@ def test_profile_loader_uses_render_cockpit_for_ce10_and_hide_car_for_cdf0():
         group_id=7,
         suppress_history_update=True,
     )
-    assert result["actions"][10]["action"] == "FUN_0080ce10"
-    assert result["actions"][11]["action"] == "FUN_0080cdf0"
+    assert result["actions"][11]["action"] == "FUN_0080ce10"
+    assert result["actions"][12]["action"] == "FUN_0080cdf0"
 
 
 def test_profile_loader_copies_projection_state_and_vectors():
