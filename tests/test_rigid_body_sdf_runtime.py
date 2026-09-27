@@ -164,3 +164,21 @@ name=body
     assert graph["ready"] is False
     assert graph["duplicate_body_names"] == ["body"]
     assert "duplicate-body-name:body" in graph["unresolved"]
+
+
+def test_sdf_body_lowering_preserves_proven_runtime_offsets():
+    import rigid_body_sdf_runtime as sdf
+
+    report = sdf.parse_sdf("""
+[BODY]
+name=body mass=1460 inertia=(1800,1920,450) pos=(0,0,0) ori=(0,0,0) vel=(0,0,0) rot=(0,0,0)
+""")
+    lowered = sdf.describe_sdf_body_runtime_lowering(report)
+    assert lowered["ready"] is True
+    row = lowered["rows"][0]
+    assert row["normalized_name"] == "BODY"
+    assert row["runtime_stride"] == 0x170
+    assert row["lowering"]["name"]["runtime"] == "+0x100"
+    assert row["lowering"]["mass"]["inverse"] == "+0x90"
+    assert row["lowering"]["group_a"]["helper"] == "FUN_007bbb10"
+    assert row["lowering"]["group_b"]["helper"] == "FUN_007bbb60"
