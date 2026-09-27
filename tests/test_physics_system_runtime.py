@@ -78,3 +78,17 @@ def test_participant_modes_are_exactly_zero_to_four():
 def test_empty_mission_rejected():
     with pytest.raises(ValueError):
         build_physics_paths("")
+
+
+def test_physics_provider_registry_preserves_two_source_slots_and_vtable_offsets():
+    from physics_system_runtime import build_physics_provider_registry
+
+    report = build_physics_provider_registry()
+    assert report["selector"]["index_zero"] == "DAT_00c23da8"
+    assert report["selector"]["index_one"] == "DAT_00c23dac"
+    assert report["selector"]["other_indices"] == "null"
+    assert report["lifecycle"]["provider_zero_init"] == "FUN_007d2f70"
+    assert report["lifecycle"]["provider_one_init"] == "FUN_007cd980"
+    assert report["consumer_vtable"]["presence_probe"] == "+0x14"
+    assert report["consumer_vtable"]["replace_primary_storage"] == "+0x04"
+    assert report["consumer_vtable"]["finalize"] == "+0x2c"
