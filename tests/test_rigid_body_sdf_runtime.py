@@ -121,3 +121,31 @@ name=broken posbody=missing negbody=body pos=(0,0,0) neg=(1,0,0) axis=(1,0,0)
     compiled = sdf.compile_sdf_runtime_topology(report)
     assert compiled["ready"] is False
     assert any("posbody:missing" in value for value in compiled["unresolved"])
+
+
+def test_sdf_pre_physx_build_exposes_source_allocation_counts():
+    import rigid_body_sdf_runtime as sdf
+
+    report = sdf.parse_sdf("""
+[BODY]
+name=body
+[BODY]
+name=wheel
+[JOINT]
+name=j posbody=body negbody=wheel axis=(1,0,0) neg=(0,0,0) pos=(0,1,0)
+[HINGE]
+name=h posbody=body negbody=wheel axis=(0,1,0) neg=(0,0,0) pos=(0,1,0)
+[BAR]
+name=b posbody=body negbody=wheel axis=(0,0,1) neg=(0,0,0) pos=(0,0,1)
+""")
+    result = sdf.describe_sdf_pre_physx_build(report)
+    assert result["ready"] is True
+    assert result["allocations"]["body_index_matrix_elements"] == 4
+    assert result["allocations"]["body_index_matrix_bytes"] == 32
+    assert result["allocations"]["body_index_vector_bytes"] == 8
+    assert result["allocations"]["per_joint_resolved_samples"] == 2
+    assert result["allocations"]["per_hinge_resolved_samples"] == 2
+    assert result["allocations"]["per_bar_resolved_samples"] == 2
+    assert [stage["function"] for stage in result["stages"][:3]] == [
+        "FUN_007ba4e0", "FUN_007b1b60", "FUN_007b2010"
+    ]
