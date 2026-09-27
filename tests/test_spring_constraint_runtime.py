@@ -18,7 +18,7 @@ from spring_constraint_runtime import (
     compute_projection,
     compute_spring_force,
     compute_type01_response,
-    normalize_direction,
+    direction_for_type,
     sign_crossing_blocks,
 )
 
@@ -42,8 +42,8 @@ def test_contract_freezes_element_storage_and_property_offsets():
 
 
 def test_direction_normalization_and_projection_are_explicit():
-    assert normalize_direction((0.0, 3.0, 4.0)) == Vec3(0.0, 0.6, 0.8)
-    assert compute_projection((0.0, 3.0, 4.0), (0.0, 3.0, 4.0)) == pytest.approx(5.0)
+    assert direction_for_type(1, (0.0, 3.0, 4.0)) == Vec3(0.0, 0.6, 0.8)
+    assert compute_projection((0.0, 3.0, 4.0), (0.0, 3.0, 4.0), spring_type=1) == pytest.approx(5.0)
 
 
 def test_collision_length_window_matches_source_gate():
@@ -57,6 +57,7 @@ def test_type01_response_is_directional_and_sign_suppression_is_separate():
         projection=2.0,
         body_relative_vector=(0.0, 1.0, 0.0),
         direction=(0.0, 1.0, 0.0),
+        spring_type=1,
         spring_param_a=3.0,
         spring_param_b=4.0,
     )
@@ -121,4 +122,4 @@ def test_unsupported_type_is_explicitly_blocked():
 
 def test_zero_direction_is_rejected():
     with pytest.raises(ValueError):
-        normalize_direction((0.0, 0.0, 0.0))
+        direction_for_type(1, (0.0, 0.0, 0.0))
