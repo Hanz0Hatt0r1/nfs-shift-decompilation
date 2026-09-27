@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: BMW M3 runtime draw correlation + Linux Vulkan renderer
 
-Current `main` is advancing through Phase 372 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
+Current `main` is advancing through Phase 373 on the non-rendering physics runtime track; the renderer workstream remains explicitly frozen while this decompilation continues. The Python and native D3D9 evidence paths are covered by CI; the current runtime work uses the confirmed-working apitrace trace path on Linux and keeps exact byte parity behind an explicit evidence boundary.
 
 The immediate target is a deterministic pipeline:
 
@@ -82,6 +82,9 @@ Freeze the first FUN_00766510 response stage after collision query: clamp +0x38e
 ## Phase 372: body load accumulation boundary
 
 Freeze FUN_007baa70 as the common point-vector accumulation boundary: add param_2 to +0x60/+0x68/+0x70 and add the exact point-cross-vector terms to +0x48/+0x50/+0x58. Keep the related FUN_007ba9e0 body-position-adjusted variant separate. Physical accumulator types and units remain unresolved. Renderer and RENDER.bff remain untouched.
+## Phase 373: wheel contact response input source
+
+Freeze the producer of FUN_00766510 local_200: FUN_007af0a0(body + 0xd4, body + 0x18, local_200), followed immediately by FUN_007551e0(..., local_200, ...). Keep FUN_007af0a0 transform semantics and the physical meaning/units of body +0x18 unresolved. Renderer and RENDER.bff remain untouched.
 ## Evidence rules
 
 - A parser result is not considered verified merely because it is syntactically
