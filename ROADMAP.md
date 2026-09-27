@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 410: solver snapshot parity adapter
+
+Added a neutral `matrix_pool/rhs/row_indices` comparison layer for external physics captures. Structural and numeric parity are checked separately with bounded cell-level diffs and configurable absolute tolerance; no captured values are invented. Next target: feed a real solver frame dump when available.
+
 ## Phase 409: unified SDF full-frame contract
 
 The vehicle physics profile now exposes one source-backed frame lifecycle from `FUN_007b3f40` through seed, numeric coupling, runtime `+0x70` identity selection, solve dispatch and `FUN_007b4110` post-solve application. Static layers are complete; identity selection is explicitly capture-dependent rather than inferred. Next target: feed a real captured solver frame, when available, into the 40-scalar storage model for cell-for-cell comparison.
