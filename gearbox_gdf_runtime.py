@@ -115,6 +115,13 @@ def parse_gdf(data: str | bytes, *, strict: bool = False) -> dict[str, Any]:
             1 for row in sections if row["section"] == "FINAL_DRIVE"
             for entry in row["entries"] if entry["name"] == "ratio"
         ),
+        "gear_ratio_sort_comparator": "FUN_00771320: second/first ascending",
+        "sorted_gear_ratios": sort_ratio_pairs_source_order([
+            entry["value"]
+            for row in sections if row["section"] == "GEAR_RATIOS"
+            for entry in row["entries"] if entry["name"] == "ratio"
+            if isinstance(entry["value"], list) and len(entry["value"]) == 2
+        ]),
         "final_drive_bevel": [
             entry["value"]
             for row in sections if row["section"] == "FINAL_DRIVE"
@@ -136,6 +143,19 @@ def parse_gdf(data: str | bytes, *, strict: bool = False) -> dict[str, Any]:
             "Mode-4 database fallback in FUN_007c2110 is outside this text-file parser.",
         ],
     }
+
+
+def sort_ratio_pairs_source_order(
+    pairs: Sequence[Sequence[int | float]],
+) -> list[list[int | float]]:
+    """Return ratio pairs in FUN_00771320 qsort order.
+
+    The comparator evaluates second / first and sorts ascending. Input order is
+    left untouched by this helper; callers receive a derived sorted view.
+    """
+    normalized = [[pair[0], pair[1]] for pair in pairs if len(pair) == 2]
+    return sorted(normalized, key=lambda pair: float(pair[1]) / float(pair[0]))
+
 
 
 def entries(report: Mapping[str, Any], section: str, key: str | None = None) -> list[Mapping[str, Any]]:
