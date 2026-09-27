@@ -53,8 +53,8 @@ def test_backward_scan_uses_exact_five_percent_steps():
         initial_score=-1.0,
         score_at=score_at,
     )
-    assert seen == pytest.approx([0.15, 0.10])
-    assert updated.parameter == pytest.approx(0.10)
+    assert seen == pytest.approx([0.15, 0.10, 0.05])
+    assert updated.parameter == pytest.approx(0.05)
     assert result["status"] == "found-positive"
 
 
