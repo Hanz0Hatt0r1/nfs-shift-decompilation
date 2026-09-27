@@ -1,14 +1,9 @@
-"""Source-backed per-frame SDF constraint solver lifecycle.
-
-This contract covers FUN_007b3f40 and FUN_007b4110 after the solver graph and
-scalar-domain reconstruction. It records storage/call order and body projection
-without assigning undocumented physical units.
-"""
+"""Source-backed per-frame SDF solver lifecycle."""
 from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
 
-FORMAT = "SHIFT.SDFConstraintSolverFrameRuntime/1"
+FORMAT = "SHIFT.SDFConstraintSolverFrameRuntime/2"
 
 
 def describe_sdf_solver_frame_contract(
@@ -18,9 +13,9 @@ def describe_sdf_solver_frame_contract(
 ) -> dict[str, Any]:
     n = None if solver_scalar_count is None else int(solver_scalar_count)
     bodies = None if body_count is None else int(body_count)
-    return {
+    report = {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "status": "execution-contract",
         "ready": True,
         "solver_scalar_count": n,
@@ -37,72 +32,122 @@ def describe_sdf_solver_frame_contract(
                 "rhs_clear": "provider-owned",
             },
         },
-        "common_pre_solve": [
-            {
-                "function": "FUN_007b3ed0",
-                "purpose": "refresh all JOINT/HINGE/BAR sampled constraint transforms via their postload helpers",
-            },
-            {
-                "function": "FUN_007b4110",
-                "purpose": "project current solved scalar vector entries through sampled constraints into body accumulator triplets",
-            },
-        ],
-        "body_projection": {
-            "JOINT": {
-                "width": 3,
-                "sample_scalar_base": "+0x30",
-                "positive_body_call": "FUN_007baa70(sample +0x18, solved[base:base+3])",
-                "negative_body_call": "FUN_007baaf0(sample +0x18, solved[base:base+3])",
-            },
-            "HINGE": {
-                "width": 2,
-                "sample_scalar_base": "+0x94",
-                "positive_body_projection": "signed linear combination of sample +0x48/+0x50/+0x58/+0x60/+0x68/+0x70 and solved[base:base+2]",
-                "negative_body_projection": "same coefficients with opposite accumulator sign",
-            },
-            "BAR": {
-                "width": 1,
-                "sample_scalar_base": "+0x30",
-                "impulse_vector": "sample +0x40/+0x48/+0x50 multiplied by solved[base]",
-                "positive_body_call": "FUN_007baa70(sample +0x18, impulse_vector)",
-                "negative_body_call": "FUN_007baaf0(sample +0x18, impulse_vector)",
+        "pre_solve": {
+            "source_line": 814057,
+            "order": [
+                "FUN_007b3ed0",
+                "FUN_007bb8d0 per body",
+                "FUN_007bc680 per body",
+                "FUN_007ba570 per body",
+                "FUN_007b2210 selected scalar rows",
+                "provider vtable +0x18 or FUN_007b0f20",
+            ],
+            "body_build": {
+                "reset": "FUN_007bb8d0",
+                "constraint_projection": "FUN_007bc680",
+                "global_export": "FUN_007ba570",
             },
         },
-        "scalar_consumers": {
-            "JOINT": "three consecutive doubles beginning at sampled +0x30",
-            "HINGE": "two consecutive doubles beginning at sampled +0x94",
-            "BAR": "one double beginning at sampled +0x30",
+        "post_solve": {
+            "function": "FUN_007b4110",
+            "source_line": 814168,
+            "solver_vector": "PhysicsSystem +0x40",
+            "purpose": "apply solved scalar values back into JOINT/HINGE/BAR runtime body state",
+        },
+        "post_solve_projection": {
+            "JOINT": {
+                "sample_stride": 0xA0,
+                "sample_pointer": "+0x7c",
+                "scalar_base": "+0x30",
+                "width": 3,
+                "positive_body_pointer": "+0x78",
+                "negative_body_pointer": "+0x80",
+                "point_offset": "+0x18",
+                "helpers": ["FUN_007baa70", "FUN_007baaf0"],
+            },
+            "HINGE": {
+                "sample_stride": 0xA0,
+                "sample_pointer": "+0x7c",
+                "scalar_base": "+0x94",
+                "width": 2,
+                "positive_body_pointer": "+0x78",
+                "negative_body_pointer": "+0x80",
+                "sample_rows": ["+0x48/+0x50/+0x58", "+0x60/+0x68/+0x70"],
+            },
+            "BAR": {
+                "sample_stride": 0xB8,
+                "sample_pointer": "+0x7c",
+                "scalar_base": "+0x30",
+                "width": 1,
+                "positive_body_pointer": "+0x78",
+                "negative_body_pointer": "+0x80",
+                "vector_source": "+0x40/+0x48/+0x50",
+                "point_offset": "+0x18",
+                "helpers": ["FUN_007baa70", "FUN_007baaf0"],
+            },
         },
         "builtin_diagonal_reset": {
             "function": "FUN_007b2210",
+            "source_line": 812551,
             "behavior": [
                 "zero selected row",
                 "zero selected column",
                 "write 1.0 to selected diagonal entry",
-                "zero corresponding rhs entry",
+                "zero corresponding RHS",
             ],
-            "selection_source": "constraint runtime +0x70 low bit and sampled scalar base index",
+            "selection": "runtime constraint flag bit 0",
         },
         "solve_dispatch": {
             "provider_present": "provider vtable +0x18",
             "provider_absent": "FUN_007b0f20",
-            "rhs_storage": "physics-system +0x4c",
             "matrix_storage": "physics-system +0x3c",
-            "scalar_count": "physics-system +0x34",
+            "rhs_storage": "physics-system +0x40",
+            "scalar_count_storage": "physics-system +0x34",
+            "solver_state_storage": "physics-system +0x4c",
         },
         "evidence": {
             "frame_entry": "FUN_007b3f40",
             "constraint_refresh": "FUN_007b3ed0",
-            "body_projection": "FUN_007b4110",
+            "body_reset": "FUN_007bb8d0",
+            "body_projection": "FUN_007bc680",
+            "body_export": "FUN_007ba570",
             "diagonal_reset": "FUN_007b2210",
             "builtin_solver": "FUN_007b0f20",
+            "post_solve": "FUN_007b4110",
         },
         "limitations": [
-            "The accumulator triplets are kept as storage coordinates; physical force/torque units are not assigned here.",
-            "Provider hooks +0x20 and +0x18 remain opaque implementations.",
-            "The contract does not claim numerical equivalence for the provider backend.",
+            "Provider vtable implementations remain opaque.",
+            "Post-solve body-state channels are kept as storage coordinates.",
         ],
     }
+    # Backward-compatible views for consumers written against Phase 389.
+    report["common_pre_solve"] = [
+        {
+            "function": "FUN_007b3ed0",
+            "purpose": "refresh constraint-side sampled state",
+        }
+    ]
+    report["body_projection"] = {
+        "JOINT": {
+            "width": 3,
+            "sample_scalar_base": "+0x30",
+            "positive_body_call": "FUN_007baa70",
+            "negative_body_call": "FUN_007baaf0",
+        },
+        "HINGE": {
+            "width": 2,
+            "sample_scalar_base": "+0x94",
+            "positive_body_projection": "direct +0x48/+0x50/+0x58 update",
+            "negative_body_projection": "direct negative +0x48/+0x50/+0x58 update",
+        },
+        "BAR": {
+            "width": 1,
+            "sample_scalar_base": "+0x30",
+            "positive_body_call": "FUN_007baa70",
+            "negative_body_call": "FUN_007baaf0",
+        },
+    }
+    return report
 
 
 def derive_builtin_diagonal_reset_nodes(
