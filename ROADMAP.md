@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 400: JOINT mixed matrix coupling
+
+`FUN_007bbb80` is now reconstructed as executable JOINT self and mixed matrix coupling: 3×3 JOINT self, 3×3 JOINT/JOINT, 3×2 JOINT/HINGE and 3×1 JOINT/BAR blocks, with exact tensor intermediates, inverse-scalar diagonal corrections, side-flag signs and lower-triangle base-order addressing. Next target: remaining mixed HINGE/BAR coupling paths.
+
 ## Phase 399: BAR/BAR matrix coupling
 
 `FUN_007bb6c0` is now reconstructed as an executable scalar coupling kernel: `p×q` body-frame transform, exact self coefficient, pair coefficient, side-flag sign and lower-triangle max/min base addressing. Next target: mixed JOINT/BAR coupling in `FUN_007bbb80`.
