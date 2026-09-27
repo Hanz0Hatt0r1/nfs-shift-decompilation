@@ -45,6 +45,7 @@ from sdf_hinge_matrix_coupling_runtime import describe_hinge_matrix_coupling_con
 from sdf_bar_matrix_coupling_runtime import describe_bar_matrix_coupling_contract
 from sdf_joint_matrix_coupling_runtime import describe_joint_matrix_coupling_contract
 from sdf_hinge_bar_matrix_coupling_runtime import describe_hinge_bar_matrix_coupling_contract
+from sdf_constraint_matrix_assembly_runtime import describe_sdf_constraint_matrix_assembly_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -112,6 +113,7 @@ def build_profile(
     sdf_bar_matrix_coupling = describe_bar_matrix_coupling_contract()
     sdf_joint_matrix_coupling = describe_joint_matrix_coupling_contract()
     sdf_hinge_bar_matrix_coupling = describe_hinge_bar_matrix_coupling_contract()
+    sdf_matrix_assembly = describe_sdf_constraint_matrix_assembly_contract()
 
     blockers: list[str] = []
     for name, report in (
@@ -214,6 +216,7 @@ def build_profile(
             "sdf_bar_matrix_coupling_ready": sdf_bar_matrix_coupling.get("ready") is True,
             "sdf_joint_matrix_coupling_ready": sdf_joint_matrix_coupling.get("ready") is True,
             "sdf_hinge_bar_matrix_coupling_ready": sdf_hinge_bar_matrix_coupling.get("ready") is True,
+            "sdf_matrix_assembly_ready": sdf_matrix_assembly.get("ready") is True,
         },
         "details": {
             "cdf": cdf_report,
@@ -244,6 +247,7 @@ def build_profile(
             "sdf_bar_matrix_coupling": sdf_bar_matrix_coupling,
             "sdf_joint_matrix_coupling": sdf_joint_matrix_coupling,
             "sdf_hinge_bar_matrix_coupling": sdf_hinge_bar_matrix_coupling,
+            "sdf_matrix_assembly": sdf_matrix_assembly,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {

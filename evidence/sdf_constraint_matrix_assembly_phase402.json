@@ -1,0 +1,24 @@
+{
+  "format": "SHIFT.SDFConstraintMatrixAssemblyEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "kernels": {
+    "JOINT": "FUN_007bbb80",
+    "HINGE": "FUN_007bb250",
+    "BAR": "FUN_007bb6c0"
+  },
+  "lower_triangle_storage": "+0x158",
+  "blocks": [
+    "JOINT self 3x3 lower triangle",
+    "JOINT/JOINT 3x3",
+    "JOINT/HINGE 3x2",
+    "JOINT/BAR 3x1",
+    "HINGE/HINGE 2x2 lower triangle",
+    "HINGE/BAR 2x1 or 1x2",
+    "BAR/BAR 1x1"
+  ],
+  "status": "source-backed-orchestration"
+}
