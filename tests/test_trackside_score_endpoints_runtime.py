@@ -75,10 +75,10 @@ def test_static_camera_copy_preserves_scalar_and_byte_groups():
 def test_static_camera_registration_retains_duplicate_offsets():
     result = static_camera_property_registration()
     screen_velocity = [
-        p for p in result["properties"] if p["name"] == "ShakeScreenVelocity"
+        p for p in result["properties"] if p.get("name") == "ShakeScreenVelocity"
     ][0]
     shake_frequency = [
-        p for p in result["properties"] if p["name"] == "ShakeFrequency"
+        p for p in result["properties"] if p.get("name") == "ShakeFrequency"
     ][0]
     assert screen_velocity["offset"] == 0xb8
     assert shake_frequency["offset"] == 0xb8
