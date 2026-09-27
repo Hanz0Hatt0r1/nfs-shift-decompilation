@@ -454,7 +454,7 @@ def build_bmw_paint_runtime_texture_parity(
     blockers = []
 
     for row in PAINT_TEXTURES:
-        expected_row = expected[row["parameter"]]
+        expected_row = None
         binding = _active_texture(snapshot, int(row["register"]))
         pointers = binding.get("texture_ptr") if isinstance(binding, Mapping) else None
         if binding is None:
