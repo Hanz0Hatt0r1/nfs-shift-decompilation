@@ -94,7 +94,7 @@ def parse_sdf(data: str | bytes, *, strict: bool = False) -> dict[str, Any]:
             continue
 
         # Real SDF lines pack multiple key=value assignments on one line.
-        matches = list(re.finditer(r"(?<!\\s)([A-Za-z_][A-Za-z0-9_&]*)\\s*=", stripped))
+        matches = list(re.finditer(r"([A-Za-z_][A-Za-z0-9_&]*)\\s*=", stripped))
         if not matches:
             warnings.append(f"line:{line_no}:unparsed:{original.strip()}")
             if strict:
@@ -483,8 +483,8 @@ def describe_sdf_constraint_runtime_lowering(
             "runtime_stride": 0xA0,
             "body_counter_offset": ["+0x98", "+0x9c"],
             "source_value_fields": {
-                "joint": ["+0x28", "+0x30", "+0x38"],
-                "hinge": ["+0x58", "+0x60", "+0x68"],
+                "joint": ["pos"],
+                "hinge": ["axis"],
             },
             "runtime_vector_offsets": ["+0x88", "+0x90", "+0x98"],
             "sample_helpers": ["FUN_007ba8b0", "FUN_007ba900"],
