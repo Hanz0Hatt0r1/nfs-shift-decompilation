@@ -152,7 +152,7 @@ def compute_type01_response(
     projection = _finite("projection", projection)
     a = _finite("spring_param_a", spring_param_a)
     b = _finite("spring_param_b", spring_param_b)
-    direction_vec = direction_for_type(spring_type, direction)
+    direction_vec = direction_for_type(spring_type, direction, direction)
     body = _vec(body_relative_vector)
     body_projection = direction_vec.dot(body)
     response = a * projection + body_projection * b
