@@ -4,6 +4,7 @@ from body_matrix_structure_runtime import BodyGroup
 
 def _domain():
     return {
+        "ready": True,
         "solver_scalar_count": 4,
         "records": [
             {
