@@ -20,7 +20,7 @@ _SUPPORTED = {
     "MOV", "ADD", "SUB", "MUL", "MAD", "DP3", "DP4", "MIN", "MAX",
     "SLT", "SGE", "EXP", "EXPP", "LOG", "LOGP", "LIT", "DST", "LRP",
     "FRC", "RCP", "RSQ", "NRM", "ABS", "POW", "CRS", "SINCOS", "CMP",
-    "DP2ADD", "TEX", "TEXLDD", "TEXLDL", "MOVA",
+    "DP2ADD", "TEX", "TEXLDD", "TEXLDL", "TEXKILL", "MOVA",
     "M4x4", "M4x3", "M3x4", "M3x3", "M3x2", "SGN",
     "DEFB", "IF", "IFC", "ELSE", "ENDIF",
     "LOOP", "ENDLOOP", "REP", "ENDREP", "BREAK", "BREAKC", "BREAKP",
@@ -132,6 +132,7 @@ class ReferenceShaderState:
         self.outputs: dict[int, list[float]] = {}
         self.output_registers: dict[tuple[int, int], list[float]] = {}
         self.depth: float | None = None
+        self.discarded: bool = False
 
     def _resolve_constant_index(self, operand: Operand) -> int:
         if operand.reg_type not in (2, 11, 12, 13):
@@ -723,6 +724,13 @@ class ReferenceShaderState:
                             ins.controls,
                         ),
                     )
+                elif name == "TEXKILL":
+                    if len(o) < 1:
+                        raise ValueError("TEXKILL requires one source operand")
+                    value = self._read(o[0])
+                    if any(component < 0.0 for component in value[:3]):
+                        self.discarded = True
+                        break
                 elif name in {"TEX", "TEXLDD", "TEXLDL"}:
                     self._write(o[0], self._texture(o[2], self._read(o[1])))
                 else:
