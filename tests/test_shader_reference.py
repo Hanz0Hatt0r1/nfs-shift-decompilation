@@ -347,6 +347,34 @@ def test_reference_shader_breakp_terminates_rep():
     assert result["loop_index"] == 0
 
 
+
+def test_reference_shader_skips_false_predicated_instruction():
+    instructions = [
+        Instruction(
+            0, 78, "SETP", 0, 3, 4, False,
+            [_dst(19, 0), _src(2, 0), _src(2, 1)],
+        ),
+        Instruction(
+            16, 1, "MOV", 0, 3, 0, True,
+            [_dst(8, 0), _src(2, 2)],
+            _src(19, 0),
+        ),
+    ]
+    result = execute_shader(
+        _program(instructions, temps=()),
+        constants={
+            "c": {
+                0: (1.0, 1.0, 1.0, 1.0),
+                1: (2.0, 2.0, 2.0, 2.0),
+                2: (0.2, 0.3, 0.4, 1.0),
+            }
+        },
+    )
+    assert result["status"] == "executed", result
+    assert result["color"] == [0.0, 0.0, 0.0, 1.0]
+
+
+
 def test_reference_shader_rejects_unbalanced_conditionals():
     result = execute_shader(
         _program([
