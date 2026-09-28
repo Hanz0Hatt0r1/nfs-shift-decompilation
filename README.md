@@ -2,9 +2,9 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 509**
+> **Current mainline: Phase 510**
 >
-> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path. Phase 507 adds the participant slot registry/update bridge used by PhysicsParticipant.cpp. Phase 508 resolves the selector global as DAT_00bbc600 and keeps it explicitly separate from the participant-manager global DAT_00c109e0. Phase 509 traces the saved participant pointer/ordinal through the subsequent process/reselection loop and vehicle-BFF load. Exact retail numeric parity remains capture-gated.
+> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path. Phase 507 adds the participant slot registry/update bridge used by PhysicsParticipant.cpp. Phase 508 resolves the selector global as DAT_00bbc600 and keeps it explicitly separate from the participant-manager global DAT_00c109e0. Phase 509 traces the saved participant pointer/ordinal through the subsequent process/reselection loop and vehicle-BFF load. Phase 510 closes the descriptor-level selector candidate lifecycle, including the observed +0x74 eligibility/exclusion state, +0x8c ordinal writeback, bounded batch reservation and distinct +0x1d post-load/process flag. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
@@ -112,7 +112,8 @@ The repository now models:
 - the PhysicsParticipantManager event-0x20 ingestion contract;
 - the PhysicsParticipantManager participant slot registry/update contract;
 - the vehicle physics selector-context separation contract;
-- the vehicle physics participant process/reselection contract.
+- the vehicle physics participant process/reselection contract;
+- the vehicle physics selector candidate lifecycle contract.
 
 ### Phase 499–500 capture bundle
 
@@ -147,6 +148,7 @@ python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff
 python tools/build_vehicle_physics_participant_gate.py -o participant_gate.json
 python tools/build_physics_participant_manager_event.py -o physics_participant_manager_event.json
 python tools/build_vehicle_physics_participant_process.py -o participant_process_reselect.json
+python tools/build_vehicle_physics_selector_candidate_lifecycle.py -o selector_candidate_lifecycle.json
 python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py
 
 ./shift-bff-viewer /path/to/BMW_M3_E36.bff
@@ -158,11 +160,11 @@ Phase 505 records the `IGPhaseVehicle → FUN_00410ef0 → wait/success → Pakf
 
 Phase 506 records `FUN_0070e1c0 → opcode 0x20 → FUN_00714560(DAT_00c109e0) → manager +0x39c = 1` as a separate source-backed evidence layer. It intentionally does not assert that this manager object is the exact registry consumed by `FUN_00410ef0`. See `docs/PHASE506_PHYSICS_PARTICIPANT_MANAGER_EVENT.md`.
 
-Phase 507 records the concrete participant slot array (`DAT_00c109e0+0x140`, stride `0x1fa0`) and the `FUN_00713f40`/`FUN_00713ec0` calls from `PhysicsParticipant.cpp`. Phase 508 establishes that `thunk_FUN_00453990` returns `DAT_00bbc600`, leaving the selector object separate from `DAT_00c109e0`. Phase 509 then proves that `IGPhaseVehicle+0x450/+0x454` are consumed by `FUN_004d5f30`, which processes the current pointer, reselects from `DAT_00bbc600`, loads the next vehicle BFF and writes back the new pointer/ordinal only after successful load.
+Phase 507 records the concrete participant slot array (`DAT_00c109e0+0x140`, stride `0x1fa0`) and the `FUN_00713f40`/`FUN_00713ec0` calls from `PhysicsParticipant.cpp`. Phase 508 establishes that `thunk_FUN_00453990` returns `DAT_00bbc600`, leaving the selector object separate from `DAT_00c109e0`. Phase 509 then proves that `IGPhaseVehicle+0x450/+0x454` are consumed by `FUN_004d5f30`, which processes the current pointer, reselects from `DAT_00bbc600`, loads the next vehicle BFF and writes back the new pointer/ordinal only after successful load. Phase 510 closes the repeated descriptor record lifecycle at `context+0xb8` with `0x90` stride: `FUN_0040eec0` initializes `+0x74 = 1`, `FUN_00410ef0`/`FUN_0043af50` select only `+0x74 == 0` entries, `FUN_0043af50` writes `+0x8c` ordinals, and `FUN_004d69d0` temporarily reasserts `+0x74 = 1` during bounded batch collection before resetting it. `FUN_00465860` separately writes `+0x1d = 1` after its observed load/process step.
 
 ## Current CI note
 
-Phase 508 mainline CI was green across Python, native, capture-producer and Vulkan smoke. Phase 509 extends the static participant consumer contract; runtime provider capture remains the next evidence gate.
+Phase 508 mainline CI was green across Python, native, capture-producer and Vulkan smoke. Phase 510 extends the static selector lifecycle contract and stabilizes blocked handoff summaries; runtime provider capture remains the next evidence gate.
 
 ## Repository map
 
