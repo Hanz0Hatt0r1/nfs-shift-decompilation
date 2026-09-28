@@ -4,7 +4,7 @@
 
 Phase 445 records the source-order execution schedule around every reciprocal pivot in the two specialized provider solvers.
 
-Each pivot block begins at the unique reciprocal recovered in Phases 436–437. Subsequent assignment sites are classified structurally as factor normalization, forward RHS handling, future-pivot diagonal update, generic workspace/global update, or terminal back-substitution.
+Each pivot block begins at the unique reciprocal recovered in Phases 436–437. Subsequent assignment sites are classified structurally as factor normalization, forward RHS handling, generic workspace/global update, or terminal back-substitution.
 
 ## Important correction
 
@@ -12,7 +12,7 @@ The retail code does **not** guarantee one simple `factor → RHS → diagonal` 
 
 ## Evidence boundary
 
-Future-diagonal updates are identified only when an assignment destination matches a later reciprocal pivot denominator. Output-vector destinations are separated from workspace/global destinations. The final pivot block is treated as the terminal back-substitution region.
+Output-vector destinations are separated from workspace/global destinations. The final pivot block is treated as the terminal back-substitution region. Workspace updates are deliberately kept neutral because retail provider storage reuses packed addresses across logical stages and the row/cell mapping is not yet proven.
 
 Workspace packing is deliberately not reinterpreted. In particular, the Phase 435 row-pointer spans are storage topology, while the logical meaning of individual packed cells remains unresolved.
 
