@@ -362,7 +362,7 @@ class ReferenceShaderState:
                 ins = instructions[pc]
                 name = ins.name
                 o = ins.operands
-                if name in {"NOP", "DCL", "DEF", "DEFI", "DEFB", "LABEL", "COMMENT", "PHASE"}:
+                if name in {"NOP", "DCL", "DEF", "DEFI", "LABEL", "COMMENT", "PHASE"}:
                     pc += 1
                     continue
                 if ins.predicate is not None:
