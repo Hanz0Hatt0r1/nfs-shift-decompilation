@@ -3,6 +3,8 @@
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
 > **Current mainline: Phase 501**
+
+Phase 502 development adds a source-backed pre-PhysX/provider handoff validator.
 >
 > Phases 499–500 add deterministic indexing and verification for specialized-provider runtime capture bundles. Phase 501 adds source-mutation correlation over the packed workspace. Exact retail numeric parity remains capture-gated.
 
@@ -104,7 +106,8 @@ The repository now models:
 - live reset-effect and callsite evidence;
 - reset→solve ordering;
 - capture-session and capture-bundle verification;
-- source-mutation correlation against source-derived factor edges.
+- source-mutation correlation against source-derived factor edges;
+- pre-PhysX/provider handoff cross-contract validation.
 
 ### Phase 499–500 capture bundle
 

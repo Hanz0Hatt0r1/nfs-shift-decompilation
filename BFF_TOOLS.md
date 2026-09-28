@@ -54,6 +54,14 @@ After a real runtime provider capture exists:
 The observed provider id is runtime evidence. The handoff attaches the corresponding
 source-derived solver program only when ids match.
 
+## Pre-PhysX/provider handoff
+
+Build a cross-contract construction/selection/rebind validation from a parsed SDF report:
+
+`python tools/build_prephysx_provider_handoff.py sdf_report.json -o prephysx_provider_handoff.json`
+
+The result checks shared offsets and scalar dimensions while keeping runtime provider acceptance explicit.
+
 ## Provider mutation correlation
 
 For a real pre/post provider capture, compare observed packed-workspace mutations
