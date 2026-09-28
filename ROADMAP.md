@@ -106,6 +106,12 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 433: exact specialized-provider workspace layout
+
+Resolved the static storage layout behind the two specialized provider vtables. Provider 0 uses a 40-entry row-pointer table at 0x00C21698, a 1190-double factor workspace at 0x00C21738 and a 40-double output vector at 0x00C23C68. Provider 1 uses a 34-entry row-pointer table at 0x00C1FDB0, a 746-double factor workspace at 0x00C1FE38 and a 34-double output vector at 0x00C21588.
+
+The address arithmetic exactly explains the vtable constants: +0x24 returns the factor-workspace double count (0x4A6/0x2EA), and +0x28 returns the scalar count (0x28/0x22). The +0x04/+0x08/+0x0c accessors return the output/factor/row-table bases respectively. The +0x2c result remains opaque.
+
 ## Phase 432: BMW M3 provider compatibility gate
 
 Compared the fixed provider acceptance signatures against the committed real BMW M3 aarm_multilink.sdf seed evidence. The symmetric 40x40 BMW seed has 700 non-zero cells with a unit diagonal, which implies 330 strict-upper non-zero cells. Provider 0 is dimension-compatible at 40 scalars but requires 450 strict-upper non-zero cells, so it cannot accept the seed-only mask and would need 120 additional non-zero strict-upper cells after numeric coefficient population. Provider 1 is dimension-incompatible at 34 scalars.
