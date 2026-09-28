@@ -76,23 +76,6 @@ def build_solver_ir(
 
     operator_map = _assignment_operator_map(operator_report)
 
-    dependency_by_key: dict[
-        tuple[int, int, int | None, str],
-        dict[str, Any],
-    ] = {}
-    for node in dependency_report.get("nodes") or []:
-        key = (
-            int(node["pivot_index"]),
-            int(node["source_line"]),
-            (
-                None
-                if node.get("loop_index") is None
-                else int(node["loop_index"])
-            ),
-            str(node["destination"]),
-        )
-        dependency_by_key[key] = node
-
     program_assignments: list[dict[str, Any]] = []
     for stencil in rhs_report.get("stencils") or []:
         pivot = int(stencil["pivot_index"])
@@ -156,23 +139,22 @@ def build_solver_ir(
                 f"source-line={key[1]}"
             )
 
+    pivot_source_lines = {
+        int(item["pivot_index"]): int(item["source_line"])
+        for item in operator_report.get("pivot_summaries") or []
+    }
+
     blocks: list[dict[str, Any]] = []
     for pivot in pivots:
         pivot_index = int(pivot.index)
         blocks.append(
             {
                 "pivot_index": pivot_index,
-                "source_line": int(
-                    next(
-                        item["source_line"]
-                        for item in rhs_report.get("stencils") or []
-                        if int(item["pivot_index"]) == pivot_index
-                    )
-                    if any(
-                        int(item["pivot_index"]) == pivot_index
-                        for item in rhs_report.get("stencils") or []
-                    )
-                    else get_solver_spec(provider_id)["first_reciprocal_line"]
+                "source_line": pivot_source_lines.get(
+                    pivot_index,
+                    int(spec["first_reciprocal_line"])
+                    if "first_reciprocal_line" in spec
+                    else 0,
                 ),
                 "row_pointer": hex(pivot.row_pointer),
                 "diagonal_address": hex(pivot.diagonal_address),
