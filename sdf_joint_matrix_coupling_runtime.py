@@ -40,7 +40,7 @@ def derive_joint_tensor_terms(
         "d2": c * x - a * z,
         "d3": e * x - b * z,
         "d12": f * x - e * z,
-        "d15": a * y - c * x,
+        "d15": a * y - b * x,
         "d19": b * y - d * x,
         "d18": c * y - e * x,
     }

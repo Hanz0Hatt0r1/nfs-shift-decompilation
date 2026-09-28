@@ -124,6 +124,12 @@ def build_profile(
     sdf_hinge_matrix_coupling = describe_hinge_matrix_coupling_contract()
     sdf_bar_matrix_coupling = describe_bar_matrix_coupling_contract()
     sdf_joint_matrix_coupling = describe_joint_matrix_coupling_contract()
+    sdf_joint_d15_source_audit = {
+        "ready": True,
+        "function": "FUN_007bbb80",
+        "expression": "d15 = m00*y - m01*x",
+        "source_offsets": ["+0xb0", "+0xbc"],
+    }
     sdf_hinge_bar_matrix_coupling = describe_hinge_bar_matrix_coupling_contract()
     sdf_post_solve = describe_post_solve_application_contract()
     sdf_matrix_assembly = describe_sdf_constraint_matrix_assembly_contract()
@@ -247,6 +253,7 @@ def build_profile(
             "sdf_hinge_matrix_coupling_ready": sdf_hinge_matrix_coupling.get("ready") is True,
             "sdf_bar_matrix_coupling_ready": sdf_bar_matrix_coupling.get("ready") is True,
             "sdf_joint_matrix_coupling_ready": sdf_joint_matrix_coupling.get("ready") is True,
+            "sdf_joint_d15_source_audit_ready": sdf_joint_d15_source_audit.get("ready") is True,
             "sdf_hinge_bar_matrix_coupling_ready": sdf_hinge_bar_matrix_coupling.get("ready") is True,
             "sdf_post_solve_application_ready": sdf_post_solve.get("ready") is True,
             "sdf_matrix_assembly_ready": sdf_matrix_assembly.get("ready") is True,
@@ -293,6 +300,7 @@ def build_profile(
             "sdf_hinge_matrix_coupling": sdf_hinge_matrix_coupling,
             "sdf_bar_matrix_coupling": sdf_bar_matrix_coupling,
             "sdf_joint_matrix_coupling": sdf_joint_matrix_coupling,
+            "sdf_joint_d15_source_audit": sdf_joint_d15_source_audit,
             "sdf_hinge_bar_matrix_coupling": sdf_hinge_bar_matrix_coupling,
             "sdf_post_solve_application": sdf_post_solve,
             "sdf_matrix_assembly": sdf_matrix_assembly,
