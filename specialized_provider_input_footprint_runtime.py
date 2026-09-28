@@ -14,28 +14,12 @@ from typing import Any
 from specialized_provider_initial_state_runtime import (
     analyze_initial_state,
 )
-from specialized_provider_reset_profile_runtime import (
-    extract_reset_profile,
+from specialized_provider_reset_domain_runtime import (
+    extract_reset_domain,
 )
 from specialized_provider_storage_runtime import get_storage_layout
 
 FORMAT = "SHIFT.SpecializedProviderInputFootprintRuntime/1"
-
-
-def _reset_domain(
-    reset_report: dict[str, Any],
-) -> tuple[set[int], set[int]]:
-    zero_addresses = {
-        int(str(address), 16)
-        for row in reset_report.get("rows") or []
-        for address in row.get("zero_assignments") or []
-    }
-    unit_addresses = {
-        int(str(row["diagonal_address"]), 16)
-        for row in reset_report.get("rows") or []
-        if row.get("diagonal_address") is not None
-    }
-    return zero_addresses | unit_addresses, unit_addresses
 
 
 def _address(entry: dict[str, Any]) -> int:
@@ -52,11 +36,18 @@ def extract_input_footprint(
         source,
         provider_id=provider_id,
     )
-    reset = extract_reset_profile(
+    reset = extract_reset_domain(
         source,
         provider_id=provider_id,
     )
-    reset_domain, unit_addresses = _reset_domain(reset)
+    reset_domain = {
+        int(str(address), 16)
+        for address in reset["touched_addresses"]
+    }
+    unit_addresses = {
+        int(str(address), 16)
+        for address in reset["unit_diagonal_addresses"]
+    }
 
     errors = list(initial.get("errors") or [])
     errors.extend(reset.get("errors") or [])
