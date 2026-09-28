@@ -29,6 +29,9 @@ def test_bmw_m3_structure_accepts_40_scalar_retail_shape():
 def test_bmw_m3_structure_blocks_wrong_scalar_count():
     capture = _capture40()
     capture["scalar_count"] = 39
+    capture["rhs"] = capture["rhs"][:39]
+    capture["matrix"] = [row[:39] for row in capture["matrix"][:39]]
+    capture["row_indices"] = [39 * row for row in range(39)]
     result = runtime.verify_bmw_m3_capture_structure(capture)
     assert result["ready"] is False
     assert any(error.startswith("solver-scalar-count:") for error in result["errors"])
@@ -62,7 +65,11 @@ def test_bmw_m3_structure_can_check_capture_identity_nodes():
         runtime_identity_nodes=[3, 9],
     )
     assert result["ready"] is True
-    assert result["warnings"] == []
+    assert result["observed"]["runtime_identity_nodes"] == [3, 9]
+    assert any(
+        warning.startswith("matrix-nonzero-below-seed-support:")
+        for warning in result["warnings"]
+    )
 
 
 def test_bmw_m3_structure_reports_missing_identity_nodes_without_blocking():
