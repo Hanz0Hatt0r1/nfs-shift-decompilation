@@ -59,8 +59,8 @@ def build_reset_effect_event(
         "frame_index": frame_index,
         "reset_event_count": int(reset_event_count),
         "addresses": {
-            "diagonal": hex(addresses["diagonal"]),
-            "output": hex(addresses["output"]),
+            "diagonal": _fmt_addr(addresses["diagonal"]),
+            "output": _fmt_addr(addresses["output"]),
         },
         "values": {
             "diagonal_before": float(diagonal_before),
