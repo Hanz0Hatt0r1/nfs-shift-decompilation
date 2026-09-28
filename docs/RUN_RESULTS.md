@@ -10,7 +10,7 @@ The older baseline recorded 193 Python tests passed and 2 skipped. This is histo
 
 ## Current mainline
 
-Commit: `df9e01f6b9ca8d225bb56ad83a104277e24b0fc9`
+Commit: `a8b4a2767e4ffd090e942e5cc2d74668b8e71446`
 
 | CI job | Result |
 |---|---|
@@ -19,9 +19,17 @@ Commit: `df9e01f6b9ca8d225bb56ad83a104277e24b0fc9`
 | python | success |
 | Vulkan smoke | success |
 
-The Phase 508 merge followed a green PR validation: Python, native, capture-producer
+The Phase 509 merge followed a green PR validation: Python, native, capture-producer
 and Vulkan smoke all passed. The post-merge mainline run for commit
-`df9e01f6b9ca8d225bb56ad83a104277e24b0fc9` also passed all four checks.
+`a8b4a2767e4ffd090e942e5cc2d74668b8e71446` also passed all four checks.
+
+## Phase 509 verification coverage
+
+The participant process/reselection tests cover consumption of `IGPhaseVehicle+0x450`,
+pre-load processing via `FUN_00468ed0`, direct reselection through `DAT_00bbc600`,
+the `Pakfiles/Vehicles/%s.bff` load gate, and pointer/ordinal writeback only after
+successful load. The BFF-to-pre-PhysX handoff tests also verify persistence of the
+Phase 509 process/reselection contract and its JSON artifact.
 
 ## Phase 508 verification coverage
 
