@@ -73,7 +73,15 @@ def render_command():
             },
         },
         "submeshes": [{
-            "shader": {"vulkan_vertex_glsl": VERTEX_GLSL, "vulkan_pixel_glsl": PIXEL_GLSL},
+            "shader": {
+                "vulkan_vertex_glsl": VERTEX_GLSL,
+                "vulkan_pixel_glsl": PIXEL_GLSL,
+                "source_payload_sha256": "c" * 64,
+                "permutation_identity": {
+                    "format": "SHIFT.ShaderPermutationIdentity/1",
+                    "identity_sha256": "d" * 64,
+                },
+            },
             "constant_commands": [
                 {"name": "ObjectOffset", "stage": "vertex", "register_index": 0, "register_count": 1},
                 {"name": "Tint", "stage": "pixel", "register_index": 1, "register_count": 1},
