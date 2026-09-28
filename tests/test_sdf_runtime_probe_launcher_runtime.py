@@ -145,3 +145,35 @@ def test_build_attach_command_uses_explicit_pid_and_script(monkeypatch, tmp_path
         "-x",
         str((tmp_path / "attach.gdb").resolve()),
     ]
+
+
+
+def test_resolve_probe_executable_extracts_only_shift_exe(tmp_path):
+    import zipfile
+
+    archive = tmp_path / "SHIFT.zip"
+    with zipfile.ZipFile(archive, "w") as bundle:
+        bundle.writestr("SHIFT.exe", b"retail-exe")
+        bundle.writestr("SHIFT.exe.c", b"source")
+
+    result = runtime.resolve_probe_executable(
+        archive,
+        tmp_path / "bundle",
+    )
+    assert result.name == "SHIFT.exe"
+    assert result.read_bytes() == b"retail-exe"
+
+
+def test_resolve_probe_executable_rejects_multiple_shift_exe_members(tmp_path):
+    import zipfile
+
+    archive = tmp_path / "SHIFT.zip"
+    with zipfile.ZipFile(archive, "w") as bundle:
+        bundle.writestr("one/SHIFT.exe", b"one")
+        bundle.writestr("two/SHIFT.exe", b"two")
+
+    with pytest.raises(ValueError, match="exactly one SHIFT.exe"):
+        runtime.resolve_probe_executable(
+            archive,
+            tmp_path / "bundle",
+        )
