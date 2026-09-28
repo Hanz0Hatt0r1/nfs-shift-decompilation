@@ -79,6 +79,24 @@ def mapping(value: int, mm: list[dict], starts: list[int]) -> dict | None:
     return None
 
 
+def parse_range(value: str) -> tuple[int, int]:
+    try:
+        start_s, size_s = value.split(":", 1)
+        start = int(start_s, 0)
+        size = int(size_s, 0)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            f"invalid range {value!r}; use START:SIZE"
+        ) from exc
+    if start < 0 or size <= 0:
+        raise argparse.ArgumentTypeError("range start must be >= 0 and size > 0")
+    return start, start + size
+
+
+def in_ranges(value: int, ranges: list[tuple[int, int]]) -> bool:
+    return any(start <= value < end for start, end in ranges)
+
+
 def read(blob: bytes, off: int, typ: str):
     try:
         return struct.unpack_from("<" + typ, blob, off)[0]
@@ -210,7 +228,14 @@ def scan(blob: bytes, start: int, mm: list[dict], starts: list[int]) -> dict[str
     return found
 
 
-def stable_pointers(sns: list[Path], indexes: list[dict[int, dict]], mm: list[dict], starts: list[int]) -> list[dict]:
+def stable_pointers(
+    sns: list[Path],
+    indexes: list[dict[int, dict]],
+    mm: list[dict],
+    starts: list[int],
+    excluded_sources: list[tuple[int, int]] | None = None,
+) -> list[dict]:
+    excluded_sources = excluded_sources or []
     common = set(indexes[0])
     for idx in indexes[1:]:
         common &= set(idx)
@@ -224,6 +249,9 @@ def stable_pointers(sns: list[Path], indexes: list[dict[int, dict]], mm: list[di
         bs = [(s / r["file"]).read_bytes() for s, r in zip(sns, rs)]
         n = min(map(len, bs))
         for off in range(0, n - 3, 4):
+            source_address = start + off
+            if in_ranges(source_address, excluded_sources):
+                continue
             vals = [struct.unpack_from("<I", b, off)[0] for b in bs]
             if len(set(vals)) != 1:
                 continue
@@ -326,6 +354,11 @@ def main() -> int:
     ap.add_argument("--top", type=int, default=200)
     ap.add_argument("--target-top", type=int, default=20)
     ap.add_argument("--radius-kib", type=int, default=128)
+    ap.add_argument(
+        "--exclude-source-range", dest="exclude_source_ranges", action="append",
+        type=parse_range,
+        help="exclude stable-pointer source addresses in START:SIZE intervals; repeatable",
+    )
     args = ap.parse_args()
     if min(args.top, args.target_top) <= 0 or args.radius_kib < 0:
         ap.error("invalid numeric option")
@@ -369,7 +402,8 @@ def main() -> int:
     for k in candidates:
         candidates[k] = sorted(candidates[k], key=lambda r: r["address"])[:args.top]
 
-    ptr = stable_pointers(sns, idx, mm, starts)
+    excluded_sources = args.exclude_source_ranges or []
+    ptr = stable_pointers(sns, idx, mm, starts, excluded_sources)
     cl = clusters(ptr)[:args.target_top]
     radius = args.radius_kib * 1024
     raw = [{
@@ -405,6 +439,7 @@ def main() -> int:
         "pointer_target_clusters": cl,
         "next_capture_windows": windows,
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
+        "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
         "notes": [
             "Reduced captures can show absence only from selected ranges, not from the live process.",
             "Pointer clusters are recommendations; target object identity must be confirmed after capturing their bytes from the original full series.",
