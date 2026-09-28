@@ -435,7 +435,9 @@ def build_bmw_vulkan_from_material_slice(
     )
 
     result["source"] = source_record
-    result["artifacts"]["material_slice_source"] = {
+    artifacts = dict(result.get("artifacts") or {})
+    result["artifacts"] = artifacts
+    artifacts["material_slice_source"] = {
         "path": str(source_path.relative_to(Path(output_dir))),
         "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
     }
