@@ -9,6 +9,8 @@ def _command():
         "format": "SHIFT.RenderBinding/1",
         "render_commands": [{
             "format": "SHIFT.RenderCommand/1",
+            "ready": True,
+            "validation": {"valid": True, "blocking_reasons": []},
             "mesh": {
             "ref": TARGET_MEB,
             "resolved": {"resource_sha256": "a" * 64},
