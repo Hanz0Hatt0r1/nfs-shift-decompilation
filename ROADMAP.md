@@ -25,7 +25,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
 4. Audit cross-vehicle raw BFF payload parity and build the deduplicated FXO shader corpus profile.
 5. Use observed shader opcode gaps to prioritize the next reference/native backend coverage.
-6. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract.
+6. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
 7. Compare retail packed-workspace/output mutations with the source-derived provider programs.
 8. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
 9. Expand the desktop reference renderer against real BMW material/shader permutations.
