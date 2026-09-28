@@ -191,3 +191,18 @@ def test_session_blocks_frame_entry_index_mismatch():
     result = runtime.normalize_probe_session(pre, None, frame)
     assert result["ready"] is False
     assert "frame-entry-pre-solve-index-mismatch" in result["errors"]
+
+
+
+def test_probe_session_contract_reports_v2_for_backend_aware_schema():
+    result = runtime.describe_sdf_runtime_probe_session_contract()
+    assert result["format"] == "SHIFT.SDFRuntimeProbeSession/2"
+    assert result["version"] == 2
+
+
+def test_probe_session_comparison_reports_v2():
+    observed = {"pre_solve": _pre()}
+    expected = {"pre_solve": _pre()}
+    result = runtime.compare_probe_session(observed, expected)
+    assert result["format"] == "SHIFT.SDFRuntimeProbeSessionComparison/2"
+    assert result["version"] == 2
