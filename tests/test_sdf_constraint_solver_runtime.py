@@ -45,3 +45,13 @@ def test_sparse_solver_validation_rejects_wrong_forward_cardinality():
     })
     assert report["ready"] is False
     assert "forward-record-count:0:3" in report["errors"]
+
+
+def test_sparse_solver_public_wrapper_delegates_to_builtin_numeric_kernel():
+    import sdf_builtin_sparse_solver_runtime as builtin
+
+    matrix = [[2.0, 1.0], [1.0, 3.0]]
+    rhs = [5.0, 7.0]
+    forward, reverse = builtin.build_dense_solver_graph(2)
+    result = solver.solve_sdf_builtin(matrix, rhs, forward, reverse)
+    assert result["solution"] == [1.6, 1.8]

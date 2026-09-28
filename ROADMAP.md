@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 423: exact builtin sparse solver
+
+`FUN_007b0f20` is now implemented as an executable numerical sparse factorization/forward/back solver. The implementation is tested independently of the provider backend and exposed through the SDF solver runtime API. Real retail-state parity remains capture-dependent.
+
 ## Phase 422: frame-aware SDF probe session
 
 Extended `SHIFT.SDFRuntimeProbeSession/2` with optional `frame_entry_XXXXXX.json`, backend/scalar/frame consistency checks, and explicit rejection of provider-backend sessions that only contain builtin `FUN_007b0f20` captures. Added `--frame` to the session CLI. Numeric comparison remains unchanged and capture-dependent. Next target: capture the first real frame-entry/pre/post triple on a Wine+GDB host.
