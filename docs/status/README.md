@@ -13,4 +13,5 @@ Current operational status lives here. Historical research remains in the chrono
 | VERTEX_ABI_STATUS.md | MEB/D3D9 vertex ABI |
 | SHIFT_BFF_VIEWER.md | Linux BFF viewer |
 | BFF_CORPUS_STATUS.md | multi-vehicle BFF corpus evidence |
+| BFF_CONTENT_REUSE_STATUS.md | cross-path raw payload reuse |
 | SPECIALIZED_PROVIDER_STATUS.md | provider runtime capture handoff |
