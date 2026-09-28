@@ -90,4 +90,4 @@ def test_validation_rejects_workspace_reference_without_coordinates():
     )
 
     assert result["ready"] is False
-    assert "pivot-0-workspace-read-row-out-of-range" in result["errors"]
+    assert "pivot-0-workspace-read-missing-coordinates" in result["errors"]
