@@ -65,6 +65,7 @@ def normalize_scalar_reset_event(
             "0x1c" if backend == "provider" else None
         ),
         "registers": dict(event.get("registers") or {}),
+        "callsite": dict(event.get("callsite") or {}),
     }
 
 
