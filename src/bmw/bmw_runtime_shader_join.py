@@ -176,6 +176,29 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
         if unexpected:
             sampler_mismatches.append({'reason': 'unexpected-runtime-samplers', 'registers': unexpected})
         state_draw_index = state.get('draw_index')
+        runtime_vertex_sha = identity.get('vertex_byte_sha256')
+        runtime_pixel_sha = identity.get('pixel_byte_sha256')
+        runtime_pair_sha = identity.get('pair_byte_sha256')
+        expected_vertex_sha = candidate.get('vertex_sha256')
+        expected_pixel_sha = candidate.get('pixel_sha256')
+        expected_pair_sha = candidate.get('pair_sha256')
+        hash_checks = {}
+        for label, expected_sha, runtime_sha in (
+            ('vertex', expected_vertex_sha, runtime_vertex_sha),
+            ('pixel', expected_pixel_sha, runtime_pixel_sha),
+            ('pair', expected_pair_sha, runtime_pair_sha),
+        ):
+            hash_checks[label] = {
+                'expected': expected_sha,
+                'runtime': runtime_sha,
+                'status': (
+                    'match'
+                    if expected_sha and runtime_sha and expected_sha == runtime_sha
+                    else 'mismatch'
+                    if expected_sha and runtime_sha
+                    else 'not-comparable'
+                ),
+            }
         candidate_rows.append({
             'frame': frame.get('frame'),
             'draw_index': state_draw_index,
@@ -192,6 +215,7 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
             'vertex_shader': state.get('vertex_shader'),
             'pixel_shader': state.get('pixel_shader'),
             'identity_sha256': identity.get('identity_sha256'),
+            'shader_byte_hash_checks': hash_checks,
             'resource_identity_status': resource_identity_status,
             'sampler_mismatches': sampler_mismatches,
         })
