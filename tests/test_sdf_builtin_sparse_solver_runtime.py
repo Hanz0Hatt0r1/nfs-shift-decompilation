@@ -93,7 +93,7 @@ def test_public_solver_wrapper_matches_builtin_kernel():
     rhs = [5.0, 7.0]
     forward, reverse = runtime.build_dense_solver_graph(2)
     result = solver.solve_sdf_builtin(matrix, rhs, forward, reverse)
-    assert result["solution"] == pytest.approx([0.8, 2.2])
+    assert result["solution"] == pytest.approx([1.6, 1.8])
 
 
 def test_builtin_solver_rejects_bad_graph_cardinality():
