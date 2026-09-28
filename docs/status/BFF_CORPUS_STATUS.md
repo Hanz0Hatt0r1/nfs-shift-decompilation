@@ -11,6 +11,8 @@ The local 2026-09-28 vehicle corpus contains 15 BFF archives:
 
 The header/entry audit observed:
 
+The corpus auditor also correlates normalized logical paths across archives. This is a name/layout correlation layer only; payload identity and runtime material identity remain separate proofs.
+
 - 15,306 total archive entries;
 - 15,286 Type-2 entries;
 - 20 Type-0 entries;
