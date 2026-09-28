@@ -124,6 +124,12 @@ def test_launch_retail_uses_explicit_wine_and_workdir(tmp_path, monkeypatch):
     assert captured["cwd"] == str(tmp_path.resolve())
 
 
+def test_launcher_contract_exposes_explicit_backend_probe():
+    result = runtime.describe_sdf_runtime_probe_launcher()
+    assert result["probe_targets"]["builtin_solver"] == "0x007b0f20"
+    assert result["probe_targets"]["post_solve"] == "0x007b4110"
+
+
 def test_build_attach_command_requires_positive_pid(monkeypatch, tmp_path):
     monkeypatch.setattr(runtime.shutil, "which", lambda name: "/usr/bin/gdb")
     with pytest.raises(ValueError, match="positive"):
