@@ -201,6 +201,52 @@ def test_reference_shader_error_is_explicit_for_missing_texture():
     assert "texture sampler s0 (sampler2D) has no reference image" in result["blocking_reasons"][0]
 
 
+
+def test_reference_shader_executes_d3d9_matrix_multiply():
+    instructions = [
+        Instruction(
+            0, 20, "M4x4", 0, 4, 0, False,
+            [
+                _dst(0, 0),
+                _src(1, 0),
+                _src(2, 0),
+            ],
+        ),
+        Instruction(
+            4, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(0, 0)],
+        ),
+    ]
+    result = execute_shader(
+        _vertex_program(instructions, temps=(0,)),
+        inputs={0: (1.0, 2.0, 3.0, 1.0)},
+        constants={
+            "c": {
+                0: (1.0, 0.0, 0.0, 0.0),
+                1: (0.0, 2.0, 0.0, 0.0),
+                2: (0.0, 0.0, 3.0, 0.0),
+                3: (0.0, 0.0, 0.0, 4.0),
+            }
+        },
+    )
+    assert result["status"] == "executed"
+    assert result["color"] == [1.0, 4.0, 9.0, 4.0]
+
+
+def test_reference_shader_executes_sgn():
+    instructions = [
+        Instruction(
+            0, 34, "SGN", 0, 3, 0, False,
+            [_dst(8, 0), _src(1, 0)],
+        ),
+    ]
+    result = execute_shader(
+        _program(instructions, temps=()),
+        inputs={0: (-2.0, 0.0, 3.0, -0.0)},
+    )
+    assert result["status"] == "executed"
+    assert result["color"] == [-1.0, 0.0, 1.0, 0.0]
+
 def test_material_uniform_binding_builds_reference_constant_bank():
     result = material_constants_from_uniform_binding({
         "format": "SHIFT.MaterialUniformBinding/1",
