@@ -68,9 +68,9 @@ def _rle_position(
         if run_index != len(runs) - 1:
             if index == cursor:
                 return {
-                    "run_index": run_index,
-                    "run_offset": run,
-                    "run_length": run,
+                    "run_index": run_index + 1,
+                    "run_offset": 0,
+                    "run_length": int(runs[run_index + 1]),
                     "state": not state,
                     "transition": True,
                 }
