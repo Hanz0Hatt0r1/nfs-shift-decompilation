@@ -287,9 +287,9 @@ class ReferenceShaderState:
         raise ValueError(f"reference resource type {sampler_type} for s{idx} is unknown")
 
     def _condition_true(self, operand: Operand) -> bool:
-        if operand.reg_type != 14:
+        if operand.reg_type not in (14, 19):
             raise ValueError(
-                "IF requires a D3D9 constbool source register"
+                "IF requires a D3D9 constbool or predicate source register"
             )
         return bool(self._read(operand)[0])
 
@@ -669,6 +669,22 @@ class ReferenceShaderState:
                         [
                             -1.0 if value < 0.0 else 1.0 if value > 0.0 else 0.0
                             for value in self._read(o[1])
+                        ],
+                    )
+                elif name == "SETP":
+                    if len(o) < 3:
+                        raise ValueError("SETP requires two source operands")
+                    self._write(
+                        o[0],
+                        [
+                            1.0 if flag else 0.0
+                            for flag in (
+                                self._comparison_true(
+                                    self._read(o[1]),
+                                    self._read(o[2]),
+                                    ins.controls,
+                                ),
+                            )
                         ],
                     )
                 elif name in {"TEX", "TEXLDD", "TEXLDL"}:
