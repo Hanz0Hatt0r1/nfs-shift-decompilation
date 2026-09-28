@@ -15,6 +15,6 @@ The same pass validates the exact diagonal geometry from Phase 436:
 
     pivot_diagonal = row_pointer[i] + 8*i
 
-The factor pattern is deliberately kept structural. It is not described as a
-semantic matrix graph until the source update loops are cross-checked against
-these extracted future-column sets.
+The factor pattern is deliberately kept structural. It is not described as a semantic matrix graph until the source update schedule and packed storage dependencies are cross-checked against these extracted future-column sets.
+
+Phase 446 corrected the extractor so the logical scalar-domain bound is the provider dimension, not the byte extent between adjacent row pointers. The latter is storage topology and may be crossed by an explicit factor loop.
