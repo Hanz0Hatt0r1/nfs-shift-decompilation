@@ -14,7 +14,9 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 427.**
+> **Current mainline: Phase 444.**
+>
+> **Latest physics/provider track:** Phases 440–444 reconstruct the specialized solver from the retail source as a layered, machine-readable boundary: workspace write graph, RHS address stencils, dependency graph, operator signatures, and a combined solver reconstruction IR. The fixed provider domains remain 40/34 scalars; final provider selection and numeric retail parity remain capture-gated.
 >
 > The project now has a source-backed BMW M3 E36 physics vertical slice through the pre-PhysX construction boundary: the real `aarm_multilink.sdf` path is reconstructed through 40 scalar solver nodes, exact JOINT/HINGE/BAR projection and coupling kernels, the builtin sparse-solver lifecycle, provider-aware PE/runtime probe tooling, and a neutral pre-PhysX construction IR for the BODY/constraint runtime records. The actual SDK/provider object classes remain an explicit unresolved boundary.
 >
