@@ -1,5 +1,3 @@
-import pytest
-
 import specialized_provider_capture_session_runtime as runtime
 
 
@@ -37,11 +35,6 @@ def test_normalize_provider_session_accepts_matching_provider_frames():
 def test_normalize_provider_session_rejects_frame_mismatch():
     pre = _capture(1, 7)
     post = _capture(1, 8)
-
-    with pytest.raises(ValueError):
-        # normalize_provider_capture rejects nothing here; the mismatch is in
-        # the returned session, so validate the session result explicitly.
-        pass
 
     result = runtime.normalize_provider_session(pre, post)
     assert result["ready"] is False
