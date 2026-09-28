@@ -45,6 +45,7 @@ def test_dynamic_domain_builds_self_and_pair_writes():
     assert result["self_cell_count"] == 10
     assert result["pair_cell_count"] == 11
     assert result["union_cell_count"] == 21
+    assert result["lower_triangle_off_diagonal_cell_count"] == 15
 
 
 def test_dynamic_domain_uses_expected_kernel_ownership():
