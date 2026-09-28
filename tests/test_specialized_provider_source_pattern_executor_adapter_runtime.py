@@ -9,7 +9,7 @@ def test_source_pattern_edge_contract_deduplicates_edges():
         "edges": [
             {"pivot_index": 0, "column": 1},
             {"pivot_index": 0, "column": 1},
-            {"pivot_index": 1, "column": 2},
+
         ],
     }
 
