@@ -162,6 +162,7 @@ def run_provider_selection(
         accepted=False,
         scalar_count=scalar_count,
         primary_storage=None,
+        graph_storage=None,
         aux_storage=None,
         secondary_domain=scalar_count * scalar_count,
         calls=calls,
@@ -190,7 +191,7 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
                     "reset_allocation_state": "result -> physics_system+0x3c",
                     "replace_primary_storage": "result -> physics_system+0x40",
                     "replace_aux_storage": "result -> physics_system+0x44",
-                    "finalize": "result -> per-body +0xa8 workspace size",
+                    "finalize": "result -> per-body +0xa8 domain",
                 }[method],
             }
             for method, offset in VTABLE.items()
@@ -201,7 +202,7 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
             "call +0x0c and replace physics_system+0x3c",
             "call +0x04 and replace physics_system+0x40",
             "call +0x08 and replace physics_system+0x44",
-            "call +0x2c and use result as per-body +0xa8 workspace size",
+            "call +0x2c and use result as per-body +0xa8 domain",
         ],
         "fallback_transition": {
             "selector_after_slot_1": "null",
