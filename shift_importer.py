@@ -1251,6 +1251,21 @@ def _resource_analysis_output(data: bytes, path: str) -> dict:
     return analyze_decoded_resource(path, data)
 
 
+def _resource_identity_fields(bff: "BFF", entry: "Entry", decoded: bytes) -> dict:
+    """Return explicit decoded and stored-payload identity for one BFF entry."""
+    decoded_sha256 = sha256(decoded)
+    raw_sha256 = sha256(bff.raw_payload(entry))
+    return {
+        "sha256": decoded_sha256,
+        "decoded_sha256": decoded_sha256,
+        "raw_sha256": raw_sha256,
+        "type": int(entry.type),
+        "entry_index": int(entry.index),
+        "compressed_size": int(entry.compressed_size),
+        "uncompressed_size": int(entry.uncompressed_size),
+    }
+
+
 def cmd_analyze_resource(args: argparse.Namespace) -> int:
     """Decode one BFF resource and emit format-aware JSON analysis."""
     with BFF(args.archive) as bff:
@@ -1492,7 +1507,18 @@ def cmd_build_ir(args: argparse.Namespace) -> int:
                         hits = resolve_resource_ref(ref, path_map, basename_map)
                         resolved.append({"ref": ref, "resolved": hits})
                     cat = classify(e.path, data)
-                    row = {"archive": bp.name, "path": e.path, "sha256": digest, "size": len(data), "category": cat, "raw": str(raw_blob.relative_to(root)).replace(os.sep, "/"), "output": str(out_path.relative_to(root)).replace(os.sep, "/"), "output_kind": out_kind, "dependencies": resolved}
+                    identity = _resource_identity_fields(bff, e, data)
+                    row = {
+                        "archive": bp.name,
+                        "path": e.path,
+                        **identity,
+                        "size": len(data),
+                        "category": cat,
+                        "raw": str(raw_blob.relative_to(root)).replace(os.sep, "/"),
+                        "output": str(out_path.relative_to(root)).replace(os.sep, "/"),
+                        "output_kind": out_kind,
+                        "dependencies": resolved,
+                    }
                     manifest.append(row); stats["converted"] += 1; stats["categories"][cat] = stats["categories"].get(cat, 0) + 1; stats["outputs"][out_kind] = stats["outputs"].get(out_kind, 0) + 1
                 except Exception as exc:
                     stats["failed"] += 1
