@@ -88,7 +88,10 @@ def test_summary_counts_factor_edges():
 def test_loop_factor_targets_can_exceed_legacy_segment_extent():
     targets = runtime._expanded_factor_targets(
         [
-            "for (local_10 = 30; local_10 < 32; local_10 = local_10 + 1) {",
+            "void FUN_007c7200(void) {",
+            "  double dVar1;",
+            "  dVar1 = 1.0 / _DAT_00c21738;",
+            "  for (local_10 = 30; local_10 < 32; local_10 = local_10 + 1) {",
             "  *(double *)(&DAT_00001000 + local_10 * 8) =",
             "       *(double *)(&DAT_00002000 + local_10 * 8) * dVar1;",
             "}",
