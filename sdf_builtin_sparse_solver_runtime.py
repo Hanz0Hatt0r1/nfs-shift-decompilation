@@ -6,7 +6,7 @@ from typing import Any, Mapping, Sequence
 FORMAT = "SHIFT.SDFBuiltinSparseSolverRuntime/1"
 SOURCE_FILE = "SHIFT.exe.c"
 SOURCE_SHA256 = "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
-SOURCE_LINE = 819229
+SOURCE_LINE = 811506
 
 
 def _copy_matrix(matrix: Sequence[Sequence[float | int]]) -> list[list[float]]:
