@@ -124,12 +124,21 @@ def extract_loop_stencils(
     source: str,
     *,
     provider_id: int,
+    function_name: str | None = None,
+    next_function_marker: str | None = None,
+    expected_scalar_count: int | None = None,
 ) -> dict[str, Any]:
     spec = _function_spec(provider_id)
+    target_function = function_name or str(spec["function"])
+    target_end = (
+        next_function_marker
+        if next_function_marker is not None
+        else spec["next_function_marker"]
+    )
     body, source_start_line = extract_function_body(
         source,
-        spec["function"],
-        next_function_marker=spec["next_function_marker"],
+        target_function,
+        next_function_marker=target_end,
     )
     lines = body.splitlines()
     pivots = extract_reciprocal_pivots(
@@ -139,9 +148,14 @@ def extract_loop_stencils(
     layout = get_storage_layout(provider_id)
 
     errors: list[str] = []
-    if len(pivots) != layout.scalar_count:
+    expected_count = (
+        layout.scalar_count
+        if expected_scalar_count is None
+        else int(expected_scalar_count)
+    )
+    if len(pivots) != expected_count:
         errors.append(
-            f"pivot-count:expected={layout.scalar_count}:actual={len(pivots)}"
+            f"pivot-count:expected={expected_count}:actual={len(pivots)}"
         )
 
     stencils: list[dict[str, Any]] = []
@@ -244,7 +258,7 @@ def extract_loop_stencils(
         "format": FORMAT,
         "version": 1,
         "provider_id": provider_id,
-        "function": spec["function"],
+        "function": target_function,
         "source_start_line": source_start_line,
         "source_line_count": len(lines),
         "scalar_count": layout.scalar_count,
