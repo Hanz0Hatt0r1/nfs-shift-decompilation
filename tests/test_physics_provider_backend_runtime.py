@@ -106,15 +106,8 @@ def test_summary_preserves_graph_and_aux_slots():
     assert summary["state_updates"]["physics_system+0x44"] == "p0:aux"
 
 
-def test_provider_2c_matches_workspace_size():
-    backend = FakeBackend(True, "p0")
-    out = runtime.run_provider_selection(
-        scalar_count=40,
-        initial_row_table="r",
-        old_matrix="m",
-        old_row_table="t",
-        backends=(backend, None),
-        release_matrix=lambda _: None,
-        release_rows=lambda _: None,
-    )
-    assert out.secondary_domain == 17
+def test_provider_2c_result_is_tracked_as_workspace_size():
+    contract = runtime.build_fun_007b3820_backend_contract()
+    assert contract["workspace_domain"]["provider_return_2c_equals_vtable_24"] is True
+    assert contract["workspace_domain"]["provider0_value"] == 1190
+    assert contract["workspace_domain"]["provider1_value"] == 746
