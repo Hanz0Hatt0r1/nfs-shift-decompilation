@@ -15,5 +15,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: make -C tools/shift_live_dump
-      - name: Smoke test
-        run: ./tools/shift_live_dump/test_smoke.sh
+      - name: Test suite
+        run: make -C tools/shift_live_dump test
