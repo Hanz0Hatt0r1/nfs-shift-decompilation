@@ -105,11 +105,7 @@ def test_reference_shader_executes_tex_against_reference_image():
 def test_reference_shader_executes_if_else_control_flow():
     instructions = [
         Instruction(
-            0, 1, "MOV", 0, 3, 0, False,
-            [_dst(0, 0), _src(1, 0)],
-        ),
-        Instruction(
-            4, 40, "IF", 0, 2, 0, False,
+            0, 40, "IF", 0, 2, 0, False,
             [_src(0, 0)],
         ),
         Instruction(
