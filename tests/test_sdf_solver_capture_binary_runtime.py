@@ -1,0 +1,82 @@
+import struct
+
+import pytest
+
+import sdf_solver_capture_binary_runtime as runtime
+
+
+def _blob():
+    rhs = struct.pack("<3d", 1.0, 2.0, 3.0)
+    matrix = struct.pack(
+        "<9d",
+        1.0, 2.0, 3.0,
+        4.0, 5.0, 6.0,
+        7.0, 8.0, 9.0,
+    )
+    return b"HEADER" + rhs + b"PADDING" + matrix
+
+
+def test_read_flat_solver_capture_decodes_explicit_offsets():
+    data = _blob()
+    result = runtime.read_flat_solver_capture(
+        data,
+        scalar_count=3,
+        rhs_offset=6,
+        matrix_offset=6 + 24 + 7,
+        row_indices=[0, 3, 6],
+        runtime_identity_nodes=[1],
+        frame=42,
+    )
+    assert result["ready"] is True
+    assert result["rhs"] == [1.0, 2.0, 3.0]
+    assert result["matrix"] == [
+        [1.0, 2.0, 3.0],
+        [4.0, 5.0, 6.0],
+        [7.0, 8.0, 9.0],
+    ]
+    assert result["binary"]["endianness"] == "little"
+    assert result["binary"]["encoding"] == "IEEE-754 binary64"
+    assert result["frame"] == 42
+
+
+def test_read_flat_solver_capture_rejects_truncated_rhs():
+    with pytest.raises(ValueError, match="rhs exceeds capture bounds"):
+        runtime.read_flat_solver_capture(
+            b"\x00" * 8,
+            scalar_count=3,
+            rhs_offset=0,
+            matrix_offset=0,
+        )
+
+
+def test_read_flat_solver_capture_rejects_truncated_matrix():
+    with pytest.raises(ValueError, match="matrix exceeds capture bounds"):
+        runtime.read_flat_solver_capture(
+            b"\x00" * 24,
+            scalar_count=2,
+            rhs_offset=0,
+            matrix_offset=24,
+        )
+
+
+def test_capture_to_json_writes_normalized_schema(tmp_path):
+    data = _blob()
+    capture = runtime.read_flat_solver_capture(
+        data,
+        scalar_count=3,
+        rhs_offset=6,
+        matrix_offset=37,
+    )
+    output = tmp_path / "solver.json"
+    result = runtime.capture_to_json(capture, output)
+    assert result["ready"] is True
+    assert output.exists()
+    text = output.read_text(encoding="utf-8")
+    assert '"scalar_count": 3' in text
+
+
+def test_binary_contract_never_infers_offsets():
+    report = runtime.describe_sdf_solver_capture_binary_contract()
+    assert report["inputs"]["rhs_offset"] == "required byte offset"
+    assert report["inputs"]["matrix_offset"] == "required byte offset"
+    assert "never inferred" in report["limitations"][0]
