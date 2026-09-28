@@ -339,7 +339,7 @@ def test_build_from_analysis_and_cli(tmp_path):
     proc = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "draw_packets.py"),
+            str(Path(__file__).resolve().parents[1] / "src" / "render" / "draw_packets.py"),
             str(analysis),
             str(output),
         ],
@@ -385,7 +385,7 @@ def test_cli_material_binding_report_reaches_draw_packet(tmp_path):
     subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "draw_packets.py"),
+            str(Path(__file__).resolve().parents[1] / "src" / "render" / "draw_packets.py"),
             str(analysis),
             str(output),
             "--material-binding-report",
