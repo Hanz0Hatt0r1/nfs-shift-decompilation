@@ -23,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pre", type=Path, required=True, help="pre_solve_XXXXXX.json")
     parser.add_argument("--post", type=Path, help="post_solve_XXXXXX.json")
+    parser.add_argument("--frame", type=Path, help="optional frame_entry_XXXXXX.json")
     parser.add_argument("--expected-pre", type=Path)
     parser.add_argument("--expected-post", type=Path)
     parser.add_argument("--abs-tol", type=float, default=0.0)
@@ -38,6 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     }
     if args.post is not None:
         observed["post_solve"] = load_probe_json(args.post)
+    if args.frame is not None:
+        observed["frame_entry"] = load_probe_json(args.frame)
 
     if args.expected_pre is None and args.expected_post is None:
         report = normalize_probe_session(
