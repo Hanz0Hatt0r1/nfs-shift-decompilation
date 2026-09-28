@@ -30,6 +30,7 @@ from sdf_runtime_probe_runtime import (
 )
 from specialized_provider_capture_runtime import build_provider_capture_payload
 from specialized_provider_runtime import get_provider
+from specialized_provider_vtable_lifecycle_runtime import get_vtable_lifecycle
 from specialized_provider_scalar_reset_capture_runtime import (
     validate_scalar_reset_event,
 )
@@ -626,12 +627,12 @@ class SDFProbeCommand(gdb.Command):
                 output,
             ),
             ProviderResetProbe(
-                get_provider(0).reset_function,
+                get_vtable_lifecycle(0).reset_function,
                 0,
                 output,
             ),
             ProviderResetProbe(
-                get_provider(1).reset_function,
+                get_vtable_lifecycle(1).reset_function,
                 1,
                 output,
             ),
@@ -642,8 +643,8 @@ class SDFProbeCommand(gdb.Command):
             f"provider0_solver=0x{get_provider(0).solve_function:08x},",
             f"provider1_solver=0x{get_provider(1).solve_function:08x},",
             "scalar_reset=0x007b2210,",
-            f"provider0_reset=0x{get_provider(0).reset_function:08x},",
-            f"provider1_reset=0x{get_provider(1).reset_function:08x},",
+            f"provider0_reset=0x{get_vtable_lifecycle(0).reset_function:08x},",
+            f"provider1_reset=0x{get_vtable_lifecycle(1).reset_function:08x},",
 ",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
             f"output={output}",
