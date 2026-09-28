@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 419: deterministic SDF probe launcher
+
+Added `sdf_runtime_probe_launcher_runtime.py` and `tools/run_sdf_solver_probe.py`. The launcher accepts either `SHIFT.exe` or a ZIP containing exactly one `SHIFT.exe`. The prepare mode validates the exact retail `SHIFT.exe`, writes a capture manifest and deterministic `attach.gdb`; attach mode uses an explicitly supplied PID and never guesses a Wine process. The launcher fails closed for wrong PE identity or missing runtime tools. Numeric solver equality still requires a real retail capture. Next target: use the supplied retail executable on a Wine+GDB host to produce the first 40-scalar pre/post-solve pair.
+
 ## Phase 418: README physics status
 
 Synchronized README mainline status with the actual Phase 417 physics state and documented the current runtime-probe/capture gate. Numeric retail-vs-reimplementation solver equality remains capture-dependent.
