@@ -171,17 +171,6 @@ def validate_initial_state(report: dict[str, Any]) -> dict[str, Any]:
             )
         seen_first.add(key)
 
-        if domain == "output_vector":
-            value = int(address, 16)
-            if not (
-                0 <= (value - int(
-                    str(
-                        hex(0)
-                    )
-                ) if False else 0)
-            ):
-                pass
-
     for event in report.get("events") or []:
         pivot = int(event.get("pivot_index", -1))
         if pivot < 0 or pivot >= scalar_count:
