@@ -87,7 +87,7 @@ def test_compare_structure_to_seed_reports_cell_mismatch():
     )
 
     assert result["ready"] is False
-    assert {"row": 0, "column": 3} <= result["mismatches"][0].items()
+    assert {"row": 0, "column": 3}.items() <= result["mismatches"][0].items()
 
 
 def test_acceptance_evaluation_reports_candidate_status():
