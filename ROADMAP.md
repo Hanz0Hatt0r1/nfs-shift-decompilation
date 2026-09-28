@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Mainline: Phase 501.**
+**Development branch: Phase 502.**
 
 Phases 499–500 make the specialized-provider capture directory self-describing:
 
@@ -30,7 +30,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 8. Extend runtime BMW shader join/render contracts with explicit VS/PS/pair byte-hash differentials — implemented.
 9. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
 10. Compare retail packed-workspace/output mutations with the source-derived provider programs — implemented as `SHIFT.SpecializedProviderCaptureSourceMutationCorrelation/1`.
-11. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
+11. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities — Phase 502 adds a cross-contract provider handoff validator.
 12. Expand the desktop reference renderer against real BMW material/shader permutations.
 13. Complete Vulkan RenderCommand execution using the same neutral contract.
 14. Continue SGB/FLAT and camera runtime reconstruction.
@@ -53,7 +53,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph and force-law boundaries |
 | Builtin solver | source-backed | runtime frame parity |
-| Specialized providers | capture-ready | real capture + numeric differential; source-mutation correlation implemented |
+| Specialized providers | capture-ready | real capture + numeric differential; source-mutation and pre-PhysX handoff correlation implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Vulkan | active | full RenderCommand/material submission |
 | Android | deferred | stable native renderer/runtime boundary |
