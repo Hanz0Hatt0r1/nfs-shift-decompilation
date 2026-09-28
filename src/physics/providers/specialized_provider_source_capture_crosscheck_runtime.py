@@ -42,13 +42,13 @@ def factor_edge_addresses(
             < layout.output_vector_base
         ):
             raise ValueError(
-                f"factor address outside provider workspace: {f"0x{address:08x}"}"
+                f"factor address outside provider workspace: 0x{address:08x}"
             )
         result.append(
             {
                 "pivot_index": pivot,
                 "column": column,
-                "address": hex(address),
+                "address": f"0x{address:08x}",
             }
         )
 
