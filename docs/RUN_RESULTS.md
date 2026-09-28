@@ -21,6 +21,12 @@ Commit: `19b53820f30fd18bca84f77171c327d473bc39f5`
 The Phase 503 merge followed a green PR validation: Python, native, capture-producer
 and Vulkan smoke all passed. The post-merge mainline run also passed all four checks.
 
+## Phase 504 verification coverage
+
+The runtime preflight tests cover GDB Python marker detection, missing toolchain handling,
+tool-version failures and successful host readiness aggregation. It also confirms that
+preflight remains non-invasive: no game launch and no debugger attach are performed.
+
 ## Phase 503 verification coverage
 
 The BFF-to-pre-PhysX/provider handoff tests cover successful composition of the
