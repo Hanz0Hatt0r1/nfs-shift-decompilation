@@ -130,3 +130,19 @@ def test_blocks_without_row_pointer_provenance():
     assert result["ready"] is False
     assert result["status"] == "blocked"
     assert "row-pointer-table-missing" in result["errors"]
+
+
+def test_blocks_when_source_pattern_is_not_ready():
+    pre, post = _capture(0, changed_indices={1: 1.0})
+    pattern = _pattern(0, [(0, 1)])
+    pattern["ready"] = False
+
+    result = runtime.build_source_mutation_correlation_contract(
+        pre,
+        post,
+        pattern,
+    )
+
+    assert result["ready"] is False
+    assert result["status"] == "blocked"
+    assert "source-pattern-not-ready" in result["errors"]
