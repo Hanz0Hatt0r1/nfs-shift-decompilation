@@ -23,6 +23,8 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 1. Restore a clean Python CI baseline after the src reorganization; the provider CLI syntax error and pytest source-path bootstrap are now fixed, with CI re-validation in progress.
 2. Capture a real provider frame with the SDF/runtime probe.
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
+4. Audit cross-vehicle raw BFF payload parity and build the deduplicated FXO shader corpus profile.
+5. Use observed shader opcode gaps to prioritize the next reference/native backend coverage.
 4. Compare retail packed-workspace/output mutations with the source-derived provider programs.
 5. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
 6. Expand the desktop reference renderer against real BMW material/shader permutations.
