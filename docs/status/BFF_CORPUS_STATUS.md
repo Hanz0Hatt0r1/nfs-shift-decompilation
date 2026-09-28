@@ -45,4 +45,9 @@ decoded-payload or same-instance runtime evidence.
 
 ## Physics bundle extraction
 
+## Physics runtime handoff
+
+`specialized_provider_runtime_selection_runtime.py` объединяет source-backed dispatch, selector provenance, execution sequence и provider solver source-shape в один `SHIFT.SpecializedProviderRuntimeSelection/1` contract. `observed_provider_id` принимается только как runtime observation; source analysis не используется для выбора retail provider.
+
+
 `vehicle_physics_bundle.py` now resolves the default CDF/EDF/GDF/SDF/TBF/BBF set directly from a BFF. Exact BMW paths remain authoritative; non-BMW fallback uses vehicle-name matching and known shared basenames, and ambiguous selections fail closed. This makes the existing `VehiclePhysicsAssetGraph/1` parser directly reusable across the vehicle corpus.
