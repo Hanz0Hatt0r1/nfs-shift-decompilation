@@ -763,6 +763,7 @@ class ReferenceShaderState:
                 in sorted(self.output_registers.items())
             },
             "depth": self.depth,
+            "discarded": self.discarded,
             "temps": {str(k): list(v) for k, v in sorted(self.temps.items())},
             "address": list(self.address),
             "loop_index": self.loop_index,
