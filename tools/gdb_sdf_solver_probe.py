@@ -28,6 +28,9 @@ from sdf_runtime_probe_runtime import (
     derive_physics_system_from_solver_state,
     describe_frame_entry_backend,
 )
+from specialized_provider_capture_runtime import build_provider_capture_payload
+from specialized_provider_runtime import get_provider
+from specialized_provider_storage_runtime import get_storage_layout
 
 
 def _u32(inferior: gdb.Inferior, address: int) -> int:
@@ -40,6 +43,57 @@ def _doubles(inferior: gdb.Inferior, address: int, count: int) -> list[float]:
         return []
     raw = bytes(inferior.read_memory(int(address), int(count) * 8))
     return list(struct.unpack("<" + "d" * int(count), raw))
+
+
+_LAST_FRAME_ENTRY = {
+    "frame_index": None,
+    "physics_system": None,
+}
+
+
+def _provider_snapshot(
+    inferior: gdb.Inferior,
+    provider_id: int,
+    stage: str,
+    hit: int,
+) -> dict:
+    layout = get_storage_layout(provider_id)
+    workspace = _doubles(
+        inferior,
+        layout.factor_workspace_base,
+        layout.factor_workspace_doubles,
+    )
+    output_vector = _doubles(
+        inferior,
+        layout.output_vector_base,
+        layout.output_vector_doubles,
+    )
+    row_pointers = [
+        _u32(inferior, layout.row_pointer_base + row * 4)
+        for row in range(layout.scalar_count)
+    ]
+    payload = build_provider_capture_payload(
+        provider_id=provider_id,
+        stage=stage,
+        workspace=workspace,
+        output_vector=output_vector,
+        row_pointers=row_pointers,
+        frame_index=_LAST_FRAME_ENTRY["frame_index"],
+        physics_system=_LAST_FRAME_ENTRY["physics_system"],
+        source="gdb_sdf_solver_probe.py",
+        metadata={
+            "capture_kind": stage,
+            "provider_solve_hit": hit,
+        },
+    )
+    payload["registers"] = {
+        "eip": int(gdb.parse_and_eval("$eip")),
+        "esp": int(gdb.parse_and_eval("$esp")),
+    }
+    payload["source_address"] = hex(
+        get_provider(provider_id).solve_function
+    )
+    return payload
 
 
 def _matrix_from_rows(
@@ -88,6 +142,8 @@ class FrameEntryProbe(_BaseProbe):
             provider=provider,
             solver_state=solver_state,
         )
+        _LAST_FRAME_ENTRY["frame_index"] = self.hit
+        _LAST_FRAME_ENTRY["physics_system"] = physics_system
         payload.update({
             "capture_kind": "frame_entry_backend",
             "frame_index": self.hit,
