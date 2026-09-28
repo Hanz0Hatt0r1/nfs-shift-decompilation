@@ -27,8 +27,8 @@ def _report_for_scalars(widths):
     return {"records": records}
 
 
-def test_phase502_identifies_provider0_for_40_scalar_shape():
-    report = _report_for_scalars(["JOINT"] * 4 + ["HINGE"] * 5 + ["BAR"] * 12)
+def test_phase502_identifies_provider1_for_34_scalar_shape():
+    report = _report_for_scalars(["JOINT"] * 4 + ["HINGE"] * 5 + ["BAR"] * 12]
     contract = runtime.build_prephysx_provider_handoff_contract(report)
 
     assert contract["ready"] is True
