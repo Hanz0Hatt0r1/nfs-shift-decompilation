@@ -16,6 +16,10 @@ from specialized_provider_row_storage_runtime import get_row_pointers
 
 FORMAT = "SHIFT.SpecializedProviderScalarResetEffectRuntime/1"
 
+def _fmt_addr(address: int) -> str:
+    return f"0x{address:08x}"
+
+
 
 def _expected_addresses(provider_id: int, selector: int) -> dict[str, int]:
     layout = get_storage_layout(provider_id)
@@ -102,9 +106,9 @@ def validate_reset_effect_event(
             addresses = None
         if addresses is not None:
             observed = event.get("addresses") or {}
-            if observed.get("diagonal") != hex(addresses["diagonal"]):
+            if observed.get("diagonal") != _fmt_addr(addresses["diagonal"]):
                 errors.append("diagonal-address-mismatch")
-            if observed.get("output") != hex(addresses["output"]):
+            if observed.get("output") != _fmt_addr(addresses["output"]):
                 errors.append("output-address-mismatch")
 
     if reset_event_count <= 0:
