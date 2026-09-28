@@ -141,7 +141,7 @@ def build_storage_contract() -> dict[str, Any]:
                 "+0x0c": {"function": hex(layout.accessor_0c), "returns": hex(layout.row_pointer_base)},
                 "+0x24": {"function": hex(layout.accessor_24), "returns": layout.factor_workspace_doubles},
                 "+0x28": {"function": hex(layout.accessor_28), "returns": layout.scalar_count},
-                "+0x2c": {"function": hex(layout.accessor_2c), "returns_global": layout.accessor_2c_global},
+                "+0x2c": {"function": hex(layout.accessor_2c), "returns_global": layout.accessor_2c_global, "returns_value": layout.factor_workspace_doubles, "equals_plus_0x24": True},
             },
             "boundary_checks": {
                 "row_table_end": hex(layout.factor_workspace_base),
@@ -157,7 +157,7 @@ def build_storage_contract() -> dict[str, Any]:
         "providers": entries,
         "status": "source-backed-static-layout",
         "limitations": [
-            "The +0x2c accessor return is preserved as a global reference; its semantic type is unresolved.",
+            "The +0x2c accessor return is preserved as a global reference and observed value; its broader semantic type is unresolved.",
             "The factor workspace is identified by its static address span and size; internal slot semantics remain owned by the provider solve function.",
         ],
     }

@@ -189,7 +189,7 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
                     "reset_allocation_state": "result -> physics_system+0x3c",
                     "replace_primary_storage": "result -> physics_system+0x40",
                     "replace_aux_storage": "result -> physics_system+0x44",
-                    "finalize": "result -> per-body +0xa8 domain",
+                    "finalize": "result -> per-body +0xa8 workspace size",
                 }[method],
             }
             for method, offset in VTABLE.items()
@@ -200,12 +200,18 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
             "call +0x0c and replace physics_system+0x3c",
             "call +0x04 and replace physics_system+0x40",
             "call +0x08 and replace physics_system+0x44",
-            "call +0x2c and use result as per-body +0xa8 domain",
+            "call +0x2c and use result as per-body +0xa8 workspace size",
         ],
         "fallback_transition": {
             "selector_after_slot_1": "null",
             "path": "FUN_007b2010 -> FUN_007b1360",
             "secondary_domain": "scalar_count * scalar_count",
+        },
+        "workspace_domain": {
+            "provider_return_2c_equals_vtable_24": True,
+            "provider0_value": 1190,
+            "provider1_value": 746,
+            "observed_destination": "per_body+0xa8",
         },
         "provider_identity": {
             "slot_0_init_vtable": "PTR_FUN_00b0fc5c",
@@ -216,7 +222,7 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
         "limitations": [
             "Provider acceptance is runtime-dependent.",
             "Concrete provider class identities remain unresolved.",
-            "The +0x2c return is named only by its observed downstream storage role.",
+            "The +0x2c return is observed as the same workspace-size value returned by +0x24 in the shipped PE.",
         ],
     }
 

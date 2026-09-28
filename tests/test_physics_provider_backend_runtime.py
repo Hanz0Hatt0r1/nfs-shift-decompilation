@@ -104,3 +104,17 @@ def test_summary_preserves_graph_and_aux_slots():
     summary = runtime.summarize_execution(out)
     assert summary["state_updates"]["physics_system+0x40"] == "p0:graph"
     assert summary["state_updates"]["physics_system+0x44"] == "p0:aux"
+
+
+def test_provider_2c_result_is_tracked_as_workspace_size():
+    contract = runtime.build_fun_007b3820_backend_contract()
+    assert contract["workspace_domain"]["provider_return_2c_equals_vtable_24"] is True
+    assert contract["workspace_domain"]["provider0_value"] == 1190
+    assert contract["workspace_domain"]["provider1_value"] == 746
+
+ 
+def test_provider_2c_result_is_workspace_size():
+    contract = runtime.build_fun_007b3820_backend_contract()
+    assert contract["workspace_domain"]["provider_return_2c_equals_vtable_24"] is True
+    assert contract["workspace_domain"]["provider0_value"] == 1190
+    assert contract["workspace_domain"]["provider1_value"] == 746

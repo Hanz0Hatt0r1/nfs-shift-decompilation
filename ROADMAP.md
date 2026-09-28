@@ -106,6 +106,12 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 434: provider workspace-size domain correction
+
+Audited FUN_007d2f00/FUN_007d2f60 and the shipped PE .data values at DAT_00b8d8ec/DAT_00b8d8f0. Provider 0 +0x24 returns 0x4A6 and +0x2C returns the same value from DAT_00b8d8ec; provider 1 +0x24 returns 0x2EA and +0x2C returns the same value from DAT_00b8d8f0. FUN_007b3820 stores the accepted-provider +0x2C return into BODY +0xA8.
+
+The provider runtime now records this as the observed factor-workspace size, while preserving compatibility field names. Concrete provider class semantics remain unresolved.
+
 ## Phase 433: exact specialized-provider workspace layout
 
 Resolved the static storage layout behind the two specialized provider vtables. Provider 0 uses a 40-entry row-pointer table at 0x00C21698, a 1190-double factor workspace at 0x00C21738 and a 40-double output vector at 0x00C23C68. Provider 1 uses a 34-entry row-pointer table at 0x00C1FDB0, a 746-double factor workspace at 0x00C1FE38 and a 34-double output vector at 0x00C21588.
