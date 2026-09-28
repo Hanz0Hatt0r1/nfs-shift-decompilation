@@ -50,7 +50,7 @@ def test_endpoint_schedule_has_expected_union_cells():
     result = runtime.build_endpoint_contribution_schedule(_domain())
 
     assert result["write_cell_count"] == 21
-    assert result["strict_upper_write_cell_count"] == 15
+    assert result["lower_triangle_off_diagonal_cell_count"] == 11
 
 
 def test_self_operations_are_endpoint_specific():
@@ -144,7 +144,7 @@ def test_summarize_endpoint_schedule():
             "pair_operation_count": 42,
             "operation_count": 98,
             "write_cell_count": 700,
-            "strict_upper_write_cell_count": 330,
+            "lower_triangle_off_diagonal_cell_count": 330,
             "ready": True,
         }
     )
