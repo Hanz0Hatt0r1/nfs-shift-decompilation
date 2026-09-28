@@ -31,7 +31,7 @@ def test_build_reset_effect_event_sets_exact_expected_values():
         output_after=0.0,
     )
 
-    assert result["addresses"]["diagonal"] == "0x00c21848"
+    assert result["addresses"]["diagonal"] == "0x00c218d8"
     assert result["addresses"]["output"] == "0x00c23c78"
     assert result["expected"] == {
         "diagonal_after": 1.0,
