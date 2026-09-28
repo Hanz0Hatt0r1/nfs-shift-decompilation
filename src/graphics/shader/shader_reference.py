@@ -194,6 +194,8 @@ class ReferenceShaderState:
         elif rt in (2, 11, 12, 13):
             bank = {2: "c", 11: "c2", 12: "c3", 13: "c4"}[rt]
             value = self.constants.get(bank, {}).get(idx, [0.0] * 4)
+        elif rt == 14:
+            value = self.constants.get("b", {}).get(idx, [0.0] * 4)
         else:
             raise ValueError(f"unsupported source register type {rt}")
         value = _swizzle(list(value), operand.swizzle)
