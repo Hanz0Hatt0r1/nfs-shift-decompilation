@@ -9,6 +9,7 @@ from sdf_constraint_solver_frame_runtime import (
 )
 from sdf_builtin_identity_reset_runtime import describe_identity_reset_contract
 from sdf_post_solve_application_runtime import describe_post_solve_application_contract
+from sdf_solver_frame_verification_runtime import verify_frame_plan, verify_solver_scalar_domain
 
 FORMAT = "SHIFT.SDFFullFrameRuntime/1"
 
@@ -155,8 +156,24 @@ def build_runtime_frame_plan(
         {"stage": "solve_dispatch", "ready": True},
         {"stage": "post_solve_application", "ready": True},
     ]
+    verification = verify_frame_plan({
+        "solver_scalar_count": int(solver_scalar_count),
+        "body_count": int(body_count),
+        "runtime_flags_available": runtime_flags_available,
+        "stages": stages,
+        "identity_selector": selected,
+        "contract": contract,
+        "verification": verification,
+        "scalar_domain_verification": scalar_domain_verification,
+    })
+    scalar_domain_verification = None
+    if runtime_record_domains:
+        scalar_domain_verification = verify_solver_scalar_domain(
+            solver_scalar_count=int(solver_scalar_count),
+            runtime_record_domains=runtime_record_domains,
+        )
     return {
-        "format": "SHIFT.SDFRuntimeFramePlan/1",
+        "format": "SHIFT.SDFRuntimeFramePlan/2",
         "version": 1,
         "status": "ready",
         "ready": True,
