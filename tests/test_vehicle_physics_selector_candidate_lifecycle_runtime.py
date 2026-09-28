@@ -11,7 +11,7 @@ def test_phase510_descriptor_layout_and_defaults_are_source_backed():
     assert descriptor["stride"] == "0x90"
     assert descriptor["state_offset"] == "+0x74"
     assert descriptor["ordinal_offset"] == "+0x8c"
-    assert descriptor["constructor_defaults"]["+0x74"] == 1
+    assert descriptor["constructor_defaults"]["+0x74"] == "not written by FUN_0040eec0"
     assert descriptor["constructor_defaults"]["+0x8c"] == 0
 
 
@@ -41,9 +41,10 @@ def test_phase510_keeps_post_load_flag_separate_from_selection_state():
     assert consumer["function"] == "FUN_00465860"
     assert report["descriptor"]["post_load_flag_offset"] == "+0x1d"
     assert report["descriptor"]["state_offset"] != report["descriptor"]["post_load_flag_offset"]
+    assert report["population"]["writes"][0] == "descriptor+0x74 = 0"
     assert any("+0x1d = 1" in step for step in consumer["steps"])
     assert report["population"]["function"] == "thunk_FUN_00d36a00"
-    assert "descriptor+0x1d = 0" in report["population"]["writes"]
+    assert "descriptor+0x74 = 0" in report["population"]["writes"]
     assert report["post_load_state_path"]["function"] == "FUN_0040f900"
 
 
