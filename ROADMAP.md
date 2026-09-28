@@ -106,6 +106,14 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 431: specialized provider identities and sparsity signatures
+
+Decoded both specialized provider vtables from the retail PE .rdata. Provider 0 at 0x00B0FC5C uses concrete entries FUN_007d2eb0/FUN_007d2ec0/FUN_007d2ed0/FUN_007c6e30/FUN_007c6e50/FUN_007c7200/FUN_007d2f00 for the observed storage, dimension, acceptance, solve and finalize paths. Provider 1 at 0x00B0FC8C uses the corresponding FUN_007d2f10/FUN_007d2f20/FUN_007d2f30/FUN_007cdb20/FUN_007cdb40/FUN_007cdfc0/FUN_007d2f60 paths.
+
+The acceptance helpers contain fixed strict-upper-triangle run-length signatures. The new specialized_provider_runtime.py decodes them exactly: provider 0 is 40x40 (780 cells, 450 non-zero, 330 zero); provider 1 is 34x34 (561 cells, 315 non-zero, 246 zero). A matrix matcher checks only the strict upper triangle, matching the retail comparison boundary and rejecting any single flipped bit.
+
+The phase intentionally stops short of assigning BMW identity to provider 0. The next target is to compare this fixed 40x40 acceptance signature against the reconstructed real BMW M3 aarm_multilink.sdf solver matrix and, when available, a captured retail frame.
+
 ## Phase 430: provider-neutral backend construction contract
 
 Added physics_provider_backend_runtime.py with an executable provider-neutral model of the accepted-provider branch in FUN_007b3820. The phase freezes provider slot order, vtable offsets +0x14/+0x0C/+0x04/+0x08/+0x2C, release-before-rebind behavior, separate +0x40 graph and +0x44 auxiliary storage results, and the +0x2C return value used as per-body +0xA8 domain. Rejected providers advance to the next slot; after slot 1, the generic FUN_007b2010/FUN_007b1360 fallback is selected with scalar_count*scalar_count domain.

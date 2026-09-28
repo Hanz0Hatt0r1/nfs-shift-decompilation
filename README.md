@@ -32,6 +32,8 @@
 
 > **Phase 430 — provider-neutral backend:** the accepted-provider branch of FUN_007b3820 is now an executable state machine with exact slot order, vtable offsets, storage replacements and the provider-returned +0x2C secondary-domain value preserved separately from the +0x40/+0x44 storage results.
 
+> **Phase 431 — specialized provider signatures:** the two concrete provider vtables are decoded from PE .rdata, including exact method addresses, fixed 40/34 scalar domains and strict-upper-triangle acceptance signatures. The RLE matcher reproduces the retail acceptance masks without assigning provider class names.
+
 > **Current physics gate:** run `tools/run_sdf_solver_probe.py SHIFT.exe --output out/sdf-solver-capture` to validate the retail PE and generate a deterministic GDB attach bundle, then attach the probe to the retail 32-bit Wine process with the generated `attach.gdb`; the probe also records `frame_entry_XXXXXX.json` with provider/builtin backend selection, and `tools/verify_sdf_probe_session.py` accepts it with `--frame` when normalizing the resulting `pre_solve_XXXXXX.json` / `post_solve_XXXXXX.json` pair with `tools/verify_sdf_probe_session.py`. The repository intentionally does not fabricate a numeric retail solver frame; exact retail-vs-reimplementation equality still depends on a real runtime capture.
 
 > **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.
