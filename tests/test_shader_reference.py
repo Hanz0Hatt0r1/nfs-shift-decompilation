@@ -95,6 +95,7 @@ def test_reference_shader_rejects_non_replicate_ifc_swizzle():
                 0, 41, "IFC", 0, 3, 2, False,
                 [_src(2, 0), _src(2, 1, swizzle="x")],
             ),
+            Instruction(4, 43, "ENDIF", 0, 1, 0, False, []),
         ], temps=()),
         constants={
             "c": {
