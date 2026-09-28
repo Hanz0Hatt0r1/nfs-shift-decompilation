@@ -55,7 +55,12 @@ def compare_provider_captures(
     post = normalize_provider_capture(after)
 
     errors: list[str] = []
-    for field in ("provider_id", "scalar_count", "workspace_doubles"):
+    if pre["provider_id"] != post["provider_id"]:
+        raise ValueError(
+            "provider_id mismatch: "
+            f"{pre['provider_id']} != {post['provider_id']}"
+        )
+    for field in ("scalar_count", "workspace_doubles"):
         if pre[field] != post[field]:
             errors.append(
                 f"{field}-mismatch:{pre[field]}:{post[field]}"
