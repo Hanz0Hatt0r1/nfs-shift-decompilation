@@ -13,8 +13,6 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Mapping
 
-from rigid_body_sdf_runtime import build_sdf_constraint_connectivity_matrix
-
 FORMAT = "SHIFT.SDFDynamicMatrixWriteDomainRuntime/1"
 
 KERNELS = {
@@ -123,7 +121,7 @@ def build_dynamic_write_domain(
             "errors": [f"connectivity-build:{exc}"],
         }
 
-    shared_pairs = list(connectivity.get("shared_body_pairs") or [])
+    shared_pairs = list(shared_constraint_pairs)
     writes: list[dict[str, Any]] = []
     cell_provenance: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
 
