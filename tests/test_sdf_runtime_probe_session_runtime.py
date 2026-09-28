@@ -132,17 +132,17 @@ def test_session_cli_can_report_numeric_divergence(monkeypatch, tmp_path, capsys
 
 
 def test_session_accepts_matching_frame_entry_builtin_capture():
-    pre = _pre_capture(frame=7)
-    post = _post_capture(frame=7)
+    pre = _pre(frame=12)
+    post = _post(frame=12)
     frame = {
         "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
         "version": 1,
         "ready": True,
         "status": "captured",
-        "frame_index": 7,
+        "frame_index": 12,
         "backend": "builtin",
         "provider": 0,
-        "scalar_count": 40,
+        "scalar_count": 3,
     }
     result = runtime.normalize_probe_session(pre, post, frame)
     assert result["ready"] is True
@@ -151,7 +151,7 @@ def test_session_accepts_matching_frame_entry_builtin_capture():
 
 
 def test_session_blocks_provider_backend_when_builtin_pre_capture_is_present():
-    pre = _pre_capture(frame=7)
+    pre = _pre(frame=7)
     frame = {
         "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
         "version": 1,
@@ -160,7 +160,7 @@ def test_session_blocks_provider_backend_when_builtin_pre_capture_is_present():
         "frame_index": 7,
         "backend": "provider",
         "provider": 0x1234,
-        "scalar_count": 40,
+        "scalar_count": 3,
     }
     result = runtime.normalize_probe_session(pre, None, frame)
     assert result["ready"] is False
