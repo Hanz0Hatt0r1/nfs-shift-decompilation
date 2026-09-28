@@ -7,9 +7,7 @@ def _bundle(profile):
     return {
         "format": "SHIFT.VehiclePhysicsBundleExtractor/1",
         "ready": True,
-        "profile": profile,
         "physics_profile": "out/vehicle_physics_asset_graph.json",
-        "profile": profile,
     }
 
 
