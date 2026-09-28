@@ -28,6 +28,9 @@ from sdf_runtime_probe_runtime import (
     derive_physics_system_from_solver_state,
     describe_frame_entry_backend,
 )
+from specialized_provider_capture_runtime import build_provider_capture_payload
+from specialized_provider_runtime import get_provider
+from specialized_provider_storage_runtime import get_storage_layout
 
 
 def _u32(inferior: gdb.Inferior, address: int) -> int:
@@ -40,6 +43,57 @@ def _doubles(inferior: gdb.Inferior, address: int, count: int) -> list[float]:
         return []
     raw = bytes(inferior.read_memory(int(address), int(count) * 8))
     return list(struct.unpack("<" + "d" * int(count), raw))
+
+
+_LAST_FRAME_ENTRY = {
+    "frame_index": None,
+    "physics_system": None,
+}
+
+
+def _provider_snapshot(
+    inferior: gdb.Inferior,
+    provider_id: int,
+    stage: str,
+    hit: int,
+) -> dict:
+    layout = get_storage_layout(provider_id)
+    workspace = _doubles(
+        inferior,
+        layout.factor_workspace_base,
+        layout.factor_workspace_doubles,
+    )
+    output_vector = _doubles(
+        inferior,
+        layout.output_vector_base,
+        layout.output_vector_doubles,
+    )
+    row_pointers = [
+        _u32(inferior, layout.row_pointer_base + row * 4)
+        for row in range(layout.scalar_count)
+    ]
+    payload = build_provider_capture_payload(
+        provider_id=provider_id,
+        stage=stage,
+        workspace=workspace,
+        output_vector=output_vector,
+        row_pointers=row_pointers,
+        frame_index=_LAST_FRAME_ENTRY["frame_index"],
+        physics_system=_LAST_FRAME_ENTRY["physics_system"],
+        source="gdb_sdf_solver_probe.py",
+        metadata={
+            "capture_kind": stage,
+            "provider_solve_hit": hit,
+        },
+    )
+    payload["registers"] = {
+        "eip": int(gdb.parse_and_eval("$eip")),
+        "esp": int(gdb.parse_and_eval("$esp")),
+    }
+    payload["source_address"] = hex(
+        get_provider(provider_id).solve_function
+    )
+    return payload
 
 
 def _matrix_from_rows(
@@ -88,6 +142,8 @@ class FrameEntryProbe(_BaseProbe):
             provider=provider,
             solver_state=solver_state,
         )
+        _LAST_FRAME_ENTRY["frame_index"] = self.hit
+        _LAST_FRAME_ENTRY["physics_system"] = physics_system
         payload.update({
             "capture_kind": "frame_entry_backend",
             "frame_index": self.hit,
@@ -141,6 +197,85 @@ class SolverEntryProbe(_BaseProbe):
         return False
 
 
+class ProviderSolveReturnProbe(gdb.FinishBreakpoint):
+    """Capture provider state immediately after a specialized solve returns."""
+
+    def __init__(
+        self,
+        frame: gdb.Frame,
+        provider_id: int,
+        output_dir: Path,
+        hit: int,
+    ) -> None:
+        super().__init__(frame, internal=False)
+        self.provider_id = provider_id
+        self.output_dir = output_dir
+        self.hit = hit
+
+    def stop(self) -> bool:
+        inferior = gdb.selected_inferior()
+        payload = _provider_snapshot(
+            inferior,
+            self.provider_id,
+            "post-solve-provider",
+            self.hit,
+        )
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        target = self.output_dir / (
+            f"provider_post_{self.provider_id}_{self.hit:06d}.json"
+        )
+        target.write_text(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            ) + "\n",
+            encoding="utf-8",
+        )
+        return False
+
+
+class ProviderSolveProbe(_BaseProbe):
+    """Capture raw provider state at solve entry and arm a return probe."""
+
+    def __init__(
+        self,
+        address: int,
+        provider_id: int,
+        output_dir: Path,
+    ) -> None:
+        super().__init__(
+            address,
+            f"provider{provider_id}_solver",
+            output_dir,
+        )
+        self.provider_id = provider_id
+        self.return_breakpoints: list[ProviderSolveReturnProbe] = []
+
+    def stop(self) -> bool:
+        self.hit += 1
+        inferior = gdb.selected_inferior()
+        payload = _provider_snapshot(
+            inferior,
+            self.provider_id,
+            "pre-solve-provider",
+            self.hit,
+        )
+        self.write_json(
+            f"provider_pre_{self.provider_id}_{self.hit:06d}.json",
+            payload,
+        )
+        return_probe = ProviderSolveReturnProbe(
+            gdb.newest_frame(),
+            self.provider_id,
+            self.output_dir,
+            self.hit,
+        )
+        self.return_breakpoints.append(return_probe)
+        return False
+
+
 class PostSolveProbe(_BaseProbe):
     def stop(self) -> bool:
         self.hit += 1
@@ -182,15 +317,36 @@ class SDFProbeCommand(gdb.Command):
         output = Path(os.path.expanduser(args[0])).resolve()
 
         for breakpoint in self.breakpoints:
+            for return_breakpoint in getattr(
+                breakpoint,
+                "return_breakpoints",
+                [],
+            ):
+                try:
+                    return_breakpoint.delete()
+                except RuntimeError:
+                    pass
             breakpoint.delete()
         self.breakpoints = [
             FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
             SolverEntryProbe(FUNCTIONS["builtin_solver"], "builtin_solver", output),
             PostSolveProbe(FUNCTIONS["post_solve"], "post_solve", output),
+            ProviderSolveProbe(
+                get_provider(0).solve_function,
+                0,
+                output,
+            ),
+            ProviderSolveProbe(
+                get_provider(1).solve_function,
+                1,
+                output,
+            ),
         ]
         print(
             "SDF probe installed:",
             f"builtin_solver=0x{FUNCTIONS['builtin_solver']:08x},",
+            f"provider0_solver=0x{get_provider(0).solve_function:08x},",
+            f"provider1_solver=0x{get_provider(1).solve_function:08x},",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
             f"output={output}",
         )
