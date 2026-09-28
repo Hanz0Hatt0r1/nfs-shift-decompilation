@@ -85,7 +85,7 @@ def test_capture_manifest_cli_rejects_invalid_trace(tmp_path):
     output = tmp_path / "manifest.json"
     capture.write_text("{not-json}\n", encoding="utf-8")
     proc = subprocess.run(
-        [sys.executable, "d3d9_capture_manifest.py", str(capture), str(output)],
+        [sys.executable, "src/graphics/d3d9/d3d9_capture_manifest.py", str(capture), str(output)],
         check=False,
         capture_output=True,
         text=True,
