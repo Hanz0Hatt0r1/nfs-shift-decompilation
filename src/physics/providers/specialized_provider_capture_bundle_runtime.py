@@ -270,6 +270,16 @@ def analyze_capture_directory(
         for error in bundle.get("errors") or []
     )
 
+    summary = summarize_capture_directory({
+        "directory": str(directory),
+        "bundle_count": len(bundles),
+        "bundles": bundles,
+        "reset_event_count": len(reset_events),
+        "ready": not errors and all(
+            bundle.get("ready") is True
+            for bundle in bundles
+        ),
+    })
     return {
         "format": FORMAT,
         "version": 1,
