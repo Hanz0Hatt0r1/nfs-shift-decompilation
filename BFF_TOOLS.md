@@ -1,7 +1,7 @@
 # BFF / corpus tooling
 
-The project keeps archive inventory, raw payload parity, decoded physics profiling,
-and shader-corpus profiling as separate evidence layers.
+The project keeps archive inventory, raw payload parity, content-addressed reuse,
+decoded physics profiling, and shader-corpus profiling as separate evidence layers.
 
 ## Vehicle corpus inventory
 
@@ -15,6 +15,14 @@ This reads BFF headers and entry tables without decoding resource payloads.
 
 A matching SHA-256 proves equality of the stored payload bytes for the compared
 logical path. It does not prove decoded-resource or runtime-material equivalence.
+
+## Raw payload reuse
+
+`python tools/audit_bff_content_reuse.py BMW_M3_E36.bff BMW_M3_E36_Cockpit.bff Vehicles.zip -o payload_reuse.json`
+
+This groups exact stored payload SHA-256 values across archives even when logical
+paths differ. It is intended to find resource-deduplication candidates without
+collapsing logical resource identity.
 
 ## Vehicle physics corpus
 
