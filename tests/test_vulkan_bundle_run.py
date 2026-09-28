@@ -14,6 +14,15 @@ def _bundle(tmp_path):
         }),
         encoding="utf-8",
     )
+    (tmp_path / "native_submission_gate.json").write_text(
+        json.dumps({
+            "format": "SHIFT.NativeSubmissionGate/1",
+            "ready": True,
+            "blocking_reasons": [],
+            "submesh_count": 1,
+        }),
+        encoding="utf-8",
+    )
     return tmp_path
 
 
@@ -132,3 +141,52 @@ def test_vulkan_runner_allows_legacy_bundle_without_sampler_sidecar(tmp_path, mo
         prepare_only=True,
     )
     assert result["status"] == "ready"
+
+
+def test_runner_blocks_native_execution_when_submission_gate_is_missing(
+    monkeypatch, tmp_path
+):
+    _bundle(tmp_path)
+    (tmp_path / "native_submission_gate.json").unlink()
+    monkeypatch.setattr(
+        "vulkan_bundle_run.compile_bmw_vulkan_bundle",
+        lambda root, validator=None: _compiled_report(),
+    )
+    monkeypatch.setattr(
+        "vulkan_bundle_run.validate_bmw_vulkan_interface",
+        lambda root, report: {
+            "format": "SHIFT.BMWVulkanInterfaceGate/1",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    )
+    result = run_bmw_vulkan_bundle(
+        tmp_path,
+        executable=tmp_path / "missing-executable",
+        prepare_only=False,
+    )
+    assert result["status"] == "blocked"
+    assert "vulkan-runner:native-submission-gate-missing" in result["blocking_reasons"]
+
+
+def test_runner_prepare_only_reports_gate_but_does_not_require_it(
+    monkeypatch, tmp_path
+):
+    _bundle(tmp_path)
+    (tmp_path / "native_submission_gate.json").unlink()
+    monkeypatch.setattr(
+        "vulkan_bundle_run.compile_bmw_vulkan_bundle",
+        lambda root, validator=None: _compiled_report(),
+    )
+    monkeypatch.setattr(
+        "vulkan_bundle_run.validate_bmw_vulkan_interface",
+        lambda root, report: {
+            "format": "SHIFT.BMWVulkanInterfaceGate/1",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    )
+    result = run_bmw_vulkan_bundle(tmp_path, prepare_only=True)
+    assert result["status"] == "ready"
+    assert result["ready"] is True
+    assert result["gates"]["native_submission"]["status"] == "blocked"
