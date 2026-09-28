@@ -375,6 +375,24 @@ def test_reference_shader_skips_false_predicated_instruction():
 
 
 
+
+def test_reference_shader_executes_texkill_discard():
+    instructions = [
+        Instruction(
+            0, 50, "TEXKILL", 0, 2, 0, False,
+            [_src(0, 0)],
+        ),
+    ]
+    result = execute_shader(
+        _program(instructions, temps=(0,)),
+        inputs={0: (-1.0, 0.5, 0.5, 1.0)},
+    )
+    assert result["status"] == "executed", result
+    assert result["discarded"] is True
+    assert result["color"] is None
+
+
+
 def test_reference_shader_rejects_unbalanced_conditionals():
     result = execute_shader(
         _program([
