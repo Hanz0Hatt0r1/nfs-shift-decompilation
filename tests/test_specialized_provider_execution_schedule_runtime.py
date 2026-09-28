@@ -20,26 +20,24 @@ def test_lhs_address_direct_and_loop_forms():
     assert array == 0x1020
 
 
-def test_classify_factor_and_future_diagonal():
+def test_classify_factor_and_workspace_update_neutrally():
     factor = runtime._classify_assignment(
         "_DAT_00001008 = _DAT_00001010 * dVar1;",
         provider_id=0,
-        current_pivot_diagonal=0x1000,
-        future_pivot_diagonals={0x1020},
+        future_pivot_diagonals=set(),
         loop_index=None,
         terminal=False,
     )
-    diagonal = runtime._classify_assignment(
-        "_DAT_00001020 = _DAT_00001020 - _DAT_00001018 * _DAT_00001008;",
+    update = runtime._classify_assignment(
+        "_DAT_00001018 = _DAT_00001018 - _DAT_00001010 * _DAT_00001008;",
         provider_id=0,
-        current_pivot_diagonal=0x1000,
-        future_pivot_diagonals={0x1020},
+        future_pivot_diagonals=set(),
         loop_index=None,
         terminal=False,
     )
 
     assert factor == "factor-normalization"
-    assert diagonal == "future-diagonal-update"
+    assert update == "workspace-or-global-update"
 
 
 def test_classify_output_as_forward_rhs_before_terminal():
