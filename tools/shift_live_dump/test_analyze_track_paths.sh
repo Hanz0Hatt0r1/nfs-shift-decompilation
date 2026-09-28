@@ -79,6 +79,10 @@ assert result["candidate_counts"]["AISegmentPath"] >= 1, result["candidate_count
 assert result["stable_external_pointer_count"] >= 2, result["stable_external_pointer_count"]
 assert result["pointer_target_clusters"], "expected pointer clusters"
 assert result["next_capture_windows"], "expected capture windows"
+assert result["path_root_targets"], "expected Path StartNode targets"
+assert result["path_root_targets"][0]["target"] == 0x00500000
+assert result["path_root_windows"][0]["start"] == 0x004e0000
+assert result["path_root_windows"][0]["size"] == 0x00040000
 assert filtered["stable_external_pointer_count"] == 1, filtered["stable_external_pointer_count"]
 assert filtered["excluded_source_ranges"] == [{"start": 0x00200120, "end": 0x00200124}], filtered["excluded_source_ranges"]
 print("track path analyzer test: PASS")

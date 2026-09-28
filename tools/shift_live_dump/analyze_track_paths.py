@@ -284,6 +284,73 @@ def stable_pointers(
     return rows
 
 
+def path_root_targets(
+    candidates: list[dict],
+    maps_list: list[dict],
+    starts: list[int],
+    snapshot_count: int,
+    top: int,
+) -> list[dict]:
+    grouped: dict[int, dict] = {}
+    for row in candidates:
+        if row.get("stable_snapshots") != snapshot_count:
+            continue
+        target = int(row.get("start_node", 0))
+        if target == 0:
+            continue
+        target_mapping = mapping(target, maps_list, starts)
+        if not target_mapping or "w" not in target_mapping.get("perms", ""):
+            continue
+        entry = grouped.setdefault(
+            target,
+            {
+                "target": target,
+                "candidate_addresses": [],
+                "candidate_count": 0,
+                "mapping_start": target_mapping["start"],
+                "mapping_end": target_mapping["end"],
+                "mapping_perms": target_mapping["perms"],
+            },
+        )
+        entry["candidate_count"] += 1
+        entry["candidate_addresses"].append(int(row["address"]))
+
+    rows = list(grouped.values())
+    rows.sort(key=lambda r: (-r["candidate_count"], r["target"]))
+    for row in rows:
+        row["candidate_addresses"] = json.dumps(
+            [f"0x{x:x}" for x in sorted(set(row["candidate_addresses"]))],
+            separators=(",", ":"),
+        )
+    return rows[:top]
+
+
+def windows_for_path_roots(rows: list[dict], radius: int, top: int) -> list[dict]:
+    intervals = []
+    for row in rows[:top]:
+        target = int(row["target"])
+        intervals.append((max(0, target - radius), target + radius, target))
+    intervals.sort()
+    merged: list[list[int]] = []
+    refs: list[list[int]] = []
+    for start, end, target in intervals:
+        if not merged or start > merged[-1][1]:
+            merged.append([start, end])
+            refs.append([target])
+        else:
+            merged[-1][1] = max(merged[-1][1], end)
+            refs[-1].append(target)
+
+    out = []
+    for (start, end), targets in zip(merged, refs):
+        out.append({
+            "start": start,
+            "size": end - start,
+            "targets": sorted(set(targets)),
+        })
+    return out
+
+
 def clusters(rows: list[dict], gap: int = 0x10000) -> list[dict]:
     rows = sorted(rows, key=lambda r: r["target"])
     out: list[dict] = []
@@ -354,13 +421,15 @@ def main() -> int:
     ap.add_argument("--top", type=int, default=200)
     ap.add_argument("--target-top", type=int, default=20)
     ap.add_argument("--radius-kib", type=int, default=128)
+    ap.add_argument("--path-root-top", type=int, default=16)
+    ap.add_argument("--path-root-radius-kib", type=int, default=128)
     ap.add_argument(
         "--exclude-source-range", dest="exclude_source_ranges", action="append",
         type=parse_range,
         help="exclude stable-pointer source addresses in START:SIZE intervals; repeatable",
     )
     args = ap.parse_args()
-    if min(args.top, args.target_top) <= 0 or args.radius_kib < 0:
+    if min(args.top, args.target_top, args.path_root_top) <= 0 or min(args.radius_kib, args.path_root_radius_kib) < 0:
         ap.error("invalid numeric option")
 
     sns = snapshots(args.root)
@@ -404,6 +473,12 @@ def main() -> int:
 
     excluded_sources = args.exclude_source_ranges or []
     ptr = stable_pointers(sns, idx, mm, starts, excluded_sources)
+    path_roots = path_root_targets(
+        candidates["Path"], mm, starts, len(sns), args.path_root_top
+    )
+    path_root_windows = windows_for_path_roots(
+        path_roots, args.path_root_radius_kib * 1024, args.path_root_top
+    )
     cl = clusters(ptr)[:args.target_top]
     radius = args.radius_kib * 1024
     raw = [{
@@ -437,6 +512,8 @@ def main() -> int:
         "candidate_counts": {k: len(v) for k, v in candidates.items()},
         "stable_external_pointer_count": len(ptr),
         "pointer_target_clusters": cl,
+        "path_root_targets": path_roots,
+        "path_root_windows": path_root_windows,
         "next_capture_windows": windows,
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
         "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
@@ -457,6 +534,21 @@ def main() -> int:
         "source_stride", "source_stride_count", "mapping_start",
         "mapping_end", "mapping_perms", "target_samples",
     ])
+    write_csv(out / "path_root_targets.csv", path_roots, [
+        "target", "candidate_count", "candidate_addresses",
+        "mapping_start", "mapping_end", "mapping_perms",
+    ])
+    write_csv(out / "path_root_windows.csv", path_root_windows, [
+        "start", "size", "targets",
+    ])
+    (out / "path_root_ranges.txt").write_text(
+        "\n".join(
+            f"0x{w['start']:x}:0x{w['size']:x}  # targets=" +
+            ",".join(f"0x{x:x}" for x in w["targets"])
+            for w in path_root_windows
+        ) + "\n",
+        encoding="utf-8",
+    )
     write_csv(out / "next_capture_windows.csv", windows, ["start", "size", "clusters", "priority"])
     (out / "next_capture_ranges.txt").write_text(
         "\n".join(

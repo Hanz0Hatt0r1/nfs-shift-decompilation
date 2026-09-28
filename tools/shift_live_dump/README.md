@@ -158,6 +158,28 @@ python3 tools/shift_live_dump/extract_ranges.py \
 lines and `#` comments. Multiple range files and explicit `--range`
 arguments can be combined; ranges are merged before extraction.
 
+### Following `Path.StartNode` directly
+
+When the analyzer finds stable `Path` candidates with a non-null `StartNode`,
+it emits:
+
+- `path_root_targets.csv` — unique StartNode targets and the Path objects that reference them.
+- `path_root_windows.csv` — merged extraction windows around those targets.
+- `path_root_ranges.txt` — ready-to-use `START:SIZE` ranges.
+
+The radius is controlled by `--path-root-radius-kib` (default 128 KiB), and
+the number of followed roots by `--path-root-top`.
+
+Use the generated roots directly against the original full capture:
+
+```bash
+python3 tools/shift_live_dump/extract_ranges.py \
+  <full-capture> \
+  track-path-roots \
+  --preset none \
+  --range-file track-targeted/track_path_analysis/path_root_ranges.txt
+```
+
 ## Evidence limits
 
 A live snapshot is not an atomic process-wide state. SHIFT can mutate memory while the tool is reading it. Use the snapshots to locate stable structures, pointers, tables, state transitions and memory correlations; do not treat a multi-structure snapshot as proof that all values existed simultaneously.
