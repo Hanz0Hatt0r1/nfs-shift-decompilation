@@ -112,8 +112,8 @@ def test_resolve_default_targets_rejects_ambiguous_sdf():
         def __init__(self, path):
             super().__init__(path)
             self.entries.extend([
-                Entry("vehicles/physics/suspension/alternate.sdf", 7),
-            Entry("vehicles/physics/suspension/strut_multilink.sdf", 8),
+                Entry("vehicles/physics/suspension/strut_multilink.sdf", 7),
+                Entry("vehicles/physics/suspension/alternate/strut_multilink.sdf", 8),
             ])
 
     archive = AmbiguousSDF("UnknownVehicle.bff")
