@@ -2,9 +2,9 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 506**
+> **Current mainline: Phase 507**
 >
-> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path, while keeping its join to the selector explicitly unproven. Exact retail numeric parity remains capture-gated.
+> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path. Phase 507 adds the participant slot registry/update bridge used by PhysicsParticipant.cpp, while keeping the selector-registry identity join explicitly unproven. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
@@ -109,7 +109,8 @@ The repository now models:
 - BFF-to-pre-PhysX/provider handoff orchestration;
 - runtime-capture preflight for retail PE/Wine/GDB/GDB Python;
 - the source-backed vehicle physics participant creation/load gate;
-- the PhysicsParticipantManager event-0x20 ingestion contract.
+- the PhysicsParticipantManager event-0x20 ingestion contract;
+- the PhysicsParticipantManager participant slot registry/update contract.
 
 ### Phase 499–500 capture bundle
 
@@ -148,11 +149,13 @@ python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-ca
 ./shift-bff-viewer /path/to/BMW_M3_E36.bff
 ```
 
-## Physics participant manager event
+## Physics participant registry/update
 
 Phase 505 records the `IGPhaseVehicle → FUN_00410ef0 → wait/success → Pakfiles/Vehicles/%s.bff` control flow without assigning a PhysX class identity. See `docs/PHASE505_VEHICLE_PHYSICS_PARTICIPANT_GATE.md`.
 
 Phase 506 records `FUN_0070e1c0 → opcode 0x20 → FUN_00714560(DAT_00c109e0) → manager +0x39c = 1` as a separate source-backed evidence layer. It intentionally does not assert that this manager object is the exact registry consumed by `FUN_00410ef0`. See `docs/PHASE506_PHYSICS_PARTICIPANT_MANAGER_EVENT.md`.
+
+Phase 507 records the concrete participant slot array (`DAT_00c109e0+0x140`, stride `0x1fa0`) and the `FUN_00713f40`/`FUN_00713ec0` calls from `PhysicsParticipant.cpp`. It still does not assert that the selector context from `thunk_FUN_00453990` is the same object.
 
 ## Current CI note
 
