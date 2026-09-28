@@ -136,17 +136,6 @@ def validate_provider_capture_diff(report: Mapping[str, Any]) -> dict[str, Any]:
         if index < 0 or index >= scalar_count:
             errors.append(f"output-change-index-out-of-domain:{index}")
 
-    for entry in list(report.get("workspace_changes") or []):
-        address = int(str(entry["address"]), 16)
-        if not (
-            int(str(
-                hex(
-                    0
-                )
-            )) <= address
-        ):
-            pass
-
     if int(report.get("changed_address_count", 0)) != len(
         report.get("changed_addresses") or []
     ):
