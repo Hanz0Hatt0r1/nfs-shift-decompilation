@@ -199,13 +199,35 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("inputs", nargs="+", type=Path)
     parser.add_argument("-o", "--output", type=Path)
+    parser.add_argument(
+        "--summary-only",
+        action="store_true",
+        help="write only corpus and opcode summaries when -o is supplied",
+    )
     args = parser.parse_args(argv)
 
     report = profile_shader_corpus(args.inputs)
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
+        output = report
+        if args.summary_only:
+            output = {
+                key: report[key]
+                for key in (
+                    "format",
+                    "version",
+                    "archive_count",
+                    "entry_count",
+                    "fxo_entry_count",
+                    "unique_raw_fxo_payloads",
+                    "decoded_unique_payloads",
+                    "decode_failures",
+                    "summary",
+                    "ready",
+                )
+            }
         args.output.write_text(
-            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
+            json.dumps(output, ensure_ascii=False, indent=2, sort_keys=True)
             + "\n",
             encoding="utf-8",
         )
