@@ -28,6 +28,8 @@ def test_full_frame_contract_contains_all_solver_lifecycle_stages():
     ]
     assert report["static_stages"]["seed"]["function"] == "FUN_007ba2b0"
     assert report["static_stages"]["coupling"]["JOINT"] == "FUN_007bbb80"
+    assert report["static_stages"]["coupling"]["HINGE"] == "FUN_007bb250"
+    assert report["static_stages"]["coupling"]["BAR"] == "FUN_007bb6c0"
 
 
 def test_runtime_frame_plan_marks_identity_selector_capture_dependent():
@@ -38,6 +40,10 @@ def test_runtime_frame_plan_marks_identity_selector_capture_dependent():
         runtime_flags_by_record=None,
     )
     assert result["ready"] is True
+    assert result["format"] == "SHIFT.SDFRuntimeFramePlan/2"
+    assert result["version"] == 2
+    assert result["verification"]["ready"] is True
+    assert result["scalar_domain_verification"]["ready"] is True
     assert result["runtime_flags_available"] is False
     assert result["identity_selector"]["status"] == "needs-runtime-flags"
     assert result["stages"][3]["runtime_dependent"] is True

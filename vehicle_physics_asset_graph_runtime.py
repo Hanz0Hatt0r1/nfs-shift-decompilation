@@ -51,6 +51,7 @@ from sdf_constraint_matrix_assembly_runtime import materialize_source_seed_matri
 from sdf_constraint_matrix_assembly_runtime import describe_sdf_constraint_matrix_assembly_contract
 from sdf_constraint_matrix_assembly_runtime import build_retail_matrix_storage
 from sdf_full_frame_runtime import describe_full_frame_contract
+from sdf_solver_frame_verification_runtime import describe_solver_frame_verification_contract
 from sdf_solver_capture_runtime import describe_sdf_solver_capture_contract
 from sdf_solver_capture_binary_runtime import describe_sdf_solver_capture_binary_contract
 from bmw_m3_solver_capture_verify_runtime import describe_bmw_m3_solver_capture_verifier
@@ -145,6 +146,7 @@ def build_profile(
         body_count=sdf_report.get("topology", {}).get("body_count"),
         runtime_flags_available=False,
     )
+    sdf_frame_verification = describe_solver_frame_verification_contract()
     sdf_solver_capture = describe_sdf_solver_capture_contract()
     sdf_solver_capture_binary = describe_sdf_solver_capture_binary_contract()
     bmw_m3_solver_capture_verifier = describe_bmw_m3_solver_capture_verifier()
@@ -263,6 +265,7 @@ def build_profile(
             "sdf_matrix_seed_write_ready": sdf_matrix_seed_write.get("ready") is True,
             "sdf_matrix_seed_write_count": sdf_matrix_seed_write.get("write_count", 0),
             "sdf_full_frame_contract_ready": sdf_full_frame.get("ready") is True,
+            "sdf_solver_frame_verification_ready": sdf_frame_verification.get("ready") is True,
             "sdf_full_frame_runtime_ready": sdf_full_frame.get("status") == "runtime-complete",
             "sdf_solver_capture_contract_ready": sdf_solver_capture.get("ready") is True,
             "sdf_solver_capture_binary_contract_ready": sdf_solver_capture_binary.get("ready") is True,
@@ -308,6 +311,7 @@ def build_profile(
             "sdf_real_solver_domain": sdf_real_solver_domain,
             "sdf_matrix_seed_write": sdf_matrix_seed_write,
             "sdf_full_frame": sdf_full_frame,
+            "sdf_solver_frame_verification": sdf_frame_verification,
             "sdf_solver_capture": sdf_solver_capture,
             "sdf_solver_capture_binary": sdf_solver_capture_binary,
             "bmw_m3_solver_capture_verifier": bmw_m3_solver_capture_verifier,

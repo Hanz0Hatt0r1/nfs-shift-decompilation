@@ -1,0 +1,19 @@
+{
+  "format": "SHIFT.SDFSolverFrameVerificationEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "entry": "FUN_007b3f40",
+  "post_solve": "FUN_007b4110",
+  "checks": [
+    "scalar-domain coverage",
+    "scalar-domain overlap rejection",
+    "identity-reset scalar-node bounds",
+    "exact frame lifecycle order",
+    "stage-name consistency",
+    "body/scalar count sanity"
+  ],
+  "status": "source-backed-structural-gate"
+}
