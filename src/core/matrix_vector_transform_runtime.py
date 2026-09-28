@@ -120,6 +120,7 @@ def build_contract() -> dict:
         "usage": {
             "body_context": "body + 0xd4",
         },
+        "input_conversion": "each double input component is cast to float32",
         "numeric_boundary": {
             "input_components_are_cast_to_float": True,
             "matrix_components_are_float": True,
