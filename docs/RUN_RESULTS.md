@@ -10,7 +10,7 @@ The older baseline recorded 193 Python tests passed and 2 skipped. This is histo
 
 ## Current mainline
 
-Commit: `3e6ed58654f4b5a22de92af6aab82ee2e3780a48`
+Commit: `df9e01f6b9ca8d225bb56ad83a104277e24b0fc9`
 
 | CI job | Result |
 |---|---|
@@ -19,9 +19,17 @@ Commit: `3e6ed58654f4b5a22de92af6aab82ee2e3780a48`
 | python | success |
 | Vulkan smoke | success |
 
-The Phase 507 merge followed a green PR validation: Python, native, capture-producer
+The Phase 508 merge followed a green PR validation: Python, native, capture-producer
 and Vulkan smoke all passed. The post-merge mainline run for commit
-`3e6ed58654f4b5a22de92af6aab82ee2e3780a48` also passed all four checks.
+`df9e01f6b9ca8d225bb56ad83a104277e24b0fc9` also passed all four checks.
+
+## Phase 508 verification coverage
+
+The selector-context tests cover the source-backed `thunk_FUN_00453990 → FUN_00402435 →
+DAT_00bbc600` identity, selector storage at `+0x9fc`, descriptor layout, matching/linking
+rules, fallback enumeration and the observed `candidate+0x74 == 0` readiness predicate.
+They also assert that the selector global remains distinct from the Phase 506-507
+`DAT_00c109e0` PhysicsParticipantManager global.
 
 ## Phase 507 verification coverage
 
