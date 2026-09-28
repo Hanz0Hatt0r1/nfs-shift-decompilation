@@ -15,9 +15,9 @@ def test_source_pattern_edge_contract_deduplicates_edges():
 
     result = runtime.check_source_pattern_admissibility(
         (
-            (2.0, 1.0, 0.0),
+            (2.0, 1.0, 1.0),
             (1.0, 3.0, 1.0),
-            (0.0, 1.0, 2.0),
+            (1.0, 1.0, 2.0),
         ),
         pattern,
     )
