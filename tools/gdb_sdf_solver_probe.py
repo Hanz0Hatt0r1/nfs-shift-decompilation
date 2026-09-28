@@ -26,6 +26,7 @@ from sdf_runtime_probe_runtime import (
     FUNCTIONS,
     capture_geometry,
     derive_physics_system_from_solver_state,
+    describe_frame_entry_backend,
 )
 
 
@@ -71,6 +72,32 @@ class _BaseProbe(gdb.Breakpoint):
     def stop(self) -> bool:
         self.hit += 1
         return True
+
+
+class FrameEntryProbe(_BaseProbe):
+    def stop(self) -> bool:
+        self.hit += 1
+        inferior = gdb.selected_inferior()
+        physics_system = int(gdb.parse_and_eval("$ecx"))
+        scalar_count = _u32(inferior, physics_system + 0x34)
+        provider = _u32(inferior, physics_system + 0x48)
+        solver_state = _u32(inferior, physics_system + 0x4C)
+        payload = describe_frame_entry_backend(
+            physics_system=physics_system,
+            scalar_count=scalar_count,
+            provider=provider,
+            solver_state=solver_state,
+        )
+        payload.update({
+            "capture_kind": "frame_entry_backend",
+            "frame_index": self.hit,
+            "registers": {
+                "ecx": physics_system,
+                "eip": int(gdb.parse_and_eval("$eip")),
+            },
+        })
+        self.write_json(f"frame_entry_{self.hit:06d}.json", payload)
+        return False
 
 
 class SolverEntryProbe(_BaseProbe):
@@ -157,6 +184,7 @@ class SDFProbeCommand(gdb.Command):
         for breakpoint in self.breakpoints:
             breakpoint.delete()
         self.breakpoints = [
+            FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
             SolverEntryProbe(FUNCTIONS["builtin_solver"], "builtin_solver", output),
             PostSolveProbe(FUNCTIONS["post_solve"], "post_solve", output),
         ]
