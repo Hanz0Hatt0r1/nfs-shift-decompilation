@@ -30,6 +30,9 @@ from sdf_runtime_probe_runtime import (
 )
 from specialized_provider_capture_runtime import build_provider_capture_payload
 from specialized_provider_runtime import get_provider
+from specialized_provider_scalar_reset_capture_runtime import (
+    validate_scalar_reset_event,
+)
 from specialized_provider_storage_runtime import get_storage_layout
 
 
@@ -94,6 +97,109 @@ def _provider_snapshot(
         get_provider(provider_id).solve_function
     )
     return payload
+
+
+def _append_jsonl(
+    output_dir: Path,
+    name: str,
+    payload: dict,
+) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    target = output_dir / name
+    with target.open("a", encoding="utf-8") as stream:
+        stream.write(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+            + "\n"
+        )
+
+
+def _provider_id_from_runtime_pointer(
+    inferior: gdb.Inferior,
+    provider_pointer: int,
+) -> tuple[int | None, int | None]:
+    if provider_pointer == 0:
+        return None, None
+
+    try:
+        vtable = _u32(inferior, provider_pointer)
+    except (gdb.MemoryError, RuntimeError):
+        return None, None
+
+    for provider_id in (0, 1):
+        if vtable == get_provider(provider_id).vtable_address:
+            return provider_id, vtable
+
+    return None, vtable
+
+
+class ScalarResetProbe(_BaseProbe):
+    """Capture each FUN_007b2210 selector and provider dispatch context."""
+
+    def __init__(
+        self,
+        address: int,
+        output_dir: Path,
+    ) -> None:
+        super().__init__(
+            address,
+            "scalar_reset",
+            output_dir,
+        )
+        self.event_index = 0
+
+    def stop(self) -> bool:
+        self.hit += 1
+        self.event_index += 1
+        inferior = gdb.selected_inferior()
+
+        physics_system = int(gdb.parse_and_eval("$ecx"))
+        esp = int(gdb.parse_and_eval("$esp"))
+        selector = _u32(inferior, esp + 0x04)
+        caller_return_address = _u32(inferior, esp)
+        scalar_count = _u32(inferior, physics_system + 0x34)
+        provider_pointer = _u32(
+            inferior,
+            physics_system + 0x48,
+        )
+        provider_id, provider_vtable = _provider_id_from_runtime_pointer(
+            inferior,
+            provider_pointer,
+        )
+
+        event = {
+            "format": "SHIFT.SpecializedProviderScalarResetCaptureRuntime/2",
+            "version": 2,
+            "frame_index": _LAST_FRAME_ENTRY["frame_index"],
+            "call_index": self.event_index,
+            "physics_system": physics_system,
+            "provider_pointer": provider_pointer,
+            "provider_vtable": provider_vtable,
+            "provider_id": provider_id,
+            "scalar_count": scalar_count,
+            "selector": selector,
+            "caller_return_address": caller_return_address,
+            "source_function": "FUN_007b2210",
+            "source_address": 0x007B2210,
+            "registers": {
+                "ecx": physics_system,
+                "esp": esp,
+                "eip": int(gdb.parse_and_eval("$eip")),
+            },
+        }
+
+        validation = validate_scalar_reset_event(event)
+        event["capture_ready"] = validation["ready"]
+        event["capture_errors"] = validation["errors"]
+        _append_jsonl(
+            self.output_dir,
+            "scalar_reset_events.jsonl",
+            event,
+        )
+        return False
 
 
 def _matrix_from_rows(
@@ -339,6 +445,10 @@ class SDFProbeCommand(gdb.Command):
             ProviderSolveProbe(
                 get_provider(1).solve_function,
                 1,
+                output,
+            ),
+            ScalarResetProbe(
+                0x007B2210,
                 output,
             ),
         ]
