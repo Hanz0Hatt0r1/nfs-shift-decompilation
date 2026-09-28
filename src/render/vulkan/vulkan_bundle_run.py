@@ -131,11 +131,6 @@ def run_bmw_vulkan_bundle(
         },
     }
 
-    if native_gate_blockers:
-        result["status"] = "blocked"
-        result["blocking_reasons"] = native_gate_blockers
-        return result
-
     if not compile_report.get("ready"):
         result["blocking_reasons"] = list(
             compile_report.get("blocking_reasons") or
@@ -180,6 +175,12 @@ def run_bmw_vulkan_bundle(
     result["ready"] = True
     if prepare_only:
         result["status"] = "ready"
+        return result
+
+    if native_gate_blockers:
+        result["status"] = "blocked"
+        result["ready"] = False
+        result["blocking_reasons"] = native_gate_blockers
         return result
 
     exe = Path(executable)
