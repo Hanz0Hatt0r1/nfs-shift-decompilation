@@ -10,7 +10,7 @@ The older baseline recorded 193 Python tests passed and 2 skipped. This is histo
 
 ## Current mainline
 
-Commit: `4227e279c3b2163ef531832afbcfc350d826b6b9`
+Commit: `bacbc103620b1d966ceaae52ee848de0b484801f`
 
 | CI job | Result |
 |---|---|
@@ -18,20 +18,21 @@ Commit: `4227e279c3b2163ef531832afbcfc350d826b6b9`
 | capture-producer | success |
 | python | success |
 
-The Phase 504 merge followed a green PR validation: Python, native, capture-producer
+The Phase 505 merge followed a green PR validation: Python, native, capture-producer
 and Vulkan smoke all passed. The post-merge mainline run also passed all four checks.
-
-## Phase 504 verification coverage
-
-The runtime preflight tests cover GDB Python marker detection, missing toolchain handling,
-tool-version failures and successful host readiness aggregation. It also confirms that
-preflight remains non-invasive: no game launch and no debugger attach are performed.
 
 ## Phase 504 verification coverage
 
 The runtime preflight tests cover GDB Python marker detection, missing toolchain handling,
 tool-version failures and successful host readiness aggregation. The merged Phase 504
 mainline CI passed Python, native, capture-producer and Vulkan smoke.
+
+## Phase 505 verification coverage
+
+The participant-gate tests cover the source-backed `FUN_00410ef0` selector, pointer/index
+writeback slots, the `-1` waiting path, and the post-success transition into
+`Pakfiles/Vehicles/%s.bff` loading. The BFF-to-pre-PhysX handoff tests also assert that the
+participant gate is present in the composed manifest.
 
 ## Phase 503 verification coverage
 
