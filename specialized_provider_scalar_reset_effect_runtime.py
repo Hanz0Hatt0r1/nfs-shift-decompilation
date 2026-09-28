@@ -84,6 +84,12 @@ def validate_reset_effect_event(
         errors.append("unsupported-provider-id")
     else:
         scalar_count = get_storage_layout(provider_id).scalar_count
+        expected_vtable = __import__(
+            "specialized_provider_runtime",
+            fromlist=["get_provider"],
+        ).get_provider(provider_id).vtable_address
+        if int(event.get("provider_vtable", -1)) != expected_vtable:
+            errors.append("provider-vtable-mismatch")
         if not 0 <= selector < scalar_count:
             errors.append(
                 f"selector-out-of-domain:selector={selector}:count={scalar_count}"
