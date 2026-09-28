@@ -101,8 +101,8 @@ def build_vehicle_physics_handoff(
             ),
             "body_count": int(counts.get("bodies", 0)),
             "runtime_constraint_count": int(counts.get("runtime_constraints", 0)),
-            "sdf_body_count": int((bundle.get("profile", {}).get("summary") or {}).get("sdf_bodies", 0)),
-            "participant_gate_ready": bool(participant_gate.get("ready")),
+            "sdf_body_count": int((bundle.get("profile", {}).get("summary") or {}).get("sdf_bodies", 0)),            "participant_gate_ready": bool(participant_gate.get("ready")),
+            "participant_registry_update_ready": bool(participant_registry_update.get("ready")),
         },
         "errors": list(dict.fromkeys(errors)),
         "limitations": [
