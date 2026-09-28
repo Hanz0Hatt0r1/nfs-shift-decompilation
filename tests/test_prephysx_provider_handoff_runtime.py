@@ -28,7 +28,7 @@ def _report_for_scalars(widths):
 
 
 def test_phase502_identifies_provider1_for_34_scalar_shape():
-    report = _report_for_scalars(["JOINT"] * 4 + ["HINGE"] * 5 + ["BAR"] * 12]
+    report = _report_for_scalars(["JOINT"] * 4 + ["HINGE"] * 5 + ["BAR"] * 12)
     contract = runtime.build_prephysx_provider_handoff_contract(report)
 
     assert contract["ready"] is True
