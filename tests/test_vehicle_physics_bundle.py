@@ -73,3 +73,56 @@ def test_find_entry_rejects_ambiguous_basename(monkeypatch, tmp_path):
             assert "exactly one" in str(exc)
         else:
             raise AssertionError("ambiguous basename must be rejected")
+
+
+
+def test_resolve_default_targets_matches_non_bmw_vehicle_stem():
+    class Ford(FakeBFF):
+        def __init__(self, path):
+            self.path = Path(path)
+            self.entries = [
+                Entry("vehicles/physics/chassis/ford_mustang_2010.cdf", 1),
+                Entry("vehicles/physics/engines/ford_mustang_2010.edf", 2),
+                Entry("vehicles/physics/gearbox/common.gdf", 3),
+                Entry("vehicles/physics/suspension/aarm_multilink.sdf", 4),
+                Entry("vehicles/physics/turbo/gen_lowrpm_33.tbf", 5),
+                Entry("vehicles/physics/turbo/nitrous.bbf", 6),
+            ]
+
+    archive = Ford("Ford_Mustang_2010.bff")
+    result = bundle.resolve_default_targets(archive)
+
+    assert result == {
+        "cdf": "vehicles/physics/chassis/ford_mustang_2010.cdf",
+        "edf": "vehicles/physics/engines/ford_mustang_2010.edf",
+        "gdf": "vehicles/physics/gearbox/common.gdf",
+        "sdf": "vehicles/physics/suspension/aarm_multilink.sdf",
+        "tbf": "vehicles/physics/turbo/gen_lowrpm_33.tbf",
+        "bbf": "vehicles/physics/turbo/nitrous.bbf",
+    }
+
+
+def test_resolve_default_targets_rejects_ambiguous_sdf():
+    class AmbiguousSDF(FakeBFF):
+        def __init__(self, path):
+            super().__init__(path)
+            self.entries.extend([
+                Entry("vehicles/physics/suspension/alternate.sdf", 7),
+            ])
+
+    archive = AmbiguousSDF("UnknownVehicle.bff")
+    archive.entries = [
+        entry for entry in archive.entries
+        if not entry.path.endswith("bmw_m3_e36.cdf")
+        and not entry.path.endswith("bmw_m3_e36.edf")
+    ]
+    archive.entries.extend([
+        Entry("vehicles/physics/chassis/unknown.cdf", 8),
+        Entry("vehicles/physics/engines/unknown.edf", 9),
+    ])
+    try:
+        bundle.resolve_default_targets(archive)
+    except ValueError as exc:
+        assert "ambiguous SDF" in str(exc)
+    else:
+        raise AssertionError("ambiguous SDF selection must fail closed")
