@@ -108,3 +108,22 @@ def test_validate_rhs_stencils_requires_coordinates_for_workspace_refs():
 
     assert result["ready"] is False
     assert "workspace-rhs-reference-missing-row-column" in result["errors"]
+
+
+def test_rhs_references_preserve_mixed_source_order():
+    rhs = (
+        "DAT_00c21808 + (&DAT_00c21738)[local_10] "
+        "+ DAT_00c21810 + *(double *)(&DAT_00c23c68 + local_10 * 8)"
+    )
+    refs = runtime._rhs_references(
+        rhs,
+        provider_id=0,
+        loop_index=1,
+    )
+
+    assert [ref.form for ref in refs] == [
+        "direct",
+        "flat-array",
+        "direct",
+        "flat-pointer",
+    ]
