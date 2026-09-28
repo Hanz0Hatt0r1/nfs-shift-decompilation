@@ -274,7 +274,7 @@ def _literal(value):
     )
 
 
-def test_reference_shader_executes_rep_using_constint_and_aL():
+def test_reference_shader_executes_rep_using_constint():
     instructions = [
         Instruction(
             0, 82, "DEFI", 0, 5, 0, False,
@@ -291,17 +291,21 @@ def test_reference_shader_executes_rep_using_constint_and_aL():
             [_src(7, 0)],
         ),
         Instruction(
-            32, 1, "MOV", 0, 3, 0, False,
-            [_dst(8, 0), _src(15, 0)],
+            32, 2, "ADD", 0, 4, 0, False,
+            [_dst(0, 0), _src(0, 0), _src(2, 0)],
         ),
-        Instruction(44, 29, "ENDREP", 0, 1, 0, False, []),
+        Instruction(48, 29, "ENDREP", 0, 1, 0, False, []),
+        Instruction(
+            52, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(0, 0)],
+        ),
     ]
     result = execute_shader(
-        _program(instructions, temps=()),
+        _program(instructions, temps=(0,)),
+        constants={"c": {0: (1.0, 1.0, 1.0, 1.0)}},
     )
     assert result["status"] == "executed", result
-    assert result["color"] == [0.0, 0.0, 0.0, 0.0]
-    assert result["loop_index"] == 0
+    assert result["color"] == [3.0, 3.0, 3.0, 3.0]
 
 
 def test_reference_shader_breakp_terminates_rep():
@@ -341,6 +345,7 @@ def test_reference_shader_breakp_terminates_rep():
     )
     assert result["status"] == "executed", result
     assert result["loop_index"] == 0
+
 
 def test_reference_shader_rejects_unbalanced_conditionals():
     result = execute_shader(
