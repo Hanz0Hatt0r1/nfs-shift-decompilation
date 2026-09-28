@@ -44,6 +44,28 @@ Compare snapshots without loading whole regions into RAM:
 
 Default block size is 4 KiB.
 
+## Streaming analysis
+
+For a larger capture set, use the Python analyzer:
+
+```bash
+python3 tools/shift_live_dump/analyze.py \
+  captures/garage \
+  --out captures/garage/analysis
+```
+
+It compares only regions with the same start address and size in every snapshot and processes one block at a time. A 13 GiB capture therefore does not need 13 GiB of RAM.
+
+Outputs:
+
+- `analysis.json` — snapshot/common-region statistics and totals by memory category.
+- `region_summary.csv` — changed-block and transition statistics per region.
+- `block_candidates.csv` — repeatedly changing block addresses ranked by activity.
+
+The analyzer is deliberately conservative: changing memory is a candidate signal, not proof that the block contains physics state.
+
+For controlled reverse engineering, capture separate series around one action at a time (steering, throttle/brake, gear, camera) and compare those series.
+
 ## Output
 
 Each snapshot contains `manifest.json`, `maps.txt` and `regions/*.bin`. Region files are exactly the mapped size; bytes that could not be read are zero-filled and accounted for as `bytes_failed` in the manifest.
