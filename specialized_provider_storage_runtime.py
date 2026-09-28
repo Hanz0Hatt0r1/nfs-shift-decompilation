@@ -141,7 +141,7 @@ def build_storage_contract() -> dict[str, Any]:
                 "+0x0c": {"function": hex(layout.accessor_0c), "returns": hex(layout.row_pointer_base)},
                 "+0x24": {"function": hex(layout.accessor_24), "returns": layout.factor_workspace_doubles},
                 "+0x28": {"function": hex(layout.accessor_28), "returns": layout.scalar_count},
-                "+0x2c": {"function": hex(layout.accessor_2c), "returns_global": layout.accessor_2c_global},
+                "+0x2c": {"function": hex(layout.accessor_2c), "returns_global": layout.accessor_2c_global, "returns_value": layout.factor_workspace_doubles, "equals_plus_0x24": True},
             },
             "boundary_checks": {
                 "row_table_end": hex(layout.factor_workspace_base),
