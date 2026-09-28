@@ -62,12 +62,14 @@ def test_build_vehicle_physics_handoff_composes_sdf_profile(monkeypatch, tmp_pat
     assert result["participant_process_reselect"]["selection_step"]["selector_global"] == "DAT_00bbc600"
     assert result["summary"]["selector_candidate_lifecycle_ready"] is True
     assert result["summary"]["igphasevehicle_finalization_ready"] is True
+    assert result["summary"]["selector_descriptor_population_ready"] is True
     assert result["igphasevehicle_finalization"]["owner"]["finalizer"] == "FUN_004d5930"
     assert result["selector_candidate_lifecycle"]["selection_scan"]["function"] == "FUN_0043af50"
     assert (out / "prephysx_provider_handoff.json").is_file()
     assert (out / "participant_process_reselect.json").is_file()
     assert (out / "selector_candidate_lifecycle.json").is_file()
     assert (out / "igphasevehicle_finalization.json").is_file()
+    assert (out / "selector_descriptor_population.json").is_file()
 
 
 def test_build_vehicle_physics_handoff_blocks_missing_sdf(monkeypatch, tmp_path: Path):
@@ -92,6 +94,7 @@ def test_build_vehicle_physics_handoff_blocks_missing_sdf(monkeypatch, tmp_path:
     assert result["selector_candidate_lifecycle"]["ready"] is True
     assert result["summary"]["selector_candidate_lifecycle_ready"] is True
     assert result["summary"]["igphasevehicle_finalization_ready"] is True
+    assert result["summary"]["selector_descriptor_population_ready"] is True
     assert result["summary"]["solver_scalar_count"] == 0
 
 
@@ -115,6 +118,7 @@ def test_build_vehicle_physics_handoff_blocks_missing_profile_details(monkeypatc
     assert result["summary"]["participant_registry_update_ready"] is True
     assert result["summary"]["participant_process_reselect_ready"] is True
     assert result["summary"]["selector_candidate_lifecycle_ready"] is True
+    assert result["summary"]["selector_descriptor_population_ready"] is True
 
 
 def test_build_vehicle_physics_handoff_propagates_bundle_blockers(monkeypatch, tmp_path: Path):

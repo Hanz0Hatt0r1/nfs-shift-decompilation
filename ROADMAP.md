@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 511.**
+**Current mainline: Phase 512.**
 
 
 
@@ -41,7 +41,8 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 17. Trace the selected participant pointer/ordinal through IGPhaseVehicle processing, reselection and vehicle-BFF writeback — Phase 509 implemented.
 18. Close the selector descriptor/candidate lifecycle: constructor defaults, +0x74 eligibility/exclusion state, +0x8c ordinal writeback, bounded batch reservation and distinct +0x1d post-load/process state — Phase 510 implemented.
 19. Close the IGPhaseVehicle completion/finalization boundary: per-container callbacks, guarded +0x160 cleanup, resource teardown and post-finalizer object callback ordering — Phase 511 implemented.
-20. Expand the desktop reference renderer against real BMW material/shader permutations.
+20. Map selector descriptor population exactly: 16-entry capacity, 0x90 stride, packed token bitfields, source-to-descriptor string/block copies, +0x74 initialization and conditional +0x70 population — Phase 512 implemented.
+21. Expand the desktop reference renderer against real BMW material/shader permutations.
 19. Complete Vulkan RenderCommand execution using the same neutral contract.
 20. Continue SGB/FLAT and camera runtime reconstruction.
 21. Derive proven animation poses from the BAB runtime grammar.
@@ -61,7 +62,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
 | SGB scene | partial | deeper object/leaf consumers |
 | Camera | active | higher-level behavior |
-| Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
+| Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
