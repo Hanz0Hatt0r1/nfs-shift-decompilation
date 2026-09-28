@@ -10,23 +10,19 @@ The older baseline recorded 193 Python tests passed and 2 skipped. This is histo
 
 ## Current mainline
 
-Commit: `dffddaaa0db4290b35d3826234c2e2e7a867cb3a`
+Commit: `b7a0c777a16f674f82887e3f7964e0c56bb53caa`
 
 | CI job | Result |
 |---|---|
 | native | success |
 | capture-producer | success |
-| python | 1 failed, 2537 passed, 3 skipped |
+| python | success |
 
-The Python failure is:
-
-`tests/test_bmw_runtime_render_contract.py::test_runtime_render_contract_builds_stage_specific_inputs`
-
-with:
-
-`KeyError: "byte_hashes"`
-
-The contract already exposed the byte-hash values at `shader.byte_hashes`; the failing regression expected the same compatibility view under `shader.identity.byte_hashes`. The fix in this development branch mirrors the values into the identity object without changing the underlying `SHIFT.ShaderPermutationIdentity/1` flat fields.
+The preceding mainline regression at `dffddaaa0db4290b35d3826234c2e2e7a867cb3a`
+failed one Python test with `KeyError: "byte_hashes"`. PR #618 mirrored the
+existing byte-hash compatibility values into `shader.identity.byte_hashes` while
+preserving the flat `SHIFT.ShaderPermutationIdentity/1` fields. The post-merge
+mainline run passed all three CI jobs.
 
 ## Phase 499–500 verification coverage
 
