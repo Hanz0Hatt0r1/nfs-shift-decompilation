@@ -57,3 +57,20 @@ def test_contract_freezes_float_matrix_offsets():
 def test_invalid_vector_size_rejected():
     with pytest.raises(ValueError):
         transform_vector(Matrix3x3(1,2,3,4,5,6,7,8,9), (1.0, 2.0))
+
+
+def test_fun_007aefb0_is_exposed_by_retail_function_name():
+    matrix = Matrix3x3(
+        1, 2, 3,
+        4, 5, 6,
+        7, 8, 9,
+    )
+    from matrix_vector_transform_runtime import transform_fun_007aefb0
+    assert transform_fun_007aefb0(matrix, (10, 20, 30)).as_tuple() == pytest.approx((140, 320, 500))
+
+
+def test_build_contract_freezes_both_retail_helpers():
+    contract = build_contract()
+    assert contract["helpers"]["FUN_007af0a0"]["canonical_api"] == "transform_fun_007af0a0"
+    assert contract["helpers"]["FUN_007aefb0"]["canonical_api"] == "transform_fun_007aefb0"
+    assert contract["helpers"]["FUN_007aefb0"]["source_line"] == 810220
