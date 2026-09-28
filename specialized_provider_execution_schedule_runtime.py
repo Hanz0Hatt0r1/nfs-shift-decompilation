@@ -97,8 +97,8 @@ def _classify_assignment(
     statement: str,
     *,
     provider_id: int,
-    pivot_index: int,
-    pivot_diagonals: set[int],
+    current_pivot_diagonal: int,
+    future_pivot_diagonals: set[int],
     loop_index: int | None,
     terminal: bool,
 ) -> str:
@@ -113,10 +113,8 @@ def _classify_assignment(
         if lhs_base == output_base:
             return "backsubstitution"
 
-    if lhs is not None and lhs in pivot_diagonals:
-        future = lhs != min(pivot_diagonals) if pivot_diagonals else False
-        if future:
-            return "future-diagonal-update"
+    if lhs is not None and lhs in future_pivot_diagonals:
+        return "future-diagonal-update"
 
     rhs = statement[
         (
@@ -153,11 +151,6 @@ def extract_execution_schedule(
         first_source_line=source_start_line,
     )
     layout = get_storage_layout(provider_id)
-    pivot_diagonals = {
-        int(pivot.denominator[8:], 16)
-        for pivot in pivots
-        if pivot.denominator.startswith("_DAT_")
-    }
 
     errors: list[str] = []
     if len(pivots) != layout.scalar_count:
@@ -196,11 +189,26 @@ def extract_execution_schedule(
                 else (None,)
             )
             for loop_index in loop_values:
+                current_diagonal = (
+                    int(pivot.denominator[len("_DAT_"):], 16)
+                    if pivot.denominator.startswith("_DAT_")
+                    else None
+                )
+                future_diagonals = {
+                    int(other.denominator[len("_DAT_"):], 16)
+                    for other in pivots[pivot_index + 1:]
+                    if other.denominator.startswith("_DAT_")
+                }
+                if current_diagonal is None:
+                    errors.append(
+                        f"pivot-{pivot_index}-invalid-denominator:{pivot.denominator}"
+                    )
+                    continue
                 kind = _classify_assignment(
                     statement,
                     provider_id=provider_id,
-                    pivot_index=pivot_index,
-                    pivot_diagonals=pivot_diagonals,
+                    current_pivot_diagonal=current_diagonal,
+                    future_pivot_diagonals=future_diagonals,
                     loop_index=loop_index,
                     terminal=terminal,
                 )
