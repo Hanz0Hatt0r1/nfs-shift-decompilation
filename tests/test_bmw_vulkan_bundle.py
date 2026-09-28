@@ -92,6 +92,11 @@ def test_bmw_vulkan_bundle_prepares_geometry_constants_and_shaders(tmp_path):
     assert (tmp_path / "geometry.svpk").exists()
     assert (tmp_path / "constants.svcp").exists()
     assert (tmp_path / "bundle_manifest.json").exists()
+    gate = json.loads(
+        (tmp_path / "native_submission_gate.json").read_text(encoding="utf-8")
+    )
+    assert gate["format"] == "SHIFT.NativeSubmissionGate/1"
+    assert gate["ready"] is True
 
     manifest = json.loads((tmp_path / "bundle_manifest.json").read_text(encoding="utf-8"))
     assert manifest["format"] == "SHIFT.BMWVulkanBundle/1"
