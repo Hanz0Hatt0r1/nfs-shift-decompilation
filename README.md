@@ -2,9 +2,9 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 504**
+> **Current mainline: Phase 505**
 >
-> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Exact retail numeric parity remains capture-gated.
+> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
@@ -107,7 +107,8 @@ The repository now models:
 - source-mutation correlation against source-derived factor edges;
 - pre-PhysX/provider handoff cross-contract validation;
 - BFF-to-pre-PhysX/provider handoff orchestration;
-- runtime-capture preflight for retail PE/Wine/GDB/GDB Python.
+- runtime-capture preflight for retail PE/Wine/GDB/GDB Python;
+- the source-backed vehicle physics participant creation/load gate.
 
 ### Phase 499–500 capture bundle
 
@@ -139,16 +140,19 @@ python tools/extract_apitrace_unique_bmw.py \
 
 python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
 python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff
+python tools/build_vehicle_physics_participant_gate.py -o participant_gate.json
 python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py
 
 ./shift-bff-viewer /path/to/BMW_M3_E36.bff
 ```
 
+## Physics participant gate
+
+At commit `f63bb0b84fa4d5305d1b784025e4823bb88640d8` (2026-09-28), Phase 504 was merged after the PR CI passed Python, native and capture-producer, and the Vulkan smoke check passed. Phase 505 extends the static physics control-flow contract; live runtime capture remains the evidence gate. The post-merge mainline CI passed Python, native, capture-producer and Vulkan smoke.
+
+The Phase 505 gate records the `IGPhaseVehicle → FUN_00410ef0 → wait/success → Pakfiles/Vehicles/%s.bff` control flow without assigning a PhysX class identity. See `docs/PHASE505_VEHICLE_PHYSICS_PARTICIPANT_GATE.md`.
+
 ## Current CI note
-
-At commit `4227e279c3b2163ef531832afbcfc350d826b6b9` (2026-09-28), Phase 504 was merged after the PR CI passed Python, native and capture-producer, and the Vulkan smoke check passed. The post-merge mainline CI passed Python, native, capture-producer and Vulkan smoke.
-
-## Repository map
 
 | Path | Purpose |
 |---|---|
