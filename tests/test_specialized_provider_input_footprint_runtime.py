@@ -1,26 +1,6 @@
 import specialized_provider_input_footprint_runtime as runtime
 
 
-def test_reset_domain_contains_zero_and_unit_addresses():
-    domain, units = runtime._reset_domain(
-        {
-            "rows": [
-                {
-                    "zero_assignments": ["0x1000", "0x1008"],
-                    "diagonal_address": "0x1000",
-                },
-                {
-                    "zero_assignments": ["0x1010"],
-                    "diagonal_address": "0x1010",
-                },
-            ]
-        }
-    )
-
-    assert domain == {0x1000, 0x1008, 0x1010}
-    assert units == {0x1000, 0x1010}
-
-
 def test_summarize_input_footprint():
     result = runtime.summarize_input_footprint(
         {
@@ -130,3 +110,26 @@ def test_validate_input_footprint_rejects_wrong_caller_candidate_domain():
         "caller-candidate-0-classification-invalid"
         in result["errors"]
     )
+
+
+def test_validate_input_footprint_accepts_reset_unit_in_reset_domain():
+    result = runtime.validate_input_footprint(
+        {
+            "provider_id": 1,
+            "scalar_count": 34,
+            "caller_input_candidates": [],
+            "reset_workspace_first_reads": [
+                {
+                    "domain": "workspace",
+                    "initialization": "reset-unit",
+                    "address": "0x00c1fe38",
+                }
+            ],
+            "output_first_reads": [],
+            "malformed_first_reads": [],
+            "reset_unit_diagonal_slots": 34,
+            "errors": [],
+        }
+    )
+
+    assert result["ready"] is True

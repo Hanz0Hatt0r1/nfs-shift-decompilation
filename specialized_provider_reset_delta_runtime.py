@@ -15,26 +15,10 @@ from specialized_provider_capture_runtime import normalize_provider_capture
 from specialized_provider_reset_cleanup_equivalence_runtime import (
     compare_reset_cleanup,
 )
-from specialized_provider_reset_profile_runtime import extract_reset_profile
+from specialized_provider_reset_domain_runtime import extract_reset_domain
 from specialized_provider_storage_runtime import get_storage_layout
 
 FORMAT = "SHIFT.SpecializedProviderResetDeltaRuntime/1"
-
-
-def _reset_addresses_and_seeds(
-    reset_report: Mapping[str, Any],
-) -> tuple[set[int], set[int]]:
-    zero_addresses = {
-        int(str(address), 16)
-        for row in reset_report.get("rows") or []
-        for address in row.get("zero_assignments") or []
-    }
-    unit_addresses = {
-        int(str(row["diagonal_address"]), 16)
-        for row in reset_report.get("rows") or []
-        if row.get("diagonal_address") is not None
-    }
-    return zero_addresses, unit_addresses
 
 
 def _value_map(
@@ -46,18 +30,6 @@ def _value_map(
         int(base_address) + index * 8: float(value)
         for index, value in enumerate(values)
     }
-
-
-def _outside_workspace(
-    address: int,
-    *,
-    layout: Any,
-) -> bool:
-    return not (
-        layout.factor_workspace_base
-        <= address
-        < layout.output_vector_base
-    )
 
 
 def _classify_change(
@@ -100,7 +72,7 @@ def compare_capture_to_reset(
     if normalized["provider_id"] != provider_id:
         raise ValueError("provider id mismatch")
 
-    reset = extract_reset_profile(
+    reset_domain_report = extract_reset_domain(
         source,
         provider_id=provider_id,
     )
@@ -108,8 +80,18 @@ def compare_capture_to_reset(
         source,
         provider_id=provider_id,
     )
-    zero_addresses, unit_addresses = _reset_addresses_and_seeds(reset)
-    reset_domain = zero_addresses | unit_addresses
+    zero_addresses = {
+        int(str(address), 16)
+        for address in reset_domain_report["zero_addresses"]
+    }
+    unit_addresses = {
+        int(str(address), 16)
+        for address in reset_domain_report["unit_diagonal_addresses"]
+    }
+    reset_domain = {
+        int(str(address), 16)
+        for address in reset_domain_report["touched_addresses"]
+    }
 
     workspace_values = _value_map(
         normalized["workspace"],
@@ -203,7 +185,7 @@ def compare_capture_to_reset(
         "provider_id": provider_id,
         "scalar_count": layout.scalar_count,
         "capture_stage": normalized["stage"],
-        "reset_function": reset["reset_function"],
+        "reset_function": reset_domain_report["reset_function"],
         "cleanup_reset_equivalent": bool(
             reset_equivalence.get(
                 "reset_zero_cleanup_exact_match"
@@ -231,12 +213,12 @@ def compare_capture_to_reset(
             if category != "outside-reset-domain-nonzero"
         )
         and not nonzero_outside_reset,
+        "reset_zero_domain_ready": bool(reset_domain_report.get("ready")),
         "ready": bool(
             normalized.get("ready")
-            and reset_equivalence.get("ready")
+            and reset_domain_report.get("ready")
         ),
-        "errors": list(reset.get("errors") or [])
-        + list(reset_equivalence.get("errors") or []),
+        "errors": list(reset_domain_report.get("errors") or []),
     }
 
 
