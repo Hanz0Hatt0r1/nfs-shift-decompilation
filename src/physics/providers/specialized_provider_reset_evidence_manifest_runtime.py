@@ -18,6 +18,9 @@ from specialized_provider_scalar_reset_capture_runtime import (
 from specialized_provider_scalar_reset_sequence_runtime import (
     validate_group_event_sequence,
 )
+from specialized_provider_scalar_reset_callsite_runtime import (
+    attribute_reset_event,
+)
 
 FORMAT = "SHIFT.SpecializedProviderResetEvidenceManifestRuntime/1"
 
@@ -42,10 +45,15 @@ def build_frame_manifest(
         grouped.items(),
         key=lambda item: (-1 if item[0] is None else int(item[0])),
     ):
-        normalized = [
-            normalize_scalar_reset_event(event)
-            for event in frame_events
-        ]
+        normalized = []
+        for event in frame_events:
+            item = normalize_scalar_reset_event(event)
+            if not (
+                isinstance(item.get("callsite"), Mapping)
+                and item["callsite"].get("status") == "attributed"
+            ):
+                item["callsite"] = attribute_reset_event(event)
+            normalized.append(item)
         groups = Counter()
         providers = Counter()
         selectors: list[int] = []
