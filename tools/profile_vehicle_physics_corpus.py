@@ -65,8 +65,9 @@ def profile_vehicle_physics_corpus(
     *,
     strict: bool = False,
 ) -> dict[str, Any]:
+    input_paths = list(inputs)
     with ExitStack() as stack:
-        archives = _materialize_bffs(inputs, stack)
+        archives = _materialize_bffs(input_paths, stack)
         selected: list[Path] = []
         skipped: list[dict[str, str]] = []
         for path in archives:
@@ -142,7 +143,7 @@ def profile_vehicle_physics_corpus(
         "format": "SHIFT.VehiclePhysicsCorpusProfile/1",
         "version": 1,
         "strict": bool(strict),
-        "input_count": len(list(inputs)) if not isinstance(inputs, (list, tuple)) else len(inputs),
+        "input_count": len(input_paths),
         "selected_archive_count": len(selected),
         "decoded_archive_count": len(reports),
         "skipped": skipped,
