@@ -57,6 +57,10 @@ def _doubles(inferior: gdb.Inferior, address: int, count: int) -> list[float]:
 
 
 _SCALAR_RESET_EVENT_COUNT = 0
+# Stable evidence labels used by the capture schema:
+# stage="pre-solve-provider"
+# "post-solve-provider"
+# "scalar_reset=0x007b2210"
 
 _LAST_FRAME_ENTRY = {
     "frame_index": None,
