@@ -21,6 +21,22 @@ from vulkan_bundle_spirv import compile_bmw_vulkan_bundle, write_compile_report
 FORMAT = "SHIFT.BMWVulkanRunner/1"
 
 
+def _validate_native_submission_gate(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    gate_path = root / "native_submission_gate.json"
+    if not gate_path.is_file():
+        return None, ["vulkan-runner:native-submission-gate-missing"]
+    try:
+        gate = json.loads(gate_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return None, [f"vulkan-runner:native-submission-gate-invalid-json:{type(error).__name__}"]
+    if not isinstance(gate, dict) or gate.get("format") != "SHIFT.NativeSubmissionGate/1":
+        return gate if isinstance(gate, dict) else None, ["vulkan-runner:native-submission-gate-invalid-format"]
+    if gate.get("ready") is not True:
+        reasons = list(gate.get("blocking_reasons") or [])
+        return gate, reasons or ["vulkan-runner:native-submission-gate-not-ready"]
+    return gate, []
+
+
 def _validate_sampler_sidecar(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     metadata_path = root / "sampler_contracts.meta.json"
     if not metadata_path.is_file():
@@ -77,6 +93,7 @@ def run_bmw_vulkan_bundle(
         encoding="utf-8",
     )
 
+    native_gate, native_gate_blockers = _validate_native_submission_gate(root)
     sampler_metadata, sampler_blockers = _validate_sampler_sidecar(root)
 
     result: dict[str, Any] = {
@@ -86,6 +103,11 @@ def run_bmw_vulkan_bundle(
         "gates": {
             "spirv": compile_report,
             "interface": None,
+            "native_submission": {
+                "status": "ready" if native_gate is not None and not native_gate_blockers else "blocked",
+                "path": str(root / "native_submission_gate.json") if native_gate is not None else None,
+                "blocking_reasons": native_gate_blockers,
+            },
             "sampler": {
                 "status": "not-supplied" if sampler_metadata is None else (
                     "ready" if not sampler_blockers else "blocked"
@@ -108,6 +130,11 @@ def run_bmw_vulkan_bundle(
             },
         },
     }
+
+    if native_gate_blockers:
+        result["status"] = "blocked"
+        result["blocking_reasons"] = native_gate_blockers
+        return result
 
     if not compile_report.get("ready"):
         result["blocking_reasons"] = list(
