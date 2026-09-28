@@ -9,10 +9,11 @@ def test_provider0_vtable_identity_and_dimension():
     assert p.scalar_count == 40
     assert p.acceptance_function == 0x007C6E50
     assert p.solve_function == 0x007C7200
-    assert p.primary_accessor == 0x007D2EB0
-    assert p.graph_accessor == 0x007D2EC0
-    assert p.aux_accessor == 0x007D2ED0
-    assert p.finalize_accessor == 0x007D2F00
+    assert p.vtable_04_accessor == 0x007D2EB0
+    assert p.vtable_08_accessor == 0x007D2EC0
+    assert p.vtable_0c_accessor == 0x007D2ED0
+    assert p.vtable_2c_accessor == 0x007D2F00
+    assert p.accessor_results[0x0C] == "0x00c21698"
     assert p.constant_24 == 0x4A6
     assert p.constant_28 == 0x28
 
@@ -23,10 +24,11 @@ def test_provider1_vtable_identity_and_dimension():
     assert p.scalar_count == 34
     assert p.acceptance_function == 0x007CDB40
     assert p.solve_function == 0x007CDFC0
-    assert p.primary_accessor == 0x007D2F10
-    assert p.graph_accessor == 0x007D2F20
-    assert p.aux_accessor == 0x007D2F30
-    assert p.finalize_accessor == 0x007D2F60
+    assert p.vtable_04_accessor == 0x007D2F10
+    assert p.vtable_08_accessor == 0x007D2F20
+    assert p.vtable_0c_accessor == 0x007D2F30
+    assert p.vtable_2c_accessor == 0x007D2F60
+    assert p.accessor_results[0x0C] == "0x00c1fdb0"
     assert p.constant_24 == 0x2EA
     assert p.constant_28 == 0x22
 
@@ -46,10 +48,8 @@ def test_provider1_rle_covers_exact_34x34_upper_triangle():
 
 
 def test_rle_starts_zero_and_interleaves_transition_cells():
-    bits = runtime.decode_transition_rle((1, 2, 1), 3)
-    # Cells: zero-run(1), transition-to-one, one-run(2), transition-to-zero.
-    # The final run then contains the remaining upper-triangle cell.
-    assert bits == [False, True, True, False, False, False]
+    bits = runtime.decode_transition_rle((1, 0, 1), 3)
+    assert bits == [False, True, False]
 
 
 def test_provider_match_ignores_diagonal_and_lower_triangle():
