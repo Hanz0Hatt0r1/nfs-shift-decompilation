@@ -1,10 +1,11 @@
 from renderer_resources import build_resource_index
 
 
-def _row(path="textures/body.dds", sha="a" * 64, fourcc="DXT1"):
+def _row(path="textures/body.dds", sha="a" * 64, fourcc="DXT1", raw_sha="b" * 64):
     return {
         "path": path,
         "sha256": sha,
+        "raw_sha256": raw_sha,
         "analysis": {
             "format": "DDS",
             "width": 64,
@@ -75,3 +76,17 @@ def test_resource_index_reports_missing_binding_resource():
     )
     assert r["stats"]["unresolved"] == 1
     assert r["unresolved"][0]["kind"] == "texture-resource-missing"
+
+
+def test_resource_index_keeps_raw_payload_identity_separate():
+    decoded_sha = "a" * 64
+    raw_sha = "b" * 64
+    result = build_resource_index(
+        [_row(sha=decoded_sha, raw_sha=raw_sha)],
+        [_binding("Diffuse")],
+        extensions=["EXT_texture_compression_s3tc"],
+    )
+    texture = result["textures"][0]
+    assert texture["sha256"] == decoded_sha
+    assert texture["raw_sha256"] == raw_sha
+    assert texture["id"] == "tex_" + decoded_sha[:24]
