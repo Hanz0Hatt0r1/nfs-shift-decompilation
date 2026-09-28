@@ -436,16 +436,15 @@ def main() -> int:
     (out / "field_analysis.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
-    (out / "region_scope.csv").write_text(
-        "start,end,size,perms,path,category,blocks,changed_blocks,changed_ratio\n"
-        + "".join(
-            f"{r['start']},{r['end']},{r['size']},{r['perms']},"
-            f"{r['path']},{r['category']},{r['blocks']},{r['changed_blocks']},"
-            f"{r['changed_ratio']:.8f}\n"
-            for r in region_stats
-        ),
-        encoding="utf-8",
-    )
+    with (out / "region_scope.csv").open("w", newline="", encoding="utf-8") as f:
+        columns = [
+            "start", "end", "size", "perms", "path", "category",
+            "blocks", "changed_blocks", "changed_ratio",
+        ]
+        w = csv.DictWriter(f, fieldnames=columns)
+        w.writeheader()
+        w.writerows(region_stats)
+
 
     print(f"snapshots: {len(snapshots)}")
     print(f"common regions: {len(common)}")
