@@ -299,7 +299,7 @@ def main() -> int:
     analyzed_blocks = 0
 
     for start in sorted(common):
-        rs = [idx[start] for idx in indexes[start] if start in idx]
+        rs = [idx[start] for idx in indexes]
         if any(int(r["size"]) != int(rs[0]["size"]) for r in rs):
             skipped["size_mismatch"] += 1
             continue
