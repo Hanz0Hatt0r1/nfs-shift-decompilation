@@ -64,6 +64,18 @@ It records the participant pointer/index writeback slots and the observed candid
 eligibility condition without naming an engine/PhysX class. The runtime participant
 instance is still capture-dependent.
 
+## PhysicsParticipantManager event path
+
+Phase 506 adds `SHIFT.PhysicsParticipantManagerEvent/1`, covering the source-backed
+`FUN_0070e1c0 → opcode 0x20 → FUN_00714560(DAT_00c109e0)` path and the observed
+manager-ready write at `+0x39c = 1`. This remains a separate evidence layer:
+the decompilation does not yet prove that `DAT_00c109e0` is the exact registry
+returned by `thunk_FUN_00453990` and consumed by `FUN_00410ef0`.
+
+CLI:
+
+`python tools/build_physics_participant_manager_event.py -o physics_participant_manager_event.json`
+
 ## Current next step
 
 Capture a real provider frame, verify the bundle, then use the handoff and Phase 501
