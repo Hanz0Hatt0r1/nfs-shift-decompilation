@@ -102,3 +102,42 @@ def test_frame_entry_resets_per_frame_counter_baseline():
     tail = text[start:start + 500]
     assert '_LAST_FRAME_ENTRY["scalar_reset_start_count"] = (' in tail
     assert '_LAST_FRAME_ENTRY["scalar_reset_end_count"] = (' in tail
+
+
+def test_provider_reset_effect_probe_is_present_for_both_resets():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert "class ProviderResetProbe" in text
+    assert "class ProviderResetReturnProbe" in text
+    assert "get_provider(0).reset_function" in text
+    assert "get_provider(1).reset_function" in text
+    assert '"provider_reset_effects.jsonl"' in text
+
+
+def test_provider_reset_effect_probe_reads_sentinel_cells():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert "get_row_pointers(self.provider_id)[selector]" in text
+    assert "row_pointer + selector * 8" in text
+    assert "addresses.output_vector_base + selector * 8" in text
+    assert "diagonal_before = _doubles(" in text
+    assert "output_before = _doubles(" in text
+
+
+def test_provider_reset_effect_return_probe_keeps_lifetime_reference():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert "self.return_breakpoints: list[ProviderResetReturnProbe] = []" in text
+    assert "self.return_breakpoints.append(return_probe)" in text
+
+
+def test_provider_reset_effect_probe_uses_scalar_reset_counter():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert '"reset_event_count": self.reset_event_count' in (
+        Path(
+            Path(__file__).resolve().parents[1]
+            / "specialized_provider_scalar_reset_effect_runtime.py"
+        ).read_text(encoding="utf-8")
+    )
+    assert "_SCALAR_RESET_EVENT_COUNT" in text
