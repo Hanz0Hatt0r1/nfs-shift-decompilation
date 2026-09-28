@@ -121,6 +121,7 @@ def test_resolve_default_targets_rejects_ambiguous_sdf():
         entry for entry in archive.entries
         if not entry.path.endswith("bmw_m3_e36.cdf")
         and not entry.path.endswith("bmw_m3_e36.edf")
+        and not entry.path.endswith("aarm_multilink.sdf")
     ]
     archive.entries.extend([
         Entry("vehicles/physics/chassis/unknown.cdf", 9),
