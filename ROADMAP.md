@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 425: source-backed JointDesc schema
+
+Added `joint_desc_schema_runtime.py` and its regression suite. The module records the exact `JointDesc`/`JointLimitDesc` registration fields, offsets and serializer type-ids from `FUN_007b9100`/`FUN_007b95d0`, plus explicit constructor writes recovered from `FUN_007b9030`. The schema provides the machine-readable constraint-definition layer needed before applying these properties at the runtime provider/SDK boundary.
+
 ## Phase 424: source-backed pre-PhysX construction IR
 
 Added `physics_constraint_construction_runtime.py` and its regression suite. The module lowers the already proven BODY/constraint SDF runtime boundary into a neutral construction IR covering `FUN_007b3670`, `FUN_007b3150` and the pre-provider allocation stage of `FUN_007b3820`. Exact BODY name/mass/inertia offsets, JOINT/HINGE/BAR strides and solver widths, endpoint pointer slots, vector destinations, allocation sizes and provider/fallback boundaries are represented. The implementation intentionally leaves PhysX object classes, provider ownership and physical units unresolved rather than inferring unsupported semantics.
