@@ -192,7 +192,7 @@ def build_profile(
             "sdf_solver_scalar_count": sdf_constraint_solver_graph.get("solver_scalar_count"),
             "sdf_constraint_solver_graph_ready": sdf_constraint_solver_graph.get("ready") is True,
             "sdf_sparse_solver_contract_ready": sdf_solver_contract.get("ready") is True,
-            "sdf_builtin_sparse_solver_ready": sdf_builtin_sparse_solver.get("ready") is True,
+            "sdf_builtin_sparse_solver_ready": bool(sdf_builtin_sparse_solver.get("ready")),
         }
     })
     blockers.extend(f"sdf-solver-frame:{reason}" for reason in sdf_frame_validation.get("errors") or [])
