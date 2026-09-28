@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any, Mapping, Sequence
 
+from specialized_provider_runtime import get_provider
 from specialized_provider_storage_runtime import get_storage_layout
 from specialized_provider_row_storage_runtime import get_row_pointers
 
@@ -84,10 +85,7 @@ def validate_reset_effect_event(
         errors.append("unsupported-provider-id")
     else:
         scalar_count = get_storage_layout(provider_id).scalar_count
-        expected_vtable = __import__(
-            "specialized_provider_runtime",
-            fromlist=["get_provider"],
-        ).get_provider(provider_id).vtable_address
+        expected_vtable = get_provider(provider_id).vtable_address
         if int(event.get("provider_vtable", -1)) != expected_vtable:
             errors.append("provider-vtable-mismatch")
         if not 0 <= selector < scalar_count:
