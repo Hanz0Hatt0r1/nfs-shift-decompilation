@@ -10,7 +10,7 @@ The older baseline recorded 193 Python tests passed and 2 skipped. This is histo
 
 ## Current mainline
 
-Commit: `19b53820f30fd18bca84f77171c327d473bc39f5`
+Commit: `4227e279c3b2163ef531832afbcfc350d826b6b9`
 
 | CI job | Result |
 |---|---|
@@ -18,7 +18,7 @@ Commit: `19b53820f30fd18bca84f77171c327d473bc39f5`
 | capture-producer | success |
 | python | success |
 
-The Phase 503 merge followed a green PR validation: Python, native, capture-producer
+The Phase 504 merge followed a green PR validation: Python, native, capture-producer
 and Vulkan smoke all passed. The post-merge mainline run also passed all four checks.
 
 ## Phase 504 verification coverage
@@ -26,6 +26,12 @@ and Vulkan smoke all passed. The post-merge mainline run also passed all four ch
 The runtime preflight tests cover GDB Python marker detection, missing toolchain handling,
 tool-version failures and successful host readiness aggregation. It also confirms that
 preflight remains non-invasive: no game launch and no debugger attach are performed.
+
+## Phase 504 verification coverage
+
+The runtime preflight tests cover GDB Python marker detection, missing toolchain handling,
+tool-version failures and successful host readiness aggregation. The merged Phase 504
+mainline CI passed Python, native, capture-producer and Vulkan smoke.
 
 ## Phase 503 verification coverage
 

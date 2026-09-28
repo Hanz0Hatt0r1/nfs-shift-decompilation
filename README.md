@@ -2,7 +2,7 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 503**
+> **Current mainline: Phase 504**
 >
 > Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Exact retail numeric parity remains capture-gated.
 
@@ -146,7 +146,7 @@ python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-ca
 
 ## Current CI note
 
-At commit `19b53820f30fd18bca84f77171c327d473bc39f5` (2026-09-28), Phase 503 was merged after the PR CI passed Python, native, capture-producer and Vulkan smoke checks. The post-merge mainline CI also passed Python, native, capture-producer and Vulkan smoke.
+At commit `4227e279c3b2163ef531832afbcfc350d826b6b9` (2026-09-28), Phase 504 was merged after the PR CI passed Python, native and capture-producer, and the Vulkan smoke check passed. The post-merge mainline CI passed Python, native, capture-producer and Vulkan smoke.
 
 ## Repository map
 

@@ -4,9 +4,9 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 503.**
+**Current mainline: Phase 504.**
 
-**Development step: Phase 504 preflight.**
+
 
 Phases 499–500 make the specialized-provider capture directory self-describing:
 
@@ -22,8 +22,8 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 
 ## Immediate execution order
 
-1. Python CI baseline after the `src` reorganization — complete; Phase 503 mainline CI is green.
-2. Capture a real provider frame with the SDF/runtime probe — Phase 504 now provides a host/artifact preflight.
+1. Python CI baseline after the `src` reorganization — complete; Phase 504 mainline CI is green.
+2. Capture a real provider frame with the SDF/runtime probe — preflight implemented; live capture remains the next evidence gate.
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
 4. Cross-vehicle raw BFF payload parity and deduplicated FXO shader profiling — complete.
 5. Corpus-driven shader opcode gap analysis — complete.

@@ -42,8 +42,8 @@ CLI:
 
 `python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py`
 
-The uploaded development environment currently lacks Wine and GDB, so runtime
-capture remains externally gated even though the supplied `SHIFT.exe` is PE32/i386.
+The current analysis environment lacks Wine and GDB, so runtime capture remains
+externally gated even though the supplied `SHIFT.exe` is PE32/i386.
 
 ## Pre-PhysX handoff
 
