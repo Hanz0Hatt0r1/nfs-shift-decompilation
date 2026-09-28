@@ -189,7 +189,15 @@ def build_bmw_vulkan_bundle(
     else:
         sampler_metadata = None
 
+    gate_path = out / "native_submission_gate.json"
+    _write(gate_path, native_gate)
+
     artifacts = {
+        "native_submission_gate": {
+            "path": str(gate_path.relative_to(out)),
+            "sha256": _hash(gate_path),
+            "ready": True,
+        },
         "geometry": {
             "path": str(geometry_path.relative_to(out)),
             "sha256": _hash(geometry_path),
@@ -254,6 +262,7 @@ def build_bmw_vulkan_bundle(
             "vertex_count": (command_source.get("mesh") or {}).get("vertex_count"),
             "triangle_count": (command_source.get("mesh") or {}).get("triangle_count"),
         },
+        "native_submission_gate": native_gate,
         "artifacts": artifacts,
         "external_samplers": external,
         "native_execution": {
