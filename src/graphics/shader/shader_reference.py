@@ -128,6 +128,7 @@ class ReferenceShaderState:
         self.temps = {int(i): [0.0, 0.0, 0.0, 0.0] for i in program.temps}
         self.address: list[float] = [0.0, 0.0, 0.0, 0.0]
         self.loop_index = 0
+        self.loop_value = 0
         self.predicates: dict[int, list[float]] = {}
         self.outputs: dict[int, list[float]] = {}
         self.output_registers: dict[tuple[int, int], list[float]] = {}
