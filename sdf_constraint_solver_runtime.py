@@ -8,6 +8,7 @@ matrix coefficients.
 from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
+from sdf_builtin_sparse_solver_runtime import solve_builtin_sparse_in_place
 
 FORMAT = "SHIFT.SDFConstraintSolverRuntime/1"
 
@@ -137,3 +138,19 @@ def validate_sdf_solver_contract(report: Mapping[str, Any]) -> dict[str, Any]:
             "graph_builder": "FUN_007b1360",
         },
     }
+
+
+
+def solve_sdf_builtin(
+    matrix: Sequence[Sequence[float | int]],
+    rhs: Sequence[float | int],
+    forward_records: Sequence[Mapping[str, Any]],
+    reverse_records: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Public compatibility wrapper for the exact FUN_007b0f20 numeric kernel."""
+    return solve_builtin_sparse_in_place(
+        matrix,
+        rhs,
+        forward_records,
+        reverse_records,
+    )
