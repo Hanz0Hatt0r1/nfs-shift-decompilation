@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Development branch: Phase 503.**
+**Current mainline: Phase 503.**
 
 Phases 499–500 make the specialized-provider capture directory self-describing:
 
@@ -20,7 +20,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 
 ## Immediate execution order
 
-1. Python CI baseline after the `src` reorganization — complete; current mainline CI is green on Phase 501.
+1. Python CI baseline after the `src` reorganization — complete; Phase 503 mainline CI is green.
 2. Capture a real provider frame with the SDF/runtime probe.
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
 4. Cross-vehicle raw BFF payload parity and deduplicated FXO shader profiling — complete.
@@ -30,7 +30,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 8. Extend runtime BMW shader join/render contracts with explicit VS/PS/pair byte-hash differentials — implemented.
 9. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
 10. Compare retail packed-workspace/output mutations with the source-derived provider programs — implemented as `SHIFT.SpecializedProviderCaptureSourceMutationCorrelation/1`.
-11. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities — Phase 502 adds a cross-contract provider handoff validator; Phase 503 adds a BFF-to-handoff orchestration path.
+11. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities — Phase 502 cross-contract validator and Phase 503 BFF-to-handoff orchestration are complete.
 12. Expand the desktop reference renderer against real BMW material/shader permutations.
 13. Complete Vulkan RenderCommand execution using the same neutral contract.
 14. Continue SGB/FLAT and camera runtime reconstruction.

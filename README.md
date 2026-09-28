@@ -2,7 +2,7 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 502**
+> **Current mainline: Phase 503**
 >
 > Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Exact retail numeric parity remains capture-gated.
 
@@ -144,7 +144,7 @@ python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff
 
 ## Current CI note
 
-At commit `c784e786f2f975dcd8a17f95931bbc277d98d104` (2026-09-28), Phase 502 was merged after the PR CI passed Python, native, capture-producer and Vulkan smoke checks. The post-merge mainline CI result for the current documentation update is tracked separately.
+At commit `19b53820f30fd18bca84f77171c327d473bc39f5` (2026-09-28), Phase 503 was merged after the PR CI passed Python, native, capture-producer and Vulkan smoke checks. The post-merge mainline CI also passed Python, native, capture-producer and Vulkan smoke.
 
 ## Repository map
 
