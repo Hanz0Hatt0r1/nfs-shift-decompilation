@@ -29,8 +29,8 @@ def test_signature_matrices_match_both_provider_predicates():
 
 def test_provider0_predicate_rejects_first_cell_divergence():
     matrix = runtime.build_signature_matrix(0)
-    matrix[0][1] = 0.0
-    matrix[1][0] = 0.0
+    matrix[0][1] = 1.0
+    matrix[1][0] = 1.0
 
     result = runtime.evaluate_acceptance_predicate(0, matrix)
 
@@ -41,7 +41,7 @@ def test_provider0_predicate_rejects_first_cell_divergence():
     assert result["mismatch"]["column"] == 1
     assert result["mismatch"]["linear_index"] == 0
     assert result["mismatch"]["expected_nonzero"] is False
-    assert result["mismatch"]["observed_nonzero"] is False or True
+    assert result["mismatch"]["observed_nonzero"] is True
 
 
 def test_provider0_predicate_rejects_transition_cell_with_exact_location():
