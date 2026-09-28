@@ -108,6 +108,7 @@ def test_resolve_default_targets_rejects_ambiguous_sdf():
             super().__init__(path)
             self.entries.extend([
                 Entry("vehicles/physics/suspension/alternate.sdf", 7),
+            Entry("vehicles/physics/suspension/strut_multilink.sdf", 8),
             ])
 
     archive = AmbiguousSDF("UnknownVehicle.bff")
@@ -117,8 +118,8 @@ def test_resolve_default_targets_rejects_ambiguous_sdf():
         and not entry.path.endswith("bmw_m3_e36.edf")
     ]
     archive.entries.extend([
-        Entry("vehicles/physics/chassis/unknown.cdf", 8),
-        Entry("vehicles/physics/engines/unknown.edf", 9),
+        Entry("vehicles/physics/chassis/unknown.cdf", 9),
+        Entry("vehicles/physics/engines/unknown.edf", 10),
     ])
     try:
         bundle.resolve_default_targets(archive)
