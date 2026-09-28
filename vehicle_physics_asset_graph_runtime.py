@@ -25,6 +25,7 @@ from rigid_body_sdf_runtime import (
 )
 from vehicle_cdf_runtime import parse_cdf
 from sdf_constraint_solver_runtime import describe_sdf_sparse_solver_contract, validate_sdf_solver_contract
+from sdf_builtin_sparse_solver_runtime import describe_builtin_sparse_solver_contract
 from sdf_constraint_solver_frame_runtime import (
     derive_builtin_diagonal_reset_nodes,
     describe_sdf_solver_frame_contract,
@@ -106,6 +107,7 @@ def build_profile(
     sdf_solver_contract = describe_sdf_sparse_solver_contract(
         constraint_count=sdf_constraint_solver_graph.get("constraint_count")
     )
+    sdf_builtin_sparse_solver = describe_builtin_sparse_solver_contract()
     sdf_solver_validation = validate_sdf_solver_contract(sdf_constraint_solver_graph)
     sdf_solver_frame = describe_sdf_solver_frame_contract(
         solver_scalar_count=sdf_constraint_solver_graph.get("solver_scalar_count"),
@@ -190,6 +192,7 @@ def build_profile(
             "sdf_solver_scalar_count": sdf_constraint_solver_graph.get("solver_scalar_count"),
             "sdf_constraint_solver_graph_ready": sdf_constraint_solver_graph.get("ready") is True,
             "sdf_sparse_solver_contract_ready": sdf_solver_contract.get("ready") is True,
+            "sdf_builtin_sparse_solver_ready": sdf_builtin_sparse_solver.get("ready") is True,
         }
     })
     blockers.extend(f"sdf-solver-frame:{reason}" for reason in sdf_frame_validation.get("errors") or [])
@@ -301,6 +304,7 @@ def build_profile(
             "sdf_constraint_solver_graph": sdf_constraint_solver_graph,
             "sdf_sparse_solver_contract": sdf_solver_contract,
             "sdf_sparse_solver_validation": sdf_solver_validation,
+            "sdf_builtin_sparse_solver": sdf_builtin_sparse_solver,
             "sdf_solver_frame": sdf_solver_frame,
             "sdf_solver_frame_validation": sdf_frame_validation,
             "sdf_builtin_diagonal_reset": sdf_diagonal_reset,
