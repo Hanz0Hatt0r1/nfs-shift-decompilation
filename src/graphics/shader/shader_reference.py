@@ -21,7 +21,7 @@ _SUPPORTED = {
     "FRC", "RCP", "RSQ", "NRM", "ABS", "POW", "CRS", "SINCOS", "CMP",
     "DP2ADD", "TEX", "TEXLDD", "TEXLDL", "MOVA",
     "M4x4", "M4x3", "M3x4", "M3x3", "M3x2", "SGN",
-    "IF", "IFC", "ELSE", "ENDIF", "RET",
+    "DEFB", "IF", "IFC", "ELSE", "ENDIF", "RET",
 }
 
 
@@ -334,7 +334,7 @@ class ReferenceShaderState:
 
     def execute(self) -> dict[str, Any]:
         ignored = {
-            "NOP", "DCL", "DEF", "DEFI", "DEFB", "LABEL", "COMMENT", "PHASE"
+            "NOP", "DCL", "DEF", "DEFI", "LABEL", "COMMENT", "PHASE"
         }
         unsupported = [
             {"opcode": ins.opcode, "name": ins.name, "offset": ins.offset}
@@ -380,6 +380,11 @@ class ReferenceShaderState:
                 elif name == "IFC":
                     if len(o) < 2:
                         raise ValueError("IFC requires two source operands")
+                    for operand in o[:2]:
+                        if operand.swizzle is None or len(operand.swizzle) != 1:
+                            raise ValueError(
+                                "IFC requires explicit replicate swizzle on both sources"
+                            )
                     if not self._comparison_true(
                         self._read(o[0]),
                         self._read(o[1]),
@@ -403,6 +408,18 @@ class ReferenceShaderState:
                     break
 
                 if name in {"IF", "IFC", "ELSE", "ENDIF"}:
+                    pc += 1
+                    continue
+
+                if name == "DEFB":
+                    if len(o) < 2 or o[0].reg_type != 14:
+                        raise ValueError("DEFB requires a constbool destination and literal")
+                    literal = o[1].value
+                    if not isinstance(literal, (int, float)):
+                        raise ValueError("DEFB requires a literal boolean value")
+                    self.constants.setdefault("b", {})[int(o[0].index or 0)] = [
+                        1.0 if float(literal) != 0.0 else 0.0
+                    ] * 4
                     pc += 1
                     continue
 
