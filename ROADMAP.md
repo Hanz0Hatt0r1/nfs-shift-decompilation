@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 505.**
+**Current mainline: Phase 506.**
 
 
 
@@ -35,12 +35,13 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 11. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities — Phase 502 cross-contract validator and Phase 503 BFF-to-handoff orchestration are complete.
 12. Validate the runtime capture host before attempting GDB attachment — Phase 504 preflight implemented.
 13. Close the IGPhaseVehicle participant creation/load gate before runtime capture — Phase 505 implemented.
-14. Expand the desktop reference renderer against real BMW material/shader permutations.
-15. Complete Vulkan RenderCommand execution using the same neutral contract.
-16. Continue SGB/FLAT and camera runtime reconstruction.
-17. Derive proven animation poses from the BAB runtime grammar.
-18. Port the stable native render/runtime boundary to Android.
-19. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+14. Map the PhysicsParticipantManager event-0x20 ingestion path without overclaiming its join to the selector registry — Phase 506 implemented.
+15. Expand the desktop reference renderer against real BMW material/shader permutations.
+16. Complete Vulkan RenderCommand execution using the same neutral contract.
+17. Continue SGB/FLAT and camera runtime reconstruction.
+18. Derive proven animation poses from the BAB runtime grammar.
+19. Port the stable native render/runtime boundary to Android.
+20. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -55,9 +56,9 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
 | SGB scene | partial | deeper object/leaf consumers |
 | Camera | active | higher-level behavior |
-| Vehicle physics | active | runtime graph, participant gate and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
+| Vehicle physics | active | runtime graph, participant gate, manager event path and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
-| Specialized providers | capture-ready | real capture + numeric differential; source-mutation and pre-PhysX handoff correlation implemented |
+| Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff and participant-manager event correlation layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Vulkan | active | full RenderCommand/material submission |
 | Android | deferred | stable native renderer/runtime boundary |
