@@ -23,7 +23,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     report = build_vehicle_physics_selector_context()
-    payload = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\\n"
+    payload = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(payload, encoding="utf-8")
