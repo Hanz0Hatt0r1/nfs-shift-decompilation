@@ -1,7 +1,7 @@
 from pathlib import Path
 import zipfile
 
-import audit_vehicle_bff_corpus as runtime
+from tools import audit_vehicle_bff_corpus as runtime
 
 
 def _fake_archive(path: Path, *, count: int, type2: int, x12d: int = 0):
