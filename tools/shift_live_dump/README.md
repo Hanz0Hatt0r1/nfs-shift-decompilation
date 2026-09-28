@@ -130,14 +130,14 @@ only a capture-order coordinate. The analyzer intentionally does not label a
 transition as a crash, physics update, camera action or input event. Such a
 label requires a controlled capture whose action timing is known.
 
-The event score is:
+By default, `--scope auto` favors anonymous/heap memory and private writable mappings and excludes known GPU/Wine noise. Use `--scope anonymous` for anonymous+heap only, or `--scope all --include-noise` when you explicitly need device/module mappings.\n\nThe event score is:
 
 `peak_changed_bytes * (1 + 1 / changed_transitions)`
 
 so a large one-transition burst receives more emphasis than a similarly large
 change spread across many transitions. This is a ranking heuristic, not a
 physical measurement.
-\n## Output
+## Output
 
 Each snapshot contains `manifest.json`, `maps.txt` and `regions/*.bin`. Region files are exactly the mapped size; bytes that could not be read are zero-filled and accounted for as `bytes_failed` in the manifest.
 
