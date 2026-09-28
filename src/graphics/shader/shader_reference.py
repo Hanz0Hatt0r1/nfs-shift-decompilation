@@ -399,6 +399,10 @@ class ReferenceShaderState:
                 elif name == "RET":
                     break
 
+                if name in {"IF", "IFC", "ELSE", "ENDIF"}:
+                    pc += 1
+                    continue
+
                 if name == "MOV":
                     value = self._read(o[1])
                     if o[0].reg_type == 3:
