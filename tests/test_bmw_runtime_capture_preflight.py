@@ -124,7 +124,7 @@ def test_runtime_capture_preflight_cli_writes_blocked_report(tmp_path):
     proc = subprocess.run(
         [
             sys.executable,
-            "bmw_runtime_capture_preflight.py",
+            "src/bmw/bmw_runtime_capture_preflight.py",
             str(runtime_path),
             str(output_path),
             "--resource-sha256",
