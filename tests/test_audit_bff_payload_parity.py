@@ -1,7 +1,7 @@
 from pathlib import Path
 import zipfile
 
-import audit_bff_payload_parity as runtime
+from tools import audit_bff_payload_parity as runtime
 
 
 def test_normalized_path_is_case_and_separator_insensitive():
