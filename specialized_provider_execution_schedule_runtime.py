@@ -32,11 +32,6 @@ LOOP_PTR_RE = re.compile(
 ARRAY_RE = re.compile(
     r"\(&DAT_([0-9A-Fa-f]+)\)\[local_10\]"
 )
-OUTPUT_REF_RE = re.compile(
-    r"\(&DAT_([0-9A-Fa-f]+)\s*\+\s*local_10\s*\*\s*8\)"
-)
-DAT_REF_RE = re.compile(r"(?:_)?DAT_([0-9A-Fa-f]+)")
-
 
 def _function_spec(provider_id: int) -> dict[str, Any]:
     try:
@@ -44,17 +39,6 @@ def _function_spec(provider_id: int) -> dict[str, Any]:
     except KeyError as exc:
         raise ValueError(f"unsupported provider id: {provider_id}") from exc
 
-
-def _parse_loop_range(statement_lines: list[str]) -> tuple[int, int] | None:
-    for line in statement_lines:
-        match = re.search(
-            r"for\s*\(\s*local_10\s*=\s*(0x[0-9A-Fa-f]+|\d+)\s*;\s*"
-            r"local_10\s*<\s*(0x[0-9A-Fa-f]+|\d+)\s*;",
-            line,
-        )
-        if match:
-            return int(match.group(1), 0), int(match.group(2), 0)
-    return None
 
 
 def _lhs_address(statement: str, loop_index: int | None) -> int | None:
@@ -97,7 +81,6 @@ def _classify_assignment(
     statement: str,
     *,
     provider_id: int,
-    current_pivot_diagonal: int,
     future_pivot_diagonals: set[int],
     loop_index: int | None,
     terminal: bool,
@@ -189,11 +172,11 @@ def extract_execution_schedule(
                 else (None,)
             )
             for loop_index in loop_values:
-                current_diagonal = (
-                    int(pivot.denominator[len("_DAT_"):], 16)
-                    if pivot.denominator.startswith("_DAT_")
-                    else None
-                )
+                if not pivot.denominator.startswith("_DAT_"):
+                    errors.append(
+                        f"pivot-{pivot_index}-invalid-denominator:{pivot.denominator}"
+                    )
+                    continue
                 future_diagonals = {
                     int(other.denominator[len("_DAT_"):], 16)
                     for other in pivots[pivot_index + 1:]
