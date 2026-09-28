@@ -71,15 +71,18 @@ named gameplay/physics concept.
 
 ## Separate post-load/process flag
 
-\`FUN_00465860\` also consumes descriptors from \`DAT_00bbc600\`. After the observed
-vehicle load/process step it writes:
+Descriptor population through \`thunk_FUN_00d36a00\` explicitly initializes:
 
-\`descriptor+0x1d = 1\`
+\`descriptor+0x1d = 0\`
 
-and then requests another descriptor.
+A later load/process path \`FUN_0040f900\` writes the same field to one after its
+observed load call. \`FUN_00465860\` independently performs the same \`+0x1d = 1\`
+write after its observed vehicle-load/process step.
 
-This flag is deliberately kept separate from \`+0x74\`. Its wider semantics are
-not established by the available static evidence.
+This is stronger than a single write-site observation: the source shows an
+explicit zeroing step followed by load/process-side writes to the same byte.
+The flag is deliberately kept separate from \`+0x74\`; its wider semantics are
+still not established.
 
 ## Cross-phase closure
 
@@ -93,7 +96,7 @@ Phase 509 established:
 
 Phase 510 adds:
 
-\`descriptor constructor → +0x74 initialization → selector scan/batch exclusion → ordinal at +0x8c\`
+\`descriptor population → +0x1d = 0 → +0x74 eligibility/exclusion → selector scan/batch reservation → +0x8c ordinal → load/process → +0x1d = 1\`
 
 This closes an explicit descriptor-state boundary behind the already-resolved
 selector object.
