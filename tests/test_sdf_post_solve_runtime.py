@@ -18,8 +18,8 @@ def test_joint_solution_uses_three_scalars_and_positive_negative_helpers():
     assert result["constraint"] == "JOINT"
     assert result["positive"]["linear"] == [3.0, 5.0, 7.0]
     assert result["negative"]["linear"] == [-1.0, -1.0, -1.0]
-    assert result["positive"]["angular"] == [10.0, 24.0, 27.0]
-    assert result["negative"]["angular"] == [6.0, 20.0, 28.0]
+    assert result["positive"]["angular"] == [10.0, 16.0, 33.0]
+    assert result["negative"]["angular"] == [6.0, 20.0, 32.0]
 
 
 def test_hinge_solution_updates_only_angular_state_with_two_solved_scalars():
