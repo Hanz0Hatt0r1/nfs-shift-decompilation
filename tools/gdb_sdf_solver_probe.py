@@ -136,6 +136,38 @@ def _provider_id_from_runtime_pointer(
     return None, vtable
 
 
+ef _matrix_from_rows(
+    inferior: gdb.Inferior,
+    row_pointer_table: int,
+    scalar_count: int,
+) -> list[list[float]]:
+    rows: list[list[float]] = []
+    for row in range(int(scalar_count)):
+        row_ptr = _u32(inferior, row_pointer_table + row * 4)
+        rows.append(_doubles(inferior, row_ptr, scalar_count))
+    return rows
+
+
+class _BaseProbe(gdb.Breakpoint):
+    def __init__(self, address: int, label: str, output_dir: Path) -> None:
+        super().__init__(f"*0x{address:08x}", type=gdb.BP_BREAKPOINT, internal=False)
+        self.label = label
+        self.output_dir = output_dir
+        self.hit = 0
+
+    def write_json(self, name: str, payload: dict) -> None:
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        target = self.output_dir / name
+        target.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    def stop(self) -> bool:
+        self.hit += 1
+        return True
+
+
 class ScalarResetProbe(_BaseProbe):
     """Capture each FUN_007b2210 selector and provider dispatch context."""
 
@@ -201,37 +233,6 @@ class ScalarResetProbe(_BaseProbe):
         )
         return False
 
-
-def _matrix_from_rows(
-    inferior: gdb.Inferior,
-    row_pointer_table: int,
-    scalar_count: int,
-) -> list[list[float]]:
-    rows: list[list[float]] = []
-    for row in range(int(scalar_count)):
-        row_ptr = _u32(inferior, row_pointer_table + row * 4)
-        rows.append(_doubles(inferior, row_ptr, scalar_count))
-    return rows
-
-
-class _BaseProbe(gdb.Breakpoint):
-    def __init__(self, address: int, label: str, output_dir: Path) -> None:
-        super().__init__(f"*0x{address:08x}", type=gdb.BP_BREAKPOINT, internal=False)
-        self.label = label
-        self.output_dir = output_dir
-        self.hit = 0
-
-    def write_json(self, name: str, payload: dict) -> None:
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        target = self.output_dir / name
-        target.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-
-    def stop(self) -> bool:
-        self.hit += 1
-        return True
 
 
 class FrameEntryProbe(_BaseProbe):
