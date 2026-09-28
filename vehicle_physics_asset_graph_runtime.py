@@ -56,6 +56,7 @@ from bmw_m3_solver_capture_verify_runtime import describe_bmw_m3_solver_capture_
 from sdf_runtime_probe_runtime import describe_sdf_runtime_probe_contract
 from sdf_runtime_probe_session_runtime import describe_sdf_runtime_probe_session_contract
 from sdf_runtime_probe_pe_validation import describe_probe_pe_validation_contract
+from sdf_runtime_probe_launcher_runtime import describe_sdf_runtime_probe_launcher
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -142,6 +143,7 @@ def build_profile(
     sdf_runtime_probe = describe_sdf_runtime_probe_contract()
     sdf_runtime_probe_session = describe_sdf_runtime_probe_session_contract()
     sdf_runtime_probe_pe = describe_probe_pe_validation_contract()
+    sdf_probe_launcher = describe_sdf_runtime_probe_launcher()
 
     blockers: list[str] = []
     for name, report in (
@@ -258,6 +260,7 @@ def build_profile(
             "sdf_runtime_probe_ready": sdf_runtime_probe.get("ready") is True,
             "sdf_runtime_probe_session_ready": sdf_runtime_probe_session.get("ready") is True,
             "sdf_runtime_probe_pe_ready": sdf_runtime_probe_pe.get("ready") is True,
+            "sdf_runtime_probe_launcher_ready": sdf_probe_launcher.get("ready") is True,
         },
         "details": {
             "cdf": cdf_report,
@@ -299,6 +302,7 @@ def build_profile(
             "sdf_runtime_probe": sdf_runtime_probe,
             "sdf_runtime_probe_session": sdf_runtime_probe_session,
             "sdf_runtime_probe_pe": sdf_runtime_probe_pe,
+            "sdf_runtime_probe_launcher": sdf_probe_launcher,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
