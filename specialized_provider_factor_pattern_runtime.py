@@ -37,7 +37,11 @@ LOOP_HEADER_RE = re.compile(
 )
 
 LOOP_LHS_RE = re.compile(
-    r"&DAT_([0-9A-Fa-f]+)\s*\+\s*local_10\s*\*\s*8"
+    r"\*\(double \*\)\(&DAT_([0-9A-Fa-f]+)\s*\+\s*local_10\s*\*\s*8\)"
+)
+
+ARRAY_LHS_RE = re.compile(
+    r"\(&DAT_([0-9A-Fa-f]+)\)\[local_10\]\s*="
 )
 
 DIRECT_LHS_RE = re.compile(
@@ -73,6 +77,7 @@ def _assignment_statements_with_loops(
 
         if (
             LOOP_LHS_RE.search(line)
+            or ARRAY_LHS_RE.search(line)
             or DIRECT_LHS_RE.match(line)
         ):
             statement = line.strip()
@@ -95,7 +100,11 @@ def _assignment_statements_with_loops(
 
 
 def _lhs_match(statement: str) -> re.Match[str] | None:
-    return LOOP_LHS_RE.search(statement) or DIRECT_LHS_RE.match(statement)
+    return (
+        LOOP_LHS_RE.search(statement)
+        or ARRAY_LHS_RE.search(statement)
+        or DIRECT_LHS_RE.match(statement)
+    )
 
 
 def _expanded_factor_targets(
@@ -115,11 +124,17 @@ def _expanded_factor_targets(
         if match is None:
             continue
 
-        lhs_form = "loop" if LOOP_LHS_RE.search(statement) else "direct"
+        lhs_form = (
+            "loop"
+            if LOOP_LHS_RE.search(statement)
+            else "array"
+            if ARRAY_LHS_RE.search(statement)
+            else "direct"
+        )
         rhs = statement[match.end():]
 
         destinations: tuple[int, ...]
-        if lhs_form == "loop":
+        if lhs_form in {"loop", "array"}:
             base = int(match.group(1), 16)
             if loop_range is None:
                 continue
@@ -139,7 +154,7 @@ def _expanded_factor_targets(
         if "dVar1" not in rhs:
             continue
 
-        if lhs_form == "loop":
+        if lhs_form in {"loop", "array"}:
             base = int(match.group(1), 16)
             if base != row_base or loop_range is None:
                 continue
