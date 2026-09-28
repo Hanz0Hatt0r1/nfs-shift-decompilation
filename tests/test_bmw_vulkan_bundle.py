@@ -135,3 +135,19 @@ def test_bmw_vulkan_bundle_blocks_missing_native_shader_provenance(tmp_path):
     assert result["ready"] is False
     assert "native-submission:shader-payload-identity-missing:0" in result["blocking_reasons"]
     assert result["native_execution"]["status"] == "blocked-by-provenance-gate"
+
+
+def test_bmw_vulkan_bundle_blocked_result_has_stable_artifacts_schema(tmp_path):
+    command = _command()
+    command["render_commands"][0]["submeshes"][0]["shader"].pop("source_payload_sha256")
+    result = build_bmw_vulkan_bundle(
+        command,
+        _mesh(),
+        tmp_path,
+        command_index=0,
+        submesh_index=0,
+    )
+    assert result["ready"] is False
+    assert isinstance(result["artifacts"], dict)
+    assert result["external_samplers"] == []
+    assert result["native_execution"]["status"] == "blocked-by-provenance-gate"
