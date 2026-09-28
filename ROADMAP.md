@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 415: runtime SDF solver probe
+
+Added a GDB-Python probe for the builtin `FUN_007b0f20` solver entry and `FUN_007b4110` post-solve boundary. The probe dumps the real row-major solver matrix/RHS and solved scalar vector into the Phase 411 normalized capture shape. It requires a live 32-bit Wine debugger session; no capture data is synthesized or committed. Next target: run it against the retail executable and compare the first real 40-scalar frame against the reconstructed seed/coupling domain.
+
 ## Phase 414: BMW M3 solver capture CLI
 
 Added one-command orchestration from the real BMW M3 BFF/domain verifier to normalized solver-capture structural validation and optional exact numeric comparison. No runtime values are synthesized. Next target: convert a real captured memory window into this normalized schema and validate it against the 40-scalar domain.

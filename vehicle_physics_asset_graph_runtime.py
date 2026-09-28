@@ -53,6 +53,7 @@ from sdf_full_frame_runtime import describe_full_frame_contract
 from sdf_solver_capture_runtime import describe_sdf_solver_capture_contract
 from sdf_solver_capture_binary_runtime import describe_sdf_solver_capture_binary_contract
 from bmw_m3_solver_capture_verify_runtime import describe_bmw_m3_solver_capture_verifier
+from sdf_runtime_probe_runtime import describe_sdf_runtime_probe_contract
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -136,6 +137,7 @@ def build_profile(
     sdf_solver_capture = describe_sdf_solver_capture_contract()
     sdf_solver_capture_binary = describe_sdf_solver_capture_binary_contract()
     bmw_m3_solver_capture_verifier = describe_bmw_m3_solver_capture_verifier()
+    sdf_runtime_probe = describe_sdf_runtime_probe_contract()
 
     blockers: list[str] = []
     for name, report in (
@@ -249,6 +251,7 @@ def build_profile(
             "sdf_solver_capture_contract_ready": sdf_solver_capture.get("ready") is True,
             "sdf_solver_capture_binary_contract_ready": sdf_solver_capture_binary.get("ready") is True,
             "bmw_m3_solver_capture_verifier_ready": bmw_m3_solver_capture_verifier.get("ready") is True,
+            "sdf_runtime_probe_ready": sdf_runtime_probe.get("ready") is True,
         },
         "details": {
             "cdf": cdf_report,
@@ -287,6 +290,7 @@ def build_profile(
             "sdf_solver_capture": sdf_solver_capture,
             "sdf_solver_capture_binary": sdf_solver_capture_binary,
             "bmw_m3_solver_capture_verifier": bmw_m3_solver_capture_verifier,
+            "sdf_runtime_probe": sdf_runtime_probe,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
