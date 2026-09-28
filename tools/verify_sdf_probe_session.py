@@ -46,6 +46,7 @@ def main(argv: list[str] | None = None) -> int:
         report = normalize_probe_session(
             observed["pre_solve"],
             observed.get("post_solve"),
+            observed.get("frame_entry"),
         )
     else:
         if args.expected_pre is None:
