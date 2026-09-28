@@ -22,7 +22,7 @@ def test_provider1_vtable_has_exact_core_lifecycle_slots():
 
 
 def test_vtable_contract_contains_twelve_slots_per_provider():
-    assert build0 := runtime.build_vtable_contract(0)
+    build0 = runtime.build_vtable_contract(0)
     assert build0["slot_count"] == 12
     assert runtime.build_vtable_contract(1)["slot_count"] == 12
 
