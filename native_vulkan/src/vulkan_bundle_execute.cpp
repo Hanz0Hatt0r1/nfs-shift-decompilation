@@ -643,6 +643,31 @@ void transition(
         0, nullptr, 0, nullptr, 1, &barrier);
 }
 
+void require_native_submission_gate(const std::filesystem::path& root) {
+    const std::filesystem::path gate_path = root / "native_submission_gate.json";
+    if (!std::filesystem::is_regular_file(gate_path)) {
+        throw std::runtime_error(
+            "native submission gate missing: " + gate_path.string());
+    }
+
+    std::ifstream gate(gate_path, std::ios::binary);
+    if (!gate) {
+        throw std::runtime_error(
+            "cannot open native submission gate: " + gate_path.string());
+    }
+    const std::string contents(
+        (std::istreambuf_iterator<char>(gate)),
+        std::istreambuf_iterator<char>());
+
+    if (contents.find("\"format\": \"SHIFT.NativeSubmissionGate/1\"") ==
+            std::string::npos ||
+        contents.find("\"ready\": true") == std::string::npos ||
+        contents.find("\"blocking_reasons\": []") == std::string::npos) {
+        throw std::runtime_error(
+            "native submission gate is not ready");
+    }
+}
+
 void write_ppm(
     const std::filesystem::path& path,
     const std::vector<uint8_t>& rgba) {
@@ -716,6 +741,7 @@ int main(int argc, char** argv) {
     VkCommandBuffer command = VK_NULL_HANDLE;
 
     try {
+        require_native_submission_gate(root);
         const Geometry geometry = load_geometry(root / "geometry.svpk");
         const Constants constants = load_constants(root / "constants.svcp");
 
