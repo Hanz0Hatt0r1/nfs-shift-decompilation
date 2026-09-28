@@ -139,8 +139,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "ready": report["ready"],
         "solver_scalar_count": report["summary"]["solver_scalar_count"],
         "same_dimension_provider_candidates": report["summary"]["same_dimension_provider_candidates"],
-        "errors": report["errors"],
-        "participant_gate_ready": report["summary"]["participant_gate_ready"],
+        "errors": report["errors"],        "participant_gate_ready": report["summary"]["participant_gate_ready"],
+        "participant_registry_update_ready": report["summary"]["participant_registry_update_ready"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
 
