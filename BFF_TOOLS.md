@@ -60,3 +60,14 @@ source-derived solver program only when ids match.
 
 The same gate is available through `python shift_importer.py validate-native-submission ...`.
 Native execution is blocked unless every submesh has complete FXO payload and permutation identity provenance.
+
+
+## Resource manifest identity
+
+Decoded resource manifests keep the legacy `sha256` field and add
+`decoded_sha256` plus `raw_sha256`. The latter is the SHA-256 of the bytes
+stored in the BFF entry before decryption/decompression.
+
+This identity split is propagated by `extract`, `analyze-dir`, and `build-ir`
+so downstream renderer/resource tooling can distinguish container-byte reuse from
+decoded-resource identity.
