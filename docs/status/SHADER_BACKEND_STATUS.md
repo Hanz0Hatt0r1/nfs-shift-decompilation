@@ -44,6 +44,16 @@ Unsupported operations remain visible blockers.
 
 `valid` compiler evidence may proceed; `invalid` blocks the path; `unavailable` is retained as an environment limitation.
 
+## Corpus-driven prioritization
+
+The real FXO corpus can be profiled with
+`python tools/audit_fxo_shader_corpus.py <BFF-or-ZIP> --summary-only -o fxo_corpus.json`.
+Observed opcode frequency can then be compared against the software oracle with
+`python tools/analyze_shader_opcode_gaps.py fxo_corpus.json -o shader_gaps.json`.
+
+This keeps the next opcode work driven by retail evidence rather than by a generic
+D3D9 feature checklist.
+
 ## Current focus
 
 The reference execution layer now covers structured conditionals (`IF`/`IFC`/`ELSE`/`ENDIF`), predicate comparisons, constant initialization, bounded loops, and the D3D9 matrix/sign operations already represented by the parser/GLSL backend. Unsupported operations remain explicit blockers.
