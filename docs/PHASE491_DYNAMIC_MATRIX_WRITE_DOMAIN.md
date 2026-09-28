@@ -33,7 +33,7 @@ The runtime reports:
 - self-cell count;
 - pair-cell count;
 - union write-cell count;
-- strict-upper count of the corresponding structural destination set;
+- lower-triangle off-diagonal cell count;
 - per-kernel write counts;
 - per-cell provenance identifying the source constraint pair and shared BODY.
 
