@@ -83,6 +83,8 @@ def _classify_assignment(
     provider_id: int,
     loop_index: int | None,
     terminal: bool,
+    current_pivot_diagonal: int | None = None,
+    future_pivot_diagonals: set[int] | None = None,
 ) -> str:
     lhs = _lhs_address(statement, loop_index)
     lhs_base = _lhs_base(statement)
