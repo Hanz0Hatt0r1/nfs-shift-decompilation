@@ -20,6 +20,9 @@ from specialized_provider_source_context_resolver_runtime import (
     build_source_context_contract,
 )
 from specialized_provider_storage_runtime import get_storage_layout
+from specialized_provider_source_shape_runtime import (
+    build_source_shape,
+)
 from specialized_provider_update_relations_runtime import (
     extract_update_relations,
 )
@@ -73,6 +76,10 @@ def build_solver_program(
         build_source_context_contract(),
         provider_id,
     )
+    source_shape = build_source_shape(
+        source,
+        provider_id=provider_id,
+    )
 
     errors: list[str] = []
 
@@ -83,6 +90,7 @@ def build_solver_program(
         ("output_schedule", output_schedule),
         ("acceptance_factor", acceptance_factor),
         ("alias_map", alias_map),
+        ("source_shape", source_shape),
     ):
         if report.get("ready") is not True:
             errors.append(f"{name}-not-ready")
@@ -107,6 +115,7 @@ def build_solver_program(
             "acceptance_factor": acceptance_factor,
             "workspace_alias_map": alias_map,
             "source_context": source_context,
+            "source_shape": source_shape,
         },
         "readiness": {
             "pivot_geometry": solver_ir.get("pivot_count") == layout.scalar_count,
@@ -119,6 +128,7 @@ def build_solver_program(
             "workspace_alias_map": alias_map.get("ready") is True,
             "source_context": source_context.get("diagonal_resolution_unique")
             is True,
+            "source_shape": source_shape.get("ready") is True,
         },
         "ready": not errors,
         "errors": errors,
@@ -170,6 +180,7 @@ def validate_solver_program(report: dict[str, Any]) -> dict[str, Any]:
         "acceptance_factor_separation",
         "workspace_alias_map",
         "source_context",
+        "source_shape",
     )
     for name in required:
         if readiness.get(name) is not True:
