@@ -84,14 +84,14 @@ def compare_probe_session(
         rel_tol=rel_tol,
     )
     post_compare = None
-    if exp["post_solve"] is not None or obs["post_solve"] is not None:
-        if exp["post_solve"] is None or obs["post_solve"] is None:
+    if exp["post_solve"] is not None:
+        if obs["post_solve"] is None:
             post_compare = {
                 "format": "SHIFT.SDFPostSolveComparison/1",
                 "version": 1,
                 "ready": False,
                 "status": "blocked",
-                "errors": [{"kind": "missing-post-solve"}],
+                "errors": [{"kind": "missing-observed-post-solve"}],
             }
         else:
             post_compare = compare_solver_vectors(
