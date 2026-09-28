@@ -294,6 +294,7 @@ def analyze_capture_directory(
         ),
         "status": "ready" if not errors else "blocked",
         "errors": list(dict.fromkeys(errors)),
+        "summary": summary,
     }
 
 
