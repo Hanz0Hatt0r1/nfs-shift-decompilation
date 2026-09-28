@@ -108,7 +108,7 @@ The next physics target is the SDK-specific object construction behind `FUN_007b
 
 ## Phase 419: deterministic SDF probe launcher
 
-Added `sdf_runtime_probe_launcher_runtime.py` and `tools/run_sdf_solver_probe.py`. The prepare mode validates the exact retail `SHIFT.exe`, writes a capture manifest and deterministic `attach.gdb`; attach mode uses an explicitly supplied PID and never guesses a Wine process. The launcher fails closed for wrong PE identity or missing runtime tools. Numeric solver equality still requires a real retail capture. Next target: use the supplied retail executable on a Wine+GDB host to produce the first 40-scalar pre/post-solve pair.
+Added `sdf_runtime_probe_launcher_runtime.py` and `tools/run_sdf_solver_probe.py`. The launcher accepts either `SHIFT.exe` or a ZIP containing exactly one `SHIFT.exe`. The prepare mode validates the exact retail `SHIFT.exe`, writes a capture manifest and deterministic `attach.gdb`; attach mode uses an explicitly supplied PID and never guesses a Wine process. The launcher fails closed for wrong PE identity or missing runtime tools. Numeric solver equality still requires a real retail capture. Next target: use the supplied retail executable on a Wine+GDB host to produce the first 40-scalar pre/post-solve pair.
 
 ## Phase 418: README physics status
 
