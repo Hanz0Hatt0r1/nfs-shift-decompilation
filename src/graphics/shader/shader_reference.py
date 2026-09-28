@@ -293,26 +293,39 @@ class ReferenceShaderState:
             )
         return bool(self._read(operand)[0])
 
+    def _comparison_mask(
+        self,
+        left: list[float],
+        right: list[float],
+        controls: int,
+    ) -> list[float]:
+        code = controls & 0x7
+        if code == 1:
+            compare = lambda a, b: a > b
+        elif code == 2:
+            compare = lambda a, b: a == b
+        elif code == 3:
+            compare = lambda a, b: a >= b
+        elif code == 4:
+            compare = lambda a, b: a < b
+        elif code == 5:
+            compare = lambda a, b: a != b
+        elif code == 6:
+            compare = lambda a, b: a <= b
+        else:
+            raise ValueError(f"unsupported IF comparison control code {code}")
+        return [1.0 if compare(a, b) else 0.0 for a, b in zip(left, right)]
+
     def _comparison_true(
         self,
         left: list[float],
         right: list[float],
         controls: int,
     ) -> bool:
-        code = controls & 0x7
-        if code == 1:
-            return all(a > b for a, b in zip(left, right))
-        if code == 2:
-            return all(a == b for a, b in zip(left, right))
-        if code == 3:
-            return all(a >= b for a, b in zip(left, right))
-        if code == 4:
-            return all(a < b for a, b in zip(left, right))
-        if code == 5:
-            return all(a != b for a, b in zip(left, right))
-        if code == 6:
-            return all(a <= b for a, b in zip(left, right))
-        raise ValueError(f"unsupported IF comparison control code {code}")
+        return all(
+            bool(value)
+            for value in self._comparison_mask(left, right, controls)
+        )
 
     def _build_control_flow_maps(
         self,
@@ -676,16 +689,11 @@ class ReferenceShaderState:
                         raise ValueError("SETP requires two source operands")
                     self._write(
                         o[0],
-                        [
-                            1.0 if flag else 0.0
-                            for flag in (
-                                self._comparison_true(
-                                    self._read(o[1]),
-                                    self._read(o[2]),
-                                    ins.controls,
-                                ),
-                            )
-                        ],
+                        self._comparison_mask(
+                            self._read(o[1]),
+                            self._read(o[2]),
+                            ins.controls,
+                        ),
                     )
                 elif name in {"TEX", "TEXLDD", "TEXLDL"}:
                     self._write(o[0], self._texture(o[2], self._read(o[1])))
