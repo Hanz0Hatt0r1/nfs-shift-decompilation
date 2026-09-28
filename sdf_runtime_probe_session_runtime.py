@@ -7,7 +7,7 @@ from typing import Any, Mapping
 
 from sdf_solver_capture_runtime import compare_solver_captures, compare_solver_vectors, normalize_solver_capture
 
-FORMAT = "SHIFT.SDFRuntimeProbeSession/1"
+FORMAT = "SHIFT.SDFRuntimeProbeSession/2"
 
 
 def load_probe_json(path: str | Path) -> dict[str, Any]:
@@ -21,10 +21,31 @@ def load_probe_json(path: str | Path) -> dict[str, Any]:
 def normalize_probe_session(
     pre_solve: Mapping[str, Any],
     post_solve: Mapping[str, Any] | None = None,
+    frame_entry: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     pre = normalize_solver_capture(pre_solve)
     post: dict[str, Any] | None = None
     errors: list[str] = []
+    frame: dict[str, Any] | None = None
+
+    if frame_entry is not None:
+        frame = {
+            "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
+            "version": 1,
+            "ready": bool(frame_entry.get("ready", True)),
+            "status": frame_entry.get("status", "captured"),
+            "frame_index": frame_entry.get("frame_index"),
+            "backend": frame_entry.get("backend"),
+            "provider": frame_entry.get("provider"),
+            "scalar_count": int(frame_entry.get("scalar_count", -1)),
+            "physics_system": frame_entry.get("physics_system"),
+        }
+        if frame["scalar_count"] != pre["scalar_count"]:
+            errors.append("frame-entry-scalar-count")
+        if frame["ready"] is not True:
+            errors.append("frame-entry-not-ready")
+        if frame.get("backend") == "provider":
+            errors.append("provider-backend-bypasses-builtin-capture")
 
     if post_solve is not None:
         post_scalar_count = int(post_solve.get("scalar_count", -1))
@@ -46,18 +67,24 @@ def normalize_probe_session(
 
     pre_frame = pre.get("frame")
     post_frame = None if post is None else post.get("frame_index")
+    frame_index = None if frame is None else frame.get("frame_index")
+    if frame_index is not None and pre_frame is not None and int(frame_index) != int(pre_frame):
+        errors.append("frame-entry-pre-solve-index-mismatch")
+    if frame_index is not None and post_frame is not None and int(frame_index) != int(post_frame):
+        errors.append("frame-entry-post-solve-index-mismatch")
     if pre_frame is not None and post_frame is not None and int(pre_frame) != int(post_frame):
         errors.append("frame-index-mismatch")
 
     return {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "status": "normalized" if not errors else "blocked",
         "ready": not errors and (post is None or post["ready"]),
         "pre_solve": pre,
         "post_solve": post,
+        "frame_entry": frame,
         "errors": list(dict.fromkeys(errors)),
-        "frame": pre_frame if pre_frame is not None else post_frame,
+        "frame": frame_index if frame_index is not None else (pre_frame if pre_frame is not None else post_frame),
     }
 
 
@@ -71,10 +98,12 @@ def compare_probe_session(
     obs = normalize_probe_session(
         observed["pre_solve"],
         observed.get("post_solve"),
+        observed.get("frame_entry"),
     )
     exp = normalize_probe_session(
         expected["pre_solve"],
         expected.get("post_solve"),
+        expected.get("frame_entry"),
     )
 
     pre_compare = compare_solver_captures(
@@ -129,12 +158,14 @@ def describe_sdf_runtime_probe_session_contract() -> dict[str, Any]:
         "inputs": {
             "pre_solve": "SHIFT.SDFRuntimeProbe/1 JSON from FUN_007b0f20",
             "post_solve": "optional SHIFT.SDFSolverPostSolveProbe/1 JSON from FUN_007b4110",
+            "frame_entry": "optional SHIFT.SDFRuntimeProbeFrameEntry/1 JSON from FUN_007b3f40",
         },
         "checks": [
             "scalar_count consistency",
             "pre/post frame index consistency",
             "pre-solve RHS/matrix comparison",
             "post-solve solved-vector comparison",
+            "frame-entry backend/scalar/frame consistency",
         ],
         "limitations": [
             "Session pairing depends on matching frame_index values from the runtime probe.",
