@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 421: SDF provider/backend probe
+
+Extended the live SDF probe with a `FUN_007b3f40` frame-entry breakpoint that records scalar count, provider pointer and solver-state pointer and classifies the frame as builtin/provider. This prevents false negatives when retail bypasses `FUN_007b0f20`. The capture format remains backward compatible. Next target: feed the first real frame-entry + pre/post-solve capture into the 40-scalar comparator.
+
 ## Phase 420: JOINT d15 source correction
 
 Re-audited `FUN_007bbb80` against the full local `SHIFT.exe.c` snapshot. The JOINT tensor intermediate `d15` is `m00*y - m01*x` (`+0xb0*y - +0xbc*x`), not `m00*y - m02*x`. Added a non-degenerate regression that distinguishes the mappings and a dedicated evidence record. No other JOINT terms are changed.
