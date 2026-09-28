@@ -30,11 +30,19 @@ def test_validate_global_lifecycle_for_both_providers():
     assert runtime.validate_provider_global_lifecycle(1)["ready"] is True
 
 
-def test_global_contract_keeps_reset_callsite_unresolved():
+def test_global_contract_tracks_reset_frame_callsite():
     contract = runtime.build_global_lifecycle_contract()
 
     assert contract["reset_boundary"]["vtable_slot"] == "+0x1c"
     assert contract["reset_boundary"]["frame_loop_callsite"] == (
-        "not inferred"
+        "FUN_007b3f40 -> FUN_007b2210 -> provider vtable +0x1c"
     )
     assert [item["provider_id"] for item in contract["providers"]] == [0, 1]
+
+
+def test_global_order_keeps_frame_reset_in_execution_layer():
+    contract = runtime.build_global_lifecycle_contract()
+
+    assert contract["reset_boundary"]["status"] == (
+        "per-scalar frame reset delegated by FUN_007b2210"
+    )
