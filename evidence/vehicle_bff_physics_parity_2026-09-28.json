@@ -1,0 +1,57 @@
+{
+  "format": "SHIFT.VehicleBFFPhysicsParity/1",
+  "date": "2026-09-28",
+  "source": ["BMW_M3_E36.bff", "BMW_M3_E36_Cockpit.bff", "Vehicles.zip"],
+  "scope": "exact logical path and raw on-disk payload SHA-256; base vehicle archives only",
+  "physics_entry_counts": {
+    ".cdf": 7,
+    ".edf": 7,
+    ".gdf": 7,
+    ".sdf": 7,
+    ".tbf": 7,
+    ".bbf": 5
+  },
+  "shared_byte_identical_entries": [
+    {
+      "path": "vehicles/physics/gearbox/common.gdf",
+      "archive_count": 7,
+      "raw_sha256": "a6c13c8076352ad114d0c069b2e8d651c003104532ab5ce16e0a8ca73605a48d"
+    },
+    {
+      "path": "vehicles/physics/suspension/aarm_multilink.sdf",
+      "archive_count": 4,
+      "raw_sha256": "ca42158011f829dee6205d11a62ea19097f298f91ed4377c205788dc0d957fd7"
+    },
+    {
+      "path": "vehicles/physics/suspension/strut_multilink.sdf",
+      "archive_count": 2,
+      "raw_sha256": "e81db342253bfae2597b0942c454941e7a5fef2467a80517304cbe029e436f29"
+    },
+    {
+      "path": "vehicles/physics/turbo/gen_lowrpm_33.tbf",
+      "archive_count": 5,
+      "raw_sha256": "1029229b0c6492c26d3d2a47d386beba4acd60acf9a09b6ecb218c74da47b669"
+    },
+    {
+      "path": "vehicles/physics/turbo/nitrous.bbf",
+      "archive_count": 5,
+      "raw_sha256": "81607891a48c144a8fb1a2c24de585090a38c235986b6e5b8d6e613f4462afa5"
+    }
+  ],
+  "unique_vehicle_specific_names": {
+    ".cdf": 7,
+    ".edf": 7,
+    ".sdf": 1,
+    ".tbf": 2
+  },
+  "interpretation": [
+    "common.gdf is stored identically in all 7 base vehicle archives in this corpus",
+    "CDF and EDF resource names are vehicle-specific in all 7 base archives",
+    "SDF/TBF families mix shared templates with vehicle-specific resources"
+  ],
+  "limitations": [
+    "Raw payload equality does not prove decoded semantic equality beyond stored-byte identity.",
+    "This evidence excludes cockpit archives from the physics resource count because they do not carry the base vehicle physics set.",
+    "No runtime loader ownership or physical-unit interpretation is inferred."
+  ]
+}
