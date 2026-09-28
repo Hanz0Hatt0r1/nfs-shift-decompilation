@@ -56,6 +56,14 @@ CLI:
 
 `python tools/build_prephysx_provider_handoff.py sdf_report.json -o prephysx_provider_handoff.json`
 
+## Vehicle physics participant gate
+
+Phase 505 adds `SHIFT.VehiclePhysicsParticipantGate/1`, capturing the source-backed
+`IGPhaseVehicle → FUN_00410ef0 → wait/success → Pakfiles/Vehicles/%s.bff` boundary.
+It records the participant pointer/index writeback slots and the observed candidate
+eligibility condition without naming an engine/PhysX class. The runtime participant
+instance is still capture-dependent.
+
 ## Current next step
 
 Capture a real provider frame, verify the bundle, then use the handoff and Phase 501
