@@ -60,6 +60,52 @@ def test_reference_shader_executes_arithmetic_and_constants():
     assert result["color"] == [0.0625, 0.25, 0.5625, 1.0]
 
 
+
+def test_reference_shader_executes_defb_for_if():
+    instructions = [
+        Instruction(
+            0, 47, "DEFB", 0, 2, 0, False,
+            [
+                _dst(14, 0),
+                Operand(token=1, kind="literal", value=1.0),
+            ],
+        ),
+        Instruction(
+            4, 40, "IF", 0, 2, 0, False,
+            [_src(14, 0)],
+        ),
+        Instruction(
+            8, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(2, 0, swizzle="xyzw")],
+        ),
+        Instruction(12, 43, "ENDIF", 0, 1, 0, False, []),
+    ]
+    result = execute_shader(
+        _program(instructions, temps=()),
+        constants={"c": {0: (0.1, 0.2, 0.3, 1.0)}},
+    )
+    assert result["status"] == "executed", result
+    assert result["color"] == [0.1, 0.2, 0.3, 1.0]
+
+
+def test_reference_shader_rejects_non_replicate_ifc_swizzle():
+    result = execute_shader(
+        _program([
+            Instruction(
+                0, 41, "IFC", 0, 3, 2, False,
+                [_src(2, 0), _src(2, 1, swizzle="x")],
+            ),
+        ], temps=()),
+        constants={
+            "c": {
+                0: (1.0, 1.0, 1.0, 1.0),
+                1: (0.0, 0.0, 0.0, 0.0),
+            }
+        },
+    )
+    assert result["status"] == "error"
+    assert "replicate swizzle" in result["blocking_reasons"][0]
+
 def test_reference_shader_applies_source_modifier_and_write_mask():
     mov = Instruction(
         0, 1, "MOV", 0, 3, 0, False,
@@ -154,7 +200,7 @@ def test_reference_shader_executes_ifc_comparison():
     instructions = [
         Instruction(
             0, 41, "IFC", 0, 3, 1, False,
-            [_src(2, 0), _src(2, 1)],
+            [_src(2, 0, swizzle="x"), _src(2, 1, swizzle="x")],
         ),
         Instruction(
             4, 1, "MOV", 0, 3, 0, False,
