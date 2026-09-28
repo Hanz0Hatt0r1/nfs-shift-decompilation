@@ -4,7 +4,7 @@ The capture gate now has a deterministic preparation layer around the existing P
 
 ## Prepare mode
 
-`tools/run_sdf_solver_probe.py SHIFT.exe --output out/sdf-solver-capture` validates the supplied retail binary against the known SHA-256/PE/prologue contract and writes two files:
+`tools/run_sdf_solver_probe.py SHIFT.exe --output out/sdf-solver-capture` or `tools/run_sdf_solver_probe.py SHIFT.zip --output out/sdf-solver-capture` validates the supplied retail binary against the known SHA-256/PE/prologue contract and writes the extracted `SHIFT.exe` when the input is a ZIP and then writes two files:
 
 - `probe_manifest.json` with validation, executable identity and capture expectations;
 - `attach.gdb` with `source`, `sdf-probe` and `continue` commands using absolute paths.
