@@ -76,6 +76,16 @@ CLI:
 
 `python tools/build_physics_participant_manager_event.py -o physics_participant_manager_event.json`
 
+## Participant registry/update bridge
+
+Phase 507 adds `SHIFT.PhysicsParticipantRegistryUpdate/1`, covering the concrete participant slot allocation, registration and refresh routines on `DAT_00c109e0`. `FUN_007146c0` allocates indexed slots at `+0x140` with `0x1fa0` stride; `FUN_00713f40` enables/records the descriptor index; `FUN_00713ec0` refreshes the indexed slot. `PhysicsParticipant.cpp` calls both for participant descriptor type `3`.
+
+The selector-context identity from Phase 505 remains unproven.
+
+CLI:
+
+`python tools/build_physics_participant_registry_update.py -o physics_participant_registry_update.json`
+
 ## Current next step
 
 Capture a real provider frame, verify the bundle, then use the handoff and Phase 501
