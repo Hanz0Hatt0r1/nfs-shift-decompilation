@@ -1,0 +1,261 @@
+{
+  "format": "SHIFT.VehicleBFFCorpusAudit/1",
+  "date": "2026-09-28",
+  "source_files": [
+    "BMW_M3_E36.bff",
+    "BMW_M3_E36_Cockpit.bff",
+    "RENDER.bff",
+    "Vehicles.zip"
+  ],
+  "archive_count": 15,
+  "total_entries": 15306,
+  "global_type_counts": {
+    "0": 20,
+    "2": 15286
+  },
+  "all_x12d_zero": true,
+  "archives": [
+    {
+      "archive": "BMW_M3_E36.bff",
+      "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+      "file_count": 1122,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 1121
+      },
+      "meb": 162,
+      "bmt": 32,
+      "dds": 72,
+      "fxo": 831
+    },
+    {
+      "archive": "BMW_M3_E36_Cockpit.bff",
+      "sha256": "a9bc1b3c0dfb21408913089d565fa2ffc80f2fb2c4a408ab9aef101d012f15be",
+      "file_count": 1043,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 1042
+      },
+      "meb": 44,
+      "bmt": 43,
+      "dds": 75,
+      "fxo": 876
+    },
+    {
+      "archive": "RENDER.bff",
+      "sha256": "b0b03960ba7e620b7ad5e2b027ed13de67afffe168eb8b30da73c2a632a7c0af",
+      "file_count": 694,
+      "x12d": 0,
+      "types": {
+        "2": 694
+      },
+      "meb": 0,
+      "bmt": 0,
+      "dds": 0,
+      "fxo": 592
+    },
+    {
+      "archive": "Ford_Mustang_2010.bff",
+      "sha256": "fb6e78de56edbd2bbeb2c93d26ebad03fb0d0c1325c15d4c5771b07229b0f85a",
+      "file_count": 1146,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 1145
+      },
+      "meb": 164,
+      "bmt": 26,
+      "dds": 69,
+      "fxo": 862
+    },
+    {
+      "archive": "Ford_Mustang_2010_Cockpit.bff",
+      "sha256": "f2025818b0ac0b6df603671853167bb53cbaa043fb4584365eb9181c663e7eb0",
+      "file_count": 1085,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 1084
+      },
+      "meb": 75,
+      "bmt": 45,
+      "dds": 84,
+      "fxo": 876
+    },
+    {
+      "archive": "Ford_Mustang_FALKEN.bff",
+      "sha256": "c4b32516d912200e05f2109baa5b852082d507809a3f1b3974557d648c9345d1",
+      "file_count": 769,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 768
+      },
+      "meb": 68,
+      "bmt": 16,
+      "dds": 45,
+      "fxo": 617
+    },
+    {
+      "archive": "Ford_Mustang_FALKEN_Cockpit.bff",
+      "sha256": "11f9869acd347459e4989399609808474aff5966a4b601952d8390f1c68e6299",
+      "file_count": 807,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 806
+      },
+      "meb": 19,
+      "bmt": 19,
+      "dds": 43,
+      "fxo": 722
+    },
+    {
+      "archive": "Honda_Civic_SI.bff",
+      "sha256": "e638ad9058fb9717b05a38bf9ec95c64b5fd32a6da1365f5ba6fab8eb736e19f",
+      "file_count": 1136,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 1135
+      },
+      "meb": 147,
+      "bmt": 29,
+      "dds": 71,
+      "fxo": 861
+    },
+    {
+      "archive": "Honda_Civic_SI_Cockpit.bff",
+      "sha256": "6468a8411137435f9ac32d7493ce63dc4df152b5d05f745f75cd6a8f69b449d4",
+      "file_count": 1129,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 1128
+      },
+      "meb": 35,
+      "bmt": 43,
+      "dds": 79,
+      "fxo": 967
+    },
+    {
+      "archive": "Honda_S2000.bff",
+      "sha256": "c3d85073fbb91423b0bde73b96eadfc28383aad9908f246ab4e5d932a57c67d3",
+      "file_count": 1147,
+      "x12d": 0,
+      "types": {
+        "0": 2,
+        "2": 1145
+      },
+      "meb": 188,
+      "bmt": 31,
+      "dds": 71,
+      "fxo": 832
+    },
+    {
+      "archive": "Honda_S2000_Cockpit.bff",
+      "sha256": "e3f5eaee2acf76666a31b95066723a64929f93f11862d5e83d8bdf32894a0397",
+      "file_count": 934,
+      "x12d": 0,
+      "types": {
+        "0": 2,
+        "2": 932
+      },
+      "meb": 61,
+      "bmt": 41,
+      "dds": 75,
+      "fxo": 753
+    },
+    {
+      "archive": "Infiniti_G35.bff",
+      "sha256": "23965376993fc895d75c1c73f418ff07d4c2a6645a9ced895f06eebd791ba3dd",
+      "file_count": 1160,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 1159
+      },
+      "meb": 145,
+      "bmt": 30,
+      "dds": 65,
+      "fxo": 893
+    },
+    {
+      "archive": "Infiniti_G35_Cockpit.bff",
+      "sha256": "08cada0a2a0232932eeffdd3fa347cd9122a1c1a165337bbc478dc92cc277bc2",
+      "file_count": 954,
+      "x12d": 0,
+      "types": {
+        "0": 1,
+        "2": 953
+      },
+      "meb": 40,
+      "bmt": 44,
+      "dds": 81,
+      "fxo": 784
+    },
+    {
+      "archive": "Lamborghini_Gallardo_LP560-4.bff",
+      "sha256": "5286ceb2333591aa4f2e6a4512dd94d47e8cbf917759220d28b8e1a09812ca0e",
+      "file_count": 1166,
+      "x12d": 0,
+      "types": {
+        "0": 3,
+        "2": 1163
+      },
+      "meb": 104,
+      "bmt": 39,
+      "dds": 73,
+      "fxo": 923
+    },
+    {
+      "archive": "Lamborghini_Gallardo_LP560-4_Cockpit.bff",
+      "sha256": "980a0aae805f5b5e7966a4c5b3f8d0c2880518c74d99c4268897e841714b107a",
+      "file_count": 1014,
+      "x12d": 0,
+      "types": {
+        "0": 3,
+        "2": 1011
+      },
+      "meb": 40,
+      "bmt": 48,
+      "dds": 77,
+      "fxo": 844
+    }
+  ],
+  "common_vehicle_suffixes_ge5": [
+    "common_black.dds",
+    "common_blank.dds",
+    "common_glass_cracks_01_normals.dds",
+    "common_paint_specular.dds",
+    "common_normal_dummy.dds",
+    "common_lightflares.dds",
+    "common_disk_glow.dds",
+    "common_disk01_diffuse.dds",
+    "common_chassis_diffuse.dds",
+    "generic_chassis.bmt",
+    "generic_lightflares.bmt",
+    "gearbox/common.gdf",
+    "tread_slick1_specular_00.dds",
+    "tread_slick1_specular_01.dds"
+  ],
+  "common_cockpit_suffixes_ge5": [
+    "generic_mirror.bmt",
+    "generic_gauge_glass.bmt",
+    "common_plastic_specular.dds",
+    "common_paint_specular.dds",
+    "common_mirror.dds",
+    "common_mfd_diffuse.dds",
+    "common_glass_clear_diffuse.dds",
+    "common_carbon01_black02_specular.dds",
+    "common_carbon01_black02_aniso.dds",
+    "common_blank.dds",
+    "common_black.dds",
+    "common_alcantara_specular.dds",
+    "common_alcantara01_normals.dds",
+    "common_alcantara01_black_diffuse.dds",
+    "generic_cockpit_upgrades_specular.dds"
+  ]
+}
