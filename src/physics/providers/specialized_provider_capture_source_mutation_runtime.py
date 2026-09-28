@@ -177,6 +177,8 @@ def correlate_source_mutations(
     provider_id = int(pre["provider_id"])
     errors = list(address_map["errors"])
 
+    if capture_diff.get("ready") is not True:
+        errors.append("capture-diff-not-ready")
     if capture_diff.get("provider_id") is None:
         errors.append("capture-diff-provider-id-missing")
     elif int(capture_diff["provider_id"]) != provider_id:
@@ -319,11 +321,9 @@ def build_source_mutation_correlation_contract(
         "provider_id": report["provider_id"],
         "status": report["status"],
         "ready": report["ready"],
-        "source_edge_count": report["mapping"]["address_edges"]
-        and sum(
-            len(entries)
-            for entries in report["mapping"]["address_edges"].values()
-        ) or 0,
+        "source_edge_count": int(
+            report["source_pattern"]["source_edge_count"]
+        ),
         "source_address_count": len(
             report["mapping"]["address_edges"]
         ),
