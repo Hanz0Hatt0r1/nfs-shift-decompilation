@@ -19,7 +19,8 @@
 - CTAB sampler/constant propagation;
 - GLSL ES 3.1 lowering for the supported subset;
 - optional glslangValidator compile/link validation;
-- vertex-shader a0 relative constant reads in the software oracle.
+- vertex-shader a0 relative constant reads in the software oracle;
+- software execution of `SETP`/predicate state, `DEF`/`DEFI`/`DEFB` constant initialization, and bounded `LOOP`/`REP`/`BREAK*` control flow.
 
 ## Boundaries
 
@@ -42,7 +43,7 @@ Unsupported operations remain visible blockers.
 
 ## Current focus
 
-The reference execution layer now covers structured conditionals (`IF`/`IFC`/`ELSE`/`ENDIF`) and the D3D9 matrix/sign operations already represented by the parser/GLSL backend. Unsupported operations remain explicit blockers.
+The reference execution layer now covers structured conditionals (`IF`/`IFC`/`ELSE`/`ENDIF`), predicate comparisons, constant initialization, bounded loops, and the D3D9 matrix/sign operations already represented by the parser/GLSL backend. Unsupported operations remain explicit blockers.
 
 
 Expand exact BMW shader/material coverage while using the software reference renderer as the deterministic oracle.
