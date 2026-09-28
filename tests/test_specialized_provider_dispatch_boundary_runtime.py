@@ -21,7 +21,7 @@ def test_execution_boundary_preserves_provider_order():
         "provider-solve",
     ]
     assert result["provider_path"][0]["vtable_offset"] == "0x20"
-    assert result["provider_path"][2]["vtable_offset"] == "0x18"
+    assert result["provider_path"][3]["vtable_offset"] == "0x18"
 
 
 def test_execution_boundary_preserves_builtin_fallback():
