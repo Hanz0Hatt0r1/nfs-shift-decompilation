@@ -122,6 +122,8 @@ def build_bmw_vulkan_bundle(
                 "status": "blocked-by-provenance-gate",
                 "gate": native_gate,
             },
+            "artifacts": {},
+            "external_samplers": [],
         }
         _write(out / "bundle_manifest.json", report)
         report["manifest_sha256"] = _hash(out / "bundle_manifest.json")
