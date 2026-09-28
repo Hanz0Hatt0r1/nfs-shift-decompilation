@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 420: JOINT d15 source correction
+
+Re-audited `FUN_007bbb80` against the full local `SHIFT.exe.c` snapshot. The JOINT tensor intermediate `d15` is `m00*y - m01*x` (`+0xb0*y - +0xbc*x`), not `m00*y - m02*x`. Added a non-degenerate regression that distinguishes the mappings and a dedicated evidence record. No other JOINT terms are changed.
+
 ## Phase 419: deterministic SDF probe launcher
 
 Added `sdf_runtime_probe_launcher_runtime.py` and `tools/run_sdf_solver_probe.py`. The launcher accepts either `SHIFT.exe` or a ZIP containing exactly one `SHIFT.exe`. The prepare mode validates the exact retail `SHIFT.exe`, writes a capture manifest and deterministic `attach.gdb`; attach mode uses an explicitly supplied PID and never guesses a Wine process. The launcher fails closed for wrong PE identity or missing runtime tools. Numeric solver equality still requires a real retail capture. Next target: use the supplied retail executable on a Wine+GDB host to produce the first 40-scalar pre/post-solve pair.
