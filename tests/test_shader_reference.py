@@ -135,7 +135,8 @@ def test_reference_shader_executes_if_else_control_flow():
         constants={
             "c": {
                 0: (1.0, 1.0, 1.0, 1.0),
-                1: (0.0, 0.0, 0.0, 1.0),
+                1: (0.2, 0.3, 0.4, 1.0),
+                2: (0.8, 0.7, 0.6, 1.0),
             }
         },
     )
@@ -147,6 +148,7 @@ def test_reference_shader_executes_if_else_control_flow():
         inputs={0: (0.0, 0.0, 0.0, 0.0)},
         constants={
             "c": {
+                0: (1.0, 1.0, 1.0, 1.0),
                 0: (1.0, 1.0, 1.0, 1.0),
                 1: (0.0, 0.0, 0.0, 1.0),
             }
