@@ -189,7 +189,7 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
                     "reset_allocation_state": "result -> physics_system+0x3c",
                     "replace_primary_storage": "result -> physics_system+0x40",
                     "replace_aux_storage": "result -> physics_system+0x44",
-                    "finalize": "result -> per-body +0xa8 domain",
+                    "finalize": "result -> per-body +0xa8 workspace size",
                 }[method],
             }
             for method, offset in VTABLE.items()
@@ -206,6 +206,12 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
             "selector_after_slot_1": "null",
             "path": "FUN_007b2010 -> FUN_007b1360",
             "secondary_domain": "scalar_count * scalar_count",
+        },
+        "workspace_domain": {
+            "provider_return_2c_equals_vtable_24": True,
+            "provider0_value": 1190,
+            "provider1_value": 746,
+            "observed_destination": "per_body+0xa8",
         },
         "provider_identity": {
             "slot_0_init_vtable": "PTR_FUN_00b0fc5c",
