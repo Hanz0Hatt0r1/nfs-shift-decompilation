@@ -20,13 +20,13 @@ The evidence now supports three distinct layers:
 
 `FUN_007b3820 → runtime provider selection/rebind`
 
-`FUN_007b3f40 → per-frame cleanup/common preparation/provider solve`
+`FUN_007b3f40 → per-frame cleanup/common preparation/per-scalar reset dispatch/provider solve`
 
-The selector-driven reset functions at vtable `+0x1c` remain a separate API. No direct frame-loop callsite is claimed without additional evidence.
+The selector-driven reset functions at vtable `+0x1c` are directly called from `FUN_007b2210`, which is itself invoked by `FUN_007b3f40` for each active constraint scalar.
 
 ## Why this matters
 
-This resolves an apparent lifecycle tension: the provider object is global and persistent, while `FUN_007b3f40` can invoke `+0x20 cleanup` every frame. The reset selector should therefore not be treated as an unconditional per-frame initializer.
+This resolves an apparent lifecycle tension: the provider object is global and persistent, while `FUN_007b3f40` can invoke `+0x20 cleanup` every frame. The reset selector should not be modeled as one unconditional global reset: its selector is dispatched repeatedly for the active scalar set on each frame solve.
 
 ## Scope boundary
 
