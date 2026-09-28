@@ -213,9 +213,13 @@ def extract_factor_pattern(
                 output_vector_bytes=layout.output_vector_bytes,
             )
         )
-        out_of_range = [column for column in columns if column >= segment_doubles]
+        out_of_range = [
+            column
+            for column in columns
+            if column < 0 or column >= layout.scalar_count
+        ]
         if out_of_range:
-            errors.append(f"pivot-{i}-factor-column-out-of-range")
+            errors.append(f"pivot-{i}-factor-column-out-of-domain")
         rows.append(
             {
                 "pivot_index": i,
@@ -286,8 +290,8 @@ def validate_factor_pattern(report: dict[str, Any]) -> dict[str, Any]:
             errors.append(f"pivot-{pivot}-columns-not-sorted-unique")
         if any(column <= pivot for column in columns):
             errors.append(f"pivot-{pivot}-contains-non-future-column")
-        if any(column >= int(row["row_segment_doubles"]) for column in columns):
-            errors.append(f"pivot-{pivot}-column-exceeds-segment")
+        if any(column >= expected_count for column in columns):
+            errors.append(f"pivot-{pivot}-column-exceeds-scalar-domain")
         if str(row["pivot_diagonal_address"]) != hex(
             int(row["row_pointer"], 16) + pivot * 8
         ):
