@@ -106,6 +106,12 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 428: exact SDF 3x3 transform helpers
+
+Added sdf_transform_runtime.py and regression tests for FUN_007aefb0 and FUN_007af0a0. The reconstruction records the nine float matrix elements beginning at BODY +0xD4, reproduces the exact row-major forward multiplication and the transposed coefficient ordering, and preserves the observed float-input/double-output numeric boundary.
+
+The phase removes the transform-helper black box from the JOINT/HINGE/BAR post-load chain. Translation is intentionally excluded because these helpers only consume the nine matrix floats. The next target is the caller-side construction/update of the +0xD4 matrix itself.
+
 ## Phase 427: SDF post-load kinematics
 
 Added sdf_constraint_postload_runtime.py and regression tests for the runtime descriptor-copy boundary FUN_007b2ae0 and post-load helpers FUN_007b2da0/FUN_007b2de0/FUN_007b2f70. The phase records all visible descriptor field copies, preserves FUN_00632920 string-reference handling, reproduces the HINGE cross-product closure v0 x v1 followed by v0 x (v0 x v1), and reproduces the BAR transformed endpoint difference plus conditional normalization.
