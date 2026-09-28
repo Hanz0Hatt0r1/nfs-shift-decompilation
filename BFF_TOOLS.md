@@ -54,6 +54,17 @@ After a real runtime provider capture exists:
 The observed provider id is runtime evidence. The handoff attaches the corresponding
 source-derived solver program only when ids match.
 
+## Provider mutation correlation
+
+For a real pre/post provider capture, compare observed packed-workspace mutations
+with source-derived factor edges without collapsing storage aliases:
+
+`python tools/compare_specialized_provider_mutations.py --pre provider_pre_0_000001.json --post provider_post_0_000001.json --source SHIFT.exe.c --provider 0 -o mutation_correlation.json`
+
+`status=correlated` means all observed workspace mutation addresses are covered by
+at least one source-derived factor edge. `status=partial` preserves uncovered
+observations without treating them as a source mismatch. No numeric parity is claimed.
+
 ## Native submission gate
 
 `python tools/validate_native_submission.py render_command.json -o native_gate.json`

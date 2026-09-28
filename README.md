@@ -2,9 +2,9 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 500**
+> **Current mainline: Phase 501**
 >
-> Phases 499–500 add deterministic indexing and verification for specialized-provider runtime capture bundles. Exact retail numeric parity remains capture-gated.
+> Phases 499–500 add deterministic indexing and verification for specialized-provider runtime capture bundles. Phase 501 adds source-mutation correlation over the packed workspace. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
@@ -103,7 +103,8 @@ The repository now models:
 - scalar selector/reset provenance;
 - live reset-effect and callsite evidence;
 - reset→solve ordering;
-- capture-session and capture-bundle verification.
+- capture-session and capture-bundle verification;
+- source-mutation correlation against source-derived factor edges.
 
 ### Phase 499–500 capture bundle
 
@@ -140,15 +141,13 @@ python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
 
 ## Current CI note
 
-At commit `dffddaaa0db4290b35d3826234c2e2e7a867cb3a` (2026-09-28):
+At commit `b7a0c777a16f674f82887e3f7964e0c56bb53caa` (2026-09-28), the mainline CI passed:
 
 - native: success;
 - capture-producer: success;
-- Python CI: one regression test failed after 2537 tests passed and 3 were skipped;
-- failing test: `tests/test_bmw_runtime_render_contract.py::test_runtime_render_contract_builds_stage_specific_inputs`;
-- failure: `KeyError: "byte_hashes"` because the runtime render contract exposed byte hashes at `shader.byte_hashes` while the test contract expects them under `shader.identity.byte_hashes`.
+- Python CI: success.
 
-The fix keeps the existing top-level `shader.byte_hashes` compatibility field and mirrors the same values inside the runtime shader identity object.
+This follows the fix for the preceding `shader.identity.byte_hashes` contract regression. The compatibility field at `shader.byte_hashes` is retained.
 
 ## Repository map
 
