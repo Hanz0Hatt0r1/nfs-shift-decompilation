@@ -191,3 +191,25 @@ def test_session_blocks_frame_entry_index_mismatch():
     result = runtime.normalize_probe_session(pre, None, frame)
     assert result["ready"] is False
     assert "frame-entry-pre-solve-index-mismatch" in result["errors"]
+
+
+
+def test_session_cli_keeps_frame_entry_in_non_comparison_mode():
+    args = cli.build_parser().parse_args([
+        "--pre", "pre.json",
+        "--frame", "frame.json",
+    ])
+    assert args.pre.name == "pre.json"
+    assert args.frame.name == "frame.json"
+
+
+def test_session_contract_and_comparison_use_v2_metadata():
+    contract = runtime.describe_sdf_runtime_probe_session_contract()
+    assert contract["format"] == "SHIFT.SDFRuntimeProbeSession/2"
+    assert contract["version"] == 2
+    result = runtime.compare_probe_session(
+        {"pre_solve": _pre()},
+        {"pre_solve": _pre()},
+    )
+    assert result["format"] == "SHIFT.SDFRuntimeProbeSessionComparison/2"
+    assert result["version"] == 2
