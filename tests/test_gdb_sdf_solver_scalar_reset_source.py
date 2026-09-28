@@ -109,8 +109,8 @@ def test_provider_reset_effect_probe_is_present_for_both_resets():
 
     assert "class ProviderResetProbe" in text
     assert "class ProviderResetReturnProbe" in text
-    assert "get_provider(0).reset_function" in text
-    assert "get_provider(1).reset_function" in text
+    assert "get_vtable_lifecycle(0).reset_function" in text
+    assert "get_vtable_lifecycle(1).reset_function" in text
     assert '"provider_reset_effects.jsonl"' in text
 
 
