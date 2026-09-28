@@ -1,0 +1,16 @@
+{
+  "format": "SHIFT.SDFRuntimeProbeSessionEvidence/1",
+  "version": 1,
+  "inputs": {
+    "pre_solve": "FUN_007b0f20 probe output",
+    "post_solve": "FUN_007b4110 probe output"
+  },
+  "checks": [
+    "scalar-count consistency",
+    "frame-index consistency",
+    "pre-solve matrix/RHS comparison",
+    "post-solve vector comparison"
+  ],
+  "status": "session-bridge-only",
+  "real_capture_present": false
+}
