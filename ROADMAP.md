@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 414: BMW M3 solver capture CLI
+
+Added one-command orchestration from the real BMW M3 BFF/domain verifier to normalized solver-capture structural validation and optional exact numeric comparison. No runtime values are synthesized. Next target: convert a real captured memory window into this normalized schema and validate it against the 40-scalar domain.
+
 ## Phase 413: BMW M3 solver capture verifier
 
 Connected the generic Phase 411/412 capture pipeline to the real BMW M3 `aarm_multilink.sdf` 40-scalar domain. Structural verification now checks the 40×40/160-row-pointer storage shape and optional runtime identity nodes; exact numeric comparison delegates to the existing cell-level comparator when a real expected frame is supplied. No numeric runtime frame is fabricated.

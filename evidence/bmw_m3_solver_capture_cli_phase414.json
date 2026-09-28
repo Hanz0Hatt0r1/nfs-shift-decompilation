@@ -1,0 +1,21 @@
+{
+  "format": "SHIFT.BMWM3SolverCaptureCLIEvidence/1",
+  "version": 1,
+  "command": "tools/verify_bmw_m3_solver_capture.py",
+  "required_inputs": [
+    "BMW_M3_E36.bff",
+    "normalized solver capture JSON"
+  ],
+  "optional_inputs": [
+    "expected solver capture JSON",
+    "abs_tol",
+    "rel_tol"
+  ],
+  "stages": [
+    "Phase 405 BMW SDF/domain verification",
+    "Phase 413 BMW capture structural verification",
+    "Phase 411 cell-level value comparison"
+  ],
+  "status": "orchestration-only",
+  "proprietary_capture_bundled": false
+}
