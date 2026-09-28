@@ -53,3 +53,10 @@ After a real runtime provider capture exists:
 
 The observed provider id is runtime evidence. The handoff attaches the corresponding
 source-derived solver program only when ids match.
+
+## Native submission gate
+
+`python tools/validate_native_submission.py render_command.json -o native_gate.json`
+
+The same gate is available through `python shift_importer.py validate-native-submission ...`.
+Native execution is blocked unless every submesh has complete FXO payload and permutation identity provenance.
