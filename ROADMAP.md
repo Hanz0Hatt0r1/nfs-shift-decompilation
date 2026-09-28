@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 504.**
+**Current mainline: Phase 505.**
 
 
 
@@ -22,7 +22,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 
 ## Immediate execution order
 
-1. Python CI baseline after the `src` reorganization — complete; Phase 504 mainline CI is green.
+1. Python CI baseline after the `src` reorganization — complete; Phase 504 mainline CI is green; Phase 505 is the current source/control-flow extension.
 2. Capture a real provider frame with the SDF/runtime probe — preflight implemented; live capture remains the next evidence gate.
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
 4. Cross-vehicle raw BFF payload parity and deduplicated FXO shader profiling — complete.
@@ -34,12 +34,13 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 10. Compare retail packed-workspace/output mutations with the source-derived provider programs — implemented as `SHIFT.SpecializedProviderCaptureSourceMutationCorrelation/1`.
 11. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities — Phase 502 cross-contract validator and Phase 503 BFF-to-handoff orchestration are complete.
 12. Validate the runtime capture host before attempting GDB attachment — Phase 504 preflight implemented.
-12. Expand the desktop reference renderer against real BMW material/shader permutations.
-13. Complete Vulkan RenderCommand execution using the same neutral contract.
-14. Continue SGB/FLAT and camera runtime reconstruction.
-15. Derive proven animation poses from the BAB runtime grammar.
-16. Port the stable native render/runtime boundary to Android.
-17. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+13. Close the IGPhaseVehicle participant creation/load gate before runtime capture — Phase 505 implemented.
+14. Expand the desktop reference renderer against real BMW material/shader permutations.
+15. Complete Vulkan RenderCommand execution using the same neutral contract.
+16. Continue SGB/FLAT and camera runtime reconstruction.
+17. Derive proven animation poses from the BAB runtime grammar.
+18. Port the stable native render/runtime boundary to Android.
+19. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -54,7 +55,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
 | SGB scene | partial | deeper object/leaf consumers |
 | Camera | active | higher-level behavior |
-| Vehicle physics | active | runtime graph and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
+| Vehicle physics | active | runtime graph, participant gate and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation and pre-PhysX handoff correlation implemented |
 | D3D9 capture | mature | more real same-instance evidence |
@@ -77,7 +78,7 @@ For large captures:
 
 ## Physics path
 
-`CDF/EDF/GDF/SDF → VehiclePhysicsAssetGraph/1 → construction → solver frame → provider/builtin → post-solve`
+`CDF/EDF/GDF/SDF → VehiclePhysicsAssetGraph/1 → participant gate → construction → solver frame → provider/builtin → post-solve`
 
 The provider branch is currently structurally reconstructed but numerically capture-gated.
 
