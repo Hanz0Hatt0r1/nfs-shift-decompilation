@@ -55,6 +55,16 @@ def _profile_zero_addresses(
     return addresses
 
 
+def _profile_unit_addresses(
+    reset_report: dict[str, Any],
+) -> set[int]:
+    return {
+        int(str(row["diagonal_address"]), 16)
+        for row in reset_report.get("rows") or []
+        if row.get("diagonal_address") is not None
+    }
+
+
 def _coverage_slots(region: dict[str, Any]) -> set[int]:
     slots: set[int] = set()
     for interval in region.get("merged_intervals") or []:
