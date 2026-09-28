@@ -196,6 +196,9 @@ def validate_scalar_group_witness(
     for entry in insertions:
         section = str(entry.get("section", "")).upper()
         width = int(entry.get("width", 0))
+        if section not in SECTION_POPULATION:
+            errors.append(f"unsupported-solver-section:{section}")
+            continue
         expected = _section_info(section)
         if width != expected["body_group_width"]:
             errors.append(
