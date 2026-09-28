@@ -1,46 +1,41 @@
-# Phase 479 — correction: complete reset-zero domain
+# Phase 468 — reset/cleanup storage partition (corrected by Phase 479)
 
-Phase 479 corrects the Phase 468 reset/cleanup comparison after a source audit found that reset cases also contain `FUN_0040cec0` bulk-clear operations.
+## Goal
 
-## What was wrong
+Phase 468 compared the source-backed cleanup coverage with the reset helper writes. Phase 479 corrected the comparison to distinguish **reset-zero writes** from **unit-diagonal seed writes**.
 
-Phase 468 compared cleanup coverage with only direct `DAT_xxxxxxxx = 0` reset stores. That omitted reset bulk-clear intervals and also treated the `1.0` diagonal seed as though it were itself a zeroed slot.
+## Correct relation
 
-## Correct model
+For each provider:
 
-The reset-zero domain is the union of:
+`cleanup-covered storage = reset-zero slots ∪ unit-diagonal seed slots`
 
-- direct zero assignments in every reset case;
-- every 8-byte slot covered by reset `FUN_0040cec0` bulk clears.
-
-Unit-diagonal seed addresses are tracked separately.
-
-## Verified results from the retail source
+The two reset sets are disjoint.
 
 Provider 0:
 
-- reset-zero domain: **410** slots;
-- cleanup zero domain: **410** slots;
-- exact equality: **yes**;
-- unit-diagonal seeds: **40**;
-- every unit seed is inside the cleanup zero domain.
+- cleanup-covered storage: **410 doubles** across workspace + output;
+- reset-zero storage: **370 doubles**;
+- unit-diagonal seeds: **40 doubles**;
+- `370 + 40 = 410`;
+- reset-zero is a subset of cleanup coverage;
+- each diagonal seed lies in cleanup coverage and outside reset-zero.
 
 Provider 1:
 
-- reset-zero domain: **280** slots;
-- cleanup zero domain: **314** slots;
-- exact equality: **no**;
-- reset-zero is a strict subset of cleanup by **34** slots;
-- unit-diagonal seeds: **34**;
-- every unit seed is inside the cleanup zero domain;
-- unit-diagonal seeds are not required to belong to the reset-zero domain.
+- cleanup-covered storage: **314 doubles** across workspace + output;
+- reset-zero storage: **280 doubles**;
+- unit-diagonal seeds: **34 doubles**;
+- `280 + 34 = 314`;
+- reset-zero is a subset of cleanup coverage;
+- each diagonal seed lies in cleanup coverage and outside reset-zero.
 
-## Consequence
+## Interpretation
 
-The earlier Phase 468 claim of complete reset/cleanup zero-set equivalence for provider 1 is withdrawn. The corrected contract preserves the observed subset mismatch instead of hiding it behind a false readiness condition.
+The cleanup function establishes a broader zero baseline. The selector-driven reset then writes zero to a subset of those slots and writes one exact `1.0` seed into one diagonal slot for each selector case.
 
-Provider 0 remains an exact zero-domain match.
+Therefore it is incorrect to describe the reset function itself as recreating the full cleanup zero set. The stronger and correct statement is that its zero-write set plus its unit-diagonal seed set reconstruct the cleanup-covered storage domain.
 
 ## Scope boundary
 
-This remains a storage-level comparison. It does not infer logical matrix semantics or claim that reset is a per-frame initializer.
+This is a storage-level identity. It does not assign matrix semantics to any slot and does not imply that reset is a per-frame initializer.
