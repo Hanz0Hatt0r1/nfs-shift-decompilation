@@ -10,26 +10,27 @@ The older baseline recorded 193 Python tests passed and 2 skipped. This is histo
 
 ## Current mainline
 
-Commit: `9bab80af4673856f77d58bed684e7a5290ff6f03`
+Commit: `dffddaaa0db4290b35d3826234c2e2e7a867cb3a`
 
 | CI job | Result |
 |---|---|
 | native | success |
 | capture-producer | success |
-| linux-vulkan | success |
-| python | failure during collection |
+| python | 1 failed, 2537 passed, 3 skipped |
 
-Python collection stops at:
+The Python failure is:
 
-`tools/run_specialized_provider_differential.py:131`
+`tests/test_bmw_runtime_render_contract.py::test_runtime_render_contract_builds_stage_specific_inputs`
 
-because of an unterminated string literal.
+with:
 
-The repository should not describe global Python CI as green until that syntax error is repaired.
+`KeyError: "byte_hashes"`
+
+The contract already exposed the byte-hash values at `shader.byte_hashes`; the failing regression expected the same compatibility view under `shader.identity.byte_hashes`. The fix in this development branch mirrors the values into the identity object without changing the underlying `SHIFT.ShaderPermutationIdentity/1` flat fields.
 
 ## Phase 499–500 verification coverage
 
-The new provider-bundle tests cover filename parsing, pre/post pairing, missing-pre blocking, summaries, CLI argument parsing, pre-only validation and manifest output.
+The provider-bundle tests cover filename parsing, pre/post pairing, missing-pre blocking, summaries, CLI argument parsing, pre-only validation and manifest output.
 
 ## Useful local commands
 
