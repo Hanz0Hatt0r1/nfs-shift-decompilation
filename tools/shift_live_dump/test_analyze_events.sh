@@ -20,6 +20,11 @@ PY
 python3 "$(dirname "$0")/analyze_events.py" "$tmp" --out "$tmp/out" --block-size-kib 4 --top 20
 grep -q '^1,snapshot-000001,snapshot-000002,' "$tmp/out/transition_summary.csv"
 grep -q ',4096,4096,0,4096,1,' "$tmp/out/event_blocks.csv"
-grep -q '"peak_transition": 1' "$tmp/out/event_analysis.json"
+python3 - "$tmp/out/event_analysis.json" <<'PY'
+import json, sys
+report = json.loads(open(sys.argv[1], encoding="utf-8").read())
+assert report["peak_transition"] == 1
+assert report["peak_changed_bytes"] == 4096
+PY
 grep -q ',1,' "$tmp/out/event_clusters.csv"
 echo "event analyzer smoke test: PASS"
