@@ -58,7 +58,10 @@ def test_build_vehicle_physics_handoff_composes_sdf_profile(monkeypatch, tmp_pat
     assert result["participant_gate"]["selection"]["callee"] == "FUN_00410ef0"
     assert result["summary"]["participant_registry_update_ready"] is True
     assert result["participant_registry_update"]["registration"]["function"] == "FUN_00713f40"
+    assert result["summary"]["participant_process_reselect_ready"] is True
+    assert result["participant_process_reselect"]["selection_step"]["selector_global"] == "DAT_00bbc600"
     assert (out / "prephysx_provider_handoff.json").is_file()
+    assert (out / "participant_process_reselect.json").is_file()
 
 
 def test_build_vehicle_physics_handoff_blocks_missing_sdf(monkeypatch, tmp_path: Path):
@@ -78,6 +81,7 @@ def test_build_vehicle_physics_handoff_blocks_missing_sdf(monkeypatch, tmp_path:
     assert result["ready"] is False
     assert result["errors"] == ["sdf-report-missing-from-vehicle-profile"]
     assert result["participant_registry_update"]["ready"] is True
+    assert result["participant_process_reselect"]["ready"] is True
     assert result["participant_gate"]["ready"] is True
 
 

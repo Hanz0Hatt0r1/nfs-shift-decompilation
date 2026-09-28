@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 508.**
+**Current mainline: Phase 509.**
 
 
 
@@ -38,12 +38,13 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 14. Map the PhysicsParticipantManager event-0x20 ingestion path without overclaiming its join to the selector registry — Phase 506 implemented.
 15. Map the PhysicsParticipantManager participant slot allocation/registration/update bridge used by PhysicsParticipant.cpp — Phase 507 implemented.
 16. Resolve the IGPhaseVehicle selector object and keep its global identity separate from DAT_00c109e0 until a join is proven — Phase 508 implemented.
-17. Expand the desktop reference renderer against real BMW material/shader permutations.
-18. Complete Vulkan RenderCommand execution using the same neutral contract.
-19. Continue SGB/FLAT and camera runtime reconstruction.
-20. Derive proven animation poses from the BAB runtime grammar.
-21. Port the stable native render/runtime boundary to Android.
-22. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+17. Trace the selected participant pointer/ordinal through IGPhaseVehicle processing, reselection and vehicle-BFF writeback — Phase 509 implemented.
+18. Expand the desktop reference renderer against real BMW material/shader permutations.
+19. Complete Vulkan RenderCommand execution using the same neutral contract.
+20. Continue SGB/FLAT and camera runtime reconstruction.
+21. Derive proven animation poses from the BAB runtime grammar.
+22. Port the stable native render/runtime boundary to Android.
+23. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -58,9 +59,9 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
 | SGB scene | partial | deeper object/leaf consumers |
 | Camera | active | higher-level behavior |
-| Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
+| Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
-| Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event and selector-context separation layers implemented |
+| Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation and participant process/reselection layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Vulkan | active | full RenderCommand/material submission |
 | Android | deferred | stable native renderer/runtime boundary |

@@ -96,6 +96,16 @@ CLI:
 
 `python tools/build_physics_selector_context.py -o physics_selector_context.json`
 
+## Participant process/reselection loop
+
+Phase 509 adds `SHIFT.VehiclePhysicsParticipantProcessReselect/1`. `FUN_004d5f30` consumes the current pointer at `IGPhaseVehicle+0x450` through `FUN_00468ed0`, then directly calls `FUN_00410ef0(&DAT_00bbc600, &local_8)`. A successful next selection is loaded from `Pakfiles/Vehicles/%s.bff`, and only after that load succeeds are `+0x454` and `+0x450` overwritten with the new ordinal/pointer.
+
+This directly closes the Phase 505 output slots against the Phase 508 selector object and preserves the distinction from `DAT_00c109e0`.
+
+CLI:
+
+`python tools/build_vehicle_physics_participant_process.py -o participant_process_reselect.json`
+
 ## Current next step
 
 Capture a real provider frame, verify the bundle, then use the handoff and Phase 501
