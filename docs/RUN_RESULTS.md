@@ -10,7 +10,7 @@ The older baseline recorded 193 Python tests passed and 2 skipped. This is histo
 
 ## Current mainline
 
-Commit: `b7a0c777a16f674f82887e3f7964e0c56bb53caa`
+Commit: `19b53820f30fd18bca84f77171c327d473bc39f5`
 
 | CI job | Result |
 |---|---|
@@ -18,11 +18,15 @@ Commit: `b7a0c777a16f674f82887e3f7964e0c56bb53caa`
 | capture-producer | success |
 | python | success |
 
-The preceding mainline regression at `dffddaaa0db4290b35d3826234c2e2e7a867cb3a`
-failed one Python test with `KeyError: "byte_hashes"`. PR #618 mirrored the
-existing byte-hash compatibility values into `shader.identity.byte_hashes` while
-preserving the flat `SHIFT.ShaderPermutationIdentity/1` fields. The post-merge
-mainline run passed all three CI jobs.
+The Phase 503 merge followed a green PR validation: Python, native, capture-producer
+and Vulkan smoke all passed. The post-merge mainline run also passed all four checks.
+
+## Phase 503 verification coverage
+
+The BFF-to-pre-PhysX/provider handoff tests cover successful composition of the
+vehicle physics bundle, missing SDF protection, blocker propagation and standalone
+CLI behavior. The post-merge mainline run for commit `19b53820f30fd18bca84f77171c327d473bc39f5`
+reported success across Python, native, capture-producer and Vulkan smoke.
 
 ## Phase 499–500 verification coverage
 
