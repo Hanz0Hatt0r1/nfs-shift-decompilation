@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 422: exact builtin sparse solver
+
+`FUN_007b0f20` is now executable: the sparse diagonal factorization, forward RHS normalization and reverse back-substitution are implemented directly from the full retail source. Deterministic SPD regressions agree with dense reference solutions. Provider `+0x18` remains opaque; final retail parity still depends on the first live 40-scalar capture.
+
 ## Phase 421: SDF provider/backend probe
 
 Extended the live SDF probe with a `FUN_007b3f40` frame-entry breakpoint that records scalar count, provider pointer and solver-state pointer and classifies the frame as builtin/provider. This prevents false negatives when retail bypasses `FUN_007b0f20`. The capture format remains backward compatible. Next target: feed the first real frame-entry + pre/post-solve capture into the 40-scalar comparator.
