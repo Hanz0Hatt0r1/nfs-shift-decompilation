@@ -56,38 +56,108 @@ def _function_spec(provider_id: int) -> dict[str, Any]:
         raise ValueError(f"unsupported provider id: {provider_id}") from exc
 
 
-def _extract_row_targets(
+def _assignment_statements_with_loops(
+    lines: list[str],
+) -> tuple[tuple[int, str, tuple[int, int] | None], ...]:
+    """Collect assignment statements while retaining local_10 loop bounds."""
+    statements: list[tuple[int, str, tuple[int, int] | None]] = []
+    active_range: tuple[int, int] | None = None
+    brace_depth = 0
+    active_depth: int | None = None
+
+    for index, line in enumerate(lines):
+        loop = LOOP_HEADER_RE.search(line)
+        if loop:
+            active_range = (_int(loop.group(1)), _int(loop.group(2)))
+            active_depth = brace_depth + 1
+
+        if (
+            LOOP_LHS_RE.search(line)
+            or DIRECT_LHS_RE.match(line)
+        ):
+            statement = line.strip()
+            cursor = index
+            while ";" not in statement and cursor + 1 < len(lines):
+                cursor += 1
+                statement += " " + lines[cursor].strip()
+            statements.append((index, statement, active_range))
+
+        brace_depth += line.count("{") - line.count("}")
+        if (
+            active_range is not None
+            and active_depth is not None
+            and brace_depth < active_depth
+        ):
+            active_range = None
+            active_depth = None
+
+    return tuple(statements)
+
+
+def _lhs_match(statement: str) -> re.Match[str] | None:
+    return LOOP_LHS_RE.search(statement) or DIRECT_LHS_RE.match(statement)
+
+
+def _expanded_factor_targets(
     lines: list[str],
     *,
     row_base: int,
-    row_segment_end: int,
     pivot_index: int,
+    scalar_count: int,
+    output_vector_base: int,
+    output_vector_bytes: int,
 ) -> set[int]:
-    columns: set[int] = set()
-    active_range: tuple[int, int] | None = None
+    """Recover factor destinations from the pre-output normalization prefix."""
+    targets: set[int] = set()
 
-    for line in lines:
-        header = LOOP_HEADER_RE.search(line)
-        if header:
-            active_range = (_int(header.group(1)), _int(header.group(2)))
+    for _, statement, loop_range in _assignment_statements_with_loops(lines):
+        match = _lhs_match(statement)
+        if match is None:
+            continue
 
-        loop_lhs = LOOP_LHS_RE.search(line)
-        if loop_lhs and _int(loop_lhs.group(1)) == row_base and active_range:
-            start, end = active_range
-            for column in range(start, end):
-                if pivot_index < column < row_segment_end:
-                    columns.add(column)
+        lhs_form = "loop" if LOOP_LHS_RE.search(statement) else "direct"
+        rhs = statement[match.end():]
 
-        direct = DIRECT_LHS_RE.match(line)
-        if direct:
-            lhs = _int(direct.group(1))
-            delta = lhs - row_base
-            if delta >= 0 and delta % 8 == 0:
-                column = delta // 8
-                if pivot_index < column < row_segment_end:
-                    columns.add(column)
+        destinations: tuple[int, ...]
+        if lhs_form == "loop":
+            base = int(match.group(1), 16)
+            if loop_range is None:
+                continue
+            destinations = tuple(
+                base + local_10 * 8
+                for local_10 in range(*loop_range)
+            )
+        else:
+            destinations = (int(match.group(1), 16),)
 
-    return columns
+        if any(
+            output_vector_base <= address < output_vector_base + output_vector_bytes
+            for address in destinations
+        ):
+            break
+
+        if "dVar1" not in rhs:
+            continue
+
+        if lhs_form == "loop":
+            base = int(match.group(1), 16)
+            if base != row_base or loop_range is None:
+                continue
+            targets.update(
+                local_10
+                for local_10 in range(*loop_range)
+                if pivot_index < local_10 < scalar_count
+            )
+            continue
+
+        address = destinations[0]
+        delta = address - row_base
+        if delta >= 0 and delta % 8 == 0:
+            column = delta // 8
+            if pivot_index < column < scalar_count:
+                targets.add(column)
+
+    return targets
 
 
 def extract_factor_pattern(
@@ -134,11 +204,13 @@ def extract_factor_pattern(
             next_pivot_line - source_start_line
         ]
         columns = sorted(
-            _extract_row_targets(
+            _expanded_factor_targets(
                 block,
                 row_base=pointers[i],
-                row_segment_end=segment_doubles,
                 pivot_index=i,
+                scalar_count=layout.scalar_count,
+                output_vector_base=layout.output_vector_base,
+                output_vector_bytes=layout.output_vector_bytes,
             )
         )
         out_of_range = [column for column in columns if column >= segment_doubles]
