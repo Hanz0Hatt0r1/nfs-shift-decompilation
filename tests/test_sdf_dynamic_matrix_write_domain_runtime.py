@@ -45,6 +45,7 @@ def test_dynamic_domain_builds_self_and_pair_writes():
     assert result["self_cell_count"] == 10
     assert result["pair_cell_count"] == 11
     assert result["union_cell_count"] == 21
+    assert result["lower_triangle_off_diagonal_cell_count"] == 15
 
 
 def test_dynamic_domain_uses_expected_kernel_ownership():
@@ -143,7 +144,7 @@ def test_summarize_dynamic_write_domain():
             "self_cell_count": 100,
             "pair_cell_count": 200,
             "union_cell_count": 280,
-            "strict_upper_cell_count": 140,
+            "lower_triangle_off_diagonal_cell_count": 140,
             "kernel_write_counts": {
                 "FUN_007bbb80": 20,
                 "FUN_007bb250": 20,
@@ -154,7 +155,7 @@ def test_summarize_dynamic_write_domain():
     )
 
     assert result["scalar_count"] == 40
-    assert result["strict_upper_cell_count"] == 140
+    assert result["lower_triangle_off_diagonal_cell_count"] == 140
     assert result["kernel_write_counts"]["FUN_007bbb80"] == 20
     assert result["ready"] is True
 
