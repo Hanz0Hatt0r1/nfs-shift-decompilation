@@ -1,0 +1,18 @@
+{
+  "format": "SHIFT.SDFRuntimeProbeLauncherEvidence/1",
+  "version": 1,
+  "source": {
+    "retail_executable_sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "pe_machine": "0x014c/i386",
+    "image_base": "0x00400000"
+  },
+  "probe_targets": {
+    "builtin_solver": "0x007b0f20",
+    "post_solve": "0x007b4110"
+  },
+  "outputs": [
+    "probe_manifest.json",
+    "attach.gdb"
+  ],
+  "status": "source-backed"
+}
