@@ -202,7 +202,7 @@ def test_bridge_cli_roundtrip_with_source_text(tmp_path):
     proc = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "d3d9_color_bridge_evidence.py"),
+            str(Path(__file__).resolve().parents[1] / "src" / "graphics" / "d3d9" / "d3d9_color_bridge_evidence.py"),
             str(meb_path),
             str(source_path),
             str(output),
