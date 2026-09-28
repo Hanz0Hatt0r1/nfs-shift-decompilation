@@ -9,6 +9,7 @@ shift-live-dump: shift_live_dump.cpp
 test: shift-live-dump
 	bash test_smoke.sh
 	bash test_analyze.sh
+	bash test_analyze_fields.sh
 
 clean:
 	rm -f shift-live-dump

@@ -66,6 +66,43 @@ The analyzer is deliberately conservative: changing memory is a candidate signal
 
 For controlled reverse engineering, capture separate series around one action at a time (steering, throttle/brake, gear, camera) and compare those series.
 
+## Field-level analysis
+
+After the block-level pass, decode only fields that overlap bytes which actually
+changed between snapshots:
+
+```bash
+python3 tools/shift_live_dump/analyze_fields.py \
+  captures/garage \
+  --out captures/garage/field_analysis
+```
+
+The default `auto` scope favors private writable/anonymous mappings and
+excludes common GPU/Wine noise such as NVIDIA device mappings and temporary
+Wine mappings. To inspect anonymous/heap memory only:
+
+```bash
+python3 tools/shift_live_dump/analyze_fields.py \
+  captures/garage \
+  --scope anonymous \
+  --out captures/garage/field_analysis
+```
+
+Use `--scope all --include-noise` only when you explicitly need module/device
+mappings.
+
+Outputs:
+
+- `field_analysis.json` — run metadata, skipped mappings and field-type counts.
+- `field_candidates.csv` — changing aligned 16/32/64-bit integer and float candidates with all observed values.
+- `structure_candidates.csv` — nearby high-signal fields grouped into structure candidates.
+- `region_scope.csv` — regions actually considered and their changed-block ratios.
+
+The field analyzer does not claim that a numeric interpretation is semantically
+correct. Pointer hits only mean that an integer value falls inside a mapped
+virtual-address range. Use controlled captures (one input/action at a time) to
+turn these candidates into physics/state hypotheses.
+
 ## Output
 
 Each snapshot contains `manifest.json`, `maps.txt` and `regions/*.bin`. Region files are exactly the mapped size; bytes that could not be read are zero-filled and accounted for as `bytes_failed` in the manifest.
