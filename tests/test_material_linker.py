@@ -1,4 +1,5 @@
 import struct
+import hashlib
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -37,6 +38,7 @@ def test_material_linker_maps_bmt_texture_names_to_sampler_registers():
     assert by['diffuseMap']['texture_resolved'].endswith('a.dds')
     assert by['specularMap']['d3d9_sampler_register']==1
     assert r['selected_fxo'] is not None and r['selected_fxo']['exact']
+    assert r['selected_fxo']['payload_sha256'] == hashlib.sha256(synthetic_fxo()).hexdigest()
 
 def test_fx_sampler_state_parser():
     s=parse_fx_samplers('samplerCUBE env : SAMPLER < string SamplerTexture="environmentTexture"; string AddressU="Clamp"; string AddressV="Clamp"; string AddressW="Clamp"; > = sampler_state {};')
