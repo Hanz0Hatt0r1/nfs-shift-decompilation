@@ -126,10 +126,17 @@ def expand_runtime_reset_footprint(
         source,
         provider_id=provider_id,
     )
-    active = reconstruct_active_scalar_groups(
-        runtime_events,
-    )
+    provider_events: list[Mapping[str, Any]] = []
+    for event in runtime_events:
+        provider_event = event.get("provider_id")
+        if provider_event is None:
+            continue
+        if int(provider_event) == int(provider_id):
+            provider_events.append(event)
 
+    active = reconstruct_active_scalar_groups(
+        provider_events,
+    )
     static_by_selector = {
         int(item["selector"]): item
         for item in static.get("selectors") or []
@@ -188,6 +195,8 @@ def expand_runtime_reset_footprint(
         "scalar_count": static["scalar_count"],
         "static_selector_footprint": static,
         "runtime_active_groups": active,
+        "runtime_event_input_count": len(runtime_events),
+        "runtime_event_provider_filtered_count": len(provider_events),
         "frames": frame_reports,
         "ready": not errors,
         "errors": list(dict.fromkeys(errors)),
