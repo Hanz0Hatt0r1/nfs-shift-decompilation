@@ -7,7 +7,7 @@ and return addresses for direct calls to FUN_007b2210.
 from __future__ import annotations
 
 import re
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 FORMAT = "SHIFT.SpecializedProviderScalarResetCallsiteExtractorRuntime/1"
 
