@@ -117,7 +117,7 @@ def _factorize_symmetric_ldl(
         matrix[i][i] = diagonal
 
         for j in range(i + 1, n):
-            matrix[i][j] = matrix[j][i]
+            matrix[i][j] = matrix[j][i] / matrix[i][i]
 
 
 def _forward_substitute(
