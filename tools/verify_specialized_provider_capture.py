@@ -18,6 +18,9 @@ from specialized_provider_capture_session_runtime import (
 from specialized_provider_source_capture_crosscheck_runtime import (
     build_source_capture_crosscheck,
 )
+from specialized_provider_source_pattern_executor_adapter_runtime import (
+    extract_source_factor_edges,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -98,10 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             and post is not None
             and report.get("ready")
         ):
-            source_pattern = __import__(
-                "specialized_provider_source_pattern_executor_adapter_runtime",
-                fromlist=["extract_source_factor_edges"],
-            ).extract_source_factor_edges(
+            source_pattern = extract_source_factor_edges(
                 source_text,
                 provider_id=actual_provider,
             )
