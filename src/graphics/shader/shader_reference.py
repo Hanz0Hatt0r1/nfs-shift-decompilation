@@ -334,52 +334,48 @@ class ReferenceShaderState:
         dict[int, int],
         dict[int, int],
         dict[int, int],
-        dict[int, int],
     ]:
         else_for_if: dict[int, int] = {}
         end_for_if: dict[int, int] = {}
         end_for_loop: dict[int, int] = {}
-        start_for_loop_end: dict[int, int] = {}
-        stack: list[tuple[str, int, int | None]] = []
+        if_stack: list[tuple[int, int | None]] = []
+        loop_stack: list[int] = []
 
         for index, ins in enumerate(self.program.instructions):
             if ins.name in {"IF", "IFC"}:
-                stack.append(("if", index, None))
-                continue
-            if ins.name in {"LOOP", "REP"}:
-                stack.append((ins.name.lower(), index, None))
+                if_stack.append((index, None))
                 continue
             if ins.name == "ELSE":
-                if not stack or stack[-1][0] != "if":
+                if not if_stack:
                     raise ValueError("ELSE without matching IF")
-                _, if_index, existing_else = stack[-1]
+                if_index, existing_else = if_stack[-1]
                 if existing_else is not None:
                     raise ValueError("multiple ELSE blocks for one IF")
-                stack[-1] = ("if", if_index, index)
+                if_stack[-1] = (if_index, index)
                 else_for_if[if_index] = index
                 continue
             if ins.name == "ENDIF":
-                if not stack or stack[-1][0] != "if":
+                if not if_stack:
                     raise ValueError("ENDIF without matching IF")
-                _, if_index, else_index = stack.pop()
+                if_index, else_index = if_stack.pop()
                 end_for_if[if_index] = index
                 if else_index is not None:
                     end_for_if[else_index] = index
                 continue
+            if ins.name in {"LOOP", "REP"}:
+                loop_stack.append(index)
+                continue
             if ins.name in {"ENDLOOP", "ENDREP"}:
-                expected = ins.name[3:].lower()
-                if not stack or stack[-1][0] != expected:
-                    raise ValueError(
-                        f"{ins.name} without matching {expected.upper()}"
-                    )
-                _, start_index, _ = stack.pop()
+                if not loop_stack:
+                    raise ValueError(f"{ins.name} without matching LOOP/REP")
+                start_index = loop_stack.pop()
                 end_for_loop[start_index] = index
-                start_for_loop_end[index] = start_index
 
-        if stack:
-            kind, index, _ = stack[-1]
-            raise ValueError(f"unterminated {kind.upper()} block at instruction {index}")
-        return else_for_if, end_for_if, end_for_loop, start_for_loop_end
+        if if_stack:
+            raise ValueError("unterminated IF block")
+        if loop_stack:
+            raise ValueError("unterminated LOOP/REP block")
+        return else_for_if, end_for_if, end_for_loop
 
     def execute(self) -> dict[str, Any]:
         ignored = {
