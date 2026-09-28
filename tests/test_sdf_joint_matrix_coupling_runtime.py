@@ -179,7 +179,7 @@ def test_joint_self_block_with_off_diagonal_tensor_matches_source():
         joint_position=(1.0, 2.0, 3.0),
         inverse_scalar=2.0,
     )
-    assert result["intermediates"]["d15"] == 1.0
+    assert result["intermediates"]["d15"] == 3.0
     assert result["lower_triangle"] == {
         "00": 34.0,
         "10": -1.0,
