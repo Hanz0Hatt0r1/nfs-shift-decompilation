@@ -54,6 +54,8 @@ def test_extract_bundle_resolves_default_vehicle_physics_entries(monkeypatch, tm
     assert result["ready"] is True
     assert set(result["extracted_paths"]) == {"cdf", "edf", "gdf", "sdf", "tbf", "bbf"}
     assert result["entries"]["cdf"]["archive_path"].endswith("bmw_m3_e36.cdf")
+    assert len(result["entries"]["cdf"]["raw_sha256"]) == 64
+    assert len(result["entries"]["cdf"]["decoded_sha256"]) == 64
     assert (tmp_path / "out" / "resources" / "bmw_m3_e36.cdf").is_file()
     assert (tmp_path / "out" / "vehicle_physics_asset_graph.json").is_file()
 
