@@ -183,17 +183,23 @@ def summarize_group_event_sequence(
     report: Mapping[str, Any],
 ) -> dict[str, Any]:
     frame_reports = list(report.get("frames") or [])
-    group_counts = {
-        group: sum(
-            int(frame.get("event_count", 0))
+
+    group_counts: dict[str, int] = {}
+    group_frame_presence: dict[str, int] = {}
+    for group in GROUP_ORDER:
+        group_counts[group] = sum(
+            int(group_entry.get("event_count", 0))
             for frame in frame_reports
-            if any(
-                item.get("group") == group
-                for item in frame.get("groups") or []
-            )
+            for group_entry in frame.get("groups") or []
+            if group_entry.get("group") == group
         )
-        for group in GROUP_ORDER
-    }
+        group_frame_presence[group] = sum(
+            any(
+                group_entry.get("group") == group
+                for group_entry in frame.get("groups") or []
+            )
+            for frame in frame_reports
+        )
 
     return {
         "format": "SHIFT.SpecializedProviderScalarResetEventSequenceSummary/1",
@@ -201,16 +207,8 @@ def summarize_group_event_sequence(
         "event_count": int(report.get("event_count", 0)),
         "attributed_count": int(report.get("attributed_count", 0)),
         "frame_count": len(frame_reports),
-        "group_frame_presence": {
-            group: sum(
-                any(
-                    item.get("group") == group
-                    for item in frame.get("groups") or []
-                )
-                for frame in frame_reports
-            )
-            for group in GROUP_ORDER
-        },
+        "group_counts": group_counts,
+        "group_frame_presence": group_frame_presence,
         "frame_errors": sum(
             len(frame.get("errors") or [])
             for frame in frame_reports
