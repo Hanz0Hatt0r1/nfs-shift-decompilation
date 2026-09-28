@@ -17,7 +17,7 @@ def _digest(value: Any) -> str:
 
 
 def _texture_identity(row: dict[str, Any], contract: dict[str, Any]) -> str:
-    source_sha = str(row.get("sha256") or "")
+    source_sha = str(row.get("sha256") or "").strip().lower()
     if source_sha:
         return "tex_" + source_sha[:24]
     return "tex_" + _digest(contract.get("dds", {}))[:24]
@@ -81,6 +81,7 @@ def build_resource_index(
             "id": texture_id,
             "path": path,
             "sha256": row.get("sha256"),
+            "raw_sha256": row.get("raw_sha256"),
             "contract": contract,
             "gpu_ready": ready,
             "blocking_reasons": reasons,
