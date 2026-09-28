@@ -15,6 +15,8 @@ The corpus auditor also correlates normalized logical paths across archives. Thi
 
 A separate raw-payload parity audit now compares exact logical paths in the 14 vehicle/cockpit BFFs. The 2026-09-28 corpus contains 1,375 paths with byte-identical stored payloads across at least 3 archives, including 1,309 FXO and 61 DDS paths. The evidence snapshot is evidence/vehicle_bff_raw_payload_parity_2026-09-28.json. This remains stored-byte evidence only.
 
+For the base vehicle physics set, the corpus contains 7 CDF, 7 EDF, 7 GDF, 7 SDF and 7 TBF entries plus 5 BBF entries. `vehicles/physics/gearbox/common.gdf` is byte-identical in all 7 base vehicle archives; CDF/EDF names are vehicle-specific. The detailed snapshot is evidence/vehicle_bff_physics_parity_2026-09-28.json.
+
 - 15,306 total archive entries;
 - 15,286 Type-2 entries;
 - 20 Type-0 entries;
