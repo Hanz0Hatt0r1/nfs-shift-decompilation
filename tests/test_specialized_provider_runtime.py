@@ -48,8 +48,8 @@ def test_provider1_rle_covers_exact_34x34_upper_triangle():
 
 
 def test_rle_starts_zero_and_interleaves_transition_cells():
-    bits = runtime.decode_transition_rle((1, 0, 1), 3)
-    assert bits == [False, True, False]
+    bits = runtime.decode_transition_rle((1, 1), 3)
+    assert bits == [False, True, True]
 
 
 def test_provider_match_ignores_diagonal_and_lower_triangle():
