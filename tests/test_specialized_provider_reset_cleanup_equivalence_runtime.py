@@ -45,6 +45,30 @@ def test_profile_zero_addresses_includes_bulk_clear_ranges():
     }
 
 
+def test_reset_profile_balanced_parser_keeps_nested_switch():
+    fixture = """
+void FUN_00000001(undefined4 param_1)
+{
+  switch(param_1) {
+  case 0:
+    if (param_1) {
+      FUN_test();
+    }
+    DAT_00001000 = 0x3ff0000000000000;
+    break;
+  case 1:
+    DAT_00001008 = 0x3ff0000000000000;
+    break;
+  }
+}
+"""
+    body = runtime._balanced_function_body(fixture, 0)
+    cases = runtime._case_blocks(body)
+
+    assert [case for case, _ in cases] == [0, 1]
+    assert "DAT_00001000 = 0x3ff0000000000000;" in cases[0][1]
+
+
 def test_validate_reset_cleanup_accepts_exact_reset_partition():
     result = runtime.validate_reset_cleanup(
         {
