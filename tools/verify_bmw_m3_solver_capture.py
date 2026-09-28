@@ -162,8 +162,7 @@ def main(argv: list[str] | None = None) -> int:
         abs_tol=args.abs_tol,
         rel_tol=args.rel_tol,
     )
-    payload = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "
-"
+    payload = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(payload, encoding="utf-8")
