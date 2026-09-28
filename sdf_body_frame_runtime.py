@@ -1,12 +1,16 @@
-"""Source-backed body-frame preparation from FUN_007ba7e0/007aefb0."""
+"""Body-frame compatibility layer using the canonical transform helpers."""
 from __future__ import annotations
 
 import struct
 from typing import Any, Sequence
 
-from matrix_vector_transform_runtime import Matrix3x3, transform_vector
+from matrix_vector_transform_runtime import (
+    Matrix3x3,
+    transform_fun_007aefb0,
+    transform_fun_007af0a0,
+)
 
-FORMAT = "SHIFT.SDFBodyFrameRuntime/1"
+FORMAT = "SHIFT.SDFBodyFrameRuntime/2"
 
 
 def _f32(value: float | int) -> float:
@@ -17,15 +21,8 @@ def transform_vector_transpose(
     matrix: Matrix3x3,
     vector: Sequence[float | int],
 ) -> tuple[float, float, float]:
-    """Mirror FUN_007aefb0: transpose(matrix) × float32(vector)."""
-    if len(vector) != 3:
-        raise ValueError("vector must contain exactly three values")
-    x, y, z = (_f32(value) for value in vector)
-    return (
-        _f32(matrix.m02 * z + matrix.m00 * x + matrix.m01 * y),
-        _f32(matrix.m12 * z + matrix.m11 * y + matrix.m10 * x),
-        _f32(matrix.m22 * z + matrix.m21 * y + matrix.m20 * x),
-    )
+    """Mirror FUN_007aefb0 through the canonical helper."""
+    return transform_fun_007aefb0(matrix, vector).as_tuple()
 
 
 def prepare_body_frame_vector(
@@ -36,17 +33,17 @@ def prepare_body_frame_vector(
     """Reproduce FUN_007ba7e0's transform-scale-transpose chain."""
     if len(scale) != 3:
         raise ValueError("scale must contain exactly three values")
-    local = transform_vector(matrix, body_vector)
+    local = transform_fun_007af0a0(matrix, body_vector)
     sx, sy, sz = (_f32(value) for value in scale)
     scaled = (
         _f32(local.x * sx),
         _f32(local.y * sy),
         _f32(local.z * sz),
     )
-    output = transform_vector_transpose(matrix, scaled)
+    output = transform_fun_007aefb0(matrix, scaled)
     return {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "status": "computed",
         "ready": True,
         "input": {
@@ -55,7 +52,7 @@ def prepare_body_frame_vector(
         },
         "local_vector": [local.x, local.y, local.z],
         "scaled_local_vector": list(scaled),
-        "output_vector": list(output),
+        "output_vector": list(output.as_tuple()),
         "source": {
             "frame_prepare": "FUN_007ba7e0",
             "forward_transform": "FUN_007af0a0",
@@ -68,7 +65,7 @@ def prepare_body_frame_vector(
 def describe_sdf_body_frame_contract() -> dict[str, Any]:
     return {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "status": "source-backed",
         "ready": True,
         "function": "FUN_007ba7e0",
@@ -89,10 +86,11 @@ def describe_sdf_body_frame_contract() -> dict[str, Any]:
             "destination": ["+0x30", "+0x38", "+0x40"],
         },
         "composite": "M^T * diag(C) * M * body_vector",
+        "canonical_helpers": "matrix_vector_transform_runtime.py",
         "float_behavior": [
             "forward-transform reads matrix/input as float32",
             "scale coefficients are float32",
-            "transpose-transform casts scaled doubles back to float32",
+            "transpose-transform casts scaled values through the canonical helper",
         ],
         "limitations": [
             "The matrix coordinate convention and physical meaning remain unnamed.",
