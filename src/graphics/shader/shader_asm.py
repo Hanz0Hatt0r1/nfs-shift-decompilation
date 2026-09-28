@@ -149,7 +149,7 @@ def _physical_constant_index(o:Operand)->int:
 
 def _decode_params(raw:list[int], opcode:int)->list[Operand]:
     source_only={
-        25,26,27,28,29,30,38,39,40,41,42,43,44,45,50,78,80
+        25,26,27,28,29,30,38,39,40,41,42,43,44,45,50,80
     }
     dest_first=opcode not in source_only
     operands=[]
