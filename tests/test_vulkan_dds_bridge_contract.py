@@ -1,7 +1,7 @@
 from pathlib import Path
 
 def test_dds_bridge_has_cli_contract():
-    source = Path("vulkan_dds_bridge.py").read_text(encoding="utf-8")
+    source = Path("src/render/vulkan/vulkan_dds_bridge.py").read_text(encoding="utf-8")
     assert "def bridge_bmw_dds_resources(" in source
     assert "def main(" in source
     assert "decode_dds" in source
