@@ -14,6 +14,7 @@ from typing import Any, Mapping, Sequence
 
 from vehicle_physics_bundle import extract_bundle
 from prephysx_provider_handoff_runtime import build_prephysx_provider_handoff_contract
+from vehicle_physics_participant_gate_runtime import build_vehicle_physics_participant_gate
 
 FORMAT = "SHIFT.VehiclePhysicsPrePhysXHandoff/1"
 
@@ -26,6 +27,7 @@ def build_vehicle_physics_handoff(
 ) -> dict[str, Any]:
     bff_path = Path(bff_path)
     output_dir = Path(output_dir)
+    participant_gate = build_vehicle_physics_participant_gate()
     bundle = extract_bundle(
         bff_path,
         output_dir,
@@ -42,6 +44,7 @@ def build_vehicle_physics_handoff(
             "ready": False,
             "bundle": bundle,
             "prephysx_provider_handoff": None,
+            "participant_gate": participant_gate,
             "errors": ["vehicle-physics-profile-details-missing"],
         }
 
@@ -54,6 +57,7 @@ def build_vehicle_physics_handoff(
             "ready": False,
             "bundle": bundle,
             "prephysx_provider_handoff": None,
+            "participant_gate": participant_gate,
             "errors": ["sdf-report-missing-from-vehicle-profile"],
         }
 
@@ -82,6 +86,7 @@ def build_vehicle_physics_handoff(
         },
         "bundle": bundle,
         "prephysx_provider_handoff": handoff,
+        "participant_gate": participant_gate,
         "outputs": {
             "vehicle_physics_asset_graph": str(bundle.get("physics_profile")),
             "prephysx_provider_handoff": str(handoff_path),
@@ -97,12 +102,14 @@ def build_vehicle_physics_handoff(
             "body_count": int(counts.get("bodies", 0)),
             "runtime_constraint_count": int(counts.get("runtime_constraints", 0)),
             "sdf_body_count": int((bundle.get("profile", {}).get("summary") or {}).get("sdf_bodies", 0)),
+            "participant_gate_ready": bool(participant_gate.get("ready")),
         },
         "errors": list(dict.fromkeys(errors)),
         "limitations": [
             "This command provides static/resource handoff only; no runtime provider acceptance is observed.",
             "Provider candidates are dimension-compatible candidates, not selected retail backends.",
             "No PhysX/provider C++ class identity or numeric equivalence is inferred.",
+            "Participant creation/load ordering is source-backed; the runtime participant instance still requires capture.",
         ],
     }
 
@@ -133,6 +140,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "solver_scalar_count": report["summary"]["solver_scalar_count"],
         "same_dimension_provider_candidates": report["summary"]["same_dimension_provider_candidates"],
         "errors": report["errors"],
+        "participant_gate_ready": report["summary"]["participant_gate_ready"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
 
