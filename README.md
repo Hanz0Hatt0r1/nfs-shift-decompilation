@@ -28,6 +28,8 @@
 
 > **Phase 428 — exact SDF 3x3 transform helpers:** FUN_007aefb0 and FUN_007af0a0 are now executable in the RE runtime. The body block +0xD4 contains nine float matrix elements; one helper performs row-major matrix×vector and the other the transposed coefficient ordering. No translation or arbitrary matrix inverse is inferred.
 
+> **Phase 429 — canonical transform-helper API:** FUN_007af0a0 and FUN_007aefb0 now have one shared executable implementation keyed by the exact retail function names. The older matrix/vector APIs remain compatibility aliases, so SDF body-frame and constraint paths cannot silently diverge.
+
 > **Current physics gate:** run `tools/run_sdf_solver_probe.py SHIFT.exe --output out/sdf-solver-capture` to validate the retail PE and generate a deterministic GDB attach bundle, then attach the probe to the retail 32-bit Wine process with the generated `attach.gdb`; the probe also records `frame_entry_XXXXXX.json` with provider/builtin backend selection, and `tools/verify_sdf_probe_session.py` accepts it with `--frame` when normalizing the resulting `pre_solve_XXXXXX.json` / `post_solve_XXXXXX.json` pair with `tools/verify_sdf_probe_session.py`. The repository intentionally does not fabricate a numeric retail solver frame; exact retail-vs-reimplementation equality still depends on a real runtime capture.
 
 > **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.

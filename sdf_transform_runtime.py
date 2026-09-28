@@ -1,128 +1,75 @@
-"""Exact 3x3 transform helpers used by SHIFT SDF post-load code.
+"""Compatibility adapter for the SDF transform helper pair.
 
-FUN_007aefb0 reads nine float values from a matrix block and performs standard
-row-major matrix times vector multiplication. FUN_007af0a0 uses the transposed
-matrix ordering. The implementation keeps the helper boundary independent from
-any claim about wider body-transform semantics.
+The canonical implementations live in matrix_vector_transform_runtime.py.
+This module keeps the Phase 428 SDF-facing names while binding them directly to
+the exact retail functions.
 """
 from __future__ import annotations
 
-import argparse
-import json
 from typing import Iterable, Sequence
 
-FORMAT = "SHIFT.SDFTransformRuntime/1"
+from matrix_vector_transform_runtime import (
+    Matrix3x3,
+    transform_fun_007aefb0,
+    transform_fun_007af0a0,
+)
+
+FORMAT = "SHIFT.SDFTransformRuntime/2"
 MATRIX_BLOCK_BASE = 0xD4
 MATRIX_FLOAT_OFFSETS = tuple(MATRIX_BLOCK_BASE + i * 4 for i in range(9))
 
 
-def _vec3(values: Iterable[float]) -> tuple[float, float, float]:
-    value = tuple(float(v) for v in values)
-    if len(value) != 3:
-        raise ValueError("expected exactly three vector components")
-    return value  # type: ignore[return-value]
-
-
-def _mat9(values: Iterable[float]) -> tuple[float, ...]:
+def _mat9(values: Iterable[float]) -> Matrix3x3:
     value = tuple(float(v) for v in values)
     if len(value) != 9:
         raise ValueError("expected exactly nine matrix components")
-    return value
+    return Matrix3x3(*value)
 
 
 def transform_forward(matrix: Sequence[float], vector: Sequence[float]) -> tuple[float, float, float]:
-    """Reproduce FUN_007aefb0's row-major matrix-times-vector ordering."""
-    m00, m01, m02, m10, m11, m12, m20, m21, m22 = _mat9(matrix)
-    x, y, z = _vec3(vector)
-    return (
-        m02 * z + m00 * x + m01 * y,
-        m12 * z + m11 * y + m10 * x,
-        m22 * z + m21 * y + m20 * x,
-    )
+    """Legacy SDF adapter for the FUN_007aefb0 coefficient ordering."""
+    return transform_fun_007aefb0(_mat9(matrix), vector).as_tuple()
 
 
 def transform_transposed(matrix: Sequence[float], vector: Sequence[float]) -> tuple[float, float, float]:
-    """Reproduce FUN_007af0a0's transposed matrix ordering."""
-    m00, m01, m02, m10, m11, m12, m20, m21, m22 = _mat9(matrix)
-    x, y, z = _vec3(vector)
-    return (
-        m20 * z + m00 * x + m10 * y,
-        m21 * z + m11 * y + m01 * x,
-        m22 * z + m12 * y + m02 * x,
-    )
+    """Legacy SDF adapter for the FUN_007af0a0 coefficient ordering."""
+    return transform_fun_007af0a0(_mat9(matrix), vector).as_tuple()
 
 
 def build_matrix_block_contract() -> dict:
     return {
-        "format": "SHIFT.BodyRotationMatrixBlock/1",
-        "version": 1,
+        "format": "SHIFT.BodyRotationMatrixBlock/2",
+        "version": 2,
         "base_offset": MATRIX_BLOCK_BASE,
         "float_offsets": [hex(offset) for offset in MATRIX_FLOAT_OFFSETS],
         "layout": {
-            "m00": hex(0xD4),
-            "m01": hex(0xD8),
-            "m02": hex(0xDC),
-            "m10": hex(0xE0),
-            "m11": hex(0xE4),
-            "m12": hex(0xE8),
-            "m20": hex(0xEC),
-            "m21": hex(0xF0),
-            "m22": hex(0xF4),
+            "m00": hex(0xD4), "m01": hex(0xD8), "m02": hex(0xDC),
+            "m10": hex(0xE0), "m11": hex(0xE4), "m12": hex(0xE8),
+            "m20": hex(0xEC), "m21": hex(0xF0), "m22": hex(0xF4),
         },
-        "forward_helper": "FUN_007aefb0",
-        "transpose_helper": "FUN_007af0a0",
+        "canonical_source": "matrix_vector_transform_runtime.py",
         "status": "ready",
     }
 
 
 def build_transform_helper_contract() -> dict:
+    canonical = __import__("matrix_vector_transform_runtime").build_contract()
     return {
         "format": FORMAT,
-        "version": 1,
-        "source": ".\\Source\\System\\SDF.cpp",
-        "helpers": {
-            "forward": {
-                "function": "FUN_007aefb0",
-                "input": "double[3]",
-                "output": "double[3]",
-                "matrix_source": "+0xd4 .. +0xf4 as nine float values",
-            },
-            "transposed": {
-                "function": "FUN_007af0a0",
-                "input": "double[3]",
-                "output": "double[3]",
-                "matrix_source": "+0xd4 .. +0xf4 as nine float values",
-            },
-        },
+        "version": 2,
         "matrix_block": build_matrix_block_contract(),
-        "numeric_boundary": {
-            "input_components_are_cast_to_float": True,
-            "matrix_components_are_float": True,
-            "output_components_are_stored_as_double": True,
-        },
+        "helpers": canonical["helpers"],
+        "numeric_boundary": canonical["numeric_boundary"],
         "status": "ready",
         "limitations": [
-            "No assumption is made that the matrix is orthonormal outside contexts where retail code separately establishes that.",
+            "No matrix coordinate convention or physical meaning is inferred.",
             "No translation component is part of these two helpers.",
         ],
     }
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Emit SHIFT SDF transform helper contracts.")
-    parser.add_argument("--matrix", action="store_true")
-    parser.add_argument("--helpers", action="store_true")
-    args = parser.parse_args()
-    if not (args.matrix or args.helpers):
-        args.matrix = args.helpers = True
-    payload = {}
-    if args.matrix:
-        payload["matrix"] = build_matrix_block_contract()
-    if args.helpers:
-        payload["helpers"] = build_transform_helper_contract()
-    print(json.dumps(payload, indent=2, sort_keys=True))
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+__all__ = [
+    "FORMAT", "MATRIX_BLOCK_BASE", "MATRIX_FLOAT_OFFSETS",
+    "transform_forward", "transform_transposed",
+    "build_matrix_block_contract", "build_transform_helper_contract",
+]

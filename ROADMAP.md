@@ -106,6 +106,12 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 429: canonical transform-helper API
+
+Consolidated the exact 3x3 transform pair into matrix_vector_transform_runtime.py. The canonical public functions are named after the retail helpers FUN_007af0a0 and FUN_007aefb0. sdf_transform_runtime.py and sdf_body_frame_runtime.py now delegate to that single implementation, while the established transform_vector/legacy adapter names remain available for compatibility.
+
+This removes a duplicate arithmetic implementation and resolves an earlier naming ambiguity between semantic forward/transpose descriptions and the raw retail instruction order. Matrix coordinate convention remains intentionally unnamed.
+
 ## Phase 428: exact SDF 3x3 transform helpers
 
 Added sdf_transform_runtime.py and regression tests for FUN_007aefb0 and FUN_007af0a0. The reconstruction records the nine float matrix elements beginning at BODY +0xD4, reproduces the exact row-major forward multiplication and the transposed coefficient ordering, and preserves the observed float-input/double-output numeric boundary.
