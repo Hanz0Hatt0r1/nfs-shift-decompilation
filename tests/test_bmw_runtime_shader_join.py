@@ -43,6 +43,35 @@ def _runtime(shader_id='shader-id', resource_sha='abc', sampler_type='sampler2D'
     }
 
 
+def test_runtime_shader_join_reports_shader_byte_hash_checks():
+    material = _material()
+    material["material"]["permutation_identity"].update({
+        "vertex_byte_sha256": "v" * 64,
+        "pixel_byte_sha256": "p" * 64,
+        "pair_byte_sha256": "q" * 64,
+    })
+    runtime = _runtime()
+    runtime["frames"][0]["shader_permutation_identity"].update({
+        "vertex_byte_sha256": "v" * 64,
+        "pixel_byte_sha256": "p" * 64,
+        "pair_byte_sha256": "q" * 64,
+    })
+    report = join_runtime_shader(material, runtime)
+    checks = report["candidate_frames"][0]["shader_byte_hash_checks"]
+    assert checks["vertex"]["status"] == "match"
+    assert checks["pixel"]["status"] == "match"
+    assert checks["pair"]["status"] == "match"
+
+
+def test_runtime_shader_join_reports_noncomparable_byte_hashes_without_blocking():
+    report = join_runtime_shader(_material(), _runtime())
+    checks = report["candidate_frames"][0]["shader_byte_hash_checks"]
+    assert checks["vertex"]["status"] == "not-comparable"
+    assert checks["pixel"]["status"] == "not-comparable"
+    assert checks["pair"]["status"] == "not-comparable"
+    assert report["ready"] is True
+
+
 def test_runtime_shader_join_requires_shader_and_resource_identity():
     report = join_runtime_shader(_material(), _runtime())
     assert report['ready'] is True
