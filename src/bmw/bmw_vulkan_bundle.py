@@ -12,6 +12,7 @@ from vulkan_cube_packet import build_vulkan_cube_packet
 from vulkan_geometry_packet import export_vulkan_geometry_packet
 from vulkan_texture_packet import build_vulkan_texture_packet
 from vulkan_sampler_contract import write_sampler_metadata, build_sampler_contract_report, write_sampler_contract_report
+from render_submission_gate import validate_native_submission
 
 FORMAT = "SHIFT.BMWVulkanBundle/1"
 TARGET_MEB = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
@@ -101,6 +102,30 @@ def build_bmw_vulkan_bundle(
     selected["submeshes"] = [dict(submeshes[submesh_index])]
     if (selected.get("mesh") or {}).get("ref") != TARGET_MEB:
         raise ValueError("BMW Vulkan bundle requires the exact M3 KIT00 body MEB reference")
+
+    native_gate = validate_native_submission(selected)
+    if not native_gate["ready"]:
+        report = {
+            "format": FORMAT,
+            "version": 1,
+            "status": "blocked",
+            "ready": False,
+            "blocking_reasons": native_gate["blocking_reasons"],
+            "source": {
+                "render_command_format": command_source.get("format"),
+                "command_index": command_index,
+                "submesh_index": submesh_index,
+                "mesh_ref": (command_source.get("mesh") or {}).get("ref"),
+                "mesh_sha256": ((command_source.get("mesh") or {}).get("resolved") or {}).get("resource_sha256"),
+            },
+            "native_execution": {
+                "status": "blocked-by-provenance-gate",
+                "gate": native_gate,
+            },
+        }
+        _write(out / "bundle_manifest.json", report)
+        report["manifest_sha256"] = _hash(out / "bundle_manifest.json")
+        return report
 
     geometry_path = out / "geometry.svpk"
     constants_path = out / "constants.svcp"
