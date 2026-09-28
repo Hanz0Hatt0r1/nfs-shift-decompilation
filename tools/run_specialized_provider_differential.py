@@ -128,8 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         indent=2,
         sort_keys=True,
         default=str,
-    ) + "
-"
+    ) + "\n"
 
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
