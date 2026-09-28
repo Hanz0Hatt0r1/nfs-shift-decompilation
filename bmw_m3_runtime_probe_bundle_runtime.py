@@ -14,7 +14,7 @@ from sdf_runtime_probe_session_runtime import (
     normalize_probe_session,
     compare_probe_session,
 )
-from verify_bmw_m3_solver_capture import verify_bff_domain
+from bmw_m3_solver_capture_verify_runtime import verify_bff_domain
 
 
 FORMAT = "SHIFT.BMWM3RuntimeProbeBundle/1"
