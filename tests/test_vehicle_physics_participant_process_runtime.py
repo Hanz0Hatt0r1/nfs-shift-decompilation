@@ -46,4 +46,4 @@ def test_phase509_closes_phase508_and_phase505_joins_without_overclaiming():
 
     assert report["relationship_to_phase508"]["same_selector_global"] is True
     assert report["relationship_to_phase505"]["same_slots"] is True
-    assert "does not assign" in " ".join(report["limitations"])
+    assert "No PhysX SDK class" in " ".join(report["limitations"])
