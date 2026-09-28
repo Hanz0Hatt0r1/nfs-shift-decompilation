@@ -128,3 +128,57 @@ def test_session_cli_can_report_numeric_divergence(monkeypatch, tmp_path, capsys
     assert rc == 0
     stdout = json.loads(capsys.readouterr().out)
     assert stdout["status"] == "matched"
+
+
+
+def test_session_accepts_matching_frame_entry_builtin_capture():
+    pre = _pre_capture(frame=7)
+    post = _post_capture(frame=7)
+    frame = {
+        "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
+        "version": 1,
+        "ready": True,
+        "status": "captured",
+        "frame_index": 7,
+        "backend": "builtin",
+        "provider": 0,
+        "scalar_count": 40,
+    }
+    result = runtime.normalize_probe_session(pre, post, frame)
+    assert result["ready"] is True
+    assert result["format"] == "SHIFT.SDFRuntimeProbeSession/2"
+    assert result["frame_entry"]["backend"] == "builtin"
+
+
+def test_session_blocks_provider_backend_when_builtin_pre_capture_is_present():
+    pre = _pre_capture(frame=7)
+    frame = {
+        "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
+        "version": 1,
+        "ready": True,
+        "status": "captured",
+        "frame_index": 7,
+        "backend": "provider",
+        "provider": 0x1234,
+        "scalar_count": 40,
+    }
+    result = runtime.normalize_probe_session(pre, None, frame)
+    assert result["ready"] is False
+    assert "provider-backend-bypasses-builtin-capture" in result["errors"]
+
+
+def test_session_blocks_frame_entry_index_mismatch():
+    pre = _pre_capture(frame=7)
+    frame = {
+        "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
+        "version": 1,
+        "ready": True,
+        "status": "captured",
+        "frame_index": 8,
+        "backend": "builtin",
+        "provider": 0,
+        "scalar_count": 40,
+    }
+    result = runtime.normalize_probe_session(pre, None, frame)
+    assert result["ready"] is False
+    assert "frame-entry-pre-solve-index-mismatch" in result["errors"]
