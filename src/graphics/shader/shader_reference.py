@@ -22,7 +22,7 @@ _SUPPORTED = {
     "FRC", "RCP", "RSQ", "NRM", "ABS", "POW", "CRS", "SINCOS", "CMP",
     "DP2ADD", "TEX", "TEXLDD", "TEXLDL", "TEXKILL", "MOVA",
     "M4x4", "M4x3", "M3x4", "M3x3", "M3x2", "SGN",
-    "DEFB", "IF", "IFC", "ELSE", "ENDIF",
+    "DEF", "DEFI", "DEFB", "IF", "IFC", "ELSE", "ENDIF", "SETP",
     "LOOP", "ENDLOOP", "REP", "ENDREP", "BREAK", "BREAKC", "BREAKP",
     "RET",
 }
