@@ -13,6 +13,10 @@ from specialized_provider_storage_runtime import get_storage_layout
 
 FORMAT = "SHIFT.SpecializedProviderResetDomainRuntime/1"
 
+def _fmt_addr(address: int) -> str:
+    return f"0x{address:08x}"
+
+
 
 def _slots_from_bulk_clears(
     rows: list[Mapping[str, Any]],
@@ -109,13 +113,13 @@ def build_reset_domain(
             output_end,
             unit_addresses,
         ),
-        "zero_addresses": [hex(address) for address in sorted(zero_addresses)],
+        "zero_addresses": [_fmt_addr(address) for address in sorted(zero_addresses)],
         "unit_diagonal_addresses": [
-            hex(address)
+            _fmt_addr(address)
             for address in sorted(unit_addresses)
         ],
         "touched_addresses": [
-            hex(address)
+            _fmt_addr(address)
             for address in sorted(touched_addresses)
         ],
         "ready": bool(reset_report.get("ready")),
@@ -161,7 +165,7 @@ def validate_reset_domain(report: Mapping[str, Any]) -> dict[str, Any]:
         errors.append("unit-domain-not-subset-touched")
     if zero & unit:
         errors.append(
-            f"unit-diagonal-overlaps-zero:{len(zero & unit)}"
+            "unit-diagonal-overlaps-zero"
         )
     if not zero <= touched:
         errors.append("zero-domain-not-subset-touched")
