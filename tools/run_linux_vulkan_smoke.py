@@ -55,6 +55,7 @@ def render_command():
         "format": "SHIFT.RenderCommand/1",
         "ready": True,
         "blocking_reasons": [],
+        "validation": {"valid": True, "blocking_reasons": []},
         "mesh": {
             "ref": TARGET_MEB,
             "resolved": {"resource_sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"},
