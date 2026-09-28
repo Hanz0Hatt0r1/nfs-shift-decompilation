@@ -761,3 +761,25 @@ def test_render_command_carries_shader_payload_identity():
     assert shader["vertex_sha256"] == "c" * 64
     assert shader["pair_sha256"] == "d" * 64
     assert shader["permutation_identity"]["identity_sha256"] == "e" * 64
+
+
+def test_render_command_rejects_malformed_shader_identity_hash():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["selected_fxo"] = {
+        "payload_sha256": "not-a-sha256",
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "shader-identity:invalid-sha256:0:source_payload_sha256" in result["blocking_reasons"]
+
+
+def test_render_command_rejects_unknown_permutation_identity_format():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["permutation_identity"] = {
+        "format": "SHIFT.UnknownPermutation/1",
+    }
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    assert result["ready"] is False
+    assert "shader-identity:invalid-permutation-format:0" in result["blocking_reasons"]
