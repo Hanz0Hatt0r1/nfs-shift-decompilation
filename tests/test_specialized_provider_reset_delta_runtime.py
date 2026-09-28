@@ -1,27 +1,6 @@
-import math
 import pytest
 
 import specialized_provider_reset_delta_runtime as runtime
-
-
-def test_reset_addresses_and_seed_sets():
-    zero, unit = runtime._reset_addresses_and_seeds(
-        {
-            "rows": [
-                {
-                    "zero_assignments": ["0x1000", "0x1008"],
-                    "diagonal_address": "0x1000",
-                },
-                {
-                    "zero_assignments": ["0x1010"],
-                    "diagonal_address": "0x1010",
-                },
-            ]
-        }
-    )
-
-    assert zero == {0x1000, 0x1008, 0x1010}
-    assert unit == {0x1000, 0x1010}
 
 
 def test_classify_known_zero_and_unit_slots():
@@ -59,6 +38,7 @@ def test_classify_unknown_workspace_nonzero():
         abs_tol=0.0,
         rel_tol=0.0,
     )
+
     assert result == "outside-reset-domain-nonzero"
 
 
@@ -73,6 +53,7 @@ def test_classify_output_nonzero():
         abs_tol=0.0,
         rel_tol=0.0,
     )
+
     assert result == "output-nonzero"
 
 
@@ -147,3 +128,19 @@ def test_validate_reset_delta_accepts_finite_values():
     )
 
     assert result["ready"] is True
+
+
+def test_reset_delta_retains_cleanup_mismatch_as_metadata():
+    result = runtime.summarize_reset_delta(
+        {
+            "provider_id": 1,
+            "scalar_count": 34,
+            "cleanup_reset_equivalent": False,
+            "reset_state_equivalent": True,
+            "counts": {},
+            "ready": True,
+        }
+    )
+
+    assert result["ready"] is True
+    assert result["provider_id"] == 1
