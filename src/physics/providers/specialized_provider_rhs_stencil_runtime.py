@@ -353,6 +353,22 @@ def _destination_for_statement(
     )
 
 
+def _destination_candidates(
+    statement: str,
+    *,
+    provider_id: int,
+    loop_index: int | None,
+) -> tuple[Reference, ...]:
+    """Compatibility view returning the deterministic destination candidate."""
+    return (
+        _destination_for_statement(
+            statement,
+            provider_id=provider_id,
+            loop_index=loop_index,
+        ),
+    )
+
+
 def extract_rhs_stencils(
     source: str,
     *,
