@@ -14,6 +14,12 @@ from pathlib import Path
 from typing import BinaryIO
 
 
+NOISE_TOKENS = (
+    "nvidia", "tmpmap", ".wine-", "/usr/lib/wine",
+    "/run/host/usr/lib32/libnvidia", "/run/host/usr/lib64/libnvidia",
+)
+
+
 FORMAT = "SHIFT-LIVE-MEMORY-EVENT-ANALYSIS/1"
 
 
@@ -36,6 +42,13 @@ def classify(path: str) -> str:
 
 def region_index(manifest: dict) -> dict[int, dict]:
     return {int(r["start"]): r for r in manifest.get("regions", [])}
+
+
+def is_noise(path: str, perms: str) -> bool:
+    p = path.lower()
+    if "rw-s" in perms:
+        return True
+    return any(token in p for token in NOISE_TOKENS)
 
 
 def read_exact(f: BinaryIO, size: int) -> bytes:
@@ -122,6 +135,8 @@ def main() -> int:
     ap.add_argument("--top", type=int, default=10000)
     ap.add_argument("--min-changed-transitions", type=int, default=1)
     ap.add_argument("--cluster-gap-kib", type=int, default=64)
+    ap.add_argument("--scope", choices=("auto", "anonymous", "all"), default="auto")
+    ap.add_argument("--include-noise", action="store_true")
     args = ap.parse_args()
     if min(args.block_size_kib, args.top, args.min_changed_transitions,
            args.cluster_gap_kib) <= 0:
@@ -148,19 +163,35 @@ def main() -> int:
         for _ in range(len(snapshots) - 1)
     ]
     candidates = []
+    skipped = {"scope": 0, "noise": 0, "size_mismatch": 0}
 
     for start in sorted(common):
         rs = [idx[start] for idx in indexes]
         if any(int(r["size"]) != int(rs[0]["size"]) for r in rs):
+            skipped["size_mismatch"] += 1
             continue
         base = rs[0]
+        perms = base.get("perms", "")
+        path = base.get("path", "")
+        category = classify(path)
+        if args.scope == "anonymous" and category not in ("anonymous", "heap"):
+            skipped["scope"] += 1
+            continue
+        if args.scope == "auto" and category == "module" and not (
+            "w-p" in perms or "wxp" in perms
+        ):
+            skipped["scope"] += 1
+            continue
+        if not args.include_noise and is_noise(path, perms):
+            skipped["noise"] += 1
+            continue
         meta = {
             "start": int(base["start"]),
             "end": int(base["end"]),
             "size": int(base["size"]),
-            "perms": base.get("perms", ""),
-            "path": base.get("path", ""),
-            "category": classify(base.get("path", "")),
+            "perms": perms,
+            "path": path,
+            "category": category,
         }
         analyze_region(
             snapshots, rs, block_size, args.top, transition_totals,
@@ -265,6 +296,9 @@ def main() -> int:
         "candidate_blocks": len(candidates),
         "event_clusters": len(clusters),
         "cluster_gap": gap,
+        "scope": args.scope,
+        "include_noise": args.include_noise,
+        "skipped": skipped,
         "transitions": [
             {
                 "transition": r["transition"],
