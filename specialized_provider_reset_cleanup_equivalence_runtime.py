@@ -7,8 +7,8 @@ land on that same zero baseline.
 
 The comparison remains storage-level; no matrix semantics are assigned.
 Reset bulk-clear intervals are included alongside direct zero assignments.
-The cleanup domain is reconstructed as the disjoint union of reset-zero storage
-and pivot unit-diagonal seed slots.
+The reset-zero domain includes both direct zero writes and bulk-clear ranges.
+Pivot unit-diagonal seeds are checked separately for per-case overlap.
 """
 from __future__ import annotations
 
@@ -67,6 +67,33 @@ def _profile_unit_addresses(
     }
 
 
+def _case_seed_clear_conflicts(
+    reset_report: dict[str, Any],
+) -> list[int]:
+    conflicts: list[int] = []
+    for row in reset_report.get("rows") or []:
+        diagonal = row.get("diagonal_address")
+        if diagonal is None:
+            continue
+        address = int(str(diagonal), 16)
+
+        if any(
+            int(str(zero), 16) == address
+            for zero in row.get("zero_assignments") or []
+        ):
+            conflicts.append(int(row["pivot_index"]))
+            continue
+
+        for clear in row.get("bulk_clears") or []:
+            start = int(str(clear["base"]), 16)
+            end = start + int(clear["bytes"])
+            if start <= address < end:
+                conflicts.append(int(row["pivot_index"]))
+                break
+
+    return sorted(set(conflicts))
+
+
 def _coverage_slots(region: dict[str, Any]) -> set[int]:
     slots: set[int] = set()
     for interval in region.get("merged_intervals") or []:
@@ -111,15 +138,14 @@ def compare_reset_cleanup(
         end=layout.output_vector_base + layout.output_vector_bytes,
     )
     reset_one = _profile_unit_addresses(reset)
+    case_seed_clear_conflicts = _case_seed_clear_conflicts(reset)
 
     reset_zero_minus_cleanup = reset_zero - cleanup_slots
     cleanup_minus_reset_zero = cleanup_slots - reset_zero
     diagonal_outside_cleanup = reset_one - cleanup_slots
-    diagonal_overlap_reset_zero = reset_one & reset_zero
-    cleanup_reconstructed_from_reset = (
-        reset_zero | reset_one
-    ) == cleanup_slots
-    cleanup_reset_partition_disjoint = not diagonal_overlap_reset_zero
+    reset_zero_cleanup_exact_match = reset_zero == cleanup_slots
+    cleanup_reconstructed_from_reset = reset_zero == cleanup_slots
+    cleanup_reset_partition_disjoint = not (reset_one & reset_zero)
     output_start = layout.output_vector_base
     output_end = output_start + layout.output_vector_bytes
 
@@ -155,9 +181,13 @@ def compare_reset_cleanup(
         errors.append(
             f"diagonal-outside-cleanup:{len(diagonal_outside_cleanup)}"
         )
-    if diagonal_overlap_reset_zero:
+    if case_seed_clear_conflicts:
         errors.append(
-            f"diagonal-overlaps-reset-zero:{len(diagonal_overlap_reset_zero)}"
+            f"case-seed-self-clear-conflicts:{len(case_seed_clear_conflicts)}"
+        )
+    if reset_one & reset_zero:
+        errors.append(
+            f"diagonal-overlaps-reset-zero:{len(reset_one & reset_zero)}"
         )
 
     return {
@@ -170,14 +200,13 @@ def compare_reset_cleanup(
         "cleanup_storage_slot_count": len(cleanup_slots),
         "reset_zero_slot_count": len(reset_zero),
         "reset_unit_diagonal_count": len(reset_one),
-        "reset_zero_cleanup_exact_match": (
-            reset_zero == cleanup_slots
-        ),
+        "reset_zero_cleanup_exact_match": reset_zero_cleanup_exact_match,
         "reset_zero_subset_cleanup": reset_zero <= cleanup_slots,
         "unit_diagonal_inside_cleanup": reset_one <= cleanup_slots,
         "unit_diagonal_overlaps_reset_zero": bool(
-            diagonal_overlap_reset_zero
+            reset_one & reset_zero
         ),
+        "case_seed_clear_conflicts": case_seed_clear_conflicts,
         "cleanup_reconstructed_from_reset": cleanup_reconstructed_from_reset,
         "cleanup_reset_partition_disjoint": cleanup_reset_partition_disjoint,
         "output_cleanup_slot_count": len(cleanup_output),
@@ -287,9 +316,8 @@ def build_reset_cleanup_contract(source: str) -> dict[str, Any]:
         "providers": providers,
         "interpretation": {
             "sequence": "cleanup zero coverage -> reset zero writes -> unit-diagonal seeds",
-            "partition": "cleanup-covered storage = reset-zero slots union unit-diagonal seed slots",
-            "zero_subset": "reset-zero slots must be a subset of cleanup coverage",
-            "diagonal_seed": "unit-diagonal seed addresses must lie in cleanup coverage and be disjoint from reset-zero slots",
+            "zero_set": "cleanup-covered zero slots must equal the reset zero-write domain, including bulk clears",
+            "diagonal_seed": "unit-diagonal seed addresses must lie in cleanup coverage and must not be cleared within their own case block",
         },
         "limitations": [
             "This proves storage initialization order, not matrix semantics.",
