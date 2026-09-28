@@ -1,0 +1,18 @@
+{
+  "format": "SHIFT.SDFPostSolveEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_007b4110",
+    "source_line": 814168
+  },
+  "solver_vector": "PhysicsSystem +0x40",
+  "constraints": {
+    "JOINT": {"width": 3, "scalar_base": "+0x30", "stride": "0xa0"},
+    "HINGE": {"width": 2, "scalar_base": "+0x94", "stride": "0xa0"},
+    "BAR": {"width": 1, "scalar_base": "+0x30", "stride": "0xb8"}
+  },
+  "helpers": ["FUN_007baa70", "FUN_007baaf0"],
+  "status": "source-backed-executable"
+}
