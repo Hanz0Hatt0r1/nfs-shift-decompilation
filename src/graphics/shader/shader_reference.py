@@ -273,10 +273,11 @@ class ReferenceShaderState:
         raise ValueError(f"reference resource type {sampler_type} for s{idx} is unknown")
 
     def _condition_true(self, operand: Operand) -> bool:
-        value = self._read(operand)
-        if operand.reg_type in (14, 19):
-            return bool(value[0])
-        return all(bool(component) for component in value)
+        if operand.reg_type != 14:
+            raise ValueError(
+                "IF requires a D3D9 constbool source register"
+            )
+        return bool(self._read(operand)[0])
 
     def _comparison_true(
         self,
