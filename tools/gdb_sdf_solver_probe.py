@@ -94,9 +94,10 @@ class SolverEntryProbe(_BaseProbe):
             "matrix": matrix,
             "rhs": rhs,
             "row_indices": [
-                _u32(inferior, row_table + row * 4) - (
-                    _u32(inferior, row_table)
-                )
+                (
+                    _u32(inferior, row_table + row * 4)
+                    - _u32(inferior, row_table)
+                ) // 8
                 for row in range(scalar_count)
             ],
             "registers": {
