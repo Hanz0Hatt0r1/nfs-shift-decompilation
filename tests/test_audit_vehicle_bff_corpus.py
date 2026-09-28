@@ -80,7 +80,7 @@ def test_audit_vehicle_corpus_reads_bffs_from_zip(monkeypatch, tmp_path: Path):
     assert result["x12d_values"] == [0]
     assert result["ready"] is True
     assert len(seen) == 1
-    assert all(path.is_dir() for path in seen)
+    assert all(path.name.startswith("shift-bff-corpus-") for path in seen)
 
 
 def test_audit_vehicle_corpus_rejects_empty_input(monkeypatch, tmp_path: Path):
