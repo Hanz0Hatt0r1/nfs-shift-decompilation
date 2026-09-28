@@ -13,6 +13,8 @@ The header/entry audit observed:
 
 The corpus auditor also correlates normalized logical paths across archives. This is a name/layout correlation layer only; payload identity and runtime material identity remain separate proofs.
 
+A separate raw-payload parity audit now compares exact logical paths in the 14 vehicle/cockpit BFFs. The 2026-09-28 corpus contains 1,375 paths with byte-identical stored payloads across at least 3 archives, including 1,309 FXO and 61 DDS paths. The evidence snapshot is evidence/vehicle_bff_raw_payload_parity_2026-09-28.json. This remains stored-byte evidence only.
+
 - 15,306 total archive entries;
 - 15,286 Type-2 entries;
 - 20 Type-0 entries;
