@@ -60,6 +60,12 @@ Build a cross-contract construction/selection/rebind validation from a parsed SD
 
 `python tools/build_prephysx_provider_handoff.py sdf_report.json -o prephysx_provider_handoff.json`
 
+For a vehicle BFF, the complete extraction-to-handoff pipeline is:
+
+`python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff`
+
+This produces the vehicle physics asset graph, the pre-PhysX/provider handoff and a top-level `SHIFT.VehiclePhysicsPrePhysXHandoff/1` manifest.
+
 The result checks shared offsets and scalar dimensions while keeping runtime provider acceptance explicit.
 
 ## Provider mutation correlation

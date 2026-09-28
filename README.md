@@ -2,11 +2,9 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 501**
-
-Phase 502 development adds a source-backed pre-PhysX/provider handoff validator.
+> **Current mainline: Phase 502**
 >
-> Phases 499–500 add deterministic indexing and verification for specialized-provider runtime capture bundles. Phase 501 adds source-mutation correlation over the packed workspace. Exact retail numeric parity remains capture-gated.
+> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
@@ -107,7 +105,8 @@ The repository now models:
 - reset→solve ordering;
 - capture-session and capture-bundle verification;
 - source-mutation correlation against source-derived factor edges;
-- pre-PhysX/provider handoff cross-contract validation.
+- pre-PhysX/provider handoff cross-contract validation;
+- BFF-to-pre-PhysX/provider handoff orchestration.
 
 ### Phase 499–500 capture bundle
 
@@ -138,19 +137,14 @@ python tools/extract_apitrace_unique_bmw.py \
   capture.trace
 
 python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
+python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff
 
 ./shift-bff-viewer /path/to/BMW_M3_E36.bff
 ```
 
 ## Current CI note
 
-At commit `b7a0c777a16f674f82887e3f7964e0c56bb53caa` (2026-09-28), the mainline CI passed:
-
-- native: success;
-- capture-producer: success;
-- Python CI: success.
-
-This follows the fix for the preceding `shader.identity.byte_hashes` contract regression. The compatibility field at `shader.byte_hashes` is retained.
+At commit `c784e786f2f975dcd8a17f95931bbc277d98d104` (2026-09-28), Phase 502 was merged after the PR CI passed Python, native, capture-producer and Vulkan smoke checks. The post-merge mainline CI result for the current documentation update is tracked separately.
 
 ## Repository map
 
