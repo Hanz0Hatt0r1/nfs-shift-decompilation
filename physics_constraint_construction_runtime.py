@@ -69,7 +69,7 @@ CONSTRAINT_RUNTIME = {
         "runtime_vector": ["+0x88", "+0x90", "+0x98", "+0xa0", "+0xa8", "+0xb0"],
         "vector_copy": "FUN_007b3150",
         "array_base": "+0x2c",
-        "body_reference_counters": {"positive": "+0x98", "negative": "+0xa0"},
+        "body_reference_counters": {"positive": "+0xa0", "negative": "+0xa0"},
     },
 }
 
