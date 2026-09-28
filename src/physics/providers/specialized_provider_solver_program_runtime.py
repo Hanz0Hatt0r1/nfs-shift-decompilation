@@ -144,10 +144,18 @@ def summarize_solver_program(report: dict[str, Any]) -> dict[str, Any]:
     update_summary = update_relations.get("summary") or {}
     output_summary = output_schedule.get("summary") or {}
     alias_summary = alias_map.get("summary") or {}
+    source_shape = evidence.get("source_shape") or {}
+    source_shape_summary = source_shape.get("summary") or {}
 
     return {
         "provider_id": report.get("provider_id"),
         "scalar_count": report.get("scalar_count"),
+        "source_shape_pivots": int(
+            source_shape_summary.get("pivot_count", 0)
+        ),
+        "source_shape_loop_families": int(
+            source_shape_summary.get("unique_loop_families", 0)
+        ),
         "update_relations": int(update_summary.get("relations", 0)),
         "self_update_relations": int(
             update_summary.get("self_update_relations", 0)
