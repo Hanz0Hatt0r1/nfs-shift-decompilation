@@ -1,0 +1,21 @@
+{
+  "format": "SHIFT.SDFBuiltinSparseSolverEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_007b0f20"
+  },
+  "algorithm": {
+    "diagonal_update": "A[i][i] -= A[k][i] * A[i][k]",
+    "target_update": "A[j][i] -= A[k][i] * A[j][k]",
+    "factor_store": "A[i][j] = A[j][i] / A[i][i]",
+    "forward": "b[i] = (b[i] - lower_dependency_sum) / A[i][i]",
+    "backward": "b[i] -= upper_dependency_sum"
+  },
+  "graph_shape": {
+    "forward_records": "n+1",
+    "reverse_records": "n"
+  },
+  "status": "source-backed-executable"
+}
