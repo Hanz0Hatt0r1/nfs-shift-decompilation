@@ -17,6 +17,7 @@ def test_execution_boundary_preserves_provider_order():
     assert [event["event"] for event in result["provider_path"]] == [
         "provider-cleanup",
         "common-preparation",
+        "per-scalar-reset-dispatch",
         "provider-solve",
     ]
     assert result["provider_path"][0]["vtable_offset"] == "0x20"
