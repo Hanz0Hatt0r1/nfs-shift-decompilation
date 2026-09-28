@@ -58,6 +58,7 @@ def test_vehicle_physics_graph_joins_all_four_resource_boundaries(tmp_path):
     assert report["summary"]["sdf_solver_capture_binary_contract_ready"] is True
     assert report["summary"]["bmw_m3_solver_capture_verifier_ready"] is True
     assert report["summary"]["sdf_runtime_probe_ready"] is True
+    assert report["summary"]["sdf_runtime_probe_session_ready"] is True
     assert report["summary"]["sdf_matrix_seed_write_count"] == 25
     assert report["summary"]["sdf_real_solver_scalar_count"] == 5
     assert report["summary"]["sdf_constraint_shared_body_pair_count"] == 1
