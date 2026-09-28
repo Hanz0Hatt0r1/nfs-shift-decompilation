@@ -26,8 +26,8 @@ def build_vehicle_physics_handoff(
     strict: bool = False,
 ) -> dict[str, Any]:
     bff_path = Path(bff_path)
-    output_dir = Path(output_dir)
-    participant_gate = build_vehicle_physics_participant_gate()
+    output_dir = Path(output_dir)    participant_gate = build_vehicle_physics_participant_gate()
+    participant_registry_update = build_physics_participant_registry_update()
     bundle = extract_bundle(
         bff_path,
         output_dir,
