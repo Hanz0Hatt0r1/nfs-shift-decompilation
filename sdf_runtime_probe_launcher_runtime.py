@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import subprocess
+import zipfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -14,6 +15,34 @@ from sdf_runtime_probe_pe_validation import (
 )
 
 FORMAT = "SHIFT.SDFRuntimeProbeLauncher/1"
+
+
+def resolve_probe_executable(
+    input_path: str | Path,
+    output_dir: str | Path,
+) -> Path:
+    """Resolve SHIFT.exe directly or extract the single retail executable from SHIFT.zip."""
+    source = Path(input_path).resolve()
+    output = Path(output_dir).resolve()
+    if source.suffix.lower() != ".zip":
+        if not source.is_file():
+            raise FileNotFoundError(source)
+        return source
+
+    output.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(source) as archive:
+        candidates = [
+            info for info in archive.infolist()
+            if not info.is_dir() and Path(info.filename).name.lower() == "shift.exe"
+        ]
+        if len(candidates) != 1:
+            raise ValueError(
+                f"expected exactly one SHIFT.exe in archive, found {len(candidates)}"
+            )
+        info = candidates[0]
+        target = output / "SHIFT.exe"
+        target.write_bytes(archive.read(info))
+        return target
 
 
 def build_gdb_command_file(
@@ -38,8 +67,8 @@ def prepare_probe_bundle(
     *,
     probe_script: str | Path,
 ) -> dict[str, Any]:
-    exe = Path(executable).resolve()
     output = Path(output_dir).resolve()
+    exe = resolve_probe_executable(executable, output)
     validation = validate_probe_executable_file(exe)
     output.mkdir(parents=True, exist_ok=True)
 
@@ -57,6 +86,10 @@ def prepare_probe_bundle(
         "version": 1,
         "status": "ready" if validation["ready"] else "blocked",
         "ready": validation["ready"],
+        "input": {
+            "path": str(Path(executable).resolve()),
+            "kind": "zip" if Path(executable).suffix.lower() == ".zip" else "executable",
+        },
         "executable": {
             "path": str(exe),
             "sha256": validation["sha256"],
@@ -180,6 +213,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
 __all__ = [
     "FORMAT",
     "build_gdb_command_file",
+    "resolve_probe_executable",
     "prepare_probe_bundle",
     "require_runtime_tools",
     "launch_retail",
