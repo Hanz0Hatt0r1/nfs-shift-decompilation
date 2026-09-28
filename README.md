@@ -18,7 +18,7 @@
 >
 > The project has progressed from format parsing to a source-backed BMW M3 E36 physics vertical slice: the real `aarm_multilink.sdf` path is reconstructed through 40 scalar solver nodes, exact JOINT/HINGE/BAR projection and coupling kernels, builtin sparse-solver lifecycle, and source-backed PE/runtime probe tooling.
 >
-> **Current physics gate:** validate the retail `SHIFT.exe`/`SHIFT.zip`, the real BMW M3 `aarm_multilink.sdf` 40-scalar domain, and a captured `frame_entry + pre_solve + post_solve` session with `tools/verify_bmw_m3_runtime_probe_bundle.py`. No retail solver values are synthesized; exact numeric parity remains available only when an expected runtime session is supplied.
+> **Current physics gate:** run `tools/verify_bmw_m3_runtime_probe_bundle.py` after capturing `frame_entry + pre_solve + post_solve` to combine retail PE, BMW M3 40-scalar domain and runtime session validation. Exact numeric parity remains capture-dependent.
 > **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.
 
 > **Linux/apitrace path:** when apitrace is the available runtime capture source, `tools/extract_apitrace_unique_bmw.py` streams the .trace directly, extracts the known BMW body draw signatures and deduplicates runtime resource instances without first creating a multi-gigabyte text dump. `--auto-trim` can emit a compact trace for subsequent inspection.
