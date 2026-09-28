@@ -100,6 +100,8 @@ def test_launch_retail_uses_explicit_wine_and_workdir(tmp_path, monkeypatch):
         pass
 
     captured = {}
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
 
     monkeypatch.setattr(runtime.shutil, "which", lambda name: "/usr/bin/wine")
 
@@ -109,14 +111,14 @@ def test_launch_retail_uses_explicit_wine_and_workdir(tmp_path, monkeypatch):
 
     monkeypatch.setattr(runtime.subprocess, "Popen", fake_popen)
     process = runtime.launch_retail(
-        tmp_path / "SHIFT.exe",
+        executable,
         workdir=tmp_path,
         game_args=["-silent"],
     )
     assert isinstance(process, DummyProcess)
     assert captured["command"] == [
         "/usr/bin/wine",
-        str((tmp_path / "SHIFT.exe").resolve()),
+        str(executable.resolve()),
         "-silent",
     ]
     assert captured["cwd"] == str(tmp_path.resolve())
