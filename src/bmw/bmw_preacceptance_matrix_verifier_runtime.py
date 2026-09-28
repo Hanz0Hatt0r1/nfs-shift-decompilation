@@ -51,6 +51,8 @@ EXPECTED_SEED = {
     "bit_hash_sha256": (
         "6d066aabff0adbdbc5ad303c4d98db381498918023478e913a1883c8c79fc764"
     ),
+    "diagonal_one": True,
+    "symmetric": True,
 }
 
 
