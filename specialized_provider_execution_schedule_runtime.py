@@ -182,15 +182,9 @@ def extract_execution_schedule(
                     for other in pivots[pivot_index + 1:]
                     if other.denominator.startswith("_DAT_")
                 }
-                if current_diagonal is None:
-                    errors.append(
-                        f"pivot-{pivot_index}-invalid-denominator:{pivot.denominator}"
-                    )
-                    continue
                 kind = _classify_assignment(
                     statement,
                     provider_id=provider_id,
-                    current_pivot_diagonal=current_diagonal,
                     future_pivot_diagonals=future_diagonals,
                     loop_index=loop_index,
                     terminal=terminal,
