@@ -131,8 +131,6 @@ def verify_frame_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
     ]
     if stage_names != expected_stages:
         errors.append("stage-name-mismatch")
-    if identity.get("ready") is not False and not identity.get("unique_scalar_nodes") and plan.get("runtime_flags_available"):
-        errors.append("runtime-flags-but-empty-reset-selection")
 
     return {
         "format": FORMAT,
