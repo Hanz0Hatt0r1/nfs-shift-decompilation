@@ -286,8 +286,13 @@ def main() -> int:
         w.writeheader()
         w.writerows(clusters)
 
+    peak = candidates[0] if candidates else None
     report = {
         "format": FORMAT,
+        "peak_transition": peak["peak_transition"] if peak else None,
+        "peak_event_score": peak["event_score"] if peak else None,
+        "peak_address": peak["address"] if peak else None,
+        "peak_changed_bytes": peak["peak_changed_bytes"] if peak else None,
         "snapshot_count": len(snapshots),
         "snapshots": [p.name for p in snapshots],
         "transition_count": len(snapshots) - 1,
