@@ -14,10 +14,12 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 421.**
+> **Current mainline: Phase 424.**
 >
-> The project has progressed from format parsing to a source-backed BMW M3 E36 physics vertical slice: the real `aarm_multilink.sdf` path is reconstructed through 40 scalar solver nodes, exact JOINT/HINGE/BAR projection and coupling kernels, builtin sparse-solver lifecycle, and source-backed PE/runtime probe tooling.
+> The project now has a source-backed BMW M3 E36 physics vertical slice through the pre-PhysX construction boundary: the real `aarm_multilink.sdf` path is reconstructed through 40 scalar solver nodes, exact JOINT/HINGE/BAR projection and coupling kernels, the builtin sparse-solver lifecycle, provider-aware PE/runtime probe tooling, and a neutral pre-PhysX construction IR for the BODY/constraint runtime records. The actual SDK/provider object classes remain an explicit unresolved boundary.
 >
+> **Phase 424 — pre-PhysX construction IR:** `physics_constraint_construction_runtime.py` lowers the proven `FUN_007b3670`, `FUN_007b3150` and `FUN_007b3820` boundaries into a neutral, machine-readable construction plan. It records BODY/constraint strides, field offsets, endpoint links, solver widths and storage allocations without inventing PhysX class names or physical units.
+
 > **Current physics gate:** run `tools/run_sdf_solver_probe.py SHIFT.exe --output out/sdf-solver-capture` to validate the retail PE and generate a deterministic GDB attach bundle, then attach the probe to the retail 32-bit Wine process with the generated `attach.gdb`; the probe also records `frame_entry_XXXXXX.json` with provider/builtin backend selection, and `tools/verify_sdf_probe_session.py` accepts it with `--frame` when normalizing the resulting `pre_solve_XXXXXX.json` / `post_solve_XXXXXX.json` pair with `tools/verify_sdf_probe_session.py`. The repository intentionally does not fabricate a numeric retail solver frame; exact retail-vs-reimplementation equality still depends on a real runtime capture.
 
 > **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.
