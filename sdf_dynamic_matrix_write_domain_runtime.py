@@ -273,10 +273,10 @@ def build_dynamic_write_domain(
         ]
 
     all_cells = self_cells | pair_cells
-    strict_upper = {
+    lower_triangle_off_diagonal = {
         (row, column)
         for row, column in all_cells
-        if row < column
+        if row > column
     }
 
     return {
@@ -290,7 +290,9 @@ def build_dynamic_write_domain(
         "self_cell_count": len(self_cells),
         "pair_cell_count": len(pair_cells),
         "union_cell_count": len(all_cells),
-        "strict_upper_cell_count": len(strict_upper),
+        "lower_triangle_off_diagonal_cell_count": len(
+            lower_triangle_off_diagonal
+        ),
         "writes": writes,
         "cell_provenance": canonical,
         "connectivity": connectivity,
@@ -332,8 +334,8 @@ def summarize_dynamic_write_domain(
         "self_cell_count": report.get("self_cell_count"),
         "pair_cell_count": report.get("pair_cell_count"),
         "union_cell_count": report.get("union_cell_count"),
-        "strict_upper_cell_count": report.get(
-            "strict_upper_cell_count"
+        "lower_triangle_off_diagonal_cell_count": report.get(
+            "lower_triangle_off_diagonal_cell_count"
         ),
         "kernel_write_counts": dict(
             report.get("kernel_write_counts") or {}
