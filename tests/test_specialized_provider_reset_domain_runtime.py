@@ -30,16 +30,16 @@ def test_build_reset_domain_separates_zero_and_unit_slots():
             "errors": [],
             "rows": [
                 {
-                    "zero_assignments": ["0x1000"],
+                    "zero_assignments": ["0x00c21738"],
                     "bulk_clears": [
-                        {"base": "0x1010", "bytes": 0x10},
+                        {"base": "0x00c21748", "bytes": 0x10},
                     ],
-                    "diagonal_address": "0x1000",
+                    "diagonal_address": "0x00c21738",
                 },
                 {
                     "zero_assignments": [],
                     "bulk_clears": [],
-                    "diagonal_address": "0x1020",
+                    "diagonal_address": "0x00c21758",
                 },
             ],
         },
@@ -48,9 +48,9 @@ def test_build_reset_domain_separates_zero_and_unit_slots():
 
     assert result["reset_zero_slot_count"] == 3
     assert result["unit_diagonal_slot_count"] == 2
-    assert result["reset_touched_slot_count"] == 5
-    assert "0x1000" in result["zero_addresses"]
-    assert "0x1000" in result["unit_diagonal_addresses"]
+    assert result["reset_touched_slot_count"] == 4
+    assert "0x00c21738" in result["zero_addresses"]
+    assert "0x00c21738" in result["unit_diagonal_addresses"]
 
 
 def test_validate_reset_domain_checks_unit_cardinality():
@@ -59,8 +59,8 @@ def test_validate_reset_domain_checks_unit_cardinality():
             "provider_id": 1,
             "scalar_count": 34,
             "zero_addresses": [],
-            "unit_diagonal_addresses": ["0x1000"] * 33,
-            "touched_addresses": ["0x1000"] * 33,
+            "unit_diagonal_addresses": ["0x00c1fe38"],
+            "touched_addresses": ["0x00c1fe38"],
             "reset_touched_slot_count": 33,
             "reset_zero_slot_count": 0,
             "errors": [],
@@ -79,12 +79,12 @@ def test_validate_reset_domain_accepts_consistent_fixture():
         {
             "provider_id": 0,
             "scalar_count": 2,
-            "zero_addresses": ["0x1000", "0x1008"],
-            "unit_diagonal_addresses": ["0x1000", "0x1010"],
+            "zero_addresses": ["0x00c21738", "0x00c21740"],
+            "unit_diagonal_addresses": ["0x00c21738", "0x00c21748"],
             "touched_addresses": [
-                "0x1000",
-                "0x1008",
-                "0x1010",
+                "0x00c21738",
+                "0x00c21740",
+                "0x00c21748",
             ],
             "reset_touched_slot_count": 3,
             "reset_zero_slot_count": 2,
