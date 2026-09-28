@@ -92,6 +92,12 @@ def build_provider_execution_boundary() -> dict[str, Any]:
                 "calls": list(COMMON_PREP_STAGES),
             },
             {
+                "event": "per-scalar-reset-dispatch",
+                "function": "FUN_007b2210",
+                "provider_vtable_offset": "0x1c",
+                "selector": "param_1",
+            },
+            {
                 "event": "provider-solve",
                 "vtable_offset": hex(EXECUTION["solve_vtable_offset"]),
             },
@@ -152,9 +158,9 @@ def build_dispatch_boundary_contract() -> dict[str, Any]:
             "otherwise builtin FUN_007b0f20",
         ],
         "interpretation": {
-            "provider_cleanup": "storage reset performed at solve orchestration entry",
+            "provider_cleanup": "provider storage cleanup performed at solve orchestration entry",
             "provider_solve": "parameterless provider function operating on fixed global state",
-            "reset_slot_+0x1c": "separate selector-driven lifecycle function; not claimed to execute in FUN_007b3f40",
+            "reset_slot_+0x1c": "per-scalar reset delegated by FUN_007b2210 before provider solve",
         },
         "limitations": [
             "This contract records dispatch order and storage boundaries, not the numeric provider algorithm.",
