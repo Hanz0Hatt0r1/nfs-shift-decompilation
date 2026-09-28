@@ -124,3 +124,73 @@ def test_executor_contract_is_explicitly_experimental():
     assert contract["storage"]["factor_edges"] == (
         "optional source-derived structural mask"
     )
+
+
+def test_factor_support_uses_upper_coordinates():
+    factorization = runtime.Factorization(
+        l=(
+            (1.0, 0.0, 0.0),
+            (0.5, 1.0, 0.0),
+            (0.0, -0.25, 1.0),
+        ),
+        d=(2.0, 3.0, 4.0),
+    )
+
+    assert runtime.factor_support(factorization) == {
+        (0, 1),
+        (1, 2),
+    }
+
+
+def test_compare_factor_pattern_accepts_matching_dense_factor_support():
+    l = (
+        (1.0, 0.0, 0.0),
+        (0.5, 1.0, 0.0),
+        (0.0, -0.25, 1.0),
+    )
+    d = (2.0, 3.0, 4.0)
+    matrix = _matmul_transpose(l, d)
+
+    result = runtime.compare_factor_pattern(
+        matrix,
+        {(0, 1), (1, 2)},
+    )
+
+    assert result["ready"] is True
+    assert result["missing_edges"] == []
+    assert result["extra_edges"] == []
+
+
+def test_compare_factor_pattern_rejects_extra_factor_edge():
+    matrix = (
+        (2.0, 1.0, 0.0),
+        (1.0, 3.0, 1.0),
+        (0.0, 1.0, 2.0),
+    )
+
+    result = runtime.compare_factor_pattern(
+        matrix,
+        {(0, 1)},
+    )
+
+    assert result["ready"] is False
+    assert (1, 2) in result["extra_edges"]
+
+
+def test_solve_guided_rejects_inadmissible_pattern():
+    matrix = (
+        (2.0, 1.0, 0.0),
+        (1.0, 3.0, 1.0),
+        (0.0, 1.0, 2.0),
+    )
+
+    try:
+        runtime.solve_guided(
+            matrix,
+            [1.0, 2.0, 3.0],
+            factor_edges={(0, 1)},
+        )
+    except ValueError as exc:
+        assert "not admissible" in str(exc)
+    else:
+        raise AssertionError("inadmissible factor pattern was accepted")

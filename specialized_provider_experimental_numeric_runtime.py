@@ -230,6 +230,88 @@ def validate_solution(
     }
 
 
+def factor_support(
+    factorization: Factorization,
+    *,
+    tolerance: float = 1e-12,
+) -> set[tuple[int, int]]:
+    """Return strict-upper (pivot,column) support of the lower factor."""
+    n = len(factorization.d)
+    return {
+        (column, row)
+        for row in range(n)
+        for column in range(row)
+        if abs(factorization.l[row][column]) > float(tolerance)
+    }
+
+
+def compare_factor_pattern(
+    matrix: Sequence[Sequence[float]],
+    expected_edges: Iterable[tuple[int, int]],
+    *,
+    symmetry_tolerance: float = 1e-10,
+    factor_tolerance: float = 1e-12,
+    pivot_tolerance: float = 1e-14,
+) -> dict[str, object]:
+    """Check a candidate matrix against an expected factor support mask."""
+    factorization = factorize_ldlt(
+        matrix,
+        symmetry_tolerance=symmetry_tolerance,
+        pivot_tolerance=pivot_tolerance,
+    )
+    expected = {
+        (int(row), int(column))
+        for row, column in expected_edges
+    }
+    actual = factor_support(
+        factorization,
+        tolerance=factor_tolerance,
+    )
+    missing = sorted(expected - actual)
+    extra = sorted(actual - expected)
+
+    return {
+        "ready": not missing and not extra,
+        "expected_edges": len(expected),
+        "actual_factor_edges": len(actual),
+        "missing_edges": missing,
+        "extra_edges": extra,
+        "factorization": factorization,
+    }
+
+
+def solve_guided(
+    matrix: Sequence[Sequence[float]],
+    rhs: Sequence[float],
+    *,
+    factor_edges: Iterable[tuple[int, int]],
+    symmetry_tolerance: float = 1e-10,
+    factor_tolerance: float = 1e-12,
+    pivot_tolerance: float = 1e-14,
+) -> list[float]:
+    """Run sparse-guided solving only after support admissibility passes."""
+    check = compare_factor_pattern(
+        matrix,
+        factor_edges,
+        symmetry_tolerance=symmetry_tolerance,
+        factor_tolerance=factor_tolerance,
+        pivot_tolerance=pivot_tolerance,
+    )
+    if not check["ready"]:
+        raise ValueError(
+            "factor pattern is not admissible: "
+            f"missing={len(check['missing_edges'])}, "
+            f"extra={len(check['extra_edges'])}"
+        )
+    return solve_ldlt(
+        matrix,
+        rhs,
+        factor_edges=factor_edges,
+        symmetry_tolerance=symmetry_tolerance,
+        pivot_tolerance=pivot_tolerance,
+    )
+
+
 def build_executor_contract() -> dict[str, object]:
     return {
         "format": FORMAT,
@@ -264,4 +346,7 @@ __all__ = [
     "residual",
     "max_abs",
     "validate_solution",
+    "factor_support",
+    "compare_factor_pattern",
+    "solve_guided",
 ]
