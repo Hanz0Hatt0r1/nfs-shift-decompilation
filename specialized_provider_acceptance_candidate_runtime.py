@@ -11,7 +11,7 @@ from typing import Any, Mapping, Sequence
 from specialized_provider_acceptance_predicate_runtime import (
     evaluate_acceptance_predicate,
 )
-from specialized_provider_capture_runtime import normalize_provider_capture
+from sdf_solver_capture_runtime import normalize_solver_capture
 
 FORMAT = "SHIFT.SpecializedProviderAcceptanceCandidateRuntime/1"
 
@@ -67,10 +67,11 @@ def analyze_capture_candidates(
     *,
     provider_ids: Sequence[int] = (0, 1),
 ) -> dict[str, Any]:
-    normalized = normalize_provider_capture(capture)
-    raise ValueError(
-        "specialized provider captures contain packed workspace, not the logical matrix; "
-        "use analyze_acceptance_candidates with an explicit matrix capture"
+    """Run candidate predicates over an existing logical SDF capture."""
+    normalized = normalize_solver_capture(capture)
+    return analyze_acceptance_candidates(
+        normalized["matrix"],
+        provider_ids=provider_ids,
     )
 
 
