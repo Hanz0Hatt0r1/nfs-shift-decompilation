@@ -1,46 +1,25 @@
-# Phase 479 — correction: complete reset-zero domain
+# Phase 468 — reset/cleanup storage partition (corrected)
 
-Phase 479 corrects the Phase 468 reset/cleanup comparison after a source audit found that reset cases also contain `FUN_0040cec0` bulk-clear operations.
+Phase 468 originally conflated the reset function's zero writes with its unit-diagonal seed writes. Phase 479/481 corrected that interpretation.
 
-## What was wrong
+## Correct relation
 
-Phase 468 compared cleanup coverage with only direct `DAT_xxxxxxxx = 0` reset stores. That omitted reset bulk-clear intervals and also treated the `1.0` diagonal seed as though it were itself a zeroed slot.
+`cleanup-covered storage = reset-zero slots ∪ unit-diagonal seed slots`
 
-## Correct model
+The two reset sets are disjoint for the shipped providers.
 
-The reset-zero domain is the union of:
+Provider 0: **370** reset-zero slots + **40** unit-diagonal seed slots = **410** cleanup-covered slots.
 
-- direct zero assignments in every reset case;
-- every 8-byte slot covered by reset `FUN_0040cec0` bulk clears.
+Provider 1: **280** reset-zero slots + **34** unit-diagonal seed slots = **314** cleanup-covered slots.
 
-Unit-diagonal seed addresses are tracked separately.
+The output vector is fully covered by cleanup/reset-zero state; the diagonal seed slots are workspace locations and are not themselves reset-zero writes.
 
-## Verified results from the retail source
+## Interpretation
 
-Provider 0:
+Cleanup establishes the broader baseline. The selector-driven reset writes zero to a subset of that baseline and writes one exact `1.0` seed for every selector case.
 
-- reset-zero domain: **410** slots;
-- cleanup zero domain: **410** slots;
-- exact equality: **yes**;
-- unit-diagonal seeds: **40**;
-- every unit seed is inside the cleanup zero domain.
-
-Provider 1:
-
-- reset-zero domain: **280** slots;
-- cleanup zero domain: **314** slots;
-- exact equality: **no**;
-- reset-zero is a strict subset of cleanup by **34** slots;
-- unit-diagonal seeds: **34**;
-- every unit seed is inside the cleanup zero domain;
-- unit-diagonal seeds are not required to belong to the reset-zero domain.
-
-## Consequence
-
-The earlier Phase 468 claim of complete reset/cleanup zero-set equivalence for provider 1 is withdrawn. The corrected contract preserves the observed subset mismatch instead of hiding it behind a false readiness condition.
-
-Provider 0 remains an exact zero-domain match.
+The corrected equality is a partition of storage domains, not a claim that reset zero writes alone reproduce cleanup.
 
 ## Scope boundary
 
-This remains a storage-level comparison. It does not infer logical matrix semantics or claim that reset is a per-frame initializer.
+This is storage-level evidence. It does not assign matrix semantics and does not imply that reset is a per-frame initializer.

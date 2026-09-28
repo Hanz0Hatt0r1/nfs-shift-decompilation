@@ -62,6 +62,7 @@ def build_reset_domain(
         <= int(str(row["diagonal_address"]), 16)
         < end
     }
+    zero_unit_overlap = zero_addresses & unit_addresses
     touched_addresses = zero_addresses | unit_addresses
 
     workspace_start = layout.factor_workspace_base
@@ -86,6 +87,8 @@ def build_reset_domain(
         "reset_zero_slot_count": len(zero_addresses),
         "unit_diagonal_slot_count": len(unit_addresses),
         "reset_touched_slot_count": len(touched_addresses),
+        "zero_unit_overlap_count": len(zero_unit_overlap),
+        "zero_unit_disjoint": not zero_unit_overlap,
         "workspace_zero_slot_count": count_in(
             workspace_start,
             workspace_end,
@@ -156,6 +159,10 @@ def validate_reset_domain(report: Mapping[str, Any]) -> dict[str, Any]:
 
     if not unit <= touched:
         errors.append("unit-domain-not-subset-touched")
+    if zero & unit:
+        errors.append(
+            f"unit-diagonal-overlaps-zero:{len(zero & unit)}"
+        )
     if not zero <= touched:
         errors.append("zero-domain-not-subset-touched")
 
@@ -196,6 +203,8 @@ def summarize_reset_domain(report: Mapping[str, Any]) -> dict[str, Any]:
         "reset_zero_slot_count": report.get("reset_zero_slot_count"),
         "unit_diagonal_slot_count": report.get("unit_diagonal_slot_count"),
         "reset_touched_slot_count": report.get("reset_touched_slot_count"),
+        "zero_unit_overlap_count": report.get("zero_unit_overlap_count"),
+        "zero_unit_disjoint": report.get("zero_unit_disjoint"),
         "workspace_zero_slot_count": report.get("workspace_zero_slot_count"),
         "output_zero_slot_count": report.get("output_zero_slot_count"),
         "ready": bool(report.get("ready")),

@@ -1,8 +1,8 @@
 """Extract the static reset profile for specialized provider workspaces.
 
-Phase 466 decodes the provider-specific reset helpers that seed each pivot
-workspace with a unit diagonal and zero related storage. The result is a
-source-backed initial-state profile, not a logical matrix initializer claim.
+The parser is deliberately brace-balanced so an inner switch/conditional does
+not truncate the outer function. It records exact case ids, one IEEE-754 1.0
+seed per case, direct zero stores, and reset bulk-clear intervals.
 """
 from __future__ import annotations
 
@@ -19,13 +19,47 @@ RESET_FUNCTIONS = {
     1: "FUN_007d48a0",
 }
 
-CASE_RE = re.compile(r"^s*cases+(0x[0-9A-Fa-f]+|d+):s*$")
+CASE_RE = re.compile(
+    r"^\s*case\s+(0x[0-9A-Fa-f]+|\d+):\s*$",
+    re.M,
+)
 ASSIGN_RE = re.compile(
-    r"(?:_)?DAT_([0-9A-Fa-f]+)s*=s*([^;]+);"
+    r"(?:_)?DAT_([0-9A-Fa-f]+)\s*=\s*([^;]+);"
 )
 CLEAR_RE = re.compile(
-    r"FUN_0040cec0(&DAT_([0-9A-Fa-f]+),0,(0x[0-9A-Fa-f]+|d+));"
+    r"FUN_0040cec0\(&DAT_([0-9A-Fa-f]+),0,(0x[0-9A-Fa-f]+|\d+)\);"
 )
+
+
+def _balanced_function_body(source: str, start: int) -> str:
+    open_brace = source.find("{", start)
+    if open_brace < 0:
+        raise ValueError("function opening brace not found")
+
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(open_brace, len(source)):
+        char = source[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start:index + 1]
+
+    raise ValueError("function closing brace not found")
 
 
 def _extract_function_block(source: str, function_name: str) -> str:
@@ -35,29 +69,22 @@ def _extract_function_block(source: str, function_name: str) -> str:
     )
     if marker is None:
         raise ValueError(f"reset function not found: {function_name}")
-
-    tail = source[marker.start():]
-    end = re.search(r"\n}\n\n\n", tail)
-    if end is None:
-        raise ValueError(
-            f"reset function closing boundary not found: {function_name}"
-        )
-    return tail[: end.end()]
+    return _balanced_function_body(source, marker.start())
 
 
 def _case_blocks(function_block: str) -> list[tuple[int, str]]:
-    lines = function_block.splitlines()
+    matches = list(CASE_RE.finditer(function_block))
     cases: list[tuple[int, str]] = []
-    starts: list[tuple[int, int]] = []
 
-    for index, line in enumerate(lines):
-        match = CASE_RE.match(line)
-        if match:
-            starts.append((index, int(match.group(1), 0)))
-
-    for index, (start, case) in enumerate(starts):
-        end = starts[index + 1][0] if index + 1 < len(starts) else len(lines)
-        cases.append((case, "\n".join(lines[start + 1 : end])))
+    for index, match in enumerate(matches):
+        case = int(match.group(1), 0)
+        start = match.end()
+        end = (
+            matches[index + 1].start()
+            if index + 1 < len(matches)
+            else len(function_block)
+        )
+        cases.append((case, function_block[start:end]))
     return cases
 
 
@@ -77,9 +104,12 @@ def extract_reset_profile(
     cases = _case_blocks(function_block)
 
     errors: list[str] = []
-    if len(cases) != layout.scalar_count:
+    case_values = [case for case, _body in cases]
+    expected_cases = list(range(layout.scalar_count))
+    if case_values != expected_cases:
         errors.append(
-            f"case-count:expected={layout.scalar_count}:actual={len(cases)}"
+            f"case-domain:expected={expected_cases[0]}..{expected_cases[-1]}:"
+            f"actual={case_values}"
         )
 
     rows: list[dict[str, Any]] = []
@@ -106,24 +136,23 @@ def extract_reset_profile(
             for address, size in CLEAR_RE.findall(body)
         ]
 
+        diagonal_address = None
+        diagonal_offset = None
         if len(one_addresses) != 1:
             errors.append(
                 f"case-{case}-unit-diagonal-count:{len(one_addresses)}"
             )
-            diagonal_address = None
-            diagonal_offset = None
         else:
             diagonal_address = one_addresses[0]
             if 0 <= case < len(pointers):
                 diagonal_offset = diagonal_address - pointers[case]
-                if diagonal_offset != case * 8:
+                expected_address = pointers[case] + case * 8
+                if diagonal_address != expected_address:
                     errors.append(
                         f"case-{case}-diagonal-geometry:"
-                        f"expected={hex(pointers[case] + case * 8)}:"
+                        f"expected={hex(expected_address)}:"
                         f"actual={hex(diagonal_address)}"
                     )
-            else:
-                diagonal_offset = None
 
         rows.append(
             {
@@ -135,7 +164,10 @@ def extract_reset_profile(
                 ),
                 "diagonal_offset": diagonal_offset,
                 "zero_assignment_count": len(zero_addresses),
-                "zero_assignments": [hex(address) for address in zero_addresses],
+                "zero_assignments": [
+                    hex(address)
+                    for address in zero_addresses
+                ],
                 "bulk_clear_count": len(clears),
                 "bulk_clears": clears,
             }
@@ -163,7 +195,8 @@ def summarize_reset_profile(report: dict[str, Any]) -> dict[str, Any]:
         "scalar_count": report.get("scalar_count"),
         "cases": len(rows),
         "unit_diagonal_cases": sum(
-            row.get("diagonal_address") is not None for row in rows
+            row.get("diagonal_address") is not None
+            for row in rows
         ),
         "zero_assignment_count": sum(
             int(row.get("zero_assignment_count", 0))
@@ -222,14 +255,17 @@ def build_reset_profile_contract(source: str) -> dict[str, Any]:
         "source_file": "SHIFT.exe.c",
         "providers": providers,
         "semantics": {
-            "unit_diagonal": "source case writes the IEEE-754 binary64 value 1.0 exactly once",
-            "zero_assignments": "direct storage locations written to zero",
-            "bulk_clears": "FUN_0040cec0 base/byte-size calls recorded without semantic naming",
+            "unit_diagonal": (
+                "one exact IEEE-754 binary64 1.0 write per selector case"
+            ),
+            "zero_assignments": "direct DAT_xxxxxxxx = 0 writes",
+            "bulk_clears": (
+                "FUN_0040cec0 base/byte-size intervals within each case"
+            ),
         },
         "limitations": [
-            "A unit-diagonal reset does not prove that the workspace is the solver's input matrix.",
-            "Zeroed storage can include staging/output-related cells and is not assigned a matrix meaning here.",
-            "No provider class name or physical unit is inferred.",
+            "Selector case numbers are not renamed as semantic pivot identifiers.",
+            "Reset storage records do not imply logical matrix ownership.",
         ],
         "status": "source-backed-specialized-provider-reset-profile",
     }
