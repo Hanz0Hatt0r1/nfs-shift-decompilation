@@ -188,7 +188,12 @@ def compare_capture_to_reset(
         "reset_function": reset_domain_report["reset_function"],
         "cleanup_reset_equivalent": bool(
             reset_equivalence.get(
-                "reset_zero_cleanup_exact_match"
+                "cleanup_reconstructed_from_reset"
+            )
+        ),
+        "cleanup_reset_partition_disjoint": bool(
+            reset_equivalence.get(
+                "cleanup_reset_partition_disjoint"
             )
         ),
         "reset_domain_workspace_slots": sum(
@@ -246,6 +251,12 @@ def summarize_reset_delta(report: Mapping[str, Any]) -> dict[str, Any]:
         "output_nonzero": int(counts.get("output-nonzero", 0)),
         "reset_state_equivalent": bool(
             report.get("reset_state_equivalent")
+        ),
+        "cleanup_reset_equivalent": bool(
+            report.get("cleanup_reset_equivalent")
+        ),
+        "cleanup_reset_partition_disjoint": bool(
+            report.get("cleanup_reset_partition_disjoint")
         ),
         "ready": bool(report.get("ready")),
     }
