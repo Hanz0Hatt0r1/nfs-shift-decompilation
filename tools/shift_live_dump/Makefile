@@ -10,6 +10,7 @@ test: shift-live-dump
 	bash test_smoke.sh
 	bash test_analyze.sh
 	bash test_analyze_fields.sh
+	bash test_analyze_events.sh
 
 clean:
 	rm -f shift-live-dump
