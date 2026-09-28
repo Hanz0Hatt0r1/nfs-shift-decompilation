@@ -13,6 +13,7 @@ from shader_asm import Instruction, Operand, ShaderProgram, decode_source
 
 
 FORMAT = "SHIFT.ReferenceShaderExecution/1"
+_MAX_LOOP_ITERATIONS = 1024
 _VECTOR = (0.0, 0.0, 0.0, 0.0)
 
 _SUPPORTED = {
