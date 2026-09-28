@@ -40,11 +40,7 @@ def audit_vehicle_corpus(source: str | Path) -> dict[str, Any]:
     path = Path(source)
     reports: list[dict[str, Any]] = []
     for prepared in _prepare_source(path):
-        reports.extend(
-            audit_source(prepared)["archives"]
-            if prepared.suffix.lower() == ".zip"
-            else audit_source(prepared)["archives"]
-        )
+        reports.extend(audit_source(prepared)["archives"])
 
     total_entries = sum(
         int(report["summary"]["entries"])
