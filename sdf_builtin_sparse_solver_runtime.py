@@ -32,6 +32,7 @@ def describe_builtin_sparse_solver_contract() -> dict[str, Any]:
 
 
 def build_dense_solver_graph(n: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build the deterministic n+1/n record shape consumed by FUN_007b0f20."""
     count = int(n)
     if count < 0:
         raise ValueError("n must be non-negative")
@@ -47,12 +48,21 @@ def build_dense_solver_graph(n: int) -> tuple[list[dict[str, Any]], list[dict[st
                 }
                 for node in range(count)
             ]
+        elif row == count:
+            items = [
+                {
+                    "node": node,
+                    "dependency_count": 0,
+                    "dependencies": [],
+                }
+                for node in range(count)
+            ]
         else:
             items = [
                 {
                     "node": node,
-                    "dependency_count": row - 1,
-                    "dependencies": list(range(row - 1)),
+                    "dependency_count": row,
+                    "dependencies": list(range(row)),
                 }
                 for node in range(row - 1, count)
             ]
@@ -67,7 +77,6 @@ def build_dense_solver_graph(n: int) -> tuple[list[dict[str, Any]], list[dict[st
             "dependencies": dependencies,
         })
     return forward, reverse
-
 
 def _validate_square_system(
     matrix: Sequence[Sequence[float | int]],
