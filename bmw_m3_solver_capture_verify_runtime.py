@@ -7,6 +7,16 @@ from sdf_solver_capture_runtime import (
     compare_retail_storage_layout,
     normalize_solver_capture,
 )
+from pathlib import Path
+
+from rigid_body_sdf_runtime import parse_sdf
+from bmw_m3_e36_solver_domain_runtime import build_solver_domain
+from shift_importer_v3_reference import BFF
+
+TARGET_ARCHIVE_SHA256 = "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70"
+TARGET_RESOURCE = "vehicles/physics/suspension/aarm_multilink.sdf"
+TARGET_RESOURCE_SHA256 = "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed"
+
 
 FORMAT = "SHIFT.BMWM3SolverCaptureVerify/1"
 
@@ -96,6 +106,80 @@ def verify_bmw_m3_capture_structure(
     }
 
 
+def verify_bff_domain(bff_path: str | Path) -> dict[str, Any]:
+    import hashlib
+
+    source = Path(bff_path)
+    archive_sha = hashlib.sha256(source.read_bytes()).hexdigest()
+    errors: list[str] = []
+    if archive_sha != TARGET_ARCHIVE_SHA256:
+        errors.append(f"unexpected-archive-sha256:{archive_sha}")
+
+    if errors:
+        return {
+            "ready": False,
+            "status": "blocked",
+            "errors": errors,
+        }
+
+    try:
+        with BFF(source) as archive:
+            target = TARGET_RESOURCE.strip("/").lower()
+            matches = [
+                entry
+                for entry in archive.entries
+                if entry.path.replace("\\", "/").strip("/").lower() == target
+            ]
+            if len(matches) != 1:
+                return {
+                    "ready": False,
+                    "status": "blocked",
+                    "errors": [f"target-entry-count:{len(matches)}"],
+                }
+            entry = matches[0]
+            data = archive.extract_entry(entry, type2="lzx")
+    except Exception as exc:
+        return {
+            "ready": False,
+            "status": "blocked",
+            "errors": [f"bff-extract:{exc}"],
+        }
+
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != TARGET_RESOURCE_SHA256:
+        return {
+            "ready": False,
+            "status": "blocked",
+            "errors": [f"unexpected-sdf-sha256:{digest}"],
+        }
+
+    sdf = parse_sdf(data, strict=True)
+    solver = build_solver_domain(sdf)
+    ready = (
+        solver.get("ready") is True
+        and int(solver.get("solver_scalar_count", 0)) == EXPECTED["solver_scalar_count"]
+    )
+    return {
+        "ready": ready,
+        "status": "verified" if ready else "blocked",
+        "errors": [] if ready else ["solver-domain-not-ready"],
+        "source": {
+            "archive_sha256": archive_sha,
+            "resource": TARGET_RESOURCE,
+            "resource_sha256": digest,
+            "entry_index": entry.index,
+            "compression_type": entry.type,
+            "compressed_size": entry.compressed_size,
+            "uncompressed_size": entry.uncompressed_size,
+        },
+        "sdf": {
+            "record_count": sdf.get("record_count"),
+            "topology": sdf.get("topology", {}),
+        },
+        "solver_domain": solver,
+    }
+
+
 def verify_bmw_m3_capture_pair(
     capture: Mapping[str, Any],
     expected: Mapping[str, Any],
@@ -157,5 +241,6 @@ __all__ = [
     "EXPECTED",
     "verify_bmw_m3_capture_structure",
     "verify_bmw_m3_capture_pair",
+    "verify_bff_domain",
     "describe_bmw_m3_solver_capture_verifier",
 ]
