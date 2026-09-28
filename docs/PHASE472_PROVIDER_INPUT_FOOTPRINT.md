@@ -2,34 +2,32 @@
 
 ## Goal
 
-Phase 472 intersects the source-derived first-read footprint from Phase 456 with the exact reset domain from Phases 466–468.
+Phase 472 intersects source-derived first-read addresses from Phase 456 with the canonical reset domain from Phase 480.
 
-The result answers a narrow but important question: **which workspace addresses are read by the provider solver before that solver writes them, and were those addresses initialized by the provider reset path?**
+The result answers: **which workspace addresses are read by the provider solver before that solver writes them, and were those addresses initialized by the provider reset path?**
 
 ## Classification
 
-`reset-zero`
-— first-read address lies in the reset zero domain.
+`reset-zero` — first-read address lies in the canonical reset-zero domain.
 
-`reset-unit`
-— first-read address is one of the pivot `1.0` seed slots.
+`reset-unit` — first-read address is one of the pivot `1.0` seed slots.
 
-`caller-input-candidate`
-— workspace first-read address is outside the proven reset domain. This is the strongest static candidate for data supplied by an upstream caller or runtime stage.
+`caller-input-candidate` — workspace first-read address is outside the canonical reset-touched domain.
 
-`external-or-upstream`
-— first-read address is outside the provider workspace/output vector.
+`external-or-upstream` — first-read address is outside the provider workspace/output vector.
+
+## Correction carried forward
+
+The reset-touched domain is not computed from direct zero stores alone. It includes reset bulk-clear ranges and the separate unit-seed set. This prevents provider 1's bulk-reset operations from being misclassified as caller inputs.
 
 ## Why this matters
 
-Phase 469 shows that reset initializes only a subset of packed workspace slots. Phase 472 now identifies which of the remaining slots are actually consumed before the solver overwrites them.
-
-This is the cleanest static boundary currently available for reconstructing the provider's caller-populated state without inventing a logical matrix layout.
+Phase 469 measures what a real pre-solve capture contains relative to this domain. Phase 472 supplies the static boundary for identifying strongest caller-population candidates without inventing a logical matrix layout.
 
 ## Important limitation
 
-`caller-input-candidate` does not mean `matrix element`. Packed workspace aliases remain possible, and an upstream function may populate a shared staging slot before the provider solve. Only a real capture can establish the runtime value and provenance.
+`caller-input-candidate` does not mean `matrix element`. Packed workspace aliases remain possible, and an upstream function may populate a shared staging slot before the provider solve.
 
-## Next use
+## Scope boundary
 
-Once Phase 463 provides a real provider pre-solve snapshot, the footprint can be intersected with the actual nonzero/populated slots from Phase 469 to identify the strongest runtime-supported input candidates.
+The footprint remains an address-level reconstruction. It does not assign matrix semantics, physical units, or provider class identity.
