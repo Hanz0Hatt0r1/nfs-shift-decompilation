@@ -65,7 +65,7 @@ def test_validate_probe_dump_shape_reports_bad_matrix_shape():
 
 
 def test_u32_from_bytes_uses_little_endian():
-    assert runtime.u32_from_bytes(b"xV4") == 0x12345678
+    assert runtime.u32_from_bytes(b"\x78\x56\x34\x12") == 0x12345678
 
 
 def test_probe_contract_declares_builtin_thiscall_stack_and_post_solve_fastcall():
