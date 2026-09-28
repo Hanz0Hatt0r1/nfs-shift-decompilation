@@ -54,8 +54,9 @@ def test_build_vehicle_physics_handoff_composes_sdf_profile(monkeypatch, tmp_pat
     assert result["summary"]["solver_scalar_count"] == 40
     assert result["summary"]["same_dimension_provider_candidates"] == [0]
     assert result["summary"]["sdf_body_count"] == 2
-    assert result["summary"]["participant_gate_ready"] is True
-    assert result["participant_gate"]["selection"]["callee"] == "FUN_00410ef0"
+    assert result["summary"]["participant_gate_ready"] is True    assert result["participant_gate"]["selection"]["callee"] == "FUN_00410ef0"
+    assert result["summary"]["participant_registry_update_ready"] is True
+    assert result["participant_registry_update"]["registration"]["function"] == "FUN_00713f40"
     assert (out / "prephysx_provider_handoff.json").is_file()
 
 
