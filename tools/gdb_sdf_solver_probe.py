@@ -51,9 +51,13 @@ def _doubles(inferior: gdb.Inferior, address: int, count: int) -> list[float]:
     return list(struct.unpack("<" + "d" * int(count), raw))
 
 
+_SCALAR_RESET_EVENT_COUNT = 0
+
 _LAST_FRAME_ENTRY = {
     "frame_index": None,
     "physics_system": None,
+    "scalar_reset_start_count": 0,
+    "scalar_reset_end_count": 0,
 }
 
 
@@ -90,6 +94,11 @@ def _provider_snapshot(
         metadata={
             "capture_kind": stage,
             "provider_solve_hit": hit,
+            "scalar_reset_event_count": _SCALAR_RESET_EVENT_COUNT,
+            "scalar_reset_events_since_frame_entry": (
+                _SCALAR_RESET_EVENT_COUNT
+                - int(_LAST_FRAME_ENTRY["scalar_reset_start_count"])
+            ),
         },
     )
     payload["registers"] = {
@@ -187,8 +196,12 @@ class ScalarResetProbe(_BaseProbe):
         self.event_index = 0
 
     def stop(self) -> bool:
+        global _SCALAR_RESET_EVENT_COUNT
+
         self.hit += 1
         self.event_index += 1
+        _SCALAR_RESET_EVENT_COUNT += 1
+        _LAST_FRAME_ENTRY["scalar_reset_end_count"] = _SCALAR_RESET_EVENT_COUNT
         inferior = gdb.selected_inferior()
 
         physics_system = int(gdb.parse_and_eval("$ecx"))
@@ -262,6 +275,12 @@ class FrameEntryProbe(_BaseProbe):
         )
         _LAST_FRAME_ENTRY["frame_index"] = self.hit
         _LAST_FRAME_ENTRY["physics_system"] = physics_system
+        _LAST_FRAME_ENTRY["scalar_reset_start_count"] = (
+            _SCALAR_RESET_EVENT_COUNT
+        )
+        _LAST_FRAME_ENTRY["scalar_reset_end_count"] = (
+            _SCALAR_RESET_EVENT_COUNT
+        )
         payload.update({
             "capture_kind": "frame_entry_backend",
             "frame_index": self.hit,
