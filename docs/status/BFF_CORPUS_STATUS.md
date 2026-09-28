@@ -41,3 +41,8 @@ The repeated logical suffixes show a shared resource layout across vehicle
 archives, but they do not by themselves prove that the resources are byte-identical
 or that they use identical runtime material parameters. Those claims require
 decoded-payload or same-instance runtime evidence.
+
+
+## Physics bundle extraction
+
+`vehicle_physics_bundle.py` now resolves the default CDF/EDF/GDF/SDF/TBF/BBF set directly from a BFF. Exact BMW paths remain authoritative; non-BMW fallback uses vehicle-name matching and known shared basenames, and ambiguous selections fail closed. This makes the existing `VehiclePhysicsAssetGraph/1` parser directly reusable across the vehicle corpus.
