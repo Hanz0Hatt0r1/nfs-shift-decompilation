@@ -1,0 +1,24 @@
+{
+  "format": "SHIFT.BMWM3SolverCaptureVerifyEvidence/1",
+  "version": 1,
+  "resource": "vehicles/physics/suspension/aarm_multilink.sdf",
+  "expected": {
+    "body_count": 11,
+    "source_constraint_records": 24,
+    "runtime_constraint_records": 28,
+    "solver_scalar_count": 40,
+    "matrix_cells": 1600,
+    "matrix_bytes": 12800,
+    "row_pointer_count": 40,
+    "row_pointer_bytes": 160,
+    "seed_nonzero_cells": 700
+  },
+  "status": "structural-verifier-only",
+  "numeric_capture_present": false,
+  "source_chain": [
+    "Phase 405",
+    "Phase 406",
+    "Phase 411",
+    "Phase 412"
+  ]
+}
