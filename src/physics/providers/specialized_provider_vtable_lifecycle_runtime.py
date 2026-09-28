@@ -101,7 +101,7 @@ def build_vtable_contract(provider_id: int) -> dict[str, Any]:
 
     slots = [
         {
-            "offset": hex(offset),
+            "offset": f"0x{offset:02x}",
             "role": SLOT_ROLES[offset],
             "function": hex(address),
         }
