@@ -1,0 +1,18 @@
+{
+  "format": "SHIFT.BMWM3RuntimeProbeBundleEvidence/1",
+  "version": 1,
+  "gates": [
+    "retail PE identity/prologues",
+    "BMW M3 aarm_multilink.sdf 40-scalar domain",
+    "frame-entry/pre/post session consistency",
+    "optional expected-session numeric parity"
+  ],
+  "inputs": [
+    "SHIFT.exe|SHIFT.zip",
+    "BMW_M3_E36.bff",
+    "frame_entry_XXXXXX.json",
+    "pre_solve_XXXXXX.json",
+    "post_solve_XXXXXX.json"
+  ],
+  "status": "source-backed"
+}
