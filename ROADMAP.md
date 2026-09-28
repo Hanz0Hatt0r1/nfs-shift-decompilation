@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 423: builtin sparse solver restoration
+
+Restored the missing `sdf_builtin_sparse_solver_runtime.py` required by the repository's own `FUN_007b0f20` tests. The module now provides the deterministic graph-shape builder and an executable symmetric LDL reference with forward/diagonal/backward solve stages. The vehicle physics profile exposes its readiness separately from the lower-level traversal contract.
+
 ## Phase 422: frame-aware SDF probe session
 
 Extended `SHIFT.SDFRuntimeProbeSession/2` with optional `frame_entry_XXXXXX.json`, backend/scalar/frame consistency checks, and explicit rejection of provider-backend sessions that only contain builtin `FUN_007b0f20` captures. Added `--frame` to the session CLI. Numeric comparison remains unchanged and capture-dependent. Next target: capture the first real frame-entry/pre/post triple on a Wine+GDB host.
