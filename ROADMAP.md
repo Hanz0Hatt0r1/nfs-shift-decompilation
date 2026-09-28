@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 418: README physics status
+
+Synchronized README mainline status with the actual Phase 417 physics state and documented the current runtime-probe/capture gate. Numeric retail-vs-reimplementation solver equality remains capture-dependent.
+
 ## Phase 417: retail PE validation for runtime probe
 
 Validated the supplied retail SHIFT.exe as PE32/i386 with image base `0x00400000`, exact SHA-256, and file-backed `.text` prologues at `FUN_007b0f20`, `FUN_007b3f40` and `FUN_007b4110`. The probe now has a fail-closed executable precondition. Next target: run it against the retail process and feed the first real pre/post-solve pair into Phase 416.

@@ -14,11 +14,11 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 382.**
+> **Current mainline: Phase 417.**
 >
-> The project has progressed from format parsing to a real BMW M3 E36 vertical slice: retail BFF resources can be reconstructed through VHF/MEB/BMT/DDS, real BMW shader evidence is available from `RENDER.bff`, runtime D3D9 capture records declarations/shaders/constants/textures, and the captured VS/PS can be executed offline through the reference renderer.
+> The project has progressed from format parsing to a source-backed BMW M3 E36 physics vertical slice: the real `aarm_multilink.sdf` path is reconstructed through 40 scalar solver nodes, exact JOINT/HINGE/BAR projection and coupling kernels, builtin sparse-solver lifecycle, and source-backed PE/runtime probe tooling.
 >
-> **Current physics gate:** extract the BMW M3 CDF/EDF/GDF/SDF resources from `BMW_M3_E36.bff`, preserve source-backed schema/provenance, and advance the PhysX boundary without relying on the monolithic capture.
+> **Current physics gate:** run `tools/validate_sdf_probe_pe.py SHIFT.exe`, attach the GDB probe from `tools/gdb_sdf_solver_probe.py` to the retail 32-bit Wine process, then normalize a real `pre_solve_XXXXXX.json` / `post_solve_XXXXXX.json` pair with `tools/verify_sdf_probe_session.py`. The repository intentionally does not fabricate a numeric retail solver frame; exact retail-vs-reimplementation equality still depends on a real runtime capture.
 
 > **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.
 
