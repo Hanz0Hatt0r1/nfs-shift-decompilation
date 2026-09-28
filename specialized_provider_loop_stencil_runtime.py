@@ -168,10 +168,9 @@ def extract_loop_stencils(
                     int(loop.group(2), 0),
                 )
                 active_depth = brace_depth + 1
-                scale_source = None
 
             dvar = DVAR_ASSIGN_RE.search(line.strip())
-            if dvar and active_range is not None:
+            if dvar:
                 scale_source = _scale_source(dvar.group(1))
 
             match = _lhs_match(line)
@@ -193,6 +192,13 @@ def extract_loop_stencils(
                             address = base + loop_index * 8
                         else:
                             address = base
+
+                        if (
+                            layout.output_vector_base
+                            <= address
+                            < layout.output_vector_base + layout.output_vector_bytes
+                        ):
+                            continue
 
                         if form in {"loop-pointer", "loop-array"} and loop_index is not None:
                             if loop_index < 0 or loop_index >= layout.scalar_count:
@@ -233,7 +239,6 @@ def extract_loop_stencils(
             ):
                 active_range = None
                 active_depth = None
-                scale_source = None
 
     return {
         "format": FORMAT,
