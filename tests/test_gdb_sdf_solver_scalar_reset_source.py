@@ -59,3 +59,20 @@ def test_unknown_provider_vtable_is_fail_closed_by_schema():
             / "specialized_provider_scalar_reset_capture_runtime.py"
         ).read_text(encoding="utf-8")
     )
+
+
+def test_scalar_reset_probe_embeds_callsite_attribution():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert "from specialized_provider_scalar_reset_callsite_runtime import" in text
+    assert "attribution = attribute_reset_event(event)" in text
+    assert '"callsite": attribution' in text
+    assert 'bool(attribution["ready"])' in text
+
+
+def test_scalar_reset_probe_blocks_unattributed_events():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert 'event["capture_ready"] = (' in text
+    assert '"capture_errors"' in text
+    assert 'list(attribution.get("errors") or [])' in text
