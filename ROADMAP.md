@@ -106,6 +106,12 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 432: BMW M3 provider compatibility gate
+
+Compared the fixed provider acceptance signatures against the committed real BMW M3 aarm_multilink.sdf seed evidence. The symmetric 40x40 BMW seed has 700 non-zero cells with a unit diagonal, which implies 330 strict-upper non-zero cells. Provider 0 is dimension-compatible at 40 scalars but requires 450 strict-upper non-zero cells, so it cannot accept the seed-only mask and would need 120 additional non-zero strict-upper cells after numeric coefficient population. Provider 1 is dimension-incompatible at 34 scalars.
+
+The new bmw_provider_compatibility_runtime.py records these results without claiming the final runtime provider. FUN_007b3820 probes the populated matrix, so the authoritative determination still requires a real frame-entry/pre-solve capture.
+
 ## Phase 431: specialized provider identities and sparsity signatures
 
 Decoded both specialized provider vtables from the retail PE .rdata. Provider 0 at 0x00B0FC5C uses concrete entries FUN_007d2eb0/FUN_007d2ec0/FUN_007d2ed0/FUN_007c6e30/FUN_007c6e50/FUN_007c7200/FUN_007d2f00 for the observed storage, dimension, acceptance, solve and finalize paths. Provider 1 at 0x00B0FC8C uses the corresponding FUN_007d2f10/FUN_007d2f20/FUN_007d2f30/FUN_007cdb20/FUN_007cdb40/FUN_007cdfc0/FUN_007d2f60 paths.
