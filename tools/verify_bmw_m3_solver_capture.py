@@ -15,9 +15,9 @@ if str(ROOT) not in sys.path:
 from bmw_m3_e36_solver_domain_runtime import build_solver_domain
 from bmw_m3_solver_capture_verify_runtime import (
     EXPECTED,
-    verify_bmw_m3_capture_pair,
     verify_bmw_m3_capture_structure,
 )
+from sdf_solver_capture_runtime import compare_solver_captures
 from rigid_body_sdf_runtime import parse_sdf
 from shift_importer_v3_reference import BFF
 
@@ -88,6 +88,17 @@ def verify_bff_domain(bff_path: Path) -> dict[str, Any]:
     }
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("bff", type=Path, help="real BMW_M3_E36.bff")
+    parser.add_argument("capture", type=Path, help="normalized solver-frame JSON")
+    parser.add_argument("--expected-capture", type=Path)
+    parser.add_argument("--abs-tol", type=float, default=0.0)
+    parser.add_argument("--rel-tol", type=float, default=0.0)
+    parser.add_argument("-o", "--output", type=Path)
+    return parser
+
+
 def build_report(
     *,
     bff_path: Path,
@@ -104,12 +115,24 @@ def build_report(
     comparison = None
     if expected_capture_path is not None:
         expected = load_json(expected_capture_path)
-        comparison = verify_bmw_m3_capture_pair(
-            capture,
-            expected,
-            abs_tol=abs_tol,
-            rel_tol=rel_tol,
-        )
+        try:
+            comparison = compare_solver_captures(
+                expected,
+                capture,
+                abs_tol=abs_tol,
+                rel_tol=rel_tol,
+            )
+        except ValueError as exc:
+            comparison = {
+                "format": "SHIFT.BMWM3SolverCaptureNumericComparison/1",
+                "version": 1,
+                "status": "blocked",
+                "ready": False,
+                "errors": [{
+                    "kind": "capture-validation",
+                    "message": str(exc),
+                }],
+            }
 
     ready = bool(domain["ready"] and structure["ready"])
     if expected_capture_path is not None:
@@ -146,13 +169,7 @@ def build_report(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("bff", type=Path, help="real BMW_M3_E36.bff")
-    parser.add_argument("capture", type=Path, help="normalized solver-frame JSON")
-    parser.add_argument("--expected-capture", type=Path)
-    parser.add_argument("--abs-tol", type=float, default=0.0)
-    parser.add_argument("--rel-tol", type=float, default=0.0)
-    parser.add_argument("-o", "--output", type=Path)
+    parser = build_parser()
     args = parser.parse_args(argv)
 
     report = build_report(
