@@ -199,6 +199,8 @@ class ReferenceShaderState:
         elif rt in (2, 11, 12, 13):
             bank = {2: "c", 11: "c2", 12: "c3", 13: "c4"}[rt]
             value = self.constants.get(bank, {}).get(idx, [0.0] * 4)
+        elif rt == 7:
+            value = self.constants.get("i", {}).get(idx, [0.0] * 4)
         elif rt == 14:
             value = self.constants.get("b", {}).get(idx, [0.0] * 4)
         elif rt == 15:
@@ -379,7 +381,7 @@ class ReferenceShaderState:
 
     def execute(self) -> dict[str, Any]:
         ignored = {
-            "NOP", "DCL", "DEF", "DEFI", "LABEL", "COMMENT", "PHASE"
+            "NOP", "DCL", "LABEL", "COMMENT", "PHASE"
         }
         unsupported = [
             {"opcode": ins.opcode, "name": ins.name, "offset": ins.offset}
@@ -561,6 +563,31 @@ class ReferenceShaderState:
                     "LOOP", "ENDLOOP", "REP", "ENDREP",
                     "BREAK", "BREAKC", "BREAKP",
                 }:
+                    pc += 1
+                    continue
+
+                if name == "DEF":
+                    if len(o) < 5 or o[0].reg_type not in (2, 11, 12, 13):
+                        raise ValueError("DEF requires a float constant destination and four literals")
+                    bank = {2: "c", 11: "c2", 12: "c3", 13: "c4"}[o[0].reg_type]
+                    values = []
+                    for literal in o[1:5]:
+                        if not isinstance(literal.value, (int, float)):
+                            raise ValueError("DEF requires literal float components")
+                        values.append(float(literal.value))
+                    self.constants.setdefault(bank, {})[int(o[0].index or 0)] = values
+                    pc += 1
+                    continue
+
+                if name == "DEFI":
+                    if len(o) < 5 or o[0].reg_type != 7:
+                        raise ValueError("DEFI requires a constint destination and four literals")
+                    values = []
+                    for literal in o[1:5]:
+                        if not isinstance(literal.value, (int, float)):
+                            raise ValueError("DEFI requires literal integer components")
+                        values.append(float(int(literal.value)))
+                    self.constants.setdefault("i", {})[int(o[0].index or 0)] = values
                     pc += 1
                     continue
 
