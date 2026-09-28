@@ -237,11 +237,17 @@ def build_runtime_render_contract(
             "candidate": {
                 "file": candidate.get("file"),
                 "program_offset": candidate.get("program_offset"),
+                "payload_sha256": candidate.get("payload_sha256"),
                 "pixel_sha256": candidate.get("pixel_sha256"),
                 "vertex_sha256": candidate.get("vertex_sha256"),
                 "pair_sha256": candidate.get("pair_sha256"),
             },
             "identity": identity,
+            "byte_hashes": {
+                "vertex": identity.get("vertex_byte_sha256"),
+                "pixel": identity.get("pixel_byte_sha256"),
+                "pair": identity.get("pair_byte_sha256"),
+            },
             "linked_shader_pair": linked_pair,
             "runtime_shader_pointers": {
                 "vertex": (frame.get("vertex_shader") or {}).get("shader_ptr"),
