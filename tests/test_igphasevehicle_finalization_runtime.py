@@ -1,4 +1,4 @@
-import igphasevehicle_finalization_runtime as runtime
+import vehicle_physics_igphasevehicle_finalization_runtime as runtime
 
 
 def test_phase511_finalizer_owns_the_three_observed_containers():
