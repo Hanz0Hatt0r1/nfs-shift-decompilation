@@ -317,6 +317,15 @@ class SDFProbeCommand(gdb.Command):
         output = Path(os.path.expanduser(args[0])).resolve()
 
         for breakpoint in self.breakpoints:
+            for return_breakpoint in getattr(
+                breakpoint,
+                "return_breakpoints",
+                [],
+            ):
+                try:
+                    return_breakpoint.delete()
+                except RuntimeError:
+                    pass
             breakpoint.delete()
         self.breakpoints = [
             FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
