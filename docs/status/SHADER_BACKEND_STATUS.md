@@ -8,7 +8,9 @@
 
 - SM2/SM3 D3D9 token decoding;
 - register, mask, modifier, swizzle and relative-addressing metadata;
-- DCL/DEF/DEFI/DEFB reflection;
+- DCL/DEF/DEFI/DEFB reflection and reference execution of `DEF/DEFI/DEFB`;
+- parser + reference execution for `SETP` predicate operations;
+- bounded `LOOP/REP/BREAK*` reference execution;
 - sampler/constant/temp/input/output discovery;
 - common arithmetic/vector operations;
 - CMP/LRP;
