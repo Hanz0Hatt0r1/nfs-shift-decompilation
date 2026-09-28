@@ -20,21 +20,20 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 
 ## Immediate execution order
 
-1. Restore a clean Python CI baseline after the src reorganization; the provider CLI syntax error and pytest source-path bootstrap are now fixed, with CI re-validation in progress.
+1. Restore a clean Python CI baseline after the src reorganization; current remaining CI validation is the vehicle-physics bundle fixture.
 2. Capture a real provider frame with the SDF/runtime probe.
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
 4. Audit cross-vehicle raw BFF payload parity and build the deduplicated FXO shader corpus profile.
-5. Use observed shader opcode gaps to prioritize the next reference/native backend coverage.5. Use observed shader opcode gaps to prioritize the next reference/native backend coverage.
+5. Use observed shader opcode gaps to prioritize the next reference/native backend coverage.
 6. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract.
-
-4. Compare retail packed-workspace/output mutations with the source-derived provider programs.
-5. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
-6. Expand the desktop reference renderer against real BMW material/shader permutations.
-7. Complete Vulkan RenderCommand execution using the same neutral contract.
-8. Continue SGB/FLAT and camera runtime reconstruction.
-9. Derive proven animation poses from the BAB runtime grammar.
-10. Port the stable native render/runtime boundary to Android.
-11. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+7. Compare retail packed-workspace/output mutations with the source-derived provider programs.
+8. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
+9. Expand the desktop reference renderer against real BMW material/shader permutations.
+10. Complete Vulkan RenderCommand execution using the same neutral contract.
+11. Continue SGB/FLAT and camera runtime reconstruction.
+12. Derive proven animation poses from the BAB runtime grammar.
+13. Port the stable native render/runtime boundary to Android.
+14. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
