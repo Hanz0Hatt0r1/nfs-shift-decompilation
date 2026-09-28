@@ -113,65 +113,64 @@ def profile_shader_corpus(inputs: Iterable[str | Path]) -> dict[str, Any]:
         bff_paths = _materialize_bffs(inputs, stack)
         for bff_path in bff_paths:
             archive_count += 1
-        with BFF(bff_path) as archive:
-            for entry in archive.entries:
-                entry_count += 1
-                if not entry.path.lower().endswith(".fxo"):
-                    continue
-                fxo_entry_count += 1
-                raw = archive.raw_payload(entry)
-                digest = _sha256(raw)
-                record = raw_payloads.setdefault(
-                    digest,
-                    {
-                        "raw_sha256": digest,
-                        "type": int(entry.type),
-                        "compressed_size": int(entry.compressed_size),
-                        "uncompressed_size": int(entry.uncompressed_size),
-                        "archive_count": 0,
-                        "entry_count": 0,
-                        "archives": set(),
-                        "paths": set(),
-                        "source_archive": str(bff_path),
-                        "source_path": entry.path,
-                    },
-                )
-                record["entry_count"] += 1
-                record.setdefault("source_entry_index", int(entry.index))
-                record["archives"].add(archive.path.name)
-                record["paths"].add(entry.path)
+            with BFF(bff_path) as archive:
+                for entry in archive.entries:
+                    entry_count += 1
+                    if not entry.path.lower().endswith(".fxo"):
+                        continue
+                    fxo_entry_count += 1
+                    raw = archive.raw_payload(entry)
+                    digest = _sha256(raw)
+                    record = raw_payloads.setdefault(
+                        digest,
+                        {
+                            "raw_sha256": digest,
+                            "type": int(entry.type),
+                            "compressed_size": int(entry.compressed_size),
+                            "uncompressed_size": int(entry.uncompressed_size),
+                            "archive_count": 0,
+                            "entry_count": 0,
+                            "archives": set(),
+                            "paths": set(),
+                            "source_archive": str(bff_path),
+                            "source_path": entry.path,
+                            "source_entry_index": int(entry.index),
+                        },
+                    )
+                    record["entry_count"] += 1
+                    record["archives"].add(archive.path.name)
+                    record["paths"].add(entry.path)
 
-    decoded = []
-    stage_counts = Counter()
-    model_counts = Counter()
-    opcode_counts = Counter()
-    unsupported_counts = Counter()
-    decode_failures = []
+        decoded = []
+        stage_counts = Counter()
+        model_counts = Counter()
+        opcode_counts = Counter()
+        unsupported_counts = Counter()
+        decode_failures = []
 
-    with ExitStack():
         for digest, record in sorted(raw_payloads.items()):
             try:
                 with BFF(Path(record["source_archive"])) as archive:
                     entry = archive.entries[int(record["source_entry_index"])]
                     payload = archive.extract_entry(entry, type2="lzx")
                 profile = _profile_payload(payload)
-        except Exception as exc:
-            decode_failures.append({
-                "raw_sha256": digest,
-                "error": f"{type(exc).__name__}: {exc}",
-            })
-            continue
+            except Exception as exc:
+                decode_failures.append({
+                    "raw_sha256": digest,
+                    "error": f"{type(exc).__name__}: {exc}",
+                })
+                continue
 
-        record = dict(record)
-        record["archive_count"] = len(record["archives"])
-        record["archives"] = sorted(record["archives"])
-        record["paths"] = sorted(record["paths"])
-        record["profile"] = profile
-        decoded.append(record)
-        stage_counts.update(profile["stages"])
-        model_counts.update(profile["shader_models"])
-        opcode_counts.update(profile["opcodes"])
-        unsupported_counts.update(profile["unsupported_opcodes"])
+            normalized = dict(record)
+            normalized["archive_count"] = len(record["archives"])
+            normalized["archives"] = sorted(record["archives"])
+            normalized["paths"] = sorted(record["paths"])
+            normalized["profile"] = profile
+            decoded.append(normalized)
+            stage_counts.update(profile["stages"])
+            model_counts.update(profile["shader_models"])
+            opcode_counts.update(profile["opcodes"])
+            unsupported_counts.update(profile["unsupported_opcodes"])
 
     return {
         "format": "SHIFT.FXOShaderCorpusAudit/1",
@@ -195,7 +194,6 @@ def profile_shader_corpus(inputs: Iterable[str | Path]) -> dict[str, Any]:
         "payloads": decoded,
         "ready": bool(raw_payloads) and not decode_failures,
     }
-
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
