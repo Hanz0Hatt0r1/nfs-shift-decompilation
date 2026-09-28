@@ -98,6 +98,13 @@ def audit_vehicle_corpus(
             key = str(key)
             type_counts[key] = type_counts.get(key, 0) + int(value)
 
+    extension_counts: dict[str, int] = {}
+    for report in reports:
+        for extension, count in report["summary"].get("extensions", {}).items():
+            extension_counts[str(extension)] = (
+                extension_counts.get(str(extension), 0) + int(count)
+            )
+
     return {
         "format": "SHIFT.VehicleBFFCorpusAudit/1",
         "version": 1,
@@ -106,6 +113,12 @@ def audit_vehicle_corpus(
         "total_entries": total_entries,
         "compression_type_counts": dict(
             sorted(type_counts.items(), key=lambda item: int(item[0]))
+        ),
+        "extension_counts": dict(
+            sorted(
+                extension_counts.items(),
+                key=lambda item: (-item[1], item[0]),
+            )
         ),
         "x12d_values": sorted(x12d_values),
         "all_x12d_zero": x12d_values <= {0},
