@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runt
 
 > **Current mainline: Phase 503**
 >
-> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Exact retail numeric parity remains capture-gated.
+> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
@@ -106,7 +106,8 @@ The repository now models:
 - capture-session and capture-bundle verification;
 - source-mutation correlation against source-derived factor edges;
 - pre-PhysX/provider handoff cross-contract validation;
-- BFF-to-pre-PhysX/provider handoff orchestration.
+- BFF-to-pre-PhysX/provider handoff orchestration;
+- runtime-capture preflight for retail PE/Wine/GDB/GDB Python.
 
 ### Phase 499–500 capture bundle
 
@@ -138,6 +139,7 @@ python tools/extract_apitrace_unique_bmw.py \
 
 python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
 python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff
+python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py
 
 ./shift-bff-viewer /path/to/BMW_M3_E36.bff
 ```
