@@ -197,6 +197,83 @@ class SolverEntryProbe(_BaseProbe):
         return False
 
 
+class ProviderSolveReturnProbe(gdb.FinishBreakpoint):
+    """Capture provider state immediately after a specialized solve returns."""
+
+    def __init__(
+        self,
+        frame: gdb.Frame,
+        provider_id: int,
+        output_dir: Path,
+        hit: int,
+    ) -> None:
+        super().__init__(frame, internal=False)
+        self.provider_id = provider_id
+        self.output_dir = output_dir
+        self.hit = hit
+
+    def stop(self) -> bool:
+        inferior = gdb.selected_inferior()
+        payload = _provider_snapshot(
+            inferior,
+            self.provider_id,
+            "post-solve-provider",
+            self.hit,
+        )
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        target = self.output_dir / (
+            f"provider_post_{self.provider_id}_{self.hit:06d}.json"
+        )
+        target.write_text(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            ) + "\n",
+            encoding="utf-8",
+        )
+        return False
+
+
+class ProviderSolveProbe(_BaseProbe):
+    """Capture raw provider state at solve entry and arm a return probe."""
+
+    def __init__(
+        self,
+        address: int,
+        provider_id: int,
+        output_dir: Path,
+    ) -> None:
+        super().__init__(
+            address,
+            f"provider{provider_id}_solver",
+            output_dir,
+        )
+        self.provider_id = provider_id
+
+    def stop(self) -> bool:
+        self.hit += 1
+        inferior = gdb.selected_inferior()
+        payload = _provider_snapshot(
+            inferior,
+            self.provider_id,
+            "pre-solve-provider",
+            self.hit,
+        )
+        self.write_json(
+            f"provider_pre_{self.provider_id}_{self.hit:06d}.json",
+            payload,
+        )
+        ProviderSolveReturnProbe(
+            gdb.newest_frame(),
+            self.provider_id,
+            self.output_dir,
+            self.hit,
+        )
+        return False
+
+
 class PostSolveProbe(_BaseProbe):
     def stop(self) -> bool:
         self.hit += 1
@@ -243,10 +320,22 @@ class SDFProbeCommand(gdb.Command):
             FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
             SolverEntryProbe(FUNCTIONS["builtin_solver"], "builtin_solver", output),
             PostSolveProbe(FUNCTIONS["post_solve"], "post_solve", output),
+            ProviderSolveProbe(
+                get_provider(0).solve_function,
+                0,
+                output,
+            ),
+            ProviderSolveProbe(
+                get_provider(1).solve_function,
+                1,
+                output,
+            ),
         ]
         print(
             "SDF probe installed:",
             f"builtin_solver=0x{FUNCTIONS['builtin_solver']:08x},",
+            f"provider0_solver=0x{get_provider(0).solve_function:08x},",
+            f"provider1_solver=0x{get_provider(1).solve_function:08x},",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
             f"output={output}",
         )
