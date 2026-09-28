@@ -31,6 +31,37 @@ DIRECT_ZERO_RE = re.compile(
 )
 
 
+def _balanced_function_body(source: str, start: int) -> str:
+    open_brace = source.find("{", start)
+    if open_brace < 0:
+        raise ValueError("function opening brace not found")
+
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(open_brace, len(source)):
+        char = source[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start:index + 1]
+
+    raise ValueError("function closing brace not found")
+
+
 def _extract_function_body(source: str, function_name: str) -> str:
     marker = re.search(
         rf"void {re.escape(function_name)}\(void\)\n",
@@ -38,14 +69,7 @@ def _extract_function_body(source: str, function_name: str) -> str:
     )
     if marker is None:
         raise ValueError(f"cleanup function not found: {function_name}")
-
-    tail = source[marker.start():]
-    end = tail.find("\n}\n")
-    if end < 0:
-        raise ValueError(
-            f"cleanup function closing boundary not found: {function_name}"
-        )
-    return tail[: end + 3]
+    return _balanced_function_body(source, marker.start())
 
 
 def _interval_coverage(
