@@ -56,7 +56,7 @@ def test_unknown_provider_vtable_is_fail_closed_by_schema():
     assert "unknown-provider-vtable" in (
         Path(
             Path(__file__).resolve().parents[1]
-            / "specialized_provider_scalar_reset_capture_runtime.py"
+            / "src/physics/providers/specialized_provider_scalar_reset_capture_runtime.py"
         ).read_text(encoding="utf-8")
     )
 
