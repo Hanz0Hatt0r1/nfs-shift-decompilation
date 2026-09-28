@@ -179,14 +179,16 @@ def _rhs_references(
     provider_id: int,
     loop_index: int,
 ) -> tuple[Reference, ...]:
-    references: list[Reference] = []
-    masked = list(rhs)
-    segments = build_row_segments(provider_id)
+    """Return normalized references in source-expression order."""
+    matches: list[tuple[int, int, Reference]] = []
 
-    def consume(match: re.Match[str]) -> None:
-        start, end = match.span()
-        for offset in range(start, end):
-            masked[offset] = " "
+    def add_match(
+        match: re.Match[str],
+        reference: Reference,
+    ) -> None:
+        matches.append((match.start(), match.end(), reference))
+
+    segments = build_row_segments(provider_id)
 
     for match in ROWPTR_OFFSET_RE.finditer(rhs):
         row = loop_index
@@ -195,7 +197,8 @@ def _rhs_references(
         offset = _parse_int(match.group(2))
         address = segments[row].start + offset
         reference = _locate_address(address, provider_id)
-        references.append(
+        add_match(
+            match,
             Reference(
                 domain=reference.domain,
                 form="row-pointer-offset",
@@ -203,9 +206,8 @@ def _rhs_references(
                 row=reference.row,
                 column=reference.column,
                 index=reference.index,
-            )
+            ),
         )
-        consume(match)
 
     for match in ROWPTR_BASE_RE.finditer(rhs):
         row = loop_index
@@ -213,7 +215,8 @@ def _rhs_references(
             raise ValueError(f"row-pointer index out of range: {row}")
         address = segments[row].start
         reference = _locate_address(address, provider_id)
-        references.append(
+        add_match(
+            match,
             Reference(
                 domain=reference.domain,
                 form="row-pointer-base",
@@ -221,33 +224,42 @@ def _rhs_references(
                 row=reference.row,
                 column=reference.column,
                 index=reference.index,
-            )
-        )
-        consume(match)
-
-    for regex, form in (
-        (DYNAMIC_PTR_RE, "flat-pointer"),
-        (ARRAY_REF_RE, "flat-array"),
-    ):
-        for match in regex.finditer(rhs):
-            references.append(
-                _resolve_loop_address(
-                    int(match.group(1), 16),
-                    loop_index,
-                    provider_id=provider_id,
-                    form=form,
-                )
-            )
-            consume(match)
-
-    masked_rhs = "".join(masked)
-    for match in DIRECT_ADDR_RE.finditer(masked_rhs):
-        references.append(
-            _locate_address(int(match.group(1), 16), provider_id)
+            ),
         )
 
-    return tuple(references)
+    for match in DYNAMIC_PTR_RE.finditer(rhs):
+        add_match(
+            match,
+            _resolve_loop_address(
+                int(match.group(1), 16),
+                loop_index,
+                provider_id=provider_id,
+                form="flat-pointer",
+            ),
+        )
 
+    for match in ARRAY_REF_RE.finditer(rhs):
+        add_match(
+            match,
+            _resolve_loop_address(
+                int(match.group(1), 16),
+                loop_index,
+                provider_id=provider_id,
+                form="flat-array",
+            ),
+        )
+
+    masked = list(rhs)
+    for start, end, _ in matches:
+        for offset in range(start, end):
+            masked[offset] = " "
+
+    for match in DIRECT_ADDR_RE.finditer("".join(masked)):
+        reference = _locate_address(int(match.group(1), 16), provider_id)
+        add_match(match, reference)
+
+    matches.sort(key=lambda item: item[0])
+    return tuple(reference for _, _, reference in matches)
 
 def _assignment_statements(
     lines: list[str],
