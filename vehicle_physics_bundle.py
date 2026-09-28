@@ -5,6 +5,7 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+import re
 
 from shift_importer import BFF
 from vehicle_physics_asset_graph_runtime import build_profile
@@ -20,6 +21,88 @@ DEFAULT_TARGETS = {
     "tbf": "vehicles/physics/turbo/gen_lowrpm_33.tbf",
     "bbf": "vehicles/physics/turbo/nitrous.bbf",
 }
+
+COMMON_DEFAULT_BASENAMES = {
+    "gdf": ("common.gdf",),
+    "sdf": ("aarm_multilink.sdf", "strut_multilink.sdf"),
+    "tbf": ("gen_lowrpm_33.tbf",),
+    "bbf": ("nitrous.bbf",),
+}
+
+
+def _stem_tokens(value: str) -> set[str]:
+    stem = Path(value.replace("\\", "/")).stem.lower()
+    return {
+        token
+        for token in re.split(r"[^a-z0-9]+", stem)
+        if token
+    }
+
+
+def resolve_default_targets(archive: BFF) -> dict[str, str]:
+    """Resolve the default physics resource set for non-BMW vehicle BFFs.
+
+    Exact DEFAULT_TARGETS remain authoritative when present. Fallback selection
+    only accepts an unambiguous candidate, otherwise it fails closed.
+    """
+    resolved: dict[str, str] = {}
+    archive_stem = archive.path.stem.lower()
+
+    for kind, wanted in DEFAULT_TARGETS.items():
+        exact = [
+            entry.path
+            for entry in archive.entries
+            if entry.path.replace("\\", "/").lower() == wanted.lower()
+        ]
+        if len(exact) == 1:
+            resolved[kind] = exact[0]
+            continue
+
+        extension = "." + kind
+        candidates = [
+            entry.path.replace("\\", "/")
+            for entry in archive.entries
+            if entry.path.replace("\\", "/").lower().endswith(extension)
+            and "/physics/" in entry.path.replace("\\", "/").lower()
+        ]
+
+        if not candidates:
+            raise ValueError(
+                f"no {kind.upper()} physics resource candidates found in {archive.path.name}"
+            )
+
+        basename_names = {name.lower() for name in COMMON_DEFAULT_BASENAMES.get(kind, ())}
+        preferred = [
+            path for path in candidates
+            if Path(path).name.lower() in basename_names
+        ]
+        if len(preferred) == 1:
+            resolved[kind] = preferred[0]
+            continue
+        if len(preferred) > 1:
+            candidates = preferred
+
+        archive_tokens = _stem_tokens(archive_stem)
+        token_matches = [
+            path for path in candidates
+            if archive_tokens & _stem_tokens(path)
+        ]
+        if len(token_matches) == 1:
+            resolved[kind] = token_matches[0]
+            continue
+        if len(token_matches) > 1:
+            candidates = token_matches
+
+        if len(candidates) == 1:
+            resolved[kind] = candidates[0]
+            continue
+
+        raise ValueError(
+            f"ambiguous {kind.upper()} physics resource selection in {archive.path.name}: "
+            + ", ".join(sorted(candidates))
+        )
+
+    return resolved
 
 
 def _find_entry(archive: BFF, wanted: str):
@@ -45,7 +128,11 @@ def extract_bundle(
 ) -> dict[str, Any]:
     bff_path = Path(bff_path)
     output_dir = Path(output_dir)
-    targets = dict(targets or DEFAULT_TARGETS)
+    targets = (
+        dict(targets)
+        if targets is not None
+        else None
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     resource_dir = output_dir / "resources"
     resource_dir.mkdir(parents=True, exist_ok=True)
@@ -54,6 +141,11 @@ def extract_bundle(
     entries: dict[str, Any] = {}
 
     with BFF(bff_path) as archive:
+        targets = (
+            resolve_default_targets(archive)
+            if targets is None
+            else targets
+        )
         for kind in ("cdf", "edf", "gdf", "sdf", "tbf", "bbf"):
             wanted = targets[kind]
             entry = _find_entry(archive, wanted)
