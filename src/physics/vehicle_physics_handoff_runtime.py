@@ -15,6 +15,7 @@ from typing import Any, Mapping, Sequence
 from vehicle_physics_bundle import extract_bundle
 from prephysx_provider_handoff_runtime import build_prephysx_provider_handoff_contract
 from vehicle_physics_participant_gate_runtime import build_vehicle_physics_participant_gate
+from physics_participant_registry_update_runtime import build_physics_participant_registry_update
 
 FORMAT = "SHIFT.VehiclePhysicsPrePhysXHandoff/1"
 
@@ -28,6 +29,7 @@ def build_vehicle_physics_handoff(
     bff_path = Path(bff_path)
     output_dir = Path(output_dir)
     participant_gate = build_vehicle_physics_participant_gate()
+    participant_registry_update = build_physics_participant_registry_update()
     bundle = extract_bundle(
         bff_path,
         output_dir,
@@ -45,6 +47,7 @@ def build_vehicle_physics_handoff(
             "bundle": bundle,
             "prephysx_provider_handoff": None,
             "participant_gate": participant_gate,
+            "participant_registry_update": participant_registry_update,
             "errors": ["vehicle-physics-profile-details-missing"],
         }
 
@@ -58,6 +61,7 @@ def build_vehicle_physics_handoff(
             "bundle": bundle,
             "prephysx_provider_handoff": None,
             "participant_gate": participant_gate,
+            "participant_registry_update": participant_registry_update,
             "errors": ["sdf-report-missing-from-vehicle-profile"],
         }
 
@@ -87,6 +91,7 @@ def build_vehicle_physics_handoff(
         "bundle": bundle,
         "prephysx_provider_handoff": handoff,
         "participant_gate": participant_gate,
+        "participant_registry_update": participant_registry_update,
         "outputs": {
             "vehicle_physics_asset_graph": str(bundle.get("physics_profile")),
             "prephysx_provider_handoff": str(handoff_path),
@@ -103,6 +108,7 @@ def build_vehicle_physics_handoff(
             "runtime_constraint_count": int(counts.get("runtime_constraints", 0)),
             "sdf_body_count": int((bundle.get("profile", {}).get("summary") or {}).get("sdf_bodies", 0)),
             "participant_gate_ready": bool(participant_gate.get("ready")),
+            "participant_registry_update_ready": bool(participant_registry_update.get("ready")),
         },
         "errors": list(dict.fromkeys(errors)),
         "limitations": [
@@ -141,6 +147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "same_dimension_provider_candidates": report["summary"]["same_dimension_provider_candidates"],
         "errors": report["errors"],
         "participant_gate_ready": report["summary"]["participant_gate_ready"],
+        "participant_registry_update_ready": report["summary"]["participant_registry_update_ready"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
 

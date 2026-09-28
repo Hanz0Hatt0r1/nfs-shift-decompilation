@@ -70,6 +70,14 @@ The Phase 505 source-backed gate records the `IGPhaseVehicle` participant select
 
 The gate intentionally does not assign a PhysX/provider class identity or a runtime participant instance.
 
+## Physics participant registry/update
+
+The Phase 507 contract records the participant slot allocation, registration and refresh routines used by `PhysicsParticipant.cpp`:
+
+`python tools/build_physics_participant_registry_update.py -o physics_participant_registry_update.json`
+
+The registry remains separate from the `FUN_00410ef0` selector context until object identity is proven.
+
 ## Pre-PhysX/provider handoff
 
 Build a cross-contract construction/selection/rebind validation from a parsed SDF report:
