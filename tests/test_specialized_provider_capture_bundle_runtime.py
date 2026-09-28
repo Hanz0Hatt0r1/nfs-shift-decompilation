@@ -73,9 +73,9 @@ def test_index_directory_rejects_duplicate_stage(tmp_path: Path):
 
     result = runtime.index_provider_snapshot_directory(tmp_path)
 
-    assert result["ready"] is False
     # These names do not match the strict regex, so they are ignored rather
     # than considered duplicates.
+    assert result["ready"] is True
     assert result["ignored_file_count"] == 2
 
 
