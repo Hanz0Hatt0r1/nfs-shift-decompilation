@@ -59,8 +59,8 @@ def _classify_relation(
     if source_row == destination_row:
         return "destination-row"
     if source_row > destination_row:
-        return "later-row"
-    return "future-pivot"
+        return "future-pivot"
+    return "later-row"
 
 
 def build_dependency_graph(
