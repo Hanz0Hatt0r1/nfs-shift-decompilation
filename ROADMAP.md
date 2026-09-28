@@ -5,7 +5,7 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: specialized-provider solver reconstruction
 
-Current `main` is advancing through Phase 444 on the non-rendering physics runtime track. The specialized 40/34-scalar provider solvers now have source-backed pivot geometry, static row topology, factor patterns, workspace write graphs, RHS dependency stencils, address dependency graphs, operator signatures, and a combined solver reconstruction IR. Numeric provider execution remains capture-gated; the renderer workstream remains unchanged by this track.
+Current `main` is advancing through Phase 456 on the non-rendering physics runtime track. The specialized 40/34-scalar provider solvers now have source-backed pivot geometry, packed row/storage topology, factor patterns, workspace write graphs, RHS dependency stencils, address dependency graphs, operator signatures, execution schedule, source-context resolution, update relations, output-vector schedule, acceptance/factor separation, a unified solver program bundle, and read-before-write initial-state analysis. Numeric provider execution remains capture-gated; the renderer workstream remains unchanged by this track.
 
 The immediate target is a deterministic pipeline:
 
@@ -125,6 +125,70 @@ Normalizes source-level RHS references into workspace/output/global domains, exp
 ## Phase 440: specialized-provider workspace update graph
 
 Resolves direct, pointer-loop and flat-array workspace writes into the exact Phase 435 row/column topology and cross-checks the recovered factor pattern.
+
+## Phase 456: specialized-provider initial-state boundary
+
+Adds source-order read-before-write analysis for the specialized provider solver. Exact absolute storage addresses are classified as previously-written or preexisting/external, providing the minimum proven input-state boundary without guessing which earlier runtime function produced the data.
+
+## Phase 455: specialized-provider solver program bundle
+
+Combines the solver IR, execution schedule, update relations, output-vector schedule, acceptance/factor separation, packed-workspace alias map and source-context resolver into one readiness-gated consumer bundle.
+
+## Phase 454: acceptance mask vs factor topology
+
+Formally separates the provider acceptance strict-upper sparsity mask from the source-derived factor-write topology. They are distinct structural domains and are not required to match.
+
+## Phase 453: specialized-provider output-vector schedule
+
+Extracts output-vector assignment sites and output-to-output dependencies, distinguishing non-terminal forward output flow from the terminal output region.
+
+## Phase 452: specialized-provider update relation IR
+
+Groups assignments into normalized-factor, self-update, subtractive-update and RHS-update relations while preserving ordered dependencies and packed-address ambiguity.
+
+## Phase 451: specialized-provider update template signatures
+
+Identifies recurring source forms such as self-subtract-product without embedding proprietary RHS expressions.
+
+## Phase 450: source-context dependency resolution
+
+Applies the packed-workspace alias map to assignments and RHS references. Explicit row-pointer/loop forms resolve uniquely; bare absolute addresses preserve candidate aliases.
+
+## Phase 449: source-context cell resolver
+
+Adds the practical resolver for explicit row-pointer + local-index source forms and preserves ambiguous direct addresses.
+
+## Phase 448: specialized-provider packed workspace aliases
+
+Enumerates candidate row/column addresses and records collisions in the 1190-double and 746-double packed workspaces.
+
+## Phase 447: specialized-provider scaled update stencils
+
+Captures local_10 ranges, dVar1 loader forms and expanded workspace destinations used by scaled retail update loops.
+
+## Phase 445: specialized-provider execution schedule
+
+Records source-order events around every reciprocal pivot and the terminal output/back-substitution region without imposing an artificial phase order.
+
+## Phase 444: specialized-provider solver reconstruction IR
+
+Combines pivot geometry, write graph, RHS stencils, dependency graph and operator signatures into one neutral per-provider reconstruction IR.
+
+## Phase 443: specialized-provider operator signatures
+
+Classifies source-visible arithmetic shapes such as subtract-product, subtract-product-then-scale and pivot scaling.
+
+## Phase 442: specialized-provider dependency graph
+
+Collapses RHS workspace references into an address-level data-dependency graph while preserving output/global reads separately.
+
+## Phase 441: specialized-provider RHS reference stencils
+
+Normalizes source-level RHS references into workspace/output/global domains, expands local loop indices and preserves source order.
+
+## Phase 440: specialized-provider workspace update graph
+
+Resolves direct, pointer-loop and flat-array workspace writes into source-derived row/column storage coordinates.
 
 ## Phase 435: exact provider row-pointer topology
 

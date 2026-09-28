@@ -14,7 +14,9 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 444.**
+> **Current mainline: Phase 456.**
+>
+> **Latest physics/provider track:** Phases 440–456 now reconstruct the specialized 40/34-scalar provider solvers as a layered evidence pipeline: workspace write graph, RHS stencils, dependency graph, operator signatures, solver IR, execution schedule, packed-workspace alias map, source-context resolution, update relations, output-vector schedule, acceptance/factor separation, a unified solver program bundle, and read-before-write initial-state analysis. Numeric provider parity remains capture-gated.
 >
 > **Latest physics/provider track:** Phases 440–444 reconstruct the specialized solver from the retail source as a layered, machine-readable boundary: workspace write graph, RHS address stencils, dependency graph, operator signatures, and a combined solver reconstruction IR. The fixed provider domains remain 40/34 scalars; final provider selection and numeric retail parity remain capture-gated.
 >
@@ -49,6 +51,8 @@
 > **Phase 438 — acceptance RLE source extractor:** the provider acceptance masks are now regenerable directly from FUN_007c6e50/FUN_007cdb40 in a local retail SHIFT.exe.c, including exact RLE entry counts and strict-upper coverage.
 
 > **Phase 439 — specialized-provider factor pattern:** future-column coefficient writes can now be extracted from the actual unrolled provider solver, yielding the static post-pivot factor edge set for each solver row.
+
+> **Phases 440–456 — specialized-provider solver reconstruction:** the provider solvers are now represented as source-derived write/dependency/operator/schedule layers. Packed workspace aliasing is explicit; source-context resolution distinguishes unique loop/array addresses from ambiguous direct addresses. Output-vector flow and the solver's read-before-write initial-state boundary are represented separately. No proprietary retail RHS expressions are stored.
 
 > **Current physics gate:** run `tools/run_sdf_solver_probe.py SHIFT.exe --output out/sdf-solver-capture` to validate the retail PE and generate a deterministic GDB attach bundle, then attach the probe to the retail 32-bit Wine process with the generated `attach.gdb`; the probe also records `frame_entry_XXXXXX.json` with provider/builtin backend selection, and `tools/verify_sdf_probe_session.py` accepts it with `--frame` when normalizing the resulting `pre_solve_XXXXXX.json` / `post_solve_XXXXXX.json` pair with `tools/verify_sdf_probe_session.py`. The repository intentionally does not fabricate a numeric retail solver frame; exact retail-vs-reimplementation equality still depends on a real runtime capture.
 
