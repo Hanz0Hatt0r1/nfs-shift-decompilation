@@ -1,27 +1,41 @@
 # SHIFT BFF Viewer
 
-`tools/shift_bff_viewer.py` is an interactive Linux/Tk viewer for the decompilation project's current BFF/MEB/VHF resource boundary.
+## Purpose
 
-## Usage
+Linux desktop viewer for inspecting SHIFT BFF archives using the current project parsers.
+
+It is a diagnostic preview, not a byte-for-byte D3D9/FXO replacement.
+
+## Quick start
 
 ```bash
-python3 tools/shift_bff_viewer.py /path/to/BMW_M3_E36.bff --render-bff /path/to/RENDER.bff
+sudo apt install python3 python3-tk
+./shift-bff-viewer /path/to/BMW_M3_E36.bff
+./shift-bff-viewer /path/to/BMW_M3_E36.bff --render-bff /path/to/RENDER.bff
 ```
 
-When `RENDER.bff` is placed beside the vehicle archive, the UI attaches it automatically.
+## Commands
 
-## Shader/material path
-
-`MEB primitive → BMT/MTX → shader reference → RENDER.bff .fx → matching .fxo cache → DDS texture`
-
-The viewer reads the recovered FX source and inspects an FXO cache program for D3D9 stage/CTAB/sampler metadata. Diffuse/specular DDS resources are decoded through the project's `texture_reference` implementation and sampled during the CPU preview.
-
-The viewport lighting is deliberately a preview approximation. It uses real BMT scalar parameters such as fresnel/specular factors, but does not claim byte-for-byte execution of the original D3D9 FXO program.
+```bash
+./shift-bff-viewer extract /path/to/file.bff -o extracted
+./shift-bff-viewer info /path/to/file.bff
+python3 tools/shift_bff_viewer.py /path/to/file.bff
+```
 
 ## Controls
 
-LMB drag rotates the model, the mouse wheel changes zoom, and `R` resets the camera. The material checkbox switches between shader-aware textured rendering and the faster geometry-only path.
+LMB drag: orbit
 
-## Dependencies
+Mouse wheel: zoom
 
-The project modules already provide BFF/XMem-LZX, MEB/VHF, BMT, DDS and shader parsing. The UI itself uses Python's standard `tkinter` only.
+R: reset camera
+
+Material/shader preview: toggle textured preview
+
+Open Render BFF: attach another shader library
+
+Extract all: decode and export manifest
+
+## Scope
+
+The viewer uses the project's BFF/XMem-LZX, MEB/VHF, BMT/MTX, DDS and shader metadata implementations. Unsupported full-runtime shader behavior may be approximated or omitted by design.

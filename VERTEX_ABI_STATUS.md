@@ -1,309 +1,58 @@
 # SHIFT Vertex ABI status
 
-## Phase 11
+## Layering
 
-SHIFT.VertexLayout/1 now records ABI evidence explicitly instead of exposing only a storage descriptor.
+Keep separate:
 
-### Evidence states
+1. MEB descriptor/source evidence;
+2. D3D9 declaration/runtime evidence;
+3. neutral VertexLayout/GLES/Vulkan target ABI.
 
-- `proven`: source representation and semantic contract are established by the current parser/runtime evidence.
-- `inferred`: storage/width is established, but the exact original D3D9 declaration still needs direct declaration evidence.
-- `ambiguous`: multiple source interpretations remain valid, and the renderer must not choose silently.
-- `unknown`: the property is not yet decoded well enough for a render contract.
+Repacked target offsets are never presented as original D3D9 stream offsets.
 
-### Current BMW target state
+## BMW mappings
 
-| MEB | Semantic | Android storage | State |
-|---|---|---|---|
-| 200 | POSITION0 | FLOAT32x3 | inferred |
-| 220 | NORMAL0 | FLOAT32x3 | inferred |
-| 240 | TANGENT0 | FLOAT32x3 | inferred |
-| 250 | BINORMAL0 | FLOAT32x3 | inferred |
-| 130-134 | TEXCOORD0-4 | FLOAT32x2 | inferred |
-| 230-234 | TEXCOORD0-4 family | FLOAT32x3 | inferred |
-| 310 | BLENDWEIGHT0 | FLOAT32x4 | proven |
-| 580 | BLENDINDICES0 | UINT8x4 | proven |
-| 460 | COLOR0 | UINT8x4 normalized | corpus-proven D3D9 Type 4 / D3DCOLOR triple; runtime-instance correlation remains |\n| 461 | COLOR1 | UINT8x4 normalized | not-observed in supplied 1.02 MEB corpus |
-| 033 | unknown | RAW4 | unknown |
+| MEB property | Semantic | Storage |
+|---:|---|---|
+| 200 | POSITION0 | FLOAT32x3 |
+| 220 | NORMAL0 | FLOAT32x3 |
+| 240 | TANGENT0 | FLOAT32x3 |
+| 250 | BINORMAL0 | FLOAT32x3 |
+| 130..134 | TEXCOORD0..4 | FLOAT32x2 |
+| 230..234 | TEXCOORD0..4 alternate | FLOAT32x3 |
+| 310 | BLENDWEIGHT0 | FLOAT32x4 |
+| 580 | BLENDINDICES0 | UINT8x4 |
+| 460 | COLOR0 | Type-4 D3D9 packed-color path |
+| 461 | COLOR1 | Type-4 D3D9 packed-color path when present |
 
-`460/461` remain the primary unresolved render ABI because the current evidence does not prove the original D3D9 declaration (`D3DCOLOR` vs `UBYTE4N`) or channel byte order (`RGBA` vs `BGRA`).
+## COLOR closure
 
-`SHIFT.StaticDraw/1` therefore blocks those attributes only when the selected shader binding actually consumes them.
-## Phase 28: vertex location collision guard
+Exact MEB descriptors:
 
-`build_vertex_input_locations()` now rejects two classes of silent ABI corruption: one D3D9 input register mapping to multiple target locations, and multiple shader registers mapping to the same target location. The resulting `location_collisions` and `unresolved` records remain machine-readable.
-## Phase 41: COLOR0/COLOR1 evidence
+`460 → [4,6,0]`
+`461 → [4,6,1]`
 
-`color_abi.py` now preserves the unresolved MEB 460/461 channel-order ambiguity as explicit RGBA and BGRA candidate interpretations. It records raw/candidate SHA-256, basic channel statistics and can compare both candidates against a known RGBA8 reference without selecting a winner.
+Recovered executable tables:
 
+`Type 4 = D3DDECLTYPE_D3DCOLOR`
+`Usage 6 = D3D9 Usage 10 (COLOR)`
 
-## Phase 55: 230..234 reference execution
+The supplied 1.02 corpus contains 70,370 property-460 instances with the exact descriptor. Property 461 is absent from that corpus.
 
-The deterministic reference layers now consume `230..234` directly as `TEXCOORD0..4` semantic inputs, preserving their FLOAT32x3 payloads. This is an execution mapping only; it does not assert an exact original D3D9 declaration beyond the evidence already recorded. Mixed 130/230 families for the same semantic remain a hard ABI collision.
+Static ABI mapping is therefore resolved. Remaining proof is runtime same-instance attribution.
 
+## Declaration record
 
-## Phase 56: skin inputs at the renderer boundary
+Runtime declaration records are the 8-byte tuple:
 
-`BLENDWEIGHT0` (MEB 310) and `BLENDINDICES0` (MEB 580) are now available to the integrated vertex shader reference path. The neutral mesh values are converted to shader-register float4 values without normalization or reinterpretation. Actual SkinPose matrix application remains a separate milestone.
+`Stream:WORD, Offset:WORD, Type:BYTE, Method:BYTE, Usage:BYTE, UsageIndex:BYTE`
 
+Creation, canonicalization, binding and D3DDECL_END evidence are represented separately.
 
-## Phase 65: TEXCOORD5 evidence boundary
+## Runtime gate
 
-`TEXCOORD5` is present in the recovered BMW shader interface and can be linked to a matching vertex output, but its MEB storage property remains unresolved. The runtime reference layer now accepts it only through an explicit semantic stream; no property id 235/236/etc. is inferred.
+Use draw-local snapshots to correlate declaration, stream/index, shader, constant and texture state at the exact DrawIndexedPrimitive.
 
+## Status model
 
-## Phase 66: COLOR evidence CLI
-
-`shift_importer.py color-evidence` is now the standard entry point for collecting evidence on MEB properties 460/461. It preserves both RGBA and BGRA candidate streams and reports exact byte differences against an external RGBA8 reference without changing the unresolved ABI status.
-
-
-## Phase 67: MEB JSON evidence input
-
-The COLOR ABI investigation no longer requires manual raw-stream extraction. The evidence CLI accepts canonical MEB mesh JSON and reconstructs the exact four-byte `colors`/`colors2` streams emitted by the decoder, preserving the unresolved declaration/channel-order status.
-
-
-## Phase 68: direct MEB resource evidence
-
-`color-evidence-resource` can read properties 460/461 directly from a `.meb` stored inside a `.bff`, recording entry index, resource SHA256, vertex count and `property_layout` metadata. This is now the canonical ingestion path for future real BMW color evidence.
-
-
-## Phase 69: COLOR corpus consistency
-
-Multiple 460/461 evidence reports can now be aggregated without selecting RGBA/BGRA. Candidate hashes and cross-report stability are exposed as machine-readable data for later declaration verification.
-
-
-## Phase 70: corpus-scale COLOR evidence
-
-A directory-level BFF scan now collects 460/461 samples from decoded MEB resources and records archive/resource identity. This provides cross-vehicle evidence for future D3D9 declaration/channel-order verification without changing the current ambiguous runtime ABI.
-
-## Phase 72: packed-color evidence from SHIFT.exe
-
-The uploaded full Ghidra decompilation provides a new source-level observation in the
-original renderer. `FUN_008310c0` rounds a float4 color to 8-bit channels and constructs
-the value as `0xAARRGGBB`; on the original little-endian Windows target this is a BGRA
-byte sequence in memory. The same helper is called from the vertex-buffer conversion
-logic in `FUN_00854e70`, where a 4-byte converted value is written into the generated
-vertex buffer.
-
-This is **supporting evidence for the packed-color/D3DCOLOR-style candidate**, but it
-does not by itself prove that MEB properties 460/461 use `D3DDECLTYPE_D3DCOLOR` rather
-than `D3DDECLTYPE_UBYTE4N`. The exact MEB declaration remains ambiguous.
-
-`color_abi.py` and `vertex_layout.py` now preserve this distinction explicitly:
-- `UBYTE4N` candidate: RGBA bytes are consumed in memory order and normalized;
-- `D3DCOLOR` candidate: packed BGRA memory is expanded to shader-visible RGBA;
-- no candidate is selected automatically.
-
-## Phase 74: machine-readable SHIFT.exe source evidence
-
-`d3d9_source_evidence.py` and `shift_importer.py source-d3d9-evidence` now turn the
-recovered `SHIFT.exe.c` observations into a reproducible JSON report. The extractor
-records `FUN_008310c0` as the packed-color helper and `FUN_00854e70` as the vertex
-conversion/declaration path where type code 4 calls that helper. It also records the
-`STREAM` parser's `Type`, `Usage` and `Channel` fields.
-
-The extractor deliberately reports `MEB 460/461 -> type 4` as `not-proven`: the
-exported C does not expose the contents of `DAT_00b90088` / `PTR_DAT_00b901d0` well
-enough to establish that exact property-to-type linkage. Therefore phase 74 improves
-provenance and repeatability without changing the runtime ABI selection.
-
-## Phase 78: recovered D3D9 primitive-type switch
-
-The recovered `FUN_00854e70` declaration conversion switch contains every type code `0..16`. A dedicated `d3d9_type_semantics.py` evidence layer records each case's source behavior and the corresponding D3D9 `D3DDECLTYPE` name. The strongest new link is type code `4 -> D3DDECLTYPE_D3DCOLOR -> FUN_008310c0 packed-color conversion`.
-
-This proves the semantics of the recovered type-code switch, but it still does not prove `MEB 460/461 -> type code 4`. The mesh ABI therefore remains ambiguous until the declaration/table linkage is recovered.
-
-The full supplied source snapshot is recorded without including the game source itself in `evidence/shift_d3d9_type_switch_snapshot.json`.
-
-
-## Phase 80: recovered Usage semantics
-
-The recovered XML stream loader iterates a fixed usage domain `0..8` and resolves the usage name through `PTR_s_Position_00b901a8`. Source-visible entries are `Position`, `Weights`, `Normal`, an opaque `DAT_00b1d188` entry, `Tangent`, `Binormal`, `Colour`, `Depth`, and `Indices`. Usage code `6 -> Colour` is now machine-readable. This does not resolve the separate Type table, so COLOR0/1 remain ambiguous.
-
-
-## Phase 81: raw memory table evidence
-
-`d3d9_memory_table_evidence.py` provides an input path for the data missing from the recovered C export: a raw memory window plus its virtual base address. The tool decodes `DAT_00b90088`, `DAT_00b900d8`, usage tables, and the 17-entry `PTR_DAT_00b901d0` pointer table without inventing initializer values. Resolved printable C strings are reported as evidence; unresolved pointers remain unresolved.
-
-
-## Phase 83: STREAM declaration record semantics
-
-The recovered loader constructs a fixed 8-byte record for each XML `STREAM` entry whose six fields match the documented `D3DVERTEXELEMENT9` order: `Stream` (WORD), `Offset` (WORD), `Type` (BYTE), `Method` (BYTE), `Usage` (BYTE), `UsageIndex` (BYTE). Source evidence shows `Stream=0`, a running `Offset`, the resolved D3D9 `Type` at `+4`, `Method=0`, the resolved `Usage` at `+6`, and the XML `Channel` at `+7`. Microsoft documents the same field order and meanings for `D3DVERTEXELEMENT9`. This is a source-level ABI observation and does not assign MEB property ids 460/461 to any Type ordinal.
-
-
-## Phase 84: declaration canonicalizer evidence
-
-`FUN_00830f80` compares the two WORD fields plus the four BYTE fields of the recovered 8-byte declaration record and copies/interns the complete record. Combined with phase 83, this is source-level evidence that the renderer treats the recovered `Stream/Offset/Type/Method/Usage/UsageIndex` tuple as the declaration identity. MEB 460/461 linkage remains unresolved.
-
-
-## Phase 85: Type -> layout table semantics
-
-The renderer uses the declaration Type byte at offset `+4` as the common key for two opaque runtime tables. `DAT_00b8eef0[Type]` supplies the element byte size; `DAT_00b8ef38[Type]` supplies the component count. The source repeatedly uses these values for stream offset accumulation, vertex-buffer allocation/copy sizes and source component reads. The exact table initializer bytes are still absent from the exported Ghidra C, so numeric contents are not guessed.
-
-
-## Phase 86: Type semantic validation profile
-
-The recovered D3D9 Type switch is now paired with a validation-only semantic profile. The profile expects the documented packed sizes/components for Type `0..16` and can compare them against real `DAT_00b8eef0`/`DAT_00b8ef38` bytes when a memory dump is supplied. Missing values stay unavailable; mismatches are surfaced rather than repaired. `MEB 460/461 -> Type` remains a separate unresolved linkage.
-
-
-## Phase 87: Stream-group topology
-
-The recovered renderer groups declaration records by Stream id. The Stream/Type/Usage/Channel input arrays are carried separately; each element resolves its Type and Usage through the recovered ordinal tables, writes Channel as UsageIndex, and is appended to a per-stream record list. The same Type byte indexes `DAT_00b8eef0` to grow the per-stream byte-size accumulator. This provides source-backed topology for future MEB→STREAM correlation, without asserting a property mapping.
-
-
-## Phase 90: D3D9 declaration evidence chain
-
-`SHIFT.D3D9DeclarationChainEvidence/1` теперь объединяет четыре независимых source-backed звена: Type size/component semantics, STREAM grouping, 8-byte `D3DVERTEXELEMENT9`-shaped record и full-record canonicalization. Отсутствующее звено блокирует итоговый статус. Реальный runtime declaration и MEB 460/461 → Type ordinal остаются отдельными unresolved boundaries.
-
-## Phase 91: raw declaration instance decoder
-
-`SHIFT.D3D9DeclarationInstanceEvidence/1` даёт воспроизводимый декодер фактических 8-байтных declaration records. Type codes 0..16 разрешаются через recovered Type profile, `0x11` экспонируется как `D3DDECLTYPE_UNUSED`; неполный payload и неизвестный Type не принимаются как валидный declaration. Numeric Usage/UsageIndex сохраняются без недоказанной semantic remapping, а MEB 460/461 linkage остаётся `not-proven`.
-
-## Phase 92: instance-to-chain integration
-
-При передаче `SHIFT.D3D9DeclarationInstanceEvidence/1` в declaration chain фактический instance становится отдельным обязательным check. Это связывает декодер bytes с ранее подтверждённой source-backed ABI-формой, не закрывая MEB 460/461 → Type ordinal.
-
-
-## Phase 93: declaration instance integrity
-
-Точная форма `D3DDECL_END` теперь фиксируется как отдельное наблюдение, а chain проверяет внутреннюю согласованность runtime report, а не доверяет его полю `status`. Это снижает риск ложного `observed` при импорте внешних memory-dump evidence.
-
-
-## Phase 94: runtime memory declaration evidence
-
-SHIFT.D3D9MemoryDeclarationEvidence/1 теперь связывает сырой loaded-memory dump с recovered 8-byte D3D9 declaration instance через явный адресный диапазон, little-endian marker, SHA-256 полного dump/slice и exact raw bytes. Declaration array автоматически ограничивается точным D3DDECL_END sentinel; дополнительные bytes после него не считаются частью ABI.
-
-Chain-level validation перепроверяет slice hash и структуру вложенного declaration report, поэтому внешний JSON не может одним полем status=match скрыть повреждённые bytes. Provenance фиксирует источник, но остаётся not-authenticated: сам факт наличия dump не является независимой проверкой его происхождения. MEB 460/461 -> Type ordinal остаётся not-proven.
-
-
-## Phase 95: runtime declaration layout
-
-SHIFT.D3D9RuntimeDeclarationLayoutEvidence/1 проверяет фактические runtime Offsets против recovered packed Type sizes по каждому Stream. Для каждого элемента фиксируются observed/expected Offset, Type и element size; per-Stream summary показывает element count, byte size и final Offset.
-
-Это runtime consistency gate поверх phase 94, а не новая semantic inference. Несогласованный Offset остаётся mismatch, отсутствующий end sentinel — неполным доказательством. MEB 460/461 -> Type ordinal остаётся not-proven.
-
-
-## Phase 96: source provenance coherence
-
-Source-backed D3D9 evidence теперь может быть сопоставлено по единому SHA-256 snapshot. Chain сравнивает hash/size/line-count across STREAM topology, declaration record and canonicalizer reports; смешение данных из разных decompilation snapshots становится явным mismatch. Без переданного source hash статус остаётся not-supplied.
-
-
-## Phase 97: D3D9 declaration bind API
-
-Source analysis now reaches the actual D3D9 declaration-binding boundary: FUN_0082e510 compares against cached declaration state at +0x70c, forwards the declaration object through the device vtable at +0x15c, and is identified as IDirect3DDevice9::SetVertexDeclaration by the interface slot ordering.
-
-This is the missing source-side edge between the recovered 8-byte declaration records and the device state transition. It does not prove the originating MEB property, runtime dump authenticity, or MEB 460/461 -> Type ordinal.
-
-
-## Phase 98: D3D9 render API boundary
-
-The source-backed declaration path now reaches the renderer's device API setup boundary. FUN_00854d30 applies the declaration, FUN_00854da0 binds a vertex stream source, and FUN_00854e10 binds the index buffer; the mesh render path calls these wrappers in declaration → stream → index order. The recovered source also contains an IDirect3DDevice9 indexed-draw dispatch at vtable slot 82.
-
-These are API-boundary observations rather than new vertex semantic inference. MEB 460/461 -> Type remains not-proven.
-
-
-## Phase 99: D3D9 declaration creation
-
-FUN_00830f80 now has an explicit machine-readable creation report. The recovered canonicalizer copies the 8-byte declaration record sequence into a new buffer sized as uVar1 * 8 + 8 and passes it through vtable slot 86 (0x158) identified as IDirect3DDevice9::CreateVertexDeclaration.
-
-The created declaration object is retained by the interning structure. This closes the source-side object creation boundary before Phase 97's SetVertexDeclaration bind. It does not select MEB 460/461 -> Type.
-
-
-## Phase 100: declaration count boundary
-
-The declaration creation path now has explicit evidence for its count rule. FUN_0082ea90 advances by 8-byte records and stops when the Stream WORD reaches 0xff or above; FUN_00830f80 uses the resulting count in an allocation of count * 8 + 8 bytes. This supports a terminator/reserved-record boundary, but exact D3DECL_END field semantics remain a separate observation.
-
-
-## Phase 101: exact D3DDECL_END producer
-
-The recovered loader now has direct source evidence for the complete declaration terminator. FUN_008587e0 writes all six fields of the final 8-byte record to the exact D3DDECL_END values at the index following the data records. This complements the count helper's Stream >= 0xff stop rule and the runtime decoder's exact sentinel recognition.
-
-
-## Phase 102: runtime/source sentinel coherence
-
-Runtime declaration evidence now has a direct source comparison for its terminator. The chain verifies the exact six-field D3DDECL_END record against FUN_008587e0 and checks the sentinel index against the declared array length. This closes the producer/consumer consistency boundary while leaving runtime dump authenticity and MEB 460/461 -> Type unresolved.
-
-
-Phase 102 follow-up verified the exact sentinel producer against the uploaded SHIFT.exe.c local_14 form. The evidence layer remains based on the six field writes and 8-byte indexing, not on decompiler-local naming.
-
-
-## Phase 103: D3D9 declaration lifecycle call chain
-
-The source-backed ABI evidence now includes an explicit declaration lifecycle: mesh construction invokes the recovered loader, the loader canonicalizes the declaration buffer, the canonicalizer creates the D3D9 declaration object, and the render path later applies that stored object through SetVertexDeclaration. The report distinguishes this static source chain from a specific runtime frame.
-
-
-## Phase 104: D3D9 binding argument semantics
-
-The recovered vertex/index binding wrappers now expose their device-call arguments as evidence: stream number, vertex-buffer storage path, zero byte offset, computed stride, and index-buffer pointer. This extends the ABI boundary beyond vtable slot identity while keeping runtime object identity and MEB 460/461 -> Type separate.
-
-## Phase 105: MEB 460/461 D3D9 candidate constraint
-
-`d3d9_color_bridge_evidence.py` now records explicit D3D9 candidate Type codes for the unresolved color properties: **4 = D3DCOLOR** and **8 = UBYTE4N**. The existing MEB parser establishes 4-byte normalized `u8x4` storage for 460/461; the recovered executable source establishes a separate Type-4 packed-color path and `Colour` stream family.
-
-Neither observation links property 460/461 to one declaration Type. The new evidence schema keeps the final property mapping at `not-proven` and can optionally record runtime COLOR declaration Type bytes without treating them as property identity proof. The intended fail-closed closure condition is a same-instance correlation across the MEB payload, declaration record and D3D9 render/bind boundary.
-
-## Phase 106: MEB bridge integrated into declaration chain
-
-`validate-d3d9-declaration-chain` now accepts the optional
-`--meb-color-bridge-evidence` input. The integrated gate checks both 460/461
-properties and the explicit D3D9 candidate codes 4 and 8, while requiring the
-bridge's final mapping to remain `not-proven`.
-
-A coherent ambiguous bridge can therefore travel through the same evidence
-pipeline as the declaration lifecycle, binding and runtime evidence without
-claiming that MEB 460/461 have been assigned to one declaration Type.
-
-## Phase 107: MEB property-descriptor provenance
-
-MEBMesh.property_descriptors and mesh_summary()[property_descriptors] now preserve descriptor offset, the three little-endian DWORD words and the raw 12-byte descriptor for every vertex property. The regression fixture confirms the expected binary locations for synthetic 460 and 461 descriptors.
-
-This strengthens traceability of MEB 460/461, but it is deliberately not a D3D9 Type proof. The unresolved boundary remains the identity edge from the MEB descriptor/payload to the exact D3D9 declaration record used by that mesh.
-
-## Phase 108: exact MEB COLOR resource provenance
-
-The BFF-backed COLOR evidence command now records the exact MEB descriptor range and payload range for properties 460/461, preserving descriptor raw bytes and payload SHA-256/hex. It also reports whether the decoded color stream is byte-identical to the selected raw payload range.
-
-This closes the byte-provenance gap at the MEB resource boundary. The D3D9 Type 4 versus Type 8 mapping remains not-proven until the same MEB instance is correlated with the exact declaration record used by the renderer.
-
-## Phase 109: resource-level MEB 460/461 provenance
-
-The color bridge now accepts real BFF-backed COLOR evidence and verifies that each report's property ID matches the preserved MEB descriptor, that descriptor/payload ranges are observed, that decoded stream bytes match the raw payload, and that payload hashes agree. Reports for 460 and 461 are tracked independently.
-
-This moves the MEB side from semantic-only metadata to exact resource-byte provenance, but the D3D9 Type mapping remains not-proven until the resource/payload is correlated to the exact runtime declaration record.
-
-## Phase 110: exact MEB descriptor triple mapping
-
-A source-backed bridge is now formalized between the MEB property descriptor and the binary mesh loader. `FUN_00859800` consumes 12-byte `[Type ordinal, Usage ordinal, Channel]` triples, resolves Type through `FUN_00853c20`, Usage through `FUN_00853c40`, and copies Channel into declaration `UsageIndex`. The same source identifies the routine as `LoadBinaryMeshFromResource` and recognizes `.meb` resources.
-
-With exact MEB descriptors preserved, the validator requires 460 = `[4,6,0]` and 461 = `[4,6,1]`. When both exact triples and all source-side prerequisites are present, `d3d9_type_mapping.status` and `meb_property_mapping.status` become `match`, resolving both MEB color properties to D3D9 Type code 4. This is no longer based on decimal-ID coincidence; it compares the actual descriptor words.
-
-Remaining runtime task: prove that the same resolved Type-4 records are the records used by the renderer for a concrete mesh instance, and keep the decoded D3D9 Usage byte tied to the supplied SHIFT.exe PE evidence. For the supplied executable, Usage ordinal 6 is now directly decoded as numeric Usage 10.
-
-## Phase 112: portable MEB evidence collection
-
-A one-command Linux collector now produces `SHIFT.MEBEvidenceBundle/1`. For every parsed MEB it records structure/property metadata; for 460/461 it additionally preserves exact on-disk descriptors and property payloads, raw hashes, color ABI evidence and BFF/resource provenance. With `--source SHIFT.exe.c` it also emits per-resource descriptor-triple proofs.
-
-This is the handoff mechanism for the remaining runtime correlation task: the returned bundle contains the exact MEB-side bytes needed to match a concrete D3D9 declaration instance without sending the full game archive.
-
-
-## Phase 116: supplied 1.02 MEB corpus bridge
-
-The supplied evidence bundle `evidence/meb_corpus_20260924.json` records a complete corpus scan of 70,370 parsed MEB resources from 1,834 BFF archives with zero collection errors. Every resource contains property `460`, and every observed 460 descriptor is exactly `[4, 6, 0]`.
-
-The same corpus reports exact descriptor/payload provenance for all 70,370 color-460 resources, and every decoded color stream matches its raw payload byte-for-byte. The recovered source evidence identifies the binary mesh element triple as `[Type ordinal, Usage ordinal, Channel]`; therefore the corpus provides a source-backed bridge `MEB 460 -> Type 4, Usage 6, Channel 0`. The recovered Type switch identifies Type 4 as `D3DCOLOR` and Usage 6 as `Colour`.
-
-No property `461` was observed anywhere in the supplied 1.02 corpus, so COLOR1 has no positive resource instance in this evidence set. A runtime declaration instance correlated to the same resource is still a separate evidence target.
-
-The large raw bundle is intentionally not committed; only its SHA-256 and aggregate findings are stored in the small snapshot above. `tools/analyze_meb_evidence_bundle.py` can reproduce the aggregate analysis by streaming `resources.jsonl` from the ZIP without loading the corpus into RAM.
-
-
-## Phase 124: D3D9 shader runtime lifecycle
-
-The recovered `SHIFT.exe.c` now has a concrete source snapshot for `FUN_0084f000` (source SHA-256 `512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9`, lines 925759–925892). One state flush applies `SetPixelShader` at vtable offset `0x1ac`, `SetVertexShader` at `0x170`, `SetVertexDeclaration` at `0x15c`, `SetStreamSource` at `0x190` and `SetIndices` at `0x1a0`. This is source-static evidence; a concrete runtime frame is still required for same-instance attribution.
-
-
-## Phase 205: exact executable ABI
-
-The supplied SHIFT.exe provides file-backed declaration lookup tables. Type ordinal 4 is RGBA32 / D3DDECLTYPE_D3DCOLOR (4 bytes, 4 components), and Usage ordinal 6 is Colour / numeric D3D9 Usage 10.
-
-The repository's PE evidence and COLOR bridge can now consume these values directly. This does not establish which declaration was bound at a particular DrawIndexedPrimitive; that remains a runtime evidence question.
+Evidence states remain machine-readable and fail-closed.

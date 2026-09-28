@@ -1,34 +1,44 @@
-# Форматный статус SHIFT importer
+# SHIFT importer / format status
 
-## Поддержка и верификация
+## Implemented or verified
 
-| Формат | Результат |
+| Format / subsystem | Current status |
 |---|---|
-| BFF v3 | Реальные архивы: разбор таблицы/имён/типов/смещений |
-| Type 0/1 | Реальные ресурсы: Raw + zlib |
-| Type 2 | Реальные ресурсы: XMem/LZX, включая persistent LZX Huffman state между блоками |
-| Type 3 | Реализовано: OodleLZ_Decompress через внешний runtime; синтетический dispatch-test |
-| X12d==2 | Реализовано и покрыто синтетическим тестом: RC4 для record table, name table и каждого payload |
-| Reflection XML | Классы, наследование, typed properties, вложенные Fct |
-| BMLY/BML | HEAD/ELMT/ATTR/COLL/NUMB/BOOL/STRS |
-| BMT | Дерево material/shaderparam/value + DDS refs |
-| HLSL | Includes/techniques/samplers/variables |
-| DDS | Header/format/dimensions metadata |
-| MEB | Реальные vertices/indices/material refs → MGEO |
-| CSM/NXS MESH | Реальные collision vertices/triangle indices → CMES |
-| VHF XML | CAR/NODE/RESOURCE graph |
-| LOD XML | Реальный `tracks.lod`, включая malformed quote, через loose parser |
-| Vehicle CDF | Source-backed section/property schema + lossless parser; physical units intentionally unresolved |
-| Vehicle EDF | Full engine property parser + 41-point RPMTorque validation/interpolation + peak-power scan |\n| Gearbox GDF | GEAR_RATIOS/FINAL_DRIVE parser + source ratio comparator view |\n| Suspension SDF | BODY/JOINT/HINGE/BAR/JOINT&HINGE parser + body reference graph + runtime topology IR |\n| Vehicle physics graph | CDF/EDF/GDF/SDF joined into neutral `SHIFT.VehiclePhysicsAssetGraph/1` |
+| BFF v3 | archive parsing and metadata |
+| Type 0 / 1 | raw + zlib |
+| Type 2 | XMem/LZX with persistent state |
+| Type 3 | external Oodle runtime path |
+| X12d=2 | RC4 protected tables/payload path |
+| Reflection XML | class/inheritance/property/Fct boundaries |
+| BMLY/BML | structural parser |
+| BMT / MTX | material graph + compatibility alias |
+| FX / FXH / FXO | source inventory, shader parsing and permutation linking |
+| DDS | metadata, DXT decode, cubemap decode |
+| MEB | geometry/indices/material refs → MGEO |
+| CSM | collision geometry → CMES |
+| VHF/CAR | scene/resource graph |
+| LOD XML | loose parser for known malformed retail forms |
+| CDF | source-backed vehicle property schema |
+| EDF | engine property parser and torque interpolation tooling |
+| GDF | gear/final-drive parser |
+| SDF | BODY/JOINT/HINGE/BAR schema + runtime reconstruction |
+| VehiclePhysicsAssetGraph/1 | CDF/EDF/GDF/SDF neutral join |
+| BAB/BAS | skeleton parsing, name linkage, animation evidence |
+| SGB | container + runtime NODE/PART/SUMM/OCCL/FLAT boundaries |
+| Camera runtime | config/state/event/control primitives |
+| D3D9 capture | runtime producer and draw-local evidence |
+| Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
+| Physics runtime | wheel/contact/body/solver boundaries |
 
-## Что ещё не является игровым runtime
+## Major open areas
 
-Это уже полноценный importer/IR слой, но не готовый Android-порт игры. Пока отсутствуют: точная реконструкция FXO shader bytecode; IMB skeletal animation; SGB scenegraph semantics; полный runtime vehicle/track dependency resolution; замена/порт PhysX 2.x dynamics; Android renderer/audio/input/game loop.
+- complete production D3D9 shader/control-flow/material coverage;
+- deeper SGB OBJECT/HIERARCHY/DAMAGE/FLAT semantics;
+- complete BAB runtime pose semantics;
+- remaining camera behavior;
+- SDK/provider construction behind pre-PhysX boundaries;
+- exact retail/provider numeric parity without runtime capture;
+- full Vulkan RenderCommand/material execution;
+- Android runtime, input, audio, streaming and gameplay integration.
 
-## Ограничения BFF вариантов
-
-`X12d==1` остаётся явно неподдерживаемым вариантом; canonical `nfsshift.bms 0.2.5` также останавливается на таком архиве. Для Type 3 Oodle библиотека намеренно не поставляется в репозитории: задайте `SHIFT_OODLE_LIB` на установленный совместимый runtime.
-
-## Важный принцип
-
-BFF и оригинальные ресурсы остаются источником истины. Android runtime должен получать преобразованные нейтральные данные, а не знать о внутреннем BFF/XMem формате. Неизвестные ресурсы не отбрасываются: они сохраняются в raw blob с hash, путём, архивом и metadata.
+The neutral IR remains the portability boundary.

@@ -1,23 +1,25 @@
 # SHIFT Texture / Render-State status
 
-`SHIFT.TextureResource/1` now describes the source DDS format, dimensions, mip count, compression block geometry, upload strategy, sampler state and color-space state.
+## TextureResource/1
 
-Known DXT1/DXT3/DXT5/ATI1/ATI2 families retain their BCn identity and explicit runtime extension requirement. The contract does not silently assume that optional compressed-texture extensions exist on the target Android device.
+Carries source DDS identity, dimensions, mip count, compression family, upload strategy, sampler state and color-space state.
 
-D3D9 filter/address modes are translated to GLES-equivalent sampler state names where the mapping is unambiguous. Unsupported modes such as BORDER are blocking conditions.
+Known DXT1/DXT3/DXT5/ATI1/ATI2 families remain explicit compressed formats. Optional target extensions are requirements, not assumptions.
 
-sRGB/linear are treated as renderer state. Conflicting source flags are a hard error rather than an implicit preference.
+## Reference sampler
 
-## Phase 40: software DDS reference sampler
+The software reference path supports the project's current DXT/uncompressed decode paths, explicit address/filter behavior, multiple sampler2D registers, and samplerCube via six-face resources or complete DDS cubemaps.
 
-`texture_reference.py` now decodes the DDS base level for DXT1/DXT3/DXT5 and common 32-bit masked RGBA resources into RGBA8, then applies explicit repeat/clamp/mirror addressing and nearest/linear sampling. `reference_renderer.py` can consume this image through a UV0-aware textured reference path without invoking BFF/LZX or the HLSL shader runtime.
+## State rules
 
-The path is intentionally a texture/material oracle only: full BMT/HLSL lighting and multi-texture shader execution remain separate work.
+Unsupported mappings such as BORDER remain blockers. sRGB/linear state is explicit. Conflicting source flags are hard errors. Duplicate non-external sampler registers are rejected.
 
-## Phase 43: sampler state propagation
+## BMW
 
-`RenderCommand/1` now preserves the full `SHIFT.SamplerState/1` selected for each material texture binding. The textured reference renderer consumes this embedded state automatically when no sampler override is supplied, keeping filter/address behavior coupled to the recovered material binding.
+Paint uses s1 diffuse, s2 specular and s4 scratch-control. Environment s3 and shadow s0 remain external renderer resources.
 
-## Phase 44: multi-texture sampler ABI
+Runtime capture also records texture lifecycle and optional mip/cube payload evidence.
 
-`RenderCommand/1` now rejects duplicate non-external D3D9 sampler registers and invalid/not-ready `SHIFT.SamplerState/1` payloads. This keeps diffuse/specular/scratch texture slots independently addressable and prevents accidental aliasing before GPU submission.
+## Remaining work
+
+Close exact sampler/material semantics and correlate more runtime resource instances with the static material plan.

@@ -2,178 +2,35 @@
 name: d3d9-re
 description: >-
   Reverse-engineer the SHIFT Direct3D 9 declaration, stream, shader and binding
-  ABI using explicit evidence chains. Use for D3D9 vtable calls, declaration
-  records, Type/Usage tables, SetVertexDeclaration, SetStreamSource, SetIndices,
-  shader registers, runtime capture correlation, parity validation, shader constants,
-  and vertex-input semantic parity.
+  ABI using explicit static and runtime evidence chains.
 ---
 # D3D9 reverse-engineering workflow
 
-The project uses two layers:
+## Evidence layers
 
-- **static evidence**: recovered SHIFT.exe C source, D3D9 vtable identities,
-  declaration record layout, Type/Usage profiles;
-- **runtime evidence**: captured declaration instances, resource identities,
-  shader objects, shader constant writes, stream bindings, and draw calls.
+Keep static source/PE evidence, runtime capture and neutral backend contracts separate.
 
-Never collapse these layers into a claim of same-instance execution without an
-explicit pointer/resource/frame correlation.
+## Declaration ABI
 
-## Declaration evidence
+`Stream:WORD, Offset:WORD, Type:BYTE, Method:BYTE, Usage:BYTE, UsageIndex:BYTE`
 
-A declaration record is 8 bytes:
-`Stream:WORD, Offset:WORD, Type:BYTE, Method:BYTE, Usage:BYTE, UsageIndex:BYTE`.
-Use `d3d9_declaration_instance.py` for raw decoding and `bmw_vertex_input_parity.py`
-for semantic checks against shader DCLs and the target VertexLayout.
+## BMW MEB bridge
 
-## Shader constants
+- 460 → `[4,6,0]`
+- 461 → `[4,6,1]`
+- Type 4 → D3DDECLTYPE_D3DCOLOR
+- Usage 6 → D3D9 COLOR (10)
 
-Runtime traces accept `set_vertex_shader_constant_f` and
-`set_pixel_shader_constant_f` with exact float vectors. Value parity is optional during
-exploration and can be made mandatory with `--require-constant-values`.
+This is a static mapping. Same-instance runtime proof remains separate.
 
-## MEB bridge
+## Runtime
 
-MEB binary descriptor triples are `[Type ordinal, Usage ordinal, Channel]`.
-Runtime declarations contain D3D9 Type/Usage/UsageIndex bytes. A triple-level match
-therefore requires an explicit Usage-ordinal map; the tooling intentionally refuses
-to invent one.
+Use draw-local capture snapshots to correlate MEB/resource identity, declaration, VB/IB, shader state and exact DrawIndexedPrimitive.
 
-## Vertex inputs
+## RenderCommand
 
-Semantic identity is taken from the shader `DCL` usage/index and the target
-`VertexLayout/1` usage/index. A missing MEB Usage ordinal is a proof gap, not a reason
-to invent a D3D9 Usage value. Repacked target offsets are not presented as original
-runtime Stream/Offset values.
+Carry accepted evidence into RenderCommand/1. Repacked VertexLayout offsets are target ABI, not original D3D9 offsets.
 
-## Rendering boundary
+## Rule
 
-Carry the same evidence into RenderCommand rather than reparsing or heuristically
-remapping the original BFF at runtime.
-
-
-## MEB descriptor triples
-
-`SHIFT.BMWMEBDescriptorParity/1` validates preserved MEB descriptor bytes against their decoded `[Type, Usage, Channel]` words and the target `VertexLayout/1`. The raw 12-byte payload is checked as little-endian DWORDs before it participates in runtime declaration parity.
-
-
-## Usage ordinal bridge
-
-Use `meb_runtime_usage_bridge.py` to derive MEB Usage ordinals from exact same-resource runtime declaration records. The tool never invents missing Usage bytes and marks conflicting observations as `ambiguous`.
-
-
-## Capture schema
-
-`SHIFT.D3D9RuntimeCaptureSchema/1` is enforced by `d3d9_runtime_trace.load_events`. Use `validate-d3d9-capture` to validate a raw JSONL capture before semantic correlation. The schema checks structure only; resource identity, shader identity and Usage mappings remain separate evidence layers.
-
-
-## RenderCommand constants
-
-Use `render-command-constant-parity` to validate c-register ranges and 16-byte offsets between `MaterialUniformBinding/1`, `MaterialConstantPayload/1` and `RenderCommand/1`. The unified BMW gate runs this check automatically for constant-bearing commands.
-
-
-## BMW paint material
-
-Use `bmw_m3_paint_contract.py` to validate the documented M3 paint binding. The contract captures exact material sampler registers and renderer-global samplers without treating them as runtime proof.
-
-
-## BMW paint binding adapter
-
-`bmw_m3_paint_contract.py` accepts the current `compile_material()` output shape and normalizes it before validation against the documented BMW M3 paint contract.
-
-
-## Paint contract enforcement
-
-For the exact BMW M3 paint material, `compile_material()` invokes `SHIFT.BMWM3PaintMaterialContract/1`. Sampler registers/state, shader path, specialization flags and external samplers are fail-closed before StaticDraw readiness.
-
-
-## BMW paint shader gate
-
-`bmw_m3_paint_shader_gate.py` enforces unique exact FXO selection, VS/PS pair validity and permutation identity for the documented BMW M3 paint material. It is fail-closed and does not invent a shader permutation.
-
-
-## BMW golden shader gate
-
-For `vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx`, `bmw_golden_gate.py` requires `paint_shader_gate.ready == true` as well as the existing paint contract. Other materials are unaffected.
-
-
-## BMW asset contract
-
-`bmw_m3_paint_asset_contract.py` locks the exact M3 golden MEB identity, paint primitive ranges and manifest provenance before material/shader/runtime joins.
-
-
-## Specialization evidence
-
-Consume `MaterialBinding/1.specialization.requested` when validating the BMW M3 paint contract. Do not convert a structured specialization report to dictionary-key names.
-
-
-## Real BMW material extraction
-
-Use `bmw_material_from_bff.py` / `bmw-material-from-bff` to turn the retail M3 BFF into a real `MaterialBinding/1`. The extractor requires exact M3 BMT/MEB entries, resolves the material shader source unambiguously, inventories all FXO permutations and DDS paths, and returns SHA-256 provenance plus paint/shader gate results. It never treats runtime execution as proven.
-
-
-## Real BMW material slice
-
-Use `bmw-real-material-slice` to build the renderer-compatible `SHIFT.BMWMaterialSlice/1` from the retail M3 BFF and golden manifest. The output contains the neutral MEB payload, StaticDraw, RenderCommand, resource plan and source provenance; runtime execution remains separate.
-
-
-## M3 MEB evidence parity
-
-Use `bmw-meb-evidence-parity` to compare the exact committed M3 MEB evidence snapshot with the golden manifest. Treat descriptor/property-layout drift as a resource evidence failure before material or renderer stages.
-
-
-## BMW material slice golden gate
-
-Use `bmw_material_slice_golden_gate.py` to validate one selected BMW M3 material slice against the exact golden MEB. The real BFF-backed slice builder invokes this gate automatically; do not use material ordering as an inference.
-
-
-## Runtime same-instance gate
-
-Use `d3d9_runtime_trace.py --require-same-instance` for strict runtime proof. A matching declaration that was created but not bound by the target frame must not be accepted.
-
-
-## Runtime golden same-instance
-
-`bmw_runtime_golden_gate.py` requires the D3D9 runtime report's `same_instance_gate.ready` field before runtime parity can become golden-ready.
-
-
-## Same-frame indexed draw
-
-The D3D9 same-instance gate requires `indexed_draw_present=true` in the bound frame. A valid declaration without a same-frame `draw_indexed_primitive` is not proof of mesh submission.
-
-
-## BMW BFF intake
-
-Use `bmw-bff-intake` to preflight the real M3 archive. It verifies the archive size, SHIFT BFF structure, exact BMT/MEB target entries and extracted body-MEB SHA without writing raw payloads.
-
-
-## BMW runtime buffer candidates
-
-Use `bmw_meb_runtime_buffer_artifacts.py` to reproduce the expected BMW VB/IB byte candidates from the retail BFF. The vertex candidate preserves raw MEB property bytes in deterministic interleaved property order; INDEX16 candidates are emitted per primitive. Do not promote these artifacts to runtime identity without the bounded Phase 344 Lock/Unlock capture.
-
-## apitrace-only BMW extraction on Linux
-
-When the only working runtime capture source is an apitrace D3D9 `.trace`,
-use `tools/extract_apitrace_unique_bmw.py`. It streams
-`apitrace dump --call-nos=true --arg-names=true` directly from the trace, so a
-multi-gigabyte text dump does not need to be created first.
-
-The extractor filters the known BMW body signature (3,550 vertices and the six
-known primitive counts), deduplicates draw bindings by declaration/stream/index
-resource instance, tracks pointer reuse across `Release`, and emits a compact
-call set plus representative draw records. With a real `.trace`, `--auto-trim`
-can additionally create a small `bmw_unique.trace` for subsequent analysis.
-
-This stage establishes runtime draw/resource-instance evidence only. Do not call
-it exact VB/IB byte parity unless independent raw payload evidence is available.
-
-
-
-## apitrace buffer blob recovery
-
-Use `extract_apitrace_bmw_buffer_blobs.py` on the compact Phase 349 trace. The
-tool parses the version-6 binary trace, follows the fake `memcpy` emitted by
-D3D9 buffer Unlock and extracts the TYPE_BLOB payload. It filters by the
-verified BMW resource creation/lifetime records. Treat extracted bytes as
-runtime evidence; promote them to MEB parity only through the existing explicit
-byte comparator.
+Never fill missing Type/Usage/runtime identity with a plausible value.

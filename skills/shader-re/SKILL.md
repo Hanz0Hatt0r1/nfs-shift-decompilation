@@ -1,38 +1,33 @@
 ---
 name: shader-re
 description: >-
-  Evidence-driven D3D9 shader reverse engineering for SHIFT: bytecode/IR analysis,
-  CTAB constants, sampler registers, VS/PS semantic linkage, GLSL ES 3.1 generation,
-  compiler validation, permutation identity, and reference-oracle parity.
+  Evidence-driven D3D9 shader reverse engineering for SHIFT.
 ---
 # SHIFT shader reverse-engineering workflow
 
-Keep three representations aligned:
+## Representations
 
-1. recovered D3D9 shader bytecode and reflection;
-2. neutral SHIFT.ShaderProgram/1 IR;
-3. generated GLSL ES 3.1 plus the desktop reference evaluator.
+Keep aligned:
 
-Shader source text is not a replacement for bytecode evidence. A generated shader is
-accepted only when its inputs, outputs, sampler registers, constants and supported
-operations are traceable to the IR.
+1. D3D9 token/bytecode evidence;
+2. `SHIFT.ShaderProgram/1`;
+3. generated GLSL ES 3.1;
+4. desktop reference execution.
 
-## Permutation rules
+Generated GLSL never replaces token/IR evidence.
 
-Select FXO programs from sampler/constant/interface evidence. Never use archive order
-as a tie-breaker. When several candidates remain equally supported, report
-`ambiguous` rather than silently selecting one.
+## Permutations
 
-Every unique selected pair should carry `SHIFT.ShaderPermutationIdentity/1`. Its
-canonical fingerprint is independent of the blob's container offset and retains
-the exact per-stage byte hashes plus reflection needed to reproduce the identity.
+Select FXO programs by sampler, constant, semantic and specialization evidence. Archive order is never a semantic tie-breaker. Equal candidates remain ambiguous.
 
-## Backend gate
+## Validation
 
-Run `glslangValidator` when available. Treat `invalid` as a submission blocker;
-`unavailable` is an environment limitation and must remain explicit.
+Use `glslangValidator` when available.
 
-## References
+- `valid` may proceed;
+- `invalid` blocks;
+- `unavailable` remains an environment limitation.
 
-Shader programming workflow inspiration:
-https://github.com/gamedev-skills/awesome-gamedev-agent-skills/tree/main/skills/shader-programming
+## Current gaps
+
+Complete D3D9 control flow, all relative-addressing variants, exact sampler/LOD semantics and the full BMW material model remain open.

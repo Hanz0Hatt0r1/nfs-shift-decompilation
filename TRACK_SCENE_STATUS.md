@@ -1,17 +1,34 @@
-# SHIFT Track Scene status
+# SHIFT Track / Scene status
 
-The existing SHIFT.SGB parser is a verified container boundary: 16-byte header, reversed FourCC chunk tags, chunk sizes, payload hashes and preserved trailing bytes.
+## Current boundary
 
-Phase 6 adds SHIFT.TrackScene/1 aggregation on top of that boundary. Path-like references inside chunk payloads are recovered as provenance records with byte offsets and encoding; supported resource kinds include MEB geometry, BMT/MTX materials, DDS textures, CSM collision meshes, VHF scene sources and FX/FXO shader resources.
+`SGB container → NODE/PART/SUMM/OCCL/FLAT runtime records → partial scene/object IR`
 
-Track placement is intentionally not inferred. The current scene manifest reports placement.status=unknown until the NODE/FLAT/SUMM payload grammar is proven against real SGB samples.
+The top-level SGB parser preserves header, reversed FourCC tags, chunk sizes, payload hashes and trailing bytes.
 
+## Runtime reconstruction
 
-## Phase 250/251: binary SGB and embedded object runtime
+Covered boundaries include:
 
-The binary SGB container now has a source-backed runtime decoder for NODE, PART, SUMM, OCCL and FLAT boundaries. NODE payload offsets are further decoded through FUN_0069bc50/FUN_0069a6c0 for OBJECT/HIERARCHY/DAMAGE dispatch. Unresolved FLAT body semantics and deeper object field names remain explicitly opaque.
+- NODE;
+- PART;
+- SUMM;
+- OCCL;
+- FLAT;
+- NODE object payload routing into OBJECT/HIERARCHY/DAMAGE;
+- recursive FLAT tree structure with 0x40-byte leaf records.
 
+## Explicitly unresolved
 
-## Phase 252: FLAT runtime tree
+The project does not invent:
 
-SGB FLAT payloads now decode through the recovered runtime tree container: 0x20-byte headers, direct leaf count, 24-bit span, recursive subtrees and 0x40-byte leaf records. Leaf semantics are retained raw until the vtable-backed consumers are normalized.
+- FLAT leaf semantics;
+- deeper object field meanings;
+- complete NODE placement/transform semantics;
+- full scene streaming and LOD behavior.
+
+Track placement remains an evidence question.
+
+## Next
+
+Correlate real SGB samples with the runtime consumers, close deeper object/leaf semantics, then join proven scene data into RenderBinding.

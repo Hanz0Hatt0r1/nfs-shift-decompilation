@@ -1,134 +1,37 @@
-# Linux Vulkan bootstrap
+# Linux Vulkan backend
 
-This directory is the first native backend step for the SHIFT renderer.
+The native Vulkan backend consumes the neutral render contracts used by the desktop reference path.
 
-The target architecture is:
+## Implemented stages
 
-```text
-BFF -> IR -> DrawBinding -> RenderCommand/1
-                         |
-                         v
-                Vulkan submission layer
-                         |
-              +----------+----------+
-              |                     |
-           SPIR-V                resources
-        VS / PS stages       buffers / images
-              |                     |
-              +----------+----------+
-                         v
-                    Vulkan device
+- Vulkan instance/device/queue bootstrap;
+- headless image/transfer checkpoint;
+- RenderCommand geometry packet;
+- vertex-layout packet;
+- constant packet;
+- texture/sampler packet;
+- cubemap packet;
+- SPIR-V reflection and interface gates;
+- BMW material→DDS→Vulkan adapter;
+- Linux CI coverage for native smoke paths.
+
+## Rules
+
+1. RenderCommand/1 is the source contract.
+2. Native execution targets SPIR-V; GLSL is validation/debug representation.
+3. MEB repack decisions stay upstream.
+4. Buffers/images/descriptors use explicit contracts.
+5. The backend does not infer undocumented game semantics.
+
+## Current limitation
+
+The backend is not yet a complete production renderer. Full BMW shader/material execution and full RenderCommand submission remain bounded by shader/reference coverage and runtime evidence.
+
+## Commands
+
+```bash
+cmake -S native_vulkan -B native_vulkan/build
+cmake --build native_vulkan/build --config Release
+./native_vulkan/build/shift_vulkan_probe
+./native_vulkan/build/shift_vulkan_headless_clear out/shift_vulkan_headless.ppm
 ```
-
-The existing Python desktop reference renderer remains the deterministic oracle. The
-Vulkan backend must consume the same `SHIFT.RenderCommand/1` data rather than creating
-a second interpretation of MEB/BMT/FXO semantics.
-
-## Bootstrap build
-
-On Linux:
-
-    cmake -S native_vulkan -B native_vulkan/build
-    cmake --build native_vulkan/build --config Release
-    ./native_vulkan/build/shift_vulkan_probe
-
-The probe has no window-system dependency. It only verifies that the Vulkan loader can
-create an instance, enumerate physical devices and find a graphics or compute queue.
-
-If the Vulkan SDK is unavailable, CMake reports that condition and does not create the
-probe target. This keeps the repository's non-Vulkan parsing tests independent of a
-machine-specific graphics stack.
-
-## Backend rules
-
-1. `RenderCommand/1` remains the source contract.
-2. Shader translation targets SPIR-V; GLSL is retained as a validation/debug representation.
-3. MEB interleaving/repack decisions stay in the neutral renderer layer.
-4. Vulkan resource creation must use explicit descriptor/buffer/image contracts.
-5. No undocumented game semantics are inferred by the Vulkan backend.
-
-
-## Headless image checkpoint
-
-After the bootstrap probe, the native backend can execute a real Vulkan transfer-only
-image checkpoint without a window system:
-
-    cmake -S native_vulkan -B native_vulkan/build
-    cmake --build native_vulkan/build --config Release
-    ./native_vulkan/build/shift_vulkan_headless_clear out/shift_vulkan_headless.ppm
-
-The executable creates a Vulkan device and graphics queue, allocates an offscreen
-R8G8B8A8 image, clears it through the Vulkan command buffer, copies it to a host-visible
-staging buffer and writes a P6 PPM.
-
-This phase intentionally has no shader or BMW semantics yet. It proves the native
-offscreen resource/submission boundary that the later RenderCommand backend will use.
-
- 
-## RenderCommand geometry bridge
-
-Phase 208 adds SHIFT.VulkanGeometryPacket/1 as the first native handoff format.
-Generate it with:
-
-    python vulkan_geometry_packet.py render_command.json mesh.json out/mesh.svpk
-
-Then render it with:
-
-    ./native_vulkan/build/shift_vulkan_render_geometry       out/mesh.svpk       out/mesh.ppm       native_vulkan/build/shaders
-
-The packet is generated from SHIFT.RenderCommand/1 and neutral mesh data. The
-native Vulkan process does not parse BFF or MEB JSON.
-
-
-## VertexLayout packet v2
-
-Phase 209 upgrades the geometry packet to version 2. The packet can carry multiple
-RenderCommand vertex attributes with explicit location/format/offset/stride metadata.
-The native backend maps these codes to Vulkan vertex formats while keeping the shader
-contract independent.
-
-COLOR0 is explicitly repacked from BGRA source bytes to RGBA normalized bytes using the
-executable-backed D3DCOLOR evidence. Unresolved COLOR1 is kept out of the packet.
-
-
-## D3D9 constant descriptor upload
-
-Phase 213 uses SHIFT.VulkanConstantPacket/1 to provide two 4096-byte c-register banks:
-
-    VS -> set 0 / binding 14
-    PS -> set 0 / binding 15
-
-Build and run the synthetic constant checkpoint with:
-
-    cmake -S native_vulkan -B native_vulkan/build
-    cmake --build native_vulkan/build --config Release
-    ./native_vulkan/build/shift_vulkan_constant_upload       out/constants.svcp       out/constants.ppm       native_vulkan/build/shaders
-
-
-## Texture descriptor upload
-
-Phase 214 maps D3D9 sampler registers to Vulkan descriptor set 1. Generate a texture
-packet from a RenderCommand with:
-
-    python vulkan_texture_packet.py render_command.json textures.json out/textures.svtp
-
-Run the native checkpoint with:
-
-    ./native_vulkan/build/shift_vulkan_texture_upload       out/textures.svtp       out/textured.ppm       native_vulkan/build/shaders
-
-The current smoke shader samples s1 and therefore the packet must contain sampler
-register s1. Additional packet registers are upload-capable but are not consumed by
-the fixed smoke shader.
-
-
-## samplerCube / environmentMap
-
-Phase 215 maps the BMW environment contract to Vulkan descriptor set 1, binding 3. Generate a cube packet with:
-
-    python vulkan_cube_packet.py render_command.json environment_cube.json out/environment.svcp
-
-Run:
-
-    ./native_vulkan/build/shift_vulkan_sampler_cube out/environment.svcp out/environment.ppm native_vulkan/build/shaders
-
-The smoke shader samples s3 as samplerCube. The packet keeps the explicit face order px/nx/py/ny/pz/nz and rejects non-clamp addressing.

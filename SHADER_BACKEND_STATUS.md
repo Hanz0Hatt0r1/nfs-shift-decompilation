@@ -1,84 +1,45 @@
 # Shader backend status
 
-Current pipeline:
+## Canonical pipeline
 
-D3D9 FXO -> register/operand parser -> `SHIFT.ShaderProgram/1` -> GLSL ES 3.1.
+`FX/FXO → D3D9 token decoder → SHIFT.ShaderProgram/1 → GLSL ES 3.1 / software reference`
 
-Implemented:
-- neutral JSON shader IR;
+## Implemented
+
+- SM2/SM3 D3D9 token decoding;
+- register, mask, modifier, swizzle and relative-addressing metadata;
+- DCL/DEF/DEFI/DEFB reflection;
+- sampler/constant/temp/input/output discovery;
 - common arithmetic/vector operations;
 - CMP/LRP;
-- TEX/TEXLDD/TEXLDL;
-- DSX/DSY;
-- basic IFC/ELSE/ENDIF and bounded LOOP/REP lowering;
-- deterministic VS/PS semantic linkage by `(usage,index)`;
-- sampler/constant reflection propagated into material binding;
-- GLES 3.1 compilation regression coverage with `glslangValidator` in CI;
-- unsupported instructions remain explicit comments instead of being silently dropped.
+- TEX/TEXLDD/TEXLDL reference operations;
+- DSX/DSY reference operations;
+- bounded IFC/ELSE/ENDIF and LOOP/REP lowering;
+- deterministic VS/PS linkage by (usage,index);
+- CTAB sampler/constant propagation;
+- GLSL ES 3.1 lowering for the supported subset;
+- optional glslangValidator compile/link validation;
+- vertex-shader a0 relative constant reads in the software oracle.
 
-Current evidence from the supplied SHIFT 1.02 install:
-- the Dropbox copy contains the original `SHIFT.exe` and a Ghidra project for it;
-- `Pakfiles/Dir/RENDER.bff` and `Pakfiles/Dir/VEHICLES.bff` are present;
-- the vehicle corpus includes BMW M3 E36/E46/E92 and M3 GT2 packages, giving us concrete render golden-path targets;
-- the supplied Ghidra project contains a decompiler export `SHIFT.exe.c`, but the connector cannot stream that 39 MB text export as one fetch, so runtime call-site evidence still needs to be extracted from the project in smaller pieces.
+## Boundaries
 
-Known limitations:
-- exact aL/loop-register constant addressing (a0 relative addressing is implemented in the software reference with explicit tie guards);
-- exact D3D9 sampler-state -> BMT/DDS state binding;
-- exact VS/PS permutation selection against runtime specialization flags;
-- exact loop-register semantics;
-- final MGEO/VHF -> DrawPacket execution path.
+The D3D9 token/IR representation remains authoritative. Generated GLSL is a lowering target.
 
-Next target: use the BMW M3 package as the golden path for exact sampler/vertex-packing evidence, then lock the resulting material draw packet before moving deeper into MGEO/VHF and skinning.
+Still incomplete:
 
-## Phase 38: linked GLES shader validation
+- all loop-register/aL addressing forms;
+- every relative-addressing variant;
+- complete sampler gradient/LOD semantics;
+- complete D3D9 instruction/control-flow coverage;
+- production BMW lighting/blending;
+- all runtime specialization flags.
 
-`shader_backend.validate_linked_shader_pair()` now validates a `SHIFT.LinkedShaderPair/1` by compiling vertex/fragment stages separately and, when `glslangValidator` is available, linking the pair with `-l`. The result is `SHIFT.GLESShaderValidation/1` with explicit `valid`, `invalid`, or `unavailable` status and machine-readable blocking reasons.
+Unsupported operations remain visible blockers.
 
-## Phase 39: RenderCommand integration
+## Validation
 
-The GLES shader compiler validator can now be attached to `SHIFT.RenderCommand/1` on demand. This keeps expensive compiler work out of the default render-link pass while making compile/link evidence part of the final submission contract when requested.
+`valid` compiler evidence may proceed; `invalid` blocks the path; `unavailable` is retained as an environment limitation.
 
-## Phase 46: software shader execution oracle
+## Current focus
 
-`shader_reference.py` now executes a strict subset of parsed D3D9 `ShaderProgram` instructions in software, including arithmetic, dot/cross/normalize, scalar/vector math, texture reads and explicit source/write modifiers. Unsupported control-flow and unknown opcodes return machine-readable `unsupported` status; missing inputs/textures return `error`. This is a reference oracle, not a claim of full HLSL compatibility.
-
-
-## Phase 49: material constant execution
-
-`shader_reference.py` now converts `SHIFT.MaterialUniformBinding/1` float register bindings into deterministic D3D9-style `c/c2/c3/c4` vec4 banks. Scalar/vector values and float4x4 row registers are supported; non-float or non-register-set-2 bindings are explicit `unsupported` states.
-
-
-## Phase 53: relative constant addressing
-
-The software shader reference now executes D3D9 vertex-shader a0 relative constant reads and MOVA writes. Constant indices are resolved as the signed 11-bit base index plus the selected a0 component; out-of-range constant reads retain the D3D9 zero-vector behavior. The oracle refuses non-vertex use, non-a0 relative tokens and exact rounding ties instead of guessing undocumented behavior.
-
-
-## Phase 54: vertex stage reference boundary
-
-The software reference executor now exposes all written shader outputs to the renderer, enabling a bounded vertex-stage execution path. POSITION/TEXCOORD/NORMAL/TANGENT/BINORMAL semantics that are already represented in the neutral MEB contract can flow through the VS->PS reference boundary; unresolved semantics remain explicit blockers.
-
-
-## Phase 56: proven skin input semantics
-
-Vertex input validation now recognizes `BLENDWEIGHT0` and `BLENDINDICES0` alongside POSITION/TEXCOORD/NORMAL/TANGENT/BINORMAL. The reference renderer sources these values from the neutral MEB mesh, while the separate skinning matrix/pose path remains intentionally unimplemented.
-
-
-## Phase 58: samplerCube reference resource
-
-The software executor now supports `samplerCube` when the bound resource is `SHIFT.ReferenceCubeTexture/1`. The cube resource is deliberately explicit and separate from 2D images; `sampler3D`/`sampler1D` remain unsupported.
-
-
-## Phase 59: DDS cubemap input
-
-The texture reference decoder now produces six-face cube resources from complete DDS cubemaps, preserving the existing RGBA8 software-resource ABI. SamplerCube execution can therefore consume either explicitly assembled faces or a decoded DDS cubemap.
-
-
-## Phase 65: extended semantic availability
-
-Shader reference input validation now accepts semantics outside the fixed MEB set when the caller explicitly provides the corresponding semantic stream. This preserves the shader-level evidence for TEXCOORD5 while keeping unresolved source ABI out of the MEB table.
-
-
-## Phase 66: COLOR evidence
-
-Shader/vertex validation continues to treat COLOR0/1 as unresolved source ABI. The new evidence CLI can supply candidate byte-order comparisons, but no declaration or channel order is promoted to verified until external evidence is supplied.
+Expand exact BMW shader/material coverage while using the software reference renderer as the deterministic oracle.

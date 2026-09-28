@@ -1,64 +1,39 @@
-# SHIFT shader assembly -> Android Shader IR status
+# SHIFT shader assembly / ShaderProgram status
 
-Implemented the next shader-port layer after FX/FXO discovery.
+## Canonical representation
 
-## Implemented
+`FXO blob → D3D9 token stream → SHIFT.ShaderProgram/1 → GLSL ES 3.1 / software reference`
 
-- D3D9 instruction-token decoder for the SHIFT SM2/SM3 shader cache.
-- 5-bit register-type decoding from bits 28..30 + 11..12.
-- Destination write masks and result modifiers.
-- Source swizzles, source modifiers, and relative-addressing detection.
-- DCL semantic declarations.
-- DEF/DEFI/DEFB literal payload preservation.
-- Sampler, constant, temporary and input/output register discovery.
-- Instruction/control metadata including predicate bit and instruction length.
-- Neutral `ShaderProgram` IR independent of OpenGL/Vulkan.
-- First-pass GLSL ES 3.1 emission for the common arithmetic/texture subset.
-- CLI:
-  - `analyze-shader-asm`
-  - `translate-shader`
+The token stream and neutral IR remain authoritative.
 
-## Full RENDER validation
+## Decoder
 
-`RENDER.bff`:
+Implemented:
 
-- 2,050 vertex shader blobs
-- 2,050 pixel shader blobs
-- 4,100 shader blobs total
-- 142,605 decoded instruction tokens
-- 38 unique opcodes
-- 0 parser errors
-- 0 unknown opcodes in the observed corpus
+- SM2/SM3 token decoding;
+- register/mask/modifier/swizzle metadata;
+- relative-addressing detection;
+- DCL/DEF/DEFI/DEFB preservation;
+- sampler/constant/temp/input/output discovery;
+- instruction/control metadata.
 
-The opcode histogram reproduces the previously measured corpus counts exactly, which is a useful regression check for token walking.
+## Backend
 
-## Important limitation
+The current stack supports a bounded set of arithmetic, texture, derivative, comparison and control-flow operations plus semantic VS/PS linkage. The software oracle additionally evaluates the documented vertex-shader a0 constant-address form.
 
-The GLSL backend is deliberately a **first-pass semantic lowering**, not yet the final production renderer. Structured control flow, exact sampler state, TEXLDD/TEXLDL gradients/LOD, aL/loop-register relative addressing, SINCOS variants, and full CTAB-to-material binding still need dedicated lowering.
+## RENDER corpus evidence
 
-The compiled D3D9 token stream remains the exact fallback representation; no original shader is discarded when the GLSL translator does not yet understand an instruction.
+The established corpus snapshot records:
 
+- 2,050 vertex shader blobs;
+- 2,050 pixel shader blobs;
+- 4,100 shader blobs total;
+- 142,605 decoded instruction tokens;
+- 38 unique opcodes;
+- 0 parser errors.
 
-## Phase 13
+These counts describe corpus parsing, not complete backend compatibility.
 
-GLSL ES 3.1 lowering now covers the D3D9 ABS opcode and the DDX/DDY derivative aliases (DSX/DSY), keeping these common semantic operations out of the unsupported path.
+## Remaining gaps
 
-## Phase 14: linked GLSL interface
-
-D3D9 vertex outputs and pixel inputs now receive shared GLSL interface locations derived from semantic usage/index linkage. Original register numbers are retained for internal lowering, while translate_pair() emits both stages with matching locations.
-## Phase 15: vertex input ABI linkage
-
-Linked GLSL translation now maps D3D9 VS input registers (`vN`) to the target `SHIFT.VertexLayout/1` attribute locations. The original register number remains the internal operand identity; the emitted GLSL location follows the explicit repacked layout.
-## Phase 16: material-linked shader payload
-
-`MaterialBinding/1` now attaches `SHIFT.LinkedShaderPair/1` when the selected FXO permutation has a unique VS/PS pair. The payload contains the neutral pair IR, semantic varying locations, VertexLayout input bindings when MEB properties are supplied, and the generated GLSL ES 3.1 stages.
-## Phase 34: GLES constant-buffer ABI
-
-Generated GLSL ES 3.1 now exposes D3D9 float constant banks through `ShiftD3D9Constants` at UBO binding 14. `SHIFT.RenderCommand/1` records the corresponding stage/register/count and byte offset (`register_index * 16`) for runtime upload.
-## Phase 36: float-only constant upload guard
-
-`SHIFT.StaticDraw/1` now rejects non-float or missing CTAB type information for material constants. The currently proven GLES constant path is a vec4-based float UBO; integer/bool CTAB upload semantics remain blocked until independently proven.
-
-## Phase 53
-
-The deterministic software reference executor now supports the documented D3D9 a0 relative addressing form for vertex-shader constant reads, including MOVA/address-register writes. The GLSL backend had already preserved the relative expression; the software oracle now evaluates the same IR form under explicit evidence guards.
+Complete loop-register/aL semantics, all relative addressing variants, sampler gradient/LOD behavior, full D3D9 control flow, production BMW lighting/blending and runtime specialization remain open.

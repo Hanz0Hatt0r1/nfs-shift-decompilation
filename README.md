@@ -1,639 +1,167 @@
 # Need for Speed: SHIFT — Decompilation & Resource IR
 
-<p align="center">
-  <strong>Evidence-driven reconstruction of the SHIFT resource and rendering pipeline</strong><br>
-  <sub>BFF → IR → VHF/MEB/BMT/DDS → FX/FXO → RenderCommand → D3D9 runtime evidence → reference renderer → Android/GLES</sub>
-</p>
+Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-<p align="center">
-  <a href="https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/actions">CI</a> ·
-  <a href="ROADMAP.md">Roadmap</a> ·
-  <a href="VERTEX_ABI_STATUS.md">Vertex ABI</a> ·
-  <a href="REFERENCE_RENDERER_STATUS.md">Reference Renderer</a> ·
-  <a href="SHADER_BACKEND_STATUS.md">Shader Backend</a> ·
-  <a href="SKINNING_STATUS.md">Skinning</a>
-</p>
-
-> **Current mainline: Phase 497.**
+> **Current mainline: Phase 500**
 >
-> **Latest physics/provider track:** Phases 440–497 extend the specialized 40/34-scalar solver reconstruction from static source IR into a capture-ready runtime evidence pipeline. The track now covers workspace write/dependency layers, solver execution IR and schedules, packed-workspace aliases, output flow, acceptance/factor separation, read-before-write boundaries, experimental numeric execution with admissibility gates, provider packed-state capture, pre/post mutation diffs, reset-domain analysis, exact provider/builtin dispatch, scalar selector provenance, six exact reset callsites, runtime selector sequence validation, reset→solve ordering, per-frame evidence manifests, active scalar-group reconstruction, selector reset footprints, live reset-effect sentinels, PE callsite extraction, and repository-wide Python syntax auditing. Exact numeric retail/provider parity remains capture-gated.
->
-> The project now has a source-backed BMW M3 E36 physics vertical slice through the pre-PhysX construction boundary: the real `aarm_multilink.sdf` path is reconstructed through 40 scalar solver nodes, exact JOINT/HINGE/BAR projection and coupling kernels, the builtin sparse-solver lifecycle, provider-aware PE/runtime probe tooling, and a neutral pre-PhysX construction IR for the BODY/constraint runtime records. The actual SDK/provider object classes remain an explicit unresolved boundary.
->
-> **Phase 425 — JointDesc schema:** `joint_desc_schema_runtime.py` records the retail `JointDesc`/ `JointLimitDesc` field names, offsets and opaque serializer type-ids registered by `FUN_007b9100`/`FUN_007b95d0`, plus explicit constructor writes from `FUN_007b9030`.
-
-> **Phase 424 — pre-PhysX construction IR:** `physics_constraint_construction_runtime.py` lowers the proven `FUN_007b3670`, `FUN_007b3150` and `FUN_007b3820` boundaries into a neutral, machine-readable construction plan. It records BODY/constraint strides, field offsets, endpoint links, solver widths and storage allocations without inventing PhysX class names or physical units.
-
-> **Phase 426 — SDF constraint ABI:** the SDF constraint descriptor registered by FUN_007b42f0 is now machine-readable with exact offsets/type-ids for Label, Pos Body, Neg Body and Copy Body. A direct audit also corrected the merged BAR endpoint reference counter to +0xA0 for both endpoints.
-
-> **Phase 427 — SDF post-load kinematics:** the runtime copy boundary FUN_007b2ae0 and post-load helpers FUN_007b2da0/FUN_007b2de0/FUN_007b2f70 are now captured as executable, source-backed contracts. HINGE vector closure and BAR endpoint-direction normalization are reproducible without assigning undocumented PhysX semantics.
-
-> **Phase 428 — exact SDF 3x3 transform helpers:** FUN_007aefb0 and FUN_007af0a0 are now executable in the RE runtime. The body block +0xD4 contains nine float matrix elements; one helper performs row-major matrix×vector and the other the transposed coefficient ordering. No translation or arbitrary matrix inverse is inferred.
-
-> **Phase 429 — canonical transform-helper API:** FUN_007af0a0 and FUN_007aefb0 now have one shared executable implementation keyed by the exact retail function names. The older matrix/vector APIs remain compatibility aliases, so SDF body-frame and constraint paths cannot silently diverge.
-
-> **Phase 430 — provider-neutral backend:** the accepted-provider branch of FUN_007b3820 is now an executable state machine with exact slot order, vtable offsets, storage replacements and the provider-returned +0x2C secondary-domain value preserved separately from the +0x40/+0x44 storage results.
-
-> **Phase 431 — specialized provider signatures:** the two concrete provider vtables are decoded from PE .rdata, including exact method addresses, fixed 40/34 scalar domains and strict-upper-triangle acceptance signatures. The RLE matcher reproduces the retail acceptance masks without assigning provider class names.
-
-> **Phase 432 — BMW M3 provider compatibility gate:** the real BMW seed evidence is now compared against the specialized provider signatures. The 40-scalar BMW seed has 330 strict-upper non-zero cells versus provider 0's required 450; provider 1 expects 34 scalars. Final runtime provider selection remains capture-gated.
-
-> **Phase 433 — exact specialized-provider workspace:** provider +0x24/+0x28 constants are now explained by static address spans: +0x24 is the factor-workspace double count (1190/746), +0x28 is the scalar dimension (40/34), with row-pointer table → factor workspace → output vector contiguous in both providers.
-
-> **Phase 434 — provider workspace-size domain:** direct PE data shows provider +0x2C returns the same 1190/746 workspace-size values as +0x24, and FUN_007b3820 stores that value at BODY +0xA8. The earlier generic 'domain' label is now narrowed to this observed workspace-size role.
-
-> **Phase 435 — exact provider row-pointer topology:** the static 40/34 row-pointer tables are decoded into row segment extents. Their segments exactly partition the 1190/746-double factor workspaces between the row-pointer tables and output vectors.
-
-> **Phase 437 — specialized-provider source fingerprint:** the unrolled provider solvers can now be re-audited directly from a local SHIFT.exe.c. The extractor finds every unique reciprocal pivot and the loop ranges between pivots, providing a reproducible source fingerprint without committing the proprietary source.
-
-> **Phase 438 — acceptance RLE source extractor:** the provider acceptance masks are now regenerable directly from FUN_007c6e50/FUN_007cdb40 in a local retail SHIFT.exe.c, including exact RLE entry counts and strict-upper coverage.
-
-> **Phase 439 — specialized-provider factor pattern:** future-column coefficient writes can now be extracted from the actual unrolled provider solver, yielding the static post-pivot factor edge set for each solver row.
-
-> **Phases 440–456 — specialized-provider solver reconstruction:** the provider solvers are now represented as source-derived write/dependency/operator/schedule layers. Packed workspace aliasing is explicit; source-context resolution distinguishes unique loop/array addresses from ambiguous direct addresses. Output-vector flow and the solver's read-before-write initial-state boundary are represented separately. No proprietary retail RHS expressions are stored.
-
-> **Current physics gate:** run `tools/run_sdf_solver_probe.py SHIFT.exe --output out/sdf-solver-capture` to validate the retail PE and generate a deterministic GDB attach bundle, then attach the probe to the retail 32-bit Wine process with the generated `attach.gdb`; the probe also records `frame_entry_XXXXXX.json` with provider/builtin backend selection, and `tools/verify_sdf_probe_session.py` accepts it with `--frame` when normalizing the resulting `pre_solve_XXXXXX.json` / `post_solve_XXXXXX.json` pair with `tools/verify_sdf_probe_session.py`. The repository intentionally does not fabricate a numeric retail solver frame; exact retail-vs-reimplementation equality still depends on a real runtime capture.
-
-> **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.
-
-> **Linux/apitrace path:** when apitrace is the available runtime capture source, `tools/extract_apitrace_unique_bmw.py` streams the .trace directly, extracts the known BMW body draw signatures and deduplicates runtime resource instances without first creating a multi-gigabyte text dump. `--auto-trim` can emit a compact trace for subsequent inspection.
-
-> **Physics bundle:** `python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics` extracts the real CDF/EDF/GDF/SDF resources and produces one neutral `SHIFT.VehiclePhysicsAssetGraph/1` profile. The bundle preserves identity and provenance without committing retail payloads.
->
-> **Single-frame handoff:** `tools/extract_apitrace_single_frame.py --auto-bmw` finds the frame with the strongest BMW target-draw coverage and creates `single_frame.trace` plus a provenance manifest for upload and independent runtime-state analysis.
->
-> **Draw-local runtime proof:** `SHIFT.D3D9RuntimeBindingEvidence/1` now freezes declaration, stream, index, shader, constant and texture state at each `DrawIndexedPrimitive` boundary. The strict same-instance gate consumes these snapshots rather than the final state of the whole frame.
-
-> **BMW runtime texture lifecycle:** Phase 336 adds `CreateTexture/CreateCubeTexture` object-lifecycle evidence; Phase 337 correlates the draw-local BMW paint texture pointers with the latest creation instance and compares runtime resource shape against retail DDS metadata without treating pointer equality as DDS provenance.
-
-> **BMW texture finding:** the supplied runtime paint `s1` object is `1024×1024 DXT1`, while the archived `common_paint.dds` entry is only 184 bytes. The project therefore treats s1 as a generated/transformed candidate pending captured-content identity; no direct DDS attribution is made.
-
-> **Raw texture capture:** Phase 339 adds opt-in `IDirect3DTexture9::LockRect/UnlockRect` capture for write-side level-0 payloads. The payload is stored as a separate binary artifact and referenced by a versioned `texture_payload` event, enabling compressed-surface byte parity without embedding DDS headers.
-
-> **Raw DDS parity:** Phase 340 compares captured level-0 DXT payload bytes directly with the exact retail DDS base-level bytes. Payloads from an earlier lifetime of a reused texture pointer are rejected.
-
-> **Mipmap parity:** Phase 341 extends raw texture evidence to the complete available mip-chain. Every captured level is byte-compared against the corresponding DDS level; missing higher levels are reported as `partial`, while any captured-level mismatch remains a hard blocker.
-
-> **Cube payload capture:** Phase 342 extends raw D3D9 payload capture to IDirect3DCubeTexture9::LockRect(face, level, ...), preserving face×mip identity in the same ordered texture_payload contract. The runtime s3 environment object remains a runtime-global resource; no retail DDS identity is inferred without a matching static source.
-
-> **BMW buffer lifecycle:** Phase 343 correlates the frame-30444 BMW VB/IB pointers with exact D3D9 CreateVertexBuffer/CreateIndexBuffer instances and MEB-derived byte sizes. Raw runtime VB/IB bytes remain a separate capture boundary.
-
-> **Draw-local shader join:** runtime shader selection, parity and the render contract now consume the same `(frame, draw_index)` snapshot. Frame-level shader state is retained only for compatibility with legacy reports that have no snapshots.
-> **Apitrace draw-instance proof:** `SHIFT.BMWM3APITRACERuntimeDrawInstanceProof/1` now preserves declaration/VB/IB creation and binding identity at the exact BMW draw; `tools/run_apitrace_bmw_buffer_proof.py` generates this proof automatically alongside the seven-object byte-parity artifacts.
-
-> **Versioned draw state:** `SHIFT.D3D9DrawStateSnapshot/1` adds normalized active stream/texture bindings and latest constant-register state to each exact draw boundary; malformed snapshots are blocked from proof.
-> **Capture preflight:** BMW paint candidates now expose snapshot schema validity, active texture stages and populated constant-state stages; `ready` also requires complete declaration/VS/PS/stream/index state on the proven draw.
->
-> **Runtime hard gates:** exact MEB SHA identity, draw/snapshot alignment and BMW capture preflight are now mandatory before runtime render execution.
-
-> **Capture provenance:** `SHIFT.D3D9RuntimeCaptureManifest/1` fingerprints the capture artifact and checks event-stream continuity while keeping authenticity explicitly unverified.
-
-> **PE Usage mapping:** `SHIFT.PEImageEvidence/1` can now decode the recovered Usage table and emit `SHIFT.D3D9UsageMap/1`; numeric Usage is now decoded from the supplied retail SHIFT.exe PE image.
-
-> **BMW M3 test scene:** `tests/scenes/bmw_m3_e36_kit00_test_scene.json` pins the supplied `BMW_M3_E36.bff` to KIT00/LODA and four deterministic 1600×900 geometry-preview views; the screenshot bundle is kept external to the repository.
-
-
->
-> **BMW capture preflight:** `SHIFT.BMWRuntimeCapturePreflight/1` locates exact target-MEB and paint-range draw candidates before shader execution; it is diagnostic and does not replace the strict same-instance gate.
-
-> **Camera runtime:** Phase 254 reconstructs CameraConfig and TrackCameraMan loader paths, registered Trackside Cams/Splines/Areas groups, class/id/data XML object boundaries and static/tracking/area property registrations. Camera behavior remains unresolved and renderer/RENDER.bff are unchanged.
-
-> **Camera runtime:** Phases 254–257 reconstruct CameraConfig/TrackCameraMan loading, spline-reference maintenance, proven class-registration prefixes and Trackside Camera minimum-score selection. The nested score function and camera behavior remain unresolved; renderer and RENDER.bff are untouched.
-
-> **Camera activation:** Phase 260 reconstructs the central `FUN_0080e1b0` state transition from selected camera id to active runtime camera, including invalid-id handling, repeat-selection no-op, object lookup failure, tracking/static activation modes and previous-group deactivation. Renderer and `RENDER.bff` remain untouched.
-
-> **Camera state:** Phase 262 aligns `CameraSwitchGateRuntime/2` with the actual active camera-buffer fields (`+0xe4`, byte `+0xf2`) and reconstructs `FUN_0080cd40`/`FUN_0080e040` buffer swap and rollback snapshots. Renderer and `RENDER.bff` remain untouched.
-
-> **Camera command dispatch:** Phase 263 reconstructs `FUN_0080e650` command kinds 1/2/3/4 and their exact callees, preserving unknown kinds as unsupported. Renderer and `RENDER.bff` remain untouched.
-
-> **Camera event stream:** Phase 264 reconstructs the channel filter and event-type dispatch in `FUN_0080c710`; event type `5` is now linked directly into the Phase 263 camera-command parser. Renderer and `RENDER.bff` remain untouched.
-> **Camera event record:** Phase 265 reconstructs the binary event record boundary used by `FUN_0080b9b0` (type 5, channel byte, six dword payload) and the separate type-3 producer `FUN_0080ccb0`.
-> **Linux/Vulkan direction:** Phase 203 establishes Linux as the primary renderer lab. Vulkan is the native backend target, while the software reference renderer remains the deterministic oracle.
-
-> **Physics runtime:** Phases 357–382 reconstruct the PhysX/PhysicsSystem startup boundary, PhysicsParticipant spawn modes, the CSM collision-record boundary, scene-query dispatch, vehicle-physics asset roots, concrete HDV property tables, external engine/EDF loading, the 6-variable driveline solver boundary, the tyre/TBC slip-curve runtime, the per-wheel thermal-state update, the four-wheel wheel-kinematics handoff, the spring gap/transition state boundary, the spring force-construction boundary, the four-wheel three-node thermal integrator, the four-wheel longitudinal-velocity extraction boundary, and the wheel contact-angle factor helper, the collision query/cache contract, the first collision-response response kernel, the common body-load accumulation boundary, and the proven producer of the response-kernel input vector, the auxiliary contact-response kernel, the exact body point-transform helpers, the shared matrix-vector transform boundary, and the vehicle rate/response kernel chain. The caller-side x87 value at runtime +0x548 remains explicitly unresolved. The caller-side x87 value at runtime +0x548 remains explicitly unresolved. Renderer and `RENDER.bff` remain untouched on this track.
-
-> **SHIFT.exe PE evidence:** `SHIFT.MEBD3D9DescriptorTripleEvidence/1` is now joined into the main color bridge. Exact MEB descriptors `[4,6,0]`/`[4,6,1]` plus the source-backed Type-4 packed-color path resolve the static color declaration to D3D9 Type 4 (`D3DCOLOR`, BGRA memory / RGBA shader order); runtime same-instance proof remains separate.
-
----
+> Phases 499–500 add deterministic indexing and verification for specialized-provider runtime capture bundles. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
-This project reconstructs the **observable formats, contracts, dependencies and runtime boundaries** of *Need for Speed: SHIFT* as deterministic, machine-readable intermediate representations.
+Reconstruct observable formats, binary layouts, dependencies and runtime boundaries as deterministic, machine-readable intermediate representations.
 
-The long-term target is a renderer that consumes this reconstructed IR without depending on the original game runtime, with a Linux/Vulkan renderer as the primary native target; Android is deferred until the decompilation and desktop/runtime boundary are substantially complete.
+Canonical render path:
 
-### Core rule
+`BFF → IR → VHF/MEB/BMT/DDS → FX/FXO → DrawBinding → RenderCommand → native renderer`
 
-> **Do not guess undocumented semantics when evidence can be collected instead.**
+Linux/Vulkan is the native renderer direction. The desktop software renderer is the deterministic reference oracle.
 
-Weak or unresolved behavior remains explicitly marked as `unknown`, `inferred`, `ambiguous`, `unsupported` or `blocked`.
+## Evidence policy
 
----
+Static source/PE evidence, runtime observations and neutral renderer contracts are separate layers.
 
-## Architecture
-
-```text
-                    RETAIL SHIFT DATA
-                          │
-             ┌────────────┴────────────┐
-             ▼                         ▼
-       BFF / XMem / LZX          SHIFT.exe evidence
-             │                         │
-             └────────────┬────────────┘
-                          ▼
-                     Resource IR
-                          │
-       ┌──────────────────┼──────────────────┐
-       ▼                  ▼                  ▼
-   VHF / BAS / BAB     MEB / BMT / DDS     FX / FXO
-       │                  │                  │
-       └──────────────────┼──────────────────┘
-                          ▼
-                Resource + Shader Linking
-                          │
-                          ▼
-                    DrawBinding
-                          │
-                          ▼
-                    RenderCommand
-                          │
-                 ┌────────┴────────┐
-                 ▼                 ▼
-          Desktop oracle       GLES 3.1 ABI
-                 │                 │
-                 └────────┬────────┘
-                          ▼
-                 Vulkan runtime
-
-             Android runtime (later)
-
-             PARALLEL RUNTIME EVIDENCE
-                          │
-                 Windows D3D9 capture
-                          ▼
-                    versioned JSONL
-                          │
-        ┌─────────────────┼─────────────────┐
-        ▼                 ▼                 ▼
-   declarations       VS / PS           SetTexture
-   streams / index    constants         resource types
-        └─────────────────┼─────────────────┘
-                          ▼
-                  same-instance gates
-                          ▼
-                 BMW runtime contract
-                          ▼
-                exact shader execution
-```
-
----
+Use explicit states such as `proven`, `verified`, `inferred`, `ambiguous`, `unknown`, `unsupported` and `blocked`. Missing evidence is never replaced with a plausible value.
 
 ## Current status
 
-| Area | Status | Capability |
-|---|:---:|---|
-| BFF / XMem / LZX | ✅ | v3 entries, ranges, raw/zlib/XMem+LZX and native backend |
-| Resource IR | ✅ | manifests, SHA-256 identities, blobs and dependency graphs |
-| Reflection / BML / XML | ✅ | typed parsing, inheritance and generic XML trees |
-| VHF vehicle hierarchy | ✅ | real BMW M3 hierarchy and deterministic KIT/LOD assembly |
-| BAS skeleton | ✅ | hierarchy and transforms |
-| BAB bone tables | ✅ | bone table parsing and conservative opaque-tail handling |
-| BAB animation | 🟡 | runtime channel grammar reconstructed; clip/pose integration remains |
-| MEB geometry | ✅ | real geometry, descriptors, UVs, normals, tangents and skin streams |
-| COLOR0 | ✅ | MEB 460 → D3D9 Type 4 bridge is evidence-backed |
-| COLOR1 | 🟡 | property 461 was absent from the supplied 1.02 corpus |
-| BMT / material | ✅ | real BMW material extraction and contract validation |
-| FX / FXO | ✅ | real `bodywork.fx` corpus and exact permutation selection |
-| Shader IR | ✅ | D3D9 bytecode → `SHIFT.ShaderProgram/1` |
-| GLSL ES 3.1 | 🟢 | generated stages + optional compile/link validation |
-| RenderCommand | ✅ | resources, constants, vertex ABI, readiness and blockers |
-| Desktop renderer | 🟢 | geometry, textures, multi-sampler, cube maps, VS→PS linkage and captured shader execution |
-| Skinning | 🟢 | explicit SkinPose, CPU LBS oracle and GLES ABI |
-| Camera / TrackCameraMan | 🟡 | config, spline reload, class registration, selection, activation, state snapshot, event stream and record serialization |
-| D3D9 runtime capture | 🟢 | declarations, streams, indices, shaders, constants, textures and resource descriptors |
-| BMW post-capture pipeline | 🟢 | one-command evidence → shader selection → render contract → offline render |
-| Android runtime | ⏳ | follows stabilization of the desktop/runtime boundary |
-| Gameplay systems | ⏳ | deliberately later |
+| Area | State | Current boundary |
+|---|---|---|
+| BFF/XMem-LZX | verified | Type 0/1/2 paths and X12d=2 covered; Type 3 uses an external Oodle-compatible runtime |
+| Resource IR | active/verified | typed parsing, hashes and provenance |
+| MEB / vertex ABI | strong static coverage | BMW descriptor triples and D3D9 Type/Usage evidence are source-backed |
+| BMW COLOR0 | statically resolved | 460 → [4,6,0] → Type 4 / D3D9 COLOR |
+| BMW COLOR1 | statically described, corpus-limited | 461 → [4,6,1]; no positive 1.02 corpus instance |
+| Material/shader linking | implemented | BMT → FX → FXO, CTAB samplers/constants, linked shader pair |
+| Desktop reference renderer | active oracle | geometry, DDS, multi-sampler, samplerCube, VS→PS, explicit semantics, skinned command path |
+| Skinning | contract implemented | MEB 310/580, explicit SkinPose, CPU reference, GLES parity |
+| BAB animation | evidence-backed | bank/channel grammar reconstructed; remaining axis/order/trailing semantics explicit |
+| SGB / scene | partial | NODE/PART/SUMM/OCCL/FLAT runtime boundaries and FLAT tree |
+| Camera | active | loader/state/event/control primitives reconstructed |
+| Vehicle physics | active | CDF/EDF/GDF/SDF and wheel/contact/solver boundaries |
+| Builtin solver | source-backed | sparse-solver lifecycle and matrix/kernel layers |
+| Specialized providers | capture-ready | 40/34 scalar domains, structural solver IR, reset/selector provenance |
+| Provider numeric parity | blocked on capture | requires an authentic runtime frame |
+| Vulkan | active native backend | bootstrap, packets, reflection gates, BMW material/DDS bridge |
+| Android | deferred | waits on stable desktop/native runtime boundary |
 
----
+## BMW M3 E36 vertical slice
 
-# BMW M3 E36 vertical slice
+The render slice is:
 
-The current proof vehicle is the real BMW M3 E36 asset.
+`VHF → MEB → BMT → FX/FXO → DrawPacket → RenderCommand`
 
-```text
-BMW_M3_E36.bff
-   │
-   ├── VHF → hierarchy / transforms
-   ├── MEB → geometry / vertex ABI
-   ├── BMT → material / sampler references
-   └── DDS → texture payloads
+The physics asset slice is:
 
-RENDER.bff
-   │
-   └── bodywork.fx / FXO corpus
-             │
-             ▼
-       exact VS/PS permutation
-             │
-             ▼
-       RenderCommand / runtime contract
-```
+`CDF + EDF + GDF + SDF → SHIFT.VehiclePhysicsAssetGraph/1`
 
-A compact golden manifest identifies the selected body MEB, primitive range, material alias and shader permutation so a future image checkpoint remains attributable to exact source data.
+### BMW paint bindings
 
----
+| Material | FX sampler | D3D9 slot | Resource |
+|---|---|---:|---|
+| diffuseTexture | diffuseMap | s1 | COMMON_PAINT.dds |
+| specularTexture | specularMap | s2 | COMMON_PAINT_SPECULAR.dds |
+| scratchControlTexture | scratchControlMap | s4 | COMMON_BLANK.dds |
+| environmentMap | environmentMap | s3 | external cube |
+| shadow map | sShadowMap_f1_0 | s0 | external renderer resource |
 
-## Evidence model
+## D3D9 / vertex ABI
 
-### Resource provenance
+MEB property descriptors are `[Type ordinal, Usage ordinal, Channel]`.
 
-Important resources carry:
+For BMW:
 
-- archive identity;
-- resource path/index;
-- decoded SHA-256;
-- exact byte ranges where relevant;
-- parser/schema version;
-- source provenance.
+- 460 → `[4,6,0]`
+- 461 → `[4,6,1]`
+- Type 4 → `D3DDECLTYPE_D3DCOLOR`
+- Usage ordinal 6 → D3D9 Usage 10 (`COLOR`)
 
-### MEB vertex ABI
+This closes the static declaration mapping. It does **not** close same-instance runtime attribution.
 
-Known mappings include:
+Runtime closure requires correlation of MEB identity, declaration, vertex/index buffers, shaders and the exact `DrawIndexedPrimitive` boundary.
 
-| Property | Semantic | Representation |
-|---:|---|---|
-| 200 | POSITION0 | FLOAT32x3 |
-| 220 | NORMAL0 | FLOAT32x3 |
-| 240 | TANGENT0 | FLOAT32x3 |
-| 250 | BINORMAL0 | FLOAT32x3 |
-| 130–134 | TEXCOORD0–4 | FLOAT32x2 |
-| 230–234 | TEXCOORD0–4 family | FLOAT32x3 UVW |
-| 310 | BLENDWEIGHT0 | FLOAT32x4 |
-| 580 | BLENDINDICES0 | UINT8x4 |
-| 460 | COLOR0 | D3D9 Type 4 bridge |
-| 461 | COLOR1 | not positively observed in supplied 1.02 corpus |
-| — | TEXCOORD5 | shader-proven; MEB source mapping unresolved |
+## Runtime capture
 
-MEB property descriptors retain the exact on-disk 12-byte descriptor records.
+The D3D9 producer captures declaration/buffer/shader/constant/texture state and exact draws. Optional payload capture records texture mip data and VB/IB bytes. Draw-local snapshots are keyed by `(frame, draw_index)`.
 
-### D3D9 declaration lifecycle
+Linux/apitrace tooling provides an alternate path for extracting unique BMW draw/resource instances and trimming large traces.
 
-The recovered source evidence models:
+## Specialized-provider physics track
+
+Current provider boundary:
+
+`FUN_007b3f40 → FUN_007b2210(selector) → provider vtable +0x1c(selector) → provider +0x18 solve`
+
+The repository now models:
+
+- 40- and 34-scalar provider domains;
+- row-pointer/workspace topology;
+- pivot and acceptance structure;
+- factor/write/dependency/update/operator IR;
+- execution schedules and output-vector flow;
+- read-before-write boundaries;
+- provider vtable/reset lifecycle;
+- scalar selector/reset provenance;
+- live reset-effect and callsite evidence;
+- reset→solve ordering;
+- capture-session and capture-bundle verification.
+
+### Phase 499–500 capture bundle
+
+`tools/verify_specialized_provider_capture_bundle.py` indexes:
 
 ```text
-MEB descriptor triple
-      ↓
-Type / Usage / Channel
-      ↓
-D3DVERTEXELEMENT9-shaped record
-      ↓
-canonicalization
-      ↓
-CreateVertexDeclaration
-      ↓
-SetVertexDeclaration
-      ↓
-SetStreamSource / SetIndices
-      ↓
-indexed draw
+provider_pre_<provider>_<hit>.json
+provider_post_<provider>_<hit>.json
+scalar_reset_events.jsonl
 ```
 
-Static executable evidence and runtime evidence are kept separate. A generic declaration observation is not promoted to same-instance proof.
+A bundle is structurally ready only when its required pre snapshot exists and integrated validation passes. A post snapshot is optional for pre-only diagnostics.
 
----
+The bundle layer performs provenance/orchestration; it does not infer matrix semantics or claim numeric equivalence.
 
-# Runtime D3D9 capture
+## Useful commands
 
-The Windows producer records the state needed to close the BMW runtime gate:
+```bash
+python tools/verify_specialized_provider_capture_bundle.py CAPTURE_DIR
+python tools/verify_specialized_provider_capture_bundle.py CAPTURE_DIR \
+  --reset-events CAPTURE_DIR/scalar_reset_events.jsonl \
+  -o provider_bundle_manifest.json
 
-- frame/object identity;
-- vertex declarations;
-- stream/index bindings;
-- VS/PS creation and binding;
-- shader byte identity;
-- shader constants;
-- `SetTexture` bindings;
-- resource descriptors;
-- indexed draw ranges;
-- optional texture surface snapshots;
-- optional `Present` backbuffer screenshots.
+python tools/extract_trace_tail.py SHIFT.trace SHIFT_tail_500MiB.trace
 
-The capture is versioned and schema-validated before semantic analysis.
+python tools/extract_apitrace_unique_bmw.py \
+  --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json \
+  capture.trace
 
-### Build
+python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
 
-On Windows:
-
-```powershell
-cmake -S native_capture -B native_capture/build -A Win32
-cmake --build native_capture/build --config Release
+./shift-bff-viewer /path/to/BMW_M3_E36.bff
 ```
 
-Place the resulting `d3d9.dll` beside the test SHIFT executable.
+## Current CI note
 
-Enable capture:
+At commit `9bab80af4673856f77d58bed684e7a5290ff6f03`:
 
-```powershell
-set SHIFT_D3D9_CAPTURE=C:\path\shift_m3_capture.jsonl
-```
+- native: success;
+- capture-producer: success;
+- linux-vulkan: success;
+- Python CI: fails during collection because `tools/run_specialized_provider_differential.py:131` contains an unterminated string literal.
 
-Optional backbuffer capture:
+This is a current code/CI issue, not evidence that the documentation or capture-bundle design is invalid.
 
-```powershell
-set SHIFT_D3D9_CAPTURE_SCREENSHOT=1
-set SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY=30
-set SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR=C:\path\capture\
-```
+## Repository map
 
----
-
-## Milestone A — Close the BMW runtime evidence gate
-
-**Immediate work**
-
-1. Capture one real BMW M3 body frame.
-2. Validate the capture schema.
-3. Correlate the exact MEB resource, declaration and indexed draw in the same frame.
-4. Correlate the exact VS/PS permutation with FXO.
-5. Verify VS/PS constants against the material payload.
-6. Verify `s0` / `s3` resource types and captured surfaces.
-7. Run the post-capture pipeline.
-8. Produce the first non-synthetic offline BMW render.
-9. Compare it against the retail backbuffer.
-10. Store a deterministic image/hash checkpoint.
-
-**Exit:** one real M3 draw has a complete same-instance evidence chain and a reproducible reference image.
-
-## Milestone B — Desktop renderer parity
-
-- expand shader execution only when evidence requires it;
-- resolve remaining lighting/blend/material semantics;
-- validate sampler state and extended UV families;
-- close TEXCOORD5 where evidence permits;
-- add image-diff regression checkpoints.
-
-**Exit:** deterministic reproduction of the selected retail draw within a defined image-diff tolerance.
-
-## Milestone C — GLES 3.1 parity
-
-- compile selected shader permutations;
-- match RenderCommand attributes/resources/constants;
-- run desktop-vs-GLES parity;
-- package runtime-independent IR/shader resources;
-- remove importer dependencies from the renderer boundary.
-
-**Exit:** the same IR produces equivalent desktop and GLES output.
-
-## Milestone D — Android renderer
-
-- implement the renderer around the proven RenderCommand ABI;
-- load content-addressed IR directly;
-- reuse neutral shader/resource contracts;
-- establish a real BMW smoke test;
-- expand to scene composition after the vehicle path is stable.
-
-**Exit:** packaged BMW M3 IR renders on Android without the original SHIFT runtime.
-
-## Milestone E — Scene and gameplay
-
-Only after the renderer boundary is stable:
-
-- SGB scene semantics;
-- tracks;
-- camera;
-- input;
-- physics;
-- audio;
-- gameplay.
-
----
-
-# Repository map
-
-| Path | Role |
+| Path | Purpose |
 |---|---|
-| `shift_importer.py` | Main CLI and evidence entry point |
-| `bff_format.py` / BFF modules | BFF/XMem/LZX handling |
-| `meb_format.py` | MEB parser and property provenance |
-| `bmw_material_from_bff.py` | Real BMW material extraction |
-| `bmw_golden_gate.py` | BMW evidence/render gate |
-| `bmw_runtime_shader_select.py` | Exact runtime VS/PS selection |
-| `bmw_runtime_render_contract.py` | Runtime readiness contract |
-| `bmw_runtime_shader_render.py` | Captured shader offline execution |
-| `bmw_post_capture_pipeline.py` | End-to-end post-capture pipeline |
-| `d3d9_runtime_trace.py` | Runtime evidence ingestion |
-| `native_capture/` | Windows D3D9 producer |
-| `reference_renderer.py` | Desktop reference renderer |
-| `static_draw.py` / `skinned_draw.py` | Draw contracts |
-| `render_command.py` | Neutral submission ABI |
-| `skinning*.py` | CPU/GLES skinning |
-| `tools/` | Evidence/corpus/snapshot tooling |
-| `tests/` | Regression tests |
-| `docs/` | Phase-specific technical documentation |
-
----
-
-# Documentation
-
-Detailed status is intentionally split into focused documents:
-
-- [Roadmap](ROADMAP.md)
-- [Vertex ABI status](VERTEX_ABI_STATUS.md)
-- [Reference renderer status](REFERENCE_RENDERER_STATUS.md)
-- [Shader backend status](SHADER_BACKEND_STATUS.md)
-- [Skinning status](SKINNING_STATUS.md)
-- [Texture render status](TEXTURE_RENDER_STATUS.md)
-- [Track scene status](TRACK_SCENE_STATUS.md)
-- [Draw packet status](DRAW_PACKET_STATUS.md)
-- [Upload contents](UPLOAD_CONTENTS.md)
-
----
-
-# Testing
-
-Full Python suite:
-
-```bash
-python -m pytest
-```
-
-Focused BMW runtime tests:
-
-```bash
-python -m pytest \
-  tests/test_bmw_runtime_capture_pipeline.py \
-  tests/test_bmw_post_capture_pipeline.py
-```
-
-The Windows D3D9 producer has a separate native/CI boundary.
-
----
-
-# Development rules
-
-1. **Evidence beats plausibility.**
-2. **Provenance travels with data.**
-3. **Ambiguity is a valid result.**
-4. **Static and runtime evidence stay separate.**
-5. **Gates fail closed.**
-6. **The desktop renderer remains the deterministic oracle until GLES parity is established.**
-
----
-
-# Asset policy
-
-Retail archives and executable dumps are analysis inputs, not repository source code.
-
-The repository should contain parsers, compact fixtures, deterministic evidence, hashes/provenance, generated checkpoints and documentation. Large retail payloads should remain outside Git unless redistribution is clearly permitted.
-
-See [NOTICE.md](NOTICE.md).
-
-<p align="center">
-  <strong>Goal:</strong> turn verified SHIFT data into a reproducible renderer — one evidence-backed boundary at a time.
-</p>
-
-
-> **PE-backed COLOR ABI:** Phase 205 makes the exact SHIFT.exe Type/Usage table an optional input to the COLOR bridge. Type 4 is validated as RGBA32 / D3DCOLOR; Usage ordinal 6 is validated as Colour / numeric D3D9 Usage 10. The runtime same-instance declaration gate remains separate.
-
-
-> **Vulkan headless checkpoint:** Phase 206 adds a real Linux Vulkan offscreen image submission path. It creates a device/queue, clears an R8G8B8A8 image, copies it through a staging buffer and emits a deterministic PPM without a window system. Shader and RenderCommand execution remain the next stages.
-
-
-> **Vulkan graphics checkpoint:** Phase 207 adds an optional headless SPIR-V triangle pipeline. When `glslangValidator` is available, Linux can compile the shader pair, create a real Vulkan graphics pipeline and export an offscreen PPM. BMW RenderCommand integration is the next backend stage.
-
- 
-> **RenderCommand → Vulkan geometry:** Phase 208 introduces SHIFT.VulkanGeometryPacket/1. Python materializes a selected RenderCommand triangle-list into a native handoff; Vulkan consumes only that packet, uploads vertex/index buffers and performs a depth-tested offscreen draw. POSITION0 is the first supported attribute.
-
-
-> **Vulkan VertexLayout v2:** Phase 209 carries multiple proven/inferred vertex attributes into the native packet and maps them to Vulkan formats. COLOR0 receives an explicit executable-backed BGRA→RGBA repack; unresolved COLOR1 remains deferred. The native geometry shader still consumes POSITION0 only.
-
-
-> **Linux Vulkan runner:** Phase 210 adds vulkan_render_command.py, a one-command bridge from RenderBinding/1 to the native Vulkan geometry target. It supports prepare-only validation, packet hashing and optional PPM output without moving BFF/MEB parsing into C++.
-
- 
-> **Vulkan shader path:** Phase 211 adds GLSL 450 emission and optional Vulkan-targeted glslang compilation for LinkedShaderPair/1. Both GLSL ES 3.1 and Vulkan stage sources are retained; native Vulkan descriptor upload remains next.
-
-
-> **Vulkan constant upload:** Phase 213 adds SHIFT.VulkanConstantPacket/1 and a native descriptor upload checkpoint. D3D9 c-register banks are kept separate: VS at binding 14 and PS at binding 15. Ambiguous stage mapping is fail-closed.
-
- 
-> **Vulkan textures:** Phase 214 adds SHIFT.VulkanTexturePacket/1 and a native RGBA8 image/sampler upload path. D3D9 sampler registers are preserved as Vulkan descriptor-set-1 bindings; set 0 remains dedicated to VS/PS constants.
-
-
-> **Vulkan textures:** Phase 214 adds a real RGBA8 image/sampler descriptor path. D3D9 sampler registers are preserved as Vulkan set 1 bindings; set 0 remains reserved for VS/PS constants. The current smoke shader exercises s1.
-
-
-> **Vulkan samplerCube:** Phase 215 adds a dedicated SHIFT.VulkanCubeTexturePacket/1 path for BMW environmentMap/s3. Six explicit RGBA8 faces are uploaded into a cube-compatible image and bound at Vulkan set 1/binding 3; actual BMW cube content/orientation remains a runtime evidence gate.
-
-
-> **BMW Vulkan bundle:** Phase 216 packages one exact M3 RenderCommand submesh into geometry/constants/texture/cube handoffs and preserves Vulkan shader source plus hashes. It is preparation-only; native BMW material execution remains the next stage.
-
- 
-> **Native Vulkan bundle runner:** Phase 218 adds the C++ boundary that consumes geometry/constants/texture/cube packets from `SHIFT.BMWVulkanBundle/1` without parsing game archives. Arbitrary mixed sampler shader execution remains explicitly blocked until SPIR-V reflection is implemented.
-
-
-> **SPIR-V reflection:** Phase 219 adds dependency-free descriptor reflection for native Vulkan execution, including set/binding, sampler2D/samplerCube and constant-buffer classification. This removes the main Phase 218 blocker for automatic mixed-resource pipeline construction.
-
-
-> **Vulkan bundle interface gate:** Phase 220 validates reflected SPIR-V descriptors against the actual geometry/constants/2D/cube packets before native pipeline creation. Missing `sN` resources or unsupported descriptor interfaces are fail-closed.
-
-
-> **BMW material → Vulkan:** Phase 222 adds an adapter from the existing real BMW material-slice report to `SHIFT.BMWVulkanBundle/1`, preserving exact M3 MEB identity, Vulkan shader sources and source provenance. No additional archive parser is introduced.
-
-
-> **Linux Vulkan CI:** Phase 223 adds Ubuntu/Mesa automated coverage for native Vulkan, including a mixed-resource bundle with D3D9 c-register banks, sampler2D and samplerCube. The test is synthetic and does not replace the real BMW D3D9 same-instance gate.
-
-
-> **Phase 230:** native Vulkan texture C++ now compiles without the literal newline corruption, and COLOR ABI promotion is guarded by the complete 460/461 descriptor pair plus source-backed Type-4 evidence.
-
-
-> **Vulkan stage gate:** Phase 231 validates reflected SPIR-V descriptor stages before native execution: VS c14, PS c15, and fragment-only set-1 sampled textures for the current native executor.
-
-
-> **Phase 234:** VertexLayout ABI status mapping is now immutable, eliminating cross-test/runtime mutation as a source of confidence-state drift.
-
-
-> **Phase 235:** the existing DDS decoder now feeds the native Vulkan texture/cubemap packet builders with source and decoded-pixel provenance; real BMW resource selection remains a separate evidence-bound step.
-
-
-> **Phase 236:** the DDS → Vulkan bridge now converts decoder/packet incompatibilities into explicit blocking reasons and preserves provenance instead of leaking exceptions.
-
-
-> **Phase 239:** the real BMW material slice preserves exact DDS provenance, and the Vulkan adapter can extract only those material DDS entries from supplied BFFs, verify SHA-256, and feed them through the existing DDS→Vulkan bridge. `s0`/`s3` remain explicit external/runtime boundaries unless an exact DDS is supplied.
-
-
-> **Phase 240:** the BMW material→DDS→Vulkan adapter now propagates extraction blockers even when no packet is produced and sanitizes temporary paths from persistent DDS provenance.
-
-
-> **Phase 241:** Linux Vulkan CI now enters through the `BMWMaterialSliceVulkan/1` adapter, retaining the mixed sampler2D/samplerCube/constants native smoke. Exact BFF DDS extraction remains separately tested through the Phase 239/240 provenance path.
-
-
-> **Phase 242:** the material→DDS→Vulkan adapter recomputes final readiness from blocking reasons, and synthetic DDS fixtures now encode `caps`/`caps2` at their actual header offsets.
-
-
-> **Phase 244:** `BMWMaterialSliceVulkan/1` now exposes the exact DDS bridge result directly at top level, matching the nested bundle report.
-
-
-> **Phase 246:** the Vulkan runner now validates the sampler sidecar's format and SHA-256 binding to `textures.svtp` before native execution; legacy bundles without the sidecar remain compatible.
-
-
-## BAB animation runtime reconstruction
-
-Phase 247 adds a source-backed decoder for the animation payload after the verified BAB header/bone table. It reconstructs runtime bank variants 0/1/2, channel types 0–9, per-channel metadata and the proven interpolation rules. The parser is evidence-driven: unresolved axis/order details and unconsumed bytes remain explicit blockers.
-
-Run it on an extracted BAB resource with a runtime mode recovered from the source:
-
-    python shift_importer.py bab-animation-runtime animation/example.bab out/example.bab.runtime.json --mode 0
-
-This phase does not modify the renderer or RENDER.bff workflow.
-
-
-## Animation TRACK/node runtime
-
-Phase 248 reconstructs the source-backed XML animation track contract without
-assuming that XML track-form names equal BAB numeric channel IDs. It captures
-translation/rotation/scale/weight usage, sampled/keyed/fixed forms, attachment
-constraints, exact node-name mapping, transform defaults, and hexadecimal
-float-word preservation. Renderer code and RENDER.bff are not part of this phase.
-
-
-## Scene NODE/partition runtime
-
-Phase 249 reconstructs the source-backed SCENE object layer independently from
-the opaque SGB chunk grammar. It captures NODE resource/variation flags,
-TRANSFORM position/orientation/scale, LIGHT types and angle conversion, and
-partition child-reference parsing. Renderer and RENDER.bff work remain outside
-this phase.
-
-
-## Binary SGB runtime
-
-Phase 250 adds sgb_runtime.py and the sgb-runtime CLI. It reconstructs the runtime-visible SGB header and the NODE, PART, SUMM, OCCL and FLAT chunk boundaries/fields from the retail SHIFT.exe.c. Unproven object payload and flat-body semantics remain preserved as opaque data. No renderer or RENDER.bff changes are included.
-
-
-## Embedded SGB object runtime
-
-Phase 251 follows NODE object_payload references into the source-backed OBJECT/HIERARCHY/DAMAGE parser. It preserves the hierarchy child table and raw fields while keeping unproven transform/material meanings explicit. Renderer and RENDER.bff code remain untouched.
-
-
-## FLAT tree runtime
-
-Phase 252 adds flat_runtime.py and the flat-runtime CLI. It reconstructs the runtime FLAT tree layout used after SGB FLAT payload ingestion, including recursive node spans and 0x40-byte leaf records. Unresolved leaf meanings remain raw. Renderer and RENDER.bff work remain deferred.
-
-
-## MATRIX runtime
-
-Phase 253 adds a shared source-backed MATRIX contract for scene/object transforms: Offset, Orientation reordering and optional Scale. It is used as a neutral runtime primitive and does not modify the renderer or RENDER.bff workflow.
-
-> **Raw geometry payload capture:** Phase 344 adds opt-in VB/IB Lock/Unlock capture. Full-buffer payloads are copied before Unlock and can be compared byte-for-byte against canonical MEB-derived VB/IB artifacts.
-
-### Extract the last 500 MiB of a trace
-
-For quickly transferring the tail of a large `.trace` file without loading the entire file into memory:
-
-    python tools/extract_trace_tail.py \
-      /path/to/SHIFT.trace \
-      ./SHIFT_tail_500MiB.trace
-
-The utility reads only the requested tail in 1 MiB chunks. Use `--size-mib N` to select another size.
+| `shift_importer.py` | importer and analysis CLI |
+| `resource_formats.py`, `meb_format.py`, `csm_format.py` | core format parsers |
+| `draw_packets.py`, `render_command.py` | neutral render contracts |
+| `reference_renderer.py`, `shader_reference.py` | desktop oracle |
+| physics runtime modules | vehicle/constraint/solver evidence |
+| `native_capture/` | Windows D3D9 capture producer |
+| `native_vulkan/` | Linux Vulkan backend |
+| `tools/` | capture/evidence utilities |
+| `tests/` | regression suite |
+| `docs/PHASE*.md` | historical phase records |
+
+Historical phase records are intentionally not rewritten retroactively. Current status belongs in the operational documents.

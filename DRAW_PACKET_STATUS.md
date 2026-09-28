@@ -1,87 +1,42 @@
-# SHIFT DrawPacket IR
+# SHIFT DrawPacket / StaticDraw status
 
 ## Current boundary
 
-The importer now has two composition layers:
+`VHF/CAR → MEB → BMT → FX/FXO → RenderBinding/1 → DrawPacket/1 → StaticDraw/1 → RenderCommand/1`
 
-`VHF/CAR -> MEB -> BMT -> DDS -> FX/FXO -> RenderBinding -> DrawPacket`
+## DrawPacket
 
-`SHIFT.RenderBinding/1` resolves scene hierarchy/world transforms, MEB primitives,
-BMT materials and FX/FXO shader candidates. `SHIFT.DrawPacket/1` is the runtime-facing
-packet schema used by the next renderer stage.
+A canonical packet preserves scene/node identity, world transform, MEB primitive range, material identity, shader-selection metadata, linked VS/PS information, vertex ABI evidence, textures and material constants.
 
-## Resolved data
+Selection is evidence-driven. Filesystem/archive order is never a hidden semantic tie-breaker.
 
-Each packet preserves:
-- scene/node identity and world matrix;
-- resolved MEB path and primitive/index range;
-- BMT material reference;
-- FX source and deterministic FXO selection metadata;
-- D3D9 sampler registers when CTAB reflection proves them;
-- VS/PS semantic linkage and vertex-format evidence when available;
-- texture references and DDS metadata.
+## StaticDraw readiness
 
-Path resolution uses slash/case normalization, `.mtx <-> .bmt` aliases and
-same-archive preference for basename fallback.
+A draw is ready only when the selected path has:
 
-## Selection policy
+- valid VertexLayout/1;
+- unique compatible VS/PS selection;
+- valid shader translation;
+- resolved required material textures;
+- valid sampler/uniform/constant contracts;
+- valid submesh index range;
+- all required external resources represented explicitly.
 
-FXO candidates are sorted using explicit evidence:
+## Vertex ABI
 
-1. exact expected sampler set;
-2. sampler coverage;
-3. valid VS/PS semantic + vertex-format pair;
-4. vertex-pair score;
-5. material uniform coverage;
-6. specialization evidence;
-7. contradictions/unexpected features;
-8. stable file/program offsets.
+The current BMW static mapping is:
 
-If multiple distinct shader pairs remain tied, the result is marked
-`selection_status=ambiguous` rather than depending on incidental filesystem order.
+`460 → [4,6,0]`, `461 → [4,6,1]`, Type 4 = D3DCOLOR, Usage 6 = D3D9 COLOR.
+
+Runtime same-instance declaration/buffer proof remains a separate gate.
+
+## Reference and native handoff
+
+The desktop oracle consumes RenderCommand/1 directly. Vulkan is required to consume the same contract rather than reinterpreting MEB/BMT/FXO independently.
 
 ## Remaining render work
 
-1. Prove exact MEB vertex packing/D3DDECLTYPE, especially raw color properties `460/461`.
-2. Validate generated GLES shaders with a real compiler for the target BMW permutations.
-3. Build the minimal desktop reference renderer.
-4. After static rendering is stable, connect blend weights/indices to BAS/BAB skinning.
-
-This document intentionally no longer lists semantic linkage as an unresolved
-future layer: it is implemented and regression-tested in `shader_interface.py`.
-
-
-## StaticDraw/1 readiness contract
-
-static_draw.py now converts each runtime-facing draw packet into SHIFT.StaticDraw/1. A packet is marked ready only when the MEB SHIFT.VertexLayout/1 is valid, the VS/PS selection is unique and its semantic/vertex-format evidence is valid, material texture bindings have explicit D3D9 sampler registers from FXO/CTAB, and there are no blocking unresolved references.
-
-Renderer-global samplers are preserved as explicit external requirements rather than being silently treated as material textures. This keeps the static BMW path deterministic while leaving environment/shadow resources for the renderer resource manager.
-
-## Phase 17: linked shader propagation
-
-`SHIFT.DrawPacket/1` now preserves `linked_shader_pair` and any `linked_shader_error` from `MaterialBinding/1`. StaticDraw readiness requires a valid `SHIFT.LinkedShaderPair/1` for each selected material, preventing a packet from becoming renderer-ready when permutation selection succeeded but GLSL translation did not.
-## Phase 19: DrawPacket -> reference renderer
-
-`reference_renderer.py` now exposes `build_static_draw_from_packet()` and `render_draw_packet()`. The reference renderer consumes the same `SHIFT.StaticDraw/1` validation boundary as the future GPU backend, then rasterizes only neutral mesh data.
-
-This keeps renderer validation separate from source-game resource access and gives us a deterministic desktop oracle for the first BMW static-render milestone.
-## Phase 20: canonical DrawPacket -> StaticDraw
-
-`draw_packets.py` now attaches a `SHIFT.StaticDraw/1` contract to every canonical `SHIFT.DrawPacket/1` packet. Aggregate stats expose `ready_static_draws` and `blocked_static_draws` so unresolved renderer prerequisites are visible without a second conversion pass.
-## Phase 21: deterministic golden render
-
-`reference_renderer.py` now has a JSON-to-JSON-to-PPM harness that consumes a `SHIFT.DrawPacket/1` plus neutral mesh JSON, validates the packet through `SHIFT.StaticDraw/1`, and records the output SHA-256.
-
-The test suite pins a 32x32 baseline image hash so renderer changes become explicit regressions rather than visual guesswork.
-## Phase 22: submesh-aware reference rendering
-
-`reference_renderer.render_static_draw()` now respects `first_index/index_count` from `SHIFT.StaticDraw/1` submeshes instead of rasterizing the complete mesh index buffer. This preserves MEB primitive boundaries and makes multi-material meshes safe for the reference path.
-## Phase 29: material uniform readiness
-
-`SHIFT.StaticDraw/1` now validates `SHIFT.MaterialUniformBinding/1`. CTAB bindings must target the expected material constant register set, contain valid register ranges, and carry no shape warnings; optimized-out/unreflected parameters remain diagnostic rather than automatic blockers.
-## Phase 30: strict material texture resolution
-
-`SHIFT.StaticDraw/1` now distinguishes resolved material textures from external/specialized samplers. A `material-texture` binding without `texture_resolved` is blocked; renderer-global/external bindings remain explicit external requirements.
-## Phase 31: StaticDraw index-range validation
-
-`SHIFT.StaticDraw/1` now validates each submesh `first_index/index_count` against the mesh triangle count and requires triangle-aligned counts. Negative and out-of-bounds ranges are explicit blockers before renderer execution.
+- broaden exact BMW shader/material coverage;
+- close more runtime draw/resource same-instance proofs;
+- complete Vulkan RenderCommand submission;
+- keep unsupported and ambiguous states fail-closed.

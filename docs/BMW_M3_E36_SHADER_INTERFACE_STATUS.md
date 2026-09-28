@@ -1,70 +1,52 @@
-# BMW M3 E36: VS/PS semantic interface status
+# BMW M3 E36 — shader interface status
 
-Реальный набор: BMW_M3_E36.bff + BMW_M3_E36_Cockpit.bff.
+## Corpus
 
-- 1,707 FXO files
-- 10,756 decoded shader programs: 5,378 pixel + 5,378 vertex
-- 125 unique stage+input/output signatures
-- 21,488 VS/PS cross-pairs внутри FXO
-- 13,909 пар (64.7%) имеют полное покрытие PS input semantics со стороны VS output semantics
+- 1,707 FXO files;
+- 10,756 decoded shader stages;
+- 125 unique stage input/output signatures;
+- 21,488 VS/PS cross-pairs;
+- 13,909 pairs (64.7%) have complete PS-input coverage from VS outputs.
 
-## D3D9 declaration codes
+## D3D9 Usage
 
-Исправлена прежняя таблица usage codes. По официальной D3D9 `D3DDECLUSAGE`:
+Important recovered values:
 
-- 0 POSITION
-- 1 BLENDWEIGHT
-- 2 BLENDINDICES
-- 3 NORMAL
-- 4 PSIZE
-- 5 TEXCOORD
-- 6 TANGENT
-- 7 BINORMAL
-- 8 TESSFACTOR
-- 9 POSITIONT
-- 10 COLOR
-- 11 FOG
-- 12 DEPTH
-- 13 SAMPLE
+- 0 POSITION;
+- 1 BLENDWEIGHT;
+- 2 BLENDINDICES;
+- 3 NORMAL;
+- 5 TEXCOORD;
+- 6 TANGENT;
+- 7 BINORMAL;
+- 10 COLOR;
+- 12 DEPTH;
+- 13 SAMPLE.
 
-В M3 это даёт важный результат: массовый input `v1` ранее ошибочно отображался как SAMPLE0, а реально это COLOR0.
+## MEB semantic mappings
 
-## MEB -> vertex semantics
+- 200 → POSITION0
+- 220 → NORMAL0
+- 240 → TANGENT0
+- 250 → BINORMAL0
+- 130..134 → TEXCOORD0..4
+- 230..234 → alternate TEXCOORD0..4
+- 310 → BLENDWEIGHT0
+- 580 → BLENDINDICES0
+- 460 → COLOR0
+- 461 → COLOR1 where present
 
-Подтверждённые mappings:
+## Example bodywork interface
 
-- 200 -> POSITION0
-- 460 -> COLOR0
-- 220 -> NORMAL0
-- 240 -> TANGENT0
-- 250 -> BINORMAL0
-- 130..134 -> TEXCOORD0..4
-- 310 -> BLENDWEIGHT0
-- 580 -> BLENDINDICES0
+A recovered bodywork pair uses:
 
-230..234 — 3-компонентные UVW-каналы; пока связываются с соответствующими TEXCOORD slots, но исходный D3D declaration type ещё требует отдельной проверки.
+- PS TEXCOORD5 → v0, TEXCOORD0 → v1, TEXCOORD1 → v2;
+- VS TEXCOORD5 → oT1, TEXCOORD0 → oT2, TEXCOORD1 → oT3.
 
-На двух M3 архивах обнаружено 8 уникальных layout combinations в основном car BFF и 9 в cockpit BFF.
+Linking is semantic by `(usage,index)`, not physical register number.
 
-## Реальная VS/PS связь
+## Current boundary
 
-Для одного из bodywork FXO:
+COLOR static Type/Usage/Channel evidence is resolved. Runtime same-instance declaration/buffer proof remains separate.
 
-- PS inputs: TEXCOORD5 -> v0, TEXCOORD0 -> v1, TEXCOORD1 -> v2
-- VS outputs: TEXCOORD5 -> oT1, TEXCOORD0 -> oT2, TEXCOORD1 -> oT3
-
-Связь полная, несмотря на разные физические номера регистров. Значит runtime linker должен использовать semantic key `(usage,index)` и строить explicit interpolator map.
-
-## Что осталось
-
-Следующая задача — восстановить D3D9 vertex declaration type/packing для каждого MEB property, после чего VS input semantic set можно превратить в реальный Android vertex layout. Затем MaterialBinding сможет фиксировать конкретную VS/PS permutation вместо одной только sampler permutation.
-
-## Phase 3 ABI contract
-
-`SHIFT.VertexLayout/1` now carries a deterministic Android repack layout for every known MEB property:
-- stable target attribute location in MEB property order;
-- byte offset and complete buffer stride for the interleaved target buffer;
-- original MEB `payload_offset` and `stride` when available;
-- explicit ABI confidence for properties whose original D3D9 declaration has not been proven.
-
-For `460/461` color properties the channel order remains explicitly ambiguous (`RGBA` vs `BGRA`); no renderer path silently chooses one.
+TEXCOORD5 semantic linkage is known at shader level; exact MEB source-property identity remains an evidence task.

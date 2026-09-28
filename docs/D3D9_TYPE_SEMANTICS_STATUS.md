@@ -1,39 +1,21 @@
-# D3D9 primitive type semantics status
+# D3D9 declaration Type semantics
 
-Phase 78 turns the recovered FUN_00854e70 type switch into a reusable, machine-readable evidence layer.
+The recovered conversion switch covers Type codes 0..16 and is represented as source-backed evidence.
 
-## Source evidence
+## Important paths
 
-The recovered SHIFT.exe.c contains one declaration conversion switch with all 17 case codes 0..16. The numeric codes align exactly with the documented D3D9 D3DDECLTYPE enumeration.
+- 0..3 use the float payload path;
+- 4 uses the packed-color conversion path;
+- 5 converts components directly to bytes;
+- 8 uses normalized 255.0 conversion;
+- 11..12 use 65535.0 scaling;
+- 13..14 use the recovered 10-bit packing path;
+- 15..16 use the recovered half-float encoder.
 
-The important source behaviors are retained in the report rather than inferred from the enum name:
+## COLOR
 
-- 0..3 share the float payload copy path.
-- 4 packs four floats through FUN_008310c0.
-- 5 rounds source components directly to bytes.
-- 8 rounds components after multiplying by 255.0.
-- 11..12 round after multiplying by 65535.0.
-- 13..14 use a 10-bit packed conversion path.
-- 15..16 use the recovered 16-bit-float encoder FUN_0064fcb0.
+Type 4 is the D3D9 D3DCOLOR path.
 
-The report records the exact decompiled line containing each case label.
+Combined with the exact MEB triples `[4,6,0]` and `[4,6,1]`, the static BMW COLOR declaration mapping is resolved.
 
-## COLOR boundary
-
-The source evidence now makes the following chain much stronger:
-
-Type code 4 -> packed-color conversion -> 0xAARRGGBB -> BGRA memory bytes on little-endian Windows
-
-It still does not establish:
-
-MEB property 460/461 -> Type code 4
-
-Therefore COLOR0/1 remains ambiguous in the renderer ABI. The type-semantics module deliberately reports meb_property_mapping.status = not-proven.
-
-## CLI
-
-Run:
-
-    python shift_importer.py source-d3d9-type-evidence SHIFT.exe.c d3d9-types.json
-
-This command is intentionally separate from MEB property mapping so an observed D3D9 primitive type cannot silently become a mesh ABI selection.
+The remaining proof target is runtime same-instance binding.

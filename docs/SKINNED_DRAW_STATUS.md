@@ -2,68 +2,27 @@
 
 ## SHIFT.SkinnedDraw/1
 
-The skinned renderer path is now represented as an explicit neutral contract.
-A packet is render-ready only when the following evidence is present:
+Render readiness requires:
 
-- SHIFT.VertexLayout/1 has one BLENDWEIGHT0 attribute from property 310.
-- SHIFT.VertexLayout/1 has one BLENDINDICES0 attribute from property 580.
-- Weights are FLOAT32x4, indices are UINT8x4, and both are non-normalized.
-- The mesh skinning summary confirms a valid paired skin stream. When older
-  DrawPackets do not carry the summary, it is derived only from the explicit
-  vertex-layout attributes; no per-vertex data is guessed.
-- SHIFT.BindSkeleton/1 has complete coverage (1.0), a positive bone count,
-  one link per bone, and a 12-float row-major 3x4 local matrix for every bone.
-- The resulting SHIFT.BonePalette/1 preserves the bind matrices and the
-  original BAB animation payload offset/size/hash. The payload remains opaque
-  until its keyframe grammar is proven.
-- Shader/material selection is unique, the selected shader pair is unique, and
-  any material texture uses an explicit FXO/CTAB sampler register. External
-  samplers remain explicit renderer requirements.
+- paired MEB 310/580 influence streams;
+- valid influence ranges and bone indices;
+- exact skeleton linkage where required;
+- explicit SkinPose/1 with expected bone count;
+- valid unique shader pair;
+- ready material/external resources.
 
-The contract intentionally records a four-influence palette interface:
-BLENDWEIGHT0 + BLENDINDICES0, four values each, with indices addressing
-[0, bone_count - 1].
+## Skin pose
 
-This phase does not decode animation keyframes, compose parent matrices into
-global pose matrices, or issue GL calls. Those are separate evidence-backed
-steps.
+Render consumes explicit 3x4 skinning matrices. BAB/BAS bind-local transforms remain separate.
 
+## Reference path
 
-### Automatic DrawPacket linkage
+`SkinnedDraw/1 + SkinPose/1 → SkinnedMeshReference/1 → reference VS/PS → raster`
 
-build_draw_packets() can now consume SHIFT.BAB and SHIFT.BAS analysis records. For a skinned MEB it attaches SHIFT.BindSkeleton/1 only when one unique BAB/BAS pair is supported by exact MEB bone-name evidence:
+## GLES parity
 
-- BAB bone order equals the complete MEB skeleton.bone_names list.
-- BAS node names are unique and cover exactly the same name set.
-- More than one exact pair is reported as ambiguous; the packet is not made render-ready by choosing one arbitrarily.
-- No BAB/BAS match is not fatal to static packet construction; the packet carries skeleton_resolution diagnostics and remains unsuitable for a ready skinned draw.
+The RenderCommand/1 skinned payload converts into GLES31Skinning/1 and is checked for attribute ABI, four-influence layout, pose layout/space/bone count and deterministic palette hashes.
 
+## Animation
 
-### Bind-local versus skinning pose
-
-SHIFT.BindSkeleton/1 records local bind transforms from the verified BAB/BAS link. Those matrices are not treated as GPU skin matrices. SHIFT.SkinnedDraw/1 is render-ready only when a separate SHIFT.SkinPose/1 is supplied with one 3x4 matrix per bone and `matrix_space=skinning`. The skin pose is the only matrix source accepted by the GLES 3.1 palette contract.
-
-This separation leaves animation decoding and bind-pose/inverse-bind semantics explicit: no parent composition or inverse-bind operation is implied by the BAB parser.
-
-
-### CPU reference
-
-`skinned_reference.py` applies only an explicit `SHIFT.SkinPose/1` to vertex positions and direction vectors. It reuses `skinning.py` for influence validation and linear-blend-skinning math. This is a renderer cross-check, not an animation decoder: BAB/BAS local bind transforms are never substituted for the skin pose.
-
-
-## Phase 60: mesh transformation adapter
-
-The CPU reference can now materialize a complete transformed mesh from an explicit SkinPose. The adapter preserves the source mesh schema and only replaces vertex POSITION and known direction streams. This keeps the skinning math reusable by the desktop renderer without forcing animation decoding into the render layer.
-
-
-## Phase 61: desktop reference integration
-
-A ready `SHIFT.SkinnedDraw/1` can now be rendered through the desktop reference path after explicit SkinPose deformation. The integration does not derive poses from BAB/BAS and does not decode animation payloads; it only connects the already-proven CPU skinning contract to rasterization.
-
-
-## Phase 62: shader reference integration
-
-A skinned draw can now be tested through the embedded VS→PS software reference after explicit SkinPose deformation. The integration requires explicit vertex/pixel programs and a reference texture; it does not infer shader permutation, animation pose or missing resources.
-
-
-A validated SkinnedDraw can now be normalized into the common RenderCommand/1 submission shape without losing its SkinPose or bind-skeleton palette. The new command validates four-influence semantics and the 3x4 skin-pose matrix payload before marking the submission ready.
+BAB runtime grammar is partially reconstructed. Runtime pose production and unresolved animation semantics remain separate work.

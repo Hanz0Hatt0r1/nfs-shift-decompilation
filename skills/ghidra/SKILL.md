@@ -1,40 +1,25 @@
 ---
 name: ghidra
 description: >-
-  Evidence-driven Ghidra workflow for Need for Speed: SHIFT: headless analysis,
-  decompiler/source correlation, function anchors, call-chain extraction, and
-  machine-readable artifacts. Use for SHIFT.exe, Ghidra C exports, function
-  address analysis, runtime ABI hypotheses, or batch binary analysis.
+  Evidence-driven Ghidra workflow for Need for Speed: SHIFT.
 ---
 # Ghidra workflow for SHIFT
 
-Use the upstream headless workflow as an implementation reference, but keep the
-project's evidence policy stricter: a decompiler observation is source evidence,
-not a runtime proof.
-
 ## Workflow
 
-1. Start from the exact binary/decompiler export and record SHA-256, architecture,
-   and source line anchors.
-2. Extract functions/call relationships before proposing semantics.
-3. Correlate a function with its caller, callee, vtable slot, and data object.
-4. Preserve ambiguous table contents as opaque; do not infer missing initializer bytes.
-5. Emit JSON evidence with provenance so later captures can be joined mechanically.
-6. When a runtime capture exists, keep static-source and runtime-instance evidence
-   as separate layers and correlate them only through explicit identity fields.
+1. Record exact binary/decompiler snapshot identity and architecture.
+2. Extract callers, callees, vtable slots and data references.
+3. Preserve ambiguous table contents when initializer bytes are absent.
+4. Emit compact source/address evidence with provenance.
+5. Keep static and runtime evidence separate.
+6. Join layers only through explicit identity fields.
 
-## SHIFT-specific anchors
+## Important anchors
 
-Important recovered paths include `FUN_00854e70` (declaration conversion),
-`FUN_00859800` (binary MEB descriptor loader), `FUN_00830f80`
-(canonicalization/CreateVertexDeclaration) and `FUN_0082e510` (SetVertexDeclaration
-wrapper). These are source anchors already represented by project evidence modules.
+- `FUN_00854e70` — D3D9 declaration Type conversion;
+- `FUN_00859800` — MEB descriptor loader;
+- `FUN_00830f80` — declaration canonicalization/creation;
+- `FUN_0082e510` — SetVertexDeclaration wrapper;
+- provider dispatch/reset paths around `FUN_007b3820`.
 
-## References
-
-Upstream Ghidra headless skill: https://github.com/mitsuhiko/agent-stuff/blob/main/skills/ghidra/SKILL.md
-
-
-## Source vehicle identity
-
-Use `source_vehicle_identity.py` to verify the source-level selector `FUN_004c32d0 case 2 -> bmw_m3_e36`. Keep this as static evidence and correlate it explicitly with VHF/MEB/runtime records before treating it as an execution path.
+A decompiler result establishes a contract boundary, not automatic runtime execution proof.
