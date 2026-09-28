@@ -37,6 +37,11 @@ def _command():
                 "shader": {
                 "vertex": "#version 450\nvoid main(){}",
                 "pixel": "#version 450\nvoid main(){}",
+                "source_payload_sha256": "a" * 64,
+                "permutation_identity": {
+                    "format": "SHIFT.ShaderPermutationIdentity/1",
+                    "identity_sha256": "b" * 64,
+                },
             },
             "constant_commands": [],
             "constant_payload": {"format": "SHIFT.MaterialConstantPayload/1", "registers": [], "ready": True},
@@ -45,7 +50,15 @@ def _command():
                 "first_index": 0,
                 "index_count": 3,
             }, {
-                "shader": {"vertex": "unused", "pixel": "unused"},
+                "shader": {
+                    "vertex": "unused",
+                    "pixel": "unused",
+                    "source_payload_sha256": "c" * 64,
+                    "permutation_identity": {
+                        "format": "SHIFT.ShaderPermutationIdentity/1",
+                        "identity_sha256": "d" * 64,
+                    },
+                },
                 "constant_commands": [],
                 "constant_payload": {"format": "SHIFT.MaterialConstantPayload/1", "registers": [], "ready": True},
                 "textures": [],
@@ -104,3 +117,19 @@ def test_bmw_vulkan_bundle_blocks_missing_material_textures(tmp_path):
     result = build_bmw_vulkan_bundle(command, _mesh(), tmp_path)
     assert result["ready"] is False
     assert "bmw-vulkan-bundle:material-textures-not-supplied" in result["blocking_reasons"]
+
+
+
+def test_bmw_vulkan_bundle_blocks_missing_native_shader_provenance(tmp_path):
+    command = _command()
+    command["render_commands"][0]["submeshes"][1]["shader"].pop("source_payload_sha256")
+    result = build_bmw_vulkan_bundle(
+        command,
+        _mesh(),
+        tmp_path,
+        command_index=0,
+        submesh_index=1,
+    )
+    assert result["ready"] is False
+    assert "native-submission:shader-payload-identity-missing:0" in result["blocking_reasons"]
+    assert result["native_execution"]["status"] == "blocked-by-provenance-gate"
