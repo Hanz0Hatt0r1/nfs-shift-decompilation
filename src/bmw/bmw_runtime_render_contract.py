@@ -226,6 +226,13 @@ def build_runtime_render_contract(
 
     blockers = list(external_blockers) if require_external_texture_objects else []
     reference_ready = not blockers
+    byte_hashes = {
+        "vertex": identity.get("vertex_byte_sha256"),
+        "pixel": identity.get("pixel_byte_sha256"),
+        "pair": identity.get("pair_byte_sha256"),
+    }
+    identity_contract = dict(identity)
+    identity_contract["byte_hashes"] = byte_hashes
     return {
         "format": FORMAT,
         "status": "ready" if not blockers else "partial",
@@ -242,12 +249,8 @@ def build_runtime_render_contract(
                 "vertex_sha256": candidate.get("vertex_sha256"),
                 "pair_sha256": candidate.get("pair_sha256"),
             },
-            "identity": identity,
-            "byte_hashes": {
-                "vertex": identity.get("vertex_byte_sha256"),
-                "pixel": identity.get("pixel_byte_sha256"),
-                "pair": identity.get("pair_byte_sha256"),
-            },
+            "identity": identity_contract,
+            "byte_hashes": byte_hashes,
             "linked_shader_pair": linked_pair,
             "runtime_shader_pointers": {
                 "vertex": (frame.get("vertex_shader") or {}).get("shader_ptr"),
