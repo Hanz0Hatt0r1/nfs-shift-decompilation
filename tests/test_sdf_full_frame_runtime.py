@@ -40,6 +40,8 @@ def test_runtime_frame_plan_marks_identity_selector_capture_dependent():
         runtime_flags_by_record=None,
     )
     assert result["ready"] is True
+    assert result["format"] == "SHIFT.SDFRuntimeFramePlan/2"
+    assert result["version"] == 2
     assert result["verification"]["ready"] is True
     assert result["scalar_domain_verification"]["ready"] is True
     assert result["runtime_flags_available"] is False
