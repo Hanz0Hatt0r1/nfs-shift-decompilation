@@ -281,6 +281,11 @@ def validate_dependency_graph(report: dict[str, Any]) -> dict[str, Any]:
                 errors.append(f"pivot-{pivot}-destination-column-negative")
 
         for reference in node.get("workspace_reads") or []:
+            if reference.get("row") is None or reference.get("column") is None:
+                errors.append(
+                    f"pivot-{pivot}-workspace-read-missing-coordinates"
+                )
+                continue
             row = int(reference["row"])
             column = int(reference["column"])
             if row < 0 or row >= scalar_count:
