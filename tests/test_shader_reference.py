@@ -102,14 +102,100 @@ def test_reference_shader_executes_tex_against_reference_image():
     assert result["color"] == [64 / 255, 128 / 255, 1.0, 1.0]
 
 
-def test_reference_shader_reports_unsupported_control_flow():
-    instr = Instruction(
-        0, 40, "IF", 0, 2, 0, False,
-        [_src(0, 0)],
+def test_reference_shader_executes_if_else_control_flow():
+    instructions = [
+        Instruction(
+            0, 1, "MOV", 0, 3, 0, False,
+            [_dst(0, 0), _src(1, 0)],
+        ),
+        Instruction(
+            4, 40, "IF", 0, 2, 0, False,
+            [_src(0, 0)],
+        ),
+        Instruction(
+            8, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(2, 0)],
+        ),
+        Instruction(
+            12, 42, "ELSE", 0, 1, 0, False,
+            [],
+        ),
+        Instruction(
+            16, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(3, 0)],
+        ),
+        Instruction(
+            20, 43, "ENDIF", 0, 1, 0, False,
+            [],
+        ),
+    ]
+    result = execute_shader(
+        _program(instructions, temps=(0,)),
+        inputs={0: (1.0, 1.0, 1.0, 1.0)},
+        constants={
+            "c": {
+                0: (1.0, 1.0, 1.0, 1.0),
+                1: (0.0, 0.0, 0.0, 1.0),
+            }
+        },
     )
-    result = execute_shader(_program([instr], temps=(0,)))
-    assert result["status"] == "unsupported"
-    assert "shader-opcode:unsupported:IF:40" in result["blocking_reasons"]
+    assert result["status"] == "executed"
+    assert result["color"] == [0.0, 0.0, 0.0, 1.0]
+
+    false_result = execute_shader(
+        _program(instructions, temps=(0,)),
+        inputs={0: (0.0, 0.0, 0.0, 0.0)},
+        constants={
+            "c": {
+                0: (1.0, 1.0, 1.0, 1.0),
+                1: (0.0, 0.0, 0.0, 1.0),
+            }
+        },
+    )
+    assert false_result["status"] == "executed"
+    assert false_result["color"] == [0.0, 0.0, 0.0, 1.0]
+
+
+def test_reference_shader_executes_ifc_comparison():
+    instructions = [
+        Instruction(
+            0, 41, "IFC", 0, 3, 1, False,
+            [_src(2, 0), _src(2, 1)],
+        ),
+        Instruction(
+            4, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(2, 2)],
+        ),
+        Instruction(8, 42, "ELSE", 0, 1, 0, False, []),
+        Instruction(
+            12, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(2, 3)],
+        ),
+        Instruction(16, 43, "ENDIF", 0, 1, 0, False, []),
+    ]
+    result = execute_shader(
+        _program(instructions, temps=()),
+        constants={
+            "c": {
+                0: (2.0, 2.0, 2.0, 2.0),
+                1: (1.0, 1.0, 1.0, 1.0),
+                2: (0.25, 0.5, 0.75, 1.0),
+                3: (0.9, 0.8, 0.7, 1.0),
+            }
+        },
+    )
+    assert result["status"] == "executed"
+    assert result["color"] == [0.25, 0.5, 0.75, 1.0]
+
+
+def test_reference_shader_rejects_unbalanced_conditionals():
+    result = execute_shader(
+        _program([
+            Instruction(0, 40, "IF", 0, 2, 0, False, [_src(0, 0)]),
+        ], temps=(0,)),
+    )
+    assert result["status"] == "error"
+    assert "unterminated IF block" in result["blocking_reasons"][0]
 
 
 def test_reference_shader_error_is_explicit_for_missing_texture():
