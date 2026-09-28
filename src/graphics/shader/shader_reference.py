@@ -20,6 +20,7 @@ _SUPPORTED = {
     "SLT", "SGE", "EXP", "EXPP", "LOG", "LOGP", "LIT", "DST", "LRP",
     "FRC", "RCP", "RSQ", "NRM", "ABS", "POW", "CRS", "SINCOS", "CMP",
     "DP2ADD", "TEX", "TEXLDD", "TEXLDL", "MOVA",
+    "IF", "IFC", "ELSE", "ENDIF", "RET",
 }
 
 
@@ -240,13 +241,75 @@ class ReferenceShaderState:
             )
         raise ValueError(f"reference resource type {sampler_type} for s{idx} is unknown")
 
+    def _condition_true(self, operand: Operand) -> bool:
+        value = self._read(operand)
+        if operand.reg_type in (14, 19):
+            return bool(value[0])
+        return all(bool(component) for component in value)
+
+    def _comparison_true(
+        self,
+        left: list[float],
+        right: list[float],
+        controls: int,
+    ) -> bool:
+        code = controls & 0x7
+        if code == 1:
+            return all(a > b for a, b in zip(left, right))
+        if code == 2:
+            return all(a == b for a, b in zip(left, right))
+        if code == 3:
+            return all(a >= b for a, b in zip(left, right))
+        if code == 4:
+            return all(a < b for a, b in zip(left, right))
+        if code == 5:
+            return all(a != b for a, b in zip(left, right))
+        if code == 6:
+            return all(a <= b for a, b in zip(left, right))
+        raise ValueError(f"unsupported IF comparison control code {code}")
+
+    def _build_control_flow_maps(
+        self,
+    ) -> tuple[dict[int, int], dict[int, int], dict[int, int]]:
+        else_for_if: dict[int, int] = {}
+        end_for_if: dict[int, int] = {}
+        if_for_else: dict[int, int] = {}
+        stack: list[tuple[int, int | None]] = []
+
+        for index, ins in enumerate(self.program.instructions):
+            if ins.name in {"IF", "IFC"}:
+                stack.append((index, None))
+                continue
+            if ins.name == "ELSE":
+                if not stack:
+                    raise ValueError("ELSE without matching IF")
+                if_index, existing_else = stack[-1]
+                if existing_else is not None:
+                    raise ValueError("multiple ELSE blocks for one IF")
+                stack[-1] = (if_index, index)
+                else_for_if[if_index] = index
+                if_for_else[index] = if_index
+                continue
+            if ins.name == "ENDIF":
+                if not stack:
+                    raise ValueError("ENDIF without matching IF")
+                if_index, else_index = stack.pop()
+                end_for_if[if_index] = index
+                if else_index is not None:
+                    end_for_if[else_index] = index
+
+        if stack:
+            raise ValueError("unterminated IF block")
+        return else_for_if, end_for_if, if_for_else
+
     def execute(self) -> dict[str, Any]:
+        ignored = {
+            "NOP", "DCL", "DEF", "DEFI", "DEFB", "LABEL", "COMMENT", "PHASE"
+        }
         unsupported = [
             {"opcode": ins.opcode, "name": ins.name, "offset": ins.offset}
             for ins in self.program.instructions
-            if ins.name not in _SUPPORTED and ins.name not in {
-                "NOP", "DCL", "DEF", "DEFI", "DEFB", "LABEL", "COMMENT", "PHASE"
-            }
+            if ins.name not in _SUPPORTED and ins.name not in ignored
         ]
         if unsupported:
             return {
@@ -262,13 +325,52 @@ class ReferenceShaderState:
             }
 
         try:
-            for ins in self.program.instructions:
+            else_for_if, end_for_if, if_for_else = self._build_control_flow_maps()
+            pc = 0
+            instructions = self.program.instructions
+            while pc < len(instructions):
+                ins = instructions[pc]
                 name = ins.name
                 o = ins.operands
                 if name in {"NOP", "DCL", "DEF", "DEFI", "DEFB", "LABEL", "COMMENT", "PHASE"}:
+                    pc += 1
                     continue
                 if ins.predicate is not None:
                     raise ValueError("predicated shader instructions are not yet supported")
+
+                if name == "IF":
+                    if len(o) < 1:
+                        raise ValueError("IF requires one condition operand")
+                    if not self._condition_true(o[0]):
+                        target = else_for_if.get(pc, end_for_if.get(pc))
+                        if target is None:
+                            raise ValueError("IF has no matching ELSE/ENDIF")
+                        pc = target + 1
+                        continue
+                elif name == "IFC":
+                    if len(o) < 2:
+                        raise ValueError("IFC requires two source operands")
+                    if not self._comparison_true(
+                        self._read(o[0]),
+                        self._read(o[1]),
+                        ins.controls,
+                    ):
+                        target = else_for_if.get(pc, end_for_if.get(pc))
+                        if target is None:
+                            raise ValueError("IFC has no matching ELSE/ENDIF")
+                        pc = target + 1
+                        continue
+                elif name == "ELSE":
+                    target = end_for_if.get(pc)
+                    if target is None:
+                        raise ValueError("ELSE has no matching ENDIF")
+                    pc = target + 1
+                    continue
+                elif name == "ENDIF":
+                    pc += 1
+                    continue
+                elif name == "RET":
+                    break
 
                 if name == "MOV":
                     value = self._read(o[1])
@@ -360,6 +462,8 @@ class ReferenceShaderState:
                     self._write(o[0], self._texture(o[2], self._read(o[1])))
                 else:
                     raise ValueError(f"unhandled supported opcode {name}")
+
+                pc += 1
 
         except (ValueError, OverflowError, ZeroDivisionError) as exc:
             return {
