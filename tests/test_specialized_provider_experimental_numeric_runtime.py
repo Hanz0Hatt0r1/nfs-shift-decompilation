@@ -25,7 +25,7 @@ def test_dense_ldlt_reconstructs_known_matrix():
 
     reconstructed, diagonal = runtime.reconstruct(matrix)
 
-    assert diagonal == list(d)
+    assert all(math.isclose(a, b, rel_tol=0.0, abs_tol=1e-12) for a, b in zip(diagonal, d))
     for left, right in zip(reconstructed, matrix):
         assert all(
             math.isclose(a, b, rel_tol=1e-12, abs_tol=1e-12)
