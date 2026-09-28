@@ -645,7 +645,6 @@ class SDFProbeCommand(gdb.Command):
             "scalar_reset=0x007b2210,",
             f"provider0_reset=0x{get_vtable_lifecycle(0).reset_function:08x},",
             f"provider1_reset=0x{get_vtable_lifecycle(1).reset_function:08x},",
-",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
             f"output={output}",
         )
