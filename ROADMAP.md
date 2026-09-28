@@ -106,6 +106,12 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 427: SDF post-load kinematics
+
+Added sdf_constraint_postload_runtime.py and regression tests for the runtime descriptor-copy boundary FUN_007b2ae0 and post-load helpers FUN_007b2da0/FUN_007b2de0/FUN_007b2f70. The phase records all visible descriptor field copies, preserves FUN_00632920 string-reference handling, reproduces the HINGE cross-product closure v0 x v1 followed by v0 x (v0 x v1), and reproduces the BAR transformed endpoint difference plus conditional normalization.
+
+Transform helpers FUN_007aefb0 and FUN_007af0a0 remain explicit black-box boundaries; no matrix convention, PhysX class name or physical unit is inferred.
+
 ## Phase 426: SDF constraint ABI correction and descriptor schema
 
 Corrected the Phase 424 BAR endpoint reference counter mapping after a direct line-by-line audit of FUN_007b3150: both positive and negative BAR endpoints increment BODY runtime +0xA0. Added a regression covering both values.
