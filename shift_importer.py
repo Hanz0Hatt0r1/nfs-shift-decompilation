@@ -29,6 +29,25 @@ import sys
 import zlib
 import ctypes
 import ctypes.util
+from pathlib import Path
+from typing import Iterable, Iterator
+
+# Root CLI compatibility: historical modules keep bare imports while source
+# files now live under subsystem directories in src/.
+_PROJECT_ROOT = Path(__file__).resolve().parent
+_SRC = _PROJECT_ROOT / "src"
+if _SRC.is_dir():
+    _SOURCE_PATHS = [_SRC]
+    _SOURCE_PATHS.extend(
+        sorted(
+            (path for path in _SRC.rglob("*") if path.is_dir()),
+            key=lambda path: (len(path.parts), str(path)),
+        )
+    )
+    for _source_path in reversed(_SOURCE_PATHS):
+        _source_value = str(_source_path)
+        if _source_value not in sys.path:
+            sys.path.insert(0, _source_value)
 
 from resource_formats import analyze_decoded_resource, parse_bml, parse_reflection_xml, parse_dds_metadata
 from shader_ir import parse_shader_blobs, parse_fx_source
@@ -36,8 +55,6 @@ from shader_asm import parse_program, to_glsl
 from meb_format import read_meb, mesh_summary, mesh_to_jsonable, write_mgeo
 from csm_format import read_csm, csm_summary, mesh_to_jsonable as csm_to_jsonable, write_cmesh
 from dataclasses import asdict, dataclass
-from pathlib import Path
-from typing import Iterable, Iterator
 
 REC_SIZE = 42
 NAME_REC_SIZE = 16
