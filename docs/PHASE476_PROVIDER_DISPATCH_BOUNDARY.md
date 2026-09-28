@@ -25,21 +25,21 @@ When a provider is active, the order is:
 
 `provider vtable +0x20 cleanup`
 → common BODY/constraint preparation
+→ `FUN_007b2210(selector)` per active constraint scalar
+→ provider `vtable +0x1c(selector)`
 → `provider vtable +0x18 solve`
 
 When the provider pointer is null, the same orchestration reaches the builtin `FUN_007b0f20` path instead.
 
 ## Important lifecycle distinction
 
-The provider reset function at vtable `+0x1c` is a separate selector-driven function. Phase 475 proves it accepts a 32-bit selector and dispatches cases `0..39` or `0..33`. Phase 476 does **not** claim that reset executes inside `FUN_007b3f40`.
-
-Likewise, the provider `+0x20` cleanup at solve orchestration is distinct from the selector-driven reset `+0x1c`.
+The provider reset function at vtable `+0x1c` is a selector-driven per-scalar reset. `FUN_007b2210` calls it for each active constraint scalar inside `FUN_007b3f40`. The provider `+0x20` cleanup remains a separate broader storage cleanup at the start of the frame solve path.
 
 ## Why this matters
 
 This creates a precise runtime timeline for future captures:
 
-`provider selection/rebind → cleanup → common physics population → provider solve`
+`provider selection/rebind → cleanup → common/body preparation → per-scalar +0x1c reset dispatch → provider solve`
 
 The Phase 463 GDB hook can now be correlated with this boundary: its solve breakpoint is the `+0x18` execution point, while Phase 464 observes the mutation caused by that call.
 
