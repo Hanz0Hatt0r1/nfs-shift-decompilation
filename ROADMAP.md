@@ -5,7 +5,26 @@ minimal reproducible render of one real SHIFT vehicle.
 
 ## Current milestone: specialized-provider solver reconstruction
 
-Current `main` is advancing through Phase 456 on the non-rendering physics runtime track. The specialized 40/34-scalar provider solvers now have source-backed pivot geometry, packed row/storage topology, factor patterns, workspace write graphs, RHS dependency stencils, address dependency graphs, operator signatures, execution schedule, source-context resolution, update relations, output-vector schedule, acceptance/factor separation, a unified solver program bundle, and read-before-write initial-state analysis. Numeric provider execution remains capture-gated; the renderer workstream remains unchanged by this track.
+Current `main` is advancing through Phase 497 on the non-rendering physics runtime track. The specialized 40/34-scalar provider solvers now have source-backed pivot geometry, packed row/storage topology, factor patterns, workspace write graphs, RHS dependency stencils, address dependency graphs, operator signatures, execution schedules, source-context resolution, update relations, output-vector schedules, acceptance/factor separation, a unified solver program bundle, read-before-write analysis, an experimental numeric executor with admissibility gates, provider packed-state capture, reset-domain and selector provenance, exact callsite attribution, runtime reset sequencing, reset-to-solve ordering and a per-frame evidence manifest. Exact numeric retail/provider parity remains capture-gated; the renderer workstream remains unchanged by this track.
+
+### Specialized-provider continuation: Phases 457–497
+
+The provider track progressed from static solver IR into a capture-first runtime reconstruction:
+
+- **457–461:** experimental clean-room numeric executor, factor-pattern admissibility gate, source-pattern adapter, capture differential harness and CLI.
+- **462–465:** provider packed-state capture schema/GDB hooks and raw pre/post mutation analysis, including source-factor address cross-checking.
+- **466–472:** reset-case profile, cleanup baseline, reset/cleanup domain reconciliation, pre-solve reset delta, provider capture session/CLI, and caller-input/first-read footprint.
+- **473–478:** provider solver ABI, 12-slot vtable lifecycle, reset ABI, frame dispatch boundary, exact execution sequence and global provider bootstrap/teardown.
+- **482–484:** scalar reset dispatcher, selector provenance and per-scalar provider reset semantics.
+- **485–491:** live scalar-reset capture, exact callsite attribution, event-sequence validation, reset→solve ordering, aggregate evidence manifest and CLI.
+- **492–496:** active scalar-group reconstruction, selector→reset storage footprint, live reset-effect sentinels, PE-derived callsite extraction and provider-reset address API hardening.
+- **497:** repository-wide Python AST syntax audit covering ordinary and GDB-facing scripts.
+
+The critical runtime boundary is now explicit:
+
+`FUN_007b3f40 → FUN_007b2210(selector) → provider vtable +0x1c(selector) → provider +0x18 solve`
+
+The remaining numerical step is to obtain a real provider capture and compare its packed workspace/output behavior against the source-derived programs without inferring unproven matrix semantics.
 
 The immediate target is a deterministic pipeline:
 

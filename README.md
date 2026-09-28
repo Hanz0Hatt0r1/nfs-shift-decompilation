@@ -14,11 +14,9 @@
   <a href="SKINNING_STATUS.md">Skinning</a>
 </p>
 
-> **Current mainline: Phase 456.**
+> **Current mainline: Phase 497.**
 >
-> **Latest physics/provider track:** Phases 440–456 now reconstruct the specialized 40/34-scalar provider solvers as a layered evidence pipeline: workspace write graph, RHS stencils, dependency graph, operator signatures, solver IR, execution schedule, packed-workspace alias map, source-context resolution, update relations, output-vector schedule, acceptance/factor separation, a unified solver program bundle, and read-before-write initial-state analysis. Numeric provider parity remains capture-gated.
->
-> **Latest physics/provider track:** Phases 440–444 reconstruct the specialized solver from the retail source as a layered, machine-readable boundary: workspace write graph, RHS address stencils, dependency graph, operator signatures, and a combined solver reconstruction IR. The fixed provider domains remain 40/34 scalars; final provider selection and numeric retail parity remain capture-gated.
+> **Latest physics/provider track:** Phases 440–497 extend the specialized 40/34-scalar solver reconstruction from static source IR into a capture-ready runtime evidence pipeline. The track now covers workspace write/dependency layers, solver execution IR and schedules, packed-workspace aliases, output flow, acceptance/factor separation, read-before-write boundaries, experimental numeric execution with admissibility gates, provider packed-state capture, pre/post mutation diffs, reset-domain analysis, exact provider/builtin dispatch, scalar selector provenance, six exact reset callsites, runtime selector sequence validation, reset→solve ordering, per-frame evidence manifests, active scalar-group reconstruction, selector reset footprints, live reset-effect sentinels, PE callsite extraction, and repository-wide Python syntax auditing. Exact numeric retail/provider parity remains capture-gated.
 >
 > The project now has a source-backed BMW M3 E36 physics vertical slice through the pre-PhysX construction boundary: the real `aarm_multilink.sdf` path is reconstructed through 40 scalar solver nodes, exact JOINT/HINGE/BAR projection and coupling kernels, the builtin sparse-solver lifecycle, provider-aware PE/runtime probe tooling, and a neutral pre-PhysX construction IR for the BODY/constraint runtime records. The actual SDK/provider object classes remain an explicit unresolved boundary.
 >
