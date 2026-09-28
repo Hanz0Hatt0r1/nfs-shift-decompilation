@@ -81,7 +81,6 @@ def _classify_assignment(
     statement: str,
     *,
     provider_id: int,
-    future_pivot_diagonals: set[int],
     loop_index: int | None,
     terminal: bool,
 ) -> str:
@@ -95,9 +94,6 @@ def _classify_assignment(
             return "backsubstitution"
         if lhs_base == output_base:
             return "backsubstitution"
-
-    if lhs is not None and lhs in future_pivot_diagonals:
-        return "future-diagonal-update"
 
     rhs = statement[
         (
@@ -177,15 +173,9 @@ def extract_execution_schedule(
                         f"pivot-{pivot_index}-invalid-denominator:{pivot.denominator}"
                     )
                     continue
-                future_diagonals = {
-                    int(other.denominator[len("_DAT_"):], 16)
-                    for other in pivots[pivot_index + 1:]
-                    if other.denominator.startswith("_DAT_")
-                }
                 kind = _classify_assignment(
                     statement,
                     provider_id=provider_id,
-                    future_pivot_diagonals=future_diagonals,
                     loop_index=loop_index,
                     terminal=terminal,
                 )
