@@ -57,6 +57,7 @@ def _material_input():
                 {
                     "file": "RENDER.bff::render/shaders/cache/render_shaders_bodywork_test.fxo",
                     "program_offset": 128,
+                    "payload_sha256": "x" * 64,
                     "pixel_sha256": "p" * 64,
                     "vertex_sha256": "v" * 64,
                     "pair_sha256": "q" * 64,
@@ -162,6 +163,12 @@ def test_runtime_render_contract_builds_stage_specific_inputs(monkeypatch, tmp_p
     }
     assert report["external_textures"][1]["resource_descriptor"]["resource_type_name"] == "cube_texture"
     assert report["shader"]["linked_shader_pair"]["format"] == "SHIFT.LinkedShaderPair/1"
+    assert report["shader"]["candidate"]["payload_sha256"] == "x" * 64
+    assert report["shader"]["identity"]["byte_hashes"] == {
+        "vertex": None,
+        "pixel": None,
+        "pair": None,
+    }
 
 
 def test_runtime_render_contract_blocks_missing_external_texture_object(monkeypatch, tmp_path):
