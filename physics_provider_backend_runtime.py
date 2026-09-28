@@ -40,6 +40,7 @@ class ProviderExecution:
     accepted: bool
     scalar_count: int
     primary_storage: Any
+    graph_storage: Any
     aux_storage: Any
     secondary_domain: int
     calls: list[ProviderCall] = field(default_factory=list)
@@ -228,6 +229,7 @@ def summarize_execution(execution: ProviderExecution) -> dict[str, Any]:
         "scalar_count": execution.scalar_count,
         "secondary_domain": execution.secondary_domain,
         "primary_storage": execution.primary_storage,
+        "graph_storage": execution.graph_storage,
         "aux_storage": execution.aux_storage,
         "call_trace": [
             {
@@ -241,8 +243,8 @@ def summarize_execution(execution: ProviderExecution) -> dict[str, Any]:
         ],
         "state_updates": {
             "physics_system+0x3c": execution.primary_storage,
-            "physics_system+0x40": execution.aux_storage if not execution.fallback else None,
-            "physics_system+0x44": None if execution.fallback else "<provider_aux>",
+            "physics_system+0x40": execution.graph_storage if not execution.fallback else None,
+            "physics_system+0x44": execution.aux_storage if not execution.fallback else None,
             "per_body+0xa8": execution.secondary_domain,
         },
     }
