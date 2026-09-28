@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 412: raw solver capture binary ingestion
+
+Added an explicit-offset little-endian binary reader and CLI for extracting `scalar_count`, RHS and row-major matrix data into the Phase 411 normalized capture schema. Offsets remain caller-supplied and capture-dependent; no real proprietary capture is synthesized or committed. Next target: use an actual captured frame for the 40-scalar BMW M3 matrix/vector comparison.
+
 ## Phase 411: solver capture diff schema
 
 Added a strict normalized SDF solver-frame capture format and cell-level vector/matrix/storage comparator for the real 40-scalar BMW model. The tooling is capture-dependent by design and does not synthesize runtime values. Next target: use a real captured solver frame for cell-by-cell validation.
