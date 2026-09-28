@@ -54,6 +54,17 @@ infer physical units or runtime loader semantics.
 
 ## Physics bundle extraction
 
+For one vehicle BFF, the canonical extractor remains:
+
+`python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics`
+
+Phase 503 adds a direct extraction-to-pre-PhysX/provider manifest:
+
+`python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff`
+
+The latter composes the existing `VehiclePhysicsAssetGraph/1` profile with the
+Phase 502 provider handoff, without performing runtime provider selection.
+
 ## Physics runtime handoff
 
 `specialized_provider_runtime_selection_runtime.py` объединяет source-backed dispatch, selector provenance, execution sequence и provider solver source-shape в один `SHIFT.SpecializedProviderRuntimeSelection/1` contract. `observed_provider_id` принимается только как runtime observation; source analysis не используется для выбора retail provider.
