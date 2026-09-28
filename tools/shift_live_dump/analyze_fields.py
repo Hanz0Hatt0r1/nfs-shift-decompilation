@@ -231,7 +231,7 @@ def group_structures(fields: list[dict], gap: int, top: int) -> list[dict]:
             if current:
                 groups.append(current)
             current = [field]
-        last = field["address"]
+        last = field
     if current:
         groups.append(current)
 
