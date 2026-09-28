@@ -100,10 +100,11 @@ def _assignment_statements_with_loops(
 
 
 def _lhs_match(statement: str) -> re.Match[str] | None:
+    lhs = statement.split("=", 1)[0]
     return (
-        LOOP_LHS_RE.search(statement)
-        or ARRAY_LHS_RE.search(statement)
-        or DIRECT_LHS_RE.match(statement)
+        ARRAY_LHS_RE.search(lhs)
+        or LOOP_LHS_RE.search(lhs)
+        or DIRECT_LHS_RE.match(lhs)
     )
 
 
