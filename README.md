@@ -148,11 +148,13 @@ python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-ca
 
 ## Physics participant gate
 
-At commit `f63bb0b84fa4d5305d1b784025e4823bb88640d8` (2026-09-28), Phase 504 was merged after the PR CI passed Python, native and capture-producer, and the Vulkan smoke check passed. Phase 505 extends the static physics control-flow contract; live runtime capture remains the evidence gate. The post-merge mainline CI passed Python, native, capture-producer and Vulkan smoke.
-
-The Phase 505 gate records the `IGPhaseVehicle → FUN_00410ef0 → wait/success → Pakfiles/Vehicles/%s.bff` control flow without assigning a PhysX class identity. See `docs/PHASE505_VEHICLE_PHYSICS_PARTICIPANT_GATE.md`.
+Phase 505 records the `IGPhaseVehicle → FUN_00410ef0 → wait/success → Pakfiles/Vehicles/%s.bff` control flow without assigning a PhysX class identity. See `docs/PHASE505_VEHICLE_PHYSICS_PARTICIPANT_GATE.md`.
 
 ## Current CI note
+
+Phase 504 mainline CI was green across Python, native, capture-producer and Vulkan smoke. Phase 505 adds a source/control-flow contract and regression coverage; runtime provider capture remains the next evidence gate.
+
+## Repository map
 
 | Path | Purpose |
 |---|---|
