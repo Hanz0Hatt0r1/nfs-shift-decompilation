@@ -22,6 +22,7 @@ from vehicle_physics_selector_candidate_lifecycle_runtime import (
 )
 from vehicle_physics_igphasevehicle_finalization_runtime import build_igphasevehicle_finalization
 from vehicle_physics_selector_descriptor_population_runtime import build_vehicle_physics_selector_descriptor_population
+from vehicle_physics_selector_source_admission_runtime import build_vehicle_physics_selector_source_admission
 
 FORMAT = "SHIFT.VehiclePhysicsPrePhysXHandoff/1"
 
@@ -40,6 +41,7 @@ def build_vehicle_physics_handoff(
     selector_candidate_lifecycle = build_vehicle_physics_selector_candidate_lifecycle()
     igphasevehicle_finalization = build_igphasevehicle_finalization()
     selector_descriptor_population = build_vehicle_physics_selector_descriptor_population()
+    selector_source_admission = build_vehicle_physics_selector_source_admission()
     base_summary = {
         "participant_gate_ready": bool(participant_gate.get("ready")),
         "participant_registry_update_ready": bool(participant_registry_update.get("ready")),
@@ -47,6 +49,7 @@ def build_vehicle_physics_handoff(
         "selector_candidate_lifecycle_ready": bool(selector_candidate_lifecycle.get("ready")),
         "igphasevehicle_finalization_ready": bool(igphasevehicle_finalization.get("ready")),
         "selector_descriptor_population_ready": bool(selector_descriptor_population.get("ready")),
+        "selector_source_admission_ready": bool(selector_source_admission.get("ready")),
     }
     bundle = extract_bundle(
         bff_path,
@@ -70,6 +73,7 @@ def build_vehicle_physics_handoff(
             "selector_candidate_lifecycle": selector_candidate_lifecycle,
             "igphasevehicle_finalization": igphasevehicle_finalization,
             "selector_descriptor_population": selector_descriptor_population,
+            "selector_source_admission": selector_source_admission,
             "summary": {
                 "solver_scalar_count": 0,
                 "same_dimension_provider_candidates": [],
@@ -130,6 +134,10 @@ def build_vehicle_physics_handoff(
         json.dumps(selector_descriptor_population, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    (output_dir / "selector_source_admission.json").write_text(
+        json.dumps(selector_source_admission, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
     handoff_path.write_text(
         json.dumps(handoff, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -155,6 +163,7 @@ def build_vehicle_physics_handoff(
         "selector_candidate_lifecycle": selector_candidate_lifecycle,
         "igphasevehicle_finalization": igphasevehicle_finalization,
         "selector_descriptor_population": selector_descriptor_population,
+        "selector_source_admission": selector_source_admission,
         "outputs": {
             "vehicle_physics_asset_graph": str(bundle.get("physics_profile")),
             "prephysx_provider_handoff": str(handoff_path),
@@ -162,6 +171,7 @@ def build_vehicle_physics_handoff(
             "selector_candidate_lifecycle": str(output_dir / "selector_candidate_lifecycle.json"),
             "igphasevehicle_finalization": str(output_dir / "igphasevehicle_finalization.json"),
             "selector_descriptor_population": str(output_dir / "selector_descriptor_population.json"),
+            "selector_source_admission": str(output_dir / "selector_source_admission.json"),
         },
         "summary": {
             "solver_scalar_count": int(summary.get("solver_scalar_count", 0)),
@@ -220,6 +230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "selector_candidate_lifecycle_ready": report["summary"]["selector_candidate_lifecycle_ready"],
         "igphasevehicle_finalization_ready": report["summary"]["igphasevehicle_finalization_ready"],
         "selector_descriptor_population_ready": report["summary"]["selector_descriptor_population_ready"],
+        "selector_source_admission_ready": report["summary"]["selector_source_admission_ready"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
 
