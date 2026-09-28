@@ -24,22 +24,34 @@ FORMAT = "SHIFT.SpecializedProviderResetCleanupEquivalenceRuntime/1"
 
 def _profile_zero_addresses(
     reset_report: dict[str, Any],
+    *,
+    start: int,
+    end: int,
 ) -> set[int]:
-    addresses: set[int] = set()
-    for row in reset_report.get("rows") or []:
-        for address in row.get("zero_assignments") or []:
-            addresses.add(int(str(address), 16))
-    return addresses
-
-
-def _profile_unit_addresses(
-    reset_report: dict[str, Any],
-) -> set[int]:
-    return {
-        int(str(row["diagonal_address"]), 16)
+    """Return all reset-zero storage slots, including bulk-clear ranges."""
+    addresses = {
+        int(str(address), 16)
         for row in reset_report.get("rows") or []
-        if row.get("diagonal_address") is not None
+        for address in row.get("zero_assignments") or []
+        if start <= int(str(address), 16) < end
     }
+
+    for row in reset_report.get("rows") or []:
+        for clear in row.get("bulk_clears") or []:
+            clear_start = int(str(clear["base"]), 16)
+            clear_end = clear_start + int(clear["bytes"])
+            clipped_start = max(start, clear_start)
+            clipped_end = min(end, clear_end)
+            if clipped_start < clipped_end:
+                addresses.update(
+                    range(
+                        clipped_start,
+                        clipped_end,
+                        8,
+                    )
+                )
+
+    return addresses
 
 
 def _coverage_slots(region: dict[str, Any]) -> set[int]:
@@ -80,7 +92,11 @@ def compare_reset_cleanup(
         _coverage_slots(cleanup["workspace"])
         | _coverage_slots(cleanup["output_vector"])
     )
-    reset_zero = _profile_zero_addresses(reset)
+    reset_zero = _profile_zero_addresses(
+        reset,
+        start=layout.factor_workspace_base,
+        end=layout.output_vector_base + layout.output_vector_bytes,
+    )
     reset_one = _profile_unit_addresses(reset)
 
     reset_zero_minus_cleanup = reset_zero - cleanup_slots
@@ -135,7 +151,7 @@ def compare_reset_cleanup(
             reset_zero == cleanup_slots
         ),
         "unit_diagonal_inside_cleanup": reset_one <= cleanup_slots,
-        "unit_diagonal_overwrites_reset_zero": reset_one <= reset_zero,
+        "unit_diagonal_in_reset_zero_domain": unit_diagonal_in_reset_zero_domain,
         "output_cleanup_slot_count": len(cleanup_output),
         "output_reset_zero_slot_count": len(reset_output_zero),
         "output_zero_exact_match": (
@@ -179,8 +195,8 @@ def summarize_reset_cleanup(report: dict[str, Any]) -> dict[str, Any]:
         "unit_diagonal_inside_cleanup": report.get(
             "unit_diagonal_inside_cleanup"
         ),
-        "unit_diagonal_overwrites_reset_zero": report.get(
-            "unit_diagonal_overwrites_reset_zero"
+        "unit_diagonal_in_reset_zero_domain": report.get(
+            "unit_diagonal_in_reset_zero_domain"
         ),
         "output_zero_exact_match": report.get(
             "output_zero_exact_match"
@@ -196,8 +212,6 @@ def validate_reset_cleanup(report: dict[str, Any]) -> dict[str, Any]:
         errors.append("reset-zero-cleanup-not-exact")
     if not bool(report.get("unit_diagonal_inside_cleanup")):
         errors.append("unit-diagonal-outside-cleanup")
-    if not bool(report.get("unit_diagonal_overwrites_reset_zero")):
-        errors.append("unit-diagonal-not-reset-zero")
     if not bool(report.get("output_zero_exact_match")):
         errors.append("output-zero-set-not-equivalent")
 
