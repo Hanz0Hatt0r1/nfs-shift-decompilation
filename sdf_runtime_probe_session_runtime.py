@@ -137,8 +137,8 @@ def compare_probe_session(
         and (post_compare is None or post_compare["ready"])
     )
     return {
-        "format": "SHIFT.SDFRuntimeProbeSessionComparison/1",
-        "version": 1,
+        "format": "SHIFT.SDFRuntimeProbeSessionComparison/2",
+        "version": 2,
         "status": "matched" if ready else "diverged-or-blocked",
         "ready": ready,
         "observed": obs,
@@ -152,7 +152,7 @@ def compare_probe_session(
 def describe_sdf_runtime_probe_session_contract() -> dict[str, Any]:
     return {
         "format": FORMAT,
-        "version": 1,
+        "version": 2,
         "status": "source-backed-session-contract",
         "ready": True,
         "inputs": {
