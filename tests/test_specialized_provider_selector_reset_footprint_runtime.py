@@ -1,3 +1,5 @@
+import specialized_provider_selector_reset_footprint_runtime as runtime
+
 def test_expand_runtime_footprint_filters_to_provider_id():
     original = runtime.extract_selector_reset_footprint
     try:
