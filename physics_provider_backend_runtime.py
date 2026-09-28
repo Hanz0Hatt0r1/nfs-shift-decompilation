@@ -200,7 +200,7 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
             "call +0x0c and replace physics_system+0x3c",
             "call +0x04 and replace physics_system+0x40",
             "call +0x08 and replace physics_system+0x44",
-            "call +0x2c and use result as per-body +0xa8 domain",
+            "call +0x2c and use result as per-body +0xa8 workspace size",
         ],
         "fallback_transition": {
             "selector_after_slot_1": "null",
@@ -222,7 +222,7 @@ def build_fun_007b3820_backend_contract() -> dict[str, Any]:
         "limitations": [
             "Provider acceptance is runtime-dependent.",
             "Concrete provider class identities remain unresolved.",
-            "The +0x2c return is named only by its observed downstream storage role.",
+            "The +0x2c return is observed as the same workspace-size value returned by +0x24 in the shipped PE.",
         ],
     }
 
