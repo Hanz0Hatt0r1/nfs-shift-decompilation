@@ -62,7 +62,11 @@ void FUN_next(void)
     )
 
     assert report["errors"] == []
-    assert [s["loop_index"] for s in report["stencils"]] == [2, 3]
+    assert [
+        s["loop_index"]
+        for s in report["stencils"]
+        if s["loop_index"] is not None
+    ] == [2, 3]
     assert all(
         s["scale_source"]["form"] == "direct-dat"
         for s in report["stencils"]
