@@ -106,6 +106,12 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 424: source-backed pre-PhysX construction IR
+
+Added `physics_constraint_construction_runtime.py` and its regression suite. The module lowers the already proven BODY/constraint SDF runtime boundary into a neutral construction IR covering `FUN_007b3670`, `FUN_007b3150` and the pre-provider allocation stage of `FUN_007b3820`. Exact BODY name/mass/inertia offsets, JOINT/HINGE/BAR strides and solver widths, endpoint pointer slots, vector destinations, allocation sizes and provider/fallback boundaries are represented. The implementation intentionally leaves PhysX object classes, provider ownership and physical units unresolved rather than inferring unsupported semantics.
+
+The retail-shaped BMW M3 E36 regression remains 11 BODY records + 4 `JOINT&HINGE` records + 20 BAR records, which materialize to 28 runtime constraints and 40 scalar solver nodes. The next target is the SDK/provider object-construction boundary behind `FUN_007b3150`/`FUN_007b3820`.
+
 ## Phase 423: exact builtin sparse solver
 
 `FUN_007b0f20` is now implemented as an executable numerical sparse factorization/forward/back solver. The implementation is tested independently of the provider backend and exposed through the SDF solver runtime API. Real retail-state parity remains capture-dependent.
