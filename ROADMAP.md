@@ -20,7 +20,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 
 ## Immediate execution order
 
-1. Restore a clean Python CI baseline by fixing the syntax error in `tools/run_specialized_provider_differential.py:131`.
+1. Restore a clean Python CI baseline after the src reorganization; the provider CLI syntax error and pytest source-path bootstrap are now fixed, with CI re-validation in progress.
 2. Capture a real provider frame with the SDF/runtime probe.
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
 4. Compare retail packed-workspace/output mutations with the source-derived provider programs.
