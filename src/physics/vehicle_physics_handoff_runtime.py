@@ -20,6 +20,7 @@ from vehicle_physics_participant_process_runtime import build_vehicle_physics_pa
 from vehicle_physics_selector_candidate_lifecycle_runtime import (
     build_vehicle_physics_selector_candidate_lifecycle,
 )
+from vehicle_physics_igphasevehicle_finalization_runtime import build_igphasevehicle_finalization
 
 FORMAT = "SHIFT.VehiclePhysicsPrePhysXHandoff/1"
 
@@ -36,11 +37,13 @@ def build_vehicle_physics_handoff(
     participant_registry_update = build_physics_participant_registry_update()
     participant_process_reselect = build_vehicle_physics_participant_process()
     selector_candidate_lifecycle = build_vehicle_physics_selector_candidate_lifecycle()
+    igphasevehicle_finalization = build_igphasevehicle_finalization()
     base_summary = {
         "participant_gate_ready": bool(participant_gate.get("ready")),
         "participant_registry_update_ready": bool(participant_registry_update.get("ready")),
         "participant_process_reselect_ready": bool(participant_process_reselect.get("ready")),
         "selector_candidate_lifecycle_ready": bool(selector_candidate_lifecycle.get("ready")),
+        "igphasevehicle_finalization_ready": bool(igphasevehicle_finalization.get("ready")),
     }
     bundle = extract_bundle(
         bff_path,
@@ -62,6 +65,7 @@ def build_vehicle_physics_handoff(
             "participant_registry_update": participant_registry_update,
             "participant_process_reselect": participant_process_reselect,
             "selector_candidate_lifecycle": selector_candidate_lifecycle,
+            "igphasevehicle_finalization": igphasevehicle_finalization,
             "summary": {
                 "solver_scalar_count": 0,
                 "same_dimension_provider_candidates": [],
@@ -114,6 +118,10 @@ def build_vehicle_physics_handoff(
         json.dumps(selector_candidate_lifecycle, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    (output_dir / "igphasevehicle_finalization.json").write_text(
+        json.dumps(igphasevehicle_finalization, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
     handoff_path.write_text(
         json.dumps(handoff, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -137,11 +145,13 @@ def build_vehicle_physics_handoff(
         "participant_registry_update": participant_registry_update,
         "participant_process_reselect": participant_process_reselect,
         "selector_candidate_lifecycle": selector_candidate_lifecycle,
+        "igphasevehicle_finalization": igphasevehicle_finalization,
         "outputs": {
             "vehicle_physics_asset_graph": str(bundle.get("physics_profile")),
             "prephysx_provider_handoff": str(handoff_path),
             "participant_process_reselect": str(output_dir / "participant_process_reselect.json"),
             "selector_candidate_lifecycle": str(output_dir / "selector_candidate_lifecycle.json"),
+            "igphasevehicle_finalization": str(output_dir / "igphasevehicle_finalization.json"),
         },
         "summary": {
             "solver_scalar_count": int(summary.get("solver_scalar_count", 0)),
@@ -198,6 +208,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "participant_registry_update_ready": report["summary"]["participant_registry_update_ready"],
         "participant_process_reselect_ready": report["summary"]["participant_process_reselect_ready"],
         "selector_candidate_lifecycle_ready": report["summary"]["selector_candidate_lifecycle_ready"],
+        "igphasevehicle_finalization_ready": report["summary"]["igphasevehicle_finalization_ready"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
 
