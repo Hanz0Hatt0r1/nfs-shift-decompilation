@@ -37,3 +37,13 @@ cmake --build native_vulkan/build --config Release
 ```
 
 The headless path has no window-system dependency.
+
+
+## RenderCommand provenance gate
+
+BMW bundle preparation accepts `SHIFT.RenderCommand/1` but now blocks native
+bundle generation unless the selected submesh passes `SHIFT.NativeSubmissionGate/1`.
+That gate requires complete FXO payload provenance and
+`SHIFT.ShaderPermutationIdentity/1` for the shader pair.
+
+This is a provenance gate, not a claim of runtime shader equivalence.
