@@ -244,6 +244,7 @@ def build_solver_program_contract(source: str) -> dict[str, Any]:
             "SHIFT.SpecializedProviderAcceptanceFactorSeparationRuntime/1",
             "SHIFT.SpecializedProviderWorkspaceAliasRuntime/1",
             "SHIFT.SpecializedProviderSourceContextResolverRuntime/1",
+            "SHIFT.SpecializedProviderSourceShapeRuntime/1",
         ],
         "limitations": [
             "The bundle is an evidence container, not a drop-in numeric provider implementation.",
