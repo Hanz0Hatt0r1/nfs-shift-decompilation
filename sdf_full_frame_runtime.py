@@ -156,6 +156,12 @@ def build_runtime_frame_plan(
         {"stage": "solve_dispatch", "ready": True},
         {"stage": "post_solve_application", "ready": True},
     ]
+    scalar_domain_verification = None
+    if runtime_record_domains:
+        scalar_domain_verification = verify_solver_scalar_domain(
+            solver_scalar_count=int(solver_scalar_count),
+            runtime_record_domains=runtime_record_domains,
+        )
     verification = verify_frame_plan({
         "solver_scalar_count": int(solver_scalar_count),
         "body_count": int(body_count),
@@ -163,18 +169,10 @@ def build_runtime_frame_plan(
         "stages": stages,
         "identity_selector": selected,
         "contract": contract,
-        "verification": verification,
-        "scalar_domain_verification": scalar_domain_verification,
     })
-    scalar_domain_verification = None
-    if runtime_record_domains:
-        scalar_domain_verification = verify_solver_scalar_domain(
-            solver_scalar_count=int(solver_scalar_count),
-            runtime_record_domains=runtime_record_domains,
-        )
     return {
         "format": "SHIFT.SDFRuntimeFramePlan/2",
-        "version": 1,
+        "version": 2,
         "status": "ready",
         "ready": True,
         "runtime_flags_available": runtime_flags_available,
