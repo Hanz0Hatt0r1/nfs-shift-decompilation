@@ -33,6 +33,9 @@ from specialized_provider_runtime import get_provider
 from specialized_provider_scalar_reset_capture_runtime import (
     validate_scalar_reset_event,
 )
+from specialized_provider_scalar_reset_callsite_runtime import (
+    attribute_reset_event,
+)
 from specialized_provider_storage_runtime import get_storage_layout
 
 
@@ -224,8 +227,16 @@ class ScalarResetProbe(_BaseProbe):
         }
 
         validation = validate_scalar_reset_event(event)
-        event["capture_ready"] = validation["ready"]
-        event["capture_errors"] = validation["errors"]
+        attribution = attribute_reset_event(event)
+        event["callsite"] = attribution
+        event["capture_ready"] = (
+            bool(validation["ready"])
+            and bool(attribution["ready"])
+        )
+        event["capture_errors"] = (
+            list(validation["errors"])
+            + list(attribution.get("errors") or [])
+        )
         _append_jsonl(
             self.output_dir,
             "scalar_reset_events.jsonl",
