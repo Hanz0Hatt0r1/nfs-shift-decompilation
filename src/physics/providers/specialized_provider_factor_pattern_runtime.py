@@ -125,14 +125,15 @@ def _expanded_factor_targets(
         if match is None:
             continue
 
+        lhs = statement.split("=", 1)[0]
         lhs_form = (
-            "loop"
-            if LOOP_LHS_RE.search(statement)
-            else "array"
-            if ARRAY_LHS_RE.search(statement)
+            "array"
+            if ARRAY_LHS_RE.search(lhs)
+            else "loop"
+            if LOOP_LHS_RE.search(lhs)
             else "direct"
         )
-        rhs = statement[match.end():]
+        rhs = statement.split("=", 1)[1] if "=" in statement else ""
 
         destinations: tuple[int, ...]
         if lhs_form in {"loop", "array"}:
