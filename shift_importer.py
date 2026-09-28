@@ -1280,7 +1280,7 @@ def cmd_analyze_resource(args: argparse.Namespace) -> int:
         result = {
             "archive": bff.path.name,
             "entry": asdict(e),
-            "sha256": sha256(data),
+            **_resource_identity_fields(bff, e, data),
             "category": classify(e.path, data),
             "dependency_hints": dependency_hints(data, e.path),
             "analysis": _resource_analysis_output(data, e.path),
@@ -1314,7 +1314,12 @@ def cmd_analyze_dir(args: argparse.Namespace) -> int:
                 try:
                     d = bff.extract_entry(e, type2="lzx")
                     a = _resource_analysis_output(d, e.path)
-                    row = {**asdict(e), "sha256": sha256(d), "category": classify(e.path, d), "analysis": a["analysis"]}
+                    row = {
+                        **asdict(e),
+                        **_resource_identity_fields(bff, e, d),
+                        "category": classify(e.path, d),
+                        "analysis": a["analysis"],
+                    }
                     rows.append(row)
                     emitted += 1
                 except Exception as exc:
@@ -1610,7 +1615,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                     manifest.append({
                         **asdict(e),
                         "status": "ok",
-                        "sha256": sha256(data),
+                        **_resource_identity_fields(bff, e, data),
                         "detected_type": classify(e.path, data),
                     })
                     ok += 1
