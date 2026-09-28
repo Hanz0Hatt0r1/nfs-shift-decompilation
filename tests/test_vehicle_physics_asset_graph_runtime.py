@@ -37,6 +37,7 @@ def test_vehicle_physics_graph_joins_all_four_resource_boundaries(tmp_path):
     assert report["summary"]["sdf_constraint_solver_graph_ready"] is True
     assert report["summary"]["sdf_solver_scalar_count"] == 5
     assert report["summary"]["sdf_sparse_solver_contract_ready"] is True
+    assert report["summary"]["sdf_builtin_sparse_solver_ready"] is True
     assert report["summary"]["sdf_sparse_solver_validation_ready"] is True
     assert "sdf_builtin_diagonal_reset_node_count" in report["summary"]
     assert report["summary"]["sdf_body_state_projection_contract_ready"] is True
