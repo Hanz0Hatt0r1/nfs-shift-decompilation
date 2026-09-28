@@ -176,6 +176,7 @@ def build_execution_sequence_contract() -> dict[str, Any]:
         "format": FORMAT,
         "version": 1,
         "function": "FUN_007b3f40",
+        "status": build_execution_sequence()["status"],
         "sequence": build_execution_sequence(),
         "validation": validation,
         "interpretation": {
