@@ -3,6 +3,7 @@ import pytest
 import specialized_provider_capture_diff_runtime as runtime
 from specialized_provider_capture_runtime import build_provider_capture_payload
 from specialized_provider_storage_runtime import get_storage_layout
+from specialized_provider_row_storage_runtime import get_row_pointers
 
 
 def _capture(provider_id: int, workspace_value: float, output_value: float):
@@ -12,7 +13,7 @@ def _capture(provider_id: int, workspace_value: float, output_value: float):
         stage="pre-solve-provider",
         workspace=[workspace_value] * layout.factor_workspace_doubles,
         output_vector=[output_value] * layout.output_vector_doubles,
-        row_pointers=[],
+        row_pointers=list(get_row_pointers(provider_id)),
         frame_index=1,
     )
 
