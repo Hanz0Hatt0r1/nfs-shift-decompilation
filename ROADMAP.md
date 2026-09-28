@@ -20,20 +20,21 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 
 ## Immediate execution order
 
-1. Restore a clean Python CI baseline after the src reorganization; current remaining CI validation is the vehicle-physics bundle fixture.
+1. Python CI baseline after the `src` reorganization — complete on `ff757bd5e5dd39fcda5f31aee9911e5dcdc63f66`.
 2. Capture a real provider frame with the SDF/runtime probe.
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
-4. Audit cross-vehicle raw BFF payload parity and build the deduplicated FXO shader corpus profile.
-5. Use observed shader opcode gaps to prioritize the next reference/native backend coverage.
-6. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
-7. Compare retail packed-workspace/output mutations with the source-derived provider programs.
-8. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
-9. Expand the desktop reference renderer against real BMW material/shader permutations.
-10. Complete Vulkan RenderCommand execution using the same neutral contract.
-11. Continue SGB/FLAT and camera runtime reconstruction.
-12. Derive proven animation poses from the BAB runtime grammar.
-13. Port the stable native render/runtime boundary to Android.
-14. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+4. Cross-vehicle raw BFF payload parity and deduplicated FXO shader profiling — complete.
+5. Corpus-driven shader opcode gap analysis — complete.
+6. Cross-path content-addressed raw payload reuse audit — implemented as `SHIFT.BFFRawPayloadReuseAudit/1`.
+7. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
+8. Compare retail packed-workspace/output mutations with the source-derived provider programs.
+9. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
+10. Expand the desktop reference renderer against real BMW material/shader permutations.
+11. Complete Vulkan RenderCommand execution using the same neutral contract.
+12. Continue SGB/FLAT and camera runtime reconstruction.
+13. Derive proven animation poses from the BAB runtime grammar.
+14. Port the stable native render/runtime boundary to Android.
+15. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
