@@ -1,3 +1,4 @@
+from pathlib import Path
 from d3d9_usage_map import build_d3d9_usage_map
 
 
