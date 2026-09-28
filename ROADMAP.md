@@ -142,6 +142,10 @@ All recovered JOINT/HINGE/BAR coupling kernels are exposed through one source-fa
 
 `FUN_007bb250` exposes the remaining HINGE/BAR 2×1 or 1×2 mixed matrix block with exact transformed rows, side-flag sign and scalar-base-dependent storage orientation.
 
+## Phase 401: HINGE/BAR matrix coupling
+
+`FUN_007bb250` now has an executable HINGE/BAR mixed 2×1 kernel, including exact transformed angular/linear rows, BAR point/direction cross terms, equal/different side sign and scalar-base orientation. This closes the mixed-type matrix population inside the HINGE pass. Next target: post-solve scalar application and end-to-end solver verification.
+
 ## Phase 400: JOINT mixed matrix coupling
 
 `FUN_007bbb80` exposes JOINT self, JOINT/JOINT, JOINT/HINGE and JOINT/BAR blocks with exact tensor intermediates, inverse-scalar diagonal terms, side signs and lower-triangle addressing.
