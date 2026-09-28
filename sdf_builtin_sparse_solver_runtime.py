@@ -5,6 +5,8 @@ from typing import Any, Mapping, Sequence
 
 FORMAT = "SHIFT.SDFBuiltinSparseSolverRuntime/1"
 
+# Phase 423: restored executable reference for FUN_007b0f20.
+
 
 def describe_builtin_sparse_solver_contract() -> dict[str, Any]:
     return {
