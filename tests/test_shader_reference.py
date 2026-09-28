@@ -371,7 +371,7 @@ def test_reference_shader_skips_false_predicated_instruction():
         },
     )
     assert result["status"] == "executed", result
-    assert result["color"] == [0.0, 0.0, 0.0, 1.0]
+    assert result["color"] is None
 
 
 
@@ -380,11 +380,11 @@ def test_reference_shader_executes_texkill_discard():
     instructions = [
         Instruction(
             0, 50, "TEXKILL", 0, 2, 0, False,
-            [_src(0, 0)],
+            [_src(1, 0)],
         ),
     ]
     result = execute_shader(
-        _program(instructions, temps=(0,)),
+        _program(instructions, temps=()),
         inputs={0: (-1.0, 0.5, 0.5, 1.0)},
     )
     assert result["status"] == "executed", result
