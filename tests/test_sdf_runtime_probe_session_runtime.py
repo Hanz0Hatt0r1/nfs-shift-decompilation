@@ -78,6 +78,15 @@ def test_compare_probe_session_blocks_missing_post_capture_when_expected_has_one
     assert result["post_solve"]["errors"][0]["kind"] == "missing-observed-post-solve"
 
 
+def test_session_cli_accepts_optional_frame_entry_capture():
+    args = cli.build_parser().parse_args([
+        "--pre", "pre.json",
+        "--post", "post.json",
+        "--frame", "frame.json",
+    ])
+    assert args.frame.name == "frame.json"
+
+
 def test_session_cli_builds_parser_with_optional_post_and_expected_capture():
     args = cli.build_parser().parse_args([
         "--pre", "pre.json",
