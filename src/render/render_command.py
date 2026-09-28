@@ -445,6 +445,23 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
             if not isinstance(matrix, list) or len(matrix) != 12:
                 reasons.append(f"skinning:skin-pose-matrix-invalid:{index}")
 
+    for submesh_index, submesh in enumerate(command.get("submeshes", []) or []):
+        shader_identity = submesh.get("shader") or {}
+        for field in ("source_payload_sha256", "pixel_sha256", "vertex_sha256", "pair_sha256"):
+            value = shader_identity.get(field)
+            if value is None:
+                continue
+            normalized = str(value).strip().lower()
+            if len(normalized) != 64 or any(ch not in "0123456789abcdef" for ch in normalized):
+                reasons.append(
+                    f"shader-identity:invalid-sha256:{submesh_index}:{field}"
+                )
+        permutation = shader_identity.get("permutation_identity")
+        if permutation is not None and permutation.get("format") != "SHIFT.ShaderPermutationIdentity/1":
+            reasons.append(
+                f"shader-identity:invalid-permutation-format:{submesh_index}"
+            )
+
     shader_validation = command.get("shader_validation") or {}
     if shader_validation.get("format") not in (None, "SHIFT.RenderCommandShaderValidation/1"):
         reasons.append("shader-validation:invalid-format")
