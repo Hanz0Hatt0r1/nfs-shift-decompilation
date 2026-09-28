@@ -188,3 +188,29 @@ def test_joint_self_block_with_off_diagonal_tensor_matches_source():
         "21": 1.0,
         "22": 6.0,
     }
+
+
+
+def test_joint_tensor_d15_uses_m01_not_m02():
+    result = runtime.derive_joint_tensor_terms(
+        (
+            (2.0, 3.0, 4.0),
+            (3.0, 5.0, 6.0),
+            (4.0, 6.0, 7.0),
+        ),
+        (1.0, 2.0, 3.0),
+    )
+    assert result["d15"] == 1.0
+
+
+def test_joint_self_block_exposes_non_degenerate_d15_effect():
+    result = runtime.evaluate_joint_self_block(
+        (
+            (2.0, 3.0, 4.0),
+            (3.0, 5.0, 6.0),
+            (4.0, 6.0, 7.0),
+        ),
+        joint_position=(1.0, 2.0, 3.0),
+        inverse_scalar=1.0,
+    )
+    assert result["intermediates"]["d15"] == 1.0
