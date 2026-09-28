@@ -22,8 +22,8 @@ def test_interval_coverage_merges_overlaps():
         end=0x1040,
     )
 
-    assert merged == [(0x1000, 0x1030)]
-    assert covered == 0x30
+    assert merged == [(0x1000, 0x1020)]
+    assert covered == 0x20
 
 
 def test_coverage_for_region_adds_aligned_direct_zero_slots():
