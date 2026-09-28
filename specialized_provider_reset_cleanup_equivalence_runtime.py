@@ -225,8 +225,8 @@ def summarize_reset_cleanup(report: dict[str, Any]) -> dict[str, Any]:
         "unit_diagonal_inside_cleanup": report.get(
             "unit_diagonal_inside_cleanup"
         ),
-        "unit_diagonal_in_reset_zero_domain": report.get(
-            "unit_diagonal_in_reset_zero_domain"
+        "case_seed_clear_conflicts": len(
+            report.get("case_seed_clear_conflicts") or []
         ),
         "output_zero_exact_match": report.get(
             "output_zero_exact_match"
@@ -242,6 +242,8 @@ def validate_reset_cleanup(report: dict[str, Any]) -> dict[str, Any]:
         errors.append("reset-zero-not-subset-of-cleanup")
     if not bool(report.get("unit_diagonal_inside_cleanup")):
         errors.append("unit-diagonal-outside-cleanup")
+    if report.get("case_seed_clear_conflicts"):
+        errors.append("case-seed-self-clear-conflicts")
     if bool(report.get("unit_diagonal_overlaps_reset_zero")):
         errors.append("unit-diagonal-overlaps-reset-zero")
     if not bool(report.get("cleanup_reconstructed_from_reset")):
