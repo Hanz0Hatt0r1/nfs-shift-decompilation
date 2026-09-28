@@ -134,7 +134,7 @@ def test_reference_shader_executes_if_else_control_flow():
         inputs={0: (1.0, 1.0, 1.0, 1.0)},
         constants=constants,
     )
-    assert result["status"] == "executed"
+    assert result["status"] == "executed", result
     assert result["color"] == [0.2, 0.3, 0.4, 1.0]
 
     false_result = execute_shader(
@@ -174,7 +174,7 @@ def test_reference_shader_executes_ifc_comparison():
             }
         },
     )
-    assert result["status"] == "executed"
+    assert result["status"] == "executed", result
     assert result["color"] == [0.25, 0.5, 0.75, 1.0]
 
 
