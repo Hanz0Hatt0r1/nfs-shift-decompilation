@@ -1,7 +1,7 @@
 """Build a complete vehicle-BFF to pre-PhysX/provider handoff manifest.
 
 This is an orchestration layer over the canonical vehicle physics bundle
-extractor and the Phase 502 source-backed provider handoff contract. It keeps
+extractor and the source-backed provider/participant contracts. It keeps
 resource extraction, parsed asset graph and pre-PhysX/provider validation as
 separate nested evidence domains.
 """
@@ -17,6 +17,9 @@ from prephysx_provider_handoff_runtime import build_prephysx_provider_handoff_co
 from vehicle_physics_participant_gate_runtime import build_vehicle_physics_participant_gate
 from physics_participant_registry_update_runtime import build_physics_participant_registry_update
 from vehicle_physics_participant_process_runtime import build_vehicle_physics_participant_process
+from vehicle_physics_selector_candidate_lifecycle_runtime import (
+    build_vehicle_physics_selector_candidate_lifecycle,
+)
 
 FORMAT = "SHIFT.VehiclePhysicsPrePhysXHandoff/1"
 
@@ -32,6 +35,13 @@ def build_vehicle_physics_handoff(
     participant_gate = build_vehicle_physics_participant_gate()
     participant_registry_update = build_physics_participant_registry_update()
     participant_process_reselect = build_vehicle_physics_participant_process()
+    selector_candidate_lifecycle = build_vehicle_physics_selector_candidate_lifecycle()
+    base_summary = {
+        "participant_gate_ready": bool(participant_gate.get("ready")),
+        "participant_registry_update_ready": bool(participant_registry_update.get("ready")),
+        "participant_process_reselect_ready": bool(participant_process_reselect.get("ready")),
+        "selector_candidate_lifecycle_ready": bool(selector_candidate_lifecycle.get("ready")),
+    }
     bundle = extract_bundle(
         bff_path,
         output_dir,
@@ -51,6 +61,16 @@ def build_vehicle_physics_handoff(
             "participant_gate": participant_gate,
             "participant_registry_update": participant_registry_update,
             "participant_process_reselect": participant_process_reselect,
+            "selector_candidate_lifecycle": selector_candidate_lifecycle,
+            "summary": {
+                "solver_scalar_count": 0,
+                "same_dimension_provider_candidates": [],
+                "generic_fallback_available": False,
+                "body_count": 0,
+                "runtime_constraint_count": 0,
+                "sdf_body_count": 0,
+                **base_summary,
+            },
             "errors": ["vehicle-physics-profile-details-missing"],
         }
 
@@ -66,6 +86,16 @@ def build_vehicle_physics_handoff(
             "participant_gate": participant_gate,
             "participant_registry_update": participant_registry_update,
             "participant_process_reselect": participant_process_reselect,
+            "selector_candidate_lifecycle": selector_candidate_lifecycle,
+            "summary": {
+                "solver_scalar_count": 0,
+                "same_dimension_provider_candidates": [],
+                "generic_fallback_available": False,
+                "body_count": 0,
+                "runtime_constraint_count": 0,
+                "sdf_body_count": 0,
+                **base_summary,
+            },
             "errors": ["sdf-report-missing-from-vehicle-profile"],
         }
 
@@ -78,6 +108,10 @@ def build_vehicle_physics_handoff(
     handoff_path = output_dir / "prephysx_provider_handoff.json"
     (output_dir / "participant_process_reselect.json").write_text(
         json.dumps(participant_process_reselect, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (output_dir / "selector_candidate_lifecycle.json").write_text(
+        json.dumps(selector_candidate_lifecycle, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
 
@@ -102,10 +136,12 @@ def build_vehicle_physics_handoff(
         "participant_gate": participant_gate,
         "participant_registry_update": participant_registry_update,
         "participant_process_reselect": participant_process_reselect,
+        "selector_candidate_lifecycle": selector_candidate_lifecycle,
         "outputs": {
             "vehicle_physics_asset_graph": str(bundle.get("physics_profile")),
             "prephysx_provider_handoff": str(handoff_path),
             "participant_process_reselect": str(output_dir / "participant_process_reselect.json"),
+            "selector_candidate_lifecycle": str(output_dir / "selector_candidate_lifecycle.json"),
         },
         "summary": {
             "solver_scalar_count": int(summary.get("solver_scalar_count", 0)),
@@ -117,10 +153,10 @@ def build_vehicle_physics_handoff(
             ),
             "body_count": int(counts.get("bodies", 0)),
             "runtime_constraint_count": int(counts.get("runtime_constraints", 0)),
-            "sdf_body_count": int((bundle.get("profile", {}).get("summary") or {}).get("sdf_bodies", 0)),
-            "participant_gate_ready": bool(participant_gate.get("ready")),
-            "participant_registry_update_ready": bool(participant_registry_update.get("ready")),
-            "participant_process_reselect_ready": bool(participant_process_reselect.get("ready")),
+            "sdf_body_count": int(
+                (bundle.get("profile", {}).get("summary") or {}).get("sdf_bodies", 0)
+            ),
+            **base_summary,
         },
         "errors": list(dict.fromkeys(errors)),
         "limitations": [
@@ -161,6 +197,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "participant_gate_ready": report["summary"]["participant_gate_ready"],
         "participant_registry_update_ready": report["summary"]["participant_registry_update_ready"],
         "participant_process_reselect_ready": report["summary"]["participant_process_reselect_ready"],
+        "selector_candidate_lifecycle_ready": report["summary"]["selector_candidate_lifecycle_ready"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
 
