@@ -58,6 +58,7 @@ from sdf_runtime_probe_runtime import describe_sdf_runtime_probe_contract
 from sdf_runtime_probe_session_runtime import describe_sdf_runtime_probe_session_contract
 from sdf_runtime_probe_pe_validation import describe_probe_pe_validation_contract
 from sdf_runtime_probe_launcher_runtime import describe_sdf_runtime_probe_launcher
+from sdf_runtime_probe_runtime import describe_frame_entry_backend
 
 FORMAT = "SHIFT.VehiclePhysicsAssetGraph/1"
 
@@ -152,6 +153,11 @@ def build_profile(
     sdf_runtime_probe_session = describe_sdf_runtime_probe_session_contract()
     sdf_runtime_probe_pe = describe_probe_pe_validation_contract()
     sdf_probe_launcher = describe_sdf_runtime_probe_launcher()
+    sdf_probe_backend_contract = describe_frame_entry_backend(
+        physics_system=0,
+        scalar_count=sdf_constraint_solver_graph.get("solver_scalar_count", 0),
+        provider=0,
+    )
 
     blockers: list[str] = []
     for name, report in (
@@ -271,6 +277,7 @@ def build_profile(
             "sdf_runtime_probe_session_ready": sdf_runtime_probe_session.get("ready") is True,
             "sdf_runtime_probe_pe_ready": sdf_runtime_probe_pe.get("ready") is True,
             "sdf_runtime_probe_launcher_ready": sdf_probe_launcher.get("ready") is True,
+            "sdf_runtime_probe_backend_contract_ready": sdf_probe_backend_contract.get("ready") is True,
         },
         "details": {
             "cdf": cdf_report,
@@ -315,6 +322,7 @@ def build_profile(
             "sdf_runtime_probe_session": sdf_runtime_probe_session,
             "sdf_runtime_probe_pe": sdf_runtime_probe_pe,
             "sdf_runtime_probe_launcher": sdf_probe_launcher,
+            "sdf_runtime_probe_backend_contract": sdf_probe_backend_contract,
         },
         "blockers": list(dict.fromkeys(blockers)),
         "evidence": {
