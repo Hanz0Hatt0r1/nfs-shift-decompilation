@@ -114,12 +114,12 @@ def test_reference_shader_executes_if_else_control_flow():
         ),
         Instruction(
             8, 1, "MOV", 0, 3, 0, False,
-            [_dst(8, 0), _src(2, 0)],
+            [_dst(8, 0), _src(2, 1)],
         ),
         Instruction(12, 42, "ELSE", 0, 1, 0, False, []),
         Instruction(
             16, 1, "MOV", 0, 3, 0, False,
-            [_dst(8, 0), _src(3, 0)],
+            [_dst(8, 0), _src(2, 2)],
         ),
         Instruction(20, 43, "ENDIF", 0, 1, 0, False, []),
     ]
