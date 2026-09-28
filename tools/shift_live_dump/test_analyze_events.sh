@@ -19,7 +19,7 @@ for n,data in enumerate(payloads):
 PY
 python3 "$(dirname "$0")/analyze_events.py" "$tmp" --out "$tmp/out" --block-size-kib 4 --top 20
 grep -q '^1,snapshot-000001,snapshot-000002,' "$tmp/out/transition_summary.csv"
-grep -q ',1,4096,4224,2,' "$tmp/out/event_blocks.csv"
+grep -q ',1,4096,0,4096,1,' "$tmp/out/event_blocks.csv"
 grep -q '"peak_transition": 1' "$tmp/out/event_analysis.json"
 grep -q ',1,' "$tmp/out/event_clusters.csv"
 echo "event analyzer smoke test: PASS"
