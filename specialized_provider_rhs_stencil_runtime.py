@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any
 
 from specialized_provider_row_storage_runtime import build_row_segments
 from specialized_provider_storage_runtime import get_storage_layout
@@ -19,9 +19,7 @@ from specialized_provider_solver_fingerprint_runtime import (
     extract_function_body,
     extract_reciprocal_pivots,
 )
-from specialized_provider_update_graph_runtime import (
-    extract_update_graph,
-)
+from specialized_provider_update_graph_runtime import extract_update_graph
 
 FORMAT = "SHIFT.SpecializedProviderRHSStencilRuntime/1"
 
@@ -42,7 +40,8 @@ LOOP_HEADER_RE = re.compile(
 )
 
 LOOP_PTR_LHS_RE = re.compile(
-    r"\*\(double \*\)\(&DAT_([0-9A-Fa-f]+)\s*\+\s*local_10\s*\*\s*8\)\s*="
+    r"\*\(double \*\)\(&DAT_([0-9A-Fa-f]+)\s*\+\s*"
+    r"local_10\s*\*\s*8\)\s*="
 )
 
 ARRAY_LHS_RE = re.compile(
@@ -129,8 +128,7 @@ def _function_spec(provider_id: int) -> dict[str, Any]:
 
 def _locate_address(address: int, provider_id: int) -> Reference:
     layout = get_storage_layout(provider_id)
-    segments = build_row_segments(provider_id)
-    for segment in segments:
+    for segment in build_row_segments(provider_id):
         if segment.start <= address < segment.end:
             delta = address - segment.start
             if delta % 8:
@@ -163,15 +161,15 @@ def _resolve_loop_address(
     provider_id: int,
     form: str,
 ) -> Reference:
-    return _locate_address(base + loop_index * 8, provider_id).__class__(
-        **{
-            "domain": _locate_address(base + loop_index * 8, provider_id).domain,
-            "form": form,
-            "address": base + loop_index * 8,
-            "row": _locate_address(base + loop_index * 8, provider_id).row,
-            "column": _locate_address(base + loop_index * 8, provider_id).column,
-            "index": _locate_address(base + loop_index * 8, provider_id).index,
-        }
+    address = base + loop_index * 8
+    reference = _locate_address(address, provider_id)
+    return Reference(
+        domain=reference.domain,
+        form=form,
+        address=address,
+        row=reference.row,
+        column=reference.column,
+        index=reference.index,
     )
 
 
@@ -183,17 +181,19 @@ def _rhs_references(
 ) -> tuple[Reference, ...]:
     references: list[Reference] = []
     masked = list(rhs)
+    segments = build_row_segments(provider_id)
 
-    def consume(match: re.Match[str]) -> bool:
+    def consume(match: re.Match[str]) -> None:
         start, end = match.span()
         for offset in range(start, end):
             masked[offset] = " "
-        return True
 
     for match in ROWPTR_OFFSET_RE.finditer(rhs):
         row = loop_index
+        if row >= len(segments):
+            raise ValueError(f"row-pointer index out of range: {row}")
         offset = _parse_int(match.group(2))
-        address = build_row_segments(provider_id)[row].start + offset
+        address = segments[row].start + offset
         reference = _locate_address(address, provider_id)
         references.append(
             Reference(
@@ -209,7 +209,9 @@ def _rhs_references(
 
     for match in ROWPTR_BASE_RE.finditer(rhs):
         row = loop_index
-        address = build_row_segments(provider_id)[row].start
+        if row >= len(segments):
+            raise ValueError(f"row-pointer index out of range: {row}")
+        address = segments[row].start
         reference = _locate_address(address, provider_id)
         references.append(
             Reference(
@@ -228,19 +230,21 @@ def _rhs_references(
         (ARRAY_REF_RE, "flat-array"),
     ):
         for match in regex.finditer(rhs):
-            reference = _resolve_loop_address(
-                int(match.group(1), 16),
-                loop_index,
-                provider_id=provider_id,
-                form=form,
+            references.append(
+                _resolve_loop_address(
+                    int(match.group(1), 16),
+                    loop_index,
+                    provider_id=provider_id,
+                    form=form,
+                )
             )
-            references.append(reference)
             consume(match)
 
     masked_rhs = "".join(masked)
     for match in DIRECT_ADDR_RE.finditer(masked_rhs):
-        reference = _locate_address(int(match.group(1), 16), provider_id)
-        references.append(reference)
+        references.append(
+            _locate_address(int(match.group(1), 16), provider_id)
+        )
 
     return tuple(references)
 
@@ -286,56 +290,55 @@ def _assignment_statements(
     return tuple(statements)
 
 
-def _destination_candidates(
+def _find_lhs_match(statement: str) -> re.Match[str]:
+    match = (
+        LOOP_PTR_LHS_RE.search(statement)
+        or ARRAY_LHS_RE.search(statement)
+        or DIRECT_LHS_RE.match(statement)
+    )
+    if match is None:
+        raise ValueError("assignment LHS form is unsupported")
+    return match
+
+
+def _destination_for_statement(
     statement: str,
     *,
     provider_id: int,
     loop_index: int | None,
-) -> tuple[Reference, ...]:
-    pointer = LOOP_PTR_LHS_RE.search(statement)
-    array = ARRAY_LHS_RE.search(statement)
-    direct = DIRECT_LHS_RE.match(statement)
-
-    if pointer is not None:
+) -> Reference:
+    match = _find_lhs_match(statement)
+    if LOOP_PTR_LHS_RE.fullmatch(statement[:match.end()]):
         if loop_index is None:
             raise ValueError("loop-pointer LHS without local_10 loop range")
-        base = int(pointer.group(1), 16)
-        return (
-            _resolve_loop_address(
-                base,
-                loop_index,
-                provider_id=provider_id,
-                form="loop-pointer-lhs",
-            ),
+        return _resolve_loop_address(
+            int(match.group(1), 16),
+            loop_index,
+            provider_id=provider_id,
+            form="loop-pointer-lhs",
         )
-
-    if array is not None:
+    if ARRAY_LHS_RE.fullmatch(statement[:match.end()]):
         if loop_index is None:
             raise ValueError("array LHS without local_10 loop range")
-        base = int(array.group(1), 16)
-        return (
-            _resolve_loop_address(
-                base,
-                loop_index,
-                provider_id=provider_id,
-                form="loop-array-lhs",
-            ),
+        return _resolve_loop_address(
+            int(match.group(1), 16),
+            loop_index,
+            provider_id=provider_id,
+            form="loop-array-lhs",
         )
 
-    if direct is not None:
-        reference = _locate_address(int(direct.group(1), 16), provider_id)
-        return (
-            Reference(
-                domain=reference.domain,
-                form="direct-lhs",
-                address=reference.address,
-                row=reference.row,
-                column=reference.column,
-                index=reference.index,
-            ),
-        )
-
-    raise ValueError("assignment LHS form is unsupported")
+    reference = _locate_address(
+        int(match.group(1), 16),
+        provider_id,
+    )
+    return Reference(
+        domain=reference.domain,
+        form="direct-lhs",
+        address=reference.address,
+        row=reference.row,
+        column=reference.column,
+        index=reference.index,
+    )
 
 
 def extract_rhs_stencils(
@@ -355,8 +358,8 @@ def extract_rhs_stencils(
         first_source_line=source_start_line,
     )
     layout = get_storage_layout(provider_id)
-
     errors: list[str] = []
+
     if len(pivots) != layout.scalar_count:
         errors.append(
             f"pivot-count:expected={layout.scalar_count}:actual={len(pivots)}"
@@ -375,17 +378,33 @@ def extract_rhs_stencils(
 
         for local_line, statement, loop_range in _assignment_statements(block):
             absolute_line = pivot.source_line + local_line
-            values = (
-                range(*loop_range)
+            loop_values = (
+                tuple(range(*loop_range))
                 if loop_range is not None
                 else (None,)
             )
-            for loop_index in values:
+            lhs_match = _find_lhs_match(statement)
+            rhs_text = statement[lhs_match.end():]
+
+            for loop_index in loop_values:
                 try:
-                    destinations = _destination_candidates(
+                    destination = _destination_for_statement(
                         statement,
                         provider_id=provider_id,
-                        loop_index=loop_index,
+                        loop_index=(
+                            None
+                            if loop_index is None
+                            else int(loop_index)
+                        ),
+                    )
+                    rhs = _rhs_references(
+                        rhs_text,
+                        provider_id=provider_id,
+                        loop_index=(
+                            0
+                            if loop_index is None
+                            else int(loop_index)
+                        ),
                     )
                 except ValueError as exc:
                     errors.append(
@@ -393,41 +412,19 @@ def extract_rhs_stencils(
                     )
                     continue
 
-                rhs_text = statement[
-                    (LOOP_PTR_LHS_RE.search(statement)
-                     or ARRAY_LHS_RE.search(statement)
-                     or DIRECT_LHS_RE.match(statement)).end():
-                ]
-                rhs = (
-                    _rhs_references(
-                        rhs_text,
-                        provider_id=provider_id,
+                stencils.append(
+                    AssignmentStencil(
+                        pivot_index=pivot_index,
+                        source_line=absolute_line,
                         loop_index=(
-                            0 if loop_index is None else int(loop_index)
+                            None
+                            if loop_index is None
+                            else int(loop_index)
                         ),
-                    )
-                    if loop_index is not None
-                    else _rhs_references(
-                        rhs_text,
-                        provider_id=provider_id,
-                        loop_index=0,
+                        destination=destination,
+                        rhs=rhs,
                     )
                 )
-
-                for destination in destinations:
-                    stencils.append(
-                        AssignmentStencil(
-                            pivot_index=pivot_index,
-                            source_line=absolute_line,
-                            loop_index=(
-                                None
-                                if loop_index is None
-                                else int(loop_index)
-                            ),
-                            destination=destination,
-                            rhs=rhs,
-                        )
-                    )
 
     return {
         "format": FORMAT,
@@ -454,6 +451,7 @@ def summarize_rhs_stencils(report: dict[str, Any]) -> dict[str, Any]:
         for stencil in stencils
     )
     global_count = len(stencils) - workspace - output
+
     return {
         "provider_id": report.get("provider_id"),
         "scalar_count": report.get("scalar_count"),
@@ -479,7 +477,10 @@ def validate_rhs_stencils(
     rows = int(report.get("scalar_count", 0))
 
     if source is not None:
-        update_graph = extract_update_graph(source, provider_id=provider_id)
+        update_graph = extract_update_graph(
+            source,
+            provider_id=provider_id,
+        )
         expected = {
             int(row["pivot_index"]): int(row["workspace_write_site_count"])
             for row in update_graph.get("rows") or []
@@ -499,11 +500,17 @@ def validate_rhs_stencils(
     for stencil in report.get("stencils") or []:
         destination = stencil.get("destination") or {}
         if destination.get("domain") == "workspace":
-            if destination.get("row") is None or destination.get("column") is None:
+            if (
+                destination.get("row") is None
+                or destination.get("column") is None
+            ):
                 errors.append("workspace-destination-missing-row-column")
         for reference in stencil.get("rhs") or []:
             if reference.get("domain") == "workspace":
-                if reference.get("row") is None or reference.get("column") is None:
+                if (
+                    reference.get("row") is None
+                    or reference.get("column") is None
+                ):
                     errors.append("workspace-rhs-reference-missing-row-column")
 
     return {
@@ -519,7 +526,10 @@ def validate_rhs_stencils(
 def build_rhs_stencil_contract(source: str) -> dict[str, Any]:
     providers: list[dict[str, Any]] = []
     for provider_id in (0, 1):
-        report = extract_rhs_stencils(source, provider_id=provider_id)
+        report = extract_rhs_stencils(
+            source,
+            provider_id=provider_id,
+        )
         report["summary"] = summarize_rhs_stencils(report)
         report["validation"] = validate_rhs_stencils(
             report,
