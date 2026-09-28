@@ -40,3 +40,11 @@ The deterministic shader oracle now executes structured D3D9 conditionals and ma
 ## Remaining work
 
 Broaden D3D9 instruction/control-flow coverage, close exact BMW lighting/blending semantics, prove more runtime resources and use the oracle as the native Vulkan parity target.
+
+
+## Resource identity refinement
+
+Render material selection now retains the SHA-256 of the complete selected FXO
+payload. Renderer texture resources preserve decoded/resource `sha256` separately
+from optional raw stored `raw_sha256`. These identities are evidence fields only;
+path identity, payload identity, and runtime draw identity remain separate gates.
