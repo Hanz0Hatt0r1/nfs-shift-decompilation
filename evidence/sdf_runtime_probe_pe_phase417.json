@@ -1,0 +1,30 @@
+{
+  "format": "SHIFT.SDFRuntimeProbePEEvidence/1",
+  "version": 1,
+  "executable": {
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "machine": "0x014c/i386",
+    "image_base": "0x00400000"
+  },
+  "targets": {
+    "FUN_007b0f20": {
+      "address": "0x007b0f20",
+      "section": ".text",
+      "file_offset": "0x003b0320",
+      "prologue": "558bec83ec208b5510535633f685d257"
+    },
+    "FUN_007b3f40": {
+      "address": "0x007b3f40",
+      "section": ".text",
+      "file_offset": "0x003b3340",
+      "prologue": "558bec51568bf1837e48005775368b4e"
+    },
+    "FUN_007b4110": {
+      "address": "0x007b4110",
+      "section": ".text",
+      "file_offset": "0x003b3510",
+      "prologue": "538bdc83ec0883e4f883c404558b6b04"
+    }
+  },
+  "status": "source-backed-executable"
+}
