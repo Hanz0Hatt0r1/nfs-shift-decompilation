@@ -18,3 +18,13 @@ bytes when both sides expose the corresponding hashes.
 The authoritative runtime match still requires the existing permutation identity
 and resource identity gates. Byte-hash diagnostics do not replace same-instance
 draw evidence.
+
+
+## Runtime render propagation
+
+The same provenance is carried into `SHIFT.BMWRuntimeRenderContract/1`: the selected
+FXO candidate retains `payload_sha256`, while runtime evidence exposes the derived
+vertex/pixel/pair byte hashes separately.
+
+This preserves the distinction between source payload identity and runtime
+same-instance identity through the final renderer-facing contract.
