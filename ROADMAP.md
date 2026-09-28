@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 424: unified BMW M3 runtime-probe bundle
+
+Added `bmw_m3_runtime_probe_bundle_runtime.py` and `tools/verify_bmw_m3_runtime_probe_bundle.py`. One report now composes retail PE validation, BMW M3 `aarm_multilink.sdf` 40-scalar domain validation, frame-entry/pre/post session consistency and optional exact expected-session numeric comparison. The verifier is fail-closed and never synthesizes solver values. Next target: feed the first real frame-entry + pre-solve + post-solve triple captured from the retail Wine/GDB runtime.
+
 ## Phase 423: exact builtin sparse solver
 
 `FUN_007b0f20` is now implemented as an executable numerical sparse factorization/forward/back solver. The implementation is tested independently of the provider backend and exposed through the SDF solver runtime API. Real retail-state parity remains capture-dependent.
