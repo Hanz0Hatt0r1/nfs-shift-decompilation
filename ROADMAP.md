@@ -106,6 +106,12 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 430: provider-neutral backend construction contract
+
+Added physics_provider_backend_runtime.py with an executable provider-neutral model of the accepted-provider branch in FUN_007b3820. The phase freezes provider slot order, vtable offsets +0x14/+0x0C/+0x04/+0x08/+0x2C, release-before-rebind behavior, separate +0x40 graph and +0x44 auxiliary storage results, and the +0x2C return value used as per-body +0xA8 domain. Rejected providers advance to the next slot; after slot 1, the generic FUN_007b2010/FUN_007b1360 fallback is selected with scalar_count*scalar_count domain.
+
+Provider vtable identity remains source-backed but semantic provider/PhysX class names stay unresolved.
+
 ## Phase 429: canonical transform-helper API
 
 Consolidated the exact 3x3 transform pair into matrix_vector_transform_runtime.py. The canonical public functions are named after the retail helpers FUN_007af0a0 and FUN_007aefb0. sdf_transform_runtime.py and sdf_body_frame_runtime.py now delegate to that single implementation, while the established transform_vector/legacy adapter names remain available for compatibility.
