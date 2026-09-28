@@ -128,7 +128,7 @@ def _expanded_factor_targets(
         lhs = statement.split("=", 1)[0]
         lhs_form = (
             "array"
-            if ARRAY_LHS_RE.search(lhs)
+            if ARRAY_LHS_RE.search(lhs + "=")
             else "loop"
             if LOOP_LHS_RE.search(lhs)
             else "direct"
