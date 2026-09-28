@@ -179,9 +179,9 @@ def join_runtime_shader(material_slice: Mapping[str, Any], runtime_report: Mappi
         runtime_vertex_sha = identity.get('vertex_byte_sha256')
         runtime_pixel_sha = identity.get('pixel_byte_sha256')
         runtime_pair_sha = identity.get('pair_byte_sha256')
-        expected_vertex_sha = candidate.get('vertex_sha256')
-        expected_pixel_sha = candidate.get('pixel_sha256')
-        expected_pair_sha = candidate.get('pair_sha256')
+        expected_vertex_sha = expected.get('vertex_byte_sha256') if expected else None
+        expected_pixel_sha = expected.get('pixel_byte_sha256') if expected else None
+        expected_pair_sha = expected.get('pair_byte_sha256') if expected else None
         hash_checks = {}
         for label, expected_sha, runtime_sha in (
             ('vertex', expected_vertex_sha, runtime_vertex_sha),
