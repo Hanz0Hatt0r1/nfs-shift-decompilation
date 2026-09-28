@@ -75,6 +75,7 @@ def _source_workspace_addresses(
         )
 
     if source_pattern.get("ready") is not True:
+        errors.append("source-pattern-not-ready")
         errors.extend(
             f"source-pattern:{error}"
             for error in source_pattern.get("errors") or []
