@@ -189,7 +189,7 @@ def extract_execution_schedule(
                     event["loop_index"] = int(loop_index)
                 address = _lhs_address(statement, loop_index)
                 if address is not None:
-                    event["destination_address"] = hex(address)
+                    event["destination_address"] = f"0x{address:08x}"
                 elif _lhs_base(statement) is not None:
                     event["destination_base"] = hex(_lhs_base(statement))
                 events.append(event)
