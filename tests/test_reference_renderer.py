@@ -440,7 +440,7 @@ def test_reference_renderer_textured_cli(tmp_path):
     proc = subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).resolve().parents[1] / "reference_renderer.py"),
+            str(Path(__file__).resolve().parents[1] / "src" / "render" / "reference_renderer.py"),
             str(command_path),
             "--render-command",
             "--textured",
