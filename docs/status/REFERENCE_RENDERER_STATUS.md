@@ -33,6 +33,10 @@ BMW renderer-global resources remain explicit, notably environment s3 and shadow
 
 Reference output can be hashed with SHA-256 and compared as a regression artifact. Geometry ranges, resource identity and shader/reference payloads are validated before execution.
 
+## Recent progress
+
+The deterministic shader oracle now executes structured D3D9 conditionals and matrix/sign operations, allowing more vertex/pixel programs to reach reference execution before native parity work.
+
 ## Remaining work
 
 Broaden D3D9 instruction/control-flow coverage, close exact BMW lighting/blending semantics, prove more runtime resources and use the oracle as the native Vulkan parity target.
