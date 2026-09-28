@@ -33,10 +33,14 @@ from specialized_provider_runtime import get_provider
 from specialized_provider_scalar_reset_capture_runtime import (
     validate_scalar_reset_event,
 )
+from specialized_provider_scalar_reset_effect_runtime import (
+    build_reset_effect_event,
+)
 from specialized_provider_scalar_reset_callsite_runtime import (
     attribute_reset_event,
 )
 from specialized_provider_storage_runtime import get_storage_layout
+from specialized_provider_row_storage_runtime import get_row_pointers
 
 
 def _u32(inferior: gdb.Inferior, address: int) -> int:
@@ -178,6 +182,145 @@ class _BaseProbe(gdb.Breakpoint):
     def stop(self) -> bool:
         self.hit += 1
         return True
+
+
+class ProviderResetReturnProbe(gdb.FinishBreakpoint):
+    """Capture source-derived reset sentinels after provider reset returns."""
+
+    def __init__(
+        self,
+        frame: gdb.Frame,
+        provider_id: int,
+        output_dir: Path,
+        selector: int,
+        frame_index: int | None,
+        reset_event_count: int,
+        provider_pointer: int,
+        provider_vtable: int,
+        diagonal_address: int,
+        output_address: int,
+        diagonal_before: float,
+        output_before: float,
+    ) -> None:
+        super().__init__(frame, internal=False)
+        self.provider_id = provider_id
+        self.output_dir = output_dir
+        self.selector = selector
+        self.frame_index = frame_index
+        self.reset_event_count = reset_event_count
+        self.provider_pointer = provider_pointer
+        self.provider_vtable = provider_vtable
+        self.diagonal_address = diagonal_address
+        self.output_address = output_address
+        self.diagonal_before = diagonal_before
+        self.output_before = output_before
+
+    def stop(self) -> bool:
+        inferior = gdb.selected_inferior()
+        diagonal_after = _doubles(
+            inferior,
+            self.diagonal_address,
+            1,
+        )[0]
+        output_after = _doubles(
+            inferior,
+            self.output_address,
+            1,
+        )[0]
+        event = build_reset_effect_event(
+            provider_id=self.provider_id,
+            selector=self.selector,
+            frame_index=self.frame_index,
+            reset_event_count=self.reset_event_count,
+            provider_pointer=self.provider_pointer,
+            provider_vtable=self.provider_vtable,
+            diagonal_before=self.diagonal_before,
+            diagonal_after=diagonal_after,
+            output_before=self.output_before,
+            output_after=output_after,
+        )
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        target = self.output_dir / "provider_reset_effects.jsonl"
+        with target.open("a", encoding="utf-8") as stream:
+            stream.write(
+                json.dumps(
+                    event,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+                + "\n"
+            )
+        return False
+
+
+class ProviderResetProbe(_BaseProbe):
+    """Capture provider reset sentinels at +0x1c entry and on return."""
+
+    def __init__(
+        self,
+        address: int,
+        provider_id: int,
+        output_dir: Path,
+    ) -> None:
+        super().__init__(
+            address,
+            f"provider{provider_id}_reset",
+            output_dir,
+        )
+        self.provider_id = provider_id
+        self.return_breakpoints: list[ProviderResetReturnProbe] = []
+
+    def stop(self) -> bool:
+        self.hit += 1
+        inferior = gdb.selected_inferior()
+        provider_pointer = int(gdb.parse_and_eval("$ecx"))
+        esp = int(gdb.parse_and_eval("$esp"))
+        selector = _u32(inferior, esp + 0x04)
+        provider_id, provider_vtable = _provider_id_from_runtime_pointer(
+            inferior,
+            provider_pointer,
+        )
+        if (
+            provider_id != self.provider_id
+            or provider_vtable is None
+        ):
+            return False
+
+        addresses = get_storage_layout(self.provider_id)
+        if not 0 <= selector < addresses.scalar_count:
+            return False
+        row_pointer = get_row_pointers(self.provider_id)[selector]
+        diagonal_address = row_pointer + selector * 8
+        output_address = (
+            addresses.output_vector_base + selector * 8
+        )
+        diagonal_before = _doubles(
+            inferior,
+            diagonal_address,
+            1,
+        )[0]
+        output_before = _doubles(
+            inferior,
+            output_address,
+            1,
+        )[0]
+
+        return_probe = ProviderResetReturnProbe(
+            gdb.newest_frame(),
+            self.provider_id,
+            self.output_dir,
+            selector,
+            _LAST_FRAME_ENTRY["frame_index"],
+            _SCALAR_RESET_EVENT_COUNT,
+            provider_pointer,
+            provider_vtable,
+            diagonal_address,
+            output_address,
+            diagonal_before,
+            output_before,
+        )
+        self.return_breakpoints.append(return_probe)
+        return False
 
 
 class ScalarResetProbe(_BaseProbe):
@@ -482,6 +625,16 @@ class SDFProbeCommand(gdb.Command):
                 0x007B2210,
                 output,
             ),
+            ProviderResetProbe(
+                get_provider(0).reset_function,
+                0,
+                output,
+            ),
+            ProviderResetProbe(
+                get_provider(1).reset_function,
+                1,
+                output,
+            ),
         ]
         print(
             "SDF probe installed:",
@@ -489,6 +642,9 @@ class SDFProbeCommand(gdb.Command):
             f"provider0_solver=0x{get_provider(0).solve_function:08x},",
             f"provider1_solver=0x{get_provider(1).solve_function:08x},",
             "scalar_reset=0x007b2210,",
+            f"provider0_reset=0x{get_provider(0).reset_function:08x},",
+            f"provider1_reset=0x{get_provider(1).reset_function:08x},",
+",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
             f"output={output}",
         )
