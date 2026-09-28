@@ -177,7 +177,7 @@ def test_session_blocks_provider_backend_when_builtin_pre_capture_is_present():
 
 
 def test_session_blocks_frame_entry_index_mismatch():
-    pre = _pre_capture(frame=7)
+    pre = _pre(7)
     frame = {
         "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
         "version": 1,
