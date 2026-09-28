@@ -8,6 +8,7 @@ import sys
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
+import sitecustomize  # noqa: F401
 
 from bmw_vulkan_bundle import TARGET_MEB
 from bmw_material_vulkan_adapter import build_bmw_vulkan_from_material_slice
