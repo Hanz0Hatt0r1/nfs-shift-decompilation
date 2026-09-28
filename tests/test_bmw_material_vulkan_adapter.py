@@ -12,6 +12,8 @@ def _slice():
         "format": "SHIFT.BMWRealMaterialSlice/1",
         "render_command": {
             "format": "SHIFT.RenderCommand/1",
+            "ready": True,
+            "validation": {"valid": True, "blocking_reasons": []},
             "mesh": {
                 "ref": TARGET_MEB,
                 "resolved": {"resource_sha256": "a" * 64},
@@ -40,6 +42,11 @@ def _slice():
                 "shader": {
                     "vulkan_vertex_glsl": "#version 450\nvoid main(){gl_Position=vec4(0.0);}",
                     "vulkan_pixel_glsl": "#version 450\nlayout(location=0) out vec4 o;void main(){o=vec4(1.0);}",
+                    "source_payload_sha256": "a" * 64,
+                    "permutation_identity": {
+                        "format": "SHIFT.ShaderPermutationIdentity/1",
+                        "identity_sha256": "b" * 64,
+                    },
                 },
                 "constant_commands": [],
                 "constant_payload": {"registers": [], "ready": True},
