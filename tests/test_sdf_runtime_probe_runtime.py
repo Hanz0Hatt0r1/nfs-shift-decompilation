@@ -30,7 +30,6 @@ def test_solver_state_derives_physics_system_from_0x4c():
 def test_capture_geometry_reports_exact_retail_sizes():
     result = runtime.capture_geometry(
         physics_system=0x10000000,
-        solver_state=0x0FFFFFFC,
         scalar_count=40,
         row_pointer_table=0x10001000,
         rhs_pointer=0x10002000,
