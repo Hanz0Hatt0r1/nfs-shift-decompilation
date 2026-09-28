@@ -6,9 +6,21 @@ from pathlib import Path
 import sys
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = REPOSITORY_ROOT / "src"
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
-import sitecustomize  # noqa: F401
+if SOURCE_ROOT.is_dir():
+    _SOURCE_PATHS = [SOURCE_ROOT]
+    _SOURCE_PATHS.extend(
+        sorted(
+            (path for path in SOURCE_ROOT.rglob("*") if path.is_dir()),
+            key=lambda path: (len(path.parts), str(path)),
+        )
+    )
+    for _source_path in reversed(_SOURCE_PATHS):
+        _source_value = str(_source_path)
+        if _source_value not in sys.path:
+            sys.path.insert(0, _source_value)
 
 from bmw_vulkan_bundle import TARGET_MEB
 from bmw_material_vulkan_adapter import build_bmw_vulkan_from_material_slice
