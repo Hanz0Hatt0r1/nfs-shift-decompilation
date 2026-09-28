@@ -15,3 +15,4 @@ Current operational status lives here. Historical research remains in the chrono
 | BFF_CORPUS_STATUS.md | multi-vehicle BFF corpus evidence |
 | BFF_CONTENT_REUSE_STATUS.md | cross-path raw payload reuse |
 | SPECIALIZED_PROVIDER_STATUS.md | provider runtime capture handoff |
+| NATIVE_SUBMISSION_GATE_STATUS.md | strict RenderCommand provenance before native execution |
