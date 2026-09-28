@@ -31,7 +31,7 @@ def build_vehicle_physics_selector_candidate_lifecycle() -> dict[str, Any]:
             "post_load_flag_offset": "+0x1d",
             "constructor": "FUN_0040eec0",
             "constructor_defaults": {
-                "+0x74": 1,
+                "+0x74": "not written by FUN_0040eec0",
                 "+0x7d": 1,
                 "+0x88": 0,
                 "+0x8c": 0,
@@ -52,6 +52,7 @@ def build_vehicle_physics_selector_candidate_lifecycle() -> dict[str, Any]:
             "entry_point": "context+0xb8",
             "step": "0x90 bytes per descriptor",
             "eligible_test": "descriptor+0x74 == 0",
+            "baseline_initialization": "The available FUN_0040eec0 source does not write +0x74; its baseline value is therefore kept as an unresolved initialization detail.",
             "success": [
                 "descriptor+0x8c = ordinal",
                 "caller output pointer = descriptor",
@@ -111,7 +112,7 @@ def build_vehicle_physics_selector_candidate_lifecycle() -> dict[str, Any]:
             "phase509_note": "FUN_004d5f30 consumes the selector global through FUN_00410ef0; the present phase adds direct evidence for the descriptor-level +0x74 scan state.",
         },
         "evidence": [
-            "FUN_0040eec0 initializes each descriptor record with +0x74 = 1 and +0x8c = 0.",
+            "FUN_0040eec0 initializes the repeated descriptor record and writes +0x7c, +0x7d, +0x88 and +0x8c; it does not write +0x74.",
             "FUN_00410ef0 enumerates selector storage and accepts the first candidate with candidate+0x74 == 0.",
             "FUN_0043af50 scans the source descriptor table at context+0xb8 with 0x90-byte stride and also tests descriptor+0x74 == 0.",
             "FUN_0043af50 writes the selected descriptor ordinal into descriptor+0x8c before returning it.",
@@ -120,7 +121,7 @@ def build_vehicle_physics_selector_candidate_lifecycle() -> dict[str, Any]:
             "FUN_00465860 independently sets descriptor+0x1d = 1 after its observed vehicle-load/process step, showing a distinct flag from the +0x74 eligibility/exclusion state.",
         ],
         "limitations": [
-            "The +0x74 field is described only as the observed selector eligibility/exclusion state; no stronger semantic label is assigned.",
+            "The +0x74 field is described only as the observed selector eligibility/exclusion state; its initial value source remains unresolved.",
             "The +0x1d field is described only as a separate observed descriptor state that is initialized to zero and later set to one after load/process paths; its broader semantics are unknown.",
             "No C++ class identity is inferred for the descriptor or selector storage.",
             "Runtime instance identity and provider/physics numeric equivalence remain capture-dependent.",
