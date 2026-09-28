@@ -402,7 +402,7 @@ class ReferenceShaderState:
             }
 
         try:
-            else_for_if, end_for_if, end_for_loop, start_for_loop_end = (
+            else_for_if, end_for_if, end_for_loop = (
                 self._build_control_flow_maps()
             )
             pc = 0
@@ -413,7 +413,7 @@ class ReferenceShaderState:
                 ins = instructions[pc]
                 name = ins.name
                 o = ins.operands
-                if name in {"NOP", "DCL", "DEF", "DEFI", "LABEL", "COMMENT", "PHASE"}:
+                if name in {"NOP", "DCL", "LABEL", "COMMENT", "PHASE"}:
                     pc += 1
                     continue
                 if ins.predicate is not None:
