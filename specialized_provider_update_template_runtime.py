@@ -13,13 +13,8 @@ from specialized_provider_contextual_dependency_runtime import (
     build_contextual_dependency_contract,
 )
 from specialized_provider_operator_signature_runtime import (
-    classify_assignment,
     extract_operator_signatures,
     SOLVER_SPECS,
-)
-from specialized_provider_solver_fingerprint_runtime import (
-    extract_function_body,
-    extract_reciprocal_pivots,
 )
 from specialized_provider_storage_runtime import get_storage_layout
 
@@ -171,9 +166,9 @@ def summarize_update_templates(report: dict[str, Any]) -> dict[str, Any]:
         for item in report.get("assignments") or []
     )
     self_updates = sum(
-        name.startswith("self-")
-        for name in templates
-        for _ in range(templates[name])
+        count
+        for name, count in templates.items()
+        if name.startswith("self-")
     )
     return {
         "provider_id": report.get("provider_id"),
