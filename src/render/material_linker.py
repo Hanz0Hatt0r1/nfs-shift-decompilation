@@ -160,6 +160,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                 fxo_payloads[(name,p["offset"])]=data
                 fxo.append({
                     "file":name,"program_offset":p["offset"],"samplers":p["samplers"],
+                    "payload_sha256":hashlib.sha256(data).hexdigest(),
                     "score":sampler_score,"expected_count":len(expected),"exact":exact,
                     "uniform_matches":uniform_matches,"uniform_expected":len(material_uniform_names),
                     "uniform_coverage":uniform_score,
