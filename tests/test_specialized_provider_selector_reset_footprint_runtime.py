@@ -1,5 +1,19 @@
 import specialized_provider_selector_reset_footprint_runtime as runtime
 
+
+def _event(call_index, frame, return_address, selector, provider_id):
+    return {
+        "frame_index": frame,
+        "call_index": call_index,
+        "physics_system": 0x1000,
+        "provider_pointer": 0x2000 if provider_id == 0 else 0,
+        "provider_vtable": 0x00B0FC5C if provider_id == 0 else None,
+        "provider_id": provider_id,
+        "scalar_count": 40 if provider_id == 0 else 34,
+        "selector": selector,
+        "caller_return_address": return_address,
+    }
+
 def test_expand_runtime_footprint_filters_to_provider_id():
     original = runtime.extract_selector_reset_footprint
     try:
