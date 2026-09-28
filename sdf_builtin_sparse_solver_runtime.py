@@ -116,8 +116,13 @@ def _factorize_symmetric_ldl(
             raise ZeroDivisionError(f"zero pivot at {i}")
         matrix[i][i] = diagonal
 
+
+
+def _mirror_upper_factors(matrix: list[list[float]]) -> None:
+    n = len(matrix)
+    for i in range(n):
         for j in range(i + 1, n):
-            matrix[i][j] = matrix[j][i] / matrix[i][i]
+            matrix[i][j] = matrix[j][i]
 
 
 def _forward_substitute(
@@ -172,6 +177,7 @@ def solve_builtin_sparse_in_place(
             raise ValueError(f"forward record {index} item count mismatch")
 
     _factorize_symmetric_ldl(factorized)
+    _mirror_upper_factors(factorized)
     _forward_substitute(factorized, solution)
     _diagonal_solve(factorized, solution)
     _backward_substitute(factorized, solution)
