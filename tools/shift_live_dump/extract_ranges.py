@@ -19,8 +19,6 @@ from pathlib import Path
 
 FORMAT = "SHIFT-LIVE-MEMORY-SNAPSHOT/1"
 
-# Highest-signal blocks from the current event analysis. Windows are deliberately
-# small; users can add/replace them with --range or --address-file.
 DEFAULT_ADDRESSES = (
     418914304,
     419000320,
@@ -61,6 +59,21 @@ def parse_range(value: str) -> tuple[int, int]:
     return start, size
 
 
+def load_range_file(path: Path) -> list[tuple[int, int]]:
+    ranges = []
+    for line_no, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        value = raw.split("#", 1)[0].strip()
+        if not value:
+            continue
+        try:
+            ranges.append(parse_range(value))
+        except argparse.ArgumentTypeError as exc:
+            raise argparse.ArgumentTypeError(
+                f"{path}:{line_no}: {exc.message}"
+            ) from exc
+    return ranges
+
+
 def merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:
     intervals = sorted((start, start + size) for start, size in ranges)
     merged: list[list[int]] = []
@@ -85,11 +98,7 @@ def read_slice(source: Path, offset: int, size: int) -> bytes:
     return data
 
 
-def extract_snapshot(
-    source_snapshot: Path,
-    output_snapshot: Path,
-    wanted: list[tuple[int, int]],
-) -> tuple[int, int]:
+def extract_snapshot(source_snapshot: Path, output_snapshot: Path, wanted: list[tuple[int, int]]) -> tuple[int, int]:
     manifest = load_manifest(source_snapshot / "manifest.json")
     output_snapshot.mkdir(parents=True, exist_ok=True)
     (output_snapshot / "regions").mkdir(exist_ok=True)
@@ -172,6 +181,10 @@ def main() -> int:
         help="address range START:SIZE; repeatable; accepts 0x notation",
     )
     ap.add_argument(
+        "--range-file", type=Path,
+        help="text file containing START:SIZE ranges; blank lines and # comments are ignored",
+    )
+    ap.add_argument(
         "--address", dest="addresses", action="append", type=parse_int,
         help="single virtual address to extract around; repeatable",
     )
@@ -193,6 +206,12 @@ def main() -> int:
         ap.error("--radius-kib must be >= 0")
 
     ranges = list(args.ranges or [])
+    if args.range_file:
+        try:
+            ranges.extend(load_range_file(args.range_file))
+        except OSError as exc:
+            ap.error(str(exc))
+
     addresses = list(args.addresses or [])
     if args.address_file:
         for raw in args.address_file.read_text(encoding="utf-8").splitlines():
@@ -205,13 +224,15 @@ def main() -> int:
 
     radius = args.radius_kib * 1024
     ranges.extend((address - radius, 2 * radius) for address in addresses)
-    ranges = [(max(0, start), size if start >= 0 else size + start)
-              for start, size in ranges]
+    ranges = [
+        (max(0, start), size if start >= 0 else size + start)
+        for start, size in ranges
+    ]
     ranges = [(start, size) for start, size in ranges if size > 0]
     ranges = merge_ranges(ranges)
 
     if not ranges:
-        ap.error("no ranges selected; use --range/--address or --preset event-top")
+        ap.error("no ranges selected; use --range/--range-file/--address or --preset event-top")
 
     snapshots = find_snapshots(args.root)
     args.out.mkdir(parents=True, exist_ok=True)
@@ -233,6 +254,7 @@ def main() -> int:
             "total_bytes": total,
             "radius_kib": args.radius_kib,
             "preset": args.preset,
+            "range_file": str(args.range_file) if args.range_file else None,
         }, indent=2) + "\n",
         encoding="utf-8",
     )
