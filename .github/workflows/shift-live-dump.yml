@@ -1,0 +1,19 @@
+name: shift-live-dump
+
+on:
+  push:
+    branches: ["main", "work/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  live-memory-dumper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make -C tools/shift_live_dump
+      - name: Smoke test
+        run: ./tools/shift_live_dump/test_smoke.sh
