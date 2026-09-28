@@ -163,6 +163,7 @@ def extract_loop_stencils(
         )
 
     stencils: list[dict[str, Any]] = []
+    seen_stencils: set[tuple[int, int | None, str, str]] = set()
     for pivot_index, pivot in enumerate(pivots):
         next_line = (
             pivots[pivot_index + 1].source_line
@@ -224,6 +225,15 @@ def extract_loop_stencils(
                                     f"pivot-{pivot_index}-loop-index-out-of-domain:{loop_index}"
                                 )
 
+                        stencil_key = (
+                            pivot_index,
+                            None if loop_index is None else int(loop_index),
+                            form,
+                            hex(address),
+                        )
+                        if stencil_key in seen_stencils:
+                            continue
+                        seen_stencils.add(stencil_key)
                         stencils.append(
                             {
                                 "pivot_index": pivot_index,
