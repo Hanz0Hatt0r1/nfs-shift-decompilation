@@ -15,6 +15,7 @@ from body_matrix_structure_runtime import (
     build_body_group,
     matrix_cells_for_body_groups,
 )
+from bmw_m3_e36_solver_domain_runtime import build_solver_domain
 from specialized_provider_acceptance_predicate_runtime import (
     evaluate_acceptance_predicate,
 )
@@ -140,6 +141,36 @@ def build_structural_matrix(
         },
         "errors": errors,
     }
+
+
+def build_from_sdf_report(
+    sdf_report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Compile a parsed SDF report and then build its BODY matrix structure."""
+    solver_domain = build_solver_domain(sdf_report)
+    if solver_domain.get("ready") is not True:
+        return {
+            "format": FORMAT,
+            "version": 1,
+            "status": "blocked",
+            "ready": False,
+            "solver_domain": solver_domain,
+            "generated": None,
+            "errors": list(solver_domain.get("unresolved") or [])
+            + list(solver_domain.get("errors") or []),
+        }
+
+    generated = build_structural_matrix(solver_domain)
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "status": "ready" if generated.get("ready") else "blocked",
+        "ready": bool(generated.get("ready")),
+        "solver_domain": solver_domain,
+        "generated": generated,
+        "errors": list(generated.get("errors") or []),
+    }
+
 
 
 def build_bmw_matrix_structure(
@@ -361,6 +392,7 @@ __all__ = [
     "build_body_group_map",
     "build_structural_matrix",
     "build_bmw_matrix_structure",
+    "build_from_sdf_report",
     "compare_structure_to_seed",
     "evaluate_generated_acceptance",
     "summarize_structural_matrix",
