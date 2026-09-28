@@ -78,6 +78,14 @@ The Phase 507 contract records the participant slot allocation, registration and
 
 The registry remains separate from the `FUN_00410ef0` selector context until object identity is proven.
 
+## Participant process/reselection
+
+The Phase 509 contract records the first concrete consumer of the participant pointer/ordinal saved by `IGPhaseVehicle`: current-pointer processing, direct reuse of selector global `DAT_00bbc600`, next vehicle-BFF loading, and successful `+0x450/+0x454` writeback:
+
+`python tools/build_vehicle_physics_participant_process.py -o participant_process_reselect.json`
+
+The contract does not name the selected object as a PhysX/engine class.
+
 ## Pre-PhysX/provider handoff
 
 Build a cross-contract construction/selection/rebind validation from a parsed SDF report:
