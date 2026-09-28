@@ -75,8 +75,8 @@ def test_build_vehicle_physics_handoff_blocks_missing_sdf(monkeypatch, tmp_path:
     result = runtime.build_vehicle_physics_handoff(bff, tmp_path / "out")
 
     assert result["ready"] is False
-    assert result["errors"] == ["sdf-report-missing-from-vehicle-profile"]
-    assert result["participant_gate"]["ready"] is True
+    assert result["errors"] == ["sdf-report-missing-from-vehicle-profile"]    assert result["participant_gate"]["ready"] is True
+    assert result["participant_registry_update"]["ready"] is True
 
 
 def test_build_vehicle_physics_handoff_propagates_bundle_blockers(monkeypatch, tmp_path: Path):
