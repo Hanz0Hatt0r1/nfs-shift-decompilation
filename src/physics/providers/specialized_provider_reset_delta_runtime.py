@@ -43,6 +43,14 @@ def _classify_change(
     abs_tol: float,
     rel_tol: float,
 ) -> str:
+    if region == "output":
+        if expected is not None:
+            delta = abs(value - expected)
+            scale = max(abs(value), abs(expected))
+            if delta <= abs_tol + rel_tol * scale:
+                return "unchanged-reset-state"
+        return "output-nonzero"
+
     if expected is not None:
         delta = abs(value - expected)
         scale = max(abs(value), abs(expected))
