@@ -1,0 +1,65 @@
+{
+  "format": "SHIFT.VehicleBFFRawPayloadParity/1",
+  "date": "2026-09-28",
+  "scope": "exact logical path; raw on-disk payload SHA-256; no decompression",
+  "archive_count": 14,
+  "source": ["BMW_M3_E36.bff", "BMW_M3_E36_Cockpit.bff", "Vehicles.zip"],
+  "summary": {
+    "common_raw_identical_paths_ge3": 1375,
+    "common_raw_identical_paths_ge5": 1084,
+    "common_raw_identical_paths_ge10": 501,
+    "extension_counts": {
+      ".fxo": 1309,
+      ".dds": 61,
+      ".bas": 1,
+      ".bbf": 1,
+      ".gdf": 1,
+      ".sdf": 1,
+      ".tbf": 1
+    },
+    "archive_count_distribution": {
+      "3": 131, "4": 160, "5": 6, "6": 170, "7": 311,
+      "8": 64, "9": 32, "10": 62, "11": 1, "12": 34,
+      "13": 124, "14": 280
+    }
+  },
+  "examples": [
+    {
+      "path": "render/shaders/cache/render_shaders_bodywork_00466c1c2a5eb173.fxo",
+      "archive_count": 14,
+      "type": 2,
+      "compressed_size": 5408,
+      "uncompressed_size": 25184,
+      "raw_sha256": "20c7ea47a7a1eb8633d40bb59cbbb084ee86a7966df858794570e0f73fc395c4"
+    },
+    {
+      "path": "render/shaders/cache/render_shaders_bodywork_04a8a647e9459f03.fxo",
+      "archive_count": 14,
+      "type": 2,
+      "compressed_size": 3988,
+      "uncompressed_size": 17500,
+      "raw_sha256": "5438ca7cc1ff62a9073cc72843ea360e4d5e8a55324b4c7cf5dbf87809cb35cc"
+    },
+    {
+      "path": "render/shaders/cache/render_shaders_bodywork_04db81071330d5e2.fxo",
+      "archive_count": 14,
+      "type": 2,
+      "compressed_size": 4670,
+      "uncompressed_size": 20864,
+      "raw_sha256": "2c5cd06929e22e08415bdf305c604df0f5ba4de13636627d7fcbd33017a27bd7"
+    },
+    {
+      "path": "render/shaders/cache/render_shaders_bodywork_06cc7510bfb1723a.fxo",
+      "archive_count": 14,
+      "type": 2,
+      "compressed_size": 4654,
+      "uncompressed_size": 20784,
+      "raw_sha256": "df2fe5f4296165a79e27f4466372bf3933c2218a14a63c20ce90c5ec18130418"
+    }
+  ],
+  "limitations": [
+    "A raw payload hash proves exact stored-byte equality for the compared logical path only.",
+    "No decoded-content or runtime material identity is inferred from this report.",
+    "The report covers the 14 vehicle/cockpit BFFs and excludes RENDER.bff from this vehicle parity set."
+  ]
+}
