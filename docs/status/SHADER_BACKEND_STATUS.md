@@ -33,7 +33,8 @@ Still incomplete:
 - complete sampler gradient/LOD semantics;
 - complete D3D9 instruction/control-flow coverage;
 - production BMW lighting/blending;
-- all runtime specialization flags.
+- all runtime specialization flags;
+- CPU-oracle predication is currently scalar `p0.x` gating; per-component predicate execution is not yet claimed.
 
 Unsupported operations remain visible blockers.
 
