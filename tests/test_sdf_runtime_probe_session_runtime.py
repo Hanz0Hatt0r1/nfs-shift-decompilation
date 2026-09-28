@@ -78,6 +78,15 @@ def test_compare_probe_session_blocks_missing_post_capture_when_expected_has_one
     assert result["post_solve"]["errors"][0]["kind"] == "missing-observed-post-solve"
 
 
+def test_session_cli_accepts_optional_frame_entry_capture():
+    args = cli.build_parser().parse_args([
+        "--pre", "pre.json",
+        "--post", "post.json",
+        "--frame", "frame.json",
+    ])
+    assert args.frame.name == "frame.json"
+
+
 def test_session_cli_builds_parser_with_optional_post_and_expected_capture():
     args = cli.build_parser().parse_args([
         "--pre", "pre.json",
@@ -128,3 +137,57 @@ def test_session_cli_can_report_numeric_divergence(monkeypatch, tmp_path, capsys
     assert rc == 0
     stdout = json.loads(capsys.readouterr().out)
     assert stdout["status"] == "matched"
+
+
+
+def test_session_accepts_matching_frame_entry_builtin_capture():
+    pre = _pre(frame=12)
+    post = _post(frame=12)
+    frame = {
+        "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
+        "version": 1,
+        "ready": True,
+        "status": "captured",
+        "frame_index": 12,
+        "backend": "builtin",
+        "provider": 0,
+        "scalar_count": 3,
+    }
+    result = runtime.normalize_probe_session(pre, post, frame)
+    assert result["ready"] is True
+    assert result["format"] == "SHIFT.SDFRuntimeProbeSession/2"
+    assert result["frame_entry"]["backend"] == "builtin"
+
+
+def test_session_blocks_provider_backend_when_builtin_pre_capture_is_present():
+    pre = _pre(frame=7)
+    frame = {
+        "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
+        "version": 1,
+        "ready": True,
+        "status": "captured",
+        "frame_index": 7,
+        "backend": "provider",
+        "provider": 0x1234,
+        "scalar_count": 3,
+    }
+    result = runtime.normalize_probe_session(pre, None, frame)
+    assert result["ready"] is False
+    assert "provider-backend-bypasses-builtin-capture" in result["errors"]
+
+
+def test_session_blocks_frame_entry_index_mismatch():
+    pre = _pre(7)
+    frame = {
+        "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
+        "version": 1,
+        "ready": True,
+        "status": "captured",
+        "frame_index": 8,
+        "backend": "builtin",
+        "provider": 0,
+        "scalar_count": 40,
+    }
+    result = runtime.normalize_probe_session(pre, None, frame)
+    assert result["ready"] is False
+    assert "frame-entry-pre-solve-index-mismatch" in result["errors"]

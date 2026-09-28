@@ -62,6 +62,7 @@ def test_vehicle_physics_graph_joins_all_four_resource_boundaries(tmp_path):
     assert report["summary"]["bmw_m3_solver_capture_verifier_ready"] is True
     assert report["summary"]["sdf_runtime_probe_ready"] is True
     assert report["summary"]["sdf_runtime_probe_session_ready"] is True
+    assert report["summary"]["sdf_runtime_probe_session_schema_v2_ready"] is True
     assert report["summary"]["sdf_runtime_probe_pe_ready"] is True
     assert report["summary"]["sdf_runtime_probe_launcher_ready"] is True
     assert report["summary"]["sdf_runtime_probe_backend_contract_ready"] is True

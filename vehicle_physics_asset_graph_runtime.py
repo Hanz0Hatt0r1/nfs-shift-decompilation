@@ -153,6 +153,11 @@ def build_profile(
     bmw_m3_solver_capture_verifier = describe_bmw_m3_solver_capture_verifier()
     sdf_runtime_probe = describe_sdf_runtime_probe_contract()
     sdf_runtime_probe_session = describe_sdf_runtime_probe_session_contract()
+    sdf_runtime_probe_session_schema_v2 = {
+        "ready": sdf_runtime_probe_session.get("ready") is True,
+        "format": "SHIFT.SDFRuntimeProbeSession/2",
+        "frame_entry_optional": True,
+    }
     sdf_runtime_probe_pe = describe_probe_pe_validation_contract()
     sdf_probe_launcher = describe_sdf_runtime_probe_launcher()
     sdf_probe_backend_contract = describe_frame_entry_backend(
@@ -278,6 +283,7 @@ def build_profile(
             "bmw_m3_solver_capture_verifier_ready": bmw_m3_solver_capture_verifier.get("ready") is True,
             "sdf_runtime_probe_ready": sdf_runtime_probe.get("ready") is True,
             "sdf_runtime_probe_session_ready": sdf_runtime_probe_session.get("ready") is True,
+            "sdf_runtime_probe_session_schema_v2_ready": sdf_runtime_probe_session_schema_v2.get("ready") is True,
             "sdf_runtime_probe_pe_ready": sdf_runtime_probe_pe.get("ready") is True,
             "sdf_runtime_probe_launcher_ready": sdf_probe_launcher.get("ready") is True,
             "sdf_runtime_probe_backend_contract_ready": sdf_probe_backend_contract.get("ready") is True,
@@ -324,6 +330,7 @@ def build_profile(
             "bmw_m3_solver_capture_verifier": bmw_m3_solver_capture_verifier,
             "sdf_runtime_probe": sdf_runtime_probe,
             "sdf_runtime_probe_session": sdf_runtime_probe_session,
+            "sdf_runtime_probe_session_schema_v2": sdf_runtime_probe_session_schema_v2,
             "sdf_runtime_probe_pe": sdf_runtime_probe_pe,
             "sdf_runtime_probe_launcher": sdf_probe_launcher,
             "sdf_runtime_probe_backend_contract": sdf_probe_backend_contract,

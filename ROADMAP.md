@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 422: frame-aware SDF probe session
+
+Extended `SHIFT.SDFRuntimeProbeSession/2` with optional `frame_entry_XXXXXX.json`, backend/scalar/frame consistency checks, and explicit rejection of provider-backend sessions that only contain builtin `FUN_007b0f20` captures. Added `--frame` to the session CLI. Numeric comparison remains unchanged and capture-dependent. Next target: capture the first real frame-entry/pre/post triple on a Wine+GDB host.
+
 ## Phase 421: SDF provider/backend probe
 
 Extended the live SDF probe with a `FUN_007b3f40` frame-entry breakpoint that records scalar count, provider pointer and solver-state pointer and classifies the frame as builtin/provider. This prevents false negatives when retail bypasses `FUN_007b0f20`. The capture format remains backward compatible. Next target: feed the first real frame-entry + pre/post-solve capture into the 40-scalar comparator.

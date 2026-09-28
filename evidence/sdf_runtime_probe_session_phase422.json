@@ -1,0 +1,15 @@
+{
+  "format": "SHIFT.SDFRuntimeProbeSessionEvidence/1",
+  "version": 1,
+  "inputs": [
+    "frame_entry_XXXXXX.json",
+    "pre_solve_XXXXXX.json",
+    "post_solve_XXXXXX.json"
+  ],
+  "checks": [
+    "frame-entry scalar_count matches pre-solve",
+    "frame-entry frame_index matches pre/post",
+    "provider backend blocks builtin pre-solve comparison"
+  ],
+  "status": "source-backed"
+}
