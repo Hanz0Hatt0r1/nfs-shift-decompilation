@@ -46,11 +46,12 @@ def _function_spec(provider_id: int) -> dict[str, Any]:
 
 
 def _lhs_match(line: str) -> re.Match[str] | None:
-    return (
-        LOOP_LHS_RE.search(line)
-        or ARRAY_LHS_RE.search(line)
-        or DIRECT_LHS_RE.match(line)
-    )
+    lhs = line.split("=", 1)[0]
+    if ARRAY_LHS_RE.search(lhs + "=") is not None:
+        return ARRAY_LHS_RE.search(line)
+    if LOOP_LHS_RE.search(lhs) is not None:
+        return LOOP_LHS_RE.search(line)
+    return DIRECT_LHS_RE.match(line)
 
 
 def _assignment_statement(
@@ -105,13 +106,14 @@ def _scale_source(expression: str) -> dict[str, Any]:
 def _destination_form(
     statement: str,
 ) -> tuple[str, int] | None:
-    match = LOOP_LHS_RE.search(statement)
-    if match:
-        return "loop-pointer", int(match.group(1), 16)
-
-    match = ARRAY_LHS_RE.search(statement)
+    lhs = statement.split("=", 1)[0]
+    match = ARRAY_LHS_RE.search(lhs + "=")
     if match:
         return "loop-array", int(match.group(1), 16)
+
+    match = LOOP_LHS_RE.search(lhs)
+    if match:
+        return "loop-pointer", int(match.group(1), 16)
 
     match = DIRECT_LHS_RE.match(statement)
     if match:
