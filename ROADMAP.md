@@ -106,6 +106,10 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 416: runtime probe session bridge
+
+Added session-level normalization for the Phase 415 pre-solve and post-solve probe files, with frame/scalar consistency checks, exact pre-solve matrix/RHS comparison and optional post-solve vector comparison. Next target remains the first real retail capture.
+
 ## Phase 415: runtime SDF solver probe
 
 Added a GDB-Python probe for the builtin `FUN_007b0f20` solver entry and `FUN_007b4110` post-solve boundary. The probe dumps the real row-major solver matrix/RHS and solved scalar vector into the Phase 411 normalized capture shape. It requires a live 32-bit Wine debugger session; no capture data is synthesized or committed. Next target: run it against the retail executable and compare the first real 40-scalar frame against the reconstructed seed/coupling domain.
