@@ -137,7 +137,7 @@ def test_provider_reset_effect_probe_uses_scalar_reset_counter():
     assert '"reset_event_count": self.reset_event_count' in (
         Path(
             Path(__file__).resolve().parents[1]
-            / "specialized_provider_scalar_reset_effect_runtime.py"
+            / "src/physics/providers/specialized_provider_scalar_reset_effect_runtime.py"
         ).read_text(encoding="utf-8")
     )
     assert "_SCALAR_RESET_EVENT_COUNT" in text
