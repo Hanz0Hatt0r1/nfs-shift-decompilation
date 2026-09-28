@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import hashlib
 import json
 from pathlib import Path
 from typing import BinaryIO
@@ -123,8 +122,6 @@ def main() -> int:
     ap.add_argument("--top", type=int, default=10000)
     ap.add_argument("--min-changed-transitions", type=int, default=1)
     ap.add_argument("--cluster-gap-kib", type=int, default=64)
-    if ap.parse_args([]) if False else False:
-        pass
     args = ap.parse_args()
     if min(args.block_size_kib, args.top, args.min_changed_transitions,
            args.cluster_gap_kib) <= 0:
