@@ -292,7 +292,7 @@ def build_dynamic_write_domain(
         "format": FORMAT,
         "version": 1,
         "status": "ready" if not errors else "blocked",
-        "ready": not errors and connectivity.get("ready") is True,
+        "ready": not errors and connectivity["ready"] is True,
         "scalar_count": scalar_count,
         "runtime_constraint_records": len(records),
         "shared_constraint_pairs": len(shared_pairs),
