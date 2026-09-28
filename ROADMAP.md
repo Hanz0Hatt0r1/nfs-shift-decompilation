@@ -26,15 +26,16 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 4. Cross-vehicle raw BFF payload parity and deduplicated FXO shader profiling — complete.
 5. Corpus-driven shader opcode gap analysis — complete.
 6. Cross-path content-addressed raw payload reuse audit — implemented as `SHIFT.BFFRawPayloadReuseAudit/1`.
-7. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
-8. Compare retail packed-workspace/output mutations with the source-derived provider programs.
-9. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
-10. Expand the desktop reference renderer against real BMW material/shader permutations.
-11. Complete Vulkan RenderCommand execution using the same neutral contract.
-12. Continue SGB/FLAT and camera runtime reconstruction.
-13. Derive proven animation poses from the BAB runtime grammar.
-14. Port the stable native render/runtime boundary to Android.
-15. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+7. Propagate FXO/resource provenance into `RenderCommand/1` and add `SHIFT.NativeSubmissionGate/1` for native execution.
+8. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
+9. Compare retail packed-workspace/output mutations with the source-derived provider programs.
+10. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities.
+11. Expand the desktop reference renderer against real BMW material/shader permutations.
+12. Complete Vulkan RenderCommand execution using the same neutral contract.
+13. Continue SGB/FLAT and camera runtime reconstruction.
+14. Derive proven animation poses from the BAB runtime grammar.
+15. Port the stable native render/runtime boundary to Android.
+16. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
