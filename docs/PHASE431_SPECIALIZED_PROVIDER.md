@@ -5,6 +5,8 @@ strict-upper-triangle acceptance signatures executable.
 
 ## Provider 0
 
+PE vtable address: 0x00B0FC5C. Observed accessor returns: +0x04 -> 0x00c23c68, +0x08 -> 0x00c21738, +0x0c -> 0x00c21698, +0x2c -> [0x00b8d8ec]. The +0x10 helper accepts only dimension 0x28 (40), while +0x24 returns 0x4A6.
+
 - vtable: 0x00B0FC5C
 - scalar domain: 40
 - init: FUN_007d2f70
@@ -25,6 +27,8 @@ run is followed by one transition cell except the final run. This decodes to
 780 strict-upper-triangle cells for a 40x40 matrix: 450 non-zero and 330 zero.
 
 ## Provider 1
+
+PE vtable address: 0x00B0FC8C. Observed accessor returns: +0x04 -> 0x00c21588, +0x08 -> 0x00c1fe38, +0x0c -> 0x00c1fdb0, +0x2c -> [0x00b8d8f0]. The +0x10 helper accepts only dimension 0x22 (34), while +0x24 returns 0x2EA.
 
 - vtable: 0x00B0FC8C
 - scalar domain: 34
