@@ -299,10 +299,9 @@ class ReferenceShaderState:
 
     def _build_control_flow_maps(
         self,
-    ) -> tuple[dict[int, int], dict[int, int], dict[int, int]]:
+    ) -> tuple[dict[int, int], dict[int, int]]:
         else_for_if: dict[int, int] = {}
         end_for_if: dict[int, int] = {}
-        if_for_else: dict[int, int] = {}
         stack: list[tuple[int, int | None]] = []
 
         for index, ins in enumerate(self.program.instructions):
@@ -317,7 +316,6 @@ class ReferenceShaderState:
                     raise ValueError("multiple ELSE blocks for one IF")
                 stack[-1] = (if_index, index)
                 else_for_if[if_index] = index
-                if_for_else[index] = if_index
                 continue
             if ins.name == "ENDIF":
                 if not stack:
@@ -329,7 +327,7 @@ class ReferenceShaderState:
 
         if stack:
             raise ValueError("unterminated IF block")
-        return else_for_if, end_for_if, if_for_else
+        return else_for_if, end_for_if
 
     def execute(self) -> dict[str, Any]:
         ignored = {
@@ -354,7 +352,7 @@ class ReferenceShaderState:
             }
 
         try:
-            else_for_if, end_for_if, if_for_else = self._build_control_flow_maps()
+            else_for_if, end_for_if = self._build_control_flow_maps()
             pc = 0
             instructions = self.program.instructions
             while pc < len(instructions):
