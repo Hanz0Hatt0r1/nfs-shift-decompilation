@@ -1,0 +1,250 @@
+"""Extract the future-column factor pattern from specialized SHIFT solver source.
+
+For pivot i, FUN_007c7200/FUN_007cdfc0 write normalized coefficients into the
+current row's static factor segment. The parser identifies loop writes and direct
+writes whose destination belongs to that exact row segment, then retains only
+columns > i. This yields the unrolled factor sparsity pattern without copying
+the proprietary source.
+"""
+from __future__ import annotations
+
+import re
+from typing import Any
+
+from specialized_provider_row_storage_runtime import (
+    get_row_pointers,
+    get_storage_layout,
+)
+from specialized_provider_solver_fingerprint_runtime import extract_function_body
+from specialized_provider_solver_fingerprint_runtime import extract_reciprocal_pivots
+
+FORMAT = "SHIFT.SpecializedProviderFactorPatternRuntime/1"
+
+SOLVER_SPECS = {
+    0: {
+        "function": "FUN_007c7200",
+        "next_function_marker": "undefined4 * __fastcall FUN_007cd980",
+    },
+    1: {
+        "function": "FUN_007cdfc0",
+        "next_function_marker": "undefined * __fastcall FUN_007d2e70",
+    },
+}
+
+LOOP_HEADER_RE = re.compile(
+    r"for\s*\(\s*local_10\s*=\s*(0x[0-9A-Fa-f]+|\d+)\s*;\s*"
+    r"local_10\s*<\s*(0x[0-9A-Fa-f]+|\d+)\s*;"
+)
+
+LOOP_LHS_RE = re.compile(
+    r"&DAT_([0-9A-Fa-f]+)\s*\+\s*local_10\s*\*\s*8"
+)
+
+DIRECT_LHS_RE = re.compile(
+    r"^\s*(?:_)?DAT_([0-9A-Fa-f]+)\s*="
+)
+
+
+def _int(value: str) -> int:
+    return int(value, 0)
+
+
+def _function_spec(provider_id: int) -> dict[str, Any]:
+    try:
+        return dict(SOLVER_SPECS[provider_id])
+    except KeyError as exc:
+        raise ValueError(f"unsupported provider id: {provider_id}") from exc
+
+
+def _extract_row_targets(
+    lines: list[str],
+    *,
+    row_base: int,
+    row_segment_end: int,
+    pivot_index: int,
+) -> set[int]:
+    columns: set[int] = set()
+    active_range: tuple[int, int] | None = None
+
+    for line in lines:
+        header = LOOP_HEADER_RE.search(line)
+        if header:
+            active_range = (_int(header.group(1)), _int(header.group(2)))
+
+        loop_lhs = LOOP_LHS_RE.search(line)
+        if loop_lhs and _int(loop_lhs.group(1)) == row_base and active_range:
+            start, end = active_range
+            for column in range(start, end):
+                if pivot_index < column < row_segment_end:
+                    columns.add(column)
+
+        direct = DIRECT_LHS_RE.match(line)
+        if direct:
+            lhs = _int(direct.group(1))
+            delta = lhs - row_base
+            if delta >= 0 and delta % 8 == 0:
+                column = delta // 8
+                if pivot_index < column < row_segment_end:
+                    columns.add(column)
+
+    return columns
+
+
+def extract_factor_pattern(
+    source: str,
+    *,
+    provider_id: int,
+) -> dict[str, Any]:
+    spec = _function_spec(provider_id)
+    body, source_start_line = extract_function_body(
+        source,
+        spec["function"],
+        next_function_marker=spec["next_function_marker"],
+    )
+    pivots = extract_reciprocal_pivots(
+        body.splitlines(),
+        first_source_line=source_start_line,
+    )
+    pointers = get_row_pointers(provider_id)
+    layout = get_storage_layout(provider_id)
+
+    errors: list[str] = []
+    if len(pivots) != layout.scalar_count:
+        errors.append(
+            f"pivot-count:expected={layout.scalar_count}:actual={len(pivots)}"
+        )
+
+    rows: list[dict[str, Any]] = []
+    for i, pivot in enumerate(pivots):
+        if i >= len(pointers):
+            break
+        next_address = (
+            pointers[i + 1]
+            if i + 1 < len(pointers)
+            else layout.output_vector_base
+        )
+        segment_doubles = (next_address - pointers[i]) // 8
+        next_pivot_line = (
+            pivots[i + 1].source_line
+            if i + 1 < len(pivots)
+            else source_start_line + len(body.splitlines())
+        )
+        block = body.splitlines()[
+            pivot.source_line - source_start_line:
+            next_pivot_line - source_start_line
+        ]
+        columns = sorted(
+            _extract_row_targets(
+                block,
+                row_base=pointers[i],
+                row_segment_end=segment_doubles,
+                pivot_index=i,
+            )
+        )
+        out_of_range = [column for column in columns if column >= segment_doubles]
+        if out_of_range:
+            errors.append(f"pivot-{i}-factor-column-out-of-range")
+        rows.append(
+            {
+                "pivot_index": i,
+                "source_line": pivot.source_line,
+                "row_pointer": hex(pointers[i]),
+                "row_segment_doubles": segment_doubles,
+                "factor_columns": columns,
+                "factor_column_count": len(columns),
+                "pivot_diagonal_address": hex(pointers[i] + i * 8),
+            }
+        )
+
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "provider_id": provider_id,
+        "function": spec["function"],
+        "source_start_line": source_start_line,
+        "source_line_count": len(body.splitlines()),
+        "scalar_count": layout.scalar_count,
+        "rows": rows,
+        "ready": not errors,
+        "errors": errors,
+    }
+
+
+def summarize_factor_pattern(report: dict[str, Any]) -> dict[str, Any]:
+    rows = report.get("rows") or []
+    return {
+        "provider_id": report.get("provider_id"),
+        "scalar_count": report.get("scalar_count"),
+        "rows": len(rows),
+        "total_factor_edges": sum(
+            int(row.get("factor_column_count", 0)) for row in rows
+        ),
+        "max_factor_column_count": max(
+            (int(row.get("factor_column_count", 0)) for row in rows),
+            default=0,
+        ),
+        "rows_with_no_future_factors": [
+            int(row["pivot_index"])
+            for row in rows
+            if int(row.get("factor_column_count", 0)) == 0
+        ],
+        "max_factor_column_by_row": [
+            (
+                max(row["factor_columns"])
+                if row.get("factor_columns")
+                else int(row["pivot_index"])
+            )
+            for row in rows
+        ],
+        "ready": bool(report.get("ready")),
+    }
+
+
+def validate_factor_pattern(report: dict[str, Any]) -> dict[str, Any]:
+    errors = list(report.get("errors") or [])
+    rows = report.get("rows") or []
+    expected_count = int(report.get("scalar_count", 0))
+    if len(rows) != expected_count:
+        errors.append(f"row-count:expected={expected_count}:actual={len(rows)}")
+
+    for row in rows:
+        pivot = int(row["pivot_index"])
+        columns = [int(v) for v in row.get("factor_columns") or []]
+        if columns != sorted(set(columns)):
+            errors.append(f"pivot-{pivot}-columns-not-sorted-unique")
+        if any(column <= pivot for column in columns):
+            errors.append(f"pivot-{pivot}-contains-non-future-column")
+        if any(column >= int(row["row_segment_doubles"]) for column in columns):
+            errors.append(f"pivot-{pivot}-column-exceeds-segment")
+        if str(row["pivot_diagonal_address"]) != hex(
+            int(row["row_pointer"], 16) + pivot * 8
+        ):
+            errors.append(f"pivot-{pivot}-diagonal-mismatch")
+
+    return {
+        "format": "SHIFT.SpecializedProviderFactorPatternValidation/1",
+        "version": 1,
+        "ready": not errors,
+        "errors": errors,
+        "rows": len(rows),
+    }
+
+
+if __name__ == "__main__":
+    import argparse
+    import json
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source", type=Path)
+    parser.add_argument("--provider", type=int, choices=(0, 1), required=True)
+    args = parser.parse_args()
+
+    report = extract_factor_pattern(
+        args.source.read_text(encoding="utf-8"),
+        provider_id=args.provider,
+    )
+    report["summary"] = summarize_factor_pattern(report)
+    report["validation"] = validate_factor_pattern(report)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    raise SystemExit(0 if report["validation"]["ready"] else 2)
