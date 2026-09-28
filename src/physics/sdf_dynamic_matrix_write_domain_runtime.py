@@ -86,28 +86,31 @@ def build_dynamic_write_domain(
     errors: list[str] = []
 
     try:
-        connectivity = build_sdf_constraint_connectivity_matrix(
-            {
-                "records": [
-                    {
-                        "source_record_index": record.get(
-                            "source_record_index",
-                            record.get("runtime_record_index", index),
-                        ),
-                        "source_section": record.get(
-                            "source_section",
-                            record.get("section"),
-                        ),
-                        "section": record.get("section"),
-                        "posbody": record.get("posbody"),
-                        "negbody": record.get("negbody"),
-                        "vectors": {},
-                    }
-                    for index, record in enumerate(records)
-                ],
-                "body_count": solver_domain.get("body_count"),
+        # solver_domain is already the lowered runtime domain. Re-running the
+        # SDF parser/topology compiler here can silently drop synthetic runtime
+        # records because they no longer carry parser-style "entries".
+        shared_constraint_pairs: list[dict[str, Any]] = []
+        for left in range(len(records)):
+            left_bodies = {
+                str(records[left].get("posbody")).upper()
+                if records[left].get("posbody") is not None else "",
+                str(records[left].get("negbody")).upper()
+                if records[left].get("negbody") is not None else "",
             }
-        )
+            for right in range(left + 1, len(records)):
+                right_bodies = {
+                    str(records[right].get("posbody")).upper()
+                    if records[right].get("posbody") is not None else "",
+                    str(records[right].get("negbody")).upper()
+                    if records[right].get("negbody") is not None else "",
+                }
+                shared = sorted((left_bodies & right_bodies) - {""})
+                if shared:
+                    shared_constraint_pairs.append({
+                        "left": left,
+                        "right": right,
+                        "shared_body": shared[0],
+                    })
     except (TypeError, ValueError) as exc:
         return {
             "format": FORMAT,
