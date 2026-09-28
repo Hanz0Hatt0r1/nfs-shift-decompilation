@@ -43,6 +43,15 @@ or that they use identical runtime material parameters. Those claims require
 decoded-payload or same-instance runtime evidence.
 
 
+## Physics corpus profiling
+
+Use `python tools/profile_vehicle_physics_corpus.py Vehicles.zip -o physics_corpus.json`
+to decode only base vehicle physics sets and aggregate CDF/EDF/GDF/SDF/TBF/BBF
+summaries. Archives without both physics CDF and EDF are skipped.
+
+This is an orchestration layer over `vehicle_physics_bundle.py`; it does not
+infer physical units or runtime loader semantics.
+
 ## Physics bundle extraction
 
 ## Physics runtime handoff
