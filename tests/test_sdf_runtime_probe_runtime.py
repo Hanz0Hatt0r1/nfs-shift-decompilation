@@ -75,3 +75,28 @@ def test_probe_contract_declares_builtin_thiscall_stack_and_post_solve_fastcall(
     assert report["breakpoints"]["post_solve"]["abi"] == "__fastcall"
     assert report["output"]["number_format"] == "little-endian IEEE-754 binary64"
     assert "A running retail target and debugger attachment are required." in report["limitations"]
+
+
+
+def test_frame_entry_backend_reports_builtin_when_provider_is_null():
+    result = runtime.describe_frame_entry_backend(
+        physics_system=0x10000000,
+        scalar_count=40,
+        provider=0,
+        solver_state=0x1000004C,
+    )
+    assert result["backend"] == "builtin"
+    assert result["builtin_solver_expected"] is True
+    assert result["provider"] == 0
+    assert result["scalar_count"] == 40
+
+
+def test_frame_entry_backend_reports_provider_when_provider_is_present():
+    result = runtime.describe_frame_entry_backend(
+        physics_system=0x10000000,
+        scalar_count=40,
+        provider=0x20000000,
+    )
+    assert result["backend"] == "provider"
+    assert result["builtin_solver_expected"] is False
+    assert result["provider"] == 0x20000000
