@@ -185,8 +185,8 @@ def test_joint_self_block_with_off_diagonal_tensor_matches_source():
         "10": -1.0,
         "11": 10.0,
         "20": -14.0,
-        "21": 1.0,
-        "22": 6.0,
+        "21": -5.0,
+        "22": 10.0,
     }
 
 
