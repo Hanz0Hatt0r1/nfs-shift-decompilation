@@ -6,6 +6,11 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from bmw_m3_e36_solver_domain_runtime import build_solver_domain
 from bmw_m3_solver_capture_verify_runtime import (
