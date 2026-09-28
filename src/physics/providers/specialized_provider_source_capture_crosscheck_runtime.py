@@ -42,7 +42,7 @@ def factor_edge_addresses(
             < layout.output_vector_base
         ):
             raise ValueError(
-                f"factor address outside provider workspace: {hex(address)}"
+                f"factor address outside provider workspace: {f"0x{address:08x}"}"
             )
         result.append(
             {
