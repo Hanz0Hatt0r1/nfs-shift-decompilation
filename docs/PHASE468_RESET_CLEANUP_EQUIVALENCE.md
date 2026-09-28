@@ -1,41 +1,46 @@
-# Phase 468 — reset/cleanup storage equivalence
+# Phase 479 — correction: complete reset-zero domain
 
-## Goal
+Phase 479 corrects the Phase 468 reset/cleanup comparison after a source audit found that reset cases also contain `FUN_0040cec0` bulk-clear operations.
 
-Phase 468 compares the source-backed cleanup coverage from Phase 467 with the reset writes extracted in Phase 466.
+## What was wrong
 
-## Exact result
+Phase 468 compared cleanup coverage with only direct `DAT_xxxxxxxx = 0` reset stores. That omitted reset bulk-clear intervals and also treated the `1.0` diagonal seed as though it were itself a zeroed slot.
+
+## Correct model
+
+The reset-zero domain is the union of:
+
+- direct zero assignments in every reset case;
+- every 8-byte slot covered by reset `FUN_0040cec0` bulk clears.
+
+Unit-diagonal seed addresses are tracked separately.
+
+## Verified results from the retail source
 
 Provider 0:
 
-- cleanup-covered storage slots: **410** across workspace + output;
-- reset direct zero slots: **410**;
+- reset-zero domain: **410** slots;
+- cleanup zero domain: **410** slots;
+- exact equality: **yes**;
 - unit-diagonal seeds: **40**;
-- output zero sets: exact match;
-- reset zero set and cleanup coverage: exact match;
-- every diagonal seed lies inside the reset zero set.
+- every unit seed is inside the cleanup zero domain.
 
 Provider 1:
 
-- cleanup-covered storage slots: **314** across workspace + output;
-- reset direct zero slots: **314**;
+- reset-zero domain: **280** slots;
+- cleanup zero domain: **314** slots;
+- exact equality: **no**;
+- reset-zero is a strict subset of cleanup by **34** slots;
 - unit-diagonal seeds: **34**;
-- output zero sets: exact match;
-- reset zero set and cleanup coverage: exact match;
-- every diagonal seed lies inside the reset zero set.
+- every unit seed is inside the cleanup zero domain;
+- unit-diagonal seeds are not required to belong to the reset-zero domain.
 
-## Interpretation
+## Consequence
 
-The source evidence therefore supports a concrete storage initialization sequence:
+The earlier Phase 468 claim of complete reset/cleanup zero-set equivalence for provider 1 is withdrawn. The corrected contract preserves the observed subset mismatch instead of hiding it behind a false readiness condition.
 
-`cleanup coverage → reset zero writes → overwrite pivot seeds with exact 1.0`
+Provider 0 remains an exact zero-domain match.
 
-This is stronger than the Phase 456 read-before-write result because it describes the actual reset operation, not merely the first read observed by the solver.
+## Scope boundary
 
-## Important boundary
-
-The equality is storage-level. It does not prove that the cleared/seeded storage is a complete logical matrix or identify physical quantities. The packed workspace still has aliasing, and provider semantics remain separate.
-
-## Next use
-
-A real Phase 463 provider capture can now be compared against a source-backed reset baseline: deviations from the 0/1 reset profile become direct evidence of what the caller populates before entering the provider solve.
+This remains a storage-level comparison. It does not infer logical matrix semantics or claim that reset is a per-frame initializer.
