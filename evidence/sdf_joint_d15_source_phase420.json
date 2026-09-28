@@ -1,0 +1,21 @@
+{
+  "format": "SHIFT.SDFJointD15SourceEvidence/1",
+  "version": 1,
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_007bbb80",
+    "source_line": 819720
+  },
+  "expression": "d15 = m00*y - m01*x",
+  "storage": {
+    "m00": "+0xb0",
+    "m01_mirrored": "+0xbc"
+  },
+  "counterexample": {
+    "tensor": [[2,3,4],[3,5,6],[4,6,7]],
+    "point": [1,2,3],
+    "d15": 1
+  },
+  "status": "source-backed"
+}
