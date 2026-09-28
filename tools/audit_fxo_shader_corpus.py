@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from contextlib import ExitStack
 import tempfile
 import zipfile
 from collections import Counter
@@ -22,24 +23,30 @@ from shader_ir import parse_shader_blobs
 from shift_importer import BFF
 
 
-def _iter_bffs(inputs: Iterable[str | Path]):
+def _materialize_bffs(
+    inputs: Iterable[str | Path],
+    stack: ExitStack,
+) -> list[Path]:
+    paths: list[Path] = []
     for source in inputs:
         path = Path(source)
         if path.suffix.lower() != ".zip":
-            yield path
+            paths.append(path)
             continue
-        with zipfile.ZipFile(path) as archive:
-            names = [
-                name
-                for name in archive.namelist()
-                if name.lower().endswith(".bff") and not name.endswith("/")
-            ]
-            with tempfile.TemporaryDirectory(prefix="shift-fxo-corpus-") as td:
-                root = Path(td)
-                for name in names:
-                    target = root / Path(name).name
-                    target.write_bytes(archive.read(name))
-                yield from sorted(root.glob("*.bff"))
+        archive = zipfile.ZipFile(path)
+        stack.callback(archive.close)
+        root = Path(
+            stack.enter_context(
+                tempfile.TemporaryDirectory(prefix="shift-fxo-corpus-")
+            )
+        )
+        for name in archive.namelist():
+            if not name.lower().endswith(".bff") or name.endswith("/"):
+                continue
+            target = root / Path(name).name
+            target.write_bytes(archive.read(name))
+            paths.append(target)
+    return paths
 
 
 def _sha256(data: bytes) -> str:
@@ -102,8 +109,10 @@ def profile_shader_corpus(inputs: Iterable[str | Path]) -> dict[str, Any]:
     entry_count = 0
     fxo_entry_count = 0
 
-    for bff_path in _iter_bffs(inputs):
-        archive_count += 1
+    with ExitStack() as stack:
+        bff_paths = _materialize_bffs(inputs, stack)
+        for bff_path in bff_paths:
+            archive_count += 1
         with BFF(bff_path) as archive:
             for entry in archive.entries:
                 entry_count += 1
@@ -128,6 +137,7 @@ def profile_shader_corpus(inputs: Iterable[str | Path]) -> dict[str, Any]:
                     },
                 )
                 record["entry_count"] += 1
+                record.setdefault("source_entry_index", int(entry.index))
                 record["archives"].add(archive.path.name)
                 record["paths"].add(entry.path)
 
@@ -138,16 +148,13 @@ def profile_shader_corpus(inputs: Iterable[str | Path]) -> dict[str, Any]:
     unsupported_counts = Counter()
     decode_failures = []
 
-    for digest, record in sorted(raw_payloads.items()):
-        try:
-            with BFF(Path(record["source_archive"])) as archive:
-                entry = next(
-                    item
-                    for item in archive.entries
-                    if _sha256(archive.raw_payload(item)) == digest
-                )
-                payload = archive.extract_entry(entry, type2="lzx")
-            profile = _profile_payload(payload)
+    with ExitStack():
+        for digest, record in sorted(raw_payloads.items()):
+            try:
+                with BFF(Path(record["source_archive"])) as archive:
+                    entry = archive.entries[int(record["source_entry_index"])]
+                    payload = archive.extract_entry(entry, type2="lzx")
+                profile = _profile_payload(payload)
         except Exception as exc:
             decode_failures.append({
                 "raw_sha256": digest,
