@@ -417,7 +417,9 @@ class ReferenceShaderState:
                     pc += 1
                     continue
                 if ins.predicate is not None:
-                    raise ValueError("predicated shader instructions are not yet supported")
+                    if not self._condition_true(ins.predicate):
+                        pc += 1
+                        continue
 
                 if name == "IF":
                     if len(o) < 1:
