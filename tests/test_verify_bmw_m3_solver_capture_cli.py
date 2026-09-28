@@ -85,6 +85,7 @@ def test_build_report_performs_exact_pair_comparison(monkeypatch, tmp_path):
     )
     assert report["ready"] is False
     assert report["status"] == "diverged-or-blocked"
+    assert report["comparison"]["status"] == "diverged"
     assert report["comparison"]["rhs"]["mismatches"][0]["index"] == 11
 
 
@@ -116,3 +117,4 @@ def test_cli_parser_keeps_expected_capture_optional():
     assert args.expected_capture is None
     assert args.abs_tol == 0.0
     assert args.rel_tol == 0.0
+    assert args.output is None
