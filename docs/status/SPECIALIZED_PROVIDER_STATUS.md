@@ -32,6 +32,17 @@ This is a linkage contract, not numeric proof. Retail/provider numerical equival
 still requires a real pre/post runtime frame and differential comparison of the
 captured packed workspace/output vectors.
 
+## Pre-PhysX handoff
+
+`SHIFT.PrePhysXProviderHandoffRuntime/1` now validates the shared construction,
+pre-acceptance, provider-selection, storage-rebind and vtable-lifecycle offsets
+across the existing static contracts. A same-dimension provider is only a
+candidate; runtime `+0x14` acceptance remains authoritative.
+
+CLI:
+
+`python tools/build_prephysx_provider_handoff.py sdf_report.json -o prephysx_provider_handoff.json`
+
 ## Current next step
 
 Capture a real provider frame, verify the bundle, then use the handoff and Phase 501
