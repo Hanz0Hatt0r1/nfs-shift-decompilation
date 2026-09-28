@@ -135,3 +135,55 @@ def test_summarize_structural_matrix():
         "symmetric": True,
         "ready": True,
     }
+
+
+def test_build_from_sdf_report_compiles_solver_domain(monkeypatch):
+    expected_domain = _domain()
+
+    def fake_build_solver_domain(_report):
+        return expected_domain
+
+    monkeypatch.setattr(
+        runtime,
+        "build_solver_domain",
+        fake_build_solver_domain,
+    )
+
+    result = runtime.build_from_sdf_report(
+        {
+            "records": [],
+        }
+    )
+
+    assert result["ready"] is True
+    assert result["solver_domain"] == expected_domain
+    assert result["generated"]["matrix_nonzero_cells"] == 16
+
+
+def test_build_from_sdf_report_propagates_blocked_solver_domain(
+    monkeypatch,
+):
+    blocked = {
+        "ready": False,
+        "unresolved": ["missing-body"],
+        "errors": ["topology-error"],
+    }
+
+    monkeypatch.setattr(
+        runtime,
+        "build_solver_domain",
+        lambda _report: blocked,
+    )
+
+    result = runtime.build_from_sdf_report(
+        {
+            "records": [],
+        }
+    )
+
+    assert result["ready"] is False
+    assert result["status"] == "blocked"
+    assert result["errors"] == [
+        "missing-body",
+        "topology-error",
+    ]
