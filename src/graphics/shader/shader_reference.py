@@ -406,7 +406,7 @@ class ReferenceShaderState:
             pc = 0
             instructions = self.program.instructions
             loop_stack: list[dict[str, int]] = []
-            max_loop_iterations = 4096
+            max_loop_iterations = _MAX_LOOP_ITERATIONS
             while pc < len(instructions):
                 ins = instructions[pc]
                 name = ins.name
@@ -465,6 +465,7 @@ class ReferenceShaderState:
                             f"LOOP iteration count {count} exceeds bounded reference limit"
                         )
                     self.loop_index = _address_round(values[1])
+                    self.loop_value = self.loop_index
                     step = _address_round(values[2])
                     loop_stack.append({
                         "start": pc,
@@ -483,6 +484,7 @@ class ReferenceShaderState:
                     frame["remaining"] -= 1
                     if frame["remaining"] > 0:
                         self.loop_index += frame["step"]
+                        self.loop_value = self.loop_index
                         pc = frame["start"] + 1
                         continue
                     loop_stack.pop()
@@ -726,6 +728,7 @@ class ReferenceShaderState:
             "temps": {str(k): list(v) for k, v in sorted(self.temps.items())},
             "address": list(self.address),
             "loop_index": self.loop_index,
+            "loop_value": self.loop_value,
             "predicates": {
                 str(k): list(v) for k, v in sorted(self.predicates.items())
             },
