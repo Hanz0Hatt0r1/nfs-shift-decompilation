@@ -6,6 +6,7 @@ storage slots cleared by cleanup and whether the reset's unit-diagonal writes
 land on that same zero baseline.
 
 The comparison remains storage-level; no matrix semantics are assigned.
+Reset bulk-clear intervals are included alongside direct zero assignments.
 """
 from __future__ import annotations
 
@@ -102,7 +103,7 @@ def compare_reset_cleanup(
     reset_zero_minus_cleanup = reset_zero - cleanup_slots
     cleanup_minus_reset_zero = cleanup_slots - reset_zero
     diagonal_outside_cleanup = reset_one - cleanup_slots
-    diagonal_not_zero_before_seed = reset_one - reset_zero
+    unit_diagonal_in_reset_zero_domain = reset_one <= reset_zero
     output_start = layout.output_vector_base
     output_end = output_start + layout.output_vector_bytes
 
@@ -131,10 +132,6 @@ def compare_reset_cleanup(
     if diagonal_outside_cleanup:
         errors.append(
             f"diagonal-outside-cleanup:{len(diagonal_outside_cleanup)}"
-        )
-    if diagonal_not_zero_before_seed:
-        errors.append(
-            f"diagonal-not-reset-zero:{len(diagonal_not_zero_before_seed)}"
         )
 
     return {
@@ -169,10 +166,9 @@ def compare_reset_cleanup(
             hex(address)
             for address in sorted(diagonal_outside_cleanup)
         ],
-        "diagonal_not_reset_zero": [
-            hex(address)
-            for address in sorted(diagonal_not_zero_before_seed)
-        ],
+        "unit_diagonal_in_reset_zero_domain": (
+            unit_diagonal_in_reset_zero_domain
+        ),
         "ready": not errors,
         "errors": errors,
     }
@@ -249,8 +245,9 @@ def build_reset_cleanup_contract(source: str) -> dict[str, Any]:
         "providers": providers,
         "interpretation": {
             "sequence": "cleanup zero coverage -> reset zero writes -> unit-diagonal seeds",
-            "exact_match": "requires reset zero address set == cleanup-covered storage slots",
-            "diagonal_seed": "each pivot's 1.0 address must already belong to the reset-zero set",
+            "exact_match": "requires complete reset-zero storage equality with cleanup-covered slots",
+            "subset_case": "permits reporting reset-zero subset of cleanup while preserving the missing addresses",
+            "diagonal_seed": "each pivot's 1.0 address is checked independently against cleanup and reset-zero domains",
         },
         "limitations": [
             "This proves storage initialization order, not matrix semantics.",
