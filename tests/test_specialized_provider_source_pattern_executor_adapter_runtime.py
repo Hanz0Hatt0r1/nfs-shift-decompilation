@@ -22,8 +22,8 @@ def test_source_pattern_edge_contract_deduplicates_edges():
         pattern,
     )
 
-    assert result["ready"] is False
-    assert (1, 2) in result["extra_edges"]
+    assert result["ready"] is False, result
+    assert (1, 2) in result["extra_edges"], result
 
 
 def test_solve_with_source_pattern_requires_ready_contract():
