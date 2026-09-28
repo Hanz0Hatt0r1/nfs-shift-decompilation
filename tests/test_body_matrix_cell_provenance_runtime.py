@@ -75,7 +75,8 @@ def test_overlapping_groups_create_multiple_producers_for_shared_cell():
 
     assert len(entries) >= 2
     assert result["max_producers_per_cell"] >= 2
-    assert result["summary"] if "summary" in result else True
+    bodies = {entry["body"] for entry in entries}
+    assert "A" in bodies
 
 
 def test_validate_cell_provenance_accepts_valid_report():
