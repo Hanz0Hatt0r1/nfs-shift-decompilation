@@ -106,6 +106,14 @@ Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
 
+## Phase 426: SDF constraint ABI correction and descriptor schema
+
+Corrected the Phase 424 BAR endpoint reference counter mapping after a direct line-by-line audit of FUN_007b3150: both positive and negative BAR endpoints increment BODY runtime +0xA0. Added a regression covering both values.
+
+Added sdf_constraint_schema_runtime.py for the exact FUN_007b42f0 descriptor registration. Named fields are preserved at +0x10/type, +0x14 Label, +0x18 Pos Body, +0x1c Neg Body and +0x20 Copy Body. The three type-id 0x13 fields at +0x28/+0x40/+0x58 retain their decompiler global identifiers and are not assigned guessed semantic names.
+
+The descriptor schema now forms the ABI bridge between parsed SDF constraint records and the existing pre-PhysX construction IR. The next target remains runtime application at the provider/SDK boundary.
+
 ## Phase 425: source-backed JointDesc schema
 
 Added `joint_desc_schema_runtime.py` and its regression suite. The module records the exact `JointDesc`/`JointLimitDesc` registration fields, offsets and serializer type-ids from `FUN_007b9100`/`FUN_007b95d0`, plus explicit constructor writes recovered from `FUN_007b9030`. The schema provides the machine-readable constraint-definition layer needed before applying these properties at the runtime provider/SDK boundary.
