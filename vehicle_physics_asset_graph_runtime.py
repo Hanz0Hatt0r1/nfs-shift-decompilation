@@ -57,6 +57,7 @@ from sdf_solver_capture_binary_runtime import describe_sdf_solver_capture_binary
 from bmw_m3_solver_capture_verify_runtime import describe_bmw_m3_solver_capture_verifier
 from sdf_runtime_probe_runtime import describe_sdf_runtime_probe_contract
 from sdf_runtime_probe_session_runtime import describe_sdf_runtime_probe_session_contract
+from sdf_builtin_sparse_solver_runtime import describe_builtin_sparse_solver_contract
 from sdf_runtime_probe_pe_validation import describe_probe_pe_validation_contract
 from sdf_runtime_probe_launcher_runtime import describe_sdf_runtime_probe_launcher
 from sdf_runtime_probe_runtime import describe_frame_entry_backend
@@ -153,6 +154,7 @@ def build_profile(
     bmw_m3_solver_capture_verifier = describe_bmw_m3_solver_capture_verifier()
     sdf_runtime_probe = describe_sdf_runtime_probe_contract()
     sdf_runtime_probe_session = describe_sdf_runtime_probe_session_contract()
+    sdf_builtin_sparse_solver = describe_builtin_sparse_solver_contract()
     sdf_runtime_probe_pe = describe_probe_pe_validation_contract()
     sdf_probe_launcher = describe_sdf_runtime_probe_launcher()
     sdf_probe_backend_contract = describe_frame_entry_backend(
@@ -278,6 +280,7 @@ def build_profile(
             "bmw_m3_solver_capture_verifier_ready": bmw_m3_solver_capture_verifier.get("ready") is True,
             "sdf_runtime_probe_ready": sdf_runtime_probe.get("ready") is True,
             "sdf_runtime_probe_session_ready": sdf_runtime_probe_session.get("ready") is True,
+            "sdf_builtin_sparse_solver_ready": sdf_builtin_sparse_solver.get("ready") is True,
             "sdf_runtime_probe_pe_ready": sdf_runtime_probe_pe.get("ready") is True,
             "sdf_runtime_probe_launcher_ready": sdf_probe_launcher.get("ready") is True,
             "sdf_runtime_probe_backend_contract_ready": sdf_probe_backend_contract.get("ready") is True,
@@ -324,6 +327,7 @@ def build_profile(
             "bmw_m3_solver_capture_verifier": bmw_m3_solver_capture_verifier,
             "sdf_runtime_probe": sdf_runtime_probe,
             "sdf_runtime_probe_session": sdf_runtime_probe_session,
+            "sdf_builtin_sparse_solver": sdf_builtin_sparse_solver,
             "sdf_runtime_probe_pe": sdf_runtime_probe_pe,
             "sdf_runtime_probe_launcher": sdf_probe_launcher,
             "sdf_runtime_probe_backend_contract": sdf_probe_backend_contract,
