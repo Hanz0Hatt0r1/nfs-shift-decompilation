@@ -56,6 +56,9 @@ void FUN_next(void)
     report = runtime.extract_loop_stencils(
         fixture,
         provider_id=0,
+        function_name="FUN_example",
+        next_function_marker="void FUN_next(void)",
+        expected_scalar_count=1,
     )
 
     assert report["errors"] == []
