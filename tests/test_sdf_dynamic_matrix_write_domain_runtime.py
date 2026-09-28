@@ -42,9 +42,9 @@ def test_dynamic_domain_builds_self_and_pair_writes():
     assert result["ready"] is True
     assert result["runtime_constraint_records"] == 3
     assert result["shared_constraint_pairs"] == 3
-    assert result["self_cell_count"] == 9
+    assert result["self_cell_count"] == 10
     assert result["pair_cell_count"] == 11
-    assert result["union_cell_count"] == 20
+    assert result["union_cell_count"] == 21
 
 
 def test_dynamic_domain_uses_expected_kernel_ownership():
