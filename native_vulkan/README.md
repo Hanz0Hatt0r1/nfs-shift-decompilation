@@ -35,3 +35,5 @@ cmake --build native_vulkan/build --config Release
 ./native_vulkan/build/shift_vulkan_probe
 ./native_vulkan/build/shift_vulkan_headless_clear out/shift_vulkan_headless.ppm
 ```
+
+The headless path has no window-system dependency.
