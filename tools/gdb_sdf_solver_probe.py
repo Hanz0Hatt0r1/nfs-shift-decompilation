@@ -139,7 +139,7 @@ def _provider_id_from_runtime_pointer(
     return None, vtable
 
 
-ef _matrix_from_rows(
+def _matrix_from_rows(
     inferior: gdb.Inferior,
     row_pointer_table: int,
     scalar_count: int,
@@ -469,6 +469,7 @@ class SDFProbeCommand(gdb.Command):
             f"builtin_solver=0x{FUNCTIONS['builtin_solver']:08x},",
             f"provider0_solver=0x{get_provider(0).solve_function:08x},",
             f"provider1_solver=0x{get_provider(1).solve_function:08x},",
+            "scalar_reset=0x007b2210,",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
             f"output={output}",
         )
