@@ -121,6 +121,14 @@ def build_dynamic_write_domain(
             "errors": [f"connectivity-build:{exc}"],
         }
 
+    connectivity = {
+        "format": "SHIFT.SDFConstraintConnectivityMatrix/1",
+        "version": 1,
+        "status": "ready",
+        "ready": True,
+        "constraint_count": len(records),
+        "shared_body_pairs": list(shared_constraint_pairs),
+    }
     shared_pairs = list(shared_constraint_pairs)
     writes: list[dict[str, Any]] = []
     cell_provenance: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
