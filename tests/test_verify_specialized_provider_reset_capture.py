@@ -47,7 +47,7 @@ def test_cli_pre_only_returns_success(tmp_path: Path, capsys):
             [
                 '{"call_index": 1, "frame_index": 1, "physics_system": 4096, "provider_pointer": 0, "scalar_count": 40, "selector": 2, "caller_return_address": 0x7b4029}',
                 '{"call_index": 2, "frame_index": 1, "physics_system": 4096, "provider_pointer": 0, "scalar_count": 40, "selector": 3, "caller_return_address": 0x7b4034}',
-                '{"call_index": 3, "frame_index": 1, "physics_system": 4096, "provider_pointer": 0, "scalar_count": 40, "selector": 4, "caller_return_address": 12322}',
+                '{"call_index": 3, "frame_index": 1, "physics_system": 4096, "provider_pointer": 0, "scalar_count": 40, "selector": 4, "caller_return_address": 0x7b403f}',
             ]
         )
         + "\n",
