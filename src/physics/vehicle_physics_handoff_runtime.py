@@ -56,8 +56,8 @@ def build_vehicle_physics_handoff(
             "status": "blocked",
             "ready": False,
             "bundle": bundle,
-            "prephysx_provider_handoff": None,
-            "participant_gate": participant_gate,
+            "prephysx_provider_handoff": None,            "participant_gate": participant_gate,
+            "participant_registry_update": participant_registry_update,
             "errors": ["sdf-report-missing-from-vehicle-profile"],
         }
 
