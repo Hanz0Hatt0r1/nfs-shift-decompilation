@@ -66,7 +66,7 @@ def test_scalar_reset_probe_embeds_callsite_attribution():
 
     assert "from specialized_provider_scalar_reset_callsite_runtime import" in text
     assert "attribution = attribute_reset_event(event)" in text
-    assert '"callsite": attribution' in text
+    assert 'event["callsite"] = attribution' in text
     assert 'bool(attribution["ready"])' in text
 
 
