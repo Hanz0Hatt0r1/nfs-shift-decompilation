@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iomanip>
+#include <map>
 #include <iostream>
 #include <optional>
 #include <signal.h>
