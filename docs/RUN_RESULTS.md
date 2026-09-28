@@ -19,9 +19,9 @@ Commit: `a8b4a2767e4ffd090e942e5cc2d74668b8e71446`
 | python | success |
 | Vulkan smoke | success |
 
-The Phase 509 merge followed a green PR validation: Python, native, capture-producer
+The Phase 511 merge followed green PR validation after one corrected test-only regression: Python, native, capture-producer
 and Vulkan smoke all passed. The post-merge mainline run for commit
-`a8b4a2767e4ffd090e942e5cc2d74668b8e71446` also passed all four checks.
+`b18a6969ae1851edde2120b1f033d6a9d616c152` also passed all four checks.
 
 ## Phase 509 verification coverage
 
@@ -30,6 +30,22 @@ pre-load processing via `FUN_00468ed0`, direct reselection through `DAT_00bbc600
 the `Pakfiles/Vehicles/%s.bff` load gate, and pointer/ordinal writeback only after
 successful load. The BFF-to-pre-PhysX handoff tests also verify persistence of the
 Phase 509 process/reselection contract and its JSON artifact.
+
+## Phase 511 verification coverage
+
+The IGPhaseVehicle finalization tests cover `FUN_004d5930` container iteration and
+cleanup for `+0x3ec`, `+0x3cc` and `+0x40c`, guarded `+0x160` cleanup via
+`+0x3c8`, resource cleanup ordering and the normal/cockpit completion callback
+ordering in `FUN_004d5f30`. The BFF-to-pre-PhysX handoff tests also verify the
+finalization contract and persisted JSON artifact.
+
+## Phase 510 verification coverage
+
+The selector lifecycle tests cover the repeated descriptor layout, explicit
+`+0x74 = 0` population in `thunk_FUN_00d36a00`, the `+0x74 == 0` eligibility
+scan, `+0x8c` ordinal writeback, the bounded 16-entry batch exclusion/reset
+path, and the separate `+0x1d` post-load/process byte. The handoff CLI tests
+also verify stable summaries for blocked early-return paths.
 
 ## Phase 508 verification coverage
 
