@@ -20,6 +20,7 @@ _SUPPORTED = {
     "SLT", "SGE", "EXP", "EXPP", "LOG", "LOGP", "LIT", "DST", "LRP",
     "FRC", "RCP", "RSQ", "NRM", "ABS", "POW", "CRS", "SINCOS", "CMP",
     "DP2ADD", "TEX", "TEXLDD", "TEXLDL", "MOVA",
+    "M4x4", "M4x3", "M3x4", "M3x3", "M3x2", "SGN",
     "IF", "IFC", "ELSE", "ENDIF", "RET",
 }
 
@@ -127,6 +128,56 @@ class ReferenceShaderState:
         self.output_registers: dict[tuple[int, int], list[float]] = {}
         self.depth: float | None = None
 
+    def _resolve_constant_index(self, operand: Operand) -> int:
+        if operand.reg_type not in (2, 11, 12, 13):
+            raise ValueError(
+                f"constant index resolution requires a float constant register, got {operand.reg_type}"
+            )
+        idx = int(operand.index or 0)
+        if not operand.relative:
+            return idx
+        if self.program.stage.lower() != "vertex":
+            raise ValueError(
+                "relative constant addressing requires vertex shader stage"
+            )
+        if operand.relative_token is None:
+            raise ValueError("relative constant operand has no address token")
+        address = decode_source(int(operand.relative_token))
+        if address.reg_type != 3 or int(address.index or 0) != 0:
+            raise ValueError(
+                "relative constant addressing requires the D3D9 a0 address register"
+            )
+        swizzle = address.swizzle or "x"
+        if len(swizzle) != 1 or swizzle not in "xyzw":
+            raise ValueError(
+                f"relative constant address component is ambiguous: {swizzle}"
+            )
+        relative_offset = _address_round(
+            self.address["xyzw".index(swizzle)]
+        )
+        return _signed11(idx) + relative_offset
+
+    def _matrix_value(self, operand: Operand, rows: int, cols: int, src: list[float]) -> list[float]:
+        if operand.reg_type not in (2, 11, 12, 13):
+            raise ValueError(
+                f"matrix source must be a float constant bank, got register type {operand.reg_type}"
+            )
+        bank = {2: "c", 11: "c2", 12: "c3", 13: "c4"}[operand.reg_type]
+        base = self._resolve_constant_index(operand)
+        vector = src[:cols]
+        result = [
+            sum(vector[column] * self.constants.get(bank, {}).get(
+                base + row,
+                [0.0, 0.0, 0.0, 0.0],
+            )[column] for column in range(cols))
+            for row in range(rows)
+        ]
+        if len(result) == 2:
+            return result + [0.0, 0.0]
+        if len(result) == 3:
+            return result + [0.0]
+        return result[:4]
+
     def _read(self, operand: Operand) -> list[float]:
         if operand.reg_type is None:
             return _vec(operand.value if isinstance(operand.value, (int, float)) else None)
@@ -134,29 +185,7 @@ class ReferenceShaderState:
         rt = operand.reg_type
         idx = int(operand.index or 0)
         if operand.relative:
-            if rt not in (2, 11, 12, 13):
-                raise ValueError(
-                    f"relative addressing is only implemented for constant registers, got reg_type {rt}"
-                )
-            if self.program.stage.lower() != "vertex":
-                raise ValueError(
-                    "relative constant addressing requires vertex shader stage"
-                )
-            if operand.relative_token is None:
-                raise ValueError("relative constant operand has no address token")
-            address = decode_source(int(operand.relative_token))
-            if address.reg_type != 3 or int(address.index or 0) != 0:
-                raise ValueError(
-                    "relative constant addressing requires the D3D9 a0 address register"
-                )
-            swizzle = address.swizzle or "x"
-            if len(swizzle) != 1 or swizzle not in "xyzw":
-                raise ValueError(
-                    f"relative constant address component is ambiguous: {swizzle}"
-                )
-            component_index = "xyzw".index(swizzle)
-            relative_offset = _address_round(self.address[component_index])
-            idx = _signed11(idx) + relative_offset
+            idx = self._resolve_constant_index(operand)
 
         if rt == 0:
             value = self.temps.setdefault(idx, [0.0] * 4)
@@ -458,6 +487,27 @@ class ReferenceShaderState:
                     a, b, c = self._read(o[1]), self._read(o[2]), self._read(o[3])
                     value = a[0] * b[0] + a[1] * b[1] + c[0]
                     self._write(o[0], [value] * 4)
+                elif name in {"M4x4", "M4x3", "M3x4", "M3x3", "M3x2"}:
+                    dims = {
+                        "M4x4": (4, 4),
+                        "M4x3": (4, 3),
+                        "M3x4": (3, 4),
+                        "M3x3": (3, 3),
+                        "M3x2": (3, 2),
+                    }[name]
+                    rows, cols = dims
+                    self._write(
+                        o[0],
+                        self._matrix_value(o[2], rows, cols, self._read(o[1])),
+                    )
+                elif name == "SGN":
+                    self._write(
+                        o[0],
+                        [
+                            -1.0 if value < 0.0 else 1.0 if value > 0.0 else 0.0
+                            for value in self._read(o[1])
+                        ],
+                    )
                 elif name in {"TEX", "TEXLDD", "TEXLDL"}:
                     self._write(o[0], self._texture(o[2], self._read(o[1])))
                 else:
