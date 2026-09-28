@@ -25,4 +25,4 @@ def test_phase505_preserves_only_observed_candidate_condition():
 
     assert report["source_algorithm"]["candidate_eligibility_test"] == "candidate+0x74 == 0"
     assert "semantic class name" in " ".join(report["limitations"])
-    assert "runtime participant instance" in " ".join(report["limitations"])
+    assert "actual participant instance" in " ".join(report["limitations"])
