@@ -30,6 +30,9 @@ class FakeBFF:
     def __exit__(self, *args):
         return None
 
+    def raw_payload(self, entry):
+        return self.extract_entry(entry, type2="raw")
+
     def extract_entry(self, entry, type2="lzx"):
         return {
             ".cdf": b"[GENERAL]\nMass=1000\n",
@@ -126,6 +129,9 @@ def test_resolve_default_targets_rejects_ambiguous_sdf():
     try:
         bundle.resolve_default_targets(archive)
     except ValueError as exc:
-        assert "ambiguous SDF" in str(exc)
+        assert "ambiguous SDF" in str(exc), str(exc)
     else:
-        raise AssertionError("ambiguous SDF selection must fail closed")
+        raise AssertionError(
+            "ambiguous SDF selection must fail closed; "
+            f"resolved candidates={bundle.resolve_default_targets.__name__}"
+        )
