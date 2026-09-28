@@ -40,6 +40,7 @@ from specialized_provider_scalar_reset_callsite_runtime import (
     attribute_reset_event,
 )
 from specialized_provider_storage_runtime import get_storage_layout
+from specialized_provider_row_storage_runtime import get_row_pointers
 
 
 def _u32(inferior: gdb.Inferior, address: int) -> int:
@@ -279,10 +280,15 @@ class ProviderResetProbe(_BaseProbe):
             inferior,
             provider_pointer,
         )
-        if provider_id != self.provider_id or provider_vtable is None:
+        if (
+            provider_id != self.provider_id
+            or provider_vtable is None
+        ):
             return False
 
         addresses = get_storage_layout(self.provider_id)
+        if not 0 <= selector < addresses.scalar_count:
+            return False
         row_pointer = get_row_pointers(self.provider_id)[selector]
         diagonal_address = row_pointer + selector * 8
         output_address = (
