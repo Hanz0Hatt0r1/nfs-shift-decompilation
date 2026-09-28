@@ -62,6 +62,14 @@ After a real runtime provider capture exists:
 The observed provider id is runtime evidence. The handoff attaches the corresponding
 source-derived solver program only when ids match.
 
+## Physics participant creation gate
+
+The Phase 505 source-backed gate records the `IGPhaseVehicle` participant selection, the `-1` wait path, and the successful transition into `Pakfiles/Vehicles/%s.bff` loading:
+
+`python tools/build_vehicle_physics_participant_gate.py -o participant_gate.json`
+
+The gate intentionally does not assign a PhysX/provider class identity or a runtime participant instance.
+
 ## Pre-PhysX/provider handoff
 
 Build a cross-contract construction/selection/rebind validation from a parsed SDF report:
