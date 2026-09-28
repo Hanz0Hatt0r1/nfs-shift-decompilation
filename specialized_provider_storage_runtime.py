@@ -157,7 +157,7 @@ def build_storage_contract() -> dict[str, Any]:
         "providers": entries,
         "status": "source-backed-static-layout",
         "limitations": [
-            "The +0x2c accessor return is preserved as a global reference; its semantic type is unresolved.",
+            "The +0x2c accessor return is preserved as a global reference and observed value; its broader semantic type is unresolved.",
             "The factor workspace is identified by its static address span and size; internal slot semantics remain owned by the provider solve function.",
         ],
     }
