@@ -1,8 +1,8 @@
 """Global bootstrap/teardown lifecycle for the specialized provider globals.
 
 Phase 478 ties the provider objects to their global initialization and atexit
-destruction functions recovered from SHIFT.exe.c. The selector-driven reset
-functions remain a distinct API with no inferred frame-loop callsite.
+destruction functions recovered from SHIFT.exe.c. The selector-driven reset functions are invoked per active scalar through
+FUN_007b2210 on the frame solver path.
 """
 from __future__ import annotations
 
@@ -117,8 +117,8 @@ def build_global_lifecycle_contract() -> dict[str, Any]:
                 1: "FUN_007d48a0",
             },
             "vtable_slot": "+0x1c",
-            "status": "separate selector-driven API",
-            "frame_loop_callsite": "not inferred",
+            "status": "per-scalar frame reset delegated by FUN_007b2210",
+            "frame_loop_callsite": "FUN_007b3f40 -> FUN_007b2210 -> provider vtable +0x1c",
         },
         "source_basis": {
             "provider0_init": "FUN_00a8ca80 -> FUN_007d2f70(&DAT_00c23da8)",

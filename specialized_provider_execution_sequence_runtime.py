@@ -1,7 +1,7 @@
 """Exact source-level execution sequence inside FUN_007b3f40.
 
-Phase 477 models only control flow, loop strides/count fields and vtable
-boundaries. It deliberately leaves the common preparation callees opaque.
+Phase 483 corrects the lifecycle model: FUN_007b2210 resets each active
+constraint scalar, and provider mode delegates that selector to vtable +0x1c.
 """
 from __future__ import annotations
 
@@ -55,30 +55,39 @@ SEQUENCE = (
     },
     {
         "index": 5,
-        "stage": "joint-hinge-scalar-accumulation",
+        "stage": "joint-hinge-scalar-reset-dispatch",
         "function": "FUN_007b2210",
         "count_source": "physics_system+0x18",
         "stride": 0xA0,
         "object_base": "physics_system+0x1c",
         "width": "3 when (record+0x70 & 1) != 0",
+        "reset_dispatch": "FUN_007b2210(selector)",
+        "provider_reset": "vtable +0x1c(selector)",
+        "builtin_reset": "row/column clear + diagonal 1.0 + rhs zero",
     },
     {
         "index": 6,
-        "stage": "bar-scalar-accumulation",
+        "stage": "secondary-scalar-reset-dispatch",
         "function": "FUN_007b2210",
         "count_source": "physics_system+0x20",
         "stride": 0xA0,
         "object_base": "physics_system+0x24",
         "width": "2 when (record+0x70 & 1) != 0",
+        "reset_dispatch": "FUN_007b2210(selector)",
+        "provider_reset": "vtable +0x1c(selector)",
+        "builtin_reset": "row/column clear + diagonal 1.0 + rhs zero",
     },
     {
         "index": 7,
-        "stage": "bar-scalar-accumulation",
+        "stage": "bar-scalar-reset-dispatch",
         "function": "FUN_007b2210",
         "count_source": "physics_system+0x28",
         "stride": 0xB8,
         "object_base": "physics_system+0x2c",
         "width": "1 when (record+0x70 & 1) != 0",
+        "reset_dispatch": "FUN_007b2210(selector)",
+        "provider_reset": "vtable +0x1c(selector)",
+        "builtin_reset": "row/column clear + diagonal 1.0 + rhs zero",
     },
     {
         "index": 8,
@@ -101,6 +110,7 @@ def build_execution_sequence() -> dict[str, Any]:
         "branching": {
             "provider_selected": "physics_system+0x48 != 0",
             "provider_cleanup": "vtable +0x20",
+            "provider_scalar_reset": "vtable +0x1c via FUN_007b2210",
             "provider_solve": "vtable +0x18",
             "builtin_reset": "zero matrix/rhs inline",
             "builtin_solve": "FUN_007b0f20",
@@ -169,12 +179,12 @@ def build_execution_sequence_contract() -> dict[str, Any]:
         "sequence": build_execution_sequence(),
         "validation": validation,
         "interpretation": {
-            "provider_path": "cleanup + common preparation + constraint scalar accumulation + solve",
-            "builtin_path": "inline matrix/rhs clear + common preparation + constraint scalar accumulation + builtin solve",
+            "provider_path": "cleanup + common preparation + per-scalar FUN_007b2210 reset dispatch + solve",
+            "builtin_path": "inline matrix/rhs clear + common preparation + per-scalar FUN_007b2210 row/column reset + builtin solve",
         },
         "limitations": [
             "Common preparation callees are identified by function address only.",
-            "FUN_007b2210 accumulation is represented by call topology and selector-derived widths, not scalar coefficient semantics.",
+            "FUN_007b2210 is represented by exact call topology and reset semantics; coefficient population remains separate.",
             "No timing, thread scheduling, or C++ class identity is inferred.",
         ],
     }

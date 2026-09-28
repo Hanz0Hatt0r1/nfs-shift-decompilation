@@ -38,12 +38,28 @@ def test_validate_dispatch_boundary():
     assert result["errors"] == []
 
 
-def test_contract_interpretation_separates_reset_from_solve():
+def test_contract_interpretation_places_reset_before_solve():
     contract = runtime.build_dispatch_boundary_contract()
 
-    assert contract["interpretation"]["reset_slot_+0x1c"].startswith(
-        "separate selector-driven"
+    assert contract["interpretation"]["reset_slot_+0x1c"] == (
+        "per-scalar reset delegated by FUN_007b2210 before provider solve"
     )
     assert contract["source_order"][2].endswith(
         "provider-cleanup +0x20 when provider is active"
     )
+
+
+def test_provider_path_contains_per_scalar_reset_dispatch():
+    result = runtime.build_provider_execution_boundary()
+
+    events = [entry["event"] for entry in result["provider_path"]]
+    assert events == [
+        "provider-cleanup",
+        "common-preparation",
+        "per-scalar-reset-dispatch",
+        "provider-solve",
+    ]
+
+    reset = result["provider_path"][2]
+    assert reset["function"] == "FUN_007b2210"
+    assert reset["provider_vtable_offset"] == "0x1c"
