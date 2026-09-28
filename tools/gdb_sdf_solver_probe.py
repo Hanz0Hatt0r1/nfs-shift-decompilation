@@ -251,6 +251,7 @@ class ProviderSolveProbe(_BaseProbe):
             output_dir,
         )
         self.provider_id = provider_id
+        self.return_breakpoints: list[ProviderSolveReturnProbe] = []
 
     def stop(self) -> bool:
         self.hit += 1
@@ -265,12 +266,13 @@ class ProviderSolveProbe(_BaseProbe):
             f"provider_pre_{self.provider_id}_{self.hit:06d}.json",
             payload,
         )
-        ProviderSolveReturnProbe(
+        return_probe = ProviderSolveReturnProbe(
             gdb.newest_frame(),
             self.provider_id,
             self.output_dir,
             self.hit,
         )
+        self.return_breakpoints.append(return_probe)
         return False
 
 
