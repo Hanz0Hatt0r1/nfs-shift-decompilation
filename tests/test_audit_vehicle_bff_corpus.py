@@ -92,3 +92,64 @@ def test_audit_vehicle_corpus_rejects_empty_input(monkeypatch, tmp_path: Path):
     result = runtime.audit_vehicle_corpus(tmp_path)
     assert result["archive_count"] == 0
     assert result["ready"] is False
+
+
+def test_common_logical_paths_normalize_vehicle_prefixes():
+    reports = [
+        {
+            "archive": {"filename": "BMW_M3_E36.bff"},
+            "entries": [
+                {"path": "vehicles/bmw_m3_e36/common_black.dds"},
+                {"path": "vehicles/bmw_m3_e36/unique.meb"},
+            ],
+        },
+        {
+            "archive": {"filename": "Honda_S2000.bff"},
+            "entries": [
+                {"path": "vehicles/honda_s2000/common_black.dds"},
+                {"path": "vehicles/honda_s2000/unique.meb"},
+            ],
+        },
+        {
+            "archive": {"filename": "Render.bff"},
+            "entries": [
+                {"path": "vehicles/common_black.dds"},
+            ],
+        },
+    ]
+
+    result = runtime._common_logical_paths(
+        reports,
+        minimum_archives=2,
+    )
+
+    assert result == [
+        {
+            "path": "vehicles/{vehicle}/common_black.dds",
+            "archive_count": 2,
+            "archives": ["BMW_M3_E36.bff", "Honda_S2000.bff"],
+            "extensions": [".dds"],
+        },
+        {
+            "path": "vehicles/{vehicle}/unique.meb",
+            "archive_count": 2,
+            "archives": ["BMW_M3_E36.bff", "Honda_S2000.bff"],
+            "extensions": [".meb"],
+        },
+    ]
+
+
+def test_common_logical_paths_can_require_three_archives():
+    reports = [
+        {
+            "archive": {"filename": name},
+            "entries": [{"path": f"vehicles/car_{index}/shared.bmt"}],
+        }
+        for index, name in enumerate(["A.bff", "B.bff", "C.bff"])
+    ]
+
+    result = runtime._common_logical_paths(reports, minimum_archives=3)
+
+    assert len(result) == 1
+    assert result[0]["path"] == "vehicles/{vehicle}/shared.bmt"
+    assert result[0]["archive_count"] == 3
