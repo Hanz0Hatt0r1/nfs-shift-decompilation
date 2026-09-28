@@ -148,3 +148,32 @@ The manifest records PID, selector, page size, backend, mapping boundaries, perm
 A live snapshot is not an atomic process-wide state. SHIFT can mutate memory while the tool is reading it. Use the snapshots to locate stable structures, pointers, tables, state transitions and memory correlations; do not treat a multi-structure snapshot as proof that all values existed simultaneously.
 
 Kernel ptrace-related access restrictions still apply. Start with SHIFT and the dumper under the same user. The tool does not weaken those protections.
+
+## Track/path structure analysis
+
+The track-path analyzer combines the current SHIFT.exe.c reverse-engineering evidence with live-memory snapshots:
+
+```bash
+python3 tools/shift_live_dump/analyze_track_paths.py \
+  captures/track-targeted \
+  --out captures/track-targeted/track_path_analysis
+```
+
+It scans 4-byte-aligned object candidates for these recovered layouts:
+
+- `Path`: tangent at `+0x10/+0x14`, outside `+0x18`, centreDist `+0x1c`, StartNode `+0x20`, and path flags `+0x24..+0x27`.
+- `Incident.PathOwner`: Path pointer at `+0xd8`, centre position at `+0xdc..+0xe4`, radius at `+0xe8`, and activity flags at `+0xf0..+0xf8`.
+- `AISegmentPath`: num nodes `+0x10`, segment-node array `+0x18`, length `+0x1c`, cyclic/narrow flags `+0x20/+0x24`, spacing `+0x28`, path distance `+0x2c`, current node `+0x30`, EdgeStep `+0x34`.
+- `AIPolylinePath`: num nodes `+0x10`, node array `+0x14`, length `+0x18`, width `+0x1c`, cyclic `+0x20`, spacing `+0x24`, default width `+0x28`.
+
+Candidates are filtered against mapped SHIFT.exe vftable addresses and writable target pointers. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
+
+Outputs:
+
+- `track_path_analysis.json` — structure-hit counts, pointer clusters, and next capture windows.
+- `{profile}.csv` — structural candidates for each recovered profile.
+- `stable_external_pointers.csv` — stable writable pointers found outside the selected ranges.
+- `pointer_target_clusters.csv` — dense target families and dominant source strides.
+- `next_capture_windows.csv` / `next_capture_ranges.txt` — merged windows for the next extraction pass.
+
+A zero hit count in a reduced capture means only that the selected ranges do not contain a matching object; it is not evidence that the structure is absent from the running game.
