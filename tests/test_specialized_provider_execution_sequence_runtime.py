@@ -55,10 +55,21 @@ def test_validate_execution_sequence_is_ready():
     assert result["errors"] == []
 
 
-def test_contract_marks_accumulation_semantics_as_structural_only():
+def test_contract_marks_reset_dispatch_as_structural_only():
     result = runtime.build_execution_sequence_contract()
 
     assert result["status"] == "source-backed-provider-execution-sequence"
-    assert "scalar coefficient semantics" in " ".join(
+    assert "coefficient population remains separate" in " ".join(
         result["limitations"]
     )
+
+
+def test_constraint_groups_are_scalar_reset_dispatches():
+    steps = runtime.build_execution_sequence()["steps"]
+
+    for index, width in ((5, "3"), (6, "2"), (7, "1")):
+        step = steps[index]
+        assert step["function"] == "FUN_007b2210"
+        assert step["reset_dispatch"] == "FUN_007b2210(selector)"
+        assert step["provider_reset"] == "vtable +0x1c(selector)"
+        assert width in step["width"]
