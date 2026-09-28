@@ -101,11 +101,11 @@ def _assignment_statements_with_loops(
 
 def _lhs_match(statement: str) -> re.Match[str] | None:
     lhs = statement.split("=", 1)[0]
-    return (
-        ARRAY_LHS_RE.search(lhs)
-        or LOOP_LHS_RE.search(lhs)
-        or DIRECT_LHS_RE.match(lhs)
-    )
+    if ARRAY_LHS_RE.search(lhs + "=") is not None:
+        return ARRAY_LHS_RE.search(statement)
+    if LOOP_LHS_RE.search(lhs) is not None:
+        return LOOP_LHS_RE.search(statement)
+    return DIRECT_LHS_RE.match(statement)
 
 
 def _expanded_factor_targets(
