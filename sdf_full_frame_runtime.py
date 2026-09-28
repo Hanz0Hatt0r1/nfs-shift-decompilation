@@ -169,6 +169,8 @@ def build_runtime_frame_plan(
         "stages": stages,
         "identity_selector": selected,
         "contract": contract,
+        "verification": verification,
+        "scalar_domain_verification": scalar_domain_verification,
     })
     return {
         "format": "SHIFT.SDFRuntimeFramePlan/2",
