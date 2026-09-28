@@ -229,6 +229,42 @@ def test_reference_shader_executes_ifc_comparison():
     assert result["color"] == [0.25, 0.5, 0.75, 1.0]
 
 
+
+def test_reference_shader_executes_setp_into_predicate_register():
+    instructions = [
+        Instruction(
+            0, 78, "SETP", 0, 3, 1, False,
+            [_dst(19, 0), _src(2, 0), _src(2, 1)],
+        ),
+        Instruction(
+            4, 40, "IF", 0, 2, 0, False,
+            [_src(19, 0)],
+        ),
+        Instruction(
+            8, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(2, 2)],
+        ),
+        Instruction(12, 42, "ELSE", 0, 1, 0, False, []),
+        Instruction(
+            16, 1, "MOV", 0, 3, 0, False,
+            [_dst(8, 0), _src(2, 3)],
+        ),
+        Instruction(20, 43, "ENDIF", 0, 1, 0, False, []),
+    ]
+    result = execute_shader(
+        _program(instructions, temps=()),
+        constants={
+            "c": {
+                0: (2.0, 1.0, 4.0, 4.0),
+                1: (1.0, 1.0, 2.0, 2.0),
+                2: (0.1, 0.2, 0.3, 1.0),
+                3: (0.9, 0.8, 0.7, 1.0),
+            }
+        },
+    )
+    assert result["status"] == "executed", result
+    assert result["color"] == [0.1, 0.2, 0.3, 1.0]
+
 def test_reference_shader_rejects_unbalanced_conditionals():
     result = execute_shader(
         _program([
