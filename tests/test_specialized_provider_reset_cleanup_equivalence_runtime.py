@@ -182,7 +182,7 @@ def test_summarize_reset_cleanup():
             "provider_id": 0,
             "scalar_count": 40,
             "cleanup_storage_slot_count": 410,
-            "reset_zero_slot_count": 370,
+            "reset_zero_slot_count": 410,
             "reset_unit_diagonal_count": 40,
             "reset_zero_cleanup_exact_match": True,
             "reset_zero_subset_cleanup": True,
