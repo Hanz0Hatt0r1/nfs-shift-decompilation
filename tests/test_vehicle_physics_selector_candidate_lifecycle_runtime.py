@@ -34,14 +34,17 @@ def test_phase510_batch_path_proves_temporary_exclusion_then_reset():
     assert "reset descriptor+0x74 = 0" in batch["steps"][3]
 
 
-def test_phase510_keeps_completion_flag_separate_from_selection_state():
+def test_phase510_keeps_post_load_flag_separate_from_selection_state():
     report = runtime.build_vehicle_physics_selector_candidate_lifecycle()
     consumer = report["vehicle_load_consumer_path"]
 
     assert consumer["function"] == "FUN_00465860"
-    assert report["descriptor"]["completion_flag_offset"] == "+0x1d"
-    assert report["descriptor"]["state_offset"] != report["descriptor"]["completion_flag_offset"]
+    assert report["descriptor"]["post_load_flag_offset"] == "+0x1d"
+    assert report["descriptor"]["state_offset"] != report["descriptor"]["post_load_flag_offset"]
     assert any("+0x1d = 1" in step for step in consumer["steps"])
+    assert report["population"]["function"] == "thunk_FUN_00d36a00"
+    assert "descriptor+0x1d = 0" in report["population"]["writes"]
+    assert report["post_load_state_path"]["function"] == "FUN_0040f900"
 
 
 def test_phase510_is_capture_gated_and_does_not_invent_class_identity():
