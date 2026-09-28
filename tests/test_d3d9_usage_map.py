@@ -55,7 +55,7 @@ def test_usage_map_cli_writes_ready_map(tmp_path):
         encoding="utf-8",
     )
     proc = subprocess.run(
-        [sys.executable, "d3d9_usage_map.py", str(source), str(output)],
+        [sys.executable, str(Path(__file__).resolve().parents[1] / "src" / "graphics" / "d3d9" / "d3d9_usage_map.py"), str(source), str(output)],
         check=False,
         capture_output=True,
         text=True,
@@ -83,7 +83,7 @@ def test_usage_map_cli_returns_blocked_for_partial_map(tmp_path):
         encoding="utf-8",
     )
     proc = subprocess.run(
-        [sys.executable, "d3d9_usage_map.py", str(source), str(output)],
+        [sys.executable, str(Path(__file__).resolve().parents[1] / "src" / "graphics" / "d3d9" / "d3d9_usage_map.py"), str(source), str(output)],
         check=False,
         capture_output=True,
         text=True,
