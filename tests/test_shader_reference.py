@@ -116,29 +116,23 @@ def test_reference_shader_executes_if_else_control_flow():
             8, 1, "MOV", 0, 3, 0, False,
             [_dst(8, 0), _src(2, 0)],
         ),
-        Instruction(
-            12, 42, "ELSE", 0, 1, 0, False,
-            [],
-        ),
+        Instruction(12, 42, "ELSE", 0, 1, 0, False, []),
         Instruction(
             16, 1, "MOV", 0, 3, 0, False,
             [_dst(8, 0), _src(3, 0)],
         ),
-        Instruction(
-            20, 43, "ENDIF", 0, 1, 0, False,
-            [],
-        ),
+        Instruction(20, 43, "ENDIF", 0, 1, 0, False, []),
     ]
+    constants = {
+        "c": {
+            1: (0.2, 0.3, 0.4, 1.0),
+            2: (0.8, 0.7, 0.6, 1.0),
+        }
+    }
     result = execute_shader(
         _program(instructions, temps=(0,)),
         inputs={0: (1.0, 1.0, 1.0, 1.0)},
-        constants={
-            "c": {
-                0: (1.0, 1.0, 1.0, 1.0),
-                1: (0.2, 0.3, 0.4, 1.0),
-                2: (0.8, 0.7, 0.6, 1.0),
-            }
-        },
+        constants=constants,
     )
     assert result["status"] == "executed"
     assert result["color"] == [0.2, 0.3, 0.4, 1.0]
@@ -146,13 +140,7 @@ def test_reference_shader_executes_if_else_control_flow():
     false_result = execute_shader(
         _program(instructions, temps=(0,)),
         inputs={0: (0.0, 0.0, 0.0, 0.0)},
-        constants={
-            "c": {
-                0: (1.0, 1.0, 1.0, 1.0),
-                0: (1.0, 1.0, 1.0, 1.0),
-                1: (0.0, 0.0, 0.0, 1.0),
-            }
-        },
+        constants=constants,
     )
     assert false_result["status"] == "executed"
     assert false_result["color"] == [0.8, 0.7, 0.6, 1.0]
