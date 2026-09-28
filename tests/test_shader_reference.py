@@ -364,8 +364,8 @@ def test_reference_shader_skips_false_predicated_instruction():
         _program(instructions, temps=()),
         constants={
             "c": {
-                0: (1.0, 1.0, 1.0, 1.0),
-                1: (2.0, 2.0, 2.0, 2.0),
+                0: (2.0, 2.0, 2.0, 2.0),
+                1: (1.0, 1.0, 1.0, 1.0),
                 2: (0.2, 0.3, 0.4, 1.0),
             }
         },
