@@ -123,7 +123,7 @@ The analyzer reads common regions in small blocks and records:
   largest transition.
 - `event_clusters.csv` — nearby retained candidates that peak on the same
   transition.
-- `event_analysis.json` — machine-readable metadata and transition totals.
+- `event_analysis.json` — machine-readable metadata, transition totals, and the highest-scoring retained event summary (`peak_transition`, `peak_event_score`, `peak_address`, `peak_changed_bytes`).
 
 `peak_transition=0` means `snapshot-000000 -> snapshot-000001`; the index is
 only a capture-order coordinate. The analyzer intentionally does not label a
