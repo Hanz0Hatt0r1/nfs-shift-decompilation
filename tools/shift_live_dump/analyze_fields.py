@@ -131,72 +131,89 @@ def analyze_block(
     min_transitions: int,
     fields: list[dict],
 ) -> None:
-    max_offset = max(0, block_size - 8)
-    # Aligned fields are much more useful for native C/C++ structures than a
-    # byte-by-byte scan. Include 2-byte alignment because packed flags/halves
-    # occur frequently in game state.
-    for alignment in (2, 4, 8):
-        for offset in range(0, max_offset + 1, alignment):
-            absolute = base_address + block_offset + offset
-            for kind in ("u16", "i16", "u32", "i32", "f32", "u64", "i64", "f64"):
-                size = {"u16": 2, "i16": 2, "u32": 4, "i32": 4,
-                        "f32": 4, "u64": 8, "i64": 8, "f64": 8}[kind]
-                if offset + size > block_size:
-                    continue
-                values = decode_field(chunks, offset, kind)
-                if values is None:
-                    continue
-                t = transitions(values)
-                if t < min_transitions:
-                    continue
-                fc = first_changes(values)
-                unique = len(set(values))
-                ptr = 0.0
-                if kind in ("u32", "u64"):
-                    ptr = pointer_score(values, pointer_ranges)
-                numeric = all(isinstance(v, (int, float)) for v in values)
-                if not numeric:
-                    continue
-                if kind in ("f32", "f64"):
-                    span = max(values) - min(values)
-                    abs_mean = sum(abs(v) for v in values) / len(values)
-                    if span == 0.0 or (abs_mean > 1e20 and ptr == 0.0):
-                        continue
-                    change_scale = span / max(abs_mean, 1e-12)
-                else:
-                    vmin, vmax = min(values), max(values)
-                    span = vmax - vmin
-                    change_scale = span / max(abs(abs_mean := sum(values) / len(values)), 1.0)
-                score = (
-                    t * 5
-                    + min(unique, 10)
-                    + fc * 1.5
-                    + ptr * 8
-                    + (2.0 if kind in ("f32", "f64") and change_scale < 100.0 else 0.0)
-                )
-                fields.append({
-                    "score": round(score, 4),
-                    "address": absolute,
-                    "region_start": meta["start"],
-                    "region_offset": block_offset + offset,
-                    "field_offset": offset,
-                    "size": size,
-                    "type": kind,
-                    "transitions": t,
-                    "changed_from_first": fc,
-                    "unique_states": unique,
-                    "min": min(values),
-                    "max": max(values),
-                    "span": max(values) - min(values),
-                    "pointer_hits": round(ptr, 4),
-                    "category": meta["category"],
-                    "path": meta["path"],
-                    "perms": meta["perms"],
-                    "region_size": meta["size"],
-                    "snapshots": len(values),
-                    "values": [float(v) if isinstance(v, float) else int(v) for v in values],
-                })
+    """Analyze only aligned fields whose byte range intersects a changed byte."""
+    changed_positions = bytearray(block_size)
+    first = chunks[0]
+    for chunk in chunks[1:]:
+        for i, (x, y) in enumerate(zip(first, chunk)):
+            if x != y:
+                changed_positions[i] = 1
+    positions = [i for i, changed in enumerate(changed_positions) if changed]
+    if not positions:
+        return
 
+    specs = (
+        (2, 2, ("u16", "i16")),
+        (4, 4, ("u32", "i32", "f32")),
+        (8, 8, ("u64", "i64", "f64")),
+    )
+    offsets: set[tuple[int, str]] = set()
+    for position in positions:
+        for size, alignment, kinds in specs:
+            # A changed byte can belong to a field that starts at any aligned
+            # position in the preceding size-1 bytes.
+            first_start = max(0, position - size + 1)
+            start = first_start + ((alignment - first_start % alignment) % alignment)
+            while start <= position and start + size <= block_size:
+                for kind in kinds:
+                    offsets.add((start, kind))
+                start += alignment
+
+    for offset, kind in sorted(offsets):
+        absolute = base_address + block_offset + offset
+        values = decode_field(chunks, offset, kind)
+        if values is None:
+            continue
+        t = transitions(values)
+        if t < min_transitions:
+            continue
+        fc = first_changes(values)
+        unique = len(set(values))
+        ptr = 0.0
+        if kind in ("u32", "u64"):
+            ptr = pointer_score(values, pointer_ranges)
+
+        if kind in ("f32", "f64"):
+            span = max(values) - min(values)
+            abs_mean = sum(abs(v) for v in values) / len(values)
+            if span == 0.0 or (abs_mean > 1e20 and ptr == 0.0):
+                continue
+            change_scale = span / max(abs_mean, 1e-12)
+        else:
+            span = max(values) - min(values)
+            mean = sum(values) / len(values)
+            change_scale = span / max(abs(mean), 1.0)
+
+        score = (
+            t * 5
+            + min(unique, 10)
+            + fc * 1.5
+            + ptr * 8
+            + (2.0 if kind in ("f32", "f64") and change_scale < 100.0 else 0.0)
+        )
+        fields.append({
+            "score": round(score, 4),
+            "address": absolute,
+            "region_start": meta["start"],
+            "region_offset": block_offset + offset,
+            "field_offset": offset,
+            "size": {"u16": 2, "i16": 2, "u32": 4, "i32": 4,
+                     "f32": 4, "u64": 8, "i64": 8, "f64": 8}[kind],
+            "type": kind,
+            "transitions": t,
+            "changed_from_first": fc,
+            "unique_states": unique,
+            "min": min(values),
+            "max": max(values),
+            "span": span,
+            "pointer_hits": round(ptr, 4),
+            "category": meta["category"],
+            "path": meta["path"],
+            "perms": meta["perms"],
+            "region_size": meta["size"],
+            "snapshots": len(values),
+            "values": [float(v) if isinstance(v, float) else int(v) for v in values],
+        })
 
 def group_structures(fields: list[dict], gap: int, top: int) -> list[dict]:
     """Group high-signal fields that sit close together in one mapping."""
