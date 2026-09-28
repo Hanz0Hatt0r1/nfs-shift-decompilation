@@ -75,7 +75,7 @@ def test_compare_probe_session_blocks_missing_post_capture_when_expected_has_one
     expected = {"pre_solve": _pre(), "post_solve": _post()}
     result = runtime.compare_probe_session(observed, expected)
     assert result["ready"] is False
-    assert result["post_solve"]["errors"][0]["kind"] == "missing-post-solve"
+    assert result["post_solve"]["errors"][0]["kind"] == "missing-observed-post-solve"
 
 
 def test_session_cli_builds_parser_with_optional_post_and_expected_capture():
