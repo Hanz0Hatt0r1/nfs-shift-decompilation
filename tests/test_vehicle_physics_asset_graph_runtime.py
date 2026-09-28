@@ -48,6 +48,7 @@ def test_vehicle_physics_graph_joins_all_four_resource_boundaries(tmp_path):
     assert report["summary"]["sdf_bar_matrix_coupling_ready"] is True
     assert report["summary"]["sdf_joint_matrix_coupling_ready"] is True
     assert report["summary"]["sdf_hinge_bar_matrix_coupling_ready"] is True
+    assert report["summary"]["sdf_post_solve_application_ready"] is True
     assert report["summary"]["sdf_matrix_assembly_ready"] is True
     assert report["summary"]["sdf_matrix_storage_ready"] is True
     assert report["summary"]["sdf_real_solver_domain_ready"] is True
