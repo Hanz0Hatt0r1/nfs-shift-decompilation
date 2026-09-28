@@ -102,3 +102,22 @@ def test_loop_factor_targets_can_exceed_legacy_segment_extent():
     )
 
     assert targets == {30, 31}
+
+
+def test_array_form_factor_targets_are_supported():
+    targets = runtime._expanded_factor_targets(
+        [
+            "for (local_10 = 30; local_10 < 32; local_10 = local_10 + 1) {",
+            "  (&DAT_00001000)[local_10] =",
+            "       *(double *)(&DAT_00002000 + local_10 * 8) * dVar1;",
+            "}",
+            "DAT_00002000 = DAT_00002000 * dVar1;",
+        ],
+        row_base=0x1000,
+        pivot_index=0,
+        scalar_count=40,
+        output_vector_base=0x3000,
+        output_vector_bytes=40 * 8,
+    )
+
+    assert targets == {30, 31}
