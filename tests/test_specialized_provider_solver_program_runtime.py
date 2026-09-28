@@ -132,3 +132,56 @@ def test_solver_program_validation_rejects_alias_domain_mismatch():
 
     assert result["ready"] is False
     assert "alias-map-scalar-count-mismatch" in result["errors"]
+
+
+
+def test_solver_program_validation_requires_source_shape_gate():
+    result = runtime.validate_solver_program(
+        {
+            "provider_id": 0,
+            "scalar_count": 40,
+            "readiness": {
+                "pivot_geometry": True,
+                "execution_blocks": True,
+                "update_relations": True,
+                "output_schedule": True,
+                "acceptance_factor_separation": True,
+                "workspace_alias_map": True,
+                "source_context": True,
+                "source_shape": False,
+            },
+            "evidence": {
+                "execution_schedule": {"blocks": [{}] * 40},
+                "output_schedule": {"assignments": []},
+                "workspace_alias_map": {"scalar_count": 40},
+            },
+            "errors": [],
+        }
+    )
+
+    assert result["ready"] is False
+    assert "readiness-source_shape-false" in result["errors"]
+
+
+def test_solver_program_summary_exposes_source_shape_metrics():
+    report = {
+        "provider_id": 0,
+        "scalar_count": 40,
+        "evidence": {
+            "source_shape": {
+                "summary": {
+                    "pivot_count": 40,
+                    "unique_loop_families": 3,
+                }
+            },
+            "update_relations": {"summary": {}},
+            "output_schedule": {"summary": {}},
+            "workspace_alias_map": {"summary": {}},
+        },
+        "ready": True,
+    }
+
+    summary = runtime.summarize_solver_program(report)
+
+    assert summary["source_shape_pivots"] == 40
+    assert summary["source_shape_loop_families"] == 3
