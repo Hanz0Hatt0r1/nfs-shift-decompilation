@@ -2,9 +2,9 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 511**
+> **Current mainline: Phase 512**
 >
-> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path. Phase 507 adds the participant slot registry/update bridge used by PhysicsParticipant.cpp. Phase 508 resolves the selector global as DAT_00bbc600 and keeps it explicitly separate from the participant-manager global DAT_00c109e0. Phase 509 traces the saved participant pointer/ordinal through the subsequent process/reselection loop and vehicle-BFF load. Phase 510 closes the descriptor-level selector candidate lifecycle, including the observed +0x74 eligibility/exclusion state, +0x8c ordinal writeback, bounded batch reservation and distinct +0x1d post-load/process flag. Phase 511 closes the IGPhaseVehicle completion/finalization boundary, including per-container callbacks, guarded +0x160 cleanup, resource teardown and final object callback ordering. Exact retail numeric parity remains capture-gated.
+> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path. Phase 507 adds the participant slot registry/update bridge used by PhysicsParticipant.cpp. Phase 508 resolves the selector global as DAT_00bbc600 and keeps it explicitly separate from the participant-manager global DAT_00c109e0. Phase 509 traces the saved participant pointer/ordinal through the subsequent process/reselection loop and vehicle-BFF load. Phase 510 closes the descriptor-level selector candidate lifecycle, including the observed +0x74 eligibility/exclusion state, +0x8c ordinal writeback, bounded batch reservation and distinct +0x1d post-load/process flag. Phase 511 closes the IGPhaseVehicle completion/finalization boundary, including per-container callbacks, guarded +0x160 cleanup, resource teardown and final object callback ordering. Phase 512 maps the selector descriptor population path exactly, including capacity/stride, packed token bits, source-to-descriptor copies, +0x74 initialization and conditional +0x70 population. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
@@ -114,7 +114,8 @@ The repository now models:
 - the vehicle physics selector-context separation contract;
 - the vehicle physics participant process/reselection contract;
 - the vehicle physics selector candidate lifecycle contract;
-- the IGPhaseVehicle completion/finalization contract.
+- the IGPhaseVehicle completion/finalization contract;
+- the selector descriptor population contract.
 
 ### Phase 499–500 capture bundle
 
@@ -151,6 +152,7 @@ python tools/build_physics_participant_manager_event.py -o physics_participant_m
 python tools/build_vehicle_physics_participant_process.py -o participant_process_reselect.json
 python tools/build_vehicle_physics_selector_candidate_lifecycle.py -o selector_candidate_lifecycle.json
 python tools/build_igphasevehicle_finalization.py -o igphasevehicle_finalization.json
+python tools/build_vehicle_physics_selector_descriptor_population.py -o selector_descriptor_population.json
 python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py
 
 ./shift-bff-viewer /path/to/BMW_M3_E36.bff
