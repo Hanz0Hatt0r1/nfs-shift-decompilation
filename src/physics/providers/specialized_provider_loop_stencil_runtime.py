@@ -46,6 +46,8 @@ def _function_spec(provider_id: int) -> dict[str, Any]:
 
 
 def _lhs_match(line: str) -> re.Match[str] | None:
+    if "=" not in line:
+        return None
     lhs = line.split("=", 1)[0]
     if ARRAY_LHS_RE.search(lhs + "=") is not None:
         return ARRAY_LHS_RE.search(line)
