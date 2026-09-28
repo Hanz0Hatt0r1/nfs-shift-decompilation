@@ -147,12 +147,15 @@ def validate_vtable_contract(provider_id: int) -> dict[str, Any]:
         if offset not in lifecycle.slots:
             errors.append(f"missing-slot:{hex(offset)}")
 
-    if lifecycle.slots[0x18] != provider.solve_function:
-        errors.append("solve-slot-function-mismatch")
-    if lifecycle.slots[0x1C] != lifecycle.reset_function:
-        errors.append("reset-slot-function-mismatch")
-    if lifecycle.slots[0x20] != lifecycle.cleanup_function:
-        errors.append("cleanup-slot-function-mismatch")
+    if lifecycle.slots.get(0x18) != provider.solve_function:
+        if 0x18 in lifecycle.slots:
+            errors.append("solve-slot-function-mismatch")
+    if lifecycle.slots.get(0x1C) != lifecycle.reset_function:
+        if 0x1C in lifecycle.slots:
+            errors.append("reset-slot-function-mismatch")
+    if lifecycle.slots.get(0x20) != lifecycle.cleanup_function:
+        if 0x20 in lifecycle.slots:
+            errors.append("cleanup-slot-function-mismatch")
 
     return {
         "format": "SHIFT.SpecializedProviderVTableLifecycleValidation/1",
