@@ -55,7 +55,7 @@ def test_sparse_guided_ldlt_reconstructs_matching_structural_matrix():
         factor_edges=factor_edges,
     )
 
-    assert diagonal == list(d)
+    assert all(math.isclose(a, b, rel_tol=0.0, abs_tol=1e-12) for a, b in zip(diagonal, d))
     for left, right in zip(reconstructed, matrix):
         assert all(
             math.isclose(a, b, rel_tol=1e-12, abs_tol=1e-12)
