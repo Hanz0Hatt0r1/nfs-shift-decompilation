@@ -57,6 +57,8 @@ def build_reset_effect_event(
         "provider_vtable": int(provider_vtable),
         "selector": int(selector),
         "frame_index": frame_index,
+        # Canonical captured field: "reset_event_count": self.reset_event_count
+        # in the GDB return-probe object is normalized to this integer payload.
         "reset_event_count": int(reset_event_count),
         "addresses": {
             "diagonal": _fmt_addr(addresses["diagonal"]),
