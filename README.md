@@ -2,9 +2,9 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 505**
+> **Current mainline: Phase 506**
 >
-> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Exact retail numeric parity remains capture-gated.
+> Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path, while keeping its join to the selector explicitly unproven. Exact retail numeric parity remains capture-gated.
 
 ## Mission
 
@@ -108,7 +108,8 @@ The repository now models:
 - pre-PhysX/provider handoff cross-contract validation;
 - BFF-to-pre-PhysX/provider handoff orchestration;
 - runtime-capture preflight for retail PE/Wine/GDB/GDB Python;
-- the source-backed vehicle physics participant creation/load gate.
+- the source-backed vehicle physics participant creation/load gate;
+- the PhysicsParticipantManager event-0x20 ingestion contract.
 
 ### Phase 499–500 capture bundle
 
@@ -141,14 +142,17 @@ python tools/extract_apitrace_unique_bmw.py \
 python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
 python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff
 python tools/build_vehicle_physics_participant_gate.py -o participant_gate.json
+python tools/build_physics_participant_manager_event.py -o physics_participant_manager_event.json
 python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py
 
 ./shift-bff-viewer /path/to/BMW_M3_E36.bff
 ```
 
-## Physics participant gate
+## Physics participant manager event
 
 Phase 505 records the `IGPhaseVehicle → FUN_00410ef0 → wait/success → Pakfiles/Vehicles/%s.bff` control flow without assigning a PhysX class identity. See `docs/PHASE505_VEHICLE_PHYSICS_PARTICIPANT_GATE.md`.
+
+Phase 506 records `FUN_0070e1c0 → opcode 0x20 → FUN_00714560(DAT_00c109e0) → manager +0x39c = 1` as a separate source-backed evidence layer. It intentionally does not assert that this manager object is the exact registry consumed by `FUN_00410ef0`. See `docs/PHASE506_PHYSICS_PARTICIPANT_MANAGER_EVENT.md`.
 
 ## Current CI note
 
