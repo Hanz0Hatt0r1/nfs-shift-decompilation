@@ -254,8 +254,8 @@ def build_endpoint_contribution_schedule(
         "pair_operation_count": pair_operation_count,
         "operation_count": len(operations),
         "write_cell_count": len(total_cells),
-        "strict_upper_write_cell_count": sum(
-            row < column
+        "lower_triangle_off_diagonal_cell_count": sum(
+            row > column
             for row, column in total_cells
         ),
         "operations": operations,
