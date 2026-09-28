@@ -143,6 +143,21 @@ Each snapshot contains `manifest.json`, `maps.txt` and `regions/*.bin`. Region f
 
 The manifest records PID, selector, page size, backend, mapping boundaries, permissions, path and read statistics.
 
+The generated range list from the track/path analyzer can be fed directly to
+the extractor without copying individual addresses:
+
+```bash
+python3 tools/shift_live_dump/extract_ranges.py \
+  <full-capture> \
+  track-path-targets \
+  --preset none \
+  --range-file track-targeted/track_path_analysis/next_capture_ranges.txt
+```
+
+`--range-file` accepts one `START:SIZE` range per line and ignores blank
+lines and `#` comments. Multiple range files and explicit `--range`
+arguments can be combined; ranges are merged before extraction.
+
 ## Evidence limits
 
 A live snapshot is not an atomic process-wide state. SHIFT can mutate memory while the tool is reading it. Use the snapshots to locate stable structures, pointers, tables, state transitions and memory correlations; do not treat a multi-structure snapshot as proof that all values existed simultaneously.
