@@ -12,9 +12,9 @@ from typing import Any, Mapping, Sequence
 FORMAT = "SHIFT.SpecializedProviderScalarResetCallsiteExtractorRuntime/1"
 
 CALL_RE = re.compile(
-    r"^s*([0-9A-Fa-f]+):s*"
-    r"((?:[0-9A-Fa-f]{2}s+)+)"
-    r"calls+0x([0-9A-Fa-f]+)s*$"
+    r"^\s*([0-9A-Fa-f]+):\s*"
+    r"((?:[0-9A-Fa-f]{2}\s+)+)"
+    r"call\s+0x([0-9A-Fa-f]+)\s*$"
 )
 
 DEFAULT_TARGET = 0x007B2210
