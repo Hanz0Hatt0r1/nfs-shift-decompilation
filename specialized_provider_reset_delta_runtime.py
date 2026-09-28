@@ -32,18 +32,6 @@ def _value_map(
     }
 
 
-def _outside_workspace(
-    address: int,
-    *,
-    layout: Any,
-) -> bool:
-    return not (
-        layout.factor_workspace_base
-        <= address
-        < layout.output_vector_base
-    )
-
-
 def _classify_change(
     address: int,
     value: float,
@@ -226,9 +214,6 @@ def compare_capture_to_reset(
         )
         and not nonzero_outside_reset,
         "reset_zero_domain_ready": bool(reset_domain_report.get("ready")),
-        "cleanup_reset_equivalent": bool(
-            reset_equivalence.get("reset_zero_cleanup_exact_match")
-        ),
         "ready": bool(
             normalized.get("ready")
             and reset_domain_report.get("ready")
