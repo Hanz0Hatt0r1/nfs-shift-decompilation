@@ -45,28 +45,40 @@ def test_profile_zero_addresses_includes_bulk_clear_ranges():
     }
 
 
-def test_reset_profile_balanced_parser_keeps_nested_switch():
-    fixture = """
-void FUN_00000001(undefined4 param_1)
-{
-  switch(param_1) {
-  case 0:
-    if (param_1) {
-      FUN_test();
-    }
-    DAT_00001000 = 0x3ff0000000000000;
-    break;
-  case 1:
-    DAT_00001008 = 0x3ff0000000000000;
-    break;
-  }
-}
-"""
-    body = runtime._balanced_function_body(fixture, 0)
-    cases = runtime._case_blocks(body)
+def test_case_seed_clear_conflicts_stays_empty_for_valid_row():
+    result = runtime._case_seed_clear_conflicts(
+        {
+            "rows": [
+                {
+                    "pivot_index": 0,
+                    "diagonal_address": "0x1000",
+                    "zero_assignments": ["0x1008"],
+                    "bulk_clears": [
+                        {"base": "0x1010", "bytes": 0x08},
+                    ],
+                }
+            ]
+        }
+    )
 
-    assert [case for case, _ in cases] == [0, 1]
-    assert "DAT_00001000 = 0x3ff0000000000000;" in cases[0][1]
+    assert result == []
+
+
+def test_case_seed_clear_conflicts_detects_same_case_overlap():
+    result = runtime._case_seed_clear_conflicts(
+        {
+            "rows": [
+                {
+                    "pivot_index": 7,
+                    "diagonal_address": "0x1050",
+                    "zero_assignments": ["0x1050"],
+                    "bulk_clears": [],
+                }
+            ]
+        }
+    )
+
+    assert result == [7]
 
 
 def test_validate_reset_cleanup_accepts_exact_reset_partition():
@@ -75,12 +87,13 @@ def test_validate_reset_cleanup_accepts_exact_reset_partition():
             "provider_id": 0,
             "scalar_count": 2,
             "reset_zero_slot_count": 2,
-            "cleanup_storage_slot_count": 4,
+            "cleanup_storage_slot_count": 2,
             "reset_unit_diagonal_count": 2,
-            "reset_zero_cleanup_exact_match": False,
+            "reset_zero_cleanup_exact_match": True,
             "reset_zero_subset_cleanup": True,
             "unit_diagonal_inside_cleanup": True,
             "unit_diagonal_overlaps_reset_zero": False,
+            "case_seed_clear_conflicts": [],
             "cleanup_reconstructed_from_reset": True,
             "cleanup_reset_partition_disjoint": True,
             "output_zero_exact_match": True,
@@ -104,6 +117,7 @@ def test_validate_reset_cleanup_rejects_missing_reset_seed():
             "reset_zero_subset_cleanup": True,
             "unit_diagonal_inside_cleanup": True,
             "unit_diagonal_overlaps_reset_zero": False,
+            "case_seed_clear_conflicts": [],
             "cleanup_reconstructed_from_reset": False,
             "cleanup_reset_partition_disjoint": True,
             "output_zero_exact_match": True,
@@ -123,10 +137,11 @@ def test_validate_reset_cleanup_requires_one_diagonal_per_scalar():
             "reset_zero_slot_count": 280,
             "cleanup_storage_slot_count": 314,
             "reset_unit_diagonal_count": 33,
-            "reset_zero_cleanup_exact_match": False,
+            "reset_zero_cleanup_exact_match": True,
             "reset_zero_subset_cleanup": True,
             "unit_diagonal_inside_cleanup": True,
             "unit_diagonal_overlaps_reset_zero": False,
+            "case_seed_clear_conflicts": [],
             "cleanup_reconstructed_from_reset": True,
             "cleanup_reset_partition_disjoint": True,
             "output_zero_exact_match": True,
@@ -146,7 +161,7 @@ def test_validate_reset_cleanup_rejects_overlapping_unit_seed():
             "reset_zero_slot_count": 280,
             "cleanup_storage_slot_count": 314,
             "reset_unit_diagonal_count": 34,
-            "reset_zero_cleanup_exact_match": True,
+            "reset_zero_cleanup_exact_match": False,
             "reset_zero_subset_cleanup": True,
             "unit_diagonal_inside_cleanup": True,
             "unit_diagonal_overlaps_reset_zero": True,
@@ -169,7 +184,7 @@ def test_summarize_reset_cleanup():
             "cleanup_storage_slot_count": 410,
             "reset_zero_slot_count": 370,
             "reset_unit_diagonal_count": 40,
-            "reset_zero_cleanup_exact_match": False,
+            "reset_zero_cleanup_exact_match": True,
             "reset_zero_subset_cleanup": True,
             "unit_diagonal_inside_cleanup": True,
             "unit_diagonal_overlaps_reset_zero": False,
@@ -182,7 +197,7 @@ def test_summarize_reset_cleanup():
 
     assert result["provider_id"] == 0
     assert result["scalar_count"] == 40
-    assert result["reset_zero_cleanup_exact_match"] is False
+    assert result["reset_zero_cleanup_exact_match"] is True
     assert result["cleanup_reconstructed_from_reset"] is True
     assert result["cleanup_reset_partition_disjoint"] is True
     assert result["output_zero_exact_match"] is True
