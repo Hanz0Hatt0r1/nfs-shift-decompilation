@@ -209,7 +209,7 @@ def analyze_capture_bundle(
 
     pre_post_order = (
         None
-        if post is None
+        if post is None or not reset_events
         else compare_provider_pre_post_order(
             pre,
             post,
