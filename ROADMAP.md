@@ -178,6 +178,10 @@ All recovered JOINT/HINGE/BAR coupling kernels are exposed through one source-fa
 
 `FUN_007bb250` exposes the remaining HINGE/BAR 2×1 or 1×2 mixed matrix block with exact transformed rows, side-flag sign and scalar-base-dependent storage orientation.
 
+## Phase 402: SDF post-solve application
+
+`FUN_007b4110` is now executable: JOINT consumes three solved scalars, HINGE two, BAR one; JOINT/BAR responses use `FUN_007baa70/baaf0`, while HINGE directly updates positive/negative angular state. The source vector is the global solver buffer at `+0x40`. Next target: end-to-end frame verification against one captured solver state.
+
 ## Phase 401: HINGE/BAR matrix coupling
 
 `FUN_007bb250` now has an executable HINGE/BAR mixed 2×1 kernel, including exact transformed angular/linear rows, BAR point/direction cross terms, equal/different side sign and scalar-base orientation. This closes the mixed-type matrix population inside the HINGE pass. Next target: post-solve scalar application and end-to-end solver verification.
