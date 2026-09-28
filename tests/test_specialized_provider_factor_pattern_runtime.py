@@ -7,9 +7,10 @@ void FUN_example(void)
   double dVar1;
   dVar1 = 1.0 / _DAT_00001000;
   for (local_10 = 1; local_10 < 4; local_10 = local_10 + 1) {
-    *(double *)(&DAT_00001000 + local_10 * 8) = 0.0;
+    *(double *)(&DAT_00001000 + local_10 * 8) =
+         *(double *)(&DAT_00002000 + local_10 * 8) * dVar1;
   }
-  DAT_00001020 = 1.0;
+  DAT_00002000 = DAT_00002000 * dVar1;
   dVar1 = 1.0 / _DAT_00001008;
   for (local_10 = 2; local_10 < 4; local_10 = local_10 + 1) {
     *(double *)(&DAT_00001008 + local_10 * 8) = 0.0;
