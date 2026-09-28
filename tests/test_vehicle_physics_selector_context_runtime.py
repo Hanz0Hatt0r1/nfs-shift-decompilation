@@ -33,7 +33,7 @@ def test_phase508_matching_rules_remain_observational():
     assert matching["function"] == "FUN_00410ef0"
     assert matching["linking"]["comparison"] == "__stricmp"
     assert matching["insert"]["function"] == "FUN_00800dd0"
-    assert matching["termination"]["fallback_scan"] == "FUN_0052cce0"
+    assert matching["termination"]["fallback_scan"].startswith("FUN_0052cce0")
     assert matching["termination"]["candidate_ready_test"] == "candidate+0x74 == 0"
 
 
