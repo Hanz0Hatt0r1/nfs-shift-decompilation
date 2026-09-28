@@ -86,6 +86,16 @@ CLI:
 
 `python tools/build_physics_participant_registry_update.py -o physics_participant_registry_update.json`
 
+## Selector-context separation
+
+Phase 508 adds `SHIFT.VehiclePhysicsSelectorContext/1`. The source-backed accessor `thunk_FUN_00453990 → FUN_00402435` returns `DAT_00bbc600`; that global is initialized by `FUN_00410490`, its selector storage is at `+0x9fc`, and shutdown is handled by `FUN_00411430`.
+
+This is separate from the `DAT_00c109e0` object used by the Phase 506-507 PhysicsParticipantManager event/registry APIs. No higher-level object identity is inferred between them.
+
+CLI:
+
+`python tools/build_physics_selector_context.py -o physics_selector_context.json`
+
 ## Current next step
 
 Capture a real provider frame, verify the bundle, then use the handoff and Phase 501
