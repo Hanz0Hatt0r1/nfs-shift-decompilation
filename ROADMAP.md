@@ -3,9 +3,9 @@
 This roadmap tracks the runtime-oriented path from verified resource parsing to a
 minimal reproducible render of one real SHIFT vehicle.
 
-## Current milestone: vehicle physics resource graph + PhysX runtime boundary
+## Current milestone: specialized-provider solver reconstruction
 
-Current `main` is advancing through Phase 382 on the non-rendering physics runtime track; renderer work remains explicitly frozen while the vehicle physics resource graph is completed. The Python and native evidence paths remain covered by CI.
+Current `main` is advancing through Phase 444 on the non-rendering physics runtime track. The specialized 40/34-scalar provider solvers now have source-backed pivot geometry, static row topology, factor patterns, workspace write graphs, RHS dependency stencils, address dependency graphs, operator signatures, and a combined solver reconstruction IR. Numeric provider execution remains capture-gated; the renderer workstream remains unchanged by this track.
 
 The immediate target is a deterministic pipeline:
 
@@ -105,6 +105,26 @@ The retail CDF loader boundary is now represented as `SHIFT.VehicleCDFRuntime/1`
 Turbo `.BBF/.TBF` loader boundaries are now represented by `SHIFT.TurboRuntime/1`, including exact field offsets, source conversions, active-state timing clamps and the shared upgrade modifier chain. The real BMW archive contains `vehicles/physics/turbo/gen_lowrpm_33.tbf` and `vehicles/physics/turbo/nitrous.bbf`.
 
 The next physics target is the SDK-specific object construction behind `FUN_007b3150`/`FUN_007b3820`, while Turbo resource semantics remain conservative about physical units.
+
+## Phase 444: specialized-provider solver reconstruction IR
+
+Phases 440–444 add the source-backed reconstruction layers for the two fixed-layout provider solvers: workspace write graph, RHS reference stencils, address dependency graph, operator signatures, and combined solver IR. The repository stores only normalized structural metadata; proprietary retail expressions remain outside the tree. Real runtime provider selection and numeric parity remain capture-gated.
+
+## Phase 443: specialized-provider operator signatures
+
+Classifies retail assignment shapes such as subtract-product, subtract-product-then-scale, pivot scaling and product without storing the proprietary RHS expressions.
+
+## Phase 442: specialized-provider dependency graph
+
+Collapses RHS workspace references into a deduplicated address-level data-dependency graph while preserving output-vector and global references separately.
+
+## Phase 441: specialized-provider RHS reference stencils
+
+Normalizes source-level RHS references into workspace/output/global domains, expands local loop indices and validates workspace destinations against Phase 440.
+
+## Phase 440: specialized-provider workspace update graph
+
+Resolves direct, pointer-loop and flat-array workspace writes into the exact Phase 435 row/column topology and cross-checks the recovered factor pattern.
 
 ## Phase 435: exact provider row-pointer topology
 
