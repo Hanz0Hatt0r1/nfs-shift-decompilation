@@ -113,8 +113,10 @@ def factorize_ldlt(
             if (i, j) not in edges:
                 continue
             lij = l[j][i]
-            for k in range(i + 1, n):
-                if (i, k) not in edges or (j, k) not in edges:
+            for k in range(j, n):
+                if (i, k) not in edges:
+                    continue
+                if k != j and (j, k) not in edges:
                     continue
                 a[j][k] -= lij * a[i][k]
                 a[k][j] = a[j][k]
