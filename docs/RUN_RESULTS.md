@@ -10,16 +10,26 @@ The older baseline recorded 193 Python tests passed and 2 skipped. This is histo
 
 ## Current mainline
 
-Commit: `bacbc103620b1d966ceaae52ee848de0b484801f`
+Commit: `3e6ed58654f4b5a22de92af6aab82ee2e3780a48`
 
 | CI job | Result |
 |---|---|
 | native | success |
 | capture-producer | success |
 | python | success |
+| Vulkan smoke | success |
 
-The Phase 505 merge followed a green PR validation: Python, native, capture-producer
-and Vulkan smoke all passed. The post-merge mainline run also passed all four checks.
+The Phase 507 merge followed a green PR validation: Python, native, capture-producer
+and Vulkan smoke all passed. The post-merge mainline run for commit
+`3e6ed58654f4b5a22de92af6aab82ee2e3780a48` also passed all four checks.
+
+## Phase 507 verification coverage
+
+The participant registry/update tests cover manager slot allocation at `+0x140` with
+`0x1fa0` stride, slot count `+0x148`, the `FUN_00713f40` registration writeback,
+`FUN_00713ec0` state refresh, and the direct `PhysicsParticipant.cpp` type-3 callsite.
+The BFF-to-pre-PhysX handoff tests also verify that the registry/update contract is
+present in the composed manifest.
 
 ## Phase 504 verification coverage
 
