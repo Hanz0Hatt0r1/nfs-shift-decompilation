@@ -140,14 +140,15 @@ python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
 
 ## Current CI note
 
-At commit `9bab80af4673856f77d58bed684e7a5290ff6f03`:
+At commit `dffddaaa0db4290b35d3826234c2e2e7a867cb3a` (2026-09-28):
 
 - native: success;
 - capture-producer: success;
-- linux-vulkan: success;
-- Python CI: fails during collection because `tools/run_specialized_provider_differential.py:131` contains an unterminated string literal.
+- Python CI: one regression test failed after 2537 tests passed and 3 were skipped;
+- failing test: `tests/test_bmw_runtime_render_contract.py::test_runtime_render_contract_builds_stage_specific_inputs`;
+- failure: `KeyError: "byte_hashes"` because the runtime render contract exposed byte hashes at `shader.byte_hashes` while the test contract expects them under `shader.identity.byte_hashes`.
 
-This is a current code/CI issue, not evidence that the documentation or capture-bundle design is invalid.
+The fix keeps the existing top-level `shader.byte_hashes` compatibility field and mirrors the same values inside the runtime shader identity object.
 
 ## Repository map
 
