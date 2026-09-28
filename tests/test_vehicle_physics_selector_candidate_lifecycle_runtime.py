@@ -11,7 +11,7 @@ def test_phase510_descriptor_layout_and_defaults_are_source_backed():
     assert descriptor["stride"] == "0x90"
     assert descriptor["state_offset"] == "+0x74"
     assert descriptor["ordinal_offset"] == "+0x8c"
-    assert descriptor["constructor_defaults"]["+0x74"] == 1
+    assert descriptor["constructor_defaults"]["+0x74"] == "not written by FUN_0040eec0"
     assert descriptor["constructor_defaults"]["+0x8c"] == 0
 
 
