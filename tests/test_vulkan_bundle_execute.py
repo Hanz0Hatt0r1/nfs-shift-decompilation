@@ -18,7 +18,7 @@ def test_native_vulkan_bundle_executor_contract():
 
 
 def test_vulkan_bundle_runner_contract():
-    source = Path("vulkan_bundle_run.py").read_text(encoding="utf-8")
+    source = Path("src/render/vulkan/vulkan_bundle_run.py").read_text(encoding="utf-8")
     assert "compile_bmw_vulkan_bundle" in source
     assert "validate_bmw_vulkan_interface" in source
     assert "shift_vulkan_bundle_execute" in source
