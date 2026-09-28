@@ -257,6 +257,7 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
         shader_validation = None
         if linked_pair is not None:
             shader_validation = linked_pair.get("shader_validation")
+        selected_fxo = material.get("selected_fxo") or shader_selection.get("selected_fxo") or {}
         external_samplers = []
         for external in material.get("external_samplers", []) or []:
             row = dict(external)
@@ -279,6 +280,15 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
                 "vertex_input_locations": linked_pair.get("vertex_input_locations", {}) if linked_pair else {},
                 "constant_buffer_binding": 14,
                 "validation": shader_validation,
+                "source_payload_sha256": selected_fxo.get("payload_sha256"),
+                "pixel_sha256": selected_fxo.get("pixel_sha256"),
+                "vertex_sha256": selected_fxo.get("vertex_sha256"),
+                "pair_sha256": selected_fxo.get("pair_sha256"),
+                "permutation_identity": (
+                    material.get("permutation_identity")
+                    or shader_selection.get("permutation_identity")
+                    or selected_fxo.get("permutation_identity")
+                ),
             },
             "textures": texture_commands,
             "external_samplers": external_samplers,
