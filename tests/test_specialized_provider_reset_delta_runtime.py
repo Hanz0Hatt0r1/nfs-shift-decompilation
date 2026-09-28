@@ -144,3 +144,20 @@ def test_reset_delta_retains_cleanup_mismatch_as_metadata():
 
     assert result["ready"] is True
     assert result["provider_id"] == 1
+
+
+def test_summarize_reset_delta_exposes_cleanup_partition_status():
+    result = runtime.summarize_reset_delta(
+        {
+            "provider_id": 0,
+            "scalar_count": 40,
+            "counts": {},
+            "reset_state_equivalent": True,
+            "cleanup_reset_equivalent": True,
+            "cleanup_reset_partition_disjoint": True,
+            "ready": True,
+        }
+    )
+
+    assert result["cleanup_reset_equivalent"] is True
+    assert result["cleanup_reset_partition_disjoint"] is True
