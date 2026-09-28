@@ -30,7 +30,7 @@ PROVIDER_SOLVER_ABI = {
 
 BUILTIN_SOLVER_ABI = {
     "function": "FUN_007b0f20",
-    "signature": "void FUN_007b0f20(void *solver_state, void **row_pointer_table, double *rhs, uint32 scalar_count)",
+    "signature": "void __thiscall FUN_007b0f20(void *this,int param_1,int param_2,int param_3)",
     "abi": "__thiscall",
     "stack_offsets": {
         "solver_state": "+0x04",
