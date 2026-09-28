@@ -46,6 +46,8 @@
 
 > **Phase 438 — acceptance RLE source extractor:** the provider acceptance masks are now regenerable directly from FUN_007c6e50/FUN_007cdb40 in a local retail SHIFT.exe.c, including exact RLE entry counts and strict-upper coverage.
 
+> **Phase 439 — specialized-provider factor pattern:** future-column coefficient writes can now be extracted from the actual unrolled provider solver, yielding the static post-pivot factor edge set for each solver row.
+
 > **Current physics gate:** run `tools/run_sdf_solver_probe.py SHIFT.exe --output out/sdf-solver-capture` to validate the retail PE and generate a deterministic GDB attach bundle, then attach the probe to the retail 32-bit Wine process with the generated `attach.gdb`; the probe also records `frame_entry_XXXXXX.json` with provider/builtin backend selection, and `tools/verify_sdf_probe_session.py` accepts it with `--frame` when normalizing the resulting `pre_solve_XXXXXX.json` / `post_solve_XXXXXX.json` pair with `tools/verify_sdf_probe_session.py`. The repository intentionally does not fabricate a numeric retail solver frame; exact retail-vs-reimplementation equality still depends on a real runtime capture.
 
 > **Exact apitrace filtering:** `tools/extract_apitrace_unique_bmw.py --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json` narrows same-signature candidates to the already identified BMW runtime VB/IB pointers when processing the same capture.
