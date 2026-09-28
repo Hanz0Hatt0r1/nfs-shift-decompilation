@@ -41,7 +41,8 @@ def test_provider_probe_order_skips_rejected_slot():
     assert released == ["old_matrix", "old_rows"]
     assert [call.vtable_offset for call in out.calls] == [0x14, 0x14, 0x0C, 0x04, 0x08, 0x2C]
     assert out.primary_storage == "p1:rows"
-    assert out.aux_storage == "p1:graph"
+    assert out.graph_storage == "p1:graph"
+    assert out.aux_storage == "p1:aux"
     assert out.secondary_domain == 17
 
 
@@ -87,3 +88,19 @@ def test_execution_summary_keeps_call_trace():
     assert summary["selected_slot"] == 0
     assert summary["call_trace"][0]["vtable_offset"] == 0x14
     assert summary["state_updates"]["per_body+0xa8"] == 17
+
+
+def test_summary_preserves_graph_and_aux_slots():
+    backend = FakeBackend(True, "p0")
+    out = runtime.run_provider_selection(
+        scalar_count=2,
+        initial_row_table="r",
+        old_matrix="m",
+        old_row_table="t",
+        backends=(backend, None),
+        release_matrix=lambda _: None,
+        release_rows=lambda _: None,
+    )
+    summary = runtime.summarize_execution(out)
+    assert summary["state_updates"]["physics_system+0x40"] == "p0:graph"
+    assert summary["state_updates"]["physics_system+0x44"] == "p0:aux"
