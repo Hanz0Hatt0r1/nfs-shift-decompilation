@@ -21,7 +21,9 @@ _SUPPORTED = {
     "FRC", "RCP", "RSQ", "NRM", "ABS", "POW", "CRS", "SINCOS", "CMP",
     "DP2ADD", "TEX", "TEXLDD", "TEXLDL", "MOVA",
     "M4x4", "M4x3", "M3x4", "M3x3", "M3x2", "SGN",
-    "DEFB", "IF", "IFC", "ELSE", "ENDIF", "RET",
+    "DEFB", "IF", "IFC", "ELSE", "ENDIF",
+    "LOOP", "ENDLOOP", "REP", "ENDREP", "BREAK", "BREAKC", "BREAKP",
+    "RET",
 }
 
 
@@ -124,6 +126,8 @@ class ReferenceShaderState:
         self.samplers = {int(k): dict(v) for k, v in (samplers or {}).items()}
         self.temps = {int(i): [0.0, 0.0, 0.0, 0.0] for i in program.temps}
         self.address: list[float] = [0.0, 0.0, 0.0, 0.0]
+        self.loop_index = 0
+        self.predicates: dict[int, list[float]] = {}
         self.outputs: dict[int, list[float]] = {}
         self.output_registers: dict[tuple[int, int], list[float]] = {}
         self.depth: float | None = None
@@ -196,6 +200,10 @@ class ReferenceShaderState:
             value = self.constants.get(bank, {}).get(idx, [0.0] * 4)
         elif rt == 14:
             value = self.constants.get("b", {}).get(idx, [0.0] * 4)
+        elif rt == 15:
+            value = [float(self.loop_index)] * 4
+        elif rt == 19:
+            value = self.predicates.setdefault(idx, [0.0] * 4)
         else:
             raise ValueError(f"unsupported source register type {rt}")
         value = _swizzle(list(value), operand.swizzle)
@@ -224,6 +232,12 @@ class ReferenceShaderState:
         elif rt == 9:
             self.depth = row[0]
             self.output_registers[(rt, idx)] = [row[0], 0.0, 0.0, 0.0]
+        elif rt == 19:
+            self.predicates[idx] = _write_mask(
+                self.predicates.get(idx, [0.0] * 4),
+                row,
+                operand.write_mask,
+            )
         elif rt in (4, 5, 6):
             previous = self.output_registers.get((rt, idx), [0.0] * 4)
             value = _write_mask(previous, row, operand.write_mask)
@@ -302,35 +316,56 @@ class ReferenceShaderState:
 
     def _build_control_flow_maps(
         self,
-    ) -> tuple[dict[int, int], dict[int, int]]:
+    ) -> tuple[
+        dict[int, int],
+        dict[int, int],
+        dict[int, int],
+        dict[int, int],
+    ]:
         else_for_if: dict[int, int] = {}
         end_for_if: dict[int, int] = {}
-        stack: list[tuple[int, int | None]] = []
+        end_for_loop: dict[int, int] = {}
+        start_for_loop_end: dict[int, int] = {}
+        stack: list[tuple[str, int, int | None]] = []
 
         for index, ins in enumerate(self.program.instructions):
             if ins.name in {"IF", "IFC"}:
-                stack.append((index, None))
+                stack.append(("if", index, None))
+                continue
+            if ins.name in {"LOOP", "REP"}:
+                stack.append((ins.name.lower(), index, None))
                 continue
             if ins.name == "ELSE":
-                if not stack:
+                if not stack or stack[-1][0] != "if":
                     raise ValueError("ELSE without matching IF")
-                if_index, existing_else = stack[-1]
+                _, if_index, existing_else = stack[-1]
                 if existing_else is not None:
                     raise ValueError("multiple ELSE blocks for one IF")
-                stack[-1] = (if_index, index)
+                stack[-1] = ("if", if_index, index)
                 else_for_if[if_index] = index
                 continue
             if ins.name == "ENDIF":
-                if not stack:
+                if not stack or stack[-1][0] != "if":
                     raise ValueError("ENDIF without matching IF")
-                if_index, else_index = stack.pop()
+                _, if_index, else_index = stack.pop()
                 end_for_if[if_index] = index
                 if else_index is not None:
                     end_for_if[else_index] = index
+                continue
+            if ins.name in {"ENDLOOP", "ENDREP"}:
+                expected = ins.name[3:].lower()
+                if not stack or stack[-1][0] != expected:
+                    raise ValueError(
+                        f"{ins.name} without matching {expected.upper()}"
+                    )
+                _, start_index, _ = stack.pop()
+                end_for_loop[start_index] = index
+                start_for_loop_end[index] = start_index
 
         if stack:
-            raise ValueError("unterminated IF block")
-        return else_for_if, end_for_if
+            kind, index, _ = stack[-1]
+            raise ValueError(f"unterminated {kind.upper()} block at instruction {index}")
+        return else_for_if, end_for_if, end_for_loop, start_for_loop_end
 
     def execute(self) -> dict[str, Any]:
         ignored = {
@@ -355,9 +390,13 @@ class ReferenceShaderState:
             }
 
         try:
-            else_for_if, end_for_if = self._build_control_flow_maps()
+            else_for_if, end_for_if, end_for_loop, start_for_loop_end = (
+                self._build_control_flow_maps()
+            )
             pc = 0
             instructions = self.program.instructions
+            loop_stack: list[dict[str, int]] = []
+            max_loop_iterations = 4096
             while pc < len(instructions):
                 ins = instructions[pc]
                 name = ins.name
@@ -404,10 +443,112 @@ class ReferenceShaderState:
                 elif name == "ENDIF":
                     pc += 1
                     continue
+                elif name == "LOOP":
+                    if len(o) < 1:
+                        raise ValueError("LOOP requires one source operand")
+                    if pc not in end_for_loop:
+                        raise ValueError("LOOP has no matching ENDLOOP")
+                    values = self._read(o[0])
+                    count = _address_round(values[0])
+                    if count < 0 or count > max_loop_iterations:
+                        raise ValueError(
+                            f"LOOP iteration count {count} exceeds bounded reference limit"
+                        )
+                    self.loop_index = _address_round(values[1])
+                    step = _address_round(values[2])
+                    loop_stack.append({
+                        "start": pc,
+                        "end": end_for_loop[pc],
+                        "remaining": count,
+                        "step": step,
+                    })
+                    if count == 0:
+                        loop_stack.pop()
+                        pc = end_for_loop[pc] + 1
+                        continue
+                elif name == "ENDLOOP":
+                    if not loop_stack or loop_stack[-1]["end"] != pc:
+                        raise ValueError("ENDLOOP encountered without active LOOP")
+                    frame = loop_stack[-1]
+                    frame["remaining"] -= 1
+                    if frame["remaining"] > 0:
+                        self.loop_index += frame["step"]
+                        pc = frame["start"] + 1
+                        continue
+                    loop_stack.pop()
+                    pc += 1
+                    continue
+                elif name == "REP":
+                    if len(o) < 1:
+                        raise ValueError("REP requires one source operand")
+                    if pc not in end_for_loop:
+                        raise ValueError("REP has no matching ENDREP")
+                    values = self._read(o[0])
+                    count = _address_round(values[0])
+                    if count < 0 or count > max_loop_iterations:
+                        raise ValueError(
+                            f"REP iteration count {count} exceeds bounded reference limit"
+                        )
+                    loop_stack.append({
+                        "start": pc,
+                        "end": end_for_loop[pc],
+                        "remaining": count,
+                        "step": 0,
+                    })
+                    if count == 0:
+                        loop_stack.pop()
+                        pc = end_for_loop[pc] + 1
+                        continue
+                elif name == "ENDREP":
+                    if not loop_stack or loop_stack[-1]["end"] != pc:
+                        raise ValueError("ENDREP encountered without active REP")
+                    frame = loop_stack[-1]
+                    frame["remaining"] -= 1
+                    if frame["remaining"] > 0:
+                        pc = frame["start"] + 1
+                        continue
+                    loop_stack.pop()
+                    pc += 1
+                    continue
+                elif name == "BREAK":
+                    if not loop_stack:
+                        raise ValueError("BREAK outside loop")
+                    frame = loop_stack[-1]
+                    frame["remaining"] = 0
+                    pc = frame["end"] + 1
+                    continue
+                elif name == "BREAKC":
+                    if len(o) < 2:
+                        raise ValueError("BREAKC requires two source operands")
+                    if not loop_stack:
+                        raise ValueError("BREAKC outside loop")
+                    if self._comparison_true(
+                        self._read(o[0]),
+                        self._read(o[1]),
+                        ins.controls,
+                    ):
+                        frame = loop_stack[-1]
+                        frame["remaining"] = 0
+                        pc = frame["end"] + 1
+                        continue
+                elif name == "BREAKP":
+                    if len(o) < 1:
+                        raise ValueError("BREAKP requires one predicate operand")
+                    if not loop_stack:
+                        raise ValueError("BREAKP outside loop")
+                    if self._condition_true(o[0]):
+                        frame = loop_stack[-1]
+                        frame["remaining"] = 0
+                        pc = frame["end"] + 1
+                        continue
                 elif name == "RET":
                     break
 
-                if name in {"IF", "IFC", "ELSE", "ENDIF"}:
+                if name in {
+                    "IF", "IFC", "ELSE", "ENDIF",
+                    "LOOP", "ENDLOOP", "REP", "ENDREP",
+                    "BREAK", "BREAKC", "BREAKP",
+                }:
                     pc += 1
                     continue
 
@@ -563,6 +704,10 @@ class ReferenceShaderState:
             "depth": self.depth,
             "temps": {str(k): list(v) for k, v in sorted(self.temps.items())},
             "address": list(self.address),
+            "loop_index": self.loop_index,
+            "predicates": {
+                str(k): list(v) for k, v in sorted(self.predicates.items())
+            },
         }
 
 
