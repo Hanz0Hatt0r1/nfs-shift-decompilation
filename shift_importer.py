@@ -3358,6 +3358,22 @@ def cmd_bmw_paint_contract(args: argparse.Namespace) -> int:
 
 
 
+def cmd_validate_native_submission(args: argparse.Namespace) -> int:
+    """Validate strict provenance before native RenderCommand execution."""
+    from render_submission_gate import validate_native_submission
+
+    command = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    report = validate_native_submission(command)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_render_command_constant_parity(args: argparse.Namespace) -> int:
     """Validate MaterialConstantPayload/uniform ranges against RenderCommand constants."""
     from render_command_constant_parity import validate_render_command_constant_parity
@@ -4245,6 +4261,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="BMW paint material binding JSON")
     p.add_argument("output", help="SHIFT.BMWM3PaintMaterialContract/1 validation JSON")
     p.set_defaults(fn=cmd_bmw_paint_contract)
+
+    p = sp.add_parser("validate-native-submission", help="strict provenance gate before native RenderCommand execution")
+    p.add_argument("input", help="SHIFT.RenderCommand/1 JSON")
+    p.add_argument("output", help="SHIFT.NativeSubmissionGate/1 JSON")
+    p.set_defaults(fn=cmd_validate_native_submission)
 
     p = sp.add_parser("render-command-constant-parity", help="validate MaterialConstantPayload/uniform ranges against RenderCommand constants")
     p.add_argument("input", help="SHIFT.RenderCommand/1 JSON")
