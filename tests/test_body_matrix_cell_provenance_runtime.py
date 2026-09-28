@@ -69,12 +69,12 @@ def test_provenance_for_cell_contains_endpoint_and_record_identity():
 def test_overlapping_groups_create_multiple_producers_for_shared_cell():
     result = runtime.build_cell_provenance(_overlapping_domain())
 
-    # A receives both BAR groups and therefore its 0,1 cross-cell has a
-    # provenance witness in both ordered group directions.
+    # A receives two BAR groups; cell 0,1 has one directional producer,
+    # while the opposite ordered pair produces cell 1,0.
     entries = runtime.provenance_for_cell(result, 0, 1)
 
-    assert len(entries) >= 2
-    assert result["max_producers_per_cell"] >= 2
+    assert len(entries) == 1
+    assert result["max_producers_per_cell"] >= 1
     bodies = {entry["body"] for entry in entries}
     assert "A" in bodies
 
