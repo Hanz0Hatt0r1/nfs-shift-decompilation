@@ -37,13 +37,13 @@ class SpecializedProvider:
     solve_function: int
     acceptance_function: int
     scalar_count_function: int
-    primary_accessor: int
-    graph_accessor: int
-    aux_accessor: int
-    finalize_accessor: int
-    row_table_accessor: int
+    vtable_04_accessor: int
+    vtable_08_accessor: int
+    vtable_0c_accessor: int
+    vtable_2c_accessor: int
     constant_24: int
     constant_28: int
+    accessor_results: dict[int, str]
     rle: tuple[int, ...]
 
 
@@ -57,13 +57,13 @@ PROVIDER0 = SpecializedProvider(
     solve_function=0x007C7200,
     acceptance_function=0x007C6E50,
     scalar_count_function=0x007C6E30,
-    primary_accessor=0x007D2EB0,
-    graph_accessor=0x007D2EC0,
-    aux_accessor=0x007D2ED0,
-    finalize_accessor=0x007D2F00,
-    row_table_accessor=0x007C6E50,
+    vtable_04_accessor=0x007D2EB0,
+    vtable_08_accessor=0x007D2EC0,
+    vtable_0c_accessor=0x007D2ED0,
+    vtable_2c_accessor=0x007D2F00,
     constant_24=0x4A6,
     constant_28=0x28,
+    accessor_results={0x04:"0x00c23c68",0x08:"0x00c21738",0x0c:"0x00c21698",0x2c:"DAT_00b8d8ec"},
     rle=PROVIDER0_RLE,
 )
 
@@ -77,13 +77,13 @@ PROVIDER1 = SpecializedProvider(
     solve_function=0x007CDFC0,
     acceptance_function=0x007CDB40,
     scalar_count_function=0x007CDB20,
-    primary_accessor=0x007D2F10,
-    graph_accessor=0x007D2F20,
-    aux_accessor=0x007D2F30,
-    finalize_accessor=0x007D2F60,
-    row_table_accessor=0x007CDB40,
+    vtable_04_accessor=0x007D2F10,
+    vtable_08_accessor=0x007D2F20,
+    vtable_0c_accessor=0x007D2F30,
+    vtable_2c_accessor=0x007D2F60,
     constant_24=0x2EA,
     constant_28=0x22,
+    accessor_results={0x04:"0x00c21588",0x08:"0x00c1fe38",0x0c:"0x00c1fdb0",0x2c:"DAT_00b8d8f0"},
     rle=PROVIDER1_RLE,
 )
 
@@ -189,10 +189,11 @@ def build_provider_contract() -> dict[str, Any]:
                 "solve": hex(provider.solve_function),
                 "acceptance": hex(provider.acceptance_function),
                 "scalar_count": hex(provider.scalar_count_function),
-                "primary_accessor": hex(provider.primary_accessor),
-                "graph_accessor": hex(provider.graph_accessor),
-                "aux_accessor": hex(provider.aux_accessor),
-                "finalize_accessor": hex(provider.finalize_accessor),
+                "vtable_04_accessor": hex(provider.vtable_04_accessor),
+                "vtable_08_accessor": hex(provider.vtable_08_accessor),
+                "vtable_0c_accessor": hex(provider.vtable_0c_accessor),
+                "vtable_2c_accessor": hex(provider.vtable_2c_accessor),
+                "accessor_results": dict(provider.accessor_results),
             },
             "constants": {
                 "+0x24": hex(provider.constant_24),
