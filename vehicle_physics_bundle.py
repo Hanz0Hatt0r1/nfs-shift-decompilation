@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -149,6 +150,7 @@ def extract_bundle(
         for kind in ("cdf", "edf", "gdf", "sdf", "tbf", "bbf"):
             wanted = targets[kind]
             entry = _find_entry(archive, wanted)
+            raw_payload = archive.raw_payload(entry)
             payload = archive.extract_entry(entry, type2="lzx")
             destination = resource_dir / Path(entry.path).name
             destination.write_bytes(payload)
@@ -161,6 +163,8 @@ def extract_bundle(
                 "compressed_size": int(entry.compressed_size),
                 "uncompressed_size": int(entry.uncompressed_size),
                 "decoded_size": len(payload),
+                "raw_sha256": hashlib.sha256(raw_payload).hexdigest(),
+                "decoded_sha256": hashlib.sha256(payload).hexdigest(),
             }
 
     profile = build_profile(
