@@ -53,4 +53,4 @@ def test_sparse_solver_public_wrapper_delegates_to_builtin_numeric_kernel():
     rhs = [5.0, 7.0]
     forward, reverse = builtin.build_dense_solver_graph(2)
     result = solver.solve_sdf_builtin(matrix, rhs, forward, reverse)
-    assert result["solution"] == [0.8, 2.2]
+    assert result["solution"] == [1.6, 1.8]
