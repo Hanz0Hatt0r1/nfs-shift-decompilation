@@ -15,14 +15,36 @@ void FUN_test(undefined4 param_1)
   }
   return;
 }
-
-
-
 """
     cases = runtime._case_blocks(block)
 
     assert [case for case, _ in cases] == [0, 1]
     assert "DAT_00001000 = 0x3ff0000000000000;" in cases[0][1]
+
+
+def test_balanced_function_body_keeps_nested_switch():
+    fixture = """
+void FUN_test(undefined4 param_1)
+{
+  switch(param_1) {
+  case 0:
+    if (param_1) {
+      DAT_00001000 = 0;
+    }
+    DAT_00001008 = 0x3ff0000000000000;
+    break;
+  case 1:
+    DAT_00001010 = 0x3ff0000000000000;
+    break;
+  }
+  DAT_00001018 = 0;
+}
+"""
+    body = runtime._balanced_function_body(fixture, 0)
+    cases = runtime._case_blocks(body)
+
+    assert [case for case, _ in cases] == [0, 1]
+    assert "DAT_00001018 = 0;" in body
 
 
 def test_validate_reset_profile_requires_one_row_per_scalar():
