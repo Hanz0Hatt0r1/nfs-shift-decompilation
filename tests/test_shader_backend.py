@@ -191,3 +191,28 @@ this is not valid GLSL
         pytest.skip("glslangValidator is not installed")
     assert result["status"] == "invalid"
     assert "linked-shader:pixel-compile-failed" in result["blocking_reasons"]
+
+
+def test_parser_decodes_setp_destination_as_predicate():
+    version = 0xFFFF0300
+    setp = (3 << 24) | 78
+    dst_predicate = 0x80000000 | (3 << 28) | (16 << 8)
+    src_c0 = 0x80000000 | (2 << 28) | 0
+    src_c1 = 0x80000000 | (2 << 28) | 1
+    end = 0xFFFF
+    data = struct.pack(
+        "<IIIII",
+        version,
+        setp,
+        dst_predicate,
+        src_c0,
+        src_c1,
+    ) + struct.pack("<I", end)
+
+    program = parse_program(data)
+
+    assert program.instructions[0].name == "SETP"
+    assert program.instructions[0].operands[0].kind == "dest"
+    assert program.instructions[0].operands[0].reg_type == 19
+    assert program.instructions[0].operands[1].kind == "source"
+    assert program.instructions[0].operands[2].reg_type == 2
