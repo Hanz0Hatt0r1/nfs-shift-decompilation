@@ -85,8 +85,8 @@ def build_vehicle_physics_handoff(
             "bytes": bff_path.stat().st_size if bff_path.is_file() else None,
         },
         "bundle": bundle,
-        "prephysx_provider_handoff": handoff,
-        "participant_gate": participant_gate,
+        "prephysx_provider_handoff": handoff,        "participant_gate": participant_gate,
+        "participant_registry_update": participant_registry_update,
         "outputs": {
             "vehicle_physics_asset_graph": str(bundle.get("physics_profile")),
             "prephysx_provider_handoff": str(handoff_path),
