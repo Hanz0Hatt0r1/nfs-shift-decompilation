@@ -6,6 +6,8 @@ This document tracks the current execution order. Detailed historical work is pr
 
 **Current mainline: Phase 503.**
 
+**Development step: Phase 504 preflight.**
+
 Phases 499–500 make the specialized-provider capture directory self-describing:
 
 - pre/post snapshots are indexed by provider id and hit;
@@ -21,7 +23,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 ## Immediate execution order
 
 1. Python CI baseline after the `src` reorganization — complete; Phase 503 mainline CI is green.
-2. Capture a real provider frame with the SDF/runtime probe.
+2. Capture a real provider frame with the SDF/runtime probe — Phase 504 now provides a host/artifact preflight.
 3. Verify the provider bundle together with `scalar_reset_events.jsonl`.
 4. Cross-vehicle raw BFF payload parity and deduplicated FXO shader profiling — complete.
 5. Corpus-driven shader opcode gap analysis — complete.
@@ -31,6 +33,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 9. Join provider dispatch/selector/execution/source-shape evidence into the capture handoff contract — implemented as `SHIFT.SpecializedProviderCaptureHandoffRuntime/1`.
 10. Compare retail packed-workspace/output mutations with the source-derived provider programs — implemented as `SHIFT.SpecializedProviderCaptureSourceMutationCorrelation/1`.
 11. Continue closing pre-PhysX construction boundaries without inventing SDK/provider class identities — Phase 502 cross-contract validator and Phase 503 BFF-to-handoff orchestration are complete.
+12. Validate the runtime capture host before attempting GDB attachment — Phase 504 preflight implemented.
 12. Expand the desktop reference renderer against real BMW material/shader permutations.
 13. Complete Vulkan RenderCommand execution using the same neutral contract.
 14. Continue SGB/FLAT and camera runtime reconstruction.

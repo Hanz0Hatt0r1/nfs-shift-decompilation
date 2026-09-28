@@ -32,6 +32,19 @@ This is a linkage contract, not numeric proof. Retail/provider numerical equival
 still requires a real pre/post runtime frame and differential comparison of the
 captured packed workspace/output vectors.
 
+## Runtime capture preflight
+
+`SHIFT.SDFRuntimeProbePreflight/1` now validates the retail PE/prologue targets,
+probe script, Wine, GDB and GDB Python before an attach is attempted. It never
+launches the game or guesses a PID.
+
+CLI:
+
+`python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py`
+
+The uploaded development environment currently lacks Wine and GDB, so runtime
+capture remains externally gated even though the supplied `SHIFT.exe` is PE32/i386.
+
 ## Pre-PhysX handoff
 
 `SHIFT.PrePhysXProviderHandoffRuntime/1` now validates the shared construction,

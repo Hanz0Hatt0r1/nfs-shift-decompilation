@@ -45,6 +45,14 @@ Then:
 The gap report lists only opcode operations actually observed in the corpus that
 are not currently executable by the software shader oracle.
 
+## Provider capture preflight
+
+Before launching or attaching to a retail process, validate the executable and host:
+
+`python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py`
+
+The preflight checks the retail PE/prologues, probe script, Wine, GDB and GDB Python without starting or attaching to the game.
+
 ## Provider capture handoff
 
 After a real runtime provider capture exists:
