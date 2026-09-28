@@ -31,11 +31,11 @@ This is an absence from the selected ranges only. The reduced capture does not c
 
 ## Stable external pointer scan
 
-2,303 distinct stable 32-bit pointers from the selected ranges point into writable mappings outside the selected ranges.
+2,303 distinct stable 32-bit pointers are visible before source filtering. The selected `0x21922000-0x21942000` range is a resource table and generates most of the highest raw pointer clusters.
 
 The strongest target families are:
 
-| Rank | Target range | Distinct targets | Dominant source stride |
+| Raw rank | Target range | Distinct targets | Dominant source stride |
 |---|---|---:|---:|
 | 1 | `0x0b0a8560-0x0b0c80e1` | 238 | `0x60` over 236 transitions |
 | 2 | `0x0b0dbf10-0x0b0e8211` | 91 | `0x60` over 89 transitions |
@@ -43,17 +43,34 @@ The strongest target families are:
 | 4 | `0x080d0700-0x080dfb01` | 54 | `0x94` over 26 transitions |
 | 5 | `0x18fec218-0x18ff3a31` | 33 | `0x4` over 31 transitions |
 
-The repeated `0x60` source stride is consistent with the 0x60-byte resource-record table visible in the selected `0x21922000` range. It establishes a strong allocator/table relationship but does not by itself identify the pointed-to objects as `Path` objects.
+The repeated `0x60` source stride is consistent with the 0x60-byte resource-record table visible in the selected `0x21922000` range. The first three raw clusters are directly sourced by records whose `+0x04/+0x08` fields resolve to Silverstone `twall_cover`, `trackedge`, and `terrain` `.meshtype` names, so they are render/resource-cache evidence rather than track-physics evidence. The common `0x0b9636a0` pointer is also a shared manager/sentinel reference and is treated as noise.
 
 ## Next extraction window
 
-Using a 128 KiB radius around the strongest pointer clusters, the analyzer merges the first three families into:
+For track/physics work, the resource-table source range is excluded with:
 
-```text
-0x0b068700:0x9fb11
+```bash
+python3 tools/shift_live_dump/analyze_track_paths.py \
+  track-targeted \
+  --out track-targeted/track_path_analysis_filtered \
+  --exclude-source-range 0x21922000:0x20000
 ```
 
-This is the first range to extract from the original full live-memory capture. The existing `tools/shift_live_dump/extract_ranges.py` accepts this `START:SIZE` syntax directly.
+The filtered pass leaves 1,343 stable external pointers. Its highest non-resource target family is:
+
+```text
+0x080d0700-0x080dfb01
+54 distinct targets
+source stride 0x94 over 26 transitions
+```
+
+Using the existing 128 KiB target radius, the resulting first non-resource extraction window is:
+
+```text
+0x080b0700:0xc45c1
+```
+
+This is the first range to extract from the original full live-memory capture. The existing `tools/shift_live_dump/extract_ranges.py` accepts this `START:SIZE` syntax directly, and the generated `next_capture_ranges.txt` can also be supplied with `--range-file`.
 
 ## Reverse-engineering anchors
 
@@ -73,10 +90,16 @@ python3 tools/shift_live_dump/analyze_track_paths.py \
   track-targeted \
   --out track-targeted/track_path_analysis
 
-# Then extract the highest-priority range from the original full capture:
+# Exclude the resource-table source range:
+python3 tools/shift_live_dump/analyze_track_paths.py \
+  track-targeted \
+  --out track-targeted/track_path_analysis_filtered \
+  --exclude-source-range 0x21922000:0x20000
+
+# Then extract the first non-resource window from the original full capture:
 python3 tools/shift_live_dump/extract_ranges.py \
   <full-capture> \
   track-path-targets \
   --preset none \
-  --range 0x0b068700:0x9fb11
+  --range 0x080b0700:0xc45c1
 ```

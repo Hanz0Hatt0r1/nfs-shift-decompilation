@@ -192,3 +192,17 @@ Outputs:
 - `next_capture_windows.csv` / `next_capture_ranges.txt` — merged windows for the next extraction pass.
 
 A zero hit count in a reduced capture means only that the selected ranges do not contain a matching object; it is not evidence that the structure is absent from the running game.
+
+When a selected range is known to be an asset/resource table, pointer-source
+noise can be excluded without changing the structural scan:
+
+```bash
+python3 tools/shift_live_dump/analyze_track_paths.py \
+  captures/track-targeted \
+  --out captures/track-targeted/track_path_analysis_filtered \
+  --exclude-source-range 0x21922000:0x20000
+```
+
+The option is repeatable and applies only to the source addresses of stable
+external pointers. It does not remove target objects merely because they fall
+inside an excluded source range.

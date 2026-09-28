@@ -64,15 +64,22 @@ PY
 python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out" --top 20 --target-top 8 >/tmp/track_path_test.out
 cat /tmp/track_path_test.out
 
-python3 - "$tmp/out/track_path_analysis.json" <<'PY'
+python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-filtered" --top 20 --target-top 8 \
+  --exclude-source-range 0x00200120:0x4 >/tmp/track_path_filter_test.out
+cat /tmp/track_path_filter_test.out
+
+python3 - "$tmp/out/track_path_analysis.json" "$tmp/out-filtered/track_path_analysis.json" <<'PY'
 import json
 import sys
 
 result = json.loads(open(sys.argv[1], encoding="utf-8").read())
+filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AISegmentPath"] >= 1, result["candidate_counts"]
 assert result["stable_external_pointer_count"] >= 2, result["stable_external_pointer_count"]
 assert result["pointer_target_clusters"], "expected pointer clusters"
 assert result["next_capture_windows"], "expected capture windows"
+assert filtered["stable_external_pointer_count"] == 1, filtered["stable_external_pointer_count"]
+assert filtered["excluded_source_ranges"] == [{"start": 0x00200120, "end": 0x00200124}], filtered["excluded_source_ranges"]
 print("track path analyzer test: PASS")
 PY
