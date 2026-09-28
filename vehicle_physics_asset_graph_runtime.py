@@ -45,6 +45,7 @@ from sdf_hinge_matrix_coupling_runtime import describe_hinge_matrix_coupling_con
 from sdf_bar_matrix_coupling_runtime import describe_bar_matrix_coupling_contract
 from sdf_joint_matrix_coupling_runtime import describe_joint_matrix_coupling_contract
 from sdf_hinge_bar_matrix_coupling_runtime import describe_hinge_bar_matrix_coupling_contract
+from sdf_post_solve_runtime import describe_post_solve_application_contract
 from bmw_m3_e36_solver_domain_runtime import build_solver_domain
 from sdf_constraint_matrix_assembly_runtime import materialize_source_seed_matrix
 from sdf_constraint_matrix_assembly_runtime import describe_sdf_constraint_matrix_assembly_contract
@@ -123,6 +124,7 @@ def build_profile(
     sdf_bar_matrix_coupling = describe_bar_matrix_coupling_contract()
     sdf_joint_matrix_coupling = describe_joint_matrix_coupling_contract()
     sdf_hinge_bar_matrix_coupling = describe_hinge_bar_matrix_coupling_contract()
+    sdf_post_solve = describe_post_solve_application_contract()
     sdf_matrix_assembly = describe_sdf_constraint_matrix_assembly_contract()
     sdf_matrix_storage = build_retail_matrix_storage(
         sdf_constraint_solver_graph.get("solver_scalar_count", 0)
@@ -244,6 +246,7 @@ def build_profile(
             "sdf_bar_matrix_coupling_ready": sdf_bar_matrix_coupling.get("ready") is True,
             "sdf_joint_matrix_coupling_ready": sdf_joint_matrix_coupling.get("ready") is True,
             "sdf_hinge_bar_matrix_coupling_ready": sdf_hinge_bar_matrix_coupling.get("ready") is True,
+            "sdf_post_solve_application_ready": sdf_post_solve.get("ready") is True,
             "sdf_matrix_assembly_ready": sdf_matrix_assembly.get("ready") is True,
             "sdf_matrix_storage_ready": sdf_matrix_storage.get("ready") is True,
             "sdf_real_solver_domain_ready": sdf_real_solver_domain.get("ready") is True,
@@ -288,6 +291,7 @@ def build_profile(
             "sdf_bar_matrix_coupling": sdf_bar_matrix_coupling,
             "sdf_joint_matrix_coupling": sdf_joint_matrix_coupling,
             "sdf_hinge_bar_matrix_coupling": sdf_hinge_bar_matrix_coupling,
+            "sdf_post_solve_application": sdf_post_solve,
             "sdf_matrix_assembly": sdf_matrix_assembly,
             "sdf_matrix_storage": sdf_matrix_storage,
             "sdf_real_solver_domain": sdf_real_solver_domain,
