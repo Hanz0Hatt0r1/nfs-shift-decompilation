@@ -1,0 +1,18 @@
+{
+  "format": "SHIFT.SDFRuntimeProbeProviderEvidence/1",
+  "version": 1,
+  "source": {
+    "function": "FUN_007b3f40",
+    "physics_system_offsets": {
+      "scalar_count": "+0x34",
+      "provider": "+0x48",
+      "solver_state": "+0x4c"
+    }
+  },
+  "backend_rule": {
+    "provider_zero": "builtin",
+    "provider_nonzero": "provider"
+  },
+  "output": "frame_entry_XXXXXX.json",
+  "status": "source-backed"
+}

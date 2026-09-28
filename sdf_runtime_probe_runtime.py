@@ -55,6 +55,31 @@ def derive_physics_system_from_solver_state(solver_state: int) -> int:
     return int(solver_state) - PHYSICS_OFFSETS["solver_state"]
 
 
+def describe_frame_entry_backend(
+    *,
+    physics_system: int,
+    scalar_count: int,
+    provider: int,
+    solver_state: int | None = None,
+) -> dict[str, Any]:
+    """Describe the backend selected by FUN_007b3f40 from source-backed fields."""
+    backend = "provider" if int(provider) != 0 else "builtin"
+    return {
+        "format": "SHIFT.SDFRuntimeProbeFrameEntry/1",
+        "version": 1,
+        "status": "captured",
+        "ready": True,
+        "function": "FUN_007b3f40",
+        "physics_system": int(physics_system),
+        "scalar_count": int(scalar_count),
+        "provider": int(provider),
+        "backend": backend,
+        "builtin_solver_expected": backend == "builtin",
+        "solver_state": None if solver_state is None else int(solver_state),
+        "offsets": dict(PHYSICS_OFFSETS),
+    }
+
+
 def capture_geometry(
     *,
     physics_system: int,
@@ -168,6 +193,7 @@ __all__ = [
     "solver_call_stack_layout",
     "derive_physics_system_from_solver_state",
     "capture_geometry",
+    "describe_frame_entry_backend",
     "validate_dump_shape",
     "describe_sdf_runtime_probe_contract",
 ]
