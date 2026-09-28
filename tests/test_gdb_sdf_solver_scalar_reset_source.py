@@ -141,3 +141,13 @@ def test_provider_reset_effect_probe_uses_scalar_reset_counter():
         ).read_text(encoding="utf-8")
     )
     assert "_SCALAR_RESET_EVENT_COUNT" in text
+
+
+def test_provider_reset_addresses_use_vtable_lifecycle_api():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert "from specialized_provider_vtable_lifecycle_runtime import" in text
+    assert "get_vtable_lifecycle(0).reset_function" in text
+    assert "get_vtable_lifecycle(1).reset_function" in text
+    assert "get_provider(0).reset_function" not in text
+    assert "get_provider(1).reset_function" not in text
