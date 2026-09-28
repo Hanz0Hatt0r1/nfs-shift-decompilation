@@ -76,3 +76,29 @@ def test_scalar_reset_probe_blocks_unattributed_events():
     assert 'event["capture_ready"] = (' in text
     assert '"capture_errors"' in text
     assert 'list(attribution.get("errors") or [])' in text
+
+
+def test_provider_snapshot_carries_scalar_reset_counters():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert '"scalar_reset_event_count": _SCALAR_RESET_EVENT_COUNT' in text
+    assert '"scalar_reset_events_since_frame_entry"' in text
+    assert '"scalar_reset_start_count"' in text
+    assert '"scalar_reset_end_count"' in text
+
+
+def test_scalar_reset_probe_is_the_only_counter_increment_site():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert text.count('_SCALAR_RESET_EVENT_COUNT += 1') == 1
+    assert '_LAST_FRAME_ENTRY["scalar_reset_end_count"] = _SCALAR_RESET_EVENT_COUNT' in text
+
+
+def test_frame_entry_resets_per_frame_counter_baseline():
+    text = PROBE.read_text(encoding="utf-8")
+
+    marker = '_LAST_FRAME_ENTRY["frame_index"] = self.hit'
+    start = text.index(marker)
+    tail = text[start:start + 500]
+    assert '_LAST_FRAME_ENTRY["scalar_reset_start_count"] = (' in tail
+    assert '_LAST_FRAME_ENTRY["scalar_reset_end_count"] = (' in tail
