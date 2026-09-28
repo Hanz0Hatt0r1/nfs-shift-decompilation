@@ -144,7 +144,8 @@ def compare_reset_cleanup(
     cleanup_minus_reset_zero = cleanup_slots - reset_zero
     diagonal_outside_cleanup = reset_one - cleanup_slots
     reset_zero_cleanup_exact_match = reset_zero == cleanup_slots
-    cleanup_reconstructed_from_reset = reset_zero == cleanup_slots
+    reset_reconstructed = reset_zero | reset_one
+    cleanup_reconstructed_from_reset = reset_reconstructed == cleanup_slots
     cleanup_reset_partition_disjoint = not (reset_one & reset_zero)
     output_start = layout.output_vector_base
     output_end = output_start + layout.output_vector_bytes
@@ -167,12 +168,7 @@ def compare_reset_cleanup(
         errors.append(
             f"reset-zero-not-in-cleanup:{len(reset_zero_minus_cleanup)}"
         )
-    missing_seed_slots = cleanup_minus_reset_zero - reset_one
-    if missing_seed_slots:
-        errors.append(
-            f"cleanup-slot-missing-reset-seed:{len(missing_seed_slots)}"
-        )
-    reset_without_cleanup = cleanup_slots - (reset_zero | reset_one)
+    reset_without_cleanup = cleanup_slots - reset_reconstructed
     if reset_without_cleanup:
         errors.append(
             f"cleanup-slot-not-reconstructed:{len(reset_without_cleanup)}"
@@ -202,6 +198,9 @@ def compare_reset_cleanup(
         "reset_unit_diagonal_count": len(reset_one),
         "reset_zero_cleanup_exact_match": reset_zero_cleanup_exact_match,
         "reset_zero_subset_cleanup": reset_zero <= cleanup_slots,
+        "reset_plus_unit_cleanup_exact_match": (
+            reset_reconstructed == cleanup_slots
+        ),
         "unit_diagonal_inside_cleanup": reset_one <= cleanup_slots,
         "unit_diagonal_overlaps_reset_zero": bool(
             reset_one & reset_zero
@@ -222,11 +221,9 @@ def compare_reset_cleanup(
             hex(address)
             for address in sorted(cleanup_minus_reset_zero)
         ],
-        "cleanup_missing_reset_seed": [
+        "cleanup_missing_reset_reconstruction": [
             hex(address)
-            for address in sorted(
-                cleanup_minus_reset_zero - reset_one
-            )
+            for address in sorted(reset_without_cleanup)
         ],
         "diagonal_outside_cleanup": [
             hex(address)
@@ -275,8 +272,8 @@ def validate_reset_cleanup(report: dict[str, Any]) -> dict[str, Any]:
         errors.append("case-seed-self-clear-conflicts")
     if bool(report.get("unit_diagonal_overlaps_reset_zero")):
         errors.append("unit-diagonal-overlaps-reset-zero")
-    if not bool(report.get("cleanup_reconstructed_from_reset")):
-        errors.append("cleanup-not-reconstructed-from-reset")
+    if not bool(report.get("reset_plus_unit_cleanup_exact_match")):
+        errors.append("cleanup-not-reconstructed-from-reset-zero-plus-unit")
     if not bool(report.get("cleanup_reset_partition_disjoint")):
         errors.append("cleanup-reset-partition-not-disjoint")
     if not bool(report.get("output_zero_exact_match")):
@@ -316,12 +313,13 @@ def build_reset_cleanup_contract(source: str) -> dict[str, Any]:
         "providers": providers,
         "interpretation": {
             "sequence": "cleanup zero coverage -> reset zero writes -> unit-diagonal seeds",
-            "zero_set": "cleanup-covered zero slots must equal the reset zero-write domain, including bulk clears",
-            "diagonal_seed": "unit-diagonal seed addresses must lie in cleanup coverage and must not be cleared within their own case block",
+            "zero_set": "reset zero-write domain is a subset of cleanup coverage because cleanup also contains the pivot unit seeds",
+            "reconstruction": "cleanup-covered slots must equal reset zero domain union the unit-diagonal seed domain",
+            "diagonal_seed": "unit-diagonal seed addresses fill exactly the cleanup slots not covered by reset zero writes and must not be cleared within their own case block",
         },
         "limitations": [
             "This proves storage initialization order, not matrix semantics.",
-            "The cleanup/reset equality is address-level and depends on the recovered provider layouts.",
+            "The cleanup/reset relationship is an address-level partition and depends on the recovered provider layouts.",
             "No assertion is made that the zeroed storage set is a complete logical matrix.",
         ],
         "status": "source-backed-reset-cleanup-equivalence",
