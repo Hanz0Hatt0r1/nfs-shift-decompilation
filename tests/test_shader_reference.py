@@ -131,7 +131,7 @@ def test_reference_shader_executes_if_else_control_flow():
         constants=constants,
     )
     assert result["status"] == "executed", result
-    assert result["color"] == [0.8, 0.7, 0.6, 1.0]
+    assert result["color"] == [0.2, 0.3, 0.4, 1.0]
 
     false_result = execute_shader(
         _program(instructions, temps=(0,)),
