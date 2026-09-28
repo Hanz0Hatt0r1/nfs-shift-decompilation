@@ -42,4 +42,7 @@ Unsupported operations remain visible blockers.
 
 ## Current focus
 
+The reference execution layer now covers structured conditionals (`IF`/`IFC`/`ELSE`/`ENDIF`) and the D3D9 matrix/sign operations already represented by the parser/GLSL backend. Unsupported operations remain explicit blockers.
+
+
 Expand exact BMW shader/material coverage while using the software reference renderer as the deterministic oracle.
