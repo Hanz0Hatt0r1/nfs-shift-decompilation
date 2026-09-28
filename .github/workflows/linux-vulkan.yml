@@ -40,6 +40,14 @@ jobs:
       - name: Headless triangle
         run: |
           native_vulkan/build/shift_vulkan_headless_triangle out/vulkan/triangle.ppm native_vulkan/build/shaders > out/vulkan/triangle.json
+      - name: Native provenance gate regression
+        run: |
+          mkdir -p out/vulkan/blocked
+          if native_vulkan/build/shift_vulkan_bundle_execute out/vulkan/blocked > out/vulkan/blocked/stdout.txt 2> out/vulkan/blocked/stderr.txt; then
+            echo "executor unexpectedly accepted a bundle without native provenance"
+            exit 1
+          fi
+          grep -q "native submission gate missing" out/vulkan/blocked/stderr.txt
       - name: Mixed-resource bundle
         run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle
       - name: Upload artifacts
