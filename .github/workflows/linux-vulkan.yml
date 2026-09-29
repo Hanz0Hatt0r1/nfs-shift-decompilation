@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p out/vulkan/runtime
           xvfb-run -a native_runtime/build/shift_runtime \
-            --bundle out/vulkan/bundle \
+            --bundle out/vulkan/bundle/bundle \
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
             --frames 3 | tee out/vulkan/runtime/runtime.json
