@@ -238,6 +238,7 @@ def build_material_pipeline_state(
         "version": 1,
         "status": "ready" if not blockers else "blocked",
         "ready": not blockers,
+        "vulkan_pipeline_ready": not blockers,
         "blocking_reasons": blockers,
         "evidence_status": "retail-static",
         "cull": cull,
