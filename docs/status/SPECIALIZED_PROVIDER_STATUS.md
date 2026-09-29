@@ -119,3 +119,6 @@ CLI:
 Capture a real provider frame, verify the bundle, then use the handoff and Phase 501
 correlation report to classify observed packed-workspace mutations against the
 source-derived execution program.
+
+
+For low-stop capture, `preflight_specialized_provider_capture.py` and `run_sdf_solver_probe.py` accept `--provider-only`. This mode omits builtin/per-frame solver breakpoints and keeps provider solve/reset and scalar-reset hooks.

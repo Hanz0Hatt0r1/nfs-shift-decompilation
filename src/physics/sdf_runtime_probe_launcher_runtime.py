@@ -49,14 +49,18 @@ def build_gdb_command_file(
     *,
     probe_script: str | Path,
     output_dir: str | Path,
+    provider_only: bool = False,
 ) -> str:
     script = Path(probe_script).resolve()
     output = Path(output_dir).resolve()
+    probe_args = f"{output}"
+    if provider_only:
+        probe_args += " --provider-only"
     return (
         "set pagination off\n"
         "set confirm off\n"
         f"source {script}\n"
-        f"sdf-probe {output}\n"
+        f"sdf-probe {probe_args}\n"
         "continue\n"
     )
 
@@ -66,17 +70,37 @@ def prepare_probe_bundle(
     output_dir: str | Path,
     *,
     probe_script: str | Path,
+    provider_only: bool = False,
 ) -> dict[str, Any]:
     output = Path(output_dir).resolve()
     exe = resolve_probe_executable(executable, output)
     validation = validate_probe_executable_file(exe)
     output.mkdir(parents=True, exist_ok=True)
 
+    expected_captures = (
+        [
+            "provider_pre_<provider>_<hit>.json",
+            "provider_post_<provider>_<hit>.json",
+            "scalar_reset_events.jsonl",
+            "provider_reset_effects.jsonl",
+        ]
+        if provider_only
+        else [
+            "pre_solve_XXXXXX.json",
+            "post_solve_XXXXXX.json",
+            "provider_pre_<provider>_<hit>.json",
+            "provider_post_<provider>_<hit>.json",
+            "scalar_reset_events.jsonl",
+            "provider_reset_effects.jsonl",
+        ]
+    )
+
     command_file = output / "attach.gdb"
     command_file.write_text(
         build_gdb_command_file(
             probe_script=probe_script,
             output_dir=output,
+            provider_only=provider_only,
         ),
         encoding="utf-8",
     )
@@ -101,10 +125,8 @@ def prepare_probe_bundle(
             "script": str(Path(probe_script).resolve()),
             "gdb_command_file": str(command_file),
             "output_dir": str(output),
-            "expected_captures": [
-                "pre_solve_XXXXXX.json",
-                "post_solve_XXXXXX.json",
-            ],
+            "mode": "provider-only" if provider_only else "full",
+            "expected_captures": expected_captures,
         },
         "limitations": [
             "A live 32-bit Wine SHIFT.exe process is required for capture.",
@@ -195,6 +217,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "prepare": "validate retail PE and write probe_manifest.json + attach.gdb",
             "launch": "start retail SHIFT.exe under explicit Wine command",
             "attach": "attach GDB to explicit user-supplied PID using attach.gdb",
+            "provider-only": "omit per-frame and builtin-solver breakpoints; keep provider solve/reset and scalar-reset hooks",
         },
         "fail_closed": [
             "wrong retail SHA-256",

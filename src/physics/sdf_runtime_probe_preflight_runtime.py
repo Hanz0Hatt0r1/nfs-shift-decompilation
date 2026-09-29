@@ -154,6 +154,7 @@ def preflight_provider_capture(
     probe_script: str | Path,
     wine_command: str = "wine",
     gdb_command: str = "gdb",
+    provider_only: bool = False,
 ) -> dict[str, Any]:
     output_dir = Path(output_dir).resolve()
     script = Path(probe_script).resolve()
@@ -161,6 +162,7 @@ def preflight_provider_capture(
         executable,
         output_dir,
         probe_script=script,
+        provider_only=provider_only,
     )
     tools = require_runtime_tools(
         wine_command=wine_command,
@@ -203,6 +205,7 @@ def preflight_provider_capture(
         "capture": {
             "attach_mode": "explicit-pid-only",
             "launch_mode": "not-performed",
+            "probe_mode": "provider-only" if provider_only else "full",
             "expected_provider_pre": "provider_pre_<provider>_<hit>.json",
             "expected_provider_post": "provider_post_<provider>_<hit>.json",
             "expected_reset_events": "scalar_reset_events.jsonl",
@@ -235,6 +238,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--wine", default="wine")
     parser.add_argument("--gdb", default="gdb")
+    parser.add_argument("--provider-only", action="store_true")
     args = parser.parse_args(argv)
     report = preflight_provider_capture(
         args.executable,
@@ -242,6 +246,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         probe_script=args.probe_script,
         wine_command=args.wine,
         gdb_command=args.gdb,
+        provider_only=args.provider_only,
     )
     print(json.dumps({
         "format": report["format"],

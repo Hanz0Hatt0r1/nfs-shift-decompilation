@@ -19,6 +19,21 @@ def test_build_gdb_command_file_is_deterministic(tmp_path):
     )
 
 
+def test_build_gdb_command_file_supports_provider_only_mode(tmp_path):
+    command = runtime.build_gdb_command_file(
+        probe_script=tmp_path / "probe.py",
+        output_dir=tmp_path / "capture",
+        provider_only=True,
+    )
+    assert command == (
+        f"set pagination off\n"
+        f"set confirm off\n"
+        f"source {(tmp_path / 'probe.py').resolve()}\n"
+        f"sdf-probe {(tmp_path / 'capture').resolve()} --provider-only\n"
+        "continue\n"
+    )
+
+
 def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypatch):
     executable = tmp_path / "SHIFT.exe"
     executable.write_bytes(b"retail")
@@ -48,6 +63,15 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
     assert result["probe"]["expected_captures"] == [
         "pre_solve_XXXXXX.json",
         "post_solve_XXXXXX.json",
+    ]
+    assert result["probe"]["mode"] == "full"
+    assert result["probe"]["expected_captures"] == [
+        "pre_solve_XXXXXX.json",
+        "post_solve_XXXXXX.json",
+        "provider_pre_<provider>_<hit>.json",
+        "provider_post_<provider>_<hit>.json",
+        "scalar_reset_events.jsonl",
+        "provider_reset_effects.jsonl",
     ]
 
 
@@ -128,6 +152,7 @@ def test_launcher_contract_exposes_explicit_backend_probe():
     result = runtime.describe_sdf_runtime_probe_launcher()
     assert result["probe_targets"]["builtin_solver"] == "0x007b0f20"
     assert result["probe_targets"]["post_solve"] == "0x007b4110"
+    assert "provider-only" in result["modes"]
 
 
 def test_build_attach_command_requires_positive_pid(monkeypatch, tmp_path):
@@ -185,3 +210,36 @@ def test_resolve_probe_executable_rejects_multiple_shift_exe_members(tmp_path):
             archive,
             tmp_path / "bundle",
         )
+
+
+def test_prepare_probe_bundle_provider_only_expected_captures(tmp_path, monkeypatch):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    output = tmp_path / "capture"
+    probe = tmp_path / "probe.py"
+    probe.write_text("# probe\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        runtime,
+        "validate_probe_executable_file",
+        lambda path: {
+            "ready": True,
+            "sha256": "a" * 64,
+            "errors": [],
+            "format": "SHIFT.SDFRuntimeProbePEValidation/1",
+        },
+    )
+
+    result = runtime.prepare_probe_bundle(
+        executable,
+        output,
+        probe_script=probe,
+        provider_only=True,
+    )
+    assert result["probe"]["mode"] == "provider-only"
+    assert result["probe"]["expected_captures"] == [
+        "provider_pre_<provider>_<hit>.json",
+        "provider_post_<provider>_<hit>.json",
+        "scalar_reset_events.jsonl",
+        "provider_reset_effects.jsonl",
+    ]

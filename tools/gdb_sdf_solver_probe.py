@@ -5,8 +5,12 @@ Usage from a GDB session attached to the retail SHIFT.exe Wine process:
     sdf-probe /tmp/shift-solver-capture
     continue
 
-The probe automatically writes one JSON file at the builtin solver entry and
-one post-solve JSON file at FUN_007b4110 for each hit.
+Provider-only mode:
+    sdf-probe /tmp/shift-provider-capture --provider-only
+
+The full probe writes builtin solver, provider and reset captures. Provider-only
+omits the per-frame and builtin-solver stops while retaining specialized-provider
+solve/reset and scalar-reset hooks.
 """
 from __future__ import annotations
 
@@ -68,6 +72,21 @@ _LAST_FRAME_ENTRY = {
     "scalar_reset_start_count": 0,
     "scalar_reset_end_count": 0,
 }
+
+
+def _provider_vtable_condition(
+    *,
+    pointer_expr: str,
+    provider_id: int | None = None,
+) -> str:
+    """Build a native GDB condition that filters stops to known providers."""
+    providers = [provider_id] if provider_id is not None else [0, 1]
+    clauses = [
+        f"({pointer_expr}) != 0 && *(unsigned int*)({pointer_expr}) == "
+        f"0x{get_vtable_lifecycle(pid).vtable_address:08x}"
+        for pid in providers
+    ]
+    return " || ".join(clauses)
 
 
 def _provider_snapshot(
@@ -273,6 +292,10 @@ class ProviderResetProbe(_BaseProbe):
             output_dir,
         )
         self.provider_id = provider_id
+        self.condition = _provider_vtable_condition(
+            pointer_expr="$ecx",
+            provider_id=provider_id,
+        )
         self.return_breakpoints: list[ProviderResetReturnProbe] = []
 
     def stop(self) -> bool:
@@ -340,6 +363,9 @@ class ScalarResetProbe(_BaseProbe):
             address,
             "scalar_reset",
             output_dir,
+        )
+        self.condition = _provider_vtable_condition(
+            pointer_expr="$ecx+0x48",
         )
         self.event_index = 0
 
@@ -597,8 +623,14 @@ class SDFProbeCommand(gdb.Command):
 
     def invoke(self, argument: str, from_tty: bool) -> None:
         args = gdb.string_to_argv(argument)
+        provider_only = False
+        if "--provider-only" in args:
+            provider_only = True
+            args.remove("--provider-only")
         if len(args) != 1:
-            raise gdb.GdbError("usage: sdf-probe OUTPUT_DIR")
+            raise gdb.GdbError(
+                "usage: sdf-probe OUTPUT_DIR [--provider-only]"
+            )
         output = Path(os.path.expanduser(args[0])).resolve()
 
         for breakpoint in self.breakpoints:
@@ -612,10 +644,14 @@ class SDFProbeCommand(gdb.Command):
                 except RuntimeError:
                     pass
             breakpoint.delete()
-        self.breakpoints = [
-            FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
-            SolverEntryProbe(FUNCTIONS["builtin_solver"], "builtin_solver", output),
-            PostSolveProbe(FUNCTIONS["post_solve"], "post_solve", output),
+        self.breakpoints = []
+        if not provider_only:
+            self.breakpoints.extend([
+                FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
+                SolverEntryProbe(FUNCTIONS["builtin_solver"], "builtin_solver", output),
+                PostSolveProbe(FUNCTIONS["post_solve"], "post_solve", output),
+            ])
+        self.breakpoints.extend([
             ProviderSolveProbe(
                 get_provider(0).solve_function,
                 0,
@@ -640,7 +676,7 @@ class SDFProbeCommand(gdb.Command):
                 1,
                 output,
             ),
-        ]
+        ])
         print(
             "SDF probe installed:",
             f"builtin_solver=0x{FUNCTIONS['builtin_solver']:08x},",
@@ -650,6 +686,7 @@ class SDFProbeCommand(gdb.Command):
             f"provider0_reset=0x{get_vtable_lifecycle(0).reset_function:08x},",
             f"provider1_reset=0x{get_vtable_lifecycle(1).reset_function:08x},",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
+            f"mode={'provider-only' if provider_only else 'full'},",
             f"output={output}",
         )
 
