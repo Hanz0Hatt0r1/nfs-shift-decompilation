@@ -200,3 +200,19 @@ def test_candidate_identity_falls_back_to_location_without_byte_hashes():
     first = {"file": "a.fxo", "program_offset": 100}
     second = {"file": "b.fxo", "program_offset": 100}
     assert _candidate_identity(first) != _candidate_identity(second)
+
+
+
+def test_constant_register_map_keeps_only_float_registers():
+    from material_linker import _constant_register_map
+
+    rows = [
+        {"name": "fresnelFactor", "register_set": 2, "register_index": 8},
+        {"name": "maxSpecPower", "register_set": 2, "register_index": 27},
+        {"name": "diffuseMap", "register_set": 3, "register_index": 1},
+        {"name": None, "register_set": 2, "register_index": 99},
+    ]
+    assert _constant_register_map(rows) == {
+        "fresnelFactor": 8,
+        "maxSpecPower": 27,
+    }
