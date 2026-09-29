@@ -171,10 +171,10 @@ def test_bmw_vulkan_bundle_emits_evidence_backed_cull_state(tmp_path):
     state = json.loads(
         (tmp_path / "pipeline_state.json").read_text(encoding="utf-8")
     )
-    assert state["format"] == "SHIFT.MaterialCullState/1"
-    assert state["engine_enum_index"] == 1
-    assert state["d3d9_value"] == 2
-    assert state["vulkan_cull_mode"] == "VK_CULL_MODE_BACK_BIT"
+    assert state["format"] == "SHIFT.MaterialPipelineState/1"
+    assert state["cull"]["engine_enum_index"] == 1
+    assert state["cull"]["d3d9_value"] == 2
+    assert state["vulkan"]["cull_mode"] == "VK_CULL_MODE_BACK_BIT"
     assert result["artifacts"]["pipeline_state"]["ready"] is True
 
 
@@ -192,3 +192,91 @@ def test_bmw_vulkan_bundle_blocks_unknown_bmt_cull(tmp_path):
         in result["blocking_reasons"]
     )
     assert result["artifacts"]["pipeline_state"]["ready"] is False
+
+
+
+def test_bmw_vulkan_bundle_emits_depth_and_blend_pipeline_state(tmp_path):
+    command = _command()
+    command["render_commands"][0]["submeshes"][0]["render_state"] = {
+        "format": "SHIFT.BMTRenderState/1",
+        "cull": "EBFCT_ANTICLOCKWISE",
+        "depth": {
+            "format": "SHIFT.BMTDepthState/1",
+            "enabled": True,
+            "write_enabled": False,
+            "function": {
+                "raw": "ETF_GREATER_THAN",
+                "engine_enum_index": 4,
+                "status": "known",
+            },
+        },
+        "alpha_test": {
+            "format": "SHIFT.BMTAlphaTestState/1",
+            "enabled": False,
+        },
+        "alpha_blend": {
+            "format": "SHIFT.BMTAlphaBlendState/1",
+            "enabled": True,
+            "source_blend": {
+                "raw": "EBF_SOURCE_ALPHA",
+                "engine_enum_index": 4,
+                "status": "known",
+            },
+            "dest_blend": {
+                "raw": "EBF_INV_SOURCE_ALPHA",
+                "engine_enum_index": 5,
+                "status": "known",
+            },
+            "blend_op": {
+                "raw": "EBO_ADD",
+                "engine_enum_index": 0,
+                "status": "known",
+            },
+        },
+    }
+    result = build_bmw_vulkan_bundle(
+        command, _mesh(), tmp_path, submesh_index=0
+    )
+
+    assert result["ready"] is True, result["blocking_reasons"]
+    state = json.loads(
+        (tmp_path / "pipeline_state.json").read_text(encoding="utf-8")
+    )
+    assert state["vulkan"] == {
+        "alpha_blend_op": "VK_BLEND_OP_ADD",
+        "blend_enable": True,
+        "color_blend_op": "VK_BLEND_OP_ADD",
+        "cull_mode": "VK_CULL_MODE_FRONT_BIT",
+        "depth_compare_op": "VK_COMPARE_OP_GREATER",
+        "depth_test_enable": True,
+        "depth_write_enable": False,
+        "dst_alpha_blend_factor": "VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA",
+        "dst_color_blend_factor": "VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA",
+        "front_face": "VK_FRONT_FACE_COUNTER_CLOCKWISE",
+        "src_alpha_blend_factor": "VK_BLEND_FACTOR_SRC_ALPHA",
+        "src_color_blend_factor": "VK_BLEND_FACTOR_SRC_ALPHA",
+    }
+
+
+def test_bmw_vulkan_bundle_blocks_enabled_alpha_test(tmp_path):
+    command = _command()
+    command["render_commands"][0]["submeshes"][0]["render_state"] = {
+        "alpha_test": {
+            "format": "SHIFT.BMTAlphaTestState/1",
+            "enabled": True,
+            "function": {
+                "raw": "ETF_GREATER_THAN_OR_EQUAL",
+                "engine_enum_index": 6,
+                "status": "known",
+            },
+            "value_normalized": 0.5,
+        },
+    }
+    result = build_bmw_vulkan_bundle(
+        command, _mesh(), tmp_path, submesh_index=0
+    )
+    assert result["ready"] is False
+    assert (
+        "material-pipeline:alpha-test-enabled-unsupported"
+        in result["blocking_reasons"]
+    )
