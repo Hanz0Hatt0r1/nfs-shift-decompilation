@@ -24,8 +24,10 @@ if SOURCE_ROOT.is_dir():
             sys.path.insert(0, _source_value)
 
 from bmw_vulkan_bundle import TARGET_MEB
-from bmw_vulkan_bundle_set import build_bmw_vulkan_bundle_set
-from bmw_material_vulkan_adapter import build_bmw_vulkan_from_material_slice
+from bmw_material_vulkan_adapter import (
+    build_bmw_vulkan_from_material_slice,
+    build_bmw_vulkan_set_from_material_slice,
+)
 from vulkan_bundle_run import run_bmw_vulkan_bundle
 from vulkan_bundle_set_prepare import prepare_bmw_vulkan_bundle_set
 
@@ -207,13 +209,18 @@ def main():
         raise SystemExit("not a PPM")
 
     bundle_set_dir = root / "bundle_set"
-    bundle_set = build_bmw_vulkan_bundle_set(
-        multidraw_command(),
-        multidraw_mesh(),
+    multi_material_slice = {
+        "format": "SHIFT.BMWRealMaterialSlice/1",
+        "render_command": multidraw_command(),
+        "mesh": multidraw_mesh(),
+    }
+    material_set = build_bmw_vulkan_set_from_material_slice(
+        multi_material_slice,
         bundle_set_dir,
         textures={"1": texture()},
         environment_cube=cube(),
     )
+    bundle_set = material_set["bundle_set"]
     if not bundle_set["ready"]:
         raise SystemExit(
             "bundle-set preparation blocked: "
