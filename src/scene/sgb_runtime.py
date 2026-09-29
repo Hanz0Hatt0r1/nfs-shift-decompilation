@@ -14,6 +14,9 @@ FORMAT = "SHIFT.SGBRuntime/1"
 MAGIC = b" \x42\x47\x53"
 KNOWN_TAGS = {"NODE", "FLAT", "OCCL", "PART", "SUMM", "END "}
 
+# FUN_006a4b40 creates the runtime NODE wrapper with this concrete vtable.
+NODE_RUNTIME_VTABLE = 0x00AF78EC
+
 
 class SGBRuntimeDecodeError(ValueError):
     pass
@@ -77,9 +80,9 @@ def _parse_node(data: bytes, start: int, end: int, count: int) -> list[dict[str,
             "instances": words[5],
             "flags": {
                 "raw": flags,
-                "present": bool(flags & 1),
-                "animated": bool(flags & 2),
-                "dynamic": bool(flags & 4),
+                "bit0": bool(flags & 1),
+                "bit1": bool(flags & 2),
+                "bit2": bool(flags & 4),
             },
             "variation_index": variation,
             "object_payload": {
@@ -87,6 +90,30 @@ def _parse_node(data: bytes, start: int, end: int, count: int) -> list[dict[str,
                 "absolute_offset": start + object_rel if object_rel else None,
                 "decoder": "FUN_0069bc50",
                 "decoded": False,
+            },
+            "runtime_wrapper": {
+                "vtable": NODE_RUNTIME_VTABLE,
+                "payload_field_offset": 0x08,
+                "resource_field_offset": 0x18,
+                "variation_palette_field_offset": 0x1C,
+                "variation_index_field_offset": 0x20,
+                "instances_field_offset": 0x24,
+                "flag_byte_offsets": {
+                    "bit0": 0x15,
+                    "bit1": 0x16,
+                    "bit2": 0x17,
+                },
+                "name_hash_field_offset": 0x28,
+                "name_hash_field_size": 0x08,
+                "source_mapping": {
+                    "object_payload": "record +0x1c -> FUN_0069bc50",
+                    "resource": "record +0x0c -> wrapper +0x18",
+                    "variation_palette": "record +0x10 -> wrapper +0x1c",
+                    "variation_index": "record +0x1a -> wrapper +0x20",
+                    "instances": "record +0x14 -> wrapper +0x24",
+                    "flags": "record +0x18 -> wrapper +0x15/+0x16/+0x17",
+                    "name_hash": "record +0x08 -> wrapper +0x28/+0x2c via FUN_0064eba0",
+                },
             },
         })
         stride = words[0]
@@ -303,7 +330,7 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
             "OCCL": "FUN_006a4f10",
         },
         "limitations": [
-            "NODE object payload is preserved because FUN_0069bc50/FUN_0069a6c0 has not yet been normalized into this IR.",
+            "NODE object payload is decoded through the existing SGBObjectRuntime decoder when its bounds are known; deeper OBJECT/HIERARCHY field semantics remain raw.",
             "FLAT body is preserved because it is forwarded to FUN_0068a8b0.",
             "SUMM/OCCL vectors remain positional; their semantic names are not proven by these handlers.",
         ],

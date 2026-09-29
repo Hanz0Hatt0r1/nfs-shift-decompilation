@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 517.**
+**Current mainline: Phase 520.**
 
 
 
@@ -46,7 +46,10 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 22. Validate the low-stop specialized-provider capture contract — Phase 515 implemented.
 23. Validate concrete AIW runtime edge coverage, stride and ambiguity without collapsing candidate mappings — Phase 516 implemented.
 24. Join recovered `Path.StartNode` pointers directly to `AIPolylinePath.array` and compare node counts/sequences — Phase 517 implemented.
-25. Expand the desktop reference renderer against real BMW material/shader permutations.
+25. Decode proven FLAT direct-record object handle/index links — Phase 518 implemented.
+26. Map proven FLAT runtime index-table geometry — Phase 519 implemented.
+27. Map the SGB NODE runtime wrapper created by `FUN_006a4b40` — Phase 520 implemented.
+28. Expand the desktop reference renderer against real BMW material/shader permutations.
 26. Complete Vulkan RenderCommand execution using the same neutral contract.
 27. Continue SGB/FLAT and camera runtime reconstruction.
 28. Derive proven animation poses from the BAB runtime grammar.
@@ -64,7 +67,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | partial | deeper object/leaf consumers |
+| SGB scene | partial | NODE wrapper, deeper object/HIERARCHY/FLAT leaf consumers |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |

@@ -42,8 +42,26 @@ def test_node_header_and_flags():
     row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
     assert row["stride"] == 32
     assert row["instances"] == 2
-    assert row["flags"]["present"] is False
+    assert row["flags"]["raw"] == 0
+    assert row["flags"]["bit0"] is False
+    assert row["flags"]["bit1"] is False
+    assert row["flags"]["bit2"] is False
     assert row["variation_index"] == 0
+
+def test_node_runtime_wrapper_mapping_is_source_backed():
+    record = struct.pack("<IIIIIIII", 32, 0, 32, 0x100, 0x120, 0x140, 3, 0x180)
+    data = _header() + _chunk("NODE", struct.pack("<I", 1) + record) + _chunk("END ", b"")
+    row = parse_sgb_runtime(data, strict=False)["chunks"][0]["records"][0]
+    wrapper = row["runtime_wrapper"]
+    assert wrapper["vtable"] == 0x00AF78EC
+    assert wrapper["payload_field_offset"] == 0x08
+    assert wrapper["resource_field_offset"] == 0x18
+    assert wrapper["variation_palette_field_offset"] == 0x1C
+    assert wrapper["variation_index_field_offset"] == 0x20
+    assert wrapper["instances_field_offset"] == 0x24
+    assert wrapper["flag_byte_offsets"] == {"bit0": 0x15, "bit1": 0x16, "bit2": 0x17}
+    assert wrapper["name_hash_field_offset"] == 0x28
+    assert wrapper["name_hash_field_size"] == 0x08
 
 
 def test_summ_and_occl_fixed_record_shape():
