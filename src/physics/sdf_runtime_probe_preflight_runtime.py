@@ -21,6 +21,15 @@ from sdf_runtime_probe_launcher_runtime import (
 FORMAT = "SHIFT.SDFRuntimeProbePreflight/1"
 _GDB_PYTHON_MARKER = "SHIFT_GDB_PYTHON_OK"
 
+_PROBE_MARKERS = (
+    ("python-gdb", "import gdb"),
+    ("sdf-command", "sdf-probe"),
+    ("provider-pre-capture", "provider_pre_"),
+    ("provider-post-capture", "provider_post_"),
+    ("scalar-reset-capture", "scalar_reset_events.jsonl"),
+    ("provider-snapshot", "build_provider_capture_payload"),
+)
+
 
 def _tool_version(command: str, executable: str | None) -> dict[str, Any]:
     if executable is None:
@@ -50,6 +59,35 @@ def _tool_version(command: str, executable: str | None) -> dict[str, Any]:
         "version": text[0].strip() if text else None,
         "ready": result.returncode == 0,
     }
+
+
+def validate_probe_script(path: str | Path) -> dict[str, Any]:
+    """Validate the source-level contract expected by the provider GDB probe."""
+    script = Path(path).resolve()
+    report: dict[str, Any] = {
+        "format": "SHIFT.ProviderGDBProbeScriptValidation/1",
+        "version": 1,
+        "path": str(script),
+        "exists": script.is_file(),
+        "markers": {},
+        "ready": False,
+        "errors": [],
+    }
+    if not script.is_file():
+        report["errors"].append(f"missing-probe-script:{script}")
+        return report
+    try:
+        text = script.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        report["errors"].append(f"probe-script-read-failed:{type(exc).__name__}:{exc}")
+        return report
+    for name, needle in _PROBE_MARKERS:
+        found = needle in text
+        report["markers"][name] = {"needle": needle, "present": found}
+        if not found:
+            report["errors"].append(f"probe-script-missing-marker:{name}")
+    report["ready"] = not report["errors"]
+    return report
 
 
 def check_gdb_python(
@@ -128,13 +166,13 @@ def preflight_provider_capture(
         wine_command=wine_command,
         gdb_command=gdb_command,
     )
+    probe_validation = validate_probe_script(script)
     wine_info = _tool_version(wine_command, tools["wine"])
     gdb_info = _tool_version(gdb_command, tools["gdb"])
     gdb_python = check_gdb_python(gdb_command)
 
     errors = list(artifacts["validation"].get("errors") or [])
-    if not script.is_file():
-        errors.append(f"missing-probe-script:{script}")
+    errors.extend(probe_validation.get("errors") or [])
     if not tools["ready"]:
         errors.extend(tools["errors"] or [])
     if tools["wine"] is not None and not wine_info["ready"]:
@@ -154,6 +192,7 @@ def preflight_provider_capture(
         "probe_script": {
             "path": str(script),
             "exists": script.is_file(),
+            "validation": probe_validation,
         },
         "runtime_tools": tools,
         "runtime_versions": {
@@ -218,7 +257,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 0 if report["ready"] else 2
 
 
-__all__ = ["FORMAT", "check_gdb_python", "preflight_provider_capture"]
+__all__ = ["FORMAT", "check_gdb_python", "validate_probe_script", "preflight_provider_capture"]
 
 
 if __name__ == "__main__":
