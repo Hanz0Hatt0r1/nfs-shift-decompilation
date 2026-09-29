@@ -20,20 +20,46 @@ def test_header_and_end_chunk():
     assert report["chunks"][0]["tag"] == "END "
 
 
-def test_part_record_uses_partition_id_and_variable_child_table():
-    record = struct.pack("<II", 7, 0)
-    record += struct.pack("<ffffff", -1, -2, -3, 1, 2, 3)
-    record += struct.pack("<IIII", 10, 11, 12, 13)
-    record += struct.pack("<I", 2)
+def test_part_record_uses_exact_source_layout_and_one_based_child_table():
+    record = struct.pack(
+        "<I6f5I",
+        7,
+        -1.0, -2.0, -3.0,
+        1.0, 2.0, 3.0,
+        10, 11, 12, 13,
+        2,
+    )
     record += struct.pack("<II", 99, 100)
     payload = struct.pack("<I", 1) + record
     data = _header() + _chunk("PART", payload) + _chunk("END ", b"")
     row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
+
     assert row["partition_id"] == 7
-    assert row["aabbox_min"] == [ -1.0, -2.0, -3.0]
+    assert row["record_bytes_minimum"] == 48
+    assert row["aabbox_min"] == [-1.0, -2.0, -3.0]
     assert row["aabbox_max"] == [1.0, 2.0, 3.0]
-    assert row["fixed_quad"] == [10, 11, 12, 13]
+    assert row["child_partition_ids"] == [10, 11, 12, 13]
+    assert row["child_partition_table_present"] is True
+    assert row["child_object_count"] == 2
     assert row["child_object_indices"] == [99, 100]
+    assert row["child_object_zero_based_lookup_indices"] == [98, 99]
+
+    runtime = row["runtime_partition_tree"]
+    assert runtime["consumer"] == "FUN_0068a360"
+    assert runtime["insert_consumer"] == "FUN_00689a30"
+    assert runtime["node_allocator"] == "FUN_00688ef0 -> FUN_006886a0"
+    assert runtime["node_vtable"] == 0x00AF7A68
+    assert runtime["manager_root_field_offset"] == 0x28
+    assert runtime["runtime_node_field_offsets"]["aabbox_min"] == 0x04
+    assert runtime["runtime_node_field_offsets"]["aabbox_max"] == 0x10
+    assert runtime["runtime_node_field_offsets"]["child_partition_slots"] == [
+        0x1C, 0x20, 0x24, 0x28
+    ]
+    assert runtime["runtime_node_field_offsets"]["child_object_container"] == 0x34
+    assert runtime["runtime_node_field_offsets"]["child_partition_id_mask"] == 0x58
+    assert runtime["child_partition_mask_initial"] == 0x0F
+    assert runtime["child_object_resolution"]["reference_base"] == 1
+    assert runtime["child_object_resolution"]["resolved_wrapper_partition_bounds_write_offset"] == 0x30
 
 
 def test_node_header_and_flags():
@@ -228,3 +254,95 @@ def test_occl_is_not_mislabeled_as_summ_wrapper():
     row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
     assert "runtime_wrapper" not in row
     assert row["runtime_object"]["constructor"] == "FUN_006b43d0"
+
+
+
+def test_part_subsequent_record_maps_partition_id_to_runtime_child_slot():
+    root = struct.pack(
+        "<I6f5I",
+        1,
+        -10.0, -10.0, -10.0,
+        10.0, 10.0, 10.0,
+        42, 0, 0, 0,
+        0,
+    )
+    child = struct.pack(
+        "<I6f5I",
+        42,
+        -5.0, -5.0, -5.0,
+        5.0, 5.0, 5.0,
+        0, 0, 0, 0,
+        0,
+    )
+    payload = struct.pack("<I", 2) + root + child
+    data = _header() + _chunk("PART", payload) + _chunk("END ", b"")
+    rows = parse_sgb_runtime(data)["chunks"][0]["records"]
+
+    assert [row["partition_id"] for row in rows] == [1, 42]
+    assert rows[0]["runtime_partition_tree"]["root_record"] is True
+    assert rows[0]["runtime_partition_tree"]["root_creation"] == (
+        "FUN_0068a360 -> FUN_00688ef0"
+    )
+    assert rows[1]["runtime_partition_tree"]["root_record"] is False
+    assert rows[1]["runtime_partition_tree"]["subsequent_insertion"] == (
+        "FUN_0068a360 -> FUN_00689a30"
+    )
+
+    slot = rows[0]["runtime_partition_tree"]["child_partition_slots"][0]
+    assert slot == {
+        "slot": 0,
+        "source_partition_id": 42,
+        "runtime_field_offset": 0x1C,
+        "initial_state": "unresolved-partition-id",
+        "mask_bit": 0,
+        "insert_consumer": "FUN_00689a30",
+        "resolved_state": "runtime-partition-node-pointer",
+    }
+    assert "replaces the source id with a child-node pointer" in (
+        rows[0]["runtime_partition_tree"]["child_partition_resolution"]
+    )
+
+
+def test_part_child_object_reference_zero_is_rejected():
+    record = struct.pack(
+        "<I6f5I",
+        7,
+        -1.0, -1.0, -1.0,
+        1.0, 1.0, 1.0,
+        0, 0, 0, 0,
+        1,
+    )
+    record += struct.pack("<I", 0)
+    data = _header() + _chunk(
+        "PART", struct.pack("<I", 1) + record
+    ) + _chunk("END ", b"")
+
+    with pytest.raises(
+        SGBRuntimeDecodeError,
+        match="not one-based",
+    ):
+        parse_sgb_runtime(data)
+
+
+def test_part_child_object_dispatch_keeps_kind_codes_numeric():
+    record = struct.pack(
+        "<I6f5I",
+        7,
+        -1.0, -1.0, -1.0,
+        1.0, 1.0, 1.0,
+        0, 0, 0, 0,
+        1,
+    )
+    record += struct.pack("<I", 1)
+    data = _header() + _chunk(
+        "PART", struct.pack("<I", 1) + record
+    ) + _chunk("END ", b"")
+    row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
+    dispatch = row["runtime_partition_tree"][
+        "child_object_resolution"
+    ]["virtual_kind_dispatch"]
+
+    assert dispatch["vfunc_offset"] == 0x04
+    assert dispatch["observed_raw_codes"] == [1, 3, 4]
+    assert dispatch["code_3_behavior"] == "append wrapper to manager +0x58"
+    assert dispatch["code_4_behavior"] == "append wrapper to partition node +0x34"
