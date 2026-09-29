@@ -116,5 +116,6 @@ def test_startnode_resolver_uses_compact_window(monkeypatch, tmp_path: Path):
     assert rows[0]["array_count"] == 32
     assert rows[0]["node_sequence"] == 32
     assert rows[0]["node_sequence_complete"] is True
-    assert len(calls) == 4
-    assert all(size in (4, 32 * 0x24) for _, size in calls)
+    assert len(calls) == 2
+    assert all(address == target - 4 for address, _ in calls)
+    assert all(size >= 4 + 32 * 0x24 for _, size in calls)
