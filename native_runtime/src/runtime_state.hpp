@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 
@@ -59,6 +60,37 @@ struct CameraBufferRuntime {
     }
 };
 
+struct PhysicsWorkspaceBoundary {
+    uint32_t body_count = 0;
+    uint32_t joint_hinge_count = 0;
+    uint32_t bar_count = 0;
+    uint32_t scalar_count = 0;
+    size_t matrix_bytes = 0;
+    size_t row_pointer_bytes = 0;
+    bool ready = false;
+
+    void configure(
+        uint32_t bodies,
+        uint32_t joint_hinges,
+        uint32_t bars) {
+        const uint64_t scalar_count64 =
+            static_cast<uint64_t>(joint_hinges) * 5u + bars;
+        if (bodies == 0 || scalar_count64 == 0 ||
+            scalar_count64 > 4096) {
+            ready = false;
+            return;
+        }
+        body_count = bodies;
+        joint_hinge_count = joint_hinges;
+        bar_count = bars;
+        scalar_count = static_cast<uint32_t>(scalar_count64);
+        matrix_bytes = static_cast<size_t>(scalar_count) *
+            static_cast<size_t>(scalar_count) * sizeof(double);
+        row_pointer_bytes = static_cast<size_t>(scalar_count) * sizeof(uint32_t);
+        ready = true;
+    }
+};
+
 struct PhysicsTickBoundary {
     static constexpr double fixed_dt = 1.0 / 60.0;
 
@@ -67,6 +99,7 @@ struct PhysicsTickBoundary {
     bool participant_ready = false;
     int32_t participant_index = -1;
     int32_t participant_mode = -1;
+    PhysicsWorkspaceBoundary workspace{};
 
     void tick(const VehicleControlIntent& input) {
         last_input = input;
