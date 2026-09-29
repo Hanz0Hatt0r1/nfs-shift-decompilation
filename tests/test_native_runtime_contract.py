@@ -52,8 +52,10 @@ def test_native_runtime_bundle_executes_material_interface():
     assert "vkCmdBindDescriptorSets" in source
     assert "load_bundle_cull_mode" in source
     assert "SHIFT.MaterialCullState/1" in source
-    assert "uses_material_descriptors ? material_cull_mode" in source
-    assert "bundle.cull_mode" in source
+    assert "SHIFT.MaterialPipelineState/1" in source
+    assert "load_bundle_pipeline_state" in source
+    assert "BundlePipelineState" in source
+    assert "bundle.pipeline_state" in source
     assert "geometry.vertex_bytes.empty()" in source
     assert "vkCmdBindDescriptorSets" in source
     assert "if (material_mode)" in source
@@ -150,3 +152,20 @@ def test_native_runtime_maps_bundle_cull_sidecar_to_vulkan():
     assert "VK_CULL_MODE_BACK_BIT" in source
     assert "VK_CULL_MODE_FRONT_BIT" in source
     assert "raster.cullMode =" in source
+
+
+
+def test_native_runtime_executes_bundle_depth_and_blend_state():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    assert "material_pipeline_state.depth_test_enable" in source
+    assert "material_pipeline_state.depth_write_enable" in source
+    assert "material_pipeline_state.depth_compare_op" in source
+    assert "material_pipeline_state.blend_enable" in source
+    assert "material_pipeline_state.src_color_blend_factor" in source
+    assert "material_pipeline_state.dst_color_blend_factor" in source
+    assert "material_pipeline_state.color_blend_op" in source
+    assert "material_pipeline_state.src_alpha_blend_factor" in source
+    assert "material_pipeline_state.dst_alpha_blend_factor" in source
+    assert "material_pipeline_state.alpha_blend_op" in source
