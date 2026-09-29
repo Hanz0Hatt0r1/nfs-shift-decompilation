@@ -35,6 +35,7 @@ cmake --build native_runtime/build --parallel
 native_runtime/build/shift_runtime \
   --bundle out/example-bundle \
   --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
   --frames 120
 ```
 
@@ -42,4 +43,4 @@ On CI or a headless workstation, run it through Xvfb.
 
 ## Design boundary
 
-This target is deliberately small. It establishes the native process/window/frame-loop boundary before scene streaming, camera state, vehicle physics and full RenderCommand submission are connected.
+This target is deliberately small. Scene streaming and full multi-submesh RenderCommand scheduling are still separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
