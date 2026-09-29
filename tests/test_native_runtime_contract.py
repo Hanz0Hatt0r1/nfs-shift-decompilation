@@ -68,3 +68,14 @@ def test_native_runtime_state_boundary_is_evidence_backed():
     assert 'runtime_state.hpp' in source
     assert "native_state.fixed_step(intent)" in source
     assert '"state_layer": "SHIFT.NativeRuntimeState/1"' in source
+
+def test_native_runtime_accepts_bmw_physics_manifest():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
+    workflow = Path(".github/workflows/linux-vulkan.yml").read_text(encoding="utf-8")
+
+    assert "SHIFT.BMWM3VehiclePhysicsResourceManifest/1" in source
+    assert "--physics-manifest" in source
+    assert "load_physics_manifest" in source
+    assert "scalar_count != 40u" in source
+    assert "evidence/bmw_m3_vehicle_physics_manifest.json" in workflow
+    assert "physics_workspace_scalars" in source
