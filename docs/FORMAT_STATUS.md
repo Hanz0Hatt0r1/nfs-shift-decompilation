@@ -24,7 +24,7 @@
 | SDF | BODY/JOINT/HINGE/BAR schema + runtime reconstruction |
 | VehiclePhysicsAssetGraph/1 | CDF/EDF/GDF/SDF neutral join |
 | BAB/BAS | skeleton parsing, name linkage, animation evidence |
-| SGB | container + runtime NODE/PART/SUMM/FLAT boundaries; OCCL Name/Resource/corners and concrete runtime object mapped |
+| SGB | NODE/SUMM/FLAT boundaries; OCCL concrete object and corrected hierarchical PART partition tree mapped |
 | Camera runtime | config/state/event/control primitives |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
