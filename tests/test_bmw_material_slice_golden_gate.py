@@ -32,6 +32,7 @@ def _slice():
             "vertex_count": golden["mesh"]["vertex_count"],
             "triangle_count": golden["mesh"]["triangle_count"],
         },
+        "generic_material_gate": {"ready": True, "blocking_reasons": []},
         "paint_contract": {"ready": True, "blocking_reasons": []},
         "paint_shader_gate": {"ready": True, "blocking_reasons": []},
         "render_command": {
@@ -77,3 +78,60 @@ def test_bmw_material_slice_golden_blocks_nonready_shader_gate():
     report = validate_bmw_material_slice_golden(_golden(), data)
     assert report["ready"] is False
     assert "slice:paint-shader-gate-not-ready" in report["blocking_reasons"]
+
+
+
+def test_bmw_material_slice_golden_accepts_exact_nonpaint_primitive():
+    golden = _golden()
+    p = golden["mesh"]["primitives"][3]
+    resource = golden["golden"]["resource"]
+    sha = golden["golden"]["resource_sha256"]
+    data = {
+        "format": "SHIFT.BMWMaterialSlice/1",
+        "ready": True,
+        "primitive_index": 3,
+        "material_ref": p["material"],
+        "golden_identity": {
+            "resource": resource,
+            "resource_sha256": sha,
+        },
+        "mesh": {
+            "resolved": {
+                "path": resource,
+                "resource_sha256": sha,
+            },
+            "ref": resource,
+            "vertex_count": golden["mesh"]["vertex_count"],
+            "triangle_count": golden["mesh"]["triangle_count"],
+        },
+        "generic_material_gate": {
+            "ready": True,
+            "blocking_reasons": [],
+        },
+        "render_command": {
+            "format": "SHIFT.RenderCommand/1",
+            "ready": True,
+            "blocking_reasons": [],
+            "submeshes": [{
+                "first_index": p["first_index"],
+                "index_count": p["index_count"],
+            }],
+        },
+    }
+
+    report = validate_bmw_material_slice_golden(golden, data)
+
+    assert report["ready"] is True
+    assert report["paint_required"] is False
+    assert report["asset_contract"] is None
+
+
+def test_bmw_material_slice_golden_requires_generic_material_gate():
+    data = _slice()
+    data["generic_material_gate"] = {"ready": False}
+    report = validate_bmw_material_slice_golden(_golden(), data)
+    assert report["ready"] is False
+    assert (
+        "slice:generic-material-gate-not-ready"
+        in report["blocking_reasons"]
+    )
