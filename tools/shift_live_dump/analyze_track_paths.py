@@ -1459,6 +1459,7 @@ def main() -> int:
     aiw_docs: list[dict] = []
     aiw_matches: list[dict] = []
     aiw_sequences: list[dict] = []
+    aiw_next_edges: list[dict] = []
     if args.aiw_sources:
         for source in args.aiw_sources:
             loaded = load_aiw_sources(source, args.aiw_entry)
@@ -1494,6 +1495,7 @@ def main() -> int:
             f"[aiw] matches={len(aiw_matches)} sequences={len(aiw_sequences)}",
             flush=True,
         )
+        aiw_next_edges = build_aiw_next_edges(aiw_docs)
 
     cl = clusters(ptr)[:args.target_top]
     radius = args.radius_kib * 1024
@@ -1588,7 +1590,6 @@ def main() -> int:
         ) + "\n",
         encoding="utf-8",
     )
-    aiw_next_edges = build_aiw_next_edges(aiw_docs)
     write_csv(out / "aiw_next_edges.csv", aiw_next_edges, [
         "aiw_source", "from_waypoint", "to_waypoint", "branch_id",
         "link_flags", "from_lap_distance", "to_lap_distance", "lap_distance_delta",
