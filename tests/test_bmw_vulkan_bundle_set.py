@@ -1,9 +1,14 @@
+import hashlib
 import json
 
 import pytest
 
 from bmw_vulkan_bundle import TARGET_MEB
-from bmw_vulkan_bundle_set import FORMAT, build_bmw_vulkan_bundle_set
+from bmw_vulkan_bundle_set import (
+    FORMAT,
+    build_bmw_vulkan_bundle_set,
+    index_bmw_vulkan_bundle_set,
+)
 
 
 def _shader(tag):
@@ -166,3 +171,54 @@ def test_bundle_set_rejects_duplicate_or_out_of_range_indices(tmp_path):
         build_bmw_vulkan_bundle_set(
             _command(), _mesh(), tmp_path / "bad", submesh_indices=[2]
         )
+
+
+def test_bundle_set_index_preserves_finalized_child_manifest(tmp_path):
+    command = _command()
+    built = build_bmw_vulkan_bundle_set(
+        command,
+        _mesh(),
+        tmp_path,
+        submesh_indices=[0],
+    )
+    assert built["ready"] is True
+
+    child_manifest = tmp_path / "draws" / "submesh_000" / "bundle_manifest.json"
+    payload = json.loads(child_manifest.read_text(encoding="utf-8"))
+    payload["dds_bridge"] = {
+        "format": "SHIFT.VulkanDDSResourceBridge/1",
+        "ready": True,
+        "marker": "finalized-after-child-build",
+    }
+    child_manifest.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    expected_sha = hashlib.sha256(child_manifest.read_bytes()).hexdigest()
+
+    indexed = index_bmw_vulkan_bundle_set(
+        command,
+        tmp_path,
+        submesh_indices=[0],
+    )
+
+    assert indexed["ready"] is True
+    assert indexed["draws"][0]["manifest_sha256"] == expected_sha
+    persisted_child = json.loads(child_manifest.read_text(encoding="utf-8"))
+    assert persisted_child["dds_bridge"]["marker"] == "finalized-after-child-build"
+
+
+def test_bundle_set_index_fails_closed_when_finalized_child_is_missing(tmp_path):
+    result = index_bmw_vulkan_bundle_set(
+        _command(),
+        tmp_path,
+        submesh_indices=[1],
+    )
+
+    assert result["ready"] is False
+    assert result["draws"][0]["ready"] is False
+    assert result["draws"][0]["blocking_reasons"] == ["manifest-missing"]
+    assert (
+        "bundle-set:submesh-1:manifest-missing"
+        in result["blocking_reasons"]
+    )
