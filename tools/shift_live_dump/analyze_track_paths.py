@@ -323,6 +323,7 @@ def scan_file(path: Path, start: int, mm: list[dict], starts: list[int]) -> dict
         "Incident.PathOwner": {},
         "AISegmentPath": {},
         "AIPolylinePath": {},
+        "AIPolyPathNode": {},
     }
     carry = b""
     base = 0
