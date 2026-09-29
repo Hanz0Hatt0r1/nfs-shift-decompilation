@@ -310,22 +310,43 @@ def translate_bmt_pipeline_state(
     )
 
     if separate_alpha:
+        alpha_source_value = (
+            (alpha_blend or {}).get("alpha_source_blend")
+            if "alpha_source_blend" in (alpha_blend or {})
+            else (alpha_blend or {}).get("alphasourceblend")
+        )
+        alpha_dest_value = (
+            (alpha_blend or {}).get("alpha_dest_blend")
+            if "alpha_dest_blend" in (alpha_blend or {})
+            else (alpha_blend or {}).get("alphadestblend")
+        )
+        alpha_op_value = (
+            (alpha_blend or {}).get("alpha_blend_op")
+            if "alpha_blend_op" in (alpha_blend or {})
+            else (alpha_blend or {}).get("alphablendop")
+        )
+        if alpha_source_value is None:
+            blockers.append("material-pipeline:separate-alpha-source-missing")
+        if alpha_dest_value is None:
+            blockers.append("material-pipeline:separate-alpha-dest-missing")
+        if alpha_op_value is None:
+            blockers.append("material-pipeline:separate-alpha-op-missing")
         src_alpha = _enum_row(
-            (alpha_blend or {}).get("alpha_source_blend"),
+            alpha_source_value,
             _BLEND_FACTOR_ROWS,
             default="EBF_ONE",
             field="alpha-source-blend",
             blockers=blockers,
         )
         dst_alpha = _enum_row(
-            (alpha_blend or {}).get("alpha_dest_blend"),
+            alpha_dest_value,
             _BLEND_FACTOR_ROWS,
             default="EBF_ZERO",
             field="alpha-dest-blend",
             blockers=blockers,
         )
         alpha_op = _enum_row(
-            (alpha_blend or {}).get("alpha_blend_op"),
+            alpha_op_value,
             _BLEND_OP_ROWS,
             default="EBO_ADD",
             field="alpha-blend-op",
