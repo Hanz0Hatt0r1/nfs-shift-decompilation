@@ -47,6 +47,35 @@ def test_hierarchy_child_record_size_is_36_bytes():
     assert result["children"][0]["runtime_copy_order"] == [6, 3, 4, 5, 1, 2, 0, 7, 8]
 
 
+def test_hierarchy_child_runtime_layout_is_proven():
+    result = parse_sgb_object_payload(_hierarchy_payload())
+    child = result["children"][0]
+    assert child["record_bytes"] == 36
+    assert child["runtime_element_bytes"] == 0x28
+    assert child["runtime_destination_word_offsets"] == {
+        "0x00": 6,
+        "0x04": 3,
+        "0x08": 4,
+        "0x0c": 5,
+        "0x10": 0,
+        "0x14": 1,
+        "0x18": 2,
+        "0x1c": 7,
+        "0x20": 8,
+    }
+    assert child["runtime_source_word_offsets"] == {
+        "0": 0x10,
+        "1": 0x14,
+        "2": 0x18,
+        "3": 0x04,
+        "4": 0x08,
+        "5": 0x0c,
+        "6": 0x00,
+        "7": 0x1c,
+        "8": 0x20,
+    }
+
+
 def test_hierarchy_truncation_blocks_non_strict():
     payload = bytearray(_hierarchy_payload(count=2))
     # Keep the proven dispatcher string inside the bounded payload while the

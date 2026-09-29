@@ -15,6 +15,21 @@ from typing import Any
 FORMAT = "SHIFT.SGBObjectRuntime/1"
 KINDS = {"OBJECT", "HIERARCHY", "DAMAGE"}
 
+# FUN_0069a6c0 copies each serialized HIERARCHY child (9 dwords / 0x24 bytes)
+# into a runtime element with a 0x28-byte stride using this destination order.
+HIERARCHY_RUNTIME_ELEMENT_BYTES = 0x28
+HIERARCHY_RUNTIME_DESTINATION_WORDS = {
+    0x00: 6,
+    0x04: 3,
+    0x08: 4,
+    0x0C: 5,
+    0x10: 0,
+    0x14: 1,
+    0x18: 2,
+    0x1C: 7,
+    0x20: 8,
+}
+
 
 class SGBObjectDecodeError(ValueError):
     pass
@@ -67,6 +82,15 @@ def parse_hierarchy_children(
             "raw_u32": words,
             "runtime_copy_order": [6, 3, 4, 5, 1, 2, 0, 7, 8],
             "record_bytes": 36,
+            "runtime_element_bytes": HIERARCHY_RUNTIME_ELEMENT_BYTES,
+            "runtime_destination_word_offsets": {
+                f"0x{offset:02x}": source_word
+                for offset, source_word in HIERARCHY_RUNTIME_DESTINATION_WORDS.items()
+            },
+            "runtime_source_word_offsets": {
+                str(source_word): offset
+                for offset, source_word in HIERARCHY_RUNTIME_DESTINATION_WORDS.items()
+            },
         })
         cursor += 36
     return rows
@@ -124,7 +148,7 @@ def parse_sgb_object_payload(
         },
         "limitations": [
             "OBJECT and DAMAGE transform/material fields are preserved as raw words.",
-            "HIERARCHY child words are preserved in source copy order; semantic field names are not yet proven.",
+            "HIERARCHY child words are preserved, and the proven 9-word to 0x28-byte runtime copy layout is exposed without semantic field names.",
         ],
     }
 
