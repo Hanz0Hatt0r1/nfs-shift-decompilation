@@ -103,3 +103,19 @@ def test_native_index_draw_count_respects_first_index():
 
     assert "geometry.indices.size() - first_index" in source
     assert "index_count == 0" in source
+
+
+def test_native_runtime_uses_per_swapchain_depth_buffers():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
+
+    assert "std::vector<Image> depth_images" in source
+    assert "create_depth_resources()" in source
+    assert "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT" in source
+    assert "VK_IMAGE_ASPECT_DEPTH_BIT" in source
+    assert "VK_FORMAT_D32_SFLOAT depth attachment unsupported" in source
+    assert "pDepthStencilAttachment = &depth_ref" in source
+    assert "depthTestEnable = VK_TRUE" in source
+    assert "depthWriteEnable = VK_TRUE" in source
+    assert "VK_COMPARE_OP_LESS_OR_EQUAL" in source
+    assert "clear[1].depthStencil.depth = 1.0f" in source
+    assert '\\"depth_test\\": true' in source
