@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 513.**
+**Current mainline: Phase 516.**
 
 
 
@@ -43,12 +43,14 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 19. Close the IGPhaseVehicle completion/finalization boundary: per-container callbacks, guarded +0x160 cleanup, resource teardown and post-finalizer object callback ordering — Phase 511 implemented.
 20. Map selector descriptor population exactly: 16-entry capacity, 0x90 stride, packed token bitfields, source-to-descriptor string/block copies, +0x74 initialization and conditional +0x70 population — Phase 512 implemented.
 21. Close selector source-record admission scheduling: owner +0x4f0 mask, low-nibble routing key, descriptor-population handoff and reset/resynchronization paths — Phase 513 implemented.
-22. Expand the desktop reference renderer against real BMW material/shader permutations.
-19. Complete Vulkan RenderCommand execution using the same neutral contract.
-20. Continue SGB/FLAT and camera runtime reconstruction.
-21. Derive proven animation poses from the BAB runtime grammar.
-22. Port the stable native render/runtime boundary to Android.
-23. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+22. Validate the low-stop specialized-provider capture contract — Phase 515 implemented.
+23. Validate concrete AIW runtime edge coverage, stride and ambiguity without collapsing candidate mappings — Phase 516 implemented.
+24. Expand the desktop reference renderer against real BMW material/shader permutations.
+25. Complete Vulkan RenderCommand execution using the same neutral contract.
+26. Continue SGB/FLAT and camera runtime reconstruction.
+27. Derive proven animation poses from the BAB runtime grammar.
+28. Port the stable native render/runtime boundary to Android.
+29. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -67,6 +69,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Builtin solver | source-backed | runtime frame parity |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
+| Track/path runtime correlation | active | runtime graph capture with complete/unambiguous edge evidence |
 | Vulkan | active | full RenderCommand/material submission |
 | Android | deferred | stable native renderer/runtime boundary |
 
