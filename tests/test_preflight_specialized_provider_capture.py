@@ -87,3 +87,44 @@ def test_validate_probe_script_blocks_unrelated_python(tmp_path: Path):
     assert "probe-script-missing-marker:provider-post-capture" in report["errors"]
     assert "probe-script-missing-marker:scalar-reset-capture" in report["errors"]
     assert "probe-script-missing-marker:provider-snapshot" in report["errors"]
+
+
+def test_cli_passes_provider_only_flag(monkeypatch, tmp_path: Path, capsys):
+    executable = tmp_path / "SHIFT.exe"
+    output = tmp_path / "capture"
+    probe = tmp_path / "probe.py"
+    executable.write_bytes(b"fixture")
+    probe.write_text("# probe\n", encoding="utf-8")
+
+    captured = {}
+
+    def fake_preflight(*args, **kwargs):
+        captured.update(kwargs)
+        return {
+            "format": "SHIFT.SDFRuntimeProbePreflight/1",
+            "status": "blocked",
+            "ready": False,
+            "artifacts": {"ready": True},
+            "probe_script": {
+                "exists": True,
+                "validation": {"ready": True},
+            },
+            "capture": {"probe_mode": "provider-only"},
+            "runtime_tools": {"wine": None, "gdb": None},
+            "gdb_python": {"ready": False},
+            "errors": ["missing:wine", "missing:gdb"],
+        }
+
+    monkeypatch.setattr(tool, "preflight_provider_capture", fake_preflight)
+
+    result = tool.main([
+        str(executable),
+        str(output),
+        "--probe-script",
+        str(probe),
+        "--provider-only",
+    ])
+
+    assert result == 2
+    assert captured["provider_only"] is True
+    assert '"probe_mode": "provider-only"' in capsys.readouterr().out
