@@ -214,6 +214,7 @@ Outputs:
 - `track_path_analysis.json` — structure-hit counts, pointer clusters, and next capture windows.
 - `{profile}.csv` — structural candidates for each recovered profile. `aipolylinepath.csv` additionally records whether `array[-4]` matches `num nodes`, whether the first array element has the `AIPolyPathNode` vtable, and how many consecutive `0x24`-byte nodes were validated.
 - `aipolylinepath_nodes.csv` — decoded elements of every fully validated `AIPolylinePath.array`, including node address/index, 2D position/tangent and cumulative distance.
+- `aiw_next_edges.csv` — normalized `WP_PTRS.next` graph edges from the selected AIW resources, including waypoint indices and lap-distance delta.
 - `path_start_node_links.csv` — direct `Path.StartNode` resolutions, including target vtable, count-prefix stability and validated consecutive node count.
 - `stable_external_pointers.csv` — stable writable pointers found outside the selected ranges.
 - `pointer_target_clusters.csv` — dense target families and dominant source strides.
