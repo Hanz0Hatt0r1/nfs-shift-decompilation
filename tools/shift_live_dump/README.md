@@ -214,6 +214,7 @@ Outputs:
 - `{profile}.csv` — structural candidates for each recovered profile. `aipolylinepath.csv` additionally records whether `array[-4]` matches `num nodes`, whether the first array element has the `AIPolyPathNode` vtable, and how many consecutive `0x24`-byte nodes were validated.
 - `aipolylinepath_nodes.csv` — decoded elements of every fully validated `AIPolylinePath.array`, including node address/index, 2D position/tangent and cumulative distance.
 - `path_start_node_links.csv` — direct `Path.StartNode` resolutions, including target vtable, count-prefix stability and validated consecutive node count.
+- `aisegmentpath_array_links.csv` — validation of the `AISegmentPath.array` count prefix, `0x24` element stride and concrete `0x00afca70` element vtable.
 - `stable_external_pointers.csv` — stable writable pointers found outside the selected ranges.
 - `pointer_target_clusters.csv` — dense target families and dominant source strides.
 - `next_capture_windows.csv` / `next_capture_ranges.txt` — merged windows for the next extraction pass.
