@@ -6,7 +6,6 @@ on:
       - ".github/workflows/linux-vulkan.yml"
       - "native_runtime/**"
       - "native_vulkan/**"
-      - "native_runtime/**"
       - "*.py"
       - "tools/**"
       - "tests/**"
@@ -63,6 +62,7 @@ jobs:
           xvfb-run -a native_runtime/build/shift_runtime \
             --bundle out/vulkan/bundle \
             --shader-dir native_runtime/build/shaders \
+            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
             --frames 3 | tee out/vulkan/runtime/runtime.json
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
