@@ -106,6 +106,7 @@ def _material_contract(material: dict[str, Any] | None) -> dict[str, Any]:
         "format": FORMAT,
         "material": material.get("name"),
         "shader_selection": selection,
+        "render_state": dict(material.get("render_state") or {}),
         "textures": explicit_textures,
         "unresolved_textures": unresolved_textures + material_unresolved,
         "external_samplers": external_samplers,

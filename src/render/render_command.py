@@ -271,6 +271,7 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
         commands.append({
             "first_index": submesh.get("first_index", 0),
             "index_count": submesh.get("index_count", 0),
+            "render_state": dict(material.get("render_state") or {}),
             "shader": {
                 "vertex": linked_pair.get("vertex_glsl") if linked_pair else None,
                 "pixel": linked_pair.get("pixel_glsl") if linked_pair else None,

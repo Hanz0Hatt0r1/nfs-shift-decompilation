@@ -44,3 +44,14 @@ On CI or a headless workstation, run it through Xvfb.
 ## Design boundary
 
 This target is deliberately small. Scene streaming and full multi-submesh RenderCommand scheduling are still separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
+
+
+## Phase 530 per-draw cull state
+
+Prepared BMW bundles can contain `pipeline_state.json` with
+`SHIFT.MaterialCullState/1`. The native runtime validates that sidecar and
+selects `VK_CULL_MODE_NONE`, `VK_CULL_MODE_BACK_BIT` or
+`VK_CULL_MODE_FRONT_BIT` independently for each material draw. The mapping is
+source-backed by the retail BMT enum/string table and the retail D3D9 cull
+lookup. Missing sidecars retain the legacy no-cull material path for old
+fixtures; malformed or blocked sidecars fail closed.

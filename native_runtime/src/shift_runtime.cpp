@@ -85,6 +85,7 @@ struct BundleCube {
 struct BundleAssets {
     std::string vertex_shader_path;
     std::string fragment_shader_path;
+    VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
     std::vector<uint8_t> vertex_constants;
     std::vector<uint8_t> pixel_constants;
     std::vector<BundleTexture> textures;
@@ -203,6 +204,37 @@ uint32_t json_u32_field(
     return static_cast<uint32_t>(value);
 }
 
+VkCullModeFlags load_bundle_cull_mode(const std::string& root) {
+    const std::string path = root + "/pipeline_state.json";
+    if (!std::filesystem::is_regular_file(path)) {
+        return VK_CULL_MODE_NONE;
+    }
+    if (!file_contains(
+            path,
+            "\"format\": \"SHIFT.MaterialCullState/1\"") ||
+        !file_contains(path, "\"ready\": true")) {
+        throw std::runtime_error(
+            "bundle pipeline-state sidecar is invalid or blocked");
+    }
+    if (file_contains(
+            path,
+            "\"vulkan_cull_mode\": \"VK_CULL_MODE_NONE\"")) {
+        return VK_CULL_MODE_NONE;
+    }
+    if (file_contains(
+            path,
+            "\"vulkan_cull_mode\": \"VK_CULL_MODE_BACK_BIT\"")) {
+        return VK_CULL_MODE_BACK_BIT;
+    }
+    if (file_contains(
+            path,
+            "\"vulkan_cull_mode\": \"VK_CULL_MODE_FRONT_BIT\"")) {
+        return VK_CULL_MODE_FRONT_BIT;
+    }
+    throw std::runtime_error(
+        "bundle pipeline-state cull mode is unsupported");
+}
+
 shift::runtime::PhysicsWorkspaceBoundary load_physics_manifest(
     const std::string& path) {
     if (!file_contains(
@@ -233,6 +265,7 @@ BundleAssets load_bundle_assets(const std::string& root) {
     }
 
     BundleAssets out;
+    out.cull_mode = load_bundle_cull_mode(root);
     out.vertex_shader_path = root + "/spirv/submesh_0.vertex.glsl.spv";
     out.fragment_shader_path = root + "/spirv/submesh_0.pixel.glsl.spv";
     if (!std::filesystem::is_regular_file(out.vertex_shader_path) ||
@@ -1503,6 +1536,7 @@ struct Runtime {
         const std::string& vertex_shader_path,
         const std::string& fragment_shader_path,
         bool uses_material_descriptors,
+        VkCullModeFlags material_cull_mode,
         VkDescriptorSetLayout material_set0,
         VkDescriptorSetLayout material_set1,
         VkShaderModule& out_vertex_shader,
@@ -1623,7 +1657,7 @@ struct Runtime {
             VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         raster.polygonMode = VK_POLYGON_MODE_FILL;
         raster.cullMode =
-            uses_material_descriptors ? VK_CULL_MODE_NONE :
+            uses_material_descriptors ? material_cull_mode :
                                         VK_CULL_MODE_BACK_BIT;
         raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         raster.lineWidth = 1.0f;
@@ -1680,6 +1714,7 @@ struct Runtime {
             shader_dir + "/runtime.vert.spv",
             shader_dir + "/runtime.frag.spv",
             false,
+            VK_CULL_MODE_BACK_BIT,
             VK_NULL_HANDLE,
             VK_NULL_HANDLE,
             vertex_shader,
@@ -1697,6 +1732,7 @@ struct Runtime {
             bundle.vertex_shader_path,
             bundle.fragment_shader_path,
             true,
+            bundle.cull_mode,
             draw.set0_layout,
             draw.set1_layout,
             draw.vertex_shader,
