@@ -77,6 +77,13 @@ def translate_render_states(states: Mapping[Any, Any]) -> dict[str, Any]:
 
     if z_func is not None and z_func not in COMPARE:
         blockers.append(f"d3d9-vulkan-state:unsupported-zfunc:{z_func}")
+    if alpha_test is not None and (
+        isinstance(alpha_test, bool) is False
+        and alpha_test not in {0, 1}
+    ):
+        blockers.append(
+            f"d3d9-vulkan-state:invalid-alphatest-enable:{alpha_test}"
+        )
     if alpha_func is not None and alpha_func not in COMPARE:
         blockers.append(
             f"d3d9-vulkan-state:unsupported-alphafunc:{alpha_func}"
