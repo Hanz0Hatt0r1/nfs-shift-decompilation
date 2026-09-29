@@ -627,14 +627,24 @@ def validate_prefixed_array_link(
                 continue
             count = struct.unpack_from("<I", count_blob)[0]
             counts.append(count)
+
+            check_count = min(count, 256)
             seq = 0
-            for n in range(min(count, 256)):
-                vt_blob = _read_virtual(snap, idx, starts, array + n * stride, 4)
-                if vt_blob is None:
-                    break
-                if struct.unpack_from("<I", vt_blob)[0] != vtable:
-                    break
-                seq += 1
+            loc = _region_record_for_address(array, idx, starts)
+            if loc and check_count > 0:
+                st, rec = loc
+                wanted = check_count * stride
+                within = array - st
+                if within + wanted <= int(rec["size"]):
+                    blob = _read_virtual(snap, idx, starts, array, wanted)
+                    if blob is not None:
+                        for n in range(check_count):
+                            off = n * stride
+                            if off + 4 > len(blob):
+                                break
+                            if struct.unpack_from("<I", blob, off)[0] != vtable:
+                                break
+                            seq += 1
             sequences.append(seq)
         count = Counter(counts).most_common(1)[0][0] if counts else None
         seq = max(sequences) if sequences else 0
