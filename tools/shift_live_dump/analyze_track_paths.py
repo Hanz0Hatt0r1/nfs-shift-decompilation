@@ -1180,9 +1180,20 @@ def correlate_aiw_runtime(
         for row in rows:
             by_wp.setdefault(row["waypoint_index"], []).append(row["runtime_address"])
 
+        source_doc = next(d for d in aiw_docs if d["source"] == source)
+        waypoint_next = {
+            int(wp["index"]): int(wp.get("next", -1))
+            for wp in source_doc["waypoints"]
+        }
+
+        # Follow the explicit AIW graph edge. Numeric waypoint ids are not
+        # guaranteed to be contiguous, especially around branches/cuts.
         delta_counts = Counter()
         for i, addresses in by_wp.items():
-            for nxt in by_wp.get(i + 1, ()):
+            next_index = waypoint_next.get(i, -1)
+            if next_index not in by_wp:
+                continue
+            for nxt in by_wp[next_index]:
                 for address in addresses:
                     delta = nxt - address
                     if 4 <= abs(delta) <= 0x10000:
@@ -1197,15 +1208,18 @@ def correlate_aiw_runtime(
             first_addr = by_wp[start_wp][0]
             last_addr = first_addr
             count = 1
-            while True:
+            visited = set()
+            while current not in visited:
+                visited.add(current)
+                next_index = waypoint_next.get(current, -1)
                 candidates = [
-                    address for address in by_wp.get(current + 1, ())
+                    address for address in by_wp.get(next_index, ())
                     if address - last_addr == stride
                 ]
                 if not candidates:
                     break
                 last_addr = candidates[0]
-                current += 1
+                current = next_index
                 count += 1
             if count >= 4:
                 chains.append((count, start_wp, current, first_addr, last_addr))
