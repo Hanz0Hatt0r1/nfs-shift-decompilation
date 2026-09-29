@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 525.**
+**Current mainline: Phase 526.**
 
 
 
@@ -55,12 +55,13 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 31. Stabilize and merge the offline Linux native runtime frame loop/material boundary — complete; `native_runtime/` is on main, depth-tested and covered by Linux Vulkan CI.
 32. Represent one multi-submesh RenderCommand as an ordered set of independently gated Vulkan bundles — Phase 524 implemented.
 33. Compile, reflect and interface-validate every ordered draw bundle before native admission — Phase 525 implemented.
-34. Execute the prepared draw set natively with per-draw pipelines, constants and descriptor resources.
-35. Expand the desktop reference renderer against real BMW material/shader permutations.
-36. Continue SGB/FLAT and camera runtime reconstruction.
-37. Derive proven animation poses from the BAB runtime grammar.
-38. Port the stable native render/runtime boundary to Android.
-39. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+34. Execute the prepared draw set in one native render pass with per-draw pipelines, constants, descriptors, textures and geometry — Phase 526 implemented.
+35. Expand the native draw-set contract to real multi-material BMW submesh permutations and state differences.
+36. Expand the desktop reference renderer against real BMW material/shader permutations.
+37. Continue SGB/FLAT and camera runtime reconstruction.
+38. Derive proven animation poses from the BAB runtime grammar.
+39. Port the stable native render/runtime boundary to Android.
+40. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -80,7 +81,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Track/path runtime correlation | active | runtime graph capture with complete/unambiguous edge evidence |
-| Vulkan | active; native runtime merged | native execution of Phase 525 prepared multi-draw set |
+| Vulkan | active; native multi-draw runtime | broader real material/state permutations |
 | Android | deferred | stable native renderer/runtime boundary |
 
 ## Canonical render path

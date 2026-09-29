@@ -417,6 +417,92 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
     return out;
 }
 
+
+std::vector<std::string> load_bundle_set_paths(const std::string& root) {
+    const std::filesystem::path base(root);
+    const std::string manifest =
+        (base / "bundle_set_manifest.json").string();
+    const std::string prepare =
+        (base / "bundle_set_prepare.json").string();
+    const std::filesystem::path order_path =
+        base / "bundle_set.paths";
+
+    if (!file_contains(
+            manifest,
+            "\"format\": \"SHIFT.BMWVulkanBundleSet/1\"") ||
+        !file_contains(manifest, "\"ready\": true")) {
+        throw std::runtime_error(
+            "bundle set manifest is missing or not ready");
+    }
+    if (!file_contains(
+            prepare,
+            "\"format\": \"SHIFT.BMWVulkanBundleSetPrepare/1\"") ||
+        !file_contains(prepare, "\"ready\": true")) {
+        throw std::runtime_error(
+            "bundle set prepare gate is missing or not ready");
+    }
+
+    const uint32_t expected =
+        json_u32_field(manifest, "draw_count");
+    const uint32_t prepared =
+        json_u32_field(prepare, "draw_count");
+    if (expected == 0 || prepared != expected) {
+        throw std::runtime_error(
+            "bundle set draw count is empty or inconsistent");
+    }
+
+    std::ifstream order(order_path);
+    if (!order) {
+        throw std::runtime_error(
+            "bundle set draw-order sidecar is missing");
+    }
+
+    std::vector<std::string> result;
+    std::string line;
+    while (std::getline(order, line)) {
+        while (!line.empty() &&
+               (line.back() == '\r' ||
+                std::isspace(static_cast<unsigned char>(line.back())))) {
+            line.pop_back();
+        }
+        size_t begin = 0;
+        while (begin < line.size() &&
+               std::isspace(static_cast<unsigned char>(line[begin]))) {
+            ++begin;
+        }
+        line = line.substr(begin);
+        if (line.empty()) continue;
+
+        const std::filesystem::path relative(line);
+        if (relative.is_absolute()) {
+            throw std::runtime_error(
+                "bundle set contains an absolute child path");
+        }
+        for (const auto& part : relative) {
+            if (part == "..") {
+                throw std::runtime_error(
+                    "bundle set child path escapes its root");
+            }
+        }
+
+        const std::filesystem::path child =
+            (base / relative).lexically_normal();
+        if (!std::filesystem::is_regular_file(
+                child / "bundle_manifest.json")) {
+            throw std::runtime_error(
+                "bundle set child manifest is missing: " +
+                relative.string());
+        }
+        result.push_back(child.string());
+    }
+
+    if (result.size() != expected) {
+        throw std::runtime_error(
+            "bundle set draw-order count does not match manifest");
+    }
+    return result;
+}
+
 struct InputState {
     bool throttle = false;
     bool brake = false;
@@ -572,6 +658,75 @@ struct Image {
     }
 };
 
+
+struct MaterialDraw {
+    Buffer vertex_buffer;
+    Buffer index_buffer;
+    uint32_t index_count = 0;
+    uint32_t first_index = 0;
+
+    Buffer vertex_constants;
+    Buffer pixel_constants;
+    std::vector<Buffer> texture_staging;
+    std::vector<Image> texture_images;
+    std::vector<VkSampler> texture_samplers;
+    Image cube_image;
+    Buffer cube_staging;
+    VkSampler cube_sampler = VK_NULL_HANDLE;
+
+    VkDescriptorSetLayout set0_layout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout set1_layout = VK_NULL_HANDLE;
+    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
+    VkDescriptorSet set0 = VK_NULL_HANDLE;
+    VkDescriptorSet set1 = VK_NULL_HANDLE;
+
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkShaderModule vertex_shader = VK_NULL_HANDLE;
+    VkShaderModule fragment_shader = VK_NULL_HANDLE;
+
+    void destroy(VkDevice device) {
+        if (pipeline) vkDestroyPipeline(device, pipeline, nullptr);
+        if (pipeline_layout) vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+        if (descriptor_pool) vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
+        if (set1_layout) vkDestroyDescriptorSetLayout(device, set1_layout, nullptr);
+        if (set0_layout) vkDestroyDescriptorSetLayout(device, set0_layout, nullptr);
+        if (vertex_shader) vkDestroyShaderModule(device, vertex_shader, nullptr);
+        if (fragment_shader) vkDestroyShaderModule(device, fragment_shader, nullptr);
+
+        for (VkSampler sampler : texture_samplers) {
+            if (sampler) vkDestroySampler(device, sampler, nullptr);
+        }
+        texture_samplers.clear();
+        if (cube_sampler) vkDestroySampler(device, cube_sampler, nullptr);
+        cube_sampler = VK_NULL_HANDLE;
+
+        for (auto& image : texture_images) image.destroy();
+        texture_images.clear();
+        cube_image.destroy();
+
+        for (auto& staging : texture_staging) staging.destroy();
+        texture_staging.clear();
+        cube_staging.destroy();
+        vertex_constants.destroy();
+        pixel_constants.destroy();
+        vertex_buffer.destroy();
+        index_buffer.destroy();
+
+        set0_layout = VK_NULL_HANDLE;
+        set1_layout = VK_NULL_HANDLE;
+        descriptor_pool = VK_NULL_HANDLE;
+        set0 = VK_NULL_HANDLE;
+        set1 = VK_NULL_HANDLE;
+        pipeline_layout = VK_NULL_HANDLE;
+        pipeline = VK_NULL_HANDLE;
+        vertex_shader = VK_NULL_HANDLE;
+        fragment_shader = VK_NULL_HANDLE;
+        first_index = 0;
+        index_count = 0;
+    }
+};
+
 struct Runtime {
     Window* window = nullptr;
 
@@ -613,19 +768,7 @@ struct Runtime {
     uint32_t first_index = 0;
 
     bool material_mode = false;
-    Buffer vertex_constants;
-    Buffer pixel_constants;
-    std::vector<Buffer> texture_staging;
-    std::vector<Image> texture_images;
-    std::vector<VkSampler> texture_samplers;
-    Image cube_image;
-    Buffer cube_staging;
-    VkSampler cube_sampler = VK_NULL_HANDLE;
-    VkDescriptorSetLayout set0_layout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout set1_layout = VK_NULL_HANDLE;
-    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    VkDescriptorSet set0 = VK_NULL_HANDLE;
-    VkDescriptorSet set1 = VK_NULL_HANDLE;
+    std::vector<MaterialDraw> material_draws;
 
     void create_instance() {
         const char* extensions[] = {
@@ -960,7 +1103,9 @@ struct Runtime {
         return sampler;
     }
 
-    void create_material_resources(const BundleAssets& bundle) {
+    void create_material_resources(
+        const BundleAssets& bundle,
+        MaterialDraw& draw) {
         if (bundle.vertex_constants.size() != kBundleConstantBytes ||
             bundle.pixel_constants.size() != kBundleConstantBytes) {
             throw std::runtime_error("bundle constants are incomplete");
@@ -968,29 +1113,29 @@ struct Runtime {
 
         create_buffer(
             bundle.vertex_constants.data(), kBundleConstantBytes,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vertex_constants);
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, draw.vertex_constants);
         create_buffer(
             bundle.pixel_constants.data(), kBundleConstantBytes,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, pixel_constants);
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, draw.pixel_constants);
 
-        texture_staging.resize(bundle.textures.size());
-        texture_images.resize(bundle.textures.size());
-        texture_samplers.resize(bundle.textures.size());
+        draw.texture_staging.resize(bundle.textures.size());
+        draw.texture_images.resize(bundle.textures.size());
+        draw.texture_samplers.resize(bundle.textures.size());
         for (size_t i = 0; i < bundle.textures.size(); ++i) {
             const BundleTexture& texture = bundle.textures[i];
             create_buffer(
                 texture.pixels.data(),
                 texture.pixels.size(),
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                texture_staging[i]);
+                draw.texture_staging[i]);
             create_image(
                 texture.width, texture.height, 1,
                 VK_FORMAT_R8G8B8A8_UNORM,
                 0,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT,
-                texture_images[i]);
-            texture_samplers[i] = create_sampler(texture.sampler_mode);
+                draw.texture_images[i]);
+            draw.texture_samplers[i] = create_sampler(texture.sampler_mode);
         }
 
         if (bundle.has_cube) {
@@ -998,15 +1143,15 @@ struct Runtime {
                 bundle.cube.pixels.data(),
                 bundle.cube.pixels.size(),
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                cube_staging);
+                draw.cube_staging);
             create_image(
                 bundle.cube.width, bundle.cube.height, 6,
                 VK_FORMAT_R8G8B8A8_UNORM,
                 VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT,
-                cube_image);
-            cube_sampler = create_sampler(4);
+                draw.cube_image);
+            draw.cube_sampler = create_sampler(4);
         }
 
         VkDescriptorSetLayoutBinding set0_bindings[2]{};
@@ -1024,15 +1169,15 @@ struct Runtime {
         set0_info.bindingCount = 2;
         set0_info.pBindings = set0_bindings;
         vk_check(vkCreateDescriptorSetLayout(
-                     device, &set0_info, nullptr, &set0_layout),
+                     device, &set0_info, nullptr, &draw.set0_layout),
                  "vkCreateDescriptorSetLayout set0 failed");
 
         std::map<uint32_t, VkDescriptorImageInfo> sampled;
         for (size_t i = 0; i < bundle.textures.size(); ++i) {
             const uint32_t reg = bundle.textures[i].register_index;
             VkDescriptorImageInfo info{};
-            info.sampler = texture_samplers[i];
-            info.imageView = texture_images[i].view;
+            info.sampler = draw.texture_samplers[i];
+            info.imageView = draw.texture_images[i].view;
             info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             if (!sampled.emplace(reg, info).second) {
                 throw std::runtime_error("duplicate bundle sampler register");
@@ -1040,11 +1185,12 @@ struct Runtime {
         }
         if (bundle.has_cube) {
             VkDescriptorImageInfo info{};
-            info.sampler = cube_sampler;
-            info.imageView = cube_image.view;
+            info.sampler = draw.cube_sampler;
+            info.imageView = draw.cube_image.view;
             info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             if (!sampled.emplace(bundle.cube.register_index, info).second) {
-                throw std::runtime_error("cube sampler register collides with 2D texture");
+                throw std::runtime_error(
+                    "cube sampler register collides with 2D texture");
             }
         }
 
@@ -1053,7 +1199,8 @@ struct Runtime {
         for (const auto& item : sampled) {
             VkDescriptorSetLayoutBinding binding{};
             binding.binding = item.first;
-            binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            binding.descriptorType =
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             binding.descriptorCount = 1;
             binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
             set1_bindings.push_back(binding);
@@ -1061,10 +1208,12 @@ struct Runtime {
 
         VkDescriptorSetLayoutCreateInfo set1_info{};
         set1_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        set1_info.bindingCount = static_cast<uint32_t>(set1_bindings.size());
-        set1_info.pBindings = set1_bindings.empty() ? nullptr : set1_bindings.data();
+        set1_info.bindingCount =
+            static_cast<uint32_t>(set1_bindings.size());
+        set1_info.pBindings =
+            set1_bindings.empty() ? nullptr : set1_bindings.data();
         vk_check(vkCreateDescriptorSetLayout(
-                     device, &set1_info, nullptr, &set1_layout),
+                     device, &set1_info, nullptr, &draw.set1_layout),
                  "vkCreateDescriptorSetLayout set1 failed");
 
         std::vector<VkDescriptorPoolSize> pool_sizes;
@@ -1081,23 +1230,27 @@ struct Runtime {
         pool.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
         pool.pPoolSizes = pool_sizes.data();
         vk_check(vkCreateDescriptorPool(
-                     device, &pool, nullptr, &descriptor_pool),
+                     device, &pool, nullptr, &draw.descriptor_pool),
                  "vkCreateDescriptorPool failed");
 
         VkDescriptorSetAllocateInfo set0_alloc{};
         set0_alloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        set0_alloc.descriptorPool = descriptor_pool;
+        set0_alloc.descriptorPool = draw.descriptor_pool;
         set0_alloc.descriptorSetCount = 1;
-        set0_alloc.pSetLayouts = &set0_layout;
+        set0_alloc.pSetLayouts = &draw.set0_layout;
         vk_check(vkAllocateDescriptorSets(
-                     device, &set0_alloc, &set0),
+                     device, &set0_alloc, &draw.set0),
                  "vkAllocateDescriptorSets set0 failed");
 
-        VkDescriptorBufferInfo vertex_info{vertex_constants.handle, 0, kBundleConstantBytes};
-        VkDescriptorBufferInfo pixel_info{pixel_constants.handle, 0, kBundleConstantBytes};
+        VkDescriptorBufferInfo vertex_info{
+            draw.vertex_constants.handle, 0, kBundleConstantBytes
+        };
+        VkDescriptorBufferInfo pixel_info{
+            draw.pixel_constants.handle, 0, kBundleConstantBytes
+        };
         VkWriteDescriptorSet writes[2]{};
         writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writes[0].dstSet = set0;
+        writes[0].dstSet = draw.set0;
         writes[0].dstBinding = 14;
         writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         writes[0].descriptorCount = 1;
@@ -1110,11 +1263,11 @@ struct Runtime {
         if (!set1_bindings.empty()) {
             VkDescriptorSetAllocateInfo set1_alloc{};
             set1_alloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            set1_alloc.descriptorPool = descriptor_pool;
+            set1_alloc.descriptorPool = draw.descriptor_pool;
             set1_alloc.descriptorSetCount = 1;
-            set1_alloc.pSetLayouts = &set1_layout;
+            set1_alloc.pSetLayouts = &draw.set1_layout;
             vk_check(vkAllocateDescriptorSets(
-                         device, &set1_alloc, &set1),
+                         device, &set1_alloc, &draw.set1),
                      "vkAllocateDescriptorSets set1 failed");
 
             std::vector<VkWriteDescriptorSet> image_writes;
@@ -1128,9 +1281,10 @@ struct Runtime {
             for (const auto& item : sampled) {
                 VkWriteDescriptorSet write{};
                 write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.dstSet = set1;
+                write.dstSet = draw.set1;
                 write.dstBinding = item.first;
-                write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                write.descriptorType =
+                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 write.descriptorCount = 1;
                 write.pImageInfo = &image_infos[image_index++];
                 image_writes.push_back(write);
@@ -1144,8 +1298,10 @@ struct Runtime {
         }
     }
 
-    void upload_material_resources(const BundleAssets& bundle) {
-        if (texture_staging.empty() && !cube_staging.handle) {
+    void upload_material_resources(
+        const BundleAssets& bundle,
+        MaterialDraw& draw) {
+        if (draw.texture_staging.empty() && !draw.cube_staging.handle) {
             return;
         }
 
@@ -1166,9 +1322,12 @@ struct Runtime {
                  "vkBeginCommandBuffer resource upload failed");
 
         auto transition = [&](VkImage image, uint32_t layers,
-                              VkImageLayout old_layout, VkImageLayout new_layout,
-                              VkAccessFlags src_access, VkAccessFlags dst_access,
-                              VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) {
+                              VkImageLayout old_layout,
+                              VkImageLayout new_layout,
+                              VkAccessFlags src_access,
+                              VkAccessFlags dst_access,
+                              VkPipelineStageFlags src_stage,
+                              VkPipelineStageFlags dst_stage) {
             VkImageMemoryBarrier barrier{};
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             barrier.srcAccessMask = src_access;
@@ -1184,9 +1343,9 @@ struct Runtime {
                 0, nullptr, 0, nullptr, 1, &barrier);
         };
 
-        for (size_t i = 0; i < texture_staging.size(); ++i) {
+        for (size_t i = 0; i < draw.texture_staging.size(); ++i) {
             transition(
-                texture_images[i].handle, 1,
+                draw.texture_images[i].handle, 1,
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 0, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -1202,13 +1361,13 @@ struct Runtime {
                 1
             };
             vkCmdCopyBufferToImage(
-                command, texture_staging[i].handle,
-                texture_images[i].handle,
+                command, draw.texture_staging[i].handle,
+                draw.texture_images[i].handle,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1, &copy);
 
             transition(
-                texture_images[i].handle, 1,
+                draw.texture_images[i].handle, 1,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -1217,9 +1376,9 @@ struct Runtime {
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
         }
 
-        if (cube_staging.handle) {
+        if (draw.cube_staging.handle) {
             transition(
-                cube_image.handle, 6,
+                draw.cube_image.handle, 6,
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 0, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -1231,8 +1390,10 @@ struct Runtime {
                 static_cast<VkDeviceSize>(bundle.cube.height) * 4u;
             for (uint32_t face = 0; face < 6; ++face) {
                 VkBufferImageCopy copy{};
-                copy.bufferOffset = static_cast<VkDeviceSize>(face) * face_bytes;
-                copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copy.bufferOffset =
+                    static_cast<VkDeviceSize>(face) * face_bytes;
+                copy.imageSubresource.aspectMask =
+                    VK_IMAGE_ASPECT_COLOR_BIT;
                 copy.imageSubresource.baseArrayLayer = face;
                 copy.imageSubresource.layerCount = 1;
                 copy.imageExtent = {
@@ -1241,14 +1402,14 @@ struct Runtime {
                     1
                 };
                 vkCmdCopyBufferToImage(
-                    command, cube_staging.handle,
-                    cube_image.handle,
+                    command, draw.cube_staging.handle,
+                    draw.cube_image.handle,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     1, &copy);
             }
 
             transition(
-                cube_image.handle, 6,
+                draw.cube_image.handle, 6,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -1272,22 +1433,13 @@ struct Runtime {
                  "vkQueueWaitIdle resource upload failed");
         vkFreeCommandBuffers(device, command_pool, 1, &command);
 
-        for (auto& staging : texture_staging) staging.destroy();
-        texture_staging.clear();
-        cube_staging.destroy();
+        for (auto& staging : draw.texture_staging) staging.destroy();
+        draw.texture_staging.clear();
+        draw.cube_staging.destroy();
     }
 
-    void create_pipeline(
-        const std::string& shader_dir,
-        const PacketGeometry& geometry,
-        const BundleAssets* bundle) {
-        material_mode = bundle != nullptr;
-        vertex_shader = load_shader(
-            material_mode ? bundle->vertex_shader_path :
-            shader_dir + "/runtime.vert.spv");
-        fragment_shader = load_shader(
-            material_mode ? bundle->fragment_shader_path :
-            shader_dir + "/runtime.frag.spv");
+    void create_render_pass() {
+        if (render_pass != VK_NULL_HANDLE) return;
 
         VkAttachmentDescription attachments[2]{};
         attachments[0].format = swapchain_format;
@@ -1311,7 +1463,8 @@ struct Runtime {
         color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         VkAttachmentReference depth_ref{};
         depth_ref.attachment = 1;
-        depth_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth_ref.layout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -1343,6 +1496,27 @@ struct Runtime {
         vk_check(vkCreateRenderPass(
                      device, &pass, nullptr, &render_pass),
                  "vkCreateRenderPass failed");
+    }
+
+    void create_pipeline_common(
+        const PacketGeometry& geometry,
+        const std::string& vertex_shader_path,
+        const std::string& fragment_shader_path,
+        bool uses_material_descriptors,
+        VkDescriptorSetLayout material_set0,
+        VkDescriptorSetLayout material_set1,
+        VkShaderModule& out_vertex_shader,
+        VkShaderModule& out_fragment_shader,
+        VkPipelineLayout& out_pipeline_layout,
+        VkPipeline& out_pipeline) {
+
+        if (render_pass == VK_NULL_HANDLE) {
+            throw std::runtime_error(
+                "render pass must exist before pipeline creation");
+        }
+
+        out_vertex_shader = load_shader(vertex_shader_path);
+        out_fragment_shader = load_shader(fragment_shader_path);
 
         VkPushConstantRange push{};
         push.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -1350,11 +1524,11 @@ struct Runtime {
         push.size = sizeof(float) * 16;
 
         const std::array<VkDescriptorSetLayout, 2> descriptor_set_layouts = {
-            set0_layout, set1_layout
+            material_set0, material_set1
         };
         VkPipelineLayoutCreateInfo layout{};
         layout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        if (material_mode) {
+        if (uses_material_descriptors) {
             layout.setLayoutCount =
                 static_cast<uint32_t>(descriptor_set_layouts.size());
             layout.pSetLayouts = descriptor_set_layouts.data();
@@ -1363,17 +1537,19 @@ struct Runtime {
             layout.pPushConstantRanges = &push;
         }
         vk_check(vkCreatePipelineLayout(
-                     device, &layout, nullptr, &pipeline_layout),
+                     device, &layout, nullptr, &out_pipeline_layout),
                  "vkCreatePipelineLayout failed");
 
         VkPipelineShaderStageCreateInfo stages[2]{};
-        stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stages[0].sType =
+            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-        stages[0].module = vertex_shader;
+        stages[0].module = out_vertex_shader;
         stages[0].pName = "main";
-        stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stages[1].sType =
+            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        stages[1].module = fragment_shader;
+        stages[1].module = out_fragment_shader;
         stages[1].pName = "main";
 
         VkVertexInputBindingDescription binding{};
@@ -1401,12 +1577,14 @@ struct Runtime {
             attribute.format = vk_format(input.format);
             attribute.offset = input.offset;
             if (attribute.format == VK_FORMAT_UNDEFINED) {
-                throw std::runtime_error("unknown runtime vertex attribute format");
+                throw std::runtime_error(
+                    "unknown runtime vertex attribute format");
             }
             vertex_attributes.push_back(attribute);
         }
         if (vertex_attributes.empty()) {
-            throw std::runtime_error("runtime geometry has no vertex attributes");
+            throw std::runtime_error(
+                "runtime geometry has no vertex attributes");
         }
 
         VkPipelineVertexInputStateCreateInfo vertex_input{};
@@ -1416,7 +1594,8 @@ struct Runtime {
         vertex_input.pVertexBindingDescriptions = &binding;
         vertex_input.vertexAttributeDescriptionCount =
             static_cast<uint32_t>(vertex_attributes.size());
-        vertex_input.pVertexAttributeDescriptions = vertex_attributes.data();
+        vertex_input.pVertexAttributeDescriptions =
+            vertex_attributes.data();
 
         VkPipelineInputAssemblyStateCreateInfo assembly{};
         assembly.sType =
@@ -1443,7 +1622,9 @@ struct Runtime {
         raster.sType =
             VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         raster.polygonMode = VK_POLYGON_MODE_FILL;
-        raster.cullMode = material_mode ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
+        raster.cullMode =
+            uses_material_descriptors ? VK_CULL_MODE_NONE :
+                                        VK_CULL_MODE_BACK_BIT;
         raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         raster.lineWidth = 1.0f;
 
@@ -1465,7 +1646,8 @@ struct Runtime {
             VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
         VkPipelineColorBlendStateCreateInfo blend{};
-        blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        blend.sType =
+            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         blend.attachmentCount = 1;
         blend.pAttachments = &color_blend;
 
@@ -1480,13 +1662,47 @@ struct Runtime {
         create.pMultisampleState = &multisample;
         create.pDepthStencilState = &depth_state;
         create.pColorBlendState = &blend;
-        create.layout = pipeline_layout;
+        create.layout = out_pipeline_layout;
         create.renderPass = render_pass;
         create.subpass = 0;
 
         vk_check(vkCreateGraphicsPipelines(
-                     device, VK_NULL_HANDLE, 1, &create, nullptr, &pipeline),
+                     device, VK_NULL_HANDLE, 1, &create,
+                     nullptr, &out_pipeline),
                  "vkCreateGraphicsPipelines failed");
+    }
+
+    void create_mesh_pipeline(
+        const std::string& shader_dir,
+        const PacketGeometry& geometry) {
+        create_pipeline_common(
+            geometry,
+            shader_dir + "/runtime.vert.spv",
+            shader_dir + "/runtime.frag.spv",
+            false,
+            VK_NULL_HANDLE,
+            VK_NULL_HANDLE,
+            vertex_shader,
+            fragment_shader,
+            pipeline_layout,
+            pipeline);
+    }
+
+    void create_material_pipeline(
+        const PacketGeometry& geometry,
+        const BundleAssets& bundle,
+        MaterialDraw& draw) {
+        create_pipeline_common(
+            geometry,
+            bundle.vertex_shader_path,
+            bundle.fragment_shader_path,
+            true,
+            draw.set0_layout,
+            draw.set1_layout,
+            draw.vertex_shader,
+            draw.fragment_shader,
+            draw.pipeline_layout,
+            draw.pipeline);
     }
 
     void create_buffer(
@@ -1531,39 +1747,51 @@ struct Runtime {
         vkUnmapMemory(device, out.memory);
     }
 
-    void create_geometry(const PacketGeometry& geometry) {
+    void create_geometry(
+        const PacketGeometry& geometry,
+        Buffer& out_vertex_buffer,
+        Buffer& out_index_buffer,
+        uint32_t& out_first_index,
+        uint32_t& out_index_count) {
         if (geometry.indices.empty() || geometry.attributes.empty() ||
             geometry.stride == 0) {
-            throw std::runtime_error("runtime geometry has no drawable vertex data");
+            throw std::runtime_error(
+                "runtime geometry has no drawable vertex data");
         }
         if (!geometry.vertex_bytes.empty()) {
             create_buffer(
                 geometry.vertex_bytes.data(),
-                static_cast<VkDeviceSize>(geometry.vertex_bytes.size()),
+                static_cast<VkDeviceSize>(
+                    geometry.vertex_bytes.size()),
                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                vertex_buffer);
+                out_vertex_buffer);
         } else if (!geometry.positions.empty()) {
             create_buffer(
                 geometry.positions.data(),
-                static_cast<VkDeviceSize>(geometry.positions.size() * sizeof(float)),
+                static_cast<VkDeviceSize>(
+                    geometry.positions.size() * sizeof(float)),
                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                vertex_buffer);
+                out_vertex_buffer);
         } else {
-            throw std::runtime_error("runtime geometry has no vertex payload");
+            throw std::runtime_error(
+                "runtime geometry has no vertex payload");
         }
         create_buffer(
             geometry.indices.data(),
-            static_cast<VkDeviceSize>(geometry.indices.size() * sizeof(uint32_t)),
+            static_cast<VkDeviceSize>(
+                geometry.indices.size() * sizeof(uint32_t)),
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            index_buffer);
+            out_index_buffer);
         if (geometry.first_index >= geometry.indices.size()) {
-            throw std::runtime_error("runtime geometry first_index is out of range");
+            throw std::runtime_error(
+                "runtime geometry first_index is out of range");
         }
-        first_index = geometry.first_index;
-        index_count = static_cast<uint32_t>(
-            geometry.indices.size() - first_index);
-        if (index_count == 0) {
-            throw std::runtime_error("runtime geometry has no drawable indices");
+        out_first_index = geometry.first_index;
+        out_index_count = static_cast<uint32_t>(
+            geometry.indices.size() - out_first_index);
+        if (out_index_count == 0) {
+            throw std::runtime_error(
+                "runtime geometry has no drawable indices");
         }
     }
 
@@ -1655,29 +1883,48 @@ struct Runtime {
 
         vkCmdBeginRenderPass(
             command, &pass, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(
-            command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(
-            command, 0, 1, &vertex_buffer.handle, &offset);
-        vkCmdBindIndexBuffer(
-            command, index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
 
         if (material_mode) {
-            vkCmdBindDescriptorSets(
-                command,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipeline_layout,
-                0, 1, &set0, 0, nullptr);
-            if (set1 != VK_NULL_HANDLE) {
+            for (const MaterialDraw& draw : material_draws) {
+                vkCmdBindPipeline(
+                    command,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    draw.pipeline);
+
+                VkDeviceSize offset = 0;
+                vkCmdBindVertexBuffers(
+                    command, 0, 1, &draw.vertex_buffer.handle, &offset);
+                vkCmdBindIndexBuffer(
+                    command, draw.index_buffer.handle,
+                    0, VK_INDEX_TYPE_UINT32);
+
                 vkCmdBindDescriptorSets(
                     command,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    pipeline_layout,
-                    1, 1, &set1, 0, nullptr);
+                    draw.pipeline_layout,
+                    0, 1, &draw.set0, 0, nullptr);
+                if (draw.set1 != VK_NULL_HANDLE) {
+                    vkCmdBindDescriptorSets(
+                        command,
+                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        draw.pipeline_layout,
+                        1, 1, &draw.set1, 0, nullptr);
+                }
+
+                vkCmdDrawIndexed(
+                    command, draw.index_count, 1,
+                    draw.first_index, 0, 0);
             }
         } else {
+            vkCmdBindPipeline(
+                command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+            VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(
+                command, 0, 1, &vertex_buffer.handle, &offset);
+            vkCmdBindIndexBuffer(
+                command, index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+
             const std::array<float, 16> mvp = {
                 1.05f, 0.0f, 0.0f, 0.0f,
                 0.0f, -1.05f, 0.0f, 0.0f,
@@ -1687,10 +1934,11 @@ struct Runtime {
             vkCmdPushConstants(
                 command, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
                 0, sizeof(mvp), mvp.data());
+
+            vkCmdDrawIndexed(
+                command, index_count, 1, first_index, 0, 0);
         }
 
-        vkCmdDrawIndexed(
-            command, index_count, 1, first_index, 0, 0);
         vkCmdEndRenderPass(command);
 
         vk_check(vkEndCommandBuffer(
@@ -1765,20 +2013,10 @@ struct Runtime {
 
         vertex_buffer.destroy();
         index_buffer.destroy();
-        vertex_constants.destroy();
-        pixel_constants.destroy();
-        for (auto& staging : texture_staging) staging.destroy();
-        texture_staging.clear();
-        cube_staging.destroy();
-        for (VkSampler sampler : texture_samplers) {
-            if (sampler && device) vkDestroySampler(device, sampler, nullptr);
+        for (auto& draw : material_draws) {
+            draw.destroy(device);
         }
-        texture_samplers.clear();
-        for (auto& image : texture_images) image.destroy();
-        texture_images.clear();
-        if (cube_sampler && device) vkDestroySampler(device, cube_sampler, nullptr);
-        cube_sampler = VK_NULL_HANDLE;
-        cube_image.destroy();
+        material_draws.clear();
 
         for (size_t i = 0; i < kFramesInFlight; ++i) {
             if (image_available[i]) {
@@ -1808,18 +2046,6 @@ struct Runtime {
         if (pipeline_layout) {
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
         }
-        if (descriptor_pool && device) {
-            vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
-        }
-        if (set1_layout && device) {
-            vkDestroyDescriptorSetLayout(device, set1_layout, nullptr);
-        }
-        if (set0_layout && device) {
-            vkDestroyDescriptorSetLayout(device, set0_layout, nullptr);
-        }
-        descriptor_pool = VK_NULL_HANDLE;
-        set1_layout = VK_NULL_HANDLE;
-        set0_layout = VK_NULL_HANDLE;
         if (render_pass) {
             vkDestroyRenderPass(device, render_pass, nullptr);
         }
@@ -1855,6 +2081,7 @@ struct Runtime {
 struct Args {
     std::string mesh;
     std::string bundle;
+    std::string bundle_set;
     std::string physics_manifest;
     std::string shader_dir;
     int frames = kDefaultFrames;
@@ -1865,31 +2092,47 @@ Args parse_args(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
         const std::string option = argv[i];
         if (option == "--mesh" || option == "--bundle" ||
-            option == "--physics-manifest" || option == "--shader-dir" ||
-            option == "--frames") {
+            option == "--bundle-set" ||
+            option == "--physics-manifest" ||
+            option == "--shader-dir" || option == "--frames") {
             if (i + 1 >= argc) {
-                throw std::runtime_error("missing value for " + option);
+                throw std::runtime_error(
+                    "missing value for " + option);
             }
             const std::string value = argv[++i];
             if (option == "--mesh") args.mesh = value;
             else if (option == "--bundle") args.bundle = value;
-            else if (option == "--physics-manifest") args.physics_manifest = value;
-            else if (option == "--shader-dir") args.shader_dir = value;
-            else args.frames = std::max(1, std::stoi(value));
+            else if (option == "--bundle-set") args.bundle_set = value;
+            else if (option == "--physics-manifest") {
+                args.physics_manifest = value;
+            } else if (option == "--shader-dir") {
+                args.shader_dir = value;
+            } else {
+                args.frames = std::max(1, std::stoi(value));
+            }
         } else if (option == "--help") {
             std::cout
-                << "usage: shift_runtime (--mesh FILE | --bundle DIR) "
+                << "usage: shift_runtime "
+                << "(--mesh FILE | --bundle DIR | --bundle-set DIR) "
                 << "--shader-dir DIR [--frames N]\n";
             std::exit(EXIT_SUCCESS);
         } else {
-            throw std::runtime_error("unknown option: " + option);
+            throw std::runtime_error(
+                "unknown option: " + option);
         }
     }
-    if (args.mesh.empty() == args.bundle.empty()) {
-        throw std::runtime_error("exactly one of --mesh or --bundle is required");
+
+    const int source_count =
+        (!args.mesh.empty() ? 1 : 0) +
+        (!args.bundle.empty() ? 1 : 0) +
+        (!args.bundle_set.empty() ? 1 : 0);
+    if (source_count != 1) {
+        throw std::runtime_error(
+            "exactly one of --mesh, --bundle or --bundle-set is required");
     }
     if (args.shader_dir.empty()) {
-        throw std::runtime_error("--shader-dir is required");
+        throw std::runtime_error(
+            "--shader-dir is required");
     }
     return args;
 }
@@ -1902,33 +2145,85 @@ int main(int argc, char** argv) {
 
     try {
         const Args args = parse_args(argc, argv);
-        PacketGeometry geometry;
-        if (!args.bundle.empty()) {
-            geometry = load_bundle_geometry(args.bundle);
-        } else {
-            const shift::ir::Mesh mesh = shift::ir::loadMgeo(args.mesh);
-            geometry.positions.reserve(mesh.positions.size() * 3u);
-            for (const auto& vertex : mesh.positions) {
-                geometry.positions.push_back(vertex.x);
-                geometry.positions.push_back(vertex.y);
-                geometry.positions.push_back(vertex.z);
+
+        PacketGeometry mesh_geometry;
+        std::vector<PacketGeometry> material_geometry;
+        std::vector<BundleAssets> material_assets;
+        const bool bundle_set_mode = !args.bundle_set.empty();
+        const bool material_mode =
+            !args.bundle.empty() || bundle_set_mode;
+
+        if (bundle_set_mode) {
+            const std::vector<std::string> children =
+                load_bundle_set_paths(args.bundle_set);
+            material_geometry.reserve(children.size());
+            material_assets.reserve(children.size());
+            for (const std::string& child : children) {
+                material_geometry.push_back(
+                    load_bundle_geometry(child));
+                material_assets.push_back(
+                    load_bundle_assets(child));
             }
-            geometry.indices = mesh.indices;
-            geometry.attributes = {{
-                0, 2, 0, static_cast<uint32_t>(sizeof(float) * 3u)
+        } else if (!args.bundle.empty()) {
+            material_geometry.push_back(
+                load_bundle_geometry(args.bundle));
+            material_assets.push_back(
+                load_bundle_assets(args.bundle));
+        } else {
+            const shift::ir::Mesh mesh =
+                shift::ir::loadMgeo(args.mesh);
+            mesh_geometry.positions.reserve(
+                mesh.positions.size() * 3u);
+            for (const auto& vertex : mesh.positions) {
+                mesh_geometry.positions.push_back(vertex.x);
+                mesh_geometry.positions.push_back(vertex.y);
+                mesh_geometry.positions.push_back(vertex.z);
+            }
+            mesh_geometry.indices = mesh.indices;
+            mesh_geometry.attributes = {{
+                0, 2, 0,
+                static_cast<uint32_t>(sizeof(float) * 3u)
             }};
-            geometry.stride = sizeof(float) * 3u;
-            geometry.source = "MGEO";
+            mesh_geometry.stride = sizeof(float) * 3u;
+            mesh_geometry.source = "MGEO";
+        }
+
+        size_t geometry_vertices = 0;
+        size_t geometry_indices = 0;
+        std::string geometry_source;
+        if (material_mode) {
+            geometry_source = bundle_set_mode ?
+                "SHIFT.BMWVulkanBundleSet/1" :
+                "SHIFT.BMWVulkanBundle/1";
+            for (const auto& geometry : material_geometry) {
+                geometry_vertices += geometry.positions.size() / 3u;
+                geometry_indices += geometry.indices.size();
+            }
+        } else {
+            geometry_source = mesh_geometry.source;
+            geometry_vertices =
+                mesh_geometry.positions.size() / 3u;
+            geometry_indices = mesh_geometry.indices.size();
         }
 
         std::cout
             << "{\n"
-            << "  \"format\": \"SHIFT.NativeRuntimeBootstrap/1\",\n"
-            << "  \"geometry_source\": \"" << geometry.source << "\",\n"
-            << "  \"geometry_vertices\": " << (geometry.positions.size() / 3u) << ",\n"
-            << "  \"geometry_indices\": " << geometry.indices.size() << ",\n"
-            << "  \"material_mode\": " << (!args.bundle.empty() ? "true" : "false") << ",\n"
-            << "  \"frames_requested\": " << args.frames << "\n"
+            << "  \"format\": "
+            << "\"SHIFT.NativeRuntimeBootstrap/1\",\n"
+            << "  \"geometry_source\": \""
+            << geometry_source << "\",\n"
+            << "  \"geometry_vertices\": "
+            << geometry_vertices << ",\n"
+            << "  \"geometry_indices\": "
+            << geometry_indices << ",\n"
+            << "  \"material_mode\": "
+            << (material_mode ? "true" : "false") << ",\n"
+            << "  \"bundle_set_mode\": "
+            << (bundle_set_mode ? "true" : "false") << ",\n"
+            << "  \"material_draws\": "
+            << material_geometry.size() << ",\n"
+            << "  \"frames_requested\": "
+            << args.frames << "\n"
             << "}\n";
 
         window.create();
@@ -1937,20 +2232,55 @@ int main(int argc, char** argv) {
         runtime.create_surface();
         runtime.create_device();
         runtime.create_swapchain();
-        BundleAssets bundle_assets{};
-        const BundleAssets* bundle = nullptr;
-        if (!args.bundle.empty()) {
-            bundle_assets = load_bundle_assets(args.bundle);
-            bundle = &bundle_assets;
-            runtime.create_material_resources(bundle_assets);
-        }
         runtime.create_depth_resources();
-        runtime.create_pipeline(args.shader_dir, geometry, bundle);
-        runtime.create_geometry(geometry);
+        runtime.create_render_pass();
+
+        runtime.material_mode = material_mode;
+        if (material_mode) {
+            if (material_geometry.size() !=
+                material_assets.size()) {
+                throw std::runtime_error(
+                    "material geometry/assets count mismatch");
+            }
+            runtime.material_draws.resize(
+                material_geometry.size());
+            for (size_t i = 0;
+                 i < material_geometry.size(); ++i) {
+                MaterialDraw& draw =
+                    runtime.material_draws[i];
+                runtime.create_material_resources(
+                    material_assets[i], draw);
+                runtime.create_material_pipeline(
+                    material_geometry[i],
+                    material_assets[i],
+                    draw);
+                runtime.create_geometry(
+                    material_geometry[i],
+                    draw.vertex_buffer,
+                    draw.index_buffer,
+                    draw.first_index,
+                    draw.index_count);
+            }
+        } else {
+            runtime.create_mesh_pipeline(
+                args.shader_dir, mesh_geometry);
+            runtime.create_geometry(
+                mesh_geometry,
+                runtime.vertex_buffer,
+                runtime.index_buffer,
+                runtime.first_index,
+                runtime.index_count);
+        }
+
         runtime.create_framebuffers();
         runtime.create_sync_and_commands();
-        if (bundle) {
-            runtime.upload_material_resources(bundle_assets);
+        if (material_mode) {
+            for (size_t i = 0;
+                 i < material_assets.size(); ++i) {
+                runtime.upload_material_resources(
+                    material_assets[i],
+                    runtime.material_draws[i]);
+            }
         }
 
         int rendered = 0;
@@ -1960,14 +2290,15 @@ int main(int argc, char** argv) {
         shift::runtime::NativeRuntimeState native_state{};
         if (!args.physics_manifest.empty()) {
             native_state.physics.workspace =
-                load_physics_manifest(args.physics_manifest);
+                load_physics_manifest(
+                    args.physics_manifest);
         }
-        const auto start = std::chrono::steady_clock::now();
+        const auto start =
+            std::chrono::steady_clock::now();
 
         while (!quit && rendered < args.frames) {
             window.poll(quit, input);
 
-            // Deterministic simulation boundary.
             shift::runtime::VehicleControlIntent intent{};
             intent.throttle = input.throttle;
             intent.brake = input.brake;
@@ -1984,39 +2315,85 @@ int main(int argc, char** argv) {
                  "vkDeviceWaitIdle failed");
 
         const auto elapsed_ms =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - start).count();
+            std::chrono::duration_cast<
+                std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() -
+                start).count();
+
+        size_t texture_count = 0;
+        bool has_cube = false;
+        for (const auto& draw : runtime.material_draws) {
+            texture_count += draw.texture_images.size();
+            has_cube =
+                has_cube || draw.cube_image.handle !=
+                            VK_NULL_HANDLE;
+        }
 
         std::cout
             << "{\n"
-            << "  \"format\": \"SHIFT.NativeRuntimeFrameLoop/1\",\n"
-            << "  \"frames_rendered\": " << rendered << ",\n"
-            << "  \"simulation_steps\": " << simulation_steps << ",\n"
-            << "  \"fixed_dt\": " << kFixedDt << ",\n"
-            << "  \"input_layer\": \"SHIFT.NativeRuntimeInput/1\",\n"
-            << "  \"state_layer\": \"SHIFT.NativeRuntimeState/1\",\n"
-            << "  \"camera_active_buffer\": " << native_state.camera.active_index << ",\n"
-            << "  \"vehicle_control_steer_axis\": " << native_state.physics.last_input.steer_axis() << ",\n"
-            << "  \"physics_participant_ready\": " << (native_state.physics.participant_ready ? "true" : "false") << ",\n"
-            << "  \"physics_participant_index\": " << native_state.physics.participant_index << ",\n"
-            << "  \"physics_participant_mode\": " << native_state.physics.participant_mode << ",\n"
-            << "  \"physics_workspace_ready\": " << (native_state.physics.workspace.ready ? "true" : "false") << ",\n"
-            << "  \"physics_workspace_scalars\": " << native_state.physics.workspace.scalar_count << ",\n"
-            << "  \"physics_workspace_matrix_bytes\": " << native_state.physics.workspace.matrix_bytes << ",\n"
-            << "  \"material_mode\": " << (runtime.material_mode ? "true" : "false") << ",\n"
-            << "  \"bundle_2d_textures\": " << runtime.texture_images.size() << ",\n"
-            << "  \"bundle_cube\": " << (!runtime.cube_image.handle ? "false" : "true") << ",\n"
-            << "  \"depth_buffers\": " << runtime.depth_images.size() << ",\n"
+            << "  \"format\": "
+            << "\"SHIFT.NativeRuntimeFrameLoop/1\",\n"
+            << "  \"frames_rendered\": "
+            << rendered << ",\n"
+            << "  \"simulation_steps\": "
+            << simulation_steps << ",\n"
+            << "  \"fixed_dt\": "
+            << kFixedDt << ",\n"
+            << "  \"input_layer\": "
+            << "\"SHIFT.NativeRuntimeInput/1\",\n"
+            << "  \"state_layer\": "
+            << "\"SHIFT.NativeRuntimeState/1\",\n"
+            << "  \"camera_active_buffer\": "
+            << native_state.camera.active_index << ",\n"
+            << "  \"vehicle_control_steer_axis\": "
+            << native_state.physics.last_input.steer_axis()
+            << ",\n"
+            << "  \"physics_participant_ready\": "
+            << (native_state.physics.participant_ready ?
+                "true" : "false") << ",\n"
+            << "  \"physics_participant_index\": "
+            << native_state.physics.participant_index
+            << ",\n"
+            << "  \"physics_participant_mode\": "
+            << native_state.physics.participant_mode
+            << ",\n"
+            << "  \"physics_workspace_ready\": "
+            << (native_state.physics.workspace.ready ?
+                "true" : "false") << ",\n"
+            << "  \"physics_workspace_scalars\": "
+            << native_state.physics.workspace.scalar_count
+            << ",\n"
+            << "  \"physics_workspace_matrix_bytes\": "
+            << native_state.physics.workspace.matrix_bytes
+            << ",\n"
+            << "  \"material_mode\": "
+            << (runtime.material_mode ? "true" : "false")
+            << ",\n"
+            << "  \"bundle_set_mode\": "
+            << (bundle_set_mode ? "true" : "false")
+            << ",\n"
+            << "  \"material_draws\": "
+            << runtime.material_draws.size() << ",\n"
+            << "  \"bundle_2d_textures\": "
+            << texture_count << ",\n"
+            << "  \"bundle_cube\": "
+            << (has_cube ? "true" : "false") << ",\n"
+            << "  \"depth_buffers\": "
+            << runtime.depth_images.size() << ",\n"
             << "  \"depth_test\": true,\n"
-            << "  \"elapsed_ms\": " << elapsed_ms << ",\n"
+            << "  \"elapsed_ms\": "
+            << elapsed_ms << ",\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";
 
         runtime.destroy();
         window.destroy();
-        return rendered > 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+        return rendered > 0 ?
+            EXIT_SUCCESS : EXIT_FAILURE;
     } catch (const std::exception& error) {
-        std::cerr << "shift_runtime: " << error.what() << "\n";
+        std::cerr
+            << "shift_runtime: "
+            << error.what() << "\n";
         runtime.destroy();
         window.destroy();
         return EXIT_FAILURE;

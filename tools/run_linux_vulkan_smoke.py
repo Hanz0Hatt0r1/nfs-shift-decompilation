@@ -35,11 +35,9 @@ layout(location = 0) out vec2 v_uv;
 layout(location = 1) out vec3 v_dir;
 layout(set = 0, binding = 14, std140) uniform ShiftVertexConstants { vec4 c[256]; } vertex_constants;
 void main() {
-    const vec2 uv[3] = vec2[3](vec2(0.0), vec2(1.0, 0.0), vec2(0.5, 1.0));
-    const vec3 dir[3] = vec3[3](vec3(-1.0,0.0,1.0), vec3(1.0,0.0,1.0), vec3(0.0,1.0,1.0));
     gl_Position = vec4(position + vertex_constants.c[0].xyz, 1.0);
-    v_uv = uv[gl_VertexIndex];
-    v_dir = dir[gl_VertexIndex];
+    v_uv = position.xy * 0.5 + vec2(0.5);
+    v_dir = vec3(position.xy, 1.0);
 }"""
 
 PIXEL_GLSL = """#version 450

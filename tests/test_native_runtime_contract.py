@@ -119,3 +119,20 @@ def test_native_runtime_uses_per_swapchain_depth_buffers():
     assert "VK_COMPARE_OP_LESS_OR_EQUAL" in source
     assert "clear[1].depthStencil.depth = 1.0f" in source
     assert '\\"depth_test\\": true' in source
+
+
+def test_native_runtime_consumes_prepared_multi_draw_bundle_sets():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
+
+    assert "struct MaterialDraw" in source
+    assert "std::vector<MaterialDraw> material_draws" in source
+    assert "load_bundle_set_paths" in source
+    assert '"--bundle-set"' in source
+    assert "SHIFT.BMWVulkanBundleSetPrepare/1" in source
+    assert "bundle set prepare gate is missing or not ready" in source
+    assert "for (const MaterialDraw& draw : material_draws)" in source
+    assert "draw.pipeline_layout" in source
+    assert "draw.vertex_constants" in source
+    assert "draw.texture_images" in source
+    assert '\\"material_draws\\": ' in source
+    assert '\\"bundle_set_mode\\": ' in source
