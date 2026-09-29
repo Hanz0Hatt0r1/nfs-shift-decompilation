@@ -1319,6 +1319,7 @@ def main() -> int:
         count_field="array_count", sequence_field="array_node_sequence",
     )
     for row in candidates["AIPolylinePath"]:
+        row["array_count_match"] = bool(row.get("array_expected_count_match"))
         row["array_node_vtable"] = row.get("array_element_vtable")
         row["array_node_vtable_match"] = bool(
             row.get("array_element_vtable") == KNOWN_VTABLES["AIPolyPathNode"]
