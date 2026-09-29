@@ -37,3 +37,56 @@ def test_phase513_keeps_capacity_gate_and_mask_gate_separate():
     assert report["relation_to_population"]["capacity_gate"] == "selector context+0x1c < selector context+0x28"
     limitations = " ".join(report["limitations"])
     assert "capacity gate is exhausted" in limitations
+
+
+
+def test_phase514_mask_hit_calls_wrapper_and_clears_bit():
+    state = runtime.evaluate_selector_source_admission(
+        owner_mask=0x20,
+        source_token=0x1235,
+        current_count=3,
+        capacity=16,
+    )
+
+    assert state["selector_key"] == 5
+    assert state["bit_mask"] == 0x20
+    assert state["mask_hit"] is True
+    assert state["wrapper_called"] is True
+    assert state["population_succeeded"] is True
+    assert state["owner_mask_after"] == 0
+    assert state["count_after"] == 4
+
+
+def test_phase514_capacity_gate_is_independent_from_mask_gate():
+    state = runtime.evaluate_selector_source_admission(
+        owner_mask=0x10,
+        source_token=0x20,
+        current_count=16,
+        capacity=16,
+    )
+
+    assert state["selector_key"] == 0
+    assert state["mask_hit"] is True
+    assert state["wrapper_called"] is True
+    assert state["capacity_available"] is False
+    assert state["population_succeeded"] is False
+    assert state["mask_cleared"] is True
+    assert state["owner_mask_after"] == 0
+    assert state["count_after"] == 16
+
+
+def test_phase514_mask_miss_does_not_mutate_state():
+    state = runtime.evaluate_selector_source_admission(
+        owner_mask=0x04,
+        source_token=0x25,
+        current_count=2,
+        capacity=16,
+    )
+
+    assert state["selector_key"] == 5
+    assert state["mask_hit"] is False
+    assert state["wrapper_called"] is False
+    assert state["population_succeeded"] is False
+    assert state["mask_cleared"] is False
+    assert state["owner_mask_after"] == 0x04
+    assert state["count_after"] == 2
