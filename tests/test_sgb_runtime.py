@@ -42,7 +42,10 @@ def test_part_record_uses_exact_source_layout_and_one_based_child_table():
     assert row["child_partition_table_present"] is True
     assert row["child_object_count"] == 2
     assert row["child_object_indices"] == [99, 100]
-    assert row["child_object_zero_based_lookup_indices"] == [98, 99]
+    assert row["child_object_lookup_indices_u32"] == [98, 99]
+    assert row["child_object_lookup_transform"] == (
+        "(source_id - 1) & 0xffffffff"
+    )
 
     runtime = row["runtime_partition_tree"]
     assert runtime["consumer"] == "FUN_0068a360"
@@ -58,7 +61,10 @@ def test_part_record_uses_exact_source_layout_and_one_based_child_table():
     assert runtime["runtime_node_field_offsets"]["child_object_container"] == 0x34
     assert runtime["runtime_node_field_offsets"]["child_partition_id_mask"] == 0x58
     assert runtime["child_partition_mask_initial"] == 0x0F
-    assert runtime["child_object_resolution"]["reference_base"] == 1
+    assert runtime["child_object_resolution"]["reference_transform"] == (
+        "source_id - 1"
+    )
+    assert runtime["child_object_resolution"]["lookup_argument_type"] == "uint32"
     assert runtime["child_object_resolution"]["resolved_wrapper_partition_bounds_write_offset"] == 0x30
 
 
@@ -303,7 +309,7 @@ def test_part_subsequent_record_maps_partition_id_to_runtime_child_slot():
     )
 
 
-def test_part_child_object_reference_zero_is_rejected():
+def test_part_child_object_reference_zero_preserves_runtime_underflow_lookup():
     record = struct.pack(
         "<I6f5I",
         7,
@@ -317,11 +323,9 @@ def test_part_child_object_reference_zero_is_rejected():
         "PART", struct.pack("<I", 1) + record
     ) + _chunk("END ", b"")
 
-    with pytest.raises(
-        SGBRuntimeDecodeError,
-        match="not one-based",
-    ):
-        parse_sgb_runtime(data)
+    row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
+    assert row["child_object_indices"] == [0]
+    assert row["child_object_lookup_indices_u32"] == [0xFFFFFFFF]
 
 
 def test_part_child_object_dispatch_keeps_kind_codes_numeric():
