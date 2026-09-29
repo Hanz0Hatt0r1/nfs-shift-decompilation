@@ -2,11 +2,11 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 515**
+> **Current mainline: Phase 516**
 >
 > Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path. Phase 507 adds the participant slot registry/update bridge used by PhysicsParticipant.cpp. Phase 508 resolves the selector global as DAT_00bbc600 and keeps it explicitly separate from the participant-manager global DAT_00c109e0. Phase 509 traces the saved participant pointer/ordinal through the subsequent process/reselection loop and vehicle-BFF load. Phase 510 closes the descriptor-level selector candidate lifecycle, including the observed +0x74 eligibility/exclusion state, +0x8c ordinal writeback, bounded batch reservation and distinct +0x1d post-load/process flag. Phase 511 closes the IGPhaseVehicle completion/finalization boundary, including per-container callbacks, guarded +0x160 cleanup, resource teardown and final object callback ordering. Phase 512 maps the selector descriptor population path exactly, including capacity/stride, packed token bits, source-to-descriptor copies, +0x74 initialization and conditional +0x70 population. Phase 513 closes the upstream source-record admission mask path through owner +0x4f0 and its reset/resynchronization calls. Exact retail numeric parity remains capture-gated.
 
-Phase 515 adds a low-stop specialized-provider GDB probe mode for captures where per-frame debugger stops disturb simulation timing.
+Phase 515 adds a low-stop specialized-provider GDB probe mode for captures where per-frame debugger stops disturb simulation timing. Phase 516 adds a deterministic validator for concrete AIW-to-runtime waypoint edge coverage, stride and ambiguity.
 
 ## Mission
 
