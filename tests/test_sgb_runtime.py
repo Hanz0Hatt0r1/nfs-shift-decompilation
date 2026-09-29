@@ -140,3 +140,91 @@ def test_flat_chunk_decodes_embedded_runtime_tree():
     assert flat["ready"] is True
     assert flat["stats"]["leaf_records"] == 1
     assert flat["root"]["records"][0]["index_word"] == 5
+
+
+
+def test_occl_runtime_object_maps_named_corners_and_wrapper():
+    record = struct.pack(
+        "<II12f",
+        0,
+        0,
+        1.0, 2.0, 3.0,
+        4.0, 5.0, 6.0,
+        7.0, 8.0, 9.0,
+        10.0, 11.0, 12.0,
+    )
+    data = (
+        _header()
+        + _chunk("OCCL", struct.pack("<I", 1) + record)
+        + _chunk("END ", b"")
+    )
+    report = parse_sgb_runtime(data)
+    row = report["chunks"][0]["records"][0]
+
+    assert report["header"]["flag_bits"]["bit1"] is False
+    assert row["position_tl"] == [1.0, 2.0, 3.0]
+    assert row["position_tr"] == [4.0, 5.0, 6.0]
+    assert row["position_bl"] == [7.0, 8.0, 9.0]
+    assert row["position_br"] == [10.0, 11.0, 12.0]
+
+    runtime = row["runtime_object"]
+    assert runtime["constructor"] == "FUN_006b43d0"
+    assert runtime["xml_constructor"] == "FUN_006a3c40"
+    assert runtime["vtable"] == 0x00AFA2FC
+    assert runtime["instance_bytes"] == 0x120
+    assert runtime["source_field_offsets"] == {
+        "name": 0x00,
+        "resource": 0x04,
+        "position_tl": 0x08,
+        "position_tr": 0x14,
+        "position_bl": 0x20,
+        "position_br": 0x2C,
+    }
+    assert runtime["runtime_field_offsets"]["name_resource_descriptor"] == 0x60
+    assert runtime["runtime_field_offsets"]["position_tl"] == 0x90
+    assert runtime["runtime_field_offsets"]["position_tr"] == 0xA0
+    assert runtime["runtime_field_offsets"]["position_bl"] == 0xB0
+    assert runtime["runtime_field_offsets"]["position_br"] == 0xC0
+    assert runtime["runtime_field_offsets"]["secondary_matrix"] == 0xD0
+    assert runtime["runtime_field_offsets"]["flag_byte"] == 0x110
+    assert runtime["vector_copy"]["position_tl"] == [1.0, 2.0, 3.0, 1.0]
+    assert runtime["vector_copy"]["position_br"] == [10.0, 11.0, 12.0, 1.0]
+
+    admission = row["runtime_admission"]
+    assert admission["mode"] == "per-record-wrapper"
+    assert admission["header_flag_bit1"] is False
+    assert admission["wrapper"]["vtable"] == 0x00AF78EC
+    assert admission["wrapper"]["instance_bytes"] == 0x38
+    assert admission["wrapper"]["payload_field_offset"] == 0x08
+    assert admission["batch_sink"] is None
+
+
+def test_occl_header_bit1_selects_batched_runtime_admission():
+    record = struct.pack("<II12f", 0, 0, *([0.0] * 12))
+    data = (
+        _header(flags=2)
+        + _chunk("OCCL", struct.pack("<I", 1) + record)
+        + _chunk("END ", b"")
+    )
+    report = parse_sgb_runtime(data)
+    row = report["chunks"][0]["records"][0]
+
+    assert report["header"]["flag_bits"]["bit1"] is True
+    assert row["runtime_admission"] == {
+        "header_flag_bit1": True,
+        "mode": "batched-object-registration",
+        "wrapper": None,
+        "batch_sink": "FUN_004f5e60 -> FUN_0068b5a0",
+    }
+
+
+def test_occl_is_not_mislabeled_as_summ_wrapper():
+    record = struct.pack("<II12f", 0, 0, *([0.0] * 12))
+    data = (
+        _header()
+        + _chunk("OCCL", struct.pack("<I", 1) + record)
+        + _chunk("END ", b"")
+    )
+    row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
+    assert "runtime_wrapper" not in row
+    assert row["runtime_object"]["constructor"] == "FUN_006b43d0"

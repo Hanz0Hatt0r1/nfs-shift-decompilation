@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 533.**
+**Current mainline: Phase 534.**
 
 
 
@@ -66,10 +66,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 42. Execute Phase 533 against the retail BMW_M3_E36/Cockpit/RENDER corpus and persist the first distinct fully-ready non-paint permutations and exact blockers.
 43. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
 44. Expand the desktop reference renderer against real BMW material/shader permutations.
-45. Continue SGB/FLAT and camera runtime reconstruction.
-46. Derive proven animation poses from the BAB runtime grammar.
-47. Port the stable native render/runtime boundary to Android.
-48. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+45. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
+46. Continue with deeper PART consumers, OBJECT/HIERARCHY fields and FLAT leaf semantics.
+47. Derive proven animation poses from the BAB runtime grammar.
+48. Port the stable native render/runtime boundary to Android.
+49. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -82,7 +83,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | partial | deeper OBJECT/HIERARCHY/FLAT leaf consumers |
+| SGB scene | partial; OCCL runtime object mapped | deeper PART/OBJECT/HIERARCHY/FLAT leaf consumers |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |

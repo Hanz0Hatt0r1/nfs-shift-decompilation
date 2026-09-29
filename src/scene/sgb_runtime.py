@@ -43,6 +43,44 @@ SUMM_RUNTIME_WRAPPER = {
     },
 }
 
+# FUN_006a4f10 consumes one fixed 0x38-byte OCCL source record.  The same
+# runtime object is constructed from SCENE XML by FUN_006a3c40, which names
+# the four source vectors PositionTL/TR/BL/BR.  FUN_006b43d0 constructs the
+# concrete 0x120-byte object and installs PTR_FUN_00afa2fc.
+OCCL_RUNTIME_OBJECT = {
+    "constructor": "FUN_006b43d0",
+    "vtable": 0x00AFA2FC,
+    "instance_bytes": 0x120,
+    "source_field_offsets": {
+        "name": 0x00,
+        "resource": 0x04,
+        "position_tl": 0x08,
+        "position_tr": 0x14,
+        "position_bl": 0x20,
+        "position_br": 0x2C,
+    },
+    "runtime_field_offsets": {
+        "name_resource_descriptor": 0x60,
+        "position_tl": 0x90,
+        "position_tr": 0xA0,
+        "position_bl": 0xB0,
+        "position_br": 0xC0,
+        "secondary_matrix": 0xD0,
+        "flag_byte": 0x110,
+    },
+    "source_vector_components": 3,
+    "runtime_vector_components": 4,
+    "runtime_w_value": 1.0,
+    "xml_constructor": "FUN_006a3c40",
+}
+
+OCCL_RUNTIME_WRAPPER = {
+    "constructor_path": "FUN_006a4f10",
+    "vtable": NODE_RUNTIME_VTABLE,
+    "instance_bytes": 0x38,
+    "payload_field_offset": 0x08,
+}
+
 
 class SGBRuntimeDecodeError(ValueError):
     pass
@@ -183,16 +221,26 @@ def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str,
     return rows
 
 
-def _parse_fixed14(data: bytes, start: int, end: int, count: int, kind: str) -> list[dict[str, Any]]:
+def _parse_summ_fixed14(
+    data: bytes,
+    start: int,
+    end: int,
+    count: int,
+) -> list[dict[str, Any]]:
+    """Preserve the existing compact SUMM view while keeping its wrapper map."""
     rows = []
     cursor = start + 12
     for index in range(count):
         if cursor + 56 > end:
-            raise SGBRuntimeDecodeError(f"{kind} record {index} exceeds chunk")
+            raise SGBRuntimeDecodeError(f"SUMM record {index} exceeds chunk")
         a = _i32(data, cursor)
         b = _i32(data, cursor + 4)
         vectors = [
-            [_f32(data, cursor + 8 + 12 * n), _f32(data, cursor + 12 + 12 * n), _f32(data, cursor + 16 + 12 * n)]
+            [
+                _f32(data, cursor + 8 + 12 * n),
+                _f32(data, cursor + 12 + 12 * n),
+                _f32(data, cursor + 16 + 12 * n),
+            ]
             for n in range(4)
         ]
         rows.append({
@@ -208,6 +256,74 @@ def _parse_fixed14(data: bytes, start: int, end: int, count: int, kind: str) -> 
                 "kind": "SUMM",
                 "name_hash_producer": "FUN_0064eba0",
                 "name_hash_resolved": False,
+            },
+        })
+        cursor += 56
+    return rows
+
+
+def _parse_occl(
+    data: bytes,
+    start: int,
+    end: int,
+    count: int,
+    *,
+    batched: bool,
+) -> list[dict[str, Any]]:
+    rows = []
+    cursor = start + 12
+    names = ("position_tl", "position_tr", "position_bl", "position_br")
+    for index in range(count):
+        if cursor + 56 > end:
+            raise SGBRuntimeDecodeError(f"OCCL record {index} exceeds chunk")
+
+        name_rel = _i32(data, cursor)
+        resource_rel = _i32(data, cursor + 4)
+        vectors = {
+            name: [
+                _f32(data, cursor + 8 + 12 * n),
+                _f32(data, cursor + 12 + 12 * n),
+                _f32(data, cursor + 16 + 12 * n),
+            ]
+            for n, name in enumerate(names)
+        }
+        runtime_vectors = {
+            name: [*value, 1.0]
+            for name, value in vectors.items()
+        }
+
+        rows.append({
+            "index": index,
+            "offset": cursor,
+            "record_bytes": 56,
+            "raw_u32": [_u32(data, cursor + 4 * i) for i in range(14)],
+            "name": _resolve_string(data, start, end, name_rel),
+            "resource": _resolve_string(data, start, end, resource_rel),
+            **vectors,
+            "runtime_object": {
+                **OCCL_RUNTIME_OBJECT,
+                "vector_copy": runtime_vectors,
+                "name_source": "record +0x00 -> object +0x60 via FUN_00631740/FUN_008244e0",
+                "resource_source": "record +0x04 -> object +0x60 via FUN_008246a0",
+                "secondary_matrix_source": "DAT_00b88a40 -> object +0xd0 via FUN_00401d10/FUN_006b43d0",
+            },
+            "runtime_admission": {
+                "header_flag_bit1": batched,
+                "mode": (
+                    "batched-object-registration"
+                    if batched
+                    else "per-record-wrapper"
+                ),
+                "wrapper": (
+                    None
+                    if batched
+                    else dict(OCCL_RUNTIME_WRAPPER)
+                ),
+                "batch_sink": (
+                    "FUN_004f5e60 -> FUN_0068b5a0"
+                    if batched
+                    else None
+                ),
             },
         })
         cursor += 56
@@ -268,6 +384,7 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
         "word_3": _u32(data, 12),
         "flag_bits": {
             "bit0": bool(flags & 1),
+            "bit1": bool(flags & 2),
             "bit2": bool(flags & 4),
         },
         "runtime_source": "FUN_006a5270",
@@ -310,9 +427,20 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
             elif tag == "PART":
                 row["records"] = _parse_part(data, cursor, chunk_end, count)
                 row["decoder"] = "FUN_006a4d10"
-            elif tag in {"SUMM", "OCCL"}:
-                row["records"] = _parse_fixed14(data, cursor, chunk_end, count, tag)
-                row["decoder"] = "FUN_006a4900" if tag == "SUMM" else "FUN_006a4f10"
+            elif tag == "SUMM":
+                row["records"] = _parse_summ_fixed14(
+                    data, cursor, chunk_end, count
+                )
+                row["decoder"] = "FUN_006a4900"
+            elif tag == "OCCL":
+                row["records"] = _parse_occl(
+                    data,
+                    cursor,
+                    chunk_end,
+                    count,
+                    batched=bool(flags & 2),
+                )
+                row["decoder"] = "FUN_006a4f10"
             elif tag == "FLAT":
                 body = data[cursor + 12:chunk_end] if size >= 12 else b""
                 row["record_count_word"] = _u32(data, cursor + 8) if size >= 12 else None
@@ -364,7 +492,8 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
         "limitations": [
             "NODE object payload is decoded through the existing SGBObjectRuntime decoder when its bounds are known; deeper OBJECT/HIERARCHY field semantics remain raw.",
             "FLAT body is preserved because it is forwarded to FUN_0068a8b0.",
-            "SUMM/OCCL vectors remain positional; their semantic names are not proven by these handlers.",
+            "SUMM vectors remain positional; their semantic names are not proven by FUN_006a4900.",
+            "OCCL Name/Resource and PositionTL/TR/BL/BR semantics are source-backed by the matching XML constructor FUN_006a3c40 and binary loader FUN_006a4f10.",
             "SUMM runtime wrapper field copies are source-backed; the 64-bit name hash is retained as provenance-only until FUN_0040b831 is normalized.",
         ],
     }
