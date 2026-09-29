@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 535.**
+**Current mainline: Phase 536.**
 
 
 
@@ -63,15 +63,16 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 39. Recover stable real-BMT depth/alpha group and field IDs, enum indices, alpha-test normalization, and carry them through the neutral render IR without enabling unproven native state — Phase 531 implemented.
 40. Map proven retail depth/default/blend semantics into one fail-closed pipeline-state sidecar and execute them independently per draw in both native Vulkan consumers — Phase 532 implemented.
 41. Orchestrate all canonical BMW body primitives independently, preserve partial ready evidence, group exact shader permutations and feed the admitted subset into the existing multi-draw adapter — Phase 533 implemented.
-42. Execute Phase 533 against the retail BMW_M3_E36/Cockpit/RENDER corpus and persist the first distinct fully-ready non-paint permutations and exact blockers.
-43. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
-44. Expand the desktop reference renderer against real BMW material/shader permutations.
-45. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
-46. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
-47. Continue with deeper OBJECT/HIERARCHY fields and FLAT leaf semantics.
-48. Derive proven animation poses from the BAB runtime grammar.
-49. Port the stable native render/runtime boundary to Android.
-50. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+42. Execute Phase 533 against the retail BMW_M3_E36/Cockpit/RENDER corpus, normalize shader-family FXO inputs and persist exact blockers — Phase 536 implemented; all five unique materials resolve BMT/FX/DDS but remain blocked on distinct shader-permutation attribution.
+43. Attribute one concrete retail FXO program pair to each canonical BMW material using runtime draw evidence or an additional source-backed static discriminator.
+44. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
+45. Expand the desktop reference renderer against real BMW material/shader permutations.
+46. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
+47. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
+48. Continue with deeper OBJECT/HIERARCHY fields and FLAT leaf semantics.
+49. Derive proven animation poses from the BAB runtime grammar.
+50. Port the stable native render/runtime boundary to Android.
+51. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -80,7 +81,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BFF/XMem-LZX | verified | broader uncommon-variant coverage |
 | Resource IR | active | remaining format-specific joins |
 | MEB / vertex ABI | strong static | more runtime same-instance proofs |
-| Material/shader linking | canonical BMW body admission + typed BMT depth/alpha/cull IR | retail execution of non-paint permutation matrix |
+| Material/shader linking | retail BMW corpus executed; BMT/FX/DDS resolved | concrete FXO permutation attribution for each canonical material |
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
