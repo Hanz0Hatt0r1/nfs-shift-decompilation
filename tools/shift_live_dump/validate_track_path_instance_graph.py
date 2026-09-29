@@ -279,7 +279,7 @@ def main() -> int:
 
     out = args.out or root / "track_path_instance_graph.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2) + "\\n", encoding="utf-8")
+    out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
     edge_out = out.with_name("track_path_instance_edges.csv")
     with edge_out.open("w", newline="", encoding="utf-8") as fh:
