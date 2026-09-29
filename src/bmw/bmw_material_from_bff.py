@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -35,22 +36,77 @@ def _entry_rows(archives: Iterable[BFF]) -> list[tuple[BFF, Any]]:
         rows.extend((archive, entry) for entry in archive.entries)
     return rows
 
+def _shader_family(path: str) -> str:
+    stem=Path(_norm(path)).stem.lower()
+    stem=re.sub(r"_[0-9a-f]{8,}$", "", stem)
+    for prefix in ("render_shaders_", "effects_particles_shaders_"):
+        if stem.startswith(prefix):
+            stem=stem[len(prefix):]
+            break
+    return re.sub(r"[^a-z0-9]", "", stem)
+
+def _select_identical_hit(
+    hits: list[tuple[BFF, Any]],
+    *,
+    label: str,
+    path: str,
+) -> tuple[BFF, Any]:
+    if not hits:
+        raise ValueError(f'{label}: expected entry {path!r}, found 0')
+    if len(hits)==1:
+        return hits[0]
+    digests=[]
+    for archive,entry in hits:
+        payload=archive.extract_entry(entry)
+        digests.append((_sha256(payload),archive,entry))
+    unique={digest for digest,_,_ in digests}
+    if len(unique)!=1:
+        detail=', '.join(
+            f'{archive.path.name}:{entry.index}:{digest[:12]}'
+            for digest,archive,entry in digests
+        )
+        raise ValueError(
+            f'{label}: conflicting duplicate entry {path!r}: {detail}'
+        )
+    # Archive order is stable (primary first). Equal bytes are one logical
+    # retail resource, not an ambiguity.
+    return hits[0]
+
 def _find_exact(rows: list[tuple[BFF, Any]], path: str, *, label: str) -> tuple[BFF, Any]:
     target=_norm(path)
     hits=[(a,e) for a,e in rows if _norm(e.path)==target]
-    if len(hits)!=1:
-        raise ValueError(f'{label}: expected exactly one entry {path!r}, found {len(hits)}')
-    return hits[0]
+    return _select_identical_hit(hits,label=label,path=path)
 
 def _find_shader_source(rows: list[tuple[BFF, Any]], shader_ref: str) -> tuple[BFF, Any]:
     target=_norm(shader_ref)
     exact=[(a,e) for a,e in rows if _norm(e.path)==target]
-    if len(exact)==1: return exact[0]
+    if exact:
+        return _select_identical_hit(exact,label='shader-source',path=shader_ref)
     base=target.rsplit('/',1)[-1]
     hits=[(a,e) for a,e in rows if _norm(e.path).rsplit('/',1)[-1]==base]
-    if len(hits)!=1:
-        raise ValueError(f'shader-source: expected one {shader_ref!r}, found {len(hits)} exact/basename matches')
-    return hits[0]
+    return _select_identical_hit(hits,label='shader-source',path=shader_ref)
+
+def _fxo_candidates_for_shader(
+    rows: list[tuple[BFF, Any]],
+    shader_ref: str,
+) -> tuple[list[tuple[str, bytes]], int]:
+    family=_shader_family(shader_ref)
+    by_path: dict[str,list[tuple[BFF,Any]]]={}
+    for archive,entry in rows:
+        path=_norm(entry.path)
+        if not path.endswith('.fxo') or _shader_family(path)!=family:
+            continue
+        by_path.setdefault(path,[]).append((archive,entry))
+    candidates=[]
+    duplicate_copies=0
+    for path in sorted(by_path):
+        hits=by_path[path]
+        duplicate_copies += max(0,len(hits)-1)
+        archive,entry=_select_identical_hit(
+            hits,label='fxo',path=path
+        )
+        candidates.append((entry.path,archive.extract_entry(entry)))
+    return candidates,duplicate_copies
 
 def validate_generic_material_binding(binding: dict[str, Any]) -> dict[str, Any]:
     """Fail closed on the shader/permutation facts required by native submission."""
@@ -172,8 +228,7 @@ def build_real_bmw_material_binding(
                 'sha256':_sha256(fx_bytes),
                 'size':len(fx_bytes),
             }
-        fxo_rows=[(a,e) for a,e in rows if _norm(e.path).endswith('.fxo')]
-        fxo_candidates=[(f'{a.path.name}::{e.path}',a.extract_entry(e)) for a,e in fxo_rows]
+        fxo_candidates,fxo_duplicate_copies=_fxo_candidates_for_shader(rows,shader_ref)
         dds_paths=sorted({_norm(e.path) for _,e in rows if _norm(e.path).endswith('.dds')})
         binding=link_material(material,fx_bytes,fxo_candidates=fxo_candidates,texture_paths=dds_paths,vertex_properties=mesh.vertex_properties)
         generic_gate=validate_generic_material_binding(binding)
@@ -201,6 +256,8 @@ def build_real_bmw_material_binding(
             'mesh_entry':{'archive':meb_archive.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},
             'shader_source':shader_source,
             'fxo_candidate_count':len(fxo_candidates),
+            'fxo_duplicate_copy_count':fxo_duplicate_copies,
+            'fxo_shader_family':_shader_family(shader_ref),
             'dds_path_count':len(dds_paths),
         }
         if shader_source_entry is not None:
