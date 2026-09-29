@@ -60,7 +60,7 @@ def build_gdb_command_file(
         "set pagination off\n"
         "set confirm off\n"
         f"source {script}\n"
-        f"sdf-probe {output}\n"
+        f"sdf-probe {probe_args}\n"
         "continue\n"
     )
 
