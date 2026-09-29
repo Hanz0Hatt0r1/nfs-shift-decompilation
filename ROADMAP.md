@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 526.**
+**Current mainline: Phase 527.**
 
 
 
@@ -56,12 +56,14 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 32. Represent one multi-submesh RenderCommand as an ordered set of independently gated Vulkan bundles — Phase 524 implemented.
 33. Compile, reflect and interface-validate every ordered draw bundle before native admission — Phase 525 implemented.
 34. Execute the prepared draw set in one native render pass with per-draw pipelines, constants, descriptors, textures and geometry — Phase 526 implemented.
-35. Expand the native draw-set contract to real multi-material BMW submesh permutations and state differences.
-36. Expand the desktop reference renderer against real BMW material/shader permutations.
-37. Continue SGB/FLAT and camera runtime reconstruction.
-38. Derive proven animation poses from the BAB runtime grammar.
-39. Port the stable native render/runtime boundary to Android.
-40. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+35. Remove the paint-only upstream BMW material-slice restriction and gate every selected primitive through a generic exact FXO/pair/permutation contract — Phase 527 implemented.
+36. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
+37. Propagate proven per-draw render-state differences only from BMT/runtime evidence; do not synthesize blend/depth/cull state.
+38. Expand the desktop reference renderer against real BMW material/shader permutations.
+39. Continue SGB/FLAT and camera runtime reconstruction.
+40. Derive proven animation poses from the BAB runtime grammar.
+41. Port the stable native render/runtime boundary to Android.
+42. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -81,7 +83,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Track/path runtime correlation | active | runtime graph capture with complete/unambiguous edge evidence |
-| Vulkan | active; native multi-draw runtime | broader real material/state permutations |
+| Vulkan | active; native multi-draw runtime | retail non-paint BMW permutations and proven per-draw state |
 | Android | deferred | stable native renderer/runtime boundary |
 
 ## Canonical render path
