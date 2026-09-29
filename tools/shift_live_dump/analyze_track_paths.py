@@ -466,8 +466,8 @@ def parse_aiw(text: str, source: str) -> dict:
             break
         if not in_waypoints or not line:
             continue
-        if line.startswith("\\\\") and line[2:].strip("-").isdigit():
-            current = {"index": int(line[2:])}
+        if line.startswith("\\") and line[1:].strip("-").isdigit():
+            current = {"index": int(line[1:])}
             waypoints.append(current)
             continue
         if "=" not in line:
