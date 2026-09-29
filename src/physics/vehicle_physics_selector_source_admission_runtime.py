@@ -69,6 +69,62 @@ def build_vehicle_physics_selector_source_admission() -> dict[str, Any]:
     }
 
 
+def evaluate_selector_source_admission(
+    owner_mask: int,
+    source_token: int,
+    current_count: int,
+    capacity: int,
+) -> dict[str, Any]:
+    """Evaluate the observed admission/mask/capacity state transition.
+
+    This is an executable model of the ordering already established by the
+    source-backed contract:
+      1. derive the low-nibble selector key from source_record+0x10;
+      2. require the corresponding owner+0x4f0 bit;
+      3. call the descriptor wrapper on a mask hit;
+      4. clear the hit bit;
+      5. inside the wrapper, populate only while count < capacity.
+
+    It deliberately exposes no inferred gameplay/provider semantics.
+    """
+    if owner_mask < 0:
+        raise ValueError("owner_mask must be >= 0")
+    if source_token < 0:
+        raise ValueError("source_token must be >= 0")
+    if current_count < 0:
+        raise ValueError("current_count must be >= 0")
+    if capacity < 0:
+        raise ValueError("capacity must be >= 0")
+
+    selector_key = source_token & 0xF
+    bit_mask = 1 << selector_key
+    mask_hit = bool(owner_mask & bit_mask)
+    wrapper_called = mask_hit
+    capacity_available = current_count < capacity
+    population_succeeded = wrapper_called and capacity_available
+
+    # The retail branch clears the same bit after invoking the descriptor
+    # wrapper, regardless of whether the wrapper's independent capacity gate
+    # accepts the record.
+    next_owner_mask = owner_mask ^ bit_mask if wrapper_called else owner_mask
+    next_count = current_count + 1 if population_succeeded else current_count
+
+    return {
+        "source_token": source_token,
+        "selector_key": selector_key,
+        "bit_mask": bit_mask,
+        "mask_hit": mask_hit,
+        "wrapper_called": wrapper_called,
+        "capacity_available": capacity_available,
+        "population_succeeded": population_succeeded,
+        "mask_cleared": wrapper_called,
+        "owner_mask_before": owner_mask,
+        "owner_mask_after": next_owner_mask,
+        "count_before": current_count,
+        "count_after": next_count,
+    }
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build selector source admission contract")
     parser.add_argument("-o", "--output", type=Path)
@@ -87,4 +143,4 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-__all__ = ["FORMAT", "build_vehicle_physics_selector_source_admission"]
+__all__ = [\n    "FORMAT",\n    "build_vehicle_physics_selector_source_admission",\n    "evaluate_selector_source_admission",\n]
