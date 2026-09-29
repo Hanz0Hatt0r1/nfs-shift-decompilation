@@ -17,7 +17,13 @@ def test_native_vulkan_bundle_executor_contract():
     assert "SHIFT.VulkanBundleExecution/1" in source
     assert "load_pipeline_cull_mode" in source
     assert "SHIFT.MaterialCullState/1" in source
-    assert "raster.cullMode = cull_mode;" in source
+    assert "SHIFT.MaterialPipelineState/1" in source
+    assert "load_pipeline_state" in source
+    assert "raster.cullMode = pipeline_state.cull_mode;" in source
+    assert "depth_state.depthTestEnable = pipeline_state.depth_test_enable;" in source
+    assert "depth_state.depthWriteEnable = pipeline_state.depth_write_enable;" in source
+    assert "depth_state.depthCompareOp = pipeline_state.depth_compare_op;" in source
+    assert "blend_attachment.blendEnable = pipeline_state.blend_enable;" in source
 
 
 def test_vulkan_bundle_runner_contract():
