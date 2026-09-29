@@ -136,6 +136,12 @@ assert poly_rows[0]["array_count_match"] == "True", poly_rows
 assert int(poly_rows[0]["array_node_vtable"]) == 0x00AFBFA8, poly_rows
 assert poly_rows[0]["array_node_vtable_match"] == "True", poly_rows
 assert int(poly_rows[0]["array_node_sequence"]) == 4, poly_rows
+with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath_nodes.csv"), newline="", encoding="utf-8") as fh:
+    node_rows = list(csv.DictReader(fh))
+assert len(node_rows) == 4, node_rows
+assert [float(row["x"]) for row in node_rows] == [1.0, 5.0, 9.0, 13.0], node_rows
+assert [int(row["address"], 0) for row in node_rows] == [0x00202000, 0x00202024, 0x00202048, 0x0020206C], node_rows
+assert [float(row["distance"]) for row in node_rows] == [0.0, 4.0, 8.0, 12.0], node_rows
 assert result["stable_external_pointer_count"] >= 2, result["stable_external_pointer_count"]
 assert result["pointer_target_clusters"], "expected pointer clusters"
 assert result["next_capture_windows"], "expected capture windows"
