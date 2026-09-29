@@ -150,6 +150,13 @@ def build_bmw_runtime_shader_target_set(
         for row in primitive_rows
         if row.get("primitive_index") is not None
     }
+    canonical_by_index = {
+        int(row.get("primitive_index")): row
+        for row in (
+            (admission.get("selection") or {}).get("canonical_primitives") or []
+        )
+        if isinstance(row, Mapping) and row.get("primitive_index") is not None
+    }
 
     for primitive_index in selected:
         row = by_index.get(primitive_index)
@@ -218,10 +225,33 @@ def build_bmw_runtime_shader_target_set(
 
         material_ref = material_slice.get("material_ref")
         material_bmt = material_slice.get("material_bmt")
+        canonical = canonical_by_index.get(primitive_index) or {}
+        first_index = canonical.get("first_index")
+        index_count = canonical.get("index_count")
+        draw_range = None
+        if first_index is not None and index_count is not None:
+            try:
+                first_index = int(first_index)
+                index_count = int(index_count)
+                draw_range = {
+                    "first_index": first_index,
+                    "index_count": index_count,
+                    "primitive_count": (
+                        index_count // 3 if index_count % 3 == 0 else None
+                    ),
+                }
+            except (TypeError, ValueError):
+                draw_range = None
+        if draw_range is None:
+            blockers.append(
+                f"shader-target:primitive-{primitive_index}:draw-range-missing"
+            )
+
         primitive_targets.append({
             "primitive_index": primitive_index,
             "material_ref": material_ref,
             "material_bmt": material_bmt,
+            "draw_range": draw_range,
             "material_status": material_slice.get("status"),
             "material_ready": material_slice.get("ready") is True,
             "material_blocking_reasons": list(
@@ -261,6 +291,7 @@ def build_bmw_runtime_shader_target_set(
         and not any(
             reason.endswith(":slice-missing")
             or reason.endswith(":mesh-identity-mismatch")
+            or reason.endswith(":draw-range-missing")
             for reason in blockers
         )
     )

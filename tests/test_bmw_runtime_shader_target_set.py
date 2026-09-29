@@ -75,7 +75,18 @@ def _admission(rows):
         "format": "SHIFT.BMWBodyMaterialAdmission/1",
         "status": "blocked",
         "ready": False,
-        "selection": {"primitive_indices": indices},
+        "selection": {
+            "primitive_indices": indices,
+            "canonical_primitives": [
+                {
+                    "primitive_index": index,
+                    "first_index": index * 300,
+                    "index_count": 300,
+                    "material": f"vehicles/bmw/material_{index}.mtx",
+                }
+                for index in indices
+            ],
+        },
         "primitive_results": [
             {
                 "primitive_index": row["primitive_index"],
@@ -101,6 +112,11 @@ def test_shader_target_set_preserves_all_top_rank_identities():
     primitive = report["primitive_targets"][0]
     assert primitive["top_rank_candidate_count"] == 2
     assert primitive["hash_target_count"] == 2
+    assert primitive["draw_range"] == {
+        "first_index": 0,
+        "index_count": 300,
+        "primitive_count": 100,
+    }
     assert {
         row["identity_value"] for row in primitive["targets"]
     } == {"1" * 64, "5" * 64}
