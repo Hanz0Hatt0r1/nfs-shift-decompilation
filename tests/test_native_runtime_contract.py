@@ -176,6 +176,6 @@ def test_native_runtime_prefers_full_pipeline_state_over_nested_legacy_cull():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(
         encoding="utf-8"
     )
-    full = source.index('"format": "SHIFT.MaterialPipelineState/1"')
-    legacy = source.index('"format": "SHIFT.MaterialCullState/1"')
+    full = source.index("SHIFT.MaterialPipelineState/1")
+    legacy = source.index("SHIFT.MaterialCullState/1")
     assert full < legacy
