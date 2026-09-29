@@ -115,6 +115,7 @@ def test_real_bmw_material_extractor_builds_ready_binding(monkeypatch,tmp_path):
     assert report['format']=='SHIFT.RealBMWMaterialBindingEvidence/1'
     assert report['ready'] is True
     assert report['material_binding']['selection_status']=='unique'
+    assert report['generic_material_gate']['ready'] is True
     assert report['paint_contract']['ready'] is True
     assert report['paint_shader_gate']['ready'] is True
     assert report['provenance']['material_entry']['index']==0
@@ -167,3 +168,99 @@ def test_real_bmw_material_extractor_rejects_wrong_external_shader_name(monkeypa
     external.write_text('void main() {}',encoding='utf-8')
     with pytest.raises(ValueError,match='does not match material reference'):
         extractor.build_real_bmw_material_binding(primary,shader_source_file=external)
+
+
+
+def _generic_binding():
+    value = _binding()
+    value = dict(value)
+    value['material'] = 'GENERIC_WINDOWS'
+    value['shader'] = 'glass.fx'
+    value['specialization'] = {'requested': []}
+    value['bindings'] = []
+    value['selected_fxo'] = {
+        'file': 'glass.fxo',
+        'program_offset': 96,
+        'exact': True,
+        'vertex_pair_selection_status': 'unique',
+        'pixel_sha256': '1' * 64,
+        'vertex_sha256': '2' * 64,
+        'pair_sha256': '3' * 64,
+    }
+    value['permutation_identity'] = {
+        'format': 'SHIFT.ShaderPermutationIdentity/1',
+        'identity_sha256': '4' * 64,
+    }
+    return value
+
+
+def test_generic_material_gate_requires_unique_exact_linked_permutation():
+    ready = extractor.validate_generic_material_binding(_generic_binding())
+    assert ready['ready'] is True
+
+    broken = _generic_binding()
+    broken['permutation_identity'] = None
+    result = extractor.validate_generic_material_binding(broken)
+    assert result['ready'] is False
+    assert (
+        'generic-material:permutation-identity-missing'
+        in result['blocking_reasons']
+    )
+
+
+def test_real_bmw_material_extractor_supports_nonpaint_bmt(monkeypatch, tmp_path):
+    primary, _ = _setup(monkeypatch, tmp_path)
+    archive = extractor.BFF(primary)
+
+    generic_bmt = 'vehicles/bmw_m3_e36/generic_windows.bmt'
+    generic_shader = 'render/shaders/glass.fx'
+    archive.entries.extend([
+        FakeEntry(generic_bmt, 30),
+        FakeEntry(generic_shader, 31),
+    ])
+    archive.payloads[generic_bmt] = b'generic-bmt'
+    archive.payloads[generic_shader] = b'generic-fx'
+
+    monkeypatch.setattr(
+        extractor,
+        'parse_bmt_material',
+        lambda data: {
+            'material': {
+                'name': 'GENERIC_WINDOWS',
+                'shader': generic_shader,
+                'specializations': [],
+                'shaderparams': [],
+            }
+        },
+    )
+    monkeypatch.setattr(
+        extractor,
+        'link_material',
+        lambda *args, **kwargs: _generic_binding(),
+    )
+    monkeypatch.setattr(
+        extractor,
+        'validate_material_binding',
+        lambda binding: (_ for _ in ()).throw(
+            AssertionError('paint contract must not run for nonpaint material')
+        ),
+    )
+    monkeypatch.setattr(
+        extractor,
+        'validate_bmw_paint_shader_gate',
+        lambda binding: (_ for _ in ()).throw(
+            AssertionError('paint shader gate must not run for nonpaint material')
+        ),
+    )
+
+    report = extractor.build_real_bmw_material_binding(
+        primary,
+        material_bmt=generic_bmt,
+    )
+
+    assert report['ready'] is True
+    assert report['material_bmt'] == generic_bmt
+    assert report['generic_material_gate']['ready'] is True
+    assert report['paint_contract'] is None
+    assert report['paint_shader_gate'] is None
+    assert report['provenance']['material_entry']['path'] == generic_bmt

@@ -6,6 +6,7 @@ from typing import Any, Mapping
 from bmw_m3_paint_asset_contract import validate_bmw_paint_asset
 
 FORMAT = "SHIFT.BMWMaterialSliceGoldenGate/1"
+PAINT_MTX = "vehicles/bmw_m3_e36/bmw_m3_e36_paint.mtx"
 
 
 def _norm(value: Any) -> str:
@@ -22,7 +23,10 @@ def validate_bmw_material_slice_golden(
     golden_meta = golden.get("golden") or {}
     golden_mesh = golden.get("mesh") or {}
     observed_mesh = material_slice.get("mesh") or {}
-    selected_index = material_slice.get("primitive_index") if primitive_index is None else primitive_index
+    selected_index = (
+        material_slice.get("primitive_index")
+        if primitive_index is None else primitive_index
+    )
 
     try:
         selected_index = int(selected_index)
@@ -30,11 +34,24 @@ def validate_bmw_material_slice_golden(
         reasons.append("slice:primitive-index-invalid")
         selected_index = -1
 
-    asset_contract = validate_bmw_paint_asset(golden)
-    reasons.extend(
-        f"asset-contract:{reason}"
-        for reason in asset_contract.get("blocking_reasons") or []
+    expected_primitives = list(golden_mesh.get("primitives") or [])
+    if selected_index < 0 or selected_index >= len(expected_primitives):
+        reasons.append("slice:primitive-index-out-of-range")
+        expected_primitive = None
+    else:
+        expected_primitive = expected_primitives[selected_index]
+
+    expected_material = _norm(
+        (expected_primitive or {}).get("material")
     )
+    paint_required = expected_material == _norm(PAINT_MTX)
+    asset_contract = None
+    if paint_required:
+        asset_contract = validate_bmw_paint_asset(golden)
+        reasons.extend(
+            f"asset-contract:{reason}"
+            for reason in asset_contract.get("blocking_reasons") or []
+        )
 
     expected_resource = _norm(golden_meta.get("resource"))
     observed_resource = _norm(
@@ -54,13 +71,6 @@ def validate_bmw_material_slice_golden(
     )
     if expected_sha and observed_sha != expected_sha:
         reasons.append("slice:resource-sha256-mismatch")
-
-    expected_primitives = list(golden_mesh.get("primitives") or [])
-    if selected_index < 0 or selected_index >= len(expected_primitives):
-        reasons.append("slice:primitive-index-out-of-range")
-        expected_primitive = None
-    else:
-        expected_primitive = expected_primitives[selected_index]
 
     observed_submeshes = list(
         material_slice.get("render_command", {}).get("submeshes")
@@ -87,22 +97,42 @@ def validate_bmw_material_slice_golden(
             or observed_submesh.get("material_ref")
             or (observed_submesh.get("material") or {}).get("ref")
         )
-        expected_material = _norm(expected_primitive.get("material"))
         if observed_material != expected_material:
             reasons.append("slice:material-ref-mismatch")
 
     for key in ("vertex_count", "triangle_count"):
         expected = golden_mesh.get(key)
-        observed = observed_mesh.get(key) or (material_slice.get("packet", {}).get("mesh") or {}).get(key)
-        if expected is not None and observed is not None and int(expected) != int(observed):
+        observed = (
+            observed_mesh.get(key)
+            or (material_slice.get("packet", {}).get("mesh") or {}).get(key)
+        )
+        if (
+            expected is not None
+            and observed is not None
+            and int(expected) != int(observed)
+        ):
             reasons.append(f"slice:{key}-mismatch")
 
-    paint_contract = material_slice.get("paint_contract")
-    paint_shader_gate = material_slice.get("paint_shader_gate")
-    if not isinstance(paint_contract, Mapping) or paint_contract.get("ready") is not True:
-        reasons.append("slice:paint-contract-not-ready")
-    if not isinstance(paint_shader_gate, Mapping) or paint_shader_gate.get("ready") is not True:
-        reasons.append("slice:paint-shader-gate-not-ready")
+    generic_gate = material_slice.get("generic_material_gate")
+    if (
+        not isinstance(generic_gate, Mapping)
+        or generic_gate.get("ready") is not True
+    ):
+        reasons.append("slice:generic-material-gate-not-ready")
+
+    if paint_required:
+        paint_contract = material_slice.get("paint_contract")
+        paint_shader_gate = material_slice.get("paint_shader_gate")
+        if (
+            not isinstance(paint_contract, Mapping)
+            or paint_contract.get("ready") is not True
+        ):
+            reasons.append("slice:paint-contract-not-ready")
+        if (
+            not isinstance(paint_shader_gate, Mapping)
+            or paint_shader_gate.get("ready") is not True
+        ):
+            reasons.append("slice:paint-shader-gate-not-ready")
 
     command = material_slice.get("render_command") or {}
     if command.get("format") != "SHIFT.RenderCommand/1":
@@ -120,6 +150,7 @@ def validate_bmw_material_slice_golden(
         "ready": ready,
         "blocking_reasons": list(dict.fromkeys(reasons)),
         "primitive_index": selected_index,
+        "paint_required": paint_required,
         "expected": {
             "resource": golden_meta.get("resource"),
             "resource_sha256": expected_sha,

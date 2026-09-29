@@ -19,6 +19,7 @@ class FakeArchive:
         self.path = Path(path)
         self.entries = [
             FakeEntry("vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt", 0),
+            FakeEntry("vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt", 4),
             FakeEntry("vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb", 1),
             FakeEntry("render/shaders/bodywork.fx", 2),
             FakeEntry("render/textures/COMMON_PAINT.dds", 3),
@@ -43,7 +44,7 @@ def _golden():
             "triangle_count": 1,
             "color460_descriptor": {"words": [4, 6, 0]},
             "primitives": [
-                {"first_index": 0, "index_count": 150, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
+                {"first_index": 0, "index_count": 150, "material": "vehicles/bmw_m3_e36/BMW_M3_E36_BADGING.mtx"},
                 {"first_index": 150, "index_count": 6294, "material": slicer.TARGET_BMT[:-4] + ".mtx"},
             ],
             "skinning": {"skinned": False},
@@ -84,11 +85,33 @@ def _binding_report():
             "linked_shader_error": None,
             "uniform_binding": {"format":"SHIFT.MaterialUniformBinding/1","bindings":[]},
         },
+        "generic_material_gate": {"ready": True, "blocking_reasons": []},
         "paint_contract": {"ready": True, "blocking_reasons": []},
         "paint_shader_gate": {"ready": True, "blocking_reasons": []},
         "provenance": {},
     }
 
+
+
+def _generic_binding_report():
+    report = json.loads(json.dumps(_binding_report()))
+    report["material_binding"]["material"] = "BMW_M3_E36_BADGING"
+    report["material_binding"]["specialization"] = {"requested": []}
+    report["material_binding"]["bindings"] = []
+    report["material_binding"]["selected_fxo"]["file"] = "badging.fxo"
+    report["material_binding"]["permutation_identity"] = {
+        "format": "SHIFT.ShaderPermutationIdentity/1",
+        "identity_sha256": "9" * 64,
+    }
+    report["generic_material_gate"] = {
+        "format": "SHIFT.BMWGenericMaterialBindingGate/1",
+        "ready": True,
+        "status": "ready",
+        "blocking_reasons": [],
+    }
+    report["paint_contract"] = None
+    report["paint_shader_gate"] = None
+    return report
 
 def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, tmp_path):
     primary=tmp_path/"BMW_M3_E36.bff"
@@ -142,24 +165,183 @@ def test_real_bmw_material_slice_builds_renderer_compatible_slice(monkeypatch, t
     assert "texture_sources" in report
 
 
-def test_real_bmw_material_slice_blocks_non_paint_primitive(monkeypatch, tmp_path):
-    primary=tmp_path/"BMW_M3_E36.bff"
+def test_real_bmw_material_slice_builds_nonpaint_primitive(monkeypatch, tmp_path):
+    primary = tmp_path / "BMW_M3_E36.bff"
     primary.write_bytes(b"fixture")
-    monkeypatch.setattr(slicer, "build_real_bmw_material_binding", lambda *a, **k: _binding_report())
-    monkeypatch.setattr(slicer, "BFF", lambda path: FakeArchive(path))
-    golden_path=tmp_path/"golden.json"
+    archive = FakeArchive(primary)
+    seen = {}
+
+    def fake_binding(*args, **kwargs):
+        seen["material_bmt"] = kwargs.get("material_bmt")
+        return _generic_binding_report()
+
+    monkeypatch.setattr(slicer, "build_real_bmw_material_binding", fake_binding)
+    monkeypatch.setattr(slicer, "BFF", lambda path: archive)
+    golden_path = tmp_path / "golden.json"
     golden_path.write_text(json.dumps(_golden()), encoding="utf-8")
-    monkeypatch.setattr(slicer, "validate_bmw_paint_asset", lambda golden: {"ready":True,"blocking_reasons":[]})
-    mesh=SimpleNamespace(name="M3",vertex_count=4,triangle_count=1,property_descriptors=[],primitives=[
-        SimpleNamespace(first_index=0,index_count=3,material="vehicles/bmw_m3_e36/BMW_M3_E36_BADGING.mtx")
-    ])
+
+    mesh = SimpleNamespace(
+        name="M3",
+        vertex_count=4,
+        triangle_count=1,
+        property_descriptors=[],
+        primitives=[
+            SimpleNamespace(
+                first_index=0,
+                index_count=150,
+                material="vehicles/bmw_m3_e36/BMW_M3_E36_BADGING.mtx",
+            )
+        ],
+    )
     monkeypatch.setattr(slicer, "read_meb", lambda data: mesh)
-    monkeypatch.setattr(slicer, "mesh_summary", lambda m: {"format":"SHIFT.MEB","vertex_count":4,"triangle_count":1,"skinning":{"skinned":False},"property_descriptors":[],"primitives":[]})
-    monkeypatch.setattr(slicer, "mesh_to_jsonable", lambda m: {"format":"SHIFT.MEB"})
-    monkeypatch.setattr(slicer, "parse_bmt_material", lambda data: {"material":{"name":"BMW_M3_E36_BADGING","shader":"bodywork.fx","shaderparams":[]}})
-    report=slicer.build_real_bmw_material_slice(primary,golden_path,primitive_index=0)
-    assert report["ready"] is False
-    assert "material-slice:primitive-not-bmw-paint" in report["blocking_reasons"]
+    monkeypatch.setattr(
+        slicer,
+        "mesh_summary",
+        lambda m: {
+            "format": "SHIFT.MEB",
+            "vertex_count": 4,
+            "triangle_count": 1,
+            "skinning": {"skinned": False},
+            "property_descriptors": [],
+            "primitives": [{
+                "first_index": 0,
+                "index_count": 150,
+                "material": m.primitives[0].material,
+            }],
+        },
+    )
+    monkeypatch.setattr(
+        slicer,
+        "mesh_to_jsonable",
+        lambda m: {
+            "format": "SHIFT.MEB",
+            "vertices": [[0, 0, 0]] * 4,
+            "indices": [0, 1, 2],
+        },
+    )
+    monkeypatch.setattr(
+        slicer,
+        "build_layout_from_summary",
+        lambda x: {
+            "format": "SHIFT.VertexLayout/1",
+            "buffer_stride": 12,
+            "attributes": [{
+                "property_id": "200",
+                "usage": "POSITION",
+                "usage_index": 0,
+                "location": 0,
+                "offset": 0,
+                "stride": 12,
+                "storage": "f32x3",
+            }],
+        },
+    )
+    monkeypatch.setattr(
+        slicer,
+        "parse_bmt_material",
+        lambda data: {
+            "material": {
+                "name": "BMW_M3_E36_BADGING",
+                "shader": "bodywork.fx",
+                "shaderparams": [],
+            }
+        },
+    )
+    monkeypatch.setattr(
+        slicer,
+        "compile_material",
+        lambda *a, **k: {
+            "ref": "vehicles/bmw_m3_e36/BMW_M3_E36_BADGING.mtx",
+            "name": "BMW_M3_E36_BADGING",
+            "shader_selection": {
+                "status": "unique",
+                "linked_shader_pair": {
+                    "format": "SHIFT.LinkedShaderPair/1",
+                    "vertex_glsl": "void main(){}",
+                    "pixel_glsl": "void main(){}",
+                },
+                "shader_pair": {"selection_status": "unique"},
+                "permutation_identity": {
+                    "format": "SHIFT.ShaderPermutationIdentity/1",
+                    "identity_sha256": "9" * 64,
+                },
+                "uniform_binding": {
+                    "format": "SHIFT.MaterialUniformBinding/1",
+                    "bindings": [],
+                },
+            },
+            "textures": [],
+            "paint_contract": None,
+            "paint_shader_gate": None,
+            "blocking_reasons": [],
+        },
+    )
+    monkeypatch.setattr(
+        slicer,
+        "build_static_draw_contract",
+        lambda packet: {
+            "format": "SHIFT.StaticDraw/1",
+            "ready": True,
+            "blocking_reasons": [],
+            "mesh": packet["mesh"],
+            "submeshes": packet["submeshes"],
+            "world_matrix": None,
+        },
+    )
+    monkeypatch.setattr(
+        slicer,
+        "build_resource_index",
+        lambda *a, **k: {
+            "format": "SHIFT.RenderResources/1",
+            "textures": [],
+            "samplers": [],
+            "bindings": [],
+            "stats": {"textures": 0, "samplers": 0, "bindings": 0},
+        },
+    )
+    monkeypatch.setattr(
+        slicer,
+        "build_render_command",
+        lambda *a, **k: {
+            "format": "SHIFT.RenderCommand/1",
+            "ready": True,
+            "blocking_reasons": [],
+            "mesh": {
+                "vertex_layout": {"format": "SHIFT.VertexLayout/1"},
+                "vertex_count": 4,
+                "attributes": [],
+            },
+            "submeshes": [{
+                "first_index": 0,
+                "index_count": 150,
+                "shader": {
+                    "vertex": "void main(){}",
+                    "pixel": "void main(){}",
+                },
+            }],
+            "resource_plan": {
+                "format": "SHIFT.RenderResources/1",
+                "texture_count": 0,
+                "sampler_count": 0,
+                "external_sampler_count": 0,
+            },
+        },
+    )
+
+    report = slicer.build_real_bmw_material_slice(
+        primary,
+        golden_path,
+        primitive_index=0,
+    )
+
+    assert report["ready"] is True, report
+    assert report["material_bmt"].lower().endswith("bmw_m3_e36_badging.bmt")
+    assert seen["material_bmt"].lower().endswith("bmw_m3_e36_badging.bmt")
+    assert report["generic_material_gate"]["ready"] is True
+    assert report["paint_contract"] is None
+    assert report["paint_shader_gate"] is None
+    assert report["slice_golden_gate"]["paint_required"] is False
+
 
 def test_real_bmw_material_slice_forwards_external_shader_source(monkeypatch, tmp_path):
     primary = tmp_path / "BMW_M3_E36.bff"
