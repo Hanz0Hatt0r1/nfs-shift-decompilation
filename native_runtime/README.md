@@ -20,7 +20,7 @@ MGEO → native IR → XCB window → Vulkan swapchain → indexed draw → fram
 
 The renderer consumes normalized native IR. Original BFF parsing remains upstream in the existing Python importer/resource pipeline.
 
-The first slice accepts either a single MGEO mesh or a prepared `SHIFT.BMWVulkanBundle/1`. Bundle mode validates the manifest/native-submission gate and consumes `geometry.svpk`, including its `first_index` draw range. The frame loop also exposes a fixed 60 Hz simulation boundary and neutral keyboard input state for future camera/physics systems. `Esc` or `Q` exits the harness.
+The runtime accepts either a single MGEO mesh or a prepared `SHIFT.BMWVulkanBundle/1`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary and neutral keyboard input state for future camera/physics systems. `Esc` or `Q` exits the harness.
 
 ## Build
 
