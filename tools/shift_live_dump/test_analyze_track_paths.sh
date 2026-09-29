@@ -34,9 +34,12 @@ blob[boundary_poff + 0x24:boundary_poff + 0x28] = bytes((1, 0, 0, 1))
 
 # An Incident.PathOwner candidate sits exactly at the end of the region.
 # This guards the scanner against using a too-short fixed tail limit.
-ioff = size - 0xFC
+ioff = size - 0x124
 struct.pack_into("<I", blob, ioff, 0x00401000)
 struct.pack_into("<IIfff f III", blob, ioff + 0xD4, 1, 0x00610000, 1.0, 2.0, 3.0, 10.0, 1, 1, 0)
+struct.pack_into("<fff", blob, ioff + 0x30, 11.0, 12.0, 13.0)
+struct.pack_into("<fffff", blob, ioff + 0x100, 20.0, 0.5, 2.0, 3.0, 25.0)
+struct.pack_into("<IIII", blob, ioff + 0x114, 2, 7, 3, 1)
 
 # Synthetic AISegmentPath using the fields explicitly reflected by
 # FUN_006d0690.
@@ -169,7 +172,23 @@ assert float(row["spacing"]) == 15.0, row
 assert float(row["path_dist"]) == 20.0, row
 assert int(row["current"]) == 2, row
 assert float(row["edge_step"]) == 1.0, row
-assert result["candidate_counts"]["Incident.PathOwner"] >= 1, result["candidate_counts"]
+assert result["candidate_counts"]["Incident.PathOwner"] == 1, result["candidate_counts"]
+with open(sys.argv[1].replace("track_path_analysis.json", "incident_pathowner.csv"), newline="", encoding="utf-8") as fh:
+    incident_rows = list(csv.DictReader(fh))
+assert len(incident_rows) == 1, incident_rows
+incident = incident_rows[0]
+assert float(incident["incident_x"]) == 11.0, incident
+assert float(incident["incident_y"]) == 12.0, incident
+assert float(incident["incident_z"]) == 13.0, incident
+assert float(incident["incident_path_dist"]) == 20.0, incident
+assert float(incident["incident_timer"]) == 0.5, incident
+assert float(incident["interest_level"]) == 2.0, incident
+assert float(incident["min_spacing"]) == 3.0, incident
+assert float(incident["track_dist"]) == 25.0, incident
+assert int(incident["race_flag"]) == 2, incident
+assert int(incident["area_index"]) == 7, incident
+assert int(incident["n_marshals"]) == 3, incident
+assert int(incident["n_flag_marshals"]) == 1, incident
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"), newline="", encoding="utf-8") as fh:
