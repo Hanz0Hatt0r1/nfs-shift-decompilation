@@ -3100,6 +3100,27 @@ def cmd_bmw_runtime_render_contract(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_bmw_runtime_shader_target_match(args: argparse.Namespace) -> int:
+    """Match BMW runtime shader targets against same-instance draw snapshots."""
+    from bmw_runtime_shader_target_match import validate_files
+
+    report = validate_files(args.target_set, args.runtime_report)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "summary": report["summary"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_runtime_shader_target_set(args: argparse.Namespace) -> int:
     """Build capture-oriented BMW runtime shader hash targets."""
     from bmw_runtime_shader_target_set import validate_files
@@ -4251,6 +4272,24 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("render_bff", help="RENDER.bff containing the selected FXO")
     p.add_argument("output", help="SHIFT.BMWRuntimeRenderContract/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_render_contract)
+
+    p = sp.add_parser(
+        "bmw-runtime-shader-target-match",
+        help="match BMW shader targets against same-instance D3D9 draw snapshots",
+    )
+    p.add_argument(
+        "target_set",
+        help="SHIFT.BMWRuntimeShaderTargetSet/1 JSON",
+    )
+    p.add_argument(
+        "runtime_report",
+        help="SHIFT.D3D9RuntimeBindingEvidence/1 JSON",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.BMWRuntimeShaderTargetMatch/1 JSON",
+    )
+    p.set_defaults(fn=cmd_bmw_runtime_shader_target_match)
 
     p = sp.add_parser(
         "bmw-runtime-shader-target-set",
