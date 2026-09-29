@@ -586,9 +586,11 @@ struct Runtime {
 
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkFormat swapchain_format = VK_FORMAT_UNDEFINED;
+    VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
     VkExtent2D swapchain_extent{};
     std::vector<VkImage> swapchain_images;
     std::vector<VkImageView> swapchain_views;
+    std::vector<Image> depth_images;
 
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -863,19 +865,22 @@ struct Runtime {
         uint32_t width,
         uint32_t height,
         uint32_t layers,
+        VkFormat format,
         VkImageCreateFlags flags,
+        VkImageUsageFlags usage,
+        VkImageAspectFlags aspect,
         Image& out) {
         VkImageCreateInfo create{};
         create.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         create.flags = flags;
         create.imageType = VK_IMAGE_TYPE_2D;
-        create.format = VK_FORMAT_R8G8B8A8_UNORM;
+        create.format = format;
         create.extent = {width, height, 1};
         create.mipLevels = 1;
         create.arrayLayers = layers;
         create.samples = VK_SAMPLE_COUNT_1_BIT;
         create.tiling = VK_IMAGE_TILING_OPTIMAL;
-        create.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        create.usage = usage;
         create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         vk_check(vkCreateImage(device, &create, nullptr, &out.handle),
                  "vkCreateImage failed");
@@ -901,13 +906,37 @@ struct Runtime {
         view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         view.image = out.handle;
         view.viewType = layers == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-        view.format = VK_FORMAT_R8G8B8A8_UNORM;
-        view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        view.format = format;
+        view.subresourceRange.aspectMask = aspect;
         view.subresourceRange.levelCount = 1;
         view.subresourceRange.layerCount = layers;
         vk_check(vkCreateImageView(
                      device, &view, nullptr, &out.view),
                  "vkCreateImageView resource failed");
+    }
+
+    void create_depth_resources() {
+        VkFormatProperties properties{};
+        vkGetPhysicalDeviceFormatProperties(
+            physical, depth_format, &properties);
+        if ((properties.optimalTilingFeatures &
+             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0u) {
+            throw std::runtime_error(
+                "VK_FORMAT_D32_SFLOAT depth attachment unsupported");
+        }
+
+        depth_images.resize(swapchain_views.size());
+        for (auto& image : depth_images) {
+            create_image(
+                swapchain_extent.width,
+                swapchain_extent.height,
+                1,
+                depth_format,
+                0,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_IMAGE_ASPECT_DEPTH_BIT,
+                image);
+        }
     }
 
     VkSampler create_sampler(uint32_t mode) {
@@ -955,7 +984,12 @@ struct Runtime {
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 texture_staging[i]);
             create_image(
-                texture.width, texture.height, 1, 0, texture_images[i]);
+                texture.width, texture.height, 1,
+                VK_FORMAT_R8G8B8A8_UNORM,
+                0,
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                texture_images[i]);
             texture_samplers[i] = create_sampler(texture.sampler_mode);
         }
 
@@ -967,7 +1001,11 @@ struct Runtime {
                 cube_staging);
             create_image(
                 bundle.cube.width, bundle.cube.height, 6,
-                VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, cube_image);
+                VK_FORMAT_R8G8B8A8_UNORM,
+                VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                cube_image);
             cube_sampler = create_sampler(4);
         }
 
@@ -1251,34 +1289,53 @@ struct Runtime {
             material_mode ? bundle->fragment_shader_path :
             shader_dir + "/runtime.frag.spv");
 
-        VkAttachmentDescription color{};
-        color.format = swapchain_format;
-        color.samples = VK_SAMPLE_COUNT_1_BIT;
-        color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        VkAttachmentDescription attachments[2]{};
+        attachments[0].format = swapchain_format;
+        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachments[1].format = depth_format;
+        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[1].finalLayout =
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkAttachmentReference color_ref{};
         color_ref.attachment = 0;
         color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference depth_ref{};
+        depth_ref.attachment = 1;
+        depth_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &color_ref;
+        subpass.pDepthStencilAttachment = &depth_ref;
 
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency.srcStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstAccessMask =
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         VkRenderPassCreateInfo pass{};
         pass.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        pass.attachmentCount = 1;
-        pass.pAttachments = &color;
+        pass.attachmentCount = 2;
+        pass.pAttachments = attachments;
         pass.subpassCount = 1;
         pass.pSubpasses = &subpass;
         pass.dependencyCount = 1;
@@ -1395,6 +1452,13 @@ struct Runtime {
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+        VkPipelineDepthStencilStateCreateInfo depth_state{};
+        depth_state.sType =
+            VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depth_state.depthTestEnable = VK_TRUE;
+        depth_state.depthWriteEnable = VK_TRUE;
+        depth_state.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+
         VkPipelineColorBlendAttachmentState color_blend{};
         color_blend.colorWriteMask =
             VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
@@ -1414,6 +1478,7 @@ struct Runtime {
         create.pViewportState = &viewport_state;
         create.pRasterizationState = &raster;
         create.pMultisampleState = &multisample;
+        create.pDepthStencilState = &depth_state;
         create.pColorBlendState = &blend;
         create.layout = pipeline_layout;
         create.renderPass = render_pass;
@@ -1503,13 +1568,20 @@ struct Runtime {
     }
 
     void create_framebuffers() {
+        if (depth_images.size() != swapchain_views.size()) {
+            throw std::runtime_error(
+                "depth image count does not match swapchain image count");
+        }
         framebuffers.resize(swapchain_views.size());
         for (size_t i = 0; i < swapchain_views.size(); ++i) {
+            const VkImageView attachments[2] = {
+                swapchain_views[i], depth_images[i].view
+            };
             VkFramebufferCreateInfo create{};
             create.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             create.renderPass = render_pass;
-            create.attachmentCount = 1;
-            create.pAttachments = &swapchain_views[i];
+            create.attachmentCount = 2;
+            create.pAttachments = attachments;
             create.width = swapchain_extent.width;
             create.height = swapchain_extent.height;
             create.layers = 1;
@@ -1572,13 +1644,14 @@ struct Runtime {
         pass.framebuffer = framebuffers[image_index];
         pass.renderArea.extent = swapchain_extent;
 
-        VkClearValue clear{};
-        clear.color.float32[0] = 0.018f;
-        clear.color.float32[1] = 0.022f;
-        clear.color.float32[2] = 0.032f;
-        clear.color.float32[3] = 1.0f;
-        pass.clearValueCount = 1;
-        pass.pClearValues = &clear;
+        VkClearValue clear[2]{};
+        clear[0].color.float32[0] = 0.018f;
+        clear[0].color.float32[1] = 0.022f;
+        clear[0].color.float32[2] = 0.032f;
+        clear[0].color.float32[3] = 1.0f;
+        clear[1].depthStencil.depth = 1.0f;
+        pass.clearValueCount = 2;
+        pass.pClearValues = clear;
 
         vkCmdBeginRenderPass(
             command, &pass, VK_SUBPASS_CONTENTS_INLINE);
@@ -1725,6 +1798,10 @@ struct Runtime {
         for (auto framebuffer : framebuffers) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
+        for (auto& image : depth_images) {
+            image.destroy();
+        }
+        depth_images.clear();
         if (pipeline) {
             vkDestroyPipeline(device, pipeline, nullptr);
         }
@@ -1867,6 +1944,7 @@ int main(int argc, char** argv) {
             bundle = &bundle_assets;
             runtime.create_material_resources(bundle_assets);
         }
+        runtime.create_depth_resources();
         runtime.create_pipeline(args.shader_dir, geometry, bundle);
         runtime.create_geometry(geometry);
         runtime.create_framebuffers();
@@ -1928,6 +2006,8 @@ int main(int argc, char** argv) {
             << "  \"material_mode\": " << (runtime.material_mode ? "true" : "false") << ",\n"
             << "  \"bundle_2d_textures\": " << runtime.texture_images.size() << ",\n"
             << "  \"bundle_cube\": " << (!runtime.cube_image.handle ? "false" : "true") << ",\n"
+            << "  \"depth_buffers\": " << runtime.depth_images.size() << ",\n"
+            << "  \"depth_test\": true,\n"
             << "  \"elapsed_ms\": " << elapsed_ms << ",\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";

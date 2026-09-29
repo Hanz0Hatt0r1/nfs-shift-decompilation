@@ -71,6 +71,7 @@ jobs:
           grep -q '"frames_rendered": 3' out/vulkan/runtime/runtime.json
           grep -q '"simulation_steps": 3' out/vulkan/runtime/runtime.json
           grep -q '"material_mode": true' out/vulkan/runtime/runtime.json
+          grep -q '"depth_test": true' out/vulkan/runtime/runtime.json
           grep -q '"bundle_2d_textures": 1' out/vulkan/runtime/runtime.json
           grep -q '"bundle_cube": true' out/vulkan/runtime/runtime.json
           grep -q '"state_layer": "SHIFT.NativeRuntimeState/1"' out/vulkan/runtime/runtime.json
