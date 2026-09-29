@@ -149,7 +149,7 @@ def build_bmw_vulkan_bundle_set(
 
     draw_order_path = out / "bundle_set.paths"
     draw_order_path.write_text(
-        "".join(f"{row['bundle_path']}\\n" for row in draws),
+        "".join(f"{row['bundle_path']}\n" for row in draws),
         encoding="utf-8",
     )
 
