@@ -202,6 +202,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "prepare": "validate retail PE and write probe_manifest.json + attach.gdb",
             "launch": "start retail SHIFT.exe under explicit Wine command",
             "attach": "attach GDB to explicit user-supplied PID using attach.gdb",
+            "provider-only": "omit per-frame and builtin-solver breakpoints; keep provider solve/reset and scalar-reset hooks",
         },
         "fail_closed": [
             "wrong retail SHA-256",
