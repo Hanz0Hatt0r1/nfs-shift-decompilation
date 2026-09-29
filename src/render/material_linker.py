@@ -187,10 +187,27 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     ambiguous_candidates=[]
     if best:
         top=[x for x in fxo if _selection_evidence_key(x) == _selection_evidence_key(best)]
-        pair_ids={(x.get("file"), x.get("program_offset"), x.get("vertex_sha256"), x.get("pair_sha256")) for x in top}
-        # A tie is still ambiguous when byte hashes are unavailable. The
-        # stable file/program offsets are enough to distinguish candidates.
-        ambiguous_candidates=top if len(pair_ids)>1 else []
+        def candidate_identity(x):
+            permutation = x.get("permutation_identity") or {}
+            identity_sha = (
+                permutation.get("identity_sha256")
+                if isinstance(permutation, dict) else None
+            )
+            if identity_sha:
+                return ("permutation", identity_sha)
+            if x.get("pair_sha256"):
+                return ("pair", x.get("pair_sha256"))
+            # When byte hashes are unavailable, stable file/program offsets
+            # remain the only evidence-backed identity.
+            return ("location", x.get("file"), x.get("program_offset"))
+
+        pair_ids={candidate_identity(x) for x in top}
+        representatives={}
+        for x in top:
+            representatives.setdefault(candidate_identity(x), x)
+        ambiguous_candidates=(
+            list(representatives.values()) if len(pair_ids)>1 else []
+        )
         pair_ambiguous=best.get("vertex_pair_selection_status")=="ambiguous"
         selection_status="ambiguous" if ambiguous_candidates or pair_ambiguous else ("unique" if best.get("vertex_pair_valid") else "heuristic")
     shader_pair=None
