@@ -38,20 +38,13 @@ ioff = size - 0xFC
 struct.pack_into("<I", blob, ioff, 0x00401000)
 struct.pack_into("<IIfff f III", blob, ioff + 0xD4, 1, 0x00610000, 1.0, 2.0, 3.0, 10.0, 1, 1, 0)
 
-# Synthetic AISegmentPath using the confirmed FUN_006d0fe0 vtable.
+# Synthetic AISegmentPath using the evidence-backed element layout:
+# num nodes +0x10, length +0x1c, path distance +0x20.
 soff = 0x220
-segment_array_local = 0x2400
-segment_array_addr = base + segment_array_local
 struct.pack_into("<III", blob, soff, 0x00AFCA70, 0, 1)
-struct.pack_into("<IIIf", blob, soff + 0x10, 8, 1, segment_array_addr, 120.0)
-struct.pack_into("<I", blob, segment_array_local - 4, 8)
-for index in range(8):
-    seg_off = segment_array_local + index * 0x24
-    struct.pack_into("<III", blob, seg_off, 0x00AFCA70, 0, 1)
-    struct.pack_into("<IIIf", blob, seg_off + 0x10, 1, 0, 0, float(index + 1))
-    struct.pack_into("<IIff", blob, seg_off + 0x20, 0, 1, 2.0, 1.0)
-struct.pack_into("<IIff", blob, soff + 0x20, 0, 1, 15.0, 20.0)
-struct.pack_into("<If", blob, soff + 0x30, 2, 1.0)
+struct.pack_into("<I", blob, soff + 0x10, 8)
+struct.pack_into("<f", blob, soff + 0x1C, 120.0)
+struct.pack_into("<f", blob, soff + 0x20, 15.0)
 
 # Synthetic AIPolylinePath using the concrete vtable recovered from
 # FUN_006cc390. Its array points at a count-prefixed AIPolyPathNode array.
@@ -157,15 +150,13 @@ import sys
 result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
-assert result["candidate_counts"]["AISegmentPath"] >= 1, result["candidate_counts"]
-with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath_array_links.csv"), newline="", encoding="utf-8") as fh:
+assert result["candidate_counts"]["AISegmentPath"] == 1, result["candidate_counts"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
     segment_rows = list(csv.DictReader(fh))
 assert len(segment_rows) == 1, segment_rows
-assert int(segment_rows[0]["segment_count"]) == 8, segment_rows
-assert segment_rows[0]["segment_count_stable"] == "True", segment_rows
-assert int(segment_rows[0]["segment_sequence"]) == 8, segment_rows
-assert segment_rows[0]["segment_sequence_complete"] == "True", segment_rows
-assert segment_rows[0]["array_expected_count_match"] == "True", segment_rows
+assert int(segment_rows[0]["nodes"]) == 8, segment_rows
+assert float(segment_rows[0]["length"]) == 120.0, segment_rows
+assert float(segment_rows[0]["path_dist"]) == 15.0, segment_rows
 assert result["candidate_counts"]["Incident.PathOwner"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]

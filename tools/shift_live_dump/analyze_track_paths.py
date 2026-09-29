@@ -37,10 +37,12 @@ INCIDENT = {
     "roaming": (0xf8, "I"),
 }
 SEGMENT = {
-    "nodes": (0x10, "I"), "side": (0x14, "i"), "array": (0x18, "I"),
-    "length": (0x1c, "f"), "cyclic": (0x20, "I"), "narrow": (0x24, "I"),
-    "spacing": (0x28, "f"), "path_dist": (0x2c, "f"), "current": (0x30, "I"),
-    "edge_step": (0x34, "f"),
+    # FUN_006d0f00 exposes only these AISegmentPath fields. The bytes at
+    # +0x14/+0x18 are initialized by the constructor but are not named by
+    # the recovered reflection metadata, so they remain intentionally opaque.
+    "nodes": (0x10, "I"),
+    "length": (0x1c, "f"),
+    "path_dist": (0x20, "f"),
 }
 POLY = {
     "nodes": (0x10, "I"), "array": (0x14, "I"), "length": (0x18, "f"),
@@ -214,18 +216,18 @@ def check_segment(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
         return None
     if not game_vtable(vt, mm, starts):
         return None
-    am = writable(d["array"], mm, starts)
-    if not am or not 1 <= d["nodes"] <= 1000000:
+    if not 1 <= d["nodes"] <= 1000000:
         return None
-    if d["side"] not in (-1, 0, 1, 2, 3) or d["cyclic"] not in (0, 1) or d["narrow"] not in (0, 1):
+    if not finite(d["length"]) or not finite(d["path_dist"]):
         return None
-    if not all(finite(d[k]) for k in ("length", "spacing", "path_dist", "edge_step")):
+    if not (0 < d["length"] <= 1e7):
         return None
-    if not (0 < d["length"] <= 1e7 and 0 < d["spacing"] <= 1e5):
-        return None
-    if not 0 <= d["current"] < d["nodes"] + 1:
-        return None
-    return {"address": addr, "vtable": vt, "vtable_mapping": game_vtable(vt, mm, starts), **d, "array_mapping": am}
+    return {
+        "address": addr,
+        "vtable": vt,
+        "vtable_mapping": game_vtable(vt, mm, starts),
+        **d,
+    }
 
 
 def check_poly_node(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
@@ -1386,12 +1388,6 @@ def main() -> int:
     path_start_node_links = resolve_path_start_nodes(
         candidates["Path"], sns, idx, mm
     )
-    validate_prefixed_array_link(
-        candidates["AISegmentPath"], sns, idx,
-        KNOWN_VTABLES["AISegmentPath"], 0x24,
-        count_field="segment_count", sequence_field="segment_sequence",
-    )
-
     polyline_nodes = extract_polyline_nodes(
         candidates["AIPolylinePath"], sns[0], idx[0]
     )
@@ -1506,10 +1502,6 @@ def main() -> int:
         "aiw_runtime_sequences": aiw_sequences,
         "polyline_node_count": len(polyline_nodes),
         "path_start_node_link_count": len(path_start_node_links),
-        "segment_array_link_count": sum(
-            1 for row in candidates["AISegmentPath"]
-            if row.get("array_link_available")
-        ),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
         "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
         "notes": [
@@ -1529,13 +1521,6 @@ def main() -> int:
         "source_stride", "source_stride_count", "mapping_start",
         "mapping_end", "mapping_perms", "target_samples",
     ])
-    write_csv(out / "aisegmentpath_array_links.csv", candidates["AISegmentPath"], [
-        "address", "nodes", "array", "segment_count", "segment_count_stable",
-        "segment_sequence", "segment_sequence_complete", "array_expected_count",
-        "array_expected_count_match", "array_element_vtable",
-        "array_element_stride", "array_link_available",
-    ])
-
     write_csv(out / "path_start_node_links.csv", path_start_node_links, [
         "path_address", "start_node", "target_vtable", "target_vtable_match",
         "link_type", "array_count", "array_count_stable", "node_sequence",
