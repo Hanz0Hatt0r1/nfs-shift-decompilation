@@ -18,6 +18,8 @@ For each candidate edge it records the path owner on both endpoints, array owner
 
 `--require-stride` requires `runtime_delta == node_index_delta * 0x24` for every emitted candidate.
 
+`--require-path-polyline-join` requires every normalized runtime edge candidate to be backed by an exact `Path.StartNode == AIPolylinePath.array` join for its source array and path owner.
+
 These are evidence gates only. A stride-consistent candidate is a structural memory-layout consistency check, not a semantic claim about how the game drives the path.
 
 ## Outputs
