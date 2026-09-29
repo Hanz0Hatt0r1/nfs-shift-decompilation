@@ -135,6 +135,8 @@ assert seq[0]["first_waypoint"] == 0, seq
 assert seq[0]["last_waypoint"] == 3, seq
 assert seq[0]["matched_waypoints"] == 4, seq
 assert seq[0]["stride"] == 0x20, seq
+assert seq[0]["runtime_root"] == 0x002004f0, seq
+assert seq[0]["position_offset"] == 0x10, seq
 print("track path AIW correlation test: PASS")
 PY
 
