@@ -768,20 +768,33 @@ def resolve_path_start_nodes(
             if blob is None:
                 continue
             first_vtables.append(struct.unpack_from("<I", blob)[0])
+
             count_blob = _read_virtual(snap, idx, starts, target - 4, 4)
             if count_blob is None:
                 continue
             count = struct.unpack_from("<I", count_blob)[0]
             counts.append(count)
+
+            check_count = min(count, 256)
             seq = 0
-            for n in range(min(count, 256)):
-                vt_blob = _read_virtual(snap, idx, starts, target + n * 0x24, 4)
-                if vt_blob is None:
-                    break
-                vt = struct.unpack_from("<I", vt_blob)[0]
-                if vt != KNOWN_VTABLES["AIPolyPathNode"]:
-                    break
-                seq += 1
+            loc = _region_record_for_address(target, idx, starts)
+            if loc and check_count > 0:
+                st, rec = loc
+                wanted = check_count * 0x24
+                within = target - st
+                if within + wanted <= int(rec["size"]):
+                    nodes_blob = _read_virtual(
+                        snap, idx, starts, target, wanted
+                    )
+                    if nodes_blob is not None:
+                        for n in range(check_count):
+                            off = n * 0x24
+                            if off + 4 > len(nodes_blob):
+                                break
+                            vt = struct.unpack_from("<I", nodes_blob, off)[0]
+                            if vt != KNOWN_VTABLES["AIPolyPathNode"]:
+                                break
+                            seq += 1
             sequences.append(seq)
         row = {
             "path_address": int(path_row["address"]),
