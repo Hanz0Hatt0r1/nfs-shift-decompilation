@@ -54,6 +54,32 @@ def build_vehicle_physics_selector_source_admission() -> dict[str, Any]:
             "capacity_gate": "selector context+0x1c < selector context+0x28",
             "descriptor_contract": "SHIFT.VehiclePhysicsSelectorDescriptorPopulation/1",
         },
+        "execution_model": {
+            "function": "evaluate_selector_source_admission",
+            "inputs": [
+                "owner+0x4f0",
+                "uint32 source_record+0x10",
+                "selector context+0x1c",
+                "selector context+0x28",
+            ],
+            "outputs": [
+                "selector_key",
+                "bit_mask",
+                "mask_hit",
+                "wrapper_called",
+                "capacity_available",
+                "population_succeeded",
+                "owner+0x4f0 after transition",
+                "selector context+0x1c after transition",
+            ],
+            "ordering": [
+                "derive low-nibble selector key",
+                "test owner mask bit",
+                "invoke descriptor wrapper on mask hit",
+                "clear the mask bit on mask hit",
+                "apply independent descriptor capacity gate",
+            ],
+        },
         "evidence": [
             "thunk_FUN_00d758d0 derives a selector bit from source_record+0x10 low nibble.",
             "The corresponding bit must be set in owner+0x4f0 before the source record is admitted into DAT_00bbc600.",
@@ -66,6 +92,62 @@ def build_vehicle_physics_selector_source_admission() -> dict[str, Any]:
             "The low-nibble key is recorded as an observed routing key, not a semantic vehicle category.",
             "No claim is made that mask admission alone guarantees successful descriptor population when the selector capacity gate is exhausted.",
         ],
+    }
+
+
+def evaluate_selector_source_admission(
+    owner_mask: int,
+    source_token: int,
+    current_count: int,
+    capacity: int,
+) -> dict[str, Any]:
+    """Evaluate the observed admission/mask/capacity state transition.
+
+    This is an executable model of the ordering already established by the
+    source-backed contract:
+      1. derive the low-nibble selector key from source_record+0x10;
+      2. require the corresponding owner+0x4f0 bit;
+      3. call the descriptor wrapper on a mask hit;
+      4. clear the hit bit;
+      5. inside the wrapper, populate only while count < capacity.
+
+    It deliberately exposes no inferred gameplay/provider semantics.
+    """
+    if owner_mask < 0:
+        raise ValueError("owner_mask must be >= 0")
+    if source_token < 0:
+        raise ValueError("source_token must be >= 0")
+    if current_count < 0:
+        raise ValueError("current_count must be >= 0")
+    if capacity < 0:
+        raise ValueError("capacity must be >= 0")
+
+    selector_key = source_token & 0xF
+    bit_mask = 1 << selector_key
+    mask_hit = bool(owner_mask & bit_mask)
+    wrapper_called = mask_hit
+    capacity_available = current_count < capacity
+    population_succeeded = wrapper_called and capacity_available
+
+    # The retail branch clears the same bit after invoking the descriptor
+    # wrapper, regardless of whether the wrapper's independent capacity gate
+    # accepts the record.
+    next_owner_mask = owner_mask ^ bit_mask if wrapper_called else owner_mask
+    next_count = current_count + 1 if population_succeeded else current_count
+
+    return {
+        "source_token": source_token,
+        "selector_key": selector_key,
+        "bit_mask": bit_mask,
+        "mask_hit": mask_hit,
+        "wrapper_called": wrapper_called,
+        "capacity_available": capacity_available,
+        "population_succeeded": population_succeeded,
+        "mask_cleared": wrapper_called,
+        "owner_mask_before": owner_mask,
+        "owner_mask_after": next_owner_mask,
+        "count_before": current_count,
+        "count_after": next_count,
     }
 
 
@@ -87,4 +169,8 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-__all__ = ["FORMAT", "build_vehicle_physics_selector_source_admission"]
+__all__ = [
+    "FORMAT",
+    "build_vehicle_physics_selector_source_admission",
+    "evaluate_selector_source_admission",
+]
