@@ -39,3 +39,25 @@ The Linux target does not require EA services, online functionality, DRM, login/
 7. Expand native depth, blend, sampler-state and shader-resource execution, then replace the bounded frame loop with the native game loop/state machine.
 
 The renderer remains downstream of normalized IR; original BFF parsing stays outside the native executable.
+
+
+## Phase 526 multi-draw boundary
+
+The runtime accepts `--bundle-set DIR` only when both
+`SHIFT.BMWVulkanBundleSet/1` and
+`SHIFT.BMWVulkanBundleSetPrepare/1` are ready. The ordered
+`bundle_set.paths` sidecar is checked against both draw counts and cannot
+contain absolute or parent-traversal paths.
+
+Each prepared child owns independent Vulkan state:
+
+- vertex/index buffers and draw range;
+- VS/PS constant buffers;
+- sampled 2D/cube images and samplers;
+- descriptor set layouts/pool/sets;
+- SPIR-V shader modules;
+- pipeline layout and graphics pipeline.
+
+All child draws share the swapchain, render pass, depth attachments and frame
+synchronization and are submitted in recorded draw order inside one render
+pass. The original `--bundle` mode uses the same path with one material draw.

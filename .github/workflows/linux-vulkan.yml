@@ -78,6 +78,27 @@ jobs:
           grep -q '"physics_workspace_ready": true' out/vulkan/runtime/runtime.json
           grep -q '"physics_workspace_scalars": 40' out/vulkan/runtime/runtime.json
           grep -q '"status": "ok"' out/vulkan/runtime/runtime.json
+      - name: Native Linux runtime multi-draw frame loop
+        run: |
+          set -o pipefail
+          xvfb-run -a native_runtime/build/shift_runtime \
+            --bundle-set out/vulkan/bundle/bundle_set \
+            --shader-dir native_runtime/build/shaders \
+            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --frames 3 | tee out/vulkan/runtime/multidraw.json
+      - name: Assert native multi-draw runtime output
+        run: |
+          grep -q '"format": "SHIFT.NativeRuntimeFrameLoop/1"' out/vulkan/runtime/multidraw.json
+          grep -q '"frames_rendered": 3' out/vulkan/runtime/multidraw.json
+          grep -q '"simulation_steps": 3' out/vulkan/runtime/multidraw.json
+          grep -q '"material_mode": true' out/vulkan/runtime/multidraw.json
+          grep -q '"bundle_set_mode": true' out/vulkan/runtime/multidraw.json
+          grep -q '"material_draws": 2' out/vulkan/runtime/multidraw.json
+          grep -q '"bundle_2d_textures": 2' out/vulkan/runtime/multidraw.json
+          grep -q '"bundle_cube": true' out/vulkan/runtime/multidraw.json
+          grep -q '"depth_test": true' out/vulkan/runtime/multidraw.json
+          grep -q '"physics_workspace_scalars": 40' out/vulkan/runtime/multidraw.json
+          grep -q '"status": "ok"' out/vulkan/runtime/multidraw.json
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
