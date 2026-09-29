@@ -118,4 +118,4 @@ def test_native_runtime_uses_per_swapchain_depth_buffers():
     assert "depthWriteEnable = VK_TRUE" in source
     assert "VK_COMPARE_OP_LESS_OR_EQUAL" in source
     assert "clear[1].depthStencil.depth = 1.0f" in source
-    assert '"depth_test": true' in source
+    assert '\\"depth_test\\": true' in source
