@@ -9,7 +9,21 @@ from pathlib import Path
 
 FORMAT = "SHIFT-LIVE-MEMORY-TRACK-PATH-ANALYSIS/1"
 VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
-KNOWN_VTABLES = {"AISegmentPath": 0x00AFCA70}
+# Exact vtables recovered from SHIFT.exe.c.
+#
+# AISegmentPath:
+#   FUN_006d0fe0 writes PTR_FUN_00afca70 in the constructor.
+# AIPolylinePath:
+#   FUN_006cc900 is its constructor and writes PTR_FUN_00afc678;
+#   its reflection metadata is emitted by FUN_006ccb20.
+# AIPolyPathNode:
+#   FUN_006cc730 allocates 0x24-byte node elements and assigns
+#   PTR_FUN_00afbfa8 to each element.
+KNOWN_VTABLES = {
+    "AISegmentPath": 0x00AFCA70,
+    "AIPolylinePath": 0x00AFC678,
+    "AIPolyPathNode": 0x00AFBFA8,
+}
 
 PATH = {
     "tx": (0x10, "f"), "ty": (0x14, "f"), "outside": (0x18, "f"),
@@ -32,6 +46,16 @@ POLY = {
     "nodes": (0x10, "I"), "array": (0x14, "I"), "length": (0x18, "f"),
     "width": (0x1c, "f"), "cyclic": (0x20, "I"), "spacing": (0x24, "f"),
     "default_width": (0x28, "f"),
+}
+# AIPolyPathNode is allocated as a 0x24-byte element by FUN_006cc730.
+# FUN_006cc600 consumes its two-dimensional position/tangent payload and
+# cumulative path distance at +0x20.
+POLY_NODE = {
+    "x": (0x10, "f"),
+    "y": (0x14, "f"),
+    "dx": (0x18, "f"),
+    "dy": (0x1c, "f"),
+    "distance": (0x20, "f"),
 }
 
 SIZE = {"B": 1, "I": 4, "i": 4, "f": 4}
@@ -204,10 +228,39 @@ def check_segment(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     return {"address": addr, "vtable": vt, "vtable_mapping": game_vtable(vt, mm, starts), **d, "array_mapping": am}
 
 
+def check_poly_node(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
+    d = fields(blob, POLY_NODE)
+    vt = read(blob, 0, "I")
+    if (
+        vt != KNOWN_VTABLES["AIPolyPathNode"]
+        or any(v is None for v in d.values())
+        or not game_vtable(vt, mm, starts)
+    ):
+        return None
+    if not all(finite(d[k], 1e7) for k in ("x", "y", "dx", "dy", "distance")):
+        return None
+    if d["distance"] < 0:
+        return None
+    return {
+        "address": addr,
+        "vtable": vt,
+        "vtable_mapping": game_vtable(vt, mm, starts),
+        **d,
+    }
+
+
 def check_poly(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     d = fields(blob, POLY)
     vt = read(blob, 0, "I")
-    if vt is None or any(v is None for v in d.values()) or not game_vtable(vt, mm, starts):
+    # AIPolylinePath has a recovered concrete vtable. Accepting any executable
+    # SHIFT.exe vtable here produced large false-positive families from
+    # unrelated classes that happened to expose compatible float/integer
+    # payloads.
+    if (
+        vt != KNOWN_VTABLES["AIPolylinePath"]
+        or any(v is None for v in d.values())
+        or not game_vtable(vt, mm, starts)
+    ):
         return None
     am = writable(d["array"], mm, starts)
     if not am or not 2 <= d["nodes"] <= 1000000 or d["cyclic"] not in (0, 1):
@@ -228,21 +281,30 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
     each candidate is exposed to the structure validators, so scan cost and
     memory use stay proportional to the chunk instead of the full capture.
     """
-    found = {"Path": [], "Incident.PathOwner": [], "AISegmentPath": [], "AIPolylinePath": []}
+    found = {
+        "Path": [],
+        "Incident.PathOwner": [],
+        "AISegmentPath": [],
+        "AIPolylinePath": [],
+        "AIPolyPathNode": [],
+    }
     checks = (
         ("Path", check_path),
         ("Incident.PathOwner", check_incident),
         ("AISegmentPath", check_segment),
         ("AIPolylinePath", check_poly),
+        ("AIPolyPathNode", check_poly_node),
     )
     view = memoryview(blob)
     limit = max(0, len(view) - 3)
     known_segment_vtable = KNOWN_VTABLES["AISegmentPath"]
+    known_poly_vtable = KNOWN_VTABLES["AIPolylinePath"]
+    known_poly_node_vtable = KNOWN_VTABLES["AIPolyPathNode"]
     for off in range(0, limit, 4):
         vtable = read(view, off, "I")
         if vtable is None:
             continue
-        if vtable != known_segment_vtable:
+        if vtable not in (known_segment_vtable, known_poly_vtable, known_poly_node_vtable):
             if not (VT_RANGE[0] <= vtable < VT_RANGE[1]):
                 continue
             if not game_vtable(vtable, mm, starts):
@@ -263,6 +325,7 @@ def scan_file(path: Path, start: int, mm: list[dict], starts: list[int]) -> dict
         "Incident.PathOwner": {},
         "AISegmentPath": {},
         "AIPolylinePath": {},
+        "AIPolyPathNode": {},
     }
     carry = b""
     base = 0
@@ -428,6 +491,169 @@ def windows_for_path_roots(rows: list[dict], radius: int, top: int) -> list[dict
         })
     return out
 
+
+def _region_record_for_address(
+    address: int,
+    region_index: dict[int, dict],
+    starts: list[int],
+) -> tuple[int, dict] | None:
+    i = bisect_right(starts, address) - 1
+    if i < 0:
+        return None
+    st = starts[i]
+    rec = region_index.get(st)
+    if rec is None:
+        return None
+    if st <= address < st + int(rec["size"]):
+        return st, rec
+    return None
+
+
+def _read_virtual(
+    snapshot: Path,
+    region_index: dict[int, dict],
+    starts: list[int],
+    address: int,
+    size: int,
+) -> bytes | None:
+    if address < 0 or size <= 0:
+        return None
+    loc = _region_record_for_address(address, region_index, starts)
+    if loc is None:
+        return None
+    st, rec = loc
+    within = address - st
+    if within + size > int(rec["size"]):
+        return None
+    path = snapshot / rec["file"]
+    try:
+        with path.open("rb") as fh:
+            fh.seek(within)
+            data = fh.read(size)
+    except OSError:
+        return None
+    return data if len(data) == size else None
+
+
+def validate_polyline_array_links(
+    candidates: list[dict],
+    snapshots: list[Path],
+    indexes: list[dict[int, dict]],
+) -> None:
+    """Resolve AIPolylinePath.array into its count-prefixed AIPolyPathNode array.
+
+    FUN_006cc730 allocates [count][0x24-byte AIPolyPathNode...], stores the
+    pointer to the first element in AIPolylinePath+0x14, and writes the count
+    immediately before that pointer. This gives an independent container to
+    node-array relation that is much stronger than interpreting fields in
+    isolation.
+
+    The validation reads one compact node-array window per snapshot/candidate
+    whenever the array is fully contained in one mapped region. This avoids
+    opening a file once per node in large captures.
+    """
+    if not candidates or not snapshots:
+        return
+    region_starts = [sorted(idx.keys()) for idx in indexes]
+    for row in candidates:
+        array = int(row.get("array", 0))
+        nodes = int(row.get("nodes", 0))
+        if array < 4 or nodes < 1:
+            row.update({
+                "array_count": None,
+                "array_count_match": False,
+                "array_node_vtable": None,
+                "array_node_vtable_match": False,
+                "array_node_sequence": 0,
+                "array_link_available": False,
+            })
+            continue
+
+        counts = []
+        first_vtables = []
+        sequence_lengths = []
+        for snap, idx, starts in zip(snapshots, indexes, region_starts):
+            loc = _region_record_for_address(array - 4, idx, starts)
+            compact = None
+            if loc:
+                st, rec = loc
+                max_nodes = min(max(nodes, 1), 64)
+                wanted = 4 + max_nodes * 0x24
+                within = (array - 4) - st
+                if within + wanted <= int(rec["size"]):
+                    compact = _read_virtual(snap, idx, starts, array - 4, wanted)
+            if compact is not None and len(compact) >= 8:
+                count = struct.unpack_from("<I", compact, 0)[0]
+                first_vt = struct.unpack_from("<I", compact, 4)[0]
+                counts.append(count)
+                first_vtables.append(first_vt)
+                seq = 0
+                max_nodes = min(count, 64)
+                for n in range(max_nodes):
+                    off = 4 + n * 0x24
+                    if off + 4 > len(compact):
+                        break
+                    vt = struct.unpack_from("<I", compact, off)[0]
+                    if vt != KNOWN_VTABLES["AIPolyPathNode"]:
+                        break
+                    seq += 1
+                sequence_lengths.append(seq)
+                continue
+
+            count_blob = _read_virtual(snap, idx, starts, array - 4, 4)
+            first_blob = _read_virtual(snap, idx, starts, array, 4)
+            if count_blob is None or first_blob is None:
+                continue
+            count = struct.unpack_from("<I", count_blob)[0]
+            first_vt = struct.unpack_from("<I", first_blob)[0]
+            counts.append(count)
+            first_vtables.append(first_vt)
+            seq = 0
+            for n in range(min(count, 64)):
+                vt_blob = _read_virtual(snap, idx, starts, array + n * 0x24, 4)
+                if vt_blob is None:
+                    break
+                vt = struct.unpack_from("<I", vt_blob)[0]
+                if vt != KNOWN_VTABLES["AIPolyPathNode"]:
+                    break
+                seq += 1
+            sequence_lengths.append(seq)
+
+        if not counts:
+            row.update({
+                "array_count": None,
+                "array_count_match": None,
+                "array_node_vtable": None,
+                "array_node_vtable_match": None,
+                "array_node_sequence": 0,
+                "array_link_available": False,
+            })
+            continue
+
+        count = Counter(counts).most_common(1)[0][0]
+        first_vt = Counter(first_vtables).most_common(1)[0][0]
+        seq = max(sequence_lengths) if sequence_lengths else 0
+        row.update({
+            "array_count": count,
+            "array_count_match": count == nodes,
+            "array_node_vtable": first_vt,
+            "array_node_vtable_match": first_vt == KNOWN_VTABLES["AIPolyPathNode"],
+            "array_node_sequence": seq,
+            "array_link_available": True,
+        })
+
+        target_loc = _region_record_for_address(array, indexes[0], region_starts[0])
+        if target_loc:
+            st, rec = target_loc
+            row["array_mapping_start"] = st
+            row["array_mapping_end"] = st + int(rec["size"])
+            row["array_mapping_perms"] = rec.get("perms", "")
+        else:
+            row["array_mapping_start"] = None
+            row["array_mapping_end"] = None
+            row["array_mapping_perms"] = None
+        row["node_array_bytes"] = count * 0x24
+        row["node_array_end"] = array + count * 0x24
 
 def clusters(rows: list[dict], gap: int = 0x10000) -> list[dict]:
     rows = sorted(rows, key=lambda r: r["target"])
@@ -672,6 +898,10 @@ def _position_key(x: float, y: float, z: float, tolerance: float) -> tuple[int, 
     return (_quantize(x, tolerance), _quantize(y, tolerance), _quantize(z, tolerance))
 
 
+def _position_key2(x: float, y: float, tolerance: float) -> tuple[int, int]:
+    return (_quantize(x, tolerance), _quantize(y, tolerance))
+
+
 def correlate_aiw_runtime(
     sns: list[Path],
     indexes: list[dict[int, dict]],
@@ -679,6 +909,8 @@ def correlate_aiw_runtime(
     scan_ranges: list[tuple[int, int]],
     tolerance: float,
     runtime_roots: list[int] | None = None,
+    runtime_nodes: list[dict] | None = None,
+    node_plane: str = "xz",
 ) -> tuple[list[dict], list[dict]]:
     """Find AIW waypoint positions in the selected runtime capture ranges."""
     if not aiw_docs:
@@ -709,11 +941,92 @@ def correlate_aiw_runtime(
             for dz in (-1, 0, 1)
         ]
 
+    node_pos_index: dict[tuple[int, int], list[tuple[int, int, dict]]] = {}
+    for doc_id, doc in enumerate(aiw_docs):
+        for wp in doc["waypoints"]:
+            if None in (wp["x"], wp["y"], wp["z"]):
+                continue
+            if node_plane == "xz":
+                coords = (wp["x"], wp["z"])
+            elif node_plane == "xy":
+                coords = (wp["x"], wp["y"])
+            else:
+                coords = (wp["y"], wp["z"])
+            node_pos_index.setdefault(
+                _position_key2(coords[0], coords[1], tolerance),
+                [],
+            ).append((doc_id, wp["index"], wp))
+
+    node_candidate_keys = {}
+    for key in node_pos_index:
+        node_candidate_keys[key] = [
+            (key[0] + dx, key[1] + dy)
+            for dx in (-1, 0, 1)
+            for dy in (-1, 0, 1)
+        ]
+
     matches: list[dict] = []
     seen: set[tuple[str, int, int]] = set()
+
+    node_matches = False
+    for row in runtime_nodes or []:
+        if row.get("stable_snapshots") is not None and int(row["stable_snapshots"]) != len(sns):
+            continue
+        address = int(row["address"])
+        if scan_ranges and not any(a <= address < b for a, b in scan_ranges):
+            continue
+        nx, ny = row.get("x"), row.get("y")
+        if not all(isinstance(v, (int, float)) and math.isfinite(float(v)) for v in (nx, ny)):
+            continue
+        key = _position_key2(float(nx), float(ny), tolerance)
+        for nearby in node_candidate_keys.get(key, ()):
+            for doc_id, wp_index, wp in node_pos_index.get(nearby, ()):
+                if node_plane == "xz":
+                    wx, wz = wp["x"], wp["z"]
+                    rx, rz = float(nx), float(ny)
+                    runtime_xyz = (rx, None, rz)
+                elif node_plane == "xy":
+                    wx, wz = wp["x"], wp["y"]
+                    rx, rz = float(nx), float(ny)
+                    runtime_xyz = (rx, rz, None)
+                else:
+                    wx, wz = wp["y"], wp["z"]
+                    rx, rz = float(nx), float(ny)
+                    runtime_xyz = (None, rx, rz)
+                plane_distance = math.hypot(rx - wx, rz - wz)
+                if plane_distance > tolerance:
+                    continue
+                ident = (wp["source"], wp_index, address)
+                if ident in seen:
+                    continue
+                seen.add(ident)
+                node_matches = True
+                node_distance = row.get("distance")
+                distance_delta = None
+                if isinstance(node_distance, (int, float)) and math.isfinite(float(node_distance)):
+                    distance_delta = float(node_distance) - float(wp.get("lap_distance", 0.0))
+                matches.append({
+                    "aiw_source": wp["source"],
+                    "waypoint_index": wp_index,
+                    "branch_id": wp["branch_id"],
+                    "runtime_address": address,
+                    "region_start": int(row.get("region_start", address)),
+                    "region_offset": address - int(row.get("region_start", address)),
+                    "distance": plane_distance,
+                    "x": runtime_xyz[0],
+                    "y": runtime_xyz[1],
+                    "z": runtime_xyz[2],
+                    "runtime_source": "AIPolyPathNode",
+                    "position_plane": node_plane,
+                    "lap_distance": node_distance,
+                    "lap_distance_delta": distance_delta,
+                })
+
     for st in sorted(common):
         rec = indexes[0][st]
         size = int(rec["size"])
+        if node_matches:
+            continue
         if scan_ranges and not any(max(st, a) < min(st + size, b) for a, b in scan_ranges):
             continue
         blob = (sns[0] / rec["file"]).read_bytes()
@@ -753,6 +1066,10 @@ def correlate_aiw_runtime(
                             "region_offset": off,
                             "distance": distance,
                             "x": x, "y": y, "z": z,
+                            "runtime_source": "float3",
+                            "position_plane": "xyz",
+                            "lap_distance": None,
+                            "lap_distance_delta": None,
                         })
 
     sequences: list[dict] = []
@@ -877,6 +1194,10 @@ def main() -> int:
         "--aiw-position-tolerance", type=float, default=0.05,
         help="maximum position difference in world units (default 0.05)",
     )
+    ap.add_argument(
+        "--aiw-node-plane", choices=("xz", "xy", "yz"), default="xz",
+        help="2D plane used when correlating AIPolyPathNode candidates with AIW positions (default: xz)",
+    )
     args = ap.parse_args()
     if min(args.top, args.target_top, args.path_root_top) <= 0 or min(
         args.radius_kib, args.path_root_radius_kib, args.aiw_root_radius_kib
@@ -896,7 +1217,15 @@ def main() -> int:
 
     out = args.out or args.root / "track_path_analysis"
     out.mkdir(parents=True, exist_ok=True)
-    candidates = {k: [] for k in ("Path", "Incident.PathOwner", "AISegmentPath", "AIPolylinePath")}
+    candidates = {
+        k: [] for k in (
+            "Path",
+            "Incident.PathOwner",
+            "AISegmentPath",
+            "AIPolylinePath",
+            "AIPolyPathNode",
+        )
+    }
 
     common_sorted = sorted(common)
     for index, st in enumerate(common_sorted, 1):
@@ -917,7 +1246,8 @@ def main() -> int:
                         0x28 if name == "Path"
                         else 0xFC if name == "Incident.PathOwner"
                         else 0x38 if name == "AISegmentPath"
-                        else 0x2C
+                        else 0x2C if name == "AIPolylinePath"
+                        else 0x24
                     )
                     reference_handle = handles[0]
                     reference_handle.seek(off)
@@ -942,6 +1272,12 @@ def main() -> int:
                 handle.close()
 
     path_root_candidates = list(candidates["Path"])
+    aiw_node_candidates = list(candidates["AIPolyPathNode"])
+
+    # Resolve exact AIPolylinePath -> count-prefixed AIPolyPathNode arrays
+    # after the global scan because the target array can live in another
+    # selected memory region.
+    validate_polyline_array_links(candidates["AIPolylinePath"], sns, idx)
     for k in candidates:
         candidates[k] = sorted(
             candidates[k],
@@ -998,7 +1334,7 @@ def main() -> int:
         print(f"[aiw] sources={len(aiw_docs)} ranges={len(corr_ranges)}", flush=True)
         aiw_matches, aiw_sequences = correlate_aiw_runtime(
             sns, idx, aiw_docs, corr_ranges, args.aiw_position_tolerance,
-            args.runtime_roots,
+            args.runtime_roots, aiw_node_candidates, args.aiw_node_plane,
         )
         print(
             f"[aiw] matches={len(aiw_matches)} sequences={len(aiw_sequences)}",

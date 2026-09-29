@@ -45,8 +45,33 @@ struct.pack_into("<IIIf", blob, soff + 0x10, 8, 1, 0x00610800, 120.0)
 struct.pack_into("<IIff", blob, soff + 0x20, 0, 1, 15.0, 20.0)
 struct.pack_into("<If", blob, soff + 0x30, 2, 1.0)
 
-# Runtime AI nodes with the same positions as a tiny synthetic AIW.
-for index, pos in enumerate(((1.0, 2.0, 3.0), (5.0, 2.0, 3.0), (9.0, 2.0, 3.0), (13.0, 2.0, 3.0))):
+# Synthetic AIPolylinePath using the concrete vtable recovered from
+# FUN_006cc390. Its array points at a count-prefixed AIPolyPathNode array.
+poff = 0x300
+poly_array_local = 0x2000
+poly_array_addr = base + poly_array_local
+struct.pack_into("<III", blob, poff, 0x00AFC678, 0, 1)
+struct.pack_into("<IIffIff", blob, poff + 0x10, 4, poly_array_addr, 160.0, 10.0, 1, 2.5, 12.0)
+struct.pack_into("<I", blob, poly_array_local - 4, 4)
+
+false_poly_off = 0x380
+struct.pack_into("<III", blob, false_poly_off, 0x00AECCF8, 0, 1)
+struct.pack_into("<IIffIff", blob, false_poly_off + 0x10, 8, 0x00610800, 160.0, 10.0, 1, 2.5, 12.0)
+
+# AIPolyPathNode array. The node's 2D x/y corresponds to AIW x/z.
+node_base = poly_array_local
+for index, x in enumerate((1.0, 5.0, 9.0, 13.0)):
+    noff = node_base + index * 0x24
+    struct.pack_into("<III", blob, noff, 0x00AFBFA8, 0, 1)
+    struct.pack_into("<fffff", blob, noff + 0x10, x, 3.0, 1.0, 0.0, float(index * 4))
+
+# Same shape with a generic executable vtable must not count.
+false_node_off = node_base + 4 * 0x24
+struct.pack_into("<III", blob, false_node_off, 0x00AECCF8, 0, 1)
+struct.pack_into("<fffff", blob, false_node_off + 0x10, 17.0, 3.0, 1.0, 0.0, 16.0)
+
+# Keep the original generic float3 correlation fixture too.
+for index, pos in enumerate(((101.0, 2.0, 3.0), (105.0, 2.0, 3.0), (109.0, 2.0, 3.0), (113.0, 2.0, 3.0))):
     struct.pack_into("<fff", blob, 0x500 + index * 0x20, *pos)
 
 for n in range(2):
@@ -75,6 +100,7 @@ for n in range(2):
     (snap / "manifest.json").write_text(json.dumps(manifest) + "\n", encoding="utf-8")
     (snap / "maps.txt").write_text(
         "00400000-00b81000 r-xp 0 00:00 0 /game/SHIFT.exe\n"
+        "00200000-00601000 rwxp 0 00:00 0\n"
         "00610000-00611000 rwxp 0 00:00 0\n"
         "00610800-00611800 rwxp 0 00:00 0\n",
         encoding="utf-8",
@@ -98,6 +124,18 @@ filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AISegmentPath"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["Incident.PathOwner"] >= 1, result["candidate_counts"]
+assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
+assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"), newline="", encoding="utf-8") as fh:
+    poly_rows = list(csv.DictReader(fh))
+assert len(poly_rows) == 1, poly_rows
+assert int(poly_rows[0]["vtable"]) == 0x00AFC678, poly_rows
+assert int(poly_rows[0]["array"]) == 0x00202000, poly_rows
+assert int(poly_rows[0]["array_count"]) == 4, poly_rows
+assert poly_rows[0]["array_count_match"] == "True", poly_rows
+assert int(poly_rows[0]["array_node_vtable"]) == 0x00AFBFA8, poly_rows
+assert poly_rows[0]["array_node_vtable_match"] == "True", poly_rows
+assert int(poly_rows[0]["array_node_sequence"]) == 4, poly_rows
 assert result["stable_external_pointer_count"] >= 2, result["stable_external_pointer_count"]
 assert result["pointer_target_clusters"], "expected pointer clusters"
 assert result["next_capture_windows"], "expected capture windows"
@@ -154,7 +192,7 @@ wp_branchID=(0)
 WP_PTRS=(2,0,-1,0)
 AIW
 
-python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-aiw"   --top 20 --target-top 8 --skip-pointer-analysis   --aiw "$tmp/test.aiw" --aiw-range 0x00200500:0x80 --runtime-root 0x002004f0   >/tmp/track_path_aiw_test.out
+python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-aiw"   --top 20 --target-top 8 --skip-pointer-analysis   --aiw "$tmp/test.aiw" --aiw-range 0x00202000:0x100 --runtime-root 0x00201ff0   --aiw-node-plane xz >/tmp/track_path_aiw_test.out
 cat /tmp/track_path_aiw_test.out
 
 python3 - "$tmp/out-aiw/track_path_analysis.json" <<'PY'
@@ -171,8 +209,8 @@ assert seq, "expected AIW runtime sequence"
 assert seq[0]["first_waypoint"] == 0, seq
 assert seq[0]["last_waypoint"] == 3, seq
 assert seq[0]["matched_waypoints"] == 4, seq
-assert seq[0]["stride"] == 0x20, seq
-assert seq[0]["runtime_root"] == 0x002004f0, seq
+assert seq[0]["stride"] == 0x24, seq
+assert seq[0]["runtime_root"] == 0x00201ff0, seq
 assert seq[0]["position_offset"] == 0x10, seq
 print("track path AIW correlation test: PASS")
 PY
@@ -186,5 +224,6 @@ assert result["stable_external_pointer_count"] == 0
 assert result["pointer_target_clusters"] == []
 assert result["path_root_targets"], "Path roots must still be analyzed when pointer analysis is skipped"
 assert result["path_root_targets"][0]["target"] == 0x00610000
+assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 print("track path skip-pointer test: PASS")
 PY

@@ -58,6 +58,8 @@ It compares only regions with the same start address and size in every snapshot 
 
 Outputs:
 
+The analyzer now resolves the AIPolylinePath array against the count-prefixed node allocation and exposes the verified node-array link in the CSV output.
+
 - `analysis.json` — snapshot/common-region statistics and totals by memory category.
 - `region_summary.csv` — changed-block and transition statistics per region.
 - `block_candidates.csv` — repeatedly changing block addresses ranked by activity.
@@ -202,13 +204,14 @@ It scans 4-byte-aligned object candidates for these recovered layouts:
 - `Incident.PathOwner`: Path pointer at `+0xd8`, centre position at `+0xdc..+0xe4`, radius at `+0xe8`, and activity flags at `+0xf0..+0xf8`.
 - `AISegmentPath`: num nodes `+0x10`, segment-node array `+0x18`, length `+0x1c`, cyclic/narrow flags `+0x20/+0x24`, spacing `+0x28`, path distance `+0x2c`, current node `+0x30`, EdgeStep `+0x34`.
 - `AIPolylinePath`: num nodes `+0x10`, node array `+0x14`, length `+0x18`, width `+0x1c`, cyclic `+0x20`, spacing `+0x24`, default width `+0x28`.
+- `AIPolyPathNode`: 0x24-byte array element with 2D position/tangent fields at `+0x10..+0x1c` and cumulative path distance at `+0x20`.
 
-Candidates are filtered against mapped SHIFT.exe vftable addresses and writable target pointers. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
+Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. `AISegmentPath`, `AIPolylinePath`, and `AIPolyPathNode` require their recovered concrete vtables (`0x00afca70`, `0x00afc678`, and `0x00afbfa8`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
 
 Outputs:
 
 - `track_path_analysis.json` — structure-hit counts, pointer clusters, and next capture windows.
-- `{profile}.csv` — structural candidates for each recovered profile.
+- `{profile}.csv` — structural candidates for each recovered profile. `aipolylinepath.csv` additionally records whether `array[-4]` matches `num nodes`, whether the first array element has the `AIPolyPathNode` vtable, and how many consecutive `0x24`-byte nodes were validated.
 - `stable_external_pointers.csv` — stable writable pointers found outside the selected ranges.
 - `pointer_target_clusters.csv` — dense target families and dominant source strides.
 - `next_capture_windows.csv` / `next_capture_ranges.txt` — merged windows for the next extraction pass.
@@ -230,8 +233,10 @@ python3 tools/shift_live_dump/analyze_track_paths.py \
 ```
 
 The AIW parser reads the `[Waypoint]` records, `wp_pos`, `wp_branchID`,
-`wp_score` and `WP_PTRS`. Runtime correlation searches only the specified
-heap roots/ranges for matching 3-float positions and then looks for long
+`wp_score` and `WP_PTRS`. Runtime correlation first uses exact
+`AIPolyPathNode` candidates when present, matching their 2D coordinates against
+the selected AIW plane (default `x/z`), and falls back to the generic 3-float
+scan when no exact node candidates are available. It then looks for long
 `waypoint N -> N+1` address sequences with a constant stride.
 
 Outputs:
