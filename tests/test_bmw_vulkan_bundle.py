@@ -156,3 +156,39 @@ def test_bmw_vulkan_bundle_blocked_result_has_stable_artifacts_schema(tmp_path):
     assert isinstance(result["artifacts"], dict)
     assert result["external_samplers"] == []
     assert result["native_execution"]["status"] == "blocked-by-provenance-gate"
+
+
+
+def test_bmw_vulkan_bundle_emits_evidence_backed_cull_state(tmp_path):
+    command = _command()
+    command["render_commands"][0]["submeshes"][0]["render_state"] = {
+        "cull": "EBFCT_CLOCKWISE"
+    }
+    result = build_bmw_vulkan_bundle(
+        command, _mesh(), tmp_path, submesh_index=0
+    )
+    assert result["ready"] is True, result["blocking_reasons"]
+    state = json.loads(
+        (tmp_path / "pipeline_state.json").read_text(encoding="utf-8")
+    )
+    assert state["format"] == "SHIFT.MaterialCullState/1"
+    assert state["engine_enum_index"] == 1
+    assert state["d3d9_value"] == 2
+    assert state["vulkan_cull_mode"] == "VK_CULL_MODE_BACK_BIT"
+    assert result["artifacts"]["pipeline_state"]["ready"] is True
+
+
+def test_bmw_vulkan_bundle_blocks_unknown_bmt_cull(tmp_path):
+    command = _command()
+    command["render_commands"][0]["submeshes"][0]["render_state"] = {
+        "cull": "EBFCT_MAGIC"
+    }
+    result = build_bmw_vulkan_bundle(
+        command, _mesh(), tmp_path, submesh_index=0
+    )
+    assert result["ready"] is False
+    assert (
+        "material-cull:unsupported:EBFCT_MAGIC"
+        in result["blocking_reasons"]
+    )
+    assert result["artifacts"]["pipeline_state"]["ready"] is False
