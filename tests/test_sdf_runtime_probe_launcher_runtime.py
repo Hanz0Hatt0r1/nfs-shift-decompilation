@@ -63,6 +63,10 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
     assert result["probe"]["expected_captures"] == [
         "pre_solve_XXXXXX.json",
         "post_solve_XXXXXX.json",
+        "provider_pre_<provider>_<hit>.json",
+        "provider_post_<provider>_<hit>.json",
+        "scalar_reset_events.jsonl",
+        "provider_reset_effects.jsonl",
     ]
     assert result["probe"]["mode"] == "full"
     assert result["probe"]["expected_captures"] == [
