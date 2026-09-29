@@ -81,6 +81,32 @@ OCCL_RUNTIME_WRAPPER = {
     "payload_field_offset": 0x08,
 }
 
+# FUN_006a4d10 forwards every PART record to FUN_0068a360.  The first
+# partition creates the runtime tree root through FUN_00688ef0/FUN_006886a0;
+# later records are inserted by FUN_00689a30 by matching their partition_id
+# against one of four unresolved child-partition slots.
+PART_RUNTIME_TREE = {
+    "loader": "FUN_006a4d10",
+    "consumer": "FUN_0068a360",
+    "insert_consumer": "FUN_00689a30",
+    "node_allocator": "FUN_00688ef0 -> FUN_006886a0",
+    "node_vtable": 0x00AF7A68,
+    "manager_root_field_offset": 0x28,
+    "runtime_node_field_offsets": {
+        "aabbox_min": 0x04,
+        "aabbox_max": 0x10,
+        "child_partition_slots": [0x1C, 0x20, 0x24, 0x28],
+        "child_object_container": 0x34,
+        "child_partition_id_mask": 0x58,
+    },
+    "scene_wrapper_partition_bounds_field_offset": 0x30,
+    "scene_wrapper_list_lookup": "FUN_006885b0",
+    "child_object_reference_base": 1,
+    "child_object_kind_vfunc_offset": 0x04,
+    "child_object_kind_codes": [1, 3, 4],
+    "manager_kind3_container_offset": 0x58,
+}
+
 
 class SGBRuntimeDecodeError(ValueError):
     pass
@@ -192,30 +218,131 @@ def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str,
     rows = []
     cursor = start + 12
     for index in range(count):
-        if cursor + 52 > end:
+        # FUN_006a4d10 reads the fixed source header through piVar4[0xb],
+        # so the minimum record is 0x30 bytes before the variable object list.
+        if cursor + 48 > end:
             raise SGBRuntimeDecodeError(f"PART record {index} header exceeds chunk")
+
         partition_id = _i32(data, cursor)
-        bbox_min = [_f32(data, cursor + 8), _f32(data, cursor + 12), _f32(data, cursor + 16)]
-        bbox_max = [_f32(data, cursor + 20), _f32(data, cursor + 24), _f32(data, cursor + 28)]
-        fixed_flag = _u32(data, cursor + 32)
-        fixed_quad = [_i32(data, cursor + 32 + 4 * i) for i in range(4)]
-        child_count = _u32(data, cursor + 48)
-        child_base = cursor + 52
+        bbox_min = [
+            _f32(data, cursor + 4),
+            _f32(data, cursor + 8),
+            _f32(data, cursor + 12),
+        ]
+        bbox_max = [
+            _f32(data, cursor + 16),
+            _f32(data, cursor + 20),
+            _f32(data, cursor + 24),
+        ]
+        child_partition_ids = [
+            _i32(data, cursor + 28 + 4 * i)
+            for i in range(4)
+        ]
+        child_partition_table_present = child_partition_ids[0] != 0
+
+        child_count = _u32(data, cursor + 44)
+        child_base = cursor + 48
         if child_base + child_count * 4 > end:
-            raise SGBRuntimeDecodeError(f"PART child table exceeds chunk at record {index}")
-        child_ids = [_i32(data, child_base + 4 * i) for i in range(child_count)]
+            raise SGBRuntimeDecodeError(
+                f"PART child table exceeds chunk at record {index}"
+            )
+        child_ids = [
+            _i32(data, child_base + 4 * i)
+            for i in range(child_count)
+        ]
+        child_lookup_indices_u32 = [
+            (value - 1) & 0xFFFFFFFF for value in child_ids
+        ]
+
         next_cursor = child_base + child_count * 4
+        runtime_slots = [
+            {
+                "slot": slot,
+                "source_partition_id": value,
+                "runtime_field_offset": 0x1C + 4 * slot,
+                "initial_state": (
+                    "unresolved-partition-id"
+                    if child_partition_table_present
+                    else "empty"
+                ),
+                "mask_bit": slot,
+                "insert_consumer": "FUN_00689a30",
+                "resolved_state": "runtime-partition-node-pointer",
+            }
+            for slot, value in enumerate(child_partition_ids)
+        ]
+
         rows.append({
             "index": index,
             "offset": cursor,
+            "record_bytes_minimum": 48,
+            "record_end": next_cursor,
             "partition_id": partition_id,
             "aabbox_min": bbox_min,
             "aabbox_max": bbox_max,
-            "fixed_quad": fixed_quad,
-            "fixed_quad_first_word": fixed_flag,
+            "child_partition_ids": child_partition_ids,
+            "child_partition_table_present": child_partition_table_present,
             "child_object_count": child_count,
             "child_object_indices": child_ids,
-            "record_end": next_cursor,
+            "child_object_lookup_indices_u32": child_lookup_indices_u32,
+            "child_object_lookup_transform": "(source_id - 1) & 0xffffffff",
+            "runtime_partition_tree": {
+                **PART_RUNTIME_TREE,
+                "root_record": index == 0,
+                "root_creation": (
+                    "FUN_0068a360 -> FUN_00688ef0"
+                    if index == 0
+                    else None
+                ),
+                "subsequent_insertion": (
+                    None
+                    if index == 0
+                    else "FUN_0068a360 -> FUN_00689a30"
+                ),
+                "aabbox_copy": {
+                    "min": {
+                        "source_offset": 0x04,
+                        "runtime_offset": 0x04,
+                        "value": bbox_min,
+                    },
+                    "max": {
+                        "source_offset": 0x10,
+                        "runtime_offset": 0x10,
+                        "value": bbox_max,
+                    },
+                },
+                "child_partition_slots": runtime_slots,
+                "child_partition_mask_initial": (
+                    0x0F if child_partition_table_present else 0
+                ),
+                "child_partition_resolution": (
+                    "FUN_00689a30 matches partition_id against a masked "
+                    "slot, replaces the source id with a child-node pointer, "
+                    "then clears that slot's mask bit"
+                ),
+                "child_object_resolution": {
+                    "reference_transform": "source_id - 1",
+                    "lookup_argument_type": "uint32",
+                    "lookup": "FUN_006885b0(scene_wrapper_list, id - 1)",
+                    "resolved_wrapper_partition_bounds_write_offset": 0x30,
+                    "partition_bounds_target": (
+                        "runtime partition node +0x04"
+                    ),
+                    "virtual_kind_dispatch": {
+                        "vfunc_offset": 0x04,
+                        "observed_raw_codes": [1, 3, 4],
+                        "code_1_root_behavior": (
+                            "release payload through its vtable"
+                        ),
+                        "code_3_behavior": (
+                            "append wrapper to manager +0x58"
+                        ),
+                        "code_4_behavior": (
+                            "append wrapper to partition node +0x34"
+                        ),
+                    },
+                },
+            },
         })
         cursor = next_cursor
     return rows
@@ -494,6 +621,7 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
             "FLAT body is preserved because it is forwarded to FUN_0068a8b0.",
             "SUMM vectors remain positional; their semantic names are not proven by FUN_006a4900.",
             "OCCL Name/Resource and PositionTL/TR/BL/BR semantics are source-backed by the matching XML constructor FUN_006a3c40 and binary loader FUN_006a4f10.",
+            "PART AABB, child-partition IDs and one-based child-object references are source-backed through FUN_006a4d10, FUN_0068a360 and FUN_00689a30; child virtual kind codes remain numeric rather than class-named.",
             "SUMM runtime wrapper field copies are source-backed; the 64-bit name hash is retained as provenance-only until FUN_0040b831 is normalized.",
         ],
     }
