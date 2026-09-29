@@ -55,8 +55,20 @@ false_poly_off = 0x380
 struct.pack_into("<III", blob, false_poly_off, 0x00AECCF8, 0, 1)
 struct.pack_into("<IIffIff", blob, false_poly_off + 0x10, 8, 0x00610800, 160.0, 10.0, 1, 2.5, 12.0)
 
-# Runtime AI nodes with the same positions as a tiny synthetic AIW.
-for index, pos in enumerate(((1.0, 2.0, 3.0), (5.0, 2.0, 3.0), (9.0, 2.0, 3.0), (13.0, 2.0, 3.0))):
+# AIPolyPathNode array. The node's 2D x/y corresponds to AIW x/z.
+node_base = 0x600
+for index, x in enumerate((1.0, 5.0, 9.0, 13.0)):
+    noff = node_base + index * 0x24
+    struct.pack_into("<III", blob, noff, 0x00AFBFA8, 0, 1)
+    struct.pack_into("<fffff", blob, noff + 0x10, x, 3.0, 1.0, 0.0, float(index * 4))
+
+# Same shape with a generic executable vtable must not count.
+false_node_off = node_base + 4 * 0x24
+struct.pack_into("<III", blob, false_node_off, 0x00AECCF8, 0, 1)
+struct.pack_into("<fffff", blob, false_node_off + 0x10, 17.0, 3.0, 1.0, 0.0, 16.0)
+
+# Keep the original generic float3 correlation fixture too.
+for index, pos in enumerate(((101.0, 2.0, 3.0), (105.0, 2.0, 3.0), (109.0, 2.0, 3.0), (113.0, 2.0, 3.0))):
     struct.pack_into("<fff", blob, 0x500 + index * 0x20, *pos)
 
 for n in range(2):
@@ -109,6 +121,7 @@ assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AISegmentPath"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["Incident.PathOwner"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
+assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"), newline="", encoding="utf-8") as fh:
     poly_rows = list(csv.DictReader(fh))
 assert len(poly_rows) == 1, poly_rows
@@ -186,8 +199,8 @@ assert seq, "expected AIW runtime sequence"
 assert seq[0]["first_waypoint"] == 0, seq
 assert seq[0]["last_waypoint"] == 3, seq
 assert seq[0]["matched_waypoints"] == 4, seq
-assert seq[0]["stride"] == 0x20, seq
-assert seq[0]["runtime_root"] == 0x002004f0, seq
+assert seq[0]["stride"] == 0x24, seq
+assert seq[0]["runtime_root"] == 0x002005f0, seq
 assert seq[0]["position_offset"] == 0x10, seq
 print("track path AIW correlation test: PASS")
 PY
