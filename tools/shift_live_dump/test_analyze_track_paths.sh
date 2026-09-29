@@ -120,7 +120,7 @@ import sys
 from pathlib import Path
 script = Path(sys.argv[1])
 root = Path(sys.argv[2])
-ns = {}
+ns = {"__name__": "track_path_test"}
 exec(compile(script.read_text(encoding="utf-8"), str(script), "exec"), ns)
 sns = ns["snapshots"](root)
 mans = [ns["load_manifest"](s / "manifest.json") for s in sns]
