@@ -24,6 +24,7 @@ constexpr uint32_t kWindowWidth = 1280;
 constexpr uint32_t kWindowHeight = 720;
 constexpr int kDefaultFrames = 120;
 constexpr size_t kFramesInFlight = 2;
+constexpr double kFixedDt = 1.0 / 60.0;
 
 #pragma pack(push, 1)
 struct GeometryHeader {
@@ -234,7 +235,8 @@ struct Window {
         const uint32_t event_mask =
             XCB_EVENT_MASK_EXPOSURE |
             XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-            XCB_EVENT_MASK_KEY_PRESS;
+            XCB_EVENT_MASK_KEY_PRESS |
+            XCB_EVENT_MASK_KEY_RELEASE;
 
         const uint32_t values[] = {
             screen->black_pixel,
@@ -269,14 +271,43 @@ struct Window {
         xcb_flush(connection);
     }
 
-    void poll(bool& quit) {
+struct InputState {
+    bool throttle = false;
+    bool brake = false;
+    bool steer_left = false;
+    bool steer_right = false;
+};
+
+    void poll(bool& quit, InputState& input) {
         while (xcb_generic_event_t* raw = xcb_poll_for_event(connection)) {
             const uint8_t type = raw->response_type & 0x7f;
-            if (type == XCB_KEY_PRESS) {
+            if (type == XCB_KEY_PRESS || type == XCB_KEY_RELEASE) {
                 const auto* event =
                     reinterpret_cast<const xcb_key_press_event_t*>(raw);
-                if (event->detail == 9 || event->detail == 24) {
-                    quit = true;
+                const bool pressed = type == XCB_KEY_PRESS;
+                switch (event->detail) {
+                    case 9:
+                    case 24:
+                        if (pressed) quit = true;
+                        break;
+                    case 111:
+                    case 25:
+                        input.throttle = pressed;
+                        break;
+                    case 116:
+                    case 39:
+                        input.brake = pressed;
+                        break;
+                    case 113:
+                    case 38:
+                        input.steer_left = pressed;
+                        break;
+                    case 114:
+                    case 40:
+                        input.steer_right = pressed;
+                        break;
+                    default:
+                        break;
                 }
             } else if (type == XCB_DESTROY_NOTIFY) {
                 quit = true;
@@ -1103,11 +1134,28 @@ int main(int argc, char** argv) {
         runtime.create_sync_and_commands();
 
         int rendered = 0;
+        uint64_t simulation_steps = 0;
         bool quit = false;
+        InputState input{};
         const auto start = std::chrono::steady_clock::now();
 
         while (!quit && rendered < args.frames) {
-            window.poll(quit);
+            window.poll(quit, input);
+
+            // Deterministic simulation boundary. Vehicle/camera systems will
+            // consume this neutral input state at the same fixed cadence.
+            ++simulation_steps;
+            const double throttle = input.throttle ? 1.0 : 0.0;
+            const double brake = input.brake ? 1.0 : 0.0;
+            const double steering =
+                static_cast<double>(input.steer_right) -
+                static_cast<double>(input.steer_left);
+            (void)throttle;
+            (void)brake;
+            (void)steering;
+            constexpr double dt = kFixedDt;
+            (void)dt;
+
             if (!runtime.frame()) break;
             ++rendered;
         }
@@ -1123,6 +1171,9 @@ int main(int argc, char** argv) {
             << "{\n"
             << "  \"format\": \"SHIFT.NativeRuntimeFrameLoop/1\",\n"
             << "  \"frames_rendered\": " << rendered << ",\n"
+            << "  \"simulation_steps\": " << simulation_steps << ",\n"
+            << "  \"fixed_dt\": " << kFixedDt << ",\n"
+            << "  \"input_layer\": \"SHIFT.NativeRuntimeInput/1\",\n"
             << "  \"elapsed_ms\": " << elapsed_ms << ",\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";
