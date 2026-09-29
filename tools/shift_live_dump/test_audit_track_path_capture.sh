@@ -101,11 +101,18 @@ print("track path capture handoff ready test: PASS")
 PY
 
 rm "$tmp/analysis/track_path_instance_edges.csv"
+test ! -e "$tmp/analysis/track_path_instance_edges.csv"
+
+set +e
 python3 "$self_dir/audit_track_path_capture.py" "$tmp/analysis" \
   --out "$tmp/analysis/blocked.json" \
   --strict >/tmp/track_path_handoff_strict.out 2>&1
 status=$?
-test "$status" -eq 2
+set -e
+if [ "$status" -ne 2 ]; then
+  cat /tmp/track_path_handoff_strict.out
+  exit 1
+fi
 python3 - "$tmp/analysis/blocked.json" <<'PY'
 import json, sys
 r=json.loads(open(sys.argv[1],encoding="utf-8").read())
