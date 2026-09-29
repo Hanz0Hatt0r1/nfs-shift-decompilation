@@ -9,7 +9,18 @@ from pathlib import Path
 
 FORMAT = "SHIFT-LIVE-MEMORY-TRACK-PATH-ANALYSIS/1"
 VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
-KNOWN_VTABLES = {"AISegmentPath": 0x00AFCA70}
+# Exact vtables recovered from SHIFT.exe.c.
+#
+# AISegmentPath:
+#   FUN_006d0fe0 writes PTR_FUN_00afca70 in the constructor.
+# AIPolylinePath:
+#   FUN_006cc390 writes PTR_FUN_00afc678 in the destructor path for the
+#   concrete AIPolylinePath container; its reflection metadata is emitted by
+#   FUN_006ccb20.
+KNOWN_VTABLES = {
+    "AISegmentPath": 0x00AFCA70,
+    "AIPolylinePath": 0x00AFC678,
+}
 
 PATH = {
     "tx": (0x10, "f"), "ty": (0x14, "f"), "outside": (0x18, "f"),
@@ -207,7 +218,15 @@ def check_segment(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
 def check_poly(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     d = fields(blob, POLY)
     vt = read(blob, 0, "I")
-    if vt is None or any(v is None for v in d.values()) or not game_vtable(vt, mm, starts):
+    # AIPolylinePath has a recovered concrete vtable. Accepting any executable
+    # SHIFT.exe vtable here produced large false-positive families from
+    # unrelated classes that happened to expose compatible float/integer
+    # payloads.
+    if (
+        vt != KNOWN_VTABLES["AIPolylinePath"]
+        or any(v is None for v in d.values())
+        or not game_vtable(vt, mm, starts)
+    ):
         return None
     am = writable(d["array"], mm, starts)
     if not am or not 2 <= d["nodes"] <= 1000000 or d["cyclic"] not in (0, 1):
@@ -238,11 +257,12 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
     view = memoryview(blob)
     limit = max(0, len(view) - 3)
     known_segment_vtable = KNOWN_VTABLES["AISegmentPath"]
+    known_poly_vtable = KNOWN_VTABLES["AIPolylinePath"]
     for off in range(0, limit, 4):
         vtable = read(view, off, "I")
         if vtable is None:
             continue
-        if vtable != known_segment_vtable:
+        if vtable not in (known_segment_vtable, known_poly_vtable):
             if not (VT_RANGE[0] <= vtable < VT_RANGE[1]):
                 continue
             if not game_vtable(vtable, mm, starts):
