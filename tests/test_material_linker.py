@@ -149,3 +149,30 @@ def test_material_binding_includes_linked_shader_pair():
     assert identity is not None
     assert identity["format"] == "SHIFT.ShaderPermutationIdentity/1"
     assert len(identity["identity_sha256"]) == 64
+
+
+def test_material_linker_collapses_identical_hashed_permutation_ties():
+    source = '''texture diffuseTexture;
+    sampler2D diffuseMap : SAMPLER < string SamplerTexture="diffuseTexture"; > =
+        sampler_state { Texture=<diffuseTexture>; };
+    float4 sampleDiffuse(float2 uv) { return tex2D(diffuseMap, uv); }'''
+    material = {
+        "name": "TEST",
+        "shader": "body.fx",
+        "shaderparams": [
+            {"name": "diffuseTexture", "type": "EPT_TEXTURE", "value": "a.dds"},
+        ],
+    }
+    data = synthetic_linkable_fxo_pair()
+    r = link_material(
+        material,
+        source,
+        fxo_candidates=[("cache_a.fxo", data), ("cache_b.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+    )
+    assert r["selection_status"] == "unique"
+    assert r["ambiguous_candidates"] == []
+    assert r["selection_evidence"]["ambiguous_count"] == 0
+    assert r["selected_fxo"]["pair_sha256"]
+    assert r["selected_fxo"]["permutation_identity"]["identity_sha256"]
