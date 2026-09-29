@@ -76,3 +76,13 @@ def test_render_state_translation_rejects_invalid_alpha_reference():
     result = translate_render_states({15: 1, 24: 256, 25: 7})
     assert result["ready"] is False
     assert "d3d9-vulkan-state:invalid-alpharef:256" in result["blocking_reasons"]
+
+
+
+def test_render_state_translation_rejects_invalid_alpha_enable():
+    result = translate_render_states({15: 2, 24: 64, 25: 7})
+    assert result["ready"] is False
+    assert (
+        "d3d9-vulkan-state:invalid-alphatest-enable:2"
+        in result["blocking_reasons"]
+    )
