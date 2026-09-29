@@ -194,7 +194,7 @@ def summarize(
 
     match_addresses = {as_int(row, "runtime_address") for row in runtime_matches}
     node_addresses = {
-        as_int(row, "address")
+        address
         for rows in grouped.values()
         for row in rows
         for address in (
