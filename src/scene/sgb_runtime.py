@@ -17,6 +17,32 @@ KNOWN_TAGS = {"NODE", "FLAT", "OCCL", "PART", "SUMM", "END "}
 # FUN_006a4b40 creates the runtime NODE wrapper with this concrete vtable.
 NODE_RUNTIME_VTABLE = 0x00AF78EC
 
+SUMM_RUNTIME_WRAPPER = {
+    "vtable": 0x00AF78EC,
+    "instance_bytes": 0x38,
+    "source_field_offsets": {
+        "name": 0x08,
+        "resource": 0x0C,
+        "variation_palette": 0x10,
+        "instances": 0x14,
+        "flags": 0x18,
+        "variation_index": 0x1A,
+        "object_payload": 0x1C,
+    },
+    "runtime_field_offsets": {
+        "payload": 0x08,
+        "resource": 0x18,
+        "variation_palette": 0x1C,
+        "variation_index": 0x20,
+        "instances": 0x24,
+        "flag_bit0": 0x15,
+        "flag_bit1": 0x16,
+        "flag_bit2": 0x17,
+        "name_hash_lo": 0x28,
+        "name_hash_hi": 0x2C,
+    },
+}
+
 
 class SGBRuntimeDecodeError(ValueError):
     pass
@@ -177,6 +203,12 @@ def _parse_fixed14(data: bytes, start: int, end: int, count: int, kind: str) -> 
             "string_b": _resolve_string(data, start, end, b),
             "vectors": vectors,
             "record_bytes": 56,
+            "runtime_wrapper": {
+                **SUMM_RUNTIME_WRAPPER,
+                "kind": "SUMM",
+                "name_hash_producer": "FUN_0064eba0",
+                "name_hash_resolved": False,
+            },
         })
         cursor += 56
     return rows
@@ -333,5 +365,6 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
             "NODE object payload is decoded through the existing SGBObjectRuntime decoder when its bounds are known; deeper OBJECT/HIERARCHY field semantics remain raw.",
             "FLAT body is preserved because it is forwarded to FUN_0068a8b0.",
             "SUMM/OCCL vectors remain positional; their semantic names are not proven by these handlers.",
+            "SUMM runtime wrapper field copies are source-backed; the 64-bit name hash is retained as provenance-only until FUN_0040b831 is normalized.",
         ],
     }
