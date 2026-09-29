@@ -33,3 +33,24 @@ def test_frame_entry_state_is_carried_to_provider_snapshots():
     assert "_LAST_FRAME_ENTRY" in text
     assert '"frame_index": self.hit' in text
     assert '"physics_system": physics_system' in text
+
+def test_provider_gdb_probe_has_low_stop_provider_only_mode():
+    text = PROBE.read_text(encoding="utf-8")
+
+    assert "--provider-only" in text
+    assert "provider_only = False" in text
+    assert "if not provider_only:" in text
+    assert 'self.condition = _provider_vtable_condition(' in text
+    assert 'pointer_expr="$ecx+0x48"' in text
+    assert 'pointer_expr="$ecx",' in text
+
+def test_provider_only_mode_does_not_use_builtin_breakpoints():
+    text = PROBE.read_text(encoding="utf-8")
+
+    start = text.index("        self.breakpoints = []")
+    end = text.index("        print(", start)
+    block = text[start:end]
+    assert "if not provider_only:" in block
+    assert "SolverEntryProbe(" in block
+    assert "PostSolveProbe(" in block
+    assert "ProviderSolveProbe(" in block
