@@ -79,16 +79,19 @@ assert first["node_sequence_match"], first
 assert first["join_evidence"] == "pointer+count+sequence", first
 assert first["candidate_count"] == 1, first
 
-second = rows[1]
-assert second["start_node"] == 0x33630000, second
+path2 = [row for row in rows if row["start_node"] == 0x33630000]
+assert len(path2) == 2, path2
+matched = [row for row in path2 if row["node_count_match"]]
+assert len(matched) == 1, path2
+second = matched[0]
 assert second["candidate_count"] == 2, second
-assert second["node_count_match"], second
 assert second["node_sequence_match"], second
 assert second["join_evidence"] == "pointer+count+sequence", second
 
-third = rows[2]
+pointer_only = [row for row in path2 if not row["node_count_match"]]
+assert len(pointer_only) == 1, path2
+third = pointer_only[0]
 assert third["candidate_count"] == 2, third
-assert not third["node_count_match"], third
 assert third["join_evidence"] == "pointer-only", third
 print("Path.StartNode -> AIPolylinePath.array join test: PASS")
 PY
