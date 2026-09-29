@@ -70,9 +70,9 @@ jobs:
           mesh += struct.pack("<4I", 0, 0, 0, 0)
           (out / "runtime.mgeo").write_bytes(mesh)
           PY
-          xvfb-run -a native_runtime/build/shift_runtime \\
-            --mesh out/vulkan/runtime/runtime.mgeo \\
-            --shader-dir native_runtime/build/shaders \\
+          xvfb-run -a native_runtime/build/shift_runtime \
+            --mesh out/vulkan/runtime/runtime.mgeo \
+            --shader-dir native_runtime/build/shaders \
             --frames 3 | tee out/vulkan/runtime/runtime.json
       - name: Mixed-resource bundle
         run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle
