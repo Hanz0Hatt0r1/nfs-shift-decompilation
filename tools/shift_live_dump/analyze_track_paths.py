@@ -526,8 +526,11 @@ def parse_aiw(text: str, source: str) -> dict:
             break
         if not in_waypoints or not line:
             continue
-        if line.startswith("\\") and line[1:].strip("-").isdigit():
-            current = {"index": int(line[1:])}
+        # Real SHIFT/Madness AIW archives use both one and two leading
+        # backslashes before waypoint indices. Normalize the marker first.
+        marker = line.lstrip("\\")
+        if marker and marker.strip("-").isdigit() and line.startswith("\\"):
+            current = {"index": int(marker)}
             waypoints.append(current)
             continue
         if "=" not in line:
