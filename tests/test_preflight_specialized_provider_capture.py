@@ -28,7 +28,10 @@ def test_cli_delegates_and_prints_machine_readable_summary(monkeypatch, tmp_path
             "status": "blocked",
             "ready": False,
             "artifacts": {"ready": True},
-            "probe_script": {"exists": True},
+            "probe_script": {
+                "exists": True,
+                "validation": {"ready": True},
+            },
             "runtime_tools": {"wine": None, "gdb": None},
             "gdb_python": {"ready": False},
             "errors": ["missing:wine", "missing:gdb"],
