@@ -259,8 +259,18 @@ def build_real_bmw_material_slice(
 def _find_shader(rows, shader_ref: str):
     target=norm_ref(shader_ref)
     exact=[(a,e) for a,e in rows if norm_ref(e.path)==target]
-    if len(exact)==1: return exact[0]
+    if exact:
+        return _find_exact(exact,shader_ref,'shader-source')
     base=target.rsplit('/',1)[-1]
     hits=[(a,e) for a,e in rows if norm_ref(e.path).rsplit('/',1)[-1]==base]
-    if len(hits)!=1: raise ValueError(f'shader-source: expected one {shader_ref!r}, found {len(hits)}')
+    if not hits:
+        raise ValueError(f'shader-source: expected {shader_ref!r}, found 0')
+    digests=[]
+    for archive,entry in hits:
+        payload=archive.extract_entry(entry)
+        digests.append((_sha256(payload),archive,entry))
+    if len({digest for digest,_,_ in digests})!=1:
+        raise ValueError(
+            f'shader-source: conflicting basename matches for {shader_ref!r}'
+        )
     return hits[0]
