@@ -21,10 +21,16 @@ def load_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(fh))
 
 
-def as_int(row: dict[str, str], key: str) -> int:
+def as_int(row: dict, key: str) -> int:
     try:
-        return int(row[key], 0)
-    except (KeyError, TypeError, ValueError) as exc:
+        value = row[key]
+    except KeyError as exc:
+        raise ValueError(f"invalid integer field {key!r}: {row!r}") from exc
+    if isinstance(value, int):
+        return value
+    try:
+        return int(value, 0)
+    except (TypeError, ValueError) as exc:
         raise ValueError(f"invalid integer field {key!r}: {row!r}") from exc
 
 
