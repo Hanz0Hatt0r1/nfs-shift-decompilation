@@ -238,7 +238,7 @@ Outputs:
 
 - `aiw_waypoints.csv` — normalized static waypoint records from every selected AIW.
 - `aiw_runtime_matches.csv` — individual runtime position matches with distance.
-- `aiw_runtime_sequences.csv` — contiguous runtime waypoint sequences and inferred node stride.
+- `aiw_runtime_sequences.csv` — contiguous runtime waypoint sequences, inferred node stride, and `wp_pos` offset relative to the supplied runtime root.
 - `track_path_analysis.json` — AIW source metadata, match count and inferred sequences.
 
 Use `--aiw-range START:SIZE` when the exact heap window is already known.
