@@ -95,7 +95,7 @@ matched = [
 ]
 assert len(matched) == 1, path2
 second = matched[0]
-assert second["candidate_count"] == 2, second
+assert second["candidate_count"] == 3, second
 assert second["node_sequence_match"], second
 assert second["join_evidence"] == "pointer+count+sequence", second
 
