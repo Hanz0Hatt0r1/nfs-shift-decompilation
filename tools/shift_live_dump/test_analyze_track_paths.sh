@@ -150,9 +150,13 @@ import sys
 result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
-assert result["candidate_counts"]["AISegmentPath"] >= 1, result["candidate_counts"]
-seg_rows = json.loads(result.get("candidate_counts_json", "{}")) if False else result["candidate_counts"]
-assert seg_rows["AISegmentPath"] >= 1, seg_rows
+assert result["candidate_counts"]["AISegmentPath"] == 1, result["candidate_counts"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
+    segment_rows = list(csv.DictReader(fh))
+assert len(segment_rows) == 1, segment_rows
+assert int(segment_rows[0]["nodes"]) == 8, segment_rows
+assert float(segment_rows[0]["length"]) == 120.0, segment_rows
+assert float(segment_rows[0]["path_dist"]) == 15.0, segment_rows
 assert result["candidate_counts"]["Incident.PathOwner"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
