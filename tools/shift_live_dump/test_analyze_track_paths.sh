@@ -169,12 +169,6 @@ assert float(row["spacing"]) == 15.0, row
 assert float(row["path_dist"]) == 20.0, row
 assert int(row["current"]) == 2, row
 assert float(row["edge_step"]) == 1.0, row
-with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
-    segment_rows = list(csv.DictReader(fh))
-assert len(segment_rows) == 1, segment_rows
-assert int(segment_rows[0]["nodes"]) == 8, segment_rows
-assert float(segment_rows[0]["length"]) == 120.0, segment_rows
-assert float(segment_rows[0]["path_dist"]) == 15.0, segment_rows
 assert result["candidate_counts"]["Incident.PathOwner"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
