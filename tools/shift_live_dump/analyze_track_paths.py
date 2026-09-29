@@ -764,22 +764,49 @@ def resolve_path_start_nodes(
         counts: list[int] = []
         sequences: list[int] = []
         for snap, idx, starts in zip(snapshots, indexes, starts_by_snapshot):
-            blob = _read_virtual(snap, idx, starts, target, 4)
-            if blob is None:
-                continue
-            first_vtables.append(struct.unpack_from("<I", blob)[0])
+            seq = 0
+            loc = _region_record_for_address(target - 4, idx, starts)
+            if loc:
+                st, rec = loc
+                within = (target - 4) - st
+                # One bounded read covers the count prefix and the first
+                # 256 possible 0x24-byte nodes.
+                max_bytes = min(4 + 256 * 0x24, int(rec["size"]) - within)
+                if max_bytes >= 8:
+                    window = _read_virtual(
+                        snap, idx, starts, target - 4, max_bytes
+                    )
+                    if window is not None and len(window) >= 8:
+                        count = struct.unpack_from("<I", window, 0)[0]
+                        first_vtables.append(struct.unpack_from("<I", window, 4)[0])
+                        counts.append(count)
+                        check_count = min(count, 256)
+                        for n in range(check_count):
+                            off = 4 + n * 0x24
+                            if off + 4 > len(window):
+                                break
+                            vt = struct.unpack_from("<I", window, off)[0]
+                            if vt != KNOWN_VTABLES["AIPolyPathNode"]:
+                                break
+                            seq += 1
+                        sequences.append(seq)
+                        continue
+
+            # Boundary fallback: count and first vtable may straddle mappings.
+            first_blob = _read_virtual(snap, idx, starts, target, 4)
             count_blob = _read_virtual(snap, idx, starts, target - 4, 4)
-            if count_blob is None:
+            if first_blob is None or count_blob is None:
                 continue
+            first_vtables.append(struct.unpack_from("<I", first_blob)[0])
             count = struct.unpack_from("<I", count_blob)[0]
             counts.append(count)
-            seq = 0
             for n in range(min(count, 256)):
-                vt_blob = _read_virtual(snap, idx, starts, target + n * 0x24, 4)
+                vt_blob = _read_virtual(
+                    snap, idx, starts, target + n * 0x24, 4
+                )
                 if vt_blob is None:
                     break
-                vt = struct.unpack_from("<I", vt_blob)[0]
-                if vt != KNOWN_VTABLES["AIPolyPathNode"]:
+                if struct.unpack_from("<I", vt_blob)[0] != KNOWN_VTABLES["AIPolyPathNode"]:
                     break
                 seq += 1
             sequences.append(seq)
