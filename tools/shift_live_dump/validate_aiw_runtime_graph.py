@@ -302,7 +302,7 @@ def main() -> int:
 
     out = args.out or root / "aiw_runtime_graph_validation.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2) + "\\n", encoding="utf-8")
+    out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
     write_csv_path = out.with_name("aiw_runtime_edge_groups.csv")
     with write_csv_path.open("w", newline="", encoding="utf-8") as fh:
