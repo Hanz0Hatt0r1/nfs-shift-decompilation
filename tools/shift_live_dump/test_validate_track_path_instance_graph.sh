@@ -59,13 +59,7 @@ print("track path instance graph test: PASS")
 PY
 
 cp "$tmp/analysis/aiw_runtime_edges.csv" "$tmp/analysis/baseline_runtime_edges.csv"
-python3 - "$tmp/analysis/aiw_runtime_edges.csv" <<'PY
-from pathlib import Path
-p=Path(__import__("sys").argv[1])
-s=p.read_text()
-s=s.replace(",0x201034,36,",",0x201040,48,")
-p.write_text(s)
-PY
+sed -i 's/,0x201034,36,/,0x201040,48,/' "$tmp/analysis/aiw_runtime_edges.csv"
 
 set +e
 python3 "$self_dir/validate_track_path_instance_graph.py" "$tmp/analysis" \
