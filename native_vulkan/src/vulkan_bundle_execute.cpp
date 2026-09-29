@@ -668,6 +668,47 @@ void require_native_submission_gate(const std::filesystem::path& root) {
     }
 }
 
+VkCullModeFlags load_pipeline_cull_mode(
+    const std::filesystem::path& root) {
+    const std::filesystem::path state_path =
+        root / "pipeline_state.json";
+    if (!std::filesystem::is_regular_file(state_path)) {
+        return VK_CULL_MODE_NONE;
+    }
+    std::ifstream state(state_path, std::ios::binary);
+    if (!state) {
+        throw std::runtime_error(
+            "cannot open pipeline state: " + state_path.string());
+    }
+    const std::string contents(
+        (std::istreambuf_iterator<char>(state)),
+        std::istreambuf_iterator<char>());
+    if (contents.find(
+            "\"format\": \"SHIFT.MaterialCullState/1\"") ==
+            std::string::npos ||
+        contents.find("\"ready\": true") == std::string::npos) {
+        throw std::runtime_error(
+            "bundle pipeline state is invalid or blocked");
+    }
+    if (contents.find(
+            "\"vulkan_cull_mode\": \"VK_CULL_MODE_NONE\"") !=
+            std::string::npos) {
+        return VK_CULL_MODE_NONE;
+    }
+    if (contents.find(
+            "\"vulkan_cull_mode\": \"VK_CULL_MODE_BACK_BIT\"") !=
+            std::string::npos) {
+        return VK_CULL_MODE_BACK_BIT;
+    }
+    if (contents.find(
+            "\"vulkan_cull_mode\": \"VK_CULL_MODE_FRONT_BIT\"") !=
+            std::string::npos) {
+        return VK_CULL_MODE_FRONT_BIT;
+    }
+    throw std::runtime_error(
+        "bundle pipeline state has unsupported cull mode");
+}
+
 void write_ppm(
     const std::filesystem::path& path,
     const std::vector<uint8_t>& rgba) {
@@ -742,6 +783,8 @@ int main(int argc, char** argv) {
 
     try {
         require_native_submission_gate(root);
+        const VkCullModeFlags cull_mode =
+            load_pipeline_cull_mode(root);
         const Geometry geometry = load_geometry(root / "geometry.svpk");
         const Constants constants = load_constants(root / "constants.svcp");
 
@@ -1210,7 +1253,7 @@ int main(int argc, char** argv) {
         VkPipelineRasterizationStateCreateInfo raster{};
         raster.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         raster.polygonMode = VK_POLYGON_MODE_FILL;
-        raster.cullMode = VK_CULL_MODE_NONE;
+        raster.cullMode = cull_mode;
         raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         raster.lineWidth = 1.0f;
 
