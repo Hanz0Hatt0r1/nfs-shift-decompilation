@@ -114,6 +114,33 @@ python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-filtered" --to
   --exclude-source-range 0x00200120:0x4 >/tmp/track_path_filter_test.out
 cat /tmp/track_path_filter_test.out
 
+# Direct Path.StartNode -> AIPolyPathNode[] resolver regression.
+python3 - "$self_dir/analyze_track_paths.py" "$tmp" <<'PY2'
+import sys
+from pathlib import Path
+script = Path(sys.argv[1])
+root = Path(sys.argv[2])
+ns = {}
+exec(compile(script.read_text(encoding="utf-8"), str(script), "exec"), ns)
+sns = ns["snapshots"](root)
+mans = [ns["load_manifest"](s / "manifest.json") for s in sns]
+idx = [{int(r["start"]): r for r in m.get("regions", [])} for m in mans]
+mm = ns["maps"](sns[0] / "maps.txt")
+rows = ns["resolve_path_start_nodes"](
+    [{"address": 0x00200100, "start_node": 0x00202000}],
+    sns, idx, mm,
+)
+assert len(rows) == 1, rows
+r = rows[0]
+assert r["target_vtable"] == 0x00AFBFA8, r
+assert r["target_vtable_match"], r
+assert r["link_type"] == "AIPolyPathNodeArray", r
+assert r["array_count"] == 4, r
+assert r["array_count_stable"], r
+assert r["node_sequence"] == 4, r
+assert r["node_sequence_complete"], r
+print("track path StartNode link test: PASS")
+PY2
 python3 - "$tmp/out/track_path_analysis.json" "$tmp/out-filtered/track_path_analysis.json" <<'PY'
 import csv
 import json
