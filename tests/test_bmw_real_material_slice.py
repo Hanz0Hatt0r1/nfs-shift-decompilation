@@ -388,3 +388,54 @@ def test_real_bmw_material_slice_forwards_external_shader_source(monkeypatch, tm
 
     assert result["format"] == "SHIFT.BMWMaterialSlice/1"
     assert seen["shader_source_file"] == external
+
+
+
+class ResourceArchive:
+    def __init__(self, path, resource_path, payload, index):
+        self.path = Path(path)
+        self.entries = [FakeEntry(resource_path, index)]
+        self.payload = payload
+
+    def extract_entry(self, entry):
+        return self.payload
+
+    def close(self):
+        pass
+
+
+def test_real_slice_deduplicates_identical_supplemental_resource(tmp_path):
+    logical = "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt"
+    first = ResourceArchive(tmp_path/"primary.bff", logical, b"same", 1)
+    second = ResourceArchive(tmp_path/"cockpit.bff", logical, b"same", 2)
+    archive, entry = slicer._find_exact(
+        [(first, first.entries[0]), (second, second.entries[0])],
+        logical,
+        "material",
+    )
+    assert archive is first
+    assert entry.index == 1
+
+
+def test_real_slice_blocks_conflicting_supplemental_resource(tmp_path):
+    logical = "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt"
+    first = ResourceArchive(tmp_path/"primary.bff", logical, b"a", 1)
+    second = ResourceArchive(tmp_path/"cockpit.bff", logical, b"b", 2)
+    with pytest.raises(ValueError, match="conflicting duplicate entry"):
+        slicer._find_exact(
+            [(first, first.entries[0]), (second, second.entries[0])],
+            logical,
+            "material",
+        )
+
+
+def test_real_slice_deduplicates_identical_shader_sources(tmp_path):
+    logical = "render/shaders/bodywork.fx"
+    first = ResourceArchive(tmp_path/"primary.bff", logical, b"same", 1)
+    second = ResourceArchive(tmp_path/"render.bff", logical, b"same", 2)
+    archive, entry = slicer._find_shader(
+        [(first, first.entries[0]), (second, second.entries[0])],
+        logical,
+    )
+    assert archive is first
+    assert entry.index == 1
