@@ -19,6 +19,14 @@ FORMAT = "SHIFT.FLATRuntime/1"
 HEADER_SIZE = 0x20
 LEAF_SIZE = 0x40
 
+# FUN_006af330 allocates the runtime tables indexed by direct-record +0x3c.
+RUNTIME_PRIMARY_STRIDE = 0x28
+RUNTIME_PRIMARY_VALUE_OFFSET = 0x20
+RUNTIME_SECONDARY_STRIDE = 0x40
+RUNTIME_SECONDARY_NODE_OFFSET = 0x30
+RUNTIME_SECONDARY_RECORD_OFFSET = 0x34
+RUNTIME_SECONDARY_PRIMARY_SLOT_OFFSET = 0x38
+
 
 class FLATRuntimeDecodeError(ValueError):
     pass
@@ -45,6 +53,25 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
         "runtime_index": words[15],
         "child_index": words[15],
         "index_word": words[15],
+        "runtime_link_metadata": {
+            "index_word_offset": 0x3c,
+            "index": words[15],
+            "primary_table": {
+                "stride": RUNTIME_PRIMARY_STRIDE,
+                "value_offset": RUNTIME_PRIMARY_VALUE_OFFSET,
+                "slot_offset": (
+                    RUNTIME_PRIMARY_VALUE_OFFSET
+                    + words[15] * RUNTIME_PRIMARY_STRIDE
+                ),
+            },
+            "secondary_table": {
+                "stride": RUNTIME_SECONDARY_STRIDE,
+                "node_pointer_offset": RUNTIME_SECONDARY_NODE_OFFSET,
+                "record_pointer_offset": RUNTIME_SECONDARY_RECORD_OFFSET,
+                "primary_slot_pointer_offset": RUNTIME_SECONDARY_PRIMARY_SLOT_OFFSET,
+                "slot_offset": words[15] * RUNTIME_SECONDARY_STRIDE,
+            },
+        },
         "runtime_generated_links": False,
     }
 
@@ -169,6 +196,8 @@ def parse_flat_runtime(
             "normalize_tree": "FUN_006af6c0",
             "index_leaves": "FUN_006af780",
             "release_leaves": "FUN_006af830",
+            "runtime_link_indexer": "FUN_006af780",
+            "runtime_link_table_builder": "FUN_006af330",
             "walk_leaves": "FUN_006af5a0",
         },
         "limitations": [
