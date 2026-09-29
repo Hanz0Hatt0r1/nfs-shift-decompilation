@@ -209,6 +209,13 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
     return out;
 }
 
+struct InputState {
+    bool throttle = false;
+    bool brake = false;
+    bool steer_left = false;
+    bool steer_right = false;
+};
+
 struct Window {
     xcb_connection_t* connection = nullptr;
     xcb_window_t window = XCB_WINDOW_NONE;
@@ -270,13 +277,6 @@ struct Window {
         xcb_map_window(connection, window);
         xcb_flush(connection);
     }
-
-struct InputState {
-    bool throttle = false;
-    bool brake = false;
-    bool steer_left = false;
-    bool steer_right = false;
-};
 
     void poll(bool& quit, InputState& input) {
         while (xcb_generic_event_t* raw = xcb_poll_for_event(connection)) {
@@ -379,6 +379,7 @@ struct Runtime {
     Buffer vertex_buffer;
     Buffer index_buffer;
     uint32_t index_count = 0;
+    uint32_t first_index = 0;
 
     void create_instance() {
         const char* extensions[] = {
