@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 531.**
+**Current mainline: Phase 532.**
 
 
 
@@ -61,13 +61,14 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 37. Join independently ready BMW primitive slices into one canonical revalidated multi-submesh RenderCommand and feed it into the material/DDS multi-draw adapter — Phase 529 implemented.
 38. Propagate the retail BMT cull enum through RenderCommand and atomic bundle sidecars into both native Vulkan consumers — Phase 530 implemented.
 39. Recover stable real-BMT depth/alpha group and field IDs, enum indices, alpha-test normalization, and carry them through the neutral render IR without enabling unproven native state — Phase 531 implemented.
-40. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
-41. Prove D3D9/default semantics for depth/alpha-test/alpha-blend and map only the proven subset to Vulkan; keep unresolved separate-alpha/bias/stencil fields fail-closed.
-42. Expand the desktop reference renderer against real BMW material/shader permutations.
-43. Continue SGB/FLAT and camera runtime reconstruction.
-44. Derive proven animation poses from the BAB runtime grammar.
-45. Port the stable native render/runtime boundary to Android.
-46. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+40. Apply the exact retail enum→D3D9 lookup/default tables and execute the lossless cull/depth/ordinary-blend subset in both Vulkan consumers; fail-close enabled alpha-test and unresolved bias/separate-alpha/stencil state — Phase 532 implemented.
+41. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
+42. Implement evidence-backed alpha-test shader discard and resolve remaining bias/separate-alpha/stencil Resource IDs before enabling those states.
+43. Expand the desktop reference renderer against real BMW material/shader permutations.
+44. Continue SGB/FLAT and camera runtime reconstruction.
+45. Derive proven animation poses from the BAB runtime grammar.
+46. Port the stable native render/runtime boundary to Android.
+47. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -87,7 +88,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Track/path runtime correlation | active | runtime graph capture with complete/unambiguous edge evidence |
-| Vulkan | active; BMW material multi-draw + source-backed cull; depth/alpha state carried but not executed | retail non-paint permutations and proven depth/alpha mapping |
+| Vulkan | active; BMW material multi-draw + source-backed cull/depth/ordinary blend | retail non-paint permutations plus alpha-test/bias/stencil closure |
 | Android | deferred | stable native renderer/runtime boundary |
 
 ## Canonical render path
