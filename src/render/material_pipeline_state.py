@@ -161,10 +161,9 @@ def build_material_pipeline_state(
         blockers,
     )
     alpha_test_vk = COMPARE.get(alpha_test_d3d)
-    alpha_test_value = alpha_test.get(
-        "value_normalized",
-        DEFAULTS["alpha_test_value"],
-    )
+    alpha_test_value = alpha_test.get("value_normalized")
+    if alpha_test_value is None:
+        alpha_test_value = DEFAULTS["alpha_test_value"]
     if not isinstance(alpha_test_value, (int, float)) or isinstance(
         alpha_test_value, bool
     ):
