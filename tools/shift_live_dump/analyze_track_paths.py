@@ -211,6 +211,13 @@ def check_poly(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
 
 
 def scan(blob: bytes, start: int, mm: list[dict], starts: list[int]) -> dict[str, list[dict]]:
+    """Scan aligned object starts without copying the remaining blob per offset.
+
+    The old implementation used blob[off:] for every 4-byte offset. That copies
+    O(n) bytes for each iteration and turns a linear scan into O(n^2) work on
+    large captures. Keep a single memoryview and reject non-game-image vtable
+    words before running the more expensive structure validators.
+    """
     found = {"Path": [], "Incident.PathOwner": [], "AISegmentPath": [], "AIPolylinePath": []}
     checks = (
         ("Path", check_path),
@@ -218,8 +225,19 @@ def scan(blob: bytes, start: int, mm: list[dict], starts: list[int]) -> dict[str
         ("AISegmentPath", check_segment),
         ("AIPolylinePath", check_poly),
     )
-    for off in range(0, max(0, len(blob) - 0x38), 4):
-        chunk = blob[off:]
+    view = memoryview(blob)
+    limit = max(0, len(view) - 0x38)
+    known_segment_vtable = KNOWN_VTABLES["AISegmentPath"]
+    for off in range(0, limit, 4):
+        vtable = read(view, off, "I")
+        if vtable is None:
+            continue
+        if vtable != known_segment_vtable:
+            if not (VT_RANGE[0] <= vtable < VT_RANGE[1]):
+                continue
+            if not game_vtable(vtable, mm, starts):
+                continue
+        chunk = view[off:]
         addr = start + off
         for name, fn in checks:
             row = fn(chunk, addr, mm, starts)
@@ -428,6 +446,10 @@ def main() -> int:
         type=parse_range,
         help="exclude stable-pointer source addresses in START:SIZE intervals; repeatable",
     )
+    ap.add_argument(
+        "--skip-pointer-analysis", action="store_true",
+        help="skip the full-capture stable-pointer scan; useful for Path/StartNode-only analysis",
+    )
     args = ap.parse_args()
     if min(args.top, args.target_top, args.path_root_top) <= 0 or min(args.radius_kib, args.path_root_radius_kib) < 0:
         ap.error("invalid numeric option")
@@ -445,7 +467,9 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     candidates = {k: [] for k in ("Path", "Incident.PathOwner", "AISegmentPath", "AIPolylinePath")}
 
-    for st in sorted(common):
+    common_sorted = sorted(common)
+    for index, st in enumerate(common_sorted, 1):
+        print(f"[scan] region {index}/{len(common_sorted)} start=0x{st:x}", flush=True)
         rr = [x[st] for x in idx]
         if any(int(r["size"]) != int(rr[0]["size"]) for r in rr):
             continue
@@ -471,8 +495,17 @@ def main() -> int:
     for k in candidates:
         candidates[k] = sorted(candidates[k], key=lambda r: r["address"])[:args.top]
 
+    print(
+        "[scan] candidates: " + ", ".join(f"{k}={len(v)}" for k, v in candidates.items()),
+        flush=True,
+    )
     excluded_sources = args.exclude_source_ranges or []
-    ptr = stable_pointers(sns, idx, mm, starts, excluded_sources)
+    if args.skip_pointer_analysis:
+        print("[pointers] skipped", flush=True)
+        ptr = []
+    else:
+        print("[pointers] scanning stable external pointers", flush=True)
+        ptr = stable_pointers(sns, idx, mm, starts, excluded_sources)
     path_roots = path_root_targets(
         candidates["Path"], mm, starts, len(sns), args.path_root_top
     )
@@ -522,7 +555,8 @@ def main() -> int:
             "Pointer clusters are recommendations; target object identity must be confirmed after capturing their bytes from the original full series.",
         ],
     }
-    (out / "track_path_analysis.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (out / "track_path_analysis.json").write_text(json.dumps(summary, indent=2) + "
+", encoding="utf-8")
     for k, v in candidates.items():
         write_csv(out / (k.lower().replace(".", "_") + ".csv"), v, sorted({x for row in v for x in row}))
     write_csv(out / "stable_external_pointers.csv", ptr, [
@@ -542,19 +576,23 @@ def main() -> int:
         "start", "size", "targets",
     ])
     (out / "path_root_ranges.txt").write_text(
-        "\n".join(
+        "
+".join(
             f"0x{w['start']:x}:0x{w['size']:x}  # targets=" +
             ",".join(f"0x{x:x}" for x in w["targets"])
             for w in path_root_windows
-        ) + "\n",
+        ) + "
+",
         encoding="utf-8",
     )
     write_csv(out / "next_capture_windows.csv", windows, ["start", "size", "clusters", "priority"])
     (out / "next_capture_ranges.txt").write_text(
-        "\n".join(
+        "
+".join(
             f"0x{w['start']:x}:0x{w['size']:x}  # priority={w['priority']:.2f} clusters={','.join(map(str, w['clusters']))}"
             for w in windows
-        ) + "\n",
+        ) + "
+",
         encoding="utf-8",
     )
 
@@ -564,7 +602,6 @@ def main() -> int:
     print(f"stable external pointers: {len(ptr)}")
     print(f"pointer clusters: {len(cl)}")
     print(f"next capture windows: {len(windows)}")
-    print(f"output: {out}")
     return 0
 
 
