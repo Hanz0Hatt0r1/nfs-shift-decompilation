@@ -58,8 +58,8 @@ assert all(r["same_array"] == "True" for r in rows), rows
 print("track path instance graph test: PASS")
 PY
 
-cp "$tmp/analysis/track_path_instance_edges.csv" "$tmp/analysis/baseline_edges.csv"
-python3 - "$tmp/analysis/track_path_instance_edges.csv" <<'PY'
+cp "$tmp/analysis/aiw_runtime_edges.csv" "$tmp/analysis/baseline_runtime_edges.csv"
+python3 - "$tmp/analysis/aiw_runtime_edges.csv" <<'PY
 from pathlib import Path
 p=Path(__import__("sys").argv[1])
 s=p.read_text()
