@@ -219,6 +219,7 @@ Outputs:
 - `stable_external_pointers.csv` — stable writable pointers found outside the selected ranges.
 - `pointer_target_clusters.csv` — dense target families and dominant source strides.
 - `next_capture_windows.csv` / `next_capture_ranges.txt` — merged windows for the next extraction pass.
+- `aiw_runtime_graph_validation.json` / `aiw_runtime_edge_groups.csv` — explicit AIW/runtime edge coverage, stride and ambiguity diagnostics from `validate_aiw_runtime_graph.py`.
 
 ### Correlating runtime nodes with static AIW waypoints
 
