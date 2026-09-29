@@ -615,6 +615,7 @@ def correlate_aiw_runtime(
     aiw_docs: list[dict],
     scan_ranges: list[tuple[int, int]],
     tolerance: float,
+    runtime_roots: list[int] | None = None,
 ) -> tuple[list[dict], list[dict]]:
     """Find AIW waypoint positions in the selected runtime capture ranges."""
     if not aiw_docs:
@@ -734,6 +735,13 @@ def correlate_aiw_runtime(
 
         if chains:
             count, first_wp, last_wp, first_addr, last_addr = max(chains)
+            root = None
+            position_offset = None
+            if runtime_roots:
+                nearest = min(runtime_roots, key=lambda r: abs(first_addr - r))
+                if abs(first_addr - nearest) <= 0x1000:
+                    root = nearest
+                    position_offset = first_addr - nearest
             sequences.append({
                 "aiw_source": source,
                 "first_waypoint": first_wp,
@@ -741,6 +749,8 @@ def correlate_aiw_runtime(
                 "matched_waypoints": count,
                 "runtime_start": first_addr,
                 "runtime_end": last_addr,
+                "runtime_root": root,
+                "position_offset": position_offset,
                 "stride": stride,
                 "stride_count": stride_count,
                 "coverage": count / max(1, len(by_wp)),
@@ -902,7 +912,8 @@ def main() -> int:
 
         print(f"[aiw] sources={len(aiw_docs)} ranges={len(corr_ranges)}", flush=True)
         aiw_matches, aiw_sequences = correlate_aiw_runtime(
-            sns, idx, aiw_docs, corr_ranges, args.aiw_position_tolerance
+            sns, idx, aiw_docs, corr_ranges, args.aiw_position_tolerance,
+            args.runtime_roots,
         )
         print(
             f"[aiw] matches={len(aiw_matches)} sequences={len(aiw_sequences)}",
