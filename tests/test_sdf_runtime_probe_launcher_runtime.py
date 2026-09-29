@@ -65,6 +65,14 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
         "post_solve_XXXXXX.json",
     ]
     assert result["probe"]["mode"] == "full"
+    assert result["probe"]["expected_captures"] == [
+        "pre_solve_XXXXXX.json",
+        "post_solve_XXXXXX.json",
+        "provider_pre_<provider>_<hit>.json",
+        "provider_post_<provider>_<hit>.json",
+        "scalar_reset_events.jsonl",
+        "provider_reset_effects.jsonl",
+    ]
 
 
 def test_prepare_probe_bundle_blocks_invalid_retail_binary(tmp_path, monkeypatch):
@@ -202,3 +210,36 @@ def test_resolve_probe_executable_rejects_multiple_shift_exe_members(tmp_path):
             archive,
             tmp_path / "bundle",
         )
+
+
+def test_prepare_probe_bundle_provider_only_expected_captures(tmp_path, monkeypatch):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    output = tmp_path / "capture"
+    probe = tmp_path / "probe.py"
+    probe.write_text("# probe\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        runtime,
+        "validate_probe_executable_file",
+        lambda path: {
+            "ready": True,
+            "sha256": "a" * 64,
+            "errors": [],
+            "format": "SHIFT.SDFRuntimeProbePEValidation/1",
+        },
+    )
+
+    result = runtime.prepare_probe_bundle(
+        executable,
+        output,
+        probe_script=probe,
+        provider_only=True,
+    )
+    assert result["probe"]["mode"] == "provider-only"
+    assert result["probe"]["expected_captures"] == [
+        "provider_pre_<provider>_<hit>.json",
+        "provider_post_<provider>_<hit>.json",
+        "scalar_reset_events.jsonl",
+        "provider_reset_effects.jsonl",
+    ]
