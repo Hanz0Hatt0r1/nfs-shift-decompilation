@@ -324,28 +324,14 @@ MaterialPipelineState load_bundle_pipeline_state(const std::string& root) {
         (std::istreambuf_iterator<char>(file)),
         std::istreambuf_iterator<char>());
     if (text.find(
-            "\"format\": \"SHIFT.MaterialCullState/1\"") !=
+            "\"format\": \"SHIFT.MaterialPipelineState/1\"") !=
             std::string::npos) {
-        if (text.find("\"ready\": true") == std::string::npos) {
+        if (!json_bool_field(text, "vulkan_pipeline_ready")) {
             throw std::runtime_error(
-                "legacy bundle pipeline-state sidecar is blocked");
+                "bundle material pipeline state is blocked");
         }
-        out.cull_mode = pipeline_cull_mode(
-            json_string_field(text, "vulkan_cull_mode"));
-        return out;
-    }
-    if (text.find(
-            "\"format\": \"SHIFT.MaterialPipelineState/1\"") ==
-            std::string::npos) {
-        throw std::runtime_error(
-            "bundle pipeline-state sidecar has unsupported format");
-    }
-    if (!json_bool_field(text, "vulkan_pipeline_ready")) {
-        throw std::runtime_error(
-            "bundle material pipeline state is blocked");
-    }
 
-    out.cull_mode = pipeline_cull_mode(
+        out.cull_mode = pipeline_cull_mode(
         json_string_field(text, "vulkan_cull_mode"));
     out.depth_test_enable =
         json_bool_field(text, "vulkan_depth_test_enable") ? VK_TRUE : VK_FALSE;
@@ -367,7 +353,22 @@ MaterialPipelineState load_bundle_pipeline_state(const std::string& root) {
         json_string_field(text, "vulkan_dst_alpha_blend_factor"));
     out.alpha_blend_op = pipeline_blend_op(
         json_string_field(text, "vulkan_alpha_blend_op"));
-    return out;
+        return out;
+    }
+
+    if (text.find(
+            "\"format\": \"SHIFT.MaterialCullState/1\"") !=
+            std::string::npos) {
+        if (text.find("\"ready\": true") == std::string::npos) {
+            throw std::runtime_error(
+                "legacy bundle pipeline-state sidecar is blocked");
+        }
+        out.cull_mode = pipeline_cull_mode(
+            json_string_field(text, "vulkan_cull_mode"));
+        return out;
+    }
+    throw std::runtime_error(
+        "bundle pipeline-state sidecar has unsupported format");
 }
 
 shift::runtime::PhysicsWorkspaceBoundary load_physics_manifest(
