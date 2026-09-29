@@ -100,6 +100,7 @@ for n in range(2):
     (snap / "manifest.json").write_text(json.dumps(manifest) + "\n", encoding="utf-8")
     (snap / "maps.txt").write_text(
         "00400000-00b81000 r-xp 0 00:00 0 /game/SHIFT.exe\n"
+        "00200000-00601000 rwxp 0 00:00 0\n"
         "00610000-00611000 rwxp 0 00:00 0\n"
         "00610800-00611800 rwxp 0 00:00 0\n",
         encoding="utf-8",
