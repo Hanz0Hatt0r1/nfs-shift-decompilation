@@ -46,17 +46,20 @@ struct.pack_into("<IIff", blob, soff + 0x20, 0, 1, 15.0, 20.0)
 struct.pack_into("<If", blob, soff + 0x30, 2, 1.0)
 
 # Synthetic AIPolylinePath using the concrete vtable recovered from
-# FUN_006cc390. A generic game vtable with the same payload must NOT count.
+# FUN_006cc390. Its array points at a count-prefixed AIPolyPathNode array.
 poff = 0x300
+poly_array_local = 0x2000
+poly_array_addr = base + poly_array_local
 struct.pack_into("<III", blob, poff, 0x00AFC678, 0, 1)
-struct.pack_into("<IIffIff", blob, poff + 0x10, 8, 0x00610800, 160.0, 10.0, 1, 2.5, 12.0)
+struct.pack_into("<IIffIff", blob, poff + 0x10, 4, poly_array_addr, 160.0, 10.0, 1, 2.5, 12.0)
+struct.pack_into("<I", blob, poly_array_local - 4, 4)
 
 false_poly_off = 0x380
 struct.pack_into("<III", blob, false_poly_off, 0x00AECCF8, 0, 1)
 struct.pack_into("<IIffIff", blob, false_poly_off + 0x10, 8, 0x00610800, 160.0, 10.0, 1, 2.5, 12.0)
 
 # AIPolyPathNode array. The node's 2D x/y corresponds to AIW x/z.
-node_base = 0x600
+node_base = poly_array_local
 for index, x in enumerate((1.0, 5.0, 9.0, 13.0)):
     noff = node_base + index * 0x24
     struct.pack_into("<III", blob, noff, 0x00AFBFA8, 0, 1)
@@ -126,6 +129,12 @@ with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"),
     poly_rows = list(csv.DictReader(fh))
 assert len(poly_rows) == 1, poly_rows
 assert int(poly_rows[0]["vtable"]) == 0x00AFC678, poly_rows
+assert int(poly_rows[0]["array"]) == 0x00202000, poly_rows
+assert int(poly_rows[0]["array_count"]) == 4, poly_rows
+assert poly_rows[0]["array_count_match"] == "True", poly_rows
+assert int(poly_rows[0]["array_node_vtable"]) == 0x00AFBFA8, poly_rows
+assert poly_rows[0]["array_node_vtable_match"] == "True", poly_rows
+assert int(poly_rows[0]["array_node_sequence"]) == 4, poly_rows
 assert result["stable_external_pointer_count"] >= 2, result["stable_external_pointer_count"]
 assert result["pointer_target_clusters"], "expected pointer clusters"
 assert result["next_capture_windows"], "expected capture windows"
@@ -182,7 +191,7 @@ wp_branchID=(0)
 WP_PTRS=(2,0,-1,0)
 AIW
 
-python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-aiw"   --top 20 --target-top 8 --skip-pointer-analysis   --aiw "$tmp/test.aiw" --aiw-range 0x00200600:0x100 --runtime-root 0x002005f0   --aiw-node-plane xz >/tmp/track_path_aiw_test.out
+python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-aiw"   --top 20 --target-top 8 --skip-pointer-analysis   --aiw "$tmp/test.aiw" --aiw-range 0x00202000:0x100 --runtime-root 0x00201ff0   --aiw-node-plane xz >/tmp/track_path_aiw_test.out
 cat /tmp/track_path_aiw_test.out
 
 python3 - "$tmp/out-aiw/track_path_analysis.json" <<'PY'
@@ -200,7 +209,7 @@ assert seq[0]["first_waypoint"] == 0, seq
 assert seq[0]["last_waypoint"] == 3, seq
 assert seq[0]["matched_waypoints"] == 4, seq
 assert seq[0]["stride"] == 0x24, seq
-assert seq[0]["runtime_root"] == 0x002005f0, seq
+assert seq[0]["runtime_root"] == 0x00201ff0, seq
 assert seq[0]["position_offset"] == 0x10, seq
 print("track path AIW correlation test: PASS")
 PY
