@@ -17,6 +17,7 @@ def test_native_vulkan_bundle_executor_contract():
     assert "SHIFT.VulkanBundleExecution/1" in source
     assert "load_pipeline_state" in source
     assert "SHIFT.MaterialPipelineState/1" in source
+    assert "vulkan_pipeline_ready" in source
     assert "SHIFT.MaterialCullState/1" in source
     assert "raster.cullMode = pipeline_state.cull_mode;" in source
     assert "pipeline_state.depth_test_enable" in source
