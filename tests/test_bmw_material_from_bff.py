@@ -123,7 +123,7 @@ def test_real_bmw_material_extractor_builds_ready_binding(monkeypatch,tmp_path):
     assert report['boundary']['runtime_instance_attribution']=='not-proven'
 
 
-def test_real_bmw_material_extractor_blocks_ambiguous_bodywork_shader(monkeypatch,tmp_path):
+def test_real_bmw_material_extractor_accepts_identical_duplicate_shader_source(monkeypatch,tmp_path):
     primary,_=_setup(monkeypatch,tmp_path)
     original_bff = extractor.BFF
     primary_archive = original_bff(str(primary))
@@ -141,8 +141,80 @@ def test_real_bmw_material_extractor_blocks_ambiguous_bodywork_shader(monkeypatc
             return supplemental_archive
         return primary_archive
     monkeypatch.setattr(extractor,'BFF',fake_bff)
-    with pytest.raises(ValueError,match='expected one'):
-        extractor.build_real_bmw_material_binding(primary,supplemental_bffs=[supplemental])
+    report=extractor.build_real_bmw_material_binding(
+        primary,supplemental_bffs=[supplemental]
+    )
+    assert report['ready'] is True
+    assert report['provenance']['shader_source']['archive']=='BMW_M3_E36.bff'
+
+
+def test_real_bmw_material_extractor_blocks_conflicting_duplicate_shader_source(monkeypatch,tmp_path):
+    primary,_=_setup(monkeypatch,tmp_path)
+    original_bff = extractor.BFF
+    primary_archive = original_bff(str(primary))
+    supplemental=tmp_path/'RENDER.bff'
+    supplemental.write_bytes(b'render')
+    duplicate=FakeEntry('render/shaders/bodywork.fx',99)
+    supplemental_archive=FakeArchive(
+        supplemental,
+        [duplicate],
+        {duplicate.path:b'different'},
+    )
+    def fake_bff(path):
+        path = str(Path(path))
+        if path == str(supplemental):
+            return supplemental_archive
+        return primary_archive
+    monkeypatch.setattr(extractor,'BFF',fake_bff)
+    with pytest.raises(ValueError,match='conflicting duplicate entry'):
+        extractor.build_real_bmw_material_binding(
+            primary,supplemental_bffs=[supplemental]
+        )
+
+
+def test_fxo_candidates_are_family_filtered_and_duplicate_resources_collapsed(tmp_path):
+    a=FakeArchive(
+        tmp_path/'A.bff',
+        [
+            FakeEntry('render/shaders/cache/render_shaders_bodywork_aaaabbbb.fxo',1),
+            FakeEntry('render/shaders/cache/render_shaders_glass_11112222.fxo',2),
+        ],
+        {
+            'render/shaders/cache/render_shaders_bodywork_aaaabbbb.fxo':b'body-a',
+            'render/shaders/cache/render_shaders_glass_11112222.fxo':b'glass',
+        },
+    )
+    b=FakeArchive(
+        tmp_path/'B.bff',
+        [
+            FakeEntry('render/shaders/cache/render_shaders_bodywork_aaaabbbb.fxo',3),
+            FakeEntry('render/shaders/cache/render_shaders_bodywork_ccccdddd.fxo',4),
+        ],
+        {
+            'render/shaders/cache/render_shaders_bodywork_aaaabbbb.fxo':b'body-a',
+            'render/shaders/cache/render_shaders_bodywork_ccccdddd.fxo':b'body-b',
+        },
+    )
+    candidates,duplicates=extractor._fxo_candidates_for_shader(
+        extractor._entry_rows([a,b]),
+        'render/shaders/bodywork.fx',
+    )
+    assert duplicates == 1
+    assert [name for name,_ in candidates] == [
+        'render/shaders/cache/render_shaders_bodywork_aaaabbbb.fxo',
+        'render/shaders/cache/render_shaders_bodywork_ccccdddd.fxo',
+    ]
+
+
+def test_fxo_candidate_duplicate_path_conflict_fails_closed(tmp_path):
+    path='render/shaders/cache/render_shaders_bodywork_aaaabbbb.fxo'
+    a=FakeArchive(tmp_path/'A.bff',[FakeEntry(path,1)],{path:b'a'})
+    b=FakeArchive(tmp_path/'B.bff',[FakeEntry(path,2)],{path:b'b'})
+    with pytest.raises(ValueError,match='conflicting duplicate entry'):
+        extractor._fxo_candidates_for_shader(
+            extractor._entry_rows([a,b]),
+            'render/shaders/bodywork.fx',
+        )
 
 
 def test_real_bmw_material_extractor_requires_actual_files(monkeypatch,tmp_path):
