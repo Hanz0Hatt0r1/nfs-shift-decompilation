@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 517.**
+**Current mainline: Phase 518.**
 
 
 
@@ -46,12 +46,13 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 22. Validate the low-stop specialized-provider capture contract — Phase 515 implemented.
 23. Validate concrete AIW runtime edge coverage, stride and ambiguity without collapsing candidate mappings — Phase 516 implemented.
 24. Join recovered `Path.StartNode` pointers directly to `AIPolylinePath.array` and compare node counts/sequences — Phase 517 implemented.
-25. Expand the desktop reference renderer against real BMW material/shader permutations.
-26. Complete Vulkan RenderCommand execution using the same neutral contract.
-27. Continue SGB/FLAT and camera runtime reconstruction.
-28. Derive proven animation poses from the BAB runtime grammar.
-29. Port the stable native render/runtime boundary to Android.
-30. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+25. Cross-check AIW runtime edges against validated `AIPolyPathNode` owners and exact Path/AIPolylinePath instances — Phase 518 implemented.
+26. Expand the desktop reference renderer against real BMW material/shader permutations.
+27. Complete Vulkan RenderCommand execution using the same neutral contract.
+28. Continue SGB/FLAT and camera runtime reconstruction.
+29. Derive proven animation poses from the BAB runtime grammar.
+30. Port the stable native render/runtime boundary to Android.
+31. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
