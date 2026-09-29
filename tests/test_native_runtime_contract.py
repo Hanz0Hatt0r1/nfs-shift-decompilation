@@ -36,3 +36,18 @@ def test_native_runtime_has_fixed_clock_and_input_layer():
     assert "constexpr double kFixedDt = 1.0 / 60.0;" in source
     assert "SHIFT.NativeRuntimeInput/1" in source
     assert "simulation_steps" in source
+
+def test_native_runtime_bundle_executes_material_interface():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
+
+    assert "struct BundleAssets" in source
+    assert "SHIFT.BMWVulkanInterfaceGate/1" in source
+    assert "SHIFT.VulkanBundleSPIRV/1" in source
+    assert "bundle->vertex_shader_path" in source
+    assert "bundle->fragment_shader_path" in source
+    assert "create_material_resources" in source
+    assert "upload_material_resources" in source
+    assert "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER" in source
+    assert "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER" in source
+    assert "vkCmdBindDescriptorSets" in source
+    assert "material_mode ? VK_CULL_MODE_NONE" in source
