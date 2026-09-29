@@ -1310,6 +1310,50 @@ def correlate_aiw_runtime(
     return matches, sequences
 
 
+def build_aiw_runtime_edges(aiw_docs: list[dict], matches: list[dict]) -> list[dict]:
+    """Map explicit AIW next edges onto matched runtime waypoint addresses."""
+    by_source_wp: dict[tuple[str, int], list[dict]] = {}
+    for row in matches:
+        by_source_wp.setdefault(
+            (row["aiw_source"], int(row["waypoint_index"])), []
+        ).append(row)
+
+    edges: list[dict] = []
+    for doc in aiw_docs:
+        by_index = {int(wp["index"]): wp for wp in doc["waypoints"]}
+        for wp in doc["waypoints"]:
+            source_index = int(wp["index"])
+            target_index = int(wp.get("next", -1))
+            if target_index not in by_index:
+                continue
+            src_rows = by_source_wp.get((doc["source"], source_index), [])
+            dst_rows = by_source_wp.get((doc["source"], target_index), [])
+            for src in src_rows:
+                for dst in dst_rows:
+                    edges.append({
+                        "aiw_source": doc["source"],
+                        "from_waypoint": source_index,
+                        "to_waypoint": target_index,
+                        "from_runtime_address": int(src["runtime_address"]),
+                        "to_runtime_address": int(dst["runtime_address"]),
+                        "runtime_delta": (
+                            int(dst["runtime_address"])
+                            - int(src["runtime_address"])
+                        ),
+                        "branch_id": int(wp.get("branch_id", 0)),
+                        "link_flags": int(wp.get("link_flags", 0)),
+                        "position_match_error": (
+                            float(src.get("distance", 0.0))
+                            + float(dst.get("distance", 0.0))
+                        ),
+                    })
+    edges.sort(key=lambda r: (
+        r["aiw_source"], r["from_waypoint"], r["to_waypoint"],
+        r["from_runtime_address"], r["to_runtime_address"],
+    ))
+    return edges
+
+
 def build_aiw_next_edges(aiw_docs: list[dict]) -> list[dict]:
     """Normalize explicit AIW WP_PTRS next links into an edge list."""
     edges: list[dict] = []
@@ -1519,6 +1563,7 @@ def main() -> int:
     aiw_matches: list[dict] = []
     aiw_sequences: list[dict] = []
     aiw_next_edges: list[dict] = []
+    aiw_runtime_edges: list[dict] = []
     if args.aiw_sources:
         for source in args.aiw_sources:
             loaded = load_aiw_sources(source, args.aiw_entry)
@@ -1555,6 +1600,7 @@ def main() -> int:
             flush=True,
         )
         aiw_next_edges = build_aiw_next_edges(aiw_docs)
+        aiw_runtime_edges = build_aiw_runtime_edges(aiw_docs, aiw_matches)
 
     cl = clusters(ptr)[:args.target_top]
     radius = args.radius_kib * 1024
@@ -1603,6 +1649,7 @@ def main() -> int:
         "aiw_match_count": len(aiw_matches),
         "aiw_runtime_sequences": aiw_sequences,
         "aiw_next_edge_count": len(aiw_next_edges),
+        "aiw_runtime_edge_count": len(aiw_runtime_edges),
         "polyline_node_count": len(polyline_nodes),
         "path_start_node_link_count": len(path_start_node_links),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
@@ -1649,6 +1696,12 @@ def main() -> int:
         ) + "\n",
         encoding="utf-8",
     )
+    write_csv(out / "aiw_runtime_edges.csv", aiw_runtime_edges, [
+        "aiw_source", "from_waypoint", "to_waypoint",
+        "from_runtime_address", "to_runtime_address", "runtime_delta",
+        "branch_id", "link_flags", "position_match_error",
+    ])
+
     write_csv(out / "aiw_next_edges.csv", aiw_next_edges, [
         "aiw_source", "from_waypoint", "to_waypoint", "branch_id",
         "link_flags", "from_lap_distance", "to_lap_distance", "lap_distance_delta",
