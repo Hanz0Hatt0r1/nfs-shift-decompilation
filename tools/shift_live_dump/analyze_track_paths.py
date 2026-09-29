@@ -973,8 +973,7 @@ def main() -> int:
             "Pointer clusters are recommendations; target object identity must be confirmed after capturing their bytes from the original full series.",
         ],
     }
-    (out / "track_path_analysis.json").write_text(json.dumps(summary, indent=2) + "
-", encoding="utf-8")
+    (out / "track_path_analysis.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     for k, v in candidates.items():
         write_csv(out / (k.lower().replace(".", "_") + ".csv"), v, sorted({x for row in v for x in row}))
     write_csv(out / "stable_external_pointers.csv", ptr, [
