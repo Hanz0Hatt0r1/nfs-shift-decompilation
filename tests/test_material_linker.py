@@ -149,3 +149,54 @@ def test_material_binding_includes_linked_shader_pair():
     assert identity is not None
     assert identity["format"] == "SHIFT.ShaderPermutationIdentity/1"
     assert len(identity["identity_sha256"]) == 64
+
+
+
+def test_candidate_identity_collapses_same_proven_permutation_across_locations():
+    from material_linker import _candidate_identity
+
+    first = {
+        "file": "a.fxo",
+        "program_offset": 100,
+        "pair_sha256": "1" * 64,
+        "permutation_identity": {
+            "identity_sha256": "2" * 64,
+        },
+    }
+    second = {
+        "file": "b.fxo",
+        "program_offset": 200,
+        "pair_sha256": "1" * 64,
+        "permutation_identity": {
+            "identity_sha256": "2" * 64,
+        },
+    }
+    assert _candidate_identity(first) == _candidate_identity(second)
+
+
+def test_candidate_identity_keeps_distinct_permutations_separate():
+    from material_linker import _candidate_identity
+
+    first = {
+        "file": "a.fxo",
+        "program_offset": 100,
+        "permutation_identity": {
+            "identity_sha256": "2" * 64,
+        },
+    }
+    second = {
+        "file": "b.fxo",
+        "program_offset": 200,
+        "permutation_identity": {
+            "identity_sha256": "3" * 64,
+        },
+    }
+    assert _candidate_identity(first) != _candidate_identity(second)
+
+
+def test_candidate_identity_falls_back_to_location_without_byte_hashes():
+    from material_linker import _candidate_identity
+
+    first = {"file": "a.fxo", "program_offset": 100}
+    second = {"file": "b.fxo", "program_offset": 100}
+    assert _candidate_identity(first) != _candidate_identity(second)

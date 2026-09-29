@@ -91,6 +91,23 @@ def _selection_sort_key(candidate: dict) -> tuple:
     )
 
 
+def _candidate_identity(candidate: dict) -> tuple:
+    permutation = candidate.get("permutation_identity") or {}
+    identity_sha = (
+        permutation.get("identity_sha256")
+        if isinstance(permutation, dict) else None
+    )
+    if identity_sha:
+        return ("permutation", identity_sha)
+    if candidate.get("pair_sha256"):
+        return ("pair", candidate.get("pair_sha256"))
+    return (
+        "location",
+        candidate.get("file"),
+        candidate.get("program_offset"),
+    )
+
+
 def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
     params = _material_params(material)
     samplers = parse_fx_samplers(fx_source)
@@ -187,10 +204,13 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     ambiguous_candidates=[]
     if best:
         top=[x for x in fxo if _selection_evidence_key(x) == _selection_evidence_key(best)]
-        pair_ids={(x.get("file"), x.get("program_offset"), x.get("vertex_sha256"), x.get("pair_sha256")) for x in top}
-        # A tie is still ambiguous when byte hashes are unavailable. The
-        # stable file/program offsets are enough to distinguish candidates.
-        ambiguous_candidates=top if len(pair_ids)>1 else []
+        pair_ids={_candidate_identity(x) for x in top}
+        representatives={}
+        for x in top:
+            representatives.setdefault(_candidate_identity(x), x)
+        ambiguous_candidates=(
+            list(representatives.values()) if len(pair_ids)>1 else []
+        )
         pair_ambiguous=best.get("vertex_pair_selection_status")=="ambiguous"
         selection_status="ambiguous" if ambiguous_candidates or pair_ambiguous else ("unique" if best.get("vertex_pair_valid") else "heuristic")
     shader_pair=None
