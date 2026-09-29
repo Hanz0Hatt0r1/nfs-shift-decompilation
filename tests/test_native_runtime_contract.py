@@ -51,6 +51,9 @@ def test_native_runtime_bundle_executes_material_interface():
     assert "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER" in source
     assert "vkCmdBindDescriptorSets" in source
     assert "material_mode ? VK_CULL_MODE_NONE" in source
+    assert "geometry.vertex_bytes.empty()" in source
+    assert "vkCmdBindDescriptorSets" in source
+    assert "if (material_mode)" in source
 
 def test_native_runtime_state_boundary_is_evidence_backed():
     header = Path("native_runtime/src/runtime_state.hpp").read_text(encoding="utf-8")
