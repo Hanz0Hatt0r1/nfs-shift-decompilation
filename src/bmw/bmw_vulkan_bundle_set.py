@@ -74,18 +74,20 @@ def _normalize_indices(
     return indices
 
 
-def build_bmw_vulkan_bundle_set(
+def index_bmw_vulkan_bundle_set(
     render_command: str | Path | Mapping[str, Any],
-    mesh: str | Path | Mapping[str, Any],
     output_dir: str | Path,
     *,
-    textures: str | Path | Mapping[str, Any] | None = None,
-    environment_cube: str | Path | Mapping[str, Any] | None = None,
     command_index: int = 0,
     submesh_indices: Sequence[int] | None = None,
 ) -> dict[str, Any]:
+    """Index already-built canonical child bundles into one ordered draw set.
+
+    This is intentionally separate from child construction so adapters that
+    attach per-submesh resources/provenance can finalize those child manifests
+    before the top-level set is hashed and admitted.
+    """
     command_source = _load(render_command)
-    mesh_source = _load(mesh)
     command = _selected_command(command_source, command_index)
     indices = _normalize_indices(command, submesh_indices)
 
@@ -99,30 +101,45 @@ def build_bmw_vulkan_bundle_set(
     for draw_order, source_index in enumerate(indices):
         submesh = dict(submeshes[source_index])
         child = out / "draws" / f"submesh_{source_index:03d}"
-        bundle = build_bmw_vulkan_bundle(
-            command_source,
-            mesh_source,
-            child,
-            textures=textures,
-            environment_cube=environment_cube,
-            command_index=command_index,
-            submesh_index=source_index,
-        )
         manifest = child / "bundle_manifest.json"
-        if not manifest.is_file():
-            raise RuntimeError(
-                f"atomic bundle did not write manifest for submesh {source_index}"
-            )
 
-        child_reasons = [str(reason) for reason in bundle.get("blocking_reasons") or []]
-        if bundle.get("ready") is not True:
-            if child_reasons:
-                blockers.extend(
-                    f"bundle-set:submesh-{source_index}:{reason}"
-                    for reason in child_reasons
+        child_report: dict[str, Any] = {}
+        child_reasons: list[str] = []
+        child_status = "missing"
+        child_ready = False
+        manifest_sha256 = None
+
+        if not manifest.is_file():
+            child_reasons.append("manifest-missing")
+        else:
+            manifest_sha256 = hashlib.sha256(manifest.read_bytes()).hexdigest()
+            try:
+                child_report = _load(manifest)
+            except (OSError, ValueError, TypeError, json.JSONDecodeError) as error:
+                child_reasons.append(
+                    f"manifest-invalid:{type(error).__name__}"
                 )
             else:
-                blockers.append(f"bundle-set:submesh-{source_index}:not-ready")
+                child_status = str(child_report.get("status") or "unknown")
+                if child_report.get("format") != "SHIFT.BMWVulkanBundle/1":
+                    child_reasons.append("invalid-bundle-format")
+                child_reasons.extend(
+                    str(reason)
+                    for reason in child_report.get("blocking_reasons") or []
+                )
+                child_ready = (
+                    child_report.get("format") == "SHIFT.BMWVulkanBundle/1"
+                    and child_report.get("ready") is True
+                    and not child_reasons
+                )
+                if not child_ready and not child_reasons:
+                    child_reasons.append("not-ready")
+
+        if not child_ready:
+            blockers.extend(
+                f"bundle-set:submesh-{source_index}:{reason}"
+                for reason in child_reasons
+            )
 
         shader = submesh.get("shader") or {}
         permutation = (
@@ -137,9 +154,9 @@ def build_bmw_vulkan_bundle_set(
             "index_count": int(submesh.get("index_count", 0)),
             "bundle_path": str(child.relative_to(out)),
             "manifest_path": str(manifest.relative_to(out)),
-            "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
-            "status": bundle.get("status"),
-            "ready": bundle.get("ready") is True,
+            "manifest_sha256": manifest_sha256,
+            "status": child_status,
+            "ready": child_ready,
             "blocking_reasons": child_reasons,
             "shader_permutation_identity_sha256": (
                 permutation.get("identity_sha256")
@@ -187,6 +204,43 @@ def build_bmw_vulkan_bundle_set(
     report["manifest_sha256"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
     return report
 
+
+def build_bmw_vulkan_bundle_set(
+    render_command: str | Path | Mapping[str, Any],
+    mesh: str | Path | Mapping[str, Any],
+    output_dir: str | Path,
+    *,
+    textures: str | Path | Mapping[str, Any] | None = None,
+    environment_cube: str | Path | Mapping[str, Any] | None = None,
+    command_index: int = 0,
+    submesh_indices: Sequence[int] | None = None,
+) -> dict[str, Any]:
+    command_source = _load(render_command)
+    mesh_source = _load(mesh)
+    command = _selected_command(command_source, command_index)
+    indices = _normalize_indices(command, submesh_indices)
+
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    for source_index in indices:
+        child = out / "draws" / f"submesh_{source_index:03d}"
+        build_bmw_vulkan_bundle(
+            command_source,
+            mesh_source,
+            child,
+            textures=textures,
+            environment_cube=environment_cube,
+            command_index=command_index,
+            submesh_index=source_index,
+        )
+
+    return index_bmw_vulkan_bundle_set(
+        command_source,
+        out,
+        command_index=command_index,
+        submesh_indices=indices,
+    )
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
