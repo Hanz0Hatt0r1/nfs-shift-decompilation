@@ -42,8 +42,16 @@ CLI:
 
 `python tools/preflight_specialized_provider_capture.py SHIFT.zip out/provider-capture --probe-script tools/gdb_sdf_solver_probe.py`
 
-The current analysis environment lacks Wine and GDB, so runtime capture remains
-externally gated even though the supplied `SHIFT.exe` is PE32/i386.
+The preflight now also validates the probe source contract before an attach:
+GDB import, `sdf-probe` command, provider pre/post capture outputs, scalar-reset
+capture and the provider snapshot builder must all be present. The CLI exposes this
+as `probe_script_valid`.
+
+The supplied `shift.zip` contains a PE32/i386 `SHIFT.exe` whose SHA-256 is
+`eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1`, matching
+the retail executable fingerprint already enforced by the PE validator. The current
+analysis environment still lacks Wine and GDB, so authentic runtime capture remains
+externally gated.
 
 ## Pre-PhysX handoff
 

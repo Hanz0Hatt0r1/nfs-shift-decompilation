@@ -14,7 +14,10 @@ for path in (ROOT, SRC):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from sdf_runtime_probe_preflight_runtime import preflight_provider_capture
+from sdf_runtime_probe_preflight_runtime import (
+    preflight_provider_capture,
+    validate_probe_script,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -42,6 +45,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "ready": report["ready"],
         "executable_valid": report["artifacts"]["ready"],
         "probe_script_exists": report["probe_script"]["exists"],
+        "probe_script_valid": report["probe_script"]["validation"]["ready"],
         "wine": report["runtime_tools"]["wine"],
         "gdb": report["runtime_tools"]["gdb"],
         "gdb_python_ready": report["gdb_python"]["ready"],

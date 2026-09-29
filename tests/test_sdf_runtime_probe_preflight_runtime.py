@@ -64,6 +64,7 @@ def test_preflight_combines_artifact_and_tool_errors(monkeypatch, tmp_path: Path
     )
     monkeypatch.setattr(runtime, "_tool_version", lambda *args: {"ready": False, "path": None, "version": None})
     monkeypatch.setattr(runtime, "check_gdb_python", lambda *args: {"ready": False, "error": "missing:gdb"})
+    monkeypatch.setattr(runtime, "validate_probe_script", lambda *args: {"ready": True, "errors": [], "markers": {}})
 
     result = runtime.preflight_provider_capture(
         executable,
@@ -100,6 +101,7 @@ def test_preflight_is_ready_when_all_requirements_pass(monkeypatch, tmp_path: Pa
         "version": f"{command}-version",
     })
     monkeypatch.setattr(runtime, "check_gdb_python", lambda *args: {"ready": True})
+    monkeypatch.setattr(runtime, "validate_probe_script", lambda *args: {"ready": True, "errors": [], "markers": {}})
 
     result = runtime.preflight_provider_capture(
         executable,
