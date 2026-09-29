@@ -49,9 +49,13 @@ def build_gdb_command_file(
     *,
     probe_script: str | Path,
     output_dir: str | Path,
+    provider_only: bool = False,
 ) -> str:
     script = Path(probe_script).resolve()
     output = Path(output_dir).resolve()
+    probe_args = f"{output}"
+    if provider_only:
+        probe_args += " --provider-only"
     return (
         "set pagination off\n"
         "set confirm off\n"
@@ -66,6 +70,7 @@ def prepare_probe_bundle(
     output_dir: str | Path,
     *,
     probe_script: str | Path,
+    provider_only: bool = False,
 ) -> dict[str, Any]:
     output = Path(output_dir).resolve()
     exe = resolve_probe_executable(executable, output)
@@ -77,6 +82,7 @@ def prepare_probe_bundle(
         build_gdb_command_file(
             probe_script=probe_script,
             output_dir=output,
+            provider_only=provider_only,
         ),
         encoding="utf-8",
     )
@@ -101,6 +107,7 @@ def prepare_probe_bundle(
             "script": str(Path(probe_script).resolve()),
             "gdb_command_file": str(command_file),
             "output_dir": str(output),
+            "mode": "provider-only" if provider_only else "full",
             "expected_captures": [
                 "pre_solve_XXXXXX.json",
                 "post_solve_XXXXXX.json",
