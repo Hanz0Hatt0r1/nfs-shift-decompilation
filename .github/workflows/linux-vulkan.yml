@@ -104,3 +104,16 @@ jobs:
         with:
           name: linux-vulkan-smoke
           path: out/vulkan
+
+      - name: Export source checkout for local retail evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-checkout
+          include-hidden-files: true
+          path: |
+            shift_importer.py
+            src
+            tools
+            evidence
+            native_runtime
+            native_vulkan
