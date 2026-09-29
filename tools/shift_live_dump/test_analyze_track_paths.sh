@@ -136,7 +136,7 @@ cat > "$tmp/test.aiw" <<'AIW'
 [Waypoint]
 number_waypoints=4
 lap_length=120.000000
-\0
+\\0
 wp_pos=(1.0000,2.0000,3.0000)
 wp_branchID=(0)
 WP_PTRS=(3,1,-1,0)
