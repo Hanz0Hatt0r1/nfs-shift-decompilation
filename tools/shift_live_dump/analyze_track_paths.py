@@ -783,16 +783,25 @@ def resolve_path_start_nodes(
                 first_vtables and
                 all(v == KNOWN_VTABLES["AIPolyPathNode"] for v in first_vtables)
             ),
+            "link_type": (
+                "AIPolyPathNodeArray"
+                if first_vtables and
+                all(v == KNOWN_VTABLES["AIPolyPathNode"] for v in first_vtables)
+                else "unknown"
+            ),
             "array_count": Counter(counts).most_common(1)[0][0] if counts else None,
-            "array_count_match": None,
+            "array_count_stable": bool(counts and len(set(counts)) == 1),
             "node_sequence": max(sequences) if sequences else 0,
+            "node_sequence_complete": bool(
+                counts and sequences and
+                len(sequences) == len(counts) and
+                all(seq == count for seq, count in zip(sequences, counts))
+            ),
             "stable_snapshots": len(first_vtables),
             "target_mapping_start": None,
             "target_mapping_end": None,
             "target_mapping_perms": None,
         }
-        if row["array_count"] is not None:
-            row["array_count_match"] = row["array_count"] >= 1 and row["array_count"] >= row["node_sequence"]
         target_mapping = mapping(target, maps_list, [r["start"] for r in maps_list])
         if target_mapping:
             row["target_mapping_start"] = target_mapping["start"]
@@ -1563,8 +1572,9 @@ def main() -> int:
     ])
     write_csv(out / "path_start_node_links.csv", path_start_node_links, [
         "path_address", "start_node", "target_vtable", "target_vtable_match",
-        "array_count", "array_count_match", "node_sequence", "stable_snapshots",
-        "target_mapping_start", "target_mapping_end", "target_mapping_perms",
+        "link_type", "array_count", "array_count_stable", "node_sequence",
+        "node_sequence_complete", "stable_snapshots", "target_mapping_start",
+        "target_mapping_end", "target_mapping_perms",
     ])
     write_csv(out / "aipolylinepath_nodes.csv", polyline_nodes, [
         "path_address", "array_address", "index", "address", "vtable",
