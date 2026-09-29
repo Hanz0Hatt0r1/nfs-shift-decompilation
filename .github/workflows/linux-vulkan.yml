@@ -64,6 +64,18 @@ jobs:
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
             --frames 3 | tee out/vulkan/runtime/runtime.json
+      - name: Assert native runtime output
+        run: |
+          grep -q '"format": "SHIFT.NativeRuntimeFrameLoop/1"' out/vulkan/runtime/runtime.json
+          grep -q '"frames_rendered": 3' out/vulkan/runtime/runtime.json
+          grep -q '"simulation_steps": 3' out/vulkan/runtime/runtime.json
+          grep -q '"material_mode": true' out/vulkan/runtime/runtime.json
+          grep -q '"bundle_2d_textures": 1' out/vulkan/runtime/runtime.json
+          grep -q '"bundle_cube": true' out/vulkan/runtime/runtime.json
+          grep -q '"state_layer": "SHIFT.NativeRuntimeState/1"' out/vulkan/runtime/runtime.json
+          grep -q '"physics_workspace_ready": true' out/vulkan/runtime/runtime.json
+          grep -q '"physics_workspace_scalars": 40' out/vulkan/runtime/runtime.json
+          grep -q '"status": "ok"' out/vulkan/runtime/runtime.json
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
