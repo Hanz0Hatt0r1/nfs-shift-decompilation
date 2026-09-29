@@ -5,8 +5,9 @@ import pytest
 from flat_runtime import FLATRuntimeDecodeError, parse_flat_runtime
 
 
-def _leaf(index: int) -> bytes:
+def _leaf(index: int, object_handle: int = 0) -> bytes:
     words = [0] * 16
+    words[14] = object_handle
     words[15] = index
     return struct.pack("<16I", *words)
 
@@ -27,6 +28,15 @@ def test_flat_header_and_leaf_layout():
     assert report["root"]["direct_record_count"] == 1
     assert report["root"]["records"][0]["runtime_index"] == 7
     assert report["root"]["span_bytes"] == 0x60
+
+
+def test_flat_leaf_exposes_object_handle_and_child_index():
+    data = _node([_leaf(11, 0x12345678)], marker=1)
+    record = parse_flat_runtime(data)["root"]["records"][0]
+    assert record["object_handle"] == 0x12345678
+    assert record["child_index"] == 11
+    assert record["runtime_index"] == 11
+    assert record["index_word"] == 11
 
 
 def test_nested_flat_nodes_follow_low24_span():
