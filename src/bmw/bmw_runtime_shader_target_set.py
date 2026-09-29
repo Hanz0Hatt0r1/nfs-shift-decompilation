@@ -202,9 +202,14 @@ def build_bmw_runtime_shader_target_set(
         targets = list(dedup.values())
 
         capture_ready = bool(targets)
-        attribution_ready = bool(targets) and all(
-            target.get("strength") == "exact-pair"
-            for target in targets
+        attribution_ready = (
+            bool(targets)
+            and dropped == 0
+            and all(
+                target.get("strength") == "exact-pair"
+                and target.get("exact") is True
+                for target in targets
+            )
         )
         if not capture_ready:
             blockers.append(
