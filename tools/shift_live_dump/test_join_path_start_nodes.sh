@@ -92,6 +92,7 @@ pointer_only = [row for row in path2 if not row["node_count_match"]]
 assert len(pointer_only) == 1, path2
 third = pointer_only[0]
 assert third["candidate_count"] == 2, third
-assert third["join_evidence"] == "pointer-only", third
+assert not third["node_sequence_match"], third
+assert third["join_evidence"] == "pointer+count", third
 print("Path.StartNode -> AIPolylinePath.array join test: PASS")
 PY
