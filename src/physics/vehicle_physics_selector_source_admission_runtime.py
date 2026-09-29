@@ -54,6 +54,32 @@ def build_vehicle_physics_selector_source_admission() -> dict[str, Any]:
             "capacity_gate": "selector context+0x1c < selector context+0x28",
             "descriptor_contract": "SHIFT.VehiclePhysicsSelectorDescriptorPopulation/1",
         },
+        "execution_model": {
+            "function": "evaluate_selector_source_admission",
+            "inputs": [
+                "owner+0x4f0",
+                "uint32 source_record+0x10",
+                "selector context+0x1c",
+                "selector context+0x28",
+            ],
+            "outputs": [
+                "selector_key",
+                "bit_mask",
+                "mask_hit",
+                "wrapper_called",
+                "capacity_available",
+                "population_succeeded",
+                "owner+0x4f0 after transition",
+                "selector context+0x1c after transition",
+            ],
+            "ordering": [
+                "derive low-nibble selector key",
+                "test owner mask bit",
+                "invoke descriptor wrapper on mask hit",
+                "clear the mask bit on mask hit",
+                "apply independent descriptor capacity gate",
+            ],
+        },
         "evidence": [
             "thunk_FUN_00d758d0 derives a selector bit from source_record+0x10 low nibble.",
             "The corresponding bit must be set in owner+0x4f0 before the source record is admitted into DAT_00bbc600.",
