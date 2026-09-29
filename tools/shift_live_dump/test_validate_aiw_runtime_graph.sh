@@ -32,6 +32,7 @@ EOF
 cat >"$tmp/analysis/aiw_runtime_edges.csv" <<'EOF'
 aiw_source,from_waypoint,to_waypoint,from_runtime_address,to_runtime_address,runtime_delta,branch_id,link_flags,position_match_error
 test.aiw:track.aiw,0,10,0x201000,0x201024,36,0,0,0
+test.aiw:track.aiw,0,10,0x301000,0x301030,48,0,0,0.01
 test.aiw:track.aiw,10,20,0x201024,0x201048,36,0,0,0
 test.aiw:track.aiw,20,30,0x201048,0x20106c,36,0,0,0
 test.aiw:track.aiw,30,0,0x20106c,0x201000,-108,0,0,0
