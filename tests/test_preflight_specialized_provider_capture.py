@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import tools.preflight_specialized_provider_capture as tool
+import sdf_runtime_probe_preflight_runtime as runtime
 
 
 def test_parser_requires_executable_output_and_probe():
