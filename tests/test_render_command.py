@@ -783,3 +783,23 @@ def test_render_command_rejects_unknown_permutation_identity_format():
     result = build_render_command(draw, _resources())
     assert result["ready"] is False
     assert "shader-identity:invalid-permutation-format:0" in result["blocking_reasons"]
+
+
+
+def test_render_command_preserves_material_cull_state():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["render_state"] = {
+        "fog": 1,
+        "antialias": 1,
+        "cull": "EBFCT_CLOCKWISE",
+    }
+    result = build_render_command(
+        build_static_draw_contract(packet),
+        _resources(),
+    )
+    assert result["ready"] is True
+    assert result["submeshes"][0]["render_state"] == {
+        "fog": 1,
+        "antialias": 1,
+        "cull": "EBFCT_CLOCKWISE",
+    }
