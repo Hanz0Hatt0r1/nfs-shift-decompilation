@@ -250,10 +250,9 @@ def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str,
             _i32(data, child_base + 4 * i)
             for i in range(child_count)
         ]
-        if any(value <= 0 for value in child_ids):
-            raise SGBRuntimeDecodeError(
-                f"PART child object reference is not one-based at record {index}"
-            )
+        child_lookup_indices_u32 = [
+            (value - 1) & 0xFFFFFFFF for value in child_ids
+        ]
 
         next_cursor = child_base + child_count * 4
         runtime_slots = [
@@ -285,9 +284,8 @@ def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str,
             "child_partition_table_present": child_partition_table_present,
             "child_object_count": child_count,
             "child_object_indices": child_ids,
-            "child_object_zero_based_lookup_indices": [
-                value - 1 for value in child_ids
-            ],
+            "child_object_lookup_indices_u32": child_lookup_indices_u32,
+            "child_object_lookup_transform": "(source_id - 1) & 0xffffffff",
             "runtime_partition_tree": {
                 **PART_RUNTIME_TREE,
                 "root_record": index == 0,
@@ -323,7 +321,8 @@ def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str,
                     "then clears that slot's mask bit"
                 ),
                 "child_object_resolution": {
-                    "reference_base": 1,
+                    "reference_transform": "source_id - 1",
+                    "lookup_argument_type": "uint32",
                     "lookup": "FUN_006885b0(scene_wrapper_list, id - 1)",
                     "resolved_wrapper_partition_bounds_write_offset": 0x30,
                     "partition_bounds_target": (
