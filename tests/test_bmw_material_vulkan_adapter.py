@@ -5,7 +5,10 @@ import json
 import struct
 
 from bmw_vulkan_bundle import TARGET_MEB
-from bmw_material_vulkan_adapter import (\n    build_bmw_vulkan_from_material_slice,\n    build_bmw_vulkan_set_from_material_slice,\n)
+from bmw_material_vulkan_adapter import (
+    build_bmw_vulkan_from_material_slice,
+    build_bmw_vulkan_set_from_material_slice,
+)
 
 
 def _slice():
