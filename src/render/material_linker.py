@@ -91,6 +91,25 @@ def _selection_sort_key(candidate: dict) -> tuple:
     )
 
 
+def _candidate_identity(candidate: dict) -> tuple:
+    permutation = candidate.get("permutation_identity") or {}
+    identity_sha = (
+        permutation.get("identity_sha256")
+        if isinstance(permutation, dict) else None
+    )
+    if identity_sha:
+        return ("permutation", identity_sha)
+    if candidate.get("pair_sha256"):
+        return ("pair", candidate.get("pair_sha256"))
+    # When byte hashes are unavailable, stable file/program offsets remain
+    # the only evidence-backed identity.
+    return (
+        "location",
+        candidate.get("file"),
+        candidate.get("program_offset"),
+    )
+
+
 def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
     params = _material_params(material)
     samplers = parse_fx_samplers(fx_source)
@@ -187,24 +206,10 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     ambiguous_candidates=[]
     if best:
         top=[x for x in fxo if _selection_evidence_key(x) == _selection_evidence_key(best)]
-        def candidate_identity(x):
-            permutation = x.get("permutation_identity") or {}
-            identity_sha = (
-                permutation.get("identity_sha256")
-                if isinstance(permutation, dict) else None
-            )
-            if identity_sha:
-                return ("permutation", identity_sha)
-            if x.get("pair_sha256"):
-                return ("pair", x.get("pair_sha256"))
-            # When byte hashes are unavailable, stable file/program offsets
-            # remain the only evidence-backed identity.
-            return ("location", x.get("file"), x.get("program_offset"))
-
-        pair_ids={candidate_identity(x) for x in top}
+        pair_ids={_candidate_identity(x) for x in top}
         representatives={}
         for x in top:
-            representatives.setdefault(candidate_identity(x), x)
+            representatives.setdefault(_candidate_identity(x), x)
         ambiguous_candidates=(
             list(representatives.values()) if len(pair_ids)>1 else []
         )
