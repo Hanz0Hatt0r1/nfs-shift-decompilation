@@ -30,13 +30,13 @@ The Linux target does not require EA services, online functionality, DRM, login/
 
 ## Next integration gates
 
-1. Generalize the native material executor from the current validated bundle interface to multiple RenderCommand submeshes and shader permutations without introducing BFF parsing into the runtime.
+1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Connect the existing evidence-backed camera update/snapshot contracts to the native state double buffer.
 3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading.
 6. Add keyboard/gamepad vehicle controls beyond the neutral intent layer.
-7. Expand native depth, blend, sampler-state and shader-resource execution, then replace the bounded frame loop with the native game loop/state machine.
+7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
 
 The renderer remains downstream of normalized IR; original BFF parsing stays outside the native executable.
 
@@ -61,3 +61,22 @@ Each prepared child owns independent Vulkan state:
 All child draws share the swapchain, render pass, depth attachments and frame
 synchronization and are submitted in recorded draw order inside one render
 pass. The original `--bundle` mode uses the same path with one material draw.
+
+
+## Phase 527 material-slice multi-draw boundary
+
+The BMW material adapter can now emit
+`SHIFT.BMWMaterialSliceVulkanSet/1`. Each selected RenderCommand submesh is
+bridged independently into its canonical
+`draws/submesh_NNN/SHIFT.BMWVulkanBundle/1` child before the top-level set is
+indexed.
+
+This ordering matters for real data: exact DDS extraction, SHA-256 provenance,
+decoded texture packets, optional environment-cube resources, constants and
+shader identity remain child-local. The set index reads the finalized child
+manifests rather than rebuilding them, so per-material evidence is not lost.
+
+A blocked submesh does not erase ready siblings, but the complete set remains
+fail-closed until every selected child is ready. The existing single-submesh
+adapter and CLI remain available; `--all-submeshes` selects the Phase 527
+set path.
