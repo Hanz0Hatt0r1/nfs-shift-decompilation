@@ -24,7 +24,7 @@ def test_native_runtime_consumes_bmw_bundle_geometry():
 
     assert "SHIFT.BMWVulkanBundle/1" in source
     assert "SHIFT.NativeSubmissionGate/1" in source
-    assert "first_index = geometry.first_index" in source
+    assert "out_first_index = geometry.first_index" in source
     assert "first_index, 0, 0" in source
     assert "layout(location = 0) in vec3 inPosition;" in shader
     assert "inNormal" not in shader
@@ -43,14 +43,14 @@ def test_native_runtime_bundle_executes_material_interface():
     assert "struct BundleAssets" in source
     assert "SHIFT.BMWVulkanInterfaceGate/1" in source
     assert "SHIFT.VulkanBundleSPIRV/1" in source
-    assert "bundle->vertex_shader_path" in source
-    assert "bundle->fragment_shader_path" in source
+    assert "bundle.vertex_shader_path" in source
+    assert "bundle.fragment_shader_path" in source
     assert "create_material_resources" in source
     assert "upload_material_resources" in source
     assert "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER" in source
     assert "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER" in source
     assert "vkCmdBindDescriptorSets" in source
-    assert "material_mode ? VK_CULL_MODE_NONE" in source
+    assert "uses_material_descriptors ? VK_CULL_MODE_NONE" in source
     assert "geometry.vertex_bytes.empty()" in source
     assert "vkCmdBindDescriptorSets" in source
     assert "if (material_mode)" in source
@@ -101,7 +101,7 @@ def test_native_camera_defaults_match_recovered_view_constructor():
 def test_native_index_draw_count_respects_first_index():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
 
-    assert "geometry.indices.size() - first_index" in source
+    assert "geometry.indices.size() - out_first_index" in source
     assert "index_count == 0" in source
 
 
