@@ -731,6 +731,86 @@ def extract_polyline_nodes(
             continue
     return rows
 
+def resolve_path_start_nodes(
+    candidates: list[dict],
+    snapshots: list[Path],
+    indexes: list[dict[int, dict]],
+    maps_list: list[dict],
+) -> list[dict]:
+    """Resolve Path.StartNode targets and classify concrete runtime node arrays.
+
+    Path.StartNode is a direct pointer field recovered from SHIFT.exe.c. When
+    it points at an AIPolyPathNode, array[-4] carries the node count and the
+    following elements use the fixed 0x24-byte stride. This pass records that
+    relation independently of generic stable-pointer clustering.
+    """
+    out: list[dict] = []
+    if not candidates or not snapshots:
+        return out
+    starts_by_snapshot = [sorted(idx.keys()) for idx in indexes]
+    for path_row in candidates:
+        target = int(path_row.get("start_node", 0))
+        if not target:
+            continue
+        first_vtables: list[int] = []
+        counts: list[int] = []
+        sequences: list[int] = []
+        for snap, idx, starts in zip(snapshots, indexes, starts_by_snapshot):
+            blob = _read_virtual(snap, idx, starts, target, 4)
+            if blob is None:
+                continue
+            first_vtables.append(struct.unpack_from("<I", blob)[0])
+            count_blob = _read_virtual(snap, idx, starts, target - 4, 4)
+            if count_blob is None:
+                continue
+            count = struct.unpack_from("<I", count_blob)[0]
+            counts.append(count)
+            seq = 0
+            for n in range(min(count, 256)):
+                vt_blob = _read_virtual(snap, idx, starts, target + n * 0x24, 4)
+                if vt_blob is None:
+                    break
+                vt = struct.unpack_from("<I", vt_blob)[0]
+                if vt != KNOWN_VTABLES["AIPolyPathNode"]:
+                    break
+                seq += 1
+            sequences.append(seq)
+        row = {
+            "path_address": int(path_row["address"]),
+            "start_node": target,
+            "target_vtable": first_vtables[0] if first_vtables else None,
+            "target_vtable_match": bool(
+                first_vtables and
+                all(v == KNOWN_VTABLES["AIPolyPathNode"] for v in first_vtables)
+            ),
+            "link_type": (
+                "AIPolyPathNodeArray"
+                if first_vtables and
+                all(v == KNOWN_VTABLES["AIPolyPathNode"] for v in first_vtables)
+                else "unknown"
+            ),
+            "array_count": Counter(counts).most_common(1)[0][0] if counts else None,
+            "array_count_stable": bool(counts and len(set(counts)) == 1),
+            "node_sequence": max(sequences) if sequences else 0,
+            "node_sequence_complete": bool(
+                counts and sequences and
+                len(sequences) == len(counts) and
+                all(seq == count for seq, count in zip(sequences, counts))
+            ),
+            "stable_snapshots": len(first_vtables),
+            "target_mapping_start": None,
+            "target_mapping_end": None,
+            "target_mapping_perms": None,
+        }
+        target_mapping = mapping(target, maps_list, [r["start"] for r in maps_list])
+        if target_mapping:
+            row["target_mapping_start"] = target_mapping["start"]
+            row["target_mapping_end"] = target_mapping["end"]
+            row["target_mapping_perms"] = target_mapping["perms"]
+        out.append(row)
+    out.sort(key=lambda r: (not r["target_vtable_match"], -int(r["node_sequence"]), r["start_node"]))
+    return out
+
 def clusters(rows: list[dict], gap: int = 0x10000) -> list[dict]:
     rows = sorted(rows, key=lambda r: r["target"])
     out: list[dict] = []
@@ -1354,6 +1434,9 @@ def main() -> int:
     # after the global scan because the target array can live in another
     # selected memory region.
     validate_polyline_array_links(candidates["AIPolylinePath"], sns, idx)
+    path_start_node_links = resolve_path_start_nodes(
+        candidates["Path"], sns, idx, mm
+    )
     polyline_nodes = extract_polyline_nodes(
         candidates["AIPolylinePath"], sns[0], idx[0]
     )
@@ -1467,6 +1550,7 @@ def main() -> int:
         "aiw_match_count": len(aiw_matches),
         "aiw_runtime_sequences": aiw_sequences,
         "polyline_node_count": len(polyline_nodes),
+        "path_start_node_link_count": len(path_start_node_links),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
         "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
         "notes": [
@@ -1485,6 +1569,12 @@ def main() -> int:
         "score", "start", "end", "span", "target_count", "source_count",
         "source_stride", "source_stride_count", "mapping_start",
         "mapping_end", "mapping_perms", "target_samples",
+    ])
+    write_csv(out / "path_start_node_links.csv", path_start_node_links, [
+        "path_address", "start_node", "target_vtable", "target_vtable_match",
+        "link_type", "array_count", "array_count_stable", "node_sequence",
+        "node_sequence_complete", "stable_snapshots", "target_mapping_start",
+        "target_mapping_end", "target_mapping_perms",
     ])
     write_csv(out / "aipolylinepath_nodes.csv", polyline_nodes, [
         "path_address", "array_address", "index", "address", "vtable",
