@@ -33,7 +33,7 @@ path_address,start_node,polyline_address,polyline_array,path_node_count,polyline
 EOF
 
 python3 "$self_dir/validate_track_path_instance_graph.py" "$tmp/analysis" \
-  --require-node-owner --require-same-array --require-stride
+  --require-node-owner --require-same-array --require-stride --require-path-polyline-join
 
 python3 - "$tmp/analysis/track_path_instance_graph.json" <<'PY'
 import csv
@@ -47,6 +47,7 @@ assert result["runtime_instance_edge_candidate_count"] == 3, result
 assert result["runtime_edge_node_owner_coverage"] == 1.0, result
 assert result["same_array_candidate_count"] == 3, result
 assert result["runtime_stride_match_candidate_count"] == 3, result
+assert result["path_polyline_join_candidate_count"] == 3, result
 
 with open(sys.argv[1].replace("track_path_instance_graph.json","track_path_instance_edges.csv"),newline="",encoding="utf-8") as fh:
     rows=list(csv.DictReader(fh))
