@@ -77,6 +77,24 @@ def prepare_probe_bundle(
     validation = validate_probe_executable_file(exe)
     output.mkdir(parents=True, exist_ok=True)
 
+    expected_captures = (
+        [
+            "provider_pre_<provider>_<hit>.json",
+            "provider_post_<provider>_<hit>.json",
+            "scalar_reset_events.jsonl",
+            "provider_reset_effects.jsonl",
+        ]
+        if provider_only
+        else [
+            "pre_solve_XXXXXX.json",
+            "post_solve_XXXXXX.json",
+            "provider_pre_<provider>_<hit>.json",
+            "provider_post_<provider>_<hit>.json",
+            "scalar_reset_events.jsonl",
+            "provider_reset_effects.jsonl",
+        ]
+    )
+
     command_file = output / "attach.gdb"
     command_file.write_text(
         build_gdb_command_file(
@@ -108,10 +126,7 @@ def prepare_probe_bundle(
             "gdb_command_file": str(command_file),
             "output_dir": str(output),
             "mode": "provider-only" if provider_only else "full",
-            "expected_captures": [
-                "pre_solve_XXXXXX.json",
-                "post_solve_XXXXXX.json",
-            ],
+            "expected_captures": expected_captures,
         },
         "limitations": [
             "A live 32-bit Wine SHIFT.exe process is required for capture.",
