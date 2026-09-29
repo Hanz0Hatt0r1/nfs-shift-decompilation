@@ -11,7 +11,7 @@ import sys
 
 root = pathlib.Path(sys.argv[1])
 base = 0x00200000
-size = 0x1000
+size = 0x401000
 blob = bytearray(size)
 
 # Synthetic Path object using the offsets recovered from SHIFT.exe.c.
@@ -21,6 +21,22 @@ struct.pack_into("<fff", blob, poff + 0x10, 1.0, 0.0, 0.25)
 struct.pack_into("<f", blob, poff + 0x1C, 12.5)
 struct.pack_into("<I", blob, poff + 0x20, 0x00500000)
 blob[poff + 0x24:poff + 0x28] = bytes((0, 0, 0, 1))
+
+# A second Path deliberately straddles the 4 MiB streaming boundary.
+# It also points at the same stable StartNode; --top must not hide it from
+# the root-following pass.
+boundary_poff = 0x400000 - 0x20
+struct.pack_into("<III", blob, boundary_poff, 0x00401000, 0, 1)
+struct.pack_into("<fff", blob, boundary_poff + 0x10, 0.0, 1.0, 0.5)
+struct.pack_into("<f", blob, boundary_poff + 0x1C, 24.5)
+struct.pack_into("<I", blob, boundary_poff + 0x20, 0x00500000)
+blob[boundary_poff + 0x24:boundary_poff + 0x28] = bytes((1, 0, 0, 1))
+
+# An Incident.PathOwner candidate sits exactly at the end of the region.
+# This guards the scanner against using a too-short fixed tail limit.
+ioff = size - 0xFC
+struct.pack_into("<I", blob, ioff, 0x00401000)
+struct.pack_into("<IIfff f III", blob, ioff + 0xD4, 1, 0x00500000, 1.0, 2.0, 3.0, 10.0, 1, 1, 0)
 
 # Synthetic AISegmentPath using the confirmed FUN_006d0fe0 vtable.
 soff = 0x220
@@ -80,6 +96,7 @@ result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AISegmentPath"] >= 1, result["candidate_counts"]
+assert result["candidate_counts"]["Incident.PathOwner"] >= 1, result["candidate_counts"]
 assert result["stable_external_pointer_count"] >= 2, result["stable_external_pointer_count"]
 assert result["pointer_target_clusters"], "expected pointer clusters"
 assert result["next_capture_windows"], "expected capture windows"
@@ -94,6 +111,22 @@ PY
 
 python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-skip-pointers" --top 20 --target-top 8 --skip-pointer-analysis >/tmp/track_path_skip_test.out
 cat /tmp/track_path_skip_test.out
+
+
+python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-top1" --top 1 --target-top 8 --skip-pointer-analysis >/tmp/track_path_top1_test.out
+cat /tmp/track_path_top1_test.out
+
+python3 - "$tmp/out-top1/track_path_analysis.json" <<'PY'
+import json
+import sys
+
+result = json.loads(open(sys.argv[1], encoding="utf-8").read())
+assert len(result["path_root_targets"]) == 1, result["path_root_targets"]
+root = result["path_root_targets"][0]
+assert root["target"] == 0x00500000
+assert root["candidate_count"] >= 2, root
+print("track path top-limit/root retention test: PASS")
+PY
 
 cat > "$tmp/test.aiw" <<'AIW'
 [Waypoint]
