@@ -993,13 +993,11 @@ def main() -> int:
         "start", "size", "targets",
     ])
     (out / "path_root_ranges.txt").write_text(
-        "
-".join(
+        "\n".join(
             f"0x{w['start']:x}:0x{w['size']:x}  # targets=" +
             ",".join(f"0x{x:x}" for x in w["targets"])
             for w in path_root_windows
-        ) + "
-",
+        ) + "\n",
         encoding="utf-8",
     )
     write_csv(out / "aiw_waypoints.csv", [
