@@ -25,22 +25,30 @@ struct VehicleControlIntent {
 };
 
 struct CameraState {
-    std::array<float, 3> position{0.0f, 0.0f, 0.0f};
-    std::array<float, 4> quaternion{0.0f, 0.0f, 0.0f, 0.0f};
+    // Projection defaults are recovered from CCameraView's initializer:
+    // FOV=0.7853982, AspectRatio=1.3333334, NearZ=0.1, FarZ=750.0.
     uint32_t fov_bits = 0x3F490FDBu;
-    int32_t type = 1;
-    uint32_t near_z_bits = 0x3F800000u;
+    uint32_t aspect_ratio_bits = 0x3FAAAAABu;
+    uint32_t near_z_bits = 0x3DCCCCCDu;
     uint32_t far_z_bits = 0x443B8000u;
-    int32_t target = 6;
-    int32_t look_at = 6;
+
+    // Manager-level snapshot fields are kept opaque/integer-shaped.
+    int32_t manager_mode = 0;
+    int32_t buffer_sub_index = -1;
+    int32_t camera_id = -1;
+    int32_t active_group = -1;
+    int32_t group_restore_value = -1;
+    uint8_t active_buffer_sub_flag = 0;
 
     float fov() const { return f32_from_bits(fov_bits); }
+    float aspect_ratio() const { return f32_from_bits(aspect_ratio_bits); }
     float near_z() const { return f32_from_bits(near_z_bits); }
     float far_z() const { return f32_from_bits(far_z_bits); }
 };
 
 struct CameraBufferRuntime {
-    CameraState buffers[2]{};
+    static constexpr uint32_t buffer_count = 2;
+    CameraState buffers[buffer_count]{};
     uint32_t active_index = 0;
     bool update_in_progress = false;
 
