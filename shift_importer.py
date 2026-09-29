@@ -3272,6 +3272,28 @@ def cmd_bmw_bff_intake(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmt_render_state_corpus(args: argparse.Namespace) -> int:
+    """Scan BFF material corpora and summarize render-state/native coverage."""
+    from bmt_render_state_corpus import scan_bff_corpus
+
+    report = scan_bff_corpus([Path(value) for value in args.input])
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+        "stats": report["stats"],
+        "output": str(out),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_material_from_bff(args: argparse.Namespace) -> int:
     """Build a real BMW M3 MaterialBinding directly from retail BFF archives."""
     from bmw_material_from_bff import build_real_bmw_material_binding
@@ -4266,6 +4288,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.BMWRenderBFFEvidence/1 JSON output")
     p.add_argument("--supplemental-bff", action="append", default=[], help="additional BFF archives such as BMW_M3_E36_Cockpit.bff")
     p.set_defaults(fn=cmd_render_bff_evidence)
+
+    p = sp.add_parser("bmt-render-state-corpus", help="scan real BFF materials for depth/alpha/blend state and native blockers")
+    p.add_argument("input", nargs="+", help="BFF files and/or directories")
+    p.add_argument("output", help="SHIFT.BMTRenderStateCorpus/1 JSON")
+    p.set_defaults(fn=cmd_bmt_render_state_corpus)
 
     p = sp.add_parser("bmw-material-from-bff", help="build real BMW M3 MaterialBinding/1 from retail BFF archives")
     p.add_argument("input", help="primary BMW_M3_E36.bff")
