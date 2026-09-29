@@ -203,6 +203,7 @@ It scans 4-byte-aligned object candidates for these recovered layouts:
 - `Path`: tangent at `+0x10/+0x14`, outside `+0x18`, centreDist `+0x1c`, StartNode `+0x20`, and path flags `+0x24..+0x27`.
 - `Incident.PathOwner`: Path pointer at `+0xd8`, centre position at `+0xdc..+0xe4`, radius at `+0xe8`, and activity flags at `+0xf0..+0xf8`.
 - `AISegmentPath`: the recovered reflection metadata exposes num nodes `+0x10`, length `+0x1c`, and path distance `+0x20`; constructor-initialized bytes at `+0x14/+0x18` remain opaque.
+  The separate resource parser `FUN_006c51a0` allocates an outer `elements*0x24+4` array at its own `+0x38` and constructs each element with the `AISegmentPath` constructor; that outer container is not treated as the `AISegmentPath` object itself.
 - `AIPolylinePath`: num nodes `+0x10`, node array `+0x14`, length `+0x18`, width `+0x1c`, cyclic `+0x20`, spacing `+0x24`, default width `+0x28`.
 - `AIPolyPathNode`: 0x24-byte array element with 2D position/tangent fields at `+0x10..+0x1c` and cumulative path distance at `+0x20`.
 
