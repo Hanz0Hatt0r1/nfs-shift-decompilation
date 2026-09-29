@@ -62,6 +62,14 @@ polyline_candidates = [
         "address": 0x70003000,
         "array": 0x33630000,
         "nodes": 5,
+        "array_node_sequence": 4,
+        "array_node_sequence_complete": True,
+        "stable_snapshots": 8,
+    },
+    {
+        "address": 0x70004000,
+        "array": 0x33630000,
+        "nodes": 5,
         "array_node_sequence": 5,
         "array_node_sequence_complete": True,
         "stable_snapshots": 8,
@@ -69,7 +77,7 @@ polyline_candidates = [
 ]
 
 rows = module.join_path_start_nodes_to_polylines(path_links, polyline_candidates)
-assert len(rows) == 3, rows
+assert len(rows) == 4, rows
 
 first = rows[0]
 assert first["path_address"] == 0x8101010, first
@@ -79,16 +87,34 @@ assert first["node_sequence_match"], first
 assert first["join_evidence"] == "pointer+count+sequence", first
 assert first["candidate_count"] == 1, first
 
-second = rows[1]
-assert second["start_node"] == 0x33630000, second
-assert second["candidate_count"] == 2, second
-assert second["node_count_match"], second
+path2 = [row for row in rows if row["start_node"] == 0x33630000]
+assert len(path2) == 3, path2
+matched = [
+    row for row in path2
+    if row["node_count_match"] and row["node_sequence_match"]
+]
+assert len(matched) == 1, path2
+second = matched[0]
+assert second["candidate_count"] == 3, second
 assert second["node_sequence_match"], second
 assert second["join_evidence"] == "pointer+count+sequence", second
 
-third = rows[2]
-assert third["candidate_count"] == 2, third
-assert not third["node_count_match"], third
+pointer_only = [
+    row for row in path2
+    if not row["node_count_match"] and row["node_sequence_match"]
+]
+assert len(pointer_only) == 1, path2
+third = pointer_only[0]
+assert third["candidate_count"] == 3, third
 assert third["join_evidence"] == "pointer-only", third
+
+pointer_plus_count = [
+    row for row in path2
+    if row["node_count_match"] and not row["node_sequence_match"]
+]
+assert len(pointer_plus_count) == 1, path2
+fourth = pointer_plus_count[0]
+assert fourth["candidate_count"] == 3, fourth
+assert fourth["join_evidence"] == "pointer+count", fourth
 print("Path.StartNode -> AIPolylinePath.array join test: PASS")
 PY
