@@ -57,7 +57,7 @@ def test_validate_probe_script_accepts_provider_probe(tmp_path: Path):
             "import gdb",
             "class Probe(gdb.Breakpoint): pass",
             "class ProviderResetReturnProbe(gdb.FinishBreakpoint): pass",
-            "def sdf_probe(): pass",
+            "command = 'sdf-probe'",
             "name = 'provider_pre_000000.json'",
             "name2 = 'provider_post_000000.json'",
             "path = 'scalar_reset_events.jsonl'",
