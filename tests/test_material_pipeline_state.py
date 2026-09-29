@@ -177,3 +177,26 @@ def test_phase532_preserves_phase530_cull_mapping():
     assert result["ready"] is True
     assert result["cull"]["d3d9_name"] == "D3DCULL_CW"
     assert result["vulkan"]["cull_mode"] == "VK_CULL_MODE_BACK_BIT"
+
+
+
+def test_phase532_blocks_incomplete_separate_alpha_state():
+    result = translate_bmt_pipeline_state({
+        "alpha_blend": {
+            "enabled": True,
+            "separate_alpha": True,
+            "source_blend": _enum("EBF_SOURCE_ALPHA", 4),
+            "dest_blend": _enum("EBF_INV_SOURCE_ALPHA", 5),
+            "blend_op": _enum("EBO_ADD", 0),
+        }
+    })
+    assert result["ready"] is False
+    assert "material-pipeline:separate-alpha-source-missing" in (
+        result["blocking_reasons"]
+    )
+    assert "material-pipeline:separate-alpha-dest-missing" in (
+        result["blocking_reasons"]
+    )
+    assert "material-pipeline:separate-alpha-op-missing" in (
+        result["blocking_reasons"]
+    )
