@@ -846,6 +846,85 @@ def resolve_path_start_nodes(
     out.sort(key=lambda r: (not r["target_vtable_match"], -int(r["node_sequence"]), r["start_node"]))
     return out
 
+def join_path_start_nodes_to_polylines(
+    path_links: list[dict],
+    polyline_candidates: list[dict],
+) -> list[dict]:
+    """Join Path.StartNode to AIPolylinePath.array by exact runtime pointer."""
+    by_array: dict[int, list[dict]] = defaultdict(list)
+    for row in polyline_candidates:
+        array = int(row.get("array", 0))
+        if array:
+            by_array[array].append(row)
+
+    out: list[dict] = []
+    for link in path_links:
+        if not link.get("target_vtable_match"):
+            continue
+        start_node = int(link.get("start_node", 0))
+        if not start_node:
+            continue
+        candidates = by_array.get(start_node, [])
+        for polyline in candidates:
+            path_count = link.get("array_count")
+            polyline_count = polyline.get("nodes")
+            count_match = (
+                path_count is not None
+                and polyline_count is not None
+                and int(path_count) == int(polyline_count)
+            )
+            path_sequence = int(link.get("node_sequence", 0))
+            polyline_sequence = int(polyline.get("array_node_sequence", 0))
+            sequence_match = (
+                path_sequence > 0
+                and polyline_sequence > 0
+                and path_sequence == polyline_sequence
+            )
+            complete = (
+                bool(link.get("node_sequence_complete"))
+                and bool(polyline.get("array_node_sequence_complete"))
+            )
+            out.append({
+                "path_address": int(link["path_address"]),
+                "start_node": start_node,
+                "polyline_address": int(polyline["address"]),
+                "polyline_array": int(polyline.get("array", 0)),
+                "path_node_count": (
+                    int(path_count) if path_count is not None else None
+                ),
+                "polyline_node_count": (
+                    int(polyline_count) if polyline_count is not None else None
+                ),
+                "node_count_match": count_match,
+                "path_node_sequence": path_sequence,
+                "polyline_node_sequence": polyline_sequence,
+                "node_sequence_match": sequence_match,
+                "path_node_sequence_complete": bool(
+                    link.get("node_sequence_complete")
+                ),
+                "polyline_node_sequence_complete": bool(
+                    polyline.get("array_node_sequence_complete")
+                ),
+                "join_complete": complete,
+                "candidate_count": len(candidates),
+                "path_stable_snapshots": int(link.get("stable_snapshots", 0)),
+                "polyline_stable_snapshots": int(
+                    polyline.get("stable_snapshots", 0)
+                ),
+                "join_evidence": (
+                    "pointer+count+sequence"
+                    if count_match and sequence_match and complete
+                    else "pointer+count"
+                    if count_match
+                    else "pointer-only"
+                ),
+            })
+    out.sort(key=lambda r: (
+        r["path_address"], r["start_node"], r["polyline_address"]
+    ))
+    return out
+
+
 def clusters(rows: list[dict], gap: int = 0x10000) -> list[dict]:
     rows = sorted(rows, key=lambda r: r["target"])
     out: list[dict] = []
@@ -1572,6 +1651,10 @@ def main() -> int:
     polyline_nodes = extract_polyline_nodes(
         candidates["AIPolylinePath"], sns[0], idx[0]
     )
+    path_polyline_links = join_path_start_nodes_to_polylines(
+        path_start_node_links,
+        candidates["AIPolylinePath"],
+    )
     for k in candidates:
         candidates[k] = sorted(
             candidates[k],
@@ -1689,6 +1772,7 @@ def main() -> int:
         "aiw_runtime_edge_count": len(aiw_runtime_edges),
         "polyline_node_count": len(polyline_nodes),
         "path_start_node_link_count": len(path_start_node_links),
+        "path_polyline_link_count": len(path_polyline_links),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
         "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
         "notes": [
@@ -1708,6 +1792,15 @@ def main() -> int:
         "source_stride", "source_stride_count", "mapping_start",
         "mapping_end", "mapping_perms", "target_samples",
     ])
+    write_csv(out / "path_polyline_links.csv", path_polyline_links, [
+        "path_address", "start_node", "polyline_address", "polyline_array",
+        "path_node_count", "polyline_node_count", "node_count_match",
+        "path_node_sequence", "polyline_node_sequence", "node_sequence_match",
+        "path_node_sequence_complete", "polyline_node_sequence_complete",
+        "join_complete", "candidate_count", "path_stable_snapshots",
+        "polyline_stable_snapshots", "join_evidence",
+    ])
+
     write_csv(out / "path_start_node_links.csv", path_start_node_links, [
         "path_address", "start_node", "target_vtable", "target_vtable_match",
         "link_type", "array_count", "array_count_stable", "node_sequence",
