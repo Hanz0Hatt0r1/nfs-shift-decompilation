@@ -119,6 +119,11 @@ def test_bundle_set_preserves_draw_order_and_atomic_bundle_abi(tmp_path):
     )
     assert persisted["format"] == FORMAT
     assert persisted["draw_count"] == 2
+    assert (tmp_path / "bundle_set.paths").read_text(encoding="utf-8").splitlines() == [
+        "draws/submesh_000",
+        "draws/submesh_001",
+    ]
+    assert persisted["artifacts"]["draw_order"]["entry_count"] == 2
 
 
 def test_bundle_set_can_preserve_explicit_non_numeric_draw_order(tmp_path):
@@ -127,6 +132,10 @@ def test_bundle_set_can_preserve_explicit_non_numeric_draw_order(tmp_path):
     )
     assert [row["source_submesh_index"] for row in result["draws"]] == [1, 0]
     assert [row["draw_order"] for row in result["draws"]] == [0, 1]
+    assert (tmp_path / "bundle_set.paths").read_text(encoding="utf-8").splitlines() == [
+        "draws/submesh_001",
+        "draws/submesh_000",
+    ]
 
 
 def test_bundle_set_propagates_atomic_gate_failure(tmp_path):
