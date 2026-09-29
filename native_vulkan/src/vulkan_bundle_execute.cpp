@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -789,13 +790,13 @@ MaterialPipelineState load_pipeline_state(
     const std::string text(
         (std::istreambuf_iterator<char>(state)),
         std::istreambuf_iterator<char>());
-    if (text.find("\"ready\": true") == std::string::npos) {
-        throw std::runtime_error(
-            "bundle pipeline state is invalid or blocked");
-    }
     if (text.find(
             "\"format\": \"SHIFT.MaterialCullState/1\"") !=
             std::string::npos) {
+        if (text.find("\"ready\": true") == std::string::npos) {
+            throw std::runtime_error(
+                "legacy bundle pipeline state is blocked");
+        }
         out.cull_mode = pipeline_cull_mode(
             pipeline_string_field(text, "vulkan_cull_mode"));
         return out;
@@ -805,6 +806,10 @@ MaterialPipelineState load_pipeline_state(
             std::string::npos) {
         throw std::runtime_error(
             "bundle pipeline state has unsupported format");
+    }
+    if (!pipeline_bool_field(text, "vulkan_pipeline_ready")) {
+        throw std::runtime_error(
+            "bundle material pipeline state is blocked");
     }
 
     out.cull_mode = pipeline_cull_mode(
