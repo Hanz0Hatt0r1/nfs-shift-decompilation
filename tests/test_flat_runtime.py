@@ -39,6 +39,21 @@ def test_flat_leaf_exposes_object_handle_and_child_index():
     assert record["index_word"] == 11
 
 
+def test_flat_leaf_exposes_runtime_index_table_geometry():
+    data = _node([_leaf(11, 0x12345678)], marker=1)
+    links = parse_flat_runtime(data)["root"]["records"][0]["runtime_link_metadata"]
+    assert links["index_word_offset"] == 0x3C
+    assert links["index"] == 11
+    assert links["primary_table"]["stride"] == 0x28
+    assert links["primary_table"]["value_offset"] == 0x20
+    assert links["primary_table"]["slot_offset"] == 0x20 + 11 * 0x28
+    assert links["secondary_table"]["stride"] == 0x40
+    assert links["secondary_table"]["node_pointer_offset"] == 0x30
+    assert links["secondary_table"]["record_pointer_offset"] == 0x34
+    assert links["secondary_table"]["primary_slot_pointer_offset"] == 0x38
+    assert links["secondary_table"]["slot_offset"] == 11 * 0x40
+
+
 def test_nested_flat_nodes_follow_low24_span():
     child = _node([_leaf(9)], marker=1)
     root = _node([], [child], marker=1)
