@@ -45,6 +45,16 @@ struct.pack_into("<IIIf", blob, soff + 0x10, 8, 1, 0x00610800, 120.0)
 struct.pack_into("<IIff", blob, soff + 0x20, 0, 1, 15.0, 20.0)
 struct.pack_into("<If", blob, soff + 0x30, 2, 1.0)
 
+# Synthetic AIPolylinePath using the concrete vtable recovered from
+# FUN_006cc390. A generic game vtable with the same payload must NOT count.
+poff = 0x300
+struct.pack_into("<III", blob, poff, 0x00AFC678, 0, 1)
+struct.pack_into("<IIffIff", blob, poff + 0x10, 8, 0x00610800, 160.0, 10.0, 1, 2.5, 12.0)
+
+false_poly_off = 0x380
+struct.pack_into("<III", blob, false_poly_off, 0x00AECCF8, 0, 1)
+struct.pack_into("<IIffIff", blob, false_poly_off + 0x10, 8, 0x00610800, 160.0, 10.0, 1, 2.5, 12.0)
+
 # Runtime AI nodes with the same positions as a tiny synthetic AIW.
 for index, pos in enumerate(((1.0, 2.0, 3.0), (5.0, 2.0, 3.0), (9.0, 2.0, 3.0), (13.0, 2.0, 3.0))):
     struct.pack_into("<fff", blob, 0x500 + index * 0x20, *pos)
@@ -98,6 +108,11 @@ filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AISegmentPath"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["Incident.PathOwner"] >= 1, result["candidate_counts"]
+assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"), newline="", encoding="utf-8") as fh:
+    poly_rows = list(csv.DictReader(fh))
+assert len(poly_rows) == 1, poly_rows
+assert int(poly_rows[0]["vtable"]) == 0x00AFC678, poly_rows
 assert result["stable_external_pointer_count"] >= 2, result["stable_external_pointer_count"]
 assert result["pointer_target_clusters"], "expected pointer clusters"
 assert result["next_capture_windows"], "expected capture windows"
@@ -186,5 +201,6 @@ assert result["stable_external_pointer_count"] == 0
 assert result["pointer_target_clusters"] == []
 assert result["path_root_targets"], "Path roots must still be analyzed when pointer analysis is skipped"
 assert result["path_root_targets"][0]["target"] == 0x00610000
+assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 print("track path skip-pointer test: PASS")
 PY
