@@ -1461,19 +1461,33 @@ struct Runtime {
     }
 
     void create_geometry(const PacketGeometry& geometry) {
-        if (geometry.positions.empty() || geometry.indices.empty()) {
-            throw std::runtime_error("runtime geometry has no drawable data");
+        if (geometry.indices.empty() || geometry.attributes.empty() ||
+            geometry.stride == 0) {
+            throw std::runtime_error("runtime geometry has no drawable vertex data");
         }
-        create_buffer(
-            geometry.positions.data(),
-            static_cast<VkDeviceSize>(geometry.positions.size() * sizeof(float)),
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            vertex_buffer);
+        if (!geometry.vertex_bytes.empty()) {
+            create_buffer(
+                geometry.vertex_bytes.data(),
+                static_cast<VkDeviceSize>(geometry.vertex_bytes.size()),
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                vertex_buffer);
+        } else if (!geometry.positions.empty()) {
+            create_buffer(
+                geometry.positions.data(),
+                static_cast<VkDeviceSize>(geometry.positions.size() * sizeof(float)),
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                vertex_buffer);
+        } else {
+            throw std::runtime_error("runtime geometry has no vertex payload");
+        }
         create_buffer(
             geometry.indices.data(),
             static_cast<VkDeviceSize>(geometry.indices.size() * sizeof(uint32_t)),
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
             index_buffer);
+        if (geometry.first_index >= geometry.indices.size()) {
+            throw std::runtime_error("runtime geometry first_index is out of range");
+        }
         index_count = static_cast<uint32_t>(geometry.indices.size());
         first_index = geometry.first_index;
     }
