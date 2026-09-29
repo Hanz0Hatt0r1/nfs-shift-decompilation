@@ -52,8 +52,10 @@ def test_native_runtime_bundle_executes_material_interface():
     assert "vkCmdBindDescriptorSets" in source
     assert "load_bundle_cull_mode" in source
     assert "SHIFT.MaterialCullState/1" in source
-    assert "uses_material_descriptors ? material_cull_mode" in source
-    assert "bundle.cull_mode" in source
+    assert "SHIFT.MaterialPipelineState/1" in source
+    assert "load_bundle_pipeline_state" in source
+    assert "BundlePipelineState" in source
+    assert "bundle.pipeline_state" in source
     assert "geometry.vertex_bytes.empty()" in source
     assert "vkCmdBindDescriptorSets" in source
     assert "if (material_mode)" in source
@@ -117,9 +119,11 @@ def test_native_runtime_uses_per_swapchain_depth_buffers():
     assert "VK_IMAGE_ASPECT_DEPTH_BIT" in source
     assert "VK_FORMAT_D32_SFLOAT depth attachment unsupported" in source
     assert "pDepthStencilAttachment = &depth_ref" in source
-    assert "depthTestEnable = VK_TRUE" in source
-    assert "depthWriteEnable = VK_TRUE" in source
-    assert "VK_COMPARE_OP_LESS_OR_EQUAL" in source
+    assert "depth_state.depthTestEnable =" in source
+    assert "material_pipeline_state.depth_test_enable" in source
+    assert "depth_state.depthWriteEnable =" in source
+    assert "material_pipeline_state.depth_write_enable" in source
+    assert "material_pipeline_state.depth_compare_op" in source
     assert "clear[1].depthStencil.depth = 1.0f" in source
     assert '\\"depth_test\\": true' in source
 
@@ -150,3 +154,20 @@ def test_native_runtime_maps_bundle_cull_sidecar_to_vulkan():
     assert "VK_CULL_MODE_BACK_BIT" in source
     assert "VK_CULL_MODE_FRONT_BIT" in source
     assert "raster.cullMode =" in source
+
+
+
+def test_native_runtime_executes_bundle_depth_and_blend_state():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    assert "material_pipeline_state.depth_test_enable" in source
+    assert "material_pipeline_state.depth_write_enable" in source
+    assert "material_pipeline_state.depth_compare_op" in source
+    assert "material_pipeline_state.blend_enable" in source
+    assert "material_pipeline_state.src_color_blend_factor" in source
+    assert "material_pipeline_state.dst_color_blend_factor" in source
+    assert "material_pipeline_state.color_blend_op" in source
+    assert "material_pipeline_state.src_alpha_blend_factor" in source
+    assert "material_pipeline_state.dst_alpha_blend_factor" in source
+    assert "material_pipeline_state.alpha_blend_op" in source
