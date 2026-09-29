@@ -218,3 +218,31 @@ def test_target_match_rejects_wrong_formats():
         assert "BMWRuntimeShaderTargetSet" in str(error)
     else:
         raise AssertionError("wrong target format must be rejected")
+
+
+
+def test_prefilter_only_target_cannot_upgrade_via_representative_pair_hash():
+    target_set = _target_set(pixel_only=True)
+    # A real ambiguous static row may still carry a representative pair hash.
+    for primitive in target_set["primitive_targets"]:
+        primitive["targets"][0]["pair_byte_sha256"] = "b" * 64
+    report = match_bmw_runtime_shader_targets(
+        target_set,
+        _runtime(
+            [
+                {"start_index": 150, "primitive_count": 100},
+                {"start_index": 450, "primitive_count": 200},
+            ],
+            [
+                _identity("x" * 64, pixel="a" * 64),
+                _identity("y" * 64, pixel="e" * 64),
+            ],
+        ),
+    )
+
+    assert report["ready"] is False
+    assert report["summary"]["attributed_primitive_count"] == 0
+    assert all(
+        row["best_score"] is None
+        for row in report["primitive_results"]
+    )

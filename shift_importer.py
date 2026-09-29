@@ -3100,6 +3100,27 @@ def cmd_bmw_runtime_render_contract(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_bmw_raw_capture_shader_prefilter(args: argparse.Namespace) -> int:
+    """Prefilter raw D3D9 JSONL for BMW shader/draw targets."""
+    from bmw_raw_capture_shader_prefilter import validate_files
+
+    report = validate_files(args.target_set, args.capture_jsonl)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "coverage_ready": report["coverage_ready"],
+        "summary": report["summary"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["coverage_ready"] else 2
+
+
 def cmd_bmw_runtime_shader_target_match(args: argparse.Namespace) -> int:
     """Match BMW runtime shader targets against same-instance draw snapshots."""
     from bmw_runtime_shader_target_match import validate_files
@@ -4272,6 +4293,24 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("render_bff", help="RENDER.bff containing the selected FXO")
     p.add_argument("output", help="SHIFT.BMWRuntimeRenderContract/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_render_contract)
+
+    p = sp.add_parser(
+        "bmw-raw-capture-shader-prefilter",
+        help="prefilter raw D3D9 JSONL for BMW shader hashes and draw ranges",
+    )
+    p.add_argument(
+        "target_set",
+        help="SHIFT.BMWRuntimeShaderTargetSet/1 JSON",
+    )
+    p.add_argument(
+        "capture_jsonl",
+        help="raw native D3D9 capture JSONL",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.BMWRawCaptureShaderPrefilter/1 JSON",
+    )
+    p.set_defaults(fn=cmd_bmw_raw_capture_shader_prefilter)
 
     p = sp.add_parser(
         "bmw-runtime-shader-target-match",
