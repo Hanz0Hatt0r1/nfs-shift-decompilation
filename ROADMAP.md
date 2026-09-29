@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 513.**
+**Current mainline: Phase 514.**
 
 
 
@@ -43,7 +43,8 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 19. Close the IGPhaseVehicle completion/finalization boundary: per-container callbacks, guarded +0x160 cleanup, resource teardown and post-finalizer object callback ordering — Phase 511 implemented.
 20. Map selector descriptor population exactly: 16-entry capacity, 0x90 stride, packed token bitfields, source-to-descriptor string/block copies, +0x74 initialization and conditional +0x70 population — Phase 512 implemented.
 21. Close selector source-record admission scheduling: owner +0x4f0 mask, low-nibble routing key, descriptor-population handoff and reset/resynchronization paths — Phase 513 implemented.
-22. Expand the desktop reference renderer against real BMW material/shader permutations.
+22. Make the selector admission ordering executable and regression-tested, keeping the upstream mask gate separate from the descriptor capacity gate — Phase 514 implemented.
+23. Expand the desktop reference renderer against real BMW material/shader permutations.
 19. Complete Vulkan RenderCommand execution using the same neutral contract.
 20. Continue SGB/FLAT and camera runtime reconstruction.
 21. Derive proven animation poses from the BAB runtime grammar.
