@@ -35,7 +35,7 @@ test.aiw:track.aiw,0,10,0x201000,0x201024,36,0,0,0
 test.aiw:track.aiw,10,20,0x201024,0x201048,36,0,0,0
 test.aiw:track.aiw,20,30,0x201048,0x20106c,36,0,0,0
 test.aiw:track.aiw,30,0,0x20106c,0x201000,-108,0,0,0
-EOFEOF
+EOF
 
 cat >"$tmp/analysis/track_path_analysis.json" <<'EOF'
 {
