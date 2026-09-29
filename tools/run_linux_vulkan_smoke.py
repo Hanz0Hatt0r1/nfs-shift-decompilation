@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import argparse
+from copy import deepcopy
 import json
 from pathlib import Path
 import sys
@@ -23,8 +24,10 @@ if SOURCE_ROOT.is_dir():
             sys.path.insert(0, _source_value)
 
 from bmw_vulkan_bundle import TARGET_MEB
+from bmw_vulkan_bundle_set import build_bmw_vulkan_bundle_set
 from bmw_material_vulkan_adapter import build_bmw_vulkan_from_material_slice
 from vulkan_bundle_run import run_bmw_vulkan_bundle
+from vulkan_bundle_set_prepare import prepare_bmw_vulkan_bundle_set
 
 VERTEX_GLSL = """#version 450
 layout(location = 0) in vec3 position;
@@ -123,6 +126,32 @@ def mesh():
         "indices": [0,1,2],
     }
 
+def multidraw_command():
+    command = deepcopy(render_command())
+    command["mesh"]["vertex_count"] = 4
+    command["mesh"]["triangle_count"] = 2
+    first = command["submeshes"][0]
+    second = deepcopy(first)
+    second["shader"]["source_payload_sha256"] = "e" * 64
+    second["shader"]["permutation_identity"]["identity_sha256"] = "f" * 64
+    second["constant_payload"]["registers"][1]["values"] = [0.65, 0.85, 1.0, 1.0]
+    second["first_index"] = 3
+    second["index_count"] = 3
+    command["submeshes"].append(second)
+    return command
+
+def multidraw_mesh():
+    return {
+        "format": "SHIFT.MEB",
+        "vertices": [
+            [-0.8,-0.6,0.0],
+            [0.0,-0.6,0.0],
+            [0.0,0.6,0.0],
+            [0.8,0.6,0.0],
+        ],
+        "indices": [0,1,2,1,3,2],
+    }
+
 def texture():
     return {
         "format": "SHIFT.ReferenceTexture/1",
@@ -178,11 +207,42 @@ def main():
     output = Path(result["native"]["output"])
     if output.read_bytes()[:2] != b"P6":
         raise SystemExit("not a PPM")
+
+    bundle_set_dir = root / "bundle_set"
+    bundle_set = build_bmw_vulkan_bundle_set(
+        multidraw_command(),
+        multidraw_mesh(),
+        bundle_set_dir,
+        textures={"1": texture()},
+        environment_cube=cube(),
+    )
+    if not bundle_set["ready"]:
+        raise SystemExit(
+            "bundle-set preparation blocked: "
+            + ", ".join(bundle_set["blocking_reasons"])
+        )
+    set_prepare = prepare_bmw_vulkan_bundle_set(
+        bundle_set_dir,
+        validator=args.validator,
+    )
+    (root / "multidraw_prepare.json").write_text(
+        json.dumps(set_prepare, ensure_ascii=False, indent=2, sort_keys=True)
+        + chr(10),
+        encoding="utf-8",
+    )
+    if not set_prepare["ready"] or set_prepare["draw_count"] != 2:
+        raise SystemExit(
+            "bundle-set compile/interface preparation failed: "
+            + ", ".join(set_prepare["blocking_reasons"])
+        )
+
     print(json.dumps({
         "format": result["format"],
         "status": result["status"],
         "output": str(output),
         "output_bytes": output.stat().st_size,
+        "bundle_set_prepare_format": set_prepare["format"],
+        "bundle_set_draws": set_prepare["draw_count"],
     }, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":
