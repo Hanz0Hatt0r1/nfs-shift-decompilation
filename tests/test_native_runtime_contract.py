@@ -83,3 +83,17 @@ def test_native_runtime_accepts_bmw_physics_manifest():
     assert "scalar_count != 40u" in source
     assert "evidence/bmw_m3_vehicle_physics_manifest.json" in workflow
     assert "physics_workspace_scalars" in source
+
+def test_native_camera_defaults_match_recovered_view_constructor():
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(encoding="utf-8")
+
+    assert "0x3F490FDBu" in header
+    assert "0x3FAAAAABu" in header
+    assert "0x3DCCCCCDu" in header
+    assert "0x443B8000u" in header
+    assert "manager_mode = 0" in header
+    assert "buffer_sub_index = -1" in header
+    assert "camera_id = -1" in header
+    assert "active_group = -1" in header
+    assert "group_restore_value = -1" in header
+    assert "buffer_count = 2" in header
