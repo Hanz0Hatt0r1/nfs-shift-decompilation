@@ -3100,6 +3100,28 @@ def cmd_bmw_runtime_render_contract(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_bmw_runtime_shader_target_set(args: argparse.Namespace) -> int:
+    """Build capture-oriented BMW runtime shader hash targets."""
+    from bmw_runtime_shader_target_set import validate_files
+
+    report = validate_files(args.admission)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "capture_ready": report["capture_ready"],
+        "attribution_ready": report["attribution_ready"],
+        "unique_hash_target_count": report["unique_hash_target_count"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["capture_ready"] else 2
+
+
 def cmd_bmw_runtime_shader_select(args: argparse.Namespace) -> int:
     """Select one exact static BMW FXO permutation from a runtime shader identity."""
     from bmw_runtime_shader_select import validate_files
@@ -4229,6 +4251,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("render_bff", help="RENDER.bff containing the selected FXO")
     p.add_argument("output", help="SHIFT.BMWRuntimeRenderContract/1 JSON")
     p.set_defaults(fn=cmd_bmw_runtime_render_contract)
+
+    p = sp.add_parser(
+        "bmw-runtime-shader-target-set",
+        help="build capture-oriented BMW shader hash targets from body admission",
+    )
+    p.add_argument(
+        "admission",
+        help="SHIFT.BMWBodyMaterialAdmission/1 JSON",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.BMWRuntimeShaderTargetSet/1 JSON",
+    )
+    p.set_defaults(fn=cmd_bmw_runtime_shader_target_set)
 
     p = sp.add_parser("bmw-runtime-shader-select", help="select an exact BMW FXO permutation from captured D3D9 shader identity")
     p.add_argument("material_input", help="SHIFT.RealBMWMaterialBindingEvidence/1 or SHIFT.MaterialBinding/1 JSON")
