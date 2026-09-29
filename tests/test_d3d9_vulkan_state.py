@@ -9,6 +9,7 @@ def test_render_state_translation_covers_depth_blend_and_color_mask():
         27: 1,
         19: 5,
         20: 6,
+        171: 1,
         168: 0xD,
     })
     assert result["ready"] is True
@@ -17,14 +18,16 @@ def test_render_state_translation_covers_depth_blend_and_color_mask():
     assert result["depth"]["compare_op"] == "VK_COMPARE_OP_LESS_OR_EQUAL"
     assert result["blend"]["src_factor"] == "VK_BLEND_FACTOR_SRC_ALPHA"
     assert result["blend"]["dst_factor"] == "VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA"
+    assert result["blend"]["op"] == "VK_BLEND_OP_ADD"
     assert result["color_write_mask"] == {"r": True, "g": False, "b": True, "a": True}
 
 
 def test_render_state_translation_blocks_unknown_modes():
-    result = translate_render_states({23: 999, 22: 999, 19: 999})
+    result = translate_render_states({23: 999, 22: 999, 19: 999, 171: 999})
     assert result["ready"] is False
     assert "d3d9-vulkan-state:unsupported-zfunc:999" in result["blocking_reasons"]
     assert "d3d9-vulkan-state:unsupported-cullmode:999" in result["blocking_reasons"]
+    assert "d3d9-vulkan-state:unsupported-blendop:999" in result["blocking_reasons"]
 
 
 def test_sampler_state_translation_is_explicit():
