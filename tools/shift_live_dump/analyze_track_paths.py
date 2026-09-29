@@ -1212,6 +1212,8 @@ def correlate_aiw_runtime(
             while current not in visited:
                 visited.add(current)
                 next_index = waypoint_next.get(current, -1)
+                if next_index in visited:
+                    break
                 candidates = [
                     address for address in by_wp.get(next_index, ())
                     if address - last_addr == stride
