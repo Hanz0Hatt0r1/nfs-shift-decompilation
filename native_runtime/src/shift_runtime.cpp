@@ -1488,8 +1488,12 @@ struct Runtime {
         if (geometry.first_index >= geometry.indices.size()) {
             throw std::runtime_error("runtime geometry first_index is out of range");
         }
-        index_count = static_cast<uint32_t>(geometry.indices.size());
         first_index = geometry.first_index;
+        index_count = static_cast<uint32_t>(
+            geometry.indices.size() - first_index);
+        if (index_count == 0) {
+            throw std::runtime_error("runtime geometry has no drawable indices");
+        }
     }
 
     void create_framebuffers() {
