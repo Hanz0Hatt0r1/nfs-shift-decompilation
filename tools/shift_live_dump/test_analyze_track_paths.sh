@@ -84,7 +84,6 @@ assert result["path_root_targets"][0]["target"] == 0x00500000
 assert result["path_root_windows"][0]["start"] == 0x004e0000
 assert result["path_root_windows"][0]["size"] == 0x00040000
 assert filtered["stable_external_pointer_count"] == 1, filtered["stable_external_pointer_count"]
-print("track path analyzer test: PASS")
 assert filtered["excluded_source_ranges"] == [{"start": 0x00200120, "end": 0x00200124}], filtered["excluded_source_ranges"]
 print("track path analyzer test: PASS")
 PY
