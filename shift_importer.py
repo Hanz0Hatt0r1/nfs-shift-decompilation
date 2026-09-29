@@ -3251,6 +3251,44 @@ def cmd_bmw_real_material_slice(args: argparse.Namespace) -> int:
 
 
 
+def cmd_bmw_body_material_admission(args: argparse.Namespace) -> int:
+    """Run canonical BMW body primitives through retail material admission."""
+    from bmw_body_material_admission import (
+        build_bmw_body_material_admission,
+        write_bmw_body_material_admission,
+    )
+
+    report = build_bmw_body_material_admission(
+        args.input,
+        args.golden,
+        supplemental_bffs=args.supplemental_bff or [],
+        primitive_indices=args.primitive_index,
+        color_abi_report=args.color_abi_report,
+        vulkan_output_dir=args.vulkan_output_dir,
+    )
+    output = write_bmw_body_material_admission(
+        report,
+        args.output_dir,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "ready_primitive_count": report["admission"][
+            "ready_primitive_count"
+        ],
+        "blocked_primitive_count": report["admission"][
+            "blocked_primitive_count"
+        ],
+        "distinct_ready_permutation_count": report["admission"][
+            "distinct_ready_permutation_count"
+        ],
+        "output": str(output),
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_bff_intake(args: argparse.Namespace) -> int:
     """Verify the exact retail BMW M3 BFF intake before material extraction."""
     from bmw_bff_intake import validate_bmw_bff
@@ -4232,6 +4270,36 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--primitive-index", type=int, default=1)
     p.add_argument("--supplemental-bff", action="append", default=[], help="additional BFF archives")
     p.set_defaults(fn=cmd_bmw_real_material_slice)
+
+    p = sp.add_parser(
+        "bmw-body-material-admission",
+        help="run all canonical BMW body primitives through retail material admission",
+    )
+    p.add_argument("input", help="primary BMW_M3_E36.bff")
+    p.add_argument("output_dir", help="directory for admission and per-primitive JSON")
+    p.add_argument(
+        "--golden",
+        default="evidence/bmw_m3_e36_kit00_body_loda.golden.json",
+        help="SHIFT.BMWGoldenAssetManifest/1 JSON",
+    )
+    p.add_argument(
+        "--supplemental-bff",
+        action="append",
+        default=[],
+        help="supplemental archives such as BMW_M3_E36_Cockpit.bff and RENDER.bff",
+    )
+    p.add_argument(
+        "--primitive-index",
+        action="append",
+        type=int,
+        help="limit admission to one primitive index; may be repeated",
+    )
+    p.add_argument("--color-abi-report")
+    p.add_argument(
+        "--vulkan-output-dir",
+        help="optional output for admitted per-draw Vulkan bundle set",
+    )
+    p.set_defaults(fn=cmd_bmw_body_material_admission)
 
     p = sp.add_parser("bmw-bff-intake", help="verify the exact BMW M3 BFF archive and target entries")
     p.add_argument("input", help="primary BMW_M3_E36.bff")
