@@ -799,11 +799,14 @@ struct Runtime {
         create.imageExtent = swapchain_extent;
         create.imageArrayLayers = 1;
         create.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        const std::array<uint32_t, 2> queue_families = {
+            graphics_family, present_family
+        };
         if (graphics_family != present_family) {
-            const uint32_t families[] = {graphics_family, present_family};
             create.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-            create.queueFamilyIndexCount = 2;
-            create.pQueueFamilyIndices = families;
+            create.queueFamilyIndexCount =
+                static_cast<uint32_t>(queue_families.size());
+            create.pQueueFamilyIndices = queue_families.data();
         } else {
             create.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         }
@@ -1289,12 +1292,15 @@ struct Runtime {
         push.offset = 0;
         push.size = sizeof(float) * 16;
 
+        const std::array<VkDescriptorSetLayout, 2> descriptor_set_layouts = {
+            set0_layout, set1_layout
+        };
         VkPipelineLayoutCreateInfo layout{};
         layout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         if (material_mode) {
-            const VkDescriptorSetLayout sets[] = {set0_layout, set1_layout};
-            layout.setLayoutCount = 2;
-            layout.pSetLayouts = sets;
+            layout.setLayoutCount =
+                static_cast<uint32_t>(descriptor_set_layouts.size());
+            layout.pSetLayouts = descriptor_set_layouts.data();
         } else {
             layout.pushConstantRangeCount = 1;
             layout.pPushConstantRanges = &push;
