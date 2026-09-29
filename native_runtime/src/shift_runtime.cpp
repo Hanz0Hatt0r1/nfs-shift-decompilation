@@ -323,14 +323,13 @@ MaterialPipelineState load_bundle_pipeline_state(const std::string& root) {
     const std::string text(
         (std::istreambuf_iterator<char>(file)),
         std::istreambuf_iterator<char>());
-    if (text.find("\"ready\": true") == std::string::npos) {
-        throw std::runtime_error(
-            "bundle pipeline-state sidecar is blocked");
-    }
-
     if (text.find(
             "\"format\": \"SHIFT.MaterialCullState/1\"") !=
             std::string::npos) {
+        if (text.find("\"ready\": true") == std::string::npos) {
+            throw std::runtime_error(
+                "legacy bundle pipeline-state sidecar is blocked");
+        }
         out.cull_mode = pipeline_cull_mode(
             json_string_field(text, "vulkan_cull_mode"));
         return out;
@@ -340,6 +339,10 @@ MaterialPipelineState load_bundle_pipeline_state(const std::string& root) {
             std::string::npos) {
         throw std::runtime_error(
             "bundle pipeline-state sidecar has unsupported format");
+    }
+    if (!json_bool_field(text, "vulkan_pipeline_ready")) {
+        throw std::runtime_error(
+            "bundle material pipeline state is blocked");
     }
 
     out.cull_mode = pipeline_cull_mode(
