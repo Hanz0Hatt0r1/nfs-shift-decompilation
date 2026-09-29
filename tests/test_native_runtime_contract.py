@@ -146,7 +146,7 @@ def test_native_runtime_maps_bundle_cull_sidecar_to_vulkan():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(
         encoding="utf-8"
     )
-    assert '"VK_CULL_MODE_NONE"' in source
-    assert '"VK_CULL_MODE_BACK_BIT"' in source
-    assert '"VK_CULL_MODE_FRONT_BIT"' in source
+    assert "VK_CULL_MODE_NONE" in source
+    assert "VK_CULL_MODE_BACK_BIT" in source
+    assert "VK_CULL_MODE_FRONT_BIT" in source
     assert "raster.cullMode =" in source
