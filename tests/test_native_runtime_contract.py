@@ -50,7 +50,10 @@ def test_native_runtime_bundle_executes_material_interface():
     assert "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER" in source
     assert "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER" in source
     assert "vkCmdBindDescriptorSets" in source
-    assert "uses_material_descriptors ? VK_CULL_MODE_NONE" in source
+    assert "load_bundle_cull_mode" in source
+    assert "SHIFT.MaterialCullState/1" in source
+    assert "uses_material_descriptors ? material_cull_mode" in source
+    assert "bundle.cull_mode" in source
     assert "geometry.vertex_bytes.empty()" in source
     assert "vkCmdBindDescriptorSets" in source
     assert "if (material_mode)" in source
@@ -136,3 +139,14 @@ def test_native_runtime_consumes_prepared_multi_draw_bundle_sets():
     assert "draw.texture_images" in source
     assert '\\"material_draws\\": ' in source
     assert '\\"bundle_set_mode\\": ' in source
+
+
+
+def test_native_runtime_maps_bundle_cull_sidecar_to_vulkan():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    assert '"VK_CULL_MODE_NONE"' in source
+    assert '"VK_CULL_MODE_BACK_BIT"' in source
+    assert '"VK_CULL_MODE_FRONT_BIT"' in source
+    assert "raster.cullMode =" in source
