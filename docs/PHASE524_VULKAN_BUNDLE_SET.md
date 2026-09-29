@@ -13,7 +13,7 @@ RenderCommand submesh under:
 draws/submesh_NNN/
 ```
 
-and records deterministic draw order in `bundle_set_manifest.json`.
+and records deterministic draw order in `bundle_set_manifest.json`. The same order is emitted as `bundle_set.paths`, one relative child-bundle directory per line, so the native runtime does not need to parse JSON to consume the draw list.
 
 Each draw retains:
 
