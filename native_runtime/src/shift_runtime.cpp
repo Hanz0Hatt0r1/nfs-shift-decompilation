@@ -1567,16 +1567,30 @@ struct Runtime {
         vkCmdBindIndexBuffer(
             command, index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
 
-        const std::array<float, 16> mvp = {
-            1.05f, 0.0f, 0.0f, 0.0f,
-            0.0f, -1.05f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.8f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-        };
-
-        vkCmdPushConstants(
-            command, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
-            0, sizeof(mvp), mvp.data());
+        if (material_mode) {
+            vkCmdBindDescriptorSets(
+                command,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                pipeline_layout,
+                0, 1, &set0, 0, nullptr);
+            if (set1 != VK_NULL_HANDLE) {
+                vkCmdBindDescriptorSets(
+                    command,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    pipeline_layout,
+                    1, 1, &set1, 0, nullptr);
+            }
+        } else {
+            const std::array<float, 16> mvp = {
+                1.05f, 0.0f, 0.0f, 0.0f,
+                0.0f, -1.05f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.8f, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+            };
+            vkCmdPushConstants(
+                command, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
+                0, sizeof(mvp), mvp.data());
+        }
 
         vkCmdDrawIndexed(
             command, index_count, 1, first_index, 0, 0);
