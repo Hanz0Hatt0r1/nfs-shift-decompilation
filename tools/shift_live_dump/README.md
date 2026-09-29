@@ -202,7 +202,7 @@ It scans 4-byte-aligned object candidates for these recovered layouts:
 
 - `Path`: tangent at `+0x10/+0x14`, outside `+0x18`, centreDist `+0x1c`, StartNode `+0x20`, and path flags `+0x24..+0x27`.
 - `Incident.PathOwner`: Path pointer at `+0xd8`, centre position at `+0xdc..+0xe4`, radius at `+0xe8`, and activity flags at `+0xf0..+0xf8`.
-- `AISegmentPath`: num nodes `+0x10`, segment-node array `+0x18`, length `+0x1c`, cyclic/narrow flags `+0x20/+0x24`, spacing `+0x28`, path distance `+0x2c`, current node `+0x30`, EdgeStep `+0x34`.
+- `AISegmentPath`: the recovered reflection metadata exposes num nodes `+0x10`, length `+0x1c`, and path distance `+0x20`; constructor-initialized bytes at `+0x14/+0x18` remain opaque.
 - `AIPolylinePath`: num nodes `+0x10`, node array `+0x14`, length `+0x18`, width `+0x1c`, cyclic `+0x20`, spacing `+0x24`, default width `+0x28`.
 - `AIPolyPathNode`: 0x24-byte array element with 2D position/tangent fields at `+0x10..+0x1c` and cumulative path distance at `+0x20`.
 
@@ -214,7 +214,6 @@ Outputs:
 - `{profile}.csv` — structural candidates for each recovered profile. `aipolylinepath.csv` additionally records whether `array[-4]` matches `num nodes`, whether the first array element has the `AIPolyPathNode` vtable, and how many consecutive `0x24`-byte nodes were validated.
 - `aipolylinepath_nodes.csv` — decoded elements of every fully validated `AIPolylinePath.array`, including node address/index, 2D position/tangent and cumulative distance.
 - `path_start_node_links.csv` — direct `Path.StartNode` resolutions, including target vtable, count-prefix stability and validated consecutive node count.
-- `aisegmentpath_array_links.csv` — validation of the `AISegmentPath.array` count prefix, `0x24` element stride and concrete `0x00afca70` element vtable.
 - `stable_external_pointers.csv` — stable writable pointers found outside the selected ranges.
 - `pointer_target_clusters.csv` — dense target families and dominant source strides.
 - `next_capture_windows.csv` / `next_capture_ranges.txt` — merged windows for the next extraction pass.
