@@ -535,6 +535,65 @@ def _read_virtual(
     return data if len(data) == size else None
 
 
+def validate_prefixed_array_link(
+    candidates: list[dict],
+    snapshots: list[Path],
+    indexes: list[dict[int, dict]],
+    vtable: int,
+    stride: int,
+    count_field: str,
+    sequence_field: str,
+) -> None:
+    """Validate count-prefixed, fixed-stride arrays referenced by containers."""
+    if not candidates or not snapshots:
+        return
+    region_starts = [sorted(idx.keys()) for idx in indexes]
+    for row in candidates:
+        array = int(row.get("array", 0))
+        expected = int(row.get("nodes", 0))
+        if array < 4 or expected < 1:
+            row.update({
+                count_field: None,
+                f"{count_field}_stable": False,
+                sequence_field: 0,
+                f"{sequence_field}_complete": False,
+                "array_link_available": False,
+            })
+            continue
+        counts: list[int] = []
+        sequences: list[int] = []
+        for snap, idx, starts in zip(snapshots, indexes, region_starts):
+            count_blob = _read_virtual(snap, idx, starts, array - 4, 4)
+            if count_blob is None:
+                continue
+            count = struct.unpack_from("<I", count_blob)[0]
+            counts.append(count)
+            seq = 0
+            for n in range(min(count, 256)):
+                vt_blob = _read_virtual(snap, idx, starts, array + n * stride, 4)
+                if vt_blob is None:
+                    break
+                if struct.unpack_from("<I", vt_blob)[0] != vtable:
+                    break
+                seq += 1
+            sequences.append(seq)
+        count = Counter(counts).most_common(1)[0][0] if counts else None
+        seq = max(sequences) if sequences else 0
+        row.update({
+            count_field: count,
+            f"{count_field}_stable": bool(counts and len(set(counts)) == 1),
+            sequence_field: seq,
+            f"{sequence_field}_complete": bool(
+                counts and sequences and len(sequences) == len(counts)
+                and all(s == c for s, c in zip(sequences, counts))
+            ),
+            "array_link_available": bool(counts),
+            "array_element_vtable": vtable if seq else None,
+            "array_element_stride": stride,
+            "array_expected_count": expected,
+            "array_expected_count_match": bool(count is not None and count == expected),
+        })
+
 def extract_polyline_nodes(
     candidates: list[dict],
     snapshot: Path,
