@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse, csv, json, math, re, struct, sys, tempfile, zipfile
 from bisect import bisect_right
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 FORMAT = "SHIFT-LIVE-MEMORY-TRACK-PATH-ANALYSIS/1"
@@ -764,49 +764,22 @@ def resolve_path_start_nodes(
         counts: list[int] = []
         sequences: list[int] = []
         for snap, idx, starts in zip(snapshots, indexes, starts_by_snapshot):
-            seq = 0
-            loc = _region_record_for_address(target - 4, idx, starts)
-            if loc:
-                st, rec = loc
-                within = (target - 4) - st
-                # One bounded read covers the count prefix and the first
-                # 256 possible 0x24-byte nodes.
-                max_bytes = min(4 + 256 * 0x24, int(rec["size"]) - within)
-                if max_bytes >= 8:
-                    window = _read_virtual(
-                        snap, idx, starts, target - 4, max_bytes
-                    )
-                    if window is not None and len(window) >= 8:
-                        count = struct.unpack_from("<I", window, 0)[0]
-                        first_vtables.append(struct.unpack_from("<I", window, 4)[0])
-                        counts.append(count)
-                        check_count = min(count, 256)
-                        for n in range(check_count):
-                            off = 4 + n * 0x24
-                            if off + 4 > len(window):
-                                break
-                            vt = struct.unpack_from("<I", window, off)[0]
-                            if vt != KNOWN_VTABLES["AIPolyPathNode"]:
-                                break
-                            seq += 1
-                        sequences.append(seq)
-                        continue
-
-            # Boundary fallback: count and first vtable may straddle mappings.
-            first_blob = _read_virtual(snap, idx, starts, target, 4)
-            count_blob = _read_virtual(snap, idx, starts, target - 4, 4)
-            if first_blob is None or count_blob is None:
+            blob = _read_virtual(snap, idx, starts, target, 4)
+            if blob is None:
                 continue
-            first_vtables.append(struct.unpack_from("<I", first_blob)[0])
+            first_vtables.append(struct.unpack_from("<I", blob)[0])
+            count_blob = _read_virtual(snap, idx, starts, target - 4, 4)
+            if count_blob is None:
+                continue
             count = struct.unpack_from("<I", count_blob)[0]
             counts.append(count)
+            seq = 0
             for n in range(min(count, 256)):
-                vt_blob = _read_virtual(
-                    snap, idx, starts, target + n * 0x24, 4
-                )
+                vt_blob = _read_virtual(snap, idx, starts, target + n * 0x24, 4)
                 if vt_blob is None:
                     break
-                if struct.unpack_from("<I", vt_blob)[0] != KNOWN_VTABLES["AIPolyPathNode"]:
+                vt = struct.unpack_from("<I", vt_blob)[0]
+                if vt != KNOWN_VTABLES["AIPolyPathNode"]:
                     break
                 seq += 1
             sequences.append(seq)
@@ -845,6 +818,77 @@ def resolve_path_start_nodes(
         out.append(row)
     out.sort(key=lambda r: (not r["target_vtable_match"], -int(r["node_sequence"]), r["start_node"]))
     return out
+
+
+def join_path_start_nodes_to_polylines(
+    path_links: list[dict],
+    polyline_candidates: list[dict],
+) -> list[dict]:
+    """Join Path.StartNode to AIPolylinePath.array by exact runtime pointer."""
+    by_array: dict[int, list[dict]] = defaultdict(list)
+    for row in polyline_candidates:
+        array = int(row.get("array", 0))
+        if array:
+            by_array[array].append(row)
+
+    out: list[dict] = []
+    for link in path_links:
+        if not link.get("target_vtable_match"):
+            continue
+        start_node = int(link.get("start_node", 0))
+        if not start_node:
+            continue
+        candidates = by_array.get(start_node, [])
+        for polyline in candidates:
+            path_count = link.get("array_count")
+            polyline_count = polyline.get("nodes")
+            count_match = (
+                path_count is not None
+                and polyline_count is not None
+                and int(path_count) == int(polyline_count)
+            )
+            path_sequence = int(link.get("node_sequence", 0))
+            polyline_sequence = int(polyline.get("array_node_sequence", 0))
+            sequence_match = (
+                path_sequence > 0
+                and polyline_sequence > 0
+                and path_sequence == polyline_sequence
+            )
+            out.append({
+                "path_address": int(link["path_address"]),
+                "start_node": start_node,
+                "polyline_address": int(polyline["address"]),
+                "polyline_array": int(polyline.get("array", 0)),
+                "path_node_count": int(path_count) if path_count is not None else None,
+                "polyline_node_count": int(polyline_count) if polyline_count is not None else None,
+                "node_count_match": count_match,
+                "path_node_sequence": path_sequence,
+                "polyline_node_sequence": polyline_sequence,
+                "node_sequence_match": sequence_match,
+                "path_node_sequence_complete": bool(
+                    link.get("node_sequence_complete")
+                ),
+                "polyline_node_sequence_complete": bool(
+                    polyline.get("array_node_sequence_complete")
+                ),
+                "candidate_count": len(candidates),
+                "path_stable_snapshots": int(link.get("stable_snapshots", 0)),
+                "polyline_stable_snapshots": int(
+                    polyline.get("stable_snapshots", 0)
+                ),
+                "join_evidence": (
+                    "pointer+count+sequence"
+                    if count_match and sequence_match
+                    else "pointer+count"
+                    if count_match
+                    else "pointer-only"
+                ),
+            })
+    out.sort(key=lambda r: (
+        r["path_address"], r["start_node"], r["polyline_address"]
+    ))
+    return out
+
 
 def clusters(rows: list[dict], gap: int = 0x10000) -> list[dict]:
     rows = sorted(rows, key=lambda r: r["target"])
@@ -1572,6 +1616,9 @@ def main() -> int:
     polyline_nodes = extract_polyline_nodes(
         candidates["AIPolylinePath"], sns[0], idx[0]
     )
+    path_polyline_links = join_path_start_nodes_to_polylines(
+        path_start_node_links, candidates["AIPolylinePath"]
+    )
     for k in candidates:
         candidates[k] = sorted(
             candidates[k],
@@ -1689,6 +1736,7 @@ def main() -> int:
         "aiw_runtime_edge_count": len(aiw_runtime_edges),
         "polyline_node_count": len(polyline_nodes),
         "path_start_node_link_count": len(path_start_node_links),
+        "path_polyline_link_count": len(path_polyline_links),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
         "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
         "notes": [
@@ -1717,6 +1765,14 @@ def main() -> int:
     write_csv(out / "aipolylinepath_nodes.csv", polyline_nodes, [
         "path_address", "array_address", "index", "address", "vtable",
         "x", "y", "dx", "dy", "distance",
+    ])
+    write_csv(out / "path_polyline_links.csv", path_polyline_links, [
+        "path_address", "start_node", "polyline_address", "polyline_array",
+        "path_node_count", "polyline_node_count", "node_count_match",
+        "path_node_sequence", "polyline_node_sequence", "node_sequence_match",
+        "path_node_sequence_complete", "polyline_node_sequence_complete",
+        "candidate_count", "path_stable_snapshots",
+        "polyline_stable_snapshots", "join_evidence",
     ])
     write_csv(out / "path_root_targets.csv", path_roots, [
         "target", "candidate_count", "candidate_addresses",
