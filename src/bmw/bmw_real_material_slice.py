@@ -39,19 +39,13 @@ def build_real_bmw_material_slice(
     shader_source_file: str | Path | None = None,
     color_abi_report: str | Path | None = None,
 ) -> dict[str, Any]:
-    binding_report=build_real_bmw_material_binding(
-        bff_path,
-        supplemental_bffs=supplemental_bffs,
-        shader_source_file=shader_source_file,
-    )
     golden=json.loads(Path(golden_manifest_path).read_text(encoding='utf-8'))
     color_abi = None
     if color_abi_report is not None:
         color_abi = json.loads(Path(color_abi_report).read_text(encoding="utf-8"))
         if not isinstance(color_abi, dict):
             raise ValueError("color ABI report must be a JSON object")
-    asset_contract=validate_bmw_paint_asset(golden)
-    reasons=list(binding_report.get('blocking_reasons') or [])+list(asset_contract.get('blocking_reasons') or [])
+    reasons=[]
     primary=Path(bff_path)
     paths=[primary,*[Path(x) for x in supplemental_bffs]]
     archives=[]
@@ -65,14 +59,31 @@ def build_real_bmw_material_slice(
             raise IndexError(f'primitive index out of range: 0..{len(mesh.primitives)-1}')
         primitive=mesh.primitives[primitive_index]
         material_ref=norm_ref(primitive.material)
-        paint_ref=norm_ref(TARGET_BMT[:-4]+'.mtx')
-        if material_ref!=paint_ref:
-            reasons.append('material-slice:primitive-not-bmw-paint')
-        bmt_archive,bmt_entry=_find_exact(rows,TARGET_BMT,'material')
+        if not material_ref.endswith('.mtx'):
+            raise ValueError(
+                f'material-slice: primitive material is not .mtx: {primitive.material}'
+            )
+        material_bmt=str(primitive.material)[:-4]+'.bmt'
+        is_paint=material_ref == norm_ref(TARGET_BMT[:-4]+'.mtx')
+
+        binding_report=build_real_bmw_material_binding(
+            bff_path,
+            supplemental_bffs=supplemental_bffs,
+            shader_source_file=shader_source_file,
+            material_bmt=material_bmt,
+        )
+        reasons.extend(binding_report.get('blocking_reasons') or [])
+        asset_contract=validate_bmw_paint_asset(golden) if is_paint else None
+        if asset_contract is not None:
+            reasons.extend(asset_contract.get('blocking_reasons') or [])
+
+        bmt_archive,bmt_entry=_find_exact(rows,material_bmt,'material')
         bmt_bytes=bmt_archive.extract_entry(bmt_entry)
         parsed=parse_bmt_material(bmt_bytes)
         material=parsed.get('material') or {}
-        if str(material.get('name') or '').upper()!='BMW_M3_E36_PAINT':
+        material_name=str(material.get('name') or '')
+        expected_name=material_ref.rsplit('/',1)[-1][:-4]
+        if material_name and material_name.lower()!=expected_name.lower():
             reasons.append('material-slice:bmt-name-mismatch')
         shader_ref=str(material.get('shader') or '')
         external_shader = Path(shader_source_file) if shader_source_file is not None else None
@@ -139,6 +150,7 @@ def build_real_bmw_material_slice(
             'material_ref': primitive.material,
             'golden_identity': golden.get('golden') or {},
             'mesh': packet['mesh'],
+            'generic_material_gate': binding_report.get('generic_material_gate'),
             'paint_contract': binding_report.get('paint_contract'),
             'paint_shader_gate': binding_report.get('paint_shader_gate'),
             'static_draw': static_draw,
@@ -153,7 +165,14 @@ def build_real_bmw_material_slice(
         reasons.extend(compiled_material.get('blocking_reasons') or [])
         reasons.extend(static_draw.get('blocking_reasons') or [])
         reasons.extend(render_command.get('blocking_reasons') or [])
-        ready=bool(binding_report.get('ready') and asset_contract.get('ready') and slice_golden_gate.get('ready') and static_draw.get('ready') and render_command.get('ready') and not reasons)
+        ready=bool(
+            binding_report.get('ready')
+            and (asset_contract is None or asset_contract.get('ready'))
+            and slice_golden_gate.get('ready')
+            and static_draw.get('ready')
+            and render_command.get('ready')
+            and not reasons
+        )
         return {
             'format':FORMAT,
             'source_format':'SHIFT.RealBMWMaterialSliceEvidence/1',
@@ -162,10 +181,12 @@ def build_real_bmw_material_slice(
             'blocking_reasons':list(dict.fromkeys(reasons)),
             'primitive_index':primitive_index,
             'material_ref':primitive.material,
+            'material_bmt':material_bmt,
             'golden_identity':golden.get('golden') or {},
             'asset_contract':asset_contract,
             'slice_golden_gate':slice_golden_gate,
             'material_binding':binding,
+            'generic_material_gate':binding_report.get('generic_material_gate'),
             'paint_contract':binding_report.get('paint_contract'),
             'paint_shader_gate':binding_report.get('paint_shader_gate'),
             'material':compiled_material,
