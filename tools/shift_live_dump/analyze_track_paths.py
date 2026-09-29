@@ -1251,6 +1251,33 @@ def correlate_aiw_runtime(
     return matches, sequences
 
 
+def build_aiw_next_edges(aiw_docs: list[dict]) -> list[dict]:
+    """Normalize explicit AIW WP_PTRS next links into an edge list."""
+    edges: list[dict] = []
+    for doc in aiw_docs:
+        by_index = {int(wp["index"]): wp for wp in doc["waypoints"]}
+        for wp in doc["waypoints"]:
+            source_index = int(wp["index"])
+            target_index = int(wp.get("next", -1))
+            if target_index not in by_index:
+                continue
+            target = by_index[target_index]
+            edges.append({
+                "aiw_source": doc["source"],
+                "from_waypoint": source_index,
+                "to_waypoint": target_index,
+                "branch_id": int(wp.get("branch_id", 0)),
+                "link_flags": int(wp.get("link_flags", 0)),
+                "from_lap_distance": float(wp.get("lap_distance", 0.0)),
+                "to_lap_distance": float(target.get("lap_distance", 0.0)),
+                "lap_distance_delta": (
+                    float(target.get("lap_distance", 0.0))
+                    - float(wp.get("lap_distance", 0.0))
+                ),
+            })
+    return edges
+
+
 def write_csv(path: Path, rows: list[dict], keys: list[str]) -> None:
     with path.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
@@ -1514,6 +1541,7 @@ def main() -> int:
         ],
         "aiw_match_count": len(aiw_matches),
         "aiw_runtime_sequences": aiw_sequences,
+        "aiw_next_edge_count": len(aiw_next_edges),
         "polyline_node_count": len(polyline_nodes),
         "path_start_node_link_count": len(path_start_node_links),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
@@ -1560,6 +1588,12 @@ def main() -> int:
         ) + "\n",
         encoding="utf-8",
     )
+    aiw_next_edges = build_aiw_next_edges(aiw_docs)
+    write_csv(out / "aiw_next_edges.csv", aiw_next_edges, [
+        "aiw_source", "from_waypoint", "to_waypoint", "branch_id",
+        "link_flags", "from_lap_distance", "to_lap_distance", "lap_distance_delta",
+    ])
+
     write_csv(out / "aiw_waypoints.csv", [
         wp for d in aiw_docs for wp in d["waypoints"]
     ], [
