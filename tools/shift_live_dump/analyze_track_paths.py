@@ -37,12 +37,19 @@ INCIDENT = {
     "roaming": (0xf8, "I"),
 }
 SEGMENT = {
-    # FUN_006d0f00 exposes only these AISegmentPath fields. The bytes at
-    # +0x14/+0x18 are initialized by the constructor but are not named by
-    # the recovered reflection metadata, so they remain intentionally opaque.
+    # FUN_006d0690 is the reflection builder for AISegmentPath and explicitly
+    # names these fields. Type 3 is a 32-bit integer/bool, type 1 is float,
+    # and type 6 is the reflected array pointer.
     "nodes": (0x10, "I"),
+    "side": (0x14, "I"),
+    "array": (0x18, "I"),
     "length": (0x1c, "f"),
-    "path_dist": (0x20, "f"),
+    "cyclic": (0x20, "I"),
+    "narrow": (0x24, "I"),
+    "spacing": (0x28, "f"),
+    "path_dist": (0x2c, "f"),
+    "current": (0x30, "I"),
+    "edge_step": (0x34, "f"),
 }
 POLY = {
     "nodes": (0x10, "I"), "array": (0x14, "I"), "length": (0x18, "f"),
@@ -218,15 +225,25 @@ def check_segment(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
         return None
     if not 1 <= d["nodes"] <= 1000000:
         return None
-    if not finite(d["length"]) or not finite(d["path_dist"]):
+    if d["side"] > 3:
         return None
-    if not (0 < d["length"] <= 1e7):
+    if d["cyclic"] not in (0, 1) or d["narrow"] not in (0, 1):
+        return None
+    array_mapping = writable(d["array"], mm, starts)
+    if not array_mapping:
+        return None
+    if not all(finite(d[k]) for k in ("length", "spacing", "path_dist", "edge_step")):
+        return None
+    if not (0 < d["length"] <= 1e7 and 0 < d["spacing"] <= 1e5):
+        return None
+    if not 0 <= d["current"] <= d["nodes"]:
         return None
     return {
         "address": addr,
         "vtable": vt,
         "vtable_mapping": game_vtable(vt, mm, starts),
         **d,
+        "array_mapping": array_mapping,
     }
 
 
