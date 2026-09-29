@@ -19,6 +19,7 @@ def test_material_pipeline_defaults_match_retail_constructor():
     result = build_material_pipeline_state({})
 
     assert result["ready"] is True, result["blocking_reasons"]
+    assert result["vulkan_pipeline_ready"] is True
     assert result["depth"] == {
         "enabled": True,
         "write_enabled": True,
@@ -96,6 +97,7 @@ def test_enabled_alpha_test_fails_closed_until_shader_discard_exists():
     })
 
     assert result["ready"] is False
+    assert result["vulkan_pipeline_ready"] is False
     assert (
         "material-pipeline:alpha-test-enabled-requires-shader-discard"
         in result["blocking_reasons"]
