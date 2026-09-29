@@ -4,6 +4,8 @@
 
 The initial offline Linux runtime shell is now implemented as `native_runtime/`.
 
+The runtime is merged on main. Linux CI exercises the material-mode frame loop under Xvfb/lavapipe, including three rendered frames, three fixed simulation steps, one 2D bundle texture, the cube resource, and the admitted 40-scalar physics workspace. The merge also fixes two Vulkan create-info lifetime bugs that previously left queue-family and descriptor-set-layout pointers referring to expired stack arrays.
+
 Current slice:
 
 ```
