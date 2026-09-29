@@ -1017,12 +1017,10 @@ def main() -> int:
     ])
     write_csv(out / "next_capture_windows.csv", windows, ["start", "size", "clusters", "priority"])
     (out / "next_capture_ranges.txt").write_text(
-        "
-".join(
+        "\n".join(
             f"0x{w['start']:x}:0x{w['size']:x}  # priority={w['priority']:.2f} clusters={','.join(map(str, w['clusters']))}"
             for w in windows
-        ) + "
-",
+        ) + "\n",
         encoding="utf-8",
     )
 
