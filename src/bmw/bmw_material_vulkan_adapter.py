@@ -6,14 +6,16 @@ import hashlib
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Mapping, Iterable
+from typing import Any, Mapping, Iterable, Sequence
 
 from bmw_vulkan_bundle import TARGET_MEB, build_bmw_vulkan_bundle
+from bmw_vulkan_bundle_set import index_bmw_vulkan_bundle_set
 from draw_packets import norm_ref
 from shift_importer import BFF
 from vulkan_dds_bridge import bridge_bmw_dds_resources
 
 FORMAT = "SHIFT.BMWMaterialSliceVulkan/1"
+SET_FORMAT = "SHIFT.BMWMaterialSliceVulkanSet/1"
 
 
 def _load(value: str | Path | Mapping[str, Any]) -> dict[str, Any]:
@@ -75,16 +77,33 @@ def _find_mesh(payload: Mapping[str, Any], command: Mapping[str, Any]) -> dict[s
     raise ValueError("BMW material slice does not contain a neutral mesh JSON payload")
 
 
-def _validate_vulkan_shader_sources(command: Mapping[str, Any]) -> list[str]:
+def _validate_vulkan_shader_sources(
+    command: Mapping[str, Any],
+    submesh_indices: Sequence[int] | None = None,
+) -> list[str]:
     blockers: list[str] = []
-    for index, submesh in enumerate(command.get("submeshes", []) or []):
-        shader = submesh.get("shader") or {}
+    submeshes = command.get("submeshes", []) or []
+    indices = (
+        list(range(len(submeshes)))
+        if submesh_indices is None
+        else [int(index) for index in submesh_indices]
+    )
+    for index in indices:
+        if index < 0 or index >= len(submeshes):
+            blockers.append(
+                f"bmw-material-vulkan:submesh-index-out-of-range:{index}"
+            )
+            continue
+        submesh = submeshes[index]
+        shader = submesh.get("shader") if isinstance(submesh, Mapping) else None
         if not isinstance(shader, Mapping):
             blockers.append(f"bmw-material-vulkan:shader-missing:{index}")
             continue
         for stage in ("vertex", "pixel"):
             if not shader.get(f"vulkan_{stage}_glsl"):
-                blockers.append(f"bmw-material-vulkan:vulkan-{stage}-source-missing:{index}")
+                blockers.append(
+                    f"bmw-material-vulkan:vulkan-{stage}-source-missing:{index}"
+                )
     return blockers
 
 
@@ -329,7 +348,7 @@ def build_bmw_vulkan_from_material_slice(
             "BMW material slice is not the exact KIT00 body MEB required by Vulkan bundle"
         )
 
-    shader_blockers = _validate_vulkan_shader_sources(command)
+    shader_blockers = _validate_vulkan_shader_sources(command, [submesh_index])
     if shader_blockers:
         return {
             "format": FORMAT,
@@ -455,9 +474,175 @@ def build_bmw_vulkan_from_material_slice(
     }
 
 
+
+def _normalize_set_submesh_indices(
+    command: Mapping[str, Any],
+    submesh_indices: Sequence[int] | None,
+) -> list[int]:
+    submeshes = command.get("submeshes") or []
+    if not submeshes:
+        raise ValueError("BMW material slice render command contains no submeshes")
+    indices = (
+        list(range(len(submeshes)))
+        if submesh_indices is None
+        else [int(index) for index in submesh_indices]
+    )
+    if not indices:
+        raise ValueError("BMW material Vulkan set requires at least one submesh")
+    if len(indices) != len(set(indices)):
+        raise ValueError("BMW material Vulkan set submesh indices must be unique")
+    for index in indices:
+        _find_selected_submesh(command, index)
+    return indices
+
+
+def build_bmw_vulkan_set_from_material_slice(
+    material_slice: str | Path | Mapping[str, Any],
+    output_dir: str | Path,
+    *,
+    textures: str | Path | Mapping[str, Any] | None = None,
+    environment_cube: str | Path | Mapping[str, Any] | None = None,
+    source_bffs: Iterable[str | Path] = (),
+    environment_cube_dds: str | Path | None = None,
+    submesh_indices: Sequence[int] | None = None,
+) -> dict[str, Any]:
+    """Build one independently bridged child bundle for every selected submesh."""
+    payload = _load(material_slice)
+    command = _find_render_command(payload)
+    _find_mesh(payload, command)
+
+    mesh_ref = (command.get("mesh") or {}).get("ref")
+    if mesh_ref != TARGET_MEB:
+        raise ValueError(
+            "BMW material slice is not the exact KIT00 body MEB required by Vulkan bundle"
+        )
+
+    indices = _normalize_set_submesh_indices(command, submesh_indices)
+    shader_blockers = _validate_vulkan_shader_sources(command, indices)
+    source_bff_list = [Path(path) for path in source_bffs]
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    child_results: list[dict[str, Any]] = []
+    adapter_blockers: list[str] = []
+
+    if not shader_blockers:
+        for draw_order, submesh_index in enumerate(indices):
+            child = out / "draws" / f"submesh_{submesh_index:03d}"
+            result = build_bmw_vulkan_from_material_slice(
+                payload,
+                child,
+                textures=textures,
+                environment_cube=environment_cube,
+                source_bffs=source_bff_list,
+                environment_cube_dds=environment_cube_dds,
+                submesh_index=submesh_index,
+            )
+            child_reasons = [
+                str(reason)
+                for reason in result.get("blocking_reasons") or []
+            ]
+            if result.get("ready") is not True:
+                adapter_blockers.extend(
+                    f"bmw-material-vulkan-set:submesh-{submesh_index}:{reason}"
+                    for reason in (
+                        child_reasons
+                        or ["material-adapter-not-ready"]
+                    )
+                )
+            child_results.append({
+                "draw_order": draw_order,
+                "source_submesh_index": submesh_index,
+                "bundle_path": str(child.relative_to(out)),
+                "format": result.get("format"),
+                "status": result.get("status"),
+                "ready": result.get("ready") is True,
+                "blocking_reasons": child_reasons,
+                "source": result.get("source"),
+                "dds_bridge": result.get("dds_bridge"),
+            })
+    else:
+        adapter_blockers.extend(shader_blockers)
+        for draw_order, submesh_index in enumerate(indices):
+            child_results.append({
+                "draw_order": draw_order,
+                "source_submesh_index": submesh_index,
+                "bundle_path": f"draws/submesh_{submesh_index:03d}",
+                "format": FORMAT,
+                "status": "blocked",
+                "ready": False,
+                "blocking_reasons": [
+                    reason
+                    for reason in shader_blockers
+                    if reason.endswith(f":{submesh_index}")
+                ],
+                "source": None,
+                "dds_bridge": None,
+            })
+
+    bundle_set = index_bmw_vulkan_bundle_set(
+        command,
+        out,
+        submesh_indices=indices,
+    )
+    blockers = list(adapter_blockers)
+    blockers.extend(
+        str(reason)
+        for reason in bundle_set.get("blocking_reasons") or []
+    )
+    blockers = list(dict.fromkeys(blockers))
+
+    source_record = {
+        "format": SET_FORMAT,
+        "material_slice_format": payload.get("format"),
+        "material_slice_path": payload.get("_source_path"),
+        "material_slice_sha256": payload.get("_source_sha256"),
+        "render_command_format": command.get("format"),
+        "render_command_identity": command.get("identity"),
+        "mesh_ref": mesh_ref,
+        "target_meb": TARGET_MEB,
+        "selected_submesh_indices": indices,
+        "dds_source_bffs": [path.name for path in source_bff_list],
+    }
+    source_path = out / "material_slice_set_source.json"
+    source_path.write_text(
+        json.dumps(source_record, ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+
+    ready = not blockers and bundle_set.get("ready") is True
+    return {
+        "format": SET_FORMAT,
+        "version": 1,
+        "status": "ready" if ready else "blocked",
+        "ready": ready,
+        "blocking_reasons": blockers,
+        "bundle_set": bundle_set,
+        "draw_count": len(child_results),
+        "draws": child_results,
+        "source": source_record,
+        "artifacts": {
+            "bundle_set_manifest": {
+                "path": "bundle_set_manifest.json",
+                "sha256": hashlib.sha256(
+                    (out / "bundle_set_manifest.json").read_bytes()
+                ).hexdigest(),
+            },
+            "draw_order": bundle_set.get("artifacts", {}).get("draw_order"),
+            "material_slice_set_source": {
+                "path": source_path.name,
+                "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
+            },
+        },
+    }
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Bridge a BMW material-slice JSON into SHIFT.BMWVulkanBundle/1"
+        description=(
+            "Bridge a BMW material-slice JSON into one Vulkan bundle "
+            "or an ordered multi-submesh bundle set"
+        )
     )
     parser.add_argument("material_slice")
     parser.add_argument("output_dir")
@@ -466,16 +651,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-bff", action="append", default=[])
     parser.add_argument("--environment-cube-dds")
     parser.add_argument("--submesh-index", type=int, default=0)
+    parser.add_argument("--all-submeshes", action="store_true")
     args = parser.parse_args(argv)
-    result = build_bmw_vulkan_from_material_slice(
-        args.material_slice,
-        args.output_dir,
-        textures=args.textures,
-        environment_cube=args.environment_cube,
-        source_bffs=args.source_bff,
-        environment_cube_dds=args.environment_cube_dds,
-        submesh_index=args.submesh_index,
-    )
+
+    common = {
+        "textures": args.textures,
+        "environment_cube": args.environment_cube,
+        "source_bffs": args.source_bff,
+        "environment_cube_dds": args.environment_cube_dds,
+    }
+    if args.all_submeshes:
+        result = build_bmw_vulkan_set_from_material_slice(
+            args.material_slice,
+            args.output_dir,
+            **common,
+        )
+    else:
+        result = build_bmw_vulkan_from_material_slice(
+            args.material_slice,
+            args.output_dir,
+            submesh_index=args.submesh_index,
+            **common,
+        )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["ready"] else 2
 
