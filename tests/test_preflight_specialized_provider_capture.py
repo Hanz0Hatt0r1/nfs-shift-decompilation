@@ -23,7 +23,7 @@ def test_cli_delegates_and_prints_machine_readable_summary(monkeypatch, tmp_path
     monkeypatch.setattr(
         tool,
         "preflight_provider_capture",
-        lambda executable, output_dir, *, probe_script, wine_command="wine", gdb_command="gdb": {
+        lambda executable, output_dir, *, probe_script, wine_command="wine", gdb_command="gdb", provider_only=False: {
             "format": "SHIFT.SDFRuntimeProbePreflight/1",
             "status": "blocked",
             "ready": False,
@@ -32,6 +32,7 @@ def test_cli_delegates_and_prints_machine_readable_summary(monkeypatch, tmp_path
                 "exists": True,
                 "validation": {"ready": True},
             },
+            "capture": {"probe_mode": "full"},
             "runtime_tools": {"wine": None, "gdb": None},
             "gdb_python": {"ready": False},
             "errors": ["missing:wine", "missing:gdb"],
