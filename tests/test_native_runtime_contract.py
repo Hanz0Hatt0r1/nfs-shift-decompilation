@@ -97,3 +97,9 @@ def test_native_camera_defaults_match_recovered_view_constructor():
     assert "active_group = -1" in header
     assert "group_restore_value = -1" in header
     assert "buffer_count = 2" in header
+
+def test_native_index_draw_count_respects_first_index():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
+
+    assert "geometry.indices.size() - first_index" in source
+    assert "index_count == 0" in source
