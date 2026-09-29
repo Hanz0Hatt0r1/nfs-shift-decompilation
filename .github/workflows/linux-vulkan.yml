@@ -58,6 +58,7 @@ jobs:
         run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle
       - name: Native Linux runtime frame loop
         run: |
+          set -o pipefail
           mkdir -p out/vulkan/runtime
           xvfb-run -a native_runtime/build/shift_runtime \
             --bundle out/vulkan/bundle/bundle \
