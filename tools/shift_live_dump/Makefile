@@ -15,6 +15,7 @@ test: shift-live-dump
 	bash test_validate_aiw_runtime_graph.sh
 	bash test_join_path_start_nodes.sh
 	bash test_validate_track_path_instance_graph.sh
+	bash test_audit_track_path_capture.sh
 
 clean:
 	rm -f shift-live-dump

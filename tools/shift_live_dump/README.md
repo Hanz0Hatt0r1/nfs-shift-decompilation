@@ -222,6 +222,7 @@ Outputs:
 - `aiw_runtime_graph_validation.json` / `aiw_runtime_edge_groups.csv` — explicit AIW/runtime edge coverage, stride and ambiguity diagnostics from `validate_aiw_runtime_graph.py`.
 - `path_polyline_links.csv` — exact `Path.StartNode == AIPolylinePath.array` joins with node-count/sequence consistency fields.
 - `track_path_instance_graph.json` / `track_path_instance_edges.csv` — AIW runtime edges cross-checked against concrete `AIPolyPathNode` owners and exact Path/AIPolylinePath instances.
+- `track_path_capture_handoff.json` — capture completeness audit, blocking evidence, recovered root candidates, and reproducible next extraction/correlation commands.
 
 ### Correlating runtime nodes with static AIW waypoints
 
