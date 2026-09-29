@@ -5,8 +5,12 @@ Usage from a GDB session attached to the retail SHIFT.exe Wine process:
     sdf-probe /tmp/shift-solver-capture
     continue
 
-The probe automatically writes one JSON file at the builtin solver entry and
-one post-solve JSON file at FUN_007b4110 for each hit.
+Provider-only mode:
+    sdf-probe /tmp/shift-provider-capture --provider-only
+
+The full probe writes builtin solver, provider and reset captures. Provider-only
+omits the per-frame and builtin-solver stops while retaining specialized-provider
+solve/reset and scalar-reset hooks.
 """
 from __future__ import annotations
 
