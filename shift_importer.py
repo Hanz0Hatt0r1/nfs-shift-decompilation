@@ -3125,6 +3125,31 @@ def cmd_bmw_runtime_shader_select(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_bmw_runtime_register_filter(args: argparse.Namespace) -> int:
+    """Filter retail BMW FXO candidates with draw-local c-register witnesses."""
+    from bmw_runtime_register_permutation_filter import validate_files
+
+    report = validate_files(args.material_input, args.runtime_witness)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "material": report["material"],
+        "top_distinct_permutation_count": report[
+            "top_distinct_permutation_count"
+        ],
+        "register_match_count": report["register_match_count"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_bmw_runtime_shader_join(args: argparse.Namespace) -> int:
     """Join an exact BMW material slice with captured D3D9 runtime shader state."""
     from bmw_runtime_shader_join import validate_files
@@ -4236,6 +4261,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.BMWRuntimeShaderSelection/1 JSON")
     p.add_argument("--allow-resource-mismatch", action="store_true", help="diagnostic mode; do not require exact MEB resource identity")
     p.set_defaults(fn=cmd_bmw_runtime_shader_select)
+
+    p = sp.add_parser("bmw-runtime-register-filter", help="filter retail BMW FXO permutations with draw-local runtime constant registers")
+    p.add_argument("material_input", help="BMW material binding/evidence JSON with FXO candidates")
+    p.add_argument("runtime_witness", help="SHIFT.BMWM3RuntimeMaterialWitness/1 JSON")
+    p.add_argument("output", help="SHIFT.BMWRuntimeRegisterPermutationFilter/1 JSON")
+    p.set_defaults(fn=cmd_bmw_runtime_register_filter)
 
     p = sp.add_parser("bmw-runtime-shader-join", help="join a BMW material slice with captured D3D9 runtime shader state")
     p.add_argument("material_slice", help="SHIFT.BMWMaterialSlice/1 JSON")
