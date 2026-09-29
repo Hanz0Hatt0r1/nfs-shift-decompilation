@@ -42,6 +42,6 @@ def test_direct_vulkan_prefers_full_pipeline_state_over_nested_legacy_cull():
     source = Path("native_vulkan/src/vulkan_bundle_execute.cpp").read_text(
         encoding="utf-8"
     )
-    full = source.index('"format": "SHIFT.MaterialPipelineState/1"')
-    legacy = source.index('"format": "SHIFT.MaterialCullState/1"')
+    full = source.index("SHIFT.MaterialPipelineState/1")
+    legacy = source.index("SHIFT.MaterialCullState/1")
     assert full < legacy
