@@ -66,6 +66,9 @@ def translate_render_states(states: Mapping[Any, Any]) -> dict[str, Any]:
     z_enable = _value(states, 7)
     z_write = _value(states, 14)
     z_func = _value(states, 23)
+    alpha_test = _value(states, 15)
+    alpha_ref = _value(states, 24)
+    alpha_func = _value(states, 25)
     alpha_blend = _value(states, 27)
     src_blend = _value(states, 19)
     dst_blend = _value(states, 20)
@@ -74,6 +77,23 @@ def translate_render_states(states: Mapping[Any, Any]) -> dict[str, Any]:
 
     if z_func is not None and z_func not in COMPARE:
         blockers.append(f"d3d9-vulkan-state:unsupported-zfunc:{z_func}")
+    if alpha_func is not None and alpha_func not in COMPARE:
+        blockers.append(
+            f"d3d9-vulkan-state:unsupported-alphafunc:{alpha_func}"
+        )
+    if alpha_ref is not None and (
+        not isinstance(alpha_ref, int)
+        or isinstance(alpha_ref, bool)
+        or alpha_ref < 0
+        or alpha_ref > 255
+    ):
+        blockers.append(
+            f"d3d9-vulkan-state:invalid-alpharef:{alpha_ref}"
+        )
+    if bool(alpha_test):
+        blockers.append(
+            "d3d9-vulkan-state:alpha-test-fragment-quantization-unproven"
+        )
     if cull_mode is not None and cull_mode not in CULL:
         blockers.append(f"d3d9-vulkan-state:unsupported-cullmode:{cull_mode}")
     for name, value in (("srcblend", src_blend), ("dstblend", dst_blend)):
@@ -113,10 +133,30 @@ def translate_render_states(states: Mapping[Any, Any]) -> dict[str, Any]:
             "cull_mode": CULL.get(cull_mode) if cull_mode is not None else None,
             "front_face_policy": "runtime-capture-required",
         },
+        "alpha_test": {
+            "enable": bool(alpha_test) if alpha_test is not None else None,
+            "reference_u8": alpha_ref,
+            "reference_normalized": (
+                alpha_ref / 255.0
+                if isinstance(alpha_ref, int)
+                and not isinstance(alpha_ref, bool)
+                and 0 <= alpha_ref <= 255
+                else None
+            ),
+            "compare_op": (
+                COMPARE.get(alpha_func)
+                if alpha_func is not None else None
+            ),
+            "d3d9_states": {
+                "enable": 15,
+                "reference": 24,
+                "function": 25,
+            },
+        },
         "blend": blend_state,
         "color_write_mask": color_mask,
         "policy": {
-            "alpha_test": "unsupported-until-shader-discard-evidence",
+            "alpha_test": "exact-d3d9-state; native quantization proof pending",
             "cull_front_face": "not-inferred",
             "blend_factor_source": "D3D9 state values",
             "allows_inference": False,
