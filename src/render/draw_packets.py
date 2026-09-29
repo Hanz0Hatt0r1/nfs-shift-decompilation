@@ -379,6 +379,11 @@ def compile_material(
                 for reason in bmw_paint_shader_gate.get("blocking_reasons") or []
             )
 
+    render_state = dict(material.get("render_state") or {})
+    render_state.setdefault("fog", material.get("fog"))
+    render_state.setdefault("antialias", material.get("antialias"))
+    render_state.setdefault("cull", material.get("cull"))
+
     return {
         "ref": material_ref,
         "resolved": hits,
@@ -413,11 +418,7 @@ def compile_material(
             else {"status": "none", "ambiguous_candidates": []}
         ),
         "technique": material.get("technique"),
-        "render_state": {
-            "fog": material.get("fog"),
-            "antialias": material.get("antialias"),
-            "cull": material.get("cull"),
-        },
+        "render_state": render_state,
         "shaderparams": params,
         "textures": texture_bindings,
         "paint_contract": bmw_paint_contract,
