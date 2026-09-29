@@ -53,6 +53,7 @@ def test_native_runtime_bundle_executes_material_interface():
     assert "struct MaterialPipelineState" in source
     assert "load_bundle_pipeline_state" in source
     assert "SHIFT.MaterialPipelineState/1" in source
+    assert "vulkan_pipeline_ready" in source
     assert "SHIFT.MaterialCullState/1" in source
     assert "uses_material_descriptors ? material_state.cull_mode" in source
     assert "bundle.pipeline_state" in source
