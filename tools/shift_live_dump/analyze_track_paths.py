@@ -655,6 +655,82 @@ def validate_polyline_array_links(
         row["node_array_bytes"] = count * 0x24
         row["node_array_end"] = array + count * 0x24
 
+def extract_polyline_nodes(
+    candidates: list[dict],
+    snapshot: Path,
+    region_index: dict[int, dict],
+    max_nodes: int = 100000,
+) -> list[dict]:
+    """Decode validated AIPolyPathNode arrays from the reference snapshot.
+
+    Only candidates with a matching count prefix and the concrete node vtable
+    are exported. Nodes are read in compact chunks so a malformed count cannot
+    force an unbounded allocation.
+    """
+    rows: list[dict] = []
+    starts = sorted(region_index)
+    for owner in candidates:
+        if not owner.get("array_link_available"):
+            continue
+        if not owner.get("array_count_match") or not owner.get("array_node_vtable_match"):
+            continue
+        array = int(owner.get("array", 0))
+        count = int(owner.get("array_count", 0))
+        count = min(count, max_nodes)
+        if array <= 0 or count <= 0:
+            continue
+        loc = _region_record_for_address(array, region_index, starts)
+        if loc is None:
+            continue
+        st, rec = loc
+        within = array - st
+        total = count * 0x24
+        if within + total > int(rec["size"]):
+            count = max(0, (int(rec["size"]) - within) // 0x24)
+        if count <= 0:
+            continue
+        path = snapshot / rec["file"]
+        try:
+            with path.open("rb") as fh:
+                fh.seek(within)
+                remaining = count
+                index = 0
+                while remaining:
+                    batch_count = min(remaining, 4096)
+                    data = fh.read(batch_count * 0x24)
+                    full = len(data) // 0x24
+                    if full == 0:
+                        break
+                    for n in range(full):
+                        off = n * 0x24
+                        vt = struct.unpack_from("<I", data, off)[0]
+                        if vt != KNOWN_VTABLES["AIPolyPathNode"]:
+                            remaining = 0
+                            break
+                        x, y, dx, dy, distance = struct.unpack_from("<fffff", data, off + 0x10)
+                        if not all(finite(v, 1e7) for v in (x, y, dx, dy, distance)) or distance < 0:
+                            remaining = 0
+                            break
+                        rows.append({
+                            "path_address": int(owner["address"]),
+                            "array_address": array,
+                            "index": index + n,
+                            "address": array + (index + n) * 0x24,
+                            "vtable": vt,
+                            "x": x,
+                            "y": y,
+                            "dx": dx,
+                            "dy": dy,
+                            "distance": distance,
+                        })
+                    index += full
+                    remaining -= full
+                    if full < batch_count:
+                        break
+        except OSError:
+            continue
+    return rows
+
 def clusters(rows: list[dict], gap: int = 0x10000) -> list[dict]:
     rows = sorted(rows, key=lambda r: r["target"])
     out: list[dict] = []
@@ -1278,6 +1354,9 @@ def main() -> int:
     # after the global scan because the target array can live in another
     # selected memory region.
     validate_polyline_array_links(candidates["AIPolylinePath"], sns, idx)
+    polyline_nodes = extract_polyline_nodes(
+        candidates["AIPolylinePath"], sns[0], idx[0]
+    )
     for k in candidates:
         candidates[k] = sorted(
             candidates[k],
@@ -1387,6 +1466,7 @@ def main() -> int:
         ],
         "aiw_match_count": len(aiw_matches),
         "aiw_runtime_sequences": aiw_sequences,
+        "polyline_node_count": len(polyline_nodes),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
         "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
         "notes": [
@@ -1405,6 +1485,10 @@ def main() -> int:
         "score", "start", "end", "span", "target_count", "source_count",
         "source_stride", "source_stride_count", "mapping_start",
         "mapping_end", "mapping_perms", "target_samples",
+    ])
+    write_csv(out / "aipolylinepath_nodes.csv", polyline_nodes, [
+        "path_address", "array_address", "index", "address", "vtable",
+        "x", "y", "dx", "dy", "distance",
     ])
     write_csv(out / "path_root_targets.csv", path_roots, [
         "target", "candidate_count", "candidate_addresses",
