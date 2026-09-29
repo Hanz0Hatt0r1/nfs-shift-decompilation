@@ -89,7 +89,10 @@ assert first["candidate_count"] == 1, first
 
 path2 = [row for row in rows if row["start_node"] == 0x33630000]
 assert len(path2) == 3, path2
-matched = [row for row in path2 if row["node_count_match"]]
+matched = [
+    row for row in path2
+    if row["node_count_match"] and row["node_sequence_match"]
+]
 assert len(matched) == 1, path2
 second = matched[0]
 assert second["candidate_count"] == 2, second
