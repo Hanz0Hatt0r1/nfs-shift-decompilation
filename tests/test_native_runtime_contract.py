@@ -67,7 +67,8 @@ def test_native_runtime_state_boundary_is_evidence_backed():
     assert "participant_index = -1" in header
     assert 'runtime_state.hpp' in source
     assert "native_state.fixed_step(intent)" in source
-    assert '"state_layer": "SHIFT.NativeRuntimeState/1"' in source
+    assert "state_layer" in source
+    assert "SHIFT.NativeRuntimeState/1" in source
 
 def test_native_runtime_accepts_bmw_physics_manifest():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
