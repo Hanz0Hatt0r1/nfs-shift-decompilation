@@ -2,7 +2,7 @@
 """Find reverse-engineered track/path structures and heap pointer families."""
 from __future__ import annotations
 
-import argparse, csv, io, json, math, re, struct, sys, tempfile, zipfile
+import argparse, csv, json, math, re, struct, sys, tempfile, zipfile
 from bisect import bisect_right
 from collections import Counter
 from pathlib import Path
