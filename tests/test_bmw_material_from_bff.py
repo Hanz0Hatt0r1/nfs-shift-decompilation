@@ -123,7 +123,7 @@ def test_real_bmw_material_extractor_builds_ready_binding(monkeypatch,tmp_path):
     assert report['boundary']['runtime_instance_attribution']=='not-proven'
 
 
-def test_real_bmw_material_extractor_blocks_ambiguous_bodywork_shader(monkeypatch,tmp_path):
+def test_real_bmw_material_extractor_accepts_identical_shader_duplicate(monkeypatch,tmp_path):
     primary,_=_setup(monkeypatch,tmp_path)
     original_bff = extractor.BFF
     primary_archive = original_bff(str(primary))
@@ -141,8 +141,39 @@ def test_real_bmw_material_extractor_blocks_ambiguous_bodywork_shader(monkeypatc
             return supplemental_archive
         return primary_archive
     monkeypatch.setattr(extractor,'BFF',fake_bff)
-    with pytest.raises(ValueError,match='expected one'):
-        extractor.build_real_bmw_material_binding(primary,supplemental_bffs=[supplemental])
+
+    report=extractor.build_real_bmw_material_binding(
+        primary,
+        supplemental_bffs=[supplemental],
+    )
+    assert report['ready'] is True
+    assert report['provenance']['shader_source']['archive']=='BMW_M3_E36.bff'
+
+
+def test_real_bmw_material_extractor_rejects_conflicting_shader_duplicate(monkeypatch,tmp_path):
+    primary,_=_setup(monkeypatch,tmp_path)
+    original_bff = extractor.BFF
+    primary_archive = original_bff(str(primary))
+    supplemental=tmp_path/'RENDER.bff'
+    supplemental.write_bytes(b'render')
+    duplicate=FakeEntry('render/shaders/bodywork.fx',99)
+    supplemental_archive=FakeArchive(
+        supplemental,
+        [duplicate],
+        {duplicate.path:b'not-the-same-shader'},
+    )
+    def fake_bff(path):
+        path = str(Path(path))
+        if path == str(supplemental):
+            return supplemental_archive
+        return primary_archive
+    monkeypatch.setattr(extractor,'BFF',fake_bff)
+
+    with pytest.raises(ValueError,match='conflicting duplicate entry'):
+        extractor.build_real_bmw_material_binding(
+            primary,
+            supplemental_bffs=[supplemental],
+        )
 
 
 def test_real_bmw_material_extractor_requires_actual_files(monkeypatch,tmp_path):
@@ -264,3 +295,67 @@ def test_real_bmw_material_extractor_supports_nonpaint_bmt(monkeypatch, tmp_path
     assert report['paint_contract'] is None
     assert report['paint_shader_gate'] is None
     assert report['provenance']['material_entry']['path'] == generic_bmt
+
+
+
+def test_shader_family_normalizes_retail_cache_names():
+    assert extractor._shader_family('render/shaders/bodywork.fx') == 'bodywork'
+    assert (
+        extractor._shader_family(
+            'render/shaders/cache/render_shaders_bodywork_01a63815cb4c4c9c.fxo'
+        )
+        == 'bodywork'
+    )
+    assert (
+        extractor._shader_family(
+            'render/shaders/cache/render_shaders_vehicles_basic_01c1e527b55bd1bc.fxo'
+        )
+        == 'vehiclesbasic'
+    )
+
+
+def test_fxo_candidates_are_filtered_by_shader_family_and_deduplicated():
+    a = FakeArchive(
+        Path('BMW_M3_E36.bff'),
+        [],
+        {},
+    )
+    b = FakeArchive(
+        Path('RENDER.bff'),
+        [],
+        {},
+    )
+    body_a = FakeEntry(
+        'render/shaders/cache/render_shaders_bodywork_deadbeefdeadbeef.fxo',
+        1,
+    )
+    body_b = FakeEntry(
+        'render/shaders/cache/render_shaders_bodywork_deadbeefdeadbeef.fxo',
+        2,
+    )
+    glass = FakeEntry(
+        'render/shaders/cache/render_shaders_glass_cafebabecafebabe.fxo',
+        3,
+    )
+    a.entries = [body_a, glass]
+    b.entries = [body_b]
+    a.payloads = {
+        body_a.path: b'bodywork-permutation',
+        glass.path: b'glass-permutation',
+    }
+    b.payloads = {
+        body_b.path: b'bodywork-permutation',
+    }
+
+    candidates, duplicate_copies = extractor._fxo_candidates_for_shader(
+        [(a, body_a), (a, glass), (b, body_b)],
+        'render/shaders/bodywork.fx',
+    )
+
+    assert duplicate_copies == 1
+    assert candidates == [
+        (
+            'render/shaders/cache/render_shaders_bodywork_deadbeefdeadbeef.fxo',
+            b'bodywork-permutation',
+        )
+    ]
