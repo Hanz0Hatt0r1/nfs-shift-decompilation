@@ -39,7 +39,11 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
         "offset": off,
         "record_bytes": LEAF_SIZE,
         "raw_u32": words,
+        # FUN_006af780/FUN_006af830 use +0x38 as the object/resource
+        # handle and +0x3c as the per-record runtime child/index.
+        "object_handle": words[14],
         "runtime_index": words[15],
+        "child_index": words[15],
         "index_word": words[15],
         "runtime_generated_links": False,
     }
@@ -164,6 +168,7 @@ def parse_flat_runtime(
             "copy_to_runtime": "FUN_006af300",
             "normalize_tree": "FUN_006af6c0",
             "index_leaves": "FUN_006af780",
+            "release_leaves": "FUN_006af830",
             "walk_leaves": "FUN_006af5a0",
         },
         "limitations": [
