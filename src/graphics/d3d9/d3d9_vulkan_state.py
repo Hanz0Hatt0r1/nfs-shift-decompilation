@@ -55,6 +55,14 @@ BLEND = {
     11: "VK_BLEND_FACTOR_SRC_ALPHA_SATURATE",
 }
 
+BLEND_OP = {
+    1: "VK_BLEND_OP_ADD",
+    2: "VK_BLEND_OP_SUBTRACT",
+    3: "VK_BLEND_OP_REVERSE_SUBTRACT",
+    4: "VK_BLEND_OP_MIN",
+    5: "VK_BLEND_OP_MAX",
+}
+
 
 def _value(states: Mapping[Any, Any], key: int, default: Any = None) -> Any:
     return states.get(key, states.get(str(key), default))
@@ -69,6 +77,7 @@ def translate_render_states(states: Mapping[Any, Any]) -> dict[str, Any]:
     alpha_blend = _value(states, 27)
     src_blend = _value(states, 19)
     dst_blend = _value(states, 20)
+    blend_op = _value(states, 171)
     cull_mode = _value(states, 22)
     color_write = _value(states, 168)
 
@@ -79,6 +88,10 @@ def translate_render_states(states: Mapping[Any, Any]) -> dict[str, Any]:
     for name, value in (("srcblend", src_blend), ("dstblend", dst_blend)):
         if value is not None and value not in BLEND:
             blockers.append(f"d3d9-vulkan-state:unsupported-{name}:{value}")
+    if blend_op is not None and blend_op not in BLEND_OP:
+        blockers.append(
+            f"d3d9-vulkan-state:unsupported-blendop:{blend_op}"
+        )
 
     color_mask = None
     if color_write is not None:
@@ -97,6 +110,7 @@ def translate_render_states(states: Mapping[Any, Any]) -> dict[str, Any]:
         "enable": blend_enable,
         "src_factor": BLEND.get(src_blend) if src_blend is not None else None,
         "dst_factor": BLEND.get(dst_blend) if dst_blend is not None else None,
+        "op": BLEND_OP.get(blend_op) if blend_op is not None else None,
     }
 
     return {

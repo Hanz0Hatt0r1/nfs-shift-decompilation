@@ -15,9 +15,13 @@ def test_native_vulkan_bundle_executor_contract():
     assert "VK_IMAGE_VIEW_TYPE_CUBE" in source
     assert "VK_FORMAT_D32_SFLOAT" in source
     assert "SHIFT.VulkanBundleExecution/1" in source
-    assert "load_pipeline_cull_mode" in source
+    assert "load_pipeline_state" in source
+    assert "SHIFT.MaterialPipelineState/1" in source
+    assert "vulkan_pipeline_ready" in source
     assert "SHIFT.MaterialCullState/1" in source
-    assert "raster.cullMode = cull_mode;" in source
+    assert "raster.cullMode = pipeline_state.cull_mode;" in source
+    assert "pipeline_state.depth_test_enable" in source
+    assert "pipeline_state.blend_enable" in source
 
 
 def test_vulkan_bundle_runner_contract():
@@ -32,3 +36,12 @@ def test_native_bundle_cube_staging_offset_excludes_packet_header():
     source = Path("native_vulkan/src/vulkan_bundle_execute.cpp").read_text(encoding="utf-8")
     assert "copy.bufferOffset =\n                    static_cast<VkDeviceSize>(face) * cube.header.face_bytes;" in source
     assert "sizeof(CubeHeader)) +" not in source
+
+
+def test_direct_vulkan_prefers_full_pipeline_state_over_nested_legacy_cull():
+    source = Path("native_vulkan/src/vulkan_bundle_execute.cpp").read_text(
+        encoding="utf-8"
+    )
+    full = source.index("SHIFT.MaterialPipelineState/1")
+    legacy = source.index("SHIFT.MaterialCullState/1")
+    assert full < legacy
