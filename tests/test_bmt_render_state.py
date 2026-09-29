@@ -169,3 +169,34 @@ def test_retail_enum_tables_match_static_string_table_order():
         "EBO_MAX",
         "EBO_SOURCE_MINUS_DEST",
     ]
+
+
+
+def test_bmt_render_state_preserves_only_unknown_nested_groups():
+    tree = _tree()
+    tree["children"].append({
+        "name_id": 0xDEADBEEF,
+        "name": "hash_DEADBEEF",
+        "attributes": [],
+        "children": [
+            _field(0x11111111, "hash_11111111", True, 101),
+        ],
+    })
+    tree["children"].append({
+        "name_id": 648867590,
+        "name": "shaderparam",
+        "attributes": [{"name": "name", "value": "Diffuse"}],
+        "children": [
+            {
+                "name_id": 1688245861,
+                "name": "type",
+                "attributes": [{"name": "t", "value": "TEXTURE"}],
+                "children": [],
+            },
+        ],
+    })
+
+    state = _material_summary_from_tree(tree)["render_state"]
+
+    assert len(state["unmapped_groups"]) == 1
+    assert state["unmapped_groups"][0]["element_id"] == 0xDEADBEEF
