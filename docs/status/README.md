@@ -17,3 +17,4 @@ Current operational status lives here. Historical research remains in the chrono
 | SPECIALIZED_PROVIDER_STATUS.md | provider runtime capture handoff |
 | BMW_RUNTIME_SHADER_JOIN_STATUS.md | runtime shader identity and byte-hash correlation |
 | NATIVE_SUBMISSION_GATE_STATUS.md | strict RenderCommand provenance before native execution |
+| NATIVE_RUNTIME_STATUS.md | native Linux process/window/frame-loop integration |
