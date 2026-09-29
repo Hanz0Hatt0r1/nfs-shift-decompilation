@@ -55,3 +55,15 @@ selects `VK_CULL_MODE_NONE`, `VK_CULL_MODE_BACK_BIT` or
 source-backed by the retail BMT enum/string table and the retail D3D9 cull
 lookup. Missing sidecars retain the legacy no-cull material path for old
 fixtures; malformed or blocked sidecars fail closed.
+
+
+## Phase 532 depth/blend pipeline state
+
+Prepared BMW bundles now emit `SHIFT.MaterialPipelineState/1`. For material
+draws the runtime consumes source-backed cull, depth-test/write/compare and
+ordinary alpha-blend enable/factors/op independently per child pipeline.
+
+The runtime still accepts the earlier `SHIFT.MaterialCullState/1` sidecar for
+backward compatibility. Enabled alpha-test and unresolved BMT bias,
+separate-alpha or stencil state are rejected during bundle preparation rather
+than approximated in Vulkan.
