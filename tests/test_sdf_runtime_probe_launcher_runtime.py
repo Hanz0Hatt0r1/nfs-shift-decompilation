@@ -19,6 +19,21 @@ def test_build_gdb_command_file_is_deterministic(tmp_path):
     )
 
 
+def test_build_gdb_command_file_supports_provider_only_mode(tmp_path):
+    command = runtime.build_gdb_command_file(
+        probe_script=tmp_path / "probe.py",
+        output_dir=tmp_path / "capture",
+        provider_only=True,
+    )
+    assert command == (
+        f"set pagination off\n"
+        f"set confirm off\n"
+        f"source {(tmp_path / 'probe.py').resolve()}\n"
+        f"sdf-probe {(tmp_path / 'capture').resolve()} --provider-only\n"
+        "continue\n"
+    )
+
+
 def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypatch):
     executable = tmp_path / "SHIFT.exe"
     executable.write_bytes(b"retail")
@@ -49,6 +64,7 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
         "pre_solve_XXXXXX.json",
         "post_solve_XXXXXX.json",
     ]
+    assert result["probe"]["mode"] == "full"
 
 
 def test_prepare_probe_bundle_blocks_invalid_retail_binary(tmp_path, monkeypatch):
