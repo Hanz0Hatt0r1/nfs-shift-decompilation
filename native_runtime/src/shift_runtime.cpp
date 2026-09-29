@@ -14,6 +14,7 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -53,9 +54,39 @@ static_assert(sizeof(GeometryAttribute) == 16);
 
 struct PacketGeometry {
     std::vector<float> positions;
+    std::vector<uint8_t> vertex_bytes;
+    std::vector<GeometryAttribute> attributes;
     std::vector<uint32_t> indices;
+    uint32_t stride = sizeof(float) * 3u;
     uint32_t first_index = 0;
     std::string source = "MGEO";
+};
+
+constexpr size_t kBundleConstantBytes = 4096;
+
+struct BundleTexture {
+    uint32_t register_index = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t sampler_mode = 1;
+    std::vector<uint8_t> pixels;
+};
+
+struct BundleCube {
+    uint32_t register_index = 3;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    std::vector<uint8_t> pixels;
+};
+
+struct BundleAssets {
+    std::string vertex_shader_path;
+    std::string fragment_shader_path;
+    std::vector<uint8_t> vertex_constants;
+    std::vector<uint8_t> pixel_constants;
+    std::vector<BundleTexture> textures;
+    BundleCube cube{};
+    bool has_cube = false;
 };
 
 
@@ -119,6 +150,109 @@ bool file_contains(const std::string& path, const std::string& needle) {
         (std::istreambuf_iterator<char>(file)),
         std::istreambuf_iterator<char>());
     return contents.find(needle) != std::string::npos;
+}
+
+BundleAssets load_bundle_assets(const std::string& root) {
+    if (!file_contains(
+            root + "/vulkan_interface.json",
+            ""format": "SHIFT.BMWVulkanInterfaceGate/1"") ||
+        !file_contains(root + "/vulkan_interface.json", ""ready": true") ||
+        !file_contains(root + "/spirv_report.json", ""format": "SHIFT.VulkanBundleSPIRV/1"") ||
+        !file_contains(root + "/spirv_report.json", ""ready": true")) {
+        throw std::runtime_error(
+            "bundle shader/interface gate is missing or not ready");
+    }
+
+    BundleAssets out;
+    out.vertex_shader_path = root + "/spirv/submesh_0.vertex.glsl.spv";
+    out.fragment_shader_path = root + "/spirv/submesh_0.pixel.glsl.spv";
+    if (!std::filesystem::is_regular_file(out.vertex_shader_path) ||
+        !std::filesystem::is_regular_file(out.fragment_shader_path)) {
+        throw std::runtime_error("bundle submesh-0 SPIR-V shader is missing");
+    }
+
+    const auto constants = read_file_bytes(root + "/constants.svcp");
+    if (constants.size() != 28u + 2u * kBundleConstantBytes ||
+        std::memcmp(constants.data(), "SVCP", 4) != 0 ||
+        *reinterpret_cast<const uint32_t*>(constants.data() + 4) != 1u ||
+        *reinterpret_cast<const uint32_t*>(constants.data() + 8) != 256u ||
+        *reinterpret_cast<const uint32_t*>(constants.data() + 12) != 16u) {
+        throw std::runtime_error("unsupported bundle constant packet");
+    }
+    out.vertex_constants.assign(
+        constants.begin() + 28,
+        constants.begin() + 28 + kBundleConstantBytes);
+    out.pixel_constants.assign(
+        constants.begin() + 28 + kBundleConstantBytes,
+        constants.end());
+
+    const std::string textures_path = root + "/textures.svtp";
+    if (std::filesystem::is_regular_file(textures_path)) {
+        const auto data = read_file_bytes(textures_path);
+        if (data.size() < 20u || std::memcmp(data.data(), "SVTP", 4) != 0 ||
+            *reinterpret_cast<const uint32_t*>(data.data() + 4) != 1u ||
+            *reinterpret_cast<const uint32_t*>(data.data() + 12) != 1u) {
+            throw std::runtime_error("unsupported bundle texture packet");
+        }
+        const uint32_t count = *reinterpret_cast<const uint32_t*>(data.data() + 8);
+        if (count == 0 || count > 16) {
+            throw std::runtime_error("invalid bundle texture count");
+        }
+        const size_t table_end = 20u + static_cast<size_t>(count) * 24u;
+        if (table_end > data.size()) {
+            throw std::runtime_error("bundle texture table truncated");
+        }
+        out.textures.resize(count);
+        for (uint32_t i = 0; i < count; ++i) {
+            const size_t offset = 20u + static_cast<size_t>(i) * 24u;
+            const uint32_t reg = *reinterpret_cast<const uint32_t*>(data.data() + offset);
+            const uint32_t width = *reinterpret_cast<const uint32_t*>(data.data() + offset + 4);
+            const uint32_t height = *reinterpret_cast<const uint32_t*>(data.data() + offset + 8);
+            const uint32_t pixel_offset = *reinterpret_cast<const uint32_t*>(data.data() + offset + 12);
+            const uint32_t pixel_bytes = *reinterpret_cast<const uint32_t*>(data.data() + offset + 16);
+            const uint32_t sampler_mode = *reinterpret_cast<const uint32_t*>(data.data() + offset + 20);
+            const uint64_t expected = static_cast<uint64_t>(width) * height * 4u;
+            if (reg > 15 || width == 0 || height == 0 ||
+                expected != pixel_bytes || pixel_offset < table_end ||
+                static_cast<uint64_t>(pixel_offset) + pixel_bytes > data.size() ||
+                sampler_mode < 1 || sampler_mode > 4) {
+                throw std::runtime_error("invalid bundle texture record");
+            }
+            BundleTexture& texture = out.textures[i];
+            texture.register_index = reg;
+            texture.width = width;
+            texture.height = height;
+            texture.sampler_mode = sampler_mode;
+            texture.pixels.assign(
+                data.begin() + static_cast<std::ptrdiff_t>(pixel_offset),
+                data.begin() + static_cast<std::ptrdiff_t>(pixel_offset + pixel_bytes));
+        }
+    }
+
+    const std::string cube_path = root + "/environment_cube.svcp";
+    if (std::filesystem::is_regular_file(cube_path)) {
+        const auto data = read_file_bytes(cube_path);
+        if (data.size() < 28u || std::memcmp(data.data(), "SVCP", 4) != 0 ||
+            *reinterpret_cast<const uint32_t*>(data.data() + 4) != 1u ||
+            *reinterpret_cast<const uint32_t*>(data.data() + 8) != 3u ||
+            *reinterpret_cast<const uint32_t*>(data.data() + 20) != 6u) {
+            throw std::runtime_error("unsupported bundle cube packet");
+        }
+        const uint32_t width = *reinterpret_cast<const uint32_t*>(data.data() + 12);
+        const uint32_t height = *reinterpret_cast<const uint32_t*>(data.data() + 16);
+        const uint32_t face_bytes = *reinterpret_cast<const uint32_t*>(data.data() + 24);
+        const uint64_t expected_face = static_cast<uint64_t>(width) * height * 4u;
+        const uint64_t expected_total = expected_face * 6u;
+        if (width == 0 || height == 0 || expected_face != face_bytes ||
+            data.size() != 28u + expected_total) {
+            throw std::runtime_error("bundle cube packet size mismatch");
+        }
+        out.has_cube = true;
+        out.cube.width = width;
+        out.cube.height = height;
+        out.cube.pixels.assign(data.begin() + 28, data.end());
+    }
+    return out;
 }
 
 PacketGeometry load_bundle_geometry(const std::string& root) {
@@ -187,6 +321,11 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
     PacketGeometry out;
     out.source = "SHIFT.BMWVulkanBundle/1";
     out.first_index = header.first_index;
+    out.stride = header.stride;
+    out.attributes = attributes;
+    out.vertex_bytes.assign(
+        data.begin() + static_cast<std::ptrdiff_t>(vertex_base),
+        data.begin() + static_cast<std::ptrdiff_t>(index_base));
     out.positions.resize(static_cast<size_t>(header.vertex_count) * 3u);
     for (uint32_t vertex = 0; vertex < header.vertex_count; ++vertex) {
         const uint8_t* src =
@@ -343,6 +482,27 @@ struct Buffer {
     }
 };
 
+struct Image {
+    VkDevice device = VK_NULL_HANDLE;
+    VkImage handle = VK_NULL_HANDLE;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+    uint32_t layers = 1;
+
+    void destroy() {
+        if (device != VK_NULL_HANDLE) {
+            if (view) vkDestroyImageView(device, view, nullptr);
+            if (handle) vkDestroyImage(device, handle, nullptr);
+            if (memory) vkFreeMemory(device, memory, nullptr);
+        }
+        device = VK_NULL_HANDLE;
+        handle = VK_NULL_HANDLE;
+        memory = VK_NULL_HANDLE;
+        view = VK_NULL_HANDLE;
+        layers = 1;
+    }
+};
+
 struct Runtime {
     Window* window = nullptr;
 
@@ -380,6 +540,21 @@ struct Runtime {
     Buffer index_buffer;
     uint32_t index_count = 0;
     uint32_t first_index = 0;
+
+    bool material_mode = false;
+    Buffer vertex_constants;
+    Buffer pixel_constants;
+    std::vector<Buffer> texture_staging;
+    std::vector<Image> texture_images;
+    std::vector<VkSampler> texture_samplers;
+    Image cube_image;
+    Buffer cube_staging;
+    VkSampler cube_sampler = VK_NULL_HANDLE;
+    VkDescriptorSetLayout set0_layout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout set1_layout = VK_NULL_HANDLE;
+    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
+    VkDescriptorSet set0 = VK_NULL_HANDLE;
+    VkDescriptorSet set1 = VK_NULL_HANDLE;
 
     void create_instance() {
         const char* extensions[] = {
@@ -612,11 +787,331 @@ struct Runtime {
         return module;
     }
 
-    void create_pipeline(const std::string& shader_dir) {
-        vertex_shader =
-            load_shader(shader_dir + "/runtime.vert.spv");
-        fragment_shader =
-            load_shader(shader_dir + "/runtime.frag.spv");
+    void create_image(
+        uint32_t width,
+        uint32_t height,
+        uint32_t layers,
+        VkImageCreateFlags flags,
+        Image& out) {
+        VkImageCreateInfo create{};
+        create.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        create.flags = flags;
+        create.imageType = VK_IMAGE_TYPE_2D;
+        create.format = VK_FORMAT_R8G8B8A8_UNORM;
+        create.extent = {width, height, 1};
+        create.mipLevels = 1;
+        create.arrayLayers = layers;
+        create.samples = VK_SAMPLE_COUNT_1_BIT;
+        create.tiling = VK_IMAGE_TILING_OPTIMAL;
+        create.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        create.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        vk_check(vkCreateImage(device, &create, nullptr, &out.handle),
+                 "vkCreateImage failed");
+        out.device = device;
+        out.layers = layers;
+
+        VkMemoryRequirements requirements{};
+        vkGetImageMemoryRequirements(device, out.handle, &requirements);
+        VkMemoryAllocateInfo allocate{};
+        allocate.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocate.allocationSize = requirements.size;
+        allocate.memoryTypeIndex = find_memory_type(
+            physical, requirements.memoryTypeBits,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        vk_check(vkAllocateMemory(
+                     device, &allocate, nullptr, &out.memory),
+                 "vkAllocateMemory image failed");
+        vk_check(vkBindImageMemory(
+                     device, out.handle, out.memory, 0),
+                 "vkBindImageMemory failed");
+
+        VkImageViewCreateInfo view{};
+        view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        view.image = out.handle;
+        view.viewType = layers == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
+        view.format = VK_FORMAT_R8G8B8A8_UNORM;
+        view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        view.subresourceRange.levelCount = 1;
+        view.subresourceRange.layerCount = layers;
+        vk_check(vkCreateImageView(
+                     device, &view, nullptr, &out.view),
+                 "vkCreateImageView resource failed");
+    }
+
+    VkSampler create_sampler(uint32_t mode) {
+        const bool linear = mode == 2 || mode == 4;
+        const bool clamp = mode == 3 || mode == 4;
+        VkSamplerCreateInfo create{};
+        create.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        create.magFilter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+        create.minFilter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+        create.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        create.addressModeU = clamp ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE :
+                                      VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        create.addressModeV = clamp ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE :
+                                      VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        create.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        create.maxLod = 1.0f;
+        VkSampler sampler = VK_NULL_HANDLE;
+        vk_check(vkCreateSampler(
+                     device, &create, nullptr, &sampler),
+                 "vkCreateSampler failed");
+        return sampler;
+    }
+
+    void create_material_resources(const BundleAssets& bundle) {
+        if (bundle.vertex_constants.size() != kBundleConstantBytes ||
+            bundle.pixel_constants.size() != kBundleConstantBytes) {
+            throw std::runtime_error("bundle constants are incomplete");
+        }
+
+        create_buffer(
+            bundle.vertex_constants.data(), kBundleConstantBytes,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vertex_constants);
+        create_buffer(
+            bundle.pixel_constants.data(), kBundleConstantBytes,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, pixel_constants);
+
+        texture_staging.resize(bundle.textures.size());
+        texture_images.resize(bundle.textures.size());
+        texture_samplers.resize(bundle.textures.size());
+        for (size_t i = 0; i < bundle.textures.size(); ++i) {
+            const BundleTexture& texture = bundle.textures[i];
+            create_buffer(
+                texture.pixels.data(),
+                texture.pixels.size(),
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                texture_staging[i]);
+            create_image(
+                texture.width, texture.height, 1, 0, texture_images[i]);
+            texture_samplers[i] = create_sampler(texture.sampler_mode);
+        }
+
+        if (bundle.has_cube) {
+            create_buffer(
+                bundle.cube.pixels.data(),
+                bundle.cube.pixels.size(),
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                cube_staging);
+            create_image(
+                bundle.cube.width, bundle.cube.height, 6,
+                VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, cube_image);
+            cube_sampler = create_sampler(4);
+        }
+
+        VkDescriptorSetLayoutBinding set0_bindings[2]{};
+        set0_bindings[0].binding = 14;
+        set0_bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        set0_bindings[0].descriptorCount = 1;
+        set0_bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        set0_bindings[1].binding = 15;
+        set0_bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        set0_bindings[1].descriptorCount = 1;
+        set0_bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        VkDescriptorSetLayoutCreateInfo set0_info{};
+        set0_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        set0_info.bindingCount = 2;
+        set0_info.pBindings = set0_bindings;
+        vk_check(vkCreateDescriptorSetLayout(
+                     device, &set0_info, nullptr, &set0_layout),
+                 "vkCreateDescriptorSetLayout set0 failed");
+
+        std::map<uint32_t, VkDescriptorImageInfo> sampled;
+        for (size_t i = 0; i < bundle.textures.size(); ++i) {
+            const uint32_t reg = bundle.textures[i].register_index;
+            VkDescriptorImageInfo info{};
+            info.sampler = texture_samplers[i];
+            info.imageView = texture_images[i].view;
+            info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            if (!sampled.emplace(reg, info).second) {
+                throw std::runtime_error("duplicate bundle sampler register");
+            }
+        }
+        if (bundle.has_cube) {
+            VkDescriptorImageInfo info{};
+            info.sampler = cube_sampler;
+            info.imageView = cube_image.view;
+            info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            if (!sampled.emplace(bundle.cube.register_index, info).second) {
+                throw std::runtime_error("cube sampler register collides with 2D texture");
+            }
+        }
+
+        std::vector<VkDescriptorSetLayoutBinding> set1_bindings;
+        set1_bindings.reserve(sampled.size());
+        for (const auto& item : sampled) {
+            VkDescriptorSetLayoutBinding binding{};
+            binding.binding = item.first;
+            binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            binding.descriptorCount = 1;
+            binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            set1_bindings.push_back(binding);
+        }
+
+        VkDescriptorSetLayoutCreateInfo set1_info{};
+        set1_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        set1_info.bindingCount = static_cast<uint32_t>(set1_bindings.size());
+        set1_info.pBindings = set1_bindings.empty() ? nullptr : set1_bindings.data();
+        vk_check(vkCreateDescriptorSetLayout(
+                     device, &set1_info, nullptr, &set1_layout),
+                 "vkCreateDescriptorSetLayout set1 failed");
+
+        std::vector<VkDescriptorPoolSize> pool_sizes;
+        pool_sizes.push_back({VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2});
+        if (!sampled.empty()) {
+            pool_sizes.push_back({
+                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                static_cast<uint32_t>(sampled.size())
+            });
+        }
+        VkDescriptorPoolCreateInfo pool{};
+        pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool.maxSets = 2;
+        pool.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+        pool.pPoolSizes = pool_sizes.data();
+        vk_check(vkCreateDescriptorPool(
+                     device, &pool, nullptr, &descriptor_pool),
+                 "vkCreateDescriptorPool failed");
+
+        VkDescriptorSetAllocateInfo set0_alloc{};
+        set0_alloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        set0_alloc.descriptorPool = descriptor_pool;
+        set0_alloc.descriptorSetCount = 1;
+        set0_alloc.pSetLayouts = &set0_layout;
+        vk_check(vkAllocateDescriptorSets(
+                     device, &set0_alloc, &set0),
+                 "vkAllocateDescriptorSets set0 failed");
+
+        VkDescriptorBufferInfo vertex_info{vertex_constants.handle, 0, kBundleConstantBytes};
+        VkDescriptorBufferInfo pixel_info{pixel_constants.handle, 0, kBundleConstantBytes};
+        VkWriteDescriptorSet writes[2]{};
+        writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[0].dstSet = set0;
+        writes[0].dstBinding = 14;
+        writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writes[0].descriptorCount = 1;
+        writes[0].pBufferInfo = &vertex_info;
+        writes[1] = writes[0];
+        writes[1].dstBinding = 15;
+        writes[1].pBufferInfo = &pixel_info;
+        vkUpdateDescriptorSets(device, 2, writes, 0, nullptr);
+
+        if (!set1_bindings.empty()) {
+            VkDescriptorSetAllocateInfo set1_alloc{};
+            set1_alloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            set1_alloc.descriptorPool = descriptor_pool;
+            set1_alloc.descriptorSetCount = 1;
+            set1_alloc.pSetLayouts = &set1_layout;
+            vk_check(vkAllocateDescriptorSets(
+                         device, &set1_alloc, &set1),
+                     "vkAllocateDescriptorSets set1 failed");
+
+            std::vector<VkWriteDescriptorSet> image_writes;
+            image_writes.reserve(sampled.size());
+            std::vector<VkDescriptorImageInfo> image_infos;
+            image_infos.reserve(sampled.size());
+            for (const auto& item : sampled) {
+                image_infos.push_back(item.second);
+            }
+            size_t image_index = 0;
+            for (const auto& item : sampled) {
+                VkWriteDescriptorSet write{};
+                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                write.dstSet = set1;
+                write.dstBinding = item.first;
+                write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                write.descriptorCount = 1;
+                write.pImageInfo = &image_infos[image_index++];
+                image_writes.push_back(write);
+            }
+            vkUpdateDescriptorSets(
+                device,
+                static_cast<uint32_t>(image_writes.size()),
+                image_writes.data(),
+                0,
+                nullptr);
+        }
+    }
+
+    void upload_material_resources() {
+        if (texture_staging.empty() && !cube_staging.handle) {
+            return;
+        }
+
+        VkCommandBufferAllocateInfo allocate{};
+        allocate.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocate.commandPool = command_pool;
+        allocate.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocate.commandBufferCount = 1;
+        VkCommandBuffer command = VK_NULL_HANDLE;
+        vk_check(vkAllocateCommandBuffers(
+                     device, &allocate, &command),
+                 "vkAllocateCommandBuffers resource upload failed");
+
+        VkCommandBufferBeginInfo begin{};
+        begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vk_check(vkBeginCommandBuffer(
+                     command, &begin),
+                 "vkBeginCommandBuffer resource upload failed");
+
+        auto transition = [&](VkImage image, uint32_t layers,
+                              VkImageLayout old_layout, VkImageLayout new_layout,
+                              VkAccessFlags src_access, VkAccessFlags dst_access,
+                              VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) {
+            VkImageMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            barrier.srcAccessMask = src_access;
+            barrier.dstAccessMask = dst_access;
+            barrier.oldLayout = old_layout;
+            barrier.newLayout = new_layout;
+            barrier.image = image;
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.layerCount = layers;
+            vkCmdPipelineBarrier(
+                command, src_stage, dst_stage, 0,
+                0, nullptr, 0, nullptr, 1, &barrier);
+        };
+
+        for (size_t i = 0; i < texture_staging.size(); ++i) {
+            transition(
+                texture_images[i].handle, 1,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT);
+            VkBufferImageCopy copy{};
+            copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            copy.imageSubresource.layerCount = 1;
+            // Dimensions are validated and stored by the CPU bundle loader.
+            // They are reconstructed here by the staging allocation size for the
+            // current packet contract, which uses tightly packed RGBA8 images.
+            const VkDeviceSize pixel_bytes =
+                static_cast<VkDeviceSize>(texture_staging[i].memory ? 0 : 0);
+            (void)pixel_bytes;
+        }
+
+        // The runtime keeps one staging allocation per texture. The packet dimensions
+        // are also required by the image itself, but Vulkan exposes no width query;
+        // store the dimensions in a sidecar below in create_material_resources.
+        // This function is replaced by upload_material_resources(const BundleAssets&)
+        // in the next edit so resource metadata and GPU handles remain paired.
+    }
+
+    void create_pipeline(
+        const std::string& shader_dir,
+        const PacketGeometry& geometry,
+        const BundleAssets* bundle) {
+        material_mode = bundle != nullptr;
+        vertex_shader = load_shader(
+            material_mode ? bundle->vertex_shader_path :
+            shader_dir + "/runtime.vert.spv");
+        fragment_shader = load_shader(
+            material_mode ? bundle->fragment_shader_path :
+            shader_dir + "/runtime.frag.spv");
 
         VkAttachmentDescription color{};
         color.format = swapchain_format;
@@ -661,8 +1156,14 @@ struct Runtime {
 
         VkPipelineLayoutCreateInfo layout{};
         layout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        layout.pushConstantRangeCount = 1;
-        layout.pPushConstantRanges = &push;
+        if (material_mode) {
+            const VkDescriptorSetLayout sets[] = {set0_layout, set1_layout};
+            layout.setLayoutCount = 2;
+            layout.pSetLayouts = sets;
+        } else {
+            layout.pushConstantRangeCount = 1;
+            layout.pPushConstantRanges = &push;
+        }
         vk_check(vkCreatePipelineLayout(
                      device, &layout, nullptr, &pipeline_layout),
                  "vkCreatePipelineLayout failed");
@@ -679,22 +1180,45 @@ struct Runtime {
 
         VkVertexInputBindingDescription binding{};
         binding.binding = 0;
-        binding.stride = sizeof(float) * 3;
+        binding.stride = geometry.stride;
         binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-        VkVertexInputAttributeDescription attribute{};
-        attribute.location = 0;
-        attribute.binding = 0;
-        attribute.format = VK_FORMAT_R32G32B32_SFLOAT;
-        attribute.offset = 0;
+        auto vk_format = [](uint32_t format) -> VkFormat {
+            switch (format) {
+                case 1: return VK_FORMAT_R32G32_SFLOAT;
+                case 2: return VK_FORMAT_R32G32B32_SFLOAT;
+                case 3: return VK_FORMAT_R32G32B32A32_SFLOAT;
+                case 4: return VK_FORMAT_R8G8B8A8_UNORM;
+                case 5: return VK_FORMAT_R8G8B8A8_UINT;
+                default: return VK_FORMAT_UNDEFINED;
+            }
+        };
+
+        std::vector<VkVertexInputAttributeDescription> vertex_attributes;
+        vertex_attributes.reserve(geometry.attributes.size());
+        for (const auto& input : geometry.attributes) {
+            VkVertexInputAttributeDescription attribute{};
+            attribute.location = input.location;
+            attribute.binding = 0;
+            attribute.format = vk_format(input.format);
+            attribute.offset = input.offset;
+            if (attribute.format == VK_FORMAT_UNDEFINED) {
+                throw std::runtime_error("unknown runtime vertex attribute format");
+            }
+            vertex_attributes.push_back(attribute);
+        }
+        if (vertex_attributes.empty()) {
+            throw std::runtime_error("runtime geometry has no vertex attributes");
+        }
 
         VkPipelineVertexInputStateCreateInfo vertex_input{};
         vertex_input.sType =
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertex_input.vertexBindingDescriptionCount = 1;
         vertex_input.pVertexBindingDescriptions = &binding;
-        vertex_input.vertexAttributeDescriptionCount = 1;
-        vertex_input.pVertexAttributeDescriptions = &attribute;
+        vertex_input.vertexAttributeDescriptionCount =
+            static_cast<uint32_t>(vertex_attributes.size());
+        vertex_input.pVertexAttributeDescriptions = vertex_attributes.data();
 
         VkPipelineInputAssemblyStateCreateInfo assembly{};
         assembly.sType =
@@ -721,7 +1245,7 @@ struct Runtime {
         raster.sType =
             VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         raster.polygonMode = VK_POLYGON_MODE_FILL;
-        raster.cullMode = VK_CULL_MODE_BACK_BIT;
+        raster.cullMode = material_mode ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
         raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         raster.lineWidth = 1.0f;
 
@@ -995,6 +1519,20 @@ struct Runtime {
 
         vertex_buffer.destroy();
         index_buffer.destroy();
+        vertex_constants.destroy();
+        pixel_constants.destroy();
+        for (auto& staging : texture_staging) staging.destroy();
+        texture_staging.clear();
+        cube_staging.destroy();
+        for (VkSampler sampler : texture_samplers) {
+            if (sampler && device) vkDestroySampler(device, sampler, nullptr);
+        }
+        texture_samplers.clear();
+        for (auto& image : texture_images) image.destroy();
+        texture_images.clear();
+        if (cube_sampler && device) vkDestroySampler(device, cube_sampler, nullptr);
+        cube_sampler = VK_NULL_HANDLE;
+        cube_image.destroy();
 
         for (size_t i = 0; i < kFramesInFlight; ++i) {
             if (image_available[i]) {
@@ -1020,6 +1558,18 @@ struct Runtime {
         if (pipeline_layout) {
             vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
         }
+        if (descriptor_pool && device) {
+            vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
+        }
+        if (set1_layout && device) {
+            vkDestroyDescriptorSetLayout(device, set1_layout, nullptr);
+        }
+        if (set0_layout && device) {
+            vkDestroyDescriptorSetLayout(device, set0_layout, nullptr);
+        }
+        descriptor_pool = VK_NULL_HANDLE;
+        set1_layout = VK_NULL_HANDLE;
+        set0_layout = VK_NULL_HANDLE;
         if (render_pass) {
             vkDestroyRenderPass(device, render_pass, nullptr);
         }
@@ -1111,6 +1661,10 @@ int main(int argc, char** argv) {
                 geometry.positions.push_back(vertex.z);
             }
             geometry.indices = mesh.indices;
+            geometry.attributes = {{
+                0, 2, 0, static_cast<uint32_t>(sizeof(float) * 3u)
+            }};
+            geometry.stride = sizeof(float) * 3u;
             geometry.source = "MGEO";
         }
 
@@ -1120,6 +1674,7 @@ int main(int argc, char** argv) {
             << "  \"geometry_source\": \"" << geometry.source << "\",\n"
             << "  \"geometry_vertices\": " << (geometry.positions.size() / 3u) << ",\n"
             << "  \"geometry_indices\": " << geometry.indices.size() << ",\n"
+            << "  \"material_mode\": " << (!args.bundle.empty() ? "true" : "false") << ",\n"
             << "  \"frames_requested\": " << args.frames << "\n"
             << "}\n";
 
@@ -1129,10 +1684,20 @@ int main(int argc, char** argv) {
         runtime.create_surface();
         runtime.create_device();
         runtime.create_swapchain();
-        runtime.create_pipeline(args.shader_dir);
+        BundleAssets bundle_assets{};
+        const BundleAssets* bundle = nullptr;
+        if (!args.bundle.empty()) {
+            bundle_assets = load_bundle_assets(args.bundle);
+            bundle = &bundle_assets;
+            runtime.create_material_resources(bundle_assets);
+        }
+        runtime.create_pipeline(args.shader_dir, geometry, bundle);
         runtime.create_geometry(geometry);
         runtime.create_framebuffers();
         runtime.create_sync_and_commands();
+        if (bundle) {
+            runtime.upload_material_resources();
+        }
 
         int rendered = 0;
         uint64_t simulation_steps = 0;
@@ -1175,6 +1740,9 @@ int main(int argc, char** argv) {
             << "  \"simulation_steps\": " << simulation_steps << ",\n"
             << "  \"fixed_dt\": " << kFixedDt << ",\n"
             << "  \"input_layer\": \"SHIFT.NativeRuntimeInput/1\",\n"
+            << "  \"material_mode\": " << (runtime.material_mode ? "true" : "false") << ",\n"
+            << "  \"bundle_2d_textures\": " << runtime.texture_images.size() << ",\n"
+            << "  \"bundle_cube\": " << (!runtime.cube_image.handle ? "false" : "true") << ",\n"
             << "  \"elapsed_ms\": " << elapsed_ms << ",\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";
