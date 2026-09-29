@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 538.**
+**Current mainline: Phase 539.**
 
 
 
@@ -66,15 +66,15 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 42. Collapse byte-identical duplicate BMW/Cockpit shader resources and scope retail FXO enumeration to the selected BMT shader family before permutation ranking — Phase 536 implemented.
 43. Execute the normalized retail BMW_M3_E36/Cockpit/RENDER corpus, collapse identical top-ranked bytecode identities and persist exact remaining blockers — Phase 537 implemented.
 44. Build a per-primitive runtime shader target set from every statically tied top-rank permutation/pair/hash without selecting one — Phase 538 implemented.
-45. Match the Phase 538 target set against same-instance D3D9 draw snapshots and attribute one concrete retail FXO program pair to each canonical BMW material.
-46. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
-47. Expand the desktop reference renderer against real BMW material/shader permutations.
-48. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
-49. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
-50. Continue with deeper OBJECT/HIERARCHY fields and FLAT leaf semantics.
-51. Derive proven animation poses from the BAB runtime grammar.
-52. Port the stable native render/runtime boundary to Android.
-53. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+45. Make downstream BMW material-slice BMT/FX/DDS resolution content-aware for identical supplemental copies while keeping conflicting bytes fail-closed — Phase 539 implemented.\n46. Match the Phase 538 target set against same-instance D3D9 draw snapshots and attribute one concrete retail FXO program pair to each canonical BMW material.
+47. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
+48. Expand the desktop reference renderer against real BMW material/shader permutations.
+49. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
+50. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
+51. Continue with deeper OBJECT/HIERARCHY fields and FLAT leaf semantics.
+52. Derive proven animation poses from the BAB runtime grammar.
+53. Port the stable native render/runtime boundary to Android.
+54. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
