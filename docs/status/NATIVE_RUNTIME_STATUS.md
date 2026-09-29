@@ -20,7 +20,7 @@ indexed geometry submission
 bounded frame loop
 ```
 
-The executable emits `SHIFT.NativeRuntimeBootstrap/1` and `SHIFT.NativeRuntimeFrameLoop/1` records.
+The executable emits `SHIFT.NativeRuntimeBootstrap/1` and `SHIFT.NativeRuntimeFrameLoop/1` records. Bundle mode now consumes the existing `SHIFT.BMWVulkanBundle/1` geometry packet after checking the `SHIFT.NativeSubmissionGate/1` manifest gate.
 
 ## Deliberate exclusions
 
@@ -28,7 +28,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 
 ## Next integration gates
 
-1. Replace the smoke mesh path with the existing BMW `RenderCommand/1` bundle path.
+1. Use the existing BMW `RenderCommand/1` bundle path as the native geometry source; material/shader execution is still the next gate.
 2. Connect scene/track resource loading.
 3. Connect reconstructed camera state/update contracts.
 4. Connect vehicle physics participant + solver tick.
