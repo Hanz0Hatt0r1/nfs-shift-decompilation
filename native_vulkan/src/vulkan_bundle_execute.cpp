@@ -82,6 +82,20 @@ constexpr uint32_t kConstantBytes = 4096;
 constexpr uint32_t kRenderWidth = 800;
 constexpr uint32_t kRenderHeight = 450;
 
+struct PipelineState {
+    VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
+    VkBool32 depth_test_enable = VK_TRUE;
+    VkBool32 depth_write_enable = VK_TRUE;
+    VkCompareOp depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL;
+    VkBool32 blend_enable = VK_FALSE;
+    VkBlendFactor src_color_blend_factor = VK_BLEND_FACTOR_ONE;
+    VkBlendFactor dst_color_blend_factor = VK_BLEND_FACTOR_ZERO;
+    VkBlendOp color_blend_op = VK_BLEND_OP_ADD;
+    VkBlendFactor src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
+    VkBlendFactor dst_alpha_blend_factor = VK_BLEND_FACTOR_ZERO;
+    VkBlendOp alpha_blend_op = VK_BLEND_OP_ADD;
+};
+
 void check(VkResult result, const char* message) {
     if (result != VK_SUCCESS) {
         throw std::runtime_error(
@@ -668,12 +682,13 @@ void require_native_submission_gate(const std::filesystem::path& root) {
     }
 }
 
-VkCullModeFlags load_pipeline_cull_mode(
+PipelineState load_pipeline_state(
     const std::filesystem::path& root) {
+    PipelineState out{};
     const std::filesystem::path state_path =
         root / "pipeline_state.json";
     if (!std::filesystem::is_regular_file(state_path)) {
-        return VK_CULL_MODE_NONE;
+        return out;
     }
     std::ifstream state(state_path, std::ios::binary);
     if (!state) {
@@ -683,30 +698,115 @@ VkCullModeFlags load_pipeline_cull_mode(
     const std::string contents(
         (std::istreambuf_iterator<char>(state)),
         std::istreambuf_iterator<char>());
-    if (contents.find(
-            "\"format\": \"SHIFT.MaterialCullState/1\"") ==
-            std::string::npos ||
+
+    const bool legacy =
+        contents.find("\"format\": \"SHIFT.MaterialCullState/1\"") !=
+        std::string::npos;
+    const bool pipeline =
+        contents.find("\"format\": \"SHIFT.MaterialPipelineState/1\"") !=
+        std::string::npos;
+    if ((!legacy && !pipeline) ||
         contents.find("\"ready\": true") == std::string::npos) {
         throw std::runtime_error(
             "bundle pipeline state is invalid or blocked");
     }
-    if (contents.find(
-            "\"vulkan_cull_mode\": \"VK_CULL_MODE_NONE\"") !=
-            std::string::npos) {
-        return VK_CULL_MODE_NONE;
+
+    auto has = [&](const std::string& value) {
+        return contents.find(value) != std::string::npos;
+    };
+    auto required_bool = [&](const char* field) -> VkBool32 {
+        const std::string prefix = "\"" + std::string(field) + "\": ";
+        if (has(prefix + "true")) return VK_TRUE;
+        if (has(prefix + "false")) return VK_FALSE;
+        throw std::runtime_error(
+            "bundle pipeline boolean is missing: " +
+            std::string(field));
+    };
+    auto require_token = [&](const char* field,
+                             const std::vector<std::pair<std::string, int>>& values)
+        -> int {
+        for (const auto& row : values) {
+            const std::string needle =
+                "\"" + std::string(field) + "\": \"" +
+                row.first + "\"";
+            if (has(needle)) return row.second;
+        }
+        throw std::runtime_error(
+            "bundle pipeline enum is missing/unsupported: " +
+            std::string(field));
+    };
+
+    if (has("\"vulkan_cull_mode\": \"VK_CULL_MODE_NONE\"") ||
+        has("\"cull_mode\": \"VK_CULL_MODE_NONE\"")) {
+        out.cull_mode = VK_CULL_MODE_NONE;
+    } else if (
+        has("\"vulkan_cull_mode\": \"VK_CULL_MODE_BACK_BIT\"") ||
+        has("\"cull_mode\": \"VK_CULL_MODE_BACK_BIT\"")) {
+        out.cull_mode = VK_CULL_MODE_BACK_BIT;
+    } else if (
+        has("\"vulkan_cull_mode\": \"VK_CULL_MODE_FRONT_BIT\"") ||
+        has("\"cull_mode\": \"VK_CULL_MODE_FRONT_BIT\"")) {
+        out.cull_mode = VK_CULL_MODE_FRONT_BIT;
+    } else {
+        throw std::runtime_error(
+            "bundle pipeline state has unsupported cull mode");
     }
-    if (contents.find(
-            "\"vulkan_cull_mode\": \"VK_CULL_MODE_BACK_BIT\"") !=
-            std::string::npos) {
-        return VK_CULL_MODE_BACK_BIT;
-    }
-    if (contents.find(
-            "\"vulkan_cull_mode\": \"VK_CULL_MODE_FRONT_BIT\"") !=
-            std::string::npos) {
-        return VK_CULL_MODE_FRONT_BIT;
-    }
-    throw std::runtime_error(
-        "bundle pipeline state has unsupported cull mode");
+
+    if (legacy) return out;
+
+    out.depth_test_enable = required_bool("depth_test_enable");
+    out.depth_write_enable = required_bool("depth_write_enable");
+    out.blend_enable = required_bool("blend_enable");
+    out.depth_compare_op = static_cast<VkCompareOp>(require_token(
+        "depth_compare_op",
+        {
+            {"VK_COMPARE_OP_NEVER", VK_COMPARE_OP_NEVER},
+            {"VK_COMPARE_OP_LESS", VK_COMPARE_OP_LESS},
+            {"VK_COMPARE_OP_EQUAL", VK_COMPARE_OP_EQUAL},
+            {"VK_COMPARE_OP_LESS_OR_EQUAL", VK_COMPARE_OP_LESS_OR_EQUAL},
+            {"VK_COMPARE_OP_GREATER", VK_COMPARE_OP_GREATER},
+            {"VK_COMPARE_OP_NOT_EQUAL", VK_COMPARE_OP_NOT_EQUAL},
+            {"VK_COMPARE_OP_GREATER_OR_EQUAL", VK_COMPARE_OP_GREATER_OR_EQUAL},
+            {"VK_COMPARE_OP_ALWAYS", VK_COMPARE_OP_ALWAYS},
+        }));
+    const std::vector<std::pair<std::string, int>> factors = {
+        {"VK_BLEND_FACTOR_ZERO", VK_BLEND_FACTOR_ZERO},
+        {"VK_BLEND_FACTOR_ONE", VK_BLEND_FACTOR_ONE},
+        {"VK_BLEND_FACTOR_SRC_COLOR", VK_BLEND_FACTOR_SRC_COLOR},
+        {"VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR", VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR},
+        {"VK_BLEND_FACTOR_SRC_ALPHA", VK_BLEND_FACTOR_SRC_ALPHA},
+        {"VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA", VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA},
+        {"VK_BLEND_FACTOR_DST_ALPHA", VK_BLEND_FACTOR_DST_ALPHA},
+        {"VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA", VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA},
+        {"VK_BLEND_FACTOR_DST_COLOR", VK_BLEND_FACTOR_DST_COLOR},
+        {"VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR", VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR},
+        {"VK_BLEND_FACTOR_SRC_ALPHA_SATURATE", VK_BLEND_FACTOR_SRC_ALPHA_SATURATE},
+    };
+    const std::vector<std::pair<std::string, int>> ops = {
+        {"VK_BLEND_OP_ADD", VK_BLEND_OP_ADD},
+        {"VK_BLEND_OP_SUBTRACT", VK_BLEND_OP_SUBTRACT},
+        {"VK_BLEND_OP_REVERSE_SUBTRACT", VK_BLEND_OP_REVERSE_SUBTRACT},
+        {"VK_BLEND_OP_MIN", VK_BLEND_OP_MIN},
+        {"VK_BLEND_OP_MAX", VK_BLEND_OP_MAX},
+    };
+    out.src_color_blend_factor = static_cast<VkBlendFactor>(
+        require_token("src_color_blend_factor", factors));
+    out.dst_color_blend_factor = static_cast<VkBlendFactor>(
+        require_token("dst_color_blend_factor", factors));
+    out.color_blend_op = static_cast<VkBlendOp>(
+        require_token("color_blend_op", ops));
+    out.src_alpha_blend_factor = static_cast<VkBlendFactor>(
+        require_token("src_alpha_blend_factor", factors));
+    out.dst_alpha_blend_factor = static_cast<VkBlendFactor>(
+        require_token("dst_alpha_blend_factor", factors));
+    out.alpha_blend_op = static_cast<VkBlendOp>(
+        require_token("alpha_blend_op", ops));
+    return out;
+}
+
+VkCullModeFlags load_pipeline_cull_mode(
+    const std::filesystem::path& root) {
+    return load_pipeline_state(root).cull_mode;
 }
 
 void write_ppm(
@@ -783,8 +883,8 @@ int main(int argc, char** argv) {
 
     try {
         require_native_submission_gate(root);
-        const VkCullModeFlags cull_mode =
-            load_pipeline_cull_mode(root);
+        const PipelineState pipeline_state =
+            load_pipeline_state(root);
         const Geometry geometry = load_geometry(root / "geometry.svpk");
         const Constants constants = load_constants(root / "constants.svcp");
 
@@ -1253,7 +1353,7 @@ int main(int argc, char** argv) {
         VkPipelineRasterizationStateCreateInfo raster{};
         raster.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         raster.polygonMode = VK_POLYGON_MODE_FILL;
-        raster.cullMode = cull_mode;
+        raster.cullMode = pipeline_state.cull_mode;
         raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         raster.lineWidth = 1.0f;
 
@@ -1263,12 +1363,22 @@ int main(int argc, char** argv) {
 
         VkPipelineDepthStencilStateCreateInfo depth_state{};
         depth_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depth_state.depthTestEnable = VK_TRUE;
-        depth_state.depthWriteEnable = VK_TRUE;
-        depth_state.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+        depth_state.depthTestEnable = pipeline_state.depth_test_enable;
+        depth_state.depthWriteEnable = pipeline_state.depth_write_enable;
+        depth_state.depthCompareOp = pipeline_state.depth_compare_op;
 
         VkPipelineColorBlendAttachmentState blend_attachment{};
-        blend_attachment.blendEnable = VK_FALSE;
+        blend_attachment.blendEnable = pipeline_state.blend_enable;
+        blend_attachment.srcColorBlendFactor =
+            pipeline_state.src_color_blend_factor;
+        blend_attachment.dstColorBlendFactor =
+            pipeline_state.dst_color_blend_factor;
+        blend_attachment.colorBlendOp = pipeline_state.color_blend_op;
+        blend_attachment.srcAlphaBlendFactor =
+            pipeline_state.src_alpha_blend_factor;
+        blend_attachment.dstAlphaBlendFactor =
+            pipeline_state.dst_alpha_blend_factor;
+        blend_attachment.alphaBlendOp = pipeline_state.alpha_blend_op;
         blend_attachment.colorWriteMask =
             VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
             VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
