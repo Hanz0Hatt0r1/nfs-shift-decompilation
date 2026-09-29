@@ -82,10 +82,24 @@ struct BundleCube {
     std::vector<uint8_t> pixels;
 };
 
+struct MaterialPipelineState {
+    VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
+    VkBool32 depth_test_enable = VK_TRUE;
+    VkBool32 depth_write_enable = VK_TRUE;
+    VkCompareOp depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL;
+    VkBool32 blend_enable = VK_FALSE;
+    VkBlendFactor src_color_blend_factor = VK_BLEND_FACTOR_ONE;
+    VkBlendFactor dst_color_blend_factor = VK_BLEND_FACTOR_ZERO;
+    VkBlendOp color_blend_op = VK_BLEND_OP_ADD;
+    VkBlendFactor src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
+    VkBlendFactor dst_alpha_blend_factor = VK_BLEND_FACTOR_ZERO;
+    VkBlendOp alpha_blend_op = VK_BLEND_OP_ADD;
+};
+
 struct BundleAssets {
     std::string vertex_shader_path;
     std::string fragment_shader_path;
-    VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
+    MaterialPipelineState pipeline_state{};
     std::vector<uint8_t> vertex_constants;
     std::vector<uint8_t> pixel_constants;
     std::vector<BundleTexture> textures;
@@ -204,35 +218,153 @@ uint32_t json_u32_field(
     return static_cast<uint32_t>(value);
 }
 
-VkCullModeFlags load_bundle_cull_mode(const std::string& root) {
+std::string json_string_field(
+    const std::string& text,
+    const std::string& field) {
+    const std::string key = "\"" + field + "\"";
+    const size_t key_pos = text.find(key);
+    if (key_pos == std::string::npos) {
+        throw std::runtime_error(
+            "pipeline-state string field missing: " + field);
+    }
+    const size_t colon = text.find(':', key_pos + key.size());
+    const size_t quote = text.find('"', colon + 1);
+    if (colon == std::string::npos || quote == std::string::npos) {
+        throw std::runtime_error(
+            "pipeline-state string field invalid: " + field);
+    }
+    const size_t end = text.find('"', quote + 1);
+    if (end == std::string::npos) {
+        throw std::runtime_error(
+            "pipeline-state string field unterminated: " + field);
+    }
+    return text.substr(quote + 1, end - quote - 1);
+}
+
+bool json_bool_field(
+    const std::string& text,
+    const std::string& field) {
+    const std::string key = "\"" + field + "\"";
+    const size_t key_pos = text.find(key);
+    if (key_pos == std::string::npos) {
+        throw std::runtime_error(
+            "pipeline-state bool field missing: " + field);
+    }
+    const size_t colon = text.find(':', key_pos + key.size());
+    if (colon == std::string::npos) {
+        throw std::runtime_error(
+            "pipeline-state bool field invalid: " + field);
+    }
+    size_t cursor = colon + 1;
+    while (cursor < text.size() &&
+           std::isspace(static_cast<unsigned char>(text[cursor]))) {
+        ++cursor;
+    }
+    if (text.compare(cursor, 4, "true") == 0) return true;
+    if (text.compare(cursor, 5, "false") == 0) return false;
+    throw std::runtime_error(
+        "pipeline-state bool field invalid: " + field);
+}
+
+VkCullModeFlags pipeline_cull_mode(const std::string& value) {
+    if (value == "VK_CULL_MODE_NONE") return VK_CULL_MODE_NONE;
+    if (value == "VK_CULL_MODE_BACK_BIT") return VK_CULL_MODE_BACK_BIT;
+    if (value == "VK_CULL_MODE_FRONT_BIT") return VK_CULL_MODE_FRONT_BIT;
+    throw std::runtime_error("unsupported pipeline cull mode: " + value);
+}
+
+VkCompareOp pipeline_compare_op(const std::string& value) {
+    if (value == "VK_COMPARE_OP_NEVER") return VK_COMPARE_OP_NEVER;
+    if (value == "VK_COMPARE_OP_LESS") return VK_COMPARE_OP_LESS;
+    if (value == "VK_COMPARE_OP_EQUAL") return VK_COMPARE_OP_EQUAL;
+    if (value == "VK_COMPARE_OP_LESS_OR_EQUAL") return VK_COMPARE_OP_LESS_OR_EQUAL;
+    if (value == "VK_COMPARE_OP_GREATER") return VK_COMPARE_OP_GREATER;
+    if (value == "VK_COMPARE_OP_NOT_EQUAL") return VK_COMPARE_OP_NOT_EQUAL;
+    if (value == "VK_COMPARE_OP_GREATER_OR_EQUAL") return VK_COMPARE_OP_GREATER_OR_EQUAL;
+    if (value == "VK_COMPARE_OP_ALWAYS") return VK_COMPARE_OP_ALWAYS;
+    throw std::runtime_error("unsupported pipeline compare op: " + value);
+}
+
+VkBlendFactor pipeline_blend_factor(const std::string& value) {
+    if (value == "VK_BLEND_FACTOR_ZERO") return VK_BLEND_FACTOR_ZERO;
+    if (value == "VK_BLEND_FACTOR_ONE") return VK_BLEND_FACTOR_ONE;
+    if (value == "VK_BLEND_FACTOR_SRC_COLOR") return VK_BLEND_FACTOR_SRC_COLOR;
+    if (value == "VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR") return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    if (value == "VK_BLEND_FACTOR_SRC_ALPHA") return VK_BLEND_FACTOR_SRC_ALPHA;
+    if (value == "VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA") return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    if (value == "VK_BLEND_FACTOR_DST_ALPHA") return VK_BLEND_FACTOR_DST_ALPHA;
+    if (value == "VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA") return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+    if (value == "VK_BLEND_FACTOR_DST_COLOR") return VK_BLEND_FACTOR_DST_COLOR;
+    if (value == "VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR") return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+    if (value == "VK_BLEND_FACTOR_SRC_ALPHA_SATURATE") return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+    throw std::runtime_error("unsupported pipeline blend factor: " + value);
+}
+
+VkBlendOp pipeline_blend_op(const std::string& value) {
+    if (value == "VK_BLEND_OP_ADD") return VK_BLEND_OP_ADD;
+    if (value == "VK_BLEND_OP_SUBTRACT") return VK_BLEND_OP_SUBTRACT;
+    if (value == "VK_BLEND_OP_REVERSE_SUBTRACT") return VK_BLEND_OP_REVERSE_SUBTRACT;
+    if (value == "VK_BLEND_OP_MIN") return VK_BLEND_OP_MIN;
+    if (value == "VK_BLEND_OP_MAX") return VK_BLEND_OP_MAX;
+    throw std::runtime_error("unsupported pipeline blend op: " + value);
+}
+
+MaterialPipelineState load_bundle_pipeline_state(const std::string& root) {
+    MaterialPipelineState out{};
     const std::string path = root + "/pipeline_state.json";
     if (!std::filesystem::is_regular_file(path)) {
-        return VK_CULL_MODE_NONE;
+        return out;
     }
-    if (!file_contains(
-            path,
-            "\"format\": \"SHIFT.MaterialCullState/1\"") ||
-        !file_contains(path, "\"ready\": true")) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
         throw std::runtime_error(
-            "bundle pipeline-state sidecar is invalid or blocked");
+            "cannot open pipeline-state sidecar: " + path);
     }
-    if (file_contains(
-            path,
-            "\"vulkan_cull_mode\": \"VK_CULL_MODE_NONE\"")) {
-        return VK_CULL_MODE_NONE;
+    const std::string text(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>());
+    if (text.find("\"ready\": true") == std::string::npos) {
+        throw std::runtime_error(
+            "bundle pipeline-state sidecar is blocked");
     }
-    if (file_contains(
-            path,
-            "\"vulkan_cull_mode\": \"VK_CULL_MODE_BACK_BIT\"")) {
-        return VK_CULL_MODE_BACK_BIT;
+
+    if (text.find(
+            "\"format\": \"SHIFT.MaterialCullState/1\"") !=
+            std::string::npos) {
+        out.cull_mode = pipeline_cull_mode(
+            json_string_field(text, "vulkan_cull_mode"));
+        return out;
     }
-    if (file_contains(
-            path,
-            "\"vulkan_cull_mode\": \"VK_CULL_MODE_FRONT_BIT\"")) {
-        return VK_CULL_MODE_FRONT_BIT;
+    if (text.find(
+            "\"format\": \"SHIFT.MaterialPipelineState/1\"") ==
+            std::string::npos) {
+        throw std::runtime_error(
+            "bundle pipeline-state sidecar has unsupported format");
     }
-    throw std::runtime_error(
-        "bundle pipeline-state cull mode is unsupported");
+
+    out.cull_mode = pipeline_cull_mode(
+        json_string_field(text, "vulkan_cull_mode"));
+    out.depth_test_enable =
+        json_bool_field(text, "vulkan_depth_test_enable") ? VK_TRUE : VK_FALSE;
+    out.depth_write_enable =
+        json_bool_field(text, "vulkan_depth_write_enable") ? VK_TRUE : VK_FALSE;
+    out.depth_compare_op = pipeline_compare_op(
+        json_string_field(text, "vulkan_depth_compare_op"));
+    out.blend_enable =
+        json_bool_field(text, "vulkan_blend_enable") ? VK_TRUE : VK_FALSE;
+    out.src_color_blend_factor = pipeline_blend_factor(
+        json_string_field(text, "vulkan_src_color_blend_factor"));
+    out.dst_color_blend_factor = pipeline_blend_factor(
+        json_string_field(text, "vulkan_dst_color_blend_factor"));
+    out.color_blend_op = pipeline_blend_op(
+        json_string_field(text, "vulkan_color_blend_op"));
+    out.src_alpha_blend_factor = pipeline_blend_factor(
+        json_string_field(text, "vulkan_src_alpha_blend_factor"));
+    out.dst_alpha_blend_factor = pipeline_blend_factor(
+        json_string_field(text, "vulkan_dst_alpha_blend_factor"));
+    out.alpha_blend_op = pipeline_blend_op(
+        json_string_field(text, "vulkan_alpha_blend_op"));
+    return out;
 }
 
 shift::runtime::PhysicsWorkspaceBoundary load_physics_manifest(
@@ -265,7 +397,7 @@ BundleAssets load_bundle_assets(const std::string& root) {
     }
 
     BundleAssets out;
-    out.cull_mode = load_bundle_cull_mode(root);
+    out.pipeline_state = load_bundle_pipeline_state(root);
     out.vertex_shader_path = root + "/spirv/submesh_0.vertex.glsl.spv";
     out.fragment_shader_path = root + "/spirv/submesh_0.pixel.glsl.spv";
     if (!std::filesystem::is_regular_file(out.vertex_shader_path) ||
@@ -1536,7 +1668,7 @@ struct Runtime {
         const std::string& vertex_shader_path,
         const std::string& fragment_shader_path,
         bool uses_material_descriptors,
-        VkCullModeFlags material_cull_mode,
+        const MaterialPipelineState& material_state,
         VkDescriptorSetLayout material_set0,
         VkDescriptorSetLayout material_set1,
         VkShaderModule& out_vertex_shader,
@@ -1657,7 +1789,7 @@ struct Runtime {
             VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         raster.polygonMode = VK_POLYGON_MODE_FILL;
         raster.cullMode =
-            uses_material_descriptors ? material_cull_mode :
+            uses_material_descriptors ? material_state.cull_mode :
                                         VK_CULL_MODE_BACK_BIT;
         raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         raster.lineWidth = 1.0f;
@@ -1670,11 +1802,23 @@ struct Runtime {
         VkPipelineDepthStencilStateCreateInfo depth_state{};
         depth_state.sType =
             VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depth_state.depthTestEnable = VK_TRUE;
-        depth_state.depthWriteEnable = VK_TRUE;
-        depth_state.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+        depth_state.depthTestEnable =
+            uses_material_descriptors ? material_state.depth_test_enable : VK_TRUE;
+        depth_state.depthWriteEnable =
+            uses_material_descriptors ? material_state.depth_write_enable : VK_TRUE;
+        depth_state.depthCompareOp =
+            uses_material_descriptors ? material_state.depth_compare_op :
+                                        VK_COMPARE_OP_LESS_OR_EQUAL;
 
         VkPipelineColorBlendAttachmentState color_blend{};
+        color_blend.blendEnable =
+            uses_material_descriptors ? material_state.blend_enable : VK_FALSE;
+        color_blend.srcColorBlendFactor = material_state.src_color_blend_factor;
+        color_blend.dstColorBlendFactor = material_state.dst_color_blend_factor;
+        color_blend.colorBlendOp = material_state.color_blend_op;
+        color_blend.srcAlphaBlendFactor = material_state.src_alpha_blend_factor;
+        color_blend.dstAlphaBlendFactor = material_state.dst_alpha_blend_factor;
+        color_blend.alphaBlendOp = material_state.alpha_blend_op;
         color_blend.colorWriteMask =
             VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
             VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -1714,7 +1858,7 @@ struct Runtime {
             shader_dir + "/runtime.vert.spv",
             shader_dir + "/runtime.frag.spv",
             false,
-            VK_CULL_MODE_BACK_BIT,
+            MaterialPipelineState{},
             VK_NULL_HANDLE,
             VK_NULL_HANDLE,
             vertex_shader,
@@ -1732,7 +1876,7 @@ struct Runtime {
             bundle.vertex_shader_path,
             bundle.fragment_shader_path,
             true,
-            bundle.cull_mode,
+            bundle.pipeline_state,
             draw.set0_layout,
             draw.set1_layout,
             draw.vertex_shader,
