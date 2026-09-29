@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse, csv, json, math, re, struct, sys, tempfile, zipfile
 from bisect import bisect_right
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 FORMAT = "SHIFT-LIVE-MEMORY-TRACK-PATH-ANALYSIS/1"
