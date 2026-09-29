@@ -51,3 +51,20 @@ def test_native_runtime_bundle_executes_material_interface():
     assert "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER" in source
     assert "vkCmdBindDescriptorSets" in source
     assert "material_mode ? VK_CULL_MODE_NONE" in source
+
+def test_native_runtime_state_boundary_is_evidence_backed():
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(encoding="utf-8")
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
+
+    assert 'SHIFT.NativeRuntimeState/1' in header
+    assert "CameraBufferRuntime" in header
+    assert "active_index = 0" in header
+    assert "update_in_progress" in header
+    assert "VehicleControlIntent" in header
+    assert "PhysicsTickBoundary" in header
+    assert "fixed_dt = 1.0 / 60.0" in header
+    assert "participant_ready = false" in header
+    assert "participant_index = -1" in header
+    assert 'runtime_state.hpp' in source
+    assert "native_state.fixed_step(intent)" in source
+    assert '"state_layer": "SHIFT.NativeRuntimeState/1"' in source
