@@ -104,7 +104,8 @@ assert result["path_root_targets"], "expected Path StartNode targets"
 assert result["path_root_targets"][0]["target"] == 0x00610000
 assert result["path_root_windows"][0]["start"] == 0x005f0000
 assert result["path_root_windows"][0]["size"] == 0x00040000
-assert filtered["stable_external_pointer_count"] == 1, filtered["stable_external_pointer_count"]
+assert filtered["stable_external_pointer_count"] == 2, filtered["stable_external_pointer_count"]
+assert all(0x00200120 not in row["sources"] for row in filtered["stable_external_pointers"]), filtered["stable_external_pointers"]
 assert filtered["excluded_source_ranges"] == [{"start": 0x00200120, "end": 0x00200124}], filtered["excluded_source_ranges"]
 print("track path analyzer test: PASS")
 PY
