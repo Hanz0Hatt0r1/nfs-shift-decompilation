@@ -154,7 +154,7 @@ wp_branchID=(0)
 WP_PTRS=(2,0,-1,0)
 AIW
 
-python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-aiw"   --top 20 --target-top 8 --skip-pointer-analysis   --aiw "$tmp/test.aiw" --aiw-range 0x00200500:0x80   >/tmp/track_path_aiw_test.out
+python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-aiw"   --top 20 --target-top 8 --skip-pointer-analysis   --aiw "$tmp/test.aiw" --aiw-range 0x00200500:0x80 --runtime-root 0x002004f0   >/tmp/track_path_aiw_test.out
 cat /tmp/track_path_aiw_test.out
 
 python3 - "$tmp/out-aiw/track_path_analysis.json" <<'PY'
