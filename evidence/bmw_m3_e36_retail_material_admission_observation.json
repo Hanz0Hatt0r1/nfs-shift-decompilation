@@ -1,0 +1,102 @@
+{
+  "format": "SHIFT.BMWRetailMaterialAdmissionObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 corpus",
+  "archives": [
+    {
+      "name": "BMW_M3_E36.bff",
+      "size": 18934688,
+      "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70"
+    },
+    {
+      "name": "BMW_M3_E36_Cockpit.bff",
+      "size": 9956064,
+      "sha256": "a9bc1b3c0dfb21408913089d565fa2ffc80f2fb2c4a408ab9aef101d012f15be"
+    },
+    {
+      "name": "RENDER.bff",
+      "size": 2985696,
+      "sha256": "b0b03960ba7e620b7ad5e2b027ed13de67afffe168eb8b30da73c2a632a7c0af"
+    }
+  ],
+  "canonical_body_primitive_count": 6,
+  "unique_material_count": 5,
+  "ready_material_count": 0,
+  "blocked_material_count": 5,
+  "materials": [
+    {
+      "material_bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_badging.bmt",
+      "material_name": "BMW_M3_E36_BADGING",
+      "shader": "render\\shaders\\vehicles_basic.fx",
+      "shader_family": "vehiclesbasic",
+      "family_fxo_candidate_count": 248,
+      "duplicate_copy_count": 124,
+      "selection_status": "ambiguous",
+      "blocking_reasons": [
+        "generic-material:shader-selection-not-unique"
+      ],
+      "representative_permutation_identity_sha256": "bf4b8c04fa74fe8d5c2db1e99c53d21b7fc8df8a5bfdb14199c246863d71b9ba"
+    },
+    {
+      "material_bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+      "material_name": "BMW_M3_E36_PAINT",
+      "shader": "render\\shaders\\bodywork.fx",
+      "shader_family": "bodywork",
+      "family_fxo_candidate_count": 305,
+      "duplicate_copy_count": 244,
+      "selection_status": "ambiguous",
+      "blocking_reasons": [
+        "generic-material:shader-selection-not-unique",
+        "generic-material:vertex-pair-not-unique",
+        "generic-material:shader-pair-not-unique",
+        "generic-material:linked-shader-pair-missing"
+      ],
+      "representative_permutation_identity_sha256": "7edf9aab8cb039abdc7e1c886d25e2e499243172b591fae9290dd583e3d42f10"
+    },
+    {
+      "material_bmt": "vehicles/bmw_m3_e36/generic_windows.bmt",
+      "material_name": "GENERIC_WINDOWS",
+      "shader": "render\\shaders\\glass.fx",
+      "shader_family": "glass",
+      "family_fxo_candidate_count": 293,
+      "duplicate_copy_count": 61,
+      "selection_status": "ambiguous",
+      "blocking_reasons": [
+        "generic-material:shader-selection-not-unique"
+      ],
+      "representative_permutation_identity_sha256": "70913c4027f167d0c96aad7f0013febedbf0e40596a86cbe9607fca6be905034"
+    },
+    {
+      "material_bmt": "vehicles/bmw_m3_e36/generic_gloss_black.bmt",
+      "material_name": "GENERIC_GLOSS_BLACK",
+      "shader": "render\\shaders\\vehicles_basic.fx",
+      "shader_family": "vehiclesbasic",
+      "family_fxo_candidate_count": 248,
+      "duplicate_copy_count": 124,
+      "selection_status": "ambiguous",
+      "blocking_reasons": [
+        "generic-material:shader-selection-not-unique"
+      ],
+      "representative_permutation_identity_sha256": "bf4b8c04fa74fe8d5c2db1e99c53d21b7fc8df8a5bfdb14199c246863d71b9ba"
+    },
+    {
+      "material_bmt": "vehicles/bmw_m3_e36/bmw_m3_e36_lightsglass.bmt",
+      "material_name": "BMW_M3_E36_LIGHTSGLASS",
+      "shader": "render\\shaders\\glass.fx",
+      "shader_family": "glass",
+      "family_fxo_candidate_count": 293,
+      "duplicate_copy_count": 61,
+      "selection_status": "ambiguous",
+      "blocking_reasons": [
+        "generic-material:shader-selection-not-unique"
+      ],
+      "representative_permutation_identity_sha256": "70913c4027f167d0c96aad7f0013febedbf0e40596a86cbe9607fca6be905034"
+    }
+  ],
+  "observations": [
+    "All five unique canonical BMW body materials resolve their BMT and referenced FX source in the combined retail corpus.",
+    "No unique material is blocked by an unresolved material texture in the combined BMW/Cockpit/RENDER corpus.",
+    "Filtering FXO candidates by shader family and collapsing identical resource copies removes false corpus ambiguity but leaves multiple distinct shader bytecode identities.",
+    "No material is admitted yet because choosing a top-ranked distinct permutation without runtime or stronger static attribution would be heuristic."
+  ],
+  "next_gate": "attribute one concrete runtime/static shader permutation to each canonical material before native admission"
+}
