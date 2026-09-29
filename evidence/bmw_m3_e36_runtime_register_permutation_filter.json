@@ -1,0 +1,292 @@
+{
+  "format": "SHIFT.BMWRuntimeRegisterPermutationFilterObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 corpus plus committed frame-30444 BMW material witness",
+  "archives": [
+    {
+      "name": "BMW_M3_E36.bff",
+      "size": 18934688,
+      "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70"
+    },
+    {
+      "name": "BMW_M3_E36_Cockpit.bff",
+      "size": 9956064,
+      "sha256": "a9bc1b3c0dfb21408913089d565fa2ffc80f2fb2c4a408ab9aef101d012f15be"
+    },
+    {
+      "name": "RENDER.bff",
+      "size": 2985696,
+      "sha256": "b0b03960ba7e620b7ad5e2b027ed13de67afffe168eb8b30da73c2a632a7c0af"
+    }
+  ],
+  "runtime_witness": {
+    "format": "SHIFT.BMWM3RuntimeMaterialWitness/1",
+    "frame": 30444,
+    "resource": {
+      "path": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+      "sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c"
+    },
+    "source": {
+      "path": "frame_30444.txt",
+      "sha256": "aefd4116c55b07559e5508b21aa838f2cac0186f0e482cbf62500033f7362f29",
+      "size": 3842697,
+      "trace_sha256": "116b5fed58c79d4e73c7903cf08625abb74b33ce8818b0535c00c67f19ec965d"
+    },
+    "validation": {
+      "status": "match",
+      "ready": true,
+      "blocking_reasons": []
+    }
+  },
+  "material_count": 5,
+  "ready_material_count": 0,
+  "blocked_material_count": 5,
+  "materials": [
+    {
+      "primitive_index": 0,
+      "material": "BMW_M3_E36_BADGING",
+      "shader": "render\\shaders\\vehicles_basic.fx",
+      "top_distinct_permutation_count": 18,
+      "register_match_count": 2,
+      "ready": false,
+      "blocking_reasons": [
+        "runtime-registers:multiple-static-permutations"
+      ],
+      "runtime_register_witness": {
+        "vertex": {
+          "fresnelFactor": 8
+        },
+        "pixel": {
+          "maxSpecPower": 27,
+          "globalSpecularFactor": 28,
+          "globalEMapFactor": 29
+        }
+      },
+      "matches": [
+        {
+          "file": "render/shaders/cache/render_shaders_vehicles_basic_9f427837c675a429.fxo",
+          "program_offset": 17488,
+          "permutation_identity_sha256": "776c2e29a0f6ffeee5ca5df90740c9c5593a5c6bc85808ad06b36484a09a1db0",
+          "pair_sha256": "cd8a5f4850616d8fb6bc893552b07464e7ef0debb43ade5c26038292401e088b",
+          "vertex_sha256": "0dda339d0b0cf1598751efec120e1ef24aa27406b25ac78ec94d9ec9bf182374",
+          "pixel_sha256": "0513bc1d397f37aa6f52ee20ea62d9c9649fb6a3136210b414ec7808a24cbd1c",
+          "vertex_pair_selection_status": "unique"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_vehicles_basic_afe2841c69456e53.fxo",
+          "program_offset": 17488,
+          "permutation_identity_sha256": "54490b8236a097c8d1b67424f0b1d2e4c2fe108bbb72e1a97a3e06fff175459e",
+          "pair_sha256": "2df36551621e8792b6c97c41df1fc62cb89a3085f5c22375a52a79bc877a8293",
+          "vertex_sha256": "0dda339d0b0cf1598751efec120e1ef24aa27406b25ac78ec94d9ec9bf182374",
+          "pixel_sha256": "76f4562ddc03cde8afe1432cfb3b84c4f46b0607df45cc037561bd4afd135fb9",
+          "vertex_pair_selection_status": "unique"
+        }
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "material": "BMW_M3_E36_PAINT",
+      "shader": "render\\shaders\\bodywork.fx",
+      "top_distinct_permutation_count": 20,
+      "register_match_count": 4,
+      "ready": false,
+      "blocking_reasons": [
+        "runtime-registers:multiple-static-permutations"
+      ],
+      "runtime_register_witness": {
+        "vertex": {},
+        "pixel": {
+          "primerBasis": 32,
+          "metalBasis": 33,
+          "dirtBasis": 34
+        }
+      },
+      "matches": [
+        {
+          "file": "render/shaders/cache/render_shaders_bodywork_1292387d45c1c133.fxo",
+          "program_offset": 15120,
+          "permutation_identity_sha256": "4a79a5deb189630b06149bf008371b34c41b1ceadab00366633fbc73f2ad7f60",
+          "pair_sha256": "413f8adca1ace93081a448fa6d635a78868299dd8d90e96fe96774ff796c2e80",
+          "vertex_sha256": "c78e1293cc389d09ae6ef5735f0bc7321a1b029acec7d509bb9c23d91f406de7",
+          "pixel_sha256": "6ae6056b499974e5ee5749e0cb230d95d0026051007f6d45837be24c8582b9a6",
+          "vertex_pair_selection_status": "ambiguous"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_bodywork_1292387d45c1c133.fxo",
+          "program_offset": 21256,
+          "permutation_identity_sha256": "10624141319dc8c98cceee7de6fed5c2c1948968a1f2993d7155c0fa0ecf3f6a",
+          "pair_sha256": "3480a35774531c4f3b2f1c501ba6953c49fab3f68d5c1674731f5a7d126239c0",
+          "vertex_sha256": "c78e1293cc389d09ae6ef5735f0bc7321a1b029acec7d509bb9c23d91f406de7",
+          "pixel_sha256": "c9a1c1dc13693d50ba6815e29c9862c75abe18c5e248b89b68b9cfe5fc622b87",
+          "vertex_pair_selection_status": "ambiguous"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_bodywork_abcdccff99f2f472.fxo",
+          "program_offset": 15120,
+          "permutation_identity_sha256": "e3ce33be873ab179261e25920942215870a535b09128da9d59ce8aed84c49995",
+          "pair_sha256": "648c1803f0b4e470fe2b61c9e29ced3dee7750564c6f0f0c049fcd2818854320",
+          "vertex_sha256": "c78e1293cc389d09ae6ef5735f0bc7321a1b029acec7d509bb9c23d91f406de7",
+          "pixel_sha256": "805aaa8ad9145381f52262f7e9c88efc86e1b10f3c7b0c2fa5a795ab2aff279a",
+          "vertex_pair_selection_status": "ambiguous"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_bodywork_abcdccff99f2f472.fxo",
+          "program_offset": 24028,
+          "permutation_identity_sha256": "460872cee55b418f3b45cb204b51b93b647b536df36a120660397b8126c152d9",
+          "pair_sha256": "45a2dcec2a824ca98d9d5d71c1cfe820981e18850b3fffedff503f9a8f898100",
+          "vertex_sha256": "c78e1293cc389d09ae6ef5735f0bc7321a1b029acec7d509bb9c23d91f406de7",
+          "pixel_sha256": "ce85f9e54a0dc4a9a65e939525e863f754a477fea7804c68ded99e7f3b5fceb3",
+          "vertex_pair_selection_status": "ambiguous"
+        }
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "material": "GENERIC_WINDOWS",
+      "shader": "render\\shaders\\glass.fx",
+      "top_distinct_permutation_count": 10,
+      "register_match_count": 2,
+      "ready": false,
+      "blocking_reasons": [
+        "runtime-registers:multiple-static-permutations"
+      ],
+      "runtime_register_witness": {
+        "vertex": {},
+        "pixel": {
+          "crackColour": 26,
+          "dirtBasis": 27,
+          "crackUVoffset": 28,
+          "crackStrength": 32,
+          "damageStartCracks": 33,
+          "damageCrackSlope": 34,
+          "crackFinalScale": 35
+        }
+      },
+      "matches": [
+        {
+          "file": "render/shaders/cache/render_shaders_glass_4fa33edbee8163a8.fxo",
+          "program_offset": 14428,
+          "permutation_identity_sha256": "404bc4ed970512bca33d091dda6560020f8336779bc06f654cc72e0fa3db9543",
+          "pair_sha256": "122f5bd2370f9aeb89b0f2ffab8d322c6882e10885b0ea569feb61b65d51b52e",
+          "vertex_sha256": "2275cba28a6d43fd248b61a5388afd54c48aaa971b09bb294b8d2f92a8873977",
+          "pixel_sha256": "1e15ebc61d4e1a24600505e713236adac139fee1687596252d4093d5ce2ad107",
+          "vertex_pair_selection_status": "unique"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_glass_6cd5982aa50bb3fb.fxo",
+          "program_offset": 14428,
+          "permutation_identity_sha256": "2350b66ca28120a7bf5fac9cbc74945b269d6ebaea65087c443e9dcef63d4c2c",
+          "pair_sha256": "28f9c1221a05f3ad1e342963c332bf927321f826c237ec00ac53bb2de3cf650b",
+          "vertex_sha256": "2275cba28a6d43fd248b61a5388afd54c48aaa971b09bb294b8d2f92a8873977",
+          "pixel_sha256": "d77657a2ab82b67f6d55b82e777e62961ceb2e85a4a5ff79f93b9eb1f5d24eaa",
+          "vertex_pair_selection_status": "unique"
+        }
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "material": "GENERIC_GLOSS_BLACK",
+      "shader": "render\\shaders\\vehicles_basic.fx",
+      "top_distinct_permutation_count": 27,
+      "register_match_count": 4,
+      "ready": false,
+      "blocking_reasons": [
+        "runtime-registers:multiple-static-permutations"
+      ],
+      "runtime_register_witness": {
+        "vertex": {
+          "fresnelFactor": 8
+        },
+        "pixel": {
+          "maxSpecPower": 26
+        }
+      },
+      "matches": [
+        {
+          "file": "render/shaders/cache/render_shaders_vehicles_basic_a83cf6e3e9b23933.fxo",
+          "program_offset": 16560,
+          "permutation_identity_sha256": "aaaff3707a56136d2f14e47725b87f2c71efb140b43c9e23570c7ae394ee528e",
+          "pair_sha256": "2f64a507686cdbcc3a72095b90241c6f05a3c844d2a2df513df6d4ad95b2184d",
+          "vertex_sha256": "8ca8b30f44a2aff5b02bc8b02aafa3a07b7dabdeef074544c26adea89e255235",
+          "pixel_sha256": "446aa67308fa79953fde662908702e58267eec5e3cc75c3f2de2fadc806a954f",
+          "vertex_pair_selection_status": "unique"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_vehicles_basic_d9109375af78c029.fxo",
+          "program_offset": 16560,
+          "permutation_identity_sha256": "714eff2a95f717c2d7789e0bfe3730d66e892698728280b57787e690f64cf255",
+          "pair_sha256": "e4d3f3f90e40a247d40c62d3fc9348f78e6f77c4e57114f3875020e222b95d99",
+          "vertex_sha256": "8ca8b30f44a2aff5b02bc8b02aafa3a07b7dabdeef074544c26adea89e255235",
+          "pixel_sha256": "322342a4fdcd4f883e950634886adecd1b0b3e91baf5184da5726b9fd2ba945f",
+          "vertex_pair_selection_status": "unique"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_vehicles_basic_e4c0cff40f8341be.fxo",
+          "program_offset": 17620,
+          "permutation_identity_sha256": "b2b91aca4cbe070d64b5bddc8f098b9ccd2e3329dbc808621914c1a1f7e171e5",
+          "pair_sha256": "8dfab145ca739bbcc51d6cbd1aafe14f22a136e06bf8d4d98fa1c9a7b1dc49d3",
+          "vertex_sha256": "0dda339d0b0cf1598751efec120e1ef24aa27406b25ac78ec94d9ec9bf182374",
+          "pixel_sha256": "ec0b48e642fc571768a6e89c15f78a0ee369b2ea3d011211d5b57ce4b2cbfc88",
+          "vertex_pair_selection_status": "unique"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_vehicles_basic_e7cf5aa0d7c524a1.fxo",
+          "program_offset": 17540,
+          "permutation_identity_sha256": "2d77ff799dbcc661268c72ddb3ecb877eb90c60aacf78bbd11aec9df04ee904c",
+          "pair_sha256": "a92c9f174d1fe6e43a7ab0164a5ba963768e9d0f297786c779346f22d31efe57",
+          "vertex_sha256": "0dda339d0b0cf1598751efec120e1ef24aa27406b25ac78ec94d9ec9bf182374",
+          "pixel_sha256": "af52abd565d345e73929efe4394700468fbfde69b5f9765270808c7f3f3923bf",
+          "vertex_pair_selection_status": "unique"
+        }
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "material": "BMW_M3_E36_LIGHTSGLASS",
+      "shader": "render\\shaders\\glass.fx",
+      "top_distinct_permutation_count": 10,
+      "register_match_count": 2,
+      "ready": false,
+      "blocking_reasons": [
+        "runtime-registers:multiple-static-permutations"
+      ],
+      "runtime_register_witness": {
+        "vertex": {},
+        "pixel": {
+          "crackColour": 26,
+          "dirtBasis": 27,
+          "crackUVoffset": 28,
+          "crackStrength": 32,
+          "damageStartCracks": 33,
+          "damageCrackSlope": 34
+        }
+      },
+      "matches": [
+        {
+          "file": "render/shaders/cache/render_shaders_glass_4fa33edbee8163a8.fxo",
+          "program_offset": 14428,
+          "permutation_identity_sha256": "404bc4ed970512bca33d091dda6560020f8336779bc06f654cc72e0fa3db9543",
+          "pair_sha256": "122f5bd2370f9aeb89b0f2ffab8d322c6882e10885b0ea569feb61b65d51b52e",
+          "vertex_sha256": "2275cba28a6d43fd248b61a5388afd54c48aaa971b09bb294b8d2f92a8873977",
+          "pixel_sha256": "1e15ebc61d4e1a24600505e713236adac139fee1687596252d4093d5ce2ad107",
+          "vertex_pair_selection_status": "unique"
+        },
+        {
+          "file": "render/shaders/cache/render_shaders_glass_6cd5982aa50bb3fb.fxo",
+          "program_offset": 14428,
+          "permutation_identity_sha256": "2350b66ca28120a7bf5fac9cbc74945b269d6ebaea65087c443e9dcef63d4c2c",
+          "pair_sha256": "28f9c1221a05f3ad1e342963c332bf927321f826c237ec00ac53bb2de3cf650b",
+          "vertex_sha256": "2275cba28a6d43fd248b61a5388afd54c48aaa971b09bb294b8d2f92a8873977",
+          "pixel_sha256": "d77657a2ab82b67f6d55b82e777e62961ceb2e85a4a5ff79f93b9eb1f5d24eaa",
+          "vertex_pair_selection_status": "unique"
+        }
+      ]
+    }
+  ],
+  "observations": [
+    "Draw-local constant register witnesses reduce every retail material permutation set without selecting an unproven winner.",
+    "BADGING and both glass materials reduce to two logical permutations; PAINT and GLOSS_BLACK reduce to four.",
+    "PAINT surviving candidates still carry ambiguous vertex-pair selection and remain independently blocked.",
+    "Raw runtime shader byte identity is still absent from the committed frame witness."
+  ],
+  "next_gate": "distinguish the remaining 2/4 candidates with stronger same-instance shader-byte or source-backed pass/permutation evidence"
+}
