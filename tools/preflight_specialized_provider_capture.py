@@ -27,6 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--probe-script", type=Path, required=True)
     parser.add_argument("--wine", default="wine")
     parser.add_argument("--gdb", default="gdb")
+    parser.add_argument("--provider-only", action="store_true")
     return parser
 
 
@@ -38,6 +39,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         probe_script=args.probe_script,
         wine_command=args.wine,
         gdb_command=args.gdb,
+        provider_only=args.provider_only,
     )
     print(json.dumps({
         "format": report["format"],
@@ -46,6 +48,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "executable_valid": report["artifacts"]["ready"],
         "probe_script_exists": report["probe_script"]["exists"],
         "probe_script_valid": report["probe_script"]["validation"]["ready"],
+        "probe_mode": report["capture"]["probe_mode"],
         "wine": report["runtime_tools"]["wine"],
         "gdb": report["runtime_tools"]["gdb"],
         "gdb_python_ready": report["gdb_python"]["ready"],
