@@ -20,7 +20,7 @@ MGEO → native IR → XCB window → Vulkan swapchain → indexed draw → fram
 
 The renderer consumes normalized native IR. Original BFF parsing remains upstream in the existing Python importer/resource pipeline.
 
-The first slice accepts a single MGEO mesh and renders it for a bounded number of frames. `Esc` or `Q` exits the harness.
+The first slice accepts either a single MGEO mesh or a prepared `SHIFT.BMWVulkanBundle/1`. Bundle mode validates the manifest/native-submission gate and consumes `geometry.svpk`, including its `first_index` draw range. `Esc` or `Q` exits the harness.
 
 ## Build
 
@@ -33,7 +33,7 @@ cmake --build native_runtime/build --parallel
 
 ```bash
 native_runtime/build/shift_runtime \
-  --mesh out/example.mgeo \
+  --bundle out/example-bundle \
   --shader-dir native_runtime/build/shaders \
   --frames 120
 ```

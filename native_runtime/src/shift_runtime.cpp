@@ -783,6 +783,7 @@ struct Runtime {
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
             index_buffer);
         index_count = static_cast<uint32_t>(geometry.indices.size());
+        first_index = geometry.first_index;
     }
 
     void create_framebuffers() {
@@ -886,7 +887,7 @@ struct Runtime {
             0, sizeof(mvp), mvp.data());
 
         vkCmdDrawIndexed(
-            command, index_count, 1, 0, 0, 0);
+            command, index_count, 1, first_index, 0, 0);
         vkCmdEndRenderPass(command);
 
         vk_check(vkEndCommandBuffer(

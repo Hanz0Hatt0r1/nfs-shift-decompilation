@@ -16,3 +16,15 @@ def test_native_runtime_contract():
     assert "offline-only" in readme
     assert "EA services" in readme
     assert "DRM" in readme
+
+
+def test_native_runtime_consumes_bmw_bundle_geometry():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
+    shader = Path("native_runtime/shaders/runtime.vert").read_text(encoding="utf-8")
+
+    assert "SHIFT.BMWVulkanBundle/1" in source
+    assert "SHIFT.NativeSubmissionGate/1" in source
+    assert "first_index = geometry.first_index" in source
+    assert "first_index, 0, 0" in source
+    assert "layout(location = 0) in vec3 inPosition;" in shader
+    assert "inNormal" not in shader
