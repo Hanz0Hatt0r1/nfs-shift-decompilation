@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 520.**
+**Current mainline: Phase 522.**
 
 
 
@@ -50,7 +50,8 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 26. Map proven FLAT runtime index-table geometry — Phase 519 implemented.
 27. Map the SGB NODE runtime wrapper created by `FUN_006a4b40` — Phase 520 implemented.
 28. Record the source-backed SGB HIERARCHY serialized-child → runtime-element copy layout — Phase 521 implemented.
-29. Expand the desktop reference renderer against real BMW material/shader permutations.
+29. Classify the concrete SGB OBJECT/HIERARCHY/DAMAGE runtime wrappers — Phase 522 implemented.
+30. Expand the desktop reference renderer against real BMW material/shader permutations.
 26. Complete Vulkan RenderCommand execution using the same neutral contract.
 27. Continue SGB/FLAT and camera runtime reconstruction.
 28. Derive proven animation poses from the BAB runtime grammar.
