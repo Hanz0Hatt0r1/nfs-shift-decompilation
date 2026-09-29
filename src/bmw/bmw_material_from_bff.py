@@ -13,6 +13,7 @@ from resource_formats import parse_bmt_material
 from shift_importer import BFF
 
 FORMAT = "SHIFT.RealBMWMaterialBindingEvidence/1"
+GENERIC_GATE_FORMAT = "SHIFT.BMWGenericMaterialBindingGate/1"
 TARGET_BMT = 'vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt'
 TARGET_MEB = 'vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb'
 
@@ -51,11 +52,67 @@ def _find_shader_source(rows: list[tuple[BFF, Any]], shader_ref: str) -> tuple[B
         raise ValueError(f'shader-source: expected one {shader_ref!r}, found {len(hits)} exact/basename matches')
     return hits[0]
 
+def validate_generic_material_binding(binding: dict[str, Any]) -> dict[str, Any]:
+    """Fail closed on the shader/permutation facts required by native submission."""
+    reasons: list[str] = []
+
+    if binding.get('selection_status') != 'unique':
+        reasons.append('generic-material:shader-selection-not-unique')
+
+    selected = binding.get('selected_fxo')
+    if not isinstance(selected, dict) or selected.get('exact') is not True:
+        reasons.append('generic-material:exact-fxo-not-selected')
+    elif selected.get('vertex_pair_selection_status') != 'unique':
+        reasons.append('generic-material:vertex-pair-not-unique')
+
+    pair = binding.get('shader_pair')
+    if not isinstance(pair, dict) or pair.get('selection_status') != 'unique':
+        reasons.append('generic-material:shader-pair-not-unique')
+
+    linked = binding.get('linked_shader_pair')
+    if not isinstance(linked, dict) or linked.get('format') != 'SHIFT.LinkedShaderPair/1':
+        reasons.append('generic-material:linked-shader-pair-missing')
+
+    permutation = binding.get('permutation_identity')
+    identity = (
+        str(permutation.get('identity_sha256') or '')
+        if isinstance(permutation, dict) else ''
+    )
+    if (
+        not isinstance(permutation, dict)
+        or permutation.get('format') != 'SHIFT.ShaderPermutationIdentity/1'
+        or len(identity) != 64
+    ):
+        reasons.append('generic-material:permutation-identity-missing')
+
+    if binding.get('linked_shader_error'):
+        reasons.append('generic-material:linked-shader-error')
+
+    unresolved = [
+        str(value) for value in binding.get('unresolved_textures') or []
+        if value
+    ]
+    if unresolved:
+        reasons.append('generic-material:unresolved-textures')
+
+    return {
+        'format': GENERIC_GATE_FORMAT,
+        'status': 'ready' if not reasons else 'blocked',
+        'ready': not reasons,
+        'blocking_reasons': list(dict.fromkeys(reasons)),
+        'selection_status': binding.get('selection_status'),
+        'selected_fxo': selected,
+        'permutation_identity': permutation,
+        'unresolved_textures': unresolved,
+    }
+
+
 def build_real_bmw_material_binding(
     bff_path: str | Path,
     *,
     supplemental_bffs: Iterable[str | Path] = (),
     shader_source_file: str | Path | None = None,
+    material_bmt: str = TARGET_BMT,
 ) -> dict[str, Any]:
     primary=Path(bff_path)
     paths=[primary, *[Path(x) for x in supplemental_bffs]]
@@ -69,7 +126,10 @@ def build_real_bmw_material_binding(
     try:
         archive_objects=[BFF(p) for p in paths]
         rows=_entry_rows(archive_objects)
-        bff, bmt_entry=_find_exact(rows,TARGET_BMT,label='material')
+        normalized_material_bmt = _norm(material_bmt)
+        if not normalized_material_bmt.endswith('.bmt'):
+            raise ValueError('material: expected .bmt reference')
+        bff, bmt_entry=_find_exact(rows,material_bmt,label='material')
         meb_archive, meb_entry=_find_exact(rows,TARGET_MEB,label='mesh')
         bmt_bytes=bff.extract_entry(bmt_entry)
         meb_bytes=meb_archive.extract_entry(meb_entry)
@@ -116,14 +176,28 @@ def build_real_bmw_material_binding(
         fxo_candidates=[(f'{a.path.name}::{e.path}',a.extract_entry(e)) for a,e in fxo_rows]
         dds_paths=sorted({_norm(e.path) for _,e in rows if _norm(e.path).endswith('.dds')})
         binding=link_material(material,fx_bytes,fxo_candidates=fxo_candidates,texture_paths=dds_paths,vertex_properties=mesh.vertex_properties)
-        contract=validate_material_binding(binding)
-        shader_gate=validate_bmw_paint_shader_gate(binding)
-        reasons=list(contract.get('blocking_reasons') or [])+list(shader_gate.get('blocking_reasons') or [])
-        ready=bool(binding.get('selection_status')=='unique' and contract.get('ready') and shader_gate.get('ready') and not reasons)
+        generic_gate=validate_generic_material_binding(binding)
+        is_paint=normalized_material_bmt == _norm(TARGET_BMT)
+        contract=validate_material_binding(binding) if is_paint else None
+        shader_gate=validate_bmw_paint_shader_gate(binding) if is_paint else None
+        reasons=list(generic_gate.get('blocking_reasons') or [])
+        if contract is not None:
+            reasons.extend(contract.get('blocking_reasons') or [])
+        if shader_gate is not None:
+            reasons.extend(shader_gate.get('blocking_reasons') or [])
+        ready=bool(
+            generic_gate.get('ready')
+            and (not is_paint or (
+                contract is not None and contract.get('ready')
+                and shader_gate is not None and shader_gate.get('ready')
+            ))
+            and not reasons
+        )
         provenance={
             'primary_bff':{'path':str(primary),'sha256':_archive_sha256(primary),'size':primary.stat().st_size},
             'supplemental_bffs':[{'path':str(p),'sha256':_archive_sha256(p),'size':p.stat().st_size} for p in paths[1:]],
             'material_entry':{'archive':bff.path.name,'path':bmt_entry.path,'index':bmt_entry.index,'sha256':_sha256(bmt_bytes),'size':len(bmt_bytes)},
+            'requested_material_bmt':material_bmt,
             'mesh_entry':{'archive':meb_archive.path.name,'path':meb_entry.path,'index':meb_entry.index,'sha256':_sha256(meb_bytes),'size':len(meb_bytes)},
             'shader_source':shader_source,
             'fxo_candidate_count':len(fxo_candidates),
@@ -136,7 +210,9 @@ def build_real_bmw_material_binding(
             'status':'ready' if ready else 'blocked',
             'ready':ready,
             'blocking_reasons':list(dict.fromkeys(reasons)),
+            'material_bmt':material_bmt,
             'material_binding':binding,
+            'generic_material_gate':generic_gate,
             'paint_contract':contract,
             'paint_shader_gate':shader_gate,
             'provenance':provenance,

@@ -3279,6 +3279,7 @@ def cmd_bmw_material_from_bff(args: argparse.Namespace) -> int:
     report = build_real_bmw_material_binding(
         args.input,
         supplemental_bffs=args.supplemental_bff or [],
+        material_bmt=args.material_bmt,
     )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -4269,6 +4270,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sp.add_parser("bmw-material-from-bff", help="build real BMW M3 MaterialBinding/1 from retail BFF archives")
     p.add_argument("input", help="primary BMW_M3_E36.bff")
     p.add_argument("output", help="SHIFT.RealBMWMaterialBindingEvidence/1 JSON")
+    p.add_argument("--material-bmt", default="vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt", help="exact BMT resource to link; defaults to BMW paint")
     p.add_argument("--supplemental-bff", action="append", default=[], help="additional BFF archives such as BMW_M3_E36_Cockpit.bff")
     p.set_defaults(fn=cmd_bmw_material_from_bff)
 
