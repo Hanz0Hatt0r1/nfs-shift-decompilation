@@ -204,7 +204,7 @@ It scans 4-byte-aligned object candidates for these recovered layouts:
 - `AIPolylinePath`: num nodes `+0x10`, node array `+0x14`, length `+0x18`, width `+0x1c`, cyclic `+0x20`, spacing `+0x24`, default width `+0x28`.
 - `AIPolyPathNode`: 0x24-byte array element with 2D position/tangent fields at `+0x10..+0x1c` and cumulative path distance at `+0x20`.
 
-Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. `AISegmentPath` and `AIPolylinePath` additionally require their recovered concrete vtables (`0x00afca70` and `0x00afc678`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
+Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. `AISegmentPath`, `AIPolylinePath`, and `AIPolyPathNode` require their recovered concrete vtables (`0x00afca70`, `0x00afc678`, and `0x00afbfa8`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
 
 Outputs:
 
@@ -231,8 +231,10 @@ python3 tools/shift_live_dump/analyze_track_paths.py \
 ```
 
 The AIW parser reads the `[Waypoint]` records, `wp_pos`, `wp_branchID`,
-`wp_score` and `WP_PTRS`. Runtime correlation searches only the specified
-heap roots/ranges for matching 3-float positions and then looks for long
+`wp_score` and `WP_PTRS`. Runtime correlation first uses exact
+`AIPolyPathNode` candidates when present, matching their 2D coordinates against
+the selected AIW plane (default `x/z`), and falls back to the generic 3-float
+scan when no exact node candidates are available. It then looks for long
 `waypoint N -> N+1` address sequences with a constant stride.
 
 Outputs:
