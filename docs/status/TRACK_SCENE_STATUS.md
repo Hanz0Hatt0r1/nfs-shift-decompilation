@@ -13,7 +13,8 @@ Covered boundaries include:
 - NODE;
 - PART;
 - SUMM;
-- OCCL;
+- OCCL fixed 0x38-byte source records with source-backed Name/Resource and PositionTL/TR/BL/BR semantics;
+- OCCL concrete 0x120-byte runtime objects plus header-bit1 wrapper/batch admission modes;
 - FLAT;
 - NODE object payload routing into OBJECT/HIERARCHY/DAMAGE;
 - recursive FLAT tree structure with 0x40-byte leaf records.
@@ -31,4 +32,4 @@ Track placement remains an evidence question.
 
 ## Next
 
-Correlate real SGB samples with the runtime consumers, close deeper object/leaf semantics, then join proven scene data into RenderBinding.
+Continue with PART consumers and FLAT leaf semantics, then correlate those mappings against real SGB samples before joining proven scene data into RenderBinding.
