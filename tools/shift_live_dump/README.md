@@ -203,7 +203,7 @@ It scans 4-byte-aligned object candidates for these recovered layouts:
 - `AISegmentPath`: num nodes `+0x10`, segment-node array `+0x18`, length `+0x1c`, cyclic/narrow flags `+0x20/+0x24`, spacing `+0x28`, path distance `+0x2c`, current node `+0x30`, EdgeStep `+0x34`.
 - `AIPolylinePath`: num nodes `+0x10`, node array `+0x14`, length `+0x18`, width `+0x1c`, cyclic `+0x20`, spacing `+0x24`, default width `+0x28`.
 
-Candidates are filtered against mapped SHIFT.exe vftable addresses and writable target pointers. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
+Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. `AISegmentPath` and `AIPolylinePath` additionally require their recovered concrete vtables (`0x00afca70` and `0x00afc678`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
 
 Outputs:
 
