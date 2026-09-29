@@ -2,6 +2,7 @@
 #include <xcb/xcb.h>
 
 #include "shift_ir.hpp"
+#include "runtime_state.hpp"
 
 #include <algorithm>
 #include <array>
@@ -1779,24 +1780,20 @@ int main(int argc, char** argv) {
         uint64_t simulation_steps = 0;
         bool quit = false;
         InputState input{};
+        shift::runtime::NativeRuntimeState native_state{};
         const auto start = std::chrono::steady_clock::now();
 
         while (!quit && rendered < args.frames) {
             window.poll(quit, input);
 
-            // Deterministic simulation boundary. Vehicle/camera systems will
-            // consume this neutral input state at the same fixed cadence.
+            // Deterministic simulation boundary.
+            shift::runtime::VehicleControlIntent intent{};
+            intent.throttle = input.throttle;
+            intent.brake = input.brake;
+            intent.steer_left = input.steer_left;
+            intent.steer_right = input.steer_right;
+            native_state.fixed_step(intent);
             ++simulation_steps;
-            const double throttle = input.throttle ? 1.0 : 0.0;
-            const double brake = input.brake ? 1.0 : 0.0;
-            const double steering =
-                static_cast<double>(input.steer_right) -
-                static_cast<double>(input.steer_left);
-            (void)throttle;
-            (void)brake;
-            (void)steering;
-            constexpr double dt = kFixedDt;
-            (void)dt;
 
             if (!runtime.frame()) break;
             ++rendered;
@@ -1816,6 +1813,12 @@ int main(int argc, char** argv) {
             << "  \"simulation_steps\": " << simulation_steps << ",\n"
             << "  \"fixed_dt\": " << kFixedDt << ",\n"
             << "  \"input_layer\": \"SHIFT.NativeRuntimeInput/1\",\n"
+            << "  \"state_layer\": \"SHIFT.NativeRuntimeState/1\",\n"
+            << "  \"camera_active_buffer\": " << native_state.camera.active_index << ",\n"
+            << "  \"vehicle_control_steer_axis\": " << native_state.physics.last_input.steer_axis() << ",\n"
+            << "  \"physics_participant_ready\": " << (native_state.physics.participant_ready ? "true" : "false") << ",\n"
+            << "  \"physics_participant_index\": " << native_state.physics.participant_index << ",\n"
+            << "  \"physics_participant_mode\": " << native_state.physics.participant_mode << ",\n"
             << "  \"material_mode\": " << (runtime.material_mode ? "true" : "false") << ",\n"
             << "  \"bundle_2d_textures\": " << runtime.texture_images.size() << ",\n"
             << "  \"bundle_cube\": " << (!runtime.cube_image.handle ? "false" : "true") << ",\n"
