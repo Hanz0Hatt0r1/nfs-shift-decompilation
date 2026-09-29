@@ -38,13 +38,17 @@ ioff = size - 0xFC
 struct.pack_into("<I", blob, ioff, 0x00401000)
 struct.pack_into("<IIfff f III", blob, ioff + 0xD4, 1, 0x00610000, 1.0, 2.0, 3.0, 10.0, 1, 1, 0)
 
-# Synthetic AISegmentPath using the evidence-backed element layout:
-# num nodes +0x10, length +0x1c, path distance +0x20.
+# Synthetic AISegmentPath using the fields explicitly reflected by
+# FUN_006d0690.
 soff = 0x220
 struct.pack_into("<III", blob, soff, 0x00AFCA70, 0, 1)
-struct.pack_into("<I", blob, soff + 0x10, 8)
-struct.pack_into("<f", blob, soff + 0x1C, 120.0)
-struct.pack_into("<f", blob, soff + 0x20, 15.0)
+struct.pack_into("<IIIf", blob, soff + 0x10, 8, 1, 0x00610800, 120.0)
+struct.pack_into("<I", blob, soff + 0x20, 0)
+struct.pack_into("<I", blob, soff + 0x24, 1)
+struct.pack_into("<f", blob, soff + 0x28, 15.0)
+struct.pack_into("<f", blob, soff + 0x2c, 20.0)
+struct.pack_into("<I", blob, soff + 0x30, 2)
+struct.pack_into("<f", blob, soff + 0x34, 1.0)
 
 # Synthetic AIPolylinePath using the concrete vtable recovered from
 # FUN_006cc390. Its array points at a count-prefixed AIPolyPathNode array.
@@ -151,6 +155,20 @@ result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
 assert result["candidate_counts"]["AISegmentPath"] == 1, result["candidate_counts"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
+    segment_rows = list(csv.DictReader(fh))
+assert len(segment_rows) == 1, segment_rows
+row = segment_rows[0]
+assert int(row["nodes"]) == 8, row
+assert int(row["side"]) == 1, row
+assert int(row["array"]) == 0x00610800, row
+assert float(row["length"]) == 120.0, row
+assert int(row["cyclic"]) == 0, row
+assert int(row["narrow"]) == 1, row
+assert float(row["spacing"]) == 15.0, row
+assert float(row["path_dist"]) == 20.0, row
+assert int(row["current"]) == 2, row
+assert float(row["edge_step"]) == 1.0, row
 with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
     segment_rows = list(csv.DictReader(fh))
 assert len(segment_rows) == 1, segment_rows
