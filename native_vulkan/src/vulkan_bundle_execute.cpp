@@ -791,28 +791,14 @@ MaterialPipelineState load_pipeline_state(
         (std::istreambuf_iterator<char>(state)),
         std::istreambuf_iterator<char>());
     if (text.find(
-            "\"format\": \"SHIFT.MaterialCullState/1\"") !=
+            "\"format\": \"SHIFT.MaterialPipelineState/1\"") !=
             std::string::npos) {
-        if (text.find("\"ready\": true") == std::string::npos) {
+        if (!pipeline_bool_field(text, "vulkan_pipeline_ready")) {
             throw std::runtime_error(
-                "legacy bundle pipeline state is blocked");
+                "bundle material pipeline state is blocked");
         }
-        out.cull_mode = pipeline_cull_mode(
-            pipeline_string_field(text, "vulkan_cull_mode"));
-        return out;
-    }
-    if (text.find(
-            "\"format\": \"SHIFT.MaterialPipelineState/1\"") ==
-            std::string::npos) {
-        throw std::runtime_error(
-            "bundle pipeline state has unsupported format");
-    }
-    if (!pipeline_bool_field(text, "vulkan_pipeline_ready")) {
-        throw std::runtime_error(
-            "bundle material pipeline state is blocked");
-    }
 
-    out.cull_mode = pipeline_cull_mode(
+        out.cull_mode = pipeline_cull_mode(
         pipeline_string_field(text, "vulkan_cull_mode"));
     out.depth_test_enable =
         pipeline_bool_field(text, "vulkan_depth_test_enable") ? VK_TRUE : VK_FALSE;
@@ -834,7 +820,22 @@ MaterialPipelineState load_pipeline_state(
         pipeline_string_field(text, "vulkan_dst_alpha_blend_factor"));
     out.alpha_blend_op = pipeline_blend_op(
         pipeline_string_field(text, "vulkan_alpha_blend_op"));
-    return out;
+        return out;
+    }
+
+    if (text.find(
+            "\"format\": \"SHIFT.MaterialCullState/1\"") !=
+            std::string::npos) {
+        if (text.find("\"ready\": true") == std::string::npos) {
+            throw std::runtime_error(
+                "legacy bundle pipeline state is blocked");
+        }
+        out.cull_mode = pipeline_cull_mode(
+            pipeline_string_field(text, "vulkan_cull_mode"));
+        return out;
+    }
+    throw std::runtime_error(
+        "bundle pipeline state has unsupported format");
 }
 
 void write_ppm(
