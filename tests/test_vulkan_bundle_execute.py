@@ -15,6 +15,9 @@ def test_native_vulkan_bundle_executor_contract():
     assert "VK_IMAGE_VIEW_TYPE_CUBE" in source
     assert "VK_FORMAT_D32_SFLOAT" in source
     assert "SHIFT.VulkanBundleExecution/1" in source
+    assert "load_pipeline_cull_mode" in source
+    assert "SHIFT.MaterialCullState/1" in source
+    assert "raster.cullMode = cull_mode;" in source
 
 
 def test_vulkan_bundle_runner_contract():
