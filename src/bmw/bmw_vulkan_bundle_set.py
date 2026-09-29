@@ -147,6 +147,12 @@ def build_bmw_vulkan_bundle_set(
             ),
         })
 
+    draw_order_path = out / "bundle_set.paths"
+    draw_order_path.write_text(
+        "".join(f"{row['bundle_path']}\\n" for row in draws),
+        encoding="utf-8",
+    )
+
     report: dict[str, Any] = {
         "format": FORMAT,
         "version": 1,
@@ -161,6 +167,13 @@ def build_bmw_vulkan_bundle_set(
         },
         "draw_count": len(draws),
         "draws": draws,
+        "artifacts": {
+            "draw_order": {
+                "path": str(draw_order_path.relative_to(out)),
+                "sha256": hashlib.sha256(draw_order_path.read_bytes()).hexdigest(),
+                "entry_count": len(draws),
+            },
+        },
         "execution": {
             "status": "prepared",
             "contract": (
