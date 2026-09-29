@@ -269,14 +269,20 @@ def test_bmw_vulkan_bundle_blocks_enabled_alpha_test(tmp_path):
                 "engine_enum_index": 6,
                 "status": "known",
             },
-            "value_normalized": 0.5,
+            "value_raw": 128.0,
+            "value_normalized": 128.0 / 255.0,
         },
     }
     result = build_bmw_vulkan_bundle(
         command, _mesh(), tmp_path, submesh_index=0
     )
     assert result["ready"] is False
+    state = json.loads(
+        (tmp_path / "pipeline_state.json").read_text(encoding="utf-8")
+    )
+    assert state["alpha_test"]["ready"] is True
+    assert state["alpha_test"]["reference"]["d3d9_u8"] == 128
     assert (
-        "material-pipeline:alpha-test-enabled-unsupported"
+        "alpha-test:fragment-alpha-quantization-unproven"
         in result["blocking_reasons"]
     )
