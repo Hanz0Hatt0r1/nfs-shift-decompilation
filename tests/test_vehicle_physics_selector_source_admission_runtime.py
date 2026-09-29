@@ -90,3 +90,18 @@ def test_phase514_mask_miss_does_not_mutate_state():
     assert state["mask_cleared"] is False
     assert state["owner_mask_after"] == 0x04
     assert state["count_after"] == 2
+
+
+def test_phase514_contract_exposes_executable_transition_order():
+    report = runtime.build_vehicle_physics_selector_source_admission()
+    model = report["execution_model"]
+
+    assert model["function"] == "evaluate_selector_source_admission"
+    assert model["inputs"] == [
+        "owner+0x4f0",
+        "uint32 source_record+0x10",
+        "selector context+0x1c",
+        "selector context+0x28",
+    ]
+    assert model["ordering"][2] == "invoke descriptor wrapper on mask hit"
+    assert model["ordering"][-1] == "apply independent descriptor capacity gate"
