@@ -50,14 +50,17 @@ def _target_match(
     hashes: Mapping[str, str | None],
 ) -> tuple[int, list[str]]:
     evidence: list[str] = []
+    exact_pair_target = target.get("strength") == "exact-pair"
     if (
-        hashes.get("permutation")
+        exact_pair_target
+        and hashes.get("permutation")
         and target.get("permutation_identity_sha256")
         and hashes["permutation"] == target["permutation_identity_sha256"]
     ):
         return 100, ["permutation_identity_sha256"]
     if (
-        hashes.get("pair")
+        exact_pair_target
+        and hashes.get("pair")
         and target.get("pair_byte_sha256")
         and hashes["pair"] == target["pair_byte_sha256"]
     ):
@@ -77,7 +80,7 @@ def _target_match(
         evidence.append("vertex_byte_sha256")
     if pixel:
         evidence.append("pixel_byte_sha256")
-    if vertex and pixel:
+    if exact_pair_target and vertex and pixel:
         return 80, evidence
     if vertex or pixel:
         return 40, evidence
