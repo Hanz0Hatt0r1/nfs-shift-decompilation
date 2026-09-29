@@ -1,5 +1,7 @@
 from bmw_runtime_register_permutation_filter import (
+    BODY_FORMAT,
     FORMAT,
+    filter_body_admission_runtime_registers,
     filter_runtime_register_permutations,
 )
 
@@ -187,3 +189,68 @@ def test_register_witness_rejects_resource_mismatch():
         "runtime-registers:mesh-resource-sha256-mismatch"
         in result["blocking_reasons"]
     )
+
+
+
+def _slice(index, candidates):
+    value = _material(candidates)
+    value.update({
+        "format": "SHIFT.BMWMaterialSlice/1",
+        "primitive_index": index,
+        "golden_identity": {
+            "resource": "vehicles/bmw/body.meb",
+            "resource_sha256": RESOURCE_SHA,
+        },
+    })
+    return value
+
+
+def test_body_register_filter_preserves_canonical_primitive_results():
+    first = _slice(1, [
+        _candidate("1", vs={"fresnelFactor": 8}, ps={"maxSpecPower": 26}),
+        _candidate("2", vs={"fresnelFactor": 9}, ps={"maxSpecPower": 26}),
+    ])
+    second = _slice(2, [
+        _candidate("1", vs={"fresnelFactor": 8}, ps={"maxSpecPower": 26}),
+        _candidate("2", vs={"fresnelFactor": 9}, ps={"maxSpecPower": 26}),
+    ])
+    admission = {
+        "format": "SHIFT.BMWBodyMaterialAdmission/1",
+        "selection": {"primitive_indices": [1, 2]},
+        "primitive_results": [
+            {"primitive_index": 1, "slice": first},
+            {"primitive_index": 2, "slice": second},
+        ],
+    }
+
+    result = filter_body_admission_runtime_registers(
+        admission, _witness()
+    )
+
+    assert result["format"] == BODY_FORMAT
+    assert result["ready"] is True
+    assert result["ready_primitive_count"] == 2
+    assert result["unique_material_count"] == 1
+    assert result["materials"][0]["primitive_indices"] == [1, 2]
+
+
+def test_body_register_filter_keeps_ambiguous_material_blocked():
+    material_slice = _slice(0, [
+        _candidate("1", vs={"fresnelFactor": 8}, ps={"maxSpecPower": 26}),
+        _candidate("2", vs={"fresnelFactor": 8}, ps={"maxSpecPower": 26}),
+    ])
+    admission = {
+        "format": "SHIFT.BMWBodyMaterialAdmission/1",
+        "selection": {"primitive_indices": [0]},
+        "primitive_results": [
+            {"primitive_index": 0, "slice": material_slice},
+        ],
+    }
+
+    result = filter_body_admission_runtime_registers(
+        admission, _witness()
+    )
+
+    assert result["ready"] is False
+    assert result["status"] == "ambiguous"
+    assert result["primitive_results"][0]["register_match_count"] == 2
