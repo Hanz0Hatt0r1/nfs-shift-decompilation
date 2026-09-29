@@ -39,6 +39,27 @@ def test_object_kind_dispatch_is_reconstructed():
     assert result["decoded"] is True
 
 
+def test_runtime_wrapper_classes_are_concrete():
+    object_report = parse_sgb_object_payload(_object_payload())
+    assert object_report["runtime_wrapper"]["constructor"] == "FUN_00698dc0"
+    assert object_report["runtime_wrapper"]["initializer"] == "FUN_00698dd0"
+    assert object_report["runtime_wrapper"]["vtable"] == 0x00AF86B0
+    assert object_report["runtime_wrapper"]["allocation_bytes"] == 0xB0
+    assert object_report["runtime_wrapper"]["proven_fields"]["resource_object"] == 0x80
+
+    hierarchy_report = parse_sgb_object_payload(_hierarchy_payload())
+    assert hierarchy_report["runtime_wrapper"]["constructor"] == "FUN_00698a20"
+    assert hierarchy_report["runtime_wrapper"]["vtable"] == 0x00AF8620
+    assert hierarchy_report["runtime_wrapper"]["allocation_bytes"] == 0xA0
+    assert hierarchy_report["runtime_wrapper"]["proven_fields"]["runtime_child_array"] == 0x88
+
+    damage_kind = bytearray(_object_payload())
+    damage_kind[64:71] = b"DAMAGE\0"
+    damage_report = parse_sgb_object_payload(bytes(damage_kind))
+    assert damage_report["runtime_wrapper"]["constructor"] == "FUN_00698b00"
+    assert damage_report["runtime_wrapper"]["vtable"] == 0x00AF7C88
+
+
 def test_hierarchy_child_record_size_is_36_bytes():
     result = parse_sgb_object_payload(_hierarchy_payload())
     assert result["kind"]["text"] == "HIERARCHY"
