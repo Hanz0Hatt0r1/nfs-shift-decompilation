@@ -833,7 +833,7 @@ def _bmt_render_state_from_tree(tree: dict[str, Any]) -> dict[str, Any]:
         }:
             # Preserve unresolved nested state-like groups (including a future
             # stencilparams Resource ID) so native admission can fail closed.
-            if group.get("children"):
+            if group_name.startswith("hash_") and group.get("children"):
                 result["unmapped_groups"].append({
                     "element_id": group.get("name_id"),
                     "element_name": group_name,
