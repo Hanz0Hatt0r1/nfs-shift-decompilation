@@ -36,3 +36,12 @@ def test_native_bundle_cube_staging_offset_excludes_packet_header():
     source = Path("native_vulkan/src/vulkan_bundle_execute.cpp").read_text(encoding="utf-8")
     assert "copy.bufferOffset =\n                    static_cast<VkDeviceSize>(face) * cube.header.face_bytes;" in source
     assert "sizeof(CubeHeader)) +" not in source
+
+
+def test_direct_vulkan_prefers_full_pipeline_state_over_nested_legacy_cull():
+    source = Path("native_vulkan/src/vulkan_bundle_execute.cpp").read_text(
+        encoding="utf-8"
+    )
+    full = source.index('"format": "SHIFT.MaterialPipelineState/1"')
+    legacy = source.index('"format": "SHIFT.MaterialCullState/1"')
+    assert full < legacy
