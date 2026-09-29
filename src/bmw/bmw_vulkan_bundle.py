@@ -13,6 +13,7 @@ from vulkan_geometry_packet import export_vulkan_geometry_packet
 from vulkan_texture_packet import build_vulkan_texture_packet
 from vulkan_sampler_contract import write_sampler_metadata, build_sampler_contract_report, write_sampler_contract_report
 from render_submission_gate import validate_native_submission
+from material_cull_state import translate_bmt_cull
 
 FORMAT = "SHIFT.BMWVulkanBundle/1"
 TARGET_MEB = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
@@ -192,11 +193,24 @@ def build_bmw_vulkan_bundle(
     gate_path = out / "native_submission_gate.json"
     _write(gate_path, native_gate)
 
+    pipeline_state = translate_bmt_cull(
+        (selected["submeshes"][0].get("render_state") or {}).get("cull")
+    )
+    pipeline_state_path = out / "pipeline_state.json"
+    _write(pipeline_state_path, pipeline_state)
+
     artifacts = {
         "native_submission_gate": {
             "path": str(gate_path.relative_to(out)),
             "sha256": _hash(gate_path),
             "ready": True,
+        },
+        "pipeline_state": {
+            "path": str(pipeline_state_path.relative_to(out)),
+            "sha256": _hash(pipeline_state_path),
+            "ready": bool(pipeline_state.get("ready")),
+            "blocking_reasons": pipeline_state.get("blocking_reasons") or [],
+            "cull": pipeline_state,
         },
         "geometry": {
             "path": str(geometry_path.relative_to(out)),
@@ -239,6 +253,7 @@ def build_bmw_vulkan_bundle(
     }
 
     blockers = list(constants.get("blocking_reasons") or [])
+    blockers.extend(pipeline_state.get("blocking_reasons") or [])
     if textures is None and selected["submeshes"][0].get("textures"):
         blockers.append("bmw-vulkan-bundle:material-textures-not-supplied")
     if has_s3_cube and environment_cube is None:
