@@ -257,6 +257,11 @@ assert len(result["aiw_sources"]) == 1, result["aiw_sources"]
 assert result["aiw_sources"][0]["number_waypoints"] == 4
 assert result["aiw_match_count"] == 4, result["aiw_match_count"]
 assert result["aiw_next_edge_count"] == 4, result["aiw_next_edge_count"]
+assert result["aiw_runtime_edge_count"] == 4, result["aiw_runtime_edge_count"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aiw_runtime_edges.csv"), newline="", encoding="utf-8") as fh:
+    runtime_edges = list(csv.DictReader(fh))
+assert len(runtime_edges) == 4, runtime_edges
+assert [int(e["runtime_delta"]) for e in runtime_edges] == [0x24, 0x24, 0x24, -0x6C], runtime_edges
 with open(sys.argv[1].replace("track_path_analysis.json", "aiw_next_edges.csv"), newline="", encoding="utf-8") as fh:
     edges = list(csv.DictReader(fh))
 assert [(int(e["from_waypoint"]), int(e["to_waypoint"])) for e in edges] == [
