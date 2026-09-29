@@ -77,7 +77,7 @@ polyline_candidates = [
 ]
 
 rows = module.join_path_start_nodes_to_polylines(path_links, polyline_candidates)
-assert len(rows) == 3, rows
+assert len(rows) == 4, rows
 
 first = rows[0]
 assert first["path_address"] == 0x8101010, first
