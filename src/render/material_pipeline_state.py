@@ -384,7 +384,9 @@ def translate_bmt_pipeline_state(
         },
         "vulkan": {
             "front_face": "VK_FRONT_FACE_COUNTER_CLOCKWISE",
-            "cull_mode": cull["vulkan_cull_mode"],
+            "cull_mode": cull.get(
+                "vulkan_cull_mode", "VK_CULL_MODE_NONE"
+            ),
             "depth_test_enable": depth_enabled,
             "depth_write_enable": depth_write,
             "depth_compare_op": depth_compare["vulkan_value"],
