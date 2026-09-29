@@ -213,6 +213,39 @@ Outputs:
 - `pointer_target_clusters.csv` — dense target families and dominant source strides.
 - `next_capture_windows.csv` / `next_capture_ranges.txt` — merged windows for the next extraction pass.
 
+### Correlating runtime nodes with static AIW waypoints
+
+The analyzer can now read the real track AIW directly from a `.aiw`, `.bff`,
+a ZIP containing them, or a directory:
+
+```bash
+python3 tools/shift_live_dump/analyze_track_paths.py \
+  capture/track-path-roots \
+  --out capture/track-path-roots/track_path_analysis \
+  --skip-pointer-analysis \
+  --aiw /path/to/Silverstone_Era3_.zip \
+  --aiw-entry 'grandprix' \
+  --runtime-root 0x33580000 \
+  --runtime-root 0x33630000
+```
+
+The AIW parser reads the `[Waypoint]` records, `wp_pos`, `wp_branchID`,
+`wp_score` and `WP_PTRS`. Runtime correlation searches only the specified
+heap roots/ranges for matching 3-float positions and then looks for long
+`waypoint N -> N+1` address sequences with a constant stride.
+
+Outputs:
+
+- `aiw_waypoints.csv` — normalized static waypoint records from every selected AIW.
+- `aiw_runtime_matches.csv` — individual runtime position matches with distance.
+- `aiw_runtime_sequences.csv` — contiguous runtime waypoint sequences and inferred node stride.
+- `track_path_analysis.json` — AIW source metadata, match count and inferred sequences.
+
+Use `--aiw-range START:SIZE` when the exact heap window is already known.
+`--runtime-root` is a convenience form that expands each root by
+`--aiw-root-radius-kib` (default 128 KiB). To prevent accidental scans of
+multi-gigabyte captures, unrestricted AIW correlation is refused above 64 MiB.
+
 A zero hit count in a reduced capture means only that the selected ranges do not contain a matching object; it is not evidence that the structure is absent from the running game.
 
 When a selected range is known to be an asset/resource table, pointer-source
