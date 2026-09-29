@@ -518,7 +518,6 @@ def build_bmw_vulkan_set_from_material_slice(
         )
 
     indices = _normalize_set_submesh_indices(command, submesh_indices)
-    shader_blockers = _validate_vulkan_shader_sources(command, indices)
     source_bff_list = [Path(path) for path in source_bffs]
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -526,59 +525,40 @@ def build_bmw_vulkan_set_from_material_slice(
     child_results: list[dict[str, Any]] = []
     adapter_blockers: list[str] = []
 
-    if not shader_blockers:
-        for draw_order, submesh_index in enumerate(indices):
-            child = out / "draws" / f"submesh_{submesh_index:03d}"
-            result = build_bmw_vulkan_from_material_slice(
-                payload,
-                child,
-                textures=textures,
-                environment_cube=environment_cube,
-                source_bffs=source_bff_list,
-                environment_cube_dds=environment_cube_dds,
-                submesh_index=submesh_index,
-            )
-            child_reasons = [
-                str(reason)
-                for reason in result.get("blocking_reasons") or []
-            ]
-            if result.get("ready") is not True:
-                adapter_blockers.extend(
-                    f"bmw-material-vulkan-set:submesh-{submesh_index}:{reason}"
-                    for reason in (
-                        child_reasons
-                        or ["material-adapter-not-ready"]
-                    )
+    for draw_order, submesh_index in enumerate(indices):
+        child = out / "draws" / f"submesh_{submesh_index:03d}"
+        result = build_bmw_vulkan_from_material_slice(
+            payload,
+            child,
+            textures=textures,
+            environment_cube=environment_cube,
+            source_bffs=source_bff_list,
+            environment_cube_dds=environment_cube_dds,
+            submesh_index=submesh_index,
+        )
+        child_reasons = [
+            str(reason)
+            for reason in result.get("blocking_reasons") or []
+        ]
+        if result.get("ready") is not True:
+            adapter_blockers.extend(
+                f"bmw-material-vulkan-set:submesh-{submesh_index}:{reason}"
+                for reason in (
+                    child_reasons
+                    or ["material-adapter-not-ready"]
                 )
-            child_results.append({
-                "draw_order": draw_order,
-                "source_submesh_index": submesh_index,
-                "bundle_path": str(child.relative_to(out)),
-                "format": result.get("format"),
-                "status": result.get("status"),
-                "ready": result.get("ready") is True,
-                "blocking_reasons": child_reasons,
-                "source": result.get("source"),
-                "dds_bridge": result.get("dds_bridge"),
-            })
-    else:
-        adapter_blockers.extend(shader_blockers)
-        for draw_order, submesh_index in enumerate(indices):
-            child_results.append({
-                "draw_order": draw_order,
-                "source_submesh_index": submesh_index,
-                "bundle_path": f"draws/submesh_{submesh_index:03d}",
-                "format": FORMAT,
-                "status": "blocked",
-                "ready": False,
-                "blocking_reasons": [
-                    reason
-                    for reason in shader_blockers
-                    if reason.endswith(f":{submesh_index}")
-                ],
-                "source": None,
-                "dds_bridge": None,
-            })
+            )
+        child_results.append({
+            "draw_order": draw_order,
+            "source_submesh_index": submesh_index,
+            "bundle_path": str(child.relative_to(out)),
+            "format": result.get("format"),
+            "status": result.get("status"),
+            "ready": result.get("ready") is True,
+            "blocking_reasons": child_reasons,
+            "source": result.get("source"),
+            "dds_bridge": result.get("dds_bridge"),
+        })
 
     bundle_set = index_bmw_vulkan_bundle_set(
         command,
