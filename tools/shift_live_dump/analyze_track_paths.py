@@ -535,126 +535,6 @@ def _read_virtual(
     return data if len(data) == size else None
 
 
-def validate_polyline_array_links(
-    candidates: list[dict],
-    snapshots: list[Path],
-    indexes: list[dict[int, dict]],
-) -> None:
-    """Resolve AIPolylinePath.array into its count-prefixed AIPolyPathNode array.
-
-    FUN_006cc730 allocates [count][0x24-byte AIPolyPathNode...], stores the
-    pointer to the first element in AIPolylinePath+0x14, and writes the count
-    immediately before that pointer. This gives an independent container to
-    node-array relation that is much stronger than interpreting fields in
-    isolation.
-
-    The validation reads one compact node-array window per snapshot/candidate
-    whenever the array is fully contained in one mapped region. This avoids
-    opening a file once per node in large captures.
-    """
-    if not candidates or not snapshots:
-        return
-    region_starts = [sorted(idx.keys()) for idx in indexes]
-    for row in candidates:
-        array = int(row.get("array", 0))
-        nodes = int(row.get("nodes", 0))
-        if array < 4 or nodes < 1:
-            row.update({
-                "array_count": None,
-                "array_count_match": False,
-                "array_node_vtable": None,
-                "array_node_vtable_match": False,
-                "array_node_sequence": 0,
-                "array_link_available": False,
-            })
-            continue
-
-        counts = []
-        first_vtables = []
-        sequence_lengths = []
-        for snap, idx, starts in zip(snapshots, indexes, region_starts):
-            loc = _region_record_for_address(array - 4, idx, starts)
-            compact = None
-            if loc:
-                st, rec = loc
-                max_nodes = min(max(nodes, 1), 64)
-                wanted = 4 + max_nodes * 0x24
-                within = (array - 4) - st
-                if within + wanted <= int(rec["size"]):
-                    compact = _read_virtual(snap, idx, starts, array - 4, wanted)
-            if compact is not None and len(compact) >= 8:
-                count = struct.unpack_from("<I", compact, 0)[0]
-                first_vt = struct.unpack_from("<I", compact, 4)[0]
-                counts.append(count)
-                first_vtables.append(first_vt)
-                seq = 0
-                max_nodes = min(count, 64)
-                for n in range(max_nodes):
-                    off = 4 + n * 0x24
-                    if off + 4 > len(compact):
-                        break
-                    vt = struct.unpack_from("<I", compact, off)[0]
-                    if vt != KNOWN_VTABLES["AIPolyPathNode"]:
-                        break
-                    seq += 1
-                sequence_lengths.append(seq)
-                continue
-
-            count_blob = _read_virtual(snap, idx, starts, array - 4, 4)
-            first_blob = _read_virtual(snap, idx, starts, array, 4)
-            if count_blob is None or first_blob is None:
-                continue
-            count = struct.unpack_from("<I", count_blob)[0]
-            first_vt = struct.unpack_from("<I", first_blob)[0]
-            counts.append(count)
-            first_vtables.append(first_vt)
-            seq = 0
-            for n in range(min(count, 64)):
-                vt_blob = _read_virtual(snap, idx, starts, array + n * 0x24, 4)
-                if vt_blob is None:
-                    break
-                vt = struct.unpack_from("<I", vt_blob)[0]
-                if vt != KNOWN_VTABLES["AIPolyPathNode"]:
-                    break
-                seq += 1
-            sequence_lengths.append(seq)
-
-        if not counts:
-            row.update({
-                "array_count": None,
-                "array_count_match": None,
-                "array_node_vtable": None,
-                "array_node_vtable_match": None,
-                "array_node_sequence": 0,
-                "array_link_available": False,
-            })
-            continue
-
-        count = Counter(counts).most_common(1)[0][0]
-        first_vt = Counter(first_vtables).most_common(1)[0][0]
-        seq = max(sequence_lengths) if sequence_lengths else 0
-        row.update({
-            "array_count": count,
-            "array_count_match": count == nodes,
-            "array_node_vtable": first_vt,
-            "array_node_vtable_match": first_vt == KNOWN_VTABLES["AIPolyPathNode"],
-            "array_node_sequence": seq,
-            "array_link_available": True,
-        })
-
-        target_loc = _region_record_for_address(array, indexes[0], region_starts[0])
-        if target_loc:
-            st, rec = target_loc
-            row["array_mapping_start"] = st
-            row["array_mapping_end"] = st + int(rec["size"])
-            row["array_mapping_perms"] = rec.get("perms", "")
-        else:
-            row["array_mapping_start"] = None
-            row["array_mapping_end"] = None
-            row["array_mapping_perms"] = None
-        row["node_array_bytes"] = count * 0x24
-        row["node_array_end"] = array + count * 0x24
-
 def extract_polyline_nodes(
     candidates: list[dict],
     snapshot: Path,
@@ -1433,10 +1313,25 @@ def main() -> int:
     # Resolve exact AIPolylinePath -> count-prefixed AIPolyPathNode arrays
     # after the global scan because the target array can live in another
     # selected memory region.
-    validate_polyline_array_links(candidates["AIPolylinePath"], sns, idx)
+    validate_prefixed_array_link(
+        candidates["AIPolylinePath"], sns, idx,
+        KNOWN_VTABLES["AIPolyPathNode"], 0x24,
+        count_field="array_count", sequence_field="array_node_sequence",
+    )
+    for row in candidates["AIPolylinePath"]:
+        row["array_node_vtable"] = row.get("array_element_vtable")
+        row["array_node_vtable_match"] = bool(
+            row.get("array_element_vtable") == KNOWN_VTABLES["AIPolyPathNode"]
+        )
     path_start_node_links = resolve_path_start_nodes(
         candidates["Path"], sns, idx, mm
     )
+    validate_prefixed_array_link(
+        candidates["AISegmentPath"], sns, idx,
+        KNOWN_VTABLES["AISegmentPath"], 0x24,
+        count_field="segment_count", sequence_field="segment_sequence",
+    )
+
     polyline_nodes = extract_polyline_nodes(
         candidates["AIPolylinePath"], sns[0], idx[0]
     )
@@ -1551,6 +1446,10 @@ def main() -> int:
         "aiw_runtime_sequences": aiw_sequences,
         "polyline_node_count": len(polyline_nodes),
         "path_start_node_link_count": len(path_start_node_links),
+        "segment_array_link_count": sum(
+            1 for row in candidates["AISegmentPath"]
+            if row.get("array_link_available")
+        ),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
         "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
         "notes": [
@@ -1570,6 +1469,13 @@ def main() -> int:
         "source_stride", "source_stride_count", "mapping_start",
         "mapping_end", "mapping_perms", "target_samples",
     ])
+    write_csv(out / "aisegmentpath_array_links.csv", candidates["AISegmentPath"], [
+        "address", "nodes", "array", "segment_count", "segment_count_stable",
+        "segment_sequence", "segment_sequence_complete", "array_expected_count",
+        "array_expected_count_match", "array_element_vtable",
+        "array_element_stride", "array_link_available",
+    ])
+
     write_csv(out / "path_start_node_links.csv", path_start_node_links, [
         "path_address", "start_node", "target_vtable", "target_vtable_match",
         "link_type", "array_count", "array_count_stable", "node_sequence",
