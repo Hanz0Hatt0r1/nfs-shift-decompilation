@@ -304,16 +304,28 @@ def main() -> int:
     }
     owner_complete = normalized_keys <= grouped_keys
     same_array_complete = (
-        bool(instance_edges)
-        and all(row["same_array"] for row in instance_edges)
+        not normalized_keys
+        or (
+            owner_complete
+            and bool(instance_edges)
+            and all(row["same_array"] for row in instance_edges)
+        )
     )
     stride_complete = (
-        bool(instance_edges)
-        and all(row["runtime_stride_match"] for row in instance_edges)
+        not normalized_keys
+        or (
+            owner_complete
+            and bool(instance_edges)
+            and all(row["runtime_stride_match"] for row in instance_edges)
+        )
     )
     path_join_complete = (
-        bool(instance_edges)
-        and all(row["path_polyline_join_present"] for row in instance_edges)
+        not normalized_keys
+        or (
+            owner_complete
+            and bool(instance_edges)
+            and all(row["path_polyline_join_present"] for row in instance_edges)
+        )
     )
 
     print(f"runtime edges: {len(runtime_edges)}")
