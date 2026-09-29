@@ -73,6 +73,41 @@ def test_summ_and_occl_fixed_record_shape():
         assert row["record_bytes"] == 56
 
 
+def test_summ_runtime_wrapper_mapping_is_source_backed():
+    record = struct.pack(
+        "<14I",
+        56, 0, 64, 72, 80, 3, 7, 0x030201, 0, 0, 0, 0, 0, 0
+    )
+    data = _header() + _chunk(
+        "SUMM", struct.pack("<I", 1) + record
+    ) + _chunk("END ", b"")
+    row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
+    wrapper = row["runtime_wrapper"]
+    assert wrapper["vtable"] == 0x00AF78EC
+    assert wrapper["instance_bytes"] == 0x38
+    assert wrapper["source_field_offsets"] == {
+        "name": 0x08,
+        "resource": 0x0C,
+        "variation_palette": 0x10,
+        "instances": 0x14,
+        "flags": 0x18,
+        "variation_index": 0x1A,
+        "object_payload": 0x1C,
+    }
+    assert wrapper["runtime_field_offsets"]["payload"] == 0x08
+    assert wrapper["runtime_field_offsets"]["resource"] == 0x18
+    assert wrapper["runtime_field_offsets"]["variation_palette"] == 0x1C
+    assert wrapper["runtime_field_offsets"]["variation_index"] == 0x20
+    assert wrapper["runtime_field_offsets"]["instances"] == 0x24
+    assert wrapper["runtime_field_offsets"]["flag_bit0"] == 0x15
+    assert wrapper["runtime_field_offsets"]["flag_bit1"] == 0x16
+    assert wrapper["runtime_field_offsets"]["flag_bit2"] == 0x17
+    assert wrapper["runtime_field_offsets"]["name_hash_lo"] == 0x28
+    assert wrapper["runtime_field_offsets"]["name_hash_hi"] == 0x2C
+    assert wrapper["name_hash_producer"] == "FUN_0064eba0"
+    assert wrapper["name_hash_resolved"] is False
+
+
 def test_truncated_chunk_blocks_non_strict():
     data = _header() + b"EDNE" + struct.pack("<I", 64)
     result = parse_sgb_runtime(data, strict=False)

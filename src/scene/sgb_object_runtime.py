@@ -35,6 +35,33 @@ class SGBObjectDecodeError(ValueError):
     pass
 
 
+RUNTIME_WRAPPERS = {
+    "OBJECT": {
+        "constructor": "FUN_00698dc0",
+        "initializer": "FUN_00698dd0",
+        "vtable": 0x00AF86B0,
+        "allocation_bytes": 0xB0,
+        "proven_fields": {"resource_object": 0x80, "matrix_number": 0x84},
+    },
+    "HIERARCHY": {
+        "constructor": "FUN_00698a20",
+        "vtable": 0x00AF8620,
+        "allocation_bytes": 0xA0,
+        "proven_fields": {
+            "hierarchy_type": 0x80,
+            "hierarchy_count": 0x84,
+            "runtime_child_array": 0x88,
+            "matrix_number": 0x94,
+        },
+    },
+    "DAMAGE": {
+        "constructor": "FUN_00698b00",
+        "vtable": 0x00AF7C88,
+        "allocation_bytes": 0xA0,
+        "proven_fields": {},
+    },
+}
+
 def _u32(data: bytes, off: int) -> int:
     if off < 0 or off + 4 > len(data):
         raise SGBObjectDecodeError(f"u32 out of range at 0x{off:x}")
@@ -141,10 +168,16 @@ def parse_sgb_object_payload(
         "kind_status": status,
         "hash_sha256": hashlib.sha256(data[base_offset:end]).hexdigest(),
         "decoded": status == "recognized-kind",
+        "runtime_wrapper": ({**RUNTIME_WRAPPERS[kind_text], "kind": kind_text} if kind_text in RUNTIME_WRAPPERS else {"kind": kind_text, "resolved": False}),
         "evidence": {
             "entry": "FUN_0069bc50",
             "dispatcher": "FUN_0069a6c0",
             "hierarchy_child_copy": "FUN_0069a6c0",
+            "runtime_wrapper_constructors": {
+                "OBJECT": "FUN_00698dc0",
+                "HIERARCHY": "FUN_00698a20",
+                "DAMAGE": "FUN_00698b00",
+            },
         },
         "limitations": [
             "OBJECT and DAMAGE transform/material fields are preserved as raw words.",

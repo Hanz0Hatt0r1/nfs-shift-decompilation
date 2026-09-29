@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 520.**
+**Current mainline: Phase 523.**
 
 
 
@@ -50,12 +50,15 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 26. Map proven FLAT runtime index-table geometry — Phase 519 implemented.
 27. Map the SGB NODE runtime wrapper created by `FUN_006a4b40` — Phase 520 implemented.
 28. Record the source-backed SGB HIERARCHY serialized-child → runtime-element copy layout — Phase 521 implemented.
-29. Expand the desktop reference renderer against real BMW material/shader permutations.
-26. Complete Vulkan RenderCommand execution using the same neutral contract.
-27. Continue SGB/FLAT and camera runtime reconstruction.
-28. Derive proven animation poses from the BAB runtime grammar.
-29. Port the stable native render/runtime boundary to Android.
-30. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+29. Classify the concrete SGB OBJECT/HIERARCHY/DAMAGE runtime wrappers — Phase 522 implemented.
+30. Map the SGB SUMM runtime wrapper and exact source/runtime field copies — Phase 523 implemented.
+31. Stabilize and merge the offline Linux native runtime frame loop/material boundary — complete; `native_runtime/` is on main and covered by Linux Vulkan CI.
+32. Generalize native RenderCommand execution to multiple submeshes and shader/material permutations.
+33. Expand the desktop reference renderer against real BMW material/shader permutations.
+34. Continue SGB/FLAT and camera runtime reconstruction.
+35. Derive proven animation poses from the BAB runtime grammar.
+36. Port the stable native render/runtime boundary to Android.
+37. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -75,7 +78,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Track/path runtime correlation | active | runtime graph capture with complete/unambiguous edge evidence |
-| Vulkan | active | full RenderCommand/material submission |
+| Vulkan | active; native runtime merged | multi-submesh/material RenderCommand execution |
 | Android | deferred | stable native renderer/runtime boundary |
 
 ## Canonical render path
