@@ -547,6 +547,10 @@ def validate_polyline_array_links(
     immediately before that pointer. This gives an independent container to
     node-array relation that is much stronger than interpreting fields in
     isolation.
+
+    The validation reads one compact node-array window per snapshot/candidate
+    whenever the array is fully contained in one mapped region. This avoids
+    opening a file once per node in large captures.
     """
     if not candidates or not snapshots:
         return
@@ -569,6 +573,33 @@ def validate_polyline_array_links(
         first_vtables = []
         sequence_lengths = []
         for snap, idx, starts in zip(snapshots, indexes, region_starts):
+            loc = _region_record_for_address(array - 4, idx, starts)
+            compact = None
+            if loc:
+                st, rec = loc
+                max_nodes = min(max(nodes, 1), 64)
+                wanted = 4 + max_nodes * 0x24
+                within = (array - 4) - st
+                if within + wanted <= int(rec["size"]):
+                    compact = _read_virtual(snap, idx, starts, array - 4, wanted)
+            if compact is not None and len(compact) >= 8:
+                count = struct.unpack_from("<I", compact, 0)[0]
+                first_vt = struct.unpack_from("<I", compact, 4)[0]
+                counts.append(count)
+                first_vtables.append(first_vt)
+                seq = 0
+                max_nodes = min(count, 64)
+                for n in range(max_nodes):
+                    off = 4 + n * 0x24
+                    if off + 4 > len(compact):
+                        break
+                    vt = struct.unpack_from("<I", compact, off)[0]
+                    if vt != KNOWN_VTABLES["AIPolyPathNode"]:
+                        break
+                    seq += 1
+                sequence_lengths.append(seq)
+                continue
+
             count_blob = _read_virtual(snap, idx, starts, array - 4, 4)
             first_blob = _read_virtual(snap, idx, starts, array, 4)
             if count_blob is None or first_blob is None:
@@ -577,13 +608,9 @@ def validate_polyline_array_links(
             first_vt = struct.unpack_from("<I", first_blob)[0]
             counts.append(count)
             first_vtables.append(first_vt)
-
             seq = 0
-            max_nodes = min(count, 64)
-            for n in range(max_nodes):
-                vt_blob = _read_virtual(
-                    snap, idx, starts, array + n * 0x24, 4
-                )
+            for n in range(min(count, 64)):
+                vt_blob = _read_virtual(snap, idx, starts, array + n * 0x24, 4)
                 if vt_blob is None:
                     break
                 vt = struct.unpack_from("<I", vt_blob)[0]
