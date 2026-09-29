@@ -36,6 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--attach-pid", type=int)
     parser.add_argument("--gdb", default="gdb")
+    parser.add_argument("--provider-only", action="store_true", help="capture only the specialized-provider path; avoid per-frame/builtin solver breakpoints")
     parser.add_argument("--print-contract", action="store_true")
     return parser
 
@@ -57,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
             args.executable,
             args.output,
             probe_script=args.probe_script,
+            provider_only=args.provider_only,
         )
     except Exception as exc:
         print(json.dumps({
