@@ -111,18 +111,22 @@ def test_phase532_maps_source_minus_dest_to_subtract():
     assert result["vulkan"]["color_blend_op"] == "VK_BLEND_OP_SUBTRACT"
 
 
-def test_phase532_blocks_enabled_alpha_test_until_shader_discard_is_proven():
+def test_phase533_blocks_enabled_alpha_test_only_on_quantization_proof():
     result = translate_bmt_pipeline_state({
         "alpha_test": {
             "format": "SHIFT.BMTAlphaTestState/1",
             "enabled": True,
             "function": _enum("ETF_GREATER_THAN_OR_EQUAL", 6),
-            "value_normalized": 0.5,
+            "value_raw": 128.0,
+            "value_normalized": 128.0 / 255.0,
         }
     })
     assert result["ready"] is False
+    assert result["alpha_test"]["ready"] is True
+    assert result["alpha_test"]["reference"]["d3d9_u8"] == 128
+    assert result["alpha_test"]["compare"]["d3d9_value"] == 7
     assert (
-        "material-pipeline:alpha-test-enabled-unsupported"
+        "alpha-test:fragment-alpha-quantization-unproven"
         in result["blocking_reasons"]
     )
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from material_cull_state import translate_bmt_cull
+from material_alpha_test import build_alpha_test_contract
 
 FORMAT = "SHIFT.MaterialPipelineState/1"
 
@@ -246,22 +247,13 @@ def translate_bmt_pipeline_state(
     if alpha_test is not None and not isinstance(alpha_test, Mapping):
         blockers.append("material-pipeline:alpha-test-invalid")
         alpha_test = None
-    _unmapped(alpha_test, "alpha-test", blockers)
-    alpha_test_enabled = _bool_value(
-        (alpha_test or {}).get("enabled"),
-        default=False,
-        field="alpha-test-enabled",
-        blockers=blockers,
+    alpha_test_contract = build_alpha_test_contract(alpha_test)
+    blockers.extend(alpha_test_contract.get("blocking_reasons") or [])
+    blockers.extend(
+        (alpha_test_contract.get("native_execution") or {}).get(
+            "blocking_reasons"
+        ) or []
     )
-    alpha_test_compare = _enum_row(
-        (alpha_test or {}).get("function"),
-        _TEST_ROWS,
-        default="ETF_PASS",
-        field="alpha-test-function",
-        blockers=blockers,
-    )
-    if alpha_test_enabled:
-        blockers.append("material-pipeline:alpha-test-enabled-unsupported")
 
     alpha_blend = state.get("alpha_blend")
     if alpha_blend is not None and not isinstance(alpha_blend, Mapping):
@@ -377,17 +369,11 @@ def translate_bmt_pipeline_state(
             "unmapped_fields": list((depth or {}).get("unmapped_fields") or []),
         },
         "alpha_test": {
+            **alpha_test_contract,
             "source_format": (alpha_test or {}).get("format"),
-            "enabled": alpha_test_enabled,
-            "compare": alpha_test_compare,
-            "value_normalized": (alpha_test or {}).get("value_normalized"),
-            "native_execution": (
-                "blocked-shader-discard-required"
-                if alpha_test_enabled else "disabled"
-            ),
-            "unmapped_fields": list(
-                (alpha_test or {}).get("unmapped_fields") or []
-            ),
+            "value_normalized": (
+                alpha_test_contract.get("reference") or {}
+            ).get("normalized"),
         },
         "alpha_blend": {
             "source_format": (alpha_blend or {}).get("format"),

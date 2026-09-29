@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 532.**
+**Current mainline: Phase 533.**
 
 
 
@@ -62,13 +62,15 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 38. Propagate the retail BMT cull enum through RenderCommand and atomic bundle sidecars into both native Vulkan consumers — Phase 530 implemented.
 39. Recover stable real-BMT depth/alpha group and field IDs, enum indices, alpha-test normalization, and carry them through the neutral render IR without enabling unproven native state — Phase 531 implemented.
 40. Map proven retail depth/default/blend semantics into one fail-closed pipeline-state sidecar and execute them independently per draw in both native Vulkan consumers — Phase 532 implemented.
-41. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
-42. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
-43. Expand the desktop reference renderer against real BMW material/shader permutations.
-43. Continue SGB/FLAT and camera runtime reconstruction.
-44. Derive proven animation poses from the BAB runtime grammar.
-45. Port the stable native render/runtime boundary to Android.
-46. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+41. Close the exact D3D9 alpha-test state/application contract and make real-BMT render-state/native-blocker corpus scans reproducible — Phase 533 implemented.
+42. Prove incoming fragment-alpha quantization/equality semantics before injecting Vulkan alpha-test shader discard.
+43. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
+44. Close bias and stencil only from additional source/runtime evidence.
+45. Expand the desktop reference renderer against real BMW material/shader permutations.
+46. Continue SGB/FLAT and camera runtime reconstruction.
+47. Derive proven animation poses from the BAB runtime grammar.
+48. Port the stable native render/runtime boundary to Android.
+49. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -77,7 +79,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BFF/XMem-LZX | verified | broader uncommon-variant coverage |
 | Resource IR | active | remaining format-specific joins |
 | MEB / vertex ABI | strong static | more runtime same-instance proofs |
-| Material/shader linking | generalized BMW intake + typed BMT depth/alpha/cull IR | retail non-paint permutation validation and proven native state mapping |
+| Material/shader linking | generalized BMW intake + typed BMT state + exact D3D9 alpha-test contract | retail non-paint permutation validation and alpha-test quantization proof |
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
@@ -88,7 +90,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Track/path runtime correlation | active | runtime graph capture with complete/unambiguous edge evidence |
-| Vulkan | active; BMW material multi-draw + source-backed cull/depth/blend | retail non-paint permutations, alpha-test/bias/stencil evidence |
+| Vulkan | active; BMW material multi-draw + source-backed cull/depth/blend | alpha-test quantization proof, retail non-paint permutations, bias/stencil evidence |
 | Android | deferred | stable native renderer/runtime boundary |
 
 ## Canonical render path

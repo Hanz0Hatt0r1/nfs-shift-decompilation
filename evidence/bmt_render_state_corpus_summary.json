@@ -1,0 +1,93 @@
+{
+  "format": "SHIFT.BMTRenderStateCorpusObservation/1",
+  "version": 1,
+  "status": "observed",
+  "corpus": {
+    "source_sets": [
+      "Vehicles.zip",
+      "Silverstone_Era3_.zip"
+    ],
+    "render_bff_count": 16,
+    "bmt_instances": 1714,
+    "unique_decoded_payloads": 854,
+    "duplicate_instances": 860,
+    "decode_errors": 0,
+    "observed_bmt_compression_type": 2
+  },
+  "state_counts": {
+    "depthparams": 848,
+    "alphablendparams": 848,
+    "alphatestparams": 86,
+    "depth_test_disabled": 6,
+    "depth_write_disabled": 113,
+    "blend_enabled": 130,
+    "alpha_test_enabled": 86
+  },
+  "observed_values": {
+    "cull": {
+      "EBFCT_ANTICLOCKWISE": 853,
+      "10.0": 1
+    },
+    "depth_enabled": {
+      "true": 842,
+      "false": 6
+    },
+    "depth_write_enabled": {
+      "true": 735,
+      "false": 113
+    },
+    "explicit_depth_function": {
+      "ETF_LESS_THAN_OR_EQUAL": 25
+    },
+    "alpha_blend_enabled": {
+      "false": 718,
+      "true": 130
+    },
+    "explicit_source_blend": {
+      "EBF_ONE": 28,
+      "EBF_SOURCE_ALPHA": 85
+    },
+    "explicit_dest_blend": {
+      "EBF_INV_SOURCE_ALPHA": 105,
+      "EBF_ONE": 8
+    },
+    "explicit_blend_op": {
+      "EBO_ADD": 113
+    },
+    "alpha_test_enabled": {
+      "true": 86
+    },
+    "alpha_test_function": {
+      "ETF_GREATER_THAN_OR_EQUAL": 86
+    },
+    "alpha_test_reference_u8": {
+      "64": 75,
+      "128": 11
+    }
+  },
+  "parser_evidence": {
+    "unknown_state_fields": 0,
+    "unknown_root_group": {
+      "id": 3413284105,
+      "hex": "0xCB729509",
+      "occurrences": 1671,
+      "state_semantics_claimed": false
+    }
+  },
+  "alpha_test_evidence": {
+    "loader_conversion": "FUN_0083f960",
+    "device_application": "FUN_00863500",
+    "d3d9_states": {
+      "D3DRS_ALPHATESTENABLE": 15,
+      "D3DRS_ALPHAREF": 24,
+      "D3DRS_ALPHAFUNC": 25
+    },
+    "native_execution": "blocked-until-fragment-alpha-quantization-proof"
+  },
+  "boundary": {
+    "raw_game_payloads_embedded": false,
+    "material_names_embedded": false,
+    "archive_payload_hashes_embedded": false,
+    "counts_are_decoded_payload_observations": true
+  }
+}
