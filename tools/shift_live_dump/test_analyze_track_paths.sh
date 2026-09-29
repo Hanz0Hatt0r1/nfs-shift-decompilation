@@ -84,6 +84,22 @@ assert result["path_root_targets"][0]["target"] == 0x00500000
 assert result["path_root_windows"][0]["start"] == 0x004e0000
 assert result["path_root_windows"][0]["size"] == 0x00040000
 assert filtered["stable_external_pointer_count"] == 1, filtered["stable_external_pointer_count"]
+print("track path analyzer test: PASS")
 assert filtered["excluded_source_ranges"] == [{"start": 0x00200120, "end": 0x00200124}], filtered["excluded_source_ranges"]
 print("track path analyzer test: PASS")
+PY
+
+python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-skip-pointers" --top 20 --target-top 8   --skip-pointer-analysis >/tmp/track_path_skip_test.out
+cat /tmp/track_path_skip_test.out
+
+python3 - "$tmp/out-skip-pointers/track_path_analysis.json" <<'PY'
+import json
+import sys
+
+result = json.loads(open(sys.argv[1], encoding="utf-8").read())
+assert result["stable_external_pointer_count"] == 0
+assert result["pointer_target_clusters"] == []
+assert result["path_root_targets"], "Path roots must still be analyzed when pointer analysis is skipped"
+assert result["path_root_targets"][0]["target"] == 0x00500000
+print("track path skip-pointer test: PASS")
 PY
