@@ -20,6 +20,7 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 KNOWN_VTABLES = {
     "AISegmentPath": 0x00AFCA70,
     "AIPolylinePath": 0x00AFC678,
+    "AIPolyPathNode": 0x00AFBFA8,
 }
 
 PATH = {
@@ -43,6 +44,16 @@ POLY = {
     "nodes": (0x10, "I"), "array": (0x14, "I"), "length": (0x18, "f"),
     "width": (0x1c, "f"), "cyclic": (0x20, "I"), "spacing": (0x24, "f"),
     "default_width": (0x28, "f"),
+}
+# AIPolyPathNode is allocated as a 0x24-byte element by FUN_006cc730.
+# FUN_006cc600 consumes its two-dimensional position/tangent payload and
+# cumulative path distance at +0x20.
+POLY_NODE = {
+    "x": (0x10, "f"),
+    "y": (0x14, "f"),
+    "dx": (0x18, "f"),
+    "dy": (0x1c, "f"),
+    "distance": (0x20, "f"),
 }
 
 SIZE = {"B": 1, "I": 4, "i": 4, "f": 4}
@@ -215,6 +226,27 @@ def check_segment(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     return {"address": addr, "vtable": vt, "vtable_mapping": game_vtable(vt, mm, starts), **d, "array_mapping": am}
 
 
+def check_poly_node(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
+    d = fields(blob, POLY_NODE)
+    vt = read(blob, 0, "I")
+    if (
+        vt != KNOWN_VTABLES["AIPolyPathNode"]
+        or any(v is None for v in d.values())
+        or not game_vtable(vt, mm, starts)
+    ):
+        return None
+    if not all(finite(d[k], 1e7) for k in ("x", "y", "dx", "dy", "distance")):
+        return None
+    if d["distance"] < 0:
+        return None
+    return {
+        "address": addr,
+        "vtable": vt,
+        "vtable_mapping": game_vtable(vt, mm, starts),
+        **d,
+    }
+
+
 def check_poly(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     d = fields(blob, POLY)
     vt = read(blob, 0, "I")
@@ -247,22 +279,30 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
     each candidate is exposed to the structure validators, so scan cost and
     memory use stay proportional to the chunk instead of the full capture.
     """
-    found = {"Path": [], "Incident.PathOwner": [], "AISegmentPath": [], "AIPolylinePath": []}
+    found = {
+        "Path": [],
+        "Incident.PathOwner": [],
+        "AISegmentPath": [],
+        "AIPolylinePath": [],
+        "AIPolyPathNode": [],
+    }
     checks = (
         ("Path", check_path),
         ("Incident.PathOwner", check_incident),
         ("AISegmentPath", check_segment),
         ("AIPolylinePath", check_poly),
+        ("AIPolyPathNode", check_poly_node),
     )
     view = memoryview(blob)
     limit = max(0, len(view) - 3)
     known_segment_vtable = KNOWN_VTABLES["AISegmentPath"]
     known_poly_vtable = KNOWN_VTABLES["AIPolylinePath"]
+    known_poly_node_vtable = KNOWN_VTABLES["AIPolyPathNode"]
     for off in range(0, limit, 4):
         vtable = read(view, off, "I")
         if vtable is None:
             continue
-        if vtable not in (known_segment_vtable, known_poly_vtable):
+        if vtable not in (known_segment_vtable, known_poly_vtable, known_poly_node_vtable):
             if not (VT_RANGE[0] <= vtable < VT_RANGE[1]):
                 continue
             if not game_vtable(vtable, mm, starts):
@@ -692,6 +732,10 @@ def _position_key(x: float, y: float, z: float, tolerance: float) -> tuple[int, 
     return (_quantize(x, tolerance), _quantize(y, tolerance), _quantize(z, tolerance))
 
 
+def _position_key2(x: float, y: float, tolerance: float) -> tuple[int, int]:
+    return (_quantize(x, tolerance), _quantize(y, tolerance))
+
+
 def correlate_aiw_runtime(
     sns: list[Path],
     indexes: list[dict[int, dict]],
@@ -729,11 +773,92 @@ def correlate_aiw_runtime(
             for dz in (-1, 0, 1)
         ]
 
+    node_pos_index: dict[tuple[int, int], list[tuple[int, int, dict]]] = {}
+    for doc_id, doc in enumerate(aiw_docs):
+        for wp in doc["waypoints"]:
+            if None in (wp["x"], wp["y"], wp["z"]):
+                continue
+            if node_plane == "xz":
+                coords = (wp["x"], wp["z"])
+            elif node_plane == "xy":
+                coords = (wp["x"], wp["y"])
+            else:
+                coords = (wp["y"], wp["z"])
+            node_pos_index.setdefault(
+                _position_key2(coords[0], coords[1], tolerance),
+                [],
+            ).append((doc_id, wp["index"], wp))
+
+    node_candidate_keys = {}
+    for key in node_pos_index:
+        node_candidate_keys[key] = [
+            (key[0] + dx, key[1] + dy)
+            for dx in (-1, 0, 1)
+            for dy in (-1, 0, 1)
+        ]
+
     matches: list[dict] = []
     seen: set[tuple[str, int, int]] = set()
+
+    node_matches = False
+    for row in runtime_nodes or []:
+        if row.get("stable_snapshots") is not None and int(row["stable_snapshots"]) != len(sns):
+            continue
+        address = int(row["address"])
+        if scan_ranges and not any(a <= address < b for a, b in scan_ranges):
+            continue
+        nx, ny = row.get("x"), row.get("y")
+        if not all(isinstance(v, (int, float)) and math.isfinite(float(v)) for v in (nx, ny)):
+            continue
+        key = _position_key2(float(nx), float(ny), tolerance)
+        for nearby in node_candidate_keys.get(key, ()):
+            for doc_id, wp_index, wp in node_pos_index.get(nearby, ()):
+                if node_plane == "xz":
+                    wx, wz = wp["x"], wp["z"]
+                    rx, rz = float(nx), float(ny)
+                    runtime_xyz = (rx, None, rz)
+                elif node_plane == "xy":
+                    wx, wz = wp["x"], wp["y"]
+                    rx, rz = float(nx), float(ny)
+                    runtime_xyz = (rx, rz, None)
+                else:
+                    wx, wz = wp["y"], wp["z"]
+                    rx, rz = float(nx), float(ny)
+                    runtime_xyz = (None, rx, rz)
+                plane_distance = math.hypot(rx - wx, rz - wz)
+                if plane_distance > tolerance:
+                    continue
+                ident = (wp["source"], wp_index, address)
+                if ident in seen:
+                    continue
+                seen.add(ident)
+                node_matches = True
+                node_distance = row.get("distance")
+                distance_delta = None
+                if isinstance(node_distance, (int, float)) and math.isfinite(float(node_distance)):
+                    distance_delta = float(node_distance) - float(wp.get("lap_distance", 0.0))
+                matches.append({
+                    "aiw_source": wp["source"],
+                    "waypoint_index": wp_index,
+                    "branch_id": wp["branch_id"],
+                    "runtime_address": address,
+                    "region_start": int(row.get("region_start", address)),
+                    "region_offset": address - int(row.get("region_start", address)),
+                    "distance": plane_distance,
+                    "x": runtime_xyz[0],
+                    "y": runtime_xyz[1],
+                    "z": runtime_xyz[2],
+                    "runtime_source": "AIPolyPathNode",
+                    "position_plane": node_plane,
+                    "lap_distance": node_distance,
+                    "lap_distance_delta": distance_delta,
+                })
+
     for st in sorted(common):
         rec = indexes[0][st]
         size = int(rec["size"])
+        if node_matches:
+            continue
         if scan_ranges and not any(max(st, a) < min(st + size, b) for a, b in scan_ranges):
             continue
         blob = (sns[0] / rec["file"]).read_bytes()
@@ -773,6 +898,10 @@ def correlate_aiw_runtime(
                             "region_offset": off,
                             "distance": distance,
                             "x": x, "y": y, "z": z,
+                            "runtime_source": "float3",
+                            "position_plane": "xyz",
+                            "lap_distance": None,
+                            "lap_distance_delta": None,
                         })
 
     sequences: list[dict] = []
@@ -897,6 +1026,10 @@ def main() -> int:
         "--aiw-position-tolerance", type=float, default=0.05,
         help="maximum position difference in world units (default 0.05)",
     )
+    ap.add_argument(
+        "--aiw-node-plane", choices=("xz", "xy", "yz"), default="xz",
+        help="2D plane used when correlating AIPolyPathNode candidates with AIW positions (default: xz)",
+    )
     args = ap.parse_args()
     if min(args.top, args.target_top, args.path_root_top) <= 0 or min(
         args.radius_kib, args.path_root_radius_kib, args.aiw_root_radius_kib
@@ -916,7 +1049,15 @@ def main() -> int:
 
     out = args.out or args.root / "track_path_analysis"
     out.mkdir(parents=True, exist_ok=True)
-    candidates = {k: [] for k in ("Path", "Incident.PathOwner", "AISegmentPath", "AIPolylinePath")}
+    candidates = {
+        k: [] for k in (
+            "Path",
+            "Incident.PathOwner",
+            "AISegmentPath",
+            "AIPolylinePath",
+            "AIPolyPathNode",
+        )
+    }
 
     common_sorted = sorted(common)
     for index, st in enumerate(common_sorted, 1):
@@ -937,7 +1078,8 @@ def main() -> int:
                         0x28 if name == "Path"
                         else 0xFC if name == "Incident.PathOwner"
                         else 0x38 if name == "AISegmentPath"
-                        else 0x2C
+                        else 0x2C if name == "AIPolylinePath"
+                        else 0x24
                     )
                     reference_handle = handles[0]
                     reference_handle.seek(off)
@@ -962,6 +1104,7 @@ def main() -> int:
                 handle.close()
 
     path_root_candidates = list(candidates["Path"])
+    aiw_node_candidates = list(candidates["AIPolyPathNode"])
     for k in candidates:
         candidates[k] = sorted(
             candidates[k],
@@ -1018,7 +1161,7 @@ def main() -> int:
         print(f"[aiw] sources={len(aiw_docs)} ranges={len(corr_ranges)}", flush=True)
         aiw_matches, aiw_sequences = correlate_aiw_runtime(
             sns, idx, aiw_docs, corr_ranges, args.aiw_position_tolerance,
-            args.runtime_roots,
+            args.runtime_roots, aiw_node_candidates, args.aiw_node_plane,
         )
         print(
             f"[aiw] matches={len(aiw_matches)} sequences={len(aiw_sequences)}",
