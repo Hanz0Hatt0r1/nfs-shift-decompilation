@@ -38,3 +38,17 @@ def test_resource_identity_fields_separate_decoded_and_raw_hashes():
     assert result["entry_index"] == 7
     assert result["compressed_size"] == 5
     assert result["uncompressed_size"] == 3
+
+
+
+def test_importer_registers_bmt_render_state_corpus():
+    parser = shift_importer.build_parser()
+    args = parser.parse_args([
+        "bmt-render-state-corpus",
+        "Vehicles",
+        "Silverstone",
+        "corpus.json",
+    ])
+    assert args.input == ["Vehicles", "Silverstone"]
+    assert args.output == "corpus.json"
+    assert args.fn is shift_importer.cmd_bmt_render_state_corpus
