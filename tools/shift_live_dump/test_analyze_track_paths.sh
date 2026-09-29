@@ -89,6 +89,7 @@ python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-filtered" --to
 cat /tmp/track_path_filter_test.out
 
 python3 - "$tmp/out/track_path_analysis.json" "$tmp/out-filtered/track_path_analysis.json" <<'PY'
+import csv
 import json
 import sys
 
