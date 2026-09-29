@@ -17,6 +17,7 @@
 #include <iterator>
 #include <limits>
 #include <map>
+#include <cctype>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -161,6 +162,63 @@ bool file_contains(const std::string& path, const std::string& needle) {
         (std::istreambuf_iterator<char>(file)),
         std::istreambuf_iterator<char>());
     return contents.find(needle) != std::string::npos;
+}
+
+uint32_t json_u32_field(
+    const std::string& path,
+    const std::string& field) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("cannot open JSON manifest: " + path);
+    }
+    const std::string text(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>());
+    const std::string key = "\""+field+"\"";
+    const size_t key_pos = text.find(key);
+    if (key_pos == std::string::npos) {
+        throw std::runtime_error("manifest field is missing: " + field);
+    }
+    const size_t colon = text.find(':', key_pos + key.size());
+    if (colon == std::string::npos) {
+        throw std::runtime_error("manifest field has no value: " + field);
+    }
+    size_t cursor = colon + 1;
+    while (cursor < text.size() &&
+           std::isspace(static_cast<unsigned char>(text[cursor]))) {
+        ++cursor;
+    }
+    if (cursor == text.size() || !std::isdigit(static_cast<unsigned char>(text[cursor]))) {
+        throw std::runtime_error("manifest field is not a non-negative integer: " + field);
+    }
+    uint64_t value = 0;
+    while (cursor < text.size() &&
+           std::isdigit(static_cast<unsigned char>(text[cursor]))) {
+        value = value * 10u + static_cast<unsigned>(text[cursor] - '0');
+        if (value > UINT32_MAX) {
+            throw std::runtime_error("manifest field exceeds uint32: " + field);
+        }
+        ++cursor;
+    }
+    return static_cast<uint32_t>(value);
+}
+
+shift::runtime::PhysicsWorkspaceBoundary load_physics_manifest(
+    const std::string& path) {
+    if (!file_contains(
+            path,
+            "\"format\": \"SHIFT.BMWM3VehiclePhysicsResourceManifest/1\"")) {
+        throw std::runtime_error("unsupported native physics manifest");
+    }
+    shift::runtime::PhysicsWorkspaceBoundary workspace{};
+    workspace.configure(
+        json_u32_field(path, "body_count"),
+        json_u32_field(path, "joint_hinge_count"),
+        json_u32_field(path, "bar_count"));
+    if (!workspace.ready || workspace.scalar_count != 40u) {
+        throw std::runtime_error("BMW SDF manifest does not resolve to 40 solver scalars");
+    }
+    return workspace;
 }
 
 BundleAssets load_bundle_assets(const std::string& root) {
@@ -1682,6 +1740,7 @@ struct Runtime {
 struct Args {
     std::string mesh;
     std::string bundle;
+    std::string physics_manifest;
     std::string shader_dir;
     int frames = kDefaultFrames;
 };
@@ -1691,13 +1750,15 @@ Args parse_args(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
         const std::string option = argv[i];
         if (option == "--mesh" || option == "--bundle" ||
-            option == "--shader-dir" || option == "--frames") {
+            option == "--physics-manifest" || option == "--shader-dir" ||
+            option == "--frames") {
             if (i + 1 >= argc) {
                 throw std::runtime_error("missing value for " + option);
             }
             const std::string value = argv[++i];
             if (option == "--mesh") args.mesh = value;
             else if (option == "--bundle") args.bundle = value;
+            else if (option == "--physics-manifest") args.physics_manifest = value;
             else if (option == "--shader-dir") args.shader_dir = value;
             else args.frames = std::max(1, std::stoi(value));
         } else if (option == "--help") {
@@ -1781,6 +1842,10 @@ int main(int argc, char** argv) {
         bool quit = false;
         InputState input{};
         shift::runtime::NativeRuntimeState native_state{};
+        if (!args.physics_manifest.empty()) {
+            native_state.physics.workspace =
+                load_physics_manifest(args.physics_manifest);
+        }
         const auto start = std::chrono::steady_clock::now();
 
         while (!quit && rendered < args.frames) {
@@ -1819,6 +1884,9 @@ int main(int argc, char** argv) {
             << "  \"physics_participant_ready\": " << (native_state.physics.participant_ready ? "true" : "false") << ",\n"
             << "  \"physics_participant_index\": " << native_state.physics.participant_index << ",\n"
             << "  \"physics_participant_mode\": " << native_state.physics.participant_mode << ",\n"
+            << "  \"physics_workspace_ready\": " << (native_state.physics.workspace.ready ? "true" : "false") << ",\n"
+            << "  \"physics_workspace_scalars\": " << native_state.physics.workspace.scalar_count << ",\n"
+            << "  \"physics_workspace_matrix_bytes\": " << native_state.physics.workspace.matrix_bytes << ",\n"
             << "  \"material_mode\": " << (runtime.material_mode ? "true" : "false") << ",\n"
             << "  \"bundle_2d_textures\": " << runtime.texture_images.size() << ",\n"
             << "  \"bundle_cube\": " << (!runtime.cube_image.handle ? "false" : "true") << ",\n"
