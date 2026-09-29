@@ -14,9 +14,11 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 # AISegmentPath:
 #   FUN_006d0fe0 writes PTR_FUN_00afca70 in the constructor.
 # AIPolylinePath:
-#   FUN_006cc390 writes PTR_FUN_00afc678 in the destructor path for the
-#   concrete AIPolylinePath container; its reflection metadata is emitted by
-#   FUN_006ccb20.
+#   FUN_006cc900 is its constructor and writes PTR_FUN_00afc678;
+#   its reflection metadata is emitted by FUN_006ccb20.
+# AIPolyPathNode:
+#   FUN_006cc730 allocates 0x24-byte node elements and assigns
+#   PTR_FUN_00afbfa8 to each element.
 KNOWN_VTABLES = {
     "AISegmentPath": 0x00AFCA70,
     "AIPolylinePath": 0x00AFC678,
