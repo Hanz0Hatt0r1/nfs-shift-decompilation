@@ -24,6 +24,39 @@ constexpr uint32_t kWindowHeight = 720;
 constexpr int kDefaultFrames = 120;
 constexpr size_t kFramesInFlight = 2;
 
+#pragma pack(push, 1)
+struct GeometryHeader {
+    char magic[4];
+    uint32_t version;
+    uint32_t vertex_count;
+    uint32_t index_count;
+    uint32_t stride;
+    uint32_t attribute_count;
+    uint32_t first_index;
+    float center_x;
+    float center_y;
+    float center_z;
+    float scale;
+};
+struct GeometryAttribute {
+    uint32_t location;
+    uint32_t format;
+    uint32_t offset;
+    uint32_t stride;
+};
+#pragma pack(pop)
+
+static_assert(sizeof(GeometryHeader) == 44);
+static_assert(sizeof(GeometryAttribute) == 16);
+
+struct PacketGeometry {
+    std::vector<float> positions;
+    std::vector<uint32_t> indices;
+    uint32_t first_index = 0;
+    std::string source = "MGEO";
+};
+
+
 void vk_check(VkResult result, const char* message) {
     if (result != VK_SUCCESS) {
         throw std::runtime_error(
@@ -61,6 +94,117 @@ std::vector<uint32_t> read_spirv(const std::string& path) {
         throw std::runtime_error("cannot read SPIR-V: " + path);
     }
     return code;
+}
+
+
+std::vector<uint8_t> read_file_bytes(const std::string& path) {
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file) throw std::runtime_error("cannot open file: " + path);
+    const std::streamsize size = file.tellg();
+    if (size <= 0) throw std::runtime_error("empty file: " + path);
+    file.seekg(0);
+    std::vector<uint8_t> data(static_cast<size_t>(size));
+    if (!file.read(reinterpret_cast<char*>(data.data()), size)) {
+        throw std::runtime_error("cannot read file: " + path);
+    }
+    return data;
+}
+
+bool file_contains(const std::string& path, const std::string& needle) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) return false;
+    const std::string contents(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>());
+    return contents.find(needle) != std::string::npos;
+}
+
+PacketGeometry load_bundle_geometry(const std::string& root) {
+    const std::string manifest = root + "/bundle_manifest.json";
+    const std::string gate = root + "/native_submission_gate.json";
+    if (!file_contains(manifest, "\"format\": \"SHIFT.BMWVulkanBundle/1\"")) {
+        throw std::runtime_error("bundle manifest is not SHIFT.BMWVulkanBundle/1");
+    }
+    if (!file_contains(gate, "\"format\": \"SHIFT.NativeSubmissionGate/1\"") ||
+        !file_contains(gate, "\"ready\": true") ||
+        !file_contains(gate, "\"blocking_reasons\": []")) {
+        throw std::runtime_error("native submission gate is missing or not ready");
+    }
+
+    const auto data = read_file_bytes(root + "/geometry.svpk");
+    if (data.size() < sizeof(GeometryHeader)) {
+        throw std::runtime_error("geometry packet truncated");
+    }
+
+    GeometryHeader header{};
+    std::memcpy(&header, data.data(), sizeof(header));
+    if (std::memcmp(header.magic, "SVGP", 4) != 0 ||
+        (header.version != 1 && header.version != 2)) {
+        throw std::runtime_error("unsupported SVGP geometry packet");
+    }
+    if (header.vertex_count == 0 || header.index_count == 0 ||
+        header.stride == 0 || header.attribute_count == 0 ||
+        header.attribute_count > 16 || header.index_count % 3 != 0) {
+        throw std::runtime_error("invalid SVGP geometry header");
+    }
+
+    const size_t attributes_bytes =
+        static_cast<size_t>(header.attribute_count) * sizeof(GeometryAttribute);
+    const size_t vertices_bytes =
+        static_cast<size_t>(header.vertex_count) * header.stride;
+    const size_t indices_bytes =
+        static_cast<size_t>(header.index_count) * sizeof(uint32_t);
+    const size_t expected =
+        sizeof(GeometryHeader) + attributes_bytes +
+        vertices_bytes + indices_bytes;
+    if (expected != data.size()) {
+        throw std::runtime_error("SVGP geometry packet size mismatch");
+    }
+
+    std::vector<GeometryAttribute> attributes(header.attribute_count);
+    std::memcpy(
+        attributes.data(), data.data() + sizeof(GeometryHeader),
+        attributes_bytes);
+
+    const GeometryAttribute* position = nullptr;
+    for (const auto& attribute : attributes) {
+        if (attribute.location == 0) {
+            position = &attribute;
+            break;
+        }
+    }
+    if (!position || position->format != 2 ||
+        position->stride != header.stride ||
+        position->offset + sizeof(float) * 3 > header.stride) {
+        throw std::runtime_error("SVGP POSITION0 is not FLOAT3");
+    }
+
+    const size_t vertex_base = sizeof(GeometryHeader) + attributes_bytes;
+    const size_t index_base = vertex_base + vertices_bytes;
+
+    PacketGeometry out;
+    out.source = "SHIFT.BMWVulkanBundle/1";
+    out.first_index = header.first_index;
+    out.positions.resize(static_cast<size_t>(header.vertex_count) * 3u);
+    for (uint32_t vertex = 0; vertex < header.vertex_count; ++vertex) {
+        const uint8_t* src =
+            data.data() + vertex_base +
+            static_cast<size_t>(vertex) * header.stride +
+            position->offset;
+        std::memcpy(
+            out.positions.data() + static_cast<size_t>(vertex) * 3u,
+            src, sizeof(float) * 3u);
+    }
+
+    out.indices.resize(header.index_count);
+    std::memcpy(
+        out.indices.data(), data.data() + index_base, indices_bytes);
+    for (uint32_t index : out.indices) {
+        if (index >= header.vertex_count) {
+            throw std::runtime_error("SVGP index out of range");
+        }
+    }
+    return out;
 }
 
 struct Window {
@@ -502,26 +646,22 @@ struct Runtime {
 
         VkVertexInputBindingDescription binding{};
         binding.binding = 0;
-        binding.stride = sizeof(float) * 6;
+        binding.stride = sizeof(float) * 3;
         binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-        VkVertexInputAttributeDescription attributes[2]{};
-        attributes[0].location = 0;
-        attributes[0].binding = 0;
-        attributes[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributes[0].offset = 0;
-        attributes[1].location = 1;
-        attributes[1].binding = 0;
-        attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributes[1].offset = sizeof(float) * 3;
+        VkVertexInputAttributeDescription attribute{};
+        attribute.location = 0;
+        attribute.binding = 0;
+        attribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+        attribute.offset = 0;
 
         VkPipelineVertexInputStateCreateInfo vertex_input{};
         vertex_input.sType =
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertex_input.vertexBindingDescriptionCount = 1;
         vertex_input.pVertexBindingDescriptions = &binding;
-        vertex_input.vertexAttributeDescriptionCount = 2;
-        vertex_input.pVertexAttributeDescriptions = attributes;
+        vertex_input.vertexAttributeDescriptionCount = 1;
+        vertex_input.pVertexAttributeDescriptions = &attribute;
 
         VkPipelineInputAssemblyStateCreateInfo assembly{};
         assembly.sType =
@@ -628,60 +768,21 @@ struct Runtime {
         vkUnmapMemory(device, out.memory);
     }
 
-    void create_geometry(const shift::ir::Mesh& mesh) {
-        if (mesh.positions.empty() || mesh.indices.empty()) {
-            throw std::runtime_error("MGEO mesh has no drawable geometry");
+    void create_geometry(const PacketGeometry& geometry) {
+        if (geometry.positions.empty() || geometry.indices.empty()) {
+            throw std::runtime_error("runtime geometry has no drawable data");
         }
-
-        shift::ir::Vec3 minv = mesh.positions.front();
-        shift::ir::Vec3 maxv = mesh.positions.front();
-        for (const auto& vertex : mesh.positions) {
-            minv.x = std::min(minv.x, vertex.x);
-            minv.y = std::min(minv.y, vertex.y);
-            minv.z = std::min(minv.z, vertex.z);
-            maxv.x = std::max(maxv.x, vertex.x);
-            maxv.y = std::max(maxv.y, vertex.y);
-            maxv.z = std::max(maxv.z, vertex.z);
-        }
-
-        const float cx = 0.5f * (minv.x + maxv.x);
-        const float cy = 0.5f * (minv.y + maxv.y);
-        const float cz = 0.5f * (minv.z + maxv.z);
-        const float extent = std::max({
-            maxv.x - minv.x, maxv.y - minv.y, maxv.z - minv.z, 1.0e-5f
-        });
-        const float scale = 1.6f / extent;
-
-        const size_t vertex_count = mesh.positions.size();
-        std::vector<float> packed(vertex_count * 6u, 0.0f);
-        for (size_t i = 0; i < vertex_count; ++i) {
-            const auto& position = mesh.positions[i];
-            const auto normal =
-                mesh.normals.size() == vertex_count
-                    ? mesh.normals[i]
-                    : shift::ir::Vec3{0.0f, 1.0f, 0.0f};
-
-            packed[i * 6u + 0] = (position.x - cx) * scale;
-            packed[i * 6u + 1] = (position.y - cy) * scale;
-            packed[i * 6u + 2] = (position.z - cz) * scale;
-            packed[i * 6u + 3] = normal.x;
-            packed[i * 6u + 4] = normal.y;
-            packed[i * 6u + 5] = normal.z;
-        }
-
         create_buffer(
-            packed.data(),
-            static_cast<VkDeviceSize>(packed.size() * sizeof(float)),
+            geometry.positions.data(),
+            static_cast<VkDeviceSize>(geometry.positions.size() * sizeof(float)),
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             vertex_buffer);
-
         create_buffer(
-            mesh.indices.data(),
-            static_cast<VkDeviceSize>(mesh.indices.size() * sizeof(uint32_t)),
+            geometry.indices.data(),
+            static_cast<VkDeviceSize>(geometry.indices.size() * sizeof(uint32_t)),
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
             index_buffer);
-
-        index_count = static_cast<uint32_t>(mesh.indices.size());
+        index_count = static_cast<uint32_t>(geometry.indices.size());
     }
 
     void create_framebuffers() {
@@ -919,6 +1020,7 @@ struct Runtime {
 
 struct Args {
     std::string mesh;
+    std::string bundle;
     std::string shader_dir;
     int frames = kDefaultFrames;
 };
@@ -927,25 +1029,28 @@ Args parse_args(int argc, char** argv) {
     Args args;
     for (int i = 1; i < argc; ++i) {
         const std::string option = argv[i];
-        if (option == "--mesh" || option == "--shader-dir" ||
-            option == "--frames") {
+        if (option == "--mesh" || option == "--bundle" ||
+            option == "--shader-dir" || option == "--frames") {
             if (i + 1 >= argc) {
                 throw std::runtime_error("missing value for " + option);
             }
             const std::string value = argv[++i];
             if (option == "--mesh") args.mesh = value;
+            else if (option == "--bundle") args.bundle = value;
             else if (option == "--shader-dir") args.shader_dir = value;
             else args.frames = std::max(1, std::stoi(value));
         } else if (option == "--help") {
             std::cout
-                << "usage: shift_runtime --mesh FILE "
+                << "usage: shift_runtime (--mesh FILE | --bundle DIR) "
                 << "--shader-dir DIR [--frames N]\n";
             std::exit(EXIT_SUCCESS);
         } else {
             throw std::runtime_error("unknown option: " + option);
         }
     }
-    if (args.mesh.empty()) throw std::runtime_error("--mesh is required");
+    if (args.mesh.empty() == args.bundle.empty()) {
+        throw std::runtime_error("exactly one of --mesh or --bundle is required");
+    }
     if (args.shader_dir.empty()) {
         throw std::runtime_error("--shader-dir is required");
     }
@@ -960,14 +1065,27 @@ int main(int argc, char** argv) {
 
     try {
         const Args args = parse_args(argc, argv);
-        const shift::ir::Mesh mesh =
-            shift::ir::loadMgeo(args.mesh);
+        PacketGeometry geometry;
+        if (!args.bundle.empty()) {
+            geometry = load_bundle_geometry(args.bundle);
+        } else {
+            const shift::ir::Mesh mesh = shift::ir::loadMgeo(args.mesh);
+            geometry.positions.reserve(mesh.positions.size() * 3u);
+            for (const auto& vertex : mesh.positions) {
+                geometry.positions.push_back(vertex.x);
+                geometry.positions.push_back(vertex.y);
+                geometry.positions.push_back(vertex.z);
+            }
+            geometry.indices = mesh.indices;
+            geometry.source = "MGEO";
+        }
 
         std::cout
             << "{\n"
             << "  \"format\": \"SHIFT.NativeRuntimeBootstrap/1\",\n"
-            << "  \"mesh_vertices\": " << mesh.positions.size() << ",\n"
-            << "  \"mesh_indices\": " << mesh.indices.size() << ",\n"
+            << "  \"geometry_source\": \"" << geometry.source << "\",\n"
+            << "  \"geometry_vertices\": " << (geometry.positions.size() / 3u) << ",\n"
+            << "  \"geometry_indices\": " << geometry.indices.size() << ",\n"
             << "  \"frames_requested\": " << args.frames << "\n"
             << "}\n";
 
@@ -978,7 +1096,7 @@ int main(int argc, char** argv) {
         runtime.create_device();
         runtime.create_swapchain();
         runtime.create_pipeline(args.shader_dir);
-        runtime.create_geometry(mesh);
+        runtime.create_geometry(geometry);
         runtime.create_framebuffers();
         runtime.create_sync_and_commands();
 
