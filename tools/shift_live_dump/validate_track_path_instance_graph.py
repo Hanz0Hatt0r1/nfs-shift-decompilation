@@ -122,6 +122,7 @@ def build_instance_edges(
                     1 for row in owners
                     if as_int(row, "path_address") == src["path_address"]
                 )
+                path_join_present = path_join_count > 0
                 out.append({
                     "aiw_source": source,
                     "from_waypoint": from_wp,
@@ -141,6 +142,7 @@ def build_instance_edges(
                     "same_array": same_array,
                     "same_path": same_path,
                     "path_polyline_join_count": path_join_count,
+                    "path_polyline_join_present": path_join_present,
                     "from_match_distance": src["match_distance"],
                     "to_match_distance": dst["match_distance"],
                     "position_match_error": as_float(edge, "position_match_error"),
@@ -180,6 +182,9 @@ def summarize(
     }
     exact_stride = sum(1 for row in instance_edges if row["runtime_stride_match"])
     same_array = sum(1 for row in instance_edges if row["same_array"])
+    path_joined = sum(
+        1 for row in instance_edges if row["path_polyline_join_present"]
+    )
 
     match_addresses = {as_int(row, "runtime_address") for row in runtime_matches}
     node_addresses = {
@@ -204,6 +209,7 @@ def summarize(
             if normalized_keys else 0.0
         ),
         "same_array_candidate_count": same_array,
+        "path_polyline_join_candidate_count": path_joined,
         "runtime_stride_match_candidate_count": exact_stride,
         "runtime_stride_match_coverage": (
             exact_stride / len(instance_edges) if instance_edges else 0.0
@@ -244,6 +250,11 @@ def main() -> int:
         action="store_true",
         help="return exit code 2 unless every candidate has runtime_delta == node_index_delta * 0x24",
     )
+    ap.add_argument(
+        "--require-path-polyline-join",
+        action="store_true",
+        help="return exit code 2 unless every candidate maps to an exact Path/AIPolylinePath array join",
+    )
     args = ap.parse_args()
 
     root = args.analysis_dir
@@ -281,7 +292,7 @@ def main() -> int:
             "expected_runtime_delta", "runtime_stride_match",
             "same_array", "same_path", "path_polyline_join_count",
             "from_match_distance", "to_match_distance",
-            "position_match_error", "graph_evidence",
+            "position_match_error", "graph_evidence", "path_polyline_join_present",
         ]
         writer = csv.DictWriter(fh, fieldnames=keys, extrasaction="ignore")
         writer.writeheader()
@@ -300,6 +311,10 @@ def main() -> int:
         bool(instance_edges)
         and all(row["runtime_stride_match"] for row in instance_edges)
     )
+    path_join_complete = (
+        bool(instance_edges)
+        and all(row["path_polyline_join_present"] for row in instance_edges)
+    )
 
     print(f"runtime edges: {len(runtime_edges)}")
     print(f"instance edge candidates: {len(instance_edges)}")
@@ -313,6 +328,8 @@ def main() -> int:
     if args.require_same_array and not same_array_complete:
         return 2
     if args.require_stride and not stride_complete:
+        return 2
+    if args.require_path_polyline_join and not path_join_complete:
         return 2
     return 0
 
