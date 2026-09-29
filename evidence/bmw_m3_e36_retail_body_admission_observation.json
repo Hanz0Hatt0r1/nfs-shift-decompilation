@@ -1,0 +1,101 @@
+{
+  "format": "SHIFT.BMWRetailBodyAdmissionObservation/1",
+  "version": 1,
+  "parent_evidence": "evidence/bmw_m3_e36_retail_material_admission_observation.json",
+  "corpus": {
+    "golden_resource": "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb",
+    "golden_resource_sha256": "960ac728db8dc1e870ae348cf77fa3a18feb1a359bc6f31a865b528b931b2c2c",
+    "primitive_count": 6
+  },
+  "admission": {
+    "ready_primitive_count": 0,
+    "blocked_primitive_count": 6,
+    "common_primary_blocker": "generic-material:shader-selection-not-unique",
+    "rows": [
+      {
+        "primitive_index": 0,
+        "material": "BMW_M3_E36_BADGING",
+        "shader_family": "vehiclesbasic",
+        "distinct_top_permutation_identity_count": 18,
+        "depth_test": true,
+        "depth_write": false,
+        "blend_enable": true,
+        "src_blend": "EBF_SOURCE_ALPHA",
+        "dst_blend": "EBF_INV_SOURCE_ALPHA",
+        "blend_op": "EBO_ADD",
+        "cull": "EBFCT_ANTICLOCKWISE"
+      },
+      {
+        "primitive_index": 1,
+        "material": "BMW_M3_E36_PAINT",
+        "shader_family": "bodywork",
+        "distinct_top_permutation_identity_count": 20,
+        "depth_test": true,
+        "depth_write": true,
+        "blend_enable": false,
+        "cull": "EBFCT_ANTICLOCKWISE"
+      },
+      {
+        "primitive_index": 2,
+        "material": "BMW_M3_E36_PAINT",
+        "shader_family": "bodywork",
+        "distinct_top_permutation_identity_count": 20,
+        "depth_test": true,
+        "depth_write": true,
+        "blend_enable": false,
+        "cull": "EBFCT_ANTICLOCKWISE"
+      },
+      {
+        "primitive_index": 3,
+        "material": "GENERIC_WINDOWS",
+        "shader_family": "glass",
+        "distinct_top_permutation_identity_count": 10,
+        "depth_test": true,
+        "depth_write": false,
+        "blend_enable": true,
+        "src_blend": "EBF_ONE",
+        "dst_blend": "EBF_INV_SOURCE_ALPHA",
+        "blend_op": "EBO_ADD",
+        "cull": "EBFCT_ANTICLOCKWISE"
+      },
+      {
+        "primitive_index": 4,
+        "material": "GENERIC_GLOSS_BLACK",
+        "shader_family": "vehiclesbasic",
+        "distinct_top_permutation_identity_count": 27,
+        "depth_test": true,
+        "depth_write": true,
+        "blend_enable": false,
+        "cull": "EBFCT_ANTICLOCKWISE"
+      },
+      {
+        "primitive_index": 5,
+        "material": "BMW_M3_E36_LIGHTSGLASS",
+        "shader_family": "glass",
+        "distinct_top_permutation_identity_count": 10,
+        "depth_test": true,
+        "depth_write": false,
+        "blend_enable": true,
+        "src_blend": "EBF_ONE",
+        "dst_blend": "EBF_INV_SOURCE_ALPHA",
+        "blend_op": "EBO_ADD",
+        "cull": "EBFCT_ANTICLOCKWISE"
+      }
+    ]
+  },
+  "duplicate_observation": {
+    "logical_resource": "vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt",
+    "copies": [
+      "BMW_M3_E36.bff",
+      "BMW_M3_E36_Cockpit.bff"
+    ],
+    "payload_sha256": "6dd62026600849a7fec2b29e48bcb68c61b342e7275954d6f3fe74a7be107b0a",
+    "previous_slice_behavior": "expected-exactly-one-and-failed",
+    "phase538_behavior": "content-identical-copies-collapse-to-one-logical-resource"
+  },
+  "boundary": {
+    "shader_selection": "blocked-until-one-concrete-permutation-is-attributed",
+    "runtime_instance_attribution": "not-proven",
+    "raw_binaries_committed": false
+  }
+}
