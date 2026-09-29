@@ -15,6 +15,8 @@ from typing import Any, Mapping
 from material_linker import _candidate_identity, _selection_evidence_key
 
 FORMAT = "SHIFT.BMWRuntimeRegisterPermutationFilter/1"
+BODY_FORMAT = "SHIFT.BMWBodyRuntimeRegisterPermutationFilter/1"
+ADMISSION_FORMAT = "SHIFT.BMWBodyMaterialAdmission/1"
 WITNESS_FORMAT = "SHIFT.BMWM3RuntimeMaterialWitness/1"
 
 
@@ -250,6 +252,161 @@ def filter_runtime_register_permutations(
     }
 
 
+
+
+
+def filter_body_admission_runtime_registers(
+    admission: Mapping[str, Any],
+    runtime_witness: Mapping[str, Any],
+) -> dict[str, Any]:
+    if admission.get("format") != ADMISSION_FORMAT:
+        raise ValueError(
+            "input must be SHIFT.BMWBodyMaterialAdmission/1"
+        )
+
+    selected = [
+        int(value)
+        for value in (
+            (admission.get("selection") or {}).get("primitive_indices") or []
+        )
+    ]
+    rows = [
+        row for row in admission.get("primitive_results") or []
+        if isinstance(row, Mapping)
+    ]
+    by_index = {
+        int(row.get("primitive_index")): row
+        for row in rows
+        if row.get("primitive_index") is not None
+    }
+    if not selected:
+        selected = sorted(by_index)
+
+    blockers: list[str] = []
+    results: list[dict[str, Any]] = []
+    unique_materials: dict[str, dict[str, Any]] = {}
+
+    for primitive_index in selected:
+        row = by_index.get(primitive_index)
+        material_slice = (
+            row.get("slice") if isinstance(row, Mapping) else None
+        )
+        if not isinstance(material_slice, Mapping):
+            reason = (
+                f"runtime-registers:primitive-{primitive_index}:slice-missing"
+            )
+            blockers.append(reason)
+            results.append({
+                "primitive_index": primitive_index,
+                "ready": False,
+                "status": "blocked",
+                "blocking_reasons": [reason],
+                "filter": None,
+            })
+            continue
+
+        filtered = filter_runtime_register_permutations(
+            material_slice, runtime_witness
+        )
+        prefixed = [
+            f"runtime-registers:primitive-{primitive_index}:{reason}"
+            for reason in filtered.get("blocking_reasons") or []
+        ]
+        blockers.extend(prefixed)
+        result = {
+            "primitive_index": primitive_index,
+            "material": filtered.get("material"),
+            "ready": filtered.get("ready") is True,
+            "status": filtered.get("status"),
+            "top_distinct_permutation_count": filtered.get(
+                "top_distinct_permutation_count", 0
+            ),
+            "register_match_count": filtered.get(
+                "register_match_count", 0
+            ),
+            "blocking_reasons": prefixed,
+            "filter": filtered,
+        }
+        results.append(result)
+
+        material_name = str(filtered.get("material") or "")
+        if material_name:
+            signature = {
+                "runtime_registers": filtered.get("runtime_registers"),
+                "matches": [
+                    {
+                        "permutation_identity_sha256": match.get(
+                            "permutation_identity_sha256"
+                        ),
+                        "pair_sha256": match.get("pair_sha256"),
+                    }
+                    for match in filtered.get("matches") or []
+                ],
+            }
+            existing = unique_materials.get(material_name)
+            if existing is None:
+                unique_materials[material_name] = {
+                    "material": material_name,
+                    "primitive_indices": [primitive_index],
+                    "top_distinct_permutation_count": filtered.get(
+                        "top_distinct_permutation_count", 0
+                    ),
+                    "register_match_count": filtered.get(
+                        "register_match_count", 0
+                    ),
+                    "ready": filtered.get("ready") is True,
+                    "signature": signature,
+                }
+            else:
+                existing["primitive_indices"].append(primitive_index)
+                if existing["signature"] != signature:
+                    blockers.append(
+                        "runtime-registers:"
+                        f"material-{material_name}:primitive-result-conflict"
+                    )
+
+    for value in unique_materials.values():
+        value["primitive_indices"].sort()
+        value.pop("signature", None)
+
+    ready_count = sum(result["ready"] for result in results)
+    ready = (
+        bool(results)
+        and ready_count == len(results)
+        and not blockers
+    )
+    any_ambiguous = any(
+        result.get("status") == "ambiguous" for result in results
+    )
+    return {
+        "format": BODY_FORMAT,
+        "version": 1,
+        "status": (
+            "match" if ready
+            else "ambiguous" if any_ambiguous
+            else "blocked"
+        ),
+        "ready": ready,
+        "blocking_reasons": list(dict.fromkeys(blockers)),
+        "selected_primitive_indices": selected,
+        "primitive_count": len(results),
+        "ready_primitive_count": ready_count,
+        "blocked_primitive_count": len(results) - ready_count,
+        "unique_material_count": len(unique_materials),
+        "primitive_results": results,
+        "materials": sorted(
+            unique_materials.values(),
+            key=lambda row: str(row["material"]),
+        ),
+        "boundary": {
+            "uses_phase538_top_rank_candidates": True,
+            "selects_only_on_draw_local_register_evidence": True,
+            "render_admission": False,
+            "raw_runtime_shader_byte_identity": "not-proven",
+        },
+    }
+
+
 def validate_files(
     material_input_path: str | Path,
     runtime_witness_path: str | Path,
@@ -262,6 +419,8 @@ def validate_files(
     )
     if not isinstance(material, dict) or not isinstance(witness, dict):
         raise ValueError("inputs must be JSON objects")
+    if material.get("format") == ADMISSION_FORMAT:
+        return filter_body_admission_runtime_registers(material, witness)
     return filter_runtime_register_permutations(material, witness)
 
 
@@ -283,17 +442,28 @@ def main(argv: list[str] | None = None) -> int:
         + "\n",
         encoding="utf-8",
     )
-    print(json.dumps({
+    summary = {
         "format": result["format"],
         "status": result["status"],
         "ready": result["ready"],
-        "material": result["material"],
-        "top_distinct_permutation_count": result[
-            "top_distinct_permutation_count"
-        ],
-        "register_match_count": result["register_match_count"],
         "blocking_reasons": result["blocking_reasons"],
-    }, ensure_ascii=False, indent=2))
+    }
+    if result["format"] == BODY_FORMAT:
+        summary.update({
+            "primitive_count": result["primitive_count"],
+            "ready_primitive_count": result["ready_primitive_count"],
+            "blocked_primitive_count": result["blocked_primitive_count"],
+            "unique_material_count": result["unique_material_count"],
+        })
+    else:
+        summary.update({
+            "material": result["material"],
+            "top_distinct_permutation_count": result[
+                "top_distinct_permutation_count"
+            ],
+            "register_match_count": result["register_match_count"],
+        })
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0 if result["ready"] else 2
 
 
