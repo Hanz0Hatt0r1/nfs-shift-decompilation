@@ -169,4 +169,8 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-__all__ = [\n    "FORMAT",\n    "build_vehicle_physics_selector_source_admission",\n    "evaluate_selector_source_admission",\n]
+__all__ = [
+    "FORMAT",
+    "build_vehicle_physics_selector_source_admission",
+    "evaluate_selector_source_admission",
+]
