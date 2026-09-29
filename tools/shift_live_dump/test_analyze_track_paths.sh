@@ -217,19 +217,19 @@ lap_length=120.000000
 \\0
 wp_pos=(1.0000,2.0000,3.0000)
 wp_branchID=(0)
-WP_PTRS=(3,1,-1,0)
-\1
+WP_PTRS=(30,10,-1,0)
+\10
 wp_pos=(5.0000,2.0000,3.0000)
 wp_branchID=(0)
-WP_PTRS=(0,2,-1,0)
-\2
+WP_PTRS=(0,20,-1,0)
+\20
 wp_pos=(9.0000,2.0000,3.0000)
 wp_branchID=(0)
-WP_PTRS=(1,3,-1,0)
-\3
+WP_PTRS=(10,30,-1,0)
+\30
 wp_pos=(13.0000,2.0000,3.0000)
 wp_branchID=(0)
-WP_PTRS=(2,0,-1,0)
+WP_PTRS=(20,0,-1,0)
 AIW
 
 python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-aiw"   --top 20 --target-top 8 --skip-pointer-analysis   --aiw "$tmp/test.aiw" --aiw-range 0x00202000:0x100 --runtime-root 0x00201ff0   --aiw-node-plane xz >/tmp/track_path_aiw_test.out
@@ -244,10 +244,16 @@ result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 assert len(result["aiw_sources"]) == 1, result["aiw_sources"]
 assert result["aiw_sources"][0]["number_waypoints"] == 4
 assert result["aiw_match_count"] == 4, result["aiw_match_count"]
+assert result["aiw_next_edge_count"] == 4, result["aiw_next_edge_count"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aiw_next_edges.csv"), newline="", encoding="utf-8") as fh:
+    edges = list(csv.DictReader(fh))
+assert [(int(e["from_waypoint"]), int(e["to_waypoint"])) for e in edges] == [
+    (0, 10), (10, 20), (20, 30), (30, 0)
+], edges
 seq = result["aiw_runtime_sequences"]
 assert seq, "expected AIW runtime sequence"
 assert seq[0]["first_waypoint"] == 0, seq
-assert seq[0]["last_waypoint"] == 3, seq
+assert seq[0]["last_waypoint"] == 30, seq
 assert seq[0]["matched_waypoints"] == 4, seq
 assert seq[0]["stride"] == 0x24, seq
 assert seq[0]["runtime_root"] == 0x00201ff0, seq
