@@ -26,8 +26,23 @@ def _sha256(data: bytes) -> str:
 def _find_exact(rows, path: str, label: str):
     target=norm_ref(path)
     hits=[(a,e) for a,e in rows if norm_ref(e.path)==target]
-    if len(hits)!=1:
-        raise ValueError(f'{label}: expected exactly one entry {path!r}, found {len(hits)}')
+    if not hits:
+        raise ValueError(f'{label}: expected entry {path!r}, found 0')
+    if len(hits)==1:
+        return hits[0]
+    digests=[]
+    for archive,entry in hits:
+        payload=archive.extract_entry(entry)
+        digests.append((_sha256(payload),archive,entry))
+    unique={digest for digest,_,_ in digests}
+    if len(unique)!=1:
+        detail=', '.join(
+            f'{archive.path.name}:{entry.index}:{digest[:12]}'
+            for digest,archive,entry in digests
+        )
+        raise ValueError(
+            f'{label}: conflicting duplicate entry {path!r}: {detail}'
+        )
     return hits[0]
 
 def build_real_bmw_material_slice(
@@ -109,7 +124,12 @@ def build_real_bmw_material_slice(
             for ref in vals:
                 if not isinstance(ref,str) or not norm_ref(ref).endswith('.dds'): continue
                 hits=[(a,e) for a,e in rows if norm_ref(e.path)==norm_ref(ref)]
-                if len(hits)!=1: reasons.append('material-slice:dds-resolution:'+norm_ref(ref)); continue
+                if not hits:
+                    reasons.append('material-slice:dds-resolution:'+norm_ref(ref)); continue
+                if len(hits)>1:
+                    payloads=[(_sha256(a.extract_entry(e)),a,e) for a,e in hits]
+                    if len({digest for digest,_,_ in payloads})!=1:
+                        reasons.append('material-slice:dds-conflict:'+norm_ref(ref)); continue
                 a,e=hits[0]; data=a.extract_entry(e)
                 texture_records.append({'path':e.path,'archive':a.path.name,'sha256':_sha256(data),'analysis':parse_dds_metadata(data)})
         dedup={norm_ref(x['path']):x for x in texture_records}
@@ -239,8 +259,18 @@ def build_real_bmw_material_slice(
 def _find_shader(rows, shader_ref: str):
     target=norm_ref(shader_ref)
     exact=[(a,e) for a,e in rows if norm_ref(e.path)==target]
-    if len(exact)==1: return exact[0]
+    if exact:
+        return _find_exact(exact,shader_ref,'shader-source')
     base=target.rsplit('/',1)[-1]
     hits=[(a,e) for a,e in rows if norm_ref(e.path).rsplit('/',1)[-1]==base]
-    if len(hits)!=1: raise ValueError(f'shader-source: expected one {shader_ref!r}, found {len(hits)}')
+    if not hits:
+        raise ValueError(f'shader-source: expected {shader_ref!r}, found 0')
+    digests=[]
+    for archive,entry in hits:
+        payload=archive.extract_entry(entry)
+        digests.append((_sha256(payload),archive,entry))
+    if len({digest for digest,_,_ in digests})!=1:
+        raise ValueError(
+            f'shader-source: conflicting basename matches for {shader_ref!r}'
+        )
     return hits[0]
