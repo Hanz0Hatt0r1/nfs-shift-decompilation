@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 530.**
+**Current mainline: Phase 531.**
 
 
 
@@ -60,13 +60,14 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 36. Remove the paint-only BMW material-slice restriction and gate every selected primitive through a generic exact FXO/pair/permutation contract — Phase 528 implemented.
 37. Join independently ready BMW primitive slices into one canonical revalidated multi-submesh RenderCommand and feed it into the material/DDS multi-draw adapter — Phase 529 implemented.
 38. Propagate the retail BMT cull enum through RenderCommand and atomic bundle sidecars into both native Vulkan consumers — Phase 530 implemented.
-39. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
-40. Close remaining proven per-draw render-state differences from BMT/runtime evidence; do not synthesize blend/depth/alpha state.
-41. Expand the desktop reference renderer against real BMW material/shader permutations.
-42. Continue SGB/FLAT and camera runtime reconstruction.
-43. Derive proven animation poses from the BAB runtime grammar.
-44. Port the stable native render/runtime boundary to Android.
-45. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+39. Recover stable real-BMT depth/alpha group and field IDs, enum indices, alpha-test normalization, and carry them through the neutral render IR without enabling unproven native state — Phase 531 implemented.
+40. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
+41. Prove D3D9/default semantics for depth/alpha-test/alpha-blend and map only the proven subset to Vulkan; keep unresolved separate-alpha/bias/stencil fields fail-closed.
+42. Expand the desktop reference renderer against real BMW material/shader permutations.
+43. Continue SGB/FLAT and camera runtime reconstruction.
+44. Derive proven animation poses from the BAB runtime grammar.
+45. Port the stable native render/runtime boundary to Android.
+46. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -75,7 +76,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BFF/XMem-LZX | verified | broader uncommon-variant coverage |
 | Resource IR | active | remaining format-specific joins |
 | MEB / vertex ABI | strong static | more runtime same-instance proofs |
-| Material/shader linking | generalized canonical BMW primitive intake | retail non-paint permutation validation |
+| Material/shader linking | generalized BMW intake + typed BMT depth/alpha/cull IR | retail non-paint permutation validation and proven native state mapping |
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
@@ -86,7 +87,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Track/path runtime correlation | active | runtime graph capture with complete/unambiguous edge evidence |
-| Vulkan | active; BMW material multi-draw + source-backed cull | retail non-paint permutations and remaining proven draw state |
+| Vulkan | active; BMW material multi-draw + source-backed cull; depth/alpha state carried but not executed | retail non-paint permutations and proven depth/alpha mapping |
 | Android | deferred | stable native renderer/runtime boundary |
 
 ## Canonical render path

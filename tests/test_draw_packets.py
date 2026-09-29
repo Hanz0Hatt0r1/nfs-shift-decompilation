@@ -690,3 +690,52 @@ def test_compile_material_uses_material_linker_specialization_requested():
     assert result["paint_contract"]["ready"] is True
     assert result["paint_shader_gate"]["ready"] is True
     assert result["blocking_reasons"] == []
+
+
+
+def test_compile_material_propagates_typed_bmt_render_state():
+    from draw_packets import compile_material
+
+    material = {
+        "material": {
+            "name": "TEST",
+            "shader": None,
+            "technique": "Default",
+            "fog": False,
+            "antialias": 1.0,
+            "cull": "EBFCT_ANTICLOCKWISE",
+            "shaderparams": [],
+            "render_state": {
+                "format": "SHIFT.BMTRenderState/1",
+                "depth": {
+                    "format": "SHIFT.BMTDepthState/1",
+                    "enabled": True,
+                    "write_enabled": False,
+                    "function": {
+                        "raw": "ETF_LESS_THAN_OR_EQUAL",
+                        "engine_enum_index": 3,
+                        "status": "known",
+                    },
+                },
+                "alpha_test": None,
+                "alpha_blend": {
+                    "format": "SHIFT.BMTAlphaBlendState/1",
+                    "enabled": True,
+                },
+            },
+        }
+    }
+
+    result = compile_material(
+        material,
+        "vehicles/test/test.mtx",
+        {},
+        {},
+    )
+
+    assert result["render_state"]["format"] == "SHIFT.BMTRenderState/1"
+    assert result["render_state"]["depth"]["write_enabled"] is False
+    assert result["render_state"]["alpha_blend"]["enabled"] is True
+    assert result["render_state"]["fog"] is False
+    assert result["render_state"]["antialias"] == 1.0
+    assert result["render_state"]["cull"] == "EBFCT_ANTICLOCKWISE"

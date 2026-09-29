@@ -566,8 +566,17 @@ BMT_ELEMENT_NAMES = {
     648867590: "shaderparam",
     1688245861: "type",
     1773598955: "value",
-    3396092427: "render_state_group",
-    14911235: "alpha_state_group",
+    # Phase 531: IDs below are stable across 1,714 real BMTs from the
+    # attached vehicle/Silverstone corpora and match the retail loader paths.
+    3396092427: "depthparams",
+    14911235: "alphablendparams",
+    624549390: "alphatestparams",
+    3875134881: "enabled",
+    2101237497: "writeenabled",
+    367069359: "function",
+    3982835436: "sourceblend",
+    3277320897: "destblend",
+    486381061: "blendop",
 }
 BMT_ATTR_NAMES = {
     102443717: "name",
@@ -732,6 +741,207 @@ def parse_bmt(data: bytes) -> dict[str, Any]:
         "root": tree,
     }
 
+
+BMT_TEST_FUNCTION_NAMES = [
+    "ETF_FAIL",
+    "ETF_LESS_THAN",
+    "ETF_EQUAL",
+    "ETF_LESS_THAN_OR_EQUAL",
+    "ETF_GREATER_THAN",
+    "ETF_NOT_EQUAL",
+    "ETF_GREATER_THAN_OR_EQUAL",
+    "ETF_PASS",
+]
+BMT_BLEND_FACTOR_NAMES = [
+    "EBF_ZERO",
+    "EBF_ONE",
+    "EBF_SOURCE",
+    "EBF_INV_SOURCE",
+    "EBF_SOURCE_ALPHA",
+    "EBF_INV_SOURCE_ALPHA",
+    "EBF_DEST_ALPHA",
+    "EBF_INV_DEST_ALPHA",
+    "EBF_DEST",
+    "EBF_INV_DEST",
+    "EBF_SOURCE_ALPHA_SATURATED",
+]
+BMT_BLEND_OP_NAMES = [
+    "EBO_ADD",
+    "EBO_DEST_MINUS_SOURCE",
+    "EBO_MIN",
+    "EBO_MAX",
+    "EBO_SOURCE_MINUS_DEST",
+]
+BMT_STENCIL_OP_NAMES = [
+    "ESO_NO_CHANGE",
+    "ESO_ZERO",
+    "ESO_SET",
+    "ESO_INCREMENT",
+    "ESO_DECREMENT",
+    "ESO_INVERT",
+    "ESO_INCREMENT_WRAP",
+    "ESO_DECREMENT_WRAP",
+]
+
+
+def _bmt_enum_value(value: Any, names: list[str]) -> dict[str, Any]:
+    index = None
+    if isinstance(value, str):
+        try:
+            index = names.index(value)
+        except ValueError:
+            pass
+    elif isinstance(value, int) and not isinstance(value, bool):
+        if 0 <= value < len(names):
+            index = value
+            value = names[value]
+    return {
+        "raw": value,
+        "engine_enum_index": index,
+        "status": "known" if index is not None else "unknown",
+    }
+
+
+def _bmt_state_field_value(node: dict[str, Any]) -> Any:
+    attrs = node.get("attributes", []) or []
+    if len(attrs) == 1:
+        return attrs[0].get("value")
+    return {
+        str(attr.get("name") or f"hash_{int(attr.get('name_id', 0)):08X}"):
+            attr.get("value")
+        for attr in attrs
+    }
+
+
+def _bmt_render_state_from_tree(tree: dict[str, Any]) -> dict[str, Any]:
+    """Build raw/typed render-state IR without executing unproven D3D state."""
+    result: dict[str, Any] = {
+        "format": "SHIFT.BMTRenderState/1",
+        "evidence_status": "retail-static+corpus",
+        "depth": None,
+        "alpha_test": None,
+        "alpha_blend": None,
+        "unmapped_groups": [],
+    }
+
+    for group in tree.get("children", []) or []:
+        group_name = str(group.get("name") or "")
+        if group_name not in {
+            "depthparams",
+            "alphatestparams",
+            "alphablendparams",
+        }:
+            continue
+
+        fields: dict[str, Any] = {}
+        raw_fields: list[dict[str, Any]] = []
+        for field in group.get("children", []) or []:
+            field_name = str(field.get("name") or "")
+            value = _bmt_state_field_value(field)
+            fields[field_name] = value
+            raw_fields.append({
+                "element_id": field.get("name_id"),
+                "element_name": field_name,
+                "value": value,
+                "attributes": field.get("attributes", []) or [],
+            })
+
+        base = {
+            "source_element_id": group.get("name_id"),
+            "source_element_name": group_name,
+            "raw_fields": raw_fields,
+        }
+
+        if group_name == "depthparams":
+            state = {
+                "format": "SHIFT.BMTDepthState/1",
+                **base,
+                "enabled": fields.get("enabled"),
+                "write_enabled": fields.get("writeenabled"),
+                "function": (
+                    _bmt_enum_value(
+                        fields.get("function"), BMT_TEST_FUNCTION_NAMES
+                    )
+                    if "function" in fields else None
+                ),
+            }
+            unknown = [
+                row for row in raw_fields
+                if row["element_name"] not in {
+                    "enabled", "writeenabled", "function"
+                }
+            ]
+            if unknown:
+                state["unmapped_fields"] = unknown
+            result["depth"] = state
+            continue
+
+        if group_name == "alphatestparams":
+            raw_value = fields.get("value")
+            normalized = None
+            if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
+                normalized = float(raw_value) / 255.0
+            state = {
+                "format": "SHIFT.BMTAlphaTestState/1",
+                **base,
+                "enabled": fields.get("enabled"),
+                "function": (
+                    _bmt_enum_value(
+                        fields.get("function"), BMT_TEST_FUNCTION_NAMES
+                    )
+                    if "function" in fields else None
+                ),
+                "value_raw": raw_value,
+                # Retail loader divides the BMT value by 255.0.
+                "value_normalized": normalized,
+            }
+            unknown = [
+                row for row in raw_fields
+                if row["element_name"] not in {
+                    "enabled", "function", "value"
+                }
+            ]
+            if unknown:
+                state["unmapped_fields"] = unknown
+            result["alpha_test"] = state
+            continue
+
+        state = {
+            "format": "SHIFT.BMTAlphaBlendState/1",
+            **base,
+            "enabled": fields.get("enabled"),
+            "source_blend": (
+                _bmt_enum_value(
+                    fields.get("sourceblend"), BMT_BLEND_FACTOR_NAMES
+                )
+                if "sourceblend" in fields else None
+            ),
+            "dest_blend": (
+                _bmt_enum_value(
+                    fields.get("destblend"), BMT_BLEND_FACTOR_NAMES
+                )
+                if "destblend" in fields else None
+            ),
+            "blend_op": (
+                _bmt_enum_value(
+                    fields.get("blendop"), BMT_BLEND_OP_NAMES
+                )
+                if "blendop" in fields else None
+            ),
+        }
+        unknown = [
+            row for row in raw_fields
+            if row["element_name"] not in {
+                "enabled", "sourceblend", "destblend", "blendop"
+            }
+        ]
+        if unknown:
+            state["unmapped_fields"] = unknown
+        result["alpha_blend"] = state
+
+    return result
+
+
 _HLSL_INCLUDE_RE = re.compile(r'#\s*include\s*[<"]([^>"]+)[>"]', re.I)
 _HLSL_TECHNIQUE_RE = re.compile(r'\btechnique(?:\d+)?\s+([A-Za-z_][A-Za-z0-9_]*)', re.I)
 _HLSL_SAMPLER_RE = re.compile(r'\bsampler(?:2D|3D|CUBE|STATE|2DARRAY|CUBEARRAY)?\s+([A-Za-z_][A-Za-z0-9_]*)', re.I)
@@ -784,8 +994,14 @@ def _material_summary_from_tree(tree: dict[str, Any]) -> dict[str, Any]:
             if re.fullmatch(r"[A-Z][A-Z0-9_]*", value):
                 specializations.append(value)
     specializations = list(dict.fromkeys(specializations))
-    return {**root_values, "shaderparams": params, "textures": textures,
-            "specializations": specializations}
+    render_state = _bmt_render_state_from_tree(tree)
+    return {
+        **root_values,
+        "shaderparams": params,
+        "textures": textures,
+        "specializations": specializations,
+        "render_state": render_state,
+    }
 
 
 def parse_bmt_material(data: bytes) -> dict[str, Any]:

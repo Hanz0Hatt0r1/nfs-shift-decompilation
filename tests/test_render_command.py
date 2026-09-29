@@ -803,3 +803,48 @@ def test_render_command_preserves_material_cull_state():
         "antialias": 1,
         "cull": "EBFCT_CLOCKWISE",
     }
+
+
+
+def test_render_command_preserves_typed_bmt_depth_and_alpha_state():
+    packet = _packet()
+    packet["submeshes"][0]["material"]["render_state"] = {
+        "format": "SHIFT.BMTRenderState/1",
+        "depth": {
+            "format": "SHIFT.BMTDepthState/1",
+            "enabled": True,
+            "write_enabled": False,
+            "function": {
+                "raw": "ETF_LESS_THAN_OR_EQUAL",
+                "engine_enum_index": 3,
+                "status": "known",
+            },
+        },
+        "alpha_test": {
+            "format": "SHIFT.BMTAlphaTestState/1",
+            "enabled": True,
+            "value_raw": 64.0,
+            "value_normalized": 64.0 / 255.0,
+        },
+        "alpha_blend": {
+            "format": "SHIFT.BMTAlphaBlendState/1",
+            "enabled": True,
+            "source_blend": {
+                "raw": "EBF_SOURCE_ALPHA",
+                "engine_enum_index": 4,
+                "status": "known",
+            },
+        },
+        "cull": "EBFCT_ANTICLOCKWISE",
+    }
+    result = build_render_command(
+        build_static_draw_contract(packet),
+        _resources(),
+    )
+
+    state = result["submeshes"][0]["render_state"]
+    assert state["format"] == "SHIFT.BMTRenderState/1"
+    assert state["depth"]["function"]["engine_enum_index"] == 3
+    assert state["alpha_test"]["value_raw"] == 64.0
+    assert state["alpha_blend"]["source_blend"]["engine_enum_index"] == 4
+    assert state["cull"] == "EBFCT_ANTICLOCKWISE"
