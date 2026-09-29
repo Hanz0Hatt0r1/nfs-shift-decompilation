@@ -58,6 +58,8 @@ It compares only regions with the same start address and size in every snapshot 
 
 Outputs:
 
+The analyzer now resolves the AIPolylinePath array against the count-prefixed node allocation and exposes the verified node-array link in the CSV output.
+
 - `analysis.json` — snapshot/common-region statistics and totals by memory category.
 - `region_summary.csv` — changed-block and transition statistics per region.
 - `block_candidates.csv` — repeatedly changing block addresses ranked by activity.
@@ -209,7 +211,7 @@ Candidates are filtered against mapped SHIFT.exe vtable addresses and writable t
 Outputs:
 
 - `track_path_analysis.json` — structure-hit counts, pointer clusters, and next capture windows.
-- `{profile}.csv` — structural candidates for each recovered profile.
+- `{profile}.csv` — structural candidates for each recovered profile. `aipolylinepath.csv` additionally records whether `array[-4]` matches `num nodes`, whether the first array element has the `AIPolyPathNode` vtable, and how many consecutive `0x24`-byte nodes were validated.
 - `stable_external_pointers.csv` — stable writable pointers found outside the selected ranges.
 - `pointer_target_clusters.csv` — dense target families and dominant source strides.
 - `next_capture_windows.csv` / `next_capture_ranges.txt` — merged windows for the next extraction pass.
