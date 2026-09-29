@@ -31,10 +31,28 @@ PATH = {
     "end": (0x25, "B"), "spawn": (0x26, "B"), "edge": (0x27, "B"),
 }
 INCIDENT = {
-    "area": (0xd4, "I"), "path": (0xd8, "I"), "cx": (0xdc, "f"),
-    "cy": (0xe0, "f"), "cz": (0xe4, "f"), "radius": (0xe8, "f"),
-    "active": (0xf0, "I"), "active_incident": (0xf4, "I"),
+    # FUN_006c67e0 reflection metadata.
+    "area": (0xd4, "I"),
+    "path": (0xd8, "I"),
+    "incident_x": (0x30, "f"),
+    "incident_y": (0x34, "f"),
+    "incident_z": (0x38, "f"),
+    "cx": (0xdc, "f"),
+    "cy": (0xe0, "f"),
+    "cz": (0xe4, "f"),
+    "radius": (0xe8, "f"),
+    "active": (0xf0, "I"),
+    "active_incident": (0xf4, "I"),
     "roaming": (0xf8, "I"),
+    "incident_path_dist": (0x100, "f"),
+    "incident_timer": (0x104, "f"),
+    "interest_level": (0x108, "f"),
+    "min_spacing": (0x10c, "f"),
+    "track_dist": (0x110, "f"),
+    "race_flag": (0x114, "I"),
+    "area_index": (0x118, "I"),
+    "n_marshals": (0x11c, "I"),
+    "n_flag_marshals": (0x120, "I"),
 }
 SEGMENT = {
     # FUN_006d0690 is the reflection builder for AISegmentPath and explicitly
@@ -207,13 +225,35 @@ def check_incident(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     pm = writable(d["path"], mm, starts)
     if not pm or not 0 <= d["area"] <= 64:
         return None
-    if not all(finite(d[k], 1e7) for k in ("cx", "cy", "cz")) or not finite(d["radius"], 1e5):
+    if not all(
+        finite(d[k], 1e7)
+        for k in ("incident_x", "incident_y", "incident_z", "cx", "cy", "cz")
+    ):
         return None
-    if not 0 <= d["radius"] <= 1e5:
+    if not finite(d["radius"], 1e5) or not 0 <= d["radius"] <= 1e5:
         return None
-    if d["active"] not in (0, 1) or d["active_incident"] not in (0, 1) or d["roaming"] not in (0, 1):
+    if not d["active"] in (0, 1) or not d["active_incident"] in (0, 1) or not d["roaming"] in (0, 1):
         return None
-    return {"address": addr, "vtable": vt, "vtable_mapping": game_vtable(vt, mm, starts), **d, "path_mapping": pm}
+    if not all(
+        finite(d[k], 1e7)
+        for k in (
+            "incident_path_dist",
+            "incident_timer",
+            "interest_level",
+            "min_spacing",
+            "track_dist",
+        )
+    ):
+        return None
+    if any(d[k] > 0x1000000 for k in ("race_flag", "area_index", "n_marshals", "n_flag_marshals")):
+        return None
+    return {
+        "address": addr,
+        "vtable": vt,
+        "vtable_mapping": game_vtable(vt, mm, starts),
+        **d,
+        "path_mapping": pm,
+    }
 
 
 def check_segment(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
@@ -1401,7 +1441,7 @@ def main() -> int:
                     off = row["address"] - st
                     span = (
                         0x28 if name == "Path"
-                        else 0xFC if name == "Incident.PathOwner"
+                        else 0x124 if name == "Incident.PathOwner"
                         else 0x38 if name == "AISegmentPath"
                         else 0x2C if name == "AIPolylinePath"
                         else 0x24
