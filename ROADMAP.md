@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 528.**
+**Current mainline: Phase 529.**
 
 
 
@@ -58,13 +58,14 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 34. Execute the prepared draw set in one native render pass with per-draw pipelines, constants, descriptors, textures and geometry — Phase 526 implemented.
 35. Adapt complete BMW material slices into the multi-draw set with independent per-submesh DDS/resource provenance — Phase 527 implemented.
 36. Remove the paint-only BMW material-slice restriction and gate every selected primitive through a generic exact FXO/pair/permutation contract — Phase 528 implemented.
-37. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
-38. Propagate proven per-draw render-state differences only from BMT/runtime evidence; do not synthesize blend/depth/cull state.
-39. Expand the desktop reference renderer against real BMW material/shader permutations.
-40. Continue SGB/FLAT and camera runtime reconstruction.
-41. Derive proven animation poses from the BAB runtime grammar.
-42. Port the stable native render/runtime boundary to Android.
-43. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+37. Join independently ready BMW primitive slices into one canonical revalidated multi-submesh RenderCommand and feed it into the material/DDS multi-draw adapter — Phase 529 implemented.
+38. Run the canonical non-paint BMW body primitives against the retail BMW/RENDER corpus and admit the first distinct fully-ready permutations into the native multi-draw set.
+39. Propagate proven per-draw render-state differences only from BMT/runtime evidence; do not synthesize blend/depth/cull state.
+40. Expand the desktop reference renderer against real BMW material/shader permutations.
+41. Continue SGB/FLAT and camera runtime reconstruction.
+42. Derive proven animation poses from the BAB runtime grammar.
+43. Port the stable native render/runtime boundary to Android.
+44. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
