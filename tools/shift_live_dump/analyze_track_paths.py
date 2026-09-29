@@ -746,6 +746,8 @@ def correlate_aiw_runtime(
     scan_ranges: list[tuple[int, int]],
     tolerance: float,
     runtime_roots: list[int] | None = None,
+    runtime_nodes: list[dict] | None = None,
+    node_plane: str = "xz",
 ) -> tuple[list[dict], list[dict]]:
     """Find AIW waypoint positions in the selected runtime capture ranges."""
     if not aiw_docs:
