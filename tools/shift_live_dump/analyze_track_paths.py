@@ -36,6 +36,17 @@ POLY = {
 
 SIZE = {"B": 1, "I": 4, "i": 4, "f": 4}
 
+# The largest recovered structure currently decoded by this analyzer.
+# Keep chunk overlap large enough to validate candidates that straddle a
+# streaming boundary without keeping an entire capture region in RAM.
+MAX_STRUCTURE_SIZE = max(
+    max(offset + SIZE[typ] for offset, typ in spec.values())
+    for spec in (PATH, INCIDENT, SEGMENT, POLY)
+)
+SCAN_CHUNK_SIZE = 4 * 1024 * 1024
+POINTER_CHUNK_SIZE = 4 * 1024 * 1024
+SCAN_OVERLAP = MAX_STRUCTURE_SIZE - 4
+
 
 def load_manifest(p: Path) -> dict:
     obj = json.loads(p.read_text(encoding="utf-8"))
@@ -210,13 +221,12 @@ def check_poly(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     return {"address": addr, "vtable": vt, "vtable_mapping": game_vtable(vt, mm, starts), **d, "array_mapping": am}
 
 
-def scan(blob: bytes, start: int, mm: list[dict], starts: list[int]) -> dict[str, list[dict]]:
-    """Scan aligned object starts without copying the remaining blob per offset.
+def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]) -> dict[str, list[dict]]:
+    """Scan aligned object starts in one in-memory chunk.
 
-    The old implementation used blob[off:] for every 4-byte offset. That copies
-    O(n) bytes for each iteration and turns a linear scan into O(n^2) work on
-    large captures. Keep a single memoryview and reject non-game-image vtable
-    words before running the more expensive structure validators.
+    The caller may pass a small streaming chunk. Only a fixed-size view around
+    each candidate is exposed to the structure validators, so scan cost and
+    memory use stay proportional to the chunk instead of the full capture.
     """
     found = {"Path": [], "Incident.PathOwner": [], "AISegmentPath": [], "AIPolylinePath": []}
     checks = (
@@ -226,7 +236,7 @@ def scan(blob: bytes, start: int, mm: list[dict], starts: list[int]) -> dict[str
         ("AIPolylinePath", check_poly),
     )
     view = memoryview(blob)
-    limit = max(0, len(view) - 0x38)
+    limit = max(0, len(view) - 3)
     known_segment_vtable = KNOWN_VTABLES["AISegmentPath"]
     for off in range(0, limit, 4):
         vtable = read(view, off, "I")
@@ -237,13 +247,46 @@ def scan(blob: bytes, start: int, mm: list[dict], starts: list[int]) -> dict[str
                 continue
             if not game_vtable(vtable, mm, starts):
                 continue
-        chunk = view[off:]
+        chunk = view[off:off + MAX_STRUCTURE_SIZE]
         addr = start + off
         for name, fn in checks:
             row = fn(chunk, addr, mm, starts)
             if row:
                 found[name].append(row)
     return found
+
+
+def scan_file(path: Path, start: int, mm: list[dict], starts: list[int]) -> dict[str, list[dict]]:
+    """Scan a region file incrementally, preserving candidates across boundaries."""
+    merged: dict[str, dict[int, dict]] = {
+        "Path": {},
+        "Incident.PathOwner": {},
+        "AISegmentPath": {},
+        "AIPolylinePath": {},
+    }
+    carry = b""
+    base = 0
+
+    with path.open("rb") as f:
+        while True:
+            raw = f.read(SCAN_CHUNK_SIZE)
+            if not raw:
+                break
+
+            data = carry + raw
+            chunk_start = start + base - len(carry)
+            found = scan(data, chunk_start, mm, starts)
+            for name, rows in found.items():
+                for row in rows:
+                    merged[name][int(row["address"])] = row
+
+            carry = data[-SCAN_OVERLAP:]
+            base += len(raw)
+
+    return {
+        name: sorted(rows.values(), key=lambda r: r["address"])
+        for name, rows in merged.items()
+    }
 
 
 def stable_pointers(
@@ -253,6 +296,7 @@ def stable_pointers(
     starts: list[int],
     excluded_sources: list[tuple[int, int]] | None = None,
 ) -> list[dict]:
+    """Find stable 32-bit pointers without loading every region into RAM."""
     excluded_sources = excluded_sources or []
     common = set(indexes[0])
     for idx in indexes[1:]:
@@ -260,27 +304,43 @@ def stable_pointers(
     selected = [(int(r["start"]), int(r["end"])) for r in indexes[0].values()]
     counts = Counter()
     refs: dict[int, list[int]] = {}
+
     for start in sorted(common):
         rs = [idx[start] for idx in indexes]
         if any(int(x["size"]) != int(rs[0]["size"]) for x in rs):
             continue
-        bs = [(s / r["file"]).read_bytes() for s, r in zip(sns, rs)]
-        n = min(map(len, bs))
-        for off in range(0, n - 3, 4):
-            source_address = start + off
-            if in_ranges(source_address, excluded_sources):
-                continue
-            vals = [struct.unpack_from("<I", b, off)[0] for b in bs]
-            if len(set(vals)) != 1:
-                continue
-            v = vals[0]
-            if not v or any(a <= v < b for a, b in selected):
-                continue
-            m = mapping(v, mm, starts)
-            if not m or "w" not in m["perms"] or v % 4:
-                continue
-            counts[v] += 1
-            refs.setdefault(v, []).append(start + off)
+
+        paths = [(s / r["file"]) for s, r in zip(sns, rs)]
+        n = min(int(r["size"]) for r in rs)
+        handles = [p.open("rb") for p in paths]
+        try:
+            for block_base in range(0, n, POINTER_CHUNK_SIZE):
+                block_size = min(POINTER_CHUNK_SIZE, n - block_base)
+                blocks = [h.read(block_size) for h in handles]
+                if any(len(block) != block_size for block in blocks):
+                    break
+
+                for off in range(0, block_size - 3, 4):
+                    source_address = start + block_base + off
+                    if in_ranges(source_address, excluded_sources):
+                        continue
+
+                    first = struct.unpack_from("<I", blocks[0], off)[0]
+                    if not first:
+                        continue
+                    if any(struct.unpack_from("<I", block, off)[0] != first for block in blocks[1:]):
+                        continue
+                    v = first
+                    if any(a <= v < b for a, b in selected):
+                        continue
+                    m = mapping(v, mm, starts)
+                    if not m or "w" not in m["perms"] or v % 4:
+                        continue
+                    counts[v] += 1
+                    refs.setdefault(v, []).append(source_address)
+        finally:
+            for handle in handles:
+                handle.close()
 
     rows = []
     for v, c in counts.items():
@@ -841,27 +901,49 @@ def main() -> int:
         rr = [x[st] for x in idx]
         if any(int(r["size"]) != int(rr[0]["size"]) for r in rr):
             continue
-        blob0 = (sns[0] / rr[0]["file"]).read_bytes()
-        found = scan(blob0, st, mm, starts)
-        other_blobs = [(s / r["file"]).read_bytes() for s, r in zip(sns[1:], rr[1:])]
-        for name, rows in found.items():
-            for row in rows[:args.top]:
-                off = row["address"] - st
-                span = 0x28 if name == "Path" else 0x124 if name == "Incident.PathOwner" else 0x38 if name == "AISegmentPath" else 0x2C
-                stable = 1 + sum(
-                    1 for blob in other_blobs
-                    if 0 <= off and off + span <= len(blob) and blob0[off:off + span] == blob[off:off + span]
-                )
-                row.update({
-                    "region_start": st,
-                    "region_offset": off,
-                    "snapshot_count": len(sns),
-                    "stable_snapshots": stable,
-                })
-                candidates[name].append(row)
+        region_path = sns[0] / rr[0]["file"]
+        found = scan_file(region_path, st, mm, starts)
 
+        other_paths = [s / r["file"] for s, r in zip(sns[1:], rr[1:])]
+        handles = [region_path.open("rb")] + [p.open("rb") for p in other_paths]
+        try:
+            for name, rows in found.items():
+                for row in rows:
+                    off = row["address"] - st
+                    span = (
+                        0x28 if name == "Path"
+                        else 0xFC if name == "Incident.PathOwner"
+                        else 0x38 if name == "AISegmentPath"
+                        else 0x2C
+                    )
+                    reference_handle = handles[0]
+                    reference_handle.seek(off)
+                    reference = reference_handle.read(span)
+                    stable = 1 if len(reference) == span else 0
+
+                    for handle in handles[1:]:
+                        handle.seek(off)
+                        other = handle.read(span)
+                        if len(other) == span and other == reference:
+                            stable += 1
+
+                    row.update({
+                        "region_start": st,
+                        "region_offset": off,
+                        "snapshot_count": len(sns),
+                        "stable_snapshots": stable,
+                    })
+                    candidates[name].append(row)
+        finally:
+            for handle in handles:
+                handle.close()
+
+    path_root_candidates = list(candidates["Path"])
     for k in candidates:
-        candidates[k] = sorted(candidates[k], key=lambda r: r["address"])[:args.top]
+        candidates[k] = sorted(
+            candidates[k],
+            key=lambda r: (-int(r.get("stable_snapshots", 0)), r["address"]),
+        )[:args.top]
 
     print(
         "[scan] candidates: " + ", ".join(f"{k}={len(v)}" for k, v in candidates.items()),
@@ -875,7 +957,7 @@ def main() -> int:
         print("[pointers] scanning stable external pointers", flush=True)
         ptr = stable_pointers(sns, idx, mm, starts, excluded_sources)
     path_roots = path_root_targets(
-        candidates["Path"], mm, starts, len(sns), args.path_root_top
+        path_root_candidates, mm, starts, len(sns), args.path_root_top
     )
     path_root_windows = windows_for_path_roots(
         path_roots, args.path_root_radius_kib * 1024, args.path_root_top
