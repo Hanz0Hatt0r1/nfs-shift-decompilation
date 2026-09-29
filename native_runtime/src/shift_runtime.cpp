@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -143,7 +144,16 @@ std::vector<uint8_t> read_file_bytes(const std::string& path) {
     return data;
 }
 
-bool file_contains(const std::string& path, const std::string& needle) {
+uint32_t read_u32(const std::vector<uint8_t>& data, size_t offset) {
+    if (offset > data.size() || data.size() - offset < sizeof(uint32_t)) {
+        throw std::runtime_error("bundle packet integer is out of bounds");
+    }
+    uint32_t value = 0;
+    std::memcpy(&value, data.data() + offset, sizeof(value));
+    return value;
+}
+
+bool file_contains(const std::string& path, const std::string& needle) { 
     std::ifstream file(path, std::ios::binary);
     if (!file) return false;
     const std::string contents(
@@ -174,9 +184,9 @@ BundleAssets load_bundle_assets(const std::string& root) {
     const auto constants = read_file_bytes(root + "/constants.svcp");
     if (constants.size() != 28u + 2u * kBundleConstantBytes ||
         std::memcmp(constants.data(), "SVCP", 4) != 0 ||
-        *reinterpret_cast<const uint32_t*>(constants.data() + 4) != 1u ||
-        *reinterpret_cast<const uint32_t*>(constants.data() + 8) != 256u ||
-        *reinterpret_cast<const uint32_t*>(constants.data() + 12) != 16u) {
+        read_u32(constants, 4) != 1u ||
+        read_u32(constants, 8) != 256u ||
+        read_u32(constants, 12) != 16u) {
         throw std::runtime_error("unsupported bundle constant packet");
     }
     out.vertex_constants.assign(
@@ -190,11 +200,11 @@ BundleAssets load_bundle_assets(const std::string& root) {
     if (std::filesystem::is_regular_file(textures_path)) {
         const auto data = read_file_bytes(textures_path);
         if (data.size() < 20u || std::memcmp(data.data(), "SVTP", 4) != 0 ||
-            *reinterpret_cast<const uint32_t*>(data.data() + 4) != 1u ||
-            *reinterpret_cast<const uint32_t*>(data.data() + 12) != 1u) {
+            read_u32(data, 4) != 1u ||
+            read_u32(data, 12) != 1u) {
             throw std::runtime_error("unsupported bundle texture packet");
         }
-        const uint32_t count = *reinterpret_cast<const uint32_t*>(data.data() + 8);
+        const uint32_t count = read_u32(data, 8);
         if (count == 0 || count > 16) {
             throw std::runtime_error("invalid bundle texture count");
         }
@@ -205,12 +215,12 @@ BundleAssets load_bundle_assets(const std::string& root) {
         out.textures.resize(count);
         for (uint32_t i = 0; i < count; ++i) {
             const size_t offset = 20u + static_cast<size_t>(i) * 24u;
-            const uint32_t reg = *reinterpret_cast<const uint32_t*>(data.data() + offset);
-            const uint32_t width = *reinterpret_cast<const uint32_t*>(data.data() + offset + 4);
-            const uint32_t height = *reinterpret_cast<const uint32_t*>(data.data() + offset + 8);
-            const uint32_t pixel_offset = *reinterpret_cast<const uint32_t*>(data.data() + offset + 12);
-            const uint32_t pixel_bytes = *reinterpret_cast<const uint32_t*>(data.data() + offset + 16);
-            const uint32_t sampler_mode = *reinterpret_cast<const uint32_t*>(data.data() + offset + 20);
+            const uint32_t reg = read_u32(data, offset);
+            const uint32_t width = read_u32(data, offset + 4);
+            const uint32_t height = read_u32(data, offset + 8);
+            const uint32_t pixel_offset = read_u32(data, offset + 12);
+            const uint32_t pixel_bytes = read_u32(data, offset + 16);
+            const uint32_t sampler_mode = read_u32(data, offset + 20);
             const uint64_t expected = static_cast<uint64_t>(width) * height * 4u;
             if (reg > 15 || width == 0 || height == 0 ||
                 expected != pixel_bytes || pixel_offset < table_end ||
@@ -233,14 +243,14 @@ BundleAssets load_bundle_assets(const std::string& root) {
     if (std::filesystem::is_regular_file(cube_path)) {
         const auto data = read_file_bytes(cube_path);
         if (data.size() < 28u || std::memcmp(data.data(), "SVCP", 4) != 0 ||
-            *reinterpret_cast<const uint32_t*>(data.data() + 4) != 1u ||
-            *reinterpret_cast<const uint32_t*>(data.data() + 8) != 3u ||
-            *reinterpret_cast<const uint32_t*>(data.data() + 20) != 6u) {
+            read_u32(data, 4) != 1u ||
+            read_u32(data, 8) != 3u ||
+            read_u32(data, 20) != 6u) {
             throw std::runtime_error("unsupported bundle cube packet");
         }
-        const uint32_t width = *reinterpret_cast<const uint32_t*>(data.data() + 12);
-        const uint32_t height = *reinterpret_cast<const uint32_t*>(data.data() + 16);
-        const uint32_t face_bytes = *reinterpret_cast<const uint32_t*>(data.data() + 24);
+        const uint32_t width = read_u32(data, 12);
+        const uint32_t height = read_u32(data, 16);
+        const uint32_t face_bytes = read_u32(data, 24);
         const uint64_t expected_face = static_cast<uint64_t>(width) * height * 4u;
         const uint64_t expected_total = expected_face * 6u;
         if (width == 0 || height == 0 || expected_face != face_bytes ||
@@ -1034,7 +1044,7 @@ struct Runtime {
         }
     }
 
-    void upload_material_resources() {
+    void upload_material_resources(const BundleAssets& bundle) {
         if (texture_staging.empty() && !cube_staging.handle) {
             return;
         }
@@ -1052,8 +1062,7 @@ struct Runtime {
         VkCommandBufferBeginInfo begin{};
         begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vk_check(vkBeginCommandBuffer(
-                     command, &begin),
+        vk_check(vkBeginCommandBuffer(command, &begin),
                  "vkBeginCommandBuffer resource upload failed");
 
         auto transition = [&](VkImage image, uint32_t layers,
@@ -1083,22 +1092,89 @@ struct Runtime {
                 0, VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                 VK_PIPELINE_STAGE_TRANSFER_BIT);
+
             VkBufferImageCopy copy{};
             copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             copy.imageSubresource.layerCount = 1;
-            // Dimensions are validated and stored by the CPU bundle loader.
-            // They are reconstructed here by the staging allocation size for the
-            // current packet contract, which uses tightly packed RGBA8 images.
-            const VkDeviceSize pixel_bytes =
-                static_cast<VkDeviceSize>(texture_staging[i].memory ? 0 : 0);
-            (void)pixel_bytes;
+            copy.imageExtent = {
+                bundle.textures[i].width,
+                bundle.textures[i].height,
+                1
+            };
+            vkCmdCopyBufferToImage(
+                command, texture_staging[i].handle,
+                texture_images[i].handle,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &copy);
+
+            transition(
+                texture_images[i].handle, 1,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
         }
 
-        // The runtime keeps one staging allocation per texture. The packet dimensions
-        // are also required by the image itself, but Vulkan exposes no width query;
-        // store the dimensions in a sidecar below in create_material_resources.
-        // This function is replaced by upload_material_resources(const BundleAssets&)
-        // in the next edit so resource metadata and GPU handles remain paired.
+        if (cube_staging.handle) {
+            transition(
+                cube_image.handle, 6,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+            const VkDeviceSize face_bytes =
+                static_cast<VkDeviceSize>(bundle.cube.width) *
+                static_cast<VkDeviceSize>(bundle.cube.height) * 4u;
+            for (uint32_t face = 0; face < 6; ++face) {
+                VkBufferImageCopy copy{};
+                copy.bufferOffset = static_cast<VkDeviceSize>(face) * face_bytes;
+                copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                copy.imageSubresource.baseArrayLayer = face;
+                copy.imageSubresource.layerCount = 1;
+                copy.imageExtent = {
+                    bundle.cube.width,
+                    bundle.cube.height,
+                    1
+                };
+                vkCmdCopyBufferToImage(
+                    command, cube_staging.handle,
+                    cube_image.handle,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    1, &copy);
+            }
+
+            transition(
+                cube_image.handle, 6,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        }
+
+        vk_check(vkEndCommandBuffer(command),
+                 "vkEndCommandBuffer resource upload failed");
+
+        VkSubmitInfo submit{};
+        submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit.commandBufferCount = 1;
+        submit.pCommandBuffers = &command;
+        vk_check(vkQueueSubmit(
+                     graphics_queue, 1, &submit, VK_NULL_HANDLE),
+                 "vkQueueSubmit resource upload failed");
+        vk_check(vkQueueWaitIdle(
+                     graphics_queue),
+                 "vkQueueWaitIdle resource upload failed");
+        vkFreeCommandBuffers(device, command_pool, 1, &command);
+
+        for (auto& staging : texture_staging) staging.destroy();
+        texture_staging.clear();
+        cube_staging.destroy();
     }
 
     void create_pipeline(
@@ -1696,7 +1772,7 @@ int main(int argc, char** argv) {
         runtime.create_framebuffers();
         runtime.create_sync_and_commands();
         if (bundle) {
-            runtime.upload_material_resources();
+            runtime.upload_material_resources(bundle_assets);
         }
 
         int rendered = 0;
