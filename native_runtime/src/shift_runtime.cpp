@@ -165,10 +165,10 @@ bool file_contains(const std::string& path, const std::string& needle) {
 BundleAssets load_bundle_assets(const std::string& root) {
     if (!file_contains(
             root + "/vulkan_interface.json",
-            ""format": "SHIFT.BMWVulkanInterfaceGate/1"") ||
-        !file_contains(root + "/vulkan_interface.json", ""ready": true") ||
-        !file_contains(root + "/spirv_report.json", ""format": "SHIFT.VulkanBundleSPIRV/1"") ||
-        !file_contains(root + "/spirv_report.json", ""ready": true")) {
+            "\"format\": \"SHIFT.BMWVulkanInterfaceGate/1\"") ||
+        !file_contains(root + "/vulkan_interface.json", "\"ready\": true") ||
+        !file_contains(root + "/spirv_report.json", "\"format\": \"SHIFT.VulkanBundleSPIRV/1\"") ||
+        !file_contains(root + "/spirv_report.json", "\"ready\": true")) {
         throw std::runtime_error(
             "bundle shader/interface gate is missing or not ready");
     }
