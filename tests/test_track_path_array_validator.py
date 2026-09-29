@@ -85,6 +85,15 @@ def test_startnode_resolver_uses_compact_window(monkeypatch, tmp_path: Path):
 
     def fake_read(snapshot, region_index, starts, address, size):
         calls.append((address, size))
+        if address == target - 4 and size > 4:
+            blob = bytearray(size)
+            struct.pack_into("<I", blob, 0, 32)
+            for i in range(32):
+                off = 4 + i * 0x24
+                if off + 4 > len(blob):
+                    break
+                struct.pack_into("<I", blob, off, 0x00AFBFA8)
+            return bytes(blob)
         if address == target:
             blob = bytearray(32 * 0x24)
             for i in range(32):
