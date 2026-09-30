@@ -65,6 +65,38 @@ The runtime module deliberately does not invent constructor defaults for direct
 fields that are not explicitly written by this constructor, including
 `Groove Alpha`, `Sector`, `Event Type`, and `Event Speed Fraction`.
 
+## Reflected index → runtime pointer links
+
+`FUN_00717b90` converts the three reflected waypoint indices into unreflected
+runtime links for every source record whose `+0x18e` active marker is nonzero:
+
+| Relation | Reflected index | Runtime pointer |
+|---|---:|---:|
+| previous | `+0x74` | `+0x17c` |
+| next | `+0x78` | `+0x180` |
+| branch | `+0x7c` | `+0x184` |
+
+For each relation the source accepts a target only when the index is not the
+`-1` sentinel, is below the AIDatabase waypoint count, and the target
+`WayPointBase +0x18e` marker is nonzero. A valid target pointer is exactly:
+
+`waypoint_array_base + index * 0x1bc`.
+
+Otherwise the runtime pointer is cleared to zero and the reflected index is
+rewritten to `-1`. If the source waypoint itself has `+0x18e == 0`,
+`FUN_00717b90` skips it entirely and leaves its index/pointer members
+untouched.
+
+The function is called from both `FUN_0071e3ba` and `FUN_0071f099`,
+including repeated calls after waypoint graph regeneration/rebuild paths. This
+establishes the three pointers as derived runtime links rather than serialized
+pointer values.
+
+The retail function explicitly guards only `-1` and `index >= count`.
+A malformed index below `-1` would address before the waypoint array; the
+Python runtime model rejects that unsafe case rather than emulating an
+out-of-bounds source read.
+
 ## Simple nearest-waypoint queries
 
 Two small AIDatabase queries are now sufficiently constrained to reproduce
@@ -98,10 +130,14 @@ and branch/link handling are more complex and remain outside this PR.
 - exact `0x1bc` record size;
 - all 20 direct reflected fields and source comments;
 - explicit constructor defaults only where written;
-- byte-layout decoding for Position, Branch ID, and the `+0x18e` marker;
+- byte-layout decoding for Position, Branch ID, the three reflected link
+  indices, their three runtime pointers, and the `+0x18e` marker;
+- source-equivalent `FUN_00717b90` index-to-pointer resolution with invalid
+  target normalization;
 - source-equivalent nearest active Branch-ID 0 and Branch-ID 1 queries over
   captured/decoded record bytes.
 
-This closes a small executable subset of AIDatabase waypoint lookup while
-leaving the more complex path-selection, link traversal, and geometric update
-functions evidence-gated.
+This closes the serialized-index → runtime-link bridge used by the waypoint
+graph plus a small executable subset of AIDatabase waypoint lookup. The more
+complex `FUN_007189a0` path-selection metric and later geometric update
+passes remain separately evidence-gated.
