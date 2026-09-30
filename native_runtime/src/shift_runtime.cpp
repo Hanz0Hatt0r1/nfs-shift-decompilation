@@ -557,7 +557,7 @@ void load_participant_boundary(
         !file_contains(path, "\"participant_index\": -1") ||
         !file_contains(path, "\"participant_mode\": -1")) {
         throw std::runtime_error(
-            "native physics participant boundary overclaims runtime identity");
+            "native physics participant boundary overclaims runtime instance/identity");
     }
 
     physics.participant_contract_ready = true;
