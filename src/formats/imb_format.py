@@ -1,9 +1,9 @@
 """Source-backed partial decoder for SHIFT binary MeshInst (.imb) meshes.
 
 The retail binary mesh loader FUN_00859800 reaches a fixed mesh header only
-after a version-dependent prefix and embedded resource-name string. Phase 556
-therefore requires the caller to provide that fixed-header offset explicitly.
-This keeps the decoder deterministic while the prefix grammar remains open.
+after a version-dependent prefix and embedded resource-name string. Phase 557
+reconstructs that prefix and locates the fixed header automatically while
+retaining the Phase 556 manual offset entry point for forensic use.
 """
 from __future__ import annotations
 
@@ -374,7 +374,7 @@ def parse_imb_binary_mesh_schema(
             "runtime_array_offset": 0x2C,
             "runtime_stride": RUNTIME_PRIMITIVE_STRIDE,
             "source_section_offset": (
-                "after variable-size vertex payload; not auto-derived in Phase 556"
+                "after variable-size vertex payload; not auto-derived yet"
             ),
             "known_runtime_fields": {
                 "bounds_sphere": "record +0x00..+0x0c",
