@@ -1,1 +1,469 @@
-"""Match IMB runtime shader targets against draw-local D3D9 evidence.\n\nThis matcher is per exact IMB resource runtime report. Attribution requires the\nD3D9 same-instance gate, exact primitive draw range and one uniquely matching\nstatic shader candidate variant. Pixel-only hits remain prefilter evidence.\n"""\nfrom __future__ import annotations\n\nimport argparse\nimport json\nfrom pathlib import Path\nfrom typing import Any, Iterable, Mapping\n\nfrom runtime_resource_identity import match_resource_identity\n\nFORMAT = "SHIFT.IMBRuntimeShaderVariantMatch/1"\nTARGET_FORMAT = "SHIFT.IMBRuntimeShaderTargetSet/1"\nRUNTIME_FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"\n\n\ndef _norm(value: Any) -> str:\n    return str(value or "").replace("\\", "/").strip("/").lower()\n\n\ndef _runtime_resource_identity(\n    runtime: Mapping[str, Any],\n) -> dict[str, Any] | None:\n    correlation = runtime.get("resource_correlation")\n    if not isinstance(correlation, Mapping):\n        correlation = runtime.get("meb_correlation")\n    if not isinstance(correlation, Mapping):\n        return None\n    identity = correlation.get("resource_identity")\n    if not isinstance(identity, Mapping):\n        return None\n    path = identity.get("resource_path")\n    sha = identity.get("resource_sha256")\n    if not path or not sha:\n        return None\n    return {\n        "resource_path": str(path).replace("\\", "/"),\n        "resource_sha256": str(sha).lower(),\n    }\n\n\ndef _runtime_hashes(state: Mapping[str, Any]) -> dict[str, str | None]:\n    identity = state.get("shader_permutation_identity") or {}\n    if not isinstance(identity, Mapping):\n        identity = {}\n    payload = identity.get("payload") or {}\n    if not isinstance(payload, Mapping):\n        payload = {}\n    vertex = payload.get("vertex") or {}\n    pixel = payload.get("pixel") or {}\n    if not isinstance(vertex, Mapping):\n        vertex = {}\n    if not isinstance(pixel, Mapping):\n        pixel = {}\n    return {\n        "permutation": (\n            str(identity.get("identity_sha256"))\n            if identity.get("identity_sha256") else None\n        ),\n        "pair": (\n            str(identity.get("pair_byte_sha256"))\n            if identity.get("pair_byte_sha256") else None\n        ),\n        "vertex": (\n            str(identity.get("vertex_byte_sha256"))\n            if identity.get("vertex_byte_sha256")\n            else str(vertex.get("byte_sha256"))\n            if vertex.get("byte_sha256") else None\n        ),\n        "pixel": (\n            str(identity.get("pixel_byte_sha256"))\n            if identity.get("pixel_byte_sha256")\n            else str(pixel.get("byte_sha256"))\n            if pixel.get("byte_sha256") else None\n        ),\n    }\n\n\ndef _variant_key(variant: Mapping[str, Any]) -> tuple[str, ...]:\n    permutation = variant.get("permutation_identity_sha256")\n    if permutation:\n        return ("permutation", str(permutation))\n    pair = variant.get("pair_byte_sha256")\n    if pair:\n        return ("pair", str(pair))\n    vertex = variant.get("vertex_byte_sha256")\n    pixel = variant.get("pixel_byte_sha256")\n    return ("stages", str(vertex or ""), str(pixel or ""))\n\n\ndef _variant_score(\n    variant: Mapping[str, Any],\n    hashes: Mapping[str, str | None],\n) -> tuple[int, list[str]]:\n    permutation = variant.get("permutation_identity_sha256")\n    if permutation and hashes.get("permutation") == permutation:\n        return 100, ["permutation_identity_sha256"]\n    pair = variant.get("pair_byte_sha256")\n    if pair and hashes.get("pair") == pair:\n        return 90, ["pair_byte_sha256"]\n\n    vertex = bool(\n        variant.get("vertex_byte_sha256")\n        and hashes.get("vertex") == variant.get("vertex_byte_sha256")\n    )\n    pixel = bool(\n        variant.get("pixel_byte_sha256")\n        and hashes.get("pixel") == variant.get("pixel_byte_sha256")\n    )\n    evidence: list[str] = []\n    if vertex:\n        evidence.append("vertex_byte_sha256")\n    if pixel:\n        evidence.append("pixel_byte_sha256")\n    if vertex and pixel:\n        return 80, evidence\n    if pixel:\n        return 40, evidence\n    if vertex:\n        return 35, evidence\n    return 0, []\n\n\ndef _gate_rows(runtime: Mapping[str, Any]) -> dict[tuple[Any, Any], Mapping[str, Any]]:\n    gate = runtime.get("same_instance_gate") or {}\n    if not isinstance(gate, Mapping) or gate.get("ready") is not True:\n        return {}\n    rows: dict[tuple[Any, Any], Mapping[str, Any]] = {}\n    for row in gate.get("candidate_frames") or []:\n        if not isinstance(row, Mapping):\n            continue\n        same_resource = (\n            row.get("same_resource") is True\n            or row.get("same_meb_resource") is True\n        )\n        if not same_resource:\n            continue\n        if row.get("bound_declaration_valid") is not True:\n            continue\n        descriptors = row.get("descriptor_matches")\n        if not isinstance(descriptors, list) or not descriptors:\n            continue\n        if row.get("snapshot_schema_status") not in (None, "valid"):\n            continue\n        rows[(row.get("frame"), row.get("draw_index"))] = row\n    return rows\n\n\ndef _draw_snapshots(\n    runtime: Mapping[str, Any],\n) -> Iterable[tuple[Mapping[str, Any], Mapping[str, Any]]]:\n    for frame in runtime.get("frames") or []:\n        if not isinstance(frame, Mapping):\n            continue\n        for snapshot in frame.get("draw_snapshots") or []:\n            if not isinstance(snapshot, Mapping):\n                continue\n            if snapshot.get("format") not in (None, "SHIFT.D3D9DrawStateSnapshot/1"):\n                continue\n            yield frame, snapshot\n\n\ndef _draw_matches(\n    draw: Mapping[str, Any],\n    expected: Mapping[str, Any],\n) -> bool:\n    try:\n        start_index = int(draw.get("start_index"))\n        primitive_count = int(draw.get("primitive_count"))\n        first_index = int(expected.get("first_index"))\n        index_count = int(expected.get("index_count"))\n    except (TypeError, ValueError):\n        return False\n    return (\n        index_count > 0\n        and index_count % 3 == 0\n        and start_index == first_index\n        and primitive_count == index_count // 3\n    )\n\n\ndef _target_variants(target: Mapping[str, Any]) -> list[Mapping[str, Any]]:\n    rows = [\n        row\n        for row in (target.get("candidate_variants") or [])\n        if isinstance(row, Mapping)\n    ]\n    return rows\n\n\ndef match_imb_runtime_shader_variants(\n    target_set: Mapping[str, Any],\n    runtime: Mapping[str, Any],\n) -> dict[str, Any]:\n    if target_set.get("format") != TARGET_FORMAT:\n        raise ValueError(\n            "target input must be SHIFT.IMBRuntimeShaderTargetSet/1"\n        )\n    if runtime.get("format") != RUNTIME_FORMAT:\n        raise ValueError(\n            "runtime input must be SHIFT.D3D9RuntimeBindingEvidence/1"\n        )\n\n    resource = _runtime_resource_identity(runtime)\n    gate = runtime.get("same_instance_gate") or {}\n    gate_rows = _gate_rows(runtime)\n    blockers: list[str] = []\n    if resource is None:\n        blockers.append("runtime-resource-identity-missing")\n    if not isinstance(gate, Mapping) or gate.get("ready") is not True:\n        blockers.append("same-instance-gate-not-ready")\n    elif not gate_rows:\n        blockers.append("same-instance-gate-has-no-declaration-proven-draws")\n\n    bindings: list[Mapping[str, Any]] = []\n    if resource is not None:\n        for row in target_set.get("binding_targets") or []:\n            if not isinstance(row, Mapping):\n                continue\n            if (\n                _norm(row.get("imb_path")) == _norm(resource["resource_path"])\n                and str(row.get("imb_sha256") or "").lower()\n                == resource["resource_sha256"]\n            ):\n                bindings.append(row)\n    if resource is not None and not bindings:\n        blockers.append("target-resource-not-found")\n\n    matches: dict[int, list[dict[str, Any]]] = {\n        int(row.get("binding_index")): []\n        for row in bindings\n    }\n\n    for frame, snapshot in _draw_snapshots(runtime):\n        frame_id = frame.get("frame")\n        draw_index = snapshot.get("draw_index")\n        gate_row = gate_rows.get((frame_id, draw_index))\n        if gate_row is None:\n            continue\n        binding = snapshot.get("vertex_declaration") or {}\n        if resource is None:\n            continue\n        same_resource, resource_status = match_resource_identity(\n            binding,\n            expected_sha256=resource["resource_sha256"],\n            expected_path=resource["resource_path"],\n        )\n        if same_resource is not True:\n            continue\n        draw = snapshot.get("draw") or {}\n        hashes = _runtime_hashes(snapshot)\n\n        for target_binding in bindings:\n            binding_index = int(target_binding.get("binding_index"))\n            draw_range = target_binding.get("draw_range") or {}\n            if not _draw_matches(draw, draw_range):\n                continue\n\n            variant_rows: list[dict[str, Any]] = []\n            for target in target_binding.get("targets") or []:\n                if not isinstance(target, Mapping):\n                    continue\n                for variant in _target_variants(target):\n                    score, evidence = _variant_score(variant, hashes)\n                    if score <= 0:\n                        continue\n                    variant_rows.append({\n                        "score": score,\n                        "evidence": evidence,\n                        "variant_key": list(_variant_key(variant)),\n                        "identity_kind": target.get("identity_kind"),\n                        "identity_value": target.get("identity_value"),\n                        "strength": target.get("strength"),\n                        "permutation_identity_sha256": variant.get(\n                            "permutation_identity_sha256"\n                        ),\n                        "pair_byte_sha256": variant.get("pair_byte_sha256"),\n                        "vertex_byte_sha256": variant.get(\n                            "vertex_byte_sha256"\n                        ),\n                        "pixel_byte_sha256": variant.get(\n                            "pixel_byte_sha256"\n                        ),\n                        "candidate_file": variant.get("candidate_file"),\n                        "candidate_program_offset": variant.get(\n                            "candidate_program_offset"\n                        ),\n                    })\n\n            if not variant_rows:\n                continue\n            matches[binding_index].append({\n                "frame": frame_id,\n                "draw_index": draw_index,\n                "draw": dict(draw),\n                "resource_identity_status": resource_status,\n                "gate_descriptor_match_count": len(\n                    gate_row.get("descriptor_matches") or []\n                ),\n                "runtime_hashes": dict(hashes),\n                "variant_matches": sorted(\n                    variant_rows,\n                    key=lambda item: (-int(item["score"]), item["variant_key"]),\n                ),\n            })\n\n    results: list[dict[str, Any]] = []\n    attributed_count = 0\n    observed_count = 0\n    for target_binding in bindings:\n        binding_index = int(target_binding.get("binding_index"))\n        rows = matches.get(binding_index, [])\n        if rows:\n            observed_count += 1\n\n        strong: list[dict[str, Any]] = []\n        for row in rows:\n            for variant in row["variant_matches"]:\n                if int(variant["score"]) >= 80:\n                    strong.append({\n                        **variant,\n                        "frame": row["frame"],\n                        "draw_index": row["draw_index"],\n                    })\n        best_score = max(\n            (int(row["score"]) for row in strong),\n            default=None,\n        )\n        best = [\n            row for row in strong\n            if best_score is not None and int(row["score"]) == best_score\n        ]\n        keys = {tuple(row["variant_key"]) for row in best}\n        attributed = (\n            not blockers\n            and best_score is not None\n            and len(keys) == 1\n        )\n\n        reasons: list[str] = []\n        if not rows:\n            reasons.append("draw-or-shader-not-observed")\n        elif not strong:\n            reasons.append("only-prefilter-hash-matched")\n        elif len(keys) != 1:\n            reasons.append("multiple-strong-variants")\n        if blockers:\n            reasons.extend(blockers)\n\n        selected = None\n        if attributed:\n            attributed_count += 1\n            first = best[0]\n            selected = {\n                key: first.get(key)\n                for key in (\n                    "score",\n                    "evidence",\n                    "variant_key",\n                    "permutation_identity_sha256",\n                    "pair_byte_sha256",\n                    "vertex_byte_sha256",\n                    "pixel_byte_sha256",\n                    "candidate_file",\n                    "candidate_program_offset",\n                )\n            }\n\n        results.append({\n            "binding_index": binding_index,\n            "primitive_index": target_binding.get("primitive_index"),\n            "imb_path": target_binding.get("imb_path"),\n            "imb_sha256": target_binding.get("imb_sha256"),\n            "draw_range": target_binding.get("draw_range"),\n            "material_reference": target_binding.get("material_reference"),\n            "shader_family": target_binding.get("shader_family"),\n            "observed": bool(rows),\n            "attributed": attributed,\n            "best_score": best_score,\n            "selected_variant": selected,\n            "match_count": len(rows),\n            "strong_variant_match_count": len(strong),\n            "blocking_reasons": list(dict.fromkeys(reasons)),\n            "matches": rows,\n        })\n\n    ready = (\n        bool(results)\n        and attributed_count == len(results)\n        and not blockers\n    )\n    status = (\n        "ready" if ready\n        else "partial" if observed_count\n        else "blocked" if blockers\n        else "not-found"\n    )\n    return {\n        "format": FORMAT,\n        "version": 1,\n        "status": status,\n        "ready": ready,\n        "blocking_reasons": list(dict.fromkeys(blockers)),\n        "target_resource": resource,\n        "summary": {\n            "resource_binding_count": len(bindings),\n            "observed_binding_count": observed_count,\n            "attributed_binding_count": attributed_count,\n            "blocked_binding_count": len(bindings) - attributed_count,\n            "same_instance_candidate_draw_count": len(gate_rows),\n        },\n        "binding_results": results,\n        "boundary": {\n            "report_scope": "one exact IMB resource identity",\n            "requires_same_instance_gate": True,\n            "requires_declaration_descriptor_proof": True,\n            "requires_exact_draw_range": True,\n            "minimum_attribution_score": 80,\n            "pixel_prefilter_score": 40,\n            "selects_permutation_only_when_unique_strong_variant": True,\n        },\n    }\n\n\ndef validate_files(\n    target_set_path: str | Path,\n    runtime_report_path: str | Path,\n) -> dict[str, Any]:\n    target_set = json.loads(\n        Path(target_set_path).read_text(encoding="utf-8")\n    )\n    runtime = json.loads(\n        Path(runtime_report_path).read_text(encoding="utf-8")\n    )\n    return match_imb_runtime_shader_variants(target_set, runtime)\n\n\ndef main(argv: list[str] | None = None) -> int:\n    parser = argparse.ArgumentParser(\n        description="Match IMB shader variants against D3D9 draw evidence"\n    )\n    parser.add_argument("target_set")\n    parser.add_argument("runtime_report")\n    parser.add_argument("output")\n    args = parser.parse_args(argv)\n\n    report = validate_files(args.target_set, args.runtime_report)\n    Path(args.output).write_text(\n        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)\n        + "\n",\n        encoding="utf-8",\n    )\n    print(json.dumps({\n        "format": report["format"],\n        "status": report["status"],\n        "ready": report["ready"],\n        "summary": report["summary"],\n        "blocking_reasons": report["blocking_reasons"],\n    }, ensure_ascii=False, indent=2))\n    return 0 if report["ready"] else 2\n\n\nif __name__ == "__main__":\n    raise SystemExit(main())\n
+"""Match IMB runtime shader targets against draw-local D3D9 evidence.
+
+This matcher is per exact IMB resource runtime report. Attribution requires the
+D3D9 same-instance gate, exact primitive draw range and one uniquely matching
+static shader candidate variant. Pixel-only hits remain prefilter evidence.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any, Iterable, Mapping
+
+from runtime_resource_identity import match_resource_identity
+
+FORMAT = "SHIFT.IMBRuntimeShaderVariantMatch/1"
+TARGET_FORMAT = "SHIFT.IMBRuntimeShaderTargetSet/1"
+RUNTIME_FORMAT = "SHIFT.D3D9RuntimeBindingEvidence/1"
+
+
+def _norm(value: Any) -> str:
+    return str(value or "").replace("\\", "/").strip("/").lower()
+
+
+def _runtime_resource_identity(
+    runtime: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    correlation = runtime.get("resource_correlation")
+    if not isinstance(correlation, Mapping):
+        correlation = runtime.get("meb_correlation")
+    if not isinstance(correlation, Mapping):
+        return None
+    identity = correlation.get("resource_identity")
+    if not isinstance(identity, Mapping):
+        return None
+    path = identity.get("resource_path")
+    sha = identity.get("resource_sha256")
+    if not path or not sha:
+        return None
+    return {
+        "resource_path": str(path).replace("\\", "/"),
+        "resource_sha256": str(sha).lower(),
+    }
+
+
+def _runtime_hashes(state: Mapping[str, Any]) -> dict[str, str | None]:
+    identity = state.get("shader_permutation_identity") or {}
+    if not isinstance(identity, Mapping):
+        identity = {}
+    payload = identity.get("payload") or {}
+    if not isinstance(payload, Mapping):
+        payload = {}
+    vertex = payload.get("vertex") or {}
+    pixel = payload.get("pixel") or {}
+    if not isinstance(vertex, Mapping):
+        vertex = {}
+    if not isinstance(pixel, Mapping):
+        pixel = {}
+    return {
+        "permutation": (
+            str(identity.get("identity_sha256"))
+            if identity.get("identity_sha256") else None
+        ),
+        "pair": (
+            str(identity.get("pair_byte_sha256"))
+            if identity.get("pair_byte_sha256") else None
+        ),
+        "vertex": (
+            str(identity.get("vertex_byte_sha256"))
+            if identity.get("vertex_byte_sha256")
+            else str(vertex.get("byte_sha256"))
+            if vertex.get("byte_sha256") else None
+        ),
+        "pixel": (
+            str(identity.get("pixel_byte_sha256"))
+            if identity.get("pixel_byte_sha256")
+            else str(pixel.get("byte_sha256"))
+            if pixel.get("byte_sha256") else None
+        ),
+    }
+
+
+def _variant_key(variant: Mapping[str, Any]) -> tuple[str, ...]:
+    permutation = variant.get("permutation_identity_sha256")
+    if permutation:
+        return ("permutation", str(permutation))
+    pair = variant.get("pair_byte_sha256")
+    if pair:
+        return ("pair", str(pair))
+    vertex = variant.get("vertex_byte_sha256")
+    pixel = variant.get("pixel_byte_sha256")
+    return ("stages", str(vertex or ""), str(pixel or ""))
+
+
+def _variant_score(
+    variant: Mapping[str, Any],
+    hashes: Mapping[str, str | None],
+) -> tuple[int, list[str]]:
+    permutation = variant.get("permutation_identity_sha256")
+    if permutation and hashes.get("permutation") == permutation:
+        return 100, ["permutation_identity_sha256"]
+    pair = variant.get("pair_byte_sha256")
+    if pair and hashes.get("pair") == pair:
+        return 90, ["pair_byte_sha256"]
+
+    vertex = bool(
+        variant.get("vertex_byte_sha256")
+        and hashes.get("vertex") == variant.get("vertex_byte_sha256")
+    )
+    pixel = bool(
+        variant.get("pixel_byte_sha256")
+        and hashes.get("pixel") == variant.get("pixel_byte_sha256")
+    )
+    evidence: list[str] = []
+    if vertex:
+        evidence.append("vertex_byte_sha256")
+    if pixel:
+        evidence.append("pixel_byte_sha256")
+    if vertex and pixel:
+        return 80, evidence
+    if pixel:
+        return 40, evidence
+    if vertex:
+        return 35, evidence
+    return 0, []
+
+
+def _gate_rows(runtime: Mapping[str, Any]) -> dict[tuple[Any, Any], Mapping[str, Any]]:
+    gate = runtime.get("same_instance_gate") or {}
+    if not isinstance(gate, Mapping) or gate.get("ready") is not True:
+        return {}
+    rows: dict[tuple[Any, Any], Mapping[str, Any]] = {}
+    for row in gate.get("candidate_frames") or []:
+        if not isinstance(row, Mapping):
+            continue
+        same_resource = (
+            row.get("same_resource") is True
+            or row.get("same_meb_resource") is True
+        )
+        if not same_resource:
+            continue
+        if row.get("bound_declaration_valid") is not True:
+            continue
+        descriptors = row.get("descriptor_matches")
+        if not isinstance(descriptors, list) or not descriptors:
+            continue
+        if row.get("snapshot_schema_status") not in (None, "valid"):
+            continue
+        rows[(row.get("frame"), row.get("draw_index"))] = row
+    return rows
+
+
+def _draw_snapshots(
+    runtime: Mapping[str, Any],
+) -> Iterable[tuple[Mapping[str, Any], Mapping[str, Any]]]:
+    for frame in runtime.get("frames") or []:
+        if not isinstance(frame, Mapping):
+            continue
+        for snapshot in frame.get("draw_snapshots") or []:
+            if not isinstance(snapshot, Mapping):
+                continue
+            if snapshot.get("format") not in (None, "SHIFT.D3D9DrawStateSnapshot/1"):
+                continue
+            yield frame, snapshot
+
+
+def _draw_matches(
+    draw: Mapping[str, Any],
+    expected: Mapping[str, Any],
+) -> bool:
+    try:
+        start_index = int(draw.get("start_index"))
+        primitive_count = int(draw.get("primitive_count"))
+        first_index = int(expected.get("first_index"))
+        index_count = int(expected.get("index_count"))
+    except (TypeError, ValueError):
+        return False
+    return (
+        index_count > 0
+        and index_count % 3 == 0
+        and start_index == first_index
+        and primitive_count == index_count // 3
+    )
+
+
+def _target_variants(target: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    rows = [
+        row
+        for row in (target.get("candidate_variants") or [])
+        if isinstance(row, Mapping)
+    ]
+    return rows
+
+
+def match_imb_runtime_shader_variants(
+    target_set: Mapping[str, Any],
+    runtime: Mapping[str, Any],
+) -> dict[str, Any]:
+    if target_set.get("format") != TARGET_FORMAT:
+        raise ValueError(
+            "target input must be SHIFT.IMBRuntimeShaderTargetSet/1"
+        )
+    if runtime.get("format") != RUNTIME_FORMAT:
+        raise ValueError(
+            "runtime input must be SHIFT.D3D9RuntimeBindingEvidence/1"
+        )
+
+    resource = _runtime_resource_identity(runtime)
+    gate = runtime.get("same_instance_gate") or {}
+    gate_rows = _gate_rows(runtime)
+    blockers: list[str] = []
+    if resource is None:
+        blockers.append("runtime-resource-identity-missing")
+    if not isinstance(gate, Mapping) or gate.get("ready") is not True:
+        blockers.append("same-instance-gate-not-ready")
+    elif not gate_rows:
+        blockers.append("same-instance-gate-has-no-declaration-proven-draws")
+
+    bindings: list[Mapping[str, Any]] = []
+    if resource is not None:
+        for row in target_set.get("binding_targets") or []:
+            if not isinstance(row, Mapping):
+                continue
+            if (
+                _norm(row.get("imb_path")) == _norm(resource["resource_path"])
+                and str(row.get("imb_sha256") or "").lower()
+                == resource["resource_sha256"]
+            ):
+                bindings.append(row)
+    if resource is not None and not bindings:
+        blockers.append("target-resource-not-found")
+
+    matches: dict[int, list[dict[str, Any]]] = {
+        int(row.get("binding_index")): []
+        for row in bindings
+    }
+
+    for frame, snapshot in _draw_snapshots(runtime):
+        frame_id = frame.get("frame")
+        draw_index = snapshot.get("draw_index")
+        gate_row = gate_rows.get((frame_id, draw_index))
+        if gate_row is None:
+            continue
+        binding = snapshot.get("vertex_declaration") or {}
+        if resource is None:
+            continue
+        same_resource, resource_status = match_resource_identity(
+            binding,
+            expected_sha256=resource["resource_sha256"],
+            expected_path=resource["resource_path"],
+        )
+        if same_resource is not True:
+            continue
+        draw = snapshot.get("draw") or {}
+        hashes = _runtime_hashes(snapshot)
+
+        for target_binding in bindings:
+            binding_index = int(target_binding.get("binding_index"))
+            draw_range = target_binding.get("draw_range") or {}
+            if not _draw_matches(draw, draw_range):
+                continue
+
+            variant_rows: list[dict[str, Any]] = []
+            for target in target_binding.get("targets") or []:
+                if not isinstance(target, Mapping):
+                    continue
+                for variant in _target_variants(target):
+                    score, evidence = _variant_score(variant, hashes)
+                    if score <= 0:
+                        continue
+                    variant_rows.append({
+                        "score": score,
+                        "evidence": evidence,
+                        "variant_key": list(_variant_key(variant)),
+                        "identity_kind": target.get("identity_kind"),
+                        "identity_value": target.get("identity_value"),
+                        "strength": target.get("strength"),
+                        "permutation_identity_sha256": variant.get(
+                            "permutation_identity_sha256"
+                        ),
+                        "pair_byte_sha256": variant.get("pair_byte_sha256"),
+                        "vertex_byte_sha256": variant.get(
+                            "vertex_byte_sha256"
+                        ),
+                        "pixel_byte_sha256": variant.get(
+                            "pixel_byte_sha256"
+                        ),
+                        "candidate_file": variant.get("candidate_file"),
+                        "candidate_program_offset": variant.get(
+                            "candidate_program_offset"
+                        ),
+                    })
+
+            if not variant_rows:
+                continue
+            matches[binding_index].append({
+                "frame": frame_id,
+                "draw_index": draw_index,
+                "draw": dict(draw),
+                "resource_identity_status": resource_status,
+                "gate_descriptor_match_count": len(
+                    gate_row.get("descriptor_matches") or []
+                ),
+                "runtime_hashes": dict(hashes),
+                "variant_matches": sorted(
+                    variant_rows,
+                    key=lambda item: (-int(item["score"]), item["variant_key"]),
+                ),
+            })
+
+    results: list[dict[str, Any]] = []
+    attributed_count = 0
+    observed_count = 0
+    for target_binding in bindings:
+        binding_index = int(target_binding.get("binding_index"))
+        rows = matches.get(binding_index, [])
+        if rows:
+            observed_count += 1
+
+        strong: list[dict[str, Any]] = []
+        for row in rows:
+            for variant in row["variant_matches"]:
+                if int(variant["score"]) >= 80:
+                    strong.append({
+                        **variant,
+                        "frame": row["frame"],
+                        "draw_index": row["draw_index"],
+                    })
+        best_score = max(
+            (int(row["score"]) for row in strong),
+            default=None,
+        )
+        best = [
+            row for row in strong
+            if best_score is not None and int(row["score"]) == best_score
+        ]
+        keys = {tuple(row["variant_key"]) for row in best}
+        attributed = (
+            not blockers
+            and best_score is not None
+            and len(keys) == 1
+        )
+
+        reasons: list[str] = []
+        if not rows:
+            reasons.append("draw-or-shader-not-observed")
+        elif not strong:
+            reasons.append("only-prefilter-hash-matched")
+        elif len(keys) != 1:
+            reasons.append("multiple-strong-variants")
+        if blockers:
+            reasons.extend(blockers)
+
+        selected = None
+        if attributed:
+            attributed_count += 1
+            first = best[0]
+            selected = {
+                key: first.get(key)
+                for key in (
+                    "score",
+                    "evidence",
+                    "variant_key",
+                    "permutation_identity_sha256",
+                    "pair_byte_sha256",
+                    "vertex_byte_sha256",
+                    "pixel_byte_sha256",
+                    "candidate_file",
+                    "candidate_program_offset",
+                )
+            }
+
+        results.append({
+            "binding_index": binding_index,
+            "primitive_index": target_binding.get("primitive_index"),
+            "imb_path": target_binding.get("imb_path"),
+            "imb_sha256": target_binding.get("imb_sha256"),
+            "draw_range": target_binding.get("draw_range"),
+            "material_reference": target_binding.get("material_reference"),
+            "shader_family": target_binding.get("shader_family"),
+            "observed": bool(rows),
+            "attributed": attributed,
+            "best_score": best_score,
+            "selected_variant": selected,
+            "match_count": len(rows),
+            "strong_variant_match_count": len(strong),
+            "blocking_reasons": list(dict.fromkeys(reasons)),
+            "matches": rows,
+        })
+
+    ready = (
+        bool(results)
+        and attributed_count == len(results)
+        and not blockers
+    )
+    status = (
+        "ready" if ready
+        else "partial" if observed_count
+        else "blocked" if blockers
+        else "not-found"
+    )
+    return {
+        "format": FORMAT,
+        "version": 1,
+        "status": status,
+        "ready": ready,
+        "blocking_reasons": list(dict.fromkeys(blockers)),
+        "target_resource": resource,
+        "summary": {
+            "resource_binding_count": len(bindings),
+            "observed_binding_count": observed_count,
+            "attributed_binding_count": attributed_count,
+            "blocked_binding_count": len(bindings) - attributed_count,
+            "same_instance_candidate_draw_count": len(gate_rows),
+        },
+        "binding_results": results,
+        "boundary": {
+            "report_scope": "one exact IMB resource identity",
+            "requires_same_instance_gate": True,
+            "requires_declaration_descriptor_proof": True,
+            "requires_exact_draw_range": True,
+            "minimum_attribution_score": 80,
+            "pixel_prefilter_score": 40,
+            "selects_permutation_only_when_unique_strong_variant": True,
+        },
+    }
+
+
+def validate_files(
+    target_set_path: str | Path,
+    runtime_report_path: str | Path,
+) -> dict[str, Any]:
+    target_set = json.loads(
+        Path(target_set_path).read_text(encoding="utf-8")
+    )
+    runtime = json.loads(
+        Path(runtime_report_path).read_text(encoding="utf-8")
+    )
+    return match_imb_runtime_shader_variants(target_set, runtime)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Match IMB shader variants against D3D9 draw evidence"
+    )
+    parser.add_argument("target_set")
+    parser.add_argument("runtime_report")
+    parser.add_argument("output")
+    args = parser.parse_args(argv)
+
+    report = validate_files(args.target_set, args.runtime_report)
+    Path(args.output).write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
+        + "
+",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "summary": report["summary"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
