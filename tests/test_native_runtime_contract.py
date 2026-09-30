@@ -239,3 +239,33 @@ def test_phase586_keeps_bmw_bundle_set_abi():
     assert "SHIFT.BMWVulkanBundleSetPrepare/1" in source
     assert "SHIFT.BMWVulkanInterfaceGate/1" in source
     assert '"--bundle-set"' in source
+
+
+def test_phase600_native_input_script_reaches_physics_tick_boundary():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "SHIFT.NativeRuntimeInputScript/1" in source
+    assert '"--input-script"' in source
+    assert "load_input_script" in source
+    assert "steps must be contiguous from zero" in source
+    assert "--frames must equal native input script step count" in source
+    assert "input_script_mode" in source
+    assert '"script" : "keyboard"' in source
+    assert "vehicle_control_throttle_steps" in source
+    assert "vehicle_control_brake_steps" in source
+    assert "vehicle_control_steer_left_steps" in source
+    assert "vehicle_control_steer_right_steps" in source
+    assert "vehicle_control_neutral_steps" in source
+
+    assert "throttle_steps" in header
+    assert "brake_steps" in header
+    assert "steer_left_steps" in header
+    assert "steer_right_steps" in header
+    assert "neutral_input_steps" in header
+    assert "if (input.throttle) ++throttle_steps" in header
+    assert "if (input.brake) ++brake_steps" in header
