@@ -150,6 +150,57 @@ def test_parent_matrix_number_materializes_world_when_runtime_root_is_supplied()
     )
 
 
+def test_parent_matrix_number_uses_constructor_root_when_no_updates_are_proven():
+    parent = _parent(_object(matrix_number=0))
+    child = parent["subobject_references"][0]["report"]
+
+    handoff = build_object_render_handoff(
+        child,
+        parent_object_report=parent,
+        parent_scenegraph_updates=[],
+    )
+
+    transform = handoff["transform"]
+    evaluation = transform["multimatrix_evaluation"]
+    root_state = evaluation["root_transform_state"]
+    assert transform["world_matrix_ready"] is True
+    assert transform["world_matrix"][12:15] == pytest.approx(
+        [1.0, 2.0, 3.0]
+    )
+    assert root_state["ready"] is True
+    assert root_state["scenegraph_update_count"] == 0
+    assert (
+        root_state["current_root_source"]
+        == "constructor-initial-world-slot-0"
+    )
+
+
+def test_parent_matrix_number_uses_last_proven_scenegraph_update():
+    parent = _parent(_object(matrix_number=0))
+    child = parent["subobject_references"][0]["report"]
+    root = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        70.0, 80.0, 90.0, 1.0,
+    ]
+
+    handoff = build_object_render_handoff(
+        child,
+        parent_object_report=parent,
+        parent_scenegraph_updates=[root],
+    )
+
+    transform = handoff["transform"]
+    root_state = transform["multimatrix_evaluation"][
+        "root_transform_state"
+    ]
+    assert transform["world_matrix_ready"] is True
+    assert transform["world_matrix"] == pytest.approx(root)
+    assert root_state["scenegraph_update_count"] == 1
+    assert root_state["current_root_source"] == "scenegraph-transform-update"
+
+
 def test_parent_matrix_number_out_of_range_blocks():
     parent = _parent(_object(matrix_number=2))
     child = parent["subobject_references"][0]["report"]
