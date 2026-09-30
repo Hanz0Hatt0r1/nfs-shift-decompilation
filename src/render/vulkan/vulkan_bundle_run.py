@@ -234,6 +234,26 @@ def run_bmw_vulkan_bundle(
             if native_report is not None
             else None
         ),
+        "world_transform_mode": (
+            native_report.get("world_transform_mode")
+            if native_report is not None
+            else None
+        ),
+        "world_transform_determinant": (
+            native_report.get("world_transform_determinant")
+            if native_report is not None
+            else None
+        ),
+        "world_transform_properties": (
+            native_report.get("world_transform_properties")
+            if native_report is not None
+            else None
+        ),
+        "world_transform_probe": (
+            native_report.get("world_transform_probe")
+            if native_report is not None
+            else None
+        ),
     })
     if proc.returncode != 0:
         result["status"] = "failed"
