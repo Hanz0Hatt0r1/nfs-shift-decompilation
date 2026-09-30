@@ -95,7 +95,11 @@ jobs:
             out/vulkan/runtime/builtin_sparse_solver.json
           grep -q '"diagonal_reset_cases": 2' \
             out/vulkan/runtime/builtin_sparse_solver.json
-          grep -q '"cases": 6' \
+          grep -q '"builtin_frame_sequence": "FUN_007b2210 -> FUN_007b0f20"' \
+            out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"builtin_frame_cases": 2' \
+            out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"cases": 8' \
             out/vulkan/runtime/builtin_sparse_solver.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/builtin_sparse_solver.json
