@@ -1,9 +1,9 @@
-"""Convert attributed D3D9 texture captures into exact Phase 589 scene snapshots.
+"""Convert attributed D3D9 texture captures into exact scene snapshots.
 
-Phase 590 consumes only draw-local texture observations that already support a
-strong Phase 572 shader attribution. It then joins those observations to one
-unique NativeSceneBundle draw and one exact external sampler2D declaration
-before converting a captured PPM into SHIFT.ReferenceTexture/1.
+Phase 590 consumes draw-local texture observations that already support a
+strong Phase 572 shader attribution and produces exact external sampler2D
+snapshots. Phase 592 extends the same exact scene-identity join to the proven
+samplerCube s3 boundary by requiring six named captured cube-face PPMs.
 """
 from __future__ import annotations
 
