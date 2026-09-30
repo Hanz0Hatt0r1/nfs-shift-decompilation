@@ -32,6 +32,8 @@ def _matrix16(value: Any) -> list[float] | None:
 def build_sgb_render_binding_bridge(
     admission: Mapping[str, Any],
     ir_root: str | Path,
+    *,
+    runtime_shader_admission: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if admission.get("format") != ADMISSION_FORMAT:
         raise ValueError(
@@ -156,7 +158,20 @@ def build_sgb_render_binding_bridge(
         ir_root,
         direct_render_instances,
         source_format=ADMISSION_FORMAT,
+        runtime_shader_admission=runtime_shader_admission,
     )
+
+    runtime_shader_join = render_binding.get("runtime_shader_join") or {}
+    if runtime_shader_admission is not None:
+        if runtime_shader_join.get("ready") is not True:
+            blockers.extend(
+                "runtime-shader-join:" + str(reason)
+                for reason in (
+                    runtime_shader_join.get("blocking_reasons") or []
+                )
+            )
+            if not runtime_shader_join.get("blocking_reasons"):
+                blockers.append("runtime-shader-join:not-ready")
 
     unresolved = list((render_binding.get("stats") or {}).get("unresolved") or [])
     for item in unresolved:
@@ -211,6 +226,7 @@ def build_sgb_render_binding_bridge(
         "resource_adapter_blocked": resource_adapter_blocked,
         "skipped_bindings": skipped,
         "render_binding": render_binding,
+        "runtime_shader_join": runtime_shader_join,
         "boundary": {
             "retail_resource_factory": "MeshType(type 0) / MeshInst(type 7)",
             "meshinst_extensions": ["imb", "imx"],
@@ -225,6 +241,12 @@ def build_sgb_render_binding_bridge(
             "world_matrix_source": "SHIFT.SGBRenderBindingAdmission/1",
             "blocked_scene_rows_promoted": False,
             "generic_render_binding_packets_emitted": True,
+            "runtime_shader_admission_format": (
+                "SHIFT.IMBRuntimeShaderAdmission/1"
+            ),
+            "runtime_shader_admission_scope": (
+                "exact IMB resource/primitive/material identity"
+            ),
             "draw_admission": (
                 "delegated to existing StaticDraw/RenderCommand gates"
             ),
@@ -235,11 +257,26 @@ def build_sgb_render_binding_bridge(
 def validate_file(
     admission_path: str | Path,
     ir_root: str | Path,
+    *,
+    runtime_shader_admission_path: str | Path | None = None,
 ) -> dict[str, Any]:
     value = json.loads(Path(admission_path).read_text(encoding="utf-8"))
     if not isinstance(value, Mapping):
         raise ValueError("SGB admission JSON must be an object")
-    return build_sgb_render_binding_bridge(value, ir_root)
+    runtime_shader_admission = None
+    if runtime_shader_admission_path is not None:
+        runtime_shader_admission = json.loads(
+            Path(runtime_shader_admission_path).read_text(encoding="utf-8")
+        )
+        if not isinstance(runtime_shader_admission, Mapping):
+            raise ValueError(
+                "runtime shader admission JSON must be an object"
+            )
+    return build_sgb_render_binding_bridge(
+        value,
+        ir_root,
+        runtime_shader_admission=runtime_shader_admission,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -249,9 +286,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("admission")
     parser.add_argument("ir_root")
     parser.add_argument("output")
+    parser.add_argument("--runtime-shader-admission")
     args = parser.parse_args(argv)
 
-    report = validate_file(args.admission, args.ir_root)
+    report = validate_file(
+        args.admission,
+        args.ir_root,
+        runtime_shader_admission_path=args.runtime_shader_admission,
+    )
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
