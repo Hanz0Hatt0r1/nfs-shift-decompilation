@@ -44,6 +44,28 @@ jobs:
       - name: Headless triangle
         run: |
           native_vulkan/build/shift_vulkan_headless_triangle out/vulkan/triangle.ppm native_vulkan/build/shaders > out/vulkan/triangle.json
+      - name: World transform packet checkpoint
+        run: |
+          cat > out/vulkan/world_transform.json <<'JSON'
+          {
+            "world_matrix": [
+              1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 1, 0,
+              10, 20, 30, 1
+            ]
+          }
+          JSON
+          python3 shift_importer.py vulkan-world-transform-packet \
+            out/vulkan/world_transform.json \
+            out/vulkan/world_transform.svwt \
+            > out/vulkan/world_transform_packet.json
+          native_vulkan/build/shift_vulkan_world_transform_check \
+            out/vulkan/world_transform.svwt \
+            | tee out/vulkan/world_transform_check.json
+          grep -q '"status": "ok"' out/vulkan/world_transform_check.json
+          grep -q '"translation_xyz": \[10, 20, 30\]' out/vulkan/world_transform_check.json
+          grep -q '"transformed_point": \[11, 22, 33, 1\]' out/vulkan/world_transform_check.json
       - name: Native provenance gate regression
         run: |
           mkdir -p out/vulkan/blocked
