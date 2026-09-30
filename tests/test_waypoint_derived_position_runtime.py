@@ -185,7 +185,8 @@ def test_descriptor_freezes_source_functions_offsets_and_pass_order():
         "scale": VECTOR_SCALE_FUNCTION,
         "add": VECTOR_ADD_FUNCTION,
     }
+    assert SECOND_GEOMETRY_PASS == "FUN_007ada70"
     assert report["caller_order"] == {
         "first_pass": "FUN_007ade00",
-        "second_pass": SECOND_GEOMETRY_PASS == "FUN_007ada70",
+        "second_pass": SECOND_GEOMETRY_PASS,
     }
