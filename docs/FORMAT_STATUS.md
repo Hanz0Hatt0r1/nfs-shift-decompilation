@@ -15,7 +15,7 @@
 | FX / FXH / FXO | source inventory, shader parsing and permutation linking |
 | DDS | metadata, DXT decode, cubemap decode |
 | MEB | geometry/indices/material refs → MGEO |
-| IMB / IMX | MeshInst/type 7; IMB 4/6/11/11 packed version/prefix, fixed header, optional bones and Type/Usage/Channel descriptor-then-vertex blocks decoded for retail-supported binary Types; primitive section located; IMX XML loader mapped; full neutral adapters remain open |
+| IMB / IMX | MeshInst/type 7; IMB 4/6/11/11 packed version/prefix, fixed header, optional bones and Type/Usage/Channel descriptor-then-vertex blocks decoded for retail-supported binary Types; primitive section located and v0.4 material/palette/index/bounds records optionally decoded; IMX XML loader mapped; full neutral adapters remain open |
 | CSM | collision geometry → CMES |
 | VHF/CAR | scene/resource graph |
 | LOD XML | loose parser for known malformed retail forms |

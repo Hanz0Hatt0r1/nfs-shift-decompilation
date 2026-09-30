@@ -1,0 +1,25 @@
+{
+  "format": "SHIFT.IMBBinaryPrimitiveSourceEvidence/1",
+  "source": {
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "loader": "FUN_00859800",
+    "primitive_records_lines": [934714, 935008],
+    "index_count_helper": "FUN_00853c80",
+    "index_count_helper_line": 929457
+  },
+  "supported_version": "0.4.0.0",
+  "primitive_type": 4,
+  "index_count": "triangle_count * 3",
+  "name_alignment": "round storage including NUL to four bytes",
+  "bone_palette_gate": "mesh bone count != 0",
+  "palette_padding_bytes": "2 when palette count is odd",
+  "index_padding_bytes": "2 when triangle count is odd",
+  "range_bounds_trailer_bytes": 44,
+  "limits": [
+    "Material word preceding triangle count remains opaque.",
+    "Legacy primitive bounds reconstruction is not implemented.",
+    "Retail IMB corpus and runtime numeric parity are not asserted.",
+    "Neutral scene/render adapter remains open."
+  ]
+}
