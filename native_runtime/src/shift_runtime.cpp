@@ -275,9 +275,11 @@ int32_t json_i32_field(
            std::isdigit(static_cast<unsigned char>(text[cursor]))) {
         value = value * 10 +
             static_cast<int64_t>(text[cursor] - '0');
-        const int64_t limit = negative
-            ? static_cast<int64_t>(INT32_MAX) + 1
-            : static_cast<int64_t>(INT32_MAX);
+        const int64_t max_i32 =
+            static_cast<int64_t>(
+                std::numeric_limits<int32_t>::max());
+        const int64_t limit =
+            negative ? max_i32 + 1 : max_i32;
         if (value > limit) {
             throw std::runtime_error(
                 "manifest field exceeds int32: " + field);
@@ -3056,7 +3058,7 @@ int main(int argc, char** argv) {
             << (native_state.camera.update_in_progress
                 ? "true" : "false")
             << ",\n"
-            << "  \"vehicle_control_steer_axis\": 
+            << "  \"vehicle_control_steer_axis\": "
             << native_state.physics.last_input.steer_axis()
             << ",\n"
             << "  \"physics_participant_ready\": "
