@@ -1,0 +1,107 @@
+{
+  "format": "SHIFT.SilverstoneEra3FLATSpatialObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 Silverstone Era3 visual corpus",
+  "source_backed_layout": {
+    "node_aabbox": {
+      "min_xyz_offset": "0x00",
+      "max_xyz_offset": "0x0c",
+      "runtime_builder": "FUN_00689db0"
+    },
+    "leaf_filter_masks": {
+      "include_offsets": [
+        "0x00",
+        "0x04"
+      ],
+      "exclude_offsets": [
+        "0x08",
+        "0x0c"
+      ],
+      "query": "FUN_006aef20/FUN_006aefe0"
+    },
+    "leaf_bounding_sphere": {
+      "center_xyz_offsets": [
+        "0x10",
+        "0x14",
+        "0x18"
+      ],
+      "radius_offset": "0x1c",
+      "query": "FUN_006aef20/FUN_006aefe0"
+    }
+  },
+  "corpus_candidate": {
+    "offsets": "0x20..0x34",
+    "source_consumer_proven": false,
+    "interpretation": "AABB-shaped min_xyz/max_xyz candidate",
+    "evidence_level": "corpus-verified-candidate"
+  },
+  "variants": [
+    {
+      "name": "Drift",
+      "sgb_size": 774127,
+      "sgb_sha256": "a8ad0608889627bedb42529b729f9a52529afedc03b66e73de86148dcd3ecf25",
+      "tree_nodes": 739,
+      "leaf_records": 2622,
+      "nonzero_filter_mask_records": 0,
+      "nonzero_serialized_direct_object_pointers": 0,
+      "ordered_candidate_bounds": 2622,
+      "sphere_center_inside_candidate_bounds": 2622,
+      "sphere_center_midpoint_matches": 2622,
+      "max_midpoint_error": 0.000030517578125
+    },
+    {
+      "name": "GrandPrix",
+      "sgb_size": 2176990,
+      "sgb_sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+      "tree_nodes": 1913,
+      "leaf_records": 7348,
+      "nonzero_filter_mask_records": 0,
+      "nonzero_serialized_direct_object_pointers": 0,
+      "ordered_candidate_bounds": 7348,
+      "sphere_center_inside_candidate_bounds": 7348,
+      "sphere_center_midpoint_matches": 7348,
+      "max_midpoint_error": 0.00006103515625
+    },
+    {
+      "name": "International",
+      "sgb_size": 1788074,
+      "sgb_sha256": "fb6a534b4890a8c046f234f10e702962913a5a03377b7a158581f0a7c74ea2b6",
+      "tree_nodes": 1557,
+      "leaf_records": 5932,
+      "nonzero_filter_mask_records": 0,
+      "nonzero_serialized_direct_object_pointers": 0,
+      "ordered_candidate_bounds": 5932,
+      "sphere_center_inside_candidate_bounds": 5932,
+      "sphere_center_midpoint_matches": 5932,
+      "max_midpoint_error": 0.00006103515625
+    },
+    {
+      "name": "National",
+      "sgb_size": 1701530,
+      "sgb_sha256": "b3f94c2b65bc74d9e309774d793c522bcd2aff5ebfa8a7e7f46ba4d484e5ad93",
+      "tree_nodes": 1519,
+      "leaf_records": 5678,
+      "nonzero_filter_mask_records": 0,
+      "nonzero_serialized_direct_object_pointers": 0,
+      "ordered_candidate_bounds": 5678,
+      "sphere_center_inside_candidate_bounds": 5678,
+      "sphere_center_midpoint_matches": 5678,
+      "max_midpoint_error": 0.00006103515625
+    }
+  ],
+  "totals": {
+    "tree_nodes": 5728,
+    "leaf_records": 21580,
+    "nonzero_filter_mask_records": 0,
+    "nonzero_serialized_direct_object_pointers": 0,
+    "ordered_candidate_bounds": 21580,
+    "sphere_center_inside_candidate_bounds": 21580,
+    "sphere_center_midpoint_matches": 21580,
+    "midpoint_match_tolerance": 0.0001,
+    "max_midpoint_error": 0.00006103515625
+  },
+  "boundary": [
+    "The filter-mask and bounding-sphere interpretations are source-backed by retail query consumers.",
+    "The tree-node AABB mapping is source-backed by PART-to-FLAT runtime materialization.",
+    "Leaf +0x20..+0x34 is not promoted to source-proven AABB semantics; only its four-variant corpus invariants are recorded."
+  ]
+}

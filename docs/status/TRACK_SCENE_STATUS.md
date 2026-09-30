@@ -26,13 +26,17 @@ Covered boundaries include:
 - FLAT +0x3c runtime index table joins and +0x38 direct-object lookup/refcount teardown consumers;
 - FLAT leaf +0x3c → SUMM wrapper-order placement identity, production-verified across 21,580 Silverstone placements;
 - PART one-based child-object IDs → NODE wrapper registry indices;
-- PART runtime → generated FLAT-like 0x40-byte record materialization through FUN_00689db0.
+- PART runtime → generated FLAT-like 0x40-byte record materialization through FUN_00689db0;
+- FLAT leaf include/exclude 64-bit query-mask pairs at +0x00..+0x0f;
+- FLAT leaf bounding sphere at +0x10..+0x1c;
+- FLAT tree-node AABB at header +0x00..+0x14;
+- leaf +0x20..+0x34 retained as a source-unresolved, corpus-verified min/max bounds candidate whose midpoint matches the sphere centre across 21,580 Silverstone placements.
 
 ## Explicitly unresolved
 
 The project does not invent:
 
-- semantics of the remaining FLAT direct-record payload words and the concrete class behind populated +0x38 runtime object pointers;
+- source semantics of FLAT leaf +0x20..+0x34 and the concrete class behind populated +0x38 runtime object pointers;
 - higher-level roles of individual LOD/HIERARCHY objects;
 - full scene streaming and LOD behavior.
 
@@ -40,4 +44,4 @@ Track placement remains an evidence question.
 
 ## Next
 
-Resolve only the remaining FLAT spatial/mask payload fields required to express the now-joined scene placement, then expose that neutral placement to RenderBinding.
+Build a neutral scene placement contract from the Phase 545 identity join plus Phase 546 source-backed FLAT filter/sphere/node-AABB geometry, while keeping +0x20..+0x34 below the source-proof threshold, then expose that contract toward RenderBinding.

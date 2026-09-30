@@ -9,8 +9,9 @@ Raw retail SGB files can encode terminal spans as a negative signed dword.
 FUN_006af6c0 normalizes that encoding into the low-24-bit span plus a runtime
 high-byte depth/termination marker before traversal.
 
-Unknown leaf payload fields remain raw. Only offsets with explicit runtime
-consumers are assigned operational names.
+Node AABBs, direct-record filter masks and direct-record bounding spheres are
+now source-backed. Remaining direct-record words stay raw until a concrete
+consumer proves their role.
 """
 from __future__ import annotations
 
@@ -38,6 +39,14 @@ DIRECT_OBJECT_REFCOUNT_OFFSET = 0x20
 DIRECT_OBJECT_CHILD_RELEASE_VFUNC_OFFSET = 0x0C
 DIRECT_OBJECT_DESTROY_VFUNC_OFFSET = 0x10
 
+NODE_AABB_MIN_OFFSET = 0x00
+NODE_AABB_MAX_OFFSET = 0x0C
+LEAF_INCLUDE_MASK_OFFSET = 0x00
+LEAF_EXCLUDE_MASK_OFFSET = 0x08
+LEAF_BOUNDING_SPHERE_OFFSET = 0x10
+LEAF_UNRESOLVED_SPATIAL_OFFSET = 0x20
+LEAF_UNRESOLVED_SPATIAL_BYTES = 0x18
+
 
 class FLATRuntimeDecodeError(ValueError):
     pass
@@ -47,6 +56,10 @@ def _u32(data: bytes, off: int) -> int:
     if off < 0 or off + 4 > len(data):
         raise FLATRuntimeDecodeError(f"u32 out of range at 0x{off:x}")
     return struct.unpack_from("<I", data, off)[0]
+
+
+def _f32_bits(value: int) -> float:
+    return struct.unpack("<f", struct.pack("<I", value))[0]
 
 
 def _signed_u32(value: int) -> int:
@@ -102,11 +115,82 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
     if off + LEAF_SIZE > end:
         raise FLATRuntimeDecodeError(f"leaf {index} exceeds FLAT node span")
     words = [_u32(data, off + 4 * i) for i in range(LEAF_SIZE // 4)]
+    sphere = [_f32_bits(value) for value in words[4:8]]
+    unresolved_spatial = [_f32_bits(value) for value in words[8:14]]
+    candidate_min = unresolved_spatial[0:3]
+    candidate_max = unresolved_spatial[3:6]
+    midpoint = [
+        (candidate_min[axis] + candidate_max[axis]) * 0.5
+        for axis in range(3)
+    ]
+    midpoint_error = max(
+        abs(sphere[axis] - midpoint[axis])
+        for axis in range(3)
+    )
     return {
         "index": index,
         "offset": off,
         "record_bytes": LEAF_SIZE,
         "raw_u32": words,
+        "filter_masks": {
+            "include_words": words[0:2],
+            "exclude_words": words[2:4],
+            "include_offset": LEAF_INCLUDE_MASK_OFFSET,
+            "exclude_offset": LEAF_EXCLUDE_MASK_OFFSET,
+            "source": {
+                "query": "FUN_006aef20/FUN_006aefe0",
+                "mutation_sync": (
+                    "PTR_FUN_00af9c44 -> "
+                    "FUN_006aee40/FUN_006aee70/"
+                    "FUN_006aeeb0/FUN_006aeef0"
+                ),
+                "include_rule": (
+                    "query include pair absent OR any overlap with "
+                    "leaf +0x00/+0x04"
+                ),
+                "exclude_rule": (
+                    "query exclude pair absent OR no overlap with "
+                    "leaf +0x08/+0x0c"
+                ),
+            },
+        },
+        "bounding_sphere": {
+            "center_xyz": sphere[0:3],
+            "radius": sphere[3],
+            "source_offset": LEAF_BOUNDING_SPHERE_OFFSET,
+            "source": {
+                "query": "FUN_006aef20/FUN_006aefe0",
+                "plane_test": "dot(plane.xyz, center) + plane.w + radius >= 0",
+            },
+        },
+        "unresolved_spatial_words_20_34": {
+            "offset": LEAF_UNRESOLVED_SPATIAL_OFFSET,
+            "bytes": LEAF_UNRESOLVED_SPATIAL_BYTES,
+            "raw_u32": words[8:14],
+            "float_view": unresolved_spatial,
+            "semantic_status": "unresolved-source-consumer",
+        },
+        "spatial_bounds_candidate": {
+            "min_xyz": candidate_min,
+            "max_xyz": candidate_max,
+            "source_offset": LEAF_UNRESOLVED_SPATIAL_OFFSET,
+            "semantic_status": "corpus-verified-candidate",
+            "source_consumer_proven": False,
+            "ordered_axes": all(
+                candidate_min[axis] <= candidate_max[axis]
+                for axis in range(3)
+            ),
+            "bounding_sphere_center_midpoint_xyz": midpoint,
+            "bounding_sphere_center_midpoint_max_abs_error": midpoint_error,
+            "silverstone_era3_observation": {
+                "leaf_count": 21580,
+                "ordered_axes_count": 21580,
+                "sphere_center_inside_count": 21580,
+                "midpoint_match_tolerance": 0.0001,
+                "midpoint_match_count": 21580,
+                "max_midpoint_error": 0.00006103515625,
+            },
+        },
         # +0x38 is a nullable direct object pointer slot. FUN_006af640
         # passes it to FUN_006b0440 for recursive scene-object lookup.
         # FUN_006af830 owns its fallback teardown when no normalized
@@ -136,6 +220,16 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
             },
         },
         "runtime_consumer_metadata": {
+            "filter_mask_query": {
+                "functions": ["FUN_006aef20", "FUN_006aefe0"],
+                "include_offsets": [0x00, 0x04],
+                "exclude_offsets": [0x08, 0x0C],
+            },
+            "bounding_sphere_query": {
+                "functions": ["FUN_006aef20", "FUN_006aefe0"],
+                "center_offsets": [0x10, 0x14, 0x18],
+                "radius_offset": 0x1C,
+            },
             "direct_object_pointer_offset": LEAF_DIRECT_OBJECT_POINTER_OFFSET,
             "runtime_index_offset": LEAF_RUNTIME_INDEX_OFFSET,
             "dispatch": {
@@ -193,6 +287,7 @@ def _parse_node(
         raise FLATRuntimeDecodeError(f"FLAT node header exceeds input at 0x{start:x}")
 
     words = [_u32(data, start + 4 * i) for i in range(8)]
+    aabb_words = [_f32_bits(value) for value in words[0:6]]
     direct_count = words[6]
     span_info = _normalize_span_word(
         words[7],
@@ -249,6 +344,20 @@ def _parse_node(
         "offset": start,
         "header_bytes": HEADER_SIZE,
         "raw_header_u32": words[:7],
+        "aabbox": {
+            "min_xyz": aabb_words[0:3],
+            "max_xyz": aabb_words[3:6],
+            "source_offsets": {
+                "min_xyz": NODE_AABB_MIN_OFFSET,
+                "max_xyz": NODE_AABB_MAX_OFFSET,
+            },
+            "source": {
+                "runtime_builder": "FUN_00689db0",
+                "part_runtime_copy": (
+                    "PART node +0x04..+0x18 -> generated FLAT header +0x00..+0x14"
+                ),
+            },
+        },
         "serialized_span_word": words[7],
         "serialized_span_signed": span_info["serialized_signed"],
         "serialized_terminal_encoding": span_info[
@@ -348,9 +457,17 @@ def parse_flat_runtime(
             "walk_leaves": "FUN_006af5a0",
             "recursive_object_lookup": "FUN_006af640 -> FUN_006b0440",
             "release_leaf_objects": "FUN_006af830",
+            "node_aabb_copy": "FUN_00689db0",
+            "leaf_filter_query": "FUN_006aef20/FUN_006aefe0",
+            "leaf_filter_mutation_sync": (
+                "PTR_FUN_00af9c44 -> "
+                "FUN_006aee40/FUN_006aee70/"
+                "FUN_006aeeb0/FUN_006aeef0"
+            ),
+            "leaf_bounding_sphere_query": "FUN_006aef20/FUN_006aefe0",
         },
         "limitations": [
-            "Unknown leaf payload words are preserved raw; only +0x38/+0x3c runtime consumers are named.",
+            "Leaf +0x20..+0x34 remains source-unresolved; Silverstone Era3 proves an AABB-shaped min/max candidate whose midpoint matches the source-backed sphere center, but no direct source consumer has been accepted yet.",
             "The class behind a populated leaf +0x38 direct object pointer remains unresolved.",
             "High-byte span marker is exposed as runtime depth/termination metadata rather than assigned a higher-level scene meaning.",
         ],
