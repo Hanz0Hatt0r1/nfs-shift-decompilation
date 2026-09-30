@@ -25,6 +25,10 @@ struct VehicleControlIntent {
 };
 
 struct CameraState {
+    // FUN_0080e040 word0 is an opaque 32-bit runtime camera reference.
+    // The native shell never dereferences or fabricates retail pointer identity.
+    uint32_t camera_source_token = 0;
+
     // Projection defaults are recovered from CCameraView's initializer:
     // FOV=0.7853982, AspectRatio=1.3333334, NearZ=0.1, FarZ=750.0.
     uint32_t fov_bits = 0x3F490FDBu;
@@ -46,20 +50,56 @@ struct CameraState {
     float far_z() const { return f32_from_bits(far_z_bits); }
 };
 
+struct CameraManagerSnapshot {
+    // Exact six-word shape written by FUN_0080e040.
+    uint32_t camera_source_token = 0;
+    int32_t manager_mode = 0;
+    int32_t buffer_sub_index = -1;
+    int32_t camera_id = -1;
+    int32_t active_group = -1;
+    int32_t group_restore_value = -1;
+};
+
 struct CameraBufferRuntime {
     static constexpr uint32_t buffer_count = 2;
     CameraState buffers[buffer_count]{};
     uint32_t active_index = 0;
     bool update_in_progress = false;
 
+    // Native-only observability counters. These do not claim retail timing.
+    uint64_t snapshot_count = 0;
+    uint64_t native_update_count = 0;
+    CameraManagerSnapshot last_snapshot{};
+
+    CameraManagerSnapshot snapshot_active() const {
+        const CameraState& state = buffers[active_index];
+        CameraManagerSnapshot snapshot{};
+        snapshot.camera_source_token = state.camera_source_token;
+        snapshot.manager_mode = state.manager_mode;
+        snapshot.buffer_sub_index = state.buffer_sub_index;
+        snapshot.camera_id = state.camera_id;
+        snapshot.active_group = state.active_group;
+        snapshot.group_restore_value = state.group_restore_value;
+        return snapshot;
+    }
+
     bool begin_swap() {
         if (update_in_progress) {
             return false;
         }
+
+        // Native scheduler policy: retain the source-backed six-word snapshot
+        // immediately before the source-backed guarded buffer flip/copy.
+        // This ordering is a native handoff choice, not a claim about
+        // FUN_0080c920 timestamp/controller scheduling.
+        last_snapshot = snapshot_active();
+        ++snapshot_count;
+
         const uint32_t next = 1u - active_index;
         buffers[next] = buffers[active_index];
         active_index = next;
         update_in_progress = true;
+        ++native_update_count;
         return true;
     }
 
@@ -124,8 +164,23 @@ struct NativeRuntimeState {
     static constexpr const char* format =
         "SHIFT.NativeRuntimeState/1";
 
+    bool begin_camera_update() {
+        return camera.begin_swap();
+    }
+
+    void complete_camera_update() {
+        camera.complete_update();
+    }
+
     void fixed_step(const VehicleControlIntent& input) {
+        const bool camera_update_started =
+            begin_camera_update();
+
         physics.tick(input);
+
+        if (camera_update_started) {
+            complete_camera_update();
+        }
     }
 };
 

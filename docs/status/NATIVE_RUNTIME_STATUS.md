@@ -31,7 +31,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 ## Next integration gates
 
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
-2. Connect the existing evidence-backed camera update/snapshot contracts to the native state double buffer.
+2. Phase 599 connects the evidence-backed six-word CameraManager snapshot and guarded double-buffer swap to native state. Remaining camera work is retail timestamp/update scheduling, controller behavior, gameplay view selection/attachment and exact render/view constant integration.
 3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
@@ -135,3 +135,20 @@ through its existing 2D texture upload path.
 
 Unsupplied or mismatched external resources remain fail-closed, and other
 renderer-owned resource types are not promoted by this phase.
+
+
+## Phase 599 camera state boundary
+
+`SHIFT.NativeRuntimeState/1` now executes the recovered CameraManager snapshot
+and guarded two-buffer transition on the native fixed-step boundary. Each
+native update records the six-word manager snapshot, copies/flips the camera
+buffer, and clears the update guard before the step completes.
+
+The frame-loop report exposes `camera_snapshot_count`,
+`camera_native_updates`, final `camera_active_buffer`,
+`camera_update_in_progress` and the explicit schedule label
+`native-fixed-step-non-retail-timing`.
+
+This is a native integration boundary only. It does not map the retail
+`FUN_0080c920` timestamp source, 0x14 suppression window, absolute time unit,
+or `FUN_0080c510` controller semantics onto the 60 Hz native clock.

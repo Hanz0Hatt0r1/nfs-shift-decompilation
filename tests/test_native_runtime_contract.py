@@ -103,6 +103,28 @@ def test_native_camera_defaults_match_recovered_view_constructor():
     assert "group_restore_value = -1" in header
     assert "buffer_count = 2" in header
 
+def test_phase599_native_camera_snapshot_and_swap_boundary():
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(
+        encoding="utf-8"
+    )
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "struct CameraManagerSnapshot" in header
+    assert "camera_source_token" in header
+    assert "snapshot_active() const" in header
+    assert "last_snapshot = snapshot_active()" in header
+    assert "++snapshot_count" in header
+    assert "++native_update_count" in header
+    assert "begin_camera_update()" in header
+    assert "complete_camera_update()" in header
+    assert "native-fixed-step-non-retail-timing" in source
+    assert "\\\"camera_snapshot_count\\\":" in source
+    assert "\\\"camera_native_updates\\\":" in source
+    assert "\\\"camera_update_in_progress\\\":" in source
+
+
 def test_native_index_draw_count_respects_first_index():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
 
