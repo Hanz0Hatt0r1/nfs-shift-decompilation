@@ -230,6 +230,17 @@ def build_scene_external_sampler_capture_adapter(
         blockers.append("scene-external-capture:scene-bridge-not-ready")
     if capture_pipeline.get("pipeline_ready") is not True:
         blockers.append("scene-external-capture:capture-pipeline-not-ready")
+    pipeline_boundary = capture_pipeline.get("boundary")
+    if (
+        not isinstance(pipeline_boundary, Mapping)
+        or pipeline_boundary.get(
+            "attributed_texture_observation_contract"
+        )
+        != "selected-strong-variant-draw-textures-v1"
+    ):
+        blockers.append(
+            "scene-external-capture:texture-observation-contract-missing"
+        )
     if not root.is_dir():
         blockers.append("scene-external-capture:capture-root-not-directory")
 
@@ -441,6 +452,10 @@ def build_scene_external_sampler_capture_adapter(
             "requires_unique_scene_draw_per_binding": True,
             "requires_phase573_strong_attribution": True,
             "requires_draw_local_texture_snapshot": True,
+            "texture_snapshot_time": (
+                "SetTexture-time content carried into the selected draw "
+                "snapshot; post-bind mutations are not excluded"
+            ),
             "requires_observed_texture2d_creation": True,
             "requires_exactly_one_ppm_snapshot_path": True,
             "material_textures_promoted": False,
