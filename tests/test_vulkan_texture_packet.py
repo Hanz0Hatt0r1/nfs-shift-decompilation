@@ -106,3 +106,8 @@ def test_vulkan_texture_native_contract():
     assert "texture.vert.spv" in cmake
     assert "texture.frag.spv" in cmake
     assert "layout(set = 1, binding = 1)" in frag
+
+
+def test_texture_native_color_image_declaration():
+    source = Path("native_vulkan/src/vulkan_texture_upload.cpp").read_text(encoding="utf-8")
+    assert "Image color{};" in source
