@@ -394,10 +394,20 @@ jobs:
           python3 shift_importer.py native-scene-vulkan-prepare             out/vulkan/native_scene_set             --validator glslangValidator             > out/vulkan/native_scene_set/prepare_stdout.json
           grep -q '"format": "SHIFT.NativeSceneVulkanSetPrepare/1"'             out/vulkan/native_scene_set/bundle_set_prepare.json
           grep -q '"ready": true'             out/vulkan/native_scene_set/bundle_set_prepare.json
+      - name: Prepare native physics participant structural boundary
+        run: |
+          python3 src/physics/native_physics_participant_boundary.py \
+            -o out/vulkan/runtime/native_physics_participant_boundary.json
+          grep -q '"format": "SHIFT.NativePhysicsParticipantBoundary/1"' \
+            out/vulkan/runtime/native_physics_participant_boundary.json
+          grep -q '"ready": true' \
+            out/vulkan/runtime/native_physics_participant_boundary.json
+          grep -q '"participant_instance_ready": false' \
+            out/vulkan/runtime/native_physics_participant_boundary.json
       - name: Native Linux runtime neutral scene-set frame loop
         run: |
           set -o pipefail
-          xvfb-run -a native_runtime/build/shift_runtime             --scene-set out/vulkan/native_scene_set             --shader-dir native_runtime/build/shaders             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json             --frames 3 --validation | tee out/vulkan/runtime/scene_set.json
+          xvfb-run -a native_runtime/build/shift_runtime             --scene-set out/vulkan/native_scene_set             --shader-dir native_runtime/build/shaders             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json             --participant-boundary out/vulkan/runtime/native_physics_participant_boundary.json             --frames 3 --validation | tee out/vulkan/runtime/scene_set.json
       - name: Assert neutral scene-set runtime output
         run: |
           grep -q '"geometry_source": "SHIFT.NativeSceneVulkanSet/1"' out/vulkan/runtime/scene_set.json
@@ -413,6 +423,14 @@ jobs:
           grep -q '"camera_active_buffer": 1' out/vulkan/runtime/scene_set.json
           grep -q '"camera_update_in_progress": false' out/vulkan/runtime/scene_set.json
           grep -q '"camera_schedule": "native-fixed-step-non-retail-timing"' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_contract_ready": true' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_registry_ready": true' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_selector_context_separate": true' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_registry_slot_stride": 8096' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_descriptor_type": 3' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_ready": false' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_index": -1' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_mode": -1' out/vulkan/runtime/scene_set.json
           grep -q '"validation_errors": 0' out/vulkan/runtime/scene_set.json
           grep -q '"status": "ok"' out/vulkan/runtime/scene_set.json
       - name: Upload artifacts
