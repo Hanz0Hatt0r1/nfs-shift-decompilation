@@ -257,6 +257,31 @@ def test_imb_scene_resource_is_classified_as_meshinst_and_stays_blocked(
     assert blocked["factory_name"] == "MeshInst"
 
 
+def test_mixed_meb_and_meshinst_preserves_ready_meb_packet(tmp_path):
+    _write_ir(tmp_path)
+    report = build_sgb_render_binding_bridge(
+        _admission(
+            _binding(index=0, resource="tracks/test/object.meb"),
+            _binding(index=1, resource="tracks/test/crowd_banner.imb"),
+        ),
+        tmp_path,
+    )
+
+    assert report["ready"] is False
+    assert report["scene_admitted_instance_count"] == 2
+    assert report["direct_render_instance_count"] == 1
+    assert report["resolved_instance_count"] == 1
+    assert report["resource_adapter_blocked_count"] == 1
+    assert len(report["render_binding"]["packets"]) == 1
+    assert (
+        report["render_binding"]["packets"][0]["scene_binding"][
+            "admission_binding_index"
+        ]
+        == 0
+    )
+    assert report["resource_adapter_blocked"][0]["binding_index"] == 1
+
+
 def test_no_admitted_rows_is_blocked(tmp_path):
     _write_ir(tmp_path)
     report = build_sgb_render_binding_bridge(
