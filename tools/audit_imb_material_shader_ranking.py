@@ -228,10 +228,28 @@ def audit_imb_material_shader_ranking(
                     })
                     continue
 
+                mesh = geometry.get("mesh") or {}
                 vertex_properties = tuple(
                     str(value)
-                    for value in ((geometry.get("mesh") or {}).get("vertex_properties") or [])
+                    for value in (mesh.get("vertex_properties") or [])
                 )
+                property_descriptors = [
+                    {
+                        "id": str(attribute.get("property_id")),
+                        "words": [
+                            int(attribute.get("type_ordinal")),
+                            int(attribute.get("usage_ordinal")),
+                            int(attribute.get("channel")),
+                        ],
+                    }
+                    for attribute in (
+                        (mesh.get("vertex_layout") or {}).get("attributes") or []
+                    )
+                    if attribute.get("property_id") is not None
+                    and attribute.get("type_ordinal") is not None
+                    and attribute.get("usage_ordinal") is not None
+                    and attribute.get("channel") is not None
+                ]
                 for primitive in geometry.get("primitives") or []:
                     primitive_index = int(primitive.get("index") or 0)
                     material_reference = str(primitive.get("material") or "")
@@ -252,6 +270,9 @@ def audit_imb_material_shader_ranking(
                             "index_count": index_count,
                             "primitive_count": triangle_count,
                         },
+                        "property_descriptors": [
+                            dict(row) for row in property_descriptors
+                        ],
                         "material_reference": material_reference.replace("\\", "/"),
                         "bmt": bmt_ref,
                         "vertex_properties": list(vertex_properties),

@@ -160,6 +160,11 @@ def _binding_identity(row: Mapping[str, Any]) -> dict[str, Any]:
         "shader": row.get("shader"),
         "shader_family": row.get("shader_family"),
         "vertex_properties": list(row.get("vertex_properties") or []),
+        "property_descriptors": [
+            dict(value)
+            for value in (row.get("property_descriptors") or [])
+            if isinstance(value, Mapping)
+        ],
     }
 
 
@@ -224,16 +229,52 @@ def build_imb_runtime_shader_target_set(
             )
             if key not in dedup:
                 dedup[key] = {
-                    **target,
+                    "identity_kind": target["identity_kind"],
+                    "identity_value": target["identity_value"],
+                    "strength": target["strength"],
                     "candidate_locations": [],
+                    "candidate_variants": [],
                 }
+            variant = {
+                "permutation_identity_sha256": target.get(
+                    "permutation_identity_sha256"
+                ),
+                "pair_byte_sha256": target.get("pair_byte_sha256"),
+                "vertex_byte_sha256": target.get("vertex_byte_sha256"),
+                "pixel_byte_sha256": target.get("pixel_byte_sha256"),
+                "candidate_file": target.get("candidate_file"),
+                "candidate_program_offset": target.get(
+                    "candidate_program_offset"
+                ),
+                "vertex_pair_selection_status": target.get(
+                    "vertex_pair_selection_status"
+                ),
+                "exact": target.get("exact") is True,
+            }
+            dedup[key]["candidate_variants"].append(variant)
             dedup[key]["candidate_locations"].append({
                 "file": target.get("candidate_file"),
                 "program_offset": target.get(
                     "candidate_program_offset"
                 ),
             })
+
         targets = list(dedup.values())
+        for target in targets:
+            variants = target["candidate_variants"]
+            for field in (
+                "permutation_identity_sha256",
+                "pair_byte_sha256",
+                "vertex_byte_sha256",
+                "pixel_byte_sha256",
+            ):
+                values = {
+                    variant.get(field)
+                    for variant in variants
+                    if variant.get(field)
+                }
+                target[field] = next(iter(values)) if len(values) == 1 else None
+            target["candidate_variant_count"] = len(variants)
 
         if not targets:
             row_blockers.append("no-hash-targets")
@@ -259,7 +300,11 @@ def build_imb_runtime_shader_target_set(
             capture_ready
             and all(
                 target.get("strength") == "exact-pair"
-                and target.get("exact") is True
+                and target.get("candidate_variants")
+                and all(
+                    variant.get("exact") is True
+                    for variant in target["candidate_variants"]
+                )
                 for target in targets
             )
         )
@@ -433,6 +478,7 @@ def build_imb_runtime_shader_target_set(
             "render_admission": False,
             "selects_permutation": False,
             "requires_complete_top_rank_set": True,
+            "preserves_candidate_variants": True,
             "runtime_resource_identity": (
                 "archive-local IMB path + decoded payload SHA-256"
             ),
