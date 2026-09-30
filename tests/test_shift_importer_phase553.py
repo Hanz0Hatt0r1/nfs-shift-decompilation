@@ -78,3 +78,15 @@ def test_phase580_cli_accepts_native_scene_vulkan_set_command():
     assert args.output_dir == "out/native-scene-vulkan"
     assert args.environment_cube_dds is None
     assert args.fn.__name__ == "cmd_native_scene_vulkan_set"
+
+
+def test_phase581_cli_accepts_vulkan_world_transform_packet_command():
+    parser = build_parser()
+    args = parser.parse_args([
+        "vulkan-world-transform-packet",
+        "render-command.json",
+        "world_transform.svwt",
+    ])
+    assert args.input == "render-command.json"
+    assert args.output == "world_transform.svwt"
+    assert args.fn.__name__ == "cmd_vulkan_world_transform_packet"
