@@ -23,7 +23,10 @@ Covered boundaries include:
 - XML-only DAMAGE wrapper fields for matrices (+0x80), runtime matrix array (+0x84), runtime subobject array (+0x88) and MatrixNumber (+0x90);
 - recursive FLAT tree structure with 0x40-byte direct records;
 - production signed-terminal FLAT span normalization controlled by SGB header bit2;
-- FLAT +0x3c runtime index table joins and +0x38 direct-object lookup/refcount teardown consumers.
+- FLAT +0x3c runtime index table joins and +0x38 direct-object lookup/refcount teardown consumers;
+- FLAT leaf +0x3c → SUMM wrapper-order placement identity, production-verified across 21,580 Silverstone placements;
+- PART one-based child-object IDs → NODE wrapper registry indices;
+- PART runtime → generated FLAT-like 0x40-byte record materialization through FUN_00689db0.
 
 ## Explicitly unresolved
 
@@ -31,11 +34,10 @@ The project does not invent:
 
 - semantics of the remaining FLAT direct-record payload words and the concrete class behind populated +0x38 runtime object pointers;
 - higher-level roles of individual LOD/HIERARCHY objects;
-- placement joins from recursive NODE/SUMM transforms into PART/FLAT spatial structures;
 - full scene streaming and LOD behavior.
 
 Track placement remains an evidence question.
 
 ## Next
 
-Join the proven recursive LOD/HIERARCHY/OBJECT transform graph to PART/FLAT placement structures, then resolve only the remaining FLAT payload fields required by that join before exposing scene placement to RenderBinding.
+Resolve only the remaining FLAT spatial/mask payload fields required to express the now-joined scene placement, then expose that neutral placement to RenderBinding.
