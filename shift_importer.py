@@ -1943,6 +1943,32 @@ def cmd_sgb_render_binding_bridge(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+
+def cmd_silverstone_native_scene_bundle(
+    args: argparse.Namespace,
+) -> int:
+    """Freeze runtime-proven SGB/IMB draws into the native bundle-set ABI."""
+    from silverstone_native_scene_bundle import validate_files
+
+    report = validate_files(
+        args.bridge,
+        args.ir_root,
+        args.output_dir,
+        environment_cube_path=args.environment_cube,
+        prepare=args.prepare,
+        validator=args.validator,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "bundle_set_ready": report["bundle_set_ready"],
+        "native_execution_ready": report["native_execution_ready"],
+        "summary": report["summary"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["bundle_set_ready"] else 2
+
 def cmd_sgb_placement_join(args: argparse.Namespace) -> int:
     """Join decoded SGB wrappers to PART/FLAT spatial placement."""
     from sgb_placement_join import validate_file
@@ -4276,6 +4302,40 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p.set_defaults(fn=cmd_sgb_render_binding_bridge)
+
+    p = sp.add_parser(
+        "silverstone-native-scene-bundle",
+        help=(
+            "freeze runtime-proven SGB/IMB RenderCommands into the "
+            "existing native Vulkan bundle-set ABI"
+        ),
+    )
+    p.add_argument(
+        "bridge",
+        help="SHIFT.SGBRenderBindingBridge/1 JSON from Phase 576",
+    )
+    p.add_argument(
+        "ir_root",
+        help="extracted/analyzed IR root containing manifest.json",
+    )
+    p.add_argument(
+        "output_dir",
+        help="output bundle-set directory consumable by native_runtime",
+    )
+    p.add_argument(
+        "--environment-cube",
+        help="optional SHIFT.ReferenceCubeTexture/1 JSON",
+    )
+    p.add_argument(
+        "--prepare",
+        action="store_true",
+        help="compile/validate every child bundle for native execution",
+    )
+    p.add_argument(
+        "--validator",
+        help="GLSL/SPIR-V validator executable for --prepare",
+    )
+    p.set_defaults(fn=cmd_silverstone_native_scene_bundle)
 
     p = sp.add_parser(
         "sgb-placement-join",
