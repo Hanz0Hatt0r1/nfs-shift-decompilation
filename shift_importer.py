@@ -1831,6 +1831,29 @@ def cmd_sgb_scene_placement(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_sgb_render_binding_admission(args: argparse.Namespace) -> int:
+    """Join SGB placement and OBJECT handoffs at the scene RenderBinding gate."""
+    from sgb_render_binding_admission import validate_files
+
+    report = validate_files(args.scene_placement, args.object_handoffs)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "binding_count": report["binding_count"],
+        "admitted_binding_count": report["admitted_binding_count"],
+        "blocked_binding_count": report["blocked_binding_count"],
+        "blockers": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_sgb_placement_join(args: argparse.Namespace) -> int:
     """Join decoded SGB wrappers to PART/FLAT spatial placement."""
     from sgb_placement_join import validate_file
@@ -4083,6 +4106,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="SHIFT.SGBScenePlacement/1 JSON output",
     )
     p.set_defaults(fn=cmd_sgb_scene_placement)
+
+    p = sp.add_parser(
+        "sgb-render-binding-admission",
+        help="join SGB scene placement and OBJECT handoffs at RenderBinding admission",
+    )
+    p.add_argument(
+        "scene_placement",
+        help="SHIFT.SGBScenePlacement/1 JSON produced by sgb-scene-placement",
+    )
+    p.add_argument(
+        "object_handoffs",
+        help="SHIFT.SGBObjectRenderHandoffSet/1 JSON produced by sgb-object-render-handoff",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.SGBRenderBindingAdmission/1 JSON output",
+    )
+    p.set_defaults(fn=cmd_sgb_render_binding_admission)
 
     p = sp.add_parser(
         "sgb-placement-join",
