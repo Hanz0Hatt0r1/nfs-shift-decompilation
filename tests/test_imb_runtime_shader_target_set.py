@@ -16,10 +16,12 @@ def _candidate(
     pixel="d",
     pair_status="unique",
     exact=True,
+    vertex_offset=64,
 ):
     return {
         "file": "render_shaders_basic_instanced_deadbeef.fxo",
         "program_offset": 128,
+        "vertex_program_offset": vertex_offset,
         "permutation_identity_sha256": _sha(identity),
         "pair_sha256": _sha(pair),
         "vertex_sha256": _sha(vertex),
@@ -199,6 +201,45 @@ def test_pixel_target_keeps_all_collapsed_pair_variants():
         for variant in target["candidate_variants"]
     } == {_sha("3"), _sha("6")}
     assert report["boundary"]["preserves_candidate_variants"] is True
+
+
+def test_explicit_pair_targets_preserve_vertex_program_offsets():
+    first = _candidate(
+        "1",
+        pair="2",
+        vertex="3",
+        pixel="9",
+        pair_status="unique",
+        vertex_offset=64,
+    )
+    second = _candidate(
+        "4",
+        pair="5",
+        vertex="6",
+        pixel="9",
+        pair_status="unique",
+        vertex_offset=96,
+    )
+    report = build_imb_runtime_shader_target_set(
+        _ranking(_row(0, [first, second]))
+    )
+
+    assert report["capture_ready"] is True
+    assert report["attribution_ready"] is True
+    row = report["binding_targets"][0]
+    assert row["hash_target_count"] == 2
+    offsets = {
+        variant["candidate_vertex_program_offset"]
+        for target in row["targets"]
+        for variant in target["candidate_variants"]
+    }
+    assert offsets == {64, 96}
+    locations = {
+        location["vertex_program_offset"]
+        for target in row["targets"]
+        for location in target["candidate_locations"]
+    }
+    assert locations == {64, 96}
 
 def test_incomplete_top_rank_list_fails_closed():
     report = build_imb_runtime_shader_target_set(
