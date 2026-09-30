@@ -145,12 +145,23 @@ def test_non_target_shader_produces_no_candidate_draw():
     assert report["summary"]["observed_target_hash_count"] == 0
 
 
-def test_target_shader_creation_hit_is_preserved_before_draw():
+def test_target_shader_creation_hit_respects_prefilter_identity_kind():
     report = prefilter_imb_raw_capture(_target_set(), _events())
 
-    assert report["summary"]["target_shader_creation_hit_count"] == 2
+    assert report["summary"]["target_shader_creation_hit_count"] == 1
     hits = report["shader_creation_hits"]
-    assert {row["stage"] for row in hits} == {"vertex", "pixel"}
+    assert [row["stage"] for row in hits] == ["pixel"]
+    assert hits[0]["byte_sha256"] == PS_SHA
+
+
+
+def test_pixel_target_does_not_match_representative_vertex_alone():
+    events = _events(pixel=OTHER_PS)
+    report = prefilter_imb_raw_capture(_target_set(), events)
+
+    assert report["status"] == "not-found"
+    assert report["summary"]["candidate_draw_count"] == 0
+    assert report["summary"]["target_shader_creation_hit_count"] == 0
 
 
 def test_shader_pointer_reuse_is_explicit_blocker():
