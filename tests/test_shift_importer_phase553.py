@@ -96,6 +96,25 @@ def test_phase580_cli_accepts_native_scene_vulkan_set_command():
     assert args.fn.__name__ == "cmd_native_scene_vulkan_set"
 
 
+def test_phase591_cli_accepts_scene_instance_transform_match():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-scene-instance-transform-match",
+        "native-scene-bundle.json",
+        "silverstone-runtime-attribution.json",
+        "out/scene-instance-transform-match.json",
+    ])
+
+    assert args.native_scene_bundle == "native-scene-bundle.json"
+    assert args.capture_pipeline == (
+        "silverstone-runtime-attribution.json"
+    )
+    assert args.output == "out/scene-instance-transform-match.json"
+    assert args.fn.__name__ == (
+        "cmd_native_scene_instance_transform_match"
+    )
+
+
 def test_phase590_cli_accepts_capture_to_scene_snapshot_adapter():
     parser = build_parser()
     args = parser.parse_args([
@@ -108,6 +127,8 @@ def test_phase590_cli_accepts_capture_to_scene_snapshot_adapter():
         "capture",
         "--snapshot-output",
         "out/scene-external-snapshots.json",
+        "--instance-transform-match",
+        "out/scene-instance-transform-match.json",
     ])
 
     assert args.native_scene_bundle == "native-scene-bundle.json"
@@ -118,6 +139,9 @@ def test_phase590_cli_accepts_capture_to_scene_snapshot_adapter():
     assert args.capture_root == "capture"
     assert args.snapshot_output == (
         "out/scene-external-snapshots.json"
+    )
+    assert args.instance_transform_match == (
+        "out/scene-instance-transform-match.json"
     )
     assert args.fn.__name__ == (
         "cmd_native_scene_external_capture"

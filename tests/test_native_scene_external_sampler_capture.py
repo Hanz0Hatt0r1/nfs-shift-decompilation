@@ -218,6 +218,166 @@ def test_capture_adapter_blocks_reused_binding_across_scene_instances(
     )
 
 
+
+def test_capture_adapter_resolves_reused_binding_with_transform_match(
+    tmp_path,
+):
+    ppm = tmp_path / "textures" / "shadow.ppm"
+    _ppm(ppm)
+
+    instance_match = {
+        "format": "SHIFT.NativeSceneInstanceTransformMatch/1",
+        "version": 1,
+        "ready": True,
+        "status": "ready",
+        "blocking_reasons": [],
+        "rows": [{
+            "binding_index": 17,
+            "ready": True,
+            "status": "resolved",
+            "selected_draw_order": 1,
+            "selected_draw_identity_sha256": _sha("e"),
+            "runtime_observation_count": 1,
+        }],
+    }
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(
+            _scene_draw(draw_order=0, tx=1.0),
+            _scene_draw(draw_order=1, tx=2.0),
+        ),
+        _bridge(draw_count=2),
+        _pipeline("textures/shadow.ppm"),
+        capture_root=tmp_path,
+        instance_transform_match=instance_match,
+    )
+
+    assert report["ready"] is True, report["blocking_reasons"]
+    assert report["snapshot_count"] == 1
+    snapshot = report["snapshot_contract"]["snapshots"][0]
+    assert snapshot["draw_identity_sha256"] == _sha("e")
+    proof = snapshot["provenance"]["scene_instance_transform_match"]
+    assert proof["binding_index"] == 17
+    assert proof["selected_draw_order"] == 1
+    assert proof["selected_draw_identity_sha256"] == _sha("e")
+    assert report["boundary"][
+        "repeated_instance_transform_match_supported"
+    ] is True
+
+
+def test_capture_adapter_rejects_invalid_transform_match_contract(
+    tmp_path,
+):
+    ppm = tmp_path / "textures" / "shadow.ppm"
+    _ppm(ppm)
+
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(
+            _scene_draw(draw_order=0, tx=1.0),
+            _scene_draw(draw_order=1, tx=2.0),
+        ),
+        _bridge(draw_count=2),
+        _pipeline("textures/shadow.ppm"),
+        capture_root=tmp_path,
+        instance_transform_match={
+            "format": "SHIFT.Other/1",
+            "version": 1,
+            "ready": True,
+            "rows": [],
+        },
+    )
+
+    assert report["ready"] is False
+    assert (
+        "scene-external-capture:instance-match-invalid-format"
+        in report["blocking_reasons"]
+    )
+
+
+def test_capture_adapter_revalidates_transform_match_draw_identity(
+    tmp_path,
+):
+    ppm = tmp_path / "textures" / "shadow.ppm"
+    _ppm(ppm)
+
+    instance_match = {
+        "format": "SHIFT.NativeSceneInstanceTransformMatch/1",
+        "version": 1,
+        "ready": False,
+        "status": "blocked",
+        "blocking_reasons": [
+            "scene-instance-match:binding-99:unrelated"
+        ],
+        "rows": [{
+            "binding_index": 17,
+            "ready": True,
+            "status": "resolved",
+            "selected_draw_order": 1,
+            "selected_draw_identity_sha256": _sha("d"),
+            "runtime_observation_count": 1,
+        }],
+    }
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(
+            _scene_draw(draw_order=0, tx=1.0),
+            _scene_draw(draw_order=1, tx=2.0),
+        ),
+        _bridge(draw_count=2),
+        _pipeline("textures/shadow.ppm"),
+        capture_root=tmp_path,
+        instance_transform_match=instance_match,
+    )
+
+    assert report["ready"] is False
+    assert any(
+        "instance-match-draw-identity-mismatch" in reason
+        for reason in report["blocking_reasons"]
+    )
+
+
+def test_capture_adapter_can_use_ready_row_from_partial_transform_report(
+    tmp_path,
+):
+    ppm = tmp_path / "textures" / "shadow.ppm"
+    _ppm(ppm)
+
+    instance_match = {
+        "format": "SHIFT.NativeSceneInstanceTransformMatch/1",
+        "version": 1,
+        "ready": False,
+        "status": "blocked",
+        "blocking_reasons": [
+            "scene-instance-match:binding-99:unrelated"
+        ],
+        "rows": [{
+            "binding_index": 17,
+            "ready": True,
+            "status": "resolved",
+            "selected_draw_order": 1,
+            "selected_draw_identity_sha256": _sha("e"),
+            "runtime_observation_count": 1,
+        }, {
+            "binding_index": 99,
+            "ready": False,
+            "status": "blocked",
+            "selected_draw_order": None,
+        }],
+    }
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(
+            _scene_draw(draw_order=0, tx=1.0),
+            _scene_draw(draw_order=1, tx=2.0),
+        ),
+        _bridge(draw_count=2),
+        _pipeline("textures/shadow.ppm"),
+        capture_root=tmp_path,
+        instance_transform_match=instance_match,
+    )
+
+    assert report["ready"] is True, report["blocking_reasons"]
+    assert report["snapshot_contract"]["snapshots"][0][
+        "draw_identity_sha256"
+    ] == _sha("e")
+
 def test_capture_adapter_does_not_promote_material_textures(tmp_path):
     ppm = tmp_path / "textures" / "shadow.ppm"
     _ppm(ppm)

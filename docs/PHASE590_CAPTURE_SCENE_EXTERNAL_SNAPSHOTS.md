@@ -91,8 +91,9 @@ only when:
 9. the PPM resolves unambiguously under the explicit capture root;
 10. the generated snapshot passes the complete Phase 589 validator.
 
-Repeated scene instances sharing one resource-level binding remain blocked.
-Phase 590 does not choose one world-space instance arbitrarily.
+Repeated scene instances sharing one resource-level binding remain blocked by
+Phase 590 alone. Phase 591 may supply an exact transform-match contract; without
+that proof the adapter still does not choose a world-space instance arbitrarily.
 
 ## Captured PPM conversion
 
@@ -153,6 +154,7 @@ python shift_importer.py native-scene-external-capture \
   out/silverstone-runtime-attribution.json \
   out/scene-external-capture.json \
   --capture-root out/capture \
+  --instance-transform-match out/scene-instance-transform-match.json \\
   --snapshot-output out/scene-external-snapshots.json
 ```
 
@@ -171,7 +173,7 @@ python shift_importer.py native-scene-vulkan-set \
 
 The adapter blocks rather than guessing when:
 
-- one binding appears in multiple NativeSceneBundle instances;
+- one binding appears in multiple NativeSceneBundle instances without a ready Phase 591 exact transform match;
 - more than one attributed runtime draw can supply the register;
 - texture creation is not observed;
 - the runtime object is a cube instead of a 2D texture;
@@ -192,8 +194,8 @@ Still external/evidence-gated:
 
 - obtaining a real Silverstone capture containing the required renderer-owned
   sampler snapshots;
-- repeated-instance disambiguation when one static binding is used by multiple
-  scene draws;
+- repeated-instance disambiguation is available through Phase 591 when exact
+  draw-local VS constant windows uniquely identify one world matrix; otherwise it remains blocked;
 - external `samplerCube` and other renderer-owned resource types;
 - unresolved scene streaming/LOD and MatrixNumber update history;
 - IMX XML neutral adaptation.

@@ -1985,6 +1985,39 @@ def cmd_vulkan_draw_bundle(args: argparse.Namespace) -> int:
     return 0 if result["ready"] else 2
 
 
+def cmd_native_scene_instance_transform_match(
+    args: argparse.Namespace,
+) -> int:
+    """Resolve repeated scene instances from strong draw-local VS constants."""
+    from native_scene_instance_transform_match import validate_files
+
+    report = validate_files(
+        args.native_scene_bundle,
+        args.capture_pipeline,
+    )
+    output = Path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        json.dumps(
+            report,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "repeated_binding_count": report["repeated_binding_count"],
+        "resolved_binding_count": report["resolved_binding_count"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_native_scene_external_capture(args: argparse.Namespace) -> int:
     """Convert attributed D3D9 PPMs into exact scene external snapshots."""
     from native_scene_external_sampler_capture import validate_files
@@ -1994,6 +2027,7 @@ def cmd_native_scene_external_capture(args: argparse.Namespace) -> int:
         args.scene_bridge,
         args.capture_pipeline,
         capture_root=args.capture_root,
+        instance_transform_match_path=args.instance_transform_match,
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -4484,6 +4518,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(fn=cmd_vulkan_draw_bundle)
 
     p = sp.add_parser(
+        "native-scene-instance-transform-match",
+        help=(
+            "disambiguate repeated NativeSceneBundle instances from exact "
+            "strong-attributed draw-local VS constant windows"
+        ),
+    )
+    p.add_argument("native_scene_bundle")
+    p.add_argument("capture_pipeline")
+    p.add_argument("output")
+    p.set_defaults(fn=cmd_native_scene_instance_transform_match)
+
+    p = sp.add_parser(
         "native-scene-external-capture",
         help=(
             "convert strong attributed D3D9 texture PPMs into exact "
@@ -4496,6 +4542,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output")
     p.add_argument("--capture-root", required=True)
     p.add_argument("--snapshot-output")
+    p.add_argument(
+        "--instance-transform-match",
+        help=(
+            "optional SHIFT.NativeSceneInstanceTransformMatch/1 JSON "
+            "for repeated binding disambiguation"
+        ),
+    )
     p.set_defaults(fn=cmd_native_scene_external_capture)
 
     p = sp.add_parser(

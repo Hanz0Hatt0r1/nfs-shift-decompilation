@@ -273,6 +273,15 @@ def test_attributed_texture_observations_keep_only_selected_strong_draws():
             "frame": 9,
             "draw_snapshots": [{
                 "draw_index": 3,
+                "constant_state": {
+                    "vertex": {
+                        "20": [1.0, 0.0, 0.0, 0.0],
+                        "21": [0.0, 1.0, 0.0, 0.0],
+                        "22": [0.0, 0.0, 1.0, 0.0],
+                        "23": [2.0, 0.0, 0.0, 1.0],
+                    },
+                    "pixel": {},
+                },
                 "active_texture_bindings": [{
                     "stage": 7,
                     "texture_ptr": "0x700",
@@ -337,6 +346,9 @@ def test_attributed_texture_observations_keep_only_selected_strong_draws():
     assert row["active_texture_bindings"][0]["stage"] == 7
     assert row["active_texture_bindings"][0]["snapshot_paths"] == [
         "textures/s7.ppm"
+    ]
+    assert row["constant_state"]["vertex"]["23"] == [
+        2.0, 0.0, 0.0, 1.0
     ]
 
 
