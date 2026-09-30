@@ -89,7 +89,13 @@ jobs:
             out/vulkan/runtime/builtin_sparse_solver.json
           grep -q '"source_function": "FUN_007b0f20"' \
             out/vulkan/runtime/builtin_sparse_solver.json
-          grep -q '"cases": 4' \
+          grep -q '"diagonal_reset_source_function": "FUN_007b2210"' \
+            out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"solver_cases": 4' \
+            out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"diagonal_reset_cases": 2' \
+            out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"cases": 6' \
             out/vulkan/runtime/builtin_sparse_solver.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/builtin_sparse_solver.json
