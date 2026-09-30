@@ -256,3 +256,20 @@ def test_phase595_cli_accepts_runtime_object_candidate_join():
     assert args.fn.__name__ == (
         "cmd_sgb_runtime_object_candidate_join"
     )
+
+
+def test_phase596_cli_accepts_multimatrix_root_consensus():
+    parser = build_parser()
+    args = parser.parse_args([
+        "sgb-multimatrix-root-consensus",
+        "sgb-runtime.json",
+        "runtime-object-candidates.json",
+        "runtime-capture.json",
+        "root-consensus.json",
+    ])
+
+    assert args.sgb_runtime == "sgb-runtime.json"
+    assert args.candidate_join == "runtime-object-candidates.json"
+    assert args.capture_pipeline == "runtime-capture.json"
+    assert args.output == "root-consensus.json"
+    assert args.fn.__name__ == "cmd_sgb_multimatrix_root_consensus"
