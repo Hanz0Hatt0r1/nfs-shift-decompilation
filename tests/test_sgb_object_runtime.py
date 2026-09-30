@@ -272,11 +272,13 @@ def test_object_explicit_matrix_is_decoded_when_matrix_number_is_minus_one():
 
 
 def test_hierarchy_matrix_table_truncation_blocks_non_strict():
-    payload = bytearray(_hierarchy_payload(matrices=2))
-    # Keep a valid HIERARCHY string reference while truncating inside the
-    # second required matrix record.
+    payload = _hierarchy_payload(matrices=2)
+    # Keep the complete backing data so the SGB-base kind string still
+    # resolves, but bound this object inside the second required matrix.
     result = parse_sgb_object_payload(
-        bytes(payload[:0x24 + 0x24 + 8]),
+        payload,
+        end_offset=0x24 + 0x24 + 8,
+        reference_base_offset=0,
         strict=False,
     )
     assert result["decoded"] is False
