@@ -108,6 +108,21 @@ def _imb_payload():
     return bytes(data)
 
 
+def _imx_payload():
+    return b"""<MESH Vertices="3" Streams="1" Buffers="1">
+  <BOUNDSPHERE Centre="0 0 0" Radius="2"/>
+  <AABBOX Min="-1 -1 -1" Max="1 1 1"/>
+  <STREAM Type="F32Vec3" Usage="Position" Channel="0">
+    <ITEM Pos="0 0 0"/>
+    <ITEM Pos="1 0 0"/>
+    <ITEM Pos="0 1 0"/>
+  </STREAM>
+  <INDEXBUFFER Material="tracks/test/object.bmt" Entries="1">
+    <TRIANGLE Indices="0 1 2"/>
+  </INDEXBUFFER>
+</MESH>"""
+
+
 def _write_ir(root):
     for name in ("meshes", "materials", "shaders", "raw"):
         (root / name).mkdir()
@@ -149,6 +164,7 @@ def _write_ir(root):
     )
     (root / "raw/mesh").write_bytes(b"")
     (root / "raw/object.imb").write_bytes(_imb_payload())
+    (root / "raw/object.imx").write_bytes(_imx_payload())
     (root / "raw/material").write_bytes(b"")
 
     manifest = [
@@ -164,6 +180,12 @@ def _write_ir(root):
             "path": "tracks/test/object.imb",
             "raw": "raw/object.imb",
             "sha256": "imb-sha",
+        },
+        {
+            "archive": "TRACK.bff",
+            "path": "tracks/test/object.imx",
+            "raw": "raw/object.imx",
+            "sha256": "imx-sha",
         },
         {
             "archive": "TRACK.bff",
@@ -391,46 +413,63 @@ def test_imb_scene_resource_enters_generic_render_binding(tmp_path):
     )
 
 
-def test_imx_scene_resource_reports_xml_adapter_gap(tmp_path):
+def test_imx_scene_resource_enters_generic_render_binding(tmp_path):
     _write_ir(tmp_path)
     report = build_sgb_render_binding_bridge(
-        _admission(_binding(resource="tracks/test/banner.imx")),
+        _admission(_binding(resource="tracks/test/object.imx")),
         tmp_path,
     )
 
-    assert report["ready"] is False
-    assert (
-        "binding-0:scene-resource:meshinst-xml-adapter-unimplemented"
-        in report["blocking_reasons"]
+    assert report["ready"] is True
+    assert report["scene_admitted_instance_count"] == 1
+    assert report["direct_render_instance_count"] == 1
+    assert report["resource_adapter_blocked_count"] == 0
+    assert report["resolved_instance_count"] == 1
+    assert report["unresolved_instance_count"] == 0
+
+    packet = report["render_binding"]["packets"][0]
+    assert packet["mesh"]["ref"] == "tracks/test/object.imx"
+    assert packet["mesh"]["resolved"]["resource_sha256"] == "imx-sha"
+    assert packet["mesh"]["source_kind"] == "IMX"
+    assert packet["mesh"]["neutral_adapter_format"] == (
+        "SHIFT.IMXNeutralGeometry/1"
     )
-    blocked = report["resource_adapter_blocked"][0]
-    assert blocked["loader_mode"] == "xml"
-    assert blocked["meshinst_runtime"]["resource_loader"]["function"] == (
-        "FUN_008587e0"
+    assert packet["mesh"]["vertex_layout"]["source"] == "IMX"
+    assert packet["mesh"]["vertex_layout"]["source_adapter"] == (
+        "SHIFT.IMXNeutralGeometry/1"
+    )
+    assert packet["mesh"]["vertex_layout"]["attributes"][0][
+        "property_id"
+    ] == "200"
+    assert report["boundary"]["imx_adapter_format"] == (
+        "SHIFT.IMXNeutralGeometry/1"
     )
 
 
-def test_mixed_meb_and_imb_resolve_independently(tmp_path):
+def test_mixed_meb_imb_and_imx_resolve_independently(tmp_path):
     _write_ir(tmp_path)
     report = build_sgb_render_binding_bridge(
         _admission(
             _binding(index=0, resource="tracks/test/object.meb"),
             _binding(index=1, resource="tracks/test/object.imb"),
+            _binding(index=2, resource="tracks/test/object.imx"),
         ),
         tmp_path,
     )
 
     assert report["ready"] is True
-    assert report["scene_admitted_instance_count"] == 2
-    assert report["direct_render_instance_count"] == 2
-    assert report["resolved_instance_count"] == 2
+    assert report["scene_admitted_instance_count"] == 3
+    assert report["direct_render_instance_count"] == 3
+    assert report["resolved_instance_count"] == 3
     assert report["resource_adapter_blocked_count"] == 0
     packets = report["render_binding"]["packets"]
-    assert len(packets) == 2
+    assert len(packets) == 3
     assert packets[0]["scene_binding"]["admission_binding_index"] == 0
     assert packets[0]["mesh"]["source_kind"] == "MEB"
     assert packets[1]["scene_binding"]["admission_binding_index"] == 1
     assert packets[1]["mesh"]["source_kind"] == "IMB"
+    assert packets[2]["scene_binding"]["admission_binding_index"] == 2
+    assert packets[2]["mesh"]["source_kind"] == "IMX"
 
 
 def test_no_admitted_rows_is_blocked(tmp_path):
