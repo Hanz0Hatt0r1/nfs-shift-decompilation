@@ -64,6 +64,10 @@ def test_explicit_object_transform_materializes_source_equivalent_matrix():
     assert handoff["ready"] is True
     assert handoff["resource"]["reference"] == "tracks/test/object.meb"
     assert handoff["resource"]["runtime_descriptor_offset"] == 0x80
+    factory = handoff["resource"]["factory_classification"]
+    assert factory["factory_type"] == 0
+    assert factory["factory_name"] == "MeshType"
+    assert factory["renderer_factory"]["factory_switch"] == "FUN_00831940"
 
     transform = handoff["transform"]
     assert transform["mode"] == "explicit-object-transform"
@@ -217,6 +221,19 @@ def test_parent_matrix_number_out_of_range_blocks():
     )
 
 
+def test_meshinst_resource_preserves_type7_extra_render_call():
+    handoff = build_object_render_handoff(
+        _object(resource="tracks/test/crowd_banner.imb")
+    )
+    factory = handoff["resource"]["factory_classification"]
+    assert handoff["ready"] is True
+    assert factory["factory_type"] == 7
+    assert factory["factory_name"] == "MeshInst"
+    assert handoff["runtime_submission"]["meshinst_type7_extra_call"][
+        "enabled"
+    ] is True
+
+
 def test_resource_reference_is_required():
     handoff = build_object_render_handoff(_object(resource=None))
 
@@ -257,6 +274,8 @@ def test_sgb_runtime_collection_walks_recursive_lod_objects_and_top_level_object
     assert handoffs["explicit_transform_count"] == 1
     assert handoffs["parent_multimatrix_slot_count"] == 1
     assert handoffs["numeric_world_matrix_ready_count"] == 1
+    assert handoffs["mesh_type_resource_count"] == 2
+    assert handoffs["mesh_inst_resource_count"] == 0
     assert handoffs["objects"][0]["object_path"] == [0]
     assert handoffs["objects"][0]["wrapper"]["chunk"] == "SUMM"
     assert handoffs["objects"][1]["object_path"] == []
