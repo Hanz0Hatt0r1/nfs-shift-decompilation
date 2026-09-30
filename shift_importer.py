@@ -1985,6 +1985,58 @@ def cmd_vulkan_draw_bundle(args: argparse.Namespace) -> int:
     return 0 if result["ready"] else 2
 
 
+def cmd_native_scene_external_capture(args: argparse.Namespace) -> int:
+    """Convert attributed D3D9 PPMs into exact scene external snapshots."""
+    from native_scene_external_sampler_capture import validate_files
+
+    report = validate_files(
+        args.native_scene_bundle,
+        args.scene_bridge,
+        args.capture_pipeline,
+        capture_root=args.capture_root,
+    )
+    output = Path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        json.dumps(
+            report,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    if (
+        args.snapshot_output
+        and report.get("snapshot_contract") is not None
+    ):
+        snapshot_output = Path(args.snapshot_output)
+        snapshot_output.parent.mkdir(parents=True, exist_ok=True)
+        snapshot_output.write_text(
+            json.dumps(
+                report["snapshot_contract"],
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "required_external_sampler2d_count": report[
+            "required_external_sampler2d_count"
+        ],
+        "snapshot_count": report["snapshot_count"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_native_scene_vulkan_set(args: argparse.Namespace) -> int:
     """Build ordered Vulkan children from a NativeSceneBundle."""
     from native_scene_vulkan_set import validate_files
@@ -4430,6 +4482,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="do not require SHIFT.RuntimeProvenDraw/1",
     )
     p.set_defaults(fn=cmd_vulkan_draw_bundle)
+
+    p = sp.add_parser(
+        "native-scene-external-capture",
+        help=(
+            "convert strong attributed D3D9 texture PPMs into exact "
+            "SHIFT.NativeSceneExternalSamplerSnapshots/1"
+        ),
+    )
+    p.add_argument("native_scene_bundle")
+    p.add_argument("scene_bridge")
+    p.add_argument("capture_pipeline")
+    p.add_argument("output")
+    p.add_argument("--capture-root", required=True)
+    p.add_argument("--snapshot-output")
+    p.set_defaults(fn=cmd_native_scene_external_capture)
 
     p = sp.add_parser(
         "native-scene-vulkan-set",
