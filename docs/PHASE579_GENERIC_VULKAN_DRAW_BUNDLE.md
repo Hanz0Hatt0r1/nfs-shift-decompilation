@@ -28,6 +28,7 @@ Supported neutral geometry wrappers are:
 
 - `SHIFT.NeutralMesh/1`;
 - `SHIFT.IMBNeutralGeometry/1` (its nested mesh is unwrapped);
+- `SHIFT.IMXNeutralGeometry/1` (Phase 592 static/neutral wrapper; runtime IMX provenance is still a separate gate);
 - the existing `SHIFT.MEB` neutral JSON;
 - legacy untagged neutral mesh JSON.
 
@@ -142,7 +143,7 @@ Optional flags mirror the standalone builder:
 Phase 579 covers:
 
 - runtime-proven `SHIFT.NeutralMesh/1` bundle construction;
-- IMB-neutral wrapper unwrapping;
+- IMB/IMX-neutral wrapper unwrapping;
 - runtime provenance required by default;
 - explicit static opt-out;
 - stale draw-range proof blocking;
