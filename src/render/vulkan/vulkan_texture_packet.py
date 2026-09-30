@@ -77,6 +77,8 @@ def build_vulkan_texture_packet(
     render_command: Mapping[str, Any] | str | Path,
     textures: Mapping[int, Mapping[str, Any]] | str | Path,
     output: str | Path,
+    *,
+    external_textures: Mapping[int, Mapping[str, Any]] | str | Path | None = None,
 ) -> dict[str, Any]:
     command = _load(render_command) if isinstance(render_command, (str, Path)) else dict(render_command)
     if command.get("format") != "SHIFT.RenderCommand/1":
@@ -84,8 +86,16 @@ def build_vulkan_texture_packet(
     texture_map = (
         _load(textures) if isinstance(textures, (str, Path)) else dict(textures)
     )
+    external_map = (
+        {}
+        if external_textures is None
+        else _load(external_textures)
+        if isinstance(external_textures, (str, Path))
+        else dict(external_textures)
+    )
 
     commands: dict[int, dict[str, Any]] = {}
+    external_commands: dict[int, dict[str, Any]] = {}
     for submesh in command.get("submeshes", []) or []:
         for row in submesh.get("textures", []) or []:
             if row.get("resource") == "external":
@@ -101,15 +111,70 @@ def build_vulkan_texture_packet(
                 raise ValueError(f"sampler register collision in RenderCommand: s{register}")
             commands[register] = dict(row)
 
+        for row in submesh.get("external_samplers", []) or []:
+            if not isinstance(row, Mapping):
+                raise ValueError("RenderCommand external sampler row is invalid")
+            if str(row.get("sampler_type") or "") != "sampler2D":
+                continue
+            register = row.get("d3d9_sampler_register", row.get("slot"))
+            try:
+                register = int(register)
+            except (TypeError, ValueError):
+                raise ValueError("RenderCommand external sampler has invalid sampler register")
+            if register < 0 or register > 15:
+                raise ValueError(f"external sampler register out of packet range: {register}")
+            if (
+                register in external_commands
+                and external_commands[register] != row
+            ):
+                raise ValueError(
+                    f"external sampler register collision in RenderCommand: s{register}"
+                )
+            external_commands[register] = dict(row)
+
+    supplied_external: set[int] = set()
+    for register_value in external_map:
+        try:
+            register = int(register_value)
+        except (TypeError, ValueError):
+            raise ValueError("external texture mapping has invalid sampler register")
+        if register not in external_commands:
+            raise ValueError(
+                f"external texture mapping has no sampler2D declaration: s{register}"
+            )
+        if register in commands:
+            raise ValueError(
+                f"external sampler collides with material texture register: s{register}"
+            )
+        if not isinstance(external_commands[register].get("sampler_state"), Mapping):
+            raise ValueError(
+                f"external sampler s{register} requires explicit sampler_state"
+            )
+        supplied_external.add(register)
+
     missing = [str(register) for register in sorted(commands) if str(register) not in texture_map and register not in texture_map]
     if missing:
         raise ValueError("missing texture reference image for sampler(s): " + ", ".join("s" + x for x in missing))
 
+    packet_commands = dict(commands)
+    packet_commands.update(
+        {
+            register: external_commands[register]
+            for register in supplied_external
+        }
+    )
+
     records: list[bytes] = []
     metadata: list[dict[str, Any]] = []
-    for register in sorted(commands):
-        row = commands[register]
-        image_value = texture_map.get(register) or texture_map.get(str(register))
+    for register in sorted(packet_commands):
+        row = packet_commands[register]
+        source_kind = (
+            "external"
+            if register in supplied_external
+            else "material"
+        )
+        source_map = external_map if source_kind == "external" else texture_map
+        image_value = source_map.get(register) or source_map.get(str(register))
         if isinstance(image_value, (str, Path)):
             image = _load(image_value)
         elif isinstance(image_value, Mapping):
@@ -121,7 +186,7 @@ def build_vulkan_texture_packet(
         mode = _sampler_mode(row.get("sampler_state"))
         width = int(image["width"])
         height = int(image["height"])
-        offset = HEADER.size + RECORD.size * len(commands) + sum(len(data) for data in records)
+        offset = HEADER.size + RECORD.size * len(packet_commands) + sum(len(data) for data in records)
         records.append(pixels)
         metadata.append({
             "register": register,
@@ -134,6 +199,8 @@ def build_vulkan_texture_packet(
             "resource_binding_id": row.get("resource_binding_id"),
             "texture_id": row.get("texture_id"),
             "sampler_id": row.get("sampler_id"),
+            "source_kind": source_kind,
+            "sampler": row.get("sampler") or row.get("name"),
         })
 
     header = HEADER.pack(MAGIC, VERSION, len(metadata), 1, 0)
@@ -153,6 +220,8 @@ def build_vulkan_texture_packet(
         "output": str(output_path),
         "descriptor_set": 1,
         "texture_count": len(metadata),
+        "material_texture_count": len(commands),
+        "external_texture_count": len(supplied_external),
         "textures": metadata,
         "byte_size": output_path.stat().st_size,
     }
@@ -163,8 +232,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("render_command")
     parser.add_argument("textures_json", help="JSON object mapping sampler registers to ReferenceTexture/1 JSON or inline resource objects")
     parser.add_argument("output")
+    parser.add_argument(
+        "--external-textures-json",
+        help="optional JSON object mapping explicit external sampler2D registers to ReferenceTexture/1 resources",
+    )
     args = parser.parse_args(argv)
-    result = build_vulkan_texture_packet(args.render_command, args.textures_json, args.output)
+    result = build_vulkan_texture_packet(
+        args.render_command,
+        args.textures_json,
+        args.output,
+        external_textures=args.external_textures_json,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 
