@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 FORMAT = "SHIFT.BMWVulkanInterfaceGate/1"
+BUNDLE_FORMATS = {"SHIFT.BMWVulkanBundle/1", "SHIFT.VulkanDrawBundle/1"}
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -41,7 +42,8 @@ def validate_bmw_vulkan_interface(
     )
 
     blockers: list[str] = []
-    if manifest.get("format") != "SHIFT.BMWVulkanBundle/1":
+    bundle_format = manifest.get("format")
+    if bundle_format not in BUNDLE_FORMATS:
         blockers.append("vulkan-interface:invalid-bundle-format")
     if report.get("format") != "SHIFT.VulkanBundleSPIRV/1":
         blockers.append("vulkan-interface:invalid-spirv-report")
@@ -139,6 +141,7 @@ def validate_bmw_vulkan_interface(
             "2d_sampler_registers": sorted(provided_2d),
             "cube_sampler_registers": sorted(provided_cube),
         },
+        "source_bundle_format": bundle_format,
         "policy": {
             "constants": "set0 bindings 14/15",
             "textures": "set1 D3D9 sampler register preserved as Vulkan binding",
@@ -149,7 +152,7 @@ def validate_bmw_vulkan_interface(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate BMW Vulkan descriptor/resource interface")
+    parser = argparse.ArgumentParser(description="Validate SHIFT Vulkan descriptor/resource interface")
     parser.add_argument("bundle_dir")
     parser.add_argument("spirv_report")
     parser.add_argument("output")
