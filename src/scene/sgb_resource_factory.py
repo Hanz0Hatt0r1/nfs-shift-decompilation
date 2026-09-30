@@ -28,6 +28,26 @@ _FACTORY_CASES = {
 }
 
 
+_MESHINST_LOADERS = {
+    "imb": {
+        "mode": "binary",
+        "function": "FUN_00859800",
+        "retail_name": (
+            "MWL::Renderer::WinRenderer::"
+            "CMeshPrimitiveType::LoadBinaryMeshFromResource"
+        ),
+    },
+    "imx": {
+        "mode": "xml",
+        "function": "FUN_008587e0",
+        "retail_name": (
+            "MWL::Renderer::WinRenderer::"
+            "CMeshPrimitiveType::LoadXMLMeshFromResource"
+        ),
+    },
+}
+
+
 def _normalized_reference(reference: str) -> str:
     return reference.replace("\\", "/").strip()
 
@@ -54,6 +74,7 @@ def classify_sgb_object_resource(reference: str | None) -> dict[str, Any]:
 
     ready = not blockers
     meshinst = factory_type == 7
+    loader = _MESHINST_LOADERS.get(extension) if meshinst else None
     return {
         "format": FORMAT,
         "version": 1,
@@ -88,6 +109,7 @@ def classify_sgb_object_resource(reference: str | None) -> dict[str, Any]:
             "factory_switch": "FUN_00831940",
             "create_if_missing": True,
         },
+        "resource_loader": loader,
         "render_instance": {
             "lookup_vfunc_offset": 0x224,
             "release_vfunc_offset": 0x220,
