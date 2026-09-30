@@ -333,9 +333,11 @@ def build_silverstone_native_scene_bundle(
         render_binding.get("runtime_shader_join") or {}
     )
     blockers: list[str] = []
-    if not isinstance(runtime_join, Mapping) or (
-        runtime_join.get("ready") is not True
-    ):
+    runtime_join_ready = (
+        isinstance(runtime_join, Mapping)
+        and runtime_join.get("ready") is True
+    )
+    if not runtime_join_ready:
         blockers.extend(
             "runtime-shader-join:" + str(reason)
             for reason in (
@@ -449,12 +451,19 @@ def build_silverstone_native_scene_bundle(
         ):
             packet_submesh = packet_submeshes[submesh_index]
             command_submesh = command_submeshes[submesh_index]
-            if not _runtime_proven_submesh(packet_submesh):
+            if (
+                not runtime_join_ready
+                or not _runtime_proven_submesh(packet_submesh)
+            ):
                 excluded.append({
                     "command_index": command_index,
                     "submesh_index": submesh_index,
                     "mesh_ref": mesh_ref,
-                    "reason": "runtime-shader-admission-not-proven",
+                    "reason": (
+                        "runtime-shader-join-not-ready"
+                        if not runtime_join_ready
+                        else "runtime-shader-admission-not-proven"
+                    ),
                 })
                 continue
             if neutral_mesh is None or resource_row is None:
@@ -633,6 +642,16 @@ def build_silverstone_native_scene_bundle(
             "excluded_draw_count": len(excluded),
             "bundle_set_draw_count": len(ready_draws),
         },
+        "coverage_complete": (
+            bool(included)
+            and not excluded
+            and len(included) == sum(
+                len(packet.get("submeshes") or [])
+                for packet in packets
+                if str((packet.get("mesh") or {}).get("source_kind") or "")
+                == "IMB"
+            )
+        ),
         "included_draws": included,
         "excluded_draws": excluded,
         "bundle_set": bundle_set,
