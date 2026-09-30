@@ -1,0 +1,57 @@
+{
+  "format": "SHIFT.IMBMaterialDependencyEvidence/1",
+  "version": 1,
+  "verification_scope": "phase-564-silverstone-era3-bmt-dependencies",
+  "source_archive": {
+    "name": "Silverstone_Era3_.zip",
+    "sha256": "5423f5a0356e664a504f90c812e32bbbd4e2a0abe83c546fdc658305661a1e2f"
+  },
+  "result": {
+    "logical_bmt_reference_count": 84,
+    "archive_bmt_occurrence_count": 239,
+    "material_parse_count": 239,
+    "material_parse_error_count": 0,
+    "local_ready_count": 239,
+    "shader_reference_count": 239,
+    "unique_shader_reference_count": 5,
+    "shader_reference_use_counts": {
+      "render/shaders/basic_instanced.fx": 114,
+      "render/shaders/crowd_geninstanced.fx": 40,
+      "render/shaders/crowd_geninstanced_billboard.fx": 44,
+      "render/shaders/foliage_instanced.fx": 37,
+      "render/shaders/skintest_instanced.fx": 4
+    },
+    "shader_source_matches_inside_silverstone_count": 0,
+    "texture_reference_count": 563,
+    "unique_texture_reference_count": 120,
+    "same_archive_texture_resolved_count": 563,
+    "same_archive_texture_missing_count": 0,
+    "texture_reference_count_per_material_distribution": {
+      "2": 170,
+      "3": 53,
+      "4": 16
+    },
+    "technique_counts": {
+      "Basic": 109,
+      "Basic_AlphaTest": 49,
+      "Foliage": 37,
+      "skintest": 44
+    }
+  },
+  "external_shader_blockers": [
+    "render/shaders/basic_instanced.fx",
+    "render/shaders/crowd_geninstanced.fx",
+    "render/shaders/crowd_geninstanced_billboard.fx",
+    "render/shaders/foliage_instanced.fx",
+    "render/shaders/skintest_instanced.fx"
+  ],
+  "boundary": {
+    "bmt_payload_parse": "resource_formats-compatible BLMY material tree",
+    "all_material_occurrences_parse": true,
+    "all_texture_references_resolve_in_same_silverstone_bff": true,
+    "shader_refs_are_global_render_resources": true,
+    "shader_source_payloads_present_in_supplied_silverstone_zip": false,
+    "fxo_permutation_verified_here": false,
+    "native_draw_ready_verified_here": false
+  }
+}
