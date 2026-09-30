@@ -86,7 +86,19 @@ def _cube_ready(cube: Mapping[str, Any]) -> bool:
         (int(faces[name]["width"]), int(faces[name]["height"]))
         for name in CUBE_FACES
     }
-    return len(dimensions) == 1
+    if len(dimensions) != 1:
+        return False
+    width, height = next(iter(dimensions))
+    try:
+        cube_width = int(cube.get("width"))
+        cube_height = int(cube.get("height"))
+    except (TypeError, ValueError):
+        return False
+    return (
+        cube_width == width
+        and cube_height == height
+        and cube.get("pixel_format") == "RGBA8"
+    )
 
 
 def validate_external_sampler_cube_snapshot_contract(
@@ -191,16 +203,35 @@ def validate_external_sampler_cube_snapshot_contract(
                 if set(face_sources) != set(CUBE_FACES):
                     reasons.append("provenance-face-set-invalid")
                 else:
+                    face_hashes: dict[str, str] = {}
                     for face_name in CUBE_FACES:
                         face_source = face_sources.get(face_name)
+                        face_sha = (
+                            _sha256(face_source.get("source_sha256"))
+                            if isinstance(face_source, Mapping)
+                            else None
+                        )
                         if (
                             not isinstance(face_source, Mapping)
-                            or _sha256(face_source.get("source_sha256"))
-                            is None
+                            or face_sha is None
                             or not str(face_source.get("snapshot_path") or "")
                         ):
                             reasons.append(
                                 f"provenance-face-{face_name}-invalid"
+                            )
+                        else:
+                            face_hashes[face_name] = face_sha
+                    if len(face_hashes) == len(CUBE_FACES):
+                        aggregate = hashlib.sha256(
+                            json.dumps(
+                                face_hashes,
+                                sort_keys=True,
+                                separators=(",", ":"),
+                            ).encode("utf-8")
+                        ).hexdigest()
+                        if source_sha != aggregate:
+                            reasons.append(
+                                "provenance-source-sha256-mismatch"
                             )
 
         if reasons:
