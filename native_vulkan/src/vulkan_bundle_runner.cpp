@@ -303,6 +303,16 @@ Geometry load_geometry(const std::string& path) {
             };
         }
     }
+    if (out.header.version == 1) {
+        if (out.header.attribute_count != 1 ||
+            out.attributes[0].format != 1u) {
+            throw std::runtime_error(
+                "invalid version-1 geometry packet");
+        }
+        // SVGP v1 used format code 1 for FLOAT3; v2/v3 use 1 for FLOAT2.
+        out.attributes[0].format = 2u;
+    }
+
     size_t vertex_offset = sizeof(GeometryHeader) + attr_bytes;
     size_t index_offset = vertex_offset + vertex_bytes;
     out.vertex_bytes.assign(
