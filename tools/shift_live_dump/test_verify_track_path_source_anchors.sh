@@ -73,9 +73,9 @@ out = Path(sys.argv[1])
 image_base = 0x00400000
 pe_offset = 0x80
 optional_size = 0xE0
-text_rva = 0x002C0000
+text_rva = 0x002B0000
 text_raw = 0x200
-text_size = 0x10000
+text_size = 0x20000
 rdata_rva = 0x006FB000
 rdata_raw = text_raw + text_size
 rdata_size = 0x3000
@@ -195,8 +195,8 @@ from pathlib import Path
 path = Path(sys.argv[1])
 blob = bytearray(path.read_bytes())
 text_raw = 0x200
-text_va = 0x006C0000
-rdata_raw = 0x10200
+text_va = 0x006B0000
+rdata_raw = 0x20200
 rdata_va = 0x00AFB000
 
 getter = 0x006C5000
