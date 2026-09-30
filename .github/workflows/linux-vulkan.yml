@@ -433,7 +433,7 @@ jobs:
             --scene-set out/vulkan/native_scene_set \
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
-            --camera-state out/vulkan/runtime/native_camera_state.json \
+            --camera-state out/vulkan/camera/native_camera.json \
             --input-script out/vulkan/runtime/native_input.script \
             --validation | tee out/vulkan/runtime/input_script.json
       - name: Assert scripted native input reaches physics tick
