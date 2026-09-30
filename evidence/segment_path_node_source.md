@@ -51,8 +51,10 @@ from an element while deriving its center. `FUN_006cf8e0` compares the
 `tools/shift_live_dump/analyze_track_paths.py` now validates captured
 `AISegmentPath.array` pointers against the count prefix, 0x38 stride and
 `0x00afbf60` vtable. It exports complete arrays from the reference snapshot
-to `aisegmentpath_nodes.csv`, with owner and element addresses plus the
-reflected fields. The synthetic regression covers two adjacent elements.
+to `aisegmentpath_nodes.csv` only when the count prefix and the complete
+`AIPathNode` vtable sequence agree across every supplied snapshot, with owner
+and element addresses plus the reflected fields. Regressions cover adjacent
+elements and reject incomplete cross-snapshot evidence.
 
 The fields' names and byte layout are source-backed. Their gameplay meaning,
 whether `dist` is always monotonic, and identity of a particular live array
