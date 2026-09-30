@@ -24,7 +24,8 @@ _LOADER_BY_EXTENSION = {
             "CMeshPrimitiveType::LoadBinaryMeshFromResource"
         ),
         "partial_decoder_format": "SHIFT.IMBBinaryMeshSchema/1",
-        "partial_decoder": "imb_format.parse_imb_binary_mesh_schema",
+        "partial_decoder": "imb_format.parse_imb_binary_mesh",
+        "prefix_auto_detection": "source-backed",
     },
     "imx": {
         "mode": "xml",
@@ -161,7 +162,7 @@ def build_meshinst_runtime_contract(
                 "0x40-byte elements; exact higher-level matrix/instance "
                 "semantics not promoted beyond observed storage use"
             ),
-            "serialized_payload_decode": "not-implemented",
+            "serialized_payload_decode": "partial-prefix-header-streams",
             "neutral_geometry_adapter": "not-implemented",
             "meb_equivalence": False,
         },
