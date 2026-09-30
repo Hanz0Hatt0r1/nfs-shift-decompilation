@@ -1943,6 +1943,30 @@ def cmd_sgb_render_binding_bridge(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_vulkan_draw_bundle(args: argparse.Namespace) -> int:
+    """Prepare one neutral runtime-proven Vulkan draw bundle."""
+    from vulkan_draw_bundle import build_vulkan_draw_bundle
+
+    result = build_vulkan_draw_bundle(
+        args.render_command,
+        args.mesh,
+        args.output_dir,
+        textures=args.textures,
+        environment_cube=args.environment_cube,
+        command_index=args.command_index,
+        submesh_index=args.submesh_index,
+        require_runtime_provenance=not args.allow_static,
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "ready": result["ready"],
+        "blocking_reasons": result["blocking_reasons"],
+        "manifest_sha256": result.get("manifest_sha256"),
+    }, ensure_ascii=False, indent=2))
+    return 0 if result["ready"] else 2
+
+
 def cmd_native_scene_bundle(args: argparse.Namespace) -> int:
     """Freeze runtime-proven SGB RenderCommands into NativeSceneBundle."""
     from native_scene_bundle import validate_file
@@ -4298,6 +4322,27 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p.set_defaults(fn=cmd_sgb_render_binding_bridge)
+
+    p = sp.add_parser(
+        "vulkan-draw-bundle",
+        help=(
+            "prepare one neutral SHIFT.VulkanDrawBundle/1 from "
+            "RenderCommand + neutral geometry"
+        ),
+    )
+    p.add_argument("render_command")
+    p.add_argument("mesh")
+    p.add_argument("output_dir")
+    p.add_argument("--textures")
+    p.add_argument("--environment-cube")
+    p.add_argument("--command-index", type=int, default=0)
+    p.add_argument("--submesh-index", type=int, default=0)
+    p.add_argument(
+        "--allow-static",
+        action="store_true",
+        help="do not require SHIFT.RuntimeProvenDraw/1",
+    )
+    p.set_defaults(fn=cmd_vulkan_draw_bundle)
 
     p = sp.add_parser(
         "native-scene-bundle",
