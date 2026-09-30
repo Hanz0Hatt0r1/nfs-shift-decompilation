@@ -1,0 +1,105 @@
+{
+  "format": "SHIFT.SilverstoneEra3GrandPrixNODEObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 corpus",
+  "archive": {
+    "name": "Silverstone_Era3_GrandPrix.bff",
+    "size": 55811062,
+    "sha256": "aac2e1fe721aec25494d0bfc84eac2bd49d1628fe55b165097ae694ef7a7d56c"
+  },
+  "sgb": {
+    "path": "tracks/silverstone_era3_grandprix/silverstone_era3_grandprix.sgb",
+    "size": 2176990,
+    "sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+    "chunk_stream_end": 1961156,
+    "post_end_reference_bytes": 215834,
+    "post_end_reference_sha256": "ed72dd00884a5a17ff626b64bd32333cf016ef02e944c2d5554d64eb3c563584"
+  },
+  "node": {
+    "chunk_offset": 1204,
+    "chunk_size": 8112,
+    "record_count": 41,
+    "metadata_bytes": 28,
+    "object_payload_layout": "inline at record +0x1c",
+    "relative_reference_base": "complete SGB base",
+    "stride_histogram": {
+      "196": 40,
+      "260": 1
+    },
+    "flags_histogram": {
+      "7": 41
+    },
+    "variation_index_histogram": {
+      "0": 41
+    },
+    "top_level_kind_counts": {
+      "LOD": 40,
+      "HIERARCHY": 1
+    },
+    "recursive_kind_counts": {
+      "LOD": 40,
+      "HIERARCHY": 1,
+      "OBJECT": 82
+    },
+    "lod": {
+      "record_count": 40,
+      "matrix_number_histogram": {
+        "-1": 40
+      },
+      "matrix_count_histogram": {
+        "1": 40
+      },
+      "subobject_count_histogram": {
+        "2": 40
+      },
+      "serialized_distance_pair_histogram": {
+        "0.0,0.0": 40
+      }
+    },
+    "hierarchy": {
+      "record_count": 1,
+      "matrix_number": 0,
+      "matrix_count": 3,
+      "subobject_count": 2
+    },
+    "object": {
+      "record_count": 82,
+      "matrix_number_histogram": {
+        "0": 80,
+        "1": 1,
+        "2": 1
+      },
+      "instances_histogram": {
+        "1": 4,
+        "2": 8,
+        "8": 16,
+        "13": 26,
+        "14": 28
+      },
+      "userflags_histogram": {
+        "272": 64,
+        "276": 2,
+        "304": 16
+      }
+    }
+  },
+  "source_join": {
+    "node_loader": "FUN_006a5270 -> FUN_006a4b40",
+    "object_entry": "FUN_0069bc50",
+    "object_dispatch": "FUN_0069a6c0",
+    "xml_crosscheck": "FUN_0069b1c0",
+    "matrix_xml_loader": "FUN_006990d0",
+    "lod_constructor": "FUN_00698a90",
+    "hierarchy_constructor": "FUN_00698a20",
+    "object_constructor": "FUN_00698dc0 / FUN_00698dd0",
+    "damage_constructor": "FUN_00698b00"
+  },
+  "observations": [
+    "FUN_006a4b40 passes NODE record +0x1c directly to FUN_0069bc50; the dword at +0x1c is the first object-payload word, not an object-payload offset.",
+    "NODE and object string/resource offsets are relative to the complete SGB base, including the payload arena after the END chunk.",
+    "The retail dispatcher recognizes LOD in addition to HIERARCHY, OBJECT and DAMAGE.",
+    "Binary bytes +0x22/+0x23 match the XML fields matrices/subobjects; they are not hierarchy type/count.",
+    "The 9-dword table following LOD/HIERARCHY common headers is the MATRIX table. Its fields match XML Offset, Orientation, Scale and parent, then copy into 0x28-byte runtime elements.",
+    "LOD records append one float distance per subobject followed by one SGB-relative subobject offset per subobject. HIERARCHY appends only the subobject offsets.",
+    "All 41 top-level NODE records and all 82 recursively referenced OBJECT payloads remain within their parent NODE record stride."
+  ]
+}
