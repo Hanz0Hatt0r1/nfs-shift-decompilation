@@ -312,33 +312,57 @@ def build_runtime_object_candidate_join(
     if not resources:
         blockers.append("runtime-object-join:no-runtime-resources")
 
-    blockers = list(dict.fromkeys(blockers))
-    pipeline_ready = not blockers
+    input_blockers = list(dict.fromkeys(blockers))
+    input_ready = not input_blockers
     resource_count = len(resources)
+
+    resource_blockers: list[str] = []
+    for row in resources:
+        if (
+            row.get("exact_runtime_resource_ready") is True
+            and int(row.get("scene_candidate_count") or 0) > 0
+        ):
+            continue
+        resource_index = row.get("runtime_resource_index")
+        reasons = row.get("blocking_reasons") or [
+            "runtime-resource-not-matched"
+        ]
+        resource_blockers.extend(
+            f"runtime-object-join:resource-{resource_index}:{reason}"
+            for reason in reasons
+        )
+
     all_resources_matched = (
-        pipeline_ready
+        input_ready
         and resource_count > 0
         and matched_resource_count == resource_count
+        and not resource_blockers
     )
     identity_complete = (
         all_resources_matched
         and unique_candidate_resource_count == resource_count
     )
 
-    if not pipeline_ready:
+    if not input_ready:
         status = "blocked"
     elif identity_complete:
         status = "unique-candidates"
+    elif all_resources_matched:
+        status = "ambiguous"
     elif matched_resource_count:
         status = "partial"
     else:
         status = "not-found"
 
+    blockers = list(dict.fromkeys(
+        [*input_blockers, *resource_blockers]
+    ))
+
     return {
         "format": FORMAT,
         "version": 1,
         "status": status,
-        "ready": pipeline_ready,
+        "ready": all_resources_matched,
         "identity_complete": identity_complete,
         "blocking_reasons": blockers,
         "scene_candidate_count": len(candidates),
