@@ -96,3 +96,18 @@ Before upload, `world_transform.svwt` is applied with the Phase 584 semantic
 affine rules. BMW `--bundle-set` remains a separate compatible path.
 
 Linux Vulkan CI executes a validated three-frame neutral scene-set smoke.
+
+
+## Phase 587 scene transform execution telemetry
+
+`SHIFT.NativeRuntimeBootstrap/1` now reports
+`world_transform_draws` and `affine_world_transform_draws`.
+
+The first counter increments only after a child SVWT has passed the existing
+fail-closed runtime transform path and mutated the native geometry before GPU
+upload. The second excludes translation-only matrices, so the Phase 586
+non-singular affine smoke must prove that the semantic-aware affine branch
+actually ran.
+
+Linux Vulkan CI requires both counters to equal one for the neutral one-child
+scene-set fixture.
