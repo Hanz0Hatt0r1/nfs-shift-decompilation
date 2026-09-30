@@ -79,6 +79,8 @@ struct.pack_into("<III", blob, false_node_off, 0x00AECCF8, 0, 1)
 struct.pack_into("<fffff", blob, false_node_off + 0x10, 17.0, 3.0, 1.0, 0.0, 16.0)
 
 # Keep the original generic float3 correlation fixture too.
+# The earlier copy of waypoint 0 is valid, but does not begin the chain.
+struct.pack_into("<fff", blob, 0x400, 101.03, 2.0, 3.0)
 for index, pos in enumerate(((101.0, 2.0, 3.0), (105.0, 2.0, 3.0), (109.0, 2.0, 3.0), (113.0, 2.0, 3.0))):
     struct.pack_into("<fff", blob, 0x500 + index * 0x20, *pos)
 
@@ -246,7 +248,7 @@ cat > "$tmp/test.aiw" <<'AIW'
 number_waypoints=4
 lap_length=120.000000
 \\0
-wp_pos=(1.0000,2.0000,3.0000)
+wp_pos=(1.0300,2.0000,3.0000)
 wp_branchID=(0)
 WP_PTRS=(30,10,-1,0)
 \10
@@ -295,6 +297,45 @@ assert seq[0]["stride"] == 0x24, seq
 assert seq[0]["runtime_root"] == 0x00201ff0, seq
 assert seq[0]["position_offset"] == 0x10, seq
 print("track path AIW correlation test: PASS")
+PY
+
+cat > "$tmp/generic.aiw" <<'AIW'
+[Waypoint]
+number_waypoints=4
+\0
+wp_pos=(101.0300,2.0000,3.0000)
+wp_branchID=(0)
+WP_PTRS=(3,1,-1,0)
+\1
+wp_pos=(105.0000,2.0000,3.0000)
+wp_branchID=(0)
+WP_PTRS=(0,2,-1,0)
+\2
+wp_pos=(109.0000,2.0000,3.0000)
+wp_branchID=(0)
+WP_PTRS=(1,3,-1,0)
+\3
+wp_pos=(113.0000,2.0000,3.0000)
+wp_branchID=(0)
+WP_PTRS=(2,0,-1,0)
+AIW
+
+python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-generic-aiw" \
+  --top 20 --target-top 8 --skip-pointer-analysis --aiw "$tmp/generic.aiw" \
+  --aiw-range 0x00200400:0x180 --runtime-root 0x002004f0 >/tmp/track_path_generic_aiw_test.out
+
+python3 - "$tmp/out-generic-aiw/track_path_analysis.json" <<'PY'
+import json
+import sys
+
+result = json.loads(open(sys.argv[1], encoding="utf-8").read())
+assert result["aiw_match_count"] == 5, result["aiw_match_count"]
+seq = result["aiw_runtime_sequences"]
+assert len(seq) == 1, seq
+assert seq[0]["matched_waypoints"] == 4, seq
+assert seq[0]["runtime_start"] == 0x00200500, seq
+assert seq[0]["stride"] == 0x20, seq
+print("track path generic AIW duplicate/bucket test: PASS")
 PY
 
 python3 - "$tmp/out-skip-pointers/track_path_analysis.json" <<'PY'
