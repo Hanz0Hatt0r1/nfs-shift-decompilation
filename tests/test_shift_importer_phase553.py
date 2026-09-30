@@ -329,3 +329,14 @@ def test_phase600_cli_accepts_native_camera_state_bridge():
         "camera-complete.json",
     ]
     assert args.fn.__name__ == "cmd_native_camera_state_bridge"
+
+
+def test_phase602_cli_accepts_native_vehicle_participant_bridge():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-vehicle-participant-bridge",
+        "out/native-participant.json",
+    ])
+
+    assert args.output == "out/native-participant.json"
+    assert args.fn.__name__ == "cmd_native_vehicle_participant_bridge"
