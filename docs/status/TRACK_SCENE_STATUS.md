@@ -35,6 +35,7 @@ Covered boundaries include:
 - `SHIFT.SGBObjectRenderHandoffSet/1` maps OBJECT resource descriptor +0x80 to renderer factory vfunc +0x214 and transform submission vfunc +0x2c;
 - OBJECT MatrixNumber=-1 produces a source-equivalent numeric 4x4 from WXYZ quaternion, XYZ offset and uniform scale; MatrixNumber>=0 selects a 0x40-byte parent MultiMatrix slot.
 - `SHIFT.SGBMultiMatrixEvaluation/1` reconstructs static mode-1 hierarchy arithmetic: the owner overwrites world slot 0 from its runtime root input, then evaluates slots 1..N-1 as `local * parent_world` using the low byte of the serialized parent dword.
+- `SHIFT.SGBRootTransformState/1` reconstructs the root lifecycle: constructor world slot 0 equals serialized local slot 0; SceneGraph immediate/deferred transform updates replace it with the exact transported 0x40-byte matrix. Unknown per-instance update history remains blocked.
 
 ## Explicitly unresolved
 
@@ -44,8 +45,8 @@ The project does not invent:
 - higher-level roles of individual LOD/HIERARCHY objects;
 - full scene streaming and LOD behavior.
 
-Track placement identity, culling geometry and static MultiMatrix arithmetic are source-backed; the top-level runtime root matrix producer and higher-level streaming behavior remain evidence questions.
+Track placement identity, culling geometry, MultiMatrix arithmetic and root-transform transport are source-backed; concrete per-instance SceneGraph transform-update history and higher-level streaming behavior remain evidence questions.
 
 ## Next
 
-Trace the top-level matrix passed to LOD/HIERARCHY update vfunc `+0x2c`, then feed that proven root into `SHIFT.SGBMultiMatrixEvaluation/1` and join the resulting OBJECT world matrices with `SHIFT.SGBScenePlacement/1` for fail-closed RenderBinding admission.
+Recover or capture the transform-update history for concrete SGB runtime instances. Feed the resolved `SHIFT.SGBRootTransformState/1` root into `SHIFT.SGBMultiMatrixEvaluation/1`, then join resulting OBJECT world matrices with `SHIFT.SGBScenePlacement/1` for fail-closed RenderBinding admission.

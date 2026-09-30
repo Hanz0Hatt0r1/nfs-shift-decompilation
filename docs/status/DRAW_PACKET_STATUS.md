@@ -36,7 +36,7 @@ The desktop oracle consumes RenderCommand/1 directly. Vulkan is required to cons
 
 ## Scene placement handoff
 
-`SHIFT.SGBScenePlacement/1` provides render-facing spatial/object identity, `SHIFT.SGBObjectRenderHandoffSet/1` proves OBJECT resource-descriptor admission plus explicit/MatrixNumber transform selection, and `SHIFT.SGBMultiMatrixEvaluation/1` now reconstructs static mode-1 MultiMatrix arithmetic when the runtime root matrix is supplied. RenderBinding integration remains fail-closed until the top-level root-world producer is source-backed.
+`SHIFT.SGBScenePlacement/1` provides render-facing spatial/object identity, `SHIFT.SGBObjectRenderHandoffSet/1` proves OBJECT resource-descriptor admission plus explicit/MatrixNumber transform selection, `SHIFT.SGBMultiMatrixEvaluation/1` reconstructs static mode-1 MultiMatrix arithmetic, and `SHIFT.SGBRootTransformState/1` reconstructs constructor plus immediate/deferred SceneGraph root transport. RenderBinding integration remains fail-closed until concrete per-instance transform-update history is known.
 
 ## Remaining render work
 
