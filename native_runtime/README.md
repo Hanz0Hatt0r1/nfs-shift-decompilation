@@ -36,6 +36,7 @@ native_runtime/build/shift_runtime \
   --bundle out/example-bundle \
   --shader-dir native_runtime/build/shaders \
   --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --camera-state out/native-camera.json \
   --frames 120
 ```
 
@@ -121,3 +122,17 @@ native_runtime/build/shift_runtime \
 This mode requires neutral child prepare/interface gates and applies each
 `world_transform.svwt` before GPU upload with the Phase 584 semantic affine
 rules. The BMW `--bundle-set` ABI remains supported independently.
+
+
+## Phase 600 camera evidence input
+
+The live Phase 599 CameraManager snapshot/double-buffer scheduler accepts an
+optional ready `SHIFT.NativeCameraStateBridge/1` through `--camera-state`.
+
+The bridge can seed the recovered numeric mode/sub-index/camera-id/group state
+before the fixed-step loop. It never transports or dereferences the opaque
+retail camera/source reference; that native token remains zero.
+
+The Phase 599 scheduler then snapshots, copies and flips the loaded state on the
+existing native fixed-step boundary, retaining its explicit
+`native-fixed-step-non-retail-timing` label.
