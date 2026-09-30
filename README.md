@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 590. Current development: Phase 591.**
+**Merged baseline: Phase 591. Current development: Phase 592.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -115,7 +115,7 @@ prove affine SVWT execution through runtime telemetry. Phase 588 adds explicit
 external `sampler2D` snapshot transport through the existing SVTP ABI while
 keeping unsupplied renderer-owned resources fail-closed. Phase 589 joins those
 snapshots to exact scene draw/resource/primitive/register identity before they
-can satisfy a NativeSceneVulkanSet external-resource blocker. Phase 590 carries
+can satisfy a NativeSceneVulkanSet external-resource blocker. Phase 592 adds the same exact scene-bound transport for captured external `samplerCube` at the proven s3 boundary. Phase 590 carries
 only strong-attributed draw-local texture observations from the D3D9 capture
 pipeline and converts an unambiguous captured PPM directly into that exact
 Phase 589 contract.
@@ -152,7 +152,7 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | authentic capture content/remaining renderer-owned resource types; remaining alpha-test/bias/stencil state |
+| Vulkan | active native backend | authentic capture content/renderer-owned resource types beyond sampler2D/samplerCube-s3; remaining alpha-test/bias/stencil state |
 | SGB / scene | strong structural/render handoff | authentic Silverstone capture content, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
@@ -313,14 +313,16 @@ python shift_importer.py native-scene-external-capture \
   out/silverstone-runtime-attribution.json \
   out/scene-external-capture.json \
   --capture-root out/capture \
-  --snapshot-output out/scene-external-snapshots.json
+  --snapshot-output out/scene-external-snapshots.json \\
+  --cube-snapshot-output out/scene-external-cube-snapshots.json
 
 python shift_importer.py native-scene-vulkan-set \
   out/native-scene-bundle.json \
   out/scene-render-binding.json \
   out/ir \
   out/native-scene-vulkan \
-  --external-sampler-snapshots out/scene-external-snapshots.json
+  --external-sampler-snapshots out/scene-external-snapshots.json \\
+  --external-sampler-cube-snapshots out/scene-external-cube-snapshots.json
 
 python shift_importer.py native-scene-vulkan-prepare \
   out/native-scene-vulkan \
@@ -375,8 +377,10 @@ These are independent; resolving one does not justify guessing another.
 2. **Renderer-owned scene evidence** — Phase 590 can automatically convert an
    unambiguous strong-attributed D3D9 `CreateTexture` + captured PPM into the
    exact Phase 589 scene contract. Phase 591 can also disambiguate repeated
-   scene instances from exact strong-attributed draw-local VS constant windows;
-   authentic Silverstone capture content and remaining resource types are still
+   scene instances from exact strong-attributed draw-local VS constant windows,
+   and Phase 592 converts observed six-face `samplerCube` s3 captures into the
+   exact scene contract/native cube packet; authentic Silverstone capture content
+   and remaining resource types are still
    required.
 3. **Scene runtime completeness** — some per-instance MatrixNumber update
    history and higher-level streaming/LOD behavior remain unresolved.
