@@ -783,6 +783,9 @@ def main(argv: list[str] | None = None) -> int:
         args.ir_root,
         args.output_dir,
         environment_cube_dds=args.environment_cube_dds,
+        external_sampler_snapshots_path=(
+            args.external_sampler_snapshots
+        ),
     )
     print(json.dumps({
         "format": report["format"],
