@@ -69,7 +69,17 @@ def test_prefixed_array_validator_uses_compact_windows(monkeypatch, tmp_path: Pa
 
 def test_prefixed_array_validator_rejects_missing_snapshot(monkeypatch, tmp_path: Path):
     snapshots = [tmp_path / "snapshot-0", tmp_path / "snapshot-1"]
-    indexes = [{}, {}]
+    indexes = [
+        {
+            0x00200000: {
+                "start": 0x00200000,
+                "size": 0x2000,
+                "file": "regions/anon.bin",
+                "perms": "rwxp",
+            }
+        }
+        for _ in snapshots
+    ]
     array = 0x00200400
 
     def fake_read(snapshot, region_index, starts, address, size):
@@ -107,7 +117,17 @@ def test_prefixed_array_validator_rejects_missing_snapshot(monkeypatch, tmp_path
 
 def test_prefixed_array_validator_rejects_changed_vtable_sequence(monkeypatch, tmp_path: Path):
     snapshots = [tmp_path / "snapshot-0", tmp_path / "snapshot-1"]
-    indexes = [{}, {}]
+    indexes = [
+        {
+            0x00200000: {
+                "start": 0x00200000,
+                "size": 0x2000,
+                "file": "regions/anon.bin",
+                "perms": "rwxp",
+            }
+        }
+        for _ in snapshots
+    ]
     array = 0x00200400
 
     def fake_read(snapshot, region_index, starts, address, size):
