@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 599.**
+**Current mainline: Phase 600.**
 
 
 
@@ -98,6 +98,8 @@ Phase 599 connects the already-recovered CameraManager six-word snapshot and gua
 70. Derive proven animation poses from the BAB runtime grammar.
 71. Port the stable native render/runtime boundary to Android.
 72. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+73. Execute the recovered CameraManager six-word snapshot plus guarded double-buffer flip/copy inside the native fixed-step scheduler without claiming retail timing — Phase 599 implemented.
+74. Seed that live Phase 599 camera scheduler from fail-closed recovered CameraManager snapshot/swap evidence without transporting the opaque camera-source token — Phase 600 implemented as SHIFT.NativeCameraStateBridge/1 plus --camera-state.
 
 ## Workstream status
 
