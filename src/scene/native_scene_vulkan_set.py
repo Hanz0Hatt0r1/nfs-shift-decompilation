@@ -194,10 +194,19 @@ def _primitive_matches(
         primitive_index = int(draw.get("primitive_index"))
     except (TypeError, ValueError):
         return False
-    primitives = neutral.get("primitives") or []
-    if primitive_index < 0 or primitive_index >= len(primitives):
+    primitives = [
+        row
+        for row in (neutral.get("primitives") or [])
+        if isinstance(row, Mapping)
+    ]
+    matches = [
+        row
+        for row in primitives
+        if row.get("index") == primitive_index
+    ]
+    if len(matches) != 1:
         return False
-    primitive = primitives[primitive_index]
+    primitive = matches[0]
     draw_range = draw.get("draw_range") or {}
     try:
         return (
