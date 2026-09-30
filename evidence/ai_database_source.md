@@ -74,7 +74,11 @@ association with that reflected field.
 
 ## Constructor defaults
 
-`FUN_00715690`, called by `FUN_0071da20`, supplies the reset/default state.
+Before the common reset, `FUN_0071da20` explicitly writes null pointers at
+`+0x1394` and `+0x139c`, so both owned record-array pointers are initialized
+independently of their counts.
+
+`FUN_00715690`, called by `FUN_0071da20`, supplies the remaining reset/default state.
 Among reflected fields this establishes:
 
 | Field | Initial value |
