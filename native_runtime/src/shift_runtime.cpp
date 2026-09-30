@@ -546,6 +546,16 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
         }
     }
 
+    if (header.version == 1) {
+        if (header.attribute_count != 1 ||
+            attributes[0].format != 1u) {
+            throw std::runtime_error(
+                "invalid version-1 SVGP geometry attribute");
+        }
+        // SVGP v1 used format code 1 for FLOAT3; v2/v3 reserve 1 for FLOAT2.
+        attributes[0].format = 2u;
+    }
+
     const GeometryAttribute* position = nullptr;
     for (const auto& attribute : attributes) {
         if (attribute.location == 0) {
