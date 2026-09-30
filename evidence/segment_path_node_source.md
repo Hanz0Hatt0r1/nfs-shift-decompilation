@@ -11,7 +11,7 @@ the 0x24-byte polyline decoder must not be applied to it.
 The evidence is from `SHIFT.exe` SHA-256
 `eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1`
 and its `SHIFT.exe.c` decompilation SHA-256
-`512753a5f91898885263c91664a3d3a5f89c402a00760ee9`.
+`512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9`.
 
 `FUN_006d8490` (`SHIFT.exe.c:650368`, PE `0x006d8490`) is the concrete path factory. When given the `AISegmentPath` RTTI object at `0x00c0d668`, it allocates `0x38` bytes and calls `FUN_006cfe70`. That constructor writes vtable `0x00afc930` after initializing the recovered `AISegmentPath` fields. This also disambiguates `FUN_006d0fe0` / `0x00afca70`: the latter belongs to the later `AIMarker` descriptor, not `AISegmentPath`.
 
