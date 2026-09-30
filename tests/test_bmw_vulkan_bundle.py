@@ -280,3 +280,44 @@ def test_bmw_vulkan_bundle_blocks_enabled_alpha_test(tmp_path):
         "material-pipeline:alpha-test-enabled-unsupported"
         in result["blocking_reasons"]
     )
+
+
+def test_vulkan_bundle_accepts_exact_neutral_scene_mesh_when_explicit(tmp_path):
+    command = _command()
+    scene_ref = "tracks/silverstone/runtime_proven.imb"
+    command["render_commands"][0]["mesh"]["ref"] = scene_ref
+    neutral = {
+        **_mesh(),
+        "format": "SHIFT.NeutralMesh/1",
+    }
+
+    result = build_bmw_vulkan_bundle(
+        command,
+        neutral,
+        tmp_path,
+        expected_mesh_ref=scene_ref,
+    )
+
+    assert result["ready"] is True, result["blocking_reasons"]
+    assert result["target"]["meb"] is None
+    assert result["target"]["resource"] == scene_ref
+    assert result["target"]["expected_resource"] == scene_ref
+    assert result["target"]["mesh_format"] == "SHIFT.NeutralMesh/1"
+
+
+def test_vulkan_bundle_rejects_wrong_explicit_scene_mesh_reference(tmp_path):
+    command = _command()
+    command["render_commands"][0]["mesh"]["ref"] = "tracks/a.imb"
+    neutral = {**_mesh(), "format": "SHIFT.NeutralMesh/1"}
+
+    try:
+        build_bmw_vulkan_bundle(
+            command,
+            neutral,
+            tmp_path,
+            expected_mesh_ref="tracks/b.imb",
+        )
+    except ValueError as error:
+        assert "does not match expected resource" in str(error)
+    else:
+        raise AssertionError("wrong exact scene resource must be blocked")
