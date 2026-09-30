@@ -93,6 +93,20 @@ def test_snapshot_contract_validates_exact_hashed_rows():
     assert len(report["index"]) == 1
 
 
+def test_snapshot_contract_rejects_unsupported_version():
+    report = validate_external_sampler_snapshot_contract({
+        "format": FORMAT,
+        "version": 2,
+        "snapshots": [],
+    })
+
+    assert report["ready"] is False
+    assert (
+        "external-snapshot:unsupported-version"
+        in report["blocking_reasons"]
+    )
+
+
 def test_snapshot_contract_rejects_texture_hash_mismatch():
     row = _snapshot()
     row["texture_sha256"] = _sha("f")
