@@ -44,8 +44,11 @@ def _decode_file(path: str | Path) -> dict[str, Any]:
     return image
 
 
-def _sampler_registers(render_command: Mapping[str, Any]) -> tuple[set[int], set[int]]:
+def _sampler_registers(
+    render_command: Mapping[str, Any],
+) -> tuple[set[int], set[int], set[int]]:
     material_2d: set[int] = set()
+    external_2d: set[int] = set()
     cubes: set[int] = set()
     for submesh in render_command.get("submeshes", []) or []:
         for row in submesh.get("textures", []) or []:
@@ -60,9 +63,14 @@ def _sampler_registers(render_command: Mapping[str, Any]) -> tuple[set[int], set
             sampler_type = str(row.get("sampler_type") or "")
             if sampler_type == "samplerCube":
                 cubes.add(int(register))
-            elif sampler_type:
-                material_2d.add(int(register))
-    return material_2d, cubes
+            elif sampler_type == "sampler2D":
+                external_2d.add(int(register))
+    if material_2d & external_2d:
+        register = sorted(material_2d & external_2d)[0]
+        raise ValueError(
+            f"material/external sampler register collision: s{register}"
+        )
+    return material_2d, external_2d, cubes
 
 
 def bridge_bmw_dds_resources(
@@ -74,23 +82,27 @@ def bridge_bmw_dds_resources(
 ) -> dict[str, Any]:
     command = _load_render_command(render_command)
     texture_map = _load_map(texture_dds_map)
-    material_registers, cube_registers = _sampler_registers(command)
+    material_registers, external_2d_registers, cube_registers = (
+        _sampler_registers(command)
+    )
+    all_2d_registers = material_registers | external_2d_registers
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
     decoded_textures: dict[int, dict[str, Any]] = {}
+    decoded_external_textures: dict[int, dict[str, Any]] = {}
     source_records: list[dict[str, Any]] = []
     blockers: list[str] = []
-    supplied_material_registers: set[int] = set()
+    supplied_2d_registers: set[int] = set()
 
     for register_text, value in texture_map.items():
         register = int(register_text)
-        if register not in material_registers:
+        if register not in all_2d_registers:
             blockers.append(
                 f"dds-bridge:unbound-material-register:s{register}"
             )
             continue
-        supplied_material_registers.add(register)
+        supplied_2d_registers.add(register)
         try:
             image = _decode_file(value)
         except (OSError, ValueError, TypeError) as error:
@@ -106,9 +118,18 @@ def bridge_bmw_dds_resources(
         if image.get("format") != FORMAT:
             blockers.append(f"dds-bridge:unsupported-decoded-format:s{register}")
             continue
-        decoded_textures[register] = image
+        target = (
+            decoded_external_textures
+            if register in external_2d_registers
+            else decoded_textures
+        )
+        target[register] = image
         source_records.append({
-            "kind": "2d",
+            "kind": (
+                "external-2d"
+                if register in external_2d_registers
+                else "2d"
+            ),
             "register": register,
             "source_path": image["_source_path"],
             "source_sha256": image["_source_sha256"],
@@ -118,7 +139,7 @@ def bridge_bmw_dds_resources(
             "height": image.get("height"),
         })
 
-    missing_2d = sorted(material_registers - supplied_material_registers)
+    missing_2d = sorted(all_2d_registers - supplied_2d_registers)
     if missing_2d:
         blockers.extend(
             f"dds-bridge:missing-2d-ds:s{register}"
@@ -127,13 +148,14 @@ def bridge_bmw_dds_resources(
 
     texture_report = None
     texture_path = None
-    if decoded_textures:
+    if decoded_textures or decoded_external_textures:
         texture_path = out / "textures.svtp"
         try:
             texture_report = build_vulkan_texture_packet(
                 command,
                 decoded_textures,
                 texture_path,
+                external_textures=decoded_external_textures,
             )
         except (OSError, ValueError, TypeError) as error:
             blockers.append(
@@ -217,6 +239,7 @@ def bridge_bmw_dds_resources(
         "blocking_reasons": list(dict.fromkeys(blockers)),
         "render_command_format": command.get("format"),
         "material_2d_registers": sorted(material_registers),
+        "external_2d_registers": sorted(external_2d_registers),
         "environment_cube_registers": sorted(cube_registers),
         "decoded_sources": source_records,
         "packets": {
