@@ -11,6 +11,7 @@ EVENT_SPECS = {
     'set_stream_source': {'pointer':'vertex_buffer_ptr'},
     'set_indices': {'pointer':'index_buffer_ptr'},
     'set_texture': {'pointer':'texture_ptr', 'allow_null': True},
+    'draw_texture_snapshot': {'pointer':'texture_ptr'},
     'create_texture': {'pointer':'texture_ptr'},
     'create_cube_texture': {'pointer':'texture_ptr'},
     'create_vertex_buffer': {'pointer':'vertex_buffer_ptr'},
@@ -129,6 +130,25 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
     if event == 'set_texture':
         if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
             reasons.append('texture:stage-invalid')
+    if event == 'draw_texture_snapshot':
+        if not isinstance(row.get('draw_index'), int) or int(row.get('draw_index')) < 0:
+            reasons.append('draw-texture:draw-index-invalid')
+        if not isinstance(row.get('stage'), int) or int(row.get('stage')) < 0:
+            reasons.append('draw-texture:stage-invalid')
+        status = row.get('snapshot_status')
+        if status not in {
+            'captured',
+            'partial',
+            'capture-failed',
+            'unsupported-resource-type',
+        }:
+            reasons.append('draw-texture:status-invalid')
+        paths = row.get('snapshot_paths')
+        if paths is not None and (
+            not isinstance(paths, list)
+            or not all(isinstance(path, str) and path for path in paths)
+        ):
+            reasons.append('draw-texture:paths-invalid')
     if event == 'present_screenshot':
         if row.get('path') is not None and not isinstance(row.get('path'), str):
             reasons.append('screenshot:path-invalid')
