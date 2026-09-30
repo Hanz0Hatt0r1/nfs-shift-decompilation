@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 564.**
+**Current mainline: Phase 565.**
 
 
 
@@ -92,7 +92,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 68. Recover the packed IMB version/control/name prefix and auto-locate the fixed header/bone gate — Phase 557 implemented.
     Phase 558 corrects descriptor/vertex block sequencing, preserves supported raw vertex streams and derives the primitive section offset.
     Phase 559 adds optional source-backed v0.4 material/palette/index/bounds primitive records.
-69. Recover full IMB vertex+primitive payload consumption and implement neutral IMB/IMX scene adapters; independently recover/capture blocked SceneGraph transform-update history. Phase 560 implements the fail-closed neutral IMB geometry adapter over the proven v0.4 stream/primitive payload. Phase 561 connects admitted `.imb` MeshInst resources through that adapter into the generic material/shader/RenderBinding pipeline. Phase 562 production-validates all 427 Silverstone Era3 IMBs. Phase 563 closes all 428 IMB primitive MTX→same-archive BMT references across 84 unique logical materials. Phase 564 decodes all 239 archive-local BMT occurrences, closes 563/563 same-archive DDS references, then resolves all five exact global FX source paths in retail `RENDER.bff`; all 239 Silverstone materials are source-dependency-ready. IMX adaptation, FXO/permutation closure and transform-update history remain.
+69. Recover full IMB vertex+primitive payload consumption and implement neutral IMB/IMX scene adapters; independently recover/capture blocked SceneGraph transform-update history. Phase 560 implements the fail-closed neutral IMB geometry adapter over the proven v0.4 stream/primitive payload. Phase 561 connects admitted `.imb` MeshInst resources through that adapter into the generic material/shader/RenderBinding pipeline. Phase 562 production-validates all 427 Silverstone Era3 IMBs. Phase 563 closes all 428 IMB primitive MTX→same-archive BMT references across 84 unique logical materials. Phase 564 decodes all 239 archive-local BMT occurrences, closes 563/563 same-archive DDS references, then resolves all five exact global FX source paths in retail `RENDER.bff`; all 239 Silverstone materials are source-dependency-ready. Phase 565 closes the compiled FXO family inventory: 1,280 cache copies collapse to 368 unique decoded payloads with zero parse failures, while material-specific permutation attribution remains fail-closed. IMX adaptation, permutation attribution and transform-update history remain.
 70. Derive proven animation poses from the BAB runtime grammar.
 71. Port the stable native render/runtime boundary to Android.
 72. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
@@ -108,7 +108,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed v0.4 IMB neutral geometry + admitted-IMB RenderBinding integration; Silverstone IMB/BMT/DDS + five global FX sources production-validated | FXO/permutation selection + IMX neutral adapter + per-instance SceneGraph update history + native scene loading |
+| SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed v0.4 IMB neutral geometry + admitted-IMB RenderBinding integration; Silverstone IMB/BMT/DDS/FX + five compiled FXO families production-inventoried (1,280 copies → 368 unique payloads) | material-specific FXO/pair attribution + IMX neutral adapter + per-instance SceneGraph update history + native scene loading |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
