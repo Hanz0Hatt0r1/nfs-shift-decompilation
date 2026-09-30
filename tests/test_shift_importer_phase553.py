@@ -308,3 +308,24 @@ def test_phase598_cli_accepts_multimatrix_runtime_coverage():
     assert args.ir_root == "out/ir"
     assert args.output == "matrix-coverage.json"
     assert args.fn.__name__ == "cmd_sgb_multimatrix_runtime_coverage"
+
+
+def test_phase599_cli_accepts_native_camera_state_bridge():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-camera-state-bridge",
+        "camera-snapshot.json",
+        "native-camera.json",
+        "--transition",
+        "camera-swap.json",
+        "--transition",
+        "camera-complete.json",
+    ])
+
+    assert args.snapshot == "camera-snapshot.json"
+    assert args.output == "native-camera.json"
+    assert args.transition == [
+        "camera-swap.json",
+        "camera-complete.json",
+    ]
+    assert args.fn.__name__ == "cmd_native_camera_state_bridge"
