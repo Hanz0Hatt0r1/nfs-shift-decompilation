@@ -88,7 +88,11 @@ def _selection_sort_key(candidate: dict) -> tuple:
         -evidence[8],
         candidate["file"],
         candidate["program_offset"],
-        candidate.get("vertex_program_offset", -1),
+        (
+            candidate.get("vertex_program_offset")
+            if candidate.get("vertex_program_offset") is not None
+            else -1
+        ),
     )
 
 
