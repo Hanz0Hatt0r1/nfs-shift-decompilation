@@ -89,7 +89,12 @@ This is still a selected-draw slice, not a retained full runtime frame.
 
 When one binding maps to multiple scene draws, the adapter may select one draw
 only when the Phase 591 report contains one ready exact selection for that
-binding.
+binding. The selected `draw_identity_sha256` is revalidated against the current
+NativeSceneBundle before use.
+
+A Phase 591 report may be globally partial: a ready row for one external-sampler
+binding can still be consumed even when unrelated repeated bindings remain
+blocked. Blocked rows never authorize selection.
 
 The resulting Phase 589 snapshot provenance records the selected draw order and
 draw identity from the transform proof.
