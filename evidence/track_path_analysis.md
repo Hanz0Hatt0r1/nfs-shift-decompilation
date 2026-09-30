@@ -77,7 +77,7 @@ This is the first range to extract from the original full live-memory capture. T
 The scanner encodes the following recovered structure anchors:
 
 - `Path` is the legacy analyzer label for retail `AIPathInfo`: `tangent` +0x10/+0x14, `outside` +0x18, `centreDist` +0x1c, `StartNode` +0x20, flags +0x24..+0x27; concrete vftable `0x00AFB150`.
-- `Incident.PathOwner`: `Path` +0xd8, centre position +0xdc..+0xe4, radius +0xe8, activity fields +0xf0..+0xf8.
+- `Incident.PathOwner` is the legacy analyzer label for the path-owner subset of retail `AIArea`: `Path` +0xd8, centre position +0xdc..+0xe4, radius +0xe8, activity fields +0xf0..+0xf8; concrete vftable `0x00AFC048`.
 - `AISegmentPath`: fields through +0x34; constructor vftable `0x00AFC930`.
 - `AIPolylinePath`: fields through +0x28.
 
