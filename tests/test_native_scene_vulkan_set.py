@@ -105,7 +105,13 @@ def _runtime_provenance(resource_sha):
     }
 
 
-def _submesh(resource_sha, *, textured=False, external=False):
+def _submesh(
+    resource_sha,
+    *,
+    textured=False,
+    external=False,
+    external_cube=False,
+):
     row = {
         "primitive_index": 0,
         "first_index": 0,
@@ -154,7 +160,7 @@ def _submesh(resource_sha, *, textured=False, external=False):
             },
         }]
     if external:
-        row["external_samplers"] = [{
+        row["external_samplers"].append({
             "sampler": "shadowMap",
             "sampler_type": "sampler2D",
             "d3d9_sampler_register": 7,
@@ -169,11 +175,35 @@ def _submesh(resource_sha, *, textured=False, external=False):
                 "address_v": "CLAMP_TO_EDGE",
                 "address_w": "CLAMP_TO_EDGE",
             },
-        }]
+        })
+    if external_cube:
+        row["external_samplers"].append({
+            "sampler": "environmentMap",
+            "sampler_type": "samplerCube",
+            "d3d9_sampler_register": 3,
+            "sampler_state": {
+                "format": "SHIFT.SamplerState/1",
+                "ready": True,
+                "blocking_reasons": [],
+                "min_filter": "LINEAR",
+                "mag_filter": "LINEAR",
+                "mip_filter": "LINEAR",
+                "address_u": "CLAMP_TO_EDGE",
+                "address_v": "CLAMP_TO_EDGE",
+                "address_w": "CLAMP_TO_EDGE",
+            },
+        })
     return row
 
 
-def _command(resource_sha, *, textured=False, external=False, tx=10.0):
+def _command(
+    resource_sha,
+    *,
+    textured=False,
+    external=False,
+    external_cube=False,
+    tx=10.0,
+):
     return {
         "format": "SHIFT.RenderCommand/1",
         "ready": True,
@@ -221,6 +251,7 @@ def _command(resource_sha, *, textured=False, external=False, tx=10.0):
                 resource_sha,
                 textured=textured,
                 external=external,
+                external_cube=external_cube,
             )
         ],
         "runtime_proven_draw_count": 1,
@@ -228,12 +259,22 @@ def _command(resource_sha, *, textured=False, external=False, tx=10.0):
             "format": "SHIFT.RenderResources/1",
             "texture_count": 1 if textured else 0,
             "sampler_count": 1 if textured else 0,
-            "external_sampler_count": 1 if external else 0,
+            "external_sampler_count": (
+                (1 if external else 0)
+                + (1 if external_cube else 0)
+            ),
         },
     }
 
 
-def _bridge(resource_sha, *, textured=False, external=False, tx=10.0):
+def _bridge(
+    resource_sha,
+    *,
+    textured=False,
+    external=False,
+    external_cube=False,
+    tx=10.0,
+):
     resources = {
         "format": "SHIFT.RenderResources/1",
         "textures": [],
@@ -284,6 +325,7 @@ def _bridge(resource_sha, *, textured=False, external=False, tx=10.0):
         resource_sha,
         textured=textured,
         external=external,
+        external_cube=external_cube,
         tx=tx,
     )
     return {
@@ -353,6 +395,7 @@ def _scene_and_bridge(
     *,
     textured=False,
     external=False,
+    external_cube=False,
     tx=10.0,
 ):
     root, imb_sha = _write_ir(tmp_path, textured=textured)
@@ -360,6 +403,7 @@ def _scene_and_bridge(
         imb_sha,
         textured=textured,
         external=external,
+        external_cube=external_cube,
         tx=tx,
     )
     scene = build_native_scene_bundle(bridge)
@@ -405,6 +449,96 @@ def _external_snapshot_contract(scene):
                 "format": "SHIFT.ExternalSamplerSnapshotProvenance/1",
                 "source_kind": "runtime-capture",
                 "source_sha256": _sha("c"),
+            },
+        }],
+    }
+
+
+def _external_reference_cube():
+    faces = {}
+    colors = {
+        "px": [255, 0, 0, 255],
+        "nx": [0, 255, 0, 255],
+        "py": [0, 0, 255, 255],
+        "ny": [255, 255, 0, 255],
+        "pz": [255, 0, 255, 255],
+        "nz": [0, 255, 255, 255],
+    }
+    for face, pixels in colors.items():
+        faces[face] = {
+            "format": "SHIFT.ReferenceTexture/1",
+            "source_format": "D3D9_CAPTURE_PPM",
+            "width": 1,
+            "height": 1,
+            "mipmaps": 1,
+            "base_level_only": True,
+            "storage": "uncompressed",
+            "pixel_format": "RGBA8",
+            "pixels": pixels,
+            "byte_size": 4,
+        }
+    return {
+        "format": "SHIFT.ReferenceCubeTexture/1",
+        "source_format": "D3D9_CAPTURE_PPM_CUBE",
+        "width": 1,
+        "height": 1,
+        "mipmaps": 1,
+        "base_level_only": True,
+        "storage": "uncompressed",
+        "pixel_format": "RGBA8",
+        "faces": faces,
+        "byte_size": 24,
+    }
+
+
+def _external_cube_snapshot_contract(scene):
+    draw = scene["draws"][0]
+    cube = _external_reference_cube()
+    cube_sha = hashlib.sha256(
+        json.dumps(
+            cube,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    face_sources = {
+        face: {
+            "snapshot_path": f"frames/s3_face_{face}.ppm",
+            "source_sha256": hashlib.sha256(
+                face.encode("ascii")
+            ).hexdigest(),
+        }
+        for face in ("px", "nx", "py", "ny", "pz", "nz")
+    }
+    source_sha = hashlib.sha256(
+        json.dumps(
+            {
+                face: face_sources[face]["source_sha256"]
+                for face in ("px", "nx", "py", "ny", "pz", "nz")
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        "format": "SHIFT.NativeSceneExternalSamplerCubeSnapshots/1",
+        "version": 1,
+        "snapshots": [{
+            "draw_identity_sha256": draw["hashes"][
+                "draw_identity_sha256"
+            ],
+            "resource": dict(draw["resource"]),
+            "primitive_index": draw["primitive_index"],
+            "d3d9_sampler_register": 3,
+            "sampler_type": "samplerCube",
+            "cube": cube,
+            "cube_sha256": cube_sha,
+            "provenance": {
+                "format": "SHIFT.ExternalSamplerSnapshotProvenance/1",
+                "source_kind": "D3D9_CAPTURE_PPM_CUBE",
+                "source_sha256": source_sha,
+                "face_sources": face_sources,
             },
         }],
     }
@@ -608,6 +742,78 @@ def test_native_scene_vulkan_set_admits_exact_external_sampler2d_snapshot(
     assert (
         report["native_scene_submission"]["blocking_reasons"]
         == ["draw-0:scene-world-transform-not-executed"]
+    )
+
+
+def test_native_scene_vulkan_set_admits_exact_sampler_cube_s3_snapshot(
+    tmp_path,
+):
+    root, scene, bridge = _scene_and_bridge(
+        tmp_path,
+        external_cube=True,
+    )
+    snapshots = _external_cube_snapshot_contract(scene)
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+        external_sampler_cube_snapshots=snapshots,
+    )
+
+    assert report["ready"] is True, report["blocking_reasons"]
+    assert report["source"][
+        "external_sampler_cube_snapshot_count"
+    ] == 1
+    child = report["draws"][0]
+    assert child["external_runtime_blocking_reasons"] == []
+    assert child["external_cube_source"]["register"] == 3
+    assert child["external_cube_source"]["sampler_type"] == (
+        "samplerCube"
+    )
+    assert (
+        tmp_path / "vulkan-set/draw_0000/environment_cube.svcp"
+    ).is_file()
+
+    manifest = json.loads(
+        (
+            tmp_path
+            / "vulkan-set/draw_0000/bundle_manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert manifest["external_samplers"] == [{
+        "d3d9_sampler_register": 3,
+        "sampler": "environmentMap",
+        "sampler_type": "samplerCube",
+        "status": "provided-to-vulkan-cube-packet",
+    }]
+
+
+def test_native_scene_vulkan_set_rejects_global_and_scene_cube_sources(
+    tmp_path,
+):
+    root, scene, bridge = _scene_and_bridge(
+        tmp_path,
+        external_cube=True,
+    )
+    snapshots = _external_cube_snapshot_contract(scene)
+    fake_dds = tmp_path / "cube.dds"
+    fake_dds.write_bytes(b"not-a-dds")
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+        environment_cube_dds=fake_dds,
+        external_sampler_cube_snapshots=snapshots,
+    )
+
+    assert report["ready"] is False
+    assert (
+        "environment-cube:global-dds-conflicts-with-scene-snapshots"
+        in report["blocking_reasons"]
     )
 
 
