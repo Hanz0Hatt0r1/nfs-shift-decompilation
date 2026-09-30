@@ -122,7 +122,7 @@ def build_object_render_handoff(
     if _kind(object_report) != "OBJECT":
         raise ValueError("render handoff currently accepts OBJECT payloads only")
 
-    blockers: list[str] = list(application_blockers)
+    blockers: list[str] = []
     resource = object_report.get("resource_filename") or {}
     resource_ref = (
         resource.get("text")
@@ -623,7 +623,7 @@ def build_sgb_object_render_handoff_set(
                 consensus_roots=consensus_roots,
             )
 
-    blockers: list[str] = []
+    blockers: list[str] = list(application_blockers)
     for index, row in enumerate(rows):
         handoff = row["handoff"]
         if handoff.get("ready") is not True:
