@@ -2008,6 +2008,25 @@ def cmd_native_scene_vulkan_set(args: argparse.Namespace) -> int:
     return 0 if result["ready"] else 2
 
 
+def cmd_native_scene_vulkan_prepare(args: argparse.Namespace) -> int:
+    """Prepare an ordered NativeSceneVulkanSet for native_runtime."""
+    from native_scene_vulkan_prepare import prepare_native_scene_vulkan_set
+
+    result = prepare_native_scene_vulkan_set(
+        args.scene_set_dir,
+        validator=args.validator,
+        output=args.output,
+    )
+    print(json.dumps({
+        "format": result["format"],
+        "status": result["status"],
+        "ready": result["ready"],
+        "draw_count": result["draw_count"],
+        "blocking_reasons": result["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if result["ready"] else 2
+
+
 def cmd_native_scene_bundle(args: argparse.Namespace) -> int:
     """Freeze runtime-proven SGB RenderCommands into NativeSceneBundle."""
     from native_scene_bundle import validate_file
@@ -4412,6 +4431,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output_dir")
     p.add_argument("--environment-cube-dds")
     p.set_defaults(fn=cmd_native_scene_vulkan_set)
+
+    p = sp.add_parser(
+        "native-scene-vulkan-prepare",
+        help=(
+            "compile/interface-validate every neutral child in "
+            "SHIFT.NativeSceneVulkanSet/1 for native_runtime"
+        ),
+    )
+    p.add_argument("scene_set_dir")
+    p.add_argument("--validator")
+    p.add_argument("--output")
+    p.set_defaults(fn=cmd_native_scene_vulkan_prepare)
 
     p = sp.add_parser(
         "native-scene-bundle",
