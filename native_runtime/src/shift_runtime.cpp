@@ -367,6 +367,74 @@ void load_camera_state_bridge(
     }
 }
 
+void load_vehicle_participant_bridge(
+    const std::string& path,
+    shift::runtime::PhysicsTickBoundary& physics) {
+    if (!file_contains(
+            path,
+            "\"format\": \"SHIFT.NativeVehicleParticipantBridge/1\"") ||
+        !file_contains(path, "\"ready\": true")) {
+        throw std::runtime_error(
+            "native vehicle participant bridge is invalid or blocked");
+    }
+
+    if (!file_contains(
+            path,
+            "\"participant_manager_global\": \"DAT_00c109e0\"") ||
+        !file_contains(
+            path,
+            "\"selector_global\": \"DAT_00bbc600\"") ||
+        json_bool_field(
+            path,
+            "manager_selector_same_object_proven")) {
+        throw std::runtime_error(
+            "native participant manager/selector identity boundary mismatch");
+    }
+
+    if (json_u32_field(path, "manager_slot_array_offset") != 0x140u ||
+        json_u32_field(path, "manager_slot_count_offset") != 0x148u ||
+        json_u32_field(path, "manager_slot_stride_bytes") != 0x1FA0u ||
+        json_u32_field(
+            path,
+            "manager_registry_index_source_offset") != 0x3Cu ||
+        json_u32_field(
+            path,
+            "igphase_selected_pointer_offset") != 0x450u ||
+        json_u32_field(
+            path,
+            "igphase_selector_ordinal_offset") != 0x454u ||
+        json_u32_field(
+            path,
+            "igphase_process_state_offset") != 0x45Cu ||
+        json_u32_field(
+            path,
+            "selector_candidate_ready_offset") != 0x74u) {
+        throw std::runtime_error(
+            "native participant topology offsets do not match source evidence");
+    }
+
+    const bool identity_join_proven = json_bool_field(
+        path,
+        "registry_selector_identity_join_proven");
+    const bool participant_ready = json_bool_field(
+        path,
+        "native_participant_ready");
+    const bool applied = physics.apply_participant_bridge(
+        json_bool_field(
+            path,
+            "native_participant_topology_ready"),
+        true,
+        identity_join_proven,
+        participant_ready,
+        json_i32_field(path, "native_registry_index"),
+        json_i32_field(path, "native_selector_ordinal"),
+        json_i32_field(path, "native_process_state"));
+    if (!applied) {
+        throw std::runtime_error(
+            "native vehicle participant bridge could not be applied");
+    }
+}
+
 VkCullModeFlags load_bundle_cull_mode(const std::string& root) {
     const std::string path = root + "/pipeline_state.json";
     if (!std::filesystem::is_regular_file(path)) {
@@ -2838,6 +2906,7 @@ struct Args {
     std::string bundle_set;
     std::string scene_set;
     std::string camera_state;
+    std::string participant_bridge;
     std::string physics_manifest;
     std::string shader_dir;
     std::string input_script;
@@ -2854,6 +2923,7 @@ Args parse_args(int argc, char** argv) {
             option == "--bundle-set" ||
             option == "--scene-set" ||
             option == "--camera-state" ||
+            option == "--participant-bridge" ||
             option == "--physics-manifest" ||
             option == "--shader-dir" ||
             option == "--input-script" ||
@@ -2868,7 +2938,9 @@ Args parse_args(int argc, char** argv) {
             else if (option == "--bundle-set") args.bundle_set = value;
             else if (option == "--scene-set") args.scene_set = value;
             else if (option == "--camera-state") args.camera_state = value;
-            else if (option == "--physics-manifest") {
+            else if (option == "--participant-bridge") {
+                args.participant_bridge = value;
+            } else if (option == "--physics-manifest") {
                 args.physics_manifest = value;
             } else if (option == "--shader-dir") {
                 args.shader_dir = value;
@@ -2885,6 +2957,7 @@ Args parse_args(int argc, char** argv) {
                 << "usage: shift_runtime "
                 << "(--mesh FILE | --bundle DIR | --bundle-set DIR | --scene-set DIR) "
                 << "--shader-dir DIR [--camera-state FILE] "
+                << "[--participant-bridge FILE] "
                 << "[--input-script FILE] [--frames N] "
                 << "[--validation]\n";
             std::exit(EXIT_SUCCESS);
@@ -3118,6 +3191,13 @@ int main(int argc, char** argv) {
                 args.camera_state,
                 native_state.camera);
         }
+        const bool participant_bridge_loaded =
+            !args.participant_bridge.empty();
+        if (participant_bridge_loaded) {
+            load_vehicle_participant_bridge(
+                args.participant_bridge,
+                native_state.physics);
+        }
         if (!args.physics_manifest.empty()) {
             native_state.physics.workspace =
                 load_physics_manifest(
@@ -3248,9 +3328,39 @@ int main(int argc, char** argv) {
             << native_state.physics.steer_right_steps << ",\n"
             << "  \"vehicle_control_neutral_steps\": "
             << native_state.physics.neutral_input_steps << ",\n"
+            << "  \"participant_bridge_loaded\": "
+            << (participant_bridge_loaded ? "true" : "false")
+            << ",\n"
+            << "  \"physics_participant_topology_ready\": "
+            << (native_state.physics.participant_topology_ready ?
+                "true" : "false") << ",\n"
+            << "  \"physics_participant_manager_selector_distinct\": "
+            << (native_state.physics.participant_manager_selector_distinct ?
+                "true" : "false") << ",\n"
+            << "  \"physics_participant_identity_join_proven\": "
+            << (native_state.physics.participant_identity_join_proven ?
+                "true" : "false") << ",\n"
             << "  \"physics_participant_ready\": "
             << (native_state.physics.participant_ready ?
                 "true" : "false") << ",\n"
+            << "  \"physics_participant_registry_index\": "
+            << native_state.physics.participant_registry_index
+            << ",\n"
+            << "  \"physics_selector_ordinal\": "
+            << native_state.physics.selector_ordinal
+            << ",\n"
+            << "  \"physics_participant_process_state\": "
+            << native_state.physics.participant_process_state
+            << ",\n"
+            << "  \"physics_participant_topology_steps\": "
+            << native_state.physics.participant_topology_steps
+            << ",\n"
+            << "  \"physics_participant_ready_steps\": "
+            << native_state.physics.participant_ready_steps
+            << ",\n"
+            << "  \"physics_participant_unresolved_steps\": "
+            << native_state.physics.participant_unresolved_steps
+            << ",\n"
             << "  \"physics_participant_index\": "
             << native_state.physics.participant_index
             << ",\n"
