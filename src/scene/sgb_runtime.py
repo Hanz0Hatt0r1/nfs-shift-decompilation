@@ -210,6 +210,7 @@ def _parse_wrapper_records(
             "index": index,
             "offset": cursor,
             "stride": stride,
+            "metadata_bytes": 0x1C,
             "record_end": record_end,
             "raw_u32_header": words,
             "unknown_word_1": words[1],
@@ -231,6 +232,8 @@ def _parse_wrapper_records(
             },
             "variation_index": variation,
             "object_payload": {
+                "layout": "inline-after-node-metadata",
+                "inline_offset": 0x1C,
                 "inline_offset_in_record": 0x1C,
                 "absolute_offset": object_base,
                 "record_end": record_end,
