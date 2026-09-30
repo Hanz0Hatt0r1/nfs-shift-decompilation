@@ -61,3 +61,20 @@ def test_phase579_cli_accepts_neutral_vulkan_draw_bundle_command():
     assert args.submesh_index == 2
     assert args.allow_static is False
     assert args.fn.__name__ == "cmd_vulkan_draw_bundle"
+
+
+def test_phase580_cli_accepts_native_scene_vulkan_set_command():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-scene-vulkan-set",
+        "native-scene-bundle.json",
+        "scene-render-binding.json",
+        "out/ir",
+        "out/native-scene-vulkan",
+    ])
+    assert args.native_scene_bundle == "native-scene-bundle.json"
+    assert args.scene_bridge == "scene-render-binding.json"
+    assert args.ir_root == "out/ir"
+    assert args.output_dir == "out/native-scene-vulkan"
+    assert args.environment_cube_dds is None
+    assert args.fn.__name__ == "cmd_native_scene_vulkan_set"
