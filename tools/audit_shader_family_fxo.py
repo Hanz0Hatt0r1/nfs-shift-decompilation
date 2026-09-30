@@ -145,10 +145,12 @@ def summarize_shader_families(
         elif parse_failures:
             status = "parse-blocked"
         elif len(unique_payloads) == 1:
-            program_count = int(unique_payloads[0].get("program_count") or 0)
+            only = unique_payloads[0]
+            vertex_count = int(only.get("vertex_program_count") or 0)
+            pixel_count = int(only.get("pixel_program_count") or 0)
             status = (
-                "single-payload"
-                if program_count == 1
+                "single-payload-single-pair"
+                if vertex_count == 1 and pixel_count == 1
                 else "single-payload-multi-program"
             )
         else:
@@ -172,7 +174,7 @@ def summarize_shader_families(
         row["parse_failure_count"] == 0 for row in families
     )
     selection_ready = bool(families) and all(
-        row["status"] == "single-payload" for row in families
+        row["status"] == "single-payload-single-pair" for row in families
     )
     return {
         "format": FORMAT,
