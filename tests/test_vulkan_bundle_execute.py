@@ -26,8 +26,12 @@ def test_native_vulkan_bundle_executor_contract():
     assert "blend_attachment.blendEnable = pipeline_state.blend_enable;" in source
     assert "world_transform.svwt" in source
     assert "WorldTransformHeader" in source
-    assert "apply_world_transform_translation" in source
-    assert "translation-only" in source
+    assert "apply_world_transform(" in source
+    assert "semantic-affine-svgp-v3" in source
+    assert "normal_matrix" in source
+    assert "TANGENT2 property 250" in source
+    assert "reflection transform is blocked" in source
+    assert "requires SVGP v3 semantic property IDs" in source
     assert "world_transform_executed" in source
     assert "struct LegacyGeometryAttribute" in source
     assert "uint32_t property_id;" in source
