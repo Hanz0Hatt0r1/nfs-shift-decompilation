@@ -21,6 +21,7 @@
 #include <cctype>
 #include <stdexcept>
 #include <string>
+#include <sstream>
 #include <vector>
 
 namespace {
@@ -1021,6 +1022,95 @@ struct InputState {
     bool steer_left = false;
     bool steer_right = false;
 };
+
+struct InputScript {
+    static constexpr const char* format =
+        "SHIFT.NativeRuntimeInputScript/1";
+    std::vector<InputState> steps;
+};
+
+InputScript load_input_script(const std::string& path) {
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error(
+            "cannot open native input script: " + path);
+    }
+
+    InputScript script{};
+    bool header_seen = false;
+    std::string line;
+    uint64_t line_number = 0;
+    while (std::getline(file, line)) {
+        ++line_number;
+        const size_t first =
+            line.find_first_not_of(" \t\r\n");
+        if (first == std::string::npos ||
+            line[first] == '#') {
+            continue;
+        }
+        const size_t last =
+            line.find_last_not_of(" \t\r\n");
+        const std::string trimmed =
+            line.substr(first, last - first + 1);
+
+        if (!header_seen) {
+            if (trimmed != InputScript::format) {
+                throw std::runtime_error(
+                    "native input script header is not "
+                    "SHIFT.NativeRuntimeInputScript/1");
+            }
+            header_seen = true;
+            continue;
+        }
+
+        std::istringstream row(trimmed);
+        uint64_t step = 0;
+        int throttle = 0;
+        int brake = 0;
+        int steer_left = 0;
+        int steer_right = 0;
+        std::string extra;
+        if (!(row >> step >> throttle >> brake >>
+              steer_left >> steer_right) ||
+            (row >> extra)) {
+            throw std::runtime_error(
+                "native input script row is malformed at line " +
+                std::to_string(line_number));
+        }
+        if (step != script.steps.size()) {
+            throw std::runtime_error(
+                "native input script steps must be contiguous from zero");
+        }
+        auto valid_bit = [](int value) {
+            return value == 0 || value == 1;
+        };
+        if (!valid_bit(throttle) ||
+            !valid_bit(brake) ||
+            !valid_bit(steer_left) ||
+            !valid_bit(steer_right)) {
+            throw std::runtime_error(
+                "native input script controls must be 0 or 1");
+        }
+
+        InputState state{};
+        state.throttle = throttle != 0;
+        state.brake = brake != 0;
+        state.steer_left = steer_left != 0;
+        state.steer_right = steer_right != 0;
+        script.steps.push_back(state);
+    }
+
+    if (!header_seen) {
+        throw std::runtime_error(
+            "native input script header is missing");
+    }
+    if (script.steps.empty()) {
+        throw std::runtime_error(
+            "native input script contains no fixed-step rows");
+    }
+    return script;
+}
+
 
 struct Window {
     xcb_connection_t* connection = nullptr;
@@ -2619,7 +2709,9 @@ struct Args {
     std::string scene_set;
     std::string physics_manifest;
     std::string shader_dir;
+    std::string input_script;
     int frames = kDefaultFrames;
+    bool frames_explicit = false;
     bool validation = false;
 };
 
@@ -2631,7 +2723,9 @@ Args parse_args(int argc, char** argv) {
             option == "--bundle-set" ||
             option == "--scene-set" ||
             option == "--physics-manifest" ||
-            option == "--shader-dir" || option == "--frames") {
+            option == "--shader-dir" ||
+            option == "--input-script" ||
+            option == "--frames") {
             if (i + 1 >= argc) {
                 throw std::runtime_error(
                     "missing value for " + option);
@@ -2645,8 +2739,11 @@ Args parse_args(int argc, char** argv) {
                 args.physics_manifest = value;
             } else if (option == "--shader-dir") {
                 args.shader_dir = value;
+            } else if (option == "--input-script") {
+                args.input_script = value;
             } else {
                 args.frames = std::max(1, std::stoi(value));
+                args.frames_explicit = true;
             }
         } else if (option == "--validation") {
             args.validation = true;
@@ -2654,7 +2751,8 @@ Args parse_args(int argc, char** argv) {
             std::cout
                 << "usage: shift_runtime "
                 << "(--mesh FILE | --bundle DIR | --bundle-set DIR | --scene-set DIR) "
-                << "--shader-dir DIR [--frames N] [--validation]\n";
+                << "--shader-dir DIR [--input-script FILE] "
+                << "[--frames N] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
             throw std::runtime_error(
@@ -2687,6 +2785,24 @@ int main(int argc, char** argv) {
     try {
         const Args args = parse_args(argc, argv);
         runtime.validation.enabled = args.validation;
+
+        const bool input_script_mode =
+            !args.input_script.empty();
+        InputScript input_script{};
+        if (input_script_mode) {
+            input_script = load_input_script(
+                args.input_script);
+            if (args.frames_explicit &&
+                static_cast<size_t>(args.frames) !=
+                    input_script.steps.size()) {
+                throw std::runtime_error(
+                    "--frames must equal native input script step count");
+            }
+        }
+        const int frame_limit =
+            input_script_mode
+                ? static_cast<int>(input_script.steps.size())
+                : args.frames;
 
         PacketGeometry mesh_geometry;
         std::vector<PacketGeometry> material_geometry;
@@ -2785,8 +2901,12 @@ int main(int argc, char** argv) {
             << world_transform_draws << ",\n"
             << "  \"affine_world_transform_draws\": "
             << affine_world_transform_draws << ",\n"
+            << "  \"input_script_mode\": "
+            << (input_script_mode ? "true" : "false") << ",\n"
+            << "  \"input_script_steps\": "
+            << input_script.steps.size() << ",\n"
             << "  \"frames_requested\": "
-            << args.frames << "\n"
+            << frame_limit << "\n"
             << "}\n";
 
         window.create();
@@ -2849,7 +2969,7 @@ int main(int argc, char** argv) {
         int rendered = 0;
         uint64_t simulation_steps = 0;
         bool quit = false;
-        InputState input{};
+        InputState live_input{};
         shift::runtime::NativeRuntimeState native_state{};
         if (!args.physics_manifest.empty()) {
             native_state.physics.workspace =
@@ -2859,14 +2979,20 @@ int main(int argc, char** argv) {
         const auto start =
             std::chrono::steady_clock::now();
 
-        while (!quit && rendered < args.frames) {
-            window.poll(quit, input);
+        while (!quit && rendered < frame_limit) {
+            window.poll(quit, live_input);
+
+            const InputState step_input =
+                input_script_mode
+                    ? input_script.steps.at(
+                        static_cast<size_t>(simulation_steps))
+                    : live_input;
 
             shift::runtime::VehicleControlIntent intent{};
-            intent.throttle = input.throttle;
-            intent.brake = input.brake;
-            intent.steer_left = input.steer_left;
-            intent.steer_right = input.steer_right;
+            intent.throttle = step_input.throttle;
+            intent.brake = step_input.brake;
+            intent.steer_left = step_input.steer_left;
+            intent.steer_right = step_input.steer_right;
             native_state.fixed_step(intent);
             ++simulation_steps;
 
@@ -2910,6 +3036,11 @@ int main(int argc, char** argv) {
             << kFixedDt << ",\n"
             << "  \"input_layer\": "
             << "\"SHIFT.NativeRuntimeInput/1\",\n"
+            << "  \"input_source\": \""
+            << (input_script_mode ? "script" : "keyboard")
+            << "\",\n"
+            << "  \"input_script_steps\": "
+            << input_script.steps.size() << ",\n"
             << "  \"state_layer\": "
             << "\"SHIFT.NativeRuntimeState/1\",\n"
             << "  \"camera_active_buffer\": "
@@ -2927,9 +3058,31 @@ int main(int argc, char** argv) {
             << native_state.camera.last_snapshot.camera_id << ",\n"
             << "  \"camera_schedule\": "
             << "\"native-fixed-step-non-retail-timing\",\n"
+            << "  \"vehicle_control_throttle\": "
+            << (native_state.physics.last_input.throttle ?
+                "true" : "false") << ",\n"
+            << "  \"vehicle_control_brake\": "
+            << (native_state.physics.last_input.brake ?
+                "true" : "false") << ",\n"
+            << "  \"vehicle_control_steer_left\": "
+            << (native_state.physics.last_input.steer_left ?
+                "true" : "false") << ",\n"
+            << "  \"vehicle_control_steer_right\": "
+            << (native_state.physics.last_input.steer_right ?
+                "true" : "false") << ",\n"
             << "  \"vehicle_control_steer_axis\": "
             << native_state.physics.last_input.steer_axis()
             << ",\n"
+            << "  \"vehicle_control_throttle_steps\": "
+            << native_state.physics.throttle_steps << ",\n"
+            << "  \"vehicle_control_brake_steps\": "
+            << native_state.physics.brake_steps << ",\n"
+            << "  \"vehicle_control_steer_left_steps\": "
+            << native_state.physics.steer_left_steps << ",\n"
+            << "  \"vehicle_control_steer_right_steps\": "
+            << native_state.physics.steer_right_steps << ",\n"
+            << "  \"vehicle_control_neutral_steps\": "
+            << native_state.physics.neutral_input_steps << ",\n"
             << "  \"physics_participant_ready\": "
             << (native_state.physics.participant_ready ?
                 "true" : "false") << ",\n"
