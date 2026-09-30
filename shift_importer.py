@@ -1943,6 +1943,23 @@ def cmd_sgb_render_binding_bridge(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_vulkan_world_transform_packet(args: argparse.Namespace) -> int:
+    """Serialize one scene world matrix into SHIFT.VulkanWorldTransformPacket/1."""
+    from vulkan_world_transform_packet import (
+        build_vulkan_world_transform_packet,
+    )
+
+    result = build_vulkan_world_transform_packet(args.input, args.output)
+    print(json.dumps({
+        "format": result["format"],
+        "ready": result["ready"],
+        "output": result["output"],
+        "translation_xyz": result["translation_xyz"],
+        "byte_size": result["byte_size"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_vulkan_draw_bundle(args: argparse.Namespace) -> int:
     """Prepare one neutral runtime-proven Vulkan draw bundle."""
     from vulkan_draw_bundle import build_vulkan_draw_bundle
@@ -4346,6 +4363,20 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p.set_defaults(fn=cmd_sgb_render_binding_bridge)
+
+    p = sp.add_parser(
+        "vulkan-world-transform-packet",
+        help=(
+            "serialize a D3D row-vector scene world matrix into "
+            "SHIFT.VulkanWorldTransformPacket/1"
+        ),
+    )
+    p.add_argument(
+        "input",
+        help="JSON containing world_matrix or SHIFT.RenderCommand/1 JSON",
+    )
+    p.add_argument("output")
+    p.set_defaults(fn=cmd_vulkan_world_transform_packet)
 
     p = sp.add_parser(
         "vulkan-draw-bundle",
