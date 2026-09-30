@@ -234,7 +234,7 @@ def build_object_render_handoff(
 def _walk_object(
     report: Mapping[str, Any],
     *,
-    parent: Mapping[str, Any] | None,
+    matrix_context_owner: Mapping[str, Any] | None,
     path: list[int],
     out: list[dict[str, Any]],
     wrapper: Mapping[str, Any],
@@ -243,17 +243,29 @@ def _walk_object(
     if kind == "OBJECT":
         handoff = build_object_render_handoff(
             report,
-            parent_object_report=parent,
+            parent_object_report=matrix_context_owner,
         )
         out.append({
             "wrapper": dict(wrapper),
             "object_path": list(path),
+            "matrix_context_owner_path": (
+                None if matrix_context_owner is None else "inherited-root"
+            ),
             "handoff": handoff,
         })
         return
 
     if kind not in {"LOD", "HIERARCHY"}:
         return
+
+    # Source behavior from FUN_006ab4a0 (and the LOD-equivalent constructor):
+    # only a hierarchy entered with no parent MultiMatrix constructs one from
+    # its serialized MATRIX table. Nested hierarchy objects inherit the
+    # existing MultiMatrix and use MatrixNumber to select a slot; their own
+    # serialized MATRIX table is not the context used by their OBJECT children.
+    active_context_owner = (
+        report if matrix_context_owner is None else matrix_context_owner
+    )
     for index, child in enumerate(report.get("subobject_references") or []):
         if not isinstance(child, Mapping):
             continue
@@ -262,7 +274,7 @@ def _walk_object(
             continue
         _walk_object(
             child_report,
-            parent=report,
+            matrix_context_owner=active_context_owner,
             path=[*path, index],
             out=out,
             wrapper=wrapper,
@@ -303,7 +315,7 @@ def build_sgb_object_render_handoff_set(
             }
             _walk_object(
                 report,
-                parent=None,
+                matrix_context_owner=None,
                 path=[],
                 out=rows,
                 wrapper=wrapper,
