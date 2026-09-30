@@ -5,9 +5,10 @@ extracted IR, reconstructs the exact IMB neutral geometry, resolves ordinary
 material DDS resources, builds one SHIFT.VulkanDrawBundle/1 per scene draw, and
 revalidates every child against the Phase 578 scene hashes.
 
-The set remains distinct from native scene execution. In particular, the
-current Vulkan geometry path does not consume the SGB world matrix and external
-renderer-owned samplers are not invented.
+The set remains distinct from native scene execution. SGB world transforms are
+transported independently through SVWT. Renderer-owned samplers are never
+invented; Phase 589 may satisfy an external sampler2D only from an exact
+provenance-bearing scene snapshot contract.
 """
 from __future__ import annotations
 
