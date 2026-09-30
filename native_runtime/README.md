@@ -136,3 +136,36 @@ retail camera/source reference; that native token remains zero.
 The Phase 599 scheduler then snapshots, copies and flips the loaded state on the
 existing native fixed-step boundary, retaining its explicit
 `native-fixed-step-non-retail-timing` label.
+
+
+## Phase 601 deterministic input scripts
+
+Live X11 keyboard input still feeds the neutral `VehicleControlIntent`
+boundary. For deterministic testing, the runtime additionally accepts:
+
+```text
+SHIFT.NativeRuntimeInputScript/1
+0 1 0 0 0
+1 1 0 0 1
+2 0 1 1 0
+3 0 0 1 1
+4 0 0 0 0
+```
+
+Run it with:
+
+```bash
+xvfb-run -a native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --camera-state out/native-camera.json \
+  --input-script out/native_input.script \
+  --validation
+```
+
+If `--frames` is omitted, the script row count becomes the run length. If
+`--frames N` is provided, `N` must match the row count exactly.
+
+The script is native test/control infrastructure only. It does not claim retail
+gamepad dead zones, analog response curves, filtering or vehicle-force
+semantics.
