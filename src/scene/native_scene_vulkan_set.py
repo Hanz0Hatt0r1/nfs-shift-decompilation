@@ -5,9 +5,9 @@ extracted IR, reconstructs the exact IMB neutral geometry, resolves ordinary
 material DDS resources, builds one SHIFT.VulkanDrawBundle/1 per scene draw, and
 revalidates every child against the Phase 578 scene hashes.
 
-The set remains distinct from native scene execution. In particular, the
-current Vulkan geometry path does not consume the SGB world matrix and external
-renderer-owned samplers are not invented.
+The set remains distinct from native scene execution. Phase 581 can bake the
+proven SGB affine world matrix into each neutral child geometry packet before
+Vulkan preparation; renderer-owned external samplers are still never invented.
 """
 from __future__ import annotations
 
@@ -614,8 +614,21 @@ def build_native_scene_vulkan_set(
         and ready_children == len(child_rows)
         and not blockers
     )
+    world_transform_ready = (
+        ready
+        and all(
+            (
+                (row.get("bundle") or {}).get(
+                    "scene_transform_executed"
+                )
+                is True
+            )
+            for row in child_rows
+            if row.get("ready") is True
+        )
+    )
     native_scene_submission_ready = (
-        ready and not native_blockers
+        ready and world_transform_ready and not native_blockers
     )
 
     report = {
@@ -631,7 +644,9 @@ def build_native_scene_vulkan_set(
             "ready": native_scene_submission_ready,
             "blocking_reasons": native_blockers,
             "world_transform_execution": (
-                "required-before-native-scene-submit"
+                "cpu-baked-row-vector-affine"
+                if world_transform_ready
+                else "required-before-native-scene-submit"
             ),
             "external_runtime_resources": (
                 "must-be-explicitly-bound"
@@ -650,19 +665,7 @@ def build_native_scene_vulkan_set(
             "exact_primitive_range_revalidated": True,
             "scene_hashes_revalidated": True,
             "material_2d_dds_resolved_from_ir": True,
-            "world_transform_executed": (
-                ready
-                and all(
-                    (
-                        (
-                            row.get("bundle") or {}
-                        ).get("scene_transform_executed")
-                        is True
-                    )
-                    for row in child_rows
-                    if row.get("ready") is True
-                )
-            ),
+            "world_transform_executed": world_transform_ready,
             "unresolved_external_samplers_promoted": False,
             "next_stage": (
                 "admit the transformed ordered child set to native_runtime "
