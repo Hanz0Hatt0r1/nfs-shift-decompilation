@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 595. Current development: Phase 596.**
+**Merged baseline: Phase 596. Current development: Phase 597.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -121,7 +121,7 @@ only strong-attributed draw-local texture observations from the D3D9 capture
 pipeline and converts an unambiguous captured PPM directly into that exact
 Phase 589 contract. Phase 591 adds repeated-instance transform matching from
 strong-attributed VS constant windows. Phase 592 reconstructs the retail `.imx`
-Phase 593 adds exact six-face external `samplerCube` capture→scene→native transport at the proven s3 boundary. Phase 594 adds fail-closed reconstruction of the current MultiMatrix root from one exact runtime-observed MatrixNumber slot world matrix. Phase 595 adds a non-circular pre-admission runtime-resource→SGB candidate join. Phase 596 adds a stronger wrapper-root witness: at least two distinct exact runtime resources using at least two distinct cumulative local chains must independently produce one exact float32 root through the Phase 594 round-trip gate; no world-register semantic or historical update sequence is inferred.
+Phase 593 adds exact six-face external `samplerCube` capture→scene→native transport at the proven s3 boundary. Phase 594 adds fail-closed reconstruction of the current MultiMatrix root from one exact runtime-observed MatrixNumber slot world matrix. Phase 595 adds a non-circular pre-admission runtime-resource→SGB candidate join. Phase 596 adds a stronger wrapper-root witness: at least two distinct exact runtime resources using at least two distinct cumulative local chains must independently produce one exact float32 root through the Phase 594 round-trip gate; no world-register semantic or historical update sequence is inferred. Phase 597 feeds only those authorized wrapper roots back through the existing MultiMatrix evaluator, materializing previously blocked MatrixNumber world matrices before ordinary scene admission without claiming the historical update sequence.
 XML mesh grammar and admits IMX MeshInst resources to generic RenderBinding.
 
 ### Native Linux runtime
@@ -157,7 +157,7 @@ matchmaking/online networking and Bink/video playback.
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
 | Vulkan | active native backend | authentic capture content/renderer-owned resource types beyond sampler2D/samplerCube-s3; remaining alpha-test/bias/stencil state |
-| SGB / scene | strong structural/render handoff | authentic Silverstone capture content, streaming/LOD, consume Phase 596 wrapper-root consensus into blocked MatrixNumber handoffs, and remaining historical update sequence |
+| SGB / scene | strong structural/render handoff | authentic Silverstone capture content, wrappers still lacking sufficient runtime root evidence, streaming/LOD, and remaining historical update sequence |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
 | Vehicle physics | structural reconstruction active | exact specialized-provider numeric parity |
@@ -384,8 +384,7 @@ These are independent; resolving one does not justify guessing another.
    scene instances from exact strong-attributed draw-local VS constant windows;
    authentic Silverstone capture content and remaining resource types are still
    required.
-3. **Scene runtime completeness** — some per-instance MatrixNumber update
-   history and higher-level streaming/LOD behavior remain unresolved.
+3. **Scene runtime completeness** — Phase 597 can materialize current MatrixNumber worlds when Phase 596 wrapper-root consensus exists; wrappers without enough runtime evidence, historical update sequencing and higher-level streaming/LOD behavior remain unresolved.
 4. **Vehicle provider numeric parity** — authentic provider frame required.
 5. **BMW tied FXO selection** — authentic same-instance body capture required.
 6. **IMX runtime proof** — the source-backed XML neutral adapter is implemented;
