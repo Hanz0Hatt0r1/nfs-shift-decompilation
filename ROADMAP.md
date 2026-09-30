@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 550.**
+**Current mainline: Phase 551.**
 
 
 
@@ -83,10 +83,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 59. Prove OBJECT resource-descriptor → render-instance admission plus explicit/MatrixNumber transform selection — Phase 548 implemented.
 60. Prove the direct FLAT `+0x20..+0x34` spatial-query consumer and promote the corpus candidate to source-backed leaf bounds — Phase 549 implemented.
 61. Reconstruct the static MultiMatrix layout/update, including explicit root overwrite, low-byte parent selection and local*parent-world composition — Phase 550 implemented.
-62. Prove the top-level root-world matrix producer, then join proven placement/object transforms into RenderBinding.
-63. Derive proven animation poses from the BAB runtime grammar.
-64. Port the stable native render/runtime boundary to Android.
-65. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+62. Prove constructor root state plus immediate/deferred SceneGraph 0x40-byte transform transport into LOD/HIERARCHY vfunc +0x2c — Phase 551 implemented.
+63. Recover or capture concrete per-instance SceneGraph transform-update history, then join the resolved world transforms into RenderBinding.
+64. Derive proven animation poses from the BAB runtime grammar.
+65. Port the stable native render/runtime boundary to Android.
+66. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -99,7 +100,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | placement + OBJECT handoff + proven leaf bounds + MultiMatrix evaluator implemented | top-level root-world producer + final RenderBinding admission |
+| SGB scene | placement + OBJECT handoff + proven leaf bounds + MultiMatrix evaluator + root transport state implemented | per-instance SceneGraph update history + final RenderBinding admission |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
