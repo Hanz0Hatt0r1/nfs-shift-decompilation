@@ -1,0 +1,58 @@
+{
+  "format": "SHIFT.IMBMaterialReferenceParityEvidence/1",
+  "version": 1,
+  "verification_scope": "phase-563-silverstone-era3-imb-material-parity",
+  "source_archive": {
+    "name": "Silverstone_Era3_.zip",
+    "sha256": "5423f5a0356e664a504f90c812e32bbbd4e2a0abe83c546fdc658305661a1e2f"
+  },
+  "result": {
+    "imb_resource_count": 427,
+    "primitive_reference_count": 428,
+    "matched_primitive_reference_count": 428,
+    "blocked_primitive_reference_count": 0,
+    "unique_bmt_reference_count": 84,
+    "missing_same_archive_count": 0,
+    "ambiguous_same_archive_count": 0,
+    "same_archive_match_type_counts": {
+      "2": 428
+    },
+    "logical_bmt_archive_multiplicity": {
+      "1": 29,
+      "2": 2,
+      "3": 6,
+      "4": 47
+    },
+    "per_archive": {
+      "Silverstone_Era3_Drift.bff": {
+        "imb_count": 117,
+        "primitive_reference_count": 118,
+        "unique_material_reference_count": 70
+      },
+      "Silverstone_Era3_GrandPrix.bff": {
+        "imb_count": 103,
+        "primitive_reference_count": 103,
+        "unique_material_reference_count": 57
+      },
+      "Silverstone_Era3_International.bff": {
+        "imb_count": 99,
+        "primitive_reference_count": 99,
+        "unique_material_reference_count": 53
+      },
+      "Silverstone_Era3_National.bff": {
+        "imb_count": 108,
+        "primitive_reference_count": 108,
+        "unique_material_reference_count": 59
+      }
+    }
+  },
+  "boundary": {
+    "primitive_material_extension_observed": ".mtx",
+    "resolution_rule": "terminal .mtx aliases to same-path .bmt",
+    "resolution_scope": "same BFF as source IMB",
+    "all_primitive_references_have_exactly_one_same_archive_bmt": true,
+    "all_matched_bmt_entries_use_bff_type2": true,
+    "bmt_payload_semantics_verified_here": false,
+    "shader_texture_dependencies_verified_here": false
+  }
+}
