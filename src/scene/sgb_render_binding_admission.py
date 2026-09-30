@@ -169,6 +169,9 @@ def build_sgb_render_binding_admission(
                     "object_path": handoff_row.get("object_path"),
                     "wrapper": handoff_row.get("wrapper"),
                     "resource_reference": resource_ref,
+                    "resource_factory": resource.get(
+                        "factory_classification"
+                    ),
                     "transform_mode": transform.get("mode"),
                     "world_matrix": world_matrix,
                 },
@@ -236,6 +239,7 @@ def build_sgb_render_binding_admission(
             ),
             "one_wrapper_to_many_objects": True,
             "generic_render_binding_format": "SHIFT.RenderBinding/1",
+            "resource_factory_classification_preserved": True,
             "generic_render_binding_packets_emitted": False,
             "draw_admission": False,
             "remaining_after_scene_admission": (
