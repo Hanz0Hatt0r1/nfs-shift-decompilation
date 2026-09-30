@@ -158,6 +158,17 @@ def _submesh(resource_sha, *, textured=False, external=False):
             "sampler": "shadowMap",
             "sampler_type": "sampler2D",
             "d3d9_sampler_register": 7,
+            "sampler_state": {
+                "format": "SHIFT.SamplerState/1",
+                "ready": True,
+                "blocking_reasons": [],
+                "min_filter": "LINEAR",
+                "mag_filter": "LINEAR",
+                "mip_filter": "LINEAR",
+                "address_u": "CLAMP_TO_EDGE",
+                "address_v": "CLAMP_TO_EDGE",
+                "address_w": "CLAMP_TO_EDGE",
+            },
         }]
     return row
 
@@ -356,6 +367,49 @@ def _scene_and_bridge(
     return root, scene, bridge
 
 
+def _external_reference_texture():
+    return {
+        "format": "SHIFT.ReferenceTexture/1",
+        "width": 1,
+        "height": 1,
+        "pixel_format": "RGBA8",
+        "pixels": [12, 34, 56, 255],
+    }
+
+
+def _external_snapshot_contract(scene):
+    draw = scene["draws"][0]
+    texture = _external_reference_texture()
+    texture_sha = hashlib.sha256(
+        json.dumps(
+            texture,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        "format": "SHIFT.NativeSceneExternalSamplerSnapshots/1",
+        "version": 1,
+        "snapshots": [{
+            "draw_identity_sha256": draw["hashes"][
+                "draw_identity_sha256"
+            ],
+            "resource": dict(draw["resource"]),
+            "primitive_index": draw["primitive_index"],
+            "d3d9_sampler_register": 7,
+            "sampler_type": "sampler2D",
+            "texture": texture,
+            "texture_sha256": texture_sha,
+            "provenance": {
+                "format": "SHIFT.ExternalSamplerSnapshotProvenance/1",
+                "source_kind": "runtime-capture",
+                "source_sha256": _sha("c"),
+            },
+        }],
+    }
+
+
 def test_native_scene_vulkan_set_builds_ordered_runtime_proven_child(
     tmp_path,
 ):
@@ -502,6 +556,84 @@ def test_native_scene_vulkan_set_keeps_external_sampler_fail_closed(
         for reason in report["native_scene_submission"]["blocking_reasons"]
     )
     assert report["boundary"]["unresolved_external_samplers_promoted"] is False
+
+
+def test_native_scene_vulkan_set_admits_exact_external_sampler2d_snapshot(
+    tmp_path,
+):
+    root, scene, bridge = _scene_and_bridge(
+        tmp_path,
+        external=True,
+    )
+    snapshots = _external_snapshot_contract(scene)
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+        external_sampler_snapshots=snapshots,
+    )
+
+    assert report["ready"] is True, report["blocking_reasons"]
+    assert report["source"]["external_sampler_snapshot_count"] == 1
+    child = report["draws"][0]
+    assert child["ready"] is True
+    assert child["external_runtime_blocking_reasons"] == []
+    assert len(child["external_texture_sources"]) == 1
+    source = child["external_texture_sources"][0]
+    assert source["register"] == 7
+    assert source["provenance"]["source_kind"] == "runtime-capture"
+
+    manifest = json.loads(
+        (
+            tmp_path
+            / "vulkan-set/draw_0000/bundle_manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    external = manifest["external_samplers"]
+    assert external == [{
+        "d3d9_sampler_register": 7,
+        "sampler": "shadowMap",
+        "sampler_type": "sampler2D",
+        "status": "provided-to-vulkan-texture-packet",
+    }]
+    assert (
+        tmp_path / "vulkan-set/draw_0000/textures.svtp"
+    ).is_file()
+
+    # Phase 589 resolves only the explicit external resource. The
+    # separately proven SVWT execution gate is still handled downstream.
+    assert report["native_scene_submission"]["ready"] is False
+    assert (
+        report["native_scene_submission"]["blocking_reasons"]
+        == ["draw-0:scene-world-transform-not-executed"]
+    )
+
+
+def test_native_scene_vulkan_set_rejects_mismatched_external_snapshot(
+    tmp_path,
+):
+    root, scene, bridge = _scene_and_bridge(
+        tmp_path,
+        external=True,
+    )
+    snapshots = _external_snapshot_contract(scene)
+    snapshots["snapshots"][0]["resource"]["sha256"] = _sha("f")
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+        external_sampler_snapshots=snapshots,
+    )
+
+    assert report["ready"] is False
+    assert (
+        "draw-0:external-snapshot:s7:resource-sha256-mismatch"
+        in report["blocking_reasons"]
+    )
 
 
 def test_native_scene_vulkan_set_requires_scene_and_bridge_contracts(
