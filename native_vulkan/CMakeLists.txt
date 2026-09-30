@@ -17,6 +17,12 @@ target_link_libraries(shift_vulkan_probe PRIVATE Vulkan::Vulkan)
 add_executable(shift_vulkan_headless_clear src/vulkan_headless_clear.cpp)
 target_link_libraries(shift_vulkan_headless_clear PRIVATE Vulkan::Vulkan)
 
+add_executable(
+  shift_vulkan_world_transform_check
+  src/vulkan_world_transform_check.cpp
+)
+target_link_libraries(shift_vulkan_world_transform_check PRIVATE Vulkan::Vulkan)
+
 find_program(GLSLANG_VALIDATOR NAMES glslangValidator)
 
 if(GLSLANG_VALIDATOR)
