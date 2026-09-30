@@ -202,6 +202,31 @@ jobs:
             exit 1
           fi
           grep -q 'linear transform is singular' out/vulkan/singular_bundle/stderr.txt
+      - name: Prepare native camera state
+        run: |
+          mkdir -p out/vulkan/runtime
+          cat > out/vulkan/runtime/camera_manager.json <<'JSON'
+          {
+            "active_buffer_index": 1,
+            "camera_source": "opaque-ci-camera",
+            "mode": 3,
+            "sub_index": 12,
+            "camera_id": 8,
+            "active_group": 4,
+            "group_restore_value": 6,
+            "sub_flag": 1
+          }
+          JSON
+          python3 shift_importer.py camera-state-snapshot snapshot \
+            out/vulkan/runtime/camera_manager.json \
+            out/vulkan/runtime/camera_snapshot.json
+          python3 shift_importer.py native-camera-state \
+            out/vulkan/runtime/camera_snapshot.json \
+            out/vulkan/runtime/native_camera_state.json
+          grep -q '"format": "SHIFT.NativeCameraState/1"' \
+            out/vulkan/runtime/native_camera_state.json
+          grep -q '"ready": true' \
+            out/vulkan/runtime/native_camera_state.json
       - name: Native Linux runtime frame loop
         run: |
           set -o pipefail
@@ -210,6 +235,7 @@ jobs:
             --bundle out/vulkan/bundle/bundle \
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --camera-state out/vulkan/runtime/native_camera_state.json \
             --frames 12 --validation | tee out/vulkan/runtime/runtime.json
       - name: Assert native runtime output
         run: |
@@ -221,6 +247,16 @@ jobs:
           grep -q '"bundle_2d_textures": 1' out/vulkan/runtime/runtime.json
           grep -q '"bundle_cube": true' out/vulkan/runtime/runtime.json
           grep -q '"state_layer": "SHIFT.NativeRuntimeState/1"' out/vulkan/runtime/runtime.json
+          grep -q '"camera_state_loaded": true' out/vulkan/runtime/runtime.json
+          grep -q '"camera_state_source": "SHIFT.NativeCameraState/1"' out/vulkan/runtime/runtime.json
+          grep -q '"camera_active_buffer": 1' out/vulkan/runtime/runtime.json
+          grep -q '"camera_manager_mode": 3' out/vulkan/runtime/runtime.json
+          grep -q '"camera_buffer_sub_index": 12' out/vulkan/runtime/runtime.json
+          grep -q '"camera_id": 8' out/vulkan/runtime/runtime.json
+          grep -q '"camera_active_group": 4' out/vulkan/runtime/runtime.json
+          grep -q '"camera_group_restore_value": 6' out/vulkan/runtime/runtime.json
+          grep -q '"camera_active_buffer_sub_flag": 1' out/vulkan/runtime/runtime.json
+          grep -q '"camera_update_in_progress": false' out/vulkan/runtime/runtime.json
           grep -q '"physics_workspace_ready": true' out/vulkan/runtime/runtime.json
           grep -q '"physics_workspace_scalars": 40' out/vulkan/runtime/runtime.json
           grep -q '"validation_enabled": true' out/vulkan/runtime/runtime.json
