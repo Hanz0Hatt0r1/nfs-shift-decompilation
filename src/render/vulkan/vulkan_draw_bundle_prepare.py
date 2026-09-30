@@ -107,6 +107,10 @@ def prepare_vulkan_draw_bundle(
                     "vulkan-draw-prepare:world-transform-packet-missing"
                 )
             else:
+                if packet.get("format") != "SHIFT.VulkanWorldTransformPacket/1":
+                    blockers.append(
+                        "vulkan-draw-prepare:world-transform-format-invalid"
+                    )
                 relative = str(packet.get("path") or "")
                 packet_path = root / relative
                 expected_sha = str(packet.get("sha256") or "").lower()
