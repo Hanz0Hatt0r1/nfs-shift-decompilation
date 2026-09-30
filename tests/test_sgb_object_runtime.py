@@ -205,12 +205,28 @@ def test_damage_is_alternate_runtime_kind_not_binary_node_dispatch():
     assert result["runtime_wrapper"]["alternate_loader"] == (
         "FUN_00699b10/FUN_0069b1c0"
     )
+    assert result["runtime_wrapper"]["proven_fields"] == {
+        "matrices": 0x80,
+        "runtime_matrix_array": 0x84,
+        "runtime_subobject_array": 0x88,
+        "matrix_number": 0x90,
+    }
+    assert result["runtime_wrapper"]["field_evidence"] == {
+        "source": "FUN_00699b10/FUN_0069b1c0",
+        "path": "XML scene object loader only",
+    }
 
 
 def test_matrix_number_matrices_and_subobjects_use_proven_bytes():
     result = parse_sgb_object_payload(_lod_payload_with_two_objects())
     assert result["matrix_number"] == -1
     assert result["control_byte_21"] == 0
+    assert result["control_byte_21_evidence"] == {
+        "binary_consumer": "FUN_0069a6c0",
+        "binary_consumer_status": "unconsumed",
+        "xml_counterpart": None,
+        "semantic_name": None,
+    }
     assert result["matrices"] == 1
     assert result["subobjects"] == 2
 

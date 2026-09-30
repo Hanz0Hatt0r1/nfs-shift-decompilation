@@ -19,6 +19,8 @@ Covered boundaries include:
 - OCCL concrete 0x120-byte runtime objects plus header-bit1 wrapper/batch admission modes;
 - FLAT;
 - binary NODE/SUMM object routing into LOD/HIERARCHY/OBJECT; DAMAGE is retained only as a concrete alternate XML-path runtime kind;
+- common object byte +0x21 preserved as source-unconsumed raw data; it is zero across 541 recursively decoded NODE objects from the four Silverstone Era3 visual variants;
+- XML-only DAMAGE wrapper fields for matrices (+0x80), runtime matrix array (+0x84), runtime subobject array (+0x88) and MatrixNumber (+0x90);
 - recursive FLAT tree structure with 0x40-byte direct records;
 - production signed-terminal FLAT span normalization controlled by SGB header bit2;
 - FLAT +0x3c runtime index table joins and +0x38 direct-object lookup/refcount teardown consumers.
@@ -28,7 +30,7 @@ Covered boundaries include:
 The project does not invent:
 
 - semantics of the remaining FLAT direct-record payload words and the concrete class behind populated +0x38 runtime object pointers;
-- the unnamed common object byte +0x21 and higher-level roles of individual LOD/HIERARCHY objects;
+- higher-level roles of individual LOD/HIERARCHY objects;
 - placement joins from recursive NODE/SUMM transforms into PART/FLAT spatial structures;
 - full scene streaming and LOD behavior.
 
