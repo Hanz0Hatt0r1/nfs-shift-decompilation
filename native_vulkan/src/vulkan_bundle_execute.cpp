@@ -2,6 +2,7 @@
 #include "shift_vulkan_validation.hpp"
 
 #include <cstdint>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -68,6 +69,12 @@ struct CubeHeader {
     uint32_t face_count;
     uint32_t face_bytes;
 };
+struct WorldTransformHeader {
+    char magic[4];
+    uint32_t version;
+    uint32_t convention;
+    uint32_t matrix_bytes;
+};
 #pragma pack(pop)
 
 static_assert(sizeof(GeometryHeader) == 44);
@@ -76,6 +83,7 @@ static_assert(sizeof(ConstantHeader) == 28);
 static_assert(sizeof(TextureHeader) == 20);
 static_assert(sizeof(TextureRecord) == 24);
 static_assert(sizeof(CubeHeader) == 28);
+static_assert(sizeof(WorldTransformHeader) == 16);
 
 namespace {
 
@@ -145,6 +153,12 @@ struct Geometry {
     std::vector<GeometryAttribute> attributes;
     std::vector<uint8_t> vertices;
     std::vector<uint32_t> indices;
+};
+
+struct WorldTransformExecution {
+    bool present = false;
+    bool executed = false;
+    float translation[3] = {0.0f, 0.0f, 0.0f};
 };
 
 struct Constants {
@@ -384,6 +398,108 @@ Geometry load_geometry(const std::filesystem::path& path) {
     }
     return geometry;
 }
+
+WorldTransformExecution apply_world_transform_translation(
+    const std::filesystem::path& root,
+    Geometry& geometry) {
+
+    WorldTransformExecution result{};
+    const std::filesystem::path path = root / "world_transform.svwt";
+    if (!std::filesystem::is_regular_file(path)) {
+        return result;
+    }
+    result.present = true;
+
+    const auto data = read_bytes(path);
+    if (data.size() != sizeof(WorldTransformHeader) + 16u * sizeof(float)) {
+        throw std::runtime_error("SVWT packet size mismatch");
+    }
+
+    WorldTransformHeader header{};
+    std::memcpy(&header, data.data(), sizeof(header));
+    if (std::memcmp(header.magic, "SVWT", 4) != 0 ||
+        header.version != 1u ||
+        header.convention != 1u ||
+        header.matrix_bytes != 16u * sizeof(float)) {
+        throw std::runtime_error("unsupported SVWT packet");
+    }
+
+    float matrix[16]{};
+    std::memcpy(matrix, data.data() + sizeof(header), sizeof(matrix));
+    for (float value : matrix) {
+        if (!std::isfinite(value)) {
+            throw std::runtime_error("SVWT matrix contains non-finite scalar");
+        }
+    }
+
+    constexpr float kTolerance = 1.0e-5f;
+    if (std::fabs(matrix[3]) > kTolerance ||
+        std::fabs(matrix[7]) > kTolerance ||
+        std::fabs(matrix[11]) > kTolerance ||
+        std::fabs(matrix[15] - 1.0f) > kTolerance) {
+        throw std::runtime_error("SVWT matrix is not affine D3D row-vector form");
+    }
+
+    // SVGP v2 carries Vulkan location/format but not semantic property IDs.
+    // Translation is the only general scene transform that can be applied to
+    // POSITION0 without also needing to identify/transform normal/tangent bases.
+    const float identity3[9] = {
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 1.0f,
+    };
+    const size_t matrix_indices[9] = {
+        0, 1, 2,
+        4, 5, 6,
+        8, 9, 10,
+    };
+    for (size_t index = 0; index < 9; ++index) {
+        if (std::fabs(matrix[matrix_indices[index]] - identity3[index]) >
+            kTolerance) {
+            throw std::runtime_error(
+                "SVWT native material execution supports translation-only "
+                "until the geometry ABI carries semantic IDs");
+        }
+    }
+
+    const GeometryAttribute* position = nullptr;
+    for (const auto& attribute : geometry.attributes) {
+        if (attribute.location == 0u) {
+            if (position != nullptr || attribute.format != 2u) {
+                throw std::runtime_error(
+                    "SVWT execution requires one FLOAT3 POSITION0 at location 0");
+            }
+            position = &attribute;
+        }
+    }
+    if (position == nullptr) {
+        throw std::runtime_error(
+            "SVWT execution requires POSITION0 at location 0");
+    }
+
+    result.translation[0] = matrix[12];
+    result.translation[1] = matrix[13];
+    result.translation[2] = matrix[14];
+
+    for (uint32_t vertex = 0; vertex < geometry.header.vertex_count; ++vertex) {
+        const size_t offset =
+            static_cast<size_t>(vertex) * geometry.header.stride +
+            position->offset;
+        if (offset + 3u * sizeof(float) > geometry.vertices.size()) {
+            throw std::runtime_error("SVWT POSITION0 write exceeds vertex buffer");
+        }
+        float xyz[3]{};
+        std::memcpy(xyz, geometry.vertices.data() + offset, sizeof(xyz));
+        xyz[0] += result.translation[0];
+        xyz[1] += result.translation[1];
+        xyz[2] += result.translation[2];
+        std::memcpy(geometry.vertices.data() + offset, xyz, sizeof(xyz));
+    }
+
+    result.executed = true;
+    return result;
+}
+
 
 Constants load_constants(const std::filesystem::path& path) {
     const auto data = read_bytes(path);
@@ -895,7 +1011,9 @@ int main(int argc, char** argv) {
         require_native_submission_gate(root);
         const PipelineState pipeline_state =
             load_pipeline_state(root);
-        const Geometry geometry = load_geometry(root / "geometry.svpk");
+        Geometry geometry = load_geometry(root / "geometry.svpk");
+        const WorldTransformExecution world_transform =
+            apply_world_transform_translation(root, geometry);
         const Constants constants = load_constants(root / "constants.svcp");
 
         TexturePacket texture_packet{};
@@ -1618,6 +1736,14 @@ int main(int argc, char** argv) {
         std::cout << "  \"index_count\": " << geometry.header.index_count << ",\n";
         std::cout << "  \"texture_count\": " << textures.size() << ",\n";
         std::cout << "  \"has_cube\": " << (has_cube ? "true" : "false") << ",\n";
+        std::cout << "  \"world_transform_present\": "
+                  << (world_transform.present ? "true" : "false") << ",\n";
+        std::cout << "  \"world_transform_executed\": "
+                  << (world_transform.executed ? "true" : "false") << ",\n";
+        std::cout << "  \"world_translation_xyz\": ["
+                  << world_transform.translation[0] << ", "
+                  << world_transform.translation[1] << ", "
+                  << world_transform.translation[2] << "],\n";
         std::cout << "  \"validation_enabled\": " << (validation.enabled ? "true" : "false") << ",\n";
         std::cout << "  \"validation_errors\": " << validation.error_count() << ",\n";
         std::cout << "  \"output\": \"" << output.string() << "\"\n";
