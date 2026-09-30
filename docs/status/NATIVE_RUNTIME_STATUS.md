@@ -33,7 +33,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Phase 599 connects the six-word CameraManager snapshot and guarded double-buffer swap to the native fixed-step scheduler. Phase 600 adds fail-closed recovered scalar evidence input through SHIFT.NativeCameraStateBridge/1 and --camera-state. Remaining camera work is retail timestamp/update scheduling, camera-source/controller behavior, gameplay view selection/attachment and exact render/view integration.
 3. Phase 602 connects the source-backed PhysicsParticipantManager registry ABI and separate selector context to native state through `SHIFT.NativePhysicsParticipantBoundary/1`. Concrete selected participant instance/index/mode and provider identity remain capture-gated.
-4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
+4. Phase 603 supplies the native source-backed `FUN_007b0f20` builtin numerical backend. Next, connect an exact BMW solver-frame input (matrix/RHS/graph/reset evidence) to the fixed tick only when the provider-absent builtin path is proven.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Live keyboard vehicle controls already feed the neutral intent layer. Phase 601 adds a deterministic fixed-step input script and physics-boundary activity telemetry for CI. Gamepad/analog normalization and retail filtering remain.
 7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
@@ -205,3 +205,22 @@ Structural admission never promotes static evidence into a retail participant:
 `participant_mode=-1` remain mandatory until independent runtime-instance
 evidence exists. Linux Vulkan CI verifies this boundary alongside the Phase 600
 camera evidence input and Phase 601 deterministic input path.
+
+
+## Phase 603 native builtin sparse solver
+
+The native runtime build now contains `shift_runtime_physics`, whose
+`solve_builtin_sparse()` mirrors the recovered retail builtin solver
+`FUN_007b0f20`.
+
+The backend preserves the recovered sparse factorization and
+forward/back-substitution traversal and validates the same `n+1` forward /
+`n` reverse record cardinality.
+
+`shift_runtime_builtin_solver_check` covers two deterministic numeric systems,
+invalid graph cardinality and zero-pivot rejection. Linux CI runs that check
+through CTest and retains its JSON report.
+
+This is not yet a complete native BMW physics step. The frame loop still does
+not synthesize matrix/RHS assembly, diagonal-reset selection flags, provider
+dispatch, post-solve body application or a concrete runtime participant.
