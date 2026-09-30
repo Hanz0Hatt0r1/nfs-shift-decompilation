@@ -19,11 +19,15 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 # AIPolyPathNode:
 #   FUN_006cc730 allocates 0x24-byte node elements and assigns
 #   PTR_FUN_00afbfa8 to each element.
+# Knot:
+#   FUN_006cdf70 allocates AISpline's 0x48-byte knot elements and assigns
+#   PTR_FUN_00afbe28 to each element.
 KNOWN_VTABLES = {
     "AISegmentPath": 0x00AFCA70,
     "AIPathNode": 0x00AFBF60,
     "AIPolylinePath": 0x00AFC678,
     "AIPolyPathNode": 0x00AFBFA8,
+    "Knot": 0x00AFBE28,
 }
 
 PATH = {
@@ -94,6 +98,14 @@ SEGMENT_NODE = {
     "height1": (0x28, "f"), "height2": (0x2c, "f"),
     "distance": (0x30, "f"), "distribution_ratio": (0x34, "f"),
 }
+# FUN_006cdb30 reflects four 3D vectors and two scalar fields in Knot.
+KNOT = {
+    **{f"{name}_{axis}": (offset + index * 4, "f")
+       for name, offset in (("pos", 0x10), ("constant_a", 0x1c),
+                            ("constant_b", 0x28), ("constant_c", 0x34))
+       for index, axis in enumerate(("x", "y", "z"))},
+    "length": (0x40, "f"), "inv_length": (0x44, "f"),
+}
 
 SIZE = {"B": 1, "I": 4, "i": 4, "f": 4}
 
@@ -102,7 +114,7 @@ SIZE = {"B": 1, "I": 4, "i": 4, "f": 4}
 # streaming boundary without keeping an entire capture region in RAM.
 MAX_STRUCTURE_SIZE = max(
     max(offset + SIZE[typ] for offset, typ in spec.values())
-    for spec in (PATH, INCIDENT, SEGMENT, POLY)
+    for spec in (PATH, INCIDENT, SEGMENT, POLY, KNOT)
 )
 SCAN_CHUNK_SIZE = 4 * 1024 * 1024
 POINTER_CHUNK_SIZE = 4 * 1024 * 1024
@@ -318,6 +330,19 @@ def check_poly_node(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     }
 
 
+def check_knot(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
+    d = fields(blob, KNOT)
+    vt = read(blob, 0, "I")
+    if (
+        vt != KNOWN_VTABLES["Knot"]
+        or any(v is None for v in d.values())
+        or not game_vtable(vt, mm, starts)
+        or not all(finite(value, 1e7) for value in d.values())
+    ):
+        return None
+    return {"address": addr, "vtable": vt, **d}
+
+
 def check_poly(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     d = fields(blob, POLY)
     vt = read(blob, 0, "I")
@@ -356,6 +381,7 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
         "AISegmentPath": [],
         "AIPolylinePath": [],
         "AIPolyPathNode": [],
+        "Knot": [],
     }
     checks = (
         ("Path", check_path),
@@ -363,17 +389,22 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
         ("AISegmentPath", check_segment),
         ("AIPolylinePath", check_poly),
         ("AIPolyPathNode", check_poly_node),
+        ("Knot", check_knot),
     )
     view = memoryview(blob)
     limit = max(0, len(view) - 3)
     known_segment_vtable = KNOWN_VTABLES["AISegmentPath"]
     known_poly_vtable = KNOWN_VTABLES["AIPolylinePath"]
     known_poly_node_vtable = KNOWN_VTABLES["AIPolyPathNode"]
+    known_knot_vtable = KNOWN_VTABLES["Knot"]
     for off in range(0, limit, 4):
         vtable = read(view, off, "I")
         if vtable is None:
             continue
-        if vtable not in (known_segment_vtable, known_poly_vtable, known_poly_node_vtable):
+        if vtable not in (
+            known_segment_vtable, known_poly_vtable, known_poly_node_vtable,
+            known_knot_vtable,
+        ):
             if not (VT_RANGE[0] <= vtable < VT_RANGE[1]):
                 continue
             if not game_vtable(vtable, mm, starts):
@@ -395,6 +426,7 @@ def scan_file(path: Path, start: int, mm: list[dict], starts: list[int]) -> dict
         "AISegmentPath": {},
         "AIPolylinePath": {},
         "AIPolyPathNode": {},
+        "Knot": {},
     }
     carry = b""
     base = 0
@@ -806,6 +838,55 @@ def extract_segment_nodes(
         if len(owner_rows) == count:
             rows.extend(owner_rows)
     return rows
+
+
+def extract_spline_knot_arrays(
+    candidates: list[dict], snapshots: list[Path],
+    indexes: list[dict[int, dict]], max_knots: int = 100000,
+) -> tuple[list[dict], list[dict]]:
+    """Group complete count-prefixed 0x48-byte Knot arrays in the reference snapshot.
+
+    A Knot vtable alone identifies an element, not its owner. The count prefix
+    and uninterrupted concrete-vtable sequence establish an array boundary;
+    no AISpline ownership is inferred here.
+    """
+    arrays: list[dict] = []
+    knots: list[dict] = []
+    if not candidates or not snapshots:
+        return arrays, knots
+    by_address = {int(row["address"]): row for row in candidates}
+    starts = [sorted(index) for index in indexes]
+    for first in sorted(candidates, key=lambda row: int(row["address"])):
+        address = int(first["address"])
+        counts: list[int] = []
+        for snap, index, region_starts in zip(snapshots, indexes, starts):
+            prefix = _read_virtual(snap, index, region_starts, address - 4, 4)
+            if prefix is None:
+                break
+            counts.append(struct.unpack_from("<I", prefix)[0])
+        if len(counts) != len(snapshots) or len(set(counts)) != 1:
+            continue
+        count = counts[0]
+        if not 2 <= count <= min(max_knots, len(by_address)):
+            continue
+        sequence = [by_address.get(address + i * 0x48) for i in range(count)]
+        if any(row is None for row in sequence):
+            continue
+        # The reference-snapshot scan validates every reflected float and
+        # concrete vtable; the count prefix must agree in every snapshot.
+        arrays.append({
+            "array_address": address,
+            "count": count,
+            "stride": 0x48,
+            "prefix_stable_snapshots": len(snapshots),
+        })
+        for i, row in enumerate(sequence):
+            knots.append({
+                "array_address": address, "index": i,
+                "address": int(row["address"]), "vtable": int(row["vtable"]),
+                **{name: row[name] for name in KNOT},
+            })
+    return arrays, knots
 
 
 def resolve_path_start_nodes(
@@ -1609,6 +1690,7 @@ def main() -> int:
             "AISegmentPath",
             "AIPolylinePath",
             "AIPolyPathNode",
+            "Knot",
         )
     }
 
@@ -1632,7 +1714,8 @@ def main() -> int:
                         else 0x124 if name == "Incident.PathOwner"
                         else 0x38 if name == "AISegmentPath"
                         else 0x2C if name == "AIPolylinePath"
-                        else 0x24
+                        else 0x24 if name == "AIPolyPathNode"
+                        else 0x48
                     )
                     reference_handle = handles[0]
                     reference_handle.seek(off)
@@ -1685,6 +1768,9 @@ def main() -> int:
     )
     segment_nodes = extract_segment_nodes(
         candidates["AISegmentPath"], sns[0], idx[0]
+    )
+    spline_knot_arrays, spline_knots = extract_spline_knot_arrays(
+        candidates["Knot"], sns, idx
     )
     path_polyline_links = join_path_start_nodes_to_polylines(
         path_start_node_links, candidates["AIPolylinePath"]
@@ -1806,6 +1892,8 @@ def main() -> int:
         "aiw_runtime_edge_count": len(aiw_runtime_edges),
         "polyline_node_count": len(polyline_nodes),
         "segment_node_count": len(segment_nodes),
+        "spline_knot_array_count": len(spline_knot_arrays),
+        "spline_knot_count": len(spline_knots),
         "path_start_node_link_count": len(path_start_node_links),
         "path_polyline_link_count": len(path_polyline_links),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
@@ -1840,6 +1928,12 @@ def main() -> int:
     write_csv(out / "aisegmentpath_nodes.csv", segment_nodes, [
         "path_address", "array_address", "index", "address", "vtable",
         *SEGMENT_NODE,
+    ])
+    write_csv(out / "aispline_knot_arrays.csv", spline_knot_arrays, [
+        "array_address", "count", "stride", "prefix_stable_snapshots",
+    ])
+    write_csv(out / "aispline_knots.csv", spline_knots, [
+        "array_address", "index", "address", "vtable", *KNOT,
     ])
     write_csv(out / "path_polyline_links.csv", path_polyline_links, [
         "path_address", "start_node", "polyline_address", "polyline_array",
