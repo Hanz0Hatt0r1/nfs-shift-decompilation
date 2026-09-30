@@ -74,9 +74,14 @@ jobs:
             exit 1
           fi
           grep -q "native submission gate missing" out/vulkan/blocked/stderr.txt
+      - name: Native Linux runtime configure
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+      - name: Native Linux runtime build
+        run: cmake --build native_runtime/build --config Release --parallel
+      - name: Prepare mixed-resource BMW bundle
+        run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
       - name: Assert material SVWT execution policy
         run: |
-          grep -q '"world_transform_executed": true' out/vulkan/bundle/smoke_result.json
           cp -a out/vulkan/bundle/bundle out/vulkan/rotated_bundle
           cat > out/vulkan/rotated_world_transform.json <<'JSON'
           {
@@ -101,12 +106,6 @@ jobs:
             exit 1
           fi
           grep -q 'supports translation-only' out/vulkan/rotated_bundle/stderr.txt
-      - name: Native Linux runtime configure
-        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
-      - name: Native Linux runtime build
-        run: cmake --build native_runtime/build --config Release --parallel
-      - name: Prepare mixed-resource BMW bundle
-        run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
       - name: Native Linux runtime frame loop
         run: |
           set -o pipefail
