@@ -60,6 +60,7 @@ def test_phase579_cli_accepts_neutral_vulkan_draw_bundle_command():
     assert args.command_index == 0
     assert args.submesh_index == 2
     assert args.allow_static is False
+    assert args.apply_scene_transform is False
     assert args.fn.__name__ == "cmd_vulkan_draw_bundle"
 
 
@@ -78,3 +79,16 @@ def test_phase580_cli_accepts_native_scene_vulkan_set_command():
     assert args.output_dir == "out/native-scene-vulkan"
     assert args.environment_cube_dds is None
     assert args.fn.__name__ == "cmd_native_scene_vulkan_set"
+
+
+def test_phase581_cli_accepts_scene_transform_bake_flag():
+    parser = build_parser()
+    args = parser.parse_args([
+        "vulkan-draw-bundle",
+        "render-command.json",
+        "neutral-mesh.json",
+        "out/vulkan-draw",
+        "--apply-scene-transform",
+    ])
+    assert args.apply_scene_transform is True
+    assert args.fn.__name__ == "cmd_vulkan_draw_bundle"
