@@ -1918,7 +1918,11 @@ def cmd_sgb_render_binding_bridge(args: argparse.Namespace) -> int:
     """Resolve scene-admitted SGB resources through generic RenderBinding."""
     from sgb_render_binding_bridge import validate_file
 
-    report = validate_file(args.admission, args.ir_root)
+    report = validate_file(
+        args.admission,
+        args.ir_root,
+        runtime_shader_admission_path=args.runtime_shader_admission,
+    )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
@@ -4263,6 +4267,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "output",
         help="SHIFT.SGBRenderBindingBridge/1 JSON output",
+    )
+    p.add_argument(
+        "--runtime-shader-admission",
+        help=(
+            "optional SHIFT.IMBRuntimeShaderAdmission/1 JSON; "
+            "joins proven shader selections to exact IMB primitives"
+        ),
     )
     p.set_defaults(fn=cmd_sgb_render_binding_bridge)
 

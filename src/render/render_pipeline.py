@@ -223,11 +223,169 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
     }
 
 
+
+RUNTIME_SHADER_ADMISSION_FORMAT = "SHIFT.IMBRuntimeShaderAdmission/1"
+
+
+def _runtime_admission_rows(
+    runtime_shader_admission: Mapping[str, Any] | None,
+) -> list[Mapping[str, Any]]:
+    if runtime_shader_admission is None:
+        return []
+    if (
+        runtime_shader_admission.get("format")
+        != RUNTIME_SHADER_ADMISSION_FORMAT
+    ):
+        raise ValueError(
+            "runtime shader admission must be "
+            "SHIFT.IMBRuntimeShaderAdmission/1"
+        )
+    return [
+        row
+        for row in (
+            runtime_shader_admission.get("admitted_bindings") or []
+        )
+        if isinstance(row, Mapping)
+        and row.get("shader_selection_admitted") is True
+    ]
+
+
+def _primitive_draw_range(primitive: Mapping[str, Any]) -> dict[str, int] | None:
+    try:
+        first_index = int(primitive.get("first_index"))
+        index_count = int(primitive.get("index_count"))
+    except (TypeError, ValueError):
+        return None
+    if first_index < 0 or index_count <= 0 or index_count % 3:
+        return None
+    triangle_count = primitive.get("triangle_count")
+    if triangle_count is None:
+        primitive_count = index_count // 3
+    else:
+        try:
+            primitive_count = int(triangle_count)
+        except (TypeError, ValueError):
+            return None
+        if primitive_count * 3 != index_count:
+            return None
+    return {
+        "first_index": first_index,
+        "index_count": index_count,
+        "primitive_count": primitive_count,
+    }
+
+
+def _same_draw_range(left: Any, right: Any) -> bool:
+    if not isinstance(left, Mapping) or not isinstance(right, Mapping):
+        return False
+    try:
+        return all(
+            int(left.get(key)) == int(right.get(key))
+            for key in ("first_index", "index_count", "primitive_count")
+        )
+    except (TypeError, ValueError):
+        return False
+
+
+def _primitive_runtime_admission(
+    rows: list[Mapping[str, Any]],
+    *,
+    mesh_row: Mapping[str, Any],
+    primitive_index: int,
+    primitive: Mapping[str, Any],
+) -> tuple[Mapping[str, Any] | None, list[str]]:
+    resource_path = norm_ref(str(mesh_row.get("path") or ""))
+    resource_sha = str(mesh_row.get("sha256") or "").lower()
+    archive = str(mesh_row.get("archive") or "")
+    candidates: list[Mapping[str, Any]] = []
+    for row in rows:
+        try:
+            row_primitive = int(row.get("primitive_index"))
+        except (TypeError, ValueError):
+            continue
+        if (
+            norm_ref(str(row.get("imb_path") or "")) == resource_path
+            and str(row.get("imb_sha256") or "").lower() == resource_sha
+            and str(row.get("archive") or "") == archive
+            and row_primitive == primitive_index
+        ):
+            candidates.append(row)
+
+    if not candidates:
+        return None, []
+    if len(candidates) != 1:
+        return None, [
+            f"runtime-shader-admission:primitive-{primitive_index}:"
+            f"multiple-rows:{len(candidates)}"
+        ]
+
+    row = candidates[0]
+    reasons: list[str] = []
+    draw_range = _primitive_draw_range(primitive)
+    if draw_range is None:
+        reasons.append(
+            f"runtime-shader-admission:primitive-{primitive_index}:"
+            "source-draw-range-invalid"
+        )
+    elif not _same_draw_range(row.get("draw_range"), draw_range):
+        reasons.append(
+            f"runtime-shader-admission:primitive-{primitive_index}:"
+            "draw-range-mismatch"
+        )
+
+    material_ref = norm_ref(str(primitive.get("material") or ""))
+    if norm_ref(str(row.get("material_reference") or "")) != material_ref:
+        reasons.append(
+            f"runtime-shader-admission:primitive-{primitive_index}:"
+            "material-reference-mismatch"
+        )
+
+    return (None if reasons else row), reasons
+
+
+def _validate_runtime_admission_material(
+    row: Mapping[str, Any],
+    *,
+    material_row: Mapping[str, Any],
+    shader_ref: Any,
+    primitive_index: int,
+) -> list[str]:
+    reasons: list[str] = []
+    admission_bmt = norm_ref(str(row.get("bmt") or ""))
+    material_path = norm_ref(str(material_row.get("path") or ""))
+    if admission_bmt and admission_bmt != material_path:
+        reasons.append(
+            f"runtime-shader-admission:primitive-{primitive_index}:"
+            "bmt-path-mismatch"
+        )
+    admission_bmt_sha = str(row.get("bmt_sha256") or "").lower()
+    material_sha = str(material_row.get("sha256") or "").lower()
+    if admission_bmt_sha:
+        if not material_sha:
+            reasons.append(
+                f"runtime-shader-admission:primitive-{primitive_index}:"
+                "bmt-sha256-not-in-ir"
+            )
+        elif admission_bmt_sha != material_sha:
+            reasons.append(
+                f"runtime-shader-admission:primitive-{primitive_index}:"
+                "bmt-sha256-mismatch"
+            )
+    admission_shader = norm_ref(str(row.get("shader") or ""))
+    if admission_shader and admission_shader != norm_ref(str(shader_ref or "")):
+        reasons.append(
+            f"runtime-shader-admission:primitive-{primitive_index}:"
+            "shader-path-mismatch"
+        )
+    return reasons
+
+
 def build_render_bindings_from_resource_instances(
     ir_root: str | Path,
     instances: list[Mapping[str, Any]],
     *,
     source_format: str | None = None,
+    runtime_shader_admission: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Resolve externally placed MEB/IMB instances through the generic render path.
 
@@ -266,6 +424,17 @@ def build_render_bindings_from_resource_instances(
         for row in rows
         if norm_ref(row["path"]).endswith(".dds")
     ]
+    runtime_admissions = _runtime_admission_rows(runtime_shader_admission)
+    runtime_application_counts = {
+        int(row.get("binding_index")): 0
+        for row in runtime_admissions
+        if row.get("binding_index") is not None
+    }
+    runtime_join_blockers: list[str] = []
+    if runtime_shader_admission is not None and not runtime_admissions:
+        runtime_join_blockers.append(
+            "runtime-shader-admission:no-admitted-bindings"
+        )
     packets: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
     static_draws: list[dict[str, Any]] = []
@@ -379,14 +548,44 @@ def build_render_bindings_from_resource_instances(
             continue
 
         submeshes = []
-        for prim in mesh.get("primitives", []) or []:
+        for primitive_index, prim in enumerate(
+            mesh.get("primitives", []) or []
+        ):
             material_ref = prim.get("material", "")
+            primitive_admission = None
+            primitive_admission_reasons: list[str] = []
+            if mesh_source_kind == "IMB" and runtime_admissions:
+                (
+                    primitive_admission,
+                    primitive_admission_reasons,
+                ) = _primitive_runtime_admission(
+                    runtime_admissions,
+                    mesh_row=mesh_row,
+                    primitive_index=primitive_index,
+                    primitive=prim,
+                )
+                runtime_join_blockers.extend(
+                    primitive_admission_reasons
+                )
             material_row = resolve(material_ref, prefer_archive)
             binding = None
             if material_row:
                 material_doc = _load_json(root, material_row)
                 material = material_doc.get("material", material_doc)
                 shader_ref = material.get("shader")
+                if primitive_admission is not None:
+                    material_reasons = _validate_runtime_admission_material(
+                        primitive_admission,
+                        material_row=material_row,
+                        shader_ref=shader_ref,
+                        primitive_index=primitive_index,
+                    )
+                    if material_reasons:
+                        runtime_join_blockers.extend(material_reasons)
+                        primitive_admission_reasons.extend(
+                            material_reasons
+                        )
+                        primitive_admission = None
                 fx_row = resolve(shader_ref) if shader_ref else None
                 if fx_row:
                     fx_source = _load_raw(root, fx_row)
@@ -407,7 +606,34 @@ def build_render_bindings_from_resource_instances(
                         fxo_candidates=fxo,
                         texture_paths=textures,
                         vertex_properties=mesh.get("vertex_properties", []),
+                        runtime_admission=primitive_admission,
                     )
+                    if primitive_admission is not None:
+                        runtime_index = primitive_admission.get(
+                            "binding_index"
+                        )
+                        if runtime_index is not None:
+                            runtime_index = int(runtime_index)
+                            runtime_application_counts[runtime_index] = (
+                                runtime_application_counts.get(
+                                    runtime_index, 0
+                                )
+                                + 1
+                            )
+                        runtime_selection = (
+                            binding.get("runtime_selection") or {}
+                        )
+                        if runtime_selection.get("ready") is not True:
+                            runtime_join_blockers.extend(
+                                "runtime-shader-admission:"
+                                + str(reason)
+                                for reason in (
+                                    runtime_selection.get(
+                                        "blocking_reasons"
+                                    )
+                                    or []
+                                )
+                            )
                 else:
                     binding = {
                         "format": "SHIFT.MaterialBinding/1",
@@ -428,9 +654,29 @@ def build_render_bindings_from_resource_instances(
                 })
 
             submeshes.append({
+                "primitive_index": primitive_index,
                 "first_index": prim.get("first_index", 0),
                 "index_count": prim.get("index_count", 0),
                 "material_ref": material_ref,
+                "runtime_shader_admission": (
+                    {
+                        "binding_index": primitive_admission.get(
+                            "binding_index"
+                        ),
+                        "shader_selection_admitted": True,
+                        "selection_status": (
+                            (binding or {}).get("selection_status")
+                        ),
+                        "selection_source": (
+                            (binding or {}).get("selection_source")
+                        ),
+                    }
+                    if primitive_admission is not None
+                    else None
+                ),
+                "runtime_shader_admission_blocking_reasons": (
+                    primitive_admission_reasons
+                ),
                 "material": binding,
             })
 
@@ -512,6 +758,56 @@ def build_render_bindings_from_resource_instances(
                         "linear": binding.get("linear"),
                     })
 
+    unmatched_runtime_admissions = [
+        binding_index
+        for binding_index, count in sorted(
+            runtime_application_counts.items()
+        )
+        if count <= 0
+    ]
+    runtime_join_blockers.extend(
+        f"runtime-shader-admission:binding-{binding_index}:not-applied"
+        for binding_index in unmatched_runtime_admissions
+    )
+    runtime_join_blockers = list(dict.fromkeys(runtime_join_blockers))
+    runtime_shader_join = {
+        "format": "SHIFT.IMBRuntimeRenderBindingJoin/1",
+        "status": (
+            "not-supplied"
+            if runtime_shader_admission is None
+            else "ready"
+            if runtime_admissions and not runtime_join_blockers
+            else "blocked"
+        ),
+        "ready": (
+            None
+            if runtime_shader_admission is None
+            else bool(runtime_admissions)
+            and not runtime_join_blockers
+        ),
+        "supplied_admission_count": len(runtime_admissions),
+        "applied_admission_count": sum(
+            count > 0 for count in runtime_application_counts.values()
+        ),
+        "application_count": sum(runtime_application_counts.values()),
+        "application_counts": {
+            str(key): value
+            for key, value in sorted(runtime_application_counts.items())
+        },
+        "unmatched_binding_indices": unmatched_runtime_admissions,
+        "blocking_reasons": runtime_join_blockers,
+        "boundary": {
+            "resource_identity": "archive + IMB path + decoded SHA-256",
+            "primitive_identity": (
+                "primitive index + first/index/primitive counts"
+            ),
+            "material_identity": (
+                "source material reference + BMT path/SHA + shader path"
+            ),
+            "admission_scope": "resource-level shader identity; reusable by scene instances",
+        },
+    }
+
     resources = build_resource_index(
         [
             {
@@ -538,6 +834,7 @@ def build_render_bindings_from_resource_instances(
         "static_draws": static_draws,
         "render_commands": render_commands,
         "resources": resources,
+        "runtime_shader_join": runtime_shader_join,
         "stats": {
             "resource_instances": len(instances),
             "resolved_resource_instances": len(packets),

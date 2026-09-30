@@ -1,6 +1,7 @@
 import json
 import struct
 
+import render_pipeline
 from imb_format import VERSION_0_4_0_0
 from sgb_render_binding_bridge import (
     FORMAT,
@@ -169,6 +170,7 @@ def _write_ir(root):
             "path": "tracks/test/object.bmt",
             "output": "materials/object.json",
             "raw": "raw/material",
+            "sha256": "bmt-sha",
         },
         {
             "archive": "RENDER.bff",
@@ -179,6 +181,90 @@ def _write_ir(root):
     ]
     (root / "manifest.json").write_text(json.dumps(manifest))
 
+
+
+def _runtime_shader_admission(*, sha="imb-sha", first_index=0):
+    return {
+        "format": "SHIFT.IMBRuntimeShaderAdmission/1",
+        "version": 1,
+        "status": "ready",
+        "ready": True,
+        "blocking_reasons": [],
+        "admitted_bindings": [{
+            "binding_index": 77,
+            "archive": "TRACK.bff",
+            "imb_path": "tracks/test/object.imb",
+            "imb_sha256": sha,
+            "primitive_index": 0,
+            "draw_range": {
+                "first_index": first_index,
+                "index_count": 3,
+                "primitive_count": 1,
+            },
+            "material_reference": "tracks/test/object.bmt",
+            "bmt": "tracks/test/object.bmt",
+            "bmt_sha256": "bmt-sha",
+            "shader": "render/shaders/object.fx",
+            "shader_family": "object",
+            "selected_variant": {
+                "score": 100,
+                "permutation_identity_sha256": "1" * 64,
+                "pair_byte_sha256": "2" * 64,
+                "vertex_byte_sha256": "3" * 64,
+                "pixel_byte_sha256": "4" * 64,
+            },
+            "shader_selection_admitted": True,
+            "render_admission": False,
+        }],
+        "rejected_bindings": [],
+    }
+
+
+def _install_runtime_link_spy(monkeypatch):
+    calls = []
+
+    def fake_link_material(
+        material,
+        fx_source,
+        *,
+        fxo_candidates=(),
+        texture_paths=(),
+        vertex_properties=(),
+        runtime_admission=None,
+    ):
+        calls.append(runtime_admission)
+        admitted = runtime_admission is not None
+        return {
+            "format": "SHIFT.MaterialBinding/1",
+            "material": material.get("name"),
+            "shader": material.get("shader"),
+            "selection_status": "unique" if admitted else "ambiguous",
+            "selection_source": (
+                "runtime-admission" if admitted else "static-ranking"
+            ),
+            "runtime_selection": (
+                {
+                    "status": "ready",
+                    "ready": True,
+                    "blocking_reasons": [],
+                }
+                if admitted
+                else None
+            ),
+            "selected_fxo": None,
+            "bindings": [],
+            "shader_pair": None,
+            "linked_shader_pair": None,
+            "uniform_binding": None,
+            "unresolved_textures": [],
+        }
+
+    monkeypatch.setattr(
+        render_pipeline,
+        "link_material",
+        fake_link_material,
+    )
+    return calls
 
 def test_admitted_sgb_meb_enters_generic_render_binding(tmp_path):
     _write_ir(tmp_path)
@@ -360,3 +446,141 @@ def test_no_admitted_rows_is_blocked(tmp_path):
     )
     assert report["direct_render_instance_count"] == 0
     assert report["render_binding"]["stats"]["resource_instances"] == 0
+
+
+def test_runtime_shader_admission_joins_exact_imb_primitive(
+    tmp_path,
+    monkeypatch,
+):
+    _write_ir(tmp_path)
+    calls = _install_runtime_link_spy(monkeypatch)
+
+    report = build_sgb_render_binding_bridge(
+        _admission(_binding(resource="tracks/test/object.imb")),
+        tmp_path,
+        runtime_shader_admission=_runtime_shader_admission(),
+    )
+
+    assert report["ready"] is True
+    join = report["runtime_shader_join"]
+    assert join["ready"] is True
+    assert join["supplied_admission_count"] == 1
+    assert join["applied_admission_count"] == 1
+    assert join["application_count"] == 1
+    assert calls[0]["binding_index"] == 77
+
+    packet = report["render_binding"]["packets"][0]
+    submesh = packet["submeshes"][0]
+    assert submesh["primitive_index"] == 0
+    assert submesh["runtime_shader_admission"] == {
+        "binding_index": 77,
+        "shader_selection_admitted": True,
+        "selection_status": "unique",
+        "selection_source": "runtime-admission",
+    }
+    assert submesh["material"]["selection_source"] == "runtime-admission"
+
+
+def test_runtime_shader_admission_mismatch_is_fail_closed(
+    tmp_path,
+    monkeypatch,
+):
+    _write_ir(tmp_path)
+    calls = _install_runtime_link_spy(monkeypatch)
+
+    report = build_sgb_render_binding_bridge(
+        _admission(_binding(resource="tracks/test/object.imb")),
+        tmp_path,
+        runtime_shader_admission=_runtime_shader_admission(
+            sha="wrong-imb-sha"
+        ),
+    )
+
+    assert report["ready"] is False
+    join = report["runtime_shader_join"]
+    assert join["ready"] is False
+    assert join["applied_admission_count"] == 0
+    assert join["unmatched_binding_indices"] == [77]
+    assert (
+        "runtime-shader-join:"
+        "runtime-shader-admission:binding-77:not-applied"
+        in report["blocking_reasons"]
+    )
+    assert calls == [None]
+
+
+def test_runtime_shader_admission_is_not_applied_to_meb(
+    tmp_path,
+    monkeypatch,
+):
+    _write_ir(tmp_path)
+    calls = _install_runtime_link_spy(monkeypatch)
+
+    report = build_sgb_render_binding_bridge(
+        _admission(
+            _binding(index=0, resource="tracks/test/object.meb"),
+            _binding(index=1, resource="tracks/test/object.imb"),
+        ),
+        tmp_path,
+        runtime_shader_admission=_runtime_shader_admission(),
+    )
+
+    assert report["ready"] is True
+    assert len(calls) == 2
+    assert calls[0] is None
+    assert calls[1]["binding_index"] == 77
+    assert report["runtime_shader_join"]["application_count"] == 1
+
+
+def test_one_resource_shader_admission_reuses_across_scene_instances(
+    tmp_path,
+    monkeypatch,
+):
+    _write_ir(tmp_path)
+    calls = _install_runtime_link_spy(monkeypatch)
+
+    report = build_sgb_render_binding_bridge(
+        _admission(
+            _binding(index=0, resource="tracks/test/object.imb"),
+            _binding(index=1, resource="tracks/test/object.imb"),
+        ),
+        tmp_path,
+        runtime_shader_admission=_runtime_shader_admission(),
+    )
+
+    assert report["ready"] is True
+    assert len(calls) == 2
+    assert all(call["binding_index"] == 77 for call in calls)
+    join = report["runtime_shader_join"]
+    assert join["applied_admission_count"] == 1
+    assert join["application_count"] == 2
+    assert join["application_counts"] == {"77": 2}
+
+
+def test_empty_runtime_shader_admission_report_is_blocked(
+    tmp_path,
+    monkeypatch,
+):
+    _write_ir(tmp_path)
+    _install_runtime_link_spy(monkeypatch)
+    empty = {
+        "format": "SHIFT.IMBRuntimeShaderAdmission/1",
+        "status": "not-admitted",
+        "ready": False,
+        "admitted_bindings": [],
+        "rejected_bindings": [],
+    }
+
+    report = build_sgb_render_binding_bridge(
+        _admission(_binding(resource="tracks/test/object.imb")),
+        tmp_path,
+        runtime_shader_admission=empty,
+    )
+
+    assert report["ready"] is False
+    assert report["runtime_shader_join"]["ready"] is False
+    assert (
+        "runtime-shader-join:"
+        "runtime-shader-admission:no-admitted-bindings"
+        in report["blocking_reasons"]
+    )
