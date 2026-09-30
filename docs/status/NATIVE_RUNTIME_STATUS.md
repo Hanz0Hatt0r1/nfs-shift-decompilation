@@ -80,3 +80,24 @@ A blocked submesh does not erase ready siblings, but the complete set remains
 fail-closed until every selected child is ready. The existing single-submesh
 adapter and CLI remain available; `--all-submeshes` selects the Phase 527
 set path.
+
+
+## Phase 577 Silverstone scene-bundle boundary
+
+`SHIFT.SilverstoneNativeSceneBundle/1` now adapts the Phase 576
+runtime-proven SGB/IMB render subset into the same ordered
+`SHIFT.BMWVulkanBundleSet/1` ABI already consumed by `--bundle-set`.
+The BMW name is retained as a compatibility ABI; child geometry may now be an
+explicitly matched `SHIFT.NeutralMesh/1` resource when the adapter supplies
+the exact RenderCommand mesh reference.
+
+The scene adapter rechecks raw IMB SHA-256, rebuilds neutral geometry, resolves
+supported material DDS payloads, and carries the Vulkan GLSL emitted by the
+existing shader backend. Unproven IMB primitives are excluded rather than
+guessed.
+
+This is not yet world-space scene rendering. Phase 577 preserves each SGB world
+matrix in the wrapper, but the current native child ABI still normalizes
+geometry for the geometry checkpoint and does not apply a per-draw scene
+matrix. The next native scene gate is explicit per-draw transform transport and
+execution.
