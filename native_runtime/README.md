@@ -20,7 +20,7 @@ MGEO → native IR → XCB window → Vulkan swapchain → indexed draw → fram
 
 The renderer consumes normalized native IR. Original BFF parsing remains upstream in the existing Python importer/resource pipeline.
 
-The runtime accepts a single MGEO mesh, a prepared `SHIFT.BMWVulkanBundle/1`, the historical BMW bundle set, or a Phase 586 prepared `SHIFT.NativeSceneVulkanSet/1` via `--scene-set`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`. Phase 599 executes the recovered CameraManager six-word snapshot plus guarded double-buffer flip/copy on that native boundary and labels the schedule as non-retail timing; vehicle control intent and a physics participant/tick boundary remain alongside it. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
+The runtime accepts a single MGEO mesh, a prepared `SHIFT.BMWVulkanBundle/1`, the historical BMW bundle set, or a Phase 586 prepared `SHIFT.NativeSceneVulkanSet/1` via `--scene-set`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`. Phase 599 executes the recovered CameraManager six-word snapshot plus guarded double-buffer flip/copy on that native boundary and labels the schedule as non-retail timing. Phase 600 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same `VehicleControlIntent` → physics-tick boundary as the live keyboard path. The state layer deliberately does not synthesize unknown retail input filtering or force/integration semantics. `Esc` or `Q` exits the harness.
 
 ## Build
 
@@ -38,6 +38,30 @@ native_runtime/build/shift_runtime \
   --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
   --frames 120
 ```
+
+A deterministic control-intent run can use:
+
+```text
+SHIFT.NativeRuntimeInputScript/1
+0 1 0 0 0
+1 1 0 0 1
+2 0 1 1 0
+3 0 0 1 1
+4 0 0 0 0
+```
+
+```bash
+xvfb-run -a native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --input-script out/native_input.script \
+  --validation
+```
+
+When `--frames` is omitted, the script row count is the run length. If
+`--frames N` is supplied with a script, `N` must match exactly. This path is
+native deterministic test/control infrastructure; it does not model retail
+gamepad dead zones, analog response curves or filtering.
 
 On CI or a headless workstation, run it through Xvfb.
 
