@@ -145,9 +145,12 @@ def build_sgb_render_binding_bridge(
         reason = item.get("reason") or item.get("kind") or "unresolved"
         if binding_index is None:
             instance_index = item.get("instance_index")
-            if isinstance(instance_index, int) and 0 <= instance_index < len(instances):
+            if (
+                isinstance(instance_index, int)
+                and 0 <= instance_index < len(direct_render_instances)
+            ):
                 binding_index = (
-                    instances[instance_index].get("source") or {}
+                    direct_render_instances[instance_index].get("source") or {}
                 ).get("admission_binding_index")
         prefix = (
             f"binding-{binding_index}"
