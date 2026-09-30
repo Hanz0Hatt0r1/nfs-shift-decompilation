@@ -6,20 +6,29 @@ import pytest
 from waypoint_base_runtime import (
     ACTIVE_MARKER_OFFSET,
     BRANCH_ID_OFFSET,
+    BRANCH_INDEX_OFFSET,
+    BRANCH_LINK_OFFSET,
     CLASS_NAME,
+    LINK_RESOLUTION_FUNCTION,
+    NEXT_INDEX_OFFSET,
+    NEXT_LINK_OFFSET,
     POSITION_OFFSET,
+    PREV_INDEX_OFFSET,
+    PREV_LINK_OFFSET,
     REFLECTED_CONSTRUCTOR_DEFAULTS,
     REFLECTED_FIELDS,
     RTTI_DESCRIPTOR,
     RTTI_GETTER,
     SIZE,
     VTABLE,
+    decode_link_fields,
     decode_query_fields,
     describe_waypoint_base_runtime,
     nearest_active_waypoint,
     nearest_branch_one_waypoint,
     nearest_branch_zero_waypoint,
     reflected_field_index,
+    resolve_waypoint_links,
 )
 
 
@@ -33,6 +42,26 @@ def _record(
     struct.pack_into("<fff", blob, POSITION_OFFSET, *position)
     struct.pack_into("<i", blob, BRANCH_ID_OFFSET, branch_id)
     struct.pack_into("<H", blob, ACTIVE_MARKER_OFFSET, active_marker)
+    return bytes(blob)
+
+
+def _link_record(
+    *,
+    active_marker=1,
+    prev_index=-1,
+    next_index=-1,
+    branch_index=-1,
+    prev_link=0,
+    next_link=0,
+    branch_link=0,
+):
+    blob = bytearray(_record(active_marker=active_marker))
+    struct.pack_into("<i", blob, PREV_INDEX_OFFSET, prev_index)
+    struct.pack_into("<i", blob, NEXT_INDEX_OFFSET, next_index)
+    struct.pack_into("<i", blob, BRANCH_INDEX_OFFSET, branch_index)
+    struct.pack_into("<I", blob, PREV_LINK_OFFSET, prev_link)
+    struct.pack_into("<I", blob, NEXT_LINK_OFFSET, next_link)
+    struct.pack_into("<I", blob, BRANCH_LINK_OFFSET, branch_link)
     return bytes(blob)
 
 
@@ -166,6 +195,129 @@ def test_no_matching_active_record_returns_none():
         _record(branch_id=1, active_marker=1),
     ])
     assert nearest_branch_zero_waypoint(records, (0.0, 0.0, 0.0)) is None
+
+
+def test_link_decoder_uses_recovered_index_and_pointer_offsets():
+    row = decode_link_fields(
+        _link_record(
+            active_marker=3,
+            prev_index=4,
+            next_index=5,
+            branch_index=6,
+            prev_link=0x1000,
+            next_link=0x2000,
+            branch_link=0x3000,
+        )
+    )
+    assert row == {
+        "active_marker": 3,
+        "prev_index": 4,
+        "next_index": 5,
+        "branch_index": 6,
+        "prev_link": 0x1000,
+        "next_link": 0x2000,
+        "branch_link": 0x3000,
+    }
+
+
+def test_link_resolution_matches_fun_00717b90_valid_and_invalid_targets():
+    base = 0x00600000
+    records = b"".join([
+        _link_record(prev_index=-1, next_index=1, branch_index=2),
+        _link_record(prev_index=0, next_index=2, branch_index=-1),
+        _link_record(
+            active_marker=0,
+            prev_index=123,
+            next_index=124,
+            branch_index=125,
+            prev_link=0x11111111,
+            next_link=0x22222222,
+            branch_link=0x33333333,
+        ),
+        _link_record(prev_index=2, next_index=4, branch_index=-1),
+    ])
+    resolved = resolve_waypoint_links(records, base_address=base)
+    out = resolved["records"]
+
+    row0 = decode_link_fields(out[0 * SIZE:1 * SIZE])
+    assert row0["prev_index"] == -1
+    assert row0["prev_link"] == 0
+    assert row0["next_index"] == 1
+    assert row0["next_link"] == base + SIZE
+    assert row0["branch_index"] == -1
+    assert row0["branch_link"] == 0
+
+    row1 = decode_link_fields(out[1 * SIZE:2 * SIZE])
+    assert row1["prev_index"] == 0
+    assert row1["prev_link"] == base
+    assert row1["next_index"] == -1
+    assert row1["next_link"] == 0
+
+    # FUN_00717b90 skips inactive source records entirely.
+    row2 = decode_link_fields(out[2 * SIZE:3 * SIZE])
+    assert row2["prev_index"] == 123
+    assert row2["next_index"] == 124
+    assert row2["branch_index"] == 125
+    assert row2["prev_link"] == 0x11111111
+    assert row2["next_link"] == 0x22222222
+    assert row2["branch_link"] == 0x33333333
+
+    row3 = decode_link_fields(out[3 * SIZE:4 * SIZE])
+    assert row3["prev_index"] == -1
+    assert row3["prev_link"] == 0
+    assert row3["next_index"] == -1
+    assert row3["next_link"] == 0
+
+    assert resolved["decisions"][0]["links"]["next"]["reason"] == "resolved"
+    assert resolved["decisions"][0]["links"]["branch"]["reason"] == "inactive-target"
+    assert resolved["decisions"][3]["links"]["next"]["reason"] == "out-of-range"
+    assert resolved["decisions"][2]["processed"] is False
+
+
+def test_link_resolution_uses_requested_database_count_not_storage_tail():
+    base = 0x00600000
+    records = b"".join([
+        _link_record(next_index=1),
+        _link_record(),
+    ])
+    resolved = resolve_waypoint_links(records, base_address=base, count=1)
+    row = decode_link_fields(resolved["records"])
+    assert row["next_index"] == -1
+    assert row["next_link"] == 0
+    assert resolved["decisions"][0]["links"]["next"]["reason"] == "out-of-range"
+
+
+def test_link_resolution_rejects_malformed_negative_index_below_source_sentinel():
+    with pytest.raises(ValueError, match="below the retail -1 sentinel"):
+        resolve_waypoint_links(
+            _link_record(next_index=-2),
+            base_address=0x00600000,
+        )
+
+
+def test_link_resolution_requires_real_32_bit_array_base():
+    record = _link_record()
+    with pytest.raises(ValueError, match="non-zero 32-bit"):
+        resolve_waypoint_links(record, base_address=0)
+    with pytest.raises(ValueError, match="non-zero 32-bit"):
+        resolve_waypoint_links(record, base_address=0x1_0000_0000)
+
+
+def test_runtime_description_records_link_resolution_contract():
+    report = describe_waypoint_base_runtime()
+    links = report["link_resolution"]
+    assert links["function"] == LINK_RESOLUTION_FUNCTION == "FUN_00717b90"
+    assert links["index_offsets"] == {
+        "prev": 0x74,
+        "next": 0x78,
+        "branch": 0x7C,
+    }
+    assert links["pointer_offsets"] == {
+        "prev": 0x17C,
+        "next": 0x180,
+        "branch": 0x184,
+    }
+    assert links["invalid_index_sentinel"] == -1
 
 
 def test_evidence_boundary_keeps_unreflected_marker_structural():
