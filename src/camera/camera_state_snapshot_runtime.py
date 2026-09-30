@@ -50,6 +50,7 @@ def snapshot_camera_state(
     return {
         "format": FORMAT,
         "version": 1,
+        "status": "snapshot",
         "snapshot": {
             "word0_camera_source": state.camera_source,
             "word1_mode": int(state.mode),
