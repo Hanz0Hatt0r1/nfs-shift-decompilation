@@ -5,18 +5,38 @@ import pytest
 from flat_runtime import FLATRuntimeDecodeError, parse_flat_runtime
 
 
-def _leaf(index: int, object_handle: int = 0) -> bytes:
+def _leaf(
+    index: int,
+    object_handle: int = 0,
+    *,
+    include=(0, 0),
+    exclude=(0, 0),
+    sphere=(0.0, 0.0, 0.0, 0.0),
+    unresolved=(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+) -> bytes:
     words = [0] * 16
+    words[0:2] = list(include)
+    words[2:4] = list(exclude)
+    for i, value in enumerate(sphere):
+        words[4 + i] = struct.unpack("<I", struct.pack("<f", value))[0]
+    for i, value in enumerate(unresolved):
+        words[8 + i] = struct.unpack("<I", struct.pack("<f", value))[0]
     words[14] = object_handle
     words[15] = index
     return struct.pack("<16I", *words)
 
 
-def _node(leaves: list[bytes], children: list[bytes] | None = None, marker: int = 1) -> bytes:
+def _node(
+    leaves: list[bytes],
+    children: list[bytes] | None = None,
+    marker: int = 1,
+    *,
+    aabb=(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+) -> bytes:
     children = children or []
     body = b"".join(leaves) + b"".join(children)
     span = 0x20 + len(body)
-    header = struct.pack("<7I", 0, 0, 0, 0, 0, 0, len(leaves))
+    header = struct.pack("<6fI", *aabb, len(leaves))
     header += struct.pack("<I", (marker << 24) | span)
     return header + body
 
@@ -64,6 +84,69 @@ def test_flat_leaf_exposes_object_handle_and_child_index():
     assert consumer["teardown"]["function"] == "FUN_006af830"
     assert consumer["teardown"]["fallback_direct_pointer"]["refcount_offset"] == 0x20
     assert consumer["teardown"]["fallback_direct_pointer"]["destroy_vfunc_offset"] == 0x10
+
+
+def test_flat_leaf_decodes_source_backed_filter_masks_and_sphere():
+    data = _node([
+        _leaf(
+            5,
+            include=(0x00000001, 0x80000000),
+            exclude=(0x00000010, 0x00000020),
+            sphere=(1.25, -2.5, 3.75, 9.5),
+            unresolved=(-1.0, -2.0, -3.0, 4.0, 5.0, 6.0),
+        )
+    ])
+    leaf = parse_flat_runtime(data)["root"]["records"][0]
+
+    assert leaf["filter_masks"]["include_words"] == [
+        0x00000001,
+        0x80000000,
+    ]
+    assert leaf["filter_masks"]["exclude_words"] == [
+        0x00000010,
+        0x00000020,
+    ]
+    assert leaf["filter_masks"]["include_offset"] == 0x00
+    assert leaf["filter_masks"]["exclude_offset"] == 0x08
+    assert leaf["bounding_sphere"]["center_xyz"] == pytest.approx(
+        [1.25, -2.5, 3.75]
+    )
+    assert leaf["bounding_sphere"]["radius"] == pytest.approx(9.5)
+    assert leaf["bounding_sphere"]["source_offset"] == 0x10
+    assert leaf["unresolved_spatial_words_20_34"]["semantic_status"] == (
+        "unresolved"
+    )
+    assert leaf["unresolved_spatial_words_20_34"]["float_view"] == pytest.approx(
+        [-1.0, -2.0, -3.0, 4.0, 5.0, 6.0]
+    )
+
+    consumer = leaf["runtime_consumer_metadata"]
+    assert consumer["filter_mask_query"]["include_offsets"] == [0x00, 0x04]
+    assert consumer["filter_mask_query"]["exclude_offsets"] == [0x08, 0x0C]
+    assert consumer["bounding_sphere_query"]["center_offsets"] == [
+        0x10,
+        0x14,
+        0x18,
+    ]
+    assert consumer["bounding_sphere_query"]["radius_offset"] == 0x1C
+
+
+def test_flat_node_decodes_source_backed_aabb():
+    report = parse_flat_runtime(
+        _node(
+            [_leaf(0)],
+            aabb=(-10.0, -20.0, -30.0, 40.0, 50.0, 60.0),
+        )
+    )
+    aabb = report["root"]["aabbox"]
+
+    assert aabb["min_xyz"] == pytest.approx([-10.0, -20.0, -30.0])
+    assert aabb["max_xyz"] == pytest.approx([40.0, 50.0, 60.0])
+    assert aabb["source_offsets"] == {
+        "min_xyz": 0x00,
+        "max_xyz": 0x0C,
+    }
+    assert aabb["source"]["runtime_builder"] == "FUN_00689db0"
 
 
 def test_flat_leaf_exposes_runtime_index_table_geometry():
