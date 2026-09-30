@@ -21,6 +21,7 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 #   PTR_FUN_00afbfa8 to each element.
 KNOWN_VTABLES = {
     "AISegmentPath": 0x00AFCA70,
+    "AIPathNode": 0x00AFBF60,
     "AIPolylinePath": 0x00AFC678,
     "AIPolyPathNode": 0x00AFBFA8,
 }
@@ -83,6 +84,15 @@ POLY_NODE = {
     "dx": (0x18, "f"),
     "dy": (0x1c, "f"),
     "distance": (0x20, "f"),
+}
+# FUN_006cfc10 allocates AISegmentPath nodes at 0x38-byte stride and writes
+# PTR_FUN_00afbf60. FUN_006d0d10 reflects the AIPathNode field names.
+SEGMENT_NODE = {
+    "pos1_x": (0x10, "f"), "pos1_y": (0x14, "f"),
+    "pos2_x": (0x18, "f"), "pos2_y": (0x1c, "f"),
+    "normal_x": (0x20, "f"), "normal_y": (0x24, "f"),
+    "height1": (0x28, "f"), "height2": (0x2c, "f"),
+    "distance": (0x30, "f"), "distribution_ratio": (0x34, "f"),
 }
 
 SIZE = {"B": 1, "I": 4, "i": 4, "f": 4}
@@ -738,6 +748,65 @@ def extract_polyline_nodes(
         except OSError:
             continue
     return rows
+
+
+def extract_segment_nodes(
+    candidates: list[dict], snapshot: Path, region_index: dict[int, dict],
+    max_nodes: int = 100000,
+) -> list[dict]:
+    """Export complete, count-prefixed AIPathNode arrays owned by AISegmentPath."""
+    rows: list[dict] = []
+    starts = sorted(region_index)
+    for owner in candidates:
+        if not owner.get("array_expected_count_match"):
+            continue
+        array = int(owner.get("array", 0))
+        count = int(owner.get("array_count", 0))
+        if array <= 0 or not 0 < count <= max_nodes:
+            continue
+        loc = _region_record_for_address(array, region_index, starts)
+        if loc is None:
+            continue
+        st, rec = loc
+        within = array - st
+        if within + count * 0x38 > int(rec["size"]):
+            continue
+        owner_rows: list[dict] = []
+        try:
+            with (snapshot / rec["file"]).open("rb") as fh:
+                fh.seek(within)
+                while len(owner_rows) < count:
+                    batch_count = min(count - len(owner_rows), 4096)
+                    data = fh.read(batch_count * 0x38)
+                    if len(data) != batch_count * 0x38:
+                        break
+                    valid_batch = True
+                    for n in range(batch_count):
+                        off = n * 0x38
+                        vt = struct.unpack_from("<I", data, off)[0]
+                        values = struct.unpack_from("<10f", data, off + 0x10)
+                        if vt != KNOWN_VTABLES["AIPathNode"] or not all(
+                            finite(value, 1e7) for value in values
+                        ):
+                            valid_batch = False
+                            break
+                        index = len(owner_rows)
+                        owner_rows.append({
+                            "path_address": int(owner["address"]),
+                            "array_address": array,
+                            "index": index,
+                            "address": array + index * 0x38,
+                            "vtable": vt,
+                            **dict(zip(SEGMENT_NODE, values)),
+                        })
+                    if not valid_batch:
+                        break
+        except OSError:
+            continue
+        if len(owner_rows) == count:
+            rows.extend(owner_rows)
+    return rows
+
 
 def resolve_path_start_nodes(
     candidates: list[dict],
@@ -1590,9 +1659,13 @@ def main() -> int:
     path_root_candidates = list(candidates["Path"])
     aiw_node_candidates = list(candidates["AIPolyPathNode"])
 
-    # Resolve exact AIPolylinePath -> count-prefixed AIPolyPathNode arrays
-    # after the global scan because the target array can live in another
-    # selected memory region.
+    # Resolve path-node arrays after the global scan because their targets
+    # can live in another selected memory region.
+    validate_prefixed_array_link(
+        candidates["AISegmentPath"], sns, idx,
+        KNOWN_VTABLES["AIPathNode"], 0x38,
+        count_field="array_count", sequence_field="array_node_sequence",
+    )
     validate_prefixed_array_link(
         candidates["AIPolylinePath"], sns, idx,
         KNOWN_VTABLES["AIPolyPathNode"], 0x24,
@@ -1609,6 +1682,9 @@ def main() -> int:
     )
     polyline_nodes = extract_polyline_nodes(
         candidates["AIPolylinePath"], sns[0], idx[0]
+    )
+    segment_nodes = extract_segment_nodes(
+        candidates["AISegmentPath"], sns[0], idx[0]
     )
     path_polyline_links = join_path_start_nodes_to_polylines(
         path_start_node_links, candidates["AIPolylinePath"]
@@ -1729,6 +1805,7 @@ def main() -> int:
         "aiw_next_edge_count": len(aiw_next_edges),
         "aiw_runtime_edge_count": len(aiw_runtime_edges),
         "polyline_node_count": len(polyline_nodes),
+        "segment_node_count": len(segment_nodes),
         "path_start_node_link_count": len(path_start_node_links),
         "path_polyline_link_count": len(path_polyline_links),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
@@ -1759,6 +1836,10 @@ def main() -> int:
     write_csv(out / "aipolylinepath_nodes.csv", polyline_nodes, [
         "path_address", "array_address", "index", "address", "vtable",
         "x", "y", "dx", "dy", "distance",
+    ])
+    write_csv(out / "aisegmentpath_nodes.csv", segment_nodes, [
+        "path_address", "array_address", "index", "address", "vtable",
+        *SEGMENT_NODE,
     ])
     write_csv(out / "path_polyline_links.csv", path_polyline_links, [
         "path_address", "start_node", "polyline_address", "polyline_array",
