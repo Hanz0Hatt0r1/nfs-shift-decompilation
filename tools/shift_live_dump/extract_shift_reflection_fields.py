@@ -29,8 +29,8 @@ _FIELD_CALL = re.compile(
 )
 _ADDRESS_OF = re.compile(r"&([A-Za-z_][A-Za-z0-9_]*)")
 _FUNCTION_HEADER = re.compile(
-    r"(?m)^[A-Za-z_][^\\n;{}]*\\b((?:thunk_)?FUN_[0-9a-fA-F]+)"
-    r"\\([^;\\n]*\\)\\s*$"
+    r"(?m)^[A-Za-z_][^\n;{}]*\b((?:thunk_)?FUN_[0-9a-fA-F]+)"
+    r"\([^;\n]*\)\s*$"
 )
 
 
