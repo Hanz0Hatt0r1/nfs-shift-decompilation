@@ -1995,6 +1995,7 @@ def cmd_native_scene_vulkan_set(args: argparse.Namespace) -> int:
         args.ir_root,
         args.output_dir,
         environment_cube_dds=args.environment_cube_dds,
+        external_texture_snapshots=args.external_texture_snapshots,
     )
     print(json.dumps({
         "format": result["format"],
@@ -4440,6 +4441,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("ir_root")
     p.add_argument("output_dir")
     p.add_argument("--environment-cube-dds")
+    p.add_argument(
+        "--external-texture-snapshots",
+        help=(
+            "SHIFT.SceneExternalTextureSnapshotSet/1 JSON "
+            "with exact per-draw external sampler2D snapshots"
+        ),
+    )
     p.set_defaults(fn=cmd_native_scene_vulkan_set)
 
     p = sp.add_parser(
