@@ -217,3 +217,21 @@ def test_phase586_keeps_bmw_bundle_set_abi():
     assert "SHIFT.BMWVulkanBundleSetPrepare/1" in source
     assert "SHIFT.BMWVulkanInterfaceGate/1" in source
     assert '"--bundle-set"' in source
+
+
+def test_phase593_native_runtime_loads_evidence_backed_camera_state():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert '"--camera-state"' in source
+    assert "SHIFT.NativeCameraState/1" in source
+    assert "load_native_camera_state" in source
+    assert "json_i32_field" in source
+    assert '"camera_state_loaded"' in source
+    assert '"camera_manager_mode"' in source
+    assert '"camera_buffer_sub_index"' in source
+    assert '"camera_id"' in source
+    assert '"camera_active_group"' in source
+    assert '"camera_group_restore_value"' in source
+    assert '"camera_active_buffer_sub_flag"' in source
