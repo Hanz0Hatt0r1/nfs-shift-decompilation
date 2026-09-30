@@ -30,3 +30,15 @@ def test_phase576_cli_accepts_runtime_shader_admission():
         args.runtime_shader_admission
         == "runtime-shader-admission.json"
     )
+
+
+def test_phase578_cli_accepts_native_scene_bundle_command():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-scene-bundle",
+        "scene-render-binding.json",
+        "native-scene-bundle.json",
+    ])
+    assert args.scene_bridge == "scene-render-binding.json"
+    assert args.output == "native-scene-bundle.json"
+    assert args.fn.__name__ == "cmd_native_scene_bundle"
