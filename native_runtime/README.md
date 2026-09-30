@@ -169,3 +169,29 @@ If `--frames` is omitted, the script row count becomes the run length. If
 The script is native test/control infrastructure only. It does not claim retail
 gamepad dead zones, analog response curves, filtering or vehicle-force
 semantics.
+
+
+## Phase 602 participant structural boundary
+
+Generate the structural participant contract:
+
+```bash
+python3 src/physics/native_physics_participant_boundary.py \
+  -o out/native_physics_participant_boundary.json
+```
+
+Then pass it to the runtime:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --participant-boundary out/native_physics_participant_boundary.json \
+  --frames 120
+```
+
+The loader verifies the exact manager/selector separation and structural ABI.
+It deliberately leaves `participant_ready=false`,
+`participant_index=-1` and `participant_mode=-1`. A concrete retail
+participant/provider still requires independent runtime evidence.
