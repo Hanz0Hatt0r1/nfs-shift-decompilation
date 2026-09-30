@@ -257,8 +257,7 @@ def build_render_bindings_from_resource_instances(
         hits = by_base.get(Path(normalized).name, [])
         if prefer:
             same = [x for x in hits if x.get("archive") == prefer]
-            if same:
-                return same[0]        return hits[0] if hits else None
+            if same:                return same[0]        return hits[0] if hits else None
 
     textures = [
         row["path"]
@@ -433,6 +432,14 @@ def build_render_bindings_from_resource_instances(
                 "material": binding,
             })
 
+        vertex_layout = build_layout_from_summary(mesh)
+        if mesh_source_kind == "IMB":
+            vertex_layout = {
+                **vertex_layout,
+                "source": "IMB",
+                "source_adapter": mesh_adapter_format,
+            }
+
         packet = {
             "scene": source.get("scene"),
             "node": source.get("node"),
@@ -453,7 +460,7 @@ def build_render_bindings_from_resource_instances(
                 },
                 "vertex_count": mesh.get("vertex_count"),
                 "triangle_count": mesh.get("triangle_count"),
-                "vertex_layout": build_layout_from_summary(mesh),
+                "vertex_layout": vertex_layout,
                 "skinning": mesh.get("skinning") or {},
                 "source_kind": mesh_source_kind,
                 "neutral_adapter_format": mesh_adapter_format,
