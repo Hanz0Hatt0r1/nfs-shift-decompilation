@@ -220,6 +220,7 @@ def audit_shader_family_fxo(
     inputs: Iterable[str | Path],
     shader_refs: Iterable[str],
 ) -> dict[str, Any]:
+    inputs = list(inputs)
     shader_refs = list(shader_refs)
     target_families = {
         shader_family(_norm(ref))
@@ -259,7 +260,7 @@ def audit_shader_family_fxo(
                     candidates.append(row)
 
     report = summarize_shader_families(shader_refs, candidates)
-    report["input_count"] = len(list(inputs)) if not isinstance(inputs, list) else len(inputs)
+    report["input_count"] = len(inputs)
     report["target_families"] = sorted(target_families)
     report["candidate_rows"] = candidates
     return report
@@ -324,9 +325,9 @@ def main(argv: list[str] | None = None) -> int:
         "parse_failure_count": report["parse_failure_count"],
     }, ensure_ascii=False, indent=2))
 
-    if args.require-selection-ready and not report["selection_ready"]:
+    if args.require_selection_ready and not report["selection_ready"]:
         return 2
-    if args.require-inventory-ready and not report["ready"]:
+    if args.require_inventory_ready and not report["ready"]:
         return 2
     return 0
 
