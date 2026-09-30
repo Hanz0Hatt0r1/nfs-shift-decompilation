@@ -111,3 +111,15 @@ actually ran.
 
 Linux Vulkan CI requires both counters to equal one for the neutral one-child
 scene-set fixture.
+
+
+## Phase 588 external sampler2D transport boundary
+
+The native runtime binary ABI does not change in Phase 588. Explicit external
+`sampler2D` snapshots are serialized as ordinary SVTP descriptor-set-1
+records at their original D3D9 register, so the existing native texture upload
+path consumes them without a special renderer-side resource class.
+
+The upstream bundle metadata preserves whether each SVTP record came from a
+material texture or an external runtime snapshot. Missing external resources
+remain unresolved and are not synthesized by `native_runtime`.
