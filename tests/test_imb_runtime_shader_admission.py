@@ -16,6 +16,7 @@ def _variant(*, permutation="1", pair="2", vertex="3", pixel="4", file="a.fxo"):
         "pixel_byte_sha256": _sha(pixel),
         "candidate_file": file,
         "candidate_program_offset": 128,
+        "candidate_vertex_program_offset": 64,
         "exact": True,
     }
 
@@ -111,7 +112,11 @@ def test_admits_exact_phase572_variant_back_to_static_binding():
     assert row["render_admission"] is False
     assert row["selected_variant_key"] == ["permutation", _sha("1")]
     assert row["equivalent_static_locations"] == [
-        {"file": "a.fxo", "program_offset": 128}
+        {
+            "file": "a.fxo",
+            "program_offset": 128,
+            "vertex_program_offset": 64,
+        }
     ]
 
 
@@ -125,8 +130,16 @@ def test_preserves_content_equivalent_static_locations():
 
     assert report["ready"] is True
     assert report["admitted_bindings"][0]["equivalent_static_locations"] == [
-        {"file": "a.fxo", "program_offset": 128},
-        {"file": "copy.fxo", "program_offset": 128},
+        {
+            "file": "a.fxo",
+            "program_offset": 128,
+            "vertex_program_offset": 64,
+        },
+        {
+            "file": "copy.fxo",
+            "program_offset": 128,
+            "vertex_program_offset": 64,
+        },
     ]
 
 

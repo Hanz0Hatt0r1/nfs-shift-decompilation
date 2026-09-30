@@ -168,13 +168,21 @@ def build_imb_runtime_shader_admission(
                 continue
 
             attributed_results += 1
-            locations = sorted({
+            locations = list({
                 (
                     str(row.get("candidate_file") or ""),
                     row.get("candidate_program_offset"),
+                    row.get("candidate_vertex_program_offset"),
                 )
                 for row in equivalent_variants
             })
+            locations.sort(
+                key=lambda item: (
+                    item[0],
+                    int(item[1]) if item[1] is not None else -1,
+                    int(item[2]) if item[2] is not None else -1,
+                )
+            )
             admitted.append({
                 "match_index": report_index,
                 "binding_index": binding_index,
@@ -194,8 +202,9 @@ def build_imb_runtime_shader_admission(
                     {
                         "file": file,
                         "program_offset": offset,
+                        "vertex_program_offset": vertex_offset,
                     }
-                    for file, offset in locations
+                    for file, offset, vertex_offset in locations
                 ],
                 "shader_selection_admitted": True,
                 "render_admission": False,

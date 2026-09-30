@@ -289,6 +289,9 @@ def match_imb_runtime_shader_variants(
                         "candidate_program_offset": variant.get(
                             "candidate_program_offset"
                         ),
+                        "candidate_vertex_program_offset": variant.get(
+                            "candidate_vertex_program_offset"
+                        ),
                     })
 
             if not variant_rows:
@@ -367,6 +370,7 @@ def match_imb_runtime_shader_variants(
                     "pixel_byte_sha256",
                     "candidate_file",
                     "candidate_program_offset",
+                    "candidate_vertex_program_offset",
                 )
             }
 

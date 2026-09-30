@@ -142,6 +142,9 @@ def _candidate_target(
         "pixel_byte_sha256": pixel_sha,
         "candidate_file": candidate.get("file"),
         "candidate_program_offset": candidate.get("program_offset"),
+        "candidate_vertex_program_offset": candidate.get(
+            "vertex_program_offset"
+        ),
         "vertex_pair_selection_status": candidate.get(
             "vertex_pair_selection_status"
         ),
@@ -246,6 +249,9 @@ def build_imb_runtime_shader_target_set(
                 "candidate_program_offset": target.get(
                     "candidate_program_offset"
                 ),
+                "candidate_vertex_program_offset": target.get(
+                    "candidate_vertex_program_offset"
+                ),
                 "vertex_pair_selection_status": target.get(
                     "vertex_pair_selection_status"
                 ),
@@ -256,6 +262,9 @@ def build_imb_runtime_shader_target_set(
                 "file": target.get("candidate_file"),
                 "program_offset": target.get(
                     "candidate_program_offset"
+                ),
+                "vertex_program_offset": target.get(
+                    "candidate_vertex_program_offset"
                 ),
             })
 

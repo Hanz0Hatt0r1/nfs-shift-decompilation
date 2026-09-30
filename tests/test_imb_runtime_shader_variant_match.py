@@ -22,6 +22,7 @@ def _variant(
         "pixel_byte_sha256": _sha(pixel),
         "candidate_file": "render/cache/example.fxo",
         "candidate_program_offset": 128,
+        "candidate_vertex_program_offset": 64,
         "vertex_pair_selection_status": "ambiguous",
         "exact": True,
     }
@@ -155,6 +156,7 @@ def test_matcher_attributes_unique_exact_runtime_variant():
     assert row["attributed"] is True
     assert row["best_score"] == 100
     assert row["selected_variant"]["permutation_identity_sha256"] == _sha("1")
+    assert row["selected_variant"]["candidate_vertex_program_offset"] == 64
 
 
 def test_matcher_uses_draw_range_for_multi_primitive_imb():

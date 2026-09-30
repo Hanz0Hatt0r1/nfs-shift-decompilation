@@ -108,6 +108,7 @@ def test_compact_candidate_retains_only_ranking_provenance():
     row = _compact_candidate({
         "file": "cache/foo.fxo",
         "program_offset": 128,
+        "vertex_program_offset": 64,
         "payload_sha256": "payload",
         "pixel_sha256": "pixel",
         "vertex_sha256": "vertex",
@@ -119,6 +120,7 @@ def test_compact_candidate_retains_only_ranking_provenance():
         "vertex_pair_valid": True,
         "vertex_pair_score": 3.0,
         "vertex_pair_selection_status": "unique",
+        "source_vertex_pair_selection_status": "ambiguous",
         "uniform_coverage": 1.0,
         "specialization_score": 4.0,
         "specialization_contradicted": [],
@@ -127,6 +129,9 @@ def test_compact_candidate_retains_only_ranking_provenance():
     })
 
     assert row["file"] == "cache/foo.fxo"
+    assert row["program_offset"] == 128
+    assert row["vertex_program_offset"] == 64
+    assert row["source_vertex_pair_selection_status"] == "ambiguous"
     assert row["permutation_identity_sha256"] == "perm"
     assert row["pair_sha256"] == "pair"
     assert row["exact"] is True

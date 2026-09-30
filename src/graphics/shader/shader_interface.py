@@ -208,6 +208,57 @@ def enumerate_shader_pairs(programs:Iterable[ShaderProgram],properties:Iterable[
         candidates.append({"vertex_offset":vs.offset,"pixel_offset":ps.offset,"score":0.65*interface["score"]+0.35*vf["score"],"interface":interface,"vertex_format":vf,"pixel_samplers":list(ps.samplers)})
     return sorted(candidates,key=lambda x:(-x["score"],-x["interface"]["score"],-x["vertex_format"]["score"],x["vertex_offset"],x["pixel_offset"]))
 
+def pair_exact_offsets(
+    data: bytes,
+    vertex_offset: int,
+    pixel_offset: int,
+    *,
+    properties: Iterable[str | dict] = (),
+) -> dict | None:
+    """Build one shader-pair contract for explicitly proven VS/PS offsets."""
+    programs = [
+        parse_program(data, b.offset, b.end, b.stage, b.major, b.minor)
+        for b in parse_shader_blobs(data)
+    ]
+    vertex = next(
+        (
+            program
+            for program in programs
+            if program.offset == vertex_offset and program.stage == "vertex"
+        ),
+        None,
+    )
+    pixel = next(
+        (
+            program
+            for program in programs
+            if program.offset == pixel_offset and program.stage == "pixel"
+        ),
+        None,
+    )
+    if vertex is None or pixel is None:
+        return None
+    interface = link_vertex_pixel(vertex, pixel)
+    vertex_format = match_vertex_format(vertex, properties)
+    return {
+        "vertex_offset": vertex.offset,
+        "pixel_offset": pixel.offset,
+        "score": (
+            0.65 * interface["score"]
+            + 0.35 * vertex_format["score"]
+        ),
+        "interface": interface,
+        "vertex_format": vertex_format,
+        "vertex_bindings": vertex_attribute_bindings(
+            vertex, properties
+        )["bindings"],
+        "pixel_samplers": list(pixel.samplers),
+        "selection_status": "unique",
+        "ambiguous_candidates": [],
+        "selection_source": "explicit-offsets",
+    }
+
+
 def pair_selected_pixel(data:bytes,pixel_offset:int,*,properties:Iterable[str|dict]=())->dict|None:
     programs=[parse_program(data,b.offset,b.end,b.stage,b.major,b.minor) for b in parse_shader_blobs(data)]
     pixel=next((p for p in programs if p.offset==pixel_offset),None)

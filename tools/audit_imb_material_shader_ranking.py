@@ -79,6 +79,7 @@ def _compact_candidate(row: dict[str, Any] | None) -> dict[str, Any] | None:
     return {
         "file": row.get("file"),
         "program_offset": row.get("program_offset"),
+        "vertex_program_offset": row.get("vertex_program_offset"),
         "payload_sha256": row.get("payload_sha256"),
         "pixel_sha256": row.get("pixel_sha256"),
         "vertex_sha256": row.get("vertex_sha256"),
@@ -94,6 +95,9 @@ def _compact_candidate(row: dict[str, Any] | None) -> dict[str, Any] | None:
         "vertex_pair_valid": bool(row.get("vertex_pair_valid")),
         "vertex_pair_score": row.get("vertex_pair_score"),
         "vertex_pair_selection_status": row.get("vertex_pair_selection_status"),
+        "source_vertex_pair_selection_status": row.get(
+            "source_vertex_pair_selection_status"
+        ),
         "uniform_coverage": row.get("uniform_coverage"),
         "specialization_score": row.get("specialization_score"),
         "specialization_contradicted": list(
