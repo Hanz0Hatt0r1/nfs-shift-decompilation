@@ -211,6 +211,21 @@ It scans 4-byte-aligned object candidates for these recovered layouts:
 The retail PE also defines how these fields are used for nearest-point and
 path-distance queries. See [AIPolylinePath geometry evidence](../../evidence/polyline_path_geometry_source.md).
 
+Before changing a concrete path vtable, validate the analyzer against the recovered
+retail decompilation:
+
+```bash
+python3 tools/shift_live_dump/verify_track_path_source_anchors.py \
+  /path/to/SHIFT.exe.c \
+  --expect-source-sha256 512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9
+```
+
+The verifier checks the source function/vtable anchors for `AISegmentPath`,
+`AIPathNode`, `AIPolylinePath`, `AIPolyPathNode`, and `Knot`, verifies
+the factory RTTI-to-constructor links for the two concrete path containers, and
+requires the recovered addresses to match `KNOWN_VTABLES` in
+`analyze_track_paths.py`. A mismatch exits non-zero.
+
 Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. `AISegmentPath`, `AIPolylinePath`, and `AIPolyPathNode` require their recovered concrete vtables (`0x00afc930`, `0x00afc678`, and `0x00afbfa8`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
 
 Outputs:
