@@ -2,7 +2,7 @@
 
 Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats, runtime contracts and rendering/physics boundaries.
 
-> **Current mainline: Phase 548**
+> **Current mainline: Phase 549**
 >
 > Phase 502 joins the source-backed SDF construction, provider selection/rebind and vtable lifecycle contracts. Phase 503 adds a direct BFF-to-pre-PhysX/provider handoff command. Phase 504 adds a runtime-capture preflight for the retail PE, Wine, GDB and GDB Python. Phase 505 closes the source-backed vehicle physics participant creation/load gate. Phase 506 adds the source-backed PhysicsParticipantManager event-0x20 ingestion path. Phase 507 adds the participant slot registry/update bridge used by PhysicsParticipant.cpp. Phase 508 resolves the selector global as DAT_00bbc600 and keeps it explicitly separate from the participant-manager global DAT_00c109e0. Phase 509 traces the saved participant pointer/ordinal through the subsequent process/reselection loop and vehicle-BFF load. Phase 510 closes the descriptor-level selector candidate lifecycle, including the observed +0x74 eligibility/exclusion state, +0x8c ordinal writeback, bounded batch reservation and distinct +0x1d post-load/process flag. Phase 511 closes the IGPhaseVehicle completion/finalization boundary, including per-container callbacks, guarded +0x160 cleanup, resource teardown and final object callback ordering. Phase 512 maps the selector descriptor population path exactly, including capacity/stride, packed token bits, source-to-descriptor copies, +0x74 initialization and conditional +0x70 population. Phase 513 closes the upstream source-record admission mask path through owner +0x4f0 and its reset/resynchronization calls. Exact retail numeric parity remains capture-gated.
 
@@ -10,7 +10,7 @@ Phase 515 adds a low-stop specialized-provider GDB probe mode for captures where
 
 Phase 544 closes the remaining common NODE control-byte boundary: byte `+0x21` has no consumer in the binary dispatcher and no XML counterpart, remains raw/unassigned, and is zero across 541 recursively decoded NODE objects from all four Silverstone Era3 visual variants. The XML-only DAMAGE wrapper now also carries its source-backed `matrices`, matrix-array, subobject-array and `MatrixNumber` runtime offsets without implying binary NODE admission.
 
-Phase 545 closes the object-to-spatial placement identity join: FLAT leaf `+0x3c` indexes SUMM wrappers by source order, PART child IDs resolve one-based into the NODE wrapper registry, and the source-backed PART runtime builder explains generated FLAT-like `+0x38/+0x3c` records. The FLAT/SUMM join is production-verified across 21,580 Silverstone placements. Phase 546 maps source-backed FLAT include/exclude masks, bounding spheres and tree-node AABBs; leaf `+0x20..+0x34` remains source-unresolved but is retained as a corpus-verified bounds candidate whose midpoint matches the sphere centre across all 21,580 placements. Phase 547 normalizes FLAT/SUMM and PART/NODE identity plus proven spatial geometry into `SHIFT.SGBScenePlacement/1`, while keeping world transforms and draw admission explicitly unresolved. Phase 548 proves the binary OBJECT resource-descriptor → render-instance path and exact transform selector: explicit transforms are materialized source-equivalently, while parent `MatrixNumber` stays tied to a validated 0x40-byte MultiMatrix slot.
+Phase 545 closes the object-to-spatial placement identity join: FLAT leaf `+0x3c` indexes SUMM wrappers by source order, PART child IDs resolve one-based into the NODE wrapper registry, and the source-backed PART runtime builder explains generated FLAT-like `+0x38/+0x3c` records. The FLAT/SUMM join is production-verified across 21,580 Silverstone placements. Phase 546 maps source-backed FLAT include/exclude masks, bounding spheres and tree-node AABBs; leaf `+0x20..+0x34` remains source-unresolved but is retained as a corpus-verified bounds candidate whose midpoint matches the sphere centre across all 21,580 placements. Phase 547 normalizes FLAT/SUMM and PART/NODE identity plus proven spatial geometry into `SHIFT.SGBScenePlacement/1`, while keeping world transforms and draw admission explicitly unresolved. Phase 548 proves the binary OBJECT resource-descriptor → render-instance path and exact transform selector: explicit transforms are materialized source-equivalently, while parent `MatrixNumber` stays tied to a validated 0x40-byte MultiMatrix slot. Phase 549 reconstructs the initial type-1 MultiMatrix world update (`world = local × parent_world`) and closes numeric initial world transforms for all 40,940 OBJECT payloads in the four Silverstone Era3 visual variants.
 
 The offline Linux runtime is now on main under `native_runtime/`: XCB/Vulkan swapchain execution, depth-tested prepared BMW material bundle submission, the fixed 60 Hz native state boundary, and the 40-scalar physics workspace admission path are covered by Linux Vulkan CI. Phase 524 keeps the proven single-draw bundle ABI intact while preparing ordered per-submesh bundles; Phase 525 requires every child to pass its existing SPIR-V/reflection/interface/provenance gates; Phase 526 consumes only that prepared set and submits all draws in one native frame; Phase 527 lets the existing BMW material-slice/DDS bridge populate each child independently before the set is indexed.
 
@@ -195,6 +195,9 @@ python shift_importer.py sgb-scene-placement \
 python shift_importer.py sgb-object-render-handoff \
   out/sgb-runtime.json out/object-render-handoff.json
 
+python shift_importer.py sgb-multimatrix-world \
+  out/sgb-runtime.json out/multimatrix-world.json
+
 python shift_importer.py sgb-runtime track.sgb out/sgb-runtime.json
 python shift_importer.py sgb-placement-join \
   out/sgb-runtime.json \
@@ -231,7 +234,7 @@ The main evidence blockers are independent:
 - **BMW rendering:** one authentic BMW M3 E36 D3D9 body capture is required to select the concrete retail FXO permutations from the Phase 538–540 target/match pipeline;
 - **specialized vehicle physics:** one authentic provider frame is required for numeric parity beyond the source-backed 40/34-scalar structural reconstruction;
 - **track/path runtime:** one complete non-stopping runtime graph capture is required to close the AIW → runtime → `AIPolylinePath` instance graph;
-- **scene:** `SHIFT.SGBScenePlacement/1` and `SHIFT.SGBObjectRenderHandoffSet/1` now cover spatial identity plus OBJECT resource/transform selection; the next step is numeric MultiMatrix hierarchy evaluation and the final placement→RenderBinding join.
+- **scene:** `SHIFT.SGBScenePlacement/1`, OBJECT render handoff and initial type-1 MultiMatrix world evaluation are now source-backed; the next step is the final placement/resource/world-transform join into RenderBinding, while dynamic MultiMatrix operation types remain separate.
 
 Missing runtime evidence remains a blocker rather than a reason to choose a plausible value.
 
