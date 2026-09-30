@@ -1,11 +1,62 @@
 #include "shift_builtin_sparse_solver.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 namespace shift::runtime::physics {
+
+BuiltinDiagonalResetResult apply_builtin_diagonal_reset(
+    const std::vector<std::vector<double>>& matrix,
+    const std::vector<double>& rhs,
+    const std::vector<std::size_t>& nodes) {
+
+    const std::size_t n = matrix.size();
+    for (const auto& row : matrix) {
+        if (row.size() != n) {
+            throw std::invalid_argument("matrix must be square");
+        }
+    }
+    if (rhs.size() != n) {
+        throw std::invalid_argument(
+            "rhs length must match matrix size");
+    }
+
+    std::vector<std::vector<double>> out_matrix = matrix;
+    std::vector<double> out_rhs = rhs;
+    std::vector<std::size_t> selected = nodes;
+    std::sort(selected.begin(), selected.end());
+    selected.erase(
+        std::unique(selected.begin(), selected.end()),
+        selected.end());
+
+    for (const std::size_t node : selected) {
+        if (node >= n) {
+            throw std::invalid_argument(
+                "reset node out of range");
+        }
+        for (std::size_t column = 0;
+             column < n;
+             ++column) {
+            out_matrix[node][column] = 0.0;
+        }
+        for (std::size_t row = 0;
+             row < n;
+             ++row) {
+            out_matrix[row][node] = 0.0;
+        }
+        out_matrix[node][node] = 1.0;
+        out_rhs[node] = 0.0;
+    }
+
+    return {
+        std::move(out_matrix),
+        std::move(out_rhs),
+        std::move(selected),
+    };
+}
 
 BuiltinSparseSolveResult solve_builtin_sparse(
     const std::vector<std::vector<double>>& matrix,
