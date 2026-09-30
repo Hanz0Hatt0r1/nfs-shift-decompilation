@@ -46,7 +46,7 @@ Use explicit states such as `proven`, `verified`, `inferred`, `ambiguous`, `unkn
 | SGB / scene | placement → OBJECT → MeshInst/IMB schema → generic RenderBinding active | IMB packed version/prefix, fixed header, bones and stream triples are source-backed and auto-decoded; full vertex/primitive payload + IMX neutral adapters and unresolved MatrixNumber history remain blocked |
 | Camera | active | loader/state/event/control primitives reconstructed |
 | AI database | source-backed structural/load/query core | retail `AIDatabase` singleton identity, AIW load/meta-section lifecycle and exact `WayPointBase` 0x1bc layout reconstructed; simple Branch-ID 0/1 queries plus retail `FUN_007189a0` Branch-filtered non-Euclidean nearest-path query implemented; parser internals and linked/local path search remain open |
-| Track metadata | source-backed structural/load core | retail `TrackDetails` identity, exact 0x1d4 allocation, 44 direct reflected fields and constructor defaults recovered; post-load comma-token collections, year bucketing, ASCII source-path hash parity, recursive .trd discovery and success/failure ownership handoff are source-backed; text track-list format, non-ASCII CRT hash normalization and higher-level selection remain open |
+| Track metadata | source-backed structural/load/selection core | retail `TrackDetails` plus `TrackList` singleton are recovered: exact 0x1d4/0xe4 sizes, property/post-load tokenization, ASCII source-path hash parity, `tracklist.lst` CRLF/@ request grammar, recursive .trd fallback, taxonomy indices, owned TrackDetails lifecycle, case-insensitive key lookup and `All`/`!exclude` Class filtering are source-backed; internal container ABI, non-ASCII CRT hash normalization, the unreflected TrackDetails +0x10 key meaning and higher-level event selection remain open |
 | Vehicle physics | active | CDF/EDF/GDF/SDF and wheel/contact/solver boundaries |
 | Builtin solver | source-backed | sparse-solver lifecycle and matrix/kernel layers |
 | Specialized providers | capture-ready | 40/34 scalar domains, structural solver IR, reset/selector provenance |
@@ -252,6 +252,7 @@ Missing runtime evidence remains a blocker rather than a reason to choose a plau
 | `src/render/` | neutral DrawPacket/StaticDraw/RenderCommand contracts and reference rendering |
 | `src/bmw/` | BMW retail admission, shader attribution, Vulkan bundle and capture evidence |
 | `src/scene/` | SGB NODE/SUMM/PART/OCCL/FLAT runtime reconstruction |
+| `src/track/` | TrackDetails/TrackList metadata, loading, taxonomy and lookup runtime contracts |
 | physics runtime modules | vehicle/constraint/solver evidence |
 | `native_capture/` | Windows D3D9 capture producer |
 | `native_vulkan/` | Linux Vulkan backend |
