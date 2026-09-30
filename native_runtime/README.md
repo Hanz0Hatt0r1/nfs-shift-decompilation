@@ -20,7 +20,7 @@ MGEO → native IR → XCB window → Vulkan swapchain → indexed draw → fram
 
 The renderer consumes normalized native IR. Original BFF parsing remains upstream in the existing Python importer/resource pipeline.
 
-The runtime accepts either a single MGEO mesh or a prepared `SHIFT.BMWVulkanBundle/1`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`, with evidence-shaped camera double-buffer state, vehicle control intent and a physics participant/tick boundary. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
+The runtime accepts a single MGEO mesh, a prepared legacy `SHIFT.BMWVulkanBundle/1`, or a prepared neutral `SHIFT.VulkanDrawBundle/1`. Neutral bundles additionally require a ready `SHIFT.VulkanDrawRuntimeProvenanceGate/1`. Bundle mode validates native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. If `world_transform.svwt` is present, the runtime validates and loads its exact `SHIFT.VulkanWorldTransformPacket/1` matrix into bundle assets but deliberately reports it as `not-applied`; no retail material constant register is inferred. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`, with evidence-shaped camera double-buffer state, vehicle control intent and a physics participant/tick boundary. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
 
 ## Build
 
@@ -43,7 +43,7 @@ On CI or a headless workstation, run it through Xvfb.
 
 ## Design boundary
 
-This target is deliberately small. Scene streaming and full multi-submesh RenderCommand scheduling are still separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
+This target is deliberately small. Neutral single-draw bundle admission is implemented, while neutral ordered scene-set preparation/submission and actual SVWT consumption by material shaders remain separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
 
 
 ## Phase 530 per-draw cull state
