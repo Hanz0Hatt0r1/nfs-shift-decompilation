@@ -30,7 +30,8 @@ Covered boundaries include:
 - FLAT leaf include/exclude 64-bit query-mask pairs at +0x00..+0x0f;
 - FLAT leaf bounding sphere at +0x10..+0x1c;
 - FLAT tree-node AABB at header +0x00..+0x14;
-- leaf +0x20..+0x34 retained as a source-unresolved, corpus-verified min/max bounds candidate whose midpoint matches the sphere centre across 21,580 Silverstone placements.
+- leaf +0x20..+0x34 retained as a source-unresolved, corpus-verified min/max bounds candidate whose midpoint matches the sphere centre across 21,580 Silverstone placements;
+- `SHIFT.SGBScenePlacement/1` normalizes FLAT/SUMM and PART/NODE object identity with only proven spatial geometry and keeps corpus bounds advisory.
 
 ## Explicitly unresolved
 
@@ -44,4 +45,4 @@ Track placement remains an evidence question.
 
 ## Next
 
-Build a neutral scene placement contract from the Phase 545 identity join plus Phase 546 source-backed FLAT filter/sphere/node-AABB geometry, while keeping +0x20..+0x34 below the source-proof threshold, then expose that contract toward RenderBinding.
+Prove the object/resource-to-render-node mapping and world-transform handoff for `SHIFT.SGBScenePlacement/1`, then admit only those proven placements into RenderBinding; keep +0x20..+0x34 advisory until a source consumer is found.
