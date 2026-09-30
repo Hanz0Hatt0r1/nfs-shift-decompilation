@@ -274,6 +274,48 @@ def _attributed_texture_observations(
                         if isinstance(path, str)
                     ],
                 })
+            draw_texture_snapshots: list[dict[str, Any]] = []
+            for raw_snapshot in (
+                snapshot.get("draw_texture_snapshots") or []
+            ):
+                if not isinstance(raw_snapshot, Mapping):
+                    continue
+                try:
+                    stage = int(raw_snapshot.get("stage"))
+                except (TypeError, ValueError):
+                    continue
+                creation = raw_snapshot.get("resource_creation")
+                draw_texture_snapshots.append({
+                    "stage": stage,
+                    "texture_ptr": raw_snapshot.get("texture_ptr"),
+                    "active_binding_texture_ptr": raw_snapshot.get(
+                        "active_binding_texture_ptr"
+                    ),
+                    "active_binding_match": (
+                        raw_snapshot.get("active_binding_match") is True
+                    ),
+                    "resource_creation_status": raw_snapshot.get(
+                        "resource_creation_status"
+                    ),
+                    "resource_creation": (
+                        dict(creation)
+                        if isinstance(creation, Mapping)
+                        else None
+                    ),
+                    "snapshot_status": raw_snapshot.get(
+                        "snapshot_status"
+                    ),
+                    "snapshot_paths": [
+                        str(path)
+                        for path in (
+                            raw_snapshot.get("snapshot_paths") or []
+                        )
+                        if isinstance(path, str)
+                    ],
+                    "event_index": raw_snapshot.get("event_index"),
+                    "line": raw_snapshot.get("line"),
+                })
+
             rows.append({
                 "binding_index": binding_index,
                 "frame": frame_id,
@@ -281,6 +323,7 @@ def _attributed_texture_observations(
                 "status": "observed",
                 "blocking_reasons": [],
                 "active_texture_bindings": textures,
+                "draw_texture_snapshots": draw_texture_snapshots,
             })
     return rows
 
@@ -478,15 +521,17 @@ def build_imb_runtime_capture_pipeline(
             "retains_full_runtime_frames": False,
             "retains_attributed_draw_texture_observations": True,
             "attributed_texture_observation_contract": (
-                "selected-strong-variant-draw-textures-v1"
+                "selected-strong-variant-draw-textures-v2"
             ),
             "texture_observation_scope": (
                 "only runtime draw snapshots supporting the selected "
                 "strong shader variant"
             ),
+            "draw_boundary_texture_snapshots_supported": True,
             "texture_snapshot_time": (
-                "captured at SetTexture and carried into draw-local state; "
-                "no post-bind mutation exclusion is claimed"
+                "draw-boundary snapshots are attached by exact draw_index "
+                "when present; SetTexture snapshots remain backward-compatible "
+                "fallback evidence"
             ),
             "purpose": (
                 "orchestrate authentic Silverstone capture attribution "
