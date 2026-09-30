@@ -113,6 +113,7 @@ def prepare_native_scene_vulkan_set(
                     "native-scene-prepare:draw-order-count-mismatch"
                 )
 
+            prepared: list[dict[str, Any]] = []
             for index, relative in enumerate(paths):
                 if not _safe_relative(relative):
                     blockers.append(
@@ -147,7 +148,6 @@ def prepare_native_scene_vulkan_set(
                         + str(index)
                     )
 
-            prepared: list[dict[str, Any]] = []
             if not blockers:
                 for index, relative in enumerate(paths):
                     child = root / relative
