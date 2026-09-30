@@ -31,7 +31,22 @@ cmake --build native_runtime/build --parallel
 
 ## Run
 
-```bash\nnative_runtime/build/shift_runtime \\\n  --bundle out/example-bundle \\\n  --shader-dir native_runtime/build/shaders \\\n  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \\\n  --frames 120\n\n# Phase 585 neutral scene scheduling\npython shift_importer.py native-scene-vulkan-prepare \\\n  out/native-scene-vulkan --validator glslangValidator\n\nnative_runtime/build/shift_runtime \\\n  --scene-set out/native-scene-vulkan \\\n  --shader-dir native_runtime/build/shaders \\\n  --frames 120\n```
+```bash
+native_runtime/build/shift_runtime \
+  --bundle out/example-bundle \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --frames 120
+
+# Phase 585 neutral scene scheduling
+python shift_importer.py native-scene-vulkan-prepare \
+  out/native-scene-vulkan --validator glslangValidator
+
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --frames 120
+```
 
 On CI or a headless workstation, run it through Xvfb.
 
