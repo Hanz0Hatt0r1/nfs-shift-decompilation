@@ -287,12 +287,12 @@ def prepare_native_scene_vulkan_set(
         "boundary": {
             "ordered_neutral_children_prepared": ready,
             "semantic_affine_svwt_execution_available": True,
-            "native_runtime_scene_set_loader_available": False,
+            "native_runtime_scene_set_loader_available": True,
             "executes_scene": False,
             "relabels_scene_as_bmw": False,
             "next_stage": (
-                "teach native_runtime to admit this neutral set/child contract "
-                "and consume per-child SVWT before GPU upload"
+                "native_runtime --scene-set consumes this prepared contract; "
+                "authentic runtime-proven scene evidence remains upstream"
             ),
         },
     }
