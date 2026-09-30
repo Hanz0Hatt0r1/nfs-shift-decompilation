@@ -106,6 +106,7 @@ def _candidate_identity(candidate: dict) -> tuple:
         "location",
         candidate.get("file"),
         candidate.get("program_offset"),
+        candidate.get("vertex_program_offset"),
     )
 
 
