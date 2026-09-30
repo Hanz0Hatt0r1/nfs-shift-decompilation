@@ -3,6 +3,9 @@ import struct
 import pytest
 
 from sgb_object_runtime import (
+    BINARY_KINDS,
+    XML_ONLY_KINDS,
+    RUNTIME_WRAPPERS,
     SGBObjectDecodeError,
     parse_matrix_records,
     parse_sgb_object_payload,
@@ -88,6 +91,19 @@ def _hierarchy_payload() -> tuple[bytes, int]:
         struct.pack_into("<I", buf, off + 0x24, 0)
 
     return bytes(buf), record_end
+
+
+def _damage_payload() -> tuple[bytes, int]:
+    fixed = 0x24
+    buf = bytearray(b"\0" * fixed)
+    kind = _append_string(buf, "DAMAGE")
+    source = _append_string(buf, "DAMAGE_ROOT")
+    third = _append_string(buf, "DAMAGE_AUX")
+    struct.pack_into("<III", buf, 0, kind, source, third)
+    struct.pack_into("<I", buf, 0x0C, 1)
+    struct.pack_into("<4f", buf, 0x10, 0.0, 0.0, 0.0, 1.0)
+    struct.pack_into("<bBBB", buf, 0x20, 0, 0, 1, 2)
+    return bytes(buf), fixed
 
 
 def _lod_payload() -> tuple[bytes, int]:
@@ -251,12 +267,20 @@ def test_relative_strings_use_explicit_sgb_base_not_payload_base():
     assert result["source_string"]["text"] == "SOURCE"
 
 
-def test_unknown_byte_21_stays_raw():
+def test_byte_21_stays_raw_and_is_explicitly_unconsumed():
     payload, end = _object_payload()
     raw = bytearray(payload)
     raw[0x21] = 0x7A
     result = parse_sgb_object_payload(bytes(raw), end_offset=end)
+
     assert result["unknown_byte_21"] == 0x7A
+    assert result["byte_21"] == {
+        "raw": 0x7A,
+        "binary_consumer_status": "unconsumed",
+        "binary_consumer": "FUN_0069a6c0",
+        "xml_counterpart": None,
+        "semantic_name": None,
+    }
 
 
 def test_truncated_matrix_table_blocks_non_strict():
@@ -274,3 +298,44 @@ def test_truncated_matrix_table_blocks_non_strict():
 def test_invalid_bounds_raise():
     with pytest.raises(SGBObjectDecodeError):
         parse_sgb_object_payload(b"\0" * 20)
+
+
+
+def test_binary_node_kind_set_excludes_xml_only_damage():
+    assert BINARY_KINDS == {"LOD", "HIERARCHY", "OBJECT"}
+    assert XML_ONLY_KINDS == {"DAMAGE"}
+
+
+def test_damage_payload_is_not_claimed_as_binary_node_kind():
+    payload, end = _damage_payload()
+    result = parse_sgb_object_payload(payload, end_offset=end)
+
+    assert result["kind"]["text"] == "DAMAGE"
+    assert result["kind_status"] == "xml-only-kind"
+    assert result["decoded"] is False
+    assert result["binary_admission"] == {
+        "supported": False,
+        "dispatcher": "FUN_0069a6c0",
+        "reason": "kind-is-only-admitted-by-xml-scene-loaders",
+    }
+    assert result["xml_runtime"]["supported"] is True
+    assert result["xml_runtime"]["loaders"] == [
+        "FUN_00699b10",
+        "FUN_0069b1c0",
+    ]
+
+
+def test_damage_runtime_wrapper_remains_source_backed_for_xml_scene_path():
+    wrapper = RUNTIME_WRAPPERS["DAMAGE"]
+
+    assert wrapper["constructor"] == "FUN_00698b00"
+    assert wrapper["vtable"] == 0x00AF7C88
+    assert wrapper["allocation_bytes"] == 0xA0
+    assert wrapper["source_admission"]["binary_node"] is False
+    assert wrapper["source_admission"]["xml_scene"] is True
+    assert wrapper["proven_fields"] == {
+        "matrix_count": 0x80,
+        "runtime_matrix_array": 0x84,
+        "runtime_subobject_array": 0x88,
+        "matrix_number": 0x90,
+    }
