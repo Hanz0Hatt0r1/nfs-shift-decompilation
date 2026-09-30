@@ -206,6 +206,7 @@ It scans 4-byte-aligned object candidates for these recovered layouts:
 - `AIPathNode`: 0x38-byte `AISegmentPath` array element with reflected 2D positions, normal, heights, path distance and distribution ratio. See [segment node evidence](../../evidence/segment_path_node_source.md).
 - `AIPolylinePath`: num nodes `+0x10`, node array `+0x14`, length `+0x18`, width `+0x1c`, cyclic `+0x20`, spacing `+0x24`, default width `+0x28`.
 - `AIPolyPathNode`: 0x24-byte array element with 2D position/tangent fields at `+0x10..+0x1c` and cumulative path distance at `+0x20`.
+- `Knot`: 0x48-byte `AISpline` element with `Pos`, `ConstantA/B/C`, `Length`, and `InvLength` fields. See [spline knot evidence](../../evidence/spline_knot_source.md).
 
 The retail PE also defines how these fields are used for nearest-point and
 path-distance queries. See [AIPolylinePath geometry evidence](../../evidence/polyline_path_geometry_source.md).
@@ -218,6 +219,7 @@ Outputs:
 - `{profile}.csv` — structural candidates for each recovered profile. `aipolylinepath.csv` additionally records whether `array[-4]` matches `num nodes`, whether the first array element has the `AIPolyPathNode` vtable, and how many consecutive `0x24`-byte nodes were validated.
 - `aipolylinepath_nodes.csv` — decoded elements of every fully validated `AIPolylinePath.array`, including node address/index, 2D position/tangent and cumulative distance.
 - `aisegmentpath_nodes.csv` — complete reference-snapshot `AISegmentPath.array` instances with matching count prefix and concrete `AIPathNode` vtable, including reflected node fields.
+- `aispline_knot_arrays.csv` / `aispline_knots.csv` — complete count-prefixed `Knot` arrays and their reflected fields from the reference snapshot. Array ownership by an `AISpline` object remains to be verified in a targeted capture.
 - `aiw_next_edges.csv` — normalized `WP_PTRS.next` graph edges from the selected AIW resources, including waypoint indices and lap-distance delta.
 - `aiw_runtime_edges.csv` — runtime-address pairs for each explicit AIW next edge, preserving the concrete in-memory graph and runtime stride/wrap information.
 - `path_start_node_links.csv` — direct `Path.StartNode` resolutions, including target vtable, count-prefix stability and validated consecutive node count.
