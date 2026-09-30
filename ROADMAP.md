@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 604.**
+**Current mainline: Phase 605.**
 
 
 
@@ -32,6 +32,9 @@ Phase 603 ports the source-backed builtin sparse numeric kernel `FUN_007b0f20` i
 
 
 Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `sample+0x70 & 1` evidence rather than inferred statically.
+
+
+Phase 605 composes the native source-backed builtin reset and solve kernels as explicit reset nodes → `FUN_007b2210` → `FUN_007b0f20`, returning both intermediate and solved state. It remains a provider-absent numerical slice, not a complete `FUN_007b3f40` frame.
 
 ## Immediate execution order
 
@@ -115,6 +118,7 @@ Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation i
 76. Admit the source-backed participant registry/selector structural ABI into native state while preserving manager/selector separation and unresolved runtime participant identity — Phase 602 implemented as SHIFT.NativePhysicsParticipantBoundary/1.
 77. Port the exact source-backed builtin sparse solver kernel to native C++ and verify deterministic numerical parity independently of full-frame assembly — Phase 603 implemented for FUN_007b0f20.
 78. Port the exact builtin diagonal-reset mutation while keeping reset-node selection runtime-evidence-gated — Phase 604 implemented for FUN_007b2210.
+79. Compose explicit reset-node application and builtin sparse solve into one reusable provider-absent native frame slice without inventing matrix assembly or dispatch — Phase 605 implemented.
 
 ## Workstream status
 
@@ -131,7 +135,7 @@ Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation i
 | Camera | source-backed manager/state primitives + native snapshot/double-buffer handoff | retail timing/controller/view-selection behavior and exact render integration |
 | Native input | live keyboard intent + deterministic fixed-step input-script path | gamepad/analog normalization and retail input filtering |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff plus Phase 602 native structural participant boundary implemented |
-| Builtin solver | source-backed + native C++ FUN_007b0f20 solver and FUN_007b2210 reset kernels | exact full-frame matrix/RHS/reset-selection/body-state parity |
+| Builtin solver | source-backed + native C++ FUN_007b2210→FUN_007b0f20 provider-absent frame slice | exact frame input/admission, dispatch and post-solve body-state parity |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Track/path runtime correlation | active | `TrackDetails`/`TrackList` structural-load-selection core and waypoint queries/links are source-backed; exit still requires a complete/unambiguous AIW → runtime → concrete path graph capture |
