@@ -327,3 +327,18 @@ def test_phase601_native_input_script_reaches_physics_tick_boundary():
     assert "neutral_input_steps" in header
     assert "if (input.throttle) ++throttle_steps" in header
     assert "if (input.brake) ++brake_steps" in header
+
+
+def test_phase602_native_participant_loader_requires_all_source_contracts_ready():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert '"registry_contract_ready\\": true"' in source
+    assert '"participant_gate_ready\\": true"' in source
+    assert '"participant_process_ready\\": true"' in source
+    assert '"selector_context_ready\\": true"' in source
+    assert (
+        "native physics participant source contracts are not all ready"
+        in source
+    )
