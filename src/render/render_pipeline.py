@@ -186,56 +186,6 @@ def build_render_bindings(ir_root: str|Path) -> dict[str,Any]:
                             })
             for child in node.get("children",[]) or []: walk(child)
         for n in scene.get("nodes",[]) or []: walk(n)
-    unmatched_runtime_admissions = [
-        binding_index
-        for binding_index, count in sorted(
-            runtime_application_counts.items()
-        )
-        if count <= 0
-    ]
-    runtime_join_blockers.extend(
-        f"runtime-shader-admission:binding-{binding_index}:not-applied"
-        for binding_index in unmatched_runtime_admissions
-    )
-    runtime_join_blockers = list(dict.fromkeys(runtime_join_blockers))
-    runtime_shader_join = {
-        "format": "SHIFT.IMBRuntimeRenderBindingJoin/1",
-        "status": (
-            "not-supplied"
-            if runtime_shader_admission is None
-            else "ready"
-            if runtime_admissions and not runtime_join_blockers
-            else "blocked"
-        ),
-        "ready": (
-            None
-            if runtime_shader_admission is None
-            else bool(runtime_admissions)
-            and not runtime_join_blockers
-        ),
-        "supplied_admission_count": len(runtime_admissions),
-        "applied_admission_count": sum(
-            count > 0 for count in runtime_application_counts.values()
-        ),
-        "application_count": sum(runtime_application_counts.values()),
-        "application_counts": {
-            str(key): value
-            for key, value in sorted(runtime_application_counts.items())
-        },
-        "unmatched_binding_indices": unmatched_runtime_admissions,
-        "blocking_reasons": runtime_join_blockers,
-        "boundary": {
-            "resource_identity": "archive + IMB path + decoded SHA-256",
-            "primitive_identity": (
-                "primitive index + first/index/primitive counts"
-            ),
-            "material_identity": (
-                "source material reference + BMT path/SHA + shader path"
-            ),
-            "admission_scope": "resource-level shader identity; reusable by scene instances",
-        },
-    }
-
     resources = build_resource_index(
         [
             {
@@ -800,6 +750,56 @@ def build_render_bindings_from_resource_instances(
                         "srgb": binding.get("srgb"),
                         "linear": binding.get("linear"),
                     })
+
+    unmatched_runtime_admissions = [
+        binding_index
+        for binding_index, count in sorted(
+            runtime_application_counts.items()
+        )
+        if count <= 0
+    ]
+    runtime_join_blockers.extend(
+        f"runtime-shader-admission:binding-{binding_index}:not-applied"
+        for binding_index in unmatched_runtime_admissions
+    )
+    runtime_join_blockers = list(dict.fromkeys(runtime_join_blockers))
+    runtime_shader_join = {
+        "format": "SHIFT.IMBRuntimeRenderBindingJoin/1",
+        "status": (
+            "not-supplied"
+            if runtime_shader_admission is None
+            else "ready"
+            if runtime_admissions and not runtime_join_blockers
+            else "blocked"
+        ),
+        "ready": (
+            None
+            if runtime_shader_admission is None
+            else bool(runtime_admissions)
+            and not runtime_join_blockers
+        ),
+        "supplied_admission_count": len(runtime_admissions),
+        "applied_admission_count": sum(
+            count > 0 for count in runtime_application_counts.values()
+        ),
+        "application_count": sum(runtime_application_counts.values()),
+        "application_counts": {
+            str(key): value
+            for key, value in sorted(runtime_application_counts.items())
+        },
+        "unmatched_binding_indices": unmatched_runtime_admissions,
+        "blocking_reasons": runtime_join_blockers,
+        "boundary": {
+            "resource_identity": "archive + IMB path + decoded SHA-256",
+            "primitive_identity": (
+                "primitive index + first/index/primitive counts"
+            ),
+            "material_identity": (
+                "source material reference + BMT path/SHA + shader path"
+            ),
+            "admission_scope": "resource-level shader identity; reusable by scene instances",
+        },
+    }
 
     resources = build_resource_index(
         [
