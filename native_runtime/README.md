@@ -20,7 +20,7 @@ MGEO → native IR → XCB window → Vulkan swapchain → indexed draw → fram
 
 The renderer consumes normalized native IR. Original BFF parsing remains upstream in the existing Python importer/resource pipeline.
 
-The runtime accepts either a single MGEO mesh or a prepared `SHIFT.BMWVulkanBundle/1`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`, with evidence-shaped camera double-buffer state, vehicle control intent and a physics participant/tick boundary. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
+The runtime accepts a single MGEO mesh, a prepared `SHIFT.BMWVulkanBundle/1`, the historical BMW bundle set, or a Phase 586 prepared `SHIFT.NativeSceneVulkanSet/1` via `--scene-set`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`, with evidence-shaped camera double-buffer state, vehicle control intent and a physics participant/tick boundary. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
 
 ## Build
 
@@ -43,7 +43,7 @@ On CI or a headless workstation, run it through Xvfb.
 
 ## Design boundary
 
-This target is deliberately small. Scene streaming and full multi-submesh RenderCommand scheduling are still separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
+This target is deliberately small. Prepared neutral scene scheduling is available through `--scene-set`; retail streaming/LOD, authentic runtime-proven Silverstone inputs and unresolved renderer-owned resources remain separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
 
 
 ## Phase 530 per-draw cull state
@@ -97,3 +97,27 @@ semaphores follow the acquired swapchain image so they are not reused while
 presentation still owns them, as described in the
 [Khronos Vulkan guide](https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html).
 Linux CI validates both single-draw and multi-draw runs across 12 frames.
+
+
+## Phase 586 neutral scene-set mode
+
+Prepare the Phase 585 set first:
+
+```bash
+python shift_importer.py native-scene-vulkan-prepare \
+  out/native-scene-vulkan \
+  --validator glslangValidator
+```
+
+Then run:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --frames 120 --validation
+```
+
+This mode requires neutral child prepare/interface gates and applies each
+`world_transform.svwt` before GPU upload with the Phase 584 semantic affine
+rules. The BMW `--bundle-set` ABI remains supported independently.

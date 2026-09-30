@@ -34,7 +34,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 2. Connect the existing evidence-backed camera update/snapshot contracts to the native state double buffer.
 3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
-5. Connect scene/track resource loading. Phase 581 serializes scene transforms as SVWT, Phase 583 upgrades native geometry to semantic-aware SVGP v3, Phase 584 executes general non-singular affine transforms in the standalone native material executor, and Phase 585 prepares ordered neutral scene children through SPIR-V/interface/provenance/SVWT gates. Direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion into native_runtime remains.
+5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Add keyboard/gamepad vehicle controls beyond the neutral intent layer.
 7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
 
@@ -80,3 +80,19 @@ A blocked submesh does not erase ready siblings, but the complete set remains
 fail-closed until every selected child is ready. The existing single-submesh
 adapter and CLI remain available; `--all-submeshes` selects the Phase 527
 set path.
+
+
+## Phase 586 neutral scene-set execution
+
+The runtime now accepts `--scene-set DIR` only for a ready
+`SHIFT.NativeSceneVulkanSet/1` with a ready
+`SHIFT.NativeSceneVulkanSetPrepare/1` in `bundle_set_prepare.json`.
+
+Neutral children must be `SHIFT.VulkanDrawBundle/1` with ready
+`SHIFT.VulkanDrawBundlePrepare/1`, native-submission, SPIR-V and
+`SHIFT.VulkanInterfaceGate/1` artifacts.
+
+Before upload, `world_transform.svwt` is applied with the Phase 584 semantic
+affine rules. BMW `--bundle-set` remains a separate compatible path.
+
+Linux Vulkan CI executes a validated three-frame neutral scene-set smoke.
