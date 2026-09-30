@@ -195,7 +195,10 @@ def extract_registry(source: Path, exe: Path | None = None) -> dict:
 
     classes: list[dict] = []
     for match in _REGISTRATION_CALL.finditer(text):
-        tail = text[match.end():match.end() + 1000]
+        function_end = text.find("\n}", match.end())
+        if function_end < 0:
+            continue
+        tail = text[match.end():function_end]
         descriptor_match = _DESCRIPTOR_ASSIGN.search(tail)
         if descriptor_match is None:
             continue
