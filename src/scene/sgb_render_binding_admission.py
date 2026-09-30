@@ -172,6 +172,7 @@ def build_sgb_render_binding_admission(
                     "resource_factory": resource.get(
                         "factory_classification"
                     ),
+                    "meshinst_runtime": resource.get("meshinst_runtime"),
                     "transform_mode": transform.get("mode"),
                     "world_matrix": world_matrix,
                 },
