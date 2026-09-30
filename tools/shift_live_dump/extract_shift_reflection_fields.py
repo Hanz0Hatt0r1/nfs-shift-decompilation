@@ -99,13 +99,18 @@ def _resolve_name_token(
     return _pe_string(exe_data, pe[0], pe[1], address)
 
 
-def extract_reflection_fields(source: Path, exe: Path | None = None) -> dict:
+def extract_reflection_fields(
+    source: Path,
+    exe: Path | None = None,
+    registry: dict | None = None,
+) -> dict:
     source_data = source.read_bytes()
     text = source_data.decode("utf-8", errors="replace")
     exe_data = exe.read_bytes() if exe is not None else None
     pe = _pe_sections(exe_data) if exe_data is not None else None
 
-    registry = extract_registry(source, exe)
+    if registry is None:
+        registry = extract_registry(source, exe)
     function_positions, function_names = _function_index(text)
     by_metadata = {
         row["reflection_metadata_symbol"]: row
