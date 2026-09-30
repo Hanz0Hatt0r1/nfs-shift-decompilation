@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 540.**
+**Current mainline: Phase 541.**
 
 
 
@@ -68,15 +68,16 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 44. Build a per-primitive runtime shader target set from every statically tied top-rank permutation/pair/hash without selecting one — Phase 538 implemented.
 45. Match the Phase 538 target set against exact MEB identity, indexed draw ranges and same-instance D3D9 shader hashes — Phase 539 implemented.
 46. Prefilter raw D3D9 JSONL by target shader byte hashes and canonical draw ranges before full runtime reconstruction — Phase 540 implemented.
-47. Capture one real BMW M3 body frame with the existing D3D9 producer and close the concrete retail FXO permutation attribution.
-48. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
-49. Expand the desktop reference renderer against real BMW material/shader permutations.
-50. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
-51. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
-52. Continue with deeper OBJECT/HIERARCHY fields and FLAT leaf semantics.
-53. Derive proven animation poses from the BAB runtime grammar.
-54. Port the stable native render/runtime boundary to Android.
-55. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+47. Reuse the committed frame-30444 draw-local constant-register witness to reduce the retail top-rank shader sets from 18/20/10/27/10 to 2/4/2/4/2 without selecting a winner — Phase 541 implemented.
+48. Capture one real BMW M3 body frame with raw shader hashes or find a stronger source-backed pass/permutation discriminator to close concrete FXO attribution.
+49. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
+50. Expand the desktop reference renderer against real BMW material/shader permutations.
+51. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
+52. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
+53. Continue with deeper OBJECT/HIERARCHY fields and FLAT leaf semantics.
+54. Derive proven animation poses from the BAB runtime grammar.
+55. Port the stable native render/runtime boundary to Android.
+56. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -85,7 +86,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BFF/XMem-LZX | verified | broader uncommon-variant coverage |
 | Resource IR | active | remaining format-specific joins |
 | MEB / vertex ABI | strong static | more runtime same-instance proofs |
-| Material/shader linking | raw + reconstructed BMW capture matchers implemented | one authentic D3D9 BMW body capture |
+| Material/shader linking | raw/reconstructed BMW matchers + frame-30444 register filter | distinguish remaining 2/4-way FXO sets with shader-byte/pass evidence |
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
