@@ -310,7 +310,7 @@ def _parse_node(
     )
 
 
-def _parse_part(def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str, Any]]:
+def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str, Any]]:
     rows = []
     cursor = start + 12
     for index in range(count):
@@ -462,7 +462,7 @@ def _parse_summ(
     )
 
 
-def _parse_occl(def _parse_occl(
+def _parse_occl(
     data: bytes,
     start: int,
     end: int,
