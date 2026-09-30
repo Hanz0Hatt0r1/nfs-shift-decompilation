@@ -119,6 +119,12 @@ def test_flat_leaf_decodes_source_backed_filter_masks_and_sphere():
     assert leaf["unresolved_spatial_words_20_34"]["float_view"] == pytest.approx(
         [-1.0, -2.0, -3.0, 4.0, 5.0, 6.0]
     )
+    candidate = leaf["spatial_bounds_candidate"]
+    assert candidate["min_xyz"] == pytest.approx([-1.0, -2.0, -3.0])
+    assert candidate["max_xyz"] == pytest.approx([4.0, 5.0, 6.0])
+    assert candidate["source_consumer_proven"] is False
+    assert candidate["ordered_axes"] is True
+    assert candidate["semantic_status"] == "corpus-verified-candidate"
 
     consumer = leaf["runtime_consumer_metadata"]
     assert consumer["filter_mask_query"]["include_offsets"] == [0x00, 0x04]
@@ -219,3 +225,30 @@ def test_negative_serialized_span_blocks_when_normalization_disabled():
             data,
             normalize_signed_terminal_spans=False,
         )
+
+
+
+def test_flat_leaf_bounds_candidate_reports_sphere_midpoint_invariant():
+    data = _node([
+        _leaf(
+            2,
+            sphere=(1.0, 2.0, 3.0, 4.0),
+            unresolved=(-3.0, -4.0, -5.0, 5.0, 8.0, 11.0),
+        )
+    ])
+    candidate = parse_flat_runtime(data)["root"]["records"][0][
+        "spatial_bounds_candidate"
+    ]
+
+    assert candidate["bounding_sphere_center_midpoint_xyz"] == pytest.approx(
+        [1.0, 2.0, 3.0]
+    )
+    assert candidate[
+        "bounding_sphere_center_midpoint_max_abs_error"
+    ] == pytest.approx(0.0)
+    observation = candidate["silverstone_era3_observation"]
+    assert observation["leaf_count"] == 21580
+    assert observation["midpoint_match_count"] == 21580
+    assert observation["max_midpoint_error"] == pytest.approx(
+        6.103515625e-05
+    )
