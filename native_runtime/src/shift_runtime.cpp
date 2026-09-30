@@ -2831,6 +2831,8 @@ Args parse_args(int argc, char** argv) {
             else if (option == "--camera-state") args.camera_state = value;
             else if (option == "--physics-manifest") {
                 args.physics_manifest = value;
+            } else if (option == "--participant-boundary") {
+                args.participant_boundary = value;
             } else if (option == "--shader-dir") {
                 args.shader_dir = value;
             } else {
