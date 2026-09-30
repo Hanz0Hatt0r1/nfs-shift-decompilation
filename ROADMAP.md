@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 547.**
+**Current mainline: Phase 548.**
 
 
 
@@ -80,10 +80,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 56. Join FLAT leaf runtime indices to SUMM wrapper order and PART one-based child IDs to the NODE wrapper registry; record PART-to-FLAT runtime materialization — Phase 545 implemented.
 57. Map source-backed FLAT include/exclude masks, bounding spheres and tree-node AABBs while retaining leaf +0x20..+0x34 only as a corpus-verified bounds candidate — Phase 546 implemented.
 58. Normalize FLAT/SUMM and PART/NODE identity plus proven spatial geometry into fail-closed SHIFT.SGBScenePlacement/1 — Phase 547 implemented.
-59. Prove the SGB object/resource-to-render-node and world-transform handoff, then admit only proven placements into RenderBinding.
-60. Derive proven animation poses from the BAB runtime grammar.
-61. Port the stable native render/runtime boundary to Android.
-62. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+59. Prove the direct spatial-query consumer for FLAT leaf +0x20..+0x34 and promote the corpus bounds candidate into proven ScenePlacement geometry — Phase 548 implemented.
+60. Prove the SGB object/resource-to-render-node and world-transform handoff, then admit only proven placements into RenderBinding.
+61. Derive proven animation poses from the BAB runtime grammar.
+62. Port the stable native render/runtime boundary to Android.
+63. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
