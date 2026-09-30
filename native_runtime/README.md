@@ -169,3 +169,30 @@ If `--frames` is omitted, the script row count becomes the run length. If
 The script is native test/control infrastructure only. It does not claim retail
 gamepad dead zones, analog response curves, filtering or vehicle-force
 semantics.
+
+
+## Phase 602 participant topology bridge
+
+Build the source-backed native participant topology:
+
+```bash
+python shift_importer.py native-vehicle-participant-bridge \
+  out/native-participant.json
+```
+
+Pass it to the runtime together with any existing camera/input evidence:
+
+```bash
+xvfb-run -a native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --participant-bridge out/native-participant.json \
+  --input-script out/native_input.script \
+  --validation
+```
+
+This does not create a retail participant. The manager registry index and
+selector ordinal remain distinct `-1` values until runtime evidence proves an
+identity join. The fixed-step report exposes topology/ready/unresolved counters
+so unresolved participant state cannot be mistaken for working vehicle
+physics.
