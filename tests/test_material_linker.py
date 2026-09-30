@@ -314,3 +314,19 @@ def test_candidate_identity_falls_back_to_location_without_byte_hashes():
     first = {"file": "a.fxo", "program_offset": 100}
     second = {"file": "b.fxo", "program_offset": 100}
     assert _candidate_identity(first) != _candidate_identity(second)
+
+
+def test_candidate_identity_fallback_distinguishes_explicit_vertex_offsets():
+    from material_linker import _candidate_identity
+
+    first = {
+        "file": "a.fxo",
+        "program_offset": 100,
+        "vertex_program_offset": 40,
+    }
+    second = {
+        "file": "a.fxo",
+        "program_offset": 100,
+        "vertex_program_offset": 80,
+    }
+    assert _candidate_identity(first) != _candidate_identity(second)
