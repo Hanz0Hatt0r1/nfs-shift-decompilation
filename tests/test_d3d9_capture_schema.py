@@ -260,3 +260,68 @@ def test_capture_schema_rejects_buffer_payload_with_invalid_kind():
         "payload_path": "x.bin",
     }
     assert "buffer-payload:resource-type-invalid" in validate_capture_event(row)
+
+
+
+def test_capture_schema_accepts_draw_texture_snapshot():
+    row = {
+        "event": "draw_texture_snapshot",
+        "frame": 4,
+        "event_index": 20,
+        "draw_index": 3,
+        "stage": 7,
+        "texture_ptr": "0x700",
+        "resource_descriptor_status": "observed",
+        "resource_type_name": "texture2d",
+        "width": 256,
+        "height": 256,
+        "format": 21,
+        "pool": 0,
+        "level_count": 1,
+        "snapshot_status": "captured",
+        "snapshot_paths": [
+            "textures/shift_d3d9_s7_700_f4_d3.ppm"
+        ],
+    }
+    assert validate_capture_event(row) == []
+
+
+def test_capture_schema_rejects_invalid_draw_texture_snapshot():
+    row = {
+        "event": "draw_texture_snapshot",
+        "frame": 4,
+        "draw_index": -1,
+        "stage": -2,
+        "texture_ptr": "0x700",
+        "snapshot_status": "bad",
+        "snapshot_paths": [""],
+    }
+    reasons = validate_capture_event(row)
+    assert "draw-texture:draw-index-invalid" in reasons
+    assert "draw-texture:stage-invalid" in reasons
+    assert "draw-texture:status-invalid" in reasons
+    assert "draw-texture:paths-invalid" in reasons
+
+
+def test_capture_schema_accepts_optional_draw_index_on_draw():
+    row = {
+        "event": "draw_indexed_primitive",
+        "frame": 4,
+        "draw_index": 0,
+        "primitive_count": 2,
+        "start_index": 6,
+        "base_vertex_index": 0,
+    }
+    assert validate_capture_event(row) == []
+
+
+def test_capture_schema_rejects_negative_draw_index_on_draw():
+    row = {
+        "event": "draw_indexed_primitive",
+        "frame": 4,
+        "draw_index": -1,
+        "primitive_count": 2,
+        "start_index": 6,
+        "base_vertex_index": 0,
+    }
+    assert "draw:draw-index-invalid" in validate_capture_event(row)
