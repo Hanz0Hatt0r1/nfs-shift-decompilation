@@ -384,12 +384,13 @@ def test_native_scene_vulkan_set_builds_ordered_runtime_proven_child(
         "draw_0000"
     )
 
-    assert report["native_scene_submission"]["ready"] is False
-    assert (
-        "draw-0:scene-world-transform-not-executed"
-        in report["native_scene_submission"]["blocking_reasons"]
+    assert report["native_scene_submission"]["ready"] is True
+    assert report["native_scene_submission"]["blocking_reasons"] == []
+    assert report["boundary"]["world_transform_executed"] is True
+    assert child["bundle"]["scene_transform_executed"] is True
+    assert child["bundle"]["scene_transform_mode"] == (
+        "cpu-baked-row-vector-affine"
     )
-    assert report["boundary"]["world_transform_executed"] is False
 
 
 def test_native_scene_vulkan_set_resolves_material_dds_from_ir(tmp_path):
@@ -524,3 +525,25 @@ def test_native_scene_vulkan_set_requires_scene_and_bridge_contracts(
         assert "SHIFT.SGBRenderBindingBridge/1" in str(error)
     else:
         raise AssertionError("invalid scene bridge format was accepted")
+
+
+def test_native_scene_vulkan_set_bakes_world_translation_into_geometry(
+    tmp_path,
+):
+    root, scene, bridge = _scene_and_bridge(tmp_path, tx=25.0)
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+    )
+
+    assert report["ready"] is True
+    assert report["native_scene_submission"]["ready"] is True
+    geometry = tmp_path / "vulkan-set/draw_0000/geometry.svpk"
+    raw = geometry.read_bytes()
+
+    # SVGP v2: 44-byte header + one 16-byte POSITION attribute.
+    position = struct.unpack_from("<3f", raw, 44 + 16)
+    assert position == (25.0, 20.0, 30.0)
