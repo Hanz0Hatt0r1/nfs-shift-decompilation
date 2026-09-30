@@ -506,3 +506,28 @@ def test_runtime_admission_accepts_content_equivalent_fxo_copies():
         row["file"]
         for row in admitted["runtime_selection"]["matching_static_locations"]
     } == {"a.fxo", "b.fxo"}
+
+
+def test_runtime_admitted_material_passes_generic_native_gate():
+    from bmw_material_from_bff import validate_generic_material_binding
+
+    source, material, data = _ambiguous_runtime_link_inputs()
+    static = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+    )
+    target = static["fxo_candidates"][1]
+    admitted = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+        runtime_admission=_runtime_admission_from_candidate(target),
+    )
+
+    gate = validate_generic_material_binding(admitted)
+    assert gate["ready"] is True, gate["blocking_reasons"]
