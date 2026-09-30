@@ -1,7 +1,7 @@
 """Prepare one runtime-proven neutral RenderCommand draw for Vulkan.
 
 This is the neutral counterpart to the BMW-specific bundle builder. It accepts
-neutral geometry (including SHIFT.NeutralMesh/1 from the IMB adapter), preserves
+neutral geometry (including SHIFT.NeutralMesh/1 from IMB/IMX adapters), preserves
 RuntimeProvenDraw provenance, and reuses the existing native submission,
 geometry, constants, texture, sampler and pipeline-state gates.
 
@@ -110,10 +110,15 @@ def _external_sampler_status(
 
 def _neutral_mesh(value: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     source = dict(value)
-    if source.get("format") == "SHIFT.IMBNeutralGeometry/1":
+    if source.get("format") in {
+        "SHIFT.IMBNeutralGeometry/1",
+        "SHIFT.IMXNeutralGeometry/1",
+    }:
         mesh = source.get("mesh")
         if not isinstance(mesh, Mapping):
-            raise ValueError("IMB neutral geometry does not contain mesh")
+            raise ValueError(
+                "neutral MeshInst geometry wrapper does not contain mesh"
+            )
         return dict(mesh), {
             "input_format": source.get("format"),
             "mesh_format": mesh.get("format"),
@@ -127,7 +132,8 @@ def _neutral_mesh(value: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, A
     }:
         raise ValueError(
             "mesh must be SHIFT.MEB, SHIFT.NeutralMesh/1, "
-            "SHIFT.IMBNeutralGeometry/1, or an untagged neutral mesh"
+            "SHIFT.IMBNeutralGeometry/1, SHIFT.IMXNeutralGeometry/1, "
+            "or an untagged neutral mesh"
         )
     return source, {
         "input_format": source.get("format"),
