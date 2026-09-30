@@ -525,18 +525,39 @@ void load_participant_boundary(
         json_u32_field(path, "registry_slot_stride");
     const uint32_t descriptor_type =
         json_u32_field(path, "participant_descriptor_type");
-    if (slot_stride != 0x1fa0u || descriptor_type != 3u) {
+    const uint32_t registry_index_source_offset =
+        json_u32_field(path, "registry_index_source_offset");
+    const uint32_t candidate_ready_offset =
+        json_u32_field(path, "selector_candidate_ready_offset");
+    if (slot_stride != 0x1fa0u ||
+        descriptor_type != 3u ||
+        registry_index_source_offset != 0x3cu ||
+        candidate_ready_offset != 0x74u) {
         throw std::runtime_error(
             "native physics participant structural ABI mismatch");
     }
 
+    const bool identity_join_proven =
+        json_bool_field(
+            path,
+            "registry_selector_identity_join_proven");
+    const int32_t registry_index =
+        json_i32_field(path, "participant_registry_index");
+    const int32_t selector_ordinal =
+        json_i32_field(path, "selector_ordinal");
+    const int32_t process_state =
+        json_i32_field(path, "participant_process_state");
     if (!file_contains(
             path,
             "\"participant_instance_ready\": false") ||
+        identity_join_proven ||
+        registry_index != -1 ||
+        selector_ordinal != -1 ||
+        process_state != -1 ||
         !file_contains(path, "\"participant_index\": -1") ||
         !file_contains(path, "\"participant_mode\": -1")) {
         throw std::runtime_error(
-            "native physics participant boundary overclaims runtime instance");
+            "native physics participant boundary overclaims runtime identity");
     }
 
     physics.participant_contract_ready = true;
@@ -544,9 +565,15 @@ void load_participant_boundary(
     physics.selector_context_separate = true;
     physics.registry_slot_stride = slot_stride;
     physics.participant_descriptor_type = descriptor_type;
+    physics.participant_identity_join_proven =
+        identity_join_proven;
 
-    // Concrete runtime participant identity remains capture-gated.
+    // Concrete runtime participant identity remains capture-gated. Registry
+    // index and selector ordinal are separate observed domains.
     physics.participant_ready = false;
+    physics.participant_registry_index = registry_index;
+    physics.selector_ordinal = selector_ordinal;
+    physics.participant_process_state = process_state;
     physics.participant_index = -1;
     physics.participant_mode = -1;
 }
@@ -3332,9 +3359,30 @@ int main(int argc, char** argv) {
             << "  \"physics_participant_descriptor_type\": "
             << native_state.physics.participant_descriptor_type
             << ",\n"
+            << "  \"physics_participant_identity_join_proven\": "
+            << (native_state.physics.participant_identity_join_proven ?
+                "true" : "false") << ",\n"
             << "  \"physics_participant_ready\": "
             << (native_state.physics.participant_ready ?
                 "true" : "false") << ",\n"
+            << "  \"physics_participant_registry_index\": "
+            << native_state.physics.participant_registry_index
+            << ",\n"
+            << "  \"physics_selector_ordinal\": "
+            << native_state.physics.selector_ordinal
+            << ",\n"
+            << "  \"physics_participant_process_state\": "
+            << native_state.physics.participant_process_state
+            << ",\n"
+            << "  \"physics_participant_topology_steps\": "
+            << native_state.physics.participant_topology_steps
+            << ",\n"
+            << "  \"physics_participant_ready_steps\": "
+            << native_state.physics.participant_ready_steps
+            << ",\n"
+            << "  \"physics_participant_unresolved_steps\": "
+            << native_state.physics.participant_unresolved_steps
+            << ",\n"
             << "  \"physics_participant_index\": "
             << native_state.physics.participant_index
             << ",\n"
