@@ -219,7 +219,7 @@ def test_phase586_keeps_bmw_bundle_set_abi():
     assert '"--bundle-set"' in source
 
 
-def test_phase593_native_runtime_loads_evidence_backed_camera_state():
+def test_phase594_native_runtime_loads_evidence_backed_camera_state():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(
         encoding="utf-8"
     )
