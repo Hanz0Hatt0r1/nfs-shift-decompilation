@@ -104,9 +104,7 @@ Phase 581 proves the SVWT transport convention without assigning any retail
 shader constant register. Phase 582 begins real material-path consumption with
 translation-only execution. Phase 583 upgrades the native geometry packet to
 semantic-aware SVGP v3 so POSITION 200, NORMAL 220, TANGENT 240 and TANGENT2
-250 are explicit. Phase 584 uses those semantics for full non-singular affine
-execution in the standalone native material path: affine POSITION transform,
-inverse-transpose NORMAL and linear normalized tangent bases.
+250 are explicit. Phase 584 uses those semantics for non-singular positive-orientation affine execution in the standalone native material path: affine POSITION transform, inverse-transpose NORMAL and linear normalized tangent bases. Reflections remain fail-closed until winding/handedness behavior is proven.
 
 ### Native Linux runtime
 
@@ -391,7 +389,8 @@ For current state, prefer operational status documents over old phase notes:
 - `docs/PHASE580_NATIVE_SCENE_VULKAN_SET.md`;
 - `docs/PHASE581_VULKAN_WORLD_TRANSFORM_PACKET.md`;
 - `docs/PHASE582_NATIVE_TRANSLATION_SVWT.md`;
-- `docs/PHASE583_SVGP_SEMANTIC_ABI.md`;\n- `docs/PHASE584_AFFINE_SVWT_EXECUTION.md`.
+- `docs/PHASE583_SVGP_SEMANTIC_ABI.md`;
+- `docs/PHASE584_AFFINE_SVWT_EXECUTION.md`.
 
 Historical phase files preserve the evidence trail and are not rewritten
 retroactively when newer work changes the current operational boundary.
