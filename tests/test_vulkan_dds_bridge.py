@@ -4,6 +4,7 @@ import struct
 from pathlib import Path
 
 from vulkan_dds_bridge import FORMAT_BRIDGE, bridge_bmw_dds_resources
+from vulkan_texture_packet import HEADER, RECORD
 
 
 def _dds_header(width=4, height=4, *, fourcc=b"", caps2=0):
@@ -164,3 +165,74 @@ def test_dds_bridge_does_not_double_report_incompatible_2d_resource_as_missing(t
     assert result["ready"] is False
     assert "dds-bridge:cubemap-supplied-to-2d-register:s1" in result["blocking_reasons"]
     assert "dds-bridge:missing-2d-ds:s1" not in result["blocking_reasons"]
+
+
+def _command_with_external_2d():
+    command = _command()
+    command["submeshes"][0]["external_samplers"].append({
+        "sampler": "shadowMap",
+        "sampler_type": "sampler2D",
+        "d3d9_sampler_register": 0,
+        "sampler_state": {
+            "min_filter": "LINEAR",
+            "mag_filter": "LINEAR",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
+    })
+    return command
+
+
+def test_dds_bridge_transports_external_sampler2d_snapshot(tmp_path):
+    diffuse = tmp_path / "diffuse.dds"
+    shadow = tmp_path / "shadow.dds"
+    cube = tmp_path / "environment.dds"
+    _write_dds(diffuse)
+    _write_dds(shadow)
+    _write_cube(cube)
+
+    output = tmp_path / "out"
+    result = bridge_bmw_dds_resources(
+        _command_with_external_2d(),
+        {"0": str(shadow), "1": str(diffuse)},
+        output,
+        environment_cube_dds=cube,
+    )
+
+    assert result["ready"] is True, result["blocking_reasons"]
+    assert result["material_2d_registers"] == [1]
+    assert result["external_2d_registers"] == [0]
+    assert result["environment_cube_registers"] == [3]
+    sources = {
+        (row["kind"], row["register"]): row
+        for row in result["decoded_sources"]
+    }
+    assert ("external-2d", 0) in sources
+    assert ("2d", 1) in sources
+    assert ("cube", 3) in sources
+
+    raw = (output / "textures.svtp").read_bytes()
+    header = HEADER.unpack_from(raw)
+    assert header[:4] == (b"SVTP", 1, 2, 1)
+    registers = [
+        RECORD.unpack_from(raw, HEADER.size + index * RECORD.size)[0]
+        for index in range(2)
+    ]
+    assert registers == [0, 1]
+
+
+def test_dds_bridge_requires_declared_external_sampler2d_snapshot(tmp_path):
+    diffuse = tmp_path / "diffuse.dds"
+    cube = tmp_path / "environment.dds"
+    _write_dds(diffuse)
+    _write_cube(cube)
+
+    result = bridge_bmw_dds_resources(
+        _command_with_external_2d(),
+        {"1": str(diffuse)},
+        tmp_path / "out",
+        environment_cube_dds=cube,
+    )
+
+    assert result["ready"] is False
+    assert "dds-bridge:missing-2d-ds:s0" in result["blocking_reasons"]
