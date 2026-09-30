@@ -1956,6 +1956,7 @@ def cmd_vulkan_draw_bundle(args: argparse.Namespace) -> int:
         command_index=args.command_index,
         submesh_index=args.submesh_index,
         require_runtime_provenance=not args.allow_static,
+        apply_scene_transform=args.apply_scene_transform,
     )
     print(json.dumps({
         "format": result["format"],
@@ -4365,6 +4366,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--allow-static",
         action="store_true",
         help="do not require SHIFT.RuntimeProvenDraw/1",
+    )
+    p.add_argument(
+        "--apply-scene-transform",
+        action="store_true",
+        help="bake RenderCommand world_matrix into Vulkan geometry",
     )
     p.set_defaults(fn=cmd_vulkan_draw_bundle)
 
