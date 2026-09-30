@@ -183,6 +183,11 @@ def validate_capture_event(row: Mapping[str, Any]) -> list[str]:
                 reasons.append(f'draw:{key}:invalid')
         if isinstance(row.get('primitive_count'), int) and row['primitive_count'] < 0:
             reasons.append('draw:primitive-count-negative')
+        if row.get('draw_index') is not None and (
+            not isinstance(row.get('draw_index'), int)
+            or row.get('draw_index') < 0
+        ):
+            reasons.append('draw:draw-index-invalid')
     if event in {'set_vertex_shader_constant_f','set_pixel_shader_constant_f'}:
         start=row.get('start_register')
         count=row.get('vector4f_count', row.get('register_count'))
