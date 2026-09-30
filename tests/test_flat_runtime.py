@@ -114,7 +114,7 @@ def test_flat_leaf_decodes_source_backed_filter_masks_and_sphere():
     assert leaf["bounding_sphere"]["radius"] == pytest.approx(9.5)
     assert leaf["bounding_sphere"]["source_offset"] == 0x10
     assert leaf["unresolved_spatial_words_20_34"]["semantic_status"] == (
-        "unresolved"
+        "unresolved-source-consumer"
     )
     assert leaf["unresolved_spatial_words_20_34"]["float_view"] == pytest.approx(
         [-1.0, -2.0, -3.0, 4.0, 5.0, 6.0]
