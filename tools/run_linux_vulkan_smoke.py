@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from copy import deepcopy
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -127,6 +128,73 @@ def mesh():
         "indices": [0,1,2],
     }
 
+
+def affine_render_command():
+    command = deepcopy(render_command())
+    command["mesh"]["vertex_layout"] = {
+        "format": "SHIFT.VertexLayout/1",
+        "buffer_stride": 48,
+        "attributes": [
+            {
+                "property_id": "200", "usage": "POSITION", "usage_index": 0,
+                "location": 0, "offset": 0, "stride": 48,
+                "storage": "FLOAT32x3", "android": "FLOAT32x3",
+                "components": 3, "normalized": False, "element_size": 12,
+                "abi_status": "proven",
+            },
+            {
+                "property_id": "220", "usage": "NORMAL", "usage_index": 0,
+                "location": 1, "offset": 12, "stride": 48,
+                "storage": "FLOAT32x3", "android": "FLOAT32x3",
+                "components": 3, "normalized": False, "element_size": 12,
+                "abi_status": "proven",
+            },
+            {
+                "property_id": "240", "usage": "TANGENT", "usage_index": 0,
+                "location": 2, "offset": 24, "stride": 48,
+                "storage": "FLOAT32x3", "android": "FLOAT32x3",
+                "components": 3, "normalized": False, "element_size": 12,
+                "abi_status": "proven",
+            },
+            {
+                "property_id": "250", "usage": "TANGENT", "usage_index": 1,
+                "location": 3, "offset": 36, "stride": 48,
+                "storage": "FLOAT32x3", "android": "FLOAT32x3",
+                "components": 3, "normalized": False, "element_size": 12,
+                "abi_status": "proven",
+            },
+        ],
+    }
+    return command
+
+
+def affine_mesh():
+    return {
+        "format": "SHIFT.MEB",
+        "vertices": [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ],
+        "normals": [
+            [1.0, 1.0, 0.0],
+            [1.0, 1.0, 0.0],
+            [1.0, 1.0, 0.0],
+        ],
+        "tangents": [
+            [1.0, 1.0, 0.0],
+            [1.0, 1.0, 0.0],
+            [1.0, 1.0, 0.0],
+        ],
+        "tangents2": [
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+        ],
+        "indices": [0, 1, 2],
+    }
+
+
 def multidraw_command():
     command = deepcopy(render_command())
     command["mesh"]["vertex_count"] = 4
@@ -232,6 +300,98 @@ def main():
     if output.read_bytes()[:2] != b"P6":
         raise SystemExit("not a PPM")
 
+    # Phase 584: execute a real semantic-aware affine SVWT over POSITION,
+    # NORMAL, TANGENT and TANGENT2. The linear part combines a 90-degree
+    # rotation with non-uniform positive scale, so normal and tangent probes
+    # diverge unless inverse-transpose handling is correct.
+    affine_bundle_dir = root / "affine_bundle"
+    affine_slice = {
+        "format": "SHIFT.BMWRealMaterialSlice/1",
+        "render_command": affine_render_command(),
+        "mesh": affine_mesh(),
+    }
+    affine_adapter = build_bmw_vulkan_from_material_slice(
+        affine_slice,
+        affine_bundle_dir,
+        textures={"1": texture()},
+        environment_cube=cube(),
+    )
+    if not affine_adapter["ready"]:
+        raise SystemExit(
+            "affine material-slice adapter blocked: "
+            + ", ".join(affine_adapter["blocking_reasons"])
+        )
+    build_vulkan_world_transform_packet(
+        {
+            "world_matrix": [
+                0.0, 2.0, 0.0, 0.0,
+                -3.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 4.0, 0.0,
+                10.0, 20.0, 30.0, 1.0,
+            ]
+        },
+        affine_bundle_dir / "world_transform.svwt",
+    )
+    affine_result = run_bmw_vulkan_bundle(
+        affine_bundle_dir,
+        executable=args.executable,
+        validation=args.validation,
+        validator=args.validator,
+        output=affine_bundle_dir / "affine.ppm",
+    )
+    (root / "affine_result.json").write_text(
+        json.dumps(
+            affine_result,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ) + "\n",
+        encoding="utf-8",
+    )
+    if affine_result["status"] != "rendered":
+        raise SystemExit("affine material executor did not render")
+    affine_native = affine_result["native"]
+    if affine_native.get("world_transform_mode") != "semantic-affine-svgp-v3":
+        raise SystemExit("affine executor did not report semantic SVGP v3 mode")
+    if not math.isclose(
+        float(affine_native.get("world_transform_determinant")),
+        24.0,
+        rel_tol=0.0,
+        abs_tol=1.0e-5,
+    ):
+        raise SystemExit("affine executor reported wrong determinant")
+    if affine_native.get("world_transform_properties") != [200, 220, 240, 250]:
+        raise SystemExit("affine executor transformed unexpected semantics")
+    probes = affine_native.get("world_transform_probe") or {}
+
+    def assert_vec3(name, expected):
+        actual = probes.get(name)
+        if not isinstance(actual, list) or len(actual) != 3:
+            raise SystemExit(f"missing affine {name} probe")
+        if any(
+            not math.isclose(
+                float(value),
+                float(target),
+                rel_tol=0.0,
+                abs_tol=2.0e-4,
+            )
+            for value, target in zip(actual, expected)
+        ):
+            raise SystemExit(
+                f"affine {name} probe mismatch: {actual} != {expected}"
+            )
+
+    assert_vec3("position", [10.0, 22.0, 30.0])
+    assert_vec3(
+        "normal",
+        [-0.5547001962, 0.8320502943, 0.0],
+    )
+    assert_vec3(
+        "tangent",
+        [-0.8320502943, 0.5547001962, 0.0],
+    )
+    assert_vec3("tangent2", [0.0, 0.0, 1.0])
+
     bundle_set_dir = root / "bundle_set"
     multi_material_slice = {
         "format": "SHIFT.BMWRealMaterialSlice/1",
@@ -273,6 +433,8 @@ def main():
         "bundle_set_prepare_format": set_prepare["format"],
         "bundle_set_draws": set_prepare["draw_count"],
         "world_transform_executed": True,
+        "affine_world_transform_executed": True,
+        "affine_world_transform_properties": [200, 220, 240, 250],
     }, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":
