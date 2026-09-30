@@ -1,8 +1,8 @@
-"""Compile Vulkan shader sources from a prepared BMW Vulkan bundle.
+"""Compile Vulkan shader sources from prepared SHIFT Vulkan draw bundles.
 
-Compilation is optional on developer machines without glslangValidator. When the
-compiler exists, every copied bundle shader must compile to SPIR-V or the bundle
-compile gate fails closed.
+The neutral API accepts both the established BMW bundle and the generic
+VulkanDrawBundle contract. The legacy BMW wrapper keeps its original input and
+report shape. Every copied shader must compile and reflect or the gate fails closed.
 """
 from __future__ import annotations
 
