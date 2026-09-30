@@ -183,3 +183,33 @@ def test_native_runtime_accepts_svgp_v3_semantics_and_legacy_packets():
     assert "legacy.location == 0u ? 200u : 0u" in source
     assert "invalid version-1 SVGP geometry attribute" in source
     assert "position->property_id != 200u" in source
+
+
+def test_native_runtime_accepts_neutral_scene_sets_and_executes_svwt():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert '"--scene-set"' in source
+    assert "SHIFT.NativeSceneVulkanSet/1" in source
+    assert "SHIFT.NativeSceneVulkanSetPrepare/1" in source
+    assert "native_scene_set_prepare.json" in source
+    assert "SHIFT.VulkanDrawBundle/1" in source
+    assert "WorldTransformHeader" in source
+    assert "apply_bundle_world_transform" in source
+    assert "SVWT affine linear transform is singular" in source
+    assert "SVWT NORMAL property 220 must be FLOAT3" in source
+    assert "SVWT TANGENT property 240 must be FLOAT3" in source
+    assert "SVWT TANGENT2 property 250 must be FLOAT3" in source
+    assert "scene_set_mode" in source
+
+
+def test_native_runtime_keeps_bmw_bundle_set_compatibility():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "SHIFT.BMWVulkanBundleSet/1" in source
+    assert "SHIFT.BMWVulkanBundleSetPrepare/1" in source
+    assert "bundle_set_prepare.json" in source
+    assert "load_bundle_set_paths(" in source
