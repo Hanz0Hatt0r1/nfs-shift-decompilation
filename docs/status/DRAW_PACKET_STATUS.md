@@ -36,7 +36,7 @@ The desktop oracle consumes RenderCommand/1 directly. Vulkan is required to cons
 
 ## Scene placement handoff
 
-`SHIFT.SGBScenePlacement/1` provides render-facing spatial/object identity, OBJECT/MultiMatrix/root contracts provide resource and world-transform state, and `SHIFT.SGBRenderBindingAdmission/1` now joins them per wrapper/OBJECT path. Ready rows may enter the generic resource pipeline; MatrixNumber rows with unknown SceneGraph update history remain independently blocked.
+`SHIFT.SGBScenePlacement/1` provides render-facing spatial/object identity, OBJECT/MultiMatrix/root contracts provide resource and world-transform state, and `SHIFT.SGBRenderBindingAdmission/1` joins them per wrapper/OBJECT path. `SHIFT.SGBObjectResourceFactory/1` additionally preserves the retail MeshType/type-0 versus MeshInst/type-7 (`.imb/.imx`) split. Only resources with an implemented neutral adapter enter DrawPacket construction; MatrixNumber rows with unknown SceneGraph update history and non-MEB factory payloads remain independently blocked.
 
 ## Remaining render work
 
