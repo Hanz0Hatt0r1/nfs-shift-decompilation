@@ -834,7 +834,7 @@ def build_scene_external_sampler_capture_adapter(
     )
     status = (
         "ready"
-        if ready and required_count
+        if ready and (required_count or required_cube_count)
         else "not-needed"
         if ready
         else "blocked"
@@ -898,7 +898,9 @@ def build_scene_external_sampler_capture_adapter(
                 "snapshot; post-bind mutations are not excluded"
             ),
             "requires_observed_texture2d_creation": True,
+            "requires_observed_cube_texture_creation": True,
             "requires_exactly_one_ppm_snapshot_path": True,
+            "requires_exactly_six_named_cube_face_paths": True,
             "material_textures_promoted": False,
             "sampler_cube_promoted": True,
             "sampler_cube_register_policy": "s3-only",
@@ -954,6 +956,13 @@ def main(argv: list[str] | None = None) -> int:
             "to this path"
         ),
     )
+    parser.add_argument(
+        "--cube-snapshot-output",
+        help=(
+            "write ready SHIFT.NativeSceneExternalSamplerCubeSnapshots/1 "
+            "to this path"
+        ),
+    )
     args = parser.parse_args(argv)
 
     report = validate_files(
@@ -985,6 +994,23 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf-8",
         )
 
+    if (
+        args.cube_snapshot_output
+        and report.get("cube_snapshot_contract") is not None
+    ):
+        cube_output = Path(args.cube_snapshot_output)
+        cube_output.parent.mkdir(parents=True, exist_ok=True)
+        cube_output.write_text(
+            json.dumps(
+                report["cube_snapshot_contract"],
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
     print(json.dumps({
         "format": report["format"],
         "status": report["status"],
@@ -993,6 +1019,7 @@ def main(argv: list[str] | None = None) -> int:
             "required_external_sampler2d_count"
         ],
         "snapshot_count": report["snapshot_count"],
+        "cube_snapshot_count": report["cube_snapshot_count"],
         "blocking_reasons": report["blocking_reasons"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
