@@ -211,6 +211,7 @@ def build_vulkan_draw_bundle(
     command_index: int = 0,
     submesh_index: int = 0,
     require_runtime_provenance: bool = True,
+    apply_scene_transform: bool = False,
 ) -> dict[str, Any]:
     command_source = (
         _load(render_command)
@@ -299,6 +300,7 @@ def build_vulkan_draw_bundle(
         mesh_source,
         geometry_path,
         submesh_index=0,
+        apply_world_matrix=apply_scene_transform,
     )
     constants = build_vulkan_constant_packet(selected, constants_path)
 
@@ -443,9 +445,16 @@ def build_vulkan_draw_bundle(
         blockers.append("vulkan-draw-bundle:environment-cube-not-supplied")
 
     world_matrix = selected_command.get("world_matrix")
+    geometry_transform = geometry.get("scene_transform") or {}
+    transform_executed = (
+        world_matrix is not None
+        and geometry_transform.get("executed") is True
+    )
     transform_status = (
         "identity-or-none"
         if world_matrix is None
+        else "baked-into-geometry"
+        if transform_executed
         else "preserved-not-applied"
     )
 
@@ -488,12 +497,20 @@ def build_vulkan_draw_bundle(
         "scene_transform": {
             "world_matrix": world_matrix,
             "execution_status": transform_status,
-            "blocking_for_scene_native_submission": world_matrix is not None,
+            "blocking_for_scene_native_submission": (
+                world_matrix is not None and not transform_executed
+            ),
+            "geometry_mode": geometry_transform.get("mode"),
+            "transformed_properties": geometry_transform.get(
+                "transformed_properties"
+            ) or [],
             "reason": (
-                "current VulkanGeometryPacket normalizes object geometry "
-                "without applying the SGB world matrix"
-                if world_matrix is not None
-                else None
+                None
+                if world_matrix is None or transform_executed
+                else (
+                    "SGB world matrix was preserved but not applied to "
+                    "the Vulkan geometry packet"
+                )
             ),
         },
         "artifacts": artifacts,
@@ -508,7 +525,12 @@ def build_vulkan_draw_bundle(
         "boundary": {
             "neutral_mesh_container_equivalence": False,
             "runtime_provenance_required": require_runtime_provenance,
-            "scene_world_transform_executed": False,
+            "scene_world_transform_executed": transform_executed,
+            "scene_transform_mode": (
+                geometry_transform.get("mode")
+                if transform_executed
+                else None
+            ),
             "preserves_bmw_bundle_abi": True,
         },
     }
@@ -533,6 +555,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="do not require SHIFT.RuntimeProvenDraw/1",
     )
+    parser.add_argument(
+        "--apply-scene-transform",
+        action="store_true",
+        help="bake RenderCommand world_matrix into Vulkan geometry",
+    )
     args = parser.parse_args(argv)
     result = build_vulkan_draw_bundle(
         args.render_command,
@@ -543,6 +570,7 @@ def main(argv: list[str] | None = None) -> int:
         command_index=args.command_index,
         submesh_index=args.submesh_index,
         require_runtime_provenance=not args.allow_static,
+        apply_scene_transform=args.apply_scene_transform,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["ready"] else 2
