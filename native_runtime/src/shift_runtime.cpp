@@ -3076,7 +3076,7 @@ int main(int argc, char** argv) {
             << static_cast<unsigned>(
                 native_state.camera.active().active_buffer_sub_flag)
             << ",\n"
-            << "  \"vehicle_control_steer_axis\": 
+            << "  \"vehicle_control_steer_axis\": "
             << native_state.physics.last_input.steer_axis()
             << ",\n"
             << "  \"physics_participant_ready\": "
