@@ -431,6 +431,10 @@ def build_render_bindings_from_resource_instances(
         if row.get("binding_index") is not None
     }
     runtime_join_blockers: list[str] = []
+    if runtime_shader_admission is not None and not runtime_admissions:
+        runtime_join_blockers.append(
+            "runtime-shader-admission:no-admitted-bindings"
+        )
     packets: list[dict[str, Any]] = []
     unresolved: list[dict[str, Any]] = []
     static_draws: list[dict[str, Any]] = []
@@ -578,6 +582,9 @@ def build_render_bindings_from_resource_instances(
                     )
                     if material_reasons:
                         runtime_join_blockers.extend(material_reasons)
+                        primitive_admission_reasons.extend(
+                            material_reasons
+                        )
                         primitive_admission = None
                 fx_row = resolve(shader_ref) if shader_ref else None
                 if fx_row:
