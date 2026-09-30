@@ -296,3 +296,66 @@ def test_generic_geometry_metadata_no_longer_claims_meb_space(tmp_path):
         "SHIFT.NeutralMesh/1"
     )
     assert result["boundary"]["neutral_mesh_container_equivalence"] is False
+
+
+def _external_reference_texture():
+    return {
+        "format": "SHIFT.ReferenceTexture/1",
+        "width": 1,
+        "height": 1,
+        "pixel_format": "RGBA8",
+        "pixels": [9, 8, 7, 255],
+    }
+
+
+def _add_external_2d(command):
+    command["submeshes"][0]["external_samplers"] = [{
+        "sampler": "shadowMap",
+        "sampler_type": "sampler2D",
+        "d3d9_sampler_register": 7,
+        "sampler_state": {
+            "format": "SHIFT.SamplerState/1",
+            "min_filter": "LINEAR",
+            "mag_filter": "LINEAR",
+            "address_u": "CLAMP_TO_EDGE",
+            "address_v": "CLAMP_TO_EDGE",
+        },
+    }]
+    return command
+
+
+def test_generic_bundle_transports_explicit_external_sampler2d_snapshot(tmp_path):
+    result = build_vulkan_draw_bundle(
+        _add_external_2d(_command()),
+        _mesh(),
+        tmp_path,
+        external_textures={"7": _external_reference_texture()},
+    )
+
+    assert result["ready"] is True, result["blocking_reasons"]
+    assert result["artifacts"]["textures"]["texture_count"] == 1
+    assert result["external_samplers"] == [{
+        "sampler": "shadowMap",
+        "sampler_type": "sampler2D",
+        "d3d9_sampler_register": 7,
+        "status": "provided-to-vulkan-texture-packet",
+    }]
+    assert result["boundary"]["external_2d_snapshot_registers"] == [7]
+    assert result["boundary"]["external_2d_snapshot_count"] == 1
+    assert (tmp_path / "textures.svtp").is_file()
+
+
+def test_generic_bundle_keeps_unsupplied_external_sampler_unresolved(tmp_path):
+    result = build_vulkan_draw_bundle(
+        _add_external_2d(_command()),
+        _mesh(),
+        tmp_path,
+    )
+
+    assert result["ready"] is True
+    assert result["external_samplers"][0]["status"] == (
+        "requires-runtime-resource"
+    )
+    assert result["boundary"]["external_2d_snapshot_registers"] == []
+    assert result["boundary"]["external_2d_snapshot_count"] == 0
+    assert result["artifacts"]["textures"] is None
