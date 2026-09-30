@@ -32,7 +32,7 @@ def _ancestry(row: dict, by_descriptor: dict[int, dict]) -> list[str]:
 
 def build_manifest(source: Path, exe: Path | None = None) -> dict:
     registry = extract_registry(source, exe)
-    reflection = extract_reflection_fields(source, exe)
+    reflection = extract_reflection_fields(source, exe, registry=registry)
 
     fields_by_descriptor: dict[int, list[dict]] = defaultdict(list)
     for field in reflection["fields"]:
