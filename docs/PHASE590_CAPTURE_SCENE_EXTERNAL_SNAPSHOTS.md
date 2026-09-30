@@ -134,7 +134,11 @@ Zero or multiple basename matches remain fail-closed.
 The adapter report contains a `snapshot_contract` only when the complete join
 is ready.
 
-For external sampler2D the contract remains exactly:\n\n`SHIFT.NativeSceneExternalSamplerSnapshots/1`\n\nand is revalidated through the Phase 589 validator before being exposed. Phase 592 additionally emits a separate `SHIFT.NativeSceneExternalSamplerCubeSnapshots/1` for the proven samplerCube s3 boundary.
+For external sampler2D the contract remains exactly:
+
+`SHIFT.NativeSceneExternalSamplerSnapshots/1`
+
+and is revalidated through the Phase 589 validator before being exposed. Phase 592 additionally emits a separate `SHIFT.NativeSceneExternalSamplerCubeSnapshots/1` for the proven samplerCube s3 boundary.
 
 A blocked adapter cannot accidentally masquerade as a valid Phase 589
 snapshot manifest.
