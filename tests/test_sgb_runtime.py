@@ -174,6 +174,48 @@ def test_flat_chunk_decodes_embedded_runtime_tree():
     assert flat["root"]["records"][0]["index_word"] == 5
 
 
+def test_flat_chunk_normalizes_signed_terminal_span_when_header_bit2_clear():
+    leaf = struct.pack("<15I", *([0] * 15)) + struct.pack("<I", 7)
+    span = 0x20 + 0x40
+    flat_body = struct.pack("<7I", 0, 0, 0, 0, 0, 0, 1)
+    flat_body += struct.pack("<i", -span) + leaf
+    data = (
+        _header(flags=0)
+        + _chunk("FLAT", struct.pack("<I", 1) + flat_body)
+        + _chunk("END ", b"")
+    )
+    chunk = parse_sgb_runtime(data)["chunks"][0]
+    flat = chunk["flat_runtime"]
+
+    assert chunk["flat_span_normalization"]["header_flag_bit2"] is False
+    assert chunk["flat_span_normalization"][
+        "normalize_signed_terminal_spans"
+    ] is True
+    assert flat["root"]["serialized_span_signed"] == -span
+    assert flat["root"]["span_bytes"] == span
+    assert flat["root"]["depth_marker"] == 1
+    assert flat["root"]["records"][0]["runtime_index"] == 7
+
+
+def test_flat_chunk_bit2_set_uses_pre_normalized_span_without_sign_rewrite():
+    leaf = struct.pack("<15I", *([0] * 15)) + struct.pack("<I", 8)
+    span = 0x20 + 0x40
+    flat_body = struct.pack("<7I", 0, 0, 0, 0, 0, 0, 1)
+    flat_body += struct.pack("<I", 0x01000000 | span) + leaf
+    data = (
+        _header(flags=4)
+        + _chunk("FLAT", struct.pack("<I", 1) + flat_body)
+        + _chunk("END ", b"")
+    )
+    chunk = parse_sgb_runtime(data)["chunks"][0]
+
+    assert chunk["flat_span_normalization"]["header_flag_bit2"] is True
+    assert chunk["flat_span_normalization"][
+        "normalize_signed_terminal_spans"
+    ] is False
+    assert chunk["flat_runtime"]["root"]["span_normalization_applied"] is False
+
+
 
 def test_occl_runtime_object_maps_named_corners_and_wrapper():
     record = struct.pack(
