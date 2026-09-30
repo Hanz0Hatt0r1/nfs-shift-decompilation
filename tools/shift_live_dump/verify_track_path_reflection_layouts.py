@@ -94,10 +94,11 @@ LAYOUT_BINDINGS = {
 }
 
 
-def _load_analyzer_specs(path: Path) -> dict:
+def _load_analyzer_specs(path: Path, class_names: list[str]) -> dict:
     namespace = runpy.run_path(str(path))
     specs = {}
-    for spec_name, _ in LAYOUT_BINDINGS.values():
+    spec_names = {LAYOUT_BINDINGS[name][0] for name in class_names}
+    for spec_name in sorted(spec_names):
         value = namespace.get(spec_name)
         if not isinstance(value, dict):
             raise ValueError(f"{path}: analyzer spec {spec_name} not found")
@@ -112,12 +113,13 @@ def verify(
     class_names: list[str] | None = None,
 ) -> dict:
     reflection = extract_reflection_fields(source, exe)
-    specs = _load_analyzer_specs(analyzer)
     selected = class_names or list(LAYOUT_BINDINGS)
 
     unknown = sorted(set(selected) - set(LAYOUT_BINDINGS))
     if unknown:
         raise ValueError("unknown layout class(es): " + ", ".join(unknown))
+
+    specs = _load_analyzer_specs(analyzer, selected)
 
     source_index: dict[tuple[str, str], list[dict]] = {}
     for row in reflection["fields"]:
