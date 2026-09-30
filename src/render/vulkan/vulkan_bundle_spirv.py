@@ -142,7 +142,10 @@ def compile_bmw_vulkan_bundle(
     manifest = _load(manifest_path)
     if manifest.get("format") != BMW_BUNDLE_FORMAT:
         raise ValueError("input is not SHIFT.BMWVulkanBundle/1")
-    return compile_vulkan_bundle(root, validator=validator)
+    result = compile_vulkan_bundle(root, validator=validator)
+    result = dict(result)
+    result.pop("bundle_format", None)
+    return result
 
 
 def write_compile_report(
