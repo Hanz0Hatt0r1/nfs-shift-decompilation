@@ -103,6 +103,40 @@ def test_native_camera_defaults_match_recovered_view_constructor():
     assert "group_restore_value = -1" in header
     assert "buffer_count = 2" in header
 
+
+
+def test_phase599_native_camera_bridge_loads_recovered_scalar_state():
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(
+        encoding="utf-8"
+    )
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "apply_evidence_snapshot" in header
+    assert "const CameraState& active() const" in header
+    assert '"--camera-state"' in source
+    assert "SHIFT.NativeCameraStateBridge/1" in source
+    assert "load_camera_state_bridge" in source
+    assert "json_i32_field" in source
+    assert "json_bool_field" in source
+    assert "native_active_index" in source
+    assert "native_manager_mode" in source
+    assert "native_buffer_sub_index" in source
+    assert "native_camera_id" in source
+    assert "native_active_group" in source
+    assert "native_group_restore_value" in source
+    assert "native_active_buffer_sub_flag" in source
+    assert '\\"camera_state_bridge_loaded\\": ' in source
+    assert '\\"camera_update_in_progress\\": ' in source
+    assert '\\"camera_manager_mode\\": ' in source
+    assert '\\"camera_buffer_sub_index\\": ' in source
+    assert '\\"camera_id\\": ' in source
+    assert '\\"camera_active_group\\": ' in source
+    assert '\\"camera_group_restore_value\\": ' in source
+    assert '\\"camera_active_buffer_sub_flag\\": ' in source
+
+
 def test_native_index_draw_count_respects_first_index():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
 
