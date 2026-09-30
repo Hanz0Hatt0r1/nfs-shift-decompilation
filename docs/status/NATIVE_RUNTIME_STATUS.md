@@ -33,7 +33,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Phase 599 connects the six-word CameraManager snapshot and guarded double-buffer swap to the native fixed-step scheduler. Phase 600 adds fail-closed recovered scalar evidence input through SHIFT.NativeCameraStateBridge/1 and --camera-state. Remaining camera work is retail timestamp/update scheduling, camera-source/controller behavior, gameplay view selection/attachment and exact render/view integration.
 3. Phase 602 connects the source-backed PhysicsParticipantManager registry ABI and separate selector context to native state through `SHIFT.NativePhysicsParticipantBoundary/1`. Concrete selected participant instance/index/mode and provider identity remain capture-gated.
-4. Phase 603 supplies the native source-backed `FUN_007b0f20` builtin numerical backend. Next, connect an exact BMW solver-frame input (matrix/RHS/graph/reset evidence) to the fixed tick only when the provider-absent builtin path is proven.
+4. Phases 603–604 supply native source-backed `FUN_007b0f20` solve and `FUN_007b2210` reset kernels. Next, connect an exact BMW solver-frame input (matrix/RHS/graph/runtime reset-node evidence) to the fixed tick only when the provider-absent builtin path is proven.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Live keyboard vehicle controls already feed the neutral intent layer. Phase 601 adds a deterministic fixed-step input script and physics-boundary activity telemetry for CI. Gamepad/analog normalization and retail filtering remain.
 7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
@@ -224,3 +224,20 @@ through CTest and retains its JSON report.
 This is not yet a complete native BMW physics step. The frame loop still does
 not synthesize matrix/RHS assembly, diagonal-reset selection flags, provider
 dispatch, post-solve body application or a concrete runtime participant.
+
+
+## Phase 604 native builtin diagonal reset
+
+`shift_runtime_physics` now also exposes
+`apply_builtin_diagonal_reset()`, mirroring recovered `FUN_007b2210`.
+
+For every explicitly supplied scalar node it zeroes the matrix row and column,
+sets the diagonal to `1.0`, and zeroes the RHS entry. Duplicate nodes are
+normalized; out-of-range nodes fail closed.
+
+The native regression reports both `FUN_007b0f20` and `FUN_007b2210` and
+covers four solve cases plus two reset cases.
+
+Reset-node **selection** remains separate. The retail frame selects reset
+records through runtime `sample+0x70 & 1`; Phase 604 does not infer that bit
+from static data and does not yet invoke a complete BMW frame.
