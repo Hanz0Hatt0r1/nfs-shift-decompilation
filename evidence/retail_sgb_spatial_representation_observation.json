@@ -1,0 +1,147 @@
+{
+  "format": "SHIFT.RetailSGBSpatialRepresentationObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 track corpus",
+  "tracks": [
+    {
+      "name": "Silverstone_Era3_GrandPrix",
+      "bff": {
+        "name": "Silverstone_Era3_GrandPrix.bff",
+        "size": 55811062,
+        "sha256": "aac2e1fe721aec25494d0bfc84eac2bd49d1628fe55b165097ae694ef7a7d56c"
+      },
+      "sgb": {
+        "path": "tracks/silverstone_era3_grandprix/silverstone_era3_grandprix.sgb",
+        "size": 2176990,
+        "sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+        "tags": [
+          "OCCL",
+          "NODE",
+          "FLAT",
+          "SUMM",
+          "END "
+        ],
+        "part_present": false,
+        "flat_present": true,
+        "flat_direct_records": 7348
+      }
+    },
+    {
+      "name": "Hazyview_Eight",
+      "bff": {
+        "name": "Hazyview_Eight.bff",
+        "size": 18420702,
+        "sha256": "20c4850b42c4f51549664a4b75c8eea8c8f41e6a3f300b15aae8fa7849d01a45"
+      },
+      "sgb": {
+        "path": "tracks/hazyview_eight/hazyview_eight.sgb",
+        "size": 393706,
+        "sha256": "e32ca1a2abca33a123adaa448b510fc288aaafe29d9d7362192c6fd9b6048b02",
+        "header_flags": 3,
+        "chunks": [
+          {
+            "tag": "OCCL",
+            "offset": 16,
+            "size": 12,
+            "record_count": 0
+          },
+          {
+            "tag": "NODE",
+            "offset": 28,
+            "size": 8048,
+            "record_count": 41
+          },
+          {
+            "tag": "FLAT",
+            "offset": 8076,
+            "size": 84140,
+            "record_count_word": 1
+          },
+          {
+            "tag": "SUMM",
+            "offset": 92216,
+            "size": 276204,
+            "record_count": 1144
+          },
+          {
+            "tag": "END ",
+            "offset": 368420,
+            "size": 12
+          }
+        ],
+        "post_end_reference_bytes": 25274,
+        "part_present": false,
+        "flat_present": true
+      }
+    },
+    {
+      "name": "Chesterglen",
+      "bff": {
+        "name": "Chesterglen.bff",
+        "size": 22309850,
+        "sha256": "cf4e87bf78688e7c29e84735427c4fd507d981623fea8249eecc482b78d1eb73"
+      },
+      "sgb": {
+        "path": "tracks/chesterglen/chesterglen.sgb",
+        "size": 312212,
+        "sha256": "5564b29516c25b044b11b39ea6b6a1f676c0f7caba0198f510e2fd9c83fcaf0d",
+        "header_flags": 3,
+        "chunks": [
+          {
+            "tag": "OCCL",
+            "offset": 16,
+            "size": 236,
+            "record_count": 4
+          },
+          {
+            "tag": "NODE",
+            "offset": 252,
+            "size": 9224,
+            "record_count": 47
+          },
+          {
+            "tag": "FLAT",
+            "offset": 9476,
+            "size": 70572,
+            "record_count_word": 1
+          },
+          {
+            "tag": "SUMM",
+            "offset": 80048,
+            "size": 206700,
+            "record_count": 966
+          },
+          {
+            "tag": "END ",
+            "offset": 286748,
+            "size": 12
+          }
+        ],
+        "post_end_reference_bytes": 25452,
+        "part_present": false,
+        "flat_present": true
+      }
+    }
+  ],
+  "source_bridge": {
+    "wrapper_catalog": {
+      "occl_per_record": "FUN_006a4f10 -> loader +0x54",
+      "node": "FUN_006a4b40 -> loader +0x54",
+      "summ": "bypasses +0x54 and enters FLAT manager through FUN_00688510",
+      "part_lookup": "FUN_0068a360 -> FUN_006885b0(wrapper_list, source_id - 1)"
+    },
+    "finalize_rule": "FUN_0068ab70 converts PART only when scenegraph +0x30 FLAT manager is null",
+    "conversion": [
+      "FUN_0068a810",
+      "FUN_00689cb0",
+      "FUN_006afd50",
+      "FUN_00689db0",
+      "FUN_006afd30 -> FUN_006af6c0"
+    ]
+  },
+  "observations": [
+    "All three surveyed shipped track SGB resources contain a prebuilt FLAT chunk and no PART chunk.",
+    "The retail binary retains a complete PART-to-FLAT fallback/construction path for scenes where the FLAT manager is absent.",
+    "PART child-object ids are one-based indices into the OCCL-per-record plus NODE wrapper catalog loaded before PART; SUMM wrappers are not members of that catalog.",
+    "FUN_00689db0 assigns FLAT runtime indices deterministically while emitting direct records before recursively visiting child partitions in slot order."
+  ]
+}
