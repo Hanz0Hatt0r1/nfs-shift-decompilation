@@ -106,3 +106,15 @@ def test_phase585_cli_accepts_native_scene_vulkan_prepare_command():
     assert args.validator == "glslangValidator"
     assert args.output == "out/native-scene-vulkan/prepare.json"
     assert args.fn.__name__ == "cmd_native_scene_vulkan_prepare"
+
+
+def test_phase588_cli_accepts_imx_neutral_geometry_command():
+    parser = build_parser()
+    args = parser.parse_args([
+        "imx-neutral-geometry",
+        "mesh.imx",
+        "out/imx-neutral.json",
+    ])
+    assert args.input == "mesh.imx"
+    assert args.output == "out/imx-neutral.json"
+    assert args.fn.__name__ == "cmd_imx_neutral_geometry"
