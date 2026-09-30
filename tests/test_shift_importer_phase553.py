@@ -96,6 +96,34 @@ def test_phase580_cli_accepts_native_scene_vulkan_set_command():
     assert args.fn.__name__ == "cmd_native_scene_vulkan_set"
 
 
+def test_phase590_cli_accepts_capture_to_scene_snapshot_adapter():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-scene-external-capture",
+        "native-scene-bundle.json",
+        "scene-render-binding.json",
+        "silverstone-runtime-attribution.json",
+        "out/scene-external-capture.json",
+        "--capture-root",
+        "capture",
+        "--snapshot-output",
+        "out/scene-external-snapshots.json",
+    ])
+
+    assert args.native_scene_bundle == "native-scene-bundle.json"
+    assert args.scene_bridge == "scene-render-binding.json"
+    assert args.capture_pipeline == (
+        "silverstone-runtime-attribution.json"
+    )
+    assert args.capture_root == "capture"
+    assert args.snapshot_output == (
+        "out/scene-external-snapshots.json"
+    )
+    assert args.fn.__name__ == (
+        "cmd_native_scene_external_capture"
+    )
+
+
 def test_phase589_cli_accepts_scene_external_sampler_snapshots():
     parser = build_parser()
     args = parser.parse_args([
