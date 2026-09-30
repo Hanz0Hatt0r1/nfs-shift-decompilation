@@ -175,9 +175,17 @@ def test_generic_bundle_preserves_but_does_not_claim_scene_transform(
     assert result["ready"] is True
     transform = result["scene_transform"]
     assert transform["world_matrix"][12:15] == [10.0, 20.0, 30.0]
-    assert transform["execution_status"] == "preserved-not-applied"
+    assert transform["execution_status"] == "packet-emitted-not-executed"
     assert transform["blocking_for_scene_native_submission"] is True
+    assert transform["packet"]["format"] == (
+        "SHIFT.VulkanWorldTransformPacket/1"
+    )
+    assert transform["packet"]["translation_xyz"] == [10.0, 20.0, 30.0]
+    assert (tmp_path / "world_transform.svwt").is_file()
+    assert result["artifacts"]["world_transform"]["ready"] is True
+    assert result["boundary"]["scene_world_transform_serialized"] is True
     assert result["boundary"]["scene_world_transform_executed"] is False
+    assert result["boundary"]["retail_world_constant_register_assigned"] is False
 
 
 def test_generic_bundle_blocks_missing_runtime_provenance_by_default(
