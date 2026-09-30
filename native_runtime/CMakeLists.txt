@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(CTest)
+
 find_package(Vulkan REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(XCB REQUIRED IMPORTED_TARGET xcb)
@@ -41,6 +43,26 @@ add_custom_command(
 add_custom_target(shift_runtime_shaders
   DEPENDS ${SHIFT_RUNTIME_VERT_SPV} ${SHIFT_RUNTIME_FRAG_SPV})
 
+add_library(shift_runtime_physics STATIC
+  src/builtin_sparse_solver.cpp)
+target_include_directories(shift_runtime_physics PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_options(shift_runtime_physics PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+add_executable(shift_runtime_builtin_solver_check
+  tests/builtin_sparse_solver_check.cpp)
+target_link_libraries(shift_runtime_builtin_solver_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_builtin_solver_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+if(BUILD_TESTING)
+  add_test(
+    NAME shift_runtime_builtin_sparse_solver
+    COMMAND shift_runtime_builtin_solver_check)
+endif()
+
 add_executable(shift_runtime src/shift_runtime.cpp)
 add_dependencies(shift_runtime shift_runtime_shaders)
 target_include_directories(shift_runtime PRIVATE
@@ -48,6 +70,7 @@ target_include_directories(shift_runtime PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../native_ir/include)
 target_link_libraries(shift_runtime PRIVATE
   shift_ir
+  shift_runtime_physics
   Vulkan::Vulkan
   PkgConfig::XCB)
 target_compile_definitions(shift_runtime PRIVATE VK_USE_PLATFORM_XCB_KHR)
