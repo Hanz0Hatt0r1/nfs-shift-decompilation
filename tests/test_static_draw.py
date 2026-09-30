@@ -397,3 +397,58 @@ def test_static_draw_propagates_bmw_paint_contract_blocker():
     assert report["ready"] is False
     assert "paint-contract:not-ready" in report["blocking_reasons"]
     assert "sampler:diffuseMap:register-mismatch" in report["blocking_reasons"]
+
+
+def test_static_draw_preserves_runtime_proven_imb_identity():
+    packet = _binding_packet()
+    packet["mesh"]["source_kind"] = "IMB"
+    packet["mesh"]["resolved"] = {
+        "path": "tracks/silverstone/object.imb",
+        "archive": "Silverstone_Era3_GrandPrix.bff",
+        "resource_sha256": "a" * 64,
+    }
+    packet["submeshes"][0]["primitive_index"] = 7
+    packet["submeshes"][0]["runtime_shader_admission"] = {
+        "binding_index": 77,
+        "shader_selection_admitted": True,
+        "selection_status": "unique",
+        "selection_source": "runtime-admission",
+    }
+    packet["submeshes"][0]["material"]["runtime_selection"] = {
+        "ready": True,
+        "selected_variant": {
+            "score": 100,
+            "permutation_identity_sha256": "b" * 64,
+            "pair_byte_sha256": "c" * 64,
+            "vertex_byte_sha256": "d" * 64,
+            "pixel_byte_sha256": "e" * 64,
+        },
+    }
+
+    result = build_static_draw_contract(packet)
+
+    assert result["ready"] is True
+    row = result["submeshes"][0]["runtime_provenance"]
+    assert row["format"] == "SHIFT.RuntimeProvenDraw/1"
+    assert row["status"] == "proven"
+    assert row["binding_index"] == 77
+    assert row["resource"] == {
+        "source_kind": "IMB",
+        "path": "tracks/silverstone/object.imb",
+        "archive": "Silverstone_Era3_GrandPrix.bff",
+        "sha256": "a" * 64,
+    }
+    assert row["primitive_index"] == 7
+    assert row["draw_range"] == {
+        "first_index": 0,
+        "index_count": 3,
+        "primitive_count": 1,
+    }
+    assert row["shader_selection"]["selection_source"] == "runtime-admission"
+    assert row["shader_selection"]["runtime_selection_ready"] is True
+
+
+def test_static_draw_does_not_invent_runtime_provenance_without_admission():
+    result = build_static_draw_contract(_binding_packet())
+    assert result["ready"] is True
+    assert result["submeshes"][0]["runtime_provenance"] is None

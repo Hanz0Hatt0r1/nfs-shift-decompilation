@@ -180,6 +180,60 @@ def _uniform_contract(material: dict[str, Any], selection: dict[str, Any]) -> tu
     return uniform_binding, list(dict.fromkeys(reasons))
 
 
+
+RUNTIME_PROVEN_DRAW_FORMAT = "SHIFT.RuntimeProvenDraw/1"
+
+
+def _runtime_provenance(
+    packet: dict[str, Any],
+    submesh: dict[str, Any],
+    *,
+    first_index: int,
+    index_count: int,
+) -> dict[str, Any] | None:
+    admission = submesh.get("runtime_shader_admission")
+    if not isinstance(admission, dict):
+        return None
+    if admission.get("shader_selection_admitted") is not True:
+        return None
+
+    mesh = packet.get("mesh") or {}
+    resolved = mesh.get("resolved") or {}
+    material = submesh.get("material") or {}
+    runtime_selection = material.get("runtime_selection") or {}
+
+    return {
+        "format": RUNTIME_PROVEN_DRAW_FORMAT,
+        "status": "proven",
+        "binding_index": admission.get("binding_index"),
+        "resource": {
+            "source_kind": mesh.get("source_kind"),
+            "path": resolved.get("path") or mesh.get("ref"),
+            "archive": resolved.get("archive"),
+            "sha256": resolved.get("resource_sha256") or resolved.get("sha256"),
+        },
+        "primitive_index": submesh.get("primitive_index"),
+        "draw_range": {
+            "first_index": first_index,
+            "index_count": index_count,
+            "primitive_count": (
+                index_count // 3
+                if index_count >= 0 and index_count % 3 == 0
+                else None
+            ),
+        },
+        "shader_selection": {
+            "selection_status": admission.get("selection_status"),
+            "selection_source": admission.get("selection_source"),
+            "runtime_selection_ready": runtime_selection.get("ready") is True,
+            "selected_variant": dict(runtime_selection.get("selected_variant") or {}),
+        },
+        "boundary": {
+            "claim": "runtime-proven shader selection on exact IMB primitive",
+            "render_backend_admission": False,
+        },
+    }
+
 def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
     """Build the renderer-facing contract for one DrawPacket."""
     mesh = packet.get("mesh") or {}
@@ -234,8 +288,15 @@ def build_static_draw_contract(packet: dict[str, Any]) -> dict[str, Any]:
             reasons.append("draw:index-range-out-of-bounds")
 
         submeshes.append({
+            "primitive_index": submesh.get("primitive_index"),
             "first_index": first_index,
             "index_count": index_count,
+            "runtime_provenance": _runtime_provenance(
+                packet,
+                submesh,
+                first_index=first_index,
+                index_count=index_count,
+            ),
             "material": contract,
         })
 

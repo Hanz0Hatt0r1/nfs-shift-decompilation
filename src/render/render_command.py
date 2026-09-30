@@ -269,8 +269,14 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
             external_samplers.append(row)
 
         commands.append({
+            "primitive_index": submesh.get("primitive_index"),
             "first_index": submesh.get("first_index", 0),
             "index_count": submesh.get("index_count", 0),
+            "runtime_provenance": (
+                dict(submesh.get("runtime_provenance"))
+                if isinstance(submesh.get("runtime_provenance"), dict)
+                else None
+            ),
             "render_state": dict(material.get("render_state") or {}),
             "shader": {
                 "vertex": linked_pair.get("vertex_glsl") if linked_pair else None,
@@ -312,6 +318,12 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
         },
         "world_matrix": static_draw.get("world_matrix"),
         "submeshes": commands,
+        "runtime_proven_draw_count": sum(
+            1
+            for row in commands
+            if isinstance(row.get("runtime_provenance"), dict)
+            and row["runtime_provenance"].get("status") == "proven"
+        ),
         "resource_plan": {
             "format": resources.get("format"),
             "texture_count": resources.get("stats", {}).get("textures", 0),
@@ -530,6 +542,54 @@ def validate_render_command(command: dict[str, Any]) -> dict[str, Any]:
         else:
             if first < 0 or count < 0 or count % 3:
                 reasons.append("index-range:invalid")
+
+        runtime_provenance = submesh.get("runtime_provenance")
+        if runtime_provenance is not None:
+            if not isinstance(runtime_provenance, dict):
+                reasons.append("runtime-provenance:invalid")
+            else:
+                if runtime_provenance.get("format") != "SHIFT.RuntimeProvenDraw/1":
+                    reasons.append("runtime-provenance:invalid-format")
+                if runtime_provenance.get("status") != "proven":
+                    reasons.append("runtime-provenance:not-proven")
+                resource = runtime_provenance.get("resource") or {}
+                if resource.get("source_kind") != "IMB":
+                    reasons.append("runtime-provenance:source-kind-not-imb")
+                if not resource.get("path"):
+                    reasons.append("runtime-provenance:resource-path-missing")
+                if not resource.get("sha256"):
+                    reasons.append("runtime-provenance:resource-sha256-missing")
+                try:
+                    binding_index = int(runtime_provenance.get("binding_index"))
+                except (TypeError, ValueError):
+                    reasons.append("runtime-provenance:binding-index-invalid")
+                else:
+                    if binding_index < 0:
+                        reasons.append("runtime-provenance:binding-index-invalid")
+                selection = runtime_provenance.get("shader_selection") or {}
+                if selection.get("selection_status") != "unique":
+                    reasons.append("runtime-provenance:selection-not-unique")
+                if selection.get("selection_source") != "runtime-admission":
+                    reasons.append("runtime-provenance:selection-source-invalid")
+                if selection.get("runtime_selection_ready") is not True:
+                    reasons.append("runtime-provenance:runtime-selection-not-ready")
+                draw_range = runtime_provenance.get("draw_range") or {}
+                try:
+                    provenance_first = int(draw_range.get("first_index"))
+                    provenance_count = int(draw_range.get("index_count"))
+                    provenance_primitives = int(draw_range.get("primitive_count"))
+                    command_first = int(submesh.get("first_index", 0))
+                    command_count = int(submesh.get("index_count", 0))
+                except (TypeError, ValueError):
+                    reasons.append("runtime-provenance:draw-range-invalid")
+                else:
+                    if (
+                        provenance_first != command_first
+                        or provenance_count != command_count
+                        or provenance_count % 3
+                        or provenance_primitives != provenance_count // 3
+                    ):
+                        reasons.append("runtime-provenance:draw-range-mismatch")
 
         shader = submesh.get("shader") or {}
         if not shader.get("vertex"):
