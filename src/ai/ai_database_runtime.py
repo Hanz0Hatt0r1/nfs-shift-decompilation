@@ -26,6 +26,10 @@ VTABLE = 0x00B04C88
 SINGLETON_ADDRESS = 0x00C10F68
 SINGLETON_INITIALIZER = 0x00A89C70
 
+# The highest proven byte access is +0x13a4. This is only a lower bound on
+# object span; no exact sizeof(AIDatabase) is asserted without an allocation.
+MINIMUM_OBSERVED_SPAN = 0x13A5
+
 SOURCE_RECORD_PTR_OFFSET = 0x1394
 SOURCE_RECORD_COUNT_OFFSET = 0x1398
 META_RECORD_PTR_OFFSET = 0x139C
@@ -240,6 +244,7 @@ def describe_ai_database_runtime() -> dict[str, Any]:
             "initializer_address": SINGLETON_INITIALIZER,
             "storage": "static",
         },
+        "minimum_observed_span": MINIMUM_OBSERVED_SPAN,
         "direct_reflected_field_count": len(REFLECTED_FIELDS),
         "direct_reflected_fields": [dict(row) for row in REFLECTED_FIELDS],
         "constructor_preset_writes": [
