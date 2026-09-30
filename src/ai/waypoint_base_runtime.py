@@ -1,7 +1,6 @@
 """Source-backed WayPointBase layout and nearest-waypoint query primitives."""
 from __future__ import annotations
 
-import math
 import struct
 from typing import Any
 
