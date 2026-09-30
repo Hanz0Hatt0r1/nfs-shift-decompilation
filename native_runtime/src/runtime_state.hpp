@@ -183,6 +183,16 @@ struct PhysicsTickBoundary {
     uint64_t steer_left_steps = 0;
     uint64_t steer_right_steps = 0;
     uint64_t neutral_input_steps = 0;
+
+    // Structural participant ABI may be admitted independently from an
+    // observed retail participant instance.
+    bool participant_contract_ready = false;
+    bool participant_registry_ready = false;
+    bool selector_context_separate = false;
+    uint32_t registry_slot_stride = 0;
+    uint32_t participant_descriptor_type = 0;
+
+    // These remain capture-gated. Structural admission must not promote them.
     bool participant_ready = false;
     int32_t participant_index = -1;
     int32_t participant_mode = -1;
