@@ -24,7 +24,7 @@
 | SDF | BODY/JOINT/HINGE/BAR schema + runtime reconstruction |
 | VehiclePhysicsAssetGraph/1 | CDF/EDF/GDF/SDF neutral join |
 | BAB/BAS | skeleton parsing, name linkage, animation evidence |
-| SGB | NODE/SUMM/FLAT boundaries; OCCL concrete object and corrected hierarchical PART partition tree mapped |
+| SGB | production NODE/SUMM LOD/HIERARCHY/OBJECT recursion, FLAT normalization/index consumers, OCCL object and PART partition tree mapped |
 | Camera runtime | config/state/event/control primitives |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
@@ -33,7 +33,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- deeper SGB DAMAGE semantics, unnamed NODE/object byte +0x21 and remaining FLAT direct-record payload/class identities;
+- SGB placement joins between recursive LOD/HIERARCHY/OBJECT graphs and PART/FLAT, plus common object byte +0x21 and remaining FLAT payload/class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
