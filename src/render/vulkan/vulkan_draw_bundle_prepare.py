@@ -91,7 +91,7 @@ def prepare_vulkan_draw_bundle(
     provenance_gate, provenance_blockers = _ready_gate(
         root,
         "runtime_provenance_gate.json",
-        "SHIFT.RuntimeProvenDrawGate/1",
+        "SHIFT.VulkanDrawRuntimeProvenanceGate/1",
     )
     blockers.extend(native_blockers)
     blockers.extend(provenance_blockers)
