@@ -37,6 +37,7 @@ This is implemented by
 
 | Class | Reflection descriptor | RTTI getter | Dedicated vtable |
 |---|---:|---:|---:|
+| `AIPathInfo` | `0x00c0d5a4` | `0x006bc3e0` | `0x00afb150` |
 | `AIPolylinePath` | `0x00c0d608` | `0x006cc3b0` | `0x00afc678` |
 | `Knot` | `0x00c0d638` | `0x006c3000` | `0x00afbe28` |
 | `AISpline` | `0x00c0d648` | not present | not established |
@@ -45,8 +46,9 @@ This is implemented by
 | `AIPolyPathNode` | `0x00c0d678` | `0x006c3950` | `0x00afbfa8` |
 | `AIPathNode` | `0x00c0d688` | `0x006c3940` | `0x00afbf60` |
 
-The five concrete vtables match both the constructor/loader source anchors and
-the analyzer constants.
+The six recovered concrete vtables, including the legacy `Path` profile's
+retail `AIPathInfo` identity, match both the constructor/loader source anchors
+and the analyzer constants.
 
 ## AISpline boundary
 

@@ -14,19 +14,29 @@ base = 0x00200000
 size = 0x401000
 blob = bytearray(size)
 
-# Synthetic Path object using the offsets recovered from SHIFT.exe.c.
+# Synthetic legacy "Path" profile. The reflected retail type is AIPathInfo;
+# FUN_006bc3a0 writes the concrete vtable 0x00AFB150.
 poff = 0x100
-struct.pack_into("<III", blob, poff, 0x00401000, 0, 1)
+struct.pack_into("<III", blob, poff, 0x00AFB150, 0, 1)
 struct.pack_into("<fff", blob, poff + 0x10, 1.0, 0.0, 0.25)
 struct.pack_into("<f", blob, poff + 0x1C, 12.5)
 struct.pack_into("<I", blob, poff + 0x20, 0x00610000)
 blob[poff + 0x24:poff + 0x28] = bytes((0, 0, 0, 1))
 
+# A byte-for-byte compatible payload with a generic executable vtable is not
+# AIPathInfo and must not survive the concrete-vtable gate.
+false_path_off = 0x180
+struct.pack_into("<III", blob, false_path_off, 0x00401000, 0, 1)
+struct.pack_into("<fff", blob, false_path_off + 0x10, 1.0, 0.0, 0.25)
+struct.pack_into("<f", blob, false_path_off + 0x1C, 12.5)
+struct.pack_into("<I", blob, false_path_off + 0x20, 0x00610000)
+blob[false_path_off + 0x24:false_path_off + 0x28] = bytes((0, 0, 0, 1))
+
 # A second Path deliberately straddles the 4 MiB streaming boundary.
 # It also points at the same stable StartNode; --top must not hide it from
 # the root-following pass.
 boundary_poff = 0x400000 - 0x20
-struct.pack_into("<III", blob, boundary_poff, 0x00401000, 0, 1)
+struct.pack_into("<III", blob, boundary_poff, 0x00AFB150, 0, 1)
 struct.pack_into("<fff", blob, boundary_poff + 0x10, 0.0, 1.0, 0.5)
 struct.pack_into("<f", blob, boundary_poff + 0x1C, 24.5)
 struct.pack_into("<I", blob, boundary_poff + 0x20, 0x00610000)
@@ -233,7 +243,7 @@ import sys
 
 result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
-assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
+assert result["candidate_counts"]["Path"] == 2, result["candidate_counts"]
 assert result["candidate_counts"]["AISegmentPath"] == 2, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
     segment_rows = list(csv.DictReader(fh))
