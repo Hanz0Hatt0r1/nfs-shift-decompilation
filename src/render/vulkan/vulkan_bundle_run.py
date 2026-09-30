@@ -229,8 +229,23 @@ def run_bmw_vulkan_bundle(
             if native_report is not None
             else None
         ),
+        "world_transform_mode": (
+            native_report.get("world_transform_mode")
+            if native_report is not None
+            else None
+        ),
+        "world_transform_determinant": (
+            native_report.get("world_transform_determinant")
+            if native_report is not None
+            else None
+        ),
         "world_translation_xyz": (
             native_report.get("world_translation_xyz")
+            if native_report is not None
+            else None
+        ),
+        "world_transformed_properties": (
+            native_report.get("world_transformed_properties")
             if native_report is not None
             else None
         ),

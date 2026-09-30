@@ -67,14 +67,37 @@ def render_command():
             "triangle_count": 1,
             "vertex_layout": {
                 "format": "SHIFT.VertexLayout/1",
-                "buffer_stride": 12,
-                "attributes": [{
-                    "property_id": "200", "usage": "POSITION", "usage_index": 0,
-                    "location": 0, "offset": 0, "stride": 12,
-                    "storage": "FLOAT32x3", "android": "FLOAT32x3",
-                    "components": 3, "normalized": False, "element_size": 12,
-                    "abi_status": "proven",
-                }],
+                "buffer_stride": 48,
+                "attributes": [
+                    {
+                        "property_id": "200", "usage": "POSITION", "usage_index": 0,
+                        "location": 0, "offset": 0, "stride": 48,
+                        "storage": "FLOAT32x3", "android": "FLOAT32x3",
+                        "components": 3, "normalized": False, "element_size": 12,
+                        "abi_status": "proven",
+                    },
+                    {
+                        "property_id": "220", "usage": "NORMAL", "usage_index": 0,
+                        "location": 1, "offset": 12, "stride": 48,
+                        "storage": "FLOAT32x3", "android": "FLOAT32x3",
+                        "components": 3, "normalized": False, "element_size": 12,
+                        "abi_status": "proven",
+                    },
+                    {
+                        "property_id": "240", "usage": "TANGENT", "usage_index": 0,
+                        "location": 2, "offset": 24, "stride": 48,
+                        "storage": "FLOAT32x3", "android": "FLOAT32x3",
+                        "components": 3, "normalized": False, "element_size": 12,
+                        "abi_status": "proven",
+                    },
+                    {
+                        "property_id": "250", "usage": "TANGENT", "usage_index": 1,
+                        "location": 3, "offset": 36, "stride": 48,
+                        "storage": "FLOAT32x3", "android": "FLOAT32x3",
+                        "components": 3, "normalized": False, "element_size": 12,
+                        "abi_status": "proven",
+                    },
+                ],
             },
         },
         "submeshes": [{
@@ -124,6 +147,9 @@ def mesh():
     return {
         "format": "SHIFT.MEB",
         "vertices": [[-0.65,-0.55,0.0],[0.65,-0.55,0.0],[0.0,0.65,0.0]],
+        "normals": [[1.0,0.0,0.0]] * 3,
+        "tangents": [[0.0,1.0,0.0]] * 3,
+        "tangents2": [[0.0,0.0,1.0]] * 3,
         "indices": [0,1,2],
     }
 
@@ -150,6 +176,9 @@ def multidraw_mesh():
             [0.0,0.6,0.0],
             [0.8,0.6,0.0],
         ],
+        "normals": [[1.0,0.0,0.0]] * 4,
+        "tangents": [[0.0,1.0,0.0]] * 4,
+        "tangents2": [[0.0,0.0,1.0]] * 4,
         "indices": [0,1,2,1,3,2],
     }
 
@@ -198,15 +227,15 @@ def main():
             + ", ".join(adapter_result["blocking_reasons"])
         )
 
-    # Phase 582: prove the actual material executor consumes the dedicated
-    # SVWT sidecar without assigning any retail material constant register.
+    # Phase 584: prove semantic-aware affine SVWT execution without assigning
+    # any retail material constant register.
     build_vulkan_world_transform_packet(
         {
             "world_matrix": [
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.10, 0.0, 0.0, 1.0,
+                0.0, 2.0, 0.0, 0.0,
+                -1.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.5, 0.0,
+                0.10, 0.20, 0.30, 1.0,
             ]
         },
         bundle_dir / "world_transform.svwt",
@@ -225,9 +254,24 @@ def main():
     if result["native"].get("world_transform_present") is not True:
         raise SystemExit("material executor did not observe SVWT")
     if result["native"].get("world_transform_executed") is not True:
-        raise SystemExit("material executor did not execute SVWT translation")
-    if result["native"].get("world_translation_xyz") != [0.1, 0, 0]:
+        raise SystemExit("material executor did not execute affine SVWT")
+    if result["native"].get("world_transform_mode") != "affine-semantic-v3":
+        raise SystemExit("material executor did not report semantic affine mode")
+    if result["native"].get("world_transform_determinant") != 1:
+        raise SystemExit("material executor reported unexpected affine determinant")
+    if result["native"].get("world_translation_xyz") != [0.1, 0.2, 0.3]:
         raise SystemExit("material executor reported unexpected SVWT translation")
+    if result["native"].get("world_transformed_properties") != [200, 220, 240, 250]:
+        raise SystemExit("material executor reported unexpected transformed semantics")
+    report = result["native"].get("report") or {}
+    if report.get("world_probe_position_xyz") != [0.65, -1.1, 0.3]:
+        raise SystemExit("material executor produced unexpected POSITION probe")
+    if report.get("world_probe_normal_xyz") != [0, 1, 0]:
+        raise SystemExit("material executor produced unexpected NORMAL probe")
+    if report.get("world_probe_tangent_xyz") != [-1, 0, 0]:
+        raise SystemExit("material executor produced unexpected TANGENT probe")
+    if report.get("world_probe_tangent2_xyz") != [0, 0, 1]:
+        raise SystemExit("material executor produced unexpected TANGENT2 probe")
     output = Path(result["native"]["output"])
     if output.read_bytes()[:2] != b"P6":
         raise SystemExit("not a PPM")
@@ -273,6 +317,10 @@ def main():
         "bundle_set_prepare_format": set_prepare["format"],
         "bundle_set_draws": set_prepare["draw_count"],
         "world_transform_executed": True,
+        "world_transform_mode": result["native"].get("world_transform_mode"),
+        "world_transformed_properties": result["native"].get(
+            "world_transformed_properties"
+        ),
     }, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":

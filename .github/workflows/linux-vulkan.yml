@@ -117,6 +117,20 @@ jobs:
           )
           (target / "geometry.svpk").write_bytes(legacy)
           PY
+          cat > out/vulkan/legacy_v2_world_transform.json <<'JSON'
+          {
+            "world_matrix": [
+              1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 1, 0,
+              0.1, 0, 0, 1
+            ]
+          }
+          JSON
+          python3 shift_importer.py vulkan-world-transform-packet \
+            out/vulkan/legacy_v2_world_transform.json \
+            out/vulkan/legacy_v2_bundle/world_transform.svwt \
+            > out/vulkan/legacy_v2_world_transform_packet.json
           native_vulkan/build/shift_vulkan_render_geometry \
             out/vulkan/legacy_v2_bundle/geometry.svpk \
             out/vulkan/legacy_v2_geometry.ppm \
@@ -137,10 +151,8 @@ jobs:
             | tee out/vulkan/legacy_v2_runtime.json
           grep -q '"frames_rendered": 2' out/vulkan/legacy_v2_runtime.json
           grep -q '"status": "ok"' out/vulkan/legacy_v2_runtime.json
-      - name: Assert material SVWT execution policy
-        run: |
-          cp -a out/vulkan/bundle/bundle out/vulkan/rotated_bundle
-          cat > out/vulkan/rotated_world_transform.json <<'JSON'
+          cp -a out/vulkan/legacy_v2_bundle out/vulkan/legacy_v2_affine_bundle
+          cat > out/vulkan/legacy_v2_affine_world_transform.json <<'JSON'
           {
             "world_matrix": [
               0, 1, 0, 0,
@@ -151,18 +163,45 @@ jobs:
           }
           JSON
           python3 shift_importer.py vulkan-world-transform-packet \
-            out/vulkan/rotated_world_transform.json \
-            out/vulkan/rotated_bundle/world_transform.svwt \
-            > out/vulkan/rotated_world_transform_packet.json
+            out/vulkan/legacy_v2_affine_world_transform.json \
+            out/vulkan/legacy_v2_affine_bundle/world_transform.svwt \
+            > out/vulkan/legacy_v2_affine_world_transform_packet.json
           if native_vulkan/build/shift_vulkan_bundle_execute \
-              out/vulkan/rotated_bundle \
-              out/vulkan/rotated_bundle/rotated.ppm \
-              > out/vulkan/rotated_bundle/stdout.txt \
-              2> out/vulkan/rotated_bundle/stderr.txt; then
-            echo "executor unexpectedly accepted non-translation SVWT"
+              out/vulkan/legacy_v2_affine_bundle \
+              out/vulkan/legacy_v2_affine_bundle/affine.ppm \
+              > out/vulkan/legacy_v2_affine_bundle/stdout.txt \
+              2> out/vulkan/legacy_v2_affine_bundle/stderr.txt; then
+            echo "legacy v2 executor unexpectedly accepted affine transform"
             exit 1
           fi
-          grep -q 'supports translation-only' out/vulkan/rotated_bundle/stderr.txt
+          grep -q 'requires SVGP v3 semantic IDs' \
+            out/vulkan/legacy_v2_affine_bundle/stderr.txt
+      - name: Assert affine SVWT fail-closed policy
+        run: |
+          cp -a out/vulkan/bundle/bundle out/vulkan/singular_bundle
+          cat > out/vulkan/singular_world_transform.json <<'JSON'
+          {
+            "world_matrix": [
+              1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 0, 0,
+              0, 0, 0, 1
+            ]
+          }
+          JSON
+          python3 shift_importer.py vulkan-world-transform-packet \
+            out/vulkan/singular_world_transform.json \
+            out/vulkan/singular_bundle/world_transform.svwt \
+            > out/vulkan/singular_world_transform_packet.json
+          if native_vulkan/build/shift_vulkan_bundle_execute \
+              out/vulkan/singular_bundle \
+              out/vulkan/singular_bundle/singular.ppm \
+              > out/vulkan/singular_bundle/stdout.txt \
+              2> out/vulkan/singular_bundle/stderr.txt; then
+            echo "executor unexpectedly accepted singular affine SVWT"
+            exit 1
+          fi
+          grep -q 'linear transform is singular' out/vulkan/singular_bundle/stderr.txt
       - name: Native Linux runtime frame loop
         run: |
           set -o pipefail

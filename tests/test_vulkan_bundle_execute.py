@@ -26,9 +26,18 @@ def test_native_vulkan_bundle_executor_contract():
     assert "blend_attachment.blendEnable = pipeline_state.blend_enable;" in source
     assert "world_transform.svwt" in source
     assert "WorldTransformHeader" in source
-    assert "apply_world_transform_translation" in source
-    assert "translation-only" in source
+    assert "apply_world_transform_affine" in source
+    assert "affine-semantic-v3" in source
+    assert "SVWT affine linear transform is singular" in source
+    assert "case 220u:" in source
+    assert "case 240u:" in source
+    assert "case 250u:" in source
+    assert "transpose(inverse(A))" in source
     assert "world_transform_executed" in source
+    assert "world_transform_mode" in source
+    assert "world_transformed_properties" in source
+    assert "world_probe_normal_xyz" in source
+    assert "world_probe_tangent_xyz" in source
     assert "struct LegacyGeometryAttribute" in source
     assert "uint32_t property_id;" in source
     assert "geometry.header.version != 3" in source
