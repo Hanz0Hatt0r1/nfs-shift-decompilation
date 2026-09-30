@@ -61,7 +61,11 @@ def audit_decoded_imb_rows(
     ready_count = 0
     deferred_streams = 0
     total_primitives = 0
+    total_triangles = 0
     total_vertices = 0
+    bone_resource_count = 0
+    trailing_bytes = Counter()
+    property_sets = Counter()
 
     for row in normalized:
         version = row.get("version_text")
@@ -77,7 +81,15 @@ def audit_decoded_imb_rows(
             ready_count += 1
         deferred_streams += int(row.get("deferred_stream_count") or 0)
         total_primitives += int(row.get("primitive_count") or 0)
+        total_triangles += int(row.get("triangle_count") or 0)
         total_vertices += int(row.get("vertex_count") or 0)
+        if int(row.get("bone_count") or 0) > 0:
+            bone_resource_count += 1
+        if row.get("trailing_bytes") is not None:
+            trailing_bytes[str(int(row["trailing_bytes"]))] += 1
+        props = tuple(str(value) for value in row.get("decoded_properties") or [])
+        if props:
+            property_sets[",".join(props)] += 1
 
     total = len(normalized)
     blocked_count = total - ready_count
@@ -93,9 +105,13 @@ def audit_decoded_imb_rows(
         "blocked_count": blocked_count,
         "total_vertex_count": total_vertices,
         "total_primitive_count": total_primitives,
+        "total_triangle_count": total_triangles,
+        "bone_resource_count": bone_resource_count,
         "total_deferred_stream_count": deferred_streams,
         "version_counts": dict(sorted(versions.items())),
         "decoded_property_use_counts": dict(sorted(properties.items())),
+        "decoded_property_set_counts": dict(sorted(property_sets.items())),
+        "trailing_byte_counts": dict(sorted(trailing_bytes.items())),
         "blocking_reason_counts": dict(sorted(blockers.items())),
         "error_kind_counts": dict(sorted(errors.items())),
         "rows": normalized,
@@ -118,6 +134,7 @@ def audit_imb_corpus(
     *,
     max_per_archive: int = 0,
 ) -> dict[str, Any]:
+    inputs = list(inputs)
     rows: list[dict[str, Any]] = []
     archive_summaries: list[dict[str, Any]] = []
 
@@ -170,6 +187,17 @@ def audit_imb_corpus(
                             "primitive_count": int(
                                 report.get("primitive_count") or 0
                             ),
+                            "triangle_count": int(
+                                (report.get("mesh") or {}).get("triangle_count")
+                                or 0
+                            ),
+                            "bone_count": int(
+                                ((report.get("mesh") or {}).get("bones") or {}).get("count")
+                                or 0
+                            ),
+                            "trailing_bytes": (
+                                report.get("source") or {}
+                            ).get("trailing_bytes"),
                             "decoded_properties": _property_ids(report),
                             "deferred_stream_count": int(
                                 report.get("deferred_stream_count") or 0
@@ -185,6 +213,9 @@ def audit_imb_corpus(
                             "decoded_properties": [],
                             "deferred_stream_count": 0,
                             "primitive_count": 0,
+                            "triangle_count": 0,
+                            "bone_count": 0,
+                            "trailing_bytes": None,
                             "vertex_count": 0,
                         }
 
@@ -204,7 +235,7 @@ def audit_imb_corpus(
     report = audit_decoded_imb_rows(rows)
     report["archives"] = archive_summaries
     report["archive_count"] = len(archive_summaries)
-    report["input_count"] = len(list(inputs)) if isinstance(inputs, list) else None
+    report["input_count"] = len(inputs)
     report["max_per_archive"] = int(max_per_archive)
     return report
 
