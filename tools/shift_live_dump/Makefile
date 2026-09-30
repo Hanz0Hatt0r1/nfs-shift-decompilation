@@ -16,6 +16,7 @@ test: shift-live-dump
 	bash test_extract_shift_rtti_registry.sh
 	bash test_extract_shift_reflection_fields.sh
 	bash test_build_shift_class_manifest.sh
+	bash test_audit_shift_class_candidates.sh
 	bash test_verify_track_path_reflection_layouts.sh
 	bash test_verify_track_path_source_anchors.sh
 	bash test_validate_aiw_runtime_graph.sh
