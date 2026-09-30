@@ -386,17 +386,18 @@ def test_native_scene_vulkan_set_builds_ordered_runtime_proven_child(
     assert (tmp_path / "vulkan-set/draw_0000/geometry.svpk").is_file()
     assert (tmp_path / "vulkan-set/draw_0000/world_transform.svwt").is_file()
     assert (tmp_path / "vulkan-set/bundle_set_manifest.json").is_file()
-    assert (tmp_path / "vulkan-set/bundle_set.paths").read_text().strip().endswith(
-        "draw_0000"
-    )
-
-    assert report["native_scene_submission"]["ready"] is False
     assert (
-        "draw-0:scene-world-transform-not-executed"
-        in report["native_scene_submission"]["blocking_reasons"]
+        tmp_path / "vulkan-set/bundle_set.paths"
+    ).read_text().strip() == "draw_0000"
+
+    assert report["native_scene_submission"]["ready"] is True
+    assert report["native_scene_submission"]["blocking_reasons"] == []
+    assert report["native_scene_submission"]["world_transform_execution"] == (
+        "supported-by-native-runtime-phase585"
     )
     assert report["boundary"]["world_transform_serialized"] is True
     assert report["boundary"]["world_transform_executed"] is False
+    assert report["boundary"]["world_transform_runtime_execution_ready"] is True
 
 
 def test_native_scene_vulkan_set_resolves_material_dds_from_ir(tmp_path):
