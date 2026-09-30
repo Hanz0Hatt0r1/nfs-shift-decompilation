@@ -2250,6 +2250,22 @@ def cmd_camera_view_defaults(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_native_camera_state(args: argparse.Namespace) -> int:
+    """Bridge an evidence-backed camera-manager snapshot into native state."""
+    from native_camera_state import build_native_camera_state_file
+
+    report = build_native_camera_state_file(args.input, args.output)
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "active_buffer_index": report["active_buffer_index"],
+        "camera_id": report["camera_id"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_camera_state_snapshot(args: argparse.Namespace) -> int:
     """Emit a camera-manager snapshot or double-buffer swap report."""
     from camera_state_snapshot_runtime import (
@@ -2291,7 +2307,7 @@ def cmd_camera_state_snapshot(args: argparse.Namespace) -> int:
     )
     print(json.dumps({
         "format": result["format"],
-        "status": result["status"],
+        "status": result.get("status", "snapshot"),
         "action": args.action,
     }, ensure_ascii=False, indent=2))
     return 0
@@ -4657,6 +4673,17 @@ def build_parser() -> argparse.ArgumentParser:
     p = sp.add_parser("camera-view-defaults", help="emit recovered CCameraView projection defaults")
     p.add_argument("output", help="SHIFT.CameraViewDefaultRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_view_defaults)
+
+    p = sp.add_parser(
+        "native-camera-state",
+        help=(
+            "bridge SHIFT.CameraStateSnapshotRuntime/1 into "
+            "SHIFT.NativeCameraState/1"
+        ),
+    )
+    p.add_argument("input", help="SHIFT.CameraStateSnapshotRuntime/1 JSON input")
+    p.add_argument("output", help="SHIFT.NativeCameraState/1 JSON output")
+    p.set_defaults(fn=cmd_native_camera_state)
 
     p = sp.add_parser("camera-state-snapshot", help="emit camera-manager snapshot or double-buffer transition")
     p.add_argument("action", choices=["snapshot", "swap", "complete"])
