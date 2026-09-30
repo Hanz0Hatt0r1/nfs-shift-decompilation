@@ -77,7 +77,7 @@ def test_post_load_derivatives_keep_hash_as_explicit_source_call():
     assert hash_contract["destination_offset"] == 0x120
     assert hash_contract["seed"] == 0
     assert hash_contract["case_sensitive_flag"] == 1
-    assert hash_contract["numeric_hash"] is None
+    assert hash_contract["numeric_hash"] == 0x0A1A5C1E
 
 
 def test_loader_contract_freezes_reflected_to_internal_token_joins():
