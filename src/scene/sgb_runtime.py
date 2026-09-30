@@ -586,7 +586,6 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
                     cursor,
                     chunk_end,
                     count,
-                    relative_base=0,
                     strict=strict,
                 )
                 row["decoder"] = "FUN_006a4b40 -> FUN_0069bc50"
@@ -688,9 +687,9 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
             "OCCL": "FUN_006a4f10",
         },
         "limitations": [
-            "NODE object payload is inline at record +0x1c and decoded against the complete SGB-relative reference arena; byte +0x21 and DAMAGE-specific payload fields remain unresolved.",
+            "NODE/SUMM object payload is inline at record +0x1c and decoded against the complete SGB-relative reference arena; byte +0x21 remains unresolved, and DAMAGE belongs to the alternate XML object path rather than binary FUN_0069a6c0.",
             "FLAT signed terminal spans are normalized exactly when SGB header bit2 is clear, matching FUN_006a5270 -> FUN_006a48d0 -> FUN_006af6c0.",
-            "SUMM vectors remain positional; their semantic names are not proven by FUN_006a4900.",
+            "SUMM now uses the source-backed variable-stride wrapper/object grammar; higher-level meaning of individual scene objects remains kind-specific.",
             "OCCL Name/Resource and PositionTL/TR/BL/BR semantics are source-backed by the matching XML constructor FUN_006a3c40 and binary loader FUN_006a4f10.",
             "PART AABB, child-partition IDs and one-based child-object references are source-backed through FUN_006a4d10, FUN_0068a360 and FUN_00689a30; child virtual kind codes remain numeric rather than class-named.",
             "SUMM runtime wrapper field copies are source-backed; the 64-bit name hash is retained as provenance-only until FUN_0040b831 is normalized.",
