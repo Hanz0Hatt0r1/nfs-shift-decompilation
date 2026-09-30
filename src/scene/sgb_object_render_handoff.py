@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from sgb_multimatrix import build_multimatrix_evaluation
+from sgb_root_transform import build_root_transform_state
 
 FORMAT = "SHIFT.SGBObjectRenderHandoffSet/1"
 SGB_FORMAT = "SHIFT.SGBRuntime/1"
@@ -102,6 +103,7 @@ def build_object_render_handoff(
     *,
     parent_object_report: Mapping[str, Any] | None = None,
     parent_multimatrix_root_matrix: Sequence[float] | None = None,
+    parent_scenegraph_updates: Sequence[Sequence[float]] | None = None,
 ) -> dict[str, Any]:
     if object_report.get("format") != OBJECT_FORMAT:
         raise ValueError("object input must be SHIFT.SGBObjectRuntime/1")
@@ -175,9 +177,56 @@ def build_object_render_handoff(
             parent_object_report,
             Mapping,
         ):
+            resolved_root = parent_multimatrix_root_matrix
+            root_state_summary = None
+            if resolved_root is None:
+                root_state = build_root_transform_state(
+                    parent_object_report,
+                    scenegraph_updates=parent_scenegraph_updates,
+                )
+                if root_state.get("ready") is True:
+                    resolved_root = root_state.get(
+                        "current_root_world_matrix"
+                    )
+                root_state_summary = {
+                    "format": root_state.get("format"),
+                    "status": root_state.get("status"),
+                    "ready": root_state.get("ready"),
+                    "blocking_reasons": root_state.get(
+                        "blocking_reasons"
+                    ),
+                    "constructor_root_matrix": root_state.get(
+                        "constructor_root_matrix"
+                    ),
+                    "scenegraph_update_history_known": root_state.get(
+                        "scenegraph_update_history_known"
+                    ),
+                    "scenegraph_update_count": root_state.get(
+                        "scenegraph_update_count"
+                    ),
+                    "current_root_source": root_state.get(
+                        "current_root_source"
+                    ),
+                    "current_root_world_matrix": root_state.get(
+                        "current_root_world_matrix"
+                    ),
+                    "source": root_state.get("source"),
+                }
+            else:
+                root_state_summary = {
+                    "format": "SHIFT.SGBRootTransformState/1",
+                    "status": "provided-explicitly",
+                    "ready": True,
+                    "blocking_reasons": [],
+                    "current_root_source": "explicit-root-world-matrix",
+                    "current_root_world_matrix": [
+                        float(value) for value in resolved_root
+                    ],
+                }
+
             evaluation = build_multimatrix_evaluation(
                 parent_object_report,
-                root_world_matrix=parent_multimatrix_root_matrix,
+                root_world_matrix=resolved_root,
             )
             selected_slot = None
             slots = evaluation.get("slots") or []
@@ -201,6 +250,7 @@ def build_object_render_handoff(
                 "blocking_reasons": evaluation.get(
                     "blocking_reasons"
                 ),
+                "root_transform_state": root_state_summary,
                 "selected_slot": selected_slot,
                 "source": evaluation.get("source"),
             }
