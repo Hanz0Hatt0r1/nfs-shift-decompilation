@@ -1,0 +1,111 @@
+{
+  "format": "SHIFT.SilverstoneEra3ScenePlacementObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 Silverstone Era3 visual corpus",
+  "source_backed_layout": {
+    "flat_node_aabbox": {
+      "offsets": "0x00..0x14",
+      "runtime_builder": "FUN_00689db0",
+      "query_consumer": "FUN_006af0d0 -> FUN_006b4790 -> FUN_006b4620"
+    },
+    "leaf_filter_masks": {
+      "include_offsets": [
+        "0x00",
+        "0x04"
+      ],
+      "exclude_offsets": [
+        "0x08",
+        "0x0c"
+      ],
+      "query": "FUN_006aef20/FUN_006aefe0"
+    },
+    "leaf_bounding_sphere": {
+      "center_offsets": [
+        "0x10",
+        "0x14",
+        "0x18"
+      ],
+      "radius_offset": "0x1c",
+      "query": "FUN_006aef20/FUN_006aefe0"
+    },
+    "leaf_spatial_bounds": {
+      "offsets": "0x20..0x34",
+      "float_count": 6,
+      "callsite": "FUN_006afb20",
+      "query": "FUN_006aef20",
+      "consumer": "query object +0x18 vfunc +0x2c(leaf+0x20, query+0x20)",
+      "interpretation": "AABB-shaped min_xyz/max_xyz payload",
+      "evidence_level": "source-consumed-corpus-validated"
+    }
+  },
+  "variants": [
+    {
+      "name": "Drift",
+      "sgb_sha256": "a8ad0608889627bedb42529b729f9a52529afedc03b66e73de86148dcd3ecf25",
+      "tree_nodes": 739,
+      "leaf_records": 2622,
+      "ordered_bounds": 2622,
+      "sphere_center_inside_bounds": 2622,
+      "sphere_center_midpoint_matches": 2622,
+      "max_midpoint_error": 0.000030517578125,
+      "nonzero_filter_mask_records": 0
+    },
+    {
+      "name": "GrandPrix",
+      "sgb_sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+      "tree_nodes": 1913,
+      "leaf_records": 7348,
+      "ordered_bounds": 7348,
+      "sphere_center_inside_bounds": 7348,
+      "sphere_center_midpoint_matches": 7348,
+      "max_midpoint_error": 0.00006103515625,
+      "nonzero_filter_mask_records": 0
+    },
+    {
+      "name": "International",
+      "sgb_sha256": "fb6a534b4890a8c046f234f10e702962913a5a03377b7a158581f0a7c74ea2b6",
+      "tree_nodes": 1557,
+      "leaf_records": 5932,
+      "ordered_bounds": 5932,
+      "sphere_center_inside_bounds": 5932,
+      "sphere_center_midpoint_matches": 5932,
+      "max_midpoint_error": 0.00006103515625,
+      "nonzero_filter_mask_records": 0
+    },
+    {
+      "name": "National",
+      "sgb_sha256": "b3f94c2b65bc74d9e309774d793c522bcd2aff5ebfa8a7e7f46ba4d484e5ad93",
+      "tree_nodes": 1519,
+      "leaf_records": 5678,
+      "ordered_bounds": 5678,
+      "sphere_center_inside_bounds": 5678,
+      "sphere_center_midpoint_matches": 5678,
+      "max_midpoint_error": 0.00006103515625,
+      "nonzero_filter_mask_records": 0
+    }
+  ],
+  "totals": {
+    "tree_nodes": 5728,
+    "leaf_records": 21580,
+    "ordered_bounds": 21580,
+    "sphere_center_inside_bounds": 21580,
+    "sphere_center_midpoint_matches": 21580,
+    "max_midpoint_error": 0.00006103515625,
+    "nonzero_filter_mask_records": 0
+  },
+  "neutral_contract": {
+    "format": "SHIFT.ScenePlacement/1",
+    "flat_summ_precision": "leaf",
+    "part_node_precision": "partition",
+    "render_binding_attachment": "top-level scene_placement",
+    "modifies_packets": false,
+    "modifies_static_draws": false,
+    "modifies_render_commands": false,
+    "synthesizes_world_matrix": false
+  },
+  "observations": [
+    "The six floats at FLAT leaf +0x20..+0x34 are directly passed to a spatial-query virtual function; they are no longer treated as an unconsumed candidate.",
+    "All 21580 Silverstone Era3 leaves form ordered three-component min/max pairs, contain their source-backed sphere center, and match the sphere-center midpoint within 6.103515625e-05.",
+    "Filter-mask bits remain semantically unnamed; all observed Silverstone masks are zero and are not promoted to universal defaults.",
+    "ScenePlacement/1 carries only proven spatial identity and query geometry; it does not synthesize transforms or alter render commands."
+  ]
+}
