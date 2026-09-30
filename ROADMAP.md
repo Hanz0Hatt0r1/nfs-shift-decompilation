@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 601.**
+**Current mainline: Phase 602.**
 
 
 
@@ -24,6 +24,8 @@ Phase 599 connects the already-recovered CameraManager six-word snapshot and gua
 
 
 Phase 601 adds `SHIFT.NativeRuntimeInputScript/1`, a fail-closed deterministic per-fixed-step throttle/brake/steer source. The same `PhysicsTickBoundary::tick()` that receives live keyboard intent records script-driven activity counters in CI, without assigning retail gamepad curves, filters or vehicle-force semantics.
+
+Phase 602 adds `SHIFT.NativeVehicleParticipantBridge/1` and connects the source-backed participant topology to `SHIFT.NativeRuntimeState/1`. `DAT_00c109e0` manager-registry identity and `DAT_00bbc600` selector identity remain explicitly distinct; manager registry index, selector ordinal and process state remain unresolved/negative until an authentic runtime observation proves the join. CI exercises five fixed steps and requires five unresolved-participant steps rather than fabricating a participant.
 
 ## Immediate execution order
 
@@ -118,7 +120,7 @@ Phase 601 adds `SHIFT.NativeRuntimeInputScript/1`, a fail-closed deterministic p
 | SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed IMB/IMX neutral geometry; Silverstone capture/matcher/admission, native scene execution, external sampler admission, Phase 594 root solve, Phase 595 candidate join, Phase 596 owner-scoped cross-resource root consensus and Phase 597 consensus→handoff application implemented | authentic Silverstone D3D9 capture content + renderer-owned resource types beyond sampler2D/samplerCube-s3 + runtime IMX same-instance proof + authentic Phase 598 production coverage numbers + historical SceneGraph update sequence |
 | Camera | source-backed manager/state primitives + native snapshot/double-buffer handoff | retail timing/controller/view-selection behavior and exact render integration |
 | Native input | live keyboard intent + deterministic fixed-step input-script path | gamepad/analog normalization and retail input filtering |
-| Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
+| Vehicle physics | active; source-backed participant topology now enters native fixed-step state | authentic manager-registry ↔ selected participant identity join, native numerical backend, and provider numeric parity |
 | Builtin solver | source-backed | runtime frame parity |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
