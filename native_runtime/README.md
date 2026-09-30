@@ -216,3 +216,16 @@ graph and zero-pivot cases.
 The backend is not a replacement for the provider path and is not yet called
 from the vehicle fixed-step loop. Full-frame use still requires exact
 matrix/RHS/reset evidence and provider-absent dispatch proof.
+
+
+## Phase 604 participant identity separation
+
+The Phase 602 participant boundary now exposes separate unresolved fields for
+the manager registry index, selector ordinal and IGPhaseVehicle process state.
+The registry index is sourced from `PhysicsParticipant+0x3c`; the selector
+ordinal is the separate value stored at `IGPhaseVehicle+0x454`.
+
+The runtime keeps all three at `-1` and reports the identity join as false
+until independent runtime evidence proves the relationship. The old generic
+participant index/mode fields remain compatibility aliases and are not
+populated by structural evidence.
