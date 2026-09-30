@@ -1,4 +1,8 @@
-"""Validate the descriptor/resource interface of a prepared BMW Vulkan bundle."""
+"""Validate descriptor/resource interfaces of prepared SHIFT Vulkan bundles.
+
+The generic API accepts BMWVulkanBundle and VulkanDrawBundle. The BMW wrapper
+remains strict and preserves the historical result contract.
+"""
 from __future__ import annotations
 
 import argparse
