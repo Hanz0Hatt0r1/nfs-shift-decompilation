@@ -7,6 +7,7 @@ from ai_database_runtime import (
     META_RECORD_PTR_OFFSET,
     META_RECORD_STRIDE,
     META_REBUILD_FLAG_OFFSET,
+    MINIMUM_OBSERVED_SPAN,
     REFLECTED_FIELDS,
     RTTI_DESCRIPTOR,
     SINGLETON_ADDRESS,
@@ -32,6 +33,8 @@ def test_ai_database_identity_is_frozen_to_retail_evidence():
     assert report["identity"]["destructor"] == "FUN_0071dab0"
     assert report["identity"]["default_initializer"] == DEFAULT_INITIALIZER
     assert report["singleton"]["storage"] == "static"
+    assert MINIMUM_OBSERVED_SPAN == 0x13A5
+    assert report["minimum_observed_span"] == 0x13A5
 
 
 def test_all_thirty_direct_reflection_fields_are_preserved():
