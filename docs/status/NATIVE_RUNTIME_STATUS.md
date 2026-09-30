@@ -32,7 +32,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Phase 599 connects the six-word CameraManager snapshot and guarded double-buffer swap to the native fixed-step scheduler. Phase 600 adds fail-closed recovered scalar evidence input through SHIFT.NativeCameraStateBridge/1 and --camera-state. Remaining camera work is retail timestamp/update scheduling, camera-source/controller behavior, gameplay view selection/attachment and exact render/view integration.
-3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
+3. Phase 602 connects the source-backed PhysicsParticipantManager registry ABI and separate selector context to native state through `SHIFT.NativePhysicsParticipantBoundary/1`. Concrete selected participant instance/index/mode and provider identity remain capture-gated.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Live keyboard vehicle controls already feed the neutral intent layer. Phase 601 adds a deterministic fixed-step input script and physics-boundary activity telemetry for CI. Gamepad/analog normalization and retail filtering remain.
@@ -189,3 +189,19 @@ crossed `SHIFT.NativeRuntimeState/1` rather than merely being parsed.
 Linux Vulkan CI runs a five-step script and verifies the exact activity counts.
 No retail controller dead-zone, analog curve, filtering, or vehicle-force
 semantics are assigned.
+
+
+## Phase 602 participant structural boundary
+
+The native runtime optionally accepts `--participant-boundary` with
+`SHIFT.NativePhysicsParticipantBoundary/1`. The contract preserves the
+proven distinction between the `DAT_00c109e0` PhysicsParticipantManager
+registry and the `DAT_00bbc600` IGPhaseVehicle selector context, validates
+the `0x1fa0` registry-slot stride and descriptor type `3`, and carries only
+that structural ABI into `PhysicsTickBoundary`.
+
+Structural admission never promotes static evidence into a retail participant:
+`participant_ready=false`, `participant_index=-1`, and
+`participant_mode=-1` remain mandatory until independent runtime-instance
+evidence exists. Linux Vulkan CI verifies this boundary alongside the Phase 600
+camera evidence input and Phase 601 deterministic input path.
