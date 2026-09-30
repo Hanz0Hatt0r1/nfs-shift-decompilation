@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 587. Current development: Phase 588.**
+**Merged baseline: Phase 588. Current development: Phase 589.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -50,7 +50,7 @@ Oodle-compatible runtime.
 
 ```text
 BFF
-  → MEB / IMB / BMT / DDS / FX / FXO
+  → MEB / IMB / IMX / BMT / DDS / FX / FXO
   → DrawPacket
   → StaticDraw
   → RenderCommand
@@ -62,8 +62,9 @@ Two important render slices share this contract:
 
 - **BMW/MEB** — the established material, shader, DDS and Vulkan regression
   slice;
-- **Silverstone SGB/MeshInst/IMB** — the scene path that feeds source-backed
-  IMB geometry into the same neutral renderer boundary.
+- **Silverstone SGB/MeshInst/IMB** — the production scene path that feeds source-backed
+  IMB geometry into the same neutral renderer boundary; Phase 589 also closes
+  the source-backed IMX XML MeshInst adapter.
 
 The desktop/reference renderer remains the deterministic oracle. Vulkan is the
 native backend direction.
@@ -88,7 +89,8 @@ SGB
 
 Key contracts near the native boundary:
 
-- `SHIFT.IMBNeutralGeometry/1` — source-backed IMB geometry normalization;
+- `SHIFT.IMBNeutralGeometry/1` — source-backed binary IMB geometry normalization;
+- `SHIFT.IMXNeutralGeometry/1` — source-backed XML MeshInst normalization;
 - `SHIFT.IMBRuntimeShaderAdmission/1` — exact runtime shader selection
   admission;
 - `SHIFT.RuntimeProvenDraw/1` — runtime proof preserved through
@@ -143,7 +145,7 @@ matchmaking/online networking and Bink/video playback.
 | BFF / XMem-LZX | verified for active corpus | uncommon variants; external Type 3 codec |
 | Resource IR | active / verified | remaining format-specific joins |
 | MEB / vertex ABI | strong static coverage | additional same-instance proof |
-| IMB / MeshInst | source-backed v0.4 path | IMX XML adapter and broader variants |
+| IMB / MeshInst | source-backed v0.4 IMB + source-backed IMX XML neutral paths | broader/unsupported stream variants |
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
@@ -358,18 +360,14 @@ These are independent; resolving one does not justify guessing another.
 
 1. **Silverstone exact shader attribution** — authentic D3D9 capture required
    for tied IMB permutations.
-2. **Neutral scene-set runtime admission** — Phase 585 now prepares every
-   `SHIFT.NativeSceneVulkanSet/1` child through neutral SPIR-V/interface/
-   provenance gates and emits `SHIFT.NativeSceneVulkanSetPrepare/1`, but
-   `native_runtime` still accepts only its established BMW-specific set loader.
-3. **Renderer-owned scene resources** — external samplers/resources need an
-   explicit runtime binding contract.
-4. **Scene runtime completeness** — some per-instance MatrixNumber update
+2. **Renderer-owned scene resources** — explicit external snapshot transport exists, but authentic scene-level runtime resources still require evidence-backed admission.
+3. **Scene runtime completeness** — some per-instance MatrixNumber update
    history and higher-level streaming/LOD behavior remain unresolved.
-5. **Vehicle provider numeric parity** — authentic provider frame required.
-6. **BMW tied FXO selection** — authentic same-instance body capture required.
-7. **IMX** — XML MeshInst neutral adapter remains separate from the proven IMB
-   path.
+4. **Vehicle provider numeric parity** — authentic provider frame required.
+5. **BMW tied FXO selection** — authentic same-instance body capture required.
+6. **IMX broader variants** — Phase 589 closes the recovered XML grammar and
+   proven neutral semantics; source-recognized but unrecovered XML value types
+   remain fail-closed.
 
 ## Repository map
 
