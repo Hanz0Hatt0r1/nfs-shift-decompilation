@@ -30,18 +30,20 @@ Covered boundaries include:
 - FLAT leaf include/exclude 64-bit query-mask pairs at +0x00..+0x0f;
 - FLAT leaf bounding sphere at +0x10..+0x1c;
 - FLAT tree-node AABB at header +0x00..+0x14;
-- leaf +0x20..+0x34 retained as a source-unresolved, corpus-verified min/max bounds candidate whose midpoint matches the sphere centre across 21,580 Silverstone placements.
+- FLAT leaf +0x20..+0x34 is consumed directly by the spatial query vfunc as six-float bounds; all 21,580 Silverstone leaves validate as ordered min/max triples whose midpoint matches the sphere centre;
+- `SHIFT.ScenePlacement/1` neutral placement contract with leaf precision for FLAT/SUMM and partition precision for PART/NODE;
+- top-level `scene_placement` attachment to `SHIFT.RenderBinding/1` without mutating DrawPacket/StaticDraw/RenderCommand/world-matrix data.
 
 ## Explicitly unresolved
 
 The project does not invent:
 
-- source semantics of FLAT leaf +0x20..+0x34 and the concrete class behind populated +0x38 runtime object pointers;
+- the concrete class behind populated FLAT +0x38 runtime object pointers;
 - higher-level roles of individual LOD/HIERARCHY objects;
 - full scene streaming and LOD behavior.
 
-Track placement remains an evidence question.
+Track placement identity and neutral spatial geometry are source-backed; higher-level streaming/visibility policy remains an evidence question.
 
 ## Next
 
-Build a neutral scene placement contract from the Phase 545 identity join plus Phase 546 source-backed FLAT filter/sphere/node-AABB geometry, while keeping +0x20..+0x34 below the source-proof threshold, then expose that contract toward RenderBinding.
+Continue with higher-level streaming/LOD behavior only where required by native scene execution; placement bytes no longer block the RenderBinding boundary.
