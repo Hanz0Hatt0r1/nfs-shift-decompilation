@@ -211,6 +211,26 @@ It scans 4-byte-aligned object candidates for these recovered layouts:
 The retail PE also defines how these fields are used for nearest-point and
 path-distance queries. See [AIPolylinePath geometry evidence](../../evidence/polyline_path_geometry_source.md).
 
+The same registration/RTTI machinery can be inspected repository-wide instead
+of one class at a time:
+
+```bash
+python3 tools/shift_live_dump/extract_shift_rtti_registry.py \
+  /path/to/SHIFT.exe.c \
+  --exe /path/to/SHIFT.exe \
+  --prefix AI \
+  --json-out /tmp/shift-ai-rtti.json
+```
+
+The registry extractor recovers the registration function, class name,
+descriptor, resolved parent class, reflection pointer slot/metadata symbol,
+descriptor-returning PE RTTI getters, all matching vtable candidates, and a
+`unique_vtable` only when the PE evidence is unambiguous. Names stored as
+`DAT_...` string symbols are resolved from the executable, so classes such as
+`Knot` do not need a hand-written name table. Multiple vtable candidates remain
+multiple candidates rather than being collapsed to a guess. See
+[RTTI registry evidence](../../evidence/rtti_registry_source.md).
+
 Before changing a concrete path vtable, validate the analyzer against the recovered
 retail decompilation:
 
@@ -222,13 +242,13 @@ python3 tools/shift_live_dump/verify_track_path_source_anchors.py \
   --expect-exe-sha256 eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1
 ```
 
-The verifier checks the source function/vtable anchors for `AISegmentPath`,
-`AIPathNode`, `AIPolylinePath`, `AIPolyPathNode`, and `Knot`, verifies
-the factory RTTI-to-constructor links for the two concrete path containers, and
-requires the recovered addresses to match `KNOWN_VTABLES` in
-`analyze_track_paths.py`. With `--exe`, it also recovers the same vtables
-through descriptor-returning virtual RTTI getters in the retail PE and asserts
-that `AISpline`/`AISplineInfo` do not expose a dedicated getter through this
+The verifier checks the source function/vtable anchors for `AIPathInfo`,
+`AIArea`, `AISegmentPath`, `AIPathNode`, `AIPolylinePath`,
+`AIPolyPathNode`, and `Knot`, verifies the factory RTTI-to-constructor links
+for the two concrete path containers, and requires the recovered addresses to
+match `KNOWN_VTABLES` in `analyze_track_paths.py`. With `--exe`, it uses
+the shared generic PE RTTI index to recover the same vtables and asserts that
+`AISpline`/`AISplineInfo` do not expose a dedicated getter through this
 mechanism. A mismatch exits non-zero. See
 [track/path RTTI vtable evidence](../../evidence/track_path_rtti_vtables.md).
 
