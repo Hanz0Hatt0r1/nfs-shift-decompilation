@@ -28,6 +28,7 @@ BRANCH_LINK_OFFSET = 0x184
 ACTIVE_MARKER_OFFSET = 0x18E
 
 LINK_RESOLUTION_FUNCTION = "FUN_00717b90"
+LINK_RESOLUTION_CALLERS = ("FUN_0071e3ba", "FUN_0071f099")
 NEAREST_BRANCH_ZERO_FUNCTION = "FUN_00718060"
 NEAREST_BRANCH_ONE_FUNCTION = "FUN_00718120"
 
@@ -261,7 +262,7 @@ def resolve_waypoint_links(
     if count < 0 or count > available:
         raise ValueError("waypoint count exceeds provided record storage")
 
-    blob = bytearray(view[: count * SIZE])
+    blob = bytearray(view)
     decisions: list[dict[str, Any]] = []
     for source_index in range(count):
         source_offset = source_index * SIZE
@@ -434,6 +435,7 @@ def describe_waypoint_base_runtime() -> dict[str, Any]:
         "reflected_constructor_defaults": dict(REFLECTED_CONSTRUCTOR_DEFAULTS),
         "link_resolution": {
             "function": LINK_RESOLUTION_FUNCTION,
+            "callers": list(LINK_RESOLUTION_CALLERS),
             "active_marker_offset": ACTIVE_MARKER_OFFSET,
             "index_offsets": {
                 "prev": PREV_INDEX_OFFSET,
