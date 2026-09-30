@@ -60,6 +60,32 @@ struct.pack_into("<fff", blob, false_area_off + 0x30, 11.0, 12.0, 13.0)
 struct.pack_into("<fffff", blob, false_area_off + 0x100, 20.0, 0.5, 2.0, 3.0, 25.0)
 struct.pack_into("<IIII", blob, false_area_off + 0x114, 2, 7, 3, 1)
 
+# AINavigationDatabase is embedded by AIBehaviourSystem but retains its own
+# concrete vtable. Its +0x10 subobject is AICarRecovery and +0x218 points at
+# the current AIArea.
+navigation_off = 0xC00
+navigation_addr = base + navigation_off
+on_track_area_addr = base + ioff
+struct.pack_into("<III", blob, navigation_off, 0x00AFB198, 0, 1)
+struct.pack_into("<III", blob, navigation_off + 0x10, 0x00AFC2C8, 0, 1)
+struct.pack_into("<I", blob, navigation_off + 0x1EC, base + 0x1100)
+struct.pack_into("<II", blob, navigation_off + 0x1F0, 1, 1)
+struct.pack_into("<I", blob, navigation_off + 0x1F8, 0)
+struct.pack_into("<I", blob, navigation_off + 0x218, on_track_area_addr)
+struct.pack_into("<I", blob, navigation_off + 0x21C, 0xFFFFFFFF)
+struct.pack_into("<II", blob, navigation_off + 0x220, 0, 0)
+struct.pack_into("<fff", blob, navigation_off + 0x228, 150.0, 100.0, 100.0)
+
+# Correct outer identity with the wrong embedded AICarRecovery vtable must fail.
+false_navigation_off = 0xE80
+struct.pack_into("<III", blob, false_navigation_off, 0x00AFB198, 0, 1)
+struct.pack_into("<III", blob, false_navigation_off + 0x10, 0x00401000, 0, 1)
+struct.pack_into("<I", blob, false_navigation_off + 0x1EC, base + 0x1100)
+struct.pack_into("<II", blob, false_navigation_off + 0x1F0, 1, 1)
+struct.pack_into("<I", blob, false_navigation_off + 0x218, on_track_area_addr)
+struct.pack_into("<I", blob, false_navigation_off + 0x21C, 0xFFFFFFFF)
+struct.pack_into("<fff", blob, false_navigation_off + 0x228, 150.0, 100.0, 100.0)
+
 # Synthetic AISegmentPath using the fields explicitly reflected by
 # FUN_006d0690.
 soff = 0x220
@@ -158,7 +184,10 @@ for index, pos in enumerate(((101.0, 2.0, 3.0), (105.0, 2.0, 3.0), (109.0, 2.0, 
 
 for n in range(2):
     snap = root / f"snapshot-{n:06d}"
-    (snap / "regions" / "anon.bin").write_bytes(blob)
+    snapshot_blob = bytearray(blob)
+    if n == 1:
+        struct.pack_into("<I", snapshot_blob, navigation_off + 0x21C, 0x1234)
+    (snap / "regions" / "anon.bin").write_bytes(snapshot_blob)
     manifest = {
         "format": "SHIFT-LIVE-MEMORY-SNAPSHOT/1",
         "pid": 1,
@@ -253,13 +282,46 @@ import sys
 result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] == 2, result["candidate_counts"]
+assert result["candidate_counts"]["AINavigationDatabase"] == 1, result["candidate_counts"]
+assert result["navigation_area_link_count"] == 1, result
+assert result["navigation_area_target_count"] == 1, result
+assert len(result["navigation_area_links"]) == 1, result["navigation_area_links"]
+nav_link = result["navigation_area_links"][0]
+assert nav_link["navigation_address"] == 0x00200C00, nav_link
+assert nav_link["on_track_area"] == 0x00600EDC, nav_link
+assert nav_link["identity_stable_snapshots"] == 2, nav_link
+assert nav_link["identity_complete"] is True, nav_link
+assert nav_link["target_stable"] is True, nav_link
+assert nav_link["target_aiarea_candidate"] is True, nav_link
+nav_root = result["navigation_area_targets"][0]
+assert nav_root["target"] == 0x00600EDC, nav_root
+assert nav_root["captured_aiarea_candidate"] is True, nav_root
 evidence = result["analyzer_evidence"]
 assert len(evidence["fingerprint"]) == 64, evidence
 assert evidence["manifest"]["format"] == "SHIFT-TRACK-PATH-ANALYZER-EVIDENCE/1", evidence
 assert evidence["manifest"]["known_vtables"]["AISegmentPath"] == "0x00afc930", evidence
+assert evidence["manifest"]["known_vtables"]["AINavigationDatabase"] == "0x00afb198", evidence
+assert evidence["manifest"]["known_vtables"]["AICarRecovery"] == "0x00afc2c8", evidence
 assert evidence["manifest"]["identity_policies"]["AISpline"]["mode"] == "structural-owner", evidence
+assert evidence["manifest"]["relations"]["AINavigationDatabase.on_track_area"]["target_class"] == "AIArea", evidence
 assert filtered["analyzer_evidence"]["fingerprint"] == evidence["fingerprint"], filtered["analyzer_evidence"]
 assert result["candidate_counts"]["AISegmentPath"] == 2, result["candidate_counts"]
+with open(sys.argv[1].replace("track_path_analysis.json", "ainavigationdatabase.csv"), newline="", encoding="utf-8") as fh:
+    navigation_rows = list(csv.DictReader(fh))
+assert len(navigation_rows) == 1, navigation_rows
+nav = navigation_rows[0]
+assert int(nav["address"]) == 0x00200C00, nav
+assert int(nav["vtable"]) == 0x00AFB198, nav
+assert int(nav["car_recovery_vtable"]) == 0x00AFC2C8, nav
+assert int(nav["on_track_area"]) == 0x00600EDC, nav
+# current_node changes in snapshot 1, so full-object stability is only one
+# snapshot while the identity/on-track-area resolver remains fully stable.
+assert int(nav["stable_snapshots"]) == 1, nav
+with open(sys.argv[1].replace("track_path_analysis.json", "navigation_area_links.csv"), newline="", encoding="utf-8") as fh:
+    navigation_links = list(csv.DictReader(fh))
+assert len(navigation_links) == 1, navigation_links
+assert navigation_links[0]["target_stable"] == "True", navigation_links
+assert navigation_links[0]["target_aiarea_candidate"] == "True", navigation_links
 with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
     segment_rows = list(csv.DictReader(fh))
 assert len(segment_rows) == 2, segment_rows
