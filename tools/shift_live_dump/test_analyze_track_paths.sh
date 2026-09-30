@@ -69,6 +69,25 @@ for index in range(2):
                      float(index * 10), 1.0, float(index * 10), -1.0,
                      0.0, 1.0, 0.5, 0.75, float(index * 10), 0.4)
 
+# AISpline Knot arrays have a four-byte count prefix and 0x48-byte elements.
+knot_array_local = 0x4000
+struct.pack_into("<I", blob, knot_array_local - 4, 2)
+for index in range(2):
+    noff = knot_array_local + index * 0x48
+    struct.pack_into("<III", blob, noff, 0x00AFBE28, 0, 1)
+    struct.pack_into("<14f", blob, noff + 0x10,
+                     float(index), 2.0, 3.0,
+                     1.0, 0.0, 0.0,
+                     0.0, 1.0, 0.0,
+                     0.0, 0.0, 1.0,
+                     5.0, 0.2)
+# A count prefix cannot license an array with a different second vtable.
+bad_knot_local = 0x4100
+struct.pack_into("<I", blob, bad_knot_local - 4, 2)
+struct.pack_into("<III", blob, bad_knot_local, 0x00AFBE28, 0, 1)
+struct.pack_into("<14f", blob, bad_knot_local + 0x10, *([1.0] * 14))
+struct.pack_into("<I", blob, bad_knot_local + 0x48, 0x00AECCF8)
+
 # Synthetic AIPolylinePath using the concrete vtable recovered from
 # FUN_006cc390. Its array points at a count-prefixed AIPolyPathNode array.
 poff = 0x300
@@ -221,6 +240,18 @@ assert len(segment_nodes) == 2, segment_nodes
 assert [int(row["address"]) for row in segment_nodes] == [0x00203000, 0x00203038], segment_nodes
 assert [float(row["distance"]) for row in segment_nodes] == [0.0, 10.0], segment_nodes
 assert all(int(row["vtable"]) == 0x00AFBF60 for row in segment_nodes), segment_nodes
+assert result["spline_knot_array_count"] == 1, result["spline_knot_array_count"]
+assert result["spline_knot_count"] == 2, result["spline_knot_count"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aispline_knot_arrays.csv"), newline="", encoding="utf-8") as fh:
+    knot_arrays = list(csv.DictReader(fh))
+assert len(knot_arrays) == 1, knot_arrays
+assert int(knot_arrays[0]["array_address"]) == 0x00204000, knot_arrays
+assert int(knot_arrays[0]["count"]) == 2, knot_arrays
+with open(sys.argv[1].replace("track_path_analysis.json", "aispline_knots.csv"), newline="", encoding="utf-8") as fh:
+    knots = list(csv.DictReader(fh))
+assert len(knots) == 2, knots
+assert [float(row["pos_x"]) for row in knots] == [0.0, 1.0], knots
+assert all(float(row["length"]) == 5.0 for row in knots), knots
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"), newline="", encoding="utf-8") as fh:
