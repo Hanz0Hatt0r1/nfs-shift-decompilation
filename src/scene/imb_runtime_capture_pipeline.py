@@ -240,6 +240,7 @@ def _attributed_texture_observations(
                         "runtime-draw-snapshot-not-found"
                     ],
                     "active_texture_bindings": [],
+                    "constant_state": {"vertex": {}, "pixel": {}},
                 })
                 continue
 
@@ -274,6 +275,12 @@ def _attributed_texture_observations(
                         if isinstance(path, str)
                     ],
                 })
+            constant_state = snapshot.get("constant_state")
+            constant_state = (
+                constant_state
+                if isinstance(constant_state, Mapping)
+                else {}
+            )
             rows.append({
                 "binding_index": binding_index,
                 "frame": frame_id,
@@ -281,6 +288,22 @@ def _attributed_texture_observations(
                 "status": "observed",
                 "blocking_reasons": [],
                 "active_texture_bindings": textures,
+                "constant_state": {
+                    "vertex": dict(
+                        constant_state.get("vertex")
+                        if isinstance(
+                            constant_state.get("vertex"), Mapping
+                        )
+                        else {}
+                    ),
+                    "pixel": dict(
+                        constant_state.get("pixel")
+                        if isinstance(
+                            constant_state.get("pixel"), Mapping
+                        )
+                        else {}
+                    ),
+                },
             })
     return rows
 
@@ -480,6 +503,10 @@ def build_imb_runtime_capture_pipeline(
             "attributed_texture_observation_contract": (
                 "selected-strong-variant-draw-textures-v1"
             ),
+            "attributed_instance_transform_observation_contract": (
+                "selected-strong-variant-vertex-constants-v1"
+            ),
+            "retains_attributed_draw_constant_state": True,
             "texture_observation_scope": (
                 "only runtime draw snapshots supporting the selected "
                 "strong shader variant"
