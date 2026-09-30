@@ -106,6 +106,8 @@ struct BundleAssets {
     std::vector<BundleTexture> textures;
     BundleCube cube{};
     bool has_cube = false;
+    std::array<float, 16> world_transform{};
+    bool has_world_transform = false;
 };
 
 
@@ -169,6 +171,50 @@ uint32_t read_u32(const std::vector<uint8_t>& data, size_t offset) {
     uint32_t value = 0;
     std::memcpy(&value, data.data() + offset, sizeof(value));
     return value;
+}
+
+
+void load_bundle_world_transform(
+    const std::string& root,
+    BundleAssets& out) {
+
+    const std::string path = root + "/world_transform.svwt";
+    if (!std::filesystem::is_regular_file(path)) {
+        return;
+    }
+
+    const auto data = read_file_bytes(path);
+    constexpr size_t kHeaderBytes = 16u;
+    constexpr size_t kMatrixBytes = sizeof(float) * 16u;
+    if (data.size() != kHeaderBytes + kMatrixBytes ||
+        std::memcmp(data.data(), "SVWT", 4) != 0 ||
+        read_u32(data, 4) != 1u ||
+        read_u32(data, 8) != 1u ||
+        read_u32(data, 12) != kMatrixBytes) {
+        throw std::runtime_error(
+            "unsupported bundle world-transform packet");
+    }
+
+    std::memcpy(
+        out.world_transform.data(),
+        data.data() + kHeaderBytes,
+        kMatrixBytes);
+    for (float value : out.world_transform) {
+        if (!std::isfinite(value)) {
+            throw std::runtime_error(
+                "bundle world transform contains non-finite scalar");
+        }
+    }
+
+    constexpr float epsilon = 1.0e-5f;
+    if (std::fabs(out.world_transform[3]) > epsilon ||
+        std::fabs(out.world_transform[7]) > epsilon ||
+        std::fabs(out.world_transform[11]) > epsilon ||
+        std::fabs(out.world_transform[15] - 1.0f) > epsilon) {
+        throw std::runtime_error(
+            "bundle world transform is not affine D3D row-vector form");
+    }
+    out.has_world_transform = true;
 }
 
 bool file_contains(const std::string& path, const std::string& needle) { 
@@ -363,10 +409,16 @@ shift::runtime::PhysicsWorkspaceBoundary load_physics_manifest(
 }
 
 BundleAssets load_bundle_assets(const std::string& root) {
-    if (!file_contains(
-            root + "/vulkan_interface.json",
-            "\"format\": \"SHIFT.BMWVulkanInterfaceGate/1\"") ||
-        !file_contains(root + "/vulkan_interface.json", "\"ready\": true") ||
+    const std::string interface_path =
+        root + "/vulkan_interface.json";
+    const bool legacy_interface = file_contains(
+        interface_path,
+        "\"format\": \"SHIFT.BMWVulkanInterfaceGate/1\"");
+    const bool neutral_interface = file_contains(
+        interface_path,
+        "\"format\": \"SHIFT.VulkanInterfaceGate/1\"");
+    if ((!legacy_interface && !neutral_interface) ||
+        !file_contains(interface_path, "\"ready\": true") ||
         !file_contains(root + "/spirv_report.json", "\"format\": \"SHIFT.VulkanBundleSPIRV/1\"") ||
         !file_contains(root + "/spirv_report.json", "\"ready\": true")) {
         throw std::runtime_error(
@@ -463,19 +515,37 @@ BundleAssets load_bundle_assets(const std::string& root) {
         out.cube.height = height;
         out.cube.pixels.assign(data.begin() + 28, data.end());
     }
+    load_bundle_world_transform(root, out);
     return out;
 }
 
 PacketGeometry load_bundle_geometry(const std::string& root) {
     const std::string manifest = root + "/bundle_manifest.json";
     const std::string gate = root + "/native_submission_gate.json";
-    if (!file_contains(manifest, "\"format\": \"SHIFT.BMWVulkanBundle/1\"")) {
-        throw std::runtime_error("bundle manifest is not SHIFT.BMWVulkanBundle/1");
+    const bool bmw_bundle = file_contains(
+        manifest, "\"format\": \"SHIFT.BMWVulkanBundle/1\"");
+    const bool neutral_bundle = file_contains(
+        manifest, "\"format\": \"SHIFT.VulkanDrawBundle/1\"");
+    if (!bmw_bundle && !neutral_bundle) {
+        throw std::runtime_error(
+            "bundle manifest is not a supported atomic Vulkan bundle");
     }
     if (!file_contains(gate, "\"format\": \"SHIFT.NativeSubmissionGate/1\"") ||
         !file_contains(gate, "\"ready\": true") ||
         !file_contains(gate, "\"blocking_reasons\": []")) {
         throw std::runtime_error("native submission gate is missing or not ready");
+    }
+    if (neutral_bundle) {
+        const std::string provenance =
+            root + "/runtime_provenance_gate.json";
+        if (!file_contains(
+                provenance,
+                "\"format\": \"SHIFT.VulkanDrawRuntimeProvenanceGate/1\"") ||
+            !file_contains(provenance, "\"ready\": true") ||
+            !file_contains(provenance, "\"blocking_reasons\": []")) {
+            throw std::runtime_error(
+                "neutral bundle runtime provenance gate is missing or not ready");
+        }
     }
 
     const auto data = read_file_bytes(root + "/geometry.svpk");
@@ -530,7 +600,9 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
     const size_t index_base = vertex_base + vertices_bytes;
 
     PacketGeometry out;
-    out.source = "SHIFT.BMWVulkanBundle/1";
+    out.source = neutral_bundle ?
+        "SHIFT.VulkanDrawBundle/1" :
+        "SHIFT.BMWVulkanBundle/1";
     out.first_index = header.first_index;
     out.stride = header.stride;
     out.attributes = attributes;
@@ -2362,7 +2434,9 @@ int main(int argc, char** argv) {
         if (material_mode) {
             geometry_source = bundle_set_mode ?
                 "SHIFT.BMWVulkanBundleSet/1" :
-                "SHIFT.BMWVulkanBundle/1";
+                (material_geometry.empty() ?
+                    "SHIFT.VulkanBundle/unknown" :
+                    material_geometry.front().source);
             for (const auto& geometry : material_geometry) {
                 geometry_vertices += geometry.positions.size() / 3u;
                 geometry_indices += geometry.indices.size();
@@ -2489,7 +2563,13 @@ int main(int argc, char** argv) {
                 start).count();
 
         size_t texture_count = 0;
+        size_t world_transform_count = 0;
         bool has_cube = false;
+        for (const auto& asset : material_assets) {
+            if (asset.has_world_transform) {
+                ++world_transform_count;
+            }
+        }
         for (const auto& draw : runtime.material_draws) {
             texture_count += draw.texture_images.size();
             has_cube =
@@ -2552,6 +2632,9 @@ int main(int argc, char** argv) {
             << texture_count << ",\n"
             << "  \"bundle_cube\": "
             << (has_cube ? "true" : "false") << ",\n"
+            << "  \"bundle_world_transforms_loaded\": "
+            << world_transform_count << ",\n"
+            << "  \"bundle_world_transform_execution\": \"not-applied\",\n"
             << "  \"depth_buffers\": "
             << depth_buffer_count << ",\n"
             << "  \"depth_test\": true,\n"
