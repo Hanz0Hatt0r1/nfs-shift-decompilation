@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 597. Current development: Phase 598.**
+**Merged baseline: Phase 598. Current development: Phase 599.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -138,9 +138,7 @@ prepared native IR / Vulkan bundles
 
 The runtime supports the established prepared bundle path, multi-draw material
 sets, per-draw pipeline state, constant buffers, 2D textures, optional cube
-resources and validation-layer coverage. Camera state, vehicle-control intent
-and a physics participant/tick boundary are represented without fabricating
-unknown retail integration semantics.
+resources and validation-layer coverage. Phase 599 makes the recovered six-word CameraManager snapshot and guarded two-buffer swap live inside `SHIFT.NativeRuntimeState/1`; the scheduling is explicitly native-fixed-step rather than claimed retail timing. Vehicle-control intent and a physics participant/tick boundary remain represented without fabricating unknown retail integration semantics.
 
 The Linux target intentionally excludes EA services, DRM, login/profile/cloud,
 matchmaking/online networking and Bink/video playback.
@@ -158,7 +156,7 @@ matchmaking/online networking and Bink/video playback.
 | Desktop renderer | active oracle | broader exact D3D9 parity |
 | Vulkan | active native backend | authentic capture content/renderer-owned resource types beyond sampler2D/samplerCube-s3; remaining alpha-test/bias/stencil state |
 | SGB / scene | strong structural/render handoff | authentic Silverstone capture content, streaming/LOD, production coverage of Phase 597 consensus-resolved MatrixNumber rows, and remaining historical update sequence |
-| Camera | structural state active | higher-level gameplay behavior |
+| Camera | config/state/event/control + native snapshot/double-buffer handoff active | retail update timing, controller behavior and exact render/view integration |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
 | Vehicle physics | structural reconstruction active | exact specialized-provider numeric parity |
 | Specialized providers | capture-ready | authentic runtime frame |
