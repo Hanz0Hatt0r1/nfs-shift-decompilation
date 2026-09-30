@@ -173,3 +173,79 @@ def test_non_object_single_handoff_is_rejected():
 def test_wrong_sgb_format_is_rejected():
     with pytest.raises(ValueError, match="SGBRuntime"):
         build_sgb_object_render_handoff_set({"format": "wrong"})
+
+
+
+def test_nested_lod_object_selector_uses_inherited_root_multimatrix_table():
+    child = _object(matrix_number=2, resource="tracks/test/deep.meb")
+    nested_lod = {
+        "format": "SHIFT.SGBObjectRuntime/1",
+        "decoded": True,
+        "kind": {"text": "LOD"},
+        "matrix_number": 1,
+        "matrix_records": [{
+            "index": 0,
+            "offset_xyz": [999.0, 0.0, 0.0],
+            "orientation_runtime_order": [1.0, 0.0, 0.0, 0.0],
+            "scale": 1.0,
+            "parent": -1,
+        }],
+        "subobject_references": [{
+            "index": 0,
+            "decoded": True,
+            "report": child,
+        }],
+    }
+    root = {
+        "format": "SHIFT.SGBObjectRuntime/1",
+        "decoded": True,
+        "kind": {"text": "HIERARCHY"},
+        "matrix_number": 0,
+        "matrix_records": [
+            {
+                "index": 0,
+                "offset_xyz": [0.0, 0.0, 0.0],
+                "orientation_runtime_order": [1.0, 0.0, 0.0, 0.0],
+                "scale": 1.0,
+                "parent": -1,
+            },
+            {
+                "index": 1,
+                "offset_xyz": [1.0, 0.0, 0.0],
+                "orientation_runtime_order": [1.0, 0.0, 0.0, 0.0],
+                "scale": 1.0,
+                "parent": 0,
+            },
+            {
+                "index": 2,
+                "offset_xyz": [2.0, 0.0, 0.0],
+                "orientation_runtime_order": [1.0, 0.0, 0.0, 0.0],
+                "scale": 1.0,
+                "parent": 0,
+            },
+        ],
+        "subobject_references": [{
+            "index": 0,
+            "decoded": True,
+            "report": nested_lod,
+        }],
+    }
+    report = {
+        "format": "SHIFT.SGBRuntime/1",
+        "ready": True,
+        "chunks": [{
+            "tag": "SUMM",
+            "records": [_wrapper(0, root)],
+        }],
+    }
+
+    handoffs = build_sgb_object_render_handoff_set(report)
+
+    assert handoffs["ready"] is True
+    assert handoffs["object_count"] == 1
+    row = handoffs["objects"][0]
+    assert row["object_path"] == [0, 0]
+    selected = row["handoff"]["transform"]["selected_parent_matrix_record"]
+    assert selected["index"] == 2
+    assert selected["offset_xyz"] == [2.0, 0.0, 0.0]
+    assert selected["offset_xyz"] != [999.0, 0.0, 0.0]
