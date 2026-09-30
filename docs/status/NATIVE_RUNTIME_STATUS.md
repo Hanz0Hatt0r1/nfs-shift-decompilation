@@ -34,7 +34,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 2. Connect the existing evidence-backed camera update/snapshot contracts to the native state double buffer.
 3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
-5. Connect scene/track resource loading.
+5. Connect scene/track resource loading. Phase 581 serializes scene transforms as SVWT and Phase 582 executes translation-only SVWT in the standalone native Vulkan material executor; native_runtime ingestion and general affine transforms remain.
 6. Add keyboard/gamepad vehicle controls beyond the neutral intent layer.
 7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
 
