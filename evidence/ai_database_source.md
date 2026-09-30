@@ -126,6 +126,10 @@ The source itself logs invalid generated meta sections from
 `.\Source\AI\ai_db.cpp`, which anchors this lifecycle to the recovered AI
 database subsystem.
 
+The highest proven byte access in these constructor/lifecycle paths is
+`+0x13a4`, so the runtime contract exposes `0x13a5` only as a minimum
+observed span. It does not infer an aligned C++ `sizeof(AIDatabase)`.
+
 ## Runtime implementation
 
 `src/ai/ai_database_runtime.py` now exposes:
