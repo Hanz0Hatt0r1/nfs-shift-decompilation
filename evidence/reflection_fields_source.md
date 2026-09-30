@@ -17,7 +17,8 @@ builder calls rooted at `FUN_0063a280`.
 `extract_shift_rtti_registry.py`. For each call it records:
 
 - owning class and descriptor;
-- reflection metadata symbol and builder function;
+- reflection metadata symbol, preferred builder function, canonical builder
+  name, and any thunk/non-thunk aliases;
 - field name and its original source token;
 - reflection type code and original type expression;
 - byte offset and original offset expression;
@@ -27,29 +28,37 @@ Names passed through `DAT_...` or `PTR_s_...` symbols are resolved from the
 retail PE when available. Generated names and computed offsets are kept as
 expressions rather than being guessed.
 
+Ghidra sometimes emits both `thunk_FUN_x` and `FUN_x` as full copies of the
+same reflection builder. The extractor now pairs only semantically identical
+calls across those thunk/non-thunk aliases, prefers the non-thunk row, and
+preserves repeated calls that occur inside the same concrete function.
+
 ## Retail corpus summary
 
 Running the extractor on the supplied retail source/executable pair produced:
 
 | Metric | Count |
 |---|---:|
-| reflection metadata calls | 3122 |
-| calls mapped back to a registered class | 3122 |
-| resolved field names | 3109 |
-| static reflection type codes | 3122 |
-| static byte offsets | 3115 |
-| static flags | 3122 |
+| raw reflection metadata calls | 3122 |
+| thunk-duplicate calls removed | 743 |
+| direct reflected fields | 2379 |
+| fields mapped back to a registered class | 2379 |
+| resolved field names | 2371 |
+| static reflection type codes | 2379 |
+| static byte offsets | 2372 |
+| static flags | 2379 |
 
-The 13 unresolved field names are generated or indirect at runtime rather than
-simple source/PE string constants. Seven calls use computed offsets in loops;
-the extractor keeps their offset expressions instead of inventing constants.
+The eight unresolved field names are generated or indirect at runtime rather
+than simple source/PE string constants. Seven fields use computed offsets in
+loops; the extractor keeps their offset expressions instead of inventing
+constants.
 
 The two observed top-level reflection flag values are:
 
 | Flags | Calls |
 |---:|---:|
-| `2` | 929 |
-| `3` | 2193 |
+| `2` | 699 |
+| `3` | 1680 |
 
 The most common recovered type codes are `10`, `0`, `3`, `1`, `6`,
 `2`, and `13`. The extractor deliberately reports numeric codes without
