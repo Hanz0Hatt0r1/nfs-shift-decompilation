@@ -267,6 +267,11 @@ def test_flat_chunk_decodes_embedded_runtime_tree():
     assert flat["ready"] is True
     assert flat["stats"]["leaf_records"] == 1
     assert flat["root"]["records"][0]["index_word"] == 5
+    bridge = parse_sgb_runtime(data)["spatial_bridge"]
+    assert bridge["ready"] is True
+    assert bridge["mode"] == "prebuilt-flat"
+    assert bridge["conversion_required"] is False
+    assert bridge["prebuilt_flat"]["direct_records"] == 1
 
 
 def test_flat_chunk_normalizes_signed_terminal_span_when_header_bit2_clear():
