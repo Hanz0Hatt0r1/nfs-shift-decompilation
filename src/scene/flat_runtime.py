@@ -235,6 +235,14 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
                 "center_offsets": [0x10, 0x14, 0x18],
                 "radius_offset": 0x1C,
             },
+            "spatial_bounds_query": {
+                "callsite": "FUN_006afb20",
+                "function": "FUN_006aef20",
+                "source_offset": LEAF_SPATIAL_BOUNDS_OFFSET,
+                "source_bytes": LEAF_SPATIAL_BOUNDS_BYTES,
+                "consumer": "query object +0x18 vfunc +0x2c",
+                "query_argument_offset": 0x20,
+            },
             "direct_object_pointer_offset": LEAF_DIRECT_OBJECT_POINTER_OFFSET,
             "runtime_index_offset": LEAF_RUNTIME_INDEX_OFFSET,
             "dispatch": {
