@@ -88,9 +88,12 @@ Before finishing, `FUN_0049c050` copies the source path, calls
 FUN_0063ad50(object + 0x120, normalized_path, length, 0, 1)
 ```
 
-`FUN_0063ad50` is a recovered 32-bit hash routine. The runtime contract records
-the exact call arguments and destination `+0x120`, but does not yet claim
-Python numeric parity for the hash. That parity can be closed independently.
+`FUN_0063ad50` is now reconstructed with source/PE-equivalent 32-bit
+arithmetic for the case-sensitive raw-byte path. The retail PE proves signed
+byte loads through `MOVSX` and big-endian-style four-byte accumulation. For
+the normalized ASCII path `tracks\\silverstone\\era3.trd`, the recovered
+hash is `0x0a1a5c1e`. See
+[SHIFT hash32 evidence](shift_hash32_source.md).
 
 ## Allocation and ownership handoff
 
@@ -132,5 +135,6 @@ higher-level track selection.
 - allocation/load success/failure ownership handoff.
 
 The boundary remains conservative: internal container types, property-parser
-internals, numeric hash parity, the text track-list format handled by
-`FUN_0049f2c0`, and higher-level track-selection policy remain open.
+internals, non-ASCII CRT locale behavior for the optional uppercase hash mode,
+the text track-list format handled by `FUN_0049f2c0`, and higher-level
+track-selection policy remain open.
