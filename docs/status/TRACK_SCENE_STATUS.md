@@ -33,7 +33,8 @@ Covered boundaries include:
 - FLAT leaf +0x20..+0x34 consumed directly by the secondary spatial-query virtual interface as six-float bounds; all 21,580 Silverstone leaves validate as ordered min/max triples whose midpoint matches the source-backed sphere centre;
 - `SHIFT.SGBScenePlacement/1` normalizes FLAT/SUMM and PART/NODE object identity with source-backed node/leaf/partition geometry; FLAT leaf bounds are admitted as proven geometry;
 - `SHIFT.SGBObjectRenderHandoffSet/1` maps OBJECT resource descriptor +0x80 to renderer factory vfunc +0x214 and transform submission vfunc +0x2c;
-- OBJECT MatrixNumber=-1 produces a source-equivalent numeric 4x4 from WXYZ quaternion, XYZ offset and uniform scale; MatrixNumber>=0 validates a 0x40-byte parent MultiMatrix slot without fabricating its runtime-updated world value.
+- OBJECT MatrixNumber=-1 produces a source-equivalent numeric 4x4 from WXYZ quaternion, XYZ offset and uniform scale; MatrixNumber>=0 selects a 0x40-byte parent MultiMatrix slot.
+- `SHIFT.SGBMultiMatrixEvaluation/1` reconstructs static mode-1 hierarchy arithmetic: the owner overwrites world slot 0 from its runtime root input, then evaluates slots 1..N-1 as `local * parent_world` using the low byte of the serialized parent dword.
 
 ## Explicitly unresolved
 
@@ -43,8 +44,8 @@ The project does not invent:
 - higher-level roles of individual LOD/HIERARCHY objects;
 - full scene streaming and LOD behavior.
 
-Track placement identity and culling geometry are source-backed; numeric hierarchy transforms and higher-level streaming behavior remain evidence questions.
+Track placement identity, culling geometry and static MultiMatrix arithmetic are source-backed; the top-level runtime root matrix producer and higher-level streaming behavior remain evidence questions.
 
 ## Next
 
-Reconstruct the numeric MultiMatrix hierarchy update used by MatrixNumber-backed OBJECTs, then join those proven transforms with `SHIFT.SGBScenePlacement/1` and `SHIFT.SGBObjectRenderHandoffSet/1` for fail-closed RenderBinding admission.
+Trace the top-level matrix passed to LOD/HIERARCHY update vfunc `+0x2c`, then feed that proven root into `SHIFT.SGBMultiMatrixEvaluation/1` and join the resulting OBJECT world matrices with `SHIFT.SGBScenePlacement/1` for fail-closed RenderBinding admission.

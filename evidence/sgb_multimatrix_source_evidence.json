@@ -1,0 +1,63 @@
+{
+  "format": "SHIFT.SGBMultiMatrixSourceEvidence/1",
+  "source": "retail Need For Speed SHIFT v1.02 / Ghidra SHIFT.exe.c",
+  "source_file_literal": ".\\\\Source\\\\RenderHierarchy\\\\MultiMatrix.cpp",
+  "functions": {
+    "constructor": {
+      "address": "0x006b144b",
+      "facts": [
+        "allocates matrix_count * 0x90 bytes",
+        "splits storage into 0x40-byte local matrices, 0x40-byte world matrices and 0x10-byte descriptors",
+        "initializes descriptor mode +0x08 to 1",
+        "stores self index at descriptor +0x0c"
+      ]
+    },
+    "local_matrix_initializer": {
+      "address": "0x0068cbb0",
+      "facts": [
+        "stores SUB41(parent,0) at descriptor +0x0b",
+        "uses FUN_00445ec0 to build the WXYZ quaternion matrix",
+        "applies uniform scale to the 3x3 basis",
+        "writes XYZ translation at float indices 12..14",
+        "copies local matrix to the matching world slot"
+      ]
+    },
+    "hierarchy_update": {
+      "address": "0x006ab710",
+      "facts": [
+        "copies caller matrix into world slot 0",
+        "calls FUN_006b1620"
+      ]
+    },
+    "lod_update": {
+      "address": "0x006b4280",
+      "facts": [
+        "copies caller matrix into world slot 0",
+        "calls FUN_006b1620"
+      ]
+    },
+    "evaluator": {
+      "address": "0x006b1620",
+      "facts": [
+        "processes slots 1..N-1",
+        "default descriptor mode is 1",
+        "mode 1 selects parent through descriptor +0x0b",
+        "mode 1 multiplies the local matrix by the selected parent world matrix"
+      ]
+    },
+    "matrix_multiply": {
+      "addresses": [
+        "0x00401610",
+        "0x00401619"
+      ],
+      "composition": "result = lhs * rhs",
+      "storage": "row-major 4x4 / D3D row-vector convention"
+    }
+  },
+  "proven_static_composition": "world[i] = local[i] * world[parent_low_byte]",
+  "explicit_boundary": {
+    "root_world_matrix": "caller-provided at runtime; not replaced with identity",
+    "dynamic_descriptor_modes": "2,3,5,6 observed but not claimed by the static evaluator",
+    "render_binding_admission": false
+  }
+}
