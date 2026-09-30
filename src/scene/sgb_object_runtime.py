@@ -92,7 +92,16 @@ RUNTIME_WRAPPERS = {
         "allocation_bytes": 0xA0,
         "binary_node_dispatch": False,
         "alternate_loader": "FUN_00699b10/FUN_0069b1c0",
-        "proven_fields": {},
+        "proven_fields": {
+            "matrices": 0x80,
+            "runtime_matrix_array": 0x84,
+            "runtime_subobject_array": 0x88,
+            "matrix_number": 0x90,
+        },
+        "field_evidence": {
+            "source": "FUN_00699b10/FUN_0069b1c0",
+            "path": "XML scene object loader only",
+        },
     },
 }
 
@@ -316,6 +325,12 @@ def parse_sgb_object_payload(
         "instances": words[3],
         "matrix_number": matrix_number,
         "control_byte_21": control_byte_21,
+        "control_byte_21_evidence": {
+            "binary_consumer": "FUN_0069a6c0",
+            "binary_consumer_status": "unconsumed",
+            "xml_counterpart": None,
+            "semantic_name": None,
+        },
         "matrices": matrices,
         "subobjects": subobjects,
         "kind_status": kind_status,
@@ -354,6 +369,9 @@ def parse_sgb_object_payload(
                 "subobjects": (
                     "XML subobjects -> binary byte +0x23"
                 ),
+                "control_byte_21": (
+                    "no read in FUN_0069a6c0; no matching XML field"
+                ),
             },
         },
         "limitations": [
@@ -364,6 +382,10 @@ def parse_sgb_object_payload(
             (
                 "DAMAGE has a concrete alternate/XML runtime wrapper but "
                 "is not present in the binary FUN_0069a6c0 dispatch."
+            ),
+            (
+                "Common byte +0x21 has no consumer in FUN_0069a6c0 and "
+                "no matching XML property; it remains raw/unassigned."
             ),
         ],
     }
