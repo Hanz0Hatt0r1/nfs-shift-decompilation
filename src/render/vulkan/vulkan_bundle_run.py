@@ -19,6 +19,8 @@ from vulkan_bundle_interface_gate import validate_bmw_vulkan_interface
 from vulkan_bundle_spirv import compile_bmw_vulkan_bundle, write_compile_report
 
 FORMAT = "SHIFT.BMWVulkanRunner/1"
+NEUTRAL_FORMAT = "SHIFT.VulkanBundleRunner/1"
+NEUTRAL_BUNDLE_FORMAT = "SHIFT.VulkanDrawBundle/1"
 
 
 def _validate_native_submission_gate(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
@@ -35,6 +37,54 @@ def _validate_native_submission_gate(root: Path) -> tuple[dict[str, Any] | None,
         reasons = list(gate.get("blocking_reasons") or [])
         return gate, reasons or ["vulkan-runner:native-submission-gate-not-ready"]
     return gate, []
+
+
+def _bundle_format(root: Path) -> str | None:
+    path = root / "bundle_manifest.json"
+    if not path.is_file():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return value.get("format") if isinstance(value, dict) else None
+
+
+def _validate_runtime_provenance_gate(
+    root: Path,
+    bundle_format: str | None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    if bundle_format != NEUTRAL_BUNDLE_FORMAT:
+        return None, []
+    path = root / "runtime_provenance_gate.json"
+    if not path.is_file():
+        return None, ["vulkan-runner:runtime-provenance-gate-missing"]
+    try:
+        gate = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return None, [
+            "vulkan-runner:runtime-provenance-gate-invalid-json:"
+            + type(error).__name__
+        ]
+    if (
+        not isinstance(gate, dict)
+        or gate.get("format")
+        != "SHIFT.VulkanDrawRuntimeProvenanceGate/1"
+    ):
+        return (
+            gate if isinstance(gate, dict) else None,
+            ["vulkan-runner:runtime-provenance-gate-invalid-format"],
+        )
+    if gate.get("ready") is not True:
+        reasons = [
+            str(reason)
+            for reason in gate.get("blocking_reasons") or []
+        ]
+        return gate, reasons or [
+            "vulkan-runner:runtime-provenance-gate-not-ready"
+        ]
+    return gate, []
+
 
 
 def _validate_sampler_sidecar(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
@@ -79,9 +129,15 @@ def run_bmw_vulkan_bundle(
     validation: bool = False,
 ) -> dict[str, Any]:
     root = Path(bundle_dir)
+    bundle_format = _bundle_format(root)
+    result_format = (
+        NEUTRAL_FORMAT
+        if bundle_format == NEUTRAL_BUNDLE_FORMAT
+        else FORMAT
+    )
     if not (root / "bundle_manifest.json").is_file():
         return {
-            "format": FORMAT,
+            "format": result_format,
             "status": "blocked",
             "ready": False,
             "blocking_reasons": ["vulkan-runner:bundle-manifest-missing"],
@@ -95,10 +151,14 @@ def run_bmw_vulkan_bundle(
     )
 
     native_gate, native_gate_blockers = _validate_native_submission_gate(root)
+    runtime_provenance_gate, runtime_provenance_blockers = (
+        _validate_runtime_provenance_gate(root, bundle_format)
+    )
     sampler_metadata, sampler_blockers = _validate_sampler_sidecar(root)
 
     result: dict[str, Any] = {
-        "format": FORMAT,
+        "format": result_format,
+        "source_bundle_format": bundle_format,
         "status": "compiled" if compile_report.get("ready") else "blocked",
         "ready": False,
         "gates": {
@@ -108,6 +168,22 @@ def run_bmw_vulkan_bundle(
                 "status": "ready" if native_gate is not None and not native_gate_blockers else "blocked",
                 "path": str(root / "native_submission_gate.json") if native_gate is not None else None,
                 "blocking_reasons": native_gate_blockers,
+            },
+            "runtime_provenance": {
+                "status": (
+                    "not-required"
+                    if bundle_format != NEUTRAL_BUNDLE_FORMAT
+                    else "ready"
+                    if runtime_provenance_gate is not None
+                    and not runtime_provenance_blockers
+                    else "blocked"
+                ),
+                "path": (
+                    str(root / "runtime_provenance_gate.json")
+                    if runtime_provenance_gate is not None
+                    else None
+                ),
+                "blocking_reasons": runtime_provenance_blockers,
             },
             "sampler": {
                 "status": "not-supplied" if sampler_metadata is None else (
@@ -138,6 +214,11 @@ def run_bmw_vulkan_bundle(
             compile_report.get("blocking_reasons") or
             ["vulkan-runner:spirv-not-ready"]
         )
+        return result
+
+    if runtime_provenance_blockers:
+        result["status"] = "blocked"
+        result["blocking_reasons"] = runtime_provenance_blockers
         return result
 
     if sampler_metadata is not None:
@@ -230,9 +311,30 @@ def run_bmw_vulkan_bundle(
     return result
 
 
+def run_vulkan_bundle(
+    bundle_dir: str | Path,
+    *,
+    executable: str | Path = "native_vulkan/build/shift_vulkan_bundle_execute",
+    validator: str | None = None,
+    output: str | Path | None = None,
+    prepare_only: bool = False,
+    validation: bool = False,
+) -> dict[str, Any]:
+    """Neutral entrypoint; legacy BMW runner remains API-compatible."""
+    return run_bmw_vulkan_bundle(
+        bundle_dir,
+        executable=executable,
+        validator=validator,
+        output=output,
+        prepare_only=prepare_only,
+        validation=validation,
+    )
+
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Run SHIFT.BMWVulkanBundle/1 through Vulkan gates and native execution"
+        description="Run a SHIFT atomic Vulkan bundle through compile/interface/native gates"
     )
     parser.add_argument("bundle_dir")
     parser.add_argument("--executable", default="native_vulkan/build/shift_vulkan_bundle_execute")
