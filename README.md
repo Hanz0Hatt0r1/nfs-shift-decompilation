@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 589. Current development: Phase 590.**
+**Merged baseline: Phase 590. Current development: Phase 591.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -152,8 +152,8 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | authentic capture content/repeated-instance disambiguation/remaining renderer-owned resource types; remaining alpha-test/bias/stencil state |
-| SGB / scene | strong structural/render handoff | authentic Silverstone capture content, repeated-instance disambiguation, streaming/LOD, some MatrixNumber history |
+| Vulkan | active native backend | authentic capture content/remaining renderer-owned resource types; remaining alpha-test/bias/stencil state |
+| SGB / scene | strong structural/render handoff | authentic Silverstone capture content, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
 | Vehicle physics | structural reconstruction active | exact specialized-provider numeric parity |
@@ -374,8 +374,9 @@ These are independent; resolving one does not justify guessing another.
    for tied IMB permutations.
 2. **Renderer-owned scene evidence** — Phase 590 can automatically convert an
    unambiguous strong-attributed D3D9 `CreateTexture` + captured PPM into the
-   exact Phase 589 scene contract, but authentic Silverstone capture content,
-   repeated-instance disambiguation and remaining resource types are still
+   exact Phase 589 scene contract. Phase 591 can also disambiguate repeated
+   scene instances from exact strong-attributed draw-local VS constant windows;
+   authentic Silverstone capture content and remaining resource types are still
    required.
 3. **Scene runtime completeness** — some per-instance MatrixNumber update
    history and higher-level streaming/LOD behavior remain unresolved.
