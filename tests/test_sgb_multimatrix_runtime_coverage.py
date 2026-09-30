@@ -255,6 +255,10 @@ def test_incomplete_capture_is_reported_blocked_without_guessing():
     assert report["coverage"]["consensus_resolved_matrix_object_count"] == 0
     assert report["coverage"]["promoted_numeric_matrix_object_count"] == 0
     assert report["coverage"]["newly_admitted_binding_count"] == 0
+    assert report["stages"]["root_consensus"]["ready"] is False
+    assert report["stages"]["root_consensus"]["status"] == "blocked"
+    assert report["coverage"]["consensus_hypothesis_count"] == 0
+    assert report["coverage"]["consensus_eligible_root_count"] == 0
     assert any(
         "runtime-same-instance-gate-not-ready" in reason
         for reason in report["blocking_reasons"]
