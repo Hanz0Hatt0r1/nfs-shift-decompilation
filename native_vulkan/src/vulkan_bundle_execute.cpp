@@ -514,6 +514,11 @@ WorldTransformExecution apply_world_transform_affine(
             "SVWT affine linear transform is singular");
     }
     result.determinant = determinant;
+    if (determinant < 0.0f) {
+        throw std::runtime_error(
+            "SVWT reflection transform is blocked until raster winding and "
+            "tangent handedness semantics are proven");
+    }
 
     const bool linear_identity =
         std::fabs(a - 1.0f) <= kTolerance &&
