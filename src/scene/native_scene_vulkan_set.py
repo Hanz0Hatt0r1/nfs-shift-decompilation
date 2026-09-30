@@ -645,6 +645,7 @@ def build_native_scene_vulkan_set(
         },
         "boundary": {
             "draw_order_preserved": True,
+            "bundle_paths_relative_to_set_root": True,
             "exact_imb_resource_revalidated": True,
             "exact_primitive_range_revalidated": True,
             "scene_hashes_revalidated": True,
@@ -653,8 +654,8 @@ def build_native_scene_vulkan_set(
             "world_transform_executed": False,
             "unresolved_external_samplers_promoted": False,
             "next_stage": (
-                "execute SGB world transform in the Vulkan/native draw path "
-                "and index these children for native_runtime"
+                "prepare the ordered neutral children through the native "
+                "SPIR-V/interface/provenance gates before native_runtime"
             ),
         },
     }
@@ -669,12 +670,7 @@ def build_native_scene_vulkan_set(
     paths_file = out / "bundle_set.paths"
     paths_file.write_text(
         "".join(
-            str(
-                (
-                    out
-                    / str(row["bundle"]["manifest_path"])
-                ).parent
-            )
+            Path(str(row["bundle"]["manifest_path"])).parent.as_posix()
             + "\n"
             for row in child_rows
             if row.get("ready") is True

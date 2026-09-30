@@ -1,8 +1,8 @@
-"""Compile Vulkan shader sources from a prepared BMW Vulkan bundle.
+"""Compile Vulkan shader sources from prepared SHIFT Vulkan draw bundles.
 
-Compilation is optional on developer machines without glslangValidator. When the
-compiler exists, every copied bundle shader must compile to SPIR-V or the bundle
-compile gate fails closed.
+The neutral API accepts both the established BMW bundle and the generic
+VulkanDrawBundle contract. The legacy BMW wrapper keeps its original input and
+report shape. Every copied shader must compile and reflect or the gate fails closed.
 """
 from __future__ import annotations
 
@@ -17,6 +17,9 @@ from typing import Any
 from spirv_reflection import reflect_spirv_file
 
 FORMAT = "SHIFT.VulkanBundleSPIRV/1"
+BMW_BUNDLE_FORMAT = "SHIFT.BMWVulkanBundle/1"
+NEUTRAL_BUNDLE_FORMAT = "SHIFT.VulkanDrawBundle/1"
+SUPPORTED_BUNDLE_FORMATS = {BMW_BUNDLE_FORMAT, NEUTRAL_BUNDLE_FORMAT}
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -26,7 +29,7 @@ def _load(path: str | Path) -> dict[str, Any]:
     return value
 
 
-def compile_bmw_vulkan_bundle(
+def compile_vulkan_bundle(
     bundle_dir: str | Path,
     *,
     validator: str | None = None,
@@ -36,8 +39,12 @@ def compile_bmw_vulkan_bundle(
     if not manifest_path.is_file():
         raise ValueError("bundle manifest is missing")
     manifest = _load(manifest_path)
-    if manifest.get("format") != "SHIFT.BMWVulkanBundle/1":
-        raise ValueError("input is not SHIFT.BMWVulkanBundle/1")
+    bundle_format = str(manifest.get("format") or "")
+    if bundle_format not in SUPPORTED_BUNDLE_FORMATS:
+        raise ValueError(
+            "input is not a supported SHIFT Vulkan bundle: "
+            + (bundle_format or "missing-format")
+        )
 
     compiler = validator or shutil.which("glslangValidator")
     shader_rows = manifest.get("artifacts", {}).get("shaders") or []
@@ -46,6 +53,7 @@ def compile_bmw_vulkan_bundle(
     if compiler is None:
         return {
             "format": FORMAT,
+            "bundle_format": bundle_format,
             "status": "unavailable",
             "ready": False,
             "validator": None,
@@ -113,12 +121,31 @@ def compile_bmw_vulkan_bundle(
 
     return {
         "format": FORMAT,
+        "bundle_format": bundle_format,
         "status": "ready" if not blockers else "invalid",
         "ready": not blockers,
         "validator": compiler,
         "shader_results": results,
         "blocking_reasons": list(dict.fromkeys(blockers)),
     }
+
+
+def compile_bmw_vulkan_bundle(
+    bundle_dir: str | Path,
+    *,
+    validator: str | None = None,
+) -> dict[str, Any]:
+    root = Path(bundle_dir)
+    manifest_path = root / "bundle_manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError("bundle manifest is missing")
+    manifest = _load(manifest_path)
+    if manifest.get("format") != BMW_BUNDLE_FORMAT:
+        raise ValueError("input is not SHIFT.BMWVulkanBundle/1")
+    result = compile_vulkan_bundle(root, validator=validator)
+    result = dict(result)
+    result.pop("bundle_format", None)
+    return result
 
 
 def write_compile_report(
