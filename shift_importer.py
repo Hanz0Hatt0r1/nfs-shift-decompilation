@@ -1784,6 +1784,31 @@ def cmd_bab_animation_runtime(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_sgb_multimatrix_world(args: argparse.Namespace) -> int:
+    """Evaluate initial SGB MultiMatrix world transforms."""
+    from sgb_multimatrix_runtime import validate_file
+
+    report = validate_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "context_count": report["context_count"],
+        "object_count": report["object_count"],
+        "ready_object_count": report["ready_object_count"],
+        "explicit_object_count": report["explicit_object_count"],
+        "multimatrix_object_count": report["multimatrix_object_count"],
+        "blockers": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_sgb_object_render_handoff(args: argparse.Namespace) -> int:
     """Build source-backed OBJECT resource/transform render handoffs."""
     from sgb_object_render_handoff import validate_file
@@ -4055,6 +4080,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--mode", type=int, choices=[0, 1, 2], required=True, help="runtime animation-bank variant recovered from SHIFT.exe.c")
     p.add_argument("--allow-partial", action="store_true", help="return a blocker instead of raising on truncated payload")
     p.set_defaults(fn=cmd_bab_animation_runtime)
+
+    p = sp.add_parser(
+        "sgb-multimatrix-world",
+        help="evaluate initial SGB MultiMatrix world transforms",
+    )
+    p.add_argument(
+        "input",
+        help="SHIFT.SGBRuntime/1 JSON produced by sgb-runtime",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.SGBMultiMatrixWorldTransformSet/1 JSON output",
+    )
+    p.set_defaults(fn=cmd_sgb_multimatrix_world)
 
     p = sp.add_parser(
         "sgb-object-render-handoff",
