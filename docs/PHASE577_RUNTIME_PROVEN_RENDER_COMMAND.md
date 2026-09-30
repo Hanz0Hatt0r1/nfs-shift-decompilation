@@ -103,3 +103,7 @@ The native scene bundle should preserve:
 
 Unproven scene primitives must remain outside the native bundle rather than
 being silently promoted.
+
+The future packager must also re-run the normal RenderCommand/native submission
+gates; `RuntimeProvenDraw/1` is necessary evidence, not a substitute for
+geometry, shader, texture, pipeline-state or SPIR-V readiness.
