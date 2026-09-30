@@ -32,7 +32,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Phase 599 connects the evidence-backed six-word CameraManager snapshot and guarded double-buffer swap to native state. Remaining camera work is retail timestamp/update scheduling, controller behavior, gameplay view selection/attachment and exact render/view constant integration.
-3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
+3. Phase 600 connects the source-backed PhysicsParticipantManager registry ABI and separate selector context to native state through `SHIFT.NativePhysicsParticipantBoundary/1`. The concrete selected participant instance/index/mode and provider identity remain capture-gated.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Add keyboard/gamepad vehicle controls beyond the neutral intent layer.
@@ -152,3 +152,24 @@ The frame-loop report exposes `camera_snapshot_count`,
 This is a native integration boundary only. It does not map the retail
 `FUN_0080c920` timestamp source, 0x14 suppression window, absolute time unit,
 or `FUN_0080c510` controller semantics onto the 60 Hz native clock.
+
+
+## Phase 600 participant structural boundary
+
+The native runtime optionally accepts
+`--participant-boundary SHIFT.NativePhysicsParticipantBoundary/1`.
+
+The contract preserves the proven distinction between the
+`DAT_00c109e0` PhysicsParticipantManager registry and the
+`DAT_00bbc600` IGPhaseVehicle selector context. It also validates the
+`0x1fa0` registry-slot stride, descriptor type `3`, and
+IGPhaseVehicle `+0x450/+0x454/+0x45c` writeback/state slots.
+
+Successful structural admission populates only ABI/readiness metadata in
+`PhysicsTickBoundary`. The concrete runtime participant remains
+`participant_ready=false`, `participant_index=-1`,
+`participant_mode=-1` until independent runtime-instance evidence exists.
+
+Linux Vulkan CI generates the boundary from the existing source-backed
+contracts and verifies both structural readiness and preservation of the
+unresolved participant instance.
