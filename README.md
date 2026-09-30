@@ -89,6 +89,19 @@ The D3D9 producer captures declaration/buffer/shader/constant/texture state and 
 
 Linux/apitrace tooling provides an alternate path for extracting unique BMW draw/resource instances and trimming large traces.
 
+The retail BMW v1.02 corpus has now been executed through the static admission path using `BMW_M3_E36.bff`, `BMW_M3_E36_Cockpit.bff` and `RENDER.bff`. BMT/FX/DDS resolution is complete for the five unique body materials; the remaining render blocker is concrete same-instance FXO permutation attribution from one authentic BMW body D3D9 capture.
+
+The capture-side path is already implemented:
+
+```text
+retail body admission
+  → BMWRuntimeShaderTargetSet/1
+  → raw JSONL shader/draw prefilter
+  → D3D9RuntimeBindingEvidence/1
+  → BMWRuntimeShaderTargetMatch/1
+  → exact static FXO selection
+```
+
 ## Specialized-provider physics track
 
 Current provider boundary:
@@ -150,6 +163,25 @@ python tools/extract_apitrace_unique_bmw.py \
   --target-runtime-geometry evidence/bmw_m3_e36_kit00_body_loda.runtime_geometry.json \
   capture.trace
 
+python shift_importer.py bmw-body-material-admission \
+  BMW_M3_E36.bff out/bmw-admission \
+  --supplemental-bff BMW_M3_E36_Cockpit.bff \
+  --supplemental-bff RENDER.bff
+
+python shift_importer.py bmw-runtime-shader-target-set \
+  out/bmw-admission/admission.json \
+  out/bmw-runtime-shader-targets.json
+
+python shift_importer.py bmw-raw-capture-shader-prefilter \
+  out/bmw-runtime-shader-targets.json \
+  shift_d3d9_capture.jsonl \
+  out/bmw-raw-prefilter.json
+
+python shift_importer.py bmw-runtime-shader-target-match \
+  out/bmw-runtime-shader-targets.json \
+  runtime-binding.json \
+  out/bmw-runtime-shader-target-match.json
+
 python vehicle_physics_bundle.py BMW_M3_E36.bff out/bmw_physics
 python tools/build_vehicle_physics_handoff.py BMW_M3_E36.bff out/bmw_handoff
 python tools/build_vehicle_physics_participant_gate.py -o participant_gate.json
@@ -172,18 +204,28 @@ Phase 506 records `FUN_0070e1c0 → opcode 0x20 → FUN_00714560(DAT_00c109e0) �
 
 Phase 507 records the concrete participant slot array (`DAT_00c109e0+0x140`, stride `0x1fa0`) and the `FUN_00713f40`/`FUN_00713ec0` calls from `PhysicsParticipant.cpp`. Phase 508 establishes that `thunk_FUN_00453990` returns `DAT_00bbc600`, leaving the selector object separate from `DAT_00c109e0`. Phase 509 then proves that `IGPhaseVehicle+0x450/+0x454` are consumed by `FUN_004d5f30`, which processes the current pointer, reselects from `DAT_00bbc600`, loads the next vehicle BFF and writes back the new pointer/ordinal only after successful load. Phase 510 closes the repeated descriptor record lifecycle at `context+0xb8` with `0x90` stride: `FUN_0040eec0` initializes `+0x74 = 1`, `FUN_00410ef0`/`FUN_0043af50` select only `+0x74 == 0` entries, `FUN_0043af50` writes `+0x8c` ordinals, and `FUN_004d69d0` temporarily reasserts `+0x74 = 1` during bounded batch collection before resetting it. `FUN_00465860` separately writes `+0x1d = 1` after its observed load/process step.
 
-## Current CI note
+## Current validation and blockers
 
-Phase 508 mainline CI was green across Python, native, capture-producer and Vulkan smoke. Phase 510 extends the static selector lifecycle contract and stabilizes blocked handoff summaries; Phase 511 extends the IGPhaseVehicle post-process lifecycle. Runtime provider capture remains the next evidence gate.
+Phase 543 PR #727 is green across the repository CI, `shift-live-dump` and Linux Vulkan workflows. The current source tree therefore validates the production FLAT/NODE scene grammar together with the existing native renderer, capture producer and Python analysis stack.
+
+The main evidence blockers are now explicit and independent:
+
+- **BMW rendering:** one authentic BMW M3 E36 D3D9 body capture is required to select the concrete retail FXO permutations from the already-built Phase 538–540 target/match pipeline;
+- **specialized vehicle physics:** one authentic provider frame is required for numeric parity beyond the source-backed 40/34-scalar structural reconstruction;
+- **track/path runtime:** one complete non-stopping runtime graph capture is required to close the AIW → runtime → `AIPolylinePath` instance graph;
+- **scene:** DAMAGE-specific NODE payload fields, unnamed common byte `+0x21`, and the remaining FLAT direct-record payload/class semantics are still open.
+
+Missing runtime evidence remains a blocker rather than a reason to choose a plausible value.
 
 ## Repository map
 
 | Path | Purpose |
 |---|---|
 | `shift_importer.py` | importer and analysis CLI |
-| `resource_formats.py`, `meb_format.py`, `csm_format.py` | core format parsers |
-| `draw_packets.py`, `render_command.py` | neutral render contracts |
-| `reference_renderer.py`, `shader_reference.py` | desktop oracle |
+| `src/formats/` | BFF-adjacent resource, material, geometry and collision parsers |
+| `src/render/` | neutral DrawPacket/StaticDraw/RenderCommand contracts and reference rendering |
+| `src/bmw/` | BMW retail admission, shader attribution, Vulkan bundle and capture evidence |
+| `src/scene/` | SGB NODE/PART/SUMM/OCCL/FLAT runtime reconstruction |
 | physics runtime modules | vehicle/constraint/solver evidence |
 | `native_capture/` | Windows D3D9 capture producer |
 | `native_vulkan/` | Linux Vulkan backend |
