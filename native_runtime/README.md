@@ -216,3 +216,23 @@ graph and zero-pivot cases.
 The backend is not a replacement for the provider path and is not yet called
 from the vehicle fixed-step loop. Full-frame use still requires exact
 matrix/RHS/reset evidence and provider-absent dispatch proof.
+
+
+## Phase 604 native builtin diagonal reset
+
+The same `shift_runtime_physics` backend now contains
+`apply_builtin_diagonal_reset()`, the exact recovered `FUN_007b2210`
+matrix/RHS mutation.
+
+The parity check now covers six cases and reports both retail source functions:
+
+```bash
+ctest --test-dir native_runtime/build --output-on-failure \
+  -R shift_runtime_builtin_sparse_solver
+native_runtime/build/shift_runtime_builtin_solver_check
+```
+
+The API accepts already-selected scalar nodes only. Retail reset-node selection
+depends on the runtime constraint-sample low bit at `+0x70` and remains an
+external evidence gate. The native fixed-step loop still does not fabricate
+that selection or a complete BMW solver frame.
