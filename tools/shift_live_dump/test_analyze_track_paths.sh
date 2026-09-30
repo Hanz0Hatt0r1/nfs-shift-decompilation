@@ -253,6 +253,12 @@ import sys
 result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] == 2, result["candidate_counts"]
+evidence = result["analyzer_evidence"]
+assert len(evidence["fingerprint"]) == 64, evidence
+assert evidence["manifest"]["format"] == "SHIFT-TRACK-PATH-ANALYZER-EVIDENCE/1", evidence
+assert evidence["manifest"]["known_vtables"]["AISegmentPath"] == "0x00afc930", evidence
+assert evidence["manifest"]["identity_policies"]["AISpline"]["mode"] == "structural-owner", evidence
+assert filtered["analyzer_evidence"]["fingerprint"] == evidence["fingerprint"], filtered["analyzer_evidence"]
 assert result["candidate_counts"]["AISegmentPath"] == 2, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
     segment_rows = list(csv.DictReader(fh))
