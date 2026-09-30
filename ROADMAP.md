@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 551.**
+**Current mainline: Phase 552.**
 
 
 
@@ -84,10 +84,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 60. Prove the direct FLAT `+0x20..+0x34` spatial-query consumer and promote the corpus candidate to source-backed leaf bounds — Phase 549 implemented.
 61. Reconstruct the static MultiMatrix layout/update, including explicit root overwrite, low-byte parent selection and local*parent-world composition — Phase 550 implemented.
 62. Prove constructor root state plus immediate/deferred SceneGraph 0x40-byte transform transport into LOD/HIERARCHY vfunc +0x2c — Phase 551 implemented.
-63. Recover or capture concrete per-instance SceneGraph transform-update history, then join the resolved world transforms into RenderBinding.
-64. Derive proven animation poses from the BAB runtime grammar.
-65. Port the stable native render/runtime boundary to Android.
-66. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+63. Join SGB placement wrappers to recursive OBJECT resource/world-transform handoffs with independent fail-closed admission — Phase 552 implemented.
+64. Recover or capture concrete per-instance SceneGraph transform-update history to promote blocked MatrixNumber bindings, then feed admitted resources into the existing generic RenderBinding pipeline.
+65. Derive proven animation poses from the BAB runtime grammar.
+66. Port the stable native render/runtime boundary to Android.
+67. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -100,7 +101,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | placement + OBJECT handoff + proven leaf bounds + MultiMatrix evaluator + root transport state implemented | per-instance SceneGraph update history + final RenderBinding admission |
+| SGB scene | placement + OBJECT handoff + MultiMatrix/root state + scene RenderBinding admission implemented | per-instance SceneGraph update history + admitted-resource handoff into generic RenderBinding/1 |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
