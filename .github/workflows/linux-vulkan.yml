@@ -151,6 +151,31 @@ jobs:
             | tee out/vulkan/legacy_v2_runtime.json
           grep -q '"frames_rendered": 2' out/vulkan/legacy_v2_runtime.json
           grep -q '"status": "ok"' out/vulkan/legacy_v2_runtime.json
+          cp -a out/vulkan/legacy_v2_bundle out/vulkan/legacy_v2_affine_bundle
+          cat > out/vulkan/legacy_v2_affine_world_transform.json <<'JSON'
+          {
+            "world_matrix": [
+              0, 1, 0, 0,
+              -1, 0, 0, 0,
+              0, 0, 1, 0,
+              0, 0, 0, 1
+            ]
+          }
+          JSON
+          python3 shift_importer.py vulkan-world-transform-packet \
+            out/vulkan/legacy_v2_affine_world_transform.json \
+            out/vulkan/legacy_v2_affine_bundle/world_transform.svwt \
+            > out/vulkan/legacy_v2_affine_world_transform_packet.json
+          if native_vulkan/build/shift_vulkan_bundle_execute \
+              out/vulkan/legacy_v2_affine_bundle \
+              out/vulkan/legacy_v2_affine_bundle/affine.ppm \
+              > out/vulkan/legacy_v2_affine_bundle/stdout.txt \
+              2> out/vulkan/legacy_v2_affine_bundle/stderr.txt; then
+            echo "legacy v2 executor unexpectedly accepted affine transform"
+            exit 1
+          fi
+          grep -q 'requires SVGP v3 semantic IDs' \
+            out/vulkan/legacy_v2_affine_bundle/stderr.txt
       - name: Assert affine SVWT fail-closed policy
         run: |
           cp -a out/vulkan/bundle/bundle out/vulkan/singular_bundle
