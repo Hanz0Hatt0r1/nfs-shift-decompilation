@@ -53,6 +53,12 @@ def build_native_physics_participant_boundary() -> dict[str, Any]:
     context = selector.get("context") or {}
     owner = process.get("owner") or {}
     selection = process.get("selection_step") or {}
+    matching = selector.get("matching") or {}
+    termination = (
+        matching.get("termination")
+        if isinstance(matching, dict)
+        else {}
+    ) or {}
 
     if manager.get("global_instance") != "DAT_00c109e0":
         blockers.append("registry:manager-global-mismatch")
@@ -64,6 +70,11 @@ def build_native_physics_participant_boundary() -> dict[str, Any]:
         blockers.append("registry:slot-stride-mismatch")
     if callsite.get("type_gate") != "participant descriptor +0x1c == 3":
         blockers.append("registry:participant-descriptor-type-mismatch")
+    if (
+        callsite.get("participant_index_source")
+        != "PhysicsParticipant +0x3c"
+    ):
+        blockers.append("registry:index-source-mismatch")
 
     if context.get("global_instance") != "DAT_00bbc600":
         blockers.append("selector:global-mismatch")
@@ -79,6 +90,8 @@ def build_native_physics_participant_boundary() -> dict[str, Any]:
         blockers.append("process:ordinal-slot-mismatch")
     if owner.get("state_slot") != "IGPhaseVehicle+0x45c":
         blockers.append("process:state-slot-mismatch")
+    if termination.get("candidate_ready_test") != "candidate+0x74 == 0":
+        blockers.append("selector:candidate-ready-gate-mismatch")
 
     ready = not blockers
     return {
@@ -98,10 +111,20 @@ def build_native_physics_participant_boundary() -> dict[str, Any]:
         "registry_slot_count_offset": 0x148,
         "registry_slot_stride": REGISTRY_SLOT_STRIDE,
         "participant_descriptor_type": PARTICIPANT_DESCRIPTOR_TYPE,
+        "registry_index_source": "PhysicsParticipant+0x3c",
+        "registry_index_source_offset": 0x3C,
         "participant_pointer_slot": "IGPhaseVehicle+0x450",
         "participant_ordinal_slot": "IGPhaseVehicle+0x454",
         "participant_state_slot": "IGPhaseVehicle+0x45c",
+        "selector_candidate_ready_offset": 0x74,
+        "registry_selector_identity_join_proven": False,
         "participant_instance_ready": False,
+        "participant_registry_index": -1,
+        "selector_ordinal": -1,
+        "participant_process_state": -1,
+        # Legacy Phase 602 aliases remain unresolved. They must never be
+        # populated from static evidence because their identity domain was
+        # intentionally ambiguous.
         "participant_index": -1,
         "participant_mode": -1,
         "source_contracts": {
@@ -116,13 +139,18 @@ def build_native_physics_participant_boundary() -> dict[str, Any]:
             "selected_provider_proven": False,
             "numeric_physics_equivalence_proven": False,
             "manager_selector_same_object_claimed": False,
+            "registry_index_equals_selector_ordinal": False,
+            "registry_selector_identity_join_proven": False,
+            "legacy_participant_index_alias_active": False,
             "participant_ready_policy": (
-                "must remain false until independent runtime-instance evidence"
+                "must remain false until independent runtime-instance evidence "
+                "joins the manager registry identity and selected IGPhaseVehicle "
+                "participant while retaining the selector ordinal separately"
             ),
         },
         "limitations": [
             "The selector context and PhysicsParticipantManager registry remain distinct objects.",
-            "No concrete runtime participant pointer/index/mode is fabricated.",
+            "No concrete runtime participant pointer, manager registry index, selector ordinal or process state is fabricated.",
             "No PhysX/provider class identity is assigned.",
             "No provider selection or numerical solver parity is claimed.",
         ],
