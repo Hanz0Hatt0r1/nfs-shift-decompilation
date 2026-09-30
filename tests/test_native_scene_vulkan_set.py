@@ -158,6 +158,13 @@ def _submesh(resource_sha, *, textured=False, external=False):
             "sampler": "shadowMap",
             "sampler_type": "sampler2D",
             "d3d9_sampler_register": 7,
+            "sampler_state": {
+                "format": "SHIFT.SamplerState/1",
+                "min_filter": "LINEAR",
+                "mag_filter": "LINEAR",
+                "address_u": "CLAMP_TO_EDGE",
+                "address_v": "CLAMP_TO_EDGE",
+            },
         }]
     return row
 
@@ -502,6 +509,160 @@ def test_native_scene_vulkan_set_keeps_external_sampler_fail_closed(
         for reason in report["native_scene_submission"]["blocking_reasons"]
     )
     assert report["boundary"]["unresolved_external_samplers_promoted"] is False
+
+
+
+def _write_external_snapshot_set(
+    tmp_path,
+    scene,
+    *,
+    draw_identity=None,
+    sampler="shadowMap",
+):
+    reference = tmp_path / "shadow-s7.json"
+    reference.write_text(
+        json.dumps({
+            "format": "SHIFT.ReferenceTexture/1",
+            "source_format": "D3D9_CAPTURE_PPM",
+            "width": 1,
+            "height": 1,
+            "pixel_format": "RGBA8",
+            "pixels": [9, 8, 7, 255],
+        }, sort_keys=True),
+        encoding="utf-8",
+    )
+    reference_sha = hashlib.sha256(reference.read_bytes()).hexdigest()
+    contract = tmp_path / "external-snapshots.json"
+    contract.write_text(
+        json.dumps({
+            "format": "SHIFT.SceneExternalTextureSnapshotSet/1",
+            "version": 1,
+            "snapshots": [{
+                "draw_order": 0,
+                "scene_draw_identity_sha256": (
+                    draw_identity
+                    or scene["draws"][0]["hashes"][
+                        "draw_identity_sha256"
+                    ]
+                ),
+                "sampler": sampler,
+                "sampler_type": "sampler2D",
+                "d3d9_sampler_register": 7,
+                "reference_texture_path": reference.name,
+                "reference_texture_sha256": reference_sha,
+                "source_provenance": {
+                    "kind": "D3D9_CAPTURE_PPM",
+                    "frame": 12,
+                    "draw": 34,
+                    "stage": 7,
+                },
+            }],
+        }),
+        encoding="utf-8",
+    )
+    return contract
+
+
+def test_native_scene_vulkan_set_admits_exact_external_sampler2d_snapshot(
+    tmp_path,
+):
+    root, scene, bridge = _scene_and_bridge(
+        tmp_path,
+        external=True,
+    )
+    snapshots = _write_external_snapshot_set(tmp_path, scene)
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+        external_texture_snapshots=snapshots,
+    )
+
+    assert report["ready"] is True, report["blocking_reasons"]
+    assert report["boundary"]["external_sampler2d_snapshots_admitted"] == 1
+    assert report["source"]["external_texture_snapshot_set"]["ready"] is True
+    child = report["draws"][0]
+    assert child["external_runtime_blocking_reasons"] == []
+    assert child["external_texture_sources"][0]["register"] == 7
+    assert child["external_texture_sources"][0]["sampler"] == "shadowMap"
+    assert child["external_texture_sources"][0]["source_provenance"][
+        "kind"
+    ] == "D3D9_CAPTURE_PPM"
+    assert (tmp_path / "vulkan-set/draw_0000/textures.svtp").is_file()
+    assert not any(
+        "external-sampler:runtime-resource-unresolved:s7:sampler2D"
+        in reason
+        for reason in report["native_scene_submission"]["blocking_reasons"]
+    )
+    assert report["native_scene_submission"]["blocking_reasons"] == [
+        "draw-0:scene-world-transform-not-executed"
+    ]
+
+
+def test_native_scene_vulkan_set_rejects_external_snapshot_draw_identity_mismatch(
+    tmp_path,
+):
+    root, scene, bridge = _scene_and_bridge(
+        tmp_path,
+        external=True,
+    )
+    snapshots = _write_external_snapshot_set(
+        tmp_path,
+        scene,
+        draw_identity=_sha("e"),
+    )
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+        external_texture_snapshots=snapshots,
+    )
+
+    assert report["ready"] is False
+    assert any(
+        "external-snapshot:s7:draw-identity-mismatch" in reason
+        for reason in report["blocking_reasons"]
+    )
+    assert (
+        "external-snapshot:unused:draw-0:s7"
+        in report["blocking_reasons"]
+    )
+
+
+def test_native_scene_vulkan_set_rejects_external_snapshot_sampler_mismatch(
+    tmp_path,
+):
+    root, scene, bridge = _scene_and_bridge(
+        tmp_path,
+        external=True,
+    )
+    snapshots = _write_external_snapshot_set(
+        tmp_path,
+        scene,
+        sampler="otherShadowMap",
+    )
+
+    report = build_native_scene_vulkan_set(
+        scene,
+        bridge,
+        root,
+        tmp_path / "vulkan-set",
+        external_texture_snapshots=snapshots,
+    )
+
+    assert report["ready"] is False
+    assert any(
+        "external-snapshot:s7:sampler-declaration-mismatch" in reason
+        for reason in report["blocking_reasons"]
+    )
+    assert (
+        "external-snapshot:unused:draw-0:s7"
+        in report["blocking_reasons"]
+    )
 
 
 def test_native_scene_vulkan_set_requires_scene_and_bridge_contracts(
