@@ -202,6 +202,32 @@ jobs:
             exit 1
           fi
           grep -q 'linear transform is singular' out/vulkan/singular_bundle/stderr.txt
+
+          cp -a out/vulkan/bundle/bundle out/vulkan/reflection_bundle
+          cat > out/vulkan/reflection_world_transform.json <<'JSON'
+          {
+            "world_matrix": [
+              -1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 1, 0,
+              0, 0, 0, 1
+            ]
+          }
+          JSON
+          python3 shift_importer.py vulkan-world-transform-packet \
+            out/vulkan/reflection_world_transform.json \
+            out/vulkan/reflection_bundle/world_transform.svwt \
+            > out/vulkan/reflection_world_transform_packet.json
+          if native_vulkan/build/shift_vulkan_bundle_execute \
+              out/vulkan/reflection_bundle \
+              out/vulkan/reflection_bundle/reflection.ppm \
+              > out/vulkan/reflection_bundle/stdout.txt \
+              2> out/vulkan/reflection_bundle/stderr.txt; then
+            echo "executor unexpectedly accepted reflected affine SVWT"
+            exit 1
+          fi
+          grep -q 'reflection transform is blocked' \
+            out/vulkan/reflection_bundle/stderr.txt
       - name: Native Linux runtime frame loop
         run: |
           set -o pipefail
