@@ -106,6 +106,11 @@ def _pipeline(snapshot_path, *, observations=1):
     return {
         "format": "SHIFT.IMBRuntimeCapturePipeline/1",
         "pipeline_ready": True,
+        "boundary": {
+            "attributed_texture_observation_contract": (
+                "selected-strong-variant-draw-textures-v1"
+            ),
+        },
         "resource_results": [{
             "resource_index": 0,
             "attributed_texture_observations": rows,
@@ -146,6 +151,28 @@ def test_capture_adapter_builds_phase589_contract_from_exact_ppm(tmp_path):
     )
     assert snapshot["provenance"]["capture_frame"] == 12
     assert snapshot["provenance"]["capture_draw_index"] == 0
+
+
+def test_capture_adapter_requires_versioned_texture_observation_contract(
+    tmp_path,
+):
+    ppm = tmp_path / "textures" / "shadow.ppm"
+    _ppm(ppm)
+    pipeline = _pipeline("textures/shadow.ppm")
+    pipeline["boundary"] = {}
+
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(_scene_draw()),
+        _bridge(),
+        pipeline,
+        capture_root=tmp_path,
+    )
+
+    assert report["ready"] is False
+    assert (
+        "scene-external-capture:texture-observation-contract-missing"
+        in report["blocking_reasons"]
+    )
 
 
 def test_capture_adapter_blocks_multiple_runtime_observations(tmp_path):
