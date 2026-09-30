@@ -132,7 +132,7 @@ def build_sgb_render_binding_bridge(
                 if loader_mode == "xml":
                     adapter_reason = "meshinst-xml-adapter-unimplemented"
                 elif loader_mode == "binary":
-                    adapter_reason = "meshinst-binary-adapter-unimplemented"
+                    adapter_reason = "meshinst-binary-adapter-incomplete"
                 else:
                     adapter_reason = "meshinst-adapter-unimplemented"
             else:

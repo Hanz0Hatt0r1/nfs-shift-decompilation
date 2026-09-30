@@ -1785,6 +1785,33 @@ def cmd_bab_animation_runtime(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_imb_binary_schema(args: argparse.Namespace) -> int:
+    """Decode the source-backed fixed header/stream schema of an extracted IMB."""
+    from imb_format import parse_imb_binary_mesh_schema
+
+    data = Path(args.input).read_bytes()
+    report = parse_imb_binary_mesh_schema(
+        data,
+        header_offset=args.header_offset,
+        has_bone_block=args.has_bone_block,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "vertex_count": report["header"]["vertex_count"],
+        "stream_count": report["header"]["stream_count"],
+        "primitive_count": report["header"]["primitive_count"],
+        "bone_count": report["bones"]["count"],
+        "vertex_payload_offset": report["vertex_payload_offset"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_sgb_object_render_handoff(args: argparse.Namespace) -> int:
     """Build source-backed OBJECT resource/transform render handoffs."""
     from sgb_object_render_handoff import validate_file
@@ -4128,6 +4155,25 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--mode", type=int, choices=[0, 1, 2], required=True, help="runtime animation-bank variant recovered from SHIFT.exe.c")
     p.add_argument("--allow-partial", action="store_true", help="return a blocker instead of raising on truncated payload")
     p.set_defaults(fn=cmd_bab_animation_runtime)
+
+    p = sp.add_parser(
+        "imb-binary-schema",
+        help="decode source-backed IMB fixed mesh header and stream descriptors",
+    )
+    p.add_argument("input", help="extracted .imb file")
+    p.add_argument("output", help="SHIFT.IMBBinaryMeshSchema/1 JSON output")
+    p.add_argument(
+        "--header-offset",
+        required=True,
+        type=lambda value: int(value, 0),
+        help="fixed mesh-header offset reached after the variable IMB prefix",
+    )
+    p.add_argument(
+        "--has-bone-block",
+        action="store_true",
+        help="decode the version-gated +0x34/+0x38 bone header",
+    )
+    p.set_defaults(fn=cmd_imb_binary_schema)
 
     p = sp.add_parser(
         "sgb-object-render-handoff",

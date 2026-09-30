@@ -23,6 +23,8 @@ _LOADER_BY_EXTENSION = {
             "MWL::Renderer::WinRenderer::"
             "CMeshPrimitiveType::LoadBinaryMeshFromResource"
         ),
+        "partial_decoder_format": "SHIFT.IMBBinaryMeshSchema/1",
+        "partial_decoder": "imb_format.parse_imb_binary_mesh_schema",
     },
     "imx": {
         "mode": "xml",

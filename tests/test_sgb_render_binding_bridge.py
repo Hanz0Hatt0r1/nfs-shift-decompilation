@@ -249,7 +249,7 @@ def test_imb_scene_resource_is_classified_as_meshinst_and_stays_blocked(
     assert report["direct_render_instance_count"] == 0
     assert report["resource_adapter_blocked_count"] == 1
     assert (
-        "binding-0:scene-resource:meshinst-binary-adapter-unimplemented"
+        "binding-0:scene-resource:meshinst-binary-adapter-incomplete"
         in report["blocking_reasons"]
     )
     blocked = report["resource_adapter_blocked"][0]
