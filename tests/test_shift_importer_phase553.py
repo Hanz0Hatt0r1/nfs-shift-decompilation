@@ -273,3 +273,18 @@ def test_phase596_cli_accepts_multimatrix_root_consensus():
     assert args.capture_pipeline == "runtime-capture.json"
     assert args.output == "root-consensus.json"
     assert args.fn.__name__ == "cmd_sgb_multimatrix_root_consensus"
+
+
+def test_phase597_cli_accepts_multimatrix_root_promotion():
+    parser = build_parser()
+    args = parser.parse_args([
+        "sgb-multimatrix-root-promotion",
+        "sgb-runtime.json",
+        "root-consensus.json",
+        "root-promoted-handoffs.json",
+    ])
+
+    assert args.sgb_runtime == "sgb-runtime.json"
+    assert args.root_consensus == "root-consensus.json"
+    assert args.output == "root-promoted-handoffs.json"
+    assert args.fn.__name__ == "cmd_sgb_multimatrix_root_promotion"
