@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 589. Current development: Phase 590.**
+**Merged baseline: Phase 590. Current development: Phase 591.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -118,7 +118,10 @@ snapshots to exact scene draw/resource/primitive/register identity before they
 can satisfy a NativeSceneVulkanSet external-resource blocker. Phase 590 carries
 only strong-attributed draw-local texture observations from the D3D9 capture
 pipeline and converts an unambiguous captured PPM directly into that exact
-Phase 589 contract.
+Phase 589 contract. Phase 591 adds an opt-in draw-boundary texture snapshot
+event keyed by frame-local draw index, verifies the captured texture pointer
+against the frozen draw state, and makes the scene adapter prefer that stronger
+PPM evidence over the older SetTexture-time snapshot.
 
 ### Native Linux runtime
 
@@ -372,11 +375,11 @@ These are independent; resolving one does not justify guessing another.
 
 1. **Silverstone exact shader attribution** — authentic D3D9 capture required
    for tied IMB permutations.
-2. **Renderer-owned scene evidence** — Phase 590 can automatically convert an
-   unambiguous strong-attributed D3D9 `CreateTexture` + captured PPM into the
-   exact Phase 589 scene contract, but authentic Silverstone capture content,
-   repeated-instance disambiguation and remaining resource types are still
-   required.
+2. **Renderer-owned scene evidence** — Phase 591 can prefer a draw-boundary
+   PPM tied to the exact indexed draw and active texture pointer before Phase
+   590 emits the exact Phase 589 scene contract, but authentic Silverstone
+   capture content, repeated-instance disambiguation and remaining resource
+   types are still required.
 3. **Scene runtime completeness** — some per-instance MatrixNumber update
    history and higher-level streaming/LOD behavior remain unresolved.
 4. **Vehicle provider numeric parity** — authentic provider frame required.
