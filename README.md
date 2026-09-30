@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 593. Current development: Phase 594.**
+**Merged baseline: Phase 594. Current development: Phase 595.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -121,7 +121,7 @@ only strong-attributed draw-local texture observations from the D3D9 capture
 pipeline and converts an unambiguous captured PPM directly into that exact
 Phase 589 contract. Phase 591 adds repeated-instance transform matching from
 strong-attributed VS constant windows. Phase 592 reconstructs the retail `.imx`
-Phase 593 adds exact six-face external `samplerCube` capture→scene→native transport at the proven s3 boundary. Phase 594 adds fail-closed reconstruction of the current MultiMatrix root from one exact runtime-observed MatrixNumber slot world matrix, with mandatory evaluator round-trip validation and no claim that SceneGraph update history was recovered.
+Phase 593 adds exact six-face external `samplerCube` capture→scene→native transport at the proven s3 boundary. Phase 594 adds fail-closed reconstruction of the current MultiMatrix root from one exact runtime-observed MatrixNumber slot world matrix, with mandatory evaluator round-trip validation and no claim that SceneGraph update history was recovered. Phase 595 adds a pre-admission candidate join from exact runtime IMB archive/path/SHA to SGB placement/wrapper/object paths without using later RenderBinding binding indices; logical uniqueness remains narrowing evidence rather than admission.
 XML mesh grammar and admits IMX MeshInst resources to generic RenderBinding.
 
 ### Native Linux runtime
@@ -157,7 +157,7 @@ matchmaking/online networking and Bink/video playback.
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
 | Vulkan | active native backend | authentic capture content/renderer-owned resource types beyond sampler2D/samplerCube-s3; remaining alpha-test/bias/stencil state |
-| SGB / scene | strong structural/render handoff | authentic Silverstone capture content, streaming/LOD, independent blocked-OBJECT runtime join and remaining MatrixNumber update history |
+| SGB / scene | strong structural/render handoff | authentic Silverstone capture content, streaming/LOD, stronger pre-admission blocked-OBJECT witness than logical resource path, and remaining MatrixNumber update history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
 | Vehicle physics | structural reconstruction active | exact specialized-provider numeric parity |
