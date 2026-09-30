@@ -106,6 +106,40 @@ struct CameraBufferRuntime {
     void complete_update() {
         update_in_progress = false;
     }
+
+    bool apply_evidence_snapshot(
+        uint32_t index,
+        bool update_busy,
+        int32_t manager_mode,
+        int32_t buffer_sub_index,
+        int32_t camera_id,
+        int32_t active_group,
+        int32_t group_restore_value,
+        uint8_t active_buffer_sub_flag) {
+        if (index >= buffer_count) {
+            return false;
+        }
+
+        CameraState state = buffers[index];
+        // FUN_0080e040 word0 remains opaque and is intentionally not
+        // transported by SHIFT.NativeCameraStateBridge/1.
+        state.camera_source_token = 0;
+        state.manager_mode = manager_mode;
+        state.buffer_sub_index = buffer_sub_index;
+        state.camera_id = camera_id;
+        state.active_group = active_group;
+        state.group_restore_value = group_restore_value;
+        state.active_buffer_sub_flag =
+            active_buffer_sub_flag;
+        buffers[index] = state;
+        active_index = index;
+        update_in_progress = update_busy;
+        return true;
+    }
+
+    const CameraState& active() const {
+        return buffers[active_index];
+    }
 };
 
 struct PhysicsWorkspaceBoundary {

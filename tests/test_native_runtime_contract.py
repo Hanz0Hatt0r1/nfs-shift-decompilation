@@ -125,6 +125,31 @@ def test_phase599_native_camera_snapshot_and_swap_boundary():
     assert "\\\"camera_update_in_progress\\\":" in source
 
 
+
+
+def test_phase600_native_runtime_accepts_camera_evidence_input():
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(
+        encoding="utf-8"
+    )
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "apply_evidence_snapshot" in header
+    assert "state.camera_source_token = 0" in header
+    assert "const CameraState& active() const" in header
+    assert '"--camera-state"' in source
+    assert "SHIFT.NativeCameraStateBridge/1" in source
+    assert "load_camera_state_bridge" in source
+    assert "native_active_index" in source
+    assert "native_update_in_progress" in source
+    assert "native_manager_mode" in source
+    assert "native_group_restore_value" in source
+    assert '\\"camera_state_bridge_loaded\\": ' in source
+    assert '\\"camera_manager_mode\\": ' in source
+    assert '\\"camera_active_group\\": ' in source
+
+
 def test_native_index_draw_count_respects_first_index():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
 

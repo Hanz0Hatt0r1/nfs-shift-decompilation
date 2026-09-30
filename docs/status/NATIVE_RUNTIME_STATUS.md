@@ -31,7 +31,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 ## Next integration gates
 
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
-2. Phase 599 connects the evidence-backed six-word CameraManager snapshot and guarded double-buffer swap to native state. Remaining camera work is retail timestamp/update scheduling, controller behavior, gameplay view selection/attachment and exact render/view constant integration.
+2. Phase 599 connects the six-word CameraManager snapshot and guarded double-buffer swap to the native fixed-step scheduler. Phase 600 adds fail-closed recovered scalar evidence input through SHIFT.NativeCameraStateBridge/1 and --camera-state. Remaining camera work is retail timestamp/update scheduling, camera-source/controller behavior, gameplay view selection/attachment and exact render/view integration.
 3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
@@ -152,3 +152,20 @@ The frame-loop report exposes `camera_snapshot_count`,
 This is a native integration boundary only. It does not map the retail
 `FUN_0080c920` timestamp source, 0x14 suppression window, absolute time unit,
 or `FUN_0080c510` controller semantics onto the 60 Hz native clock.
+
+
+## Phase 600 recovered camera evidence input
+
+The Phase 599 native camera scheduler can now be initialized from a ready
+`SHIFT.NativeCameraStateBridge/1` through `--camera-state`.
+
+The bridge validates the existing CameraManager snapshot plus ordered
+swap/completion reports and transports only numeric manager/buffer state:
+active index/guard, mode, sub-index/flag, camera id, active group and restore
+group. The opaque camera/source word is deliberately not transported; the
+native token remains zero.
+
+After admission, the ordinary Phase 599 fixed-step snapshot/copy/flip path runs
+unchanged. Linux Vulkan CI verifies that 12 native updates preserve the loaded
+mode/id/group/sub-state and that the Phase 599 snapshot telemetry observes the
+same recovered values.

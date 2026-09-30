@@ -22,6 +22,7 @@ def test_camera_snapshot_keeps_six_runtime_values_distinct():
         sub_flag=1,
     )
     result = snapshot_camera_state(state)
+    assert result["status"] == "snapshot"
     snap = result["snapshot"]
     assert snap["word0_camera_source"] == "opaque-camera-source"
     assert snap["word1_mode"] == 3

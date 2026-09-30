@@ -2448,6 +2448,34 @@ def cmd_camera_state_snapshot(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_native_camera_state_bridge(args: argparse.Namespace) -> int:
+    """Bridge recovered CameraManager snapshot state into native_runtime."""
+    from native_camera_state_bridge import validate_files
+
+    report = validate_files(
+        args.snapshot,
+        args.transition,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "active_index": report.get("native_active_index"),
+        "update_in_progress": report.get(
+            "native_update_in_progress"
+        ),
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_camera_switch_gate(args: argparse.Namespace) -> int:
     """Evaluate the recovered CameraManager switch-request fast path."""
     from camera_switch_gate_runtime import CameraSwitchState, evaluate_switch_gate
@@ -4939,6 +4967,32 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="JSON camera manager/buffer state")
     p.add_argument("output", help="SHIFT.CameraStateSnapshotRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_state_snapshot)
+
+    p = sp.add_parser(
+        "native-camera-state-bridge",
+        help=(
+            "bridge recovered CameraManager snapshot/swap reports into "
+            "SHIFT.NativeCameraStateBridge/1"
+        ),
+    )
+    p.add_argument(
+        "snapshot",
+        help="SHIFT.CameraStateSnapshotRuntime/1 snapshot JSON",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.NativeCameraStateBridge/1 JSON output",
+    )
+    p.add_argument(
+        "--transition",
+        action="append",
+        default=[],
+        help=(
+            "ordered CameraStateSnapshotRuntime swap/complete report; "
+            "may be repeated"
+        ),
+    )
+    p.set_defaults(fn=cmd_native_camera_state_bridge)
 
     p = sp.add_parser("camera-switch-gate", help="evaluate recovered CameraManager switch fast path")
     p.add_argument("input", help="JSON switch request/state")
