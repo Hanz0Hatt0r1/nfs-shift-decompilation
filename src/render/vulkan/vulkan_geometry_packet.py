@@ -329,7 +329,9 @@ def export_vulkan_geometry_packet(
         "normalization": {
             "center": center,
             "scale": scale,
-            "source_space": "MEB object space",
+            "source_space": "neutral object space",
+            "source_mesh_format": mesh_data.get("format"),
+            "source_serialized_format": mesh_data.get("source_format"),
             "target_space": "Vulkan clip-space cube",
             "purpose": "geometry-only checkpoint",
         },
