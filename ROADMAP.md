@@ -105,6 +105,8 @@ Phase 602 adds `SHIFT.NativePhysicsParticipantBoundary/1`, joining the source-ba
 72. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 73. Execute the recovered CameraManager six-word snapshot plus guarded double-buffer flip/copy inside the native fixed-step scheduler without claiming retail timing — Phase 599 implemented.
 74. Seed that live Phase 599 camera scheduler from fail-closed recovered CameraManager snapshot/swap evidence without transporting the opaque camera-source token — Phase 600 implemented as SHIFT.NativeCameraStateBridge/1 plus --camera-state.
+75. Make native vehicle-control input deterministic without inventing retail controller semantics — Phase 601 implemented as SHIFT.NativeRuntimeInputScript/1.
+76. Admit the source-backed participant registry/selector structural ABI into native state while preserving manager/selector separation and unresolved runtime participant identity — Phase 602 implemented as SHIFT.NativePhysicsParticipantBoundary/1.
 
 ## Workstream status
 
