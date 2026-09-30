@@ -215,3 +215,23 @@ def test_phase585_cli_accepts_native_scene_vulkan_prepare_command():
     assert args.validator == "glslangValidator"
     assert args.output == "out/native-scene-vulkan/prepare.json"
     assert args.fn.__name__ == "cmd_native_scene_vulkan_prepare"
+
+
+def test_phase594_cli_accepts_multimatrix_runtime_root_solve():
+    parser = build_parser()
+    args = parser.parse_args([
+        "sgb-multimatrix-root-solve",
+        "owner.json",
+        "2",
+        "observed-world.json",
+        "root-solve.json",
+        "--tolerance",
+        "1e-6",
+    ])
+
+    assert args.owner == "owner.json"
+    assert args.selected_slot == 2
+    assert args.observed_world == "observed-world.json"
+    assert args.output == "root-solve.json"
+    assert args.tolerance == 1.0e-6
+    assert args.fn.__name__ == "cmd_sgb_multimatrix_root_solve"

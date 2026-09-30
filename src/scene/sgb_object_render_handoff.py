@@ -7,7 +7,11 @@ stored at wrapper +0x80 and chooses one of two transform paths:
 * MatrixNumber == -1: build a 4x4 matrix from wrapper quaternion/offset/scale.
 
 This module records that boundary without pretending that a parent MultiMatrix
-slot is already a numerically materialized world matrix.
+slot is already a numerically materialized world matrix. When one exact runtime
+world matrix for the selected slot is supplied, Phase 594 may solve the current
+root matrix through the source-backed static parent chain and re-evaluate the
+slot. That solves current state only; it does not reconstruct SceneGraph update
+history.
 """
 from __future__ import annotations
 
@@ -16,7 +20,10 @@ import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from sgb_multimatrix import build_multimatrix_evaluation
+from sgb_multimatrix import (
+    build_multimatrix_evaluation,
+    build_multimatrix_root_solve,
+)
 from sgb_root_transform import build_root_transform_state
 from sgb_resource_factory import classify_sgb_object_resource
 from sgb_meshinst_runtime import build_meshinst_runtime_contract
@@ -106,6 +113,7 @@ def build_object_render_handoff(
     parent_object_report: Mapping[str, Any] | None = None,
     parent_multimatrix_root_matrix: Sequence[float] | None = None,
     parent_scenegraph_updates: Sequence[Sequence[float]] | None = None,
+    parent_selected_slot_world_matrix: Sequence[float] | None = None,
 ) -> dict[str, Any]:
     if object_report.get("format") != OBJECT_FORMAT:
         raise ValueError("object input must be SHIFT.SGBObjectRuntime/1")
@@ -187,7 +195,17 @@ def build_object_render_handoff(
         ):
             resolved_root = parent_multimatrix_root_matrix
             root_state_summary = None
-            if resolved_root is None:
+            root_solve_summary = None
+            if resolved_root is not None:
+                root_state_summary = {
+                    "format": "SHIFT.SGBRootTransformState/1",
+                    "status": "provided-explicitly",
+                    "ready": True,
+                    "blocking_reasons": [],
+                    "current_root_source": "explicit-root-world-matrix",
+                    "current_root_world_matrix": list(resolved_root),
+                }
+            elif parent_scenegraph_updates is not None:
                 root_state = build_root_transform_state(
                     parent_object_report,
                     scenegraph_updates=parent_scenegraph_updates,
@@ -220,14 +238,72 @@ def build_object_render_handoff(
                     ),
                     "source": root_state.get("source"),
                 }
+            elif parent_selected_slot_world_matrix is not None:
+                root_solve = build_multimatrix_root_solve(
+                    parent_object_report,
+                    matrix_number,
+                    parent_selected_slot_world_matrix,
+                )
+                if root_solve.get("ready") is True:
+                    resolved_root = root_solve.get(
+                        "solved_root_world_matrix"
+                    )
+                root_solve_summary = {
+                    "format": root_solve.get("format"),
+                    "status": root_solve.get("status"),
+                    "ready": root_solve.get("ready"),
+                    "blocking_reasons": root_solve.get(
+                        "blocking_reasons"
+                    ),
+                    "selected_slot": root_solve.get(
+                        "selected_slot"
+                    ),
+                    "selected_slot_chain_to_root": root_solve.get(
+                        "selected_slot_chain_to_root"
+                    ),
+                    "observed_world_matrix": root_solve.get(
+                        "observed_world_matrix"
+                    ),
+                    "solved_root_world_matrix": root_solve.get(
+                        "solved_root_world_matrix"
+                    ),
+                    "reproduced_selected_world_matrix": root_solve.get(
+                        "reproduced_selected_world_matrix"
+                    ),
+                    "max_abs_reproduction_error": root_solve.get(
+                        "max_abs_reproduction_error"
+                    ),
+                    "boundary": root_solve.get("boundary"),
+                    "source": root_solve.get("source"),
+                }
             else:
+                root_state = build_root_transform_state(
+                    parent_object_report,
+                    scenegraph_updates=None,
+                )
                 root_state_summary = {
-                    "format": "SHIFT.SGBRootTransformState/1",
-                    "status": "provided-explicitly",
-                    "ready": True,
-                    "blocking_reasons": [],
-                    "current_root_source": "explicit-root-world-matrix",
-                    "current_root_world_matrix": list(resolved_root),
+                    "format": root_state.get("format"),
+                    "status": root_state.get("status"),
+                    "ready": root_state.get("ready"),
+                    "blocking_reasons": root_state.get(
+                        "blocking_reasons"
+                    ),
+                    "constructor_root_matrix": root_state.get(
+                        "constructor_root_matrix"
+                    ),
+                    "scenegraph_update_history_known": root_state.get(
+                        "scenegraph_update_history_known"
+                    ),
+                    "scenegraph_update_count": root_state.get(
+                        "scenegraph_update_count"
+                    ),
+                    "current_root_source": root_state.get(
+                        "current_root_source"
+                    ),
+                    "current_root_world_matrix": root_state.get(
+                        "current_root_world_matrix"
+                    ),
+                    "source": root_state.get("source"),
                 }
 
             evaluation = build_multimatrix_evaluation(
@@ -257,6 +333,7 @@ def build_object_render_handoff(
                     "blocking_reasons"
                 ),
                 "root_transform_state": root_state_summary,
+                "runtime_selected_slot_root_solve": root_solve_summary,
                 "selected_slot": selected_slot,
                 "source": evaluation.get("source"),
             }
@@ -271,6 +348,11 @@ def build_object_render_handoff(
             "world_matrix": numeric_world_matrix,
             "world_matrix_ready": numeric_world_matrix_ready,
             "selector_ready": selected is not None,
+            "runtime_selected_slot_world_matrix_observed": (
+                list(parent_selected_slot_world_matrix)
+                if parent_selected_slot_world_matrix is not None
+                else None
+            ),
             "multimatrix_evaluation": evaluation_summary,
             "source": {
                 "render_vfunc": "0x00699230",
@@ -480,6 +562,10 @@ def build_sgb_object_render_handoff_set(
             "meshinst_extensions": ["imb", "imx"],
             "transform_selector": "source-backed",
             "parent_multimatrix_numeric_world_matrix": "runtime-context-required",
+            "runtime_selected_slot_root_solve": (
+                "SHIFT.SGBMultiMatrixRootSolve/1"
+            ),
+            "root_solve_recovers_scenegraph_history": False,
             "draw_admission": False,
         },
     }
