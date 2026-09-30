@@ -266,6 +266,29 @@ def test_generic_bundle_unwraps_imb_neutral_geometry(tmp_path):
     )
 
 
+def test_generic_bundle_unwraps_imx_neutral_geometry(tmp_path):
+    report = {
+        "format": "SHIFT.IMXNeutralGeometry/1",
+        "ready": True,
+        "mesh": _mesh(),
+    }
+    result = build_vulkan_draw_bundle(
+        _command(),
+        report,
+        tmp_path,
+    )
+
+    assert result["ready"] is True
+    assert (
+        result["source"]["mesh_provenance"]["input_format"]
+        == "SHIFT.IMXNeutralGeometry/1"
+    )
+    assert (
+        result["artifacts"]["geometry"]["source_mesh_format"]
+        == "SHIFT.NeutralMesh/1"
+    )
+
+
 def test_generic_bundle_rejects_unknown_mesh_contract(tmp_path):
     mesh = _mesh()
     mesh["format"] = "SHIFT.UnknownMesh/1"

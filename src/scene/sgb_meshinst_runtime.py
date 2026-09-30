@@ -38,6 +38,11 @@ _LOADER_BY_EXTENSION = {
             "MWL::Renderer::WinRenderer::"
             "CMeshPrimitiveType::LoadXMLMeshFromResource"
         ),
+        "neutral_geometry_format": "SHIFT.IMXNeutralGeometry/1",
+        "neutral_geometry_adapter": (
+            "imx_neutral_geometry.build_imx_neutral_geometry"
+        ),
+        "xml_grammar": "source-backed",
     },
 }
 
@@ -167,11 +172,11 @@ def build_meshinst_runtime_contract(
                 "semantics not promoted beyond observed storage use"
             ),
             "serialized_payload_decode": (
-                "source-backed v0.4 prefix/header/streams/primitives"
+                "IMB: source-backed v0.4 prefix/header/streams/primitives; "
+                "IMX: source-backed FUN_008587e0 XML grammar"
             ),
             "neutral_geometry_adapter": (
-                "SHIFT.IMBNeutralGeometry/1 implemented; "
-                "scene material/RenderBinding integration remains separate"
+                "SHIFT.IMBNeutralGeometry/1 + SHIFT.IMXNeutralGeometry/1"
             ),
             "meb_equivalence": False,
         },
