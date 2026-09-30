@@ -36,6 +36,8 @@ Covered boundaries include:
 - OBJECT MatrixNumber=-1 produces a source-equivalent numeric 4x4 from WXYZ quaternion, XYZ offset and uniform scale; MatrixNumber>=0 selects a 0x40-byte parent MultiMatrix slot.
 - `SHIFT.SGBMultiMatrixEvaluation/1` reconstructs static mode-1 hierarchy arithmetic: the owner overwrites world slot 0 from its runtime root input, then evaluates slots 1..N-1 as `local * parent_world` using the low byte of the serialized parent dword.
 - `SHIFT.SGBRootTransformState/1` reconstructs the root lifecycle: constructor world slot 0 equals serialized local slot 0; SceneGraph immediate/deferred transform updates replace it with the exact transported 0x40-byte matrix. Unknown per-instance update history remains blocked.
+- `SHIFT.SGBRenderBindingAdmission/1` joins source-backed placement rows to recursive OBJECT resource/world transforms without promoting blocked rows.
+- `SHIFT.SGBRenderBindingBridge/1` resolves scene-admitted MEB instances through the existing MEB/BMT/FXO path into generic `SHIFT.RenderBinding/1`, preserving the admitted numeric world matrix.
 
 ## Explicitly unresolved
 
@@ -45,8 +47,8 @@ The project does not invent:
 - higher-level roles of individual LOD/HIERARCHY objects;
 - full scene streaming and LOD behavior.
 
-Track placement identity, culling geometry, MultiMatrix arithmetic, root-transform transport and placement→OBJECT scene admission are source-backed. Concrete per-instance SceneGraph transform-update history and higher-level streaming behavior remain evidence questions.
+Track placement identity, culling geometry, MultiMatrix arithmetic, root-transform transport, placement→OBJECT admission and admitted-MEB integration with generic RenderBinding are source-backed. Concrete per-instance SceneGraph transform-update history, non-MEB scene-resource semantics and higher-level streaming behavior remain evidence questions.
 
 ## Next
 
-`SHIFT.SGBRenderBindingAdmission/1` now performs the fail-closed wrapper/object join. Recover or capture transform-update history for blocked MatrixNumber instances, then feed admitted resource references into the existing generic `SHIFT.RenderBinding/1` resource pipeline.
+`SHIFT.SGBRenderBindingBridge/1` now feeds admitted MEB instances into generic `SHIFT.RenderBinding/1`. Next scene work is either to recover/capture transform-update history for blocked MatrixNumber instances or to map additional non-MEB scene-resource/streaming visibility semantics without guessing.

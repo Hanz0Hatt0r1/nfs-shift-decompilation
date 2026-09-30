@@ -1854,6 +1854,31 @@ def cmd_sgb_render_binding_admission(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_sgb_render_binding_bridge(args: argparse.Namespace) -> int:
+    """Resolve scene-admitted SGB resources through generic RenderBinding."""
+    from sgb_render_binding_bridge import validate_file
+
+    report = validate_file(args.admission, args.ir_root)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "scene_admitted_instance_count": report[
+            "scene_admitted_instance_count"
+        ],
+        "resolved_instance_count": report["resolved_instance_count"],
+        "unresolved_instance_count": report["unresolved_instance_count"],
+        "blockers": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_sgb_placement_join(args: argparse.Namespace) -> int:
     """Join decoded SGB wrappers to PART/FLAT spatial placement."""
     from sgb_placement_join import validate_file
@@ -4124,6 +4149,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="SHIFT.SGBRenderBindingAdmission/1 JSON output",
     )
     p.set_defaults(fn=cmd_sgb_render_binding_admission)
+
+    p = sp.add_parser(
+        "sgb-render-binding-bridge",
+        help="resolve scene-admitted SGB MEB resources through generic RenderBinding",
+    )
+    p.add_argument(
+        "admission",
+        help="SHIFT.SGBRenderBindingAdmission/1 JSON",
+    )
+    p.add_argument(
+        "ir_root",
+        help="existing extracted/analyzed IR directory containing manifest.json",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.SGBRenderBindingBridge/1 JSON output",
+    )
+    p.set_defaults(fn=cmd_sgb_render_binding_bridge)
 
     p = sp.add_parser(
         "sgb-placement-join",
