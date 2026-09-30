@@ -1868,6 +1868,40 @@ def cmd_sgb_multimatrix_root_solve(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_sgb_runtime_transform_recovery(args: argparse.Namespace) -> int:
+    """Run Phase 595-597 MatrixNumber recovery and scene admission."""
+    from sgb_runtime_transform_recovery import validate_files
+
+    report = validate_files(
+        args.sgb_runtime,
+        args.scene_placement,
+        args.capture_pipeline,
+        args.ir_root,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "pipeline_ready": report["pipeline_ready"],
+        "consensus_applied": report["consensus_applied"],
+        "transform_recovery_complete": report[
+            "transform_recovery_complete"
+        ],
+        "scene_admission_ready": report[
+            "scene_admission_ready"
+        ],
+        "summary": report["summary"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["pipeline_ready"] else 2
+
+
 def cmd_sgb_multimatrix_root_consensus(args: argparse.Namespace) -> int:
     """Build an independent runtime-observed MultiMatrix root consensus."""
     from sgb_multimatrix_root_consensus import validate_files
@@ -4569,6 +4603,35 @@ def build_parser() -> argparse.ArgumentParser:
         help="maximum reevaluation absolute error (default: 1e-5)",
     )
     p.set_defaults(fn=cmd_sgb_multimatrix_root_solve)
+
+    p = sp.add_parser(
+        "sgb-runtime-transform-recovery",
+        help=(
+            "run Phase 595 candidate join, Phase 596 owner-root consensus, "
+            "Phase 597 handoff rebuild and scene admission in one report"
+        ),
+    )
+    p.add_argument(
+        "sgb_runtime",
+        help="SHIFT.SGBRuntime/1 JSON",
+    )
+    p.add_argument(
+        "scene_placement",
+        help="SHIFT.SGBScenePlacement/1 JSON",
+    )
+    p.add_argument(
+        "capture_pipeline",
+        help="SHIFT.IMBRuntimeCapturePipeline/1 JSON",
+    )
+    p.add_argument(
+        "ir_root",
+        help="analyzed IR directory containing manifest.json",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.SGBRuntimeTransformRecoveryPipeline/1 JSON output",
+    )
+    p.set_defaults(fn=cmd_sgb_runtime_transform_recovery)
 
     p = sp.add_parser(
         "sgb-multimatrix-root-consensus",
