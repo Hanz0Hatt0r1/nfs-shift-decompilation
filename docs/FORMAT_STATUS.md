@@ -33,7 +33,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- deeper SGB OBJECT/HIERARCHY/DAMAGE/FLAT semantics;
+- deeper SGB OBJECT/HIERARCHY/DAMAGE semantics and remaining FLAT direct-record payload/class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
