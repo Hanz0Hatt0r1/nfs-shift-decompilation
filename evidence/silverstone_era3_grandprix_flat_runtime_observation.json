@@ -1,0 +1,59 @@
+{
+  "format": "SHIFT.SilverstoneEra3GrandPrixFLATObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 corpus",
+  "archive": {
+    "name": "Silverstone_Era3_GrandPrix.bff",
+    "size": 55811062,
+    "sha256": "aac2e1fe721aec25494d0bfc84eac2bd49d1628fe55b165097ae694ef7a7d56c"
+  },
+  "sgb": {
+    "path": "tracks/silverstone_era3_grandprix/silverstone_era3_grandprix.sgb",
+    "size": 2176990,
+    "sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+    "header_flags": 3,
+    "header_flag_bit2": false
+  },
+  "flat": {
+    "chunk_offset": 9316,
+    "chunk_size": 531500,
+    "record_count_word": 1,
+    "body_size": 531488,
+    "root_serialized_span_word": "0xfff7e3e0",
+    "root_serialized_span_signed": -531488,
+    "root_normalized_span_word": "0x01081c20",
+    "tree_nodes": 1913,
+    "leaf_records": 7348,
+    "max_depth": 10,
+    "signed_terminal_node_count": 629,
+    "normalized_marker_histogram": {
+      "0": 1284,
+      "1": 422,
+      "2": 143,
+      "3": 46,
+      "4": 14,
+      "5": 3,
+      "6": 1
+    },
+    "runtime_index_min": 0,
+    "runtime_index_max": 7347,
+    "runtime_index_unique_count": 7348,
+    "runtime_index_contiguous": true,
+    "serialized_nonzero_direct_object_pointer_count": 0
+  },
+  "source_join": {
+    "chunk_dispatch": "FUN_006a5270",
+    "flat_loader": "FUN_006a48d0 -> FUN_0068a8b0",
+    "span_normalizer": "FUN_006afd30 -> FUN_006af6c0",
+    "runtime_indexer": "FUN_006af780",
+    "leaf_dispatch": "FUN_006af5a0",
+    "recursive_lookup": "FUN_006af640 -> FUN_006b0440",
+    "teardown": "FUN_006af830"
+  },
+  "observations": [
+    "SGB header bit2 is clear, so FUN_006a5270 requests FLAT signed-terminal normalization.",
+    "The root FLAT span is stored as signed -body_size and cannot be parsed by treating the serialized high byte as an already-normalized runtime marker.",
+    "After source-equivalent normalization the entire 531488-byte FLAT body is consumed exactly.",
+    "All 7348 direct-record runtime indices are unique and contiguous from 0 through 7347.",
+    "Serialized direct object pointer words at +0x38 are zero in this corpus; their runtime lookup/teardown semantics are source-backed but not observed as persisted pointers."
+  ]
+}
