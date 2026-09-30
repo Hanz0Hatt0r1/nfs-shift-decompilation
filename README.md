@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 591. Current development: Phase 592.**
+**Merged baseline: Phase 592. Current development: Phase 593.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -139,7 +139,9 @@ The runtime supports the established prepared bundle path, multi-draw material
 sets, per-draw pipeline state, constant buffers, 2D textures, optional cube
 resources and validation-layer coverage. Camera state, vehicle-control intent
 and a physics participant/tick boundary are represented without fabricating
-unknown retail integration semantics.
+unknown retail integration semantics. Phase 593 connects the recovered
+CameraManager snapshot fields to the native active camera buffer while keeping
+the retail camera pointer and higher-level behavior opaque.
 
 The Linux target intentionally excludes EA services, DRM, login/profile/cloud,
 matchmaking/online networking and Bink/video playback.
@@ -157,7 +159,7 @@ matchmaking/online networking and Bink/video playback.
 | Desktop renderer | active oracle | broader exact D3D9 parity |
 | Vulkan | active native backend | authentic capture content/remaining renderer-owned resource types; remaining alpha-test/bias/stencil state |
 | SGB / scene | strong structural/render handoff | authentic Silverstone capture content, streaming/LOD, some MatrixNumber history |
-| Camera | structural state active | higher-level gameplay behavior |
+| Camera | structural state + native snapshot handoff active | buffer-swap execution and higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
 | Vehicle physics | structural reconstruction active | exact specialized-provider numeric parity |
 | Specialized providers | capture-ready | authentic runtime frame |
