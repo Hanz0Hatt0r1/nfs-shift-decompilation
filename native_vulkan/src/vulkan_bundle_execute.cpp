@@ -166,7 +166,18 @@ struct Geometry {
 struct WorldTransformExecution {
     bool present = false;
     bool executed = false;
+    std::string mode = "none";
+    float determinant = 1.0f;
     float translation[3] = {0.0f, 0.0f, 0.0f};
+    std::vector<uint32_t> transformed_properties;
+    bool has_position_probe = false;
+    bool has_normal_probe = false;
+    bool has_tangent_probe = false;
+    bool has_tangent2_probe = false;
+    float position_probe[3] = {0.0f, 0.0f, 0.0f};
+    float normal_probe[3] = {0.0f, 0.0f, 0.0f};
+    float tangent_probe[3] = {0.0f, 0.0f, 0.0f};
+    float tangent2_probe[3] = {0.0f, 0.0f, 0.0f};
 };
 
 struct Constants {
@@ -441,7 +452,7 @@ Geometry load_geometry(const std::filesystem::path& path) {
     return geometry;
 }
 
-WorldTransformExecution apply_world_transform_translation(
+WorldTransformExecution apply_world_transform(
     const std::filesystem::path& root,
     Geometry& geometry) {
 
@@ -482,67 +493,232 @@ WorldTransformExecution apply_world_transform_translation(
         throw std::runtime_error("SVWT matrix is not affine D3D row-vector form");
     }
 
-    // SVGP v2 carries Vulkan location/format but not semantic property IDs.
-    // Translation is the only general scene transform that can be applied to
-    // POSITION0 without also needing to identify/transform normal/tangent bases.
-    const float identity3[9] = {
+    const float linear[9] = {
+        matrix[0], matrix[1], matrix[2],
+        matrix[4], matrix[5], matrix[6],
+        matrix[8], matrix[9], matrix[10],
+    };
+    const float identity[9] = {
         1.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 1.0f,
     };
-    const size_t matrix_indices[9] = {
-        0, 1, 2,
-        4, 5, 6,
-        8, 9, 10,
-    };
+    bool linear_identity = true;
     for (size_t index = 0; index < 9; ++index) {
-        if (std::fabs(matrix[matrix_indices[index]] - identity3[index]) >
-            kTolerance) {
-            throw std::runtime_error(
-                "SVWT native material execution supports translation-only "
-                "until the geometry ABI carries semantic IDs");
+        if (std::fabs(linear[index] - identity[index]) > kTolerance) {
+            linear_identity = false;
+            break;
         }
     }
 
+    const float a = linear[0];
+    const float b = linear[1];
+    const float cc = linear[2];
+    const float d = linear[3];
+    const float e = linear[4];
+    const float ff = linear[5];
+    const float g = linear[6];
+    const float h = linear[7];
+    const float i = linear[8];
+    const float determinant =
+        a * (e * i - ff * h) -
+        b * (d * i - ff * g) +
+        cc * (d * h - e * g);
+    result.determinant = determinant;
+
+    if (std::fabs(determinant) <= kTolerance) {
+        throw std::runtime_error("SVWT affine linear transform is singular");
+    }
+    if (determinant < 0.0f) {
+        throw std::runtime_error(
+            "SVWT reflection transform is blocked until tangent handedness "
+            "semantics are proven");
+    }
+    if (!linear_identity && geometry.header.version < 3u) {
+        throw std::runtime_error(
+            "SVWT non-translation transform requires SVGP v3 semantic "
+            "property IDs");
+    }
+
     const GeometryAttribute* position = nullptr;
+    const GeometryAttribute* normal = nullptr;
+    const GeometryAttribute* tangent = nullptr;
+    const GeometryAttribute* tangent2 = nullptr;
     for (const auto& attribute : geometry.attributes) {
-        if (attribute.location == 0u) {
-            if (position != nullptr || attribute.format != 2u ||
-                attribute.property_id != 200u) {
+        const GeometryAttribute** slot = nullptr;
+        switch (attribute.property_id) {
+            case 200u: slot = &position; break;
+            case 220u: slot = &normal; break;
+            case 240u: slot = &tangent; break;
+            case 250u: slot = &tangent2; break;
+            default: break;
+        }
+        if (slot != nullptr) {
+            if (*slot != nullptr) {
                 throw std::runtime_error(
-                    "SVWT execution requires one FLOAT3 POSITION0 at location 0");
+                    "SVWT geometry contains duplicate transform semantic");
             }
-            position = &attribute;
+            *slot = &attribute;
         }
     }
-    if (position == nullptr) {
+
+    if (position == nullptr ||
+        position->location != 0u ||
+        position->format != 2u) {
         throw std::runtime_error(
-            "SVWT execution requires POSITION0 at location 0");
+            "SVWT execution requires FLOAT3 POSITION property 200 at location 0");
     }
+    auto require_direction_format = [](const GeometryAttribute* attribute,
+                                       const char* name) {
+        if (attribute == nullptr) return;
+        if (attribute->format != 2u && attribute->format != 3u) {
+            throw std::runtime_error(
+                std::string("SVWT ") + name +
+                " must use FLOAT3 or FLOAT4 storage");
+        }
+    };
+    require_direction_format(normal, "NORMAL property 220");
+    require_direction_format(tangent, "TANGENT property 240");
+    require_direction_format(tangent2, "TANGENT2 property 250");
+
+    const float normal_matrix[9] = {
+        (e * i - ff * h) / determinant,
+        (ff * g - d * i) / determinant,
+        (d * h - e * g) / determinant,
+        (cc * h - b * i) / determinant,
+        (a * i - cc * g) / determinant,
+        (b * g - a * h) / determinant,
+        (b * ff - cc * e) / determinant,
+        (cc * d - a * ff) / determinant,
+        (a * e - b * d) / determinant,
+    };
+
+    auto read_xyz = [&](uint32_t vertex,
+                        const GeometryAttribute& attribute,
+                        float xyz[3]) {
+        const size_t offset =
+            static_cast<size_t>(vertex) * geometry.header.stride +
+            attribute.offset;
+        if (offset + 3u * sizeof(float) > geometry.vertices.size()) {
+            throw std::runtime_error(
+                "SVWT semantic read exceeds vertex buffer");
+        }
+        std::memcpy(xyz, geometry.vertices.data() + offset, 3u * sizeof(float));
+    };
+    auto write_xyz = [&](uint32_t vertex,
+                         const GeometryAttribute& attribute,
+                         const float xyz[3]) {
+        const size_t offset =
+            static_cast<size_t>(vertex) * geometry.header.stride +
+            attribute.offset;
+        if (offset + 3u * sizeof(float) > geometry.vertices.size()) {
+            throw std::runtime_error(
+                "SVWT semantic write exceeds vertex buffer");
+        }
+        std::memcpy(
+            geometry.vertices.data() + offset,
+            xyz,
+            3u * sizeof(float));
+    };
+    auto multiply_row = [](const float source[3],
+                           const float transform[9],
+                           float target[3]) {
+        target[0] =
+            source[0] * transform[0] +
+            source[1] * transform[3] +
+            source[2] * transform[6];
+        target[1] =
+            source[0] * transform[1] +
+            source[1] * transform[4] +
+            source[2] * transform[7];
+        target[2] =
+            source[0] * transform[2] +
+            source[1] * transform[5] +
+            source[2] * transform[8];
+    };
+    auto normalize = [&](float xyz[3], const char* name) {
+        const float length_squared =
+            xyz[0] * xyz[0] +
+            xyz[1] * xyz[1] +
+            xyz[2] * xyz[2];
+        if (!std::isfinite(length_squared) ||
+            length_squared <= kTolerance * kTolerance) {
+            throw std::runtime_error(
+                std::string("SVWT ") + name +
+                " collapses under affine transform");
+        }
+        const float inverse_length = 1.0f / std::sqrt(length_squared);
+        xyz[0] *= inverse_length;
+        xyz[1] *= inverse_length;
+        xyz[2] *= inverse_length;
+    };
+    auto transform_direction = [&](uint32_t vertex,
+                                   const GeometryAttribute* attribute,
+                                   const float transform[9],
+                                   const char* name,
+                                   bool* probe_flag,
+                                   float probe[3]) {
+        if (attribute == nullptr) return;
+        float source[3]{};
+        float target[3]{};
+        read_xyz(vertex, *attribute, source);
+        multiply_row(source, transform, target);
+        normalize(target, name);
+        write_xyz(vertex, *attribute, target);
+        if (vertex == 0u) {
+            *probe_flag = true;
+            std::memcpy(probe, target, 3u * sizeof(float));
+        }
+    };
 
     result.translation[0] = matrix[12];
     result.translation[1] = matrix[13];
     result.translation[2] = matrix[14];
+    result.mode = linear_identity
+        ? "translation"
+        : "semantic-affine-svgp-v3";
+    result.transformed_properties.push_back(200u);
+    if (!linear_identity) {
+        if (normal != nullptr) result.transformed_properties.push_back(220u);
+        if (tangent != nullptr) result.transformed_properties.push_back(240u);
+        if (tangent2 != nullptr) result.transformed_properties.push_back(250u);
+    }
 
-    for (uint32_t vertex = 0; vertex < geometry.header.vertex_count; ++vertex) {
-        const size_t offset =
-            static_cast<size_t>(vertex) * geometry.header.stride +
-            position->offset;
-        if (offset + 3u * sizeof(float) > geometry.vertices.size()) {
-            throw std::runtime_error("SVWT POSITION0 write exceeds vertex buffer");
+    for (uint32_t vertex = 0;
+         vertex < geometry.header.vertex_count;
+         ++vertex) {
+        float source[3]{};
+        float target[3]{};
+        read_xyz(vertex, *position, source);
+        multiply_row(source, linear, target);
+        target[0] += result.translation[0];
+        target[1] += result.translation[1];
+        target[2] += result.translation[2];
+        write_xyz(vertex, *position, target);
+        if (vertex == 0u) {
+            result.has_position_probe = true;
+            std::memcpy(
+                result.position_probe,
+                target,
+                3u * sizeof(float));
         }
-        float xyz[3]{};
-        std::memcpy(xyz, geometry.vertices.data() + offset, sizeof(xyz));
-        xyz[0] += result.translation[0];
-        xyz[1] += result.translation[1];
-        xyz[2] += result.translation[2];
-        std::memcpy(geometry.vertices.data() + offset, xyz, sizeof(xyz));
+
+        if (!linear_identity) {
+            transform_direction(
+                vertex, normal, normal_matrix, "NORMAL",
+                &result.has_normal_probe, result.normal_probe);
+            transform_direction(
+                vertex, tangent, linear, "TANGENT",
+                &result.has_tangent_probe, result.tangent_probe);
+            transform_direction(
+                vertex, tangent2, linear, "TANGENT2",
+                &result.has_tangent2_probe, result.tangent2_probe);
+        }
     }
 
     result.executed = true;
     return result;
 }
-
 
 Constants load_constants(const std::filesystem::path& path) {
     const auto data = read_bytes(path);
@@ -1056,7 +1232,7 @@ int main(int argc, char** argv) {
             load_pipeline_state(root);
         Geometry geometry = load_geometry(root / "geometry.svpk");
         const WorldTransformExecution world_transform =
-            apply_world_transform_translation(root, geometry);
+            apply_world_transform(root, geometry);
         const Constants constants = load_constants(root / "constants.svcp");
 
         TexturePacket texture_packet{};
@@ -1783,10 +1959,51 @@ int main(int argc, char** argv) {
                   << (world_transform.present ? "true" : "false") << ",\n";
         std::cout << "  \"world_transform_executed\": "
                   << (world_transform.executed ? "true" : "false") << ",\n";
+        std::cout << "  \"world_transform_mode\": \""
+                  << world_transform.mode << "\",\n";
+        std::cout << "  \"world_transform_determinant\": "
+                  << world_transform.determinant << ",\n";
         std::cout << "  \"world_translation_xyz\": ["
                   << world_transform.translation[0] << ", "
                   << world_transform.translation[1] << ", "
                   << world_transform.translation[2] << "],\n";
+        std::cout << "  \"world_transform_properties\": [";
+        for (size_t index = 0;
+             index < world_transform.transformed_properties.size();
+             ++index) {
+            if (index != 0u) std::cout << ", ";
+            std::cout << world_transform.transformed_properties[index];
+        }
+        std::cout << "],\n";
+        auto print_probe = [&](const char* name,
+                               bool present,
+                               const float xyz[3]) {
+            std::cout << "    \"" << name << "\": ";
+            if (present) {
+                std::cout << "[" << xyz[0] << ", "
+                          << xyz[1] << ", "
+                          << xyz[2] << "]";
+            } else {
+                std::cout << "null";
+            }
+        };
+        std::cout << "  \"world_transform_probe\": {\n";
+        print_probe(
+            "position", world_transform.has_position_probe,
+            world_transform.position_probe);
+        std::cout << ",\n";
+        print_probe(
+            "normal", world_transform.has_normal_probe,
+            world_transform.normal_probe);
+        std::cout << ",\n";
+        print_probe(
+            "tangent", world_transform.has_tangent_probe,
+            world_transform.tangent_probe);
+        std::cout << ",\n";
+        print_probe(
+            "tangent2", world_transform.has_tangent2_probe,
+            world_transform.tangent2_probe);
+        std::cout << "\n  },\n";
         std::cout << "  \"validation_enabled\": " << (validation.enabled ? "true" : "false") << ",\n";
         std::cout << "  \"validation_errors\": " << validation.error_count() << ",\n";
         std::cout << "  \"output\": \"" << output.string() << "\"\n";
