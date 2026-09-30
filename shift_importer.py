@@ -1784,6 +1784,28 @@ def cmd_bab_animation_runtime(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_sgb_placement_join(args: argparse.Namespace) -> int:
+    """Join decoded SGB wrappers to PART/FLAT spatial placement."""
+    from sgb_placement_join import validate_file
+
+    report = validate_file(args.input)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "modes_present": report["modes_present"],
+        "modes_ready": report["modes_ready"],
+        "blockers": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_sgb_runtime(args: argparse.Namespace) -> int:
     """Decode source-backed binary SGB chunk structures."""
     from sgb_runtime import parse_sgb_runtime
@@ -3986,6 +4008,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--mode", type=int, choices=[0, 1, 2], required=True, help="runtime animation-bank variant recovered from SHIFT.exe.c")
     p.add_argument("--allow-partial", action="store_true", help="return a blocker instead of raising on truncated payload")
     p.set_defaults(fn=cmd_bab_animation_runtime)
+
+    p = sp.add_parser(
+        "sgb-placement-join",
+        help="join decoded SGB NODE/SUMM wrappers to PART/FLAT placement",
+    )
+    p.add_argument(
+        "input",
+        help="SHIFT.SGBRuntime/1 JSON produced by sgb-runtime",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.SGBPlacementJoin/1 JSON output",
+    )
+    p.set_defaults(fn=cmd_sgb_placement_join)
 
     p = sp.add_parser("sgb-runtime", help="decode source-backed binary SGB scene chunks")
     p.add_argument("input", help="extracted .sgb file")
