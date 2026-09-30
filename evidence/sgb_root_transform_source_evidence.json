@@ -1,0 +1,51 @@
+{
+  "format": "SHIFT.SGBRootTransformSourceEvidence/1",
+  "source": "retail Need For Speed SHIFT v1.02 / Ghidra SHIFT.exe.c + x86 disassembly",
+  "facts": [
+    {
+      "function": "FUN_0068cbb0",
+      "address": "0x0068cbb0",
+      "claim": "MultiMatrix construction copies every serialized local MATRIX into the matching world slot, including slot 0."
+    },
+    {
+      "function": "FUN_006ab710",
+      "address": "0x006ab710",
+      "claim": "HIERARCHY update copies the caller-provided 0x40-byte matrix into world slot 0 before FUN_006b1620."
+    },
+    {
+      "function": "FUN_006b4280",
+      "address": "0x006b4280",
+      "claim": "LOD update copies the caller-provided 0x40-byte matrix into world slot 0 before FUN_006b1620."
+    },
+    {
+      "function": "FUN_0068bc60",
+      "address": "0x0068bc60",
+      "claim": "SceneGraph transform dispatch forwards its second argument in EDX to object vfunc +0x2c; when deferred mode is active it enqueues update type 4."
+    },
+    {
+      "function": "FUN_0068ba90",
+      "address": "0x0068ba90",
+      "claim": "SceneGraph queued update type 4 reserves an xform index and copies exactly 0x40 bytes from the supplied matrix into the xform pool via FUN_00401d10."
+    },
+    {
+      "function": "FUN_0068b840",
+      "address": "0x0068b840",
+      "claim": "SceneGraph flush resolves queued type-4 matrix as xform_pool + index*0x40 in EDX and calls the queued object's vfunc +0x2c."
+    },
+    {
+      "function": "FUN_006a4b40",
+      "address": "0x006a4b40",
+      "claim": "Binary SGB NODE loading creates scene descriptors and decodes object payloads but does not itself perform a SceneGraph transform dispatch."
+    }
+  ],
+  "state_model": {
+    "constructor_initial_root": "serialized MATRIX slot 0 local matrix",
+    "post_update_root": "last SceneGraph 0x40-byte transform supplied to owner vfunc +0x2c",
+    "unknown_update_history": "current root must remain unresolved"
+  },
+  "boundary": {
+    "identity_assumption": false,
+    "absence_of_runtime_updates_assumed": false,
+    "render_binding_admission": false
+  }
+}
