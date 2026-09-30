@@ -439,6 +439,14 @@ def build_imb_runtime_capture_pipeline(
             "routed_binding_count": routed_count,
             "candidate_resource_count": len(candidate_resources),
             "runtime_report_count": len(resource_results),
+            "attributed_texture_observation_count": sum(
+                len(
+                    row.get(
+                        "attributed_texture_observations"
+                    ) or []
+                )
+                for row in resource_results
+            ),
             "observed_candidate_binding_count": observed_count,
             "attributed_candidate_binding_count": attributed_count,
             "blocked_candidate_binding_count": (
