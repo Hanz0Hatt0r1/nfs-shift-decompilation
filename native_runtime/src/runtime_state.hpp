@@ -144,6 +144,11 @@ struct PhysicsTickBoundary {
 
     uint64_t fixed_step = 0;
     VehicleControlIntent last_input{};
+    uint64_t throttle_steps = 0;
+    uint64_t brake_steps = 0;
+    uint64_t steer_left_steps = 0;
+    uint64_t steer_right_steps = 0;
+    uint64_t neutral_input_steps = 0;
     bool participant_ready = false;
     int32_t participant_index = -1;
     int32_t participant_mode = -1;
@@ -152,6 +157,16 @@ struct PhysicsTickBoundary {
     void tick(const VehicleControlIntent& input) {
         last_input = input;
         ++fixed_step;
+        if (input.throttle) ++throttle_steps;
+        if (input.brake) ++brake_steps;
+        if (input.steer_left) ++steer_left_steps;
+        if (input.steer_right) ++steer_right_steps;
+        if (!input.throttle &&
+            !input.brake &&
+            !input.steer_left &&
+            !input.steer_right) {
+            ++neutral_input_steps;
+        }
         // Physics integration intentionally remains outside this shell.
         // The retail participant/provider semantics are not synthesized here.
     }
