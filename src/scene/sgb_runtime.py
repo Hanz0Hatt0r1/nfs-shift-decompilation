@@ -676,7 +676,7 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
             "OCCL": "FUN_006a4f10",
         },
         "limitations": [
-            "NODE object payload is inline at record +0x1c and decoded against the complete SGB-relative reference arena; byte +0x21 and DAMAGE-specific payload fields remain unresolved.",
+            "NODE object payload is inline at record +0x1c and decoded against the complete SGB-relative reference arena; binary admission is limited to LOD/HIERARCHY/OBJECT, while DAMAGE is XML-only and byte +0x21 is source-unconsumed raw data.",
             "FLAT signed terminal spans are normalized exactly when SGB header bit2 is clear, matching FUN_006a5270 -> FUN_006a48d0 -> FUN_006af6c0.",
             "SUMM vectors remain positional; their semantic names are not proven by FUN_006a4900.",
             "OCCL Name/Resource and PositionTL/TR/BL/BR semantics are source-backed by the matching XML constructor FUN_006a3c40 and binary loader FUN_006a4f10.",
