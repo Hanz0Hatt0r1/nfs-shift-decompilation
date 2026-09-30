@@ -330,3 +330,179 @@ def test_candidate_identity_fallback_distinguishes_explicit_vertex_offsets():
         "vertex_program_offset": 80,
     }
     assert _candidate_identity(first) != _candidate_identity(second)
+
+
+def _runtime_admission_from_candidate(candidate, *, score=100):
+    identity = candidate.get("permutation_identity") or {}
+    return {
+        "format": "SHIFT.IMBRuntimeShaderAdmission/1",
+        "binding_index": 17,
+        "imb_path": "tracks/silverstone/test.imb",
+        "imb_sha256": "f" * 64,
+        "shader_selection_admitted": True,
+        "render_admission": False,
+        "selected_variant": {
+            "score": score,
+            "evidence": ["permutation_identity_sha256"],
+            "permutation_identity_sha256": identity.get(
+                "identity_sha256"
+            ),
+            "pair_byte_sha256": candidate.get("pair_sha256"),
+            "vertex_byte_sha256": candidate.get("vertex_sha256"),
+            "pixel_byte_sha256": candidate.get("pixel_sha256"),
+        },
+    }
+
+
+def _ambiguous_runtime_link_inputs():
+    source = """texture diffuseTexture;
+    sampler2D diffuseMap : SAMPLER < string SamplerTexture="diffuseTexture"; > =
+        sampler_state { Texture=<diffuseTexture>; };
+    float4 sampleDiffuse(float2 uv) { return tex2D(diffuseMap, uv); }"""
+    material = {
+        "name": "TEST",
+        "shader": "body.fx",
+        "shaderparams": [
+            {
+                "name": "diffuseTexture",
+                "type": "EPT_TEXTURE",
+                "value": "a.dds",
+            },
+        ],
+    }
+    return source, material, synthetic_ambiguous_vertex_pair_fxo()
+
+
+def test_runtime_admission_resolves_ambiguous_vertex_pair_exactly():
+    source, material, data = _ambiguous_runtime_link_inputs()
+    static = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+    )
+    assert static["selection_status"] == "ambiguous"
+    assert len(static["fxo_candidates"]) == 2
+
+    target = static["fxo_candidates"][1]
+    admitted = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+        runtime_admission=_runtime_admission_from_candidate(target),
+    )
+
+    assert admitted["selection_status"] == "unique"
+    assert admitted["selection_source"] == "runtime-admission"
+    assert admitted["runtime_selection"]["ready"] is True
+    assert admitted["runtime_selection"]["matching_static_candidate_count"] == 1
+    assert (
+        admitted["selected_fxo"]["vertex_program_offset"]
+        == target["vertex_program_offset"]
+    )
+    assert admitted["selected_fxo"]["pair_sha256"] == target["pair_sha256"]
+    assert (
+        admitted["permutation_identity"]["identity_sha256"]
+        == target["permutation_identity"]["identity_sha256"]
+    )
+    assert admitted["shader_pair"]["selection_source"] == "explicit-offsets"
+    assert admitted["linked_shader_pair"] is not None
+    assert admitted["uniform_binding"] is not None
+
+
+def test_runtime_admission_rejects_weak_prefilter_only_selection():
+    source, material, data = _ambiguous_runtime_link_inputs()
+    static = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+    )
+    target = static["fxo_candidates"][0]
+
+    blocked = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+        runtime_admission=_runtime_admission_from_candidate(
+            target,
+            score=40,
+        ),
+    )
+
+    assert blocked["selection_status"] == "blocked"
+    assert blocked["selection_source"] == "runtime-admission"
+    assert blocked["selected_fxo"] is None
+    assert blocked["linked_shader_pair"] is None
+    assert blocked["runtime_selection"]["ready"] is False
+    assert (
+        "runtime-admission:weak-selection"
+        in blocked["runtime_selection"]["blocking_reasons"]
+    )
+
+
+def test_runtime_admission_rejects_identity_not_in_static_candidates():
+    source, material, data = _ambiguous_runtime_link_inputs()
+    static = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+    )
+    admission = _runtime_admission_from_candidate(
+        static["fxo_candidates"][0]
+    )
+    admission["selected_variant"]["permutation_identity_sha256"] = "0" * 64
+
+    blocked = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+        runtime_admission=admission,
+    )
+
+    assert blocked["selection_status"] == "blocked"
+    assert blocked["runtime_selection"]["ready"] is False
+    assert (
+        "runtime-admission:static-candidate-not-found"
+        in blocked["runtime_selection"]["blocking_reasons"]
+    )
+
+
+def test_runtime_admission_accepts_content_equivalent_fxo_copies():
+    source, material, data = _ambiguous_runtime_link_inputs()
+    static = link_material(
+        material,
+        source,
+        fxo_candidates=[("a.fxo", data), ("b.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+    )
+    target = static["fxo_candidates"][0]
+    admission = _runtime_admission_from_candidate(target)
+
+    admitted = link_material(
+        material,
+        source,
+        fxo_candidates=[("a.fxo", data), ("b.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+        runtime_admission=admission,
+    )
+
+    assert admitted["selection_status"] == "unique"
+    assert admitted["runtime_selection"]["ready"] is True
+    assert admitted["runtime_selection"]["matching_static_candidate_count"] == 2
+    assert {
+        row["file"]
+        for row in admitted["runtime_selection"]["matching_static_locations"]
+    } == {"a.fxo", "b.fxo"}
