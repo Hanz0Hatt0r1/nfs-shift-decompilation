@@ -117,6 +117,16 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
     words = [_u32(data, off + 4 * i) for i in range(LEAF_SIZE // 4)]
     sphere = [_f32_bits(value) for value in words[4:8]]
     unresolved_spatial = [_f32_bits(value) for value in words[8:14]]
+    candidate_min = unresolved_spatial[0:3]
+    candidate_max = unresolved_spatial[3:6]
+    midpoint = [
+        (candidate_min[axis] + candidate_max[axis]) * 0.5
+        for axis in range(3)
+    ]
+    midpoint_error = max(
+        abs(sphere[axis] - midpoint[axis])
+        for axis in range(3)
+    )
     return {
         "index": index,
         "offset": off,
@@ -158,7 +168,28 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
             "bytes": LEAF_UNRESOLVED_SPATIAL_BYTES,
             "raw_u32": words[8:14],
             "float_view": unresolved_spatial,
-            "semantic_status": "unresolved",
+            "semantic_status": "unresolved-source-consumer",
+        },
+        "spatial_bounds_candidate": {
+            "min_xyz": candidate_min,
+            "max_xyz": candidate_max,
+            "source_offset": LEAF_UNRESOLVED_SPATIAL_OFFSET,
+            "semantic_status": "corpus-verified-candidate",
+            "source_consumer_proven": False,
+            "ordered_axes": all(
+                candidate_min[axis] <= candidate_max[axis]
+                for axis in range(3)
+            ),
+            "bounding_sphere_center_midpoint_xyz": midpoint,
+            "bounding_sphere_center_midpoint_max_abs_error": midpoint_error,
+            "silverstone_era3_observation": {
+                "leaf_count": 21580,
+                "ordered_axes_count": 21580,
+                "sphere_center_inside_count": 21580,
+                "midpoint_match_tolerance": 0.0001,
+                "midpoint_match_count": 21580,
+                "max_midpoint_error": 0.00006103515625,
+            },
         },
         # +0x38 is a nullable direct object pointer slot. FUN_006af640
         # passes it to FUN_006b0440 for recursive scene-object lookup.
@@ -436,7 +467,7 @@ def parse_flat_runtime(
             "leaf_bounding_sphere_query": "FUN_006aef20/FUN_006aefe0",
         },
         "limitations": [
-            "Leaf +0x20..+0x34 remains raw; the production corpus is spatially suggestive but no direct source consumer has been accepted yet.",
+            "Leaf +0x20..+0x34 remains source-unresolved; Silverstone Era3 proves an AABB-shaped min/max candidate whose midpoint matches the source-backed sphere center, but no direct source consumer has been accepted yet.",
             "The class behind a populated leaf +0x38 direct object pointer remains unresolved.",
             "High-byte span marker is exposed as runtime depth/termination metadata rather than assigned a higher-level scene meaning.",
         ],
