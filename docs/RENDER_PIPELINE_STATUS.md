@@ -2,7 +2,7 @@
 
 ## Canonical path
 
-`VHF/CAR → MEB → BMT/MTX → FX/FXO → RenderBinding/1 → DrawPacket/1 → StaticDraw/1 → RenderCommand/1`
+`VHF/CAR or SGB → MEB/IMB/IMX → BMT/MTX → FX/FXO → RenderBinding/1 → DrawPacket/1 → StaticDraw/1 → RenderCommand/1`
 
 ## Implemented
 
@@ -10,7 +10,7 @@
 
 - VHF references resolve to MEB;
 - scene-admitted SGB MEB instances can enter the same resource path with their source-backed world matrices;
-- the retail SGB OBJECT factory is classified separately as MeshType/type 0 or MeshInst/type 7 (`.imb/.imx`); `.imx` uses the XML mesh loader while `.imb` now auto-decodes its packed version/control/name prefix plus fixed header, bones and Type/Usage/Channel stream table; the existing MEB path remains a separate neutral adapter;
+- the retail SGB OBJECT factory is classified separately as MeshType/type 0 or MeshInst/type 7 (`.imb/.imx`); `.imb` uses the source-backed v0.4 binary neutral adapter while `.imx` uses the source-backed `FUN_008587e0` XML neutral adapter; MEB remains a separate serialized path;
 - MEB primitive material references resolve through BMT/MTX;
 - BMT connects to FX sources and FXO permutations;
 - CTAB reflection supplies sampler registers and material constants;
@@ -36,4 +36,4 @@ Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets
 
 ## Remaining work
 
-Broaden exact BMW shader/material execution, close more runtime same-instance evidence, wire provenance-bearing external snapshots into scene-level admission, implement the IMX XML neutral adapter, carry scene visibility/streaming semantics beyond the SGB resource bridge, and close remaining alpha-test/bias/stencil Vulkan state. Missing renderer-owned resources remain fail-closed.
+Broaden exact BMW shader/material execution, close more runtime same-instance evidence, wire provenance-bearing external snapshots into scene-level admission, extend unrecovered IMX XML value types only when source/runtime evidence exists, carry scene visibility/streaming semantics beyond the SGB resource bridge, and close remaining alpha-test/bias/stencil Vulkan state. Missing renderer-owned resources remain fail-closed.
