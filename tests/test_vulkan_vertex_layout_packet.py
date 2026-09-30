@@ -68,7 +68,7 @@ def test_vulkan_packet_contains_all_supported_attributes(tmp_path):
     output = tmp_path / "mesh.svpk"
     report = export_vulkan_geometry_packet(_command(), _mesh(), output)
 
-    assert report["version"] == 2
+    assert report["version"] == 3
     assert [row["property_id"] for row in report["attributes"]] == [
         "200", "220", "460", "310", "580"
     ]
@@ -76,17 +76,17 @@ def test_vulkan_packet_contains_all_supported_attributes(tmp_path):
 
     raw = output.read_bytes()
     header = HEADER.unpack_from(raw)
-    assert header[:7] == (b"SVGP", 2, 3, 3, 52, 5, 0)
+    assert header[:7] == (b"SVGP", 3, 3, 3, 52, 5, 0)
 
     attrs = [
         ATTRIBUTE.unpack_from(raw, HEADER.size + i * ATTRIBUTE.size)
         for i in range(5)
     ]
-    assert attrs[0] == (0, 2, 0, 52)
-    assert attrs[1] == (1, 2, 12, 52)
-    assert attrs[2] == (2, 4, 24, 52)
-    assert attrs[3] == (3, 3, 28, 52)
-    assert attrs[4] == (4, 5, 44, 52)
+    assert attrs[0] == (0, 2, 0, 52, 200)
+    assert attrs[1] == (1, 2, 12, 52, 220)
+    assert attrs[2] == (2, 4, 24, 52, 460)
+    assert attrs[3] == (3, 3, 28, 52, 310)
+    assert attrs[4] == (4, 5, 44, 52, 580)
 
     vertex_base = HEADER.size + (5 * ATTRIBUTE.size)
     # COLOR0 source bytes are BGRA and are explicitly repacked to RGBA.

@@ -26,16 +26,24 @@ struct PacketHeader {
     float scale;
 };
 
-struct PacketAttribute {
+struct LegacyPacketAttribute {
     uint32_t location;
     uint32_t format;
     uint32_t offset;
     uint32_t stride;
 };
+struct PacketAttribute {
+    uint32_t location;
+    uint32_t format;
+    uint32_t offset;
+    uint32_t stride;
+    uint32_t property_id;
+};
 #pragma pack(pop)
 
 static_assert(sizeof(PacketHeader) == 44, "unexpected geometry packet header size");
-static_assert(sizeof(PacketAttribute) == 16, "unexpected geometry packet attribute size");
+static_assert(sizeof(LegacyPacketAttribute) == 16, "unexpected legacy geometry packet attribute size");
+static_assert(sizeof(PacketAttribute) == 20, "unexpected geometry packet attribute size");
 
 namespace {
 
@@ -295,14 +303,16 @@ std::vector<uint8_t> read_file(const std::string& path) {
 
 GeometryPacket parse_packet(const std::string& path) {
     const std::vector<uint8_t> data = read_file(path);
-    if (data.size() < sizeof(PacketHeader) + sizeof(PacketAttribute)) {
+    if (data.size() < sizeof(PacketHeader) + sizeof(LegacyPacketAttribute)) {
         throw std::runtime_error("geometry packet is truncated");
     }
 
     GeometryPacket packet{};
     std::memcpy(&packet.header, data.data(), sizeof(packet.header));
     if (std::memcmp(packet.header.magic, "SVGP", 4) != 0 ||
-        (packet.header.version != 1 && packet.header.version != 2)) {
+        (packet.header.version != 1 &&
+         packet.header.version != 2 &&
+         packet.header.version != 3)) {
         throw std::runtime_error("unsupported SHIFT Vulkan geometry packet");
     }
     if (packet.header.vertex_count == 0 ||
@@ -313,16 +323,42 @@ GeometryPacket parse_packet(const std::string& path) {
         throw std::runtime_error("invalid geometry packet counts/stride/attribute count");
     }
 
+    const size_t attribute_record_bytes =
+        packet.header.version >= 3
+            ? sizeof(PacketAttribute)
+            : sizeof(LegacyPacketAttribute);
     const size_t attribute_bytes =
-        static_cast<size_t>(packet.header.attribute_count) * sizeof(PacketAttribute);
+        static_cast<size_t>(packet.header.attribute_count) *
+        attribute_record_bytes;
     if (sizeof(packet.header) + attribute_bytes > data.size()) {
         throw std::runtime_error("geometry packet attribute table is truncated");
     }
     packet.attributes.resize(packet.header.attribute_count);
-    std::memcpy(
-        packet.attributes.data(),
-        data.data() + sizeof(packet.header),
-        attribute_bytes);
+    if (packet.header.version >= 3) {
+        std::memcpy(
+            packet.attributes.data(),
+            data.data() + sizeof(packet.header),
+            attribute_bytes);
+    } else {
+        for (uint32_t index = 0;
+             index < packet.header.attribute_count;
+             ++index) {
+            LegacyPacketAttribute legacy{};
+            std::memcpy(
+                &legacy,
+                data.data() + sizeof(packet.header) +
+                    static_cast<size_t>(index) *
+                        sizeof(LegacyPacketAttribute),
+                sizeof(legacy));
+            packet.attributes[index] = {
+                legacy.location,
+                legacy.format,
+                legacy.offset,
+                legacy.stride,
+                legacy.location == 0u ? 200u : 0u,
+            };
+        }
+    }
 
     if (packet.header.version == 1) {
         if (packet.header.attribute_count != 1 ||
@@ -353,9 +389,16 @@ GeometryPacket parse_packet(const std::string& path) {
             attribute.stride != packet.header.stride) {
             throw std::runtime_error("unsupported Vulkan vertex attribute");
         }
+        if (packet.header.version >= 3 &&
+            attribute.property_id == 0u) {
+            throw std::runtime_error(
+                "SVGP v3 attribute is missing SHIFT property identity");
+        }
         if (attribute.location == 0) {
-            if (attribute.format != 2 || position_seen) {
-                throw std::runtime_error("POSITION0 must be exactly one FLOAT3 attribute at location 0");
+            if (attribute.format != 2 || position_seen ||
+                attribute.property_id != 200u) {
+                throw std::runtime_error(
+                    "POSITION0 must be exactly one FLOAT3 property 200 at location 0");
             }
             position_seen = true;
         }

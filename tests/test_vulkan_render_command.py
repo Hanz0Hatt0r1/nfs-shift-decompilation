@@ -58,7 +58,7 @@ def test_vulkan_runner_prepare_only(tmp_path):
     assert result["format"] == "SHIFT.VulkanRenderCommandRunner/1"
     assert result["status"] == "prepared"
     assert result["command"]["ready"] is False
-    assert result["packet"]["version"] == 2
+    assert result["packet"]["version"] == 3
     assert result["packet"]["attribute_count"] == 1
     assert result["render"]["status"] == "not-run"
     assert len(result["packet"]["sha256"]) == 64

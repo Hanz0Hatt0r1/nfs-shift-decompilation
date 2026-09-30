@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 581. Current development: Phase 582.**
+**Merged baseline: Phase 582. Current development: Phase 583.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -103,9 +103,11 @@ Key contracts near the native boundary:
 Phase 581 proves the SVWT transport convention without assigning any retail
 shader constant register. Phase 582 begins real material-path consumption:
 the native Vulkan executor applies **translation-only** SVWT matrices directly
-to POSITION0 before GPU upload. Rotation/scale remain fail-closed until the
-geometry/native interface carries enough semantic information to update
-normal/tangent bases correctly.
+to POSITION0 before GPU upload. Phase 583 upgrades the native geometry packet
+to semantic-aware SVGP v3: every emitted vertex attribute now preserves its
+SHIFT property ID, so native code can distinguish POSITION 200, NORMAL 220,
+TANGENT 240/TANGENT2 250 and other fields without guessing. General affine
+execution is the next transform step.
 
 ### Native Linux runtime
 
@@ -139,7 +141,7 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | general affine scene transform + neutral scene-set admission |
+| Vulkan | active native backend | general affine SVWT execution + neutral scene-set admission |
 | SGB / scene | strong structural/render handoff | external runtime resources, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
@@ -346,10 +348,10 @@ These are independent; resolving one does not justify guessing another.
 
 1. **Silverstone exact shader attribution** — authentic D3D9 capture required
    for tied IMB permutations.
-2. **General affine scene execution** — Phase 582 safely executes translation
-   through SVWT; rotation/scale still require a semantic-aware native geometry
-   or dedicated shader transform path that also preserves normal/tangent
-   correctness.
+2. **General affine scene execution** — Phase 583 now carries exact vertex
+   property IDs in SVGP v3; rotation/scale/shear still need the native executor
+   to apply POSITION plus inverse-transpose NORMAL and linear TANGENT/TANGENT2
+   transforms safely.
 3. **Neutral scene-set runtime admission** — `native_runtime` still consumes
    the established BMW bundle/set contract rather than
    `SHIFT.NativeSceneVulkanSet/1` directly.
@@ -391,7 +393,9 @@ For current state, prefer operational status documents over old phase notes:
 - `docs/PHASE578_NATIVE_SCENE_BUNDLE.md`;
 - `docs/PHASE579_GENERIC_VULKAN_DRAW_BUNDLE.md`;
 - `docs/PHASE580_NATIVE_SCENE_VULKAN_SET.md`;
-- `docs/PHASE581_VULKAN_WORLD_TRANSFORM_PACKET.md`;\n- `docs/PHASE582_NATIVE_TRANSLATION_SVWT.md`.
+- `docs/PHASE581_VULKAN_WORLD_TRANSFORM_PACKET.md`;
+- `docs/PHASE582_NATIVE_TRANSLATION_SVWT.md`;
+- `docs/PHASE583_SVGP_SEMANTIC_ABI.md`.
 
 Historical phase files preserve the evidence trail and are not rewritten
 retroactively when newer work changes the current operational boundary.

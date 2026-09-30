@@ -29,6 +29,11 @@ def test_native_vulkan_bundle_executor_contract():
     assert "apply_world_transform_translation" in source
     assert "translation-only" in source
     assert "world_transform_executed" in source
+    assert "struct LegacyGeometryAttribute" in source
+    assert "uint32_t property_id;" in source
+    assert "geometry.header.version != 3" in source
+    assert "legacy.location == 0u ? 200u : 0u" in source
+    assert "attribute.property_id != 200u" in source
 
 
 def test_vulkan_bundle_runner_contract():

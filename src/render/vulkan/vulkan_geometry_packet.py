@@ -2,8 +2,9 @@
 
 The native Vulkan backend deliberately does not parse BFF/MEB/RenderCommand JSON. This
 module is the bridge from the neutral Python submission contract to a small, versioned
-binary geometry packet. Phase 208 supports POSITION0 only; other RenderCommand
-attributes are reported as deferred rather than guessed.
+binary geometry packet. SVGP v3 preserves the SHIFT vertex property identifier in every
+native attribute record so backend transforms can distinguish position, normal, tangent,
+color, skinning and UV semantics without guessing.
 """
 from __future__ import annotations
 
@@ -15,9 +16,9 @@ from typing import Any
 
 FORMAT = "SHIFT.VulkanGeometryPacket/1"
 MAGIC = b"SVGP"
-VERSION = 2
+VERSION = 3
 HEADER = struct.Struct("<4sIIIIII4f")
-ATTRIBUTE = struct.Struct("<IIII")
+ATTRIBUTE = struct.Struct("<IIIII")
 FORMAT_FLOAT2 = 1
 FORMAT_FLOAT3 = 2
 FORMAT_FLOAT4 = 3
@@ -304,6 +305,7 @@ def export_vulkan_geometry_packet(
             int(row["format"]),
             int(row["offset"]),
             int(row["stride"]),
+            int(row["property_id"]),
         )
         for row in vertex_attributes
     )

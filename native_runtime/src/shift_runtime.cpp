@@ -45,16 +45,24 @@ struct GeometryHeader {
     float center_z;
     float scale;
 };
-struct GeometryAttribute {
+struct LegacyGeometryAttribute {
     uint32_t location;
     uint32_t format;
     uint32_t offset;
     uint32_t stride;
 };
+struct GeometryAttribute {
+    uint32_t location;
+    uint32_t format;
+    uint32_t offset;
+    uint32_t stride;
+    uint32_t property_id;
+};
 #pragma pack(pop)
 
 static_assert(sizeof(GeometryHeader) == 44);
-static_assert(sizeof(GeometryAttribute) == 16);
+static_assert(sizeof(LegacyGeometryAttribute) == 16);
+static_assert(sizeof(GeometryAttribute) == 20);
 
 struct PacketGeometry {
     std::vector<float> positions;
@@ -486,7 +494,9 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
     GeometryHeader header{};
     std::memcpy(&header, data.data(), sizeof(header));
     if (std::memcmp(header.magic, "SVGP", 4) != 0 ||
-        (header.version != 1 && header.version != 2)) {
+        (header.version != 1 &&
+         header.version != 2 &&
+         header.version != 3)) {
         throw std::runtime_error("unsupported SVGP geometry packet");
     }
     if (header.vertex_count == 0 || header.index_count == 0 ||
@@ -495,8 +505,12 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
         throw std::runtime_error("invalid SVGP geometry header");
     }
 
+    const size_t attribute_record_bytes =
+        header.version >= 3
+            ? sizeof(GeometryAttribute)
+            : sizeof(LegacyGeometryAttribute);
     const size_t attributes_bytes =
-        static_cast<size_t>(header.attribute_count) * sizeof(GeometryAttribute);
+        static_cast<size_t>(header.attribute_count) * attribute_record_bytes;
     const size_t vertices_bytes =
         static_cast<size_t>(header.vertex_count) * header.stride;
     const size_t indices_bytes =
@@ -509,9 +523,38 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
     }
 
     std::vector<GeometryAttribute> attributes(header.attribute_count);
-    std::memcpy(
-        attributes.data(), data.data() + sizeof(GeometryHeader),
-        attributes_bytes);
+    if (header.version >= 3) {
+        std::memcpy(
+            attributes.data(),
+            data.data() + sizeof(GeometryHeader),
+            attributes_bytes);
+    } else {
+        for (uint32_t index = 0; index < header.attribute_count; ++index) {
+            LegacyGeometryAttribute legacy{};
+            std::memcpy(
+                &legacy,
+                data.data() + sizeof(GeometryHeader) +
+                    static_cast<size_t>(index) * sizeof(LegacyGeometryAttribute),
+                sizeof(legacy));
+            attributes[index] = {
+                legacy.location,
+                legacy.format,
+                legacy.offset,
+                legacy.stride,
+                legacy.location == 0u ? 200u : 0u,
+            };
+        }
+    }
+
+    if (header.version == 1) {
+        if (header.attribute_count != 1 ||
+            attributes[0].format != 1u) {
+            throw std::runtime_error(
+                "invalid version-1 SVGP geometry attribute");
+        }
+        // SVGP v1 used format code 1 for FLOAT3; v2/v3 reserve 1 for FLOAT2.
+        attributes[0].format = 2u;
+    }
 
     const GeometryAttribute* position = nullptr;
     for (const auto& attribute : attributes) {
@@ -521,9 +564,19 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
         }
     }
     if (!position || position->format != 2 ||
+        position->property_id != 200u ||
         position->stride != header.stride ||
         position->offset + sizeof(float) * 3 > header.stride) {
-        throw std::runtime_error("SVGP POSITION0 is not FLOAT3");
+        throw std::runtime_error(
+            "SVGP POSITION0 is not FLOAT3 property 200");
+    }
+    if (header.version >= 3) {
+        for (const auto& attribute : attributes) {
+            if (attribute.property_id == 0u) {
+                throw std::runtime_error(
+                    "SVGP v3 attribute is missing SHIFT property identity");
+            }
+        }
     }
 
     const size_t vertex_base = sizeof(GeometryHeader) + attributes_bytes;

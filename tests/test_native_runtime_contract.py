@@ -171,3 +171,15 @@ def test_native_runtime_executes_bundle_depth_and_blend_state():
     assert "material_pipeline_state.src_alpha_blend_factor" in source
     assert "material_pipeline_state.dst_alpha_blend_factor" in source
     assert "material_pipeline_state.alpha_blend_op" in source
+
+
+def test_native_runtime_accepts_svgp_v3_semantics_and_legacy_packets():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    assert "struct LegacyGeometryAttribute" in source
+    assert "uint32_t property_id;" in source
+    assert "header.version != 3" in source
+    assert "legacy.location == 0u ? 200u : 0u" in source
+    assert "invalid version-1 SVGP geometry attribute" in source
+    assert "position->property_id != 200u" in source
