@@ -39,8 +39,10 @@ def test_phase600_native_participant_boundary_is_source_backed():
 
 
 def test_phase600_fails_closed_on_selector_manager_conflation(monkeypatch):
+    original = runtime.build_vehicle_physics_selector_context
+
     def selector():
-        report = runtime.build_vehicle_physics_selector_context()
+        report = original()
         report["separation"]["same_object_proven"] = True
         return report
 
