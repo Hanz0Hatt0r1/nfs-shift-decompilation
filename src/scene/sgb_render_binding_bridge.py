@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from render_pipeline import build_render_bindings_from_resource_instances
+from sgb_resource_factory import classify_sgb_object_resource
 
 FORMAT = "SHIFT.SGBRenderBindingBridge/1"
 ADMISSION_FORMAT = "SHIFT.SGBRenderBindingAdmission/1"
@@ -37,6 +38,8 @@ def build_sgb_render_binding_bridge(
         )
 
     instances: list[dict[str, Any]] = []
+    direct_render_instances: list[dict[str, Any]] = []
+    resource_adapter_blocked: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
     blockers: list[str] = []
 
@@ -84,9 +87,16 @@ def build_sgb_render_binding_bridge(
             })
             continue
 
-        instances.append({
+        resource_factory = object_row.get("resource_factory")
+        if not isinstance(resource_factory, Mapping):
+            resource_factory = classify_sgb_object_resource(
+                str(resource_ref)
+            )
+
+        instance = {
             "resource_reference": str(resource_ref),
             "world_matrix": world_matrix,
+            "resource_factory": dict(resource_factory),
             "source": {
                 "admission_binding_index": binding_index,
                 "placement": row.get("placement"),
@@ -94,16 +104,38 @@ def build_sgb_render_binding_bridge(
                     "object_path": object_row.get("object_path"),
                     "wrapper": object_row.get("wrapper"),
                     "transform_mode": object_row.get("transform_mode"),
+                    "resource_factory": dict(resource_factory),
                 },
             },
-        })
+        }
+        instances.append(instance)
+
+        suffix = Path(str(resource_ref).replace("\\", "/")).suffix.lower()
+        if suffix == ".meb":
+            direct_render_instances.append(instance)
+        else:
+            factory_type = resource_factory.get("factory_type")
+            if factory_type == 7:
+                adapter_reason = "meshinst-adapter-unimplemented"
+            else:
+                adapter_reason = "meshtype-adapter-unimplemented"
+            blockers.append(
+                f"binding-{binding_index}:scene-resource:{adapter_reason}"
+            )
+            resource_adapter_blocked.append({
+                "binding_index": binding_index,
+                "resource_reference": str(resource_ref),
+                "factory_type": factory_type,
+                "factory_name": resource_factory.get("factory_name"),
+                "reason": adapter_reason,
+            })
 
     if not instances:
         blockers.append("sgb-render-binding-bridge:no-admitted-bindings")
 
     render_binding = build_render_bindings_from_resource_instances(
         ir_root,
-        instances,
+        direct_render_instances,
         source_format=ADMISSION_FORMAT,
     )
 
@@ -150,13 +182,20 @@ def build_sgb_render_binding_bridge(
             "blocked_binding_count": admission.get("blocked_binding_count"),
         },
         "scene_admitted_instance_count": len(instances),
+        "direct_render_instance_count": len(direct_render_instances),
+        "resource_adapter_blocked_count": len(resource_adapter_blocked),
         "resolved_instance_count": resolved_count,
         "unresolved_instance_count": len(instances) - resolved_count,
+        "resource_adapter_blocked": resource_adapter_blocked,
         "skipped_bindings": skipped,
         "render_binding": render_binding,
         "boundary": {
-            "supported_scene_resource": "MEB",
+            "retail_resource_factory": "MeshType(type 0) / MeshInst(type 7)",
+            "meshinst_extensions": ["imb", "imx"],
+            "direct_neutral_adapter": "MEB only",
             "resource_pipeline": "MEB -> BMT/MTX -> FX/FXO -> SHIFT.RenderBinding/1",
+            "meshtype_equals_meb": False,
+            "meshinst_equals_meb": False,
             "world_matrix_source": "SHIFT.SGBRenderBindingAdmission/1",
             "blocked_scene_rows_promoted": False,
             "generic_render_binding_packets_emitted": True,
@@ -197,6 +236,12 @@ def main(argv: list[str] | None = None) -> int:
         "ready": report["ready"],
         "scene_admitted_instance_count": report[
             "scene_admitted_instance_count"
+        ],
+        "direct_render_instance_count": report[
+            "direct_render_instance_count"
+        ],
+        "resource_adapter_blocked_count": report[
+            "resource_adapter_blocked_count"
         ],
         "resolved_instance_count": report["resolved_instance_count"],
         "unresolved_instance_count": report["unresolved_instance_count"],
