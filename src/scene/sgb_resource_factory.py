@@ -37,7 +37,8 @@ _MESHINST_LOADERS = {
             "CMeshPrimitiveType::LoadBinaryMeshFromResource"
         ),
         "partial_decoder_format": "SHIFT.IMBBinaryMeshSchema/1",
-        "partial_decoder": "imb_format.parse_imb_binary_mesh_schema",
+        "partial_decoder": "imb_format.parse_imb_binary_mesh",
+        "prefix_auto_detection": "source-backed",
     },
     "imx": {
         "mode": "xml",
