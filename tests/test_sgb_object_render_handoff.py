@@ -101,6 +101,55 @@ def test_parent_matrix_number_selects_multimatrix_slot_without_guessing_world_ma
     assert transform["selector_ready"] is True
 
 
+def test_parent_matrix_number_reports_root_gate_without_assuming_identity():
+    parent = _parent(_object(matrix_number=0))
+    child = parent["subobject_references"][0]["report"]
+
+    handoff = build_object_render_handoff(
+        child,
+        parent_object_report=parent,
+    )
+
+    transform = handoff["transform"]
+    evaluation = transform["multimatrix_evaluation"]
+    assert handoff["ready"] is True
+    assert transform["selector_ready"] is True
+    assert transform["world_matrix_ready"] is False
+    assert (
+        "multimatrix:root-world-matrix-required"
+        in evaluation["blocking_reasons"]
+    )
+
+
+def test_parent_matrix_number_materializes_world_when_runtime_root_is_supplied():
+    parent = _parent(_object(matrix_number=0))
+    child = parent["subobject_references"][0]["report"]
+    root = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        10.0, 20.0, 30.0, 1.0,
+    ]
+
+    handoff = build_object_render_handoff(
+        child,
+        parent_object_report=parent,
+        parent_multimatrix_root_matrix=root,
+    )
+
+    transform = handoff["transform"]
+    assert handoff["ready"] is True
+    assert transform["world_matrix_ready"] is True
+    assert transform["world_matrix"] == pytest.approx(root)
+    selected = transform["multimatrix_evaluation"]["selected_slot"]
+    assert selected["local_matrix"][12:15] == pytest.approx(
+        [1.0, 2.0, 3.0]
+    )
+    assert selected["world_matrix"][12:15] == pytest.approx(
+        [10.0, 20.0, 30.0]
+    )
+
+
 def test_parent_matrix_number_out_of_range_blocks():
     parent = _parent(_object(matrix_number=2))
     child = parent["subobject_references"][0]["report"]
