@@ -17,6 +17,7 @@ from native_scene_external_sampler_snapshots import (
     FORMAT as SNAPSHOT_FORMAT,
     PROVENANCE_FORMAT,
     reference_texture_sha256,
+    validate_external_sampler_snapshot_contract,
 )
 from runtime_texture_reference import ppm_to_reference_texture
 
@@ -244,6 +245,7 @@ def build_scene_external_sampler_capture_adapter(
     texture_by_binding = _pipeline_texture_observations(capture_pipeline)
     snapshots: list[dict[str, Any]] = []
     rows: list[dict[str, Any]] = []
+    required_count = 0
 
     for binding_index in sorted(scene_by_binding):
         draws = scene_by_binding[binding_index]
@@ -261,6 +263,10 @@ def build_scene_external_sampler_capture_adapter(
         needs_external = any(external_decl_sets)
         if not needs_external:
             continue
+        required_count += sum(
+            len(declarations)
+            for declarations in external_decl_sets
+        )
         if len(draws) != 1:
             blockers.append(
                 f"scene-external-capture:binding-{binding_index}:"
@@ -373,10 +379,30 @@ def build_scene_external_sampler_capture_adapter(
             })
 
     blockers = list(dict.fromkeys(blockers))
-    required_count = len(rows)
+    provisional_contract = {
+        "format": SNAPSHOT_FORMAT,
+        "version": 1,
+        "snapshots": snapshots,
+    }
+    contract_validation = None
+    if not blockers:
+        contract_validation = (
+            validate_external_sampler_snapshot_contract(
+                provisional_contract
+            )
+        )
+        blockers.extend(
+            "scene-external-capture:phase589:" + str(reason)
+            for reason in (
+                contract_validation.get("blocking_reasons") or []
+            )
+        )
+        blockers = list(dict.fromkeys(blockers))
+
     ready = (
         not blockers
         and all(row["snapshot_ready"] for row in rows)
+        and len(snapshots) == required_count
     )
     status = (
         "ready"
@@ -385,15 +411,7 @@ def build_scene_external_sampler_capture_adapter(
         if ready
         else "blocked"
     )
-    contract = (
-        {
-            "format": SNAPSHOT_FORMAT,
-            "version": 1,
-            "snapshots": snapshots,
-        }
-        if ready
-        else None
-    )
+    contract = provisional_contract if ready else None
     return {
         "format": FORMAT,
         "version": 1,
@@ -404,6 +422,21 @@ def build_scene_external_sampler_capture_adapter(
         "snapshot_count": len(snapshots),
         "rows": rows,
         "snapshot_contract": contract,
+        "phase589_validation": (
+            {
+                "format": contract_validation.get("format"),
+                "ready": contract_validation.get("ready") is True,
+                "snapshot_count": contract_validation.get(
+                    "snapshot_count"
+                ),
+                "blocking_reasons": list(
+                    contract_validation.get("blocking_reasons")
+                    or []
+                ),
+            }
+            if isinstance(contract_validation, Mapping)
+            else None
+        ),
         "boundary": {
             "requires_unique_scene_draw_per_binding": True,
             "requires_phase573_strong_attribution": True,
