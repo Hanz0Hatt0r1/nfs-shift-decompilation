@@ -436,9 +436,86 @@ def parse_imb_binary_mesh_schema(
     }
 
 
-def parse_imb_binary_mesh(data: bytes) -> dict[str, Any]:
-    """Decode IMB prefix plus the Phase-556 fixed mesh schema automatically."""
+def _parse_v04_primitives(data: bytes, report: dict[str, Any]) -> dict[str, Any]:
+    """Consume FUN_00859800's v0.4 material/palette/index/bounds records."""
+    cursor = report["primitives"]["source_section_offset"]
+    count = report["header"]["primitive_count"]
+    has_bones = report["bones"]["count"] != 0
+    # Even an empty name occupies four bytes; every record also has an
+    # opaque word, triangle count and 44-byte range/bounds trailer.
+    minimum_size = 56 + (4 if has_bones else 0)
+    _require(data, cursor, count * minimum_size, "IMB primitive records")
+    records = []
+    for index in range(count):
+        start = cursor
+        end = data.find(b"\x00", cursor)
+        if end < 0:
+            raise ValueError("unterminated IMB primitive material name")
+        name = data[cursor:end].decode("utf-8", "replace")
+        # The retail loader rounds name STORAGE, not the absolute cursor.
+        name_storage = (end + 1 - cursor + 3) & ~3
+        cursor += name_storage
+        _require(data, cursor, 8, "IMB primitive material/count header")
+        material_word = _u32(data, cursor)
+        triangle_count = _u32(data, cursor + 4)
+        cursor += 8
+        palette = []
+        palette_offset = None
+        if has_bones:
+            palette_count = _u32(data, cursor)
+            cursor += 4
+            palette_offset = cursor
+            palette_size = palette_count * 2
+            _require(data, cursor, palette_size, "IMB primitive bone palette")
+            palette = [item[0] for item in struct.iter_unpack(
+                "<H", data[cursor:cursor + palette_size],
+            )]
+            cursor += palette_size + (2 if palette_count & 1 else 0)
+            _require(data, cursor, 0, "IMB primitive palette padding")
+        index_offset = cursor
+        index_count = triangle_count * 3  # FUN_00853c80(count, type=4)
+        index_size = index_count * 2
+        _require(data, cursor, index_size, "IMB primitive indices")
+        indices = [item[0] for item in struct.iter_unpack(
+            "<H", data[cursor:cursor + index_size],
+        )]
+        if any(value >= report["header"]["vertex_count"] for value in indices):
+            raise ValueError("IMB primitive index exceeds mesh vertex count")
+        cursor += index_size + (2 if triangle_count & 1 else 0)
+        trailer_offset = cursor
+        _require(data, cursor, 0x2C, "IMB primitive range/bounds trailer")
+        minimum, maximum, *bounds = struct.unpack_from("<HH10f", data, cursor)
+        cursor += 0x2C
+        records.append({
+            "index": index,
+            "source_offset": start,
+            "source_size": cursor - start,
+            "material_name": name,
+            "material_name_storage_bytes": name_storage,
+            "material_opaque_word": material_word,
+            "primitive_type": 4,
+            "triangle_count": triangle_count,
+            "index_count": index_count,
+            "indices_offset": index_offset,
+            "indices_u16": indices,
+            "bone_palette_offset": palette_offset,
+            "bone_palette_u16": palette,
+            "trailer_offset": trailer_offset,
+            "vertex_range_u16": [minimum, maximum],
+            "bounding_sphere": {"center_xyz": bounds[:3], "radius": bounds[3]},
+            "aabb": {"min_xyz": bounds[4:7], "max_xyz": bounds[7:10]},
+        })
+    return {"records": records, "source_end_offset": cursor,
+            "trailing_bytes": len(data) - cursor}
+
+
+def parse_imb_binary_mesh(
+    data: bytes, *, decode_primitives: bool = False,
+) -> dict[str, Any]:
+    """Decode the schema, optionally consuming proven v0.4 primitive records."""
     prefix = locate_imb_mesh_header(data)
+    if decode_primitives and prefix["packed_version"] != VERSION_0_4_0_0:
+        raise ValueError("IMB primitive decoding currently requires version 0.4.0.0")
     report = parse_imb_binary_mesh_schema(
         data,
         header_offset=prefix["header_offset"],
@@ -450,6 +527,9 @@ def parse_imb_binary_mesh(data: bytes) -> dict[str, Any]:
     report["source"]["packed_version"] = prefix["packed_version"]
     report["boundary"]["variable_prefix"] = "source-backed"
     report["boundary"]["bone_block"] = "source-backed with automatic version/control gate"
+    if decode_primitives:
+        report["primitives"].update(_parse_v04_primitives(data, report))
+        report["boundary"]["primitive_source_decode"] = "source-backed-v0.4"
     return report
 
 
@@ -461,11 +541,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output")
     parser.add_argument("--header-offset", type=lambda x: int(x, 0))
     parser.add_argument("--has-bone-block", action="store_true")
+    parser.add_argument("--decode-primitives", action="store_true")
     args = parser.parse_args(argv)
+    if args.decode_primitives and args.header_offset is not None:
+        parser.error("--decode-primitives requires automatic version/prefix detection")
 
     data = Path(args.input).read_bytes()
     if args.header_offset is None:
-        report = parse_imb_binary_mesh(data)
+        report = parse_imb_binary_mesh(data, decode_primitives=args.decode_primitives)
     else:
         report = parse_imb_binary_mesh_schema(
             data,

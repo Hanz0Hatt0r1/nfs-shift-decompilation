@@ -1793,8 +1793,10 @@ def cmd_imb_binary_schema(args: argparse.Namespace) -> int:
     )
 
     data = Path(args.input).read_bytes()
+    if args.decode_primitives and args.header_offset is not None:
+        raise ValueError("--decode-primitives requires automatic version/prefix detection")
     if args.header_offset is None:
-        report = parse_imb_binary_mesh(data)
+        report = parse_imb_binary_mesh(data, decode_primitives=args.decode_primitives)
     else:
         report = parse_imb_binary_mesh_schema(
             data,
@@ -4180,6 +4182,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--has-bone-block",
         action="store_true",
         help="decode the version-gated +0x34/+0x38 bone header",
+    )
+    p.add_argument(
+        "--decode-primitives", action="store_true",
+        help="consume source-backed v0.4 material/palette/index/bounds records",
     )
     p.set_defaults(fn=cmd_imb_binary_schema)
 
