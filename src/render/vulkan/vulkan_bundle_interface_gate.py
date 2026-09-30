@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any, Iterable
 
 FORMAT = "SHIFT.BMWVulkanInterfaceGate/1"
+NEUTRAL_FORMAT = "SHIFT.VulkanInterfaceGate/1"
+BUNDLE_FORMATS = {"SHIFT.BMWVulkanBundle/1", "SHIFT.VulkanDrawBundle/1"}
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -28,7 +30,7 @@ def _descriptor_rows(compile_report: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
-def validate_bmw_vulkan_interface(
+def validate_vulkan_interface(
     bundle_dir: str | Path,
     compile_report: str | Path | dict[str, Any],
 ) -> dict[str, Any]:
@@ -41,7 +43,8 @@ def validate_bmw_vulkan_interface(
     )
 
     blockers: list[str] = []
-    if manifest.get("format") != "SHIFT.BMWVulkanBundle/1":
+    bundle_format = manifest.get("format")
+    if bundle_format not in BUNDLE_FORMATS:
         blockers.append("vulkan-interface:invalid-bundle-format")
     if report.get("format") != "SHIFT.VulkanBundleSPIRV/1":
         blockers.append("vulkan-interface:invalid-spirv-report")
@@ -129,8 +132,13 @@ def validate_bmw_vulkan_interface(
         })
 
     return {
-        "format": FORMAT,
+        "format": (
+            FORMAT
+            if bundle_format == "SHIFT.BMWVulkanBundle/1"
+            else NEUTRAL_FORMAT
+        ),
         "version": 1,
+        "source_bundle_format": bundle_format,
         "ready": not blockers,
         "status": "ready" if not blockers else "blocked",
         "blocking_reasons": list(dict.fromkeys(blockers)),
@@ -148,13 +156,21 @@ def validate_bmw_vulkan_interface(
     }
 
 
+def validate_bmw_vulkan_interface(
+    bundle_dir: str | Path,
+    compile_report: str | Path | dict[str, Any],
+) -> dict[str, Any]:
+    """Compatibility alias for the neutral Vulkan interface validator."""
+    return validate_vulkan_interface(bundle_dir, compile_report)
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Validate BMW Vulkan descriptor/resource interface")
+    parser = argparse.ArgumentParser(description="Validate SHIFT Vulkan descriptor/resource interface")
     parser.add_argument("bundle_dir")
     parser.add_argument("spirv_report")
     parser.add_argument("output")
     args = parser.parse_args(argv)
-    result = validate_bmw_vulkan_interface(args.bundle_dir, args.spirv_report)
+    result = validate_vulkan_interface(args.bundle_dir, args.spirv_report)
     Path(args.output).write_text(
         json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
