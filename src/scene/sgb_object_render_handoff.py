@@ -428,12 +428,16 @@ def _walk_object(
     path: list[int],
     out: list[dict[str, Any]],
     wrapper: Mapping[str, Any],
+    parent_multimatrix_root_matrix: Sequence[float] | None = None,
 ) -> None:
     kind = _kind(report)
     if kind == "OBJECT":
         handoff = build_object_render_handoff(
             report,
             parent_object_report=parent,
+            parent_multimatrix_root_matrix=(
+                parent_multimatrix_root_matrix
+            ),
         )
         out.append({
             "wrapper": dict(wrapper),
@@ -456,11 +460,21 @@ def _walk_object(
             path=[*path, index],
             out=out,
             wrapper=wrapper,
+            parent_multimatrix_root_matrix=(
+                parent_multimatrix_root_matrix
+            ),
         )
 
 
 def build_sgb_object_render_handoff_set(
     sgb_report: Mapping[str, Any],
+    *,
+    wrapper_root_matrices: Mapping[
+        tuple[str, Any], Sequence[float]
+    ] | None = None,
+    wrapper_root_provenance: Mapping[
+        tuple[str, Any], Mapping[str, Any]
+    ] | None = None,
 ) -> dict[str, Any]:
     if sgb_report.get("format") != SGB_FORMAT:
         raise ValueError("input must be SHIFT.SGBRuntime/1")
@@ -491,13 +505,45 @@ def build_sgb_object_render_handoff_set(
                 "name": (record.get("name") or {}).get("text"),
                 "resource": (record.get("resource") or {}).get("text"),
             }
+            wrapper_key = (
+                tag,
+                record.get("index"),
+            )
+            wrapper_root = (
+                wrapper_root_matrices.get(wrapper_key)
+                if wrapper_root_matrices is not None
+                else None
+            )
             _walk_object(
                 report,
                 parent=None,
                 path=[],
                 out=rows,
                 wrapper=wrapper,
+                parent_multimatrix_root_matrix=wrapper_root,
             )
+            if wrapper_root is not None:
+                for row in rows:
+                    row_wrapper = row.get("wrapper") or {}
+                    if (
+                        row_wrapper.get("chunk") == wrapper_key[0]
+                        and row_wrapper.get("source_record_index")
+                        == wrapper_key[1]
+                    ):
+                        row["runtime_wrapper_root"] = {
+                            "world_matrix": list(wrapper_root),
+                            "provenance": (
+                                dict(
+                                    wrapper_root_provenance.get(
+                                        wrapper_key,
+                                        {},
+                                    )
+                                )
+                                if wrapper_root_provenance
+                                is not None
+                                else None
+                            ),
+                        }
 
     blockers: list[str] = []
     for index, row in enumerate(rows):
@@ -564,6 +610,14 @@ def build_sgb_object_render_handoff_set(
             "parent_multimatrix_numeric_world_matrix": "runtime-context-required",
             "runtime_selected_slot_root_solve": (
                 "SHIFT.SGBMultiMatrixRootSolve/1"
+            ),
+            "runtime_wrapper_root_consensus": (
+                "SHIFT.SGBMultiMatrixRootConsensus/1"
+                if wrapper_root_matrices
+                else None
+            ),
+            "runtime_wrapper_root_count": (
+                len(wrapper_root_matrices or {})
             ),
             "root_solve_recovers_scenegraph_history": False,
             "draw_admission": False,
