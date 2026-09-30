@@ -257,7 +257,16 @@ def test_runner_surfaces_structured_world_transform_execution(
         "format": "SHIFT.VulkanBundleExecution/1",
         "world_transform_present": True,
         "world_transform_executed": True,
-        "world_translation_xyz": [0.1, 0.0, 0.0],
+        "world_transform_mode": "semantic-affine-svgp-v3",
+        "world_transform_determinant": 24.0,
+        "world_translation_xyz": [10.0, 20.0, 30.0],
+        "world_transform_properties": [200, 220, 240, 250],
+        "world_transform_probe": {
+            "position": [10.0, 22.0, 30.0],
+            "normal": [-0.5547, 0.83205, 0.0],
+            "tangent": [-0.83205, 0.5547, 0.0],
+            "tangent2": [0.0, 0.0, 1.0],
+        },
     }
     monkeypatch.setattr(
         "vulkan_bundle_run.subprocess.run",
@@ -278,4 +287,8 @@ def test_runner_surfaces_structured_world_transform_execution(
     assert result["native"]["report"] == native_report
     assert result["native"]["world_transform_present"] is True
     assert result["native"]["world_transform_executed"] is True
-    assert result["native"]["world_translation_xyz"] == [0.1, 0.0, 0.0]
+    assert result["native"]["world_transform_mode"] == "semantic-affine-svgp-v3"
+    assert result["native"]["world_transform_determinant"] == 24.0
+    assert result["native"]["world_translation_xyz"] == [10.0, 20.0, 30.0]
+    assert result["native"]["world_transform_properties"] == [200, 220, 240, 250]
+    assert result["native"]["world_transform_probe"] == native_report["world_transform_probe"]
