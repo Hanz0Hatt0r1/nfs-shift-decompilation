@@ -21,6 +21,26 @@ void FUN_00100090(void)
   return;
 }
 
+undefined4 thunk_FUN_00200000(void)
+
+{
+  int thunk_c;
+  int thunk_8;
+
+  FUN_00631740(&thunk_c,&DAT_00aa9b60);
+  FUN_00631740(&thunk_8,"Speed");
+  FUN_0063a280(&DAT_00b8a014,1,&thunk_8,0x10,2,&thunk_c);
+  FUN_006310c0(&thunk_8);
+  FUN_006310c0(&thunk_c);
+
+  FUN_00631740(&thunk_c,&DAT_00aa9b60);
+  FUN_00631740(&thunk_8,&DAT_00afb120);
+  FUN_0063a280(&DAT_00b8a014,3,&thunk_8,0x14,2,&thunk_c);
+  FUN_006310c0(&thunk_8);
+  FUN_006310c0(&thunk_c);
+  return 1;
+}
+
 undefined4 FUN_00200000(void)
 
 {
@@ -106,7 +126,9 @@ import json
 import sys
 
 report = json.load(open(sys.argv[1], encoding="utf-8"))
-assert report["format"] == "SHIFT-REFLECTION-FIELDS/1", report
+assert report["format"] == "SHIFT-REFLECTION-FIELDS/2", report
+assert report["raw_field_call_count"] == 5, report
+assert report["duplicate_thunk_field_call_count"] == 2, report
 assert report["field_call_count"] == 3, report
 assert report["mapped_class_count"] == 3, report
 assert report["resolved_field_name_count"] == 2, report
@@ -117,8 +139,16 @@ assert report["static_flags_count"] == 3, report
 rows = report["fields"]
 assert [row["class_name"] for row in rows] == ["Child"] * 3, rows
 assert [row["reflection_function"] for row in rows] == ["FUN_00200000"] * 3, rows
+assert [row["reflection_function_canonical"] for row in rows] == ["FUN_00200000"] * 3, rows
 
 speed, count, dynamic = rows
+assert speed["reflection_function_aliases"] == [
+    "FUN_00200000", "thunk_FUN_00200000"
+], speed
+assert count["reflection_function_aliases"] == [
+    "FUN_00200000", "thunk_FUN_00200000"
+], count
+assert dynamic["reflection_function_aliases"] == ["FUN_00200000"], dynamic
 assert speed["field_name"] == "Speed", speed
 assert speed["type_code"] == 1, speed
 assert speed["offset"] == 0x10, speed
@@ -139,6 +169,7 @@ with open(sys.argv[2], newline="", encoding="utf-8") as handle:
     csv_rows = list(csv.DictReader(handle))
 assert len(csv_rows) == 3, csv_rows
 assert csv_rows[0]["field_name"] == "Speed", csv_rows
+assert csv_rows[0]["reflection_function_aliases"] == "FUN_00200000;thunk_FUN_00200000", csv_rows
 assert csv_rows[1]["field_name"] == "Count", csv_rows
 PY
 
