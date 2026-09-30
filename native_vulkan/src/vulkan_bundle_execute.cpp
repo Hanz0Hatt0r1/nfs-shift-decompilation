@@ -170,6 +170,14 @@ struct WorldTransformExecution {
     float translation[3] = {0.0f, 0.0f, 0.0f};
     float determinant = 1.0f;
     std::vector<uint32_t> transformed_properties;
+    bool has_position_probe = false;
+    bool has_normal_probe = false;
+    bool has_tangent_probe = false;
+    bool has_tangent2_probe = false;
+    float position_probe[3] = {0.0f, 0.0f, 0.0f};
+    float normal_probe[3] = {0.0f, 0.0f, 0.0f};
+    float tangent_probe[3] = {0.0f, 0.0f, 0.0f};
+    float tangent2_probe[3] = {0.0f, 0.0f, 0.0f};
 };
 
 struct Constants {
@@ -657,24 +665,52 @@ WorldTransformExecution apply_world_transform_affine(
         value[1] = x * b + y * e + z * h + result.translation[1];
         value[2] = x * c0 + y * f0 + z * i + result.translation[2];
         store_float3(vertex, *position, value);
+        if (vertex == 0u) {
+            result.has_position_probe = true;
+            std::memcpy(
+                result.position_probe,
+                value,
+                3u * sizeof(float));
+        }
 
         for (const GeometryAttribute* attribute : normals) {
             load_float3(vertex, *attribute, value);
             transform_normal(value);
             normalize(value, "NORMAL");
             store_float3(vertex, *attribute, value);
+            if (vertex == 0u && !result.has_normal_probe) {
+                result.has_normal_probe = true;
+                std::memcpy(
+                    result.normal_probe,
+                    value,
+                    3u * sizeof(float));
+            }
         }
         for (const GeometryAttribute* attribute : tangents) {
             load_float3(vertex, *attribute, value);
             transform_direction(value);
             normalize(value, "TANGENT");
             store_float3(vertex, *attribute, value);
+            if (vertex == 0u && !result.has_tangent_probe) {
+                result.has_tangent_probe = true;
+                std::memcpy(
+                    result.tangent_probe,
+                    value,
+                    3u * sizeof(float));
+            }
         }
         for (const GeometryAttribute* attribute : tangents2) {
             load_float3(vertex, *attribute, value);
             transform_direction(value);
             normalize(value, "TANGENT2");
             store_float3(vertex, *attribute, value);
+            if (vertex == 0u && !result.has_tangent2_probe) {
+                result.has_tangent2_probe = true;
+                std::memcpy(
+                    result.tangent2_probe,
+                    value,
+                    3u * sizeof(float));
+            }
         }
     }
 
@@ -1946,6 +1982,35 @@ int main(int argc, char** argv) {
             std::cout << world_transform.transformed_properties[index];
         }
         std::cout << "],\n";
+        auto print_probe = [&](const char* name,
+                               bool present,
+                               const float value[3]) {
+            std::cout << "  \"" << name << "\": ";
+            if (!present) {
+                std::cout << "null,\n";
+                return;
+            }
+            std::cout << "["
+                      << value[0] << ", "
+                      << value[1] << ", "
+                      << value[2] << "],\n";
+        };
+        print_probe(
+            "world_probe_position_xyz",
+            world_transform.has_position_probe,
+            world_transform.position_probe);
+        print_probe(
+            "world_probe_normal_xyz",
+            world_transform.has_normal_probe,
+            world_transform.normal_probe);
+        print_probe(
+            "world_probe_tangent_xyz",
+            world_transform.has_tangent_probe,
+            world_transform.tangent_probe);
+        print_probe(
+            "world_probe_tangent2_xyz",
+            world_transform.has_tangent2_probe,
+            world_transform.tangent2_probe);
         std::cout << "  \"validation_enabled\": " << (validation.enabled ? "true" : "false") << ",\n";
         std::cout << "  \"validation_errors\": " << validation.error_count() << ",\n";
         std::cout << "  \"output\": \"" << output.string() << "\"\n";
