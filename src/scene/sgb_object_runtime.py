@@ -506,6 +506,7 @@ def parse_sgb_object_payload(
         report["recursive_subobject_decoder"] = "FUN_0069bc50"
 
     if kind_text == "OBJECT":
+        report["resource_filename"] = aux
         if base_offset + 0x28 <= end:
             report["user_flags_word"] = _u32(
                 data, base_offset + 0x24
