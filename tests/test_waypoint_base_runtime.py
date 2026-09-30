@@ -9,6 +9,7 @@ from waypoint_base_runtime import (
     BRANCH_INDEX_OFFSET,
     BRANCH_LINK_OFFSET,
     CLASS_NAME,
+    LINK_RESOLUTION_CALLERS,
     LINK_RESOLUTION_FUNCTION,
     NEXT_INDEX_OFFSET,
     NEXT_LINK_OFFSET,
@@ -281,9 +282,15 @@ def test_link_resolution_uses_requested_database_count_not_storage_tail():
         _link_record(),
     ])
     resolved = resolve_waypoint_links(records, base_address=base, count=1)
-    row = decode_link_fields(resolved["records"])
+    assert len(resolved["records"]) == 2 * SIZE
+    row = decode_link_fields(resolved["records"][:SIZE])
+    tail = decode_link_fields(resolved["records"][SIZE:2 * SIZE])
     assert row["next_index"] == -1
     assert row["next_link"] == 0
+    assert tail["active_marker"] == 1
+    assert tail["prev_index"] == -1
+    assert tail["next_index"] == -1
+    assert tail["branch_index"] == -1
     assert resolved["decisions"][0]["links"]["next"]["reason"] == "out-of-range"
 
 
@@ -307,6 +314,10 @@ def test_runtime_description_records_link_resolution_contract():
     report = describe_waypoint_base_runtime()
     links = report["link_resolution"]
     assert links["function"] == LINK_RESOLUTION_FUNCTION == "FUN_00717b90"
+    assert tuple(links["callers"]) == LINK_RESOLUTION_CALLERS == (
+        "FUN_0071e3ba",
+        "FUN_0071f099",
+    )
     assert links["index_offsets"] == {
         "prev": 0x74,
         "next": 0x78,
