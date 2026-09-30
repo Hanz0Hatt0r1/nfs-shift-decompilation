@@ -205,6 +205,102 @@ def test_parent_matrix_number_uses_last_proven_scenegraph_update():
     assert root_state["current_root_source"] == "scenegraph-transform-update"
 
 
+
+
+def test_parent_matrix_number_solves_root_from_observed_selected_slot_world():
+    child = _object(matrix_number=1)
+    parent = {
+        "format": "SHIFT.SGBObjectRuntime/1",
+        "decoded": True,
+        "kind": {"text": "LOD"},
+        "matrix_number": -1,
+        "matrix_records": [
+            {
+                "index": 0,
+                "offset_xyz": [1.0, 2.0, 3.0],
+                "orientation_runtime_order": [1.0, 0.0, 0.0, 0.0],
+                "scale": 1.0,
+                "parent": -1,
+            },
+            {
+                "index": 1,
+                "offset_xyz": [4.0, 0.0, 0.0],
+                "orientation_runtime_order": [1.0, 0.0, 0.0, 0.0],
+                "scale": 1.0,
+                "parent": 0,
+            },
+        ],
+        "subobject_references": [{
+            "index": 0,
+            "decoded": True,
+            "report": child,
+        }],
+    }
+    observed_selected = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        14.0, 20.0, 30.0, 1.0,
+    ]
+
+    handoff = build_object_render_handoff(
+        child,
+        parent_object_report=parent,
+        parent_selected_slot_world_matrix=observed_selected,
+    )
+
+    transform = handoff["transform"]
+    assert transform["world_matrix_ready"] is True
+    assert transform["world_matrix"] == pytest.approx(observed_selected)
+    evaluation = transform["multimatrix_evaluation"]
+    solve = evaluation["runtime_selected_slot_root_solve"]
+    assert solve["format"] == "SHIFT.SGBMultiMatrixRootSolve/1"
+    assert solve["ready"] is True
+    assert solve["selected_slot_chain_to_root"] == [1]
+    assert solve["solved_root_world_matrix"] == pytest.approx([
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        10.0, 20.0, 30.0, 1.0,
+    ])
+    assert (
+        solve["boundary"]["scenegraph_update_history_recovered"]
+        is False
+    )
+
+
+def test_scenegraph_update_history_takes_precedence_over_runtime_slot_solve():
+    parent = _parent(_object(matrix_number=0))
+    child = parent["subobject_references"][0]["report"]
+    proven_root = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        70.0, 80.0, 90.0, 1.0,
+    ]
+    conflicting_observation = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        7.0, 8.0, 9.0, 1.0,
+    ]
+
+    handoff = build_object_render_handoff(
+        child,
+        parent_object_report=parent,
+        parent_scenegraph_updates=[proven_root],
+        parent_selected_slot_world_matrix=conflicting_observation,
+    )
+
+    transform = handoff["transform"]
+    assert transform["world_matrix"] == pytest.approx(proven_root)
+    evaluation = transform["multimatrix_evaluation"]
+    assert evaluation["runtime_selected_slot_root_solve"] is None
+    assert (
+        evaluation["root_transform_state"]["current_root_source"]
+        == "scenegraph-transform-update"
+    )
+
 def test_parent_matrix_number_out_of_range_blocks():
     parent = _parent(_object(matrix_number=2))
     child = parent["subobject_references"][0]["report"]
