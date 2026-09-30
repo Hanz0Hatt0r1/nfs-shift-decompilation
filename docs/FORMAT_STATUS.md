@@ -15,6 +15,7 @@
 | FX / FXH / FXO | source inventory, shader parsing and permutation linking |
 | DDS | metadata, DXT decode, cubemap decode |
 | MEB | geometry/indices/material refs → MGEO |
+| IMB / IMX | retail SGB resource factory classifies both as MeshInst/type 7; serialized payload adapter remains open |
 | CSM | collision geometry → CMES |
 | VHF/CAR | scene/resource graph |
 | LOD XML | loose parser for known malformed retail forms |
@@ -24,7 +25,7 @@
 | SDF | BODY/JOINT/HINGE/BAR schema + runtime reconstruction |
 | VehiclePhysicsAssetGraph/1 | CDF/EDF/GDF/SDF neutral join |
 | BAB/BAS | skeleton parsing, name linkage, animation evidence |
-| SGB | NODE/SUMM object graphs, SGBScenePlacement/1, proven FLAT spatial geometry, OBJECT/MultiMatrix/root handoff, SGBRenderBindingAdmission/1, admitted-MEB SGBRenderBindingBridge/1, OCCL and PART tree mapped |
+| SGB | NODE/SUMM object graphs, SGBScenePlacement/1, proven FLAT spatial geometry, OBJECT/MultiMatrix/root handoff, MeshType/MeshInst resource factory, SGBRenderBindingAdmission/1, admitted-MEB SGBRenderBindingBridge/1, OCCL and PART tree mapped |
 | Camera runtime | config/state/event/control primitives |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
@@ -33,7 +34,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- concrete per-instance SGB SceneGraph transform-update history for blocked MatrixNumber rows, non-MEB scene-resource semantics and higher-level streaming/visibility behavior; unresolved runtime class identities;
+- concrete per-instance SGB SceneGraph transform-update history for blocked MatrixNumber rows, neutral MeshType/MeshInst payload adapters and higher-level streaming/visibility behavior; unresolved runtime class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
