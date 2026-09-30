@@ -9,14 +9,17 @@ from track_list_runtime import (
     SINGLETON_POINTER_GLOBAL,
     SIZE,
     TRACKLIST_PATH,
+    TRACK_DETAILS_SCENEGRAPH_STEM_OFFSET,
     TRACK_DETAILS_SIZE,
     VTABLE,
     build_filter_indices,
     describe_track_list_runtime,
     is_track_details_filename,
     lookup_key_matches,
+    preferred_track_name,
     parse_tracklist_requests,
     reflected_field_index,
+    scenegraph_stem_matches,
     split_source_csv,
     track_details_class_matches,
     year_era_bucket,
@@ -105,11 +108,24 @@ def test_track_details_class_filter_matches_all_include_and_exclude():
     assert track_details_class_matches("GT", tokens, "!Road") is False
 
 
-def test_case_insensitive_structural_lookup_key_contract():
-    assert lookup_key_matches("Silverstone", "silverSTONE") is True
-    assert lookup_key_matches("Silverstone", "Brands Hatch") is False
-    assert lookup_key_matches("Silverstone", "") is False
-    assert lookup_key_matches(None, "Silverstone") is False
+def test_case_insensitive_scenegraph_stem_lookup_contract():
+    assert TRACK_DETAILS_SCENEGRAPH_STEM_OFFSET == 0x10
+    assert scenegraph_stem_matches("silverstone_era3_", "SilverStone_Era3_") is True
+    assert scenegraph_stem_matches("silverstone_era3_", "brands_hatch") is False
+    assert scenegraph_stem_matches("silverstone_era3_", "") is False
+    assert scenegraph_stem_matches(None, "silverstone_era3_") is False
+
+    # Compatibility wrapper keeps earlier callers source-compatible.
+    assert lookup_key_matches("silverstone_era3_", "SILVERSTONE_ERA3_") is True
+
+
+def test_preferred_track_name_falls_back_to_scenegraph_stem():
+    assert preferred_track_name("Silverstone GP", "silverstone_era3_") == (
+        "Silverstone GP"
+    )
+    assert preferred_track_name("", "silverstone_era3_") == "silverstone_era3_"
+    assert preferred_track_name(None, "silverstone_era3_") == "silverstone_era3_"
+    assert preferred_track_name("", None) == ""
 
 
 def test_tracklist_lst_crlf_parser_and_at_concatenation():
@@ -152,9 +168,12 @@ def test_load_and_ownership_contract_links_track_list_to_track_details():
     assert "owns loaded TrackDetails pointers" in report["ownership"]
 
 
-def test_evidence_boundary_keeps_container_abi_and_lookup_key_semantics_unassigned():
+def test_evidence_boundary_keeps_only_container_and_event_policy_unassigned():
     report = describe_track_list_runtime()
     assert report["direct_reflected_field_count"] == 4
-    assert report["lookups"]["track_details_lookup_key_offset"] == 0x10
+    assert report["lookups"]["track_details_scenegraph_stem_offset"] == 0x10
+    assert report["lookups"]["by_scenegraph_stem"] == "FUN_0049ed00"
+    assert report["lookups"]["source_hash_by_scenegraph_stem"] == "thunk_FUN_00406a90"
+    assert report["lookups"]["preferred_name_getter"] == "FUN_0049bcf0"
     assert "internal tree/container node ABI" in report["evidence_boundary"]
-    assert "higher-level meaning" in report["evidence_boundary"]
+    assert "event-selection policy" in report["evidence_boundary"]

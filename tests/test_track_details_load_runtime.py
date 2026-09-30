@@ -4,12 +4,17 @@ from track_details_load_runtime import (
     DIRECTORY_SCAN,
     OWNER_COLLECTION_OFFSET,
     PROPERTY_LOAD_VTABLE_OFFSET,
+    SCENEGRAPH_FILE_OFFSET,
+    SCENEGRAPH_PATH_OFFSET,
+    SCENEGRAPH_STEM_OFFSET,
     SOURCE_PATH_HASH_OFFSET,
     TOKEN_COLLECTIONS,
     TRACK_EXTENSION,
     YEAR_BUCKET_COLLECTION_OFFSET,
     classify_track_year,
     derive_post_load_values,
+    derive_scenegraph_path,
+    derive_scenegraph_stem,
     describe_track_details_load_runtime,
     is_track_details_filename,
     normalize_track_source_path,
@@ -51,9 +56,33 @@ def test_source_path_normalization_and_trd_filter_are_source_equivalent():
     assert not is_track_details_filename("trd")
 
 
+def test_scenegraph_path_and_stem_follow_retail_path_helper_chain():
+    source = "Tracks/Silverstone/silverstone.trd"
+    assert derive_scenegraph_path(source, "Silverstone_Era3_.SGB") == (
+        "tracks\\silverstone\\silverstone_era3_.sgb"
+    )
+    assert derive_scenegraph_stem(source, "Silverstone_Era3_.SGB") == (
+        "silverstone_era3_"
+    )
+    assert derive_scenegraph_path(source, "Visuals/ERA3.SGB") == (
+        "tracks\\silverstone\\visuals\\era3.sgb"
+    )
+    assert derive_scenegraph_stem(source, "Visuals/ERA3.SGB") == "era3"
+    assert derive_scenegraph_stem("track.trd", "NO_EXTENSION") == "no_extension"
+    assert derive_scenegraph_stem(source, ".hidden") == ""
+
+
+def test_scenegraph_identity_fails_closed_outside_proven_ascii_path_domain():
+    import pytest
+
+    with pytest.raises(ValueError, match="ASCII"):
+        derive_scenegraph_stem("Tracks/Monza/track.trd", "scène.sgb")
+
+
 def test_post_load_derivatives_keep_hash_as_explicit_source_call():
     report = derive_post_load_values(
         {
+            "ScenegraphFile": "Visuals/Silverstone_Era3_.SGB",
             "Track Type": "Circuit,Race",
             "Allowed TimeOfDay": "Day,Night",
             "Event Types": "Race,,TimeAttack",
@@ -70,6 +99,10 @@ def test_post_load_derivatives_keep_hash_as_explicit_source_call():
     assert report["token_collections"]["Class"] == ["A", ""]
     assert report["token_collections"]["Allowed Weather"] == ["Dry"]
     assert report["year_bucket"] == "2020-2100"
+    assert report["scenegraph_path"] == (
+        "tracks\\silverstone\\visuals\\silverstone_era3_.sgb"
+    )
+    assert report["scenegraph_stem"] == "silverstone_era3_"
     assert report["normalized_source_path"] == "tracks\\silverstone\\era3.trd"
 
     hash_contract = report["source_path_hash"]
@@ -88,6 +121,10 @@ def test_loader_contract_freezes_reflected_to_internal_token_joins():
     assert DATA_READY_VTABLE_OFFSET == 0x24
     assert SOURCE_PATH_HASH_OFFSET == 0x120
     assert YEAR_BUCKET_COLLECTION_OFFSET == 0x58
+    assert SCENEGRAPH_STEM_OFFSET == 0x10
+    assert SCENEGRAPH_FILE_OFFSET == 0x20
+    assert SCENEGRAPH_PATH_OFFSET == 0x24
+    assert post["scenegraph_identity"]["stem_extractor"] == "FUN_006360f0"
 
     rows = {
         row["field_name"]: row

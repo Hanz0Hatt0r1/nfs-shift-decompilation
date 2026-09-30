@@ -78,6 +78,36 @@ appended to the internal member at `+0x58`:
 The labels are recorded exactly as found in retail source; no attempt is made
 to “correct” the `1930-1969` label for the 1901–1929 numerical range.
 
+## Scenegraph path and lookup stem
+
+After the property/data gates succeed, `FUN_0049c050` resolves the reflected
+`ScenegraphFile +0x20` against the directory of the source `.trd` path.
+
+The helper chain is explicit:
+
+1. `FUN_00636090` extracts the source-path directory;
+2. `FUN_006361f0` assigns that directory to the embedded path object at
+   `TrackDetails +0x24`;
+3. `FUN_006362e0` replaces the filename with the reflected
+   `ScenegraphFile`;
+4. path normalization reaches `FUN_00635f20` / `FUN_00635a30`, which
+   lower-cases the path and converts `/` to `\\`;
+5. `FUN_006360f0` extracts basename-without-final-extension into the
+   unreflected string at `TrackDetails +0x10`.
+
+For example, source
+`Tracks/Silverstone/ERA3.TRD` plus
+`ScenegraphFile = Visuals/Silverstone_Era3_.SGB` yields:
+
+```text
+TrackDetails +0x24 path = tracks\silverstone\visuals\silverstone_era3_.sgb
+TrackDetails +0x10 stem = silverstone_era3_
+```
+
+This establishes `+0x10` as the normalized **scenegraph stem**, not merely an
+anonymous lookup key. ASCII path behavior is reproduced directly; non-ASCII
+CRT lower-case/locale behavior remains outside the proven portable contract.
+
 ## Source-path normalization and hash
 
 Before finishing, `FUN_0049c050` copies the source path, calls
@@ -129,12 +159,12 @@ higher-level track selection.
 - source-equivalent comma tokenization;
 - exact year bucketing;
 - lower-case/backslash path normalization;
+- source-TRD + `ScenegraphFile` path construction and the `+0x10` scenegraph stem;
 - the source hash call contract;
 - reflected-source → internal-token destination offsets;
 - recursive `.trd` discovery semantics;
 - allocation/load success/failure ownership handoff.
 
 The boundary remains conservative: internal container types, property-parser
-internals, non-ASCII CRT locale behavior for the optional uppercase hash mode,
-the text track-list format handled by `FUN_0049f2c0`, and higher-level
-track-selection policy remain open.
+internals, non-ASCII CRT locale behavior, and higher-level event-selection
+policy remain open.

@@ -5,6 +5,7 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from track_details_load_runtime import (
+    SCENEGRAPH_STEM_OFFSET,
     TOKEN_COLLECTIONS,
     YEAR_BUCKET_COLLECTION_OFFSET,
     classify_track_year,
@@ -66,9 +67,11 @@ TRACK_DETAILS_EXTENSION = ".trd"
 TRACK_DETAILS_OBJECT_LOADER = "FUN_0049ef40"
 TRACK_DETAILS_PROPERTY_LOADER = "FUN_0049c050"
 TRACK_DETAILS_INSERT = "FUN_004f5e60"
-LOOKUP_BY_KEY = "FUN_0049ed00"
+LOOKUP_BY_SCENEGRAPH_STEM = "FUN_0049ed00"
 LOOKUP_FIRST = "thunk_FUN_00480cb0"
 LOOKUP_BY_CLASS_FILTER = "thunk_FUN_00d6abc0"
+SOURCE_HASH_BY_SCENEGRAPH_STEM = "thunk_FUN_00406a90"
+PREFERRED_NAME_GETTER = "FUN_0049bcf0"
 
 TRACK_DETAILS_DERIVED_TOKEN_CONTAINERS = {
     "era": YEAR_BUCKET_COLLECTION_OFFSET,
@@ -78,7 +81,9 @@ TRACK_DETAILS_DERIVED_TOKEN_CONTAINERS = {
     "event_type": int(TOKEN_COLLECTIONS["Event Types"]["destination_offset"]),
     "class": int(TOKEN_COLLECTIONS["Class"]["destination_offset"]),
 }
-TRACK_DETAILS_LOOKUP_KEY_OFFSET = 0x10
+TRACK_DETAILS_SCENEGRAPH_STEM_OFFSET = SCENEGRAPH_STEM_OFFSET
+# Compatibility alias for the earlier structural contract.
+TRACK_DETAILS_LOOKUP_KEY_OFFSET = TRACK_DETAILS_SCENEGRAPH_STEM_OFFSET
 TRACK_DETAILS_CLASS_FIELD_OFFSET = int(_track_details_fields()["Class"]["offset"])
 
 
@@ -122,11 +127,21 @@ def track_details_class_matches(
     return needle.casefold() in tokens
 
 
-def lookup_key_matches(stored_key: str | None, query: str | None) -> bool:
-    """Case-insensitive key comparison used by FUN_0049ed00."""
+def scenegraph_stem_matches(stored_stem: str | None, query: str | None) -> bool:
+    """Case-insensitive Scenegraph stem comparison used by FUN_0049ed00."""
     if not query:
         return False
-    return (stored_key or "").casefold() == str(query).casefold()
+    return (stored_stem or "").casefold() == str(query).casefold()
+
+
+def lookup_key_matches(stored_key: str | None, query: str | None) -> bool:
+    """Compatibility wrapper for the now-resolved Scenegraph stem lookup."""
+    return scenegraph_stem_matches(stored_key, query)
+
+
+def preferred_track_name(track_name: str | None, scenegraph_stem: str | None) -> str:
+    """Mirror FUN_0049bcf0: TrackName when non-empty, else Scenegraph stem."""
+    return str(track_name) if track_name else str(scenegraph_stem or "")
 
 
 def parse_tracklist_requests(text: str) -> list[str]:
@@ -218,9 +233,12 @@ def describe_track_list_runtime() -> dict[str, Any]:
             "track_details_class_field_offset": TRACK_DETAILS_CLASS_FIELD_OFFSET,
         },
         "lookups": {
-            "by_key": LOOKUP_BY_KEY,
+            "by_scenegraph_stem": LOOKUP_BY_SCENEGRAPH_STEM,
             "first": LOOKUP_FIRST,
             "by_class_filter": LOOKUP_BY_CLASS_FILTER,
+            "source_hash_by_scenegraph_stem": SOURCE_HASH_BY_SCENEGRAPH_STEM,
+            "preferred_name_getter": PREFERRED_NAME_GETTER,
+            "track_details_scenegraph_stem_offset": TRACK_DETAILS_SCENEGRAPH_STEM_OFFSET,
             "track_details_lookup_key_offset": TRACK_DETAILS_LOOKUP_KEY_OFFSET,
         },
         "ownership": (
@@ -231,8 +249,8 @@ def describe_track_list_runtime() -> dict[str, Any]:
         "evidence_boundary": (
             "Exact TrackList identity/size, reflected taxonomy strings, "
             "TrackDetails ownership, list/directory load control flow and "
-            "case-insensitive/class-filter lookups are recovered. The internal "
-            "tree/container node ABI and the higher-level meaning of the "
-            "TrackDetails +0x10 lookup key remain structural."
+            "case-insensitive Scenegraph-stem/Class-filter lookups are recovered. "
+            "The internal tree/container node ABI and higher-level event-selection "
+            "policy remain structural."
         ),
     }

@@ -151,9 +151,18 @@ first range label is broader/narrower than its numeric threshold suggests.
 ## Lookups and Class matching
 
 `FUN_0049ed00` walks the owned TrackDetails container and performs a
-case-insensitive lookup against an unreflected string at `TrackDetails +0x10`.
-The source rejects an empty query. This evidence does not assign a higher-level
-semantic name to that key yet.
+case-insensitive lookup against `TrackDetails +0x10`. The TrackDetails loader
+chain now identifies that field independently as the lower-case
+basename-without-extension of the resolved reflected `ScenegraphFile`, i.e.
+the **scenegraph stem**. Empty queries are rejected.
+
+A second consumer, `thunk_FUN_00406a90`, performs the same scenegraph-stem
+lookup and returns the source-path hash at `TrackDetails +0x120`.
+
+The TrackDetails vtable slot at `+0x10` points to `FUN_0049bcf0`. That
+accessor returns reflected `TrackName +0x40` when non-empty and otherwise
+returns the scenegraph stem at `+0x10`. This provides an independent
+preferred-name/fallback consumer for the recovered field identity.
 
 `thunk_FUN_00480cb0` returns the first TrackDetails owner entry when the
 container is non-empty.
@@ -182,13 +191,14 @@ directly:
   fallback;
 - the year-to-era bucket;
 - Class include/exclude matching;
-- case-insensitive structural key matching;
+- case-insensitive scenegraph-stem matching plus source-hash lookup identity;
+- `TrackName` → scenegraph-stem preferred-name fallback;
 - CRLF `tracklist.lst` request parsing;
 - case-insensitive `.trd` extension admission.
 
 ## Boundary
 
 The internal ordered/tree node ABI is intentionally not reconstructed here.
-The meaning of the unreflected TrackDetails `+0x10` lookup key also remains
-structural. The contract proves ownership, loading, filtering and lookup
-control flow without assigning unsupported container or gameplay semantics.
+The contract now proves the `TrackDetails +0x10` scenegraph-stem identity,
+ownership, loading, filtering and lookup control flow, while higher-level
+event-selection policy remains outside this layer.

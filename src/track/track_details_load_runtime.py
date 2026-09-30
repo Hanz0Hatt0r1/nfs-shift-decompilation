@@ -21,12 +21,20 @@ OWNER_INSERT = "FUN_004f5e60"
 SOURCE_HASH = "FUN_0063ad50"
 LOWERCASE = "FUN_00631a10"
 CHAR_REPLACE = "FUN_00631410"
+PATH_DIRECTORY_EXTRACTOR = "FUN_00636090"
+PATH_SET_DIRECTORY = "FUN_006361f0"
+PATH_SET_FILENAME = "FUN_006362e0"
+PATH_STEM_EXTRACTOR = "FUN_006360f0"
+PATH_NORMALIZER = "FUN_00635f20"
 
 PROPERTY_LOAD_VTABLE_OFFSET = 0x20
 DATA_READY_VTABLE_OFFSET = 0x24
 OWNER_COLLECTION_OFFSET = 0x10
 SOURCE_PATH_HASH_OFFSET = 0x120
 YEAR_BUCKET_COLLECTION_OFFSET = 0x58
+SCENEGRAPH_STEM_OFFSET = 0x10
+SCENEGRAPH_FILE_OFFSET = 0x20
+SCENEGRAPH_PATH_OFFSET = 0x24
 TRACK_EXTENSION = ".trd"
 
 TOKEN_COLLECTIONS = {
@@ -99,6 +107,41 @@ def normalize_track_source_path(path: str) -> str:
     return path.lower().replace("/", "\\")
 
 
+def _normalize_ascii_runtime_path(path: str) -> str:
+    """Normalize only the ASCII path domain established by retail evidence."""
+    value = str(path)
+    try:
+        value.encode("ascii")
+    except UnicodeEncodeError as exc:
+        raise ValueError("retail path normalization is only proven for ASCII") from exc
+    return value.lower().replace("/", "\\")
+
+
+def derive_scenegraph_path(source_path: str, scenegraph_file: str) -> str:
+    """Reproduce FUN_0049c050's path-object construction at TrackDetails +0x24.
+
+    The loader extracts the directory of the source .trd path, assigns that
+    directory to the internal path object, replaces its filename with the
+    reflected ScenegraphFile value, and normalizes the resulting path.
+    """
+    source = _normalize_ascii_runtime_path(source_path)
+    scenegraph = _normalize_ascii_runtime_path(scenegraph_file)
+    slash = source.rfind("\\")
+    directory = source[: slash + 1] if slash >= 0 else ""
+    return directory + scenegraph
+
+
+def derive_scenegraph_stem(source_path: str, scenegraph_file: str) -> str:
+    """Return the lower-case basename-without-extension stored at +0x10."""
+    path = derive_scenegraph_path(source_path, scenegraph_file)
+    slash = path.rfind("\\")
+    basename = path[slash + 1 :] if slash >= 0 else path
+    if not basename or basename.startswith("."):
+        return ""
+    dot = basename.rfind(".")
+    return basename[:dot] if dot > 0 else basename
+
+
 def is_track_details_filename(name: str) -> bool:
     """Mirror FUN_0049f010's case-insensitive final-four-byte .trd test."""
     return len(name) > 3 and name[-4:].lower() == TRACK_EXTENSION
@@ -122,9 +165,14 @@ def derive_post_load_values(
     year = int(properties.get(YEAR_FIELD, 0))
     normalized_path = normalize_track_source_path(source_path)
     path_bytes = normalized_path.encode("ascii")
+    scenegraph_file = str(properties.get("ScenegraphFile", ""))
+    scenegraph_path = derive_scenegraph_path(source_path, scenegraph_file)
+    scenegraph_stem = derive_scenegraph_stem(source_path, scenegraph_file)
     return {
         "token_collections": token_collections,
         "year_bucket": classify_track_year(year),
+        "scenegraph_path": scenegraph_path,
+        "scenegraph_stem": scenegraph_stem,
         "normalized_source_path": normalized_path,
         "source_path_hash": {
             "function": SOURCE_HASH,
@@ -139,6 +187,7 @@ def derive_post_load_values(
 
 def describe_track_details_load_runtime() -> dict[str, Any]:
     fields = reflected_field_index()
+    assert int(fields["ScenegraphFile"]["offset"]) == SCENEGRAPH_FILE_OFFSET
     token_rows = []
     for field_name, contract in TOKEN_COLLECTIONS.items():
         source_offset = int(contract["source_offset"])
@@ -188,6 +237,19 @@ def describe_track_details_load_runtime() -> dict[str, Any]:
                 "hash_seed": 0,
                 "hash_case_sensitive_flag": 1,
             },
+            "scenegraph_identity": {
+                "scenegraph_file_field": "ScenegraphFile",
+                "scenegraph_file_offset": SCENEGRAPH_FILE_OFFSET,
+                "path_object_offset": SCENEGRAPH_PATH_OFFSET,
+                "stem_offset": SCENEGRAPH_STEM_OFFSET,
+                "directory_extractor": PATH_DIRECTORY_EXTRACTOR,
+                "set_directory_function": PATH_SET_DIRECTORY,
+                "set_filename_function": PATH_SET_FILENAME,
+                "path_normalizer": PATH_NORMALIZER,
+                "stem_extractor": PATH_STEM_EXTRACTOR,
+                "normalization": "ASCII lower-case, slash to backslash",
+                "value": "basename(ScenegraphFile) without final extension",
+            },
         },
         "allocation_and_ownership": {
             "function": ALLOCATION_LOAD_WRAPPER,
@@ -208,9 +270,10 @@ def describe_track_details_load_runtime() -> dict[str, Any]:
         "tracklist_text_load_function": TRACKLIST_TEXT_LOAD,
         "evidence_boundary": (
             "Comma tokenization, year bucketing, ASCII source-path normalization "
-            "and numeric hash parity, recursive .trd discovery, and success/failure "
-            "ownership handoff are recovered. Internal collection types, non-ASCII "
-            "CRT path behavior, property-parser internals and higher-level "
-            "track-selection policy are not inferred."
+            "and numeric hash parity, ScenegraphFile-derived path/stem identity, "
+            "recursive .trd discovery, and success/failure ownership handoff are "
+            "recovered. Internal collection types, non-ASCII CRT path behavior, "
+            "property-parser internals and higher-level event-selection policy "
+            "are not inferred."
         ),
     }
