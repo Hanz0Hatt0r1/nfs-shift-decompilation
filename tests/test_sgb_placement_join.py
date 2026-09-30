@@ -21,6 +21,19 @@ def _flat_leaf(runtime_index, *, pointer=0, offset=0x20):
         "offset": offset,
         "runtime_index": runtime_index,
         "direct_object_pointer_word": pointer,
+        "filter_masks": {
+            "include_words": [0, 0],
+            "exclude_words": [0, 0],
+        },
+        "bounding_sphere": {
+            "center_xyz": [1.0, 2.0, 3.0],
+            "radius": 4.0,
+        },
+        "spatial_bounds_candidate": {
+            "min_xyz": [-1.0, 0.0, 1.0],
+            "max_xyz": [3.0, 4.0, 5.0],
+            "source_consumer_proven": False,
+        },
     }
 
 
@@ -28,6 +41,10 @@ def _flat_tree(leaves):
     return {
         "offset": 0,
         "depth": 0,
+        "aabbox": {
+            "min_xyz": [-10.0, -20.0, -30.0],
+            "max_xyz": [40.0, 50.0, 60.0],
+        },
         "records": leaves,
         "children": [],
     }
@@ -68,6 +85,8 @@ def _report(*, with_flat=True, with_summ=True, with_part=False):
             "records": [{
                 "index": 0,
                 "partition_id": 10,
+                "aabbox_min": [-100.0, -50.0, -25.0],
+                "aabbox_max": [100.0, 50.0, 25.0],
                 "child_object_indices": [2, 1],
             }],
         })
@@ -95,6 +114,11 @@ def test_flat_summ_runtime_index_joins_wrapper_order():
     ]
     assert join["links"][0]["flat"]["leaf_offset"] == 0x60
     assert join["links"][1]["flat"]["leaf_offset"] == 0x20
+    spatial = join["links"][0]["flat"]
+    assert spatial["node_aabbox"]["min_xyz"] == [-10.0, -20.0, -30.0]
+    assert spatial["filter_masks"]["include_words"] == [0, 0]
+    assert spatial["bounding_sphere"]["radius"] == 4.0
+    assert spatial["spatial_bounds_candidate"]["source_consumer_proven"] is False
 
 
 def test_flat_summ_duplicate_runtime_index_blocks():
@@ -141,6 +165,10 @@ def test_part_child_ids_join_one_based_node_registry():
         "NODE_B",
         "NODE_A",
     ]
+    assert join["links"][0]["spatial"]["partition_aabbox"] == {
+        "min_xyz": [-100.0, -50.0, -25.0],
+        "max_xyz": [100.0, 50.0, 25.0],
+    }
 
 
 def test_part_child_id_zero_is_not_silently_wrapped_to_uint32():

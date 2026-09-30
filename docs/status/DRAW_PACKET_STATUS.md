@@ -34,6 +34,10 @@ Runtime same-instance declaration/buffer proof remains a separate gate.
 
 The desktop oracle consumes RenderCommand/1 directly. Vulkan is required to consume the same contract rather than reinterpreting MEB/BMT/FXO independently.
 
+## Scene placement handoff
+
+`SHIFT.SGBScenePlacement/1` now provides render-facing object identity and proven spatial culling geometry without claiming a world transform or draw admission. RenderBinding integration must remain fail-closed until object/resource-to-render-node identity and transform semantics are source-backed.
+
 ## Remaining render work
 
 - broaden exact BMW shader/material coverage;
