@@ -45,8 +45,8 @@ The project does not invent:
 - higher-level roles of individual LOD/HIERARCHY objects;
 - full scene streaming and LOD behavior.
 
-Track placement identity, culling geometry, MultiMatrix arithmetic and root-transform transport are source-backed; concrete per-instance SceneGraph transform-update history and higher-level streaming behavior remain evidence questions.
+Track placement identity, culling geometry, MultiMatrix arithmetic, root-transform transport and placement→OBJECT scene admission are source-backed. Concrete per-instance SceneGraph transform-update history and higher-level streaming behavior remain evidence questions.
 
 ## Next
 
-Recover or capture the transform-update history for concrete SGB runtime instances. Feed the resolved `SHIFT.SGBRootTransformState/1` root into `SHIFT.SGBMultiMatrixEvaluation/1`, then join resulting OBJECT world matrices with `SHIFT.SGBScenePlacement/1` for fail-closed RenderBinding admission.
+`SHIFT.SGBRenderBindingAdmission/1` now performs the fail-closed wrapper/object join. Recover or capture transform-update history for blocked MatrixNumber instances, then feed admitted resource references into the existing generic `SHIFT.RenderBinding/1` resource pipeline.
