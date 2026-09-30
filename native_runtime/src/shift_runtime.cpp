@@ -79,6 +79,8 @@ struct PacketGeometry {
     uint32_t stride = sizeof(float) * 3u;
     uint32_t first_index = 0;
     std::string source = "MGEO";
+    bool world_transform_applied = false;
+    std::string world_transform_mode = "none";
 };
 
 constexpr size_t kBundleConstantBytes = 4096;
@@ -755,6 +757,13 @@ void apply_bundle_world_transform(
             value,
             3u * sizeof(float));
     }
+    geometry.world_transform_applied = true;
+    geometry.world_transform_mode =
+        linear_identity
+            ? "translation"
+            : geometry.attributes.size() > 1u
+                ? "affine-semantic-v3"
+                : "affine-position-only-legacy";
 }
 
 PacketGeometry load_bundle_geometry(const std::string& root) {
@@ -2728,6 +2737,7 @@ int main(int argc, char** argv) {
 
         size_t geometry_vertices = 0;
         size_t geometry_indices = 0;
+        size_t world_transform_draws = 0;
         std::string geometry_source;
         if (material_mode) {
             geometry_source = scene_set_mode
@@ -2738,6 +2748,9 @@ int main(int argc, char** argv) {
             for (const auto& geometry : material_geometry) {
                 geometry_vertices += geometry.positions.size() / 3u;
                 geometry_indices += geometry.indices.size();
+                if (geometry.world_transform_applied) {
+                    ++world_transform_draws;
+                }
             }
         } else {
             geometry_source = mesh_geometry.source;
@@ -2764,6 +2777,8 @@ int main(int argc, char** argv) {
             << (scene_set_mode ? "true" : "false") << ",\n"
             << "  \"material_draws\": "
             << material_geometry.size() << ",\n"
+            << "  \"world_transform_draws\": "
+            << world_transform_draws << ",\n"
             << "  \"frames_requested\": "
             << args.frames << "\n"
             << "}\n";
