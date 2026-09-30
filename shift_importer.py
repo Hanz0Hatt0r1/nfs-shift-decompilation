@@ -1787,14 +1787,20 @@ def cmd_bab_animation_runtime(args: argparse.Namespace) -> int:
 
 def cmd_imb_binary_schema(args: argparse.Namespace) -> int:
     """Decode the source-backed fixed header/stream schema of an extracted IMB."""
-    from imb_format import parse_imb_binary_mesh_schema
+    from imb_format import (
+        parse_imb_binary_mesh,
+        parse_imb_binary_mesh_schema,
+    )
 
     data = Path(args.input).read_bytes()
-    report = parse_imb_binary_mesh_schema(
-        data,
-        header_offset=args.header_offset,
-        has_bone_block=args.has_bone_block,
-    )
+    if args.header_offset is None:
+        report = parse_imb_binary_mesh(data)
+    else:
+        report = parse_imb_binary_mesh_schema(
+            data,
+            header_offset=args.header_offset,
+            has_bone_block=args.has_bone_block,
+        )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
@@ -4164,9 +4170,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", help="SHIFT.IMBBinaryMeshSchema/1 JSON output")
     p.add_argument(
         "--header-offset",
-        required=True,
         type=lambda value: int(value, 0),
-        help="fixed mesh-header offset reached after the variable IMB prefix",
+        help=(
+            "manual fixed mesh-header override; omitted by default because "
+            "Phase 557 auto-decodes the retail version/name prefix"
+        ),
     )
     p.add_argument(
         "--has-bone-block",

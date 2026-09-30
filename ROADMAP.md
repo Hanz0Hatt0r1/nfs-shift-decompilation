@@ -89,10 +89,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 65. Recover the retail SGB OBJECT resource factory: default MeshType/type 0, `.imb/.imx` promotion to MeshInst/type 7, and the type-7 render-instance branch — Phase 554 implemented.
 66. Map MeshInst inheritance/runtime layout, `.imx` XML versus `.imb` binary loaders, aligned 0x40-stride instance storage and category-10 lifecycle — Phase 555 implemented.
 67. Decode the source-backed IMB fixed mesh header, optional bone block and Type/Usage/Channel stream table while keeping the variable prefix explicit — Phase 556 implemented.
-68. Recover the IMB variable prefix/full vertex+primitive payload and implement neutral IMB/IMX scene adapters; independently recover/capture blocked SceneGraph transform-update history.
-69. Derive proven animation poses from the BAB runtime grammar.
-70. Port the stable native render/runtime boundary to Android.
-71. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+68. Recover the packed IMB version/control/name prefix and auto-locate the fixed header/bone gate — Phase 557 implemented.
+69. Recover full IMB vertex+primitive payload consumption and implement neutral IMB/IMX scene adapters; independently recover/capture blocked SceneGraph transform-update history.
+70. Derive proven animation poses from the BAB runtime grammar.
+71. Port the stable native render/runtime boundary to Android.
+72. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -105,7 +106,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + partial IMB binary schema implemented | IMB prefix/full payload + IMX neutral adapter + per-instance SceneGraph update history |
+| SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + automatic IMB prefix/header/stream schema implemented | full IMB vertex+primitive payload + IMX neutral adapter + per-instance SceneGraph update history |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |

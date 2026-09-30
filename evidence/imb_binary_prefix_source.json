@@ -1,0 +1,68 @@
+{
+  "format": "SHIFT.IMBBinaryPrefixSourceEvidence/1",
+  "source": "retail Need for Speed SHIFT v1.02 SHIFT.exe / Ghidra decompilation",
+  "version_encoding": {
+    "packer": "FUN_0064a250",
+    "expression": "((major << 6 | minor) << 11 | patch) << 11 | build",
+    "fields": [
+      {"name": "major", "bits": 4, "getter": "FUN_0064a270", "shift": 28},
+      {"name": "minor", "bits": 6, "getter": "FUN_0064a280", "shift": 22},
+      {"name": "patch", "bits": 11, "getter": "FUN_0064a290", "shift": 11},
+      {"name": "build", "bits": 11, "getter": "FUN_0064a2a0", "shift": 0}
+    ],
+    "known_versions": {
+      "0.2.0.0": "0x00800000",
+      "0.4.0.0": "0x01000000"
+    }
+  },
+  "binary_loader": {
+    "function": "FUN_00859800",
+    "maximum_version": "0.4.0.0",
+    "maximum_version_check": "reject when packed file version > packed 0.4.0.0",
+    "v0_2_exact_case": {
+      "condition": "file version == 0.2.0.0",
+      "control_width": 1,
+      "control_offset": 4,
+      "name_offset": 5,
+      "runtime_field_0x04_source": 1
+    },
+    "other_pre_v0_4_case": {
+      "control_width": 2,
+      "control_offset": 4,
+      "name_offset": 6,
+      "runtime_field_0x04_source": "control high byte"
+    },
+    "v0_4_case": {
+      "condition": "file version >= 0.4.0.0",
+      "control_width": 2,
+      "control_offset": 4,
+      "extra_u16_offset": 6,
+      "name_offset": 8,
+      "name_storage_alignment": 4
+    },
+    "runtime_field_0x04_normalization": {
+      "0": 0,
+      "2": 2,
+      "other": 1
+    },
+    "bone_block_gate": {
+      "condition": "file version >= 0.2.0.0 and control low byte != 0",
+      "control_component": "low byte"
+    },
+    "fixed_header": {
+      "pre_v0_4": "immediately after the NUL-terminated embedded resource name",
+      "v0_4": "after the NUL-terminated embedded resource name rounded up to 4-byte storage"
+    }
+  },
+  "implementation": {
+    "format": "SHIFT.IMBBinaryPrefix/1",
+    "locator": "imb_format.locate_imb_mesh_header",
+    "automatic_decoder": "imb_format.parse_imb_binary_mesh",
+    "manual_override_retained": true
+  },
+  "limits": [
+    "The additional v0.4 u16 is preserved raw; no higher-level semantic is assigned.",
+    "Automatic prefix decoding does not by itself close variable-size vertex or primitive payload decoding.",
+    "Packed version ordering is used only where the retail loader itself compares the packed value."
+  ]
+}

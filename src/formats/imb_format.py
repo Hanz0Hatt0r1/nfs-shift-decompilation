@@ -1,9 +1,9 @@
 """Source-backed partial decoder for SHIFT binary MeshInst (.imb) meshes.
 
 The retail binary mesh loader FUN_00859800 reaches a fixed mesh header only
-after a version-dependent prefix and embedded resource-name string. Phase 556
-therefore requires the caller to provide that fixed-header offset explicitly.
-This keeps the decoder deterministic while the prefix grammar remains open.
+after a version-dependent prefix and embedded resource-name string. Phase 557
+reconstructs that prefix and locates the fixed header automatically while
+retaining the Phase 556 manual offset entry point for forensic use.
 """
 from __future__ import annotations
 
@@ -20,6 +20,40 @@ STREAM_DESCRIPTOR_SIZE = 0x0C
 BONE_SOURCE_MATRIX_SIZE = 0x30
 RUNTIME_MATRIX_SIZE = 0x40
 RUNTIME_PRIMITIVE_STRIDE = 0x50
+
+PREFIX_FORMAT = "SHIFT.IMBBinaryPrefix/1"
+
+
+def pack_imb_version(
+    major: int,
+    minor: int,
+    patch: int,
+    build: int,
+) -> int:
+    """Pack the retail 4/6/11/11-bit resource version."""
+    if not 0 <= major < 0x10:
+        raise ValueError("IMB version major must fit 4 bits")
+    if not 0 <= minor < 0x40:
+        raise ValueError("IMB version minor must fit 6 bits")
+    if not 0 <= patch < 0x800:
+        raise ValueError("IMB version patch must fit 11 bits")
+    if not 0 <= build < 0x800:
+        raise ValueError("IMB version build must fit 11 bits")
+    return (((major << 6) | minor) << 11 | patch) << 11 | build
+
+
+def unpack_imb_version(value: int) -> dict[str, int]:
+    value = int(value) & 0xFFFFFFFF
+    return {
+        "major": (value >> 28) & 0x0F,
+        "minor": (value >> 22) & 0x3F,
+        "patch": (value >> 11) & 0x7FF,
+        "build": value & 0x7FF,
+    }
+
+
+VERSION_0_2_0_0 = pack_imb_version(0, 2, 0, 0)
+VERSION_0_4_0_0 = pack_imb_version(0, 4, 0, 0)
 
 
 def _require(data: bytes, offset: int, size: int, label: str) -> None:
@@ -47,6 +81,104 @@ def _read_cstring(data: bytes, start: int, limit: int) -> tuple[str, int]:
     if end < 0:
         raise ValueError("unterminated IMB bone name")
     return data[start:end].decode("utf-8", "replace"), end + 1
+
+
+def locate_imb_mesh_header(data: bytes) -> dict[str, Any]:
+    """Recover the variable IMB prefix exactly as FUN_00859800 consumes it."""
+    _require(data, 0, 4, "IMB version")
+    packed_version = _u32(data, 0)
+    version = unpack_imb_version(packed_version)
+    if packed_version > VERSION_0_4_0_0:
+        raise ValueError(
+            "IMB version is newer than retail loader maximum 0.4.0.0: "
+            f"{version['major']}.{version['minor']}."
+            f"{version['patch']}.{version['build']}"
+        )
+
+    if packed_version == VERSION_0_2_0_0:
+        _require(data, 4, 1, "IMB v0.2 control byte")
+        control_width = 1
+        control_raw = data[4]
+        bone_flag = control_raw
+        runtime_field_04_source = 1
+        name_offset = 5
+        extra_v04_u16 = None
+    else:
+        _require(data, 4, 2, "IMB control word")
+        control_width = 2
+        control_raw = struct.unpack_from("<H", data, 4)[0]
+        bone_flag = control_raw & 0xFF
+        high = (control_raw >> 8) & 0xFF
+        runtime_field_04_source = high
+        name_offset = 6
+        extra_v04_u16 = None
+
+    if packed_version >= VERSION_0_4_0_0:
+        _require(data, name_offset, 2, "IMB v0.4 extra prefix word")
+        extra_v04_u16 = struct.unpack_from("<H", data, name_offset)[0]
+        name_offset += 2
+
+    name_end = data.find(b"\x00", name_offset)
+    if name_end < 0:
+        raise ValueError("unterminated IMB embedded resource name")
+    resource_name = data[name_offset:name_end].decode("utf-8", "replace")
+    name_bytes_with_nul = name_end + 1 - name_offset
+
+    if packed_version >= VERSION_0_4_0_0:
+        name_storage_bytes = (name_bytes_with_nul + 3) & ~3
+    else:
+        name_storage_bytes = name_bytes_with_nul
+    header_offset = name_offset + name_storage_bytes
+    _require(data, header_offset, COMMON_HEADER_SIZE, "IMB fixed header")
+
+    if runtime_field_04_source == 0:
+        runtime_field_04 = 0
+    elif runtime_field_04_source == 2:
+        runtime_field_04 = 2
+    else:
+        runtime_field_04 = 1
+
+    has_bone_block = (
+        packed_version >= VERSION_0_2_0_0
+        and bone_flag != 0
+    )
+
+    return {
+        "format": PREFIX_FORMAT,
+        "version": 1,
+        "status": "decoded",
+        "packed_version": packed_version,
+        "version_fields": version,
+        "version_text": (
+            f"{version['major']}.{version['minor']}."
+            f"{version['patch']}.{version['build']}"
+        ),
+        "maximum_supported_version": "0.4.0.0",
+        "control_offset": 0x04,
+        "control_width": control_width,
+        "control_raw": control_raw,
+        "bone_flag_low_byte": bone_flag,
+        "runtime_field_0x04_source": runtime_field_04_source,
+        "runtime_field_0x04_value": runtime_field_04,
+        "extra_v0_4_u16": extra_v04_u16,
+        "resource_name_offset": name_offset,
+        "resource_name": resource_name,
+        "resource_name_bytes_with_nul": name_bytes_with_nul,
+        "resource_name_storage_bytes": name_storage_bytes,
+        "resource_name_aligned_to_4": (
+            packed_version >= VERSION_0_4_0_0
+        ),
+        "header_offset": header_offset,
+        "has_bone_block": has_bone_block,
+        "source": {
+            "version_packer": "FUN_0064a250",
+            "version_major_getter": "FUN_0064a270",
+            "version_minor_getter": "FUN_0064a280",
+            "version_patch_getter": "FUN_0064a290",
+            "version_build_getter": "FUN_0064a2a0",
+            "binary_mesh_loader": "FUN_00859800",
+        },
+    }
 
 
 def _expand_source_matrix(values: list[float]) -> list[float]:
@@ -242,7 +374,7 @@ def parse_imb_binary_mesh_schema(
             "runtime_array_offset": 0x2C,
             "runtime_stride": RUNTIME_PRIMITIVE_STRIDE,
             "source_section_offset": (
-                "after variable-size vertex payload; not auto-derived in Phase 556"
+                "after variable-size vertex payload; not auto-derived yet"
             ),
             "known_runtime_fields": {
                 "bounds_sphere": "record +0x00..+0x0c",
@@ -270,22 +402,41 @@ def parse_imb_binary_mesh_schema(
     }
 
 
+def parse_imb_binary_mesh(data: bytes) -> dict[str, Any]:
+    """Decode IMB prefix plus the Phase-556 fixed mesh schema automatically."""
+    prefix = locate_imb_mesh_header(data)
+    report = parse_imb_binary_mesh_schema(
+        data,
+        header_offset=prefix["header_offset"],
+        has_bone_block=prefix["has_bone_block"],
+    )
+    report["prefix"] = prefix
+    report["source"]["prefix_auto_detection"] = True
+    report["source"]["resource_name"] = prefix["resource_name"]
+    report["source"]["packed_version"] = prefix["packed_version"]
+    report["boundary"]["variable_prefix"] = "source-backed"
+    return report
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Decode the source-backed fixed header of a SHIFT .imb mesh"
     )
     parser.add_argument("input")
     parser.add_argument("output")
-    parser.add_argument("--header-offset", required=True, type=lambda x: int(x, 0))
+    parser.add_argument("--header-offset", type=lambda x: int(x, 0))
     parser.add_argument("--has-bone-block", action="store_true")
     args = parser.parse_args(argv)
 
     data = Path(args.input).read_bytes()
-    report = parse_imb_binary_mesh_schema(
-        data,
-        header_offset=args.header_offset,
-        has_bone_block=args.has_bone_block,
-    )
+    if args.header_offset is None:
+        report = parse_imb_binary_mesh(data)
+    else:
+        report = parse_imb_binary_mesh_schema(
+            data,
+            header_offset=args.header_offset,
+            has_bone_block=args.has_bone_block,
+        )
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",

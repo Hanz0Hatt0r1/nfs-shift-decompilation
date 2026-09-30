@@ -4,7 +4,13 @@ import pytest
 
 from imb_format import (
     FORMAT,
+    VERSION_0_2_0_0,
+    VERSION_0_4_0_0,
+    locate_imb_mesh_header,
+    pack_imb_version,
+    parse_imb_binary_mesh,
     parse_imb_binary_mesh_schema,
+    unpack_imb_version,
 )
 
 
@@ -34,6 +40,93 @@ def _pack_common(
         6.0,
         7.0,
     )
+
+
+def _build_prefix(version, control, name, *, extra_v04=0):
+    data = bytearray(struct.pack("<I", version))
+    if version == VERSION_0_2_0_0:
+        data += bytes([control & 0xFF])
+    else:
+        data += struct.pack("<H", control & 0xFFFF)
+    if version >= VERSION_0_4_0_0:
+        data += struct.pack("<H", extra_v04)
+    name_bytes = name.encode("utf-8") + b"\x00"
+    data += name_bytes
+    if version >= VERSION_0_4_0_0:
+        storage = (len(name_bytes) + 3) & ~3
+        data += b"\x00" * (storage - len(name_bytes))
+    return data
+
+
+def test_retail_version_pack_is_4_6_11_11_bits():
+    assert VERSION_0_2_0_0 == 0x00800000
+    assert VERSION_0_4_0_0 == 0x01000000
+    packed = pack_imb_version(3, 17, 1025, 511)
+    assert unpack_imb_version(packed) == {
+        "major": 3,
+        "minor": 17,
+        "patch": 1025,
+        "build": 511,
+    }
+
+
+def test_v02_prefix_uses_one_control_byte_and_forced_runtime_mode():
+    data = _build_prefix(VERSION_0_2_0_0, 1, "mesh")
+    data += b"\x00" * 0x80
+    prefix = locate_imb_mesh_header(bytes(data))
+
+    assert prefix["control_width"] == 1
+    assert prefix["resource_name_offset"] == 5
+    assert prefix["resource_name"] == "mesh"
+    assert prefix["header_offset"] == 10
+    assert prefix["has_bone_block"] is True
+    assert prefix["runtime_field_0x04_source"] == 1
+    assert prefix["runtime_field_0x04_value"] == 1
+
+
+def test_v04_prefix_uses_extra_word_and_aligns_name_storage():
+    data = _build_prefix(
+        VERSION_0_4_0_0,
+        0x0200,
+        "abcd",
+        extra_v04=0x1234,
+    )
+    data += b"\x00" * 0x80
+    prefix = locate_imb_mesh_header(bytes(data))
+
+    assert prefix["control_width"] == 2
+    assert prefix["resource_name_offset"] == 8
+    assert prefix["resource_name_bytes_with_nul"] == 5
+    assert prefix["resource_name_storage_bytes"] == 8
+    assert prefix["header_offset"] == 16
+    assert prefix["extra_v0_4_u16"] == 0x1234
+    assert prefix["has_bone_block"] is False
+    assert prefix["runtime_field_0x04_source"] == 2
+    assert prefix["runtime_field_0x04_value"] == 2
+
+
+def test_auto_parser_uses_retail_prefix_boundary():
+    data = _build_prefix(VERSION_0_4_0_0, 0, "mesh")
+    base = len(data)
+    data += b"\x00" * 0x100
+    _pack_common(data, base, stream_count=1)
+    struct.pack_into("<III", data, base + 0x34, 4, 6, 0)
+
+    report = parse_imb_binary_mesh(bytes(data))
+
+    assert report["source"]["prefix_auto_detection"] is True
+    assert report["source"]["resource_name"] == "mesh"
+    assert report["source"]["header_offset"] == base
+    assert report["prefix"]["version_text"] == "0.4.0.0"
+    assert report["boundary"]["variable_prefix"] == "source-backed"
+    assert report["streams"]["records"][0]["type_ordinal"] == 4
+
+
+def test_version_newer_than_retail_maximum_is_rejected():
+    data = _build_prefix(pack_imb_version(0, 5, 0, 0), 0, "mesh")
+    data += b"\x00" * 0x80
+    with pytest.raises(ValueError, match="newer than retail loader maximum"):
+        locate_imb_mesh_header(bytes(data))
 
 
 def test_fixed_header_without_bone_block_decodes_stream_triples():
