@@ -29,12 +29,29 @@ def _candidate(
     }
 
 
-def _row(index, candidates, *, declared=None):
+def _row(
+    index,
+    candidates,
+    *,
+    declared=None,
+    imb_sha256=None,
+    draw_range=None,
+):
+    if imb_sha256 is None:
+        imb_sha256 = _sha("f")
+    if draw_range is None:
+        draw_range = {
+            "first_index": index * 30,
+            "index_count": 30,
+            "primitive_count": 10,
+        }
     return {
         "archive": "Silverstone_Era3_GrandPrix.bff",
         "imb_path": f"tracks/silverstone/object_{index}.imb",
         "imb_entry_index": 100 + index,
+        "imb_sha256": imb_sha256,
         "primitive_index": 0,
+        "draw_range": draw_range,
         "material_reference": "materials/test.mtx",
         "bmt": "materials/test.bmt",
         "bmt_sha256": _sha("e"),
@@ -72,6 +89,10 @@ def test_target_set_preserves_all_top_rank_identities_without_selecting_one():
     assert report["format"] == FORMAT
     assert report["capture_ready"] is True
     assert report["attribution_ready"] is True
+    assert report["same_instance_match_ready"] is True
+    assert report["resource_identity_ready_count"] == 2
+    assert report["draw_range_ready_count"] == 2
+    assert report["same_instance_match_ready_count"] == 2
     assert report["binding_target_count"] == 2
     assert report["unique_hash_target_count"] == 2
     assert report["strong_hash_target_count"] == 2
@@ -79,6 +100,16 @@ def test_target_set_preserves_all_top_rank_identities_without_selecting_one():
     assert report["boundary"]["selects_permutation"] is False
 
     row = report["binding_targets"][0]
+    assert row["imb_sha256"] == _sha("f")
+    assert row["draw_range"] == {
+        "first_index": 0,
+        "index_count": 30,
+        "primitive_count": 10,
+    }
+    assert row["resource_identity_ready"] is True
+    assert row["draw_range_ready"] is True
+    assert row["same_instance_match_ready"] is True
+    assert row["runtime_identity_blocking_reasons"] == []
     assert row["top_rank_candidate_count"] == 2
     assert row["hash_target_count"] == 2
     assert {target["identity_value"] for target in row["targets"]} == {
@@ -138,6 +169,13 @@ def test_incomplete_top_rank_list_fails_closed():
         in report["blocking_reasons"]
     )
     assert report["binding_targets"][0]["capture_ready"] is False
+    assert report["binding_targets"][0]["same_instance_match_ready"] is False
+    assert report["binding_targets"][0]["same_instance_blocking_reasons"] == [
+        "shader-capture-not-ready"
+    ]
+    assert report["same_instance_blocking_reasons"] == [
+        "binding-0:shader-capture-not-ready"
+    ]
 
 
 def test_unhashed_top_rank_candidate_is_explicit_blocker():
@@ -157,6 +195,94 @@ def test_unhashed_top_rank_candidate_is_explicit_blocker():
         "binding-0:unhashed-top-candidates:1"
         in report["blocking_reasons"]
     )
+
+
+def test_missing_runtime_resource_identity_does_not_break_capture_prefilter():
+    report = build_imb_runtime_shader_target_set(
+        _ranking(
+            _row(
+                0,
+                [_candidate("1")],
+                imb_sha256="",
+            )
+        )
+    )
+
+    assert report["capture_ready"] is True
+    assert report["same_instance_match_ready"] is False
+    assert report["resource_identity_ready_count"] == 0
+    assert report["draw_range_ready_count"] == 1
+    assert report["same_instance_match_ready_count"] == 0
+    row = report["binding_targets"][0]
+    assert row["capture_ready"] is True
+    assert row["resource_identity_ready"] is False
+    assert row["same_instance_match_ready"] is False
+    assert row["runtime_identity_blocking_reasons"] == [
+        "resource-imb-sha256-invalid"
+    ]
+    assert row["same_instance_blocking_reasons"] == [
+        "resource-imb-sha256-invalid"
+    ]
+    assert report["blocking_reasons"] == []
+    assert report["same_instance_blocking_reasons"] == [
+        "binding-0:resource-imb-sha256-invalid"
+    ]
+
+
+def test_invalid_draw_range_blocks_same_instance_match_only():
+    report = build_imb_runtime_shader_target_set(
+        _ranking(
+            _row(
+                0,
+                [_candidate("1")],
+                draw_range={
+                    "first_index": 4,
+                    "index_count": 31,
+                    "primitive_count": 10,
+                },
+            )
+        )
+    )
+
+    assert report["capture_ready"] is True
+    assert report["same_instance_match_ready"] is False
+    assert report["resource_identity_ready_count"] == 1
+    assert report["draw_range_ready_count"] == 0
+    row = report["binding_targets"][0]
+    assert row["draw_range"] is None
+    assert row["draw_range_ready"] is False
+    assert "draw-range-invalid" in row[
+        "runtime_identity_blocking_reasons"
+    ]
+
+
+def test_declared_primitive_count_must_match_index_count():
+    report = build_imb_runtime_shader_target_set(
+        _ranking(
+            _row(
+                0,
+                [_candidate("1")],
+                draw_range={
+                    "first_index": 0,
+                    "index_count": 30,
+                    "primitive_count": 9,
+                },
+            )
+        )
+    )
+
+    assert report["capture_ready"] is True
+    assert report["same_instance_match_ready"] is False
+    row = report["binding_targets"][0]
+    assert row["draw_range"] == {
+        "first_index": 0,
+        "index_count": 30,
+        "primitive_count": 10,
+    }
+    assert row["draw_range_ready"] is False
+    assert row["runtime_identity_blocking_reasons"] == [
+        "draw-range-primitive-count-mismatch"
+    ]
 
 
 def test_wrong_ranking_format_is_rejected():

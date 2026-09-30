@@ -26,6 +26,80 @@ def _valid_sha(value: Any) -> str | None:
     return text
 
 
+def _runtime_identity(
+    row: Mapping[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    reasons: list[str] = []
+    archive = str(row.get("archive") or "")
+    imb_path = str(row.get("imb_path") or "").replace("\\", "/")
+    imb_sha256 = _valid_sha(row.get("imb_sha256"))
+
+    if not archive:
+        reasons.append("resource-archive-missing")
+    if not imb_path.lower().endswith(".imb"):
+        reasons.append("resource-imb-path-missing")
+    if imb_sha256 is None:
+        reasons.append("resource-imb-sha256-invalid")
+
+    source_draw = row.get("draw_range")
+    draw_range: dict[str, int] | None = None
+    if not isinstance(source_draw, Mapping):
+        reasons.append("draw-range-missing")
+    else:
+        try:
+            first_index = int(source_draw.get("first_index"))
+            index_count = int(source_draw.get("index_count"))
+        except (TypeError, ValueError):
+            reasons.append("draw-range-invalid")
+        else:
+            if (
+                first_index < 0
+                or index_count <= 0
+                or index_count % 3 != 0
+            ):
+                reasons.append("draw-range-invalid")
+            else:
+                primitive_count = index_count // 3
+                declared_primitives = source_draw.get("primitive_count")
+                if declared_primitives is not None:
+                    try:
+                        declared_primitives = int(declared_primitives)
+                    except (TypeError, ValueError):
+                        reasons.append(
+                            "draw-range-primitive-count-invalid"
+                        )
+                    else:
+                        if declared_primitives != primitive_count:
+                            reasons.append(
+                                "draw-range-primitive-count-mismatch"
+                            )
+                draw_range = {
+                    "first_index": first_index,
+                    "index_count": index_count,
+                    "primitive_count": primitive_count,
+                }
+
+    return {
+        "archive": archive or None,
+        "imb_path": imb_path or None,
+        "imb_entry_index": row.get("imb_entry_index"),
+        "imb_sha256": imb_sha256,
+        "draw_range": draw_range,
+        "resource_identity_ready": (
+            bool(archive)
+            and imb_path.lower().endswith(".imb")
+            and imb_sha256 is not None
+        ),
+        "draw_range_ready": (
+            draw_range is not None
+            and not any(
+                reason.startswith("draw-range-")
+                for reason in reasons
+            )
+        ),
+    }, reasons
+
+
 def _candidate_target(
     candidate: Mapping[str, Any],
 ) -> dict[str, Any] | None:
@@ -76,10 +150,9 @@ def _candidate_target(
 
 
 def _binding_identity(row: Mapping[str, Any]) -> dict[str, Any]:
+    runtime_identity, _ = _runtime_identity(row)
     return {
-        "archive": row.get("archive"),
-        "imb_path": row.get("imb_path"),
-        "imb_entry_index": row.get("imb_entry_index"),
+        **runtime_identity,
         "primitive_index": row.get("primitive_index"),
         "material_reference": row.get("material_reference"),
         "bmt": row.get("bmt"),
@@ -110,6 +183,7 @@ def build_imb_runtime_shader_target_set(
 
     for ordinal, row in enumerate(rows):
         identity = _binding_identity(row)
+        _, runtime_identity_reasons = _runtime_identity(row)
         declared_count = row.get("top_rank_candidate_count")
         candidates = [
             candidate
@@ -190,6 +264,18 @@ def build_imb_runtime_shader_target_set(
             )
         )
 
+        same_instance_binding_blockers = list(
+            runtime_identity_reasons
+        )
+        if not capture_ready:
+            same_instance_binding_blockers.append(
+                "shader-capture-not-ready"
+            )
+        same_instance_match_ready = (
+            not same_instance_binding_blockers
+            and identity.get("resource_identity_ready") is True
+            and identity.get("draw_range_ready") is True
+        )
         binding_targets.append({
             "binding_index": ordinal,
             **identity,
@@ -201,7 +287,12 @@ def build_imb_runtime_shader_target_set(
             "dropped_unhashed_top_candidates": dropped,
             "capture_ready": capture_ready,
             "attribution_ready": attribution_ready,
+            "same_instance_match_ready": same_instance_match_ready,
             "blocking_reasons": row_blockers,
+            "runtime_identity_blocking_reasons": runtime_identity_reasons,
+            "same_instance_blocking_reasons": (
+                same_instance_binding_blockers
+            ),
             "targets": targets,
         })
 
@@ -264,6 +355,27 @@ def build_imb_runtime_shader_target_set(
             for row in binding_targets
         )
     )
+    resource_identity_ready_count = sum(
+        row.get("resource_identity_ready") is True
+        for row in binding_targets
+    )
+    draw_range_ready_count = sum(
+        row.get("draw_range_ready") is True
+        for row in binding_targets
+    )
+    same_instance_match_ready_count = sum(
+        row.get("same_instance_match_ready") is True
+        for row in binding_targets
+    )
+    same_instance_match_ready = (
+        bool(binding_targets)
+        and same_instance_match_ready_count == len(binding_targets)
+    )
+    same_instance_blockers = [
+        f"binding-{row['binding_index']}:{reason}"
+        for row in binding_targets
+        for reason in (row.get("same_instance_blocking_reasons") or [])
+    ]
 
     unique_targets = sorted(
         global_targets.values(),
@@ -285,7 +397,11 @@ def build_imb_runtime_shader_target_set(
         ),
         "capture_ready": capture_ready,
         "attribution_ready": attribution_ready,
+        "same_instance_match_ready": same_instance_match_ready,
         "blocking_reasons": list(dict.fromkeys(blockers)),
+        "same_instance_blocking_reasons": list(
+            dict.fromkeys(same_instance_blockers)
+        ),
         "source_ranking": {
             "format": ranking.get("format"),
             "primitive_binding_count": ranking.get(
@@ -299,6 +415,9 @@ def build_imb_runtime_shader_target_set(
             ),
         },
         "binding_target_count": len(binding_targets),
+        "resource_identity_ready_count": resource_identity_ready_count,
+        "draw_range_ready_count": draw_range_ready_count,
+        "same_instance_match_ready_count": same_instance_match_ready_count,
         "unique_hash_target_count": len(unique_targets),
         "strong_hash_target_count": sum(
             row.get("strength") == "exact-pair"
@@ -314,6 +433,16 @@ def build_imb_runtime_shader_target_set(
             "render_admission": False,
             "selects_permutation": False,
             "requires_complete_top_rank_set": True,
+            "runtime_resource_identity": (
+                "archive-local IMB path + decoded payload SHA-256"
+            ),
+            "runtime_draw_identity": (
+                "source-backed primitive first_index + index_count"
+            ),
+            "same_instance_match_ready_meaning": (
+                "capture-ready shader targets plus exact IMB resource "
+                "identity and valid triangle-aligned draw range"
+            ),
             "purpose": (
                 "prefilter runtime D3D9 shader objects and constrain "
                 "same-instance IMB primitive attribution"
@@ -357,6 +486,9 @@ def main(argv: list[str] | None = None) -> int:
         "capture_ready": report["capture_ready"],
         "attribution_ready": report[
             "attribution_ready"
+        ],
+        "same_instance_match_ready": report[
+            "same_instance_match_ready"
         ],
         "binding_target_count": report[
             "binding_target_count"

@@ -213,9 +213,9 @@ def audit_imb_material_shader_ranking(
 
             for imb in imbs:
                 try:
-                    geometry = build_imb_neutral_geometry(
-                        archive.extract_entry(imb, type2="lzx")
-                    )
+                    imb_payload = archive.extract_entry(imb, type2="lzx")
+                    imb_sha256 = hashlib.sha256(imb_payload).hexdigest()
+                    geometry = build_imb_neutral_geometry(imb_payload)
                 except Exception as exc:
                     context_rows.append({
                         "archive": archive.path.name,
@@ -236,11 +236,22 @@ def audit_imb_material_shader_ranking(
                     primitive_index = int(primitive.get("index") or 0)
                     material_reference = str(primitive.get("material") or "")
                     bmt_ref = _bmt_ref(material_reference)
+                    first_index = int(primitive.get("first_index") or 0)
+                    index_count = int(primitive.get("index_count") or 0)
+                    triangle_count = int(
+                        primitive.get("triangle_count") or 0
+                    )
                     base = {
                         "archive": archive.path.name,
                         "imb_path": imb.path.replace("\\", "/"),
                         "imb_entry_index": int(imb.index),
+                        "imb_sha256": imb_sha256,
                         "primitive_index": primitive_index,
+                        "draw_range": {
+                            "first_index": first_index,
+                            "index_count": index_count,
+                            "primitive_count": triangle_count,
+                        },
                         "material_reference": material_reference.replace("\\", "/"),
                         "bmt": bmt_ref,
                         "vertex_properties": list(vertex_properties),
