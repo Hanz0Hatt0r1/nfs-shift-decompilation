@@ -67,6 +67,21 @@ def _sha256(value: Any) -> str | None:
     return text
 
 
+def _mapped_registers(
+    value: str | Path | Mapping[str, Any] | None,
+) -> set[int]:
+    if value is None:
+        return set()
+    payload = _load(value) if isinstance(value, (str, Path)) else dict(value)
+    result: set[int] = set()
+    for key in payload:
+        try:
+            result.add(int(key))
+        except (TypeError, ValueError):
+            raise ValueError("texture mapping contains an invalid sampler register")
+    return result
+
+
 def _neutral_mesh(value: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     source = dict(value)
     if source.get("format") == "SHIFT.IMBNeutralGeometry/1":
@@ -208,6 +223,7 @@ def build_vulkan_draw_bundle(
     output_dir: str | Path,
     *,
     textures: str | Path | Mapping[str, Any] | None = None,
+    external_textures: str | Path | Mapping[str, Any] | None = None,
     environment_cube: str | Path | Mapping[str, Any] | None = None,
     command_index: int = 0,
     submesh_index: int = 0,
@@ -305,12 +321,20 @@ def build_vulkan_draw_bundle(
 
     texture_report = None
     texture_path: Path | None = None
-    if textures is not None:
+    material_textures_required = bool(selected_submesh.get("textures"))
+    if (
+        textures is not None
+        or (
+            external_textures is not None
+            and not material_textures_required
+        )
+    ):
         texture_path = out / "textures.svtp"
         texture_report = build_vulkan_texture_packet(
             selected,
-            textures,
+            textures if textures is not None else {},
             texture_path,
+            external_textures=external_textures,
         )
 
     has_s3_cube = any(
@@ -484,6 +508,15 @@ def build_vulkan_draw_bundle(
         else "packet-emitted-not-executed"
     )
 
+    _mapped_registers(external_textures)
+    packet_external_registers = {
+        int(row.get("register"))
+        for row in (
+            (texture_report or {}).get("textures") or []
+        )
+        if row.get("source_kind") == "external"
+    }
+
     external = [
         {
             "sampler": row.get("sampler"),
@@ -492,7 +525,30 @@ def build_vulkan_draw_bundle(
                 "d3d9_sampler_register",
                 row.get("slot"),
             ),
-            "status": "requires-runtime-resource",
+            "status": (
+                "provided-to-vulkan-texture-packet"
+                if (
+                    str(row.get("sampler_type") or "") == "sampler2D"
+                    and int(
+                        row.get(
+                            "d3d9_sampler_register",
+                            row.get("slot", -1),
+                        )
+                    ) in packet_external_registers
+                )
+                else "provided-to-vulkan-cube-packet"
+                if (
+                    str(row.get("sampler_type") or "") == "samplerCube"
+                    and int(
+                        row.get(
+                            "d3d9_sampler_register",
+                            row.get("slot", -1),
+                        )
+                    ) == 3
+                    and cube_report is not None
+                )
+                else "requires-runtime-resource"
+            ),
         }
         for row in (selected_submesh.get("external_samplers") or [])
     ]
@@ -563,6 +619,12 @@ def build_vulkan_draw_bundle(
             "scene_world_transform_executed": False,
             "retail_world_constant_register_assigned": False,
             "preserves_bmw_bundle_abi": True,
+            "external_2d_snapshot_registers": sorted(
+                packet_external_registers
+            ),
+            "external_2d_snapshot_count": len(
+                packet_external_registers
+            ),
         },
     }
     _write(out / "bundle_manifest.json", report)
@@ -578,6 +640,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("mesh")
     parser.add_argument("output_dir")
     parser.add_argument("--textures")
+    parser.add_argument(
+        "--external-textures",
+        help=(
+            "optional JSON mapping explicit external sampler2D registers "
+            "to ReferenceTexture/1 snapshots"
+        ),
+    )
     parser.add_argument("--environment-cube")
     parser.add_argument("--command-index", type=int, default=0)
     parser.add_argument("--submesh-index", type=int, default=0)
@@ -592,6 +661,7 @@ def main(argv: list[str] | None = None) -> int:
         args.mesh,
         args.output_dir,
         textures=args.textures,
+        external_textures=args.external_textures,
         environment_cube=args.environment_cube,
         command_index=args.command_index,
         submesh_index=args.submesh_index,
