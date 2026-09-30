@@ -14,6 +14,7 @@ from typing import Any, Mapping
 
 from render_pipeline import build_render_bindings_from_resource_instances
 from sgb_resource_factory import classify_sgb_object_resource
+from sgb_meshinst_runtime import build_meshinst_runtime_contract
 
 FORMAT = "SHIFT.SGBRenderBindingBridge/1"
 ADMISSION_FORMAT = "SHIFT.SGBRenderBindingAdmission/1"
@@ -93,11 +94,20 @@ def build_sgb_render_binding_bridge(
                 str(resource_ref)
             )
 
+        meshinst_runtime = object_row.get("meshinst_runtime")
+        if (
+            not isinstance(meshinst_runtime, Mapping)
+            and resource_factory.get("factory_type") == 7
+        ):
+            meshinst_runtime = build_meshinst_runtime_contract(
+                str(resource_ref)
+            )
+
         instance = {
             "resource_reference": str(resource_ref),
             "world_matrix": world_matrix,
             "resource_factory": dict(resource_factory),
-            "meshinst_runtime": object_row.get("meshinst_runtime"),
+            "meshinst_runtime": meshinst_runtime,
             "source": {
                 "admission_binding_index": binding_index,
                 "placement": row.get("placement"),
@@ -137,7 +147,7 @@ def build_sgb_render_binding_bridge(
                 "factory_type": factory_type,
                 "factory_name": resource_factory.get("factory_name"),
                 "loader_mode": loader_mode,
-                "meshinst_runtime": object_row.get("meshinst_runtime"),
+                "meshinst_runtime": meshinst_runtime,
                 "reason": adapter_reason,
             })
 
