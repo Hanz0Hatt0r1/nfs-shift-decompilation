@@ -152,6 +152,120 @@ def test_material_binding_includes_linked_shader_pair():
 
 
 
+
+def synthetic_ambiguous_vertex_pair_fxo():
+    """Build two equally ranked VS programs feeding one pixel program."""
+    import struct
+
+    def ctab(name: bytes, stage_version: int, register: int) -> bytes:
+        header = 28
+        info = 20
+        typ = 20
+        name_off = header + info + typ
+        payload = bytearray(b"CTAB")
+        payload += struct.pack("<7I", header, 0, stage_version, 1, header, 0, 0)
+        payload += struct.pack(
+            "<IHHHHII",
+            name_off,
+            3,
+            register,
+            1,
+            0,
+            header + info,
+            0,
+        )
+        payload += struct.pack("<HHHHHHII", 4, 12, 1, 1, 1, 0, 0, 0)
+        payload += name
+        payload += b"\x00" * ((-len(payload)) % 4)
+        return struct.pack("<I", stage_version) + struct.pack(
+            "<I", ((len(payload) // 4) << 16) | 0xFFFE
+        ) + payload
+
+    vs_version = 0xFFFE0300
+    ps_version = 0xFFFF0300
+    dcl = (2 << 24) | 31
+
+    def vertex(*, nop=False):
+        value = bytearray(ctab(b"diffuseMap\x00", vs_version, 0))
+        value += struct.pack(
+            "<III",
+            dcl,
+            0,
+            0x80000000 | 0 | (15 << 16) | (1 << 28),
+        )
+        value += struct.pack(
+            "<III",
+            dcl,
+            5 | (5 << 16),
+            0x80000000 | 1 | (15 << 16) | (6 << 28),
+        )
+        if nop:
+            value += struct.pack("<I", 0)
+        value += struct.pack("<I", 0xFFFF)
+        return bytes(value)
+
+    ps = bytearray(ctab(b"diffuseMap\x00", ps_version, 0))
+    ps += struct.pack(
+        "<III",
+        dcl,
+        5 | (5 << 16),
+        0x80000000 | 0 | (15 << 16) | (1 << 28),
+    )
+    ps += struct.pack("<I", 0xFFFF)
+    return vertex(nop=False) + vertex(nop=True) + bytes(ps)
+
+
+def test_material_linker_expands_tied_vertex_pairs_without_losing_hashes():
+    source = """texture diffuseTexture;
+    sampler2D diffuseMap : SAMPLER < string SamplerTexture="diffuseTexture"; > =
+        sampler_state { Texture=<diffuseTexture>; };
+    float4 sampleDiffuse(float2 uv) { return tex2D(diffuseMap, uv); }"""
+    material = {
+        "name": "TEST",
+        "shader": "body.fx",
+        "shaderparams": [
+            {
+                "name": "diffuseTexture",
+                "type": "EPT_TEXTURE",
+                "value": "a.dds",
+            },
+        ],
+    }
+    data = synthetic_ambiguous_vertex_pair_fxo()
+    result = link_material(
+        material,
+        source,
+        fxo_candidates=[("body.fxo", data)],
+        texture_paths=["a.dds"],
+        vertex_properties=["200"],
+    )
+
+    assert result["selection_status"] == "ambiguous"
+    candidates = result["fxo_candidates"]
+    assert len(candidates) == 2
+    assert len({
+        row["vertex_program_offset"] for row in candidates
+    }) == 2
+    assert len({
+        row["vertex_sha256"] for row in candidates
+    }) == 2
+    assert len({
+        row["pair_sha256"] for row in candidates
+    }) == 2
+    assert len({
+        row["permutation_identity"]["identity_sha256"]
+        for row in candidates
+    }) == 2
+    assert all(
+        row["vertex_pair_selection_status"] == "unique"
+        for row in candidates
+    )
+    assert all(
+        row["source_vertex_pair_selection_status"] == "ambiguous"
+        for row in candidates
+    )
+    assert result["shader_pair"]["selection_source"] == "explicit-offsets"
+
 def test_candidate_identity_collapses_same_proven_permutation_across_locations():
     from material_linker import _candidate_identity
 
