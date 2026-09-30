@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 586. Current development: Phase 587.**
+**Merged baseline: Phase 587. Current development: Phase 588.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -110,6 +110,10 @@ execution in the standalone native material path: affine POSITION transform,
 inverse-transpose NORMAL and linear normalized tangent bases. Phase 585 adds
 neutral per-child SPIR-V/interface/provenance preparation and an ordered
 `SHIFT.NativeSceneVulkanSetPrepare/1` without relabeling scene draws as BMW.
+Phases 586–587 execute that prepared neutral scene set in `native_runtime` and
+prove affine SVWT execution through runtime telemetry. Phase 588 adds explicit
+external `sampler2D` snapshot transport through the existing SVTP ABI while
+keeping unsupplied renderer-owned resources fail-closed.
 
 ### Native Linux runtime
 
@@ -143,7 +147,7 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | neutral prepared scene-set loader in native_runtime |
+| Vulkan | active native backend | scene-level admission of authentic renderer-owned external snapshots; remaining alpha-test/bias/stencil state |
 | SGB / scene | strong structural/render handoff | external runtime resources, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
