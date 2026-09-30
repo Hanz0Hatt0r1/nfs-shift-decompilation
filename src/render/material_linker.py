@@ -114,7 +114,79 @@ def _candidate_identity(candidate: dict) -> tuple:
     )
 
 
-def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
+
+
+def _runtime_selected_variant(runtime_admission: dict | None) -> dict | None:
+    if not isinstance(runtime_admission, dict):
+        return None
+    if runtime_admission.get("shader_selection_admitted") is not True:
+        return None
+    selected = runtime_admission.get("selected_variant")
+    return selected if isinstance(selected, dict) else None
+
+
+def _candidate_matches_runtime_variant(
+    candidate: dict,
+    selected: dict,
+) -> bool:
+    checks = []
+    permutation = candidate.get("permutation_identity") or {}
+    expected_permutation = selected.get("permutation_identity_sha256")
+    if expected_permutation:
+        checks.append(
+            isinstance(permutation, dict)
+            and permutation.get("identity_sha256") == expected_permutation
+        )
+    expected_pair = selected.get("pair_byte_sha256")
+    if expected_pair:
+        checks.append(candidate.get("pair_sha256") == expected_pair)
+    expected_vertex = selected.get("vertex_byte_sha256")
+    if expected_vertex:
+        checks.append(candidate.get("vertex_sha256") == expected_vertex)
+    expected_pixel = selected.get("pixel_byte_sha256")
+    if expected_pixel:
+        checks.append(candidate.get("pixel_sha256") == expected_pixel)
+    return bool(checks) and all(checks)
+
+
+def _select_runtime_candidate(
+    candidates: list[dict],
+    runtime_admission: dict | None,
+) -> tuple[dict | None, list[dict], list[str]]:
+    if runtime_admission is None:
+        return None, [], []
+    selected = _runtime_selected_variant(runtime_admission)
+    if selected is None:
+        return None, [], ["runtime-admission:not-admitted"]
+
+    try:
+        score = int(selected.get("score"))
+    except (TypeError, ValueError):
+        score = 0
+    if score < 80:
+        return None, [], ["runtime-admission:weak-selection"]
+
+    matches = [
+        candidate
+        for candidate in candidates
+        if _candidate_matches_runtime_variant(candidate, selected)
+    ]
+    if not matches:
+        return None, [], ["runtime-admission:static-candidate-not-found"]
+
+    identities = {_candidate_identity(candidate) for candidate in matches}
+    if len(identities) != 1:
+        return None, matches, ["runtime-admission:multiple-static-identities"]
+
+    chosen = sorted(matches, key=_selection_sort_key)[0]
+    if chosen.get("exact") is not True:
+        return None, matches, ["runtime-admission:selected-candidate-not-exact"]
+    if chosen.get("vertex_program_offset") is None:
+        return None, matches, ["runtime-admission:vertex-offset-missing"]
+
+    return chosen, matches, []
+
+def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Iterable[tuple[str, bytes]] = (), texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = (), runtime_admission: dict | None = None) -> dict:
     params = _material_params(material)
     samplers = parse_fx_samplers(fx_source)
     specialization = feature_indicators(material, fx_source)
@@ -300,6 +372,7 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     fxo=sorted(uniq, key=_selection_sort_key)
     best=fxo[0] if fxo else None
     selection_status="none"
+    selection_source="static-ranking"
     ambiguous_candidates=[]
     if best:
         top=[x for x in fxo if _selection_evidence_key(x) == _selection_evidence_key(best)]
@@ -312,6 +385,22 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
         )
         pair_ambiguous=best.get("vertex_pair_selection_status")=="ambiguous"
         selection_status="ambiguous" if ambiguous_candidates or pair_ambiguous else ("unique" if best.get("vertex_pair_valid") else "heuristic")
+
+    runtime_best, runtime_matches, runtime_reasons = _select_runtime_candidate(
+        fxo,
+        runtime_admission,
+    )
+    if runtime_admission is not None:
+        if runtime_best is not None:
+            best=runtime_best
+            selection_status="unique"
+            selection_source="runtime-admission"
+            ambiguous_candidates=[]
+        else:
+            best=None
+            selection_status="blocked"
+            selection_source="runtime-admission"
+
     shader_pair=None
     linked_shader_pair=None
     linked_shader_error=None
@@ -346,11 +435,38 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                 except Exception as exc:
                     linked_shader_error = f"{type(exc).__name__}: {exc}"
             uniform_binding=link_selected_pair(material,payload,shader_pair)
+    runtime_selection = None
+    if runtime_admission is not None:
+        runtime_selection = {
+            "status": "ready" if runtime_best is not None else "blocked",
+            "ready": runtime_best is not None,
+            "blocking_reasons": list(runtime_reasons),
+            "admission_binding_index": runtime_admission.get("binding_index"),
+            "admission_imb_path": runtime_admission.get("imb_path"),
+            "admission_imb_sha256": runtime_admission.get("imb_sha256"),
+            "selected_variant": (
+                dict(runtime_admission.get("selected_variant") or {})
+            ),
+            "matching_static_candidate_count": len(runtime_matches),
+            "matching_static_locations": [
+                {
+                    "file": row.get("file"),
+                    "program_offset": row.get("program_offset"),
+                    "vertex_program_offset": row.get(
+                        "vertex_program_offset"
+                    ),
+                }
+                for row in runtime_matches
+            ],
+        }
+
     return {"format":"SHIFT.MaterialBinding/1","material":material.get("name"),"shader":material.get("shader"),
             "technique":material.get("technique"),"specialization":specialization,"bindings":bindings,"fxo_candidates":fxo,
             "selected_fxo":best if best and best["exact"] else None,
             "permutation_identity":(best or {}).get("permutation_identity") if best else None,
             "selection_status":selection_status,
+            "selection_source":selection_source,
+            "runtime_selection":runtime_selection,
             "selection_evidence":(
                 {"rank":list(_selection_evidence_key(best)), "ambiguous_count":len(ambiguous_candidates)}
                 if best else None
@@ -362,10 +478,10 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             "uniform_binding":uniform_binding if best and best["exact"] and shader_pair else None,
             "unresolved_textures":sorted(set(unresolved))}
 
-def link_from_files(material_json: str | Path, fx_source: str | Path, *, fxo_dir: str | Path | None = None, texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = ()) -> dict:
+def link_from_files(material_json: str | Path, fx_source: str | Path, *, fxo_dir: str | Path | None = None, texture_paths: Iterable[str] = (), vertex_properties: Iterable[str | dict] = (), runtime_admission: dict | None = None) -> dict:
     material=json.loads(Path(material_json).read_text(encoding="utf-8"))
     if "material" in material: material=material["material"]
     candidates=[]
     if fxo_dir:
         for p in sorted(Path(fxo_dir).glob("*.fxo")): candidates.append((p.name,p.read_bytes()))
-    return link_material(material, Path(fx_source).read_bytes(), fxo_candidates=candidates, texture_paths=texture_paths, vertex_properties=vertex_properties)
+    return link_material(material, Path(fx_source).read_bytes(), fxo_candidates=candidates, texture_paths=texture_paths, vertex_properties=vertex_properties, runtime_admission=runtime_admission)
