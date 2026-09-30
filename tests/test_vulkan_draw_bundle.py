@@ -288,3 +288,23 @@ def test_generic_geometry_metadata_no_longer_claims_meb_space(tmp_path):
         "SHIFT.NeutralMesh/1"
     )
     assert result["boundary"]["neutral_mesh_container_equivalence"] is False
+
+
+def test_generic_bundle_can_execute_scene_transform_into_geometry(tmp_path):
+    result = build_vulkan_draw_bundle(
+        _command(world=True),
+        _mesh(),
+        tmp_path,
+        apply_scene_transform=True,
+    )
+
+    assert result["ready"] is True, result["blocking_reasons"]
+    transform = result["scene_transform"]
+    assert transform["execution_status"] == "baked-into-geometry"
+    assert transform["blocking_for_scene_native_submission"] is False
+    assert transform["geometry_mode"] == "cpu-baked-row-vector-affine"
+    assert transform["transformed_properties"] == ["200"]
+    assert result["boundary"]["scene_world_transform_executed"] is True
+    assert result["boundary"]["scene_transform_mode"] == (
+        "cpu-baked-row-vector-affine"
+    )
