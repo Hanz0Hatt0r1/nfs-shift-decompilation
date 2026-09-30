@@ -72,6 +72,7 @@ def build_bmw_vulkan_bundle(
     environment_cube: str | Path | Mapping[str, Any] | None = None,
     command_index: int = 0,
     submesh_index: int = 0,
+    expected_mesh_ref: str | None = TARGET_MEB,
 ) -> dict[str, Any]:
     command_source = _load(render_command) if isinstance(render_command, (str, Path)) else dict(render_command)
     mesh_source = _load(mesh) if isinstance(mesh, (str, Path)) else dict(mesh)
@@ -79,8 +80,14 @@ def build_bmw_vulkan_bundle(
     input_format = command_source.get("format")
     if input_format not in {"SHIFT.RenderBinding/1", "SHIFT.RenderCommand/1"}:
         raise ValueError("input must be SHIFT.RenderBinding/1 or SHIFT.RenderCommand/1")
-    if mesh_source.get("format") not in {"SHIFT.MEB", None}:
-        raise ValueError("mesh must be neutral SHIFT.MEB JSON")
+    if mesh_source.get("format") not in {
+        "SHIFT.MEB",
+        "SHIFT.NeutralMesh/1",
+        None,
+    }:
+        raise ValueError(
+            "mesh must be SHIFT.MEB or SHIFT.NeutralMesh/1 JSON"
+        )
 
     if input_format == "SHIFT.RenderCommand/1":
         commands = [command_source]
@@ -101,8 +108,16 @@ def build_bmw_vulkan_bundle(
 
     selected = dict(selected_command)
     selected["submeshes"] = [dict(submeshes[submesh_index])]
-    if (selected.get("mesh") or {}).get("ref") != TARGET_MEB:
-        raise ValueError("BMW Vulkan bundle requires the exact M3 KIT00 body MEB reference")
+    selected_mesh_ref = str((selected.get("mesh") or {}).get("ref") or "")
+    if expected_mesh_ref is not None and selected_mesh_ref != expected_mesh_ref:
+        if expected_mesh_ref == TARGET_MEB:
+            raise ValueError(
+                "BMW Vulkan bundle requires the exact M3 KIT00 body MEB reference"
+            )
+        raise ValueError(
+            "Vulkan bundle mesh reference does not match expected resource: "
+            f"{selected_mesh_ref!r} != {expected_mesh_ref!r}"
+        )
 
     native_gate = validate_native_submission(selected)
     if not native_gate["ready"]:
@@ -274,9 +289,20 @@ def build_bmw_vulkan_bundle(
             "mesh_sha256": ((command_source.get("mesh") or {}).get("resolved") or {}).get("resource_sha256"),
         },
         "target": {
-            "meb": TARGET_MEB,
-            "vertex_count": (command_source.get("mesh") or {}).get("vertex_count"),
-            "triangle_count": (command_source.get("mesh") or {}).get("triangle_count"),
+            "meb": (
+                TARGET_MEB
+                if expected_mesh_ref == TARGET_MEB
+                else None
+            ),
+            "resource": selected_mesh_ref,
+            "expected_resource": expected_mesh_ref,
+            "mesh_format": mesh_source.get("format"),
+            "vertex_count": (selected_command.get("mesh") or {}).get(
+                "vertex_count"
+            ),
+            "triangle_count": (selected_command.get("mesh") or {}).get(
+                "triangle_count"
+            ),
         },
         "native_submission_gate": native_gate,
         "artifacts": artifacts,
@@ -300,6 +326,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--environment-cube")
     parser.add_argument("--command-index", type=int, default=0)
     parser.add_argument("--submesh-index", type=int, default=0)
+    parser.add_argument(
+        "--expected-mesh-ref",
+        default=TARGET_MEB,
+        help=(
+            "exact RenderCommand mesh ref required by the bundle; "
+            "defaults to the legacy BMW target"
+        ),
+    )
     args = parser.parse_args(argv)
     result = build_bmw_vulkan_bundle(
         args.render_command,
@@ -309,6 +343,7 @@ def main(argv: list[str] | None = None) -> int:
         environment_cube=args.environment_cube,
         command_index=args.command_index,
         submesh_index=args.submesh_index,
+        expected_mesh_ref=args.expected_mesh_ref,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["ready"] else 2
