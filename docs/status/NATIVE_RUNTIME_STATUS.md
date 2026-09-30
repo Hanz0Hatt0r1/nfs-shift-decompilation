@@ -32,7 +32,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Phase 599 connects the six-word CameraManager snapshot and guarded double-buffer swap to the native fixed-step scheduler. Phase 600 adds fail-closed recovered scalar evidence input through SHIFT.NativeCameraStateBridge/1 and --camera-state. Remaining camera work is retail timestamp/update scheduling, camera-source/controller behavior, gameplay view selection/attachment and exact render/view integration.
-3. Phase 602 connects the source-backed PhysicsParticipantManager registry ABI and separate selector context to native state through `SHIFT.NativePhysicsParticipantBoundary/1`. Concrete selected participant instance/index/mode and provider identity remain capture-gated.
+3. Phases 602 and 604 connect the source-backed participant structure while preserving separate manager-registry index and selector-ordinal domains. Both remain unresolved until authentic runtime evidence proves the concrete participant join; provider identity remains capture-gated.
 4. Phase 603 supplies the native source-backed `FUN_007b0f20` builtin numerical backend. Next, connect an exact BMW solver-frame input (matrix/RHS/graph/reset evidence) to the fixed tick only when the provider-absent builtin path is proven.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Live keyboard vehicle controls already feed the neutral intent layer. Phase 601 adds a deterministic fixed-step input script and physics-boundary activity telemetry for CI. Gamepad/analog normalization and retail filtering remain.
@@ -224,3 +224,21 @@ through CTest and retains its JSON report.
 This is not yet a complete native BMW physics step. The frame loop still does
 not synthesize matrix/RHS assembly, diagonal-reset selection flags, provider
 dispatch, post-solve body application or a concrete runtime participant.
+
+
+## Phase 604 participant identity-domain separation
+
+The participant boundary now preserves two separate capture-gated integer
+identities: the PhysicsParticipantManager registry index sourced from
+`PhysicsParticipant+0x3c`, and the IGPhaseVehicle selector ordinal stored at
+`+0x454`.
+
+The contract and native state also retain the process state independently.
+All three values remain `-1` and
+`participant_identity_join_proven=false` under static evidence alone. The
+legacy `participant_index/mode` telemetry remains present only as inactive
+compatibility aliases.
+
+Fixed-step telemetry counts topology, ready and unresolved participant steps.
+Linux CI requires the admitted structural boundary to remain unresolved for
+every tested fixed step until runtime-instance evidence exists.
