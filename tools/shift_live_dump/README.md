@@ -231,6 +231,24 @@ descriptor-returning PE RTTI getters, all matching vtable candidates, and a
 multiple candidates rather than being collapsed to a guess. See
 [RTTI registry evidence](../../evidence/rtti_registry_source.md).
 
+Reflected field layouts can be extracted from the same retail pair:
+
+```bash
+python3 tools/shift_live_dump/extract_shift_reflection_fields.py \
+  /path/to/SHIFT.exe.c \
+  --exe /path/to/SHIFT.exe \
+  --prefix AI \
+  --json-out /tmp/shift-ai-fields.json \
+  --csv-out /tmp/shift-ai-fields.csv
+```
+
+The field extractor joins every `FUN_0063a280` metadata call back to the RTTI
+registry, recovers the owning class, field name, reflection type code, offset
+and flags, and preserves the original expression when an offset or generated
+name is dynamic. PE-backed string resolution also handles reflected names stored
+as `DAT_...` or `PTR_s_...` symbols. See
+[reflection field evidence](../../evidence/reflection_fields_source.md).
+
 Before changing a concrete path vtable, validate the analyzer against the recovered
 retail decompilation:
 
