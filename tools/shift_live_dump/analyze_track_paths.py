@@ -34,9 +34,16 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 # Knot:
 #   FUN_006cdf70 allocates AISpline's 0x48-byte knot elements and assigns
 #   PTR_FUN_00afbe28 to each element.
+# AINavigationDatabase:
+#   FUN_006bc7c0 writes PTR_FUN_00afb198 and constructs an embedded
+#   AICarRecovery at +0x10 through FUN_006c8280 / PTR_FUN_00afc2c8.
+#   FUN_006bd2e0 reflects the navigation roots and FUN_006bcf80 loads the
+#   +0x1f8 area-list container with AIArea instances.
 KNOWN_VTABLES = {
     "AIPathInfo": 0x00AFB150,
     "AIArea": 0x00AFC048,
+    "AINavigationDatabase": 0x00AFB198,
+    "AICarRecovery": 0x00AFC2C8,
     "AISegmentPath": 0x00AFC930,
     "AIPathNode": 0x00AFBF60,
     "AIPolylinePath": 0x00AFC678,
@@ -72,6 +79,22 @@ INCIDENT = {
     "area_index": (0x118, "I"),
     "n_marshals": (0x11c, "I"),
     "n_flag_marshals": (0x120, "I"),
+}
+NAVIGATION = {
+    # FUN_006bd2e0 reflection metadata. The +0x10 entry is the first word of
+    # the embedded AICarRecovery object whose constructor is FUN_006c8280.
+    "car_recovery_vtable": (0x10, "I"),
+    "behaviour_system": (0x1ec, "I"),
+    "data_loaded": (0x1f0, "I"),
+    "entities_spawned": (0x1f4, "I"),
+    "area_list_storage": (0x1f8, "I"),
+    "on_track_area": (0x218, "I"),
+    "current_node": (0x21c, "I"),
+    "start_flag_marshal": (0x220, "I"),
+    "cheq_flag_marshal": (0x224, "I"),
+    "active_visible_range": (0x228, "f"),
+    "active_area_range": (0x22c, "f"),
+    "height_raycast_range": (0x230, "f"),
 }
 SEGMENT = {
     # FUN_006d0690 is the reflection builder for AISegmentPath and explicitly
@@ -180,6 +203,7 @@ def analyzer_evidence_manifest() -> dict:
         "layouts": {
             "AIPathInfo": _manifest_layout(PATH),
             "AIArea": _manifest_layout(INCIDENT),
+            "AINavigationDatabase": _manifest_layout(NAVIGATION),
             "AISegmentPath": _manifest_layout(SEGMENT),
             "AIPathNode": _manifest_layout(SEGMENT_NODE),
             "AIPolylinePath": _manifest_layout(POLY),
@@ -191,6 +215,15 @@ def analyzer_evidence_manifest() -> dict:
         "identity_policies": {
             "Path": {"retail_class": "AIPathInfo", "mode": "concrete-vtable"},
             "Incident.PathOwner": {"retail_class": "AIArea", "mode": "concrete-vtable"},
+            "AINavigationDatabase": {
+                "mode": "concrete-vtable",
+                "nested_identity": {
+                    "offset": 0x10,
+                    "class": "AICarRecovery",
+                    "vtable": f"0x{KNOWN_VTABLES['AICarRecovery']:08x}",
+                },
+                "area_list": "opaque-reflected-container",
+            },
             "AISegmentPath": {"mode": "concrete-vtable"},
             "AIPolylinePath": {"mode": "concrete-vtable"},
             "AIPolyPathNode": {"mode": "concrete-vtable"},
@@ -198,6 +231,18 @@ def analyzer_evidence_manifest() -> dict:
             "AISpline": {
                 "mode": "structural-owner",
                 "reason": "no-dedicated-retail-rtti-getter",
+            },
+        },
+        "relations": {
+            "AINavigationDatabase.on_track_area": {
+                "target_class": "AIArea",
+                "source_loader": "FUN_006bc490",
+                "requires_cross_snapshot_pointer_stability": True,
+            },
+            "AINavigationDatabase.area_list_storage": {
+                "target_class": "AIArea",
+                "container_loader": "FUN_006bcf80",
+                "runtime_container_layout": "opaque",
             },
         },
     }
@@ -218,7 +263,7 @@ SIZE = {"B": 1, "I": 4, "i": 4, "f": 4}
 # streaming boundary without keeping an entire capture region in RAM.
 MAX_STRUCTURE_SIZE = max(
     max(offset + SIZE[typ] for offset, typ in spec.values())
-    for spec in (PATH, INCIDENT, SEGMENT, POLY, KNOT, SPLINE)
+    for spec in (PATH, INCIDENT, NAVIGATION, SEGMENT, POLY, KNOT, SPLINE)
 )
 SCAN_CHUNK_SIZE = 4 * 1024 * 1024
 POINTER_CHUNK_SIZE = 4 * 1024 * 1024
@@ -393,6 +438,47 @@ def check_incident(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     }
 
 
+def check_navigation(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
+    d = fields(blob, NAVIGATION)
+    vt = read(blob, 0, "I")
+    if (
+        vt != KNOWN_VTABLES["AINavigationDatabase"]
+        or any(v is None for v in d.values())
+        or d["car_recovery_vtable"] != KNOWN_VTABLES["AICarRecovery"]
+        or not game_vtable(vt, mm, starts)
+        or not game_vtable(d["car_recovery_vtable"], mm, starts)
+    ):
+        return None
+    if d["data_loaded"] not in (0, 1) or d["entities_spawned"] not in (0, 1):
+        return None
+    if not all(
+        finite(d[name], 1e7) and 0 <= d[name] <= 1e7
+        for name in ("active_visible_range", "active_area_range", "height_raycast_range")
+    ):
+        return None
+
+    pointer_mappings = {}
+    for name in (
+        "behaviour_system",
+        "on_track_area",
+        "start_flag_marshal",
+        "cheq_flag_marshal",
+    ):
+        value = int(d[name])
+        target = None if value == 0 else writable(value, mm, starts)
+        if value and target is None:
+            return None
+        pointer_mappings[name + "_mapping"] = target
+
+    return {
+        "address": addr,
+        "vtable": vt,
+        "vtable_mapping": game_vtable(vt, mm, starts),
+        **d,
+        **pointer_mappings,
+    }
+
+
 def check_segment(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
     d = fields(blob, SEGMENT)
     vt = read(blob, 0, "I")
@@ -511,6 +597,7 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
     found = {
         "Path": [],
         "Incident.PathOwner": [],
+        "AINavigationDatabase": [],
         "AISegmentPath": [],
         "AIPolylinePath": [],
         "AIPolyPathNode": [],
@@ -520,6 +607,7 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
     checks = (
         ("Path", check_path),
         ("Incident.PathOwner", check_incident),
+        ("AINavigationDatabase", check_navigation),
         ("AISegmentPath", check_segment),
         ("AIPolylinePath", check_poly),
         ("AIPolyPathNode", check_poly_node),
@@ -530,6 +618,7 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
     limit = max(0, len(view) - 3)
     known_path_vtable = KNOWN_VTABLES["AIPathInfo"]
     known_area_vtable = KNOWN_VTABLES["AIArea"]
+    known_navigation_vtable = KNOWN_VTABLES["AINavigationDatabase"]
     known_segment_vtable = KNOWN_VTABLES["AISegmentPath"]
     known_poly_vtable = KNOWN_VTABLES["AIPolylinePath"]
     known_poly_node_vtable = KNOWN_VTABLES["AIPolyPathNode"]
@@ -539,8 +628,9 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
         if vtable is None:
             continue
         if vtable not in (
-            known_path_vtable, known_area_vtable, known_segment_vtable,
-            known_poly_vtable, known_poly_node_vtable, known_knot_vtable,
+            known_path_vtable, known_area_vtable, known_navigation_vtable,
+            known_segment_vtable, known_poly_vtable, known_poly_node_vtable,
+            known_knot_vtable,
         ):
             if not (VT_RANGE[0] <= vtable < VT_RANGE[1]):
                 continue
@@ -662,6 +752,124 @@ def stable_pointers(
             "score": float(c),
         })
     return rows
+
+
+def resolve_navigation_area_links(
+    navigation_candidates: list[dict],
+    area_candidates: list[dict],
+    snapshots: list[Path],
+    indexes: list[dict[int, dict]],
+    maps_list: list[dict],
+) -> list[dict]:
+    """Resolve AINavigationDatabase.on_track_area with field-specific stability."""
+    if not navigation_candidates:
+        return []
+    starts_by_snapshot = [sorted(index) for index in indexes]
+    area_by_address = {int(row["address"]): row for row in area_candidates}
+    map_starts = [row["start"] for row in maps_list]
+    rows: list[dict] = []
+
+    for candidate in navigation_candidates:
+        address = int(candidate["address"])
+        targets: list[int] = []
+        identity_stable = 0
+        for snapshot, index, region_starts in zip(
+            snapshots, indexes, starts_by_snapshot
+        ):
+            vt_blob = _read_virtual(snapshot, index, region_starts, address, 4)
+            nested_blob = _read_virtual(
+                snapshot, index, region_starts, address + 0x10, 4
+            )
+            target_blob = _read_virtual(
+                snapshot, index, region_starts, address + 0x218, 4
+            )
+            if vt_blob is None or nested_blob is None or target_blob is None:
+                continue
+            vt = struct.unpack_from("<I", vt_blob)[0]
+            nested_vt = struct.unpack_from("<I", nested_blob)[0]
+            if (
+                vt != KNOWN_VTABLES["AINavigationDatabase"]
+                or nested_vt != KNOWN_VTABLES["AICarRecovery"]
+            ):
+                continue
+            identity_stable += 1
+            targets.append(struct.unpack_from("<I", target_blob)[0])
+
+        complete = identity_stable == len(snapshots) and len(targets) == len(snapshots)
+        target_stable = complete and len(set(targets)) == 1
+        target = targets[0] if target_stable else int(candidate.get("on_track_area", 0))
+        target_mapping = mapping(target, maps_list, map_starts) if target else None
+        target_area = area_by_address.get(target) if target_stable and target else None
+
+        rows.append({
+            "navigation_address": address,
+            "on_track_area": target,
+            "identity_stable_snapshots": identity_stable,
+            "identity_complete": complete,
+            "target_stable": target_stable,
+            "target_observation_count": len(targets),
+            "target_unique_count": len(set(targets)),
+            "target_aiarea_candidate": bool(target_area),
+            "target_aiarea_stable_snapshots": (
+                int(target_area.get("stable_snapshots", 0))
+                if target_area is not None else 0
+            ),
+            "target_mapping_start": (
+                target_mapping["start"] if target_mapping is not None else None
+            ),
+            "target_mapping_end": (
+                target_mapping["end"] if target_mapping is not None else None
+            ),
+            "target_mapping_perms": (
+                target_mapping["perms"] if target_mapping is not None else None
+            ),
+        })
+    rows.sort(key=lambda row: row["navigation_address"])
+    return rows
+
+
+def navigation_area_targets(
+    links: list[dict],
+    snapshot_count: int,
+    top: int,
+) -> list[dict]:
+    grouped: dict[int, dict] = {}
+    for row in links:
+        if (
+            not row.get("identity_complete")
+            or int(row.get("identity_stable_snapshots", 0)) != snapshot_count
+            or not row.get("target_stable")
+        ):
+            continue
+        target = int(row.get("on_track_area", 0))
+        if not target or row.get("target_mapping_start") is None:
+            continue
+        entry = grouped.setdefault(
+            target,
+            {
+                "target": target,
+                "candidate_addresses": [],
+                "candidate_count": 0,
+                "mapping_start": row["target_mapping_start"],
+                "mapping_end": row["target_mapping_end"],
+                "mapping_perms": row["target_mapping_perms"],
+                "captured_aiarea_candidate": False,
+            },
+        )
+        entry["candidate_count"] += 1
+        entry["candidate_addresses"].append(int(row["navigation_address"]))
+        entry["captured_aiarea_candidate"] = bool(
+            entry["captured_aiarea_candidate"] or row["target_aiarea_candidate"]
+        )
+
+    rows = list(grouped.values())
+    rows.sort(key=lambda row: (-row["candidate_count"], row["target"]))
+    for row in rows:
+        row["candidate_addresses"] = json.dumps(
+            [f"0x{x:x}" for x in sorted(set(row["candidate_addresses"]))],
+            separators=(",", ":"),
+        )
+    return rows[:top]
 
 
 def path_root_targets(
@@ -1824,6 +2032,8 @@ def main() -> int:
     ap.add_argument("--radius-kib", type=int, default=128)
     ap.add_argument("--path-root-top", type=int, default=16)
     ap.add_argument("--path-root-radius-kib", type=int, default=128)
+    ap.add_argument("--navigation-root-top", type=int, default=16)
+    ap.add_argument("--navigation-root-radius-kib", type=int, default=128)
     ap.add_argument(
         "--exclude-source-range", dest="exclude_source_ranges", action="append",
         type=parse_range,
@@ -1862,8 +2072,11 @@ def main() -> int:
         help="2D plane used when correlating AIPolyPathNode candidates with AIW positions (default: xz)",
     )
     args = ap.parse_args()
-    if min(args.top, args.target_top, args.path_root_top) <= 0 or min(
-        args.radius_kib, args.path_root_radius_kib, args.aiw_root_radius_kib
+    if min(
+        args.top, args.target_top, args.path_root_top, args.navigation_root_top
+    ) <= 0 or min(
+        args.radius_kib, args.path_root_radius_kib,
+        args.navigation_root_radius_kib, args.aiw_root_radius_kib
     ) < 0:
         ap.error("invalid numeric option")
     if args.aiw_position_tolerance <= 0:
@@ -1884,6 +2097,7 @@ def main() -> int:
         k: [] for k in (
             "Path",
             "Incident.PathOwner",
+            "AINavigationDatabase",
             "AISegmentPath",
             "AIPolylinePath",
             "AIPolyPathNode",
@@ -1910,6 +2124,7 @@ def main() -> int:
                     span = (
                         0x28 if name == "Path"
                         else 0x124 if name == "Incident.PathOwner"
+                        else 0x234 if name == "AINavigationDatabase"
                         else 0x38 if name == "AISegmentPath"
                         else 0x2C if name == "AIPolylinePath"
                         else 0x24 if name == "AIPolyPathNode"
@@ -1981,6 +2196,21 @@ def main() -> int:
     ]
     path_polyline_links = join_path_start_nodes_to_polylines(
         path_start_node_links, candidates["AIPolylinePath"]
+    )
+    navigation_area_links = resolve_navigation_area_links(
+        candidates["AINavigationDatabase"],
+        candidates["Incident.PathOwner"],
+        sns,
+        idx,
+        mm,
+    )
+    navigation_roots = navigation_area_targets(
+        navigation_area_links, len(sns), args.navigation_root_top
+    )
+    navigation_root_windows = windows_for_path_roots(
+        navigation_roots,
+        args.navigation_root_radius_kib * 1024,
+        args.navigation_root_top,
     )
     for k in candidates:
         candidates[k] = sorted(
@@ -2089,6 +2319,9 @@ def main() -> int:
         "pointer_target_clusters": cl,
         "path_root_targets": path_roots,
         "path_root_windows": path_root_windows,
+        "navigation_area_links": navigation_area_links,
+        "navigation_area_targets": navigation_roots,
+        "navigation_area_windows": navigation_root_windows,
         "next_capture_windows": windows,
         "aiw_sources": [
             {
@@ -2112,6 +2345,8 @@ def main() -> int:
         ),
         "path_start_node_link_count": len(path_start_node_links),
         "path_polyline_link_count": len(path_polyline_links),
+        "navigation_area_link_count": len(navigation_area_links),
+        "navigation_area_target_count": len(navigation_roots),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
         "excluded_source_ranges": [{"start": a, "end": b} for a, b in excluded_sources],
         "notes": [
@@ -2176,6 +2411,29 @@ def main() -> int:
             f"0x{w['start']:x}:0x{w['size']:x}  # targets=" +
             ",".join(f"0x{x:x}" for x in w["targets"])
             for w in path_root_windows
+        ) + "\n",
+        encoding="utf-8",
+    )
+    write_csv(out / "navigation_area_links.csv", navigation_area_links, [
+        "navigation_address", "on_track_area", "identity_stable_snapshots",
+        "identity_complete", "target_stable", "target_observation_count",
+        "target_unique_count", "target_aiarea_candidate",
+        "target_aiarea_stable_snapshots", "target_mapping_start",
+        "target_mapping_end", "target_mapping_perms",
+    ])
+    write_csv(out / "navigation_area_targets.csv", navigation_roots, [
+        "target", "candidate_count", "candidate_addresses",
+        "mapping_start", "mapping_end", "mapping_perms",
+        "captured_aiarea_candidate",
+    ])
+    write_csv(out / "navigation_area_windows.csv", navigation_root_windows, [
+        "start", "size", "targets",
+    ])
+    (out / "navigation_area_ranges.txt").write_text(
+        "\n".join(
+            f"0x{w['start']:x}:0x{w['size']:x}  # targets=" +
+            ",".join(f"0x{x:x}" for x in w["targets"])
+            for w in navigation_root_windows
         ) + "\n",
         encoding="utf-8",
     )
