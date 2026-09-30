@@ -89,6 +89,11 @@ def test_adapter_materializes_neutral_fields_and_primitive_ranges():
     mesh = report["mesh"]
     assert mesh["format"] == "SHIFT.NeutralMesh/1"
     assert mesh["vertex_count"] == 3
+    assert mesh["triangle_count"] == 1
+    assert mesh["vertex_properties"] == ["200", "130", "460"]
+    assert [row["id"] for row in mesh["property_layouts"]] == [
+        "200", "130", "460",
+    ]
     assert mesh["vertices"] == [
         [0.0, 0.0, 0.0],
         [1.0, 0.0, 0.0],
@@ -105,6 +110,9 @@ def test_adapter_materializes_neutral_fields_and_primitive_ranges():
         [70, 80, 90, 255],
     ]
     assert mesh["indices"] == [0, 1, 2]
+    assert mesh["primitives"][0]["material"] == "paint"
+    assert mesh["primitives"][0]["first_index"] == 0
+    assert mesh["primitives"][0]["index_count"] == 3
     assert mesh["vertex_layout"]["runtime_interleaved_stride"] == 28
 
     assert report["primitive_count"] == 1
