@@ -2,9 +2,9 @@
 
 Phase 554 proves that .imb/.imx OBJECT resources are promoted to renderer
 factory type 7 (MeshInst). Phase 555 follows the concrete type-7 constructor
-and loader path. Phases 556-560 progressively recover the binary IMB payload
-through a neutral geometry adapter while keeping IMX and higher-level scene
-material binding separate.
+and loader path. Phases 556-561 progressively recover and integrate the binary
+IMB path. Phase 589 reconstructs the source-backed IMX XML grammar and neutral
+geometry adapter while keeping IMB, IMX and MEB serialized identities separate.
 """
 from __future__ import annotations
 
