@@ -192,10 +192,21 @@ struct PhysicsTickBoundary {
     uint32_t registry_slot_stride = 0;
     uint32_t participant_descriptor_type = 0;
 
-    // These remain capture-gated. Structural admission must not promote them.
+    // These identity domains remain capture-gated and deliberately distinct.
+    bool participant_identity_join_proven = false;
     bool participant_ready = false;
+    int32_t participant_registry_index = -1;
+    int32_t selector_ordinal = -1;
+    int32_t participant_process_state = -1;
+
+    // Legacy compatibility aliases. Static structural admission must never
+    // populate these from either identity domain.
     int32_t participant_index = -1;
     int32_t participant_mode = -1;
+
+    uint64_t participant_topology_steps = 0;
+    uint64_t participant_ready_steps = 0;
+    uint64_t participant_unresolved_steps = 0;
     PhysicsWorkspaceBoundary workspace{};
 
     void tick(const VehicleControlIntent& input) {
@@ -210,6 +221,14 @@ struct PhysicsTickBoundary {
             !input.steer_left &&
             !input.steer_right) {
             ++neutral_input_steps;
+        }
+        if (participant_contract_ready) {
+            ++participant_topology_steps;
+            if (participant_ready) {
+                ++participant_ready_steps;
+            } else {
+                ++participant_unresolved_steps;
+            }
         }
         // Physics integration intentionally remains outside this shell.
         // The retail participant/provider semantics are not synthesized here.
