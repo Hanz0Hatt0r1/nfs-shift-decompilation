@@ -35,7 +35,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
-6. Add keyboard/gamepad vehicle controls beyond the neutral intent layer.
+6. Live keyboard vehicle controls already feed the neutral intent layer. Phase 601 adds a deterministic fixed-step input script and physics-boundary activity telemetry for CI. Gamepad/analog normalization and retail filtering remain.
 7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
 
 The renderer remains downstream of normalized IR; original BFF parsing stays outside the native executable.
@@ -169,3 +169,23 @@ After admission, the ordinary Phase 599 fixed-step snapshot/copy/flip path runs
 unchanged. Linux Vulkan CI verifies that 12 native updates preserve the loaded
 mode/id/group/sub-state and that the Phase 599 snapshot telemetry observes the
 same recovered values.
+
+
+## Phase 601 deterministic control-intent boundary
+
+`native_runtime` accepts `--input-script FILE` with
+`SHIFT.NativeRuntimeInputScript/1`. Each row supplies the complete
+throttle/brake/left/right state for one contiguous native fixed step.
+
+Without the option, the existing X11 keyboard mapping remains active. With it,
+the script supplies vehicle intent while X11 continues to handle quit/window
+events. `--camera-state` remains compatible and can be loaded in the same run.
+
+`PhysicsTickBoundary::tick()` counts active throttle, brake, left, right and
+fully-neutral steps. The final frame-loop telemetry exposes those counters plus
+the last control state and `input_source`, proving the deterministic input
+crossed `SHIFT.NativeRuntimeState/1` rather than merely being parsed.
+
+Linux Vulkan CI runs a five-step script and verifies the exact activity counts.
+No retail controller dead-zone, analog curve, filtering, or vehicle-force
+semantics are assigned.
