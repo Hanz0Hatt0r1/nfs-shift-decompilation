@@ -31,14 +31,14 @@ def test_snapshot_maps_only_proven_numeric_camera_state():
 
     assert report["format"] == FORMAT
     assert report["ready"] is True
-    assert report["active_index"] == 0
-    assert report["update_in_progress"] is False
-    assert report["manager_mode"] == 1
-    assert report["buffer_sub_index"] == 7
-    assert report["camera_id"] == 42
-    assert report["active_group"] == 3
-    assert report["group_restore_value"] == 2
-    assert report["active_buffer_sub_flag"] == 1
+    assert report["native_active_index"] == 0
+    assert report["native_update_in_progress"] is False
+    assert report["native_manager_mode"] == 1
+    assert report["native_buffer_sub_index"] == 7
+    assert report["native_camera_id"] == 42
+    assert report["native_active_group"] == 3
+    assert report["native_group_restore_value"] == 2
+    assert report["native_active_buffer_sub_flag"] == 1
     assert report["opaque_camera_source_present"] is True
     assert "opaque-camera" not in str(report)
     assert report["boundary"]["camera_source_transport"] == (
@@ -65,8 +65,8 @@ def test_swap_then_complete_updates_native_double_buffer_state():
     )
 
     assert report["ready"] is True
-    assert report["active_index"] == 1
-    assert report["update_in_progress"] is False
+    assert report["native_active_index"] == 1
+    assert report["native_update_in_progress"] is False
     assert report["transition_count"] == 2
     assert [row["status"] for row in report["transitions"]] == [
         "swapped",
@@ -84,8 +84,8 @@ def test_swapped_state_can_remain_update_in_progress():
     )
 
     assert report["ready"] is True
-    assert report["active_index"] == 1
-    assert report["update_in_progress"] is True
+    assert report["native_active_index"] == 1
+    assert report["native_update_in_progress"] is True
 
 
 def test_busy_transition_does_not_change_active_index():
@@ -99,8 +99,8 @@ def test_busy_transition_does_not_change_active_index():
     )
 
     assert report["ready"] is True
-    assert report["active_index"] == 0
-    assert report["update_in_progress"] is True
+    assert report["native_active_index"] == 0
+    assert report["native_update_in_progress"] is True
 
 
 def test_unknown_group_restore_value_blocks_bridge():
