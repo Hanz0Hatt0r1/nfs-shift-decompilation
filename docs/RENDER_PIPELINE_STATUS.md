@@ -10,7 +10,7 @@
 
 - VHF references resolve to MEB;
 - scene-admitted SGB MEB instances can enter the same resource path with their source-backed world matrices;
-- the retail SGB OBJECT factory is classified separately as MeshType/type 0 or MeshInst/type 7 (`.imb/.imx`); `.imx` uses the XML mesh loader while `.imb` now has a partial source-backed decoder for its fixed header, bones and Type/Usage/Channel stream table; the existing MEB path remains a separate neutral adapter;
+- the retail SGB OBJECT factory is classified separately as MeshType/type 0 or MeshInst/type 7 (`.imb/.imx`); `.imx` uses the XML mesh loader while `.imb` now auto-decodes its packed version/control/name prefix plus fixed header, bones and Type/Usage/Channel stream table; the existing MEB path remains a separate neutral adapter;
 - MEB primitive material references resolve through BMT/MTX;
 - BMT connects to FX sources and FXO permutations;
 - CTAB reflection supplies sampler registers and material constants;
@@ -36,4 +36,4 @@ Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets
 
 ## Remaining work
 
-Broaden exact BMW shader/material execution, close more runtime same-instance evidence, finish the IMB variable prefix/vertex/primitive decoder and IMX XML neutral adapter, carry scene visibility/streaming semantics beyond the SGB resource bridge, and complete full RenderCommand submission on Vulkan.
+Broaden exact BMW shader/material execution, close more runtime same-instance evidence, finish IMB vertex/primitive payload decoding and the IMX XML neutral adapter, carry scene visibility/streaming semantics beyond the SGB resource bridge, and complete full RenderCommand submission on Vulkan.
