@@ -2,6 +2,7 @@ from tools.audit_imb_material_shader_ranking import (
     FORMAT,
     _candidate_identity,
     _compact_candidate,
+    _top_rank_candidates,
     summarize_ranking_rows,
 )
 
@@ -131,3 +132,39 @@ def test_compact_candidate_retains_only_ranking_provenance():
     assert row["exact"] is True
     assert row["specialization_unexpected"] == ["X"]
     assert "samplers" not in row
+
+
+
+def test_top_rank_candidates_are_not_truncated_to_diagnostic_ambiguity_limit():
+    best = {
+        "exact": True,
+        "score": 2,
+        "vertex_pair_valid": True,
+        "vertex_pair_score": 1.0,
+        "uniform_coverage": 1.0,
+        "specialization_score": 1.0,
+        "specialization_contradicted": [],
+        "specialization_unexpected": [],
+        "uniform_matches": ["A"],
+    }
+    tied = [
+        {
+            **best,
+            "file": f"candidate_{index}.fxo",
+            "program_offset": index,
+        }
+        for index in range(20)
+    ]
+    lower = {
+        **best,
+        "file": "lower.fxo",
+        "program_offset": 100,
+        "uniform_coverage": 0.5,
+    }
+
+    rows = _top_rank_candidates(
+        {"fxo_candidates": tied + [lower]}
+    )
+
+    assert len(rows) == 20
+    assert {row["program_offset"] for row in rows} == set(range(20))
