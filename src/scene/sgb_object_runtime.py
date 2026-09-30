@@ -4,9 +4,11 @@ FUN_006a4b40 passes the inline payload at NODE record +0x1c to FUN_0069bc50.
 FUN_0069a6c0 then dispatches by a kind string whose offset is relative to the
 base of the complete SGB resource, not relative to the object payload.
 
-The source and matching XML loader prove four binary kinds: LOD, HIERARCHY,
-OBJECT and DAMAGE.  Matrix records are shared by LOD/HIERARCHY and use the
-same Offset/Orientation/Scale/parent semantics as FUN_006990d0.
+The retail binary dispatcher FUN_0069a6c0 recognizes LOD, HIERARCHY and
+OBJECT. DAMAGE is reconstructed by the XML scene loaders FUN_00699b10 and
+FUN_0069b1c0, but is not admitted by the binary NODE dispatcher. Matrix
+records are shared by LOD/HIERARCHY and use the same
+Offset/Orientation/Scale/parent semantics as FUN_006990d0.
 """
 from __future__ import annotations
 
@@ -16,7 +18,10 @@ from typing import Any
 
 
 FORMAT = "SHIFT.SGBObjectRuntime/1"
-KINDS = {"LOD", "HIERARCHY", "OBJECT", "DAMAGE"}
+BINARY_KINDS = {"LOD", "HIERARCHY", "OBJECT"}
+XML_ONLY_KINDS = {"DAMAGE"}
+# Compatibility name: this parser consumes the binary NODE object grammar.
+KINDS = BINARY_KINDS
 
 COMMON_HEADER_BYTES = 0x24
 MATRIX_RECORD_BYTES = 0x24
@@ -89,6 +94,11 @@ RUNTIME_WRAPPERS = {
         "constructor": "FUN_00698b00",
         "vtable": 0x00AF7C88,
         "allocation_bytes": 0xA0,
+        "source_admission": {
+            "binary_node": False,
+            "xml_scene": True,
+            "xml_loaders": ["FUN_00699b10", "FUN_0069b1c0"],
+        },
         "proven_fields": {
             "matrix_count": 0x80,
             "runtime_matrix_array": 0x84,
@@ -307,7 +317,9 @@ def parse_sgb_object_payload(
     matrix_count = data[base_offset + 0x22]
     subobject_count = data[base_offset + 0x23]
 
-    if kind_text and kind_text not in KINDS:
+    if kind_text in XML_ONLY_KINDS:
+        status = "xml-only-kind"
+    elif kind_text and kind_text not in BINARY_KINDS:
         status = "unknown-kind"
     else:
         status = "recognized-kind" if kind_text else "kind-unresolved"
@@ -335,7 +347,17 @@ def parse_sgb_object_payload(
             "source": "SCENE XML SPHERE/Centre + Radius",
         },
         "matrix_number": matrix_number,
+        # Kept as a compatibility scalar while the structured evidence below
+        # makes the actual conclusion explicit: FUN_0069a6c0 does not consume
+        # byte +0x21 in the binary NODE object grammar.
         "unknown_byte_21": unknown_byte_21,
+        "byte_21": {
+            "raw": unknown_byte_21,
+            "binary_consumer_status": "unconsumed",
+            "binary_consumer": "FUN_0069a6c0",
+            "xml_counterpart": None,
+            "semantic_name": None,
+        },
         "matrix_count": matrix_count,
         "subobject_count": subobject_count,
         "kind_status": status,
@@ -351,6 +373,8 @@ def parse_sgb_object_payload(
         "evidence": {
             "entry": "FUN_0069bc50",
             "dispatcher": "FUN_0069a6c0",
+            "binary_kinds": sorted(BINARY_KINDS),
+            "xml_only_kinds": sorted(XML_ONLY_KINDS),
             "xml_crosscheck": "FUN_0069b1c0",
             "matrix_xml_loader": "FUN_006990d0",
             "matrix_copy": "FUN_0069a6c0",
@@ -362,10 +386,24 @@ def parse_sgb_object_payload(
             },
         },
         "limitations": [
-            "Byte +0x21 remains unnamed because no direct source consumer is proven.",
-            "DAMAGE-specific serialized payload after the common header remains conservative.",
+            "Byte +0x21 has no binary consumer in FUN_0069a6c0; it is preserved raw and not assigned a semantic name.",
+            "DAMAGE has source-backed runtime wrapper semantics through XML scene loaders, but no binary NODE admission in FUN_0069a6c0.",
         ],
     }
+
+    if status == "xml-only-kind":
+        report["decoded"] = False
+        report["binary_admission"] = {
+            "supported": False,
+            "dispatcher": "FUN_0069a6c0",
+            "reason": "kind-is-only-admitted-by-xml-scene-loaders",
+        }
+        report["xml_runtime"] = {
+            "supported": True,
+            "loaders": ["FUN_00699b10", "FUN_0069b1c0"],
+            "runtime_wrapper": dict(RUNTIME_WRAPPERS[kind_text]),
+        }
+        return report
 
     if status != "recognized-kind":
         return report
@@ -512,14 +550,5 @@ def parse_sgb_object_payload(
             report["serialized_fixed_region_end"] = base_offset + 0x48
         else:
             report["serialized_fixed_region_end"] = base_offset + 0x28
-
-    elif kind_text == "DAMAGE":
-        report["damage_serialized_layout"] = {
-            "status": "partial",
-            "matrix_count_offset": 0x22,
-            "subobject_count_offset": 0x23,
-            "runtime_matrix_loader": "FUN_00699870",
-            "runtime_subobject_array_offset": 0x88,
-        }
 
     return report
