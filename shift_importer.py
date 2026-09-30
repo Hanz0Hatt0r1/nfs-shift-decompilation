@@ -1808,6 +1808,12 @@ def cmd_sgb_runtime(args: argparse.Namespace) -> int:
         "recognized_chunks": sum(
             bool(row.get("recognized_by_runtime")) for row in report["chunks"]
         ),
+        "spatial_bridge_mode": (
+            (report.get("spatial_bridge") or {}).get("mode")
+        ),
+        "spatial_bridge_ready": bool(
+            (report.get("spatial_bridge") or {}).get("ready")
+        ),
         "blockers": report["blockers"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
