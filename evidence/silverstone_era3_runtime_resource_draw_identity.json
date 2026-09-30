@@ -1,0 +1,55 @@
+{
+  "boundary": {
+    "all_primitive_bindings_draw_range_ready": true,
+    "all_primitive_bindings_resource_identity_ready": true,
+    "draw_identity": "source-backed primitive first_index + index_count from IMB index payload",
+    "resource_identity": "archive-local IMB path + decoded payload SHA-256",
+    "same_instance_runtime_observation": "not evaluated",
+    "shader_runtime_observation": "not evaluated"
+  },
+  "format": "SHIFT.IMBRuntimeResourceDrawIdentityEvidence/1",
+  "multi_primitive_resources": [
+    {
+      "archive": "Silverstone_Era3_Drift.bff",
+      "path": "tracks/_data/instances/gen_tent18_loda.imb",
+      "primitives": [
+        {
+          "first_index": 0,
+          "imb_sha256": "5c1a48322e783e635f1c801b669d499697f60ac61f67b11617339ea45b5c59bc",
+          "index_count": 96,
+          "primitive_index": 0,
+          "triangle_count": 32
+        },
+        {
+          "first_index": 96,
+          "imb_sha256": "5c1a48322e783e635f1c801b669d499697f60ac61f67b11617339ea45b5c59bc",
+          "index_count": 24,
+          "primitive_index": 1,
+          "triangle_count": 8
+        }
+      ]
+    }
+  ],
+  "result": {
+    "draw_range_ready_count": 428,
+    "index_count_max": 3072,
+    "index_count_min": 6,
+    "logical_paths_with_multiple_decoded_hashes": 0,
+    "logical_resource_path_count": 181,
+    "primitive_binding_count": 428,
+    "resource_identity_ready_count": 428,
+    "resource_occurrence_count": 427,
+    "resource_primitive_count_distribution": {
+      "1": 426,
+      "2": 1
+    },
+    "same_instance_target_ready_count": 428,
+    "unique_decoded_imb_sha256_count": 181
+  },
+  "source_archive": {
+    "name": "Silverstone_Era3_.zip",
+    "sha256": "5423f5a0356e664a504f90c812e32bbbd4e2a0abe83c546fdc658305661a1e2f"
+  },
+  "verification_scope": "phase-570-silverstone-era3-runtime-resource-draw-identity",
+  "version": 1
+}
