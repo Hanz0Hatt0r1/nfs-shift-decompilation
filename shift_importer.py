@@ -1868,6 +1868,39 @@ def cmd_sgb_multimatrix_root_solve(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_sgb_multimatrix_root_consensus(args: argparse.Namespace) -> int:
+    """Build an independent runtime-observed MultiMatrix root consensus."""
+    from sgb_multimatrix_root_consensus import validate_files
+
+    report = validate_files(
+        args.sgb_runtime,
+        args.candidate_join,
+        args.capture_pipeline,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "hypothesis_count": report["hypothesis_count"],
+        "eligible_root_count": report["eligible_root_count"],
+        "ready_consensus_count": report[
+            "ready_consensus_count"
+        ],
+        "ambiguous_consensus_count": report[
+            "ambiguous_consensus_count"
+        ],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_sgb_runtime_object_candidate_join(args: argparse.Namespace) -> int:
     """Join runtime IMB resource evidence to pre-admission SGB candidates."""
     from sgb_runtime_object_candidate_join import validate_files
@@ -4527,6 +4560,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="maximum reevaluation absolute error (default: 1e-5)",
     )
     p.set_defaults(fn=cmd_sgb_multimatrix_root_solve)
+
+    p = sp.add_parser(
+        "sgb-multimatrix-root-consensus",
+        help=(
+            "recover one current wrapper root only when independent "
+            "runtime resources agree through distinct MultiMatrix chains"
+        ),
+    )
+    p.add_argument(
+        "sgb_runtime",
+        help="SHIFT.SGBRuntime/1 JSON",
+    )
+    p.add_argument(
+        "candidate_join",
+        help="SHIFT.SGBRuntimeObjectCandidateJoin/1 JSON",
+    )
+    p.add_argument(
+        "capture_pipeline",
+        help="SHIFT.IMBRuntimeCapturePipeline/1 JSON",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.SGBMultiMatrixRootConsensus/1 JSON output",
+    )
+    p.set_defaults(fn=cmd_sgb_multimatrix_root_consensus)
 
     p = sp.add_parser(
         "sgb-runtime-object-candidate-join",
