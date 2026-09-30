@@ -104,7 +104,11 @@ Phase 581 proves the SVWT transport convention without assigning any retail
 shader constant register. Phase 582 begins real material-path consumption with
 translation-only execution. Phase 583 upgrades the native geometry packet to
 semantic-aware SVGP v3 so POSITION 200, NORMAL 220, TANGENT 240 and TANGENT2
-250 are explicit. Phase 584 uses those semantics for full non-singular affine\nexecution in the standalone native material path: affine POSITION transform,\ninverse-transpose NORMAL and linear normalized tangent bases. Phase 585 adds\nneutral `NativeSceneVulkanSet` preparation and direct `native_runtime --scene-set`\nadmission, executing the same SVWT semantics before child GPU upload.
+250 are explicit. Phase 584 uses those semantics for full non-singular affine
+execution in the standalone native material path: affine POSITION transform,
+inverse-transpose NORMAL and linear normalized tangent bases. Phase 585 adds
+neutral `NativeSceneVulkanSet` preparation and direct `native_runtime --scene-set`
+admission, executing the same SVWT semantics before child GPU upload.
 
 ### Native Linux runtime
 
@@ -118,7 +122,10 @@ prepared native IR / Vulkan bundles
   → fixed 60 Hz state/tick boundary
 ```
 
-The runtime supports the established prepared bundle path, BMW multi-draw sets\nand neutral `SHIFT.NativeSceneVulkanSet/1` scheduling, per-draw pipeline state,\nconstant buffers, 2D textures, optional cube resources and validation-layer\ncoverage. Camera state, vehicle-control intent
+The runtime supports the established prepared bundle path, BMW multi-draw sets
+and neutral `SHIFT.NativeSceneVulkanSet/1` scheduling, per-draw pipeline state,
+constant buffers, 2D textures, optional cube resources and validation-layer
+coverage. Camera state, vehicle-control intent
 and a physics participant/tick boundary are represented without fabricating
 unknown retail integration semantics.
 
@@ -387,7 +394,8 @@ For current state, prefer operational status documents over old phase notes:
 - `docs/PHASE580_NATIVE_SCENE_VULKAN_SET.md`;
 - `docs/PHASE581_VULKAN_WORLD_TRANSFORM_PACKET.md`;
 - `docs/PHASE582_NATIVE_TRANSLATION_SVWT.md`;
-- `docs/PHASE583_SVGP_SEMANTIC_ABI.md`;\n- `docs/PHASE584_AFFINE_SVWT_EXECUTION.md`.
+- `docs/PHASE583_SVGP_SEMANTIC_ABI.md`;
+- `docs/PHASE584_AFFINE_SVWT_EXECUTION.md`.
 
 Historical phase files preserve the evidence trail and are not rewritten
 retroactively when newer work changes the current operational boundary.
