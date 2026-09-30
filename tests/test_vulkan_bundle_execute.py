@@ -24,6 +24,11 @@ def test_native_vulkan_bundle_executor_contract():
     assert "depth_state.depthWriteEnable = pipeline_state.depth_write_enable;" in source
     assert "depth_state.depthCompareOp = pipeline_state.depth_compare_op;" in source
     assert "blend_attachment.blendEnable = pipeline_state.blend_enable;" in source
+    assert "world_transform.svwt" in source
+    assert "WorldTransformHeader" in source
+    assert "apply_world_transform_translation" in source
+    assert "translation-only" in source
+    assert "world_transform_executed" in source
 
 
 def test_vulkan_bundle_runner_contract():

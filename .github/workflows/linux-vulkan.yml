@@ -80,6 +80,32 @@ jobs:
         run: cmake --build native_runtime/build --config Release --parallel
       - name: Prepare mixed-resource BMW bundle
         run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
+      - name: Assert material SVWT execution policy
+        run: |
+          cp -a out/vulkan/bundle/bundle out/vulkan/rotated_bundle
+          cat > out/vulkan/rotated_world_transform.json <<'JSON'
+          {
+            "world_matrix": [
+              0, 1, 0, 0,
+              -1, 0, 0, 0,
+              0, 0, 1, 0,
+              0, 0, 0, 1
+            ]
+          }
+          JSON
+          python3 shift_importer.py vulkan-world-transform-packet \
+            out/vulkan/rotated_world_transform.json \
+            out/vulkan/rotated_bundle/world_transform.svwt \
+            > out/vulkan/rotated_world_transform_packet.json
+          if native_vulkan/build/shift_vulkan_bundle_execute \
+              out/vulkan/rotated_bundle \
+              out/vulkan/rotated_bundle/rotated.ppm \
+              > out/vulkan/rotated_bundle/stdout.txt \
+              2> out/vulkan/rotated_bundle/stderr.txt; then
+            echo "executor unexpectedly accepted non-translation SVWT"
+            exit 1
+          fi
+          grep -q 'supports translation-only' out/vulkan/rotated_bundle/stderr.txt
       - name: Native Linux runtime frame loop
         run: |
           set -o pipefail

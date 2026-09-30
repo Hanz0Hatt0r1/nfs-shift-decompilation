@@ -30,6 +30,7 @@ from bmw_material_vulkan_adapter import (
 )
 from vulkan_bundle_run import run_bmw_vulkan_bundle
 from vulkan_bundle_set_prepare import prepare_bmw_vulkan_bundle_set
+from vulkan_world_transform_packet import build_vulkan_world_transform_packet
 
 VERTEX_GLSL = """#version 450
 layout(location = 0) in vec3 position;
@@ -196,6 +197,21 @@ def main():
             "material-slice adapter blocked: "
             + ", ".join(adapter_result["blocking_reasons"])
         )
+
+    # Phase 582: prove the actual material executor consumes the dedicated
+    # SVWT sidecar without assigning any retail material constant register.
+    build_vulkan_world_transform_packet(
+        {
+            "world_matrix": [
+                1.0, 0.0, 0.0, 0.0,
+                0.0, 1.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.10, 0.0, 0.0, 1.0,
+            ]
+        },
+        bundle_dir / "world_transform.svwt",
+    )
+
     result = run_bmw_vulkan_bundle(
         bundle_dir,
         executable=args.executable,
@@ -206,6 +222,12 @@ def main():
     (root / "smoke_result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True)+"\n", encoding="utf-8")
     if result["status"] != "rendered":
         raise SystemExit(2)
+    if result["native"].get("world_transform_present") is not True:
+        raise SystemExit("material executor did not observe SVWT")
+    if result["native"].get("world_transform_executed") is not True:
+        raise SystemExit("material executor did not execute SVWT translation")
+    if result["native"].get("world_translation_xyz") != [0.1, 0, 0]:
+        raise SystemExit("material executor reported unexpected SVWT translation")
     output = Path(result["native"]["output"])
     if output.read_bytes()[:2] != b"P6":
         raise SystemExit("not a PPM")
@@ -250,6 +272,7 @@ def main():
         "output_bytes": output.stat().st_size,
         "bundle_set_prepare_format": set_prepare["format"],
         "bundle_set_draws": set_prepare["draw_count"],
+        "world_transform_executed": True,
     }, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":
