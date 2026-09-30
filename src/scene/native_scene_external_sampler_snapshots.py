@@ -83,6 +83,8 @@ def validate_external_sampler_snapshot_contract(
         )
 
     blockers: list[str] = []
+    if value.get("version") != 1:
+        blockers.append("external-snapshot:unsupported-version")
     rows: list[dict[str, Any]] = []
     index: dict[str, dict[str, Any]] = {}
     raw_rows = value.get("snapshots")
