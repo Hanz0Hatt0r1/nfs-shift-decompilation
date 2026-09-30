@@ -215,3 +215,16 @@ def test_phase585_cli_accepts_native_scene_vulkan_prepare_command():
     assert args.validator == "glslangValidator"
     assert args.output == "out/native-scene-vulkan/prepare.json"
     assert args.fn.__name__ == "cmd_native_scene_vulkan_prepare"
+
+
+def test_phase594_cli_accepts_native_camera_state_command():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-camera-state",
+        "out/camera-snapshot.json",
+        "out/native-camera.json",
+    ])
+
+    assert args.input == "out/camera-snapshot.json"
+    assert args.output == "out/native-camera.json"
+    assert args.fn.__name__ == "cmd_native_camera_state"
