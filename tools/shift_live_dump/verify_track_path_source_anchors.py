@@ -15,6 +15,8 @@ FORMAT = "SHIFT-TRACK-PATH-SOURCE-ANCHORS/1"
 ANCHORS = {
     "AIPathInfo": ("FUN_006bc3a0", "PTR_FUN_00afb150"),
     "AIArea": ("FUN_006c3a20", "PTR_FUN_00afc048"),
+    "AINavigationDatabase": ("FUN_006bc7c0", "PTR_FUN_00afb198"),
+    "AICarRecovery": ("FUN_006c8280", "PTR_FUN_00afc2c8"),
     "AISegmentPath": ("FUN_006cfe70", "PTR_FUN_00afc930"),
     "AIPathNode": ("FUN_006cfc10", "PTR_FUN_00afbf60"),
     "AIPolylinePath": ("FUN_006cc900", "PTR_FUN_00afc678"),
@@ -34,6 +36,8 @@ SOURCE_ONLY_VTABLE_ANCHORS = (
 HIERARCHY_LINKS = (
     ("AIPathObj", "BPersistent"),
     ("AIPath", "AIPathObj"),
+    ("AINavigationDatabase", "BPersistent"),
+    ("AICarRecovery", "BPersistent"),
     ("AIPolylinePath", "AIPath"),
     ("AISegmentPath", "AIPath"),
 )
@@ -48,6 +52,8 @@ RTTI_DESCRIPTORS = {
     "AIPath": 0x00C0D698,
     "AIPathInfo": 0x00C0D5A4,
     "AIArea": 0x00C0D588,
+    "AINavigationDatabase": 0x00C0D434,
+    "AICarRecovery": 0x00C0D5C8,
     "AIPolylinePath": 0x00C0D608,
     "Knot": 0x00C0D638,
     "AISpline": 0x00C0D648,
