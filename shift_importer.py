@@ -2476,6 +2476,42 @@ def cmd_native_camera_state_bridge(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_native_vehicle_participant_bridge(
+    args: argparse.Namespace,
+) -> int:
+    """Bridge source-backed participant topology into native_runtime."""
+    from native_vehicle_participant_bridge import (
+        build_native_vehicle_participant_bridge,
+    )
+
+    report = build_native_vehicle_participant_bridge()
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(
+            report,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "participant_topology_ready": report[
+            "native_participant_topology_ready"
+        ],
+        "participant_ready": report["native_participant_ready"],
+        "registry_index": report["native_registry_index"],
+        "selector_ordinal": report["native_selector_ordinal"],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_camera_switch_gate(args: argparse.Namespace) -> int:
     """Evaluate the recovered CameraManager switch-request fast path."""
     from camera_switch_gate_runtime import CameraSwitchState, evaluate_switch_gate
@@ -4993,6 +5029,19 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p.set_defaults(fn=cmd_native_camera_state_bridge)
+
+    p = sp.add_parser(
+        "native-vehicle-participant-bridge",
+        help=(
+            "bridge source-backed participant manager/selector topology "
+            "into SHIFT.NativeVehicleParticipantBridge/1"
+        ),
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.NativeVehicleParticipantBridge/1 JSON output",
+    )
+    p.set_defaults(fn=cmd_native_vehicle_participant_bridge)
 
     p = sp.add_parser("camera-switch-gate", help="evaluate recovered CameraManager switch fast path")
     p.add_argument("input", help="JSON switch request/state")
