@@ -35,6 +35,9 @@ SOURCE_RECORD_COUNT_OFFSET = 0x1398
 META_RECORD_PTR_OFFSET = 0x139C
 META_RECORD_COUNT_OFFSET = 0x13A0
 META_REBUILD_FLAG_OFFSET = 0x13A4
+# FUN_00720190 resolves this byte: 1 means external meta was unavailable and
+# generated meta sections are required. Keep the old structural name as an alias.
+GENERATE_META_SECTIONS_FLAG_OFFSET = META_REBUILD_FLAG_OFFSET
 SOURCE_RECORD_STRIDE = 0x18
 META_RECORD_STRIDE = 0x14
 
