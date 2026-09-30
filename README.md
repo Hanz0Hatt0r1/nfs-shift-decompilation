@@ -45,7 +45,7 @@ Use explicit states such as `proven`, `verified`, `inferred`, `ambiguous`, `unkn
 | BAB animation | evidence-backed | bank/channel grammar reconstructed; remaining axis/order/trailing semantics explicit |
 | SGB / scene | placement → OBJECT → MeshInst/IMB schema → generic RenderBinding active | IMB packed version/prefix, fixed header, bones and stream triples are source-backed and auto-decoded; full vertex/primitive payload + IMX neutral adapters and unresolved MatrixNumber history remain blocked |
 | Camera | active | loader/state/event/control primitives reconstructed |
-| AI database | source-backed structural/load core | retail `AIDatabase` singleton identity, 30 direct reflected fields, constructor/load presets, AIW persistent/fallback control flow, 0x1bc waypoint storage/post-load passes and external-vs-generated meta-section lifecycle reconstructed; parser internals and higher-level path-generation behavior remain open |
+| AI database | source-backed structural/load/query core | retail `AIDatabase` singleton identity, AIW persistent/fallback load lifecycle and meta-section generation reconstructed; exact `WayPointBase` 0x1bc layout plus simple Branch-ID 0/1 nearest queries implemented; parser internals and higher-level path-selection/generation remain open |
 | Vehicle physics | active | CDF/EDF/GDF/SDF and wheel/contact/solver boundaries |
 | Builtin solver | source-backed | sparse-solver lifecycle and matrix/kernel layers |
 | Specialized providers | capture-ready | 40/34 scalar domains, structural solver IR, reset/selector provenance |
