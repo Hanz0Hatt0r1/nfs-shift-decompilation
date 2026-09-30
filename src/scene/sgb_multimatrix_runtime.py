@@ -496,17 +496,20 @@ def build_sgb_multimatrix_world_transforms(
         "containers": containers,
         "objects": objects,
         "render_binding_boundary": {
-            "numeric_object_world_matrices_ready": ready,
+            "initial_numeric_object_world_matrices_ready": ready,
             "matrix_convention": (
                 "row-vector/row-major, translation indices 12..14"
             ),
             "multimatrix_case1_world_rule": "local * parent_world",
+            "supported_operation_types": [1],
+            "dynamic_runtime_mutations_evaluated": False,
             "draw_admission": False,
             "next_join": (
                 "SHIFT.SGBScenePlacement/1 + "
                 "SHIFT.SGBObjectRenderHandoffSet/1"
             ),
         },
+        "evaluation_scope": "initial-static-multimatrix-state",
         "evidence": {
             "allocator": "FUN_006b144b",
             "local_builder": "FUN_0068cbb0",
