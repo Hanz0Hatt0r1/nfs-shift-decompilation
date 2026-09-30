@@ -56,6 +56,16 @@ these offsets; `+0x10` and `+0x1c` are also visible in PE calls at
 vtable and finite reflected fields. It groups only complete 0x48-stride
 sequences whose count prefix agrees across all supplied snapshots and exports
 the reference snapshot to `aispline_knot_arrays.csv` and
-`aispline_knots.csv`. This proves an array layout, not which live
-`AISpline` object owns it. A later targeted capture can connect an
-`AISpline+0x10` pointer to the exported array address.
+`aispline_knots.csv`.
+
+The reflected `AISpline+0x10` pointer and `+0x18` count provide an owner
+test. The analyzer reports `aispline_knot_links.csv` only when a candidate
+object points exactly to a validated array, its count equals the array
+prefix, its vtable points into mapped game code, and the pointer/count remain
+consistent across every snapshot. The object's concrete class vtable has
+not been identified from the PE, so these are structural owner candidates.
+`owner_candidate_count` exposes any ambiguity when several objects point
+to the same array.
+
+The currently available reduced track captures contain no matching
+`AISpline` or `Knot` objects; they cannot confirm live retail ownership.
