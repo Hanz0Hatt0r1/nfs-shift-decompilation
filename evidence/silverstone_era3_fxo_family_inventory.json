@@ -1,0 +1,98 @@
+{
+  "format": "SHIFT.ShaderFamilyFXOInventoryEvidence/1",
+  "version": 1,
+  "verification_scope": "phase-565-silverstone-era3-fxo-family-inventory",
+  "source_archives": [
+    {
+      "name": "Silverstone_Era3_.zip",
+      "sha256": "5423f5a0356e664a504f90c812e32bbbd4e2a0abe83c546fdc658305661a1e2f"
+    },
+    {
+      "name": "RENDER.bff",
+      "sha256": "b0b03960ba7e620b7ad5e2b027ed13de67afffe168eb8b30da73c2a632a7c0af"
+    }
+  ],
+  "target_shader_sources": [
+    "render/shaders/basic_instanced.fx",
+    "render/shaders/crowd_geninstanced.fx",
+    "render/shaders/crowd_geninstanced_billboard.fx",
+    "render/shaders/foliage_instanced.fx",
+    "render/shaders/skintest_instanced.fx"
+  ],
+  "result": {
+    "family_count": 5,
+    "candidate_copy_count": 1280,
+    "unique_decoded_payload_count": 368,
+    "duplicate_copy_count": 912,
+    "parse_failure_count": 0,
+    "inventory_ready": true,
+    "selection_ready": false
+  },
+  "families": [
+    {
+      "shader_ref": "render/shaders/basic_instanced.fx",
+      "family": "basicinstanced",
+      "candidate_copy_count": 192,
+      "unique_payload_count": 48,
+      "duplicate_copy_count": 144,
+      "parse_failure_count": 0,
+      "program_count_distribution": {
+        "14": 192
+      }
+    },
+    {
+      "shader_ref": "render/shaders/crowd_geninstanced.fx",
+      "family": "crowdgeninstanced",
+      "candidate_copy_count": 336,
+      "unique_payload_count": 96,
+      "duplicate_copy_count": 240,
+      "parse_failure_count": 0,
+      "program_count_distribution": {
+        "14": 336
+      }
+    },
+    {
+      "shader_ref": "render/shaders/crowd_geninstanced_billboard.fx",
+      "family": "crowdgeninstancedbillboard",
+      "candidate_copy_count": 320,
+      "unique_payload_count": 80,
+      "duplicate_copy_count": 240,
+      "parse_failure_count": 0,
+      "program_count_distribution": {
+        "8": 320
+      }
+    },
+    {
+      "shader_ref": "render/shaders/foliage_instanced.fx",
+      "family": "foliageinstanced",
+      "candidate_copy_count": 304,
+      "unique_payload_count": 112,
+      "duplicate_copy_count": 192,
+      "parse_failure_count": 0,
+      "program_count_distribution": {
+        "10": 304
+      }
+    },
+    {
+      "shader_ref": "render/shaders/skintest_instanced.fx",
+      "family": "skintestinstanced",
+      "candidate_copy_count": 128,
+      "unique_payload_count": 32,
+      "duplicate_copy_count": 96,
+      "parse_failure_count": 0,
+      "program_count_distribution": {
+        "14": 128
+      }
+    }
+  ],
+  "boundary": {
+    "source_to_cache_family": "render_pipeline.shader_family normalized source/cache stem",
+    "decoded_content_identity": "SHA-256 after BFF Type-2 XMem/LZX decode",
+    "all_target_families_present": true,
+    "all_candidate_payloads_parse_as_d3d9_program_corpora": true,
+    "byte_identical_copies_collapsed": true,
+    "unique_static_permutation_selected": false,
+    "reason": "every target family retains multiple decoded FXO payload identities and every payload contains multiple embedded shader programs",
+    "next_gate": "rank material-specific FXO/pair candidates without selecting tied identities; runtime same-instance evidence remains authoritative when static ties survive"
+  }
+}
