@@ -201,7 +201,7 @@ python3 tools/shift_live_dump/analyze_track_paths.py \
 It scans 4-byte-aligned object candidates for these recovered layouts:
 
 - `Path` (legacy output name for retail `AIPathInfo`): tangent at `+0x10/+0x14`, outside `+0x18`, centreDist `+0x1c`, StartNode `+0x20`, and path flags `+0x24..+0x27`; source constructor `FUN_006bc3a0` and PE RTTI getter `0x006bc3e0` identify concrete vtable `0x00afb150`. See [AIPathInfo evidence](../../evidence/ai_path_info_source.md).
-- `Incident.PathOwner`: incident position `+0x30..+0x38`, area type `+0xd4`, Path pointer `+0xd8`, CentrePos `+0xdc..+0xe4`, Radius `+0xe8`, activity flags `+0xf0..+0xf8`, incident path distance `+0x100`, timer `+0x104`, interest `+0x108`, min spacing `+0x10c`, TrackDist `+0x110`, RaceFlag `+0x114`, AreaIndex `+0x118`, nMarshals `+0x11c`, and nFlagMarshals `+0x120`.
+- `Incident.PathOwner` (legacy profile name for the path-owner subset of retail `AIArea`): incident position `+0x30..+0x38`, area type `+0xd4`, Path pointer `+0xd8`, CentrePos `+0xdc..+0xe4`, Radius `+0xe8`, activity flags `+0xf0..+0xf8`, incident path distance `+0x100`, timer `+0x104`, interest `+0x108`, min spacing `+0x10c`, TrackDist `+0x110`, RaceFlag `+0x114`, AreaIndex `+0x118`, nMarshals `+0x11c`, and nFlagMarshals `+0x120`; source constructor `FUN_006c3a20` and PE RTTI getter `0x006c3c30` identify vtable `0x00afc048`. See [AIArea evidence](../../evidence/ai_area_source.md).
 - `AISegmentPath`: reflection explicitly exposes num nodes `+0x10`, track side `+0x14`, segment-node array `+0x18`, length `+0x1c`, cyclic `+0x20`, NarrowPath `+0x24`, PathNodeSpacing `+0x28`, PathDist `+0x2c`, CurrentNode `+0x30`, and EdgeStep `+0x34`.
 - `AIPathNode`: 0x38-byte `AISegmentPath` array element with reflected 2D positions, normal, heights, path distance and distribution ratio. See [segment node evidence](../../evidence/segment_path_node_source.md).
 - `AIPolylinePath`: num nodes `+0x10`, node array `+0x14`, length `+0x18`, width `+0x1c`, cyclic `+0x20`, spacing `+0x24`, default width `+0x28`.
@@ -232,7 +232,7 @@ that `AISpline`/`AISplineInfo` do not expose a dedicated getter through this
 mechanism. A mismatch exits non-zero. See
 [track/path RTTI vtable evidence](../../evidence/track_path_rtti_vtables.md).
 
-Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. Legacy `Path`/`AIPathInfo`, `AISegmentPath`, `AIPolylinePath`, and `AIPolyPathNode` require their recovered concrete vtables (`0x00afb150`, `0x00afc930`, `0x00afc678`, and `0x00afbfa8`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
+Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. Legacy `Path`/`AIPathInfo`, `Incident.PathOwner`/`AIArea`, `AISegmentPath`, `AIPolylinePath`, and `AIPolyPathNode` require their recovered concrete vtables (`0x00afb150`, `0x00afc048`, `0x00afc930`, `0x00afc678`, and `0x00afbfa8`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
 
 Outputs:
 

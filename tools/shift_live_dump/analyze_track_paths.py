@@ -20,6 +20,11 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 #   reflection metadata DAT_00b8afd4; FUN_006c6f60 emits the recovered fields.
 #   FUN_006bc3a0 constructs the object and writes PTR_FUN_00afb150. Retail PE
 #   RTTI getter 0x006bc3e0 independently resolves the same concrete vtable.
+# AIArea (legacy CSV/profile label: Incident.PathOwner):
+#   FUN_00a83e10 registers RTTI descriptor DAT_00c0d588 and reflection metadata
+#   DAT_00b8afac; FUN_006c67e0 emits the decoded path-owner fields.
+#   FUN_006c3a20 constructs the object and writes PTR_FUN_00afc048. Retail PE
+#   RTTI getter 0x006c3c30 independently resolves the same concrete vtable.
 # AIPolylinePath:
 #   FUN_006cc900 is its constructor and writes PTR_FUN_00afc678;
 #   its reflection metadata is emitted by FUN_006ccb20.
@@ -31,6 +36,7 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 #   PTR_FUN_00afbe28 to each element.
 KNOWN_VTABLES = {
     "AIPathInfo": 0x00AFB150,
+    "AIArea": 0x00AFC048,
     "AISegmentPath": 0x00AFC930,
     "AIPathNode": 0x00AFBF60,
     "AIPolylinePath": 0x00AFC678,
@@ -263,9 +269,15 @@ def check_path(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
 
 
 def check_incident(blob: bytes, addr: int, mm: list[dict], starts: list[int]):
+    # Historical output names this profile "Incident.PathOwner"; the reflected
+    # retail owner type is AIArea (FUN_00a83e10 / DAT_00c0d588).
     d = fields(blob, INCIDENT)
     vt = read(blob, 0, "I")
-    if vt is None or any(v is None for v in d.values()) or not game_vtable(vt, mm, starts):
+    if (
+        vt != KNOWN_VTABLES["AIArea"]
+        or any(v is None for v in d.values())
+        or not game_vtable(vt, mm, starts)
+    ):
         return None
     pm = writable(d["path"], mm, starts)
     if not pm or not 0 <= d["area"] <= 64:
@@ -437,6 +449,7 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
     view = memoryview(blob)
     limit = max(0, len(view) - 3)
     known_path_vtable = KNOWN_VTABLES["AIPathInfo"]
+    known_area_vtable = KNOWN_VTABLES["AIArea"]
     known_segment_vtable = KNOWN_VTABLES["AISegmentPath"]
     known_poly_vtable = KNOWN_VTABLES["AIPolylinePath"]
     known_poly_node_vtable = KNOWN_VTABLES["AIPolyPathNode"]
@@ -446,8 +459,8 @@ def scan(blob: bytes | memoryview, start: int, mm: list[dict], starts: list[int]
         if vtable is None:
             continue
         if vtable not in (
-            known_path_vtable, known_segment_vtable, known_poly_vtable,
-            known_poly_node_vtable, known_knot_vtable,
+            known_path_vtable, known_area_vtable, known_segment_vtable,
+            known_poly_vtable, known_poly_node_vtable, known_knot_vtable,
         ):
             if not (VT_RANGE[0] <= vtable < VT_RANGE[1]):
                 continue

@@ -13,6 +13,7 @@ FORMAT = "SHIFT-TRACK-PATH-SOURCE-ANCHORS/1"
 
 ANCHORS = {
     "AIPathInfo": ("FUN_006bc3a0", "PTR_FUN_00afb150"),
+    "AIArea": ("FUN_006c3a20", "PTR_FUN_00afc048"),
     "AISegmentPath": ("FUN_006cfe70", "PTR_FUN_00afc930"),
     "AIPathNode": ("FUN_006cfc10", "PTR_FUN_00afbf60"),
     "AIPolylinePath": ("FUN_006cc900", "PTR_FUN_00afc678"),
@@ -27,6 +28,7 @@ FACTORY_LINKS = (
 
 RTTI_DESCRIPTORS = {
     "AIPathInfo": 0x00C0D5A4,
+    "AIArea": 0x00C0D588,
     "AIPolylinePath": 0x00C0D608,
     "Knot": 0x00C0D638,
     "AISpline": 0x00C0D648,
