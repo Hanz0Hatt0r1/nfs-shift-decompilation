@@ -80,3 +80,19 @@ A blocked submesh does not erase ready siblings, but the complete set remains
 fail-closed until every selected child is ready. The existing single-submesh
 adapter and CLI remain available; `--all-submeshes` selects the Phase 527
 set path.
+
+
+## Phase 586 neutral scene-set execution
+
+The runtime now accepts `--scene-set DIR` only for a ready
+`SHIFT.NativeSceneVulkanSet/1` with a ready
+`SHIFT.NativeSceneVulkanSetPrepare/1` in `bundle_set_prepare.json`.
+
+Neutral children must be `SHIFT.VulkanDrawBundle/1` with ready
+`SHIFT.VulkanDrawBundlePrepare/1`, native-submission, SPIR-V and
+`SHIFT.VulkanInterfaceGate/1` artifacts.
+
+Before upload, `world_transform.svwt` is applied with the Phase 584 semantic
+affine rules. BMW `--bundle-set` remains a separate compatible path.
+
+Linux Vulkan CI executes a validated three-frame neutral scene-set smoke.
