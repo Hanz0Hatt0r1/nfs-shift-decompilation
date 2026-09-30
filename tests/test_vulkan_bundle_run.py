@@ -234,3 +234,48 @@ def test_runner_native_validation_failure_overrides_existing_output(
     if returncode:
         assert result["blocking_reasons"] == ["vulkan-runner:native-execution-failed"]
         assert "output_sha256" not in result["native"]
+
+
+def test_runner_surfaces_structured_world_transform_execution(
+    monkeypatch, tmp_path
+):
+    _bundle(tmp_path)
+    monkeypatch.setattr(
+        "vulkan_bundle_run.compile_bmw_vulkan_bundle",
+        lambda root, validator=None: _compiled_report(),
+    )
+    monkeypatch.setattr(
+        "vulkan_bundle_run.validate_bmw_vulkan_interface",
+        lambda root, report: {"ready": True, "blocking_reasons": []},
+    )
+    executable = tmp_path / "executor"
+    executable.touch()
+    output = tmp_path / "render.ppm"
+    output.write_bytes(b"P6\n1 1\n255\n\xff\x00\x00")
+
+    native_report = {
+        "format": "SHIFT.VulkanBundleExecution/1",
+        "world_transform_present": True,
+        "world_transform_executed": True,
+        "world_translation_xyz": [0.1, 0.0, 0.0],
+    }
+    monkeypatch.setattr(
+        "vulkan_bundle_run.subprocess.run",
+        lambda command, **kwargs: subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=json.dumps(native_report),
+            stderr="",
+        ),
+    )
+
+    result = run_bmw_vulkan_bundle(
+        tmp_path,
+        executable=executable,
+        output=output,
+    )
+    assert result["status"] == "rendered"
+    assert result["native"]["report"] == native_report
+    assert result["native"]["world_transform_present"] is True
+    assert result["native"]["world_transform_executed"] is True
+    assert result["native"]["world_translation_xyz"] == [0.1, 0.0, 0.0]
