@@ -43,6 +43,16 @@ def test_imx_uses_xml_loader_and_preserves_mesh_xml_fields():
     assert report["resource_loader"]["mode"] == "xml"
     assert report["resource_loader"]["function"] == "FUN_008587e0"
     assert "LoadXMLMeshFromResource" in report["resource_loader"]["retail_name"]
+    assert report["resource_loader"]["xml_root"] == "MESH"
+    assert report["resource_loader"]["neutral_geometry_format"] == (
+        "SHIFT.IMXNeutralGeometry/1"
+    )
+    assert report["resource_loader"]["neutral_geometry_adapter"] == (
+        "imx_neutral_geometry.build_imx_neutral_geometry"
+    )
+    assert report["resource_loader"]["source_evidence"] == (
+        "evidence/imx_xml_mesh_loader_source.json"
+    )
     assert report["runtime_layout"]["instance_count"]["value"] is None
     assert report["runtime_layout"]["instance_storage"]["payload_bytes"] is None
     fields = report["mesh_type_base_loader"]["xml_fields_proven"]
@@ -50,6 +60,13 @@ def test_imx_uses_xml_loader_and_preserves_mesh_xml_fields():
     assert fields["bounding_sphere"] == "BOUNDSPHERE"
     assert fields["axis_aligned_box"] == "AABBOX"
     assert fields["bones"] == "BONES"
+    assert report["boundary"]["serialized_payload_decode"] == (
+        "source-backed XML MESH/STREAM/ITEM/INDEXBUFFER/TRIANGLE grammar"
+    )
+    assert report["boundary"]["neutral_geometry_adapter"] == (
+        "SHIFT.IMXNeutralGeometry/1"
+    )
+    assert report["boundary"]["imb_imx_container_equivalence"] is False
 
 
 def test_zero_instance_count_does_not_claim_storage_allocation():
