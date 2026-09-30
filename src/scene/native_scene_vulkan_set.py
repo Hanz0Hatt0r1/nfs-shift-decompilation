@@ -522,6 +522,7 @@ def build_native_scene_vulkan_set(
                     environment_cube=environment_cube,
                     submesh_index=submesh_index,
                     require_runtime_provenance=True,
+                    apply_scene_transform=True,
                 )
             except (OSError, ValueError, TypeError) as exc:
                 child_blockers.append(
@@ -592,6 +593,15 @@ def build_native_scene_vulkan_set(
                         .get("ready")
                         is True
                     ),
+                    "scene_transform_executed": (
+                        (child_report.get("boundary") or {})
+                        .get("scene_world_transform_executed")
+                        is True
+                    ),
+                    "scene_transform_mode": (
+                        (child_report.get("boundary") or {})
+                        .get("scene_transform_mode")
+                    ),
                 }
             ),
         })
@@ -640,11 +650,23 @@ def build_native_scene_vulkan_set(
             "exact_primitive_range_revalidated": True,
             "scene_hashes_revalidated": True,
             "material_2d_dds_resolved_from_ir": True,
-            "world_transform_executed": False,
+            "world_transform_executed": (
+                ready
+                and all(
+                    (
+                        (
+                            row.get("bundle") or {}
+                        ).get("scene_transform_executed")
+                        is True
+                    )
+                    for row in child_rows
+                    if row.get("ready") is True
+                )
+            ),
             "unresolved_external_samplers_promoted": False,
             "next_stage": (
-                "execute SGB world transform in the Vulkan/native draw path "
-                "and index these children for native_runtime"
+                "admit the transformed ordered child set to native_runtime "
+                "without weakening SPIR-V/interface/resource gates"
             ),
         },
     }
