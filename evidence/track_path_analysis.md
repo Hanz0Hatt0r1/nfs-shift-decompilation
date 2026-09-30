@@ -78,7 +78,7 @@ The scanner encodes the following recovered structure anchors:
 
 - `Path`: `tangent` +0x10/+0x14, `outside` +0x18, `centreDist` +0x1c, `StartNode` +0x20, flags +0x24..+0x27.
 - `Incident.PathOwner`: `Path` +0xd8, centre position +0xdc..+0xe4, radius +0xe8, activity fields +0xf0..+0xf8.
-- `AISegmentPath`: fields through +0x34; constructor vftable `0x00AFCA70`.
+- `AISegmentPath`: fields through +0x34; constructor vftable `0x00AFC930`.
 - `AIPolylinePath`: fields through +0x28.
 
 These layouts are evidence-backed candidates from the current `SHIFT.exe.c` decompilation, not guesses derived solely from numeric memory patterns.

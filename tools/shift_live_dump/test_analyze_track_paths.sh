@@ -44,7 +44,7 @@ struct.pack_into("<IIII", blob, ioff + 0x114, 2, 7, 3, 1)
 # Synthetic AISegmentPath using the fields explicitly reflected by
 # FUN_006d0690.
 soff = 0x220
-struct.pack_into("<III", blob, soff, 0x00AFCA70, 0, 1)
+struct.pack_into("<III", blob, soff, 0x00AFC930, 0, 1)
 struct.pack_into("<IIIf", blob, soff + 0x10, 8, 1, 0x00610800, 120.0)
 struct.pack_into("<I", blob, soff + 0x20, 0)
 struct.pack_into("<I", blob, soff + 0x24, 1)
@@ -53,11 +53,18 @@ struct.pack_into("<f", blob, soff + 0x2c, 20.0)
 struct.pack_into("<I", blob, soff + 0x30, 2)
 struct.pack_into("<f", blob, soff + 0x34, 1.0)
 
+# 0x00AFCA70 is AIMarker's vtable, not AISegmentPath. A segment-shaped
+# payload carrying the old misidentified vtable must therefore be rejected.
+false_segment_off = 0x2A0
+struct.pack_into("<III", blob, false_segment_off, 0x00AFCA70, 0, 1)
+struct.pack_into("<IIIf", blob, false_segment_off + 0x10, 8, 1, 0x00610800, 120.0)
+struct.pack_into("<IIffIf", blob, false_segment_off + 0x20, 0, 1, 15.0, 20.0, 2, 1.0)
+
 # AISegmentPath with a captured, count-prefixed AIPathNode array.
 segment_array_local = 0x3000
 segment_array_addr = base + segment_array_local
 soff = 0x800
-struct.pack_into("<III", blob, soff, 0x00AFCA70, 0, 1)
+struct.pack_into("<III", blob, soff, 0x00AFC930, 0, 1)
 struct.pack_into("<IIIf", blob, soff + 0x10, 2, 1, segment_array_addr, 20.0)
 struct.pack_into("<IIff", blob, soff + 0x20, 0, 1, 5.0, 0.0)
 struct.pack_into("<If", blob, soff + 0x30, 1, 1.0)

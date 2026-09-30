@@ -12,7 +12,9 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 # Exact vtables recovered from SHIFT.exe.c.
 #
 # AISegmentPath:
-#   FUN_006d0fe0 writes PTR_FUN_00afca70 in the constructor.
+#   FUN_006d8490 allocates 0x38 bytes for the AISegmentPath RTTI type and
+#   calls FUN_006cfe70, whose constructor writes PTR_FUN_00afc930.
+#   FUN_006d0fe0 / PTR_FUN_00afca70 belongs to AIMarker, not AISegmentPath.
 # AIPolylinePath:
 #   FUN_006cc900 is its constructor and writes PTR_FUN_00afc678;
 #   its reflection metadata is emitted by FUN_006ccb20.
@@ -23,7 +25,7 @@ VT_RANGE = (0x00400000, 0x00B81000)  # SHIFT.exe image in the supplied capture
 #   FUN_006cdf70 allocates AISpline's 0x48-byte knot elements and assigns
 #   PTR_FUN_00afbe28 to each element.
 KNOWN_VTABLES = {
-    "AISegmentPath": 0x00AFCA70,
+    "AISegmentPath": 0x00AFC930,
     "AIPathNode": 0x00AFBF60,
     "AIPolylinePath": 0x00AFC678,
     "AIPolyPathNode": 0x00AFBFA8,
