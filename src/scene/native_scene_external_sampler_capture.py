@@ -171,6 +171,51 @@ def _matching_texture_rows(
     for observation in observations:
         if observation.get("status") != "observed":
             continue
+
+        # Phase 591 draw-boundary evidence is stronger than the historical
+        # SetTexture-time PPM. If any draw snapshot event exists for this stage,
+        # never silently fall back to the older binding-time image when the
+        # draw-boundary capture failed or mismatched.
+        draw_rows = [
+            row
+            for row in (
+                observation.get("draw_texture_snapshots") or []
+            )
+            if isinstance(row, Mapping)
+            and _safe_int(row.get("stage")) == register
+        ]
+        if draw_rows:
+            for row in draw_rows:
+                creation = row.get("resource_creation")
+                paths = [
+                    str(path)
+                    for path in (row.get("snapshot_paths") or [])
+                    if isinstance(path, str) and path
+                ]
+                if (
+                    row.get("active_binding_match") is not True
+                    or row.get("resource_creation_status") != "observed"
+                    or not isinstance(creation, Mapping)
+                    or creation.get("resource_type") != "texture2d"
+                    or row.get("snapshot_status") != "captured"
+                    or len(paths) != 1
+                ):
+                    continue
+                rows.append({
+                    "frame": observation.get("frame"),
+                    "draw_index": observation.get("draw_index"),
+                    "stage": register,
+                    "texture_ptr": row.get("texture_ptr"),
+                    "resource_creation": dict(creation),
+                    "snapshot_path": paths[0],
+                    "snapshot_time": "draw-boundary-post-draw",
+                    "source_kind": "D3D9_DRAW_CAPTURE_PPM",
+                    "draw_snapshot_event_index": row.get(
+                        "event_index"
+                    ),
+                })
+            continue
+
         for binding in observation.get("active_texture_bindings") or []:
             if not isinstance(binding, Mapping):
                 continue
@@ -200,6 +245,9 @@ def _matching_texture_rows(
                 "texture_ptr": binding.get("texture_ptr"),
                 "resource_creation": dict(creation),
                 "snapshot_path": paths[0],
+                "snapshot_time": "set-texture",
+                "source_kind": "D3D9_CAPTURE_PPM",
+                "draw_snapshot_event_index": None,
             })
     return rows
 
@@ -231,13 +279,17 @@ def build_scene_external_sampler_capture_adapter(
     if capture_pipeline.get("pipeline_ready") is not True:
         blockers.append("scene-external-capture:capture-pipeline-not-ready")
     pipeline_boundary = capture_pipeline.get("boundary")
-    if (
-        not isinstance(pipeline_boundary, Mapping)
-        or pipeline_boundary.get(
+    observation_contract = (
+        pipeline_boundary.get(
             "attributed_texture_observation_contract"
         )
-        != "selected-strong-variant-draw-textures-v1"
-    ):
+        if isinstance(pipeline_boundary, Mapping)
+        else None
+    )
+    if observation_contract not in {
+        "selected-strong-variant-draw-textures-v1",
+        "selected-strong-variant-draw-textures-v2",
+    }:
         blockers.append(
             "scene-external-capture:texture-observation-contract-missing"
         )
@@ -345,7 +397,10 @@ def build_scene_external_sampler_capture_adapter(
                                 "texture_sha256": texture_sha,
                                 "provenance": {
                                     "format": PROVENANCE_FORMAT,
-                                    "source_kind": "D3D9_CAPTURE_PPM",
+                                    "source_kind": candidate.get(
+                                        "source_kind",
+                                        "D3D9_CAPTURE_PPM",
+                                    ),
                                     "source_sha256": source_sha,
                                     "capture_frame": candidate.get("frame"),
                                     "capture_draw_index": candidate.get(
@@ -361,6 +416,14 @@ def build_scene_external_sampler_capture_adapter(
                                         resolved
                                     ),
                                     "path_resolution": resolution,
+                                    "snapshot_time": candidate.get(
+                                        "snapshot_time"
+                                    ),
+                                    "draw_snapshot_event_index": (
+                                        candidate.get(
+                                            "draw_snapshot_event_index"
+                                        )
+                                    ),
                                     "resource_creation": candidate.get(
                                         "resource_creation"
                                     ),
@@ -383,6 +446,11 @@ def build_scene_external_sampler_capture_adapter(
                 "sampler": declaration.get("sampler"),
                 "sampler_type": "sampler2D",
                 "candidate_observation_count": len(candidates),
+                "snapshot_time": (
+                    candidates[0].get("snapshot_time")
+                    if len(candidates) == 1
+                    else None
+                ),
                 "snapshot_ready": (
                     snapshot_row is not None and not row_blockers
                 ),
@@ -452,9 +520,12 @@ def build_scene_external_sampler_capture_adapter(
             "requires_unique_scene_draw_per_binding": True,
             "requires_phase573_strong_attribution": True,
             "requires_draw_local_texture_snapshot": True,
+            "draw_boundary_snapshot_preferred": True,
+            "set_texture_snapshot_fallback": True,
             "texture_snapshot_time": (
-                "SetTexture-time content carried into the selected draw "
-                "snapshot; post-bind mutations are not excluded"
+                "Phase 591 draw-boundary PPM is preferred; SetTexture-time "
+                "content is accepted only when no draw snapshot event exists "
+                "for that register"
             ),
             "requires_observed_texture2d_creation": True,
             "requires_exactly_one_ppm_snapshot_path": True,
