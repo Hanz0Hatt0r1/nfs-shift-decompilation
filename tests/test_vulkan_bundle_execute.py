@@ -29,6 +29,7 @@ def test_native_vulkan_bundle_executor_contract():
     assert "apply_world_transform_affine" in source
     assert "affine-semantic-v3" in source
     assert "SVWT affine linear transform is singular" in source
+    assert "SVWT reflection transform is blocked" in source
     assert "case 220u:" in source
     assert "case 240u:" in source
     assert "case 250u:" in source
