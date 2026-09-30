@@ -179,9 +179,11 @@ def test_descriptor_freezes_source_functions_offsets_and_pass_order():
         "derived_query_position_offset": 0x8C,
     }
     assert report["formula"]["lateral"] == "(1-factor)*WetLat + factor*DryLat"
+    assert VECTOR_SCALE_FUNCTION == "FUN_004368e0"
+    assert VECTOR_ADD_FUNCTION == "FUN_00432c00"
     assert report["vector_helpers"] == {
-        "scale": VECTOR_SCALE_FUNCTION == "FUN_004368e0",
-        "add": VECTOR_ADD_FUNCTION == "FUN_00432c00",
+        "scale": VECTOR_SCALE_FUNCTION,
+        "add": VECTOR_ADD_FUNCTION,
     }
     assert report["caller_order"] == {
         "first_pass": "FUN_007ade00",
