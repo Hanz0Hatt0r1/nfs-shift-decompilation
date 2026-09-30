@@ -21,10 +21,12 @@ def test_silverstone_bmt_dependency_evidence_has_only_global_shader_blockers():
     assert result["same_archive_texture_resolved_count"] == 563
     assert result["same_archive_texture_missing_count"] == 0
     assert result["unique_shader_reference_count"] == 5
-    assert len(report["external_shader_blockers"]) == 5
+    assert result["fully_source_ready_count"] == 239
+    assert result["shader_source_matches_in_render_count"] == 239
+    assert len(report["shader_sources"]) == 5
     assert report["boundary"][
         "all_texture_references_resolve_in_same_silverstone_bff"
     ] is True
     assert report["boundary"][
-        "shader_source_payloads_present_in_supplied_silverstone_zip"
-    ] is False
+        "all_five_shader_sources_resolve_exactly_once_in_render_bff"
+    ] is True
