@@ -31,7 +31,9 @@ Covered boundaries include:
 - FLAT leaf bounding sphere at +0x10..+0x1c;
 - FLAT tree-node AABB at header +0x00..+0x14;
 - leaf +0x20..+0x34 retained as a source-unresolved, corpus-verified min/max bounds candidate whose midpoint matches the sphere centre across 21,580 Silverstone placements;
-- `SHIFT.SGBScenePlacement/1` normalizes FLAT/SUMM and PART/NODE object identity with only proven spatial geometry and keeps corpus bounds advisory.
+- `SHIFT.SGBScenePlacement/1` normalizes FLAT/SUMM and PART/NODE object identity with only proven spatial geometry and keeps corpus bounds advisory;
+- `SHIFT.SGBObjectRenderHandoffSet/1` maps OBJECT resource descriptor +0x80 to renderer factory vfunc +0x214 and transform submission vfunc +0x2c;
+- OBJECT MatrixNumber=-1 produces a source-equivalent numeric 4x4 from WXYZ quaternion, XYZ offset and uniform scale; MatrixNumber>=0 validates a 0x40-byte parent MultiMatrix slot without fabricating its runtime-updated world value.
 
 ## Explicitly unresolved
 
@@ -45,4 +47,4 @@ Track placement remains an evidence question.
 
 ## Next
 
-Prove the object/resource-to-render-node mapping and world-transform handoff for `SHIFT.SGBScenePlacement/1`, then admit only those proven placements into RenderBinding; keep +0x20..+0x34 advisory until a source consumer is found.
+Reconstruct the numeric MultiMatrix hierarchy update used by MatrixNumber-backed OBJECTs, then join those proven transforms with `SHIFT.SGBScenePlacement/1` for fail-closed RenderBinding admission; keep +0x20..+0x34 advisory until a source consumer is found.
