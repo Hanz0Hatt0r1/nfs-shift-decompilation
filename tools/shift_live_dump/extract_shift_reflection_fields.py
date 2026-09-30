@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import ast
 import csv
+from bisect import bisect_right
 import hashlib
 import json
 import re
@@ -27,7 +28,10 @@ _FIELD_CALL = re.compile(
     r"(?P<flags>[^,\n]+)\s*,"
 )
 _ADDRESS_OF = re.compile(r"&([A-Za-z_][A-Za-z0-9_]*)")
-_FUNCTION_NAME = re.compile(r"\b((?:thunk_)?FUN_[0-9a-fA-F]+)\s*\(")
+_FUNCTION_HEADER = re.compile(
+    r"(?m)^[A-Za-z_][^\\n;{}]*\\b((?:thunk_)?FUN_[0-9a-fA-F]+)"
+    r"\\([^;\\n]*\\)\\s*$"
+)
 
 
 def _parse_int(expression: str) -> int | None:
@@ -55,11 +59,22 @@ def _field_name_token(text: str, position: int, variable: str | None) -> str | N
     return matches[-1].group("token").strip() if matches else None
 
 
-def _reflection_function(text: str, position: int) -> str | None:
-    prefix = text[max(0, position - 2500):position]
-    matches = list(_FUNCTION_NAME.finditer(prefix))
-    return matches[-1].group(1) if matches else None
+def _function_index(text: str) -> tuple[list[int], list[str]]:
+    positions: list[int] = []
+    names: list[str] = []
+    for match in _FUNCTION_HEADER.finditer(text):
+        positions.append(match.start())
+        names.append(match.group(1))
+    return positions, names
 
+
+def _reflection_function(
+    positions: list[int],
+    names: list[str],
+    position: int,
+) -> str | None:
+    index = bisect_right(positions, position) - 1
+    return names[index] if index >= 0 else None
 
 def _resolve_name_token(
     token: str | None,
@@ -91,6 +106,7 @@ def extract_reflection_fields(source: Path, exe: Path | None = None) -> dict:
     pe = _pe_sections(exe_data) if exe_data is not None else None
 
     registry = extract_registry(source, exe)
+    function_positions, function_names = _function_index(text)
     by_metadata = {
         row["reflection_metadata_symbol"]: row
         for row in registry["classes"]
@@ -113,7 +129,11 @@ def extract_reflection_fields(source: Path, exe: Path | None = None) -> dict:
             "class_name": owner["name"] if owner is not None else None,
             "class_descriptor": owner["descriptor"] if owner is not None else None,
             "reflection_metadata_symbol": metadata,
-            "reflection_function": _reflection_function(text, match.start()),
+            "reflection_function": _reflection_function(
+                function_positions,
+                function_names,
+                match.start(),
+            ),
             "field_name": field_name,
             "field_name_token": name_token,
             "name_argument": name_argument,
