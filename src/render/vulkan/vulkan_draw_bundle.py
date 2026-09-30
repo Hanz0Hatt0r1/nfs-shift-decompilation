@@ -28,6 +28,7 @@ from vulkan_sampler_contract import (
     write_sampler_metadata,
 )
 from vulkan_texture_packet import build_vulkan_texture_packet
+from vulkan_world_transform_packet import build_vulkan_world_transform_packet
 
 FORMAT = "SHIFT.VulkanDrawBundle/1"
 RUNTIME_PROVEN_FORMAT = "SHIFT.RuntimeProvenDraw/1"
@@ -360,6 +361,21 @@ def build_vulkan_draw_bundle(
     pipeline_state_path = out / "pipeline_state.json"
     _write(pipeline_state_path, pipeline_state)
 
+    world_matrix = selected_command.get("world_matrix")
+    world_transform_report = None
+    world_transform_path: Path | None = None
+    world_transform_error: str | None = None
+    if world_matrix is not None:
+        world_transform_path = out / "world_transform.svwt"
+        try:
+            world_transform_report = build_vulkan_world_transform_packet(
+                {"world_matrix": world_matrix},
+                world_transform_path,
+            )
+        except (TypeError, ValueError) as error:
+            world_transform_error = type(error).__name__
+            world_transform_path = None
+
     artifacts = {
         "runtime_provenance_gate": {
             "path": str(runtime_gate_path.relative_to(out)),
@@ -387,6 +403,19 @@ def build_vulkan_draw_bundle(
             "ready": True,
             "source_mesh_format": mesh_provenance.get("mesh_format"),
         },
+        "world_transform": (
+            None
+            if world_transform_report is None or world_transform_path is None
+            else {
+                "path": str(world_transform_path.relative_to(out)),
+                "sha256": _hash(world_transform_path),
+                "ready": True,
+                "format": world_transform_report.get("format"),
+                "translation_xyz": world_transform_report.get(
+                    "translation_xyz"
+                ),
+            }
+        ),
         "constants": {
             "path": str(constants_path.relative_to(out)),
             "sha256": _hash(constants_path),
@@ -437,16 +466,22 @@ def build_vulkan_draw_bundle(
     blockers = list(constants.get("blocking_reasons") or [])
     blockers.extend(pipeline_state.get("blocking_reasons") or [])
     blockers.extend(sampler_report.get("blocking_reasons") or [])
+    if world_transform_error is not None:
+        blockers.append(
+            "vulkan-draw-bundle:world-transform-packet-invalid:"
+            + world_transform_error
+        )
     if textures is None and selected_submesh.get("textures"):
         blockers.append("vulkan-draw-bundle:material-textures-not-supplied")
     if has_s3_cube and environment_cube is None:
         blockers.append("vulkan-draw-bundle:environment-cube-not-supplied")
 
-    world_matrix = selected_command.get("world_matrix")
     transform_status = (
         "identity-or-none"
         if world_matrix is None
-        else "preserved-not-applied"
+        else "packet-invalid"
+        if world_transform_report is None
+        else "packet-emitted-not-executed"
     )
 
     external = [
@@ -489,9 +524,23 @@ def build_vulkan_draw_bundle(
             "world_matrix": world_matrix,
             "execution_status": transform_status,
             "blocking_for_scene_native_submission": world_matrix is not None,
+            "packet": (
+                None
+                if world_transform_report is None or world_transform_path is None
+                else {
+                    "format": world_transform_report.get("format"),
+                    "path": str(world_transform_path.relative_to(out)),
+                    "sha256": _hash(world_transform_path),
+                    "translation_xyz": world_transform_report.get(
+                        "translation_xyz"
+                    ),
+                }
+            ),
             "reason": (
-                "current VulkanGeometryPacket normalizes object geometry "
-                "without applying the SGB world matrix"
+                "world transform is serialized for native consumption but "
+                "the material Vulkan path has not consumed SVWT yet"
+                if world_transform_report is not None
+                else "world transform could not be serialized"
                 if world_matrix is not None
                 else None
             ),
@@ -508,7 +557,11 @@ def build_vulkan_draw_bundle(
         "boundary": {
             "neutral_mesh_container_equivalence": False,
             "runtime_provenance_required": require_runtime_provenance,
+            "scene_world_transform_serialized": (
+                world_matrix is None or world_transform_report is not None
+            ),
             "scene_world_transform_executed": False,
+            "retail_world_constant_register_assigned": False,
             "preserves_bmw_bundle_abi": True,
         },
     }
