@@ -37,7 +37,7 @@ Covered boundaries include:
 
 The project does not invent:
 
-- source semantics of FLAT leaf +0x20..+0x34 and the concrete class behind populated +0x38 runtime object pointers;
+- the concrete class behind populated FLAT +0x38 runtime object pointers;
 - higher-level roles of individual LOD/HIERARCHY objects;
 - full scene streaming and LOD behavior.
 
