@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <vector>
 
 namespace shift::runtime {
 
@@ -149,7 +150,17 @@ struct PhysicsWorkspaceBoundary {
     uint32_t scalar_count = 0;
     size_t matrix_bytes = 0;
     size_t row_pointer_bytes = 0;
+    size_t rhs_bytes = 0;
     bool ready = false;
+    bool materialized = false;
+
+    // Native representation of the source-backed retail storage contract.
+    // Retail row pointers are 32-bit addresses. The 64-bit native runtime
+    // stores equivalent double offsets instead of fabricating retail pointers.
+    std::vector<double> matrix_pool{};
+    std::vector<uint32_t> row_indices{};
+    std::vector<double> rhs{};
+    uint64_t provider_absent_clear_count = 0;
 
     void configure(
         uint32_t bodies,
@@ -160,6 +171,7 @@ struct PhysicsWorkspaceBoundary {
         if (bodies == 0 || scalar_count64 == 0 ||
             scalar_count64 > 4096) {
             ready = false;
+            materialized = false;
             return;
         }
         body_count = bodies;
@@ -168,8 +180,48 @@ struct PhysicsWorkspaceBoundary {
         scalar_count = static_cast<uint32_t>(scalar_count64);
         matrix_bytes = static_cast<size_t>(scalar_count) *
             static_cast<size_t>(scalar_count) * sizeof(double);
-        row_pointer_bytes = static_cast<size_t>(scalar_count) * sizeof(uint32_t);
+        row_pointer_bytes =
+            static_cast<size_t>(scalar_count) * sizeof(uint32_t);
+        rhs_bytes =
+            static_cast<size_t>(scalar_count) * sizeof(double);
         ready = true;
+        materialized = false;
+    }
+
+    bool materialize_source_backed_storage() {
+        if (!ready || scalar_count == 0) {
+            return false;
+        }
+
+        const size_t n = static_cast<size_t>(scalar_count);
+        matrix_pool.assign(n * n, 0.0);
+        row_indices.resize(n);
+        rhs.assign(n, 0.0);
+        for (size_t row = 0; row < n; ++row) {
+            row_indices[row] =
+                static_cast<uint32_t>(n * row);
+        }
+
+        materialized =
+            matrix_pool.size() == n * n &&
+            row_indices.size() == n &&
+            rhs.size() == n;
+        provider_absent_clear_count = 0;
+        return materialized;
+    }
+
+    bool clear_provider_absent_frame() {
+        if (!ready || !materialized) {
+            return false;
+        }
+        for (double& value : matrix_pool) {
+            value = 0.0;
+        }
+        for (double& value : rhs) {
+            value = 0.0;
+        }
+        ++provider_absent_clear_count;
+        return true;
     }
 };
 
@@ -196,11 +248,23 @@ struct PhysicsTickBoundary {
     bool participant_ready = false;
     int32_t participant_index = -1;
     int32_t participant_mode = -1;
+
+    // No native provider/numerical backend is selected yet.
+    bool provider_bound = false;
+    bool numerical_backend_ready = false;
+    uint64_t solver_execution_count = 0;
     PhysicsWorkspaceBoundary workspace{};
 
     void tick(const VehicleControlIntent& input) {
         last_input = input;
         ++fixed_step;
+
+        // FUN_007b3f40 provider-absent branch clears the logical matrix and
+        // RHS before body contributions. Phase 603 stops after this proven
+        // stage; no body contribution or numerical solve is synthesized.
+        if (workspace.materialized && !provider_bound) {
+            workspace.clear_provider_absent_frame();
+        }
         if (input.throttle) ++throttle_steps;
         if (input.brake) ++brake_steps;
         if (input.steer_left) ++steer_left_steps;

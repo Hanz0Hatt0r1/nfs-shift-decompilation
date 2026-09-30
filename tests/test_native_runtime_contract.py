@@ -89,6 +89,39 @@ def test_native_runtime_accepts_bmw_physics_manifest():
     assert "evidence/bmw_m3_vehicle_physics_manifest.json" in workflow
     assert "physics_workspace_scalars" in source
 
+def test_phase603_native_runtime_materializes_source_backed_sdf_workspace():
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(
+        encoding="utf-8"
+    )
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "#include <vector>" in header
+    assert "std::vector<double> matrix_pool" in header
+    assert "std::vector<uint32_t> row_indices" in header
+    assert "std::vector<double> rhs" in header
+    assert "materialize_source_backed_storage()" in header
+    assert "row_indices[row]" in header
+    assert "static_cast<uint32_t>(n * row)" in header
+    assert "clear_provider_absent_frame()" in header
+    assert "provider_absent_clear_count" in header
+    assert "provider_bound = false" in header
+    assert "numerical_backend_ready = false" in header
+    assert "solver_execution_count = 0" in header
+
+    assert "workspace.materialize_source_backed_storage()" in source
+    assert "workspace.matrix_pool.size() != 1600u" in source
+    assert "workspace.row_indices.back() != 1560u" in source
+    assert "\\\"physics_workspace_materialized\\\":" in source
+    assert "\\\"physics_workspace_matrix_doubles\\\":" in source
+    assert "\\\"physics_workspace_row_indices\\\":" in source
+    assert "\\\"physics_workspace_rhs_scalars\\\":" in source
+    assert "\\\"physics_provider_absent_clears\\\":" in source
+    assert "\\\"physics_numerical_backend_ready\\\":" in source
+    assert "\\\"physics_solver_execution_count\\\":" in source
+
+
 def test_phase602_native_runtime_admits_structural_participant_boundary():
     header = Path("native_runtime/src/runtime_state.hpp").read_text(
         encoding="utf-8"

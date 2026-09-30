@@ -151,3 +151,14 @@ It does not create a runtime participant and fixes ready/index/mode to
 
 This closes the native structural handoff only. Provider identity and numerical
 parity remain capture-gated.
+
+
+## Phase 603 native logical workspace
+
+Native runtime now materializes the source-backed pre-acceptance logical matrix
+shape from `FUN_007b3820` and the provider-absent matrix/RHS clear from
+`FUN_007b3f40`. Retail 32-bit row pointers are represented as equivalent
+row double offsets rather than fabricated absolute addresses.
+
+This is not provider execution: provider-bound remains false, numerical backend
+readiness remains false, and solver execution count remains zero.

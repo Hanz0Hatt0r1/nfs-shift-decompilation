@@ -567,6 +567,18 @@ shift::runtime::PhysicsWorkspaceBoundary load_physics_manifest(
     if (!workspace.ready || workspace.scalar_count != 40u) {
         throw std::runtime_error("BMW SDF manifest does not resolve to 40 solver scalars");
     }
+    if (!workspace.materialize_source_backed_storage()) {
+        throw std::runtime_error(
+            "BMW SDF native workspace materialization failed");
+    }
+    if (workspace.matrix_pool.size() != 1600u ||
+        workspace.row_indices.size() != 40u ||
+        workspace.rhs.size() != 40u ||
+        workspace.row_indices.front() != 0u ||
+        workspace.row_indices.back() != 1560u) {
+        throw std::runtime_error(
+            "BMW SDF native workspace layout mismatch");
+    }
     return workspace;
 }
 
@@ -3350,7 +3362,37 @@ int main(int argc, char** argv) {
             << "  \"physics_workspace_matrix_bytes\": "
             << native_state.physics.workspace.matrix_bytes
             << ",\n"
-            << "  \"material_mode\": "
+            << "  \"physics_workspace_row_pointer_bytes\": "
+            << native_state.physics.workspace.row_pointer_bytes
+            << ",\n"
+            << "  \"physics_workspace_rhs_bytes\": "
+            << native_state.physics.workspace.rhs_bytes
+            << ",\n"
+            << "  \"physics_workspace_materialized\": "
+            << (native_state.physics.workspace.materialized ?
+                "true" : "false") << ",\n"
+            << "  \"physics_workspace_matrix_doubles\": "
+            << native_state.physics.workspace.matrix_pool.size()
+            << ",\n"
+            << "  \"physics_workspace_row_indices\": "
+            << native_state.physics.workspace.row_indices.size()
+            << ",\n"
+            << "  \"physics_workspace_rhs_scalars\": "
+            << native_state.physics.workspace.rhs.size()
+            << ",\n"
+            << "  \"physics_provider_absent_clears\": "
+            << native_state.physics.workspace.provider_absent_clear_count
+            << ",\n"
+            << "  \"physics_provider_bound\": "
+            << (native_state.physics.provider_bound ?
+                "true" : "false") << ",\n"
+            << "  \"physics_numerical_backend_ready\": "
+            << (native_state.physics.numerical_backend_ready ?
+                "true" : "false") << ",\n"
+            << "  \"physics_solver_execution_count\": "
+            << native_state.physics.solver_execution_count
+            << ",\n"
+            << "  \"material_mode\": 
             << (runtime.material_mode ? "true" : "false")
             << ",\n"
             << "  \"bundle_set_mode\": "

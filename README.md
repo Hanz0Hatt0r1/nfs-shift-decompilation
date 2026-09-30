@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 601. Current development: Phase 602.**
+**Merged baseline: Phase 602. Current development: Phase 603.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -159,7 +159,7 @@ matchmaking/online networking and Bink/video playback.
 | Camera | config/state/event/control + native snapshot/double-buffer handoff active | retail update timing, controller behavior and exact render/view integration |
 | Native input | live X11 keyboard + deterministic fixed-step control script | gamepad/analog normalization and retail filtering semantics |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
-| Vehicle physics | structural reconstruction active; Phase 602 participant registry/selector ABI admitted to native state | concrete runtime participant/provider identity and exact specialized-provider numeric parity |
+| Vehicle physics | structural reconstruction active; Phase 602 participant ABI + Phase 603 materialized 40-scalar workspace/provider-absent clear active | native matrix contributions/solve execution, concrete provider identity and exact numerical parity |
 | Specialized providers | capture-ready | authentic runtime frame |
 | BAB animation | evidence-backed grammar | remaining axis/order/trailing semantics |
 | Android | deferred | waits for stable desktop/native runtime boundary |
