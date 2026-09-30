@@ -13,6 +13,22 @@ void FUN_00100000(void)
     _DAT_00bfa610 = &DAT_00bfa000;
 }
 
+void FUN_00100010(void)
+{
+    int local_8;
+    FUN_00631740(&local_8,"AINavigationDatabase");
+    _DAT_00c0d434 = &PTR_FUN_00aaa988;
+    _DAT_00c0d43c = &DAT_00bfa608;
+}
+
+void FUN_00100018(void)
+{
+    int local_8;
+    FUN_00631740(&local_8,"AICarRecovery");
+    _DAT_00c0d5c8 = &PTR_FUN_00aaa988;
+    _DAT_00c0d5d0 = &DAT_00bfa608;
+}
+
 void FUN_00100020(void)
 {
     int local_8;
@@ -54,6 +70,18 @@ void * FUN_006bc3a0(void *this)
 void * FUN_006c3a20(void *this)
 {
     *(void ***)this = &PTR_FUN_00afc048;
+    return this;
+}
+
+void * FUN_006bc7c0(void *this)
+{
+    *(void ***)this = &PTR_FUN_00afb198;
+    return this;
+}
+
+void * FUN_006c8280(void *this)
+{
+    *(void ***)this = &PTR_FUN_00afc2c8;
     return this;
 }
 
@@ -118,6 +146,8 @@ cat >"$tmp/analyzer.py" <<'EOF'
 KNOWN_VTABLES = {
     "AIPathInfo": 0x00AFB150,
     "AIArea": 0x00AFC048,
+    "AINavigationDatabase": 0x00AFB198,
+    "AICarRecovery": 0x00AFC2C8,
     "AISegmentPath": 0x00AFC930,
     "AIPathNode": 0x00AFBF60,
     "AIPolylinePath": 0x00AFC678,
@@ -174,6 +204,8 @@ getters = {
     0x006CC220: 0x00C0DC64,  # AIPathObj
     0x006BC3E0: 0x00C0D5A4,  # AIPathInfo
     0x006C3C30: 0x00C0D588,  # AIArea
+    0x006BC870: 0x00C0D434,  # AINavigationDatabase
+    0x006C8360: 0x00C0D5C8,  # AICarRecovery
     0x006CC3B0: 0x00C0D608,  # AIPolylinePath
     0x006C3000: 0x00C0D638,  # Knot
     0x006CE680: 0x00C0D668,  # AISegmentPath
@@ -189,6 +221,8 @@ vtables = {
     0x00AFC630: 0x006CC220,
     0x00AFB150: 0x006BC3E0,
     0x00AFC048: 0x006C3C30,
+    0x00AFB198: 0x006BC870,
+    0x00AFC2C8: 0x006C8360,
     0x00AFC678: 0x006CC3B0,
     0x00AFBE28: 0x006C3000,
     0x00AFC930: 0x006CE680,
@@ -210,7 +244,7 @@ import sys
 
 report = json.load(open(sys.argv[1], encoding="utf-8"))
 assert report["ready"] is True, report
-assert len(report["anchors"]) == 7, report
+assert len(report["anchors"]) == 9, report
 assert all(row["analyzer_match"] for row in report["anchors"]), report
 assert all(row["rtti_found"] and row["constructor_found"] for row in report["factory_links"]), report
 assert all(
@@ -237,6 +271,10 @@ assert rows["AIPathInfo"]["getter_addresses"] == [0x006BC3E0], rows
 assert rows["AIPathInfo"]["candidate_vtables"] == [0x00AFB150], rows
 assert rows["AIArea"]["getter_addresses"] == [0x006C3C30], rows
 assert rows["AIArea"]["candidate_vtables"] == [0x00AFC048], rows
+assert rows["AINavigationDatabase"]["getter_addresses"] == [0x006BC870], rows
+assert rows["AINavigationDatabase"]["candidate_vtables"] == [0x00AFB198], rows
+assert rows["AICarRecovery"]["getter_addresses"] == [0x006C8360], rows
+assert rows["AICarRecovery"]["candidate_vtables"] == [0x00AFC2C8], rows
 assert rows["AISegmentPath"]["candidate_vtables"] == [0x00AFC930], rows
 assert rows["AIPolylinePath"]["candidate_vtables"] == [0x00AFC678], rows
 assert rows["AIPathNode"]["candidate_vtables"] == [0x00AFBF60], rows
