@@ -32,7 +32,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Phase 599 connects the six-word CameraManager snapshot and guarded double-buffer swap to the native fixed-step scheduler. Phase 600 adds fail-closed recovered scalar evidence input through SHIFT.NativeCameraStateBridge/1 and --camera-state. Remaining camera work is retail timestamp/update scheduling, camera-source/controller behavior, gameplay view selection/attachment and exact render/view integration.
-3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
+3. Phase 601 connects the source-backed PhysicsParticipantManager registry ABI and separate selector context to native state through `SHIFT.NativePhysicsParticipantBoundary/1`. The concrete selected participant instance/index/mode and provider identity remain capture-gated.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Add keyboard/gamepad vehicle controls beyond the neutral intent layer.
@@ -169,3 +169,24 @@ After admission, the ordinary Phase 599 fixed-step snapshot/copy/flip path runs
 unchanged. Linux Vulkan CI verifies that 12 native updates preserve the loaded
 mode/id/group/sub-state and that the Phase 599 snapshot telemetry observes the
 same recovered values.
+
+
+## Phase 601 participant structural boundary
+
+The native runtime optionally accepts
+`--participant-boundary SHIFT.NativePhysicsParticipantBoundary/1`.
+
+The contract preserves the proven distinction between the
+`DAT_00c109e0` PhysicsParticipantManager registry and the
+`DAT_00bbc600` IGPhaseVehicle selector context. It validates the
+`0x1fa0` registry-slot stride, descriptor type `3`, and the established
+IGPhaseVehicle selected pointer/ordinal/state slots.
+
+Successful structural admission populates only ABI/readiness metadata in
+`PhysicsTickBoundary`. The concrete runtime participant remains
+`participant_ready=false`, `participant_index=-1` and
+`participant_mode=-1` until independent runtime-instance evidence exists.
+
+Linux Vulkan CI generates this contract from the existing source-backed
+participant/registry/selector/process reports and verifies both structural
+readiness and preservation of the unresolved participant instance.
