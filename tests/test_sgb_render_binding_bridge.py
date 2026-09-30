@@ -249,12 +249,37 @@ def test_imb_scene_resource_is_classified_as_meshinst_and_stays_blocked(
     assert report["direct_render_instance_count"] == 0
     assert report["resource_adapter_blocked_count"] == 1
     assert (
-        "binding-0:scene-resource:meshinst-adapter-unimplemented"
+        "binding-0:scene-resource:meshinst-binary-adapter-unimplemented"
         in report["blocking_reasons"]
     )
     blocked = report["resource_adapter_blocked"][0]
     assert blocked["factory_type"] == 7
     assert blocked["factory_name"] == "MeshInst"
+    assert blocked["loader_mode"] == "binary"
+    assert blocked["meshinst_runtime"]["format"] == "SHIFT.SGBMeshInstRuntime/1"
+    assert (
+        blocked["meshinst_runtime"]["resource_loader"]["function"]
+        == "FUN_00859800"
+    )
+
+
+def test_imx_scene_resource_reports_xml_adapter_gap(tmp_path):
+    _write_ir(tmp_path)
+    report = build_sgb_render_binding_bridge(
+        _admission(_binding(resource="tracks/test/banner.imx")),
+        tmp_path,
+    )
+
+    assert report["ready"] is False
+    assert (
+        "binding-0:scene-resource:meshinst-xml-adapter-unimplemented"
+        in report["blocking_reasons"]
+    )
+    blocked = report["resource_adapter_blocked"][0]
+    assert blocked["loader_mode"] == "xml"
+    assert blocked["meshinst_runtime"]["resource_loader"]["function"] == (
+        "FUN_008587e0"
+    )
 
 
 def test_mixed_meb_and_meshinst_preserves_ready_meb_packet(tmp_path):
