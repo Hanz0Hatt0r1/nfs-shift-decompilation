@@ -35,7 +35,9 @@ The bootstrap record reports:
 `geometry_source = "SHIFT.NativeSceneVulkanSet/1"`
 
 and exposes `scene_set_mode=true` independently of BMW
-`bundle_set_mode`.
+`bundle_set_mode`. The bootstrap also reports `world_transform_draws`, the
+number of loaded material children whose SVWT was actually executed before GPU
+upload.
 
 ## Neutral interface gate
 
@@ -105,6 +107,9 @@ It then executes three validated frames through:
 ```bash
 shift_runtime --scene-set ...
 ```
+
+The smoke requires `world_transform_draws = 1`, so admission alone is not
+enough to pass the Phase 586 checkpoint.
 
 The existing BMW single-draw and BMW bundle-set smoke paths remain intact.
 
