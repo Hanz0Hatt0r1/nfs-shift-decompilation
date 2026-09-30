@@ -2,7 +2,7 @@
 """Find reverse-engineered track/path structures and heap pointer families."""
 from __future__ import annotations
 
-import argparse, csv, json, math, re, struct, sys, tempfile, zipfile
+import argparse, csv, hashlib, json, math, re, struct, sys, tempfile, zipfile
 from bisect import bisect_right
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -130,6 +130,86 @@ SPLINE = {
     "array": (0x10, "I"), "length": (0x14, "f"),
     "knots": (0x18, "I"), "step_dist": (0x1c, "f"),
 }
+
+ANALYZER_EVIDENCE_FORMAT = "SHIFT-TRACK-PATH-ANALYZER-EVIDENCE/1"
+ARRAY_CONTRACTS = {
+    "AIPolylinePath": {
+        "array_field": "array",
+        "count_field": "nodes",
+        "element_vtable": "AIPolyPathNode",
+        "stride": 0x24,
+        "count_prefix_bytes": 4,
+        "requires_all_snapshots": True,
+    },
+    "AISegmentPath": {
+        "array_field": "array",
+        "count_field": "nodes",
+        "element_vtable": "AIPathNode",
+        "stride": 0x38,
+        "count_prefix_bytes": 4,
+        "requires_all_snapshots": True,
+    },
+    "AISpline": {
+        "array_field": "array",
+        "count_field": "knots",
+        "element_vtable": "Knot",
+        "stride": 0x48,
+        "count_prefix_bytes": 4,
+        "requires_all_snapshots": True,
+        "owner_identity": "structural-pointer-count-link",
+    },
+}
+
+
+def _manifest_layout(spec: dict) -> dict:
+    return {
+        name: {"offset": int(offset), "type": typ}
+        for name, (offset, typ) in sorted(spec.items())
+    }
+
+
+def analyzer_evidence_manifest() -> dict:
+    """Return the canonical source-backed schema used to interpret captures."""
+    return {
+        "format": ANALYZER_EVIDENCE_FORMAT,
+        "analysis_format": FORMAT,
+        "known_vtables": {
+            name: f"0x{value:08x}"
+            for name, value in sorted(KNOWN_VTABLES.items())
+        },
+        "layouts": {
+            "AIPathInfo": _manifest_layout(PATH),
+            "AIArea": _manifest_layout(INCIDENT),
+            "AISegmentPath": _manifest_layout(SEGMENT),
+            "AIPathNode": _manifest_layout(SEGMENT_NODE),
+            "AIPolylinePath": _manifest_layout(POLY),
+            "AIPolyPathNode": _manifest_layout(POLY_NODE),
+            "Knot": _manifest_layout(KNOT),
+            "AISpline": _manifest_layout(SPLINE),
+        },
+        "array_contracts": ARRAY_CONTRACTS,
+        "identity_policies": {
+            "Path": {"retail_class": "AIPathInfo", "mode": "concrete-vtable"},
+            "Incident.PathOwner": {"retail_class": "AIArea", "mode": "concrete-vtable"},
+            "AISegmentPath": {"mode": "concrete-vtable"},
+            "AIPolylinePath": {"mode": "concrete-vtable"},
+            "AIPolyPathNode": {"mode": "concrete-vtable"},
+            "Knot": {"mode": "concrete-vtable"},
+            "AISpline": {
+                "mode": "structural-owner",
+                "reason": "no-dedicated-retail-rtti-getter",
+            },
+        },
+    }
+
+
+def analyzer_evidence_fingerprint(manifest: dict | None = None) -> str:
+    payload = manifest if manifest is not None else analyzer_evidence_manifest()
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
 
 SIZE = {"B": 1, "I": 4, "i": 4, "f": 4}
 
@@ -1995,8 +2075,13 @@ def main() -> int:
     } for w in merged]
     windows.sort(key=lambda x: (-x["priority"], x["start"]))
 
+    evidence_manifest = analyzer_evidence_manifest()
     summary = {
         "format": FORMAT,
+        "analyzer_evidence": {
+            "fingerprint": analyzer_evidence_fingerprint(evidence_manifest),
+            "manifest": evidence_manifest,
+        },
         "snapshots": len(sns),
         "common_regions": len(common),
         "candidate_counts": {k: len(v) for k, v in candidates.items()},

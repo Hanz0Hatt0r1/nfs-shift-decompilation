@@ -287,11 +287,25 @@ the shared generic PE RTTI index to recover the same vtables and asserts that
 mechanism. A mismatch exits non-zero. See
 [track/path RTTI vtable evidence](../../evidence/track_path_rtti_vtables.md).
 
+Every newly generated `track_path_analysis.json` embeds a canonical evidence
+manifest and SHA-256 fingerprint. Audit an older result before comparing counts:
+
+```bash
+python3 tools/shift_live_dump/audit_track_path_analysis_provenance.py \
+  /path/to/track_path_analysis.json
+```
+
+The audit returns `current` only for an exact fingerprint match. Older outputs
+without a fingerprint are `legacy-unversioned` unless an overlapping concrete
+vtable already disagrees, in which case they are `legacy-stale`. Fingerprinted
+outputs whose layouts/vtables/contracts changed are `stale`. See
+[track/path analysis provenance evidence](../../evidence/track_path_analysis_provenance.md).
+
 Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. Legacy `Path`/`AIPathInfo`, `Incident.PathOwner`/`AIArea`, `AISegmentPath`, `AIPolylinePath`, and `AIPolyPathNode` require their recovered concrete vtables (`0x00afb150`, `0x00afc048`, `0x00afc930`, `0x00afc678`, and `0x00afbfa8`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
 
 Outputs:
 
-- `track_path_analysis.json` — structure-hit counts, pointer clusters, and next capture windows.
+- `track_path_analysis.json` — structure-hit counts, pointer clusters, next capture windows, and an `analyzer_evidence` manifest/fingerprint covering the vtables, layouts, array contracts and class-identity policies used to interpret the capture.
 - `{profile}.csv` — structural candidates for each recovered profile. `aipolylinepath.csv` additionally records whether `array[-4]` matches `num nodes`, whether the first array element has the `AIPolyPathNode` vtable, and how many consecutive `0x24`-byte nodes were validated.
 - `aipolylinepath_nodes.csv` — decoded elements of every fully validated `AIPolylinePath.array`, exported only when the count prefix and complete concrete-vtable sequence agree across every supplied snapshot; includes node address/index, 2D position/tangent and cumulative distance.
 - `aisegmentpath_nodes.csv` — complete reference-snapshot `AISegmentPath.array` instances exported only when the count prefix and complete `AIPathNode` vtable sequence agree across every supplied snapshot, including reflected node fields.

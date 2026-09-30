@@ -1,5 +1,13 @@
 # Track/path runtime structure analysis
 
+> **Historical provenance notice:** the runtime counts in this document were
+> produced before analyzer evidence fingerprints and before the concrete
+> `AIPathInfo`/`AIArea` gates and corrected `AISegmentPath` vtable were
+> established. They remain useful as a record of capture progression, but must
+> not be treated as current class-identification results without rerunning the
+> present analyzer. See [track_path_analysis_provenance.md](track_path_analysis_provenance.md).
+
+
 ## Capture
 
 Input: `track-targeted.zip`

@@ -12,6 +12,7 @@ test: shift-live-dump
 	bash test_analyze_fields.sh
 	bash test_analyze_events.sh
 	bash test_analyze_track_paths.sh
+	bash test_audit_track_path_analysis_provenance.sh
 	bash test_extract_shift_rtti_registry.sh
 	bash test_extract_shift_reflection_fields.sh
 	bash test_verify_track_path_reflection_layouts.sh
