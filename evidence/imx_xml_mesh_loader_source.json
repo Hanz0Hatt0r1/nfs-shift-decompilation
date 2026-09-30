@@ -1,0 +1,98 @@
+{
+  "format": "SHIFT.IMXXMLMeshLoaderSourceEvidence/1",
+  "version": 1,
+  "status": "source-backed",
+  "function": "FUN_008587e0",
+  "address": "0x008587E0",
+  "retail_name": "MWL::Renderer::WinRenderer::CMeshPrimitiveType::LoadXMLMeshFromResource",
+  "source_file": ".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",
+  "root": "MESH",
+  "root_attributes": [
+    "Vertices",
+    "Streams",
+    "Buffers",
+    "EnvMapType"
+  ],
+  "bounds": {
+    "sphere": {
+      "node": "BOUNDSPHERE",
+      "attributes": ["Centre", "Radius"]
+    },
+    "aabb": {
+      "node": "AABBOX",
+      "attributes": ["Min", "Max"]
+    }
+  },
+  "bones": {
+    "container": "BONES",
+    "count_attribute": "NumBones",
+    "node": "NODE",
+    "node_attributes": ["Name", "Transform"],
+    "transform_source": "12 floats expanded to a 4x4 affine matrix",
+    "inverse_generated_by": "FUN_006308b0"
+  },
+  "stream": {
+    "node": "STREAM",
+    "attributes": ["Type", "Usage", "Channel"],
+    "item_node": "ITEM",
+    "runtime_repack": "separate XML stream arrays are interleaved into one runtime vertex buffer"
+  },
+  "type_table": [
+    {"source_index": 0, "name": "F32", "runtime_type": 0, "size": 4},
+    {"source_index": 1, "name": "F32Vec2", "runtime_type": 1, "size": 8},
+    {"source_index": 2, "name": "F32Vec3", "runtime_type": 2, "size": 12},
+    {"source_index": 3, "name": "F32Vec4", "runtime_type": 3, "size": 16},
+    {"source_index": 4, "name": "RGBA32", "runtime_type": 4, "size": 4},
+    {"source_index": 5, "name": "U8Vec4", "runtime_type": 5, "size": 4},
+    {"source_index": 6, "name": "S16Vec2", "runtime_type": 6, "size": 4},
+    {"source_index": 7, "name": "S16Vec4", "runtime_type": 7, "size": 8},
+    {"source_index": 8, "name": "U8Vec4N", "runtime_type": 8, "size": 4},
+    {"source_index": 9, "name": "S16Vec2N", "runtime_type": 9, "size": 4},
+    {"source_index": 10, "name": "S16Vec4N", "runtime_type": 10, "size": 8},
+    {"source_index": 11, "name": "U16Vec2N", "runtime_type": 11, "size": 4},
+    {"source_index": 12, "name": "U16Vec4N", "runtime_type": 12, "size": 8},
+    {"source_index": 13, "name": "U10Vec3", "runtime_type": 13, "size": 4},
+    {"source_index": 14, "name": "U10Vec3N", "runtime_type": 14, "size": 4},
+    {"source_index": 15, "name": "F16Vec2", "runtime_type": 15, "size": 4},
+    {"source_index": 16, "name": "F16Vec4", "runtime_type": 15, "size": 8}
+  ],
+  "usage_table": [
+    {"source_index": 0, "name": "Position", "runtime_usage": 0, "item_attribute": "Pos"},
+    {"source_index": 1, "name": "BlendWeights", "runtime_usage": 1, "item_attribute": "Weights"},
+    {"source_index": 2, "name": "Normal", "runtime_usage": 3, "item_attribute": "Normal"},
+    {"source_index": 3, "name": "TexCoord", "runtime_usage": 5, "item_attribute": "UV"},
+    {"source_index": 4, "name": "Tangent", "runtime_usage": 6, "item_attribute": "Tangent"},
+    {"source_index": 5, "name": "Binormal", "runtime_usage": 7, "item_attribute": "Binormal"},
+    {"source_index": 6, "name": "Colour", "runtime_usage": 10, "item_attribute": "Colour"},
+    {"source_index": 7, "name": "Depth", "runtime_usage": 12, "item_attribute": "Depth"},
+    {"source_index": 8, "name": "BlendIndices", "runtime_usage": 2, "item_attribute": "Indices"}
+  ],
+  "xml_value_decode_switch": {
+    "source_type_indices": [0, 1, 2, 3, 4, 5],
+    "cases": {
+      "0": "one float",
+      "1": "two floats",
+      "2": "three floats",
+      "3": "four floats",
+      "4": "strtoul base 0 packed 32-bit value",
+      "5": "four decimal uint8 values"
+    },
+    "later_type_indices": "recognized by declaration tables but no recovered value-decode case is promoted"
+  },
+  "index_buffer": {
+    "node": "INDEXBUFFER",
+    "attributes": ["Material", "Entries", "NumBones", "BoneIndices"],
+    "primitive_type_runtime_value": 4,
+    "index_count_rule": "FUN_00853c80(Entries, 4) = Entries * 3",
+    "triangle_node": "TRIANGLE",
+    "triangle_attribute": "Indices",
+    "index_storage": "uint16"
+  },
+  "neutral_mapping_boundary": {
+    "xml_runtime_usage_values": "D3DDECLUSAGE-style values",
+    "binary_imb_property_ordinals": "not equivalent to XML runtime usage values",
+    "policy": "map XML Type/Usage/Channel by proven semantic identity; do not concatenate XML runtime enum values",
+    "meb_equivalence": false,
+    "imb_equivalence": false
+  }
+}
