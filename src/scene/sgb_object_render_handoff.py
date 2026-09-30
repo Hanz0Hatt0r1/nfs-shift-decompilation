@@ -7,7 +7,11 @@ stored at wrapper +0x80 and chooses one of two transform paths:
 * MatrixNumber == -1: build a 4x4 matrix from wrapper quaternion/offset/scale.
 
 This module records that boundary without pretending that a parent MultiMatrix
-slot is already a numerically materialized world matrix.
+slot is already a numerically materialized world matrix. When one exact runtime
+world matrix for the selected slot is supplied, Phase 594 may solve the current
+root matrix through the source-backed static parent chain and re-evaluate the
+slot. That solves current state only; it does not reconstruct SceneGraph update
+history.
 """
 from __future__ import annotations
 
@@ -558,6 +562,10 @@ def build_sgb_object_render_handoff_set(
             "meshinst_extensions": ["imb", "imx"],
             "transform_selector": "source-backed",
             "parent_multimatrix_numeric_world_matrix": "runtime-context-required",
+            "runtime_selected_slot_root_solve": (
+                "SHIFT.SGBMultiMatrixRootSolve/1"
+            ),
+            "root_solve_recovers_scenegraph_history": False,
             "draw_admission": False,
         },
     }
