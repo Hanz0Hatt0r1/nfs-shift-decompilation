@@ -171,3 +171,29 @@ def test_native_runtime_executes_bundle_depth_and_blend_state():
     assert "material_pipeline_state.src_alpha_blend_factor" in source
     assert "material_pipeline_state.dst_alpha_blend_factor" in source
     assert "material_pipeline_state.alpha_blend_op" in source
+
+
+def test_native_runtime_accepts_neutral_vulkan_draw_bundle_and_svwt():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    workflow = Path(".github/workflows/linux-vulkan.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "SHIFT.VulkanDrawBundle/1" in source
+    assert "SHIFT.VulkanInterfaceGate/1" in source
+    assert "SHIFT.VulkanDrawRuntimeProvenanceGate/1" in source
+    assert "world_transform.svwt" in source
+    assert "unsupported bundle world-transform packet" in source
+    assert "has_world_transform" in source
+    assert '"bundle_world_transforms_loaded"' in source
+    assert '"bundle_world_transform_execution"' in source
+    assert '"not-applied"' in source
+    assert "neutral bundle runtime provenance gate is missing or not ready" in source
+
+    assert "Prepare neutral Vulkan runtime admission fixture" in workflow
+    assert "SHIFT.VulkanBundleRunner/1" in workflow
+    assert "SHIFT.VulkanInterfaceGate/1" in workflow
+    assert '"bundle_world_transforms_loaded": 1' in workflow
+    assert '"bundle_world_transform_execution": "not-applied"' in workflow
