@@ -26,7 +26,7 @@
 | VehiclePhysicsAssetGraph/1 | CDF/EDF/GDF/SDF neutral join |
 | BAB/BAS | skeleton parsing, name linkage, animation evidence |
 | SGB | NODE/SUMM object graphs, SGBScenePlacement/1, proven FLAT spatial geometry, OBJECT/MultiMatrix/root handoff, MeshType/MeshInst resource factory, SGBRenderBindingAdmission/1, admitted-MEB SGBRenderBindingBridge/1, OCCL and PART tree mapped |
-| Camera runtime | config/state/event/control primitives |
+| Camera runtime | config/state/event/control primitives + native six-word snapshot/double-buffer handoff |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
 | Physics runtime | wheel/contact/body/solver boundaries |
