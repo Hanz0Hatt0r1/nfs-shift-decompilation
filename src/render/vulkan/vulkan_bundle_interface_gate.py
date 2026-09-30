@@ -161,12 +161,15 @@ def validate_bmw_vulkan_interface(
     bundle_dir: str | Path,
     compile_report: str | Path | dict[str, Any],
 ) -> dict[str, Any]:
-    return _validate_vulkan_interface(
+    result = _validate_vulkan_interface(
         bundle_dir,
         compile_report,
         allowed_bundle_formats={BMW_BUNDLE_FORMAT},
         output_format=FORMAT,
     )
+    result = dict(result)
+    result.pop("bundle_format", None)
+    return result
 
 
 def validate_vulkan_bundle_interface(
