@@ -1,0 +1,122 @@
+{
+  "format": "SHIFT.SilverstoneEra3NODEKindBoundaryObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 Silverstone Era3 corpus",
+  "binary_dispatcher": "FUN_0069a6c0",
+  "binary_kinds": [
+    "LOD",
+    "HIERARCHY",
+    "OBJECT"
+  ],
+  "xml_only_kinds": [
+    "DAMAGE"
+  ],
+  "xml_damage_loaders": [
+    "FUN_00699b10",
+    "FUN_0069b1c0"
+  ],
+  "common_header": {
+    "bytes": 36,
+    "matrix_number_offset": 32,
+    "byte_21_offset": 33,
+    "matrix_count_offset": 34,
+    "subobject_count_offset": 35,
+    "byte_21_binary_consumer_status": "unconsumed"
+  },
+  "variants": [
+    {
+      "archive": "Silverstone_Era3_Drift.bff",
+      "archive_size": 38439900,
+      "archive_sha256": "ea0078c88155978ac1d9d8513698d8c793fd1eed92bac38da34a9e8a9381308a",
+      "sgb_path": "tracks/silverstone_era3_drift/silverstone_era3_drift.sgb",
+      "sgb_size": 774127,
+      "sgb_sha256": "a8ad0608889627bedb42529b729f9a52529afedc03b66e73de86148dcd3ecf25",
+      "top_level_node_count": 25,
+      "recursive_object_count": 75,
+      "kind_counts": {
+        "LOD": 25,
+        "OBJECT": 50,
+        "HIERARCHY": 0,
+        "DAMAGE": 0
+      },
+      "byte_21_counts": {
+        "0": 75
+      }
+    },
+    {
+      "archive": "Silverstone_Era3_GrandPrix.bff",
+      "archive_size": 55811062,
+      "archive_sha256": "aac2e1fe721aec25494d0bfc84eac2bd49d1628fe55b165097ae694ef7a7d56c",
+      "sgb_path": "tracks/silverstone_era3_grandprix/silverstone_era3_grandprix.sgb",
+      "sgb_size": 2176990,
+      "sgb_sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+      "top_level_node_count": 41,
+      "recursive_object_count": 123,
+      "kind_counts": {
+        "LOD": 40,
+        "OBJECT": 82,
+        "HIERARCHY": 1,
+        "DAMAGE": 0
+      },
+      "byte_21_counts": {
+        "0": 123
+      }
+    },
+    {
+      "archive": "Silverstone_Era3_International.bff",
+      "archive_size": 51954684,
+      "archive_sha256": "634984a4053012e7edd89c1fa47e89583cb6b34c139feeb8a01fa9a44bca5863",
+      "sgb_path": "tracks/silverstone_era3_international/silverstone_era3_international.sgb",
+      "sgb_size": 1788074,
+      "sgb_sha256": "fb6a534b4890a8c046f234f10e702962913a5a03377b7a158581f0a7c74ea2b6",
+      "top_level_node_count": 37,
+      "recursive_object_count": 109,
+      "kind_counts": {
+        "LOD": 36,
+        "OBJECT": 73,
+        "HIERARCHY": 0,
+        "DAMAGE": 0
+      },
+      "byte_21_counts": {
+        "0": 109
+      }
+    },
+    {
+      "archive": "Silverstone_Era3_National.bff",
+      "archive_size": 51155960,
+      "archive_sha256": "58c2a9476804c8a29fd87eeaa5e99e8656b03e3ee21d773acb8c7f8a84f522ea",
+      "sgb_path": "tracks/silverstone_era3_national/silverstone_era3_national.sgb",
+      "sgb_size": 1701530,
+      "sgb_sha256": "b3f94c2b65bc74d9e309774d793c522bcd2aff5ebfa8a7e7f46ba4d484e5ad93",
+      "top_level_node_count": 78,
+      "recursive_object_count": 234,
+      "kind_counts": {
+        "LOD": 77,
+        "OBJECT": 156,
+        "HIERARCHY": 1,
+        "DAMAGE": 0
+      },
+      "byte_21_counts": {
+        "0": 234
+      }
+    }
+  ],
+  "totals": {
+    "top_level_node_count": 181,
+    "recursive_object_count": 541,
+    "kind_counts": {
+      "LOD": 178,
+      "OBJECT": 361,
+      "HIERARCHY": 2,
+      "DAMAGE": 0
+    },
+    "byte_21_zero_count": 541,
+    "byte_21_nonzero_count": 0
+  },
+  "observations": [
+    "FUN_0069a6c0 hashes/compares only LOD, HIERARCHY and OBJECT in the binary NODE path.",
+    "DAMAGE construction is present in the XML scene loaders FUN_00699b10 and FUN_0069b1c0, not in FUN_0069a6c0.",
+    "The binary dispatcher consumes MatrixNumber at +0x20 and counts at +0x22/+0x23 but has no read of byte +0x21.",
+    "Across 541 recursively decoded production objects from four Silverstone Era3 variants, byte +0x21 is always zero.",
+    "The zero corpus observation does not assign a semantic name to +0x21; the IR preserves it as raw source-unconsumed data."
+  ]
+}
