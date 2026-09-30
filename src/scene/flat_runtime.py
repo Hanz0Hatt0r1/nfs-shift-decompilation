@@ -44,8 +44,8 @@ NODE_AABB_MAX_OFFSET = 0x0C
 LEAF_INCLUDE_MASK_OFFSET = 0x00
 LEAF_EXCLUDE_MASK_OFFSET = 0x08
 LEAF_BOUNDING_SPHERE_OFFSET = 0x10
-LEAF_UNRESOLVED_SPATIAL_OFFSET = 0x20
-LEAF_UNRESOLVED_SPATIAL_BYTES = 0x18
+LEAF_SPATIAL_BOUNDS_OFFSET = 0x20
+LEAF_SPATIAL_BOUNDS_BYTES = 0x18
 
 
 class FLATRuntimeDecodeError(ValueError):
@@ -116,9 +116,9 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
         raise FLATRuntimeDecodeError(f"leaf {index} exceeds FLAT node span")
     words = [_u32(data, off + 4 * i) for i in range(LEAF_SIZE // 4)]
     sphere = [_f32_bits(value) for value in words[4:8]]
-    unresolved_spatial = [_f32_bits(value) for value in words[8:14]]
-    candidate_min = unresolved_spatial[0:3]
-    candidate_max = unresolved_spatial[3:6]
+    spatial_bounds = [_f32_bits(value) for value in words[8:14]]
+    candidate_min = spatial_bounds[0:3]
+    candidate_max = spatial_bounds[3:6]
     midpoint = [
         (candidate_min[axis] + candidate_max[axis]) * 0.5
         for axis in range(3)
@@ -135,6 +135,8 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
         "filter_masks": {
             "include_words": words[0:2],
             "exclude_words": words[2:4],
+            "include_mask_u64": words[0] | (words[1] << 32),
+            "exclude_mask_u64": words[2] | (words[3] << 32),
             "include_offset": LEAF_INCLUDE_MASK_OFFSET,
             "exclude_offset": LEAF_EXCLUDE_MASK_OFFSET,
             "source": {
@@ -163,23 +165,26 @@ def _parse_leaf(data: bytes, off: int, end: int, index: int) -> dict[str, Any]:
                 "plane_test": "dot(plane.xyz, center) + plane.w + radius >= 0",
             },
         },
-        "unresolved_spatial_words_20_34": {
-            "offset": LEAF_UNRESOLVED_SPATIAL_OFFSET,
-            "bytes": LEAF_UNRESOLVED_SPATIAL_BYTES,
-            "raw_u32": words[8:14],
-            "float_view": unresolved_spatial,
-            "semantic_status": "unresolved-source-consumer",
-        },
-        "spatial_bounds_candidate": {
+        "spatial_bounds": {
             "min_xyz": candidate_min,
             "max_xyz": candidate_max,
-            "source_offset": LEAF_UNRESOLVED_SPATIAL_OFFSET,
-            "semantic_status": "corpus-verified-candidate",
-            "source_consumer_proven": False,
+            "source_offset": LEAF_SPATIAL_BOUNDS_OFFSET,
+            "bytes": LEAF_SPATIAL_BOUNDS_BYTES,
+            "raw_u32": words[8:14],
+            "semantic_status": "source-consumed-corpus-validated-aabb",
+            "source_consumer_proven": True,
             "ordered_axes": all(
                 candidate_min[axis] <= candidate_max[axis]
                 for axis in range(3)
             ),
+            "source": {
+                "query": "FUN_006aef20",
+                "callsite": "FUN_006afb20",
+                "consumer": (
+                    "query object +0x18 vfunc +0x2c receives leaf +0x20 "
+                    "and query +0x20"
+                ),
+            },
             "bounding_sphere_center_midpoint_xyz": midpoint,
             "bounding_sphere_center_midpoint_max_abs_error": midpoint_error,
             "silverstone_era3_observation": {
@@ -465,9 +470,13 @@ def parse_flat_runtime(
                 "FUN_006aeeb0/FUN_006aeef0"
             ),
             "leaf_bounding_sphere_query": "FUN_006aef20/FUN_006aefe0",
+            "leaf_spatial_bounds_query": (
+                "FUN_006afb20 -> FUN_006aef20 -> "
+                "query object vfunc +0x2c(leaf+0x20, query+0x20)"
+            ),
         },
         "limitations": [
-            "Leaf +0x20..+0x34 remains source-unresolved; Silverstone Era3 proves an AABB-shaped min/max candidate whose midpoint matches the source-backed sphere center, but no direct source consumer has been accepted yet.",
+            "Leaf +0x20..+0x34 is exposed as an AABB-shaped six-float bounds payload because it is consumed directly by the spatial query vfunc and validates as ordered min/max across all 21,580 Silverstone Era3 leaves; the higher-level query class remains unnamed.",
             "The class behind a populated leaf +0x38 direct object pointer remains unresolved.",
             "High-byte span marker is exposed as runtime depth/termination metadata rather than assigned a higher-level scene meaning.",
         ],
