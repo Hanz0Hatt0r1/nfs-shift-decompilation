@@ -2057,6 +2057,22 @@ def cmd_native_scene_external_capture(args: argparse.Namespace) -> int:
             + "\n",
             encoding="utf-8",
         )
+    if (
+        args.cube_snapshot_output
+        and report.get("cube_snapshot_contract") is not None
+    ):
+        cube_output = Path(args.cube_snapshot_output)
+        cube_output.parent.mkdir(parents=True, exist_ok=True)
+        cube_output.write_text(
+            json.dumps(
+                report["cube_snapshot_contract"],
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
     print(json.dumps({
         "format": report["format"],
@@ -2066,6 +2082,7 @@ def cmd_native_scene_external_capture(args: argparse.Namespace) -> int:
             "required_external_sampler2d_count"
         ],
         "snapshot_count": report["snapshot_count"],
+        "cube_snapshot_count": report["cube_snapshot_count"],
         "blocking_reasons": report["blocking_reasons"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
@@ -2083,6 +2100,9 @@ def cmd_native_scene_vulkan_set(args: argparse.Namespace) -> int:
         environment_cube_dds=args.environment_cube_dds,
         external_sampler_snapshots_path=(
             args.external_sampler_snapshots
+        ),
+        external_sampler_cube_snapshots_path=(
+            args.external_sampler_cube_snapshots
         ),
     )
     print(json.dumps({
@@ -4542,6 +4562,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output")
     p.add_argument("--capture-root", required=True)
     p.add_argument("--snapshot-output")
+    p.add_argument("--cube-snapshot-output")
     p.add_argument(
         "--instance-transform-match",
         help=(
@@ -4568,6 +4589,13 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "SHIFT.NativeSceneExternalSamplerSnapshots/1 JSON with "
             "exact per-draw sampler2D snapshots"
+        ),
+    )
+    p.add_argument(
+        "--external-sampler-cube-snapshots",
+        help=(
+            "SHIFT.NativeSceneExternalSamplerCubeSnapshots/1 JSON with "
+            "exact per-draw samplerCube s3 snapshots"
         ),
     )
     p.set_defaults(fn=cmd_native_scene_vulkan_set)
