@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 548.**
+**Current mainline: Phase 549.**
 
 
 
@@ -81,10 +81,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 57. Map source-backed FLAT include/exclude masks, bounding spheres and tree-node AABBs while retaining leaf +0x20..+0x34 only as a corpus-verified bounds candidate — Phase 546 implemented.
 58. Normalize FLAT/SUMM and PART/NODE identity plus proven spatial geometry into fail-closed SHIFT.SGBScenePlacement/1 — Phase 547 implemented.
 59. Prove OBJECT resource-descriptor → render-instance admission plus explicit/MatrixNumber transform selection — Phase 548 implemented.
-60. Reconstruct numeric MultiMatrix hierarchy evaluation for MatrixNumber-backed objects, then join proven placement/object transforms into RenderBinding.
-61. Derive proven animation poses from the BAB runtime grammar.
-62. Port the stable native render/runtime boundary to Android.
-63. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+60. Reconstruct the initial type-1 MultiMatrix hierarchy update and numeric OBJECT world matrices — Phase 549 implemented.
+61. Join SGBScenePlacement/1, OBJECT render handoff and numeric initial world transforms into a fail-closed RenderBinding scene admission contract.
+62. Derive proven animation poses from the BAB runtime grammar.
+63. Port the stable native render/runtime boundary to Android.
+64. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -97,7 +98,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | placement + OBJECT render handoff implemented | numeric MultiMatrix hierarchy evaluation + final RenderBinding admission |
+| SGB scene | placement + OBJECT render handoff + initial MultiMatrix numeric world implemented | final scene placement/resource/world-transform admission into RenderBinding |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
