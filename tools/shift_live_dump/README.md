@@ -245,8 +245,10 @@ python3 tools/shift_live_dump/extract_shift_reflection_fields.py \
 The field extractor joins every `FUN_0063a280` metadata call back to the RTTI
 registry, recovers the owning class, field name, reflection type code, offset
 and flags, and preserves the original expression when an offset or generated
-name is dynamic. PE-backed string resolution also handles reflected names stored
-as `DAT_...` or `PTR_s_...` symbols. See
+name is dynamic. It also de-duplicates semantic copies emitted as both
+`thunk_FUN_x` and `FUN_x`, while preserving genuine repeated calls inside a
+single concrete builder. PE-backed string resolution also handles reflected
+names stored as `DAT_...` or `PTR_s_...` symbols. See
 [reflection field evidence](../../evidence/reflection_fields_source.md).
 
 For class-centric work, join both sources into one manifest:
@@ -266,8 +268,9 @@ direct children, reflection metadata/builders, direct reflected fields, RTTI
 getters and vtable candidates together in one row per class. Inherited fields
 are not flattened into derived classes; `ancestry` remains a separate evidence
 chain. On the supplied retail pair it joins all 315 registered classes, 245
-classes with direct reflected fields, 3122 direct fields, and 267 classes with
-a unique PE vtable candidate. See
+classes with direct reflected fields, 2379 direct fields, and 267 classes with
+a unique PE vtable candidate. The retail source contains 3122 raw reflection
+calls; 743 are paired thunk/non-thunk duplicates. See
 [class manifest evidence](../../evidence/class_manifest_source.md).
 
 To isolate classes whose basic structure is fully source/PE-backed, run the
