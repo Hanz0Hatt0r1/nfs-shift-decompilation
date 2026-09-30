@@ -34,6 +34,12 @@ META_REBUILD_FLAG_OFFSET = 0x13A4
 SOURCE_RECORD_STRIDE = 0x18
 META_RECORD_STRIDE = 0x14
 
+# Direct pointer clears in FUN_0071da20 before FUN_00715690 runs.
+CONSTRUCTOR_PRESET_WRITES = (
+    (SOURCE_RECORD_PTR_OFFSET, 4, 0),
+    (META_RECORD_PTR_OFFSET, 4, 0),
+)
+
 REFLECTED_FIELDS = (
     {"name": "Pit Lanes", "offset": 0xAC, "type_code": 0x0D, "flags": 3},
     {"name": "Starting Grid", "offset": 0xB0, "type_code": 0x0D, "flags": 3},
@@ -154,9 +160,9 @@ def reflected_field_index() -> dict[str, dict[str, Any]]:
 
 
 def constructor_default_writes() -> list[dict[str, int | float]]:
-    """Return FUN_00715690 writes, including decoded f32 values where known."""
+    """Return direct constructor clears plus FUN_00715690 reset writes."""
     rows: list[dict[str, int | float]] = []
-    for offset, width, raw in DEFAULT_WRITES:
+    for offset, width, raw in (*CONSTRUCTOR_PRESET_WRITES, *DEFAULT_WRITES):
         row: dict[str, int | float] = {
             "offset": offset,
             "width": width,
@@ -236,6 +242,10 @@ def describe_ai_database_runtime() -> dict[str, Any]:
         },
         "direct_reflected_field_count": len(REFLECTED_FIELDS),
         "direct_reflected_fields": [dict(row) for row in REFLECTED_FIELDS],
+        "constructor_preset_writes": [
+            {"offset": offset, "width": width, "raw_value": raw}
+            for offset, width, raw in CONSTRUCTOR_PRESET_WRITES
+        ],
         "constructor_default_writes": constructor_default_writes(),
         "reflected_constructor_defaults": reflected_constructor_defaults(),
         "meta_section_storage": describe_meta_section_storage(),
