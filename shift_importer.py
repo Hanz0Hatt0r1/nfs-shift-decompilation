@@ -1958,6 +1958,12 @@ def cmd_sgb_object_render_handoff(args: argparse.Namespace) -> int:
         "parent_multimatrix_slot_count": report[
             "parent_multimatrix_slot_count"
         ],
+        "numeric_world_matrix_ready_count": report[
+            "numeric_world_matrix_ready_count"
+        ],
+        "runtime_root_consensus_applied_object_count": report[
+            "runtime_root_consensus_applied_object_count"
+        ],
         "blockers": report["blocking_reasons"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
