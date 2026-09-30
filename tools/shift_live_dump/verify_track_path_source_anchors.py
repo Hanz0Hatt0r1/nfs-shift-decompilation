@@ -8,7 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from extract_shift_rtti_registry import build_pe_rtti_index
+from extract_shift_rtti_registry import build_pe_rtti_index, extract_registry
 
 FORMAT = "SHIFT-TRACK-PATH-SOURCE-ANCHORS/1"
 
@@ -27,7 +27,25 @@ FACTORY_LINKS = (
     ("AIPolylinePath", "FUN_006d8490", "DAT_00c0d608", "FUN_006cc900"),
 )
 
+SOURCE_ONLY_VTABLE_ANCHORS = (
+    ("AIPathObj", "FUN_006d0ef0", "PTR_FUN_00afc630", 0x00AFC630),
+)
+
+HIERARCHY_LINKS = (
+    ("AIPathObj", "BPersistent"),
+    ("AIPath", "AIPathObj"),
+    ("AIPolylinePath", "AIPath"),
+    ("AISegmentPath", "AIPath"),
+)
+
+DESTRUCTOR_CHAIN_LINKS = (
+    ("AIPolylinePath", "FUN_006cc390", "PTR_FUN_00afc678", "FUN_006d0ef0"),
+    ("AISegmentPath", "FUN_006ce660", "PTR_FUN_00afc930", "FUN_006d0ef0"),
+)
+
 RTTI_DESCRIPTORS = {
+    "AIPathObj": 0x00C0DC64,
+    "AIPath": 0x00C0D698,
     "AIPathInfo": 0x00C0D5A4,
     "AIArea": 0x00C0D588,
     "AIPolylinePath": 0x00C0D608,
@@ -44,7 +62,8 @@ RTTI_DESCRIPTORS = {
 # and AISplineInfo are reflected, but no dedicated getter/vtable is present via
 # that same mechanism. Keep this absence explicit instead of inventing a
 # concrete AISpline vtable from address proximity.
-RTTI_GETTER_EXPECTED_ABSENT = {"AISpline", "AISplineInfo"}
+RTTI_GETTER_EXPECTED_ABSENT = {"AIPath", "AISpline", "AISplineInfo"}
+PE_ONLY_VTABLES = {"AIPathObj": 0x00AFC630}
 
 
 def extract_function(text: str, name: str) -> str | None:
@@ -100,14 +119,18 @@ def scan_pe_rtti_vtables(data: bytes, known: dict[str, int]) -> dict:
         getters = list(pe["getter_addresses"].get(descriptor, ()))
         candidates = list(pe["vtable_candidates"].get(descriptor, ()))
         analyzer_vtable = known.get(class_name)
+        pe_only_vtable = PE_ONLY_VTABLES.get(class_name)
+        expected_vtable = (
+            analyzer_vtable if analyzer_vtable is not None else pe_only_vtable
+        )
         expected_absent = class_name in RTTI_GETTER_EXPECTED_ABSENT
         if expected_absent:
-            match = not getters and not candidates and analyzer_vtable is None
+            match = not getters and not candidates and expected_vtable is None
         else:
             match = (
-                analyzer_vtable is not None
+                expected_vtable is not None
                 and len(getters) == 1
-                and candidates == [analyzer_vtable]
+                and candidates == [expected_vtable]
             )
         rows.append({
             "class": class_name,
@@ -115,6 +138,8 @@ def scan_pe_rtti_vtables(data: bytes, known: dict[str, int]) -> dict:
             "getter_addresses": getters,
             "candidate_vtables": candidates,
             "analyzer_vtable": analyzer_vtable,
+            "pe_only_vtable": pe_only_vtable,
+            "expected_vtable": expected_vtable,
             "expected_dedicated_vtable_absent": expected_absent,
             "match": match,
         })
@@ -167,6 +192,49 @@ def verify(
             "constructor_found": body is not None and constructor in body,
         })
 
+    source_only_rows = []
+    for class_name, function, symbol, expected in SOURCE_ONLY_VTABLE_ANCHORS:
+        body = extract_function(text, function)
+        source_only_rows.append({
+            "class": class_name,
+            "function": function,
+            "vtable_symbol": symbol,
+            "expected_vtable": expected,
+            "function_found": body is not None,
+            "source_symbol_found": body is not None and symbol in body,
+            "symbol_address_match": symbol_address(symbol) == expected,
+        })
+
+    registry = extract_registry(source, exe)
+    registry_by_name = {
+        row["name"]: row
+        for row in registry["classes"]
+        if row.get("name") is not None
+    }
+    hierarchy_rows = []
+    for class_name, expected_parent in HIERARCHY_LINKS:
+        row = registry_by_name.get(class_name)
+        hierarchy_rows.append({
+            "class": class_name,
+            "expected_parent": expected_parent,
+            "class_found": row is not None,
+            "actual_parent": row.get("parent_class") if row is not None else None,
+            "match": row is not None and row.get("parent_class") == expected_parent,
+        })
+
+    destructor_rows = []
+    for class_name, function, own_vtable, base_destructor in DESTRUCTOR_CHAIN_LINKS:
+        body = extract_function(text, function)
+        destructor_rows.append({
+            "class": class_name,
+            "function": function,
+            "own_vtable_symbol": own_vtable,
+            "base_destructor": base_destructor,
+            "function_found": body is not None,
+            "own_vtable_found": body is not None and own_vtable in body,
+            "base_destructor_found": body is not None and base_destructor in body,
+        })
+
     sha_match = expected_sha256 is None or actual_sha256.lower() == expected_sha256.lower()
     pe_report = None
     exe_sha256 = None
@@ -192,6 +260,19 @@ def verify(
             row["function_found"] and row["rtti_found"] and row["constructor_found"]
             for row in factory_rows
         )
+        and all(
+            row["function_found"]
+            and row["source_symbol_found"]
+            and row["symbol_address_match"]
+            for row in source_only_rows
+        )
+        and all(row["match"] for row in hierarchy_rows)
+        and all(
+            row["function_found"]
+            and row["own_vtable_found"]
+            and row["base_destructor_found"]
+            for row in destructor_rows
+        )
         and (pe_report is None or (bool(exe_sha_match) and pe_report["ready"]))
     )
     return {
@@ -207,7 +288,10 @@ def verify(
         "exe_sha256_match": exe_sha_match,
         "ready": ready,
         "anchors": anchor_rows,
+        "source_only_vtable_anchors": source_only_rows,
         "factory_links": factory_rows,
+        "hierarchy_links": hierarchy_rows,
+        "destructor_chain_links": destructor_rows,
         "pe_rtti_vtables": pe_report,
     }
 
