@@ -76,6 +76,16 @@ def test_constructor_write_contract_preserves_write_widths_and_flag():
     assert writes[0x48] == {"offset": 0x48, "width": 1, "raw_value": 0}
     assert writes[0x2C]["raw_value"] == 0x40C00000
     assert writes[0x2C]["float_value"] == 6.0
+    assert writes[SOURCE_RECORD_PTR_OFFSET] == {
+        "offset": SOURCE_RECORD_PTR_OFFSET,
+        "width": 4,
+        "raw_value": 0,
+    }
+    assert writes[META_RECORD_PTR_OFFSET] == {
+        "offset": META_RECORD_PTR_OFFSET,
+        "width": 4,
+        "raw_value": 0,
+    }
     assert writes[META_REBUILD_FLAG_OFFSET] == {
         "offset": META_REBUILD_FLAG_OFFSET,
         "width": 1,
