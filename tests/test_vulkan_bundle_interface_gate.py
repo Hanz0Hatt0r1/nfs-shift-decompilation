@@ -4,9 +4,9 @@ from bmw_vulkan_bundle import TARGET_MEB
 from vulkan_bundle_interface_gate import validate_bmw_vulkan_interface
 
 
-def _manifest(tmp_path):
+def _manifest(tmp_path, *, format="SHIFT.BMWVulkanBundle/1"):
     (tmp_path / "bundle_manifest.json").write_text(json.dumps({
-        "format": "SHIFT.BMWVulkanBundle/1",
+        "format": format,
         "artifacts": {"shaders": []},
         "source": {"mesh_ref": TARGET_MEB},
     }), encoding="utf-8")
@@ -128,3 +128,11 @@ def test_interface_gate_rejects_vertex_stage_texture_descriptor(tmp_path):
     result = validate_bmw_vulkan_interface(tmp_path, report)
     assert result["ready"] is False
     assert "vulkan-interface:set1-stage-unsupported:1:vertex" in result["blocking_reasons"]
+
+
+def test_interface_gate_accepts_neutral_vulkan_draw_bundle(tmp_path):
+    _manifest(tmp_path, format="SHIFT.VulkanDrawBundle/1")
+    report = _report([])
+    result = validate_bmw_vulkan_interface(tmp_path, report)
+    assert result["ready"] is True
+    assert result["source_bundle_format"] == "SHIFT.VulkanDrawBundle/1"
