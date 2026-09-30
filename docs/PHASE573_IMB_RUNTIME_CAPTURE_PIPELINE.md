@@ -89,11 +89,13 @@ for Phase 572 matching but stores only a compact per-resource runtime summary:
 - same-instance gate readiness/candidate count/blockers;
 - Phase 572 candidate-binding results;
 - since Phase 590, draw-local texture observations only for runtime draws that
-  support the selected strong shader variant.
+  support the selected strong shader variant;\n- since Phase 591, the same selected observations also retain compact draw-local
+  vertex/pixel constant state for exact scene-instance transform matching.
 
-The texture observation slice keeps register, texture pointer, observed
-CreateTexture identity, capture status and snapshot paths. It does not retain
-unrelated frame state and does not select one of multiple supporting draws.
+The selected observation slice keeps register, texture pointer, observed
+CreateTexture identity, capture status, snapshot paths and draw-local constant
+state. It does not retain unrelated frame state and does not select one of
+multiple supporting draws.
 
 The output explicitly records that full runtime frames are not retained.
 
