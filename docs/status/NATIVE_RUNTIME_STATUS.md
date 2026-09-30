@@ -34,7 +34,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 2. Connect the existing evidence-backed camera update/snapshot contracts to the native state double buffer.
 3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
-5. Connect scene/track resource loading. Phase 581 serializes scene transforms as SVWT, Phase 583 upgrades native geometry to semantic-aware SVGP v3, and Phase 584 executes general non-singular affine transforms in the standalone native material executor. Direct NativeSceneVulkanSet preparation/ingestion into native_runtime remains.
+5. Connect scene/track resource loading. Phases 581–584 close SVWT transport, semantic-aware SVGP v3 and non-singular affine execution. Phase 585 adds `SHIFT.NativeSceneVulkanSetPrepare/1` plus direct `native_runtime --scene-set` scheduling with the same affine transform semantics. Authentic runtime-proven Silverstone draws and unresolved renderer-owned scene resources remain.
 6. Add keyboard/gamepad vehicle controls beyond the neutral intent layer.
 7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
 
@@ -80,3 +80,19 @@ A blocked submesh does not erase ready siblings, but the complete set remains
 fail-closed until every selected child is ready. The existing single-submesh
 adapter and CLI remain available; `--all-submeshes` selects the Phase 527
 set path.
+
+
+## Phase 585 neutral scene-set boundary
+
+The runtime now accepts `--scene-set DIR` independently from the historical
+BMW `--bundle-set` mode. The set must pass
+`SHIFT.NativeSceneVulkanSetPrepare/1`, and every child remains independently
+gated by the existing native-submission, SPIR-V and interface contracts.
+
+Neutral scene children use `SHIFT.VulkanDrawBundle/1`; the runtime no longer
+requires them to masquerade as `SHIFT.BMWVulkanBundle/1`. Before vertex upload,
+the runtime consumes `world_transform.svwt` with the Phase 584 semantic-aware
+affine rules for POSITION/NORMAL/TANGENT/TANGENT2.
+
+Linux Vulkan CI executes a validated three-frame neutral scene-set smoke in
+addition to the existing BMW single/multi-draw regressions.
