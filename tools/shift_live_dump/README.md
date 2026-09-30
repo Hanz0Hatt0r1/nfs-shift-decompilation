@@ -217,14 +217,20 @@ retail decompilation:
 ```bash
 python3 tools/shift_live_dump/verify_track_path_source_anchors.py \
   /path/to/SHIFT.exe.c \
-  --expect-source-sha256 512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9
+  --expect-source-sha256 512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9 \
+  --exe /path/to/SHIFT.exe \
+  --expect-exe-sha256 eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1
 ```
 
 The verifier checks the source function/vtable anchors for `AISegmentPath`,
 `AIPathNode`, `AIPolylinePath`, `AIPolyPathNode`, and `Knot`, verifies
 the factory RTTI-to-constructor links for the two concrete path containers, and
 requires the recovered addresses to match `KNOWN_VTABLES` in
-`analyze_track_paths.py`. A mismatch exits non-zero.
+`analyze_track_paths.py`. With `--exe`, it also recovers the same vtables
+through descriptor-returning virtual RTTI getters in the retail PE and asserts
+that `AISpline`/`AISplineInfo` do not expose a dedicated getter through this
+mechanism. A mismatch exits non-zero. See
+[track/path RTTI vtable evidence](../../evidence/track_path_rtti_vtables.md).
 
 Candidates are filtered against mapped SHIFT.exe vtable addresses and writable target pointers. `AISegmentPath`, `AIPolylinePath`, and `AIPolyPathNode` require their recovered concrete vtables (`0x00afc930`, `0x00afc678`, and `0x00afbfa8`, respectively); generic executable vtables are not accepted as those concrete classes. The analyzer also follows stable 32-bit pointers leaving the selected ranges, clusters nearby heap targets, and writes capture windows for the original full snapshot.
 
@@ -235,7 +241,7 @@ Outputs:
 - `aipolylinepath_nodes.csv` — decoded elements of every fully validated `AIPolylinePath.array`, exported only when the count prefix and complete concrete-vtable sequence agree across every supplied snapshot; includes node address/index, 2D position/tangent and cumulative distance.
 - `aisegmentpath_nodes.csv` — complete reference-snapshot `AISegmentPath.array` instances exported only when the count prefix and complete `AIPathNode` vtable sequence agree across every supplied snapshot, including reflected node fields.
 - `aispline_knot_arrays.csv` / `aispline_knots.csv` — complete count-prefixed `Knot` arrays and their reflected fields from the reference snapshot.
-- `aispline_knot_links.csv` — exact `AISpline` candidate pointer/count joins to validated `Knot` arrays across every supplied snapshot, with owner ambiguity counts. The object's concrete vtable remains unidentified.
+- `aispline_knot_links.csv` — exact structural `AISpline` candidate pointer/count joins to validated `Knot` arrays across every supplied snapshot, with `owner_candidate_count` and `unique_owner`. The retail PE exposes no dedicated AISpline RTTI getter/vtable through the concrete-class pattern used by the neighboring path classes.
 - `aiw_next_edges.csv` — normalized `WP_PTRS.next` graph edges from the selected AIW resources, including waypoint indices and lap-distance delta.
 - `aiw_runtime_edges.csv` — runtime-address pairs for each explicit AIW next edge, preserving the concrete in-memory graph and runtime stride/wrap information.
 - `path_start_node_links.csv` — direct `Path.StartNode` resolutions, including target vtable, count-prefix stability and validated consecutive node count.

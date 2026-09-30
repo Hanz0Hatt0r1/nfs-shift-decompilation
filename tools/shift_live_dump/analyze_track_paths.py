@@ -108,9 +108,12 @@ KNOT = {
        for index, axis in enumerate(("x", "y", "z"))},
     "length": (0x40, "f"), "inv_length": (0x44, "f"),
 }
-# FUN_006ce2f0 reflects the AISpline container layout. Its concrete vtable
-# has not yet been established; exact Knot-array pointer/count evidence is
-# required before reporting an owner.
+# FUN_006ce2f0 reflects the AISpline container layout. Unlike Knot,
+# AIPolylinePath, AIPathNode, AIPolyPathNode and AISegmentPath, the retail PE
+# exposes no dedicated virtual RTTI getter returning the AISpline descriptor
+# DAT_00c0d648, so no concrete AISpline vtable is asserted. Exact Knot-array
+# pointer/count evidence and cross-snapshot header stability are required before
+# reporting a structural owner candidate.
 SPLINE = {
     "array": (0x10, "I"), "length": (0x14, "f"),
     "knots": (0x18, "I"), "step_dist": (0x1c, "f"),
@@ -972,7 +975,9 @@ def link_splines_to_knot_arrays(
             })
     owners_per_array = Counter(row["array_address"] for row in links)
     for link in links:
-        link["owner_candidate_count"] = owners_per_array[link["array_address"]]
+        owner_count = owners_per_array[link["array_address"]]
+        link["owner_candidate_count"] = owner_count
+        link["unique_owner"] = owner_count == 1
     return sorted(links, key=lambda row: (row["array_address"], row["spline_address"]))
 
 
@@ -1992,6 +1997,9 @@ def main() -> int:
         "spline_knot_array_count": len(spline_knot_arrays),
         "spline_knot_count": len(spline_knots),
         "spline_knot_link_count": len(spline_knot_links),
+        "spline_unique_knot_link_count": sum(
+            1 for row in spline_knot_links if row.get("unique_owner")
+        ),
         "path_start_node_link_count": len(path_start_node_links),
         "path_polyline_link_count": len(path_polyline_links),
         "known_vtables": {k: hex(v) for k, v in KNOWN_VTABLES.items()},
@@ -2036,6 +2044,7 @@ def main() -> int:
     write_csv(out / "aispline_knot_links.csv", spline_knot_links, [
         "spline_address", "spline_vtable", "array_address", "knot_count",
         "length", "step_dist", "stable_snapshots", "owner_candidate_count",
+        "unique_owner",
     ])
     write_csv(out / "path_polyline_links.csv", path_polyline_links, [
         "path_address", "start_node", "polyline_address", "polyline_array",

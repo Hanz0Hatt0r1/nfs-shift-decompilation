@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Verify track/path vtable constants against recovered SHIFT.exe.c anchors."""
+"""Verify track/path vtable constants against recovered SHIFT.exe.c and PE anchors."""
 from __future__ import annotations
 
 import argparse
 import ast
 import hashlib
 import json
+import struct
 from pathlib import Path
 
 FORMAT = "SHIFT-TRACK-PATH-SOURCE-ANCHORS/1"
@@ -22,6 +23,23 @@ FACTORY_LINKS = (
     ("AISegmentPath", "FUN_006d8490", "DAT_00c0d668", "FUN_006cfe70"),
     ("AIPolylinePath", "FUN_006d8490", "DAT_00c0d608", "FUN_006cc900"),
 )
+
+RTTI_DESCRIPTORS = {
+    "AIPolylinePath": 0x00C0D608,
+    "Knot": 0x00C0D638,
+    "AISpline": 0x00C0D648,
+    "AISplineInfo": 0x00C0D658,
+    "AISegmentPath": 0x00C0D668,
+    "AIPolyPathNode": 0x00C0D678,
+    "AIPathNode": 0x00C0D688,
+}
+
+# In the retail PE, the concrete polymorphic track/path classes above expose a
+# tiny virtual RTTI getter of the form "mov eax, <descriptor>; ret". AISpline
+# and AISplineInfo are reflected, but no dedicated getter/vtable is present via
+# that same mechanism. Keep this absence explicit instead of inventing a
+# concrete AISpline vtable from address proximity.
+RTTI_GETTER_EXPECTED_ABSENT = {"AISpline", "AISplineInfo"}
 
 
 def extract_function(text: str, name: str) -> str | None:
@@ -69,7 +87,124 @@ def symbol_address(symbol: str) -> int:
     return int(symbol.rsplit("_", 1)[-1], 16)
 
 
-def verify(source: Path, analyzer: Path, expected_sha256: str | None = None) -> dict:
+def _pe_sections(data: bytes) -> tuple[int, dict[str, dict[str, int]]]:
+    if len(data) < 0x40 or data[:2] != b"MZ":
+        raise ValueError("not a PE image")
+    pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+    if pe_offset + 24 > len(data) or data[pe_offset:pe_offset + 4] != b"PE\0\0":
+        raise ValueError("invalid PE signature")
+    section_count = struct.unpack_from("<H", data, pe_offset + 6)[0]
+    optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
+    optional = pe_offset + 24
+    if optional + optional_size > len(data):
+        raise ValueError("truncated PE optional header")
+    magic = struct.unpack_from("<H", data, optional)[0]
+    if magic == 0x10B:
+        image_base = struct.unpack_from("<I", data, optional + 28)[0]
+    elif magic == 0x20B:
+        image_base = struct.unpack_from("<Q", data, optional + 24)[0]
+    else:
+        raise ValueError(f"unsupported PE optional-header magic 0x{magic:04x}")
+
+    section_table = optional + optional_size
+    sections: dict[str, dict[str, int]] = {}
+    for index in range(section_count):
+        offset = section_table + index * 40
+        if offset + 40 > len(data):
+            raise ValueError("truncated PE section table")
+        name = data[offset:offset + 8].split(b"\0", 1)[0].decode("ascii", errors="replace")
+        virtual_size, virtual_address, raw_size, raw_offset = struct.unpack_from(
+            "<IIII", data, offset + 8
+        )
+        sections[name] = {
+            "virtual_address": virtual_address,
+            "virtual_size": virtual_size,
+            "raw_offset": raw_offset,
+            "raw_size": raw_size,
+        }
+    return int(image_base), sections
+
+
+def _section_bounds(data: bytes, section: dict[str, int]) -> tuple[int, int]:
+    start = int(section["raw_offset"])
+    end = min(len(data), start + int(section["raw_size"]))
+    if start < 0 or start > end:
+        raise ValueError("invalid PE section raw range")
+    return start, end
+
+
+def scan_pe_rtti_vtables(data: bytes, known: dict[str, int]) -> dict:
+    """Recover dedicated vtables through tiny descriptor-returning RTTI getters."""
+    image_base, sections = _pe_sections(data)
+    if ".text" not in sections or ".rdata" not in sections:
+        raise ValueError("PE lacks .text or .rdata")
+    text_section = sections[".text"]
+    rdata_section = sections[".rdata"]
+    text_start, text_end = _section_bounds(data, text_section)
+    rdata_start, rdata_end = _section_bounds(data, rdata_section)
+    text_va = image_base + int(text_section["virtual_address"])
+    rdata_va = image_base + int(rdata_section["virtual_address"])
+    text_virtual_end = text_va + max(
+        int(text_section["virtual_size"]), int(text_section["raw_size"])
+    )
+
+    rows = []
+    for class_name, descriptor in RTTI_DESCRIPTORS.items():
+        getter_pattern = b"\xB8" + struct.pack("<I", descriptor) + b"\xC3"
+        getters: list[int] = []
+        cursor = text_start
+        while True:
+            offset = data.find(getter_pattern, cursor, text_end)
+            if offset < 0:
+                break
+            getters.append(text_va + (offset - text_start))
+            cursor = offset + 1
+
+        candidate_vtables: set[int] = set()
+        for getter in getters:
+            encoded = struct.pack("<I", getter)
+            for offset in range(rdata_start + 4, rdata_end - 3, 4):
+                if data[offset:offset + 4] != encoded:
+                    continue
+                first_entry = struct.unpack_from("<I", data, offset - 4)[0]
+                if text_va <= first_entry < text_virtual_end:
+                    candidate_vtables.add(rdata_va + (offset - rdata_start) - 4)
+
+        analyzer_vtable = known.get(class_name)
+        expected_absent = class_name in RTTI_GETTER_EXPECTED_ABSENT
+        candidates = sorted(candidate_vtables)
+        if expected_absent:
+            match = not getters and not candidates and analyzer_vtable is None
+        else:
+            match = (
+                analyzer_vtable is not None
+                and len(getters) == 1
+                and candidates == [analyzer_vtable]
+            )
+        rows.append({
+            "class": class_name,
+            "descriptor": descriptor,
+            "getter_addresses": getters,
+            "candidate_vtables": candidates,
+            "analyzer_vtable": analyzer_vtable,
+            "expected_dedicated_vtable_absent": expected_absent,
+            "match": match,
+        })
+
+    return {
+        "image_base": image_base,
+        "rows": rows,
+        "ready": all(row["match"] for row in rows),
+    }
+
+
+def verify(
+    source: Path,
+    analyzer: Path,
+    expected_sha256: str | None = None,
+    exe: Path | None = None,
+    expected_exe_sha256: str | None = None,
+) -> dict:
     data = source.read_bytes()
     text = data.decode("utf-8", errors="replace")
     actual_sha256 = hashlib.sha256(data).hexdigest()
@@ -105,6 +240,18 @@ def verify(source: Path, analyzer: Path, expected_sha256: str | None = None) -> 
         })
 
     sha_match = expected_sha256 is None or actual_sha256.lower() == expected_sha256.lower()
+    pe_report = None
+    exe_sha256 = None
+    exe_sha_match = None
+    if exe is not None:
+        exe_data = exe.read_bytes()
+        exe_sha256 = hashlib.sha256(exe_data).hexdigest()
+        exe_sha_match = (
+            expected_exe_sha256 is None
+            or exe_sha256.lower() == expected_exe_sha256.lower()
+        )
+        pe_report = scan_pe_rtti_vtables(exe_data, known)
+
     ready = (
         sha_match
         and all(
@@ -117,6 +264,7 @@ def verify(source: Path, analyzer: Path, expected_sha256: str | None = None) -> 
             row["function_found"] and row["rtti_found"] and row["constructor_found"]
             for row in factory_rows
         )
+        and (pe_report is None or (bool(exe_sha_match) and pe_report["ready"]))
     )
     return {
         "format": FORMAT,
@@ -125,9 +273,14 @@ def verify(source: Path, analyzer: Path, expected_sha256: str | None = None) -> 
         "expected_source_sha256": expected_sha256,
         "source_sha256_match": sha_match,
         "analyzer": str(analyzer),
+        "exe": str(exe) if exe is not None else None,
+        "exe_sha256": exe_sha256,
+        "expected_exe_sha256": expected_exe_sha256,
+        "exe_sha256_match": exe_sha_match,
         "ready": ready,
         "anchors": anchor_rows,
         "factory_links": factory_rows,
+        "pe_rtti_vtables": pe_report,
     }
 
 
@@ -141,10 +294,18 @@ def main() -> int:
         help="analyze_track_paths.py to validate",
     )
     parser.add_argument("--expect-source-sha256")
+    parser.add_argument("--exe", type=Path, help="retail SHIFT.exe for PE RTTI/vtable validation")
+    parser.add_argument("--expect-exe-sha256")
     parser.add_argument("--json-out", type=Path)
     args = parser.parse_args()
 
-    report = verify(args.source, args.analyzer, args.expect_source_sha256)
+    report = verify(
+        args.source,
+        args.analyzer,
+        args.expect_source_sha256,
+        args.exe,
+        args.expect_exe_sha256,
+    )
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.json_out:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)

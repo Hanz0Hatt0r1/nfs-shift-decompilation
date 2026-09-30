@@ -287,6 +287,7 @@ assert len(knots) == 2, knots
 assert [float(row["pos_x"]) for row in knots] == [0.0, 1.0], knots
 assert all(float(row["length"]) == 5.0 for row in knots), knots
 assert result["spline_knot_link_count"] == 1, result["spline_knot_link_count"]
+assert result["spline_unique_knot_link_count"] == 1, result["spline_unique_knot_link_count"]
 assert result["candidate_counts"]["AISpline"] == 1, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aispline_knot_links.csv"), newline="", encoding="utf-8") as fh:
     spline_links = list(csv.DictReader(fh))
@@ -296,6 +297,7 @@ assert int(spline_links[0]["array_address"]) == 0x00204000, spline_links
 assert int(spline_links[0]["knot_count"]) == 2, spline_links
 assert int(spline_links[0]["stable_snapshots"]) == 2, spline_links
 assert int(spline_links[0]["owner_candidate_count"]) == 1, spline_links
+assert spline_links[0]["unique_owner"] == "True", spline_links
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"), newline="", encoding="utf-8") as fh:

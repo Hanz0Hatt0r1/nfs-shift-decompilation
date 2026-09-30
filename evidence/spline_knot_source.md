@@ -61,11 +61,17 @@ the reference snapshot to `aispline_knot_arrays.csv` and
 The reflected `AISpline+0x10` pointer and `+0x18` count provide an owner
 test. The analyzer reports `aispline_knot_links.csv` only when a candidate
 object points exactly to a validated array, its count equals the array
-prefix, its vtable points into mapped game code, and the pointer/count remain
-consistent across every snapshot. The object's concrete class vtable has
-not been identified from the PE, so these are structural owner candidates.
-`owner_candidate_count` exposes any ambiguity when several objects point
-to the same array.
+prefix, its first word points into mapped game code, and the header/pointer/count
+remain consistent across every snapshot.
+
+The PE-level RTTI scan in
+[track_path_rtti_vtables.md](track_path_rtti_vtables.md) establishes the
+important negative boundary: unlike `Knot`, `AISegmentPath`,
+`AIPolylinePath`, `AIPathNode`, and `AIPolyPathNode`, retail
+`AISpline` has no dedicated descriptor-returning virtual RTTI getter, so no
+concrete AISpline vtable is asserted. These remain structural owner candidates.
+`owner_candidate_count` exposes ambiguity and `unique_owner` is true only
+when exactly one surviving structural object owns a validated array.
 
 The currently available reduced track captures contain no matching
 `AISpline` or `Knot` objects; they cannot confirm live retail ownership.
