@@ -88,6 +88,17 @@ struct.pack_into("<III", blob, bad_knot_local, 0x00AFBE28, 0, 1)
 struct.pack_into("<14f", blob, bad_knot_local + 0x10, *([1.0] * 14))
 struct.pack_into("<I", blob, bad_knot_local + 0x48, 0x00AECCF8)
 
+# AISpline's reflected array pointer and count identify the owner.
+spline_off = 0xA00
+struct.pack_into("<III", blob, spline_off, 0x00401000, 0, 1)
+struct.pack_into("<IfIf", blob, spline_off + 0x10,
+                 base + knot_array_local, 10.0, 2, 5.0)
+# Exact pointer with a different count is insufficient for a link.
+false_spline_off = 0xA40
+struct.pack_into("<III", blob, false_spline_off, 0x00401000, 0, 1)
+struct.pack_into("<IfIf", blob, false_spline_off + 0x10,
+                 base + knot_array_local, 10.0, 3, 5.0)
+
 # Synthetic AIPolylinePath using the concrete vtable recovered from
 # FUN_006cc390. Its array points at a count-prefixed AIPolyPathNode array.
 poff = 0x300
@@ -161,6 +172,8 @@ cat /tmp/track_path_filter_test.out
 
 # Direct Path.StartNode -> AIPolyPathNode[] resolver regression.
 python3 - "$self_dir/analyze_track_paths.py" "$tmp" <<'PY2'
+import shutil
+import struct
 import sys
 from pathlib import Path
 script = Path(sys.argv[1])
@@ -190,6 +203,20 @@ wrong_vtable = ns["extract_segment_nodes"](
     sns[0], idx[0],
 )
 assert wrong_vtable == [], wrong_vtable
+# The owner pointer/count must agree in every snapshot, not just the first.
+changed = root / "changed-owner"
+shutil.copytree(sns[1], changed)
+with (changed / "regions/anon.bin").open("r+b") as fh:
+    fh.seek(0xA00 + 0x18)
+    fh.write(struct.pack("<I", 3))
+unstable_owner = ns["link_splines_to_knot_arrays"](
+    [{"address": 0x00200A00, "vtable": 0x00401000,
+      "array": 0x00204000, "knots": 2, "length": 10.0,
+      "step_dist": 5.0}],
+    [{"array_address": 0x00204000, "count": 2}],
+    [sns[0], changed], idx,
+)
+assert unstable_owner == [], unstable_owner
 print("track path StartNode link test: PASS")
 PY2
 python3 - "$tmp/out/track_path_analysis.json" "$tmp/out-filtered/track_path_analysis.json" <<'PY'
@@ -252,6 +279,16 @@ with open(sys.argv[1].replace("track_path_analysis.json", "aispline_knots.csv"),
 assert len(knots) == 2, knots
 assert [float(row["pos_x"]) for row in knots] == [0.0, 1.0], knots
 assert all(float(row["length"]) == 5.0 for row in knots), knots
+assert result["spline_knot_link_count"] == 1, result["spline_knot_link_count"]
+assert result["candidate_counts"]["AISpline"] == 1, result["candidate_counts"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aispline_knot_links.csv"), newline="", encoding="utf-8") as fh:
+    spline_links = list(csv.DictReader(fh))
+assert len(spline_links) == 1, spline_links
+assert int(spline_links[0]["spline_address"]) == 0x00200A00, spline_links
+assert int(spline_links[0]["array_address"]) == 0x00204000, spline_links
+assert int(spline_links[0]["knot_count"]) == 2, spline_links
+assert int(spline_links[0]["stable_snapshots"]) == 2, spline_links
+assert int(spline_links[0]["owner_candidate_count"]) == 1, spline_links
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"), newline="", encoding="utf-8") as fh:
