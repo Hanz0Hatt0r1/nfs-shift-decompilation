@@ -264,8 +264,15 @@ def build_imb_runtime_shader_target_set(
             )
         )
 
+        same_instance_binding_blockers = list(
+            runtime_identity_reasons
+        )
+        if not capture_ready:
+            same_instance_binding_blockers.append(
+                "shader-capture-not-ready"
+            )
         same_instance_match_ready = (
-            capture_ready
+            not same_instance_binding_blockers
             and identity.get("resource_identity_ready") is True
             and identity.get("draw_range_ready") is True
         )
@@ -283,6 +290,9 @@ def build_imb_runtime_shader_target_set(
             "same_instance_match_ready": same_instance_match_ready,
             "blocking_reasons": row_blockers,
             "runtime_identity_blocking_reasons": runtime_identity_reasons,
+            "same_instance_blocking_reasons": (
+                same_instance_binding_blockers
+            ),
             "targets": targets,
         })
 
@@ -364,7 +374,7 @@ def build_imb_runtime_shader_target_set(
     same_instance_blockers = [
         f"binding-{row['binding_index']}:{reason}"
         for row in binding_targets
-        for reason in (row.get("runtime_identity_blocking_reasons") or [])
+        for reason in (row.get("same_instance_blocking_reasons") or [])
     ]
 
     unique_targets = sorted(
