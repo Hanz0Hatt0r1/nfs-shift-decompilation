@@ -229,6 +229,11 @@ def test_meshinst_resource_preserves_type7_extra_render_call():
     assert handoff["ready"] is True
     assert factory["factory_type"] == 7
     assert factory["factory_name"] == "MeshInst"
+    assert factory["resource_loader"]["mode"] == "binary"
+    meshinst = handoff["resource"]["meshinst_runtime"]
+    assert meshinst["format"] == "SHIFT.SGBMeshInstRuntime/1"
+    assert meshinst["resource_loader"]["function"] == "FUN_00859800"
+    assert meshinst["runtime_layout"]["instance_count"]["runtime_offset"] == 0x80
     assert handoff["runtime_submission"]["meshinst_type7_extra_call"][
         "enabled"
     ] is True
