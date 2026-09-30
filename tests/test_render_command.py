@@ -848,3 +848,72 @@ def test_render_command_preserves_typed_bmt_depth_and_alpha_state():
     assert state["alpha_test"]["value_raw"] == 64.0
     assert state["alpha_blend"]["source_blend"]["engine_enum_index"] == 4
     assert state["cull"] == "EBFCT_ANTICLOCKWISE"
+
+
+def _runtime_proven_packet():
+    packet = _packet()
+    packet["mesh"]["source_kind"] = "IMB"
+    packet["mesh"]["resolved"] = {
+        "path": "tracks/silverstone/object.imb",
+        "archive": "Silverstone_Era3_GrandPrix.bff",
+        "resource_sha256": "a" * 64,
+    }
+    packet["submeshes"][0]["primitive_index"] = 3
+    packet["submeshes"][0]["runtime_shader_admission"] = {
+        "binding_index": 42,
+        "shader_selection_admitted": True,
+        "selection_status": "unique",
+        "selection_source": "runtime-admission",
+    }
+    packet["submeshes"][0]["material"]["runtime_selection"] = {
+        "ready": True,
+        "selected_variant": {
+            "score": 100,
+            "permutation_identity_sha256": "b" * 64,
+        },
+    }
+    return packet
+
+
+def test_render_command_preserves_runtime_proven_draw_contract():
+    result = build_render_command(
+        build_static_draw_contract(_runtime_proven_packet()),
+        _resources(),
+    )
+
+    assert result["ready"] is True
+    assert result["runtime_proven_draw_count"] == 1
+    row = result["submeshes"][0]["runtime_provenance"]
+    assert row["format"] == "SHIFT.RuntimeProvenDraw/1"
+    assert row["binding_index"] == 42
+    assert row["primitive_index"] == 3
+    assert row["resource"]["source_kind"] == "IMB"
+    assert row["resource"]["sha256"] == "a" * 64
+    assert row["shader_selection"]["selection_source"] == "runtime-admission"
+    assert result["validation"]["valid"] is True
+
+
+def test_render_command_rejects_tampered_runtime_proven_draw_range():
+    draw = build_static_draw_contract(_runtime_proven_packet())
+    draw["submeshes"][0]["runtime_provenance"]["draw_range"]["first_index"] = 9
+    result = build_render_command(draw, _resources())
+
+    assert result["ready"] is False
+    assert (
+        "runtime-provenance:draw-range-mismatch"
+        in result["blocking_reasons"]
+    )
+
+
+def test_render_command_rejects_non_runtime_admission_provenance():
+    draw = build_static_draw_contract(_runtime_proven_packet())
+    draw["submeshes"][0]["runtime_provenance"]["shader_selection"][
+        "selection_source"
+    ] = "static-ranking"
+    result = build_render_command(draw, _resources())
+
+    assert result["ready"] is False
+    assert (
+        "runtime-provenance:selection-source-invalid"
+        in result["blocking_reasons"]
+    )
