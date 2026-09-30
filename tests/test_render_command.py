@@ -848,3 +848,20 @@ def test_render_command_preserves_typed_bmt_depth_and_alpha_state():
     assert state["alpha_test"]["value_raw"] == 64.0
     assert state["alpha_blend"]["source_blend"]["engine_enum_index"] == 4
     assert state["cull"] == "EBFCT_ANTICLOCKWISE"
+
+
+def test_render_command_preserves_vulkan_shader_sources():
+    packet = _packet()
+    linked = packet["submeshes"][0]["material"]["linked_shader_pair"]
+    linked["vulkan_vertex_glsl"] = "#version 450\nvoid main(){}"
+    linked["vulkan_pixel_glsl"] = (
+        "#version 450\nlayout(location=0) out vec4 o;"
+        "void main(){o=vec4(1.0);}"
+    )
+
+    draw = build_static_draw_contract(packet)
+    result = build_render_command(draw, _resources())
+    shader = result["submeshes"][0]["shader"]
+
+    assert shader["vulkan_vertex_glsl"].startswith("#version 450")
+    assert shader["vulkan_pixel_glsl"].startswith("#version 450")
