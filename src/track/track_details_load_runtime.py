@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from shift_hash_runtime import shift_hash32
 from track_details_runtime import LOADER, reflected_field_index
 
 FORMAT = "SHIFT.TrackDetailsLoadRuntime/1"
@@ -111,6 +112,8 @@ def derive_post_load_values(
 
     Missing properties are represented by an empty source string for token
     parsing; this helper is not a replacement for the retail property loader.
+    Numeric source-path hash parity is available for ASCII source paths, which
+    matches the recovered retail TrackDetails corpus path convention.
     """
     token_collections = {
         name: split_track_tokens(str(properties.get(name, "")))
@@ -118,6 +121,7 @@ def derive_post_load_values(
     }
     year = int(properties.get(YEAR_FIELD, 0))
     normalized_path = normalize_track_source_path(source_path)
+    path_bytes = normalized_path.encode("ascii")
     return {
         "token_collections": token_collections,
         "year_bucket": classify_track_year(year),
@@ -125,10 +129,10 @@ def derive_post_load_values(
         "source_path_hash": {
             "function": SOURCE_HASH,
             "destination_offset": SOURCE_PATH_HASH_OFFSET,
-            "byte_length": len(normalized_path.encode("latin-1", errors="replace")),
+            "byte_length": len(path_bytes),
             "seed": 0,
             "case_sensitive_flag": 1,
-            "numeric_hash": None,
+            "numeric_hash": shift_hash32(path_bytes, 0),
         },
     }
 
@@ -203,9 +207,10 @@ def describe_track_details_load_runtime() -> dict[str, Any]:
         },
         "tracklist_text_load_function": TRACKLIST_TEXT_LOAD,
         "evidence_boundary": (
-            "Comma tokenization, year bucketing, source-path normalization/hash "
-            "call, recursive .trd discovery, and success/failure ownership handoff "
-            "are recovered. Internal collection types, property-parser internals "
-            "and higher-level track-selection policy are not inferred."
+            "Comma tokenization, year bucketing, ASCII source-path normalization "
+            "and numeric hash parity, recursive .trd discovery, and success/failure "
+            "ownership handoff are recovered. Internal collection types, non-ASCII "
+            "CRT path behavior, property-parser internals and higher-level "
+            "track-selection policy are not inferred."
         ),
     }
