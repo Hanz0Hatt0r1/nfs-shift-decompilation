@@ -24,7 +24,7 @@
 | SDF | BODY/JOINT/HINGE/BAR schema + runtime reconstruction |
 | VehiclePhysicsAssetGraph/1 | CDF/EDF/GDF/SDF neutral join |
 | BAB/BAS | skeleton parsing, name linkage, animation evidence |
-| SGB | NODE/SUMM object graphs joined to FLAT/SUMM and PART/NODE spatial registries; FLAT normalization/index consumers, OCCL and PART tree mapped |
+| SGB | NODE/SUMM object graphs plus source-backed FLAT/PART spatial placement; ScenePlacement/1 can attach to RenderBinding/1 |
 | Camera runtime | config/state/event/control primitives |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
@@ -33,7 +33,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- neutral SGB scene placement handoff to RenderBinding and unresolved FLAT +0x20..+0x34/source runtime class identities;
+- higher-level SGB streaming/LOD behavior and unresolved runtime class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
