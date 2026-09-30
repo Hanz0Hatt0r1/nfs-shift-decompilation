@@ -36,6 +36,7 @@ native_runtime/build/shift_runtime \
   --bundle out/example-bundle \
   --shader-dir native_runtime/build/shaders \
   --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --camera-state out/native-camera.json \
   --frames 120
 ```
 
@@ -43,7 +44,12 @@ On CI or a headless workstation, run it through Xvfb.
 
 ## Design boundary
 
-This target is deliberately small. Prepared neutral scene scheduling is available through `--scene-set`; retail streaming/LOD, authentic runtime-proven Silverstone inputs and unresolved renderer-owned resources remain separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
+This target is deliberately small. Prepared neutral scene scheduling is available through `--scene-set`; retail streaming/LOD, authentic runtime-proven Silverstone inputs and unresolved renderer-owned resources remain separate gates. The current native state boundary accepts the real BMW physics manifest and
+sizes the proven SDF workspace. Phase 599 also accepts a ready
+`SHIFT.NativeCameraStateBridge/1` through `--camera-state`, carrying only
+recovered numeric CameraManager snapshot/double-buffer state. Opaque
+camera-source/vtable behavior and numerical force/integration semantics remain
+separate evidence-backed backend tasks.
 
 
 ## Phase 530 per-draw cull state
