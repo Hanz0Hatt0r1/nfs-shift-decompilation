@@ -35,6 +35,8 @@ def test_all_ready_corpus_aggregates_versions_properties_and_totals():
     assert report["blocked_count"] == 0
     assert report["total_vertex_count"] == 30
     assert report["total_primitive_count"] == 5
+    assert report["total_triangle_count"] == 0
+    assert report["bone_resource_count"] == 0
     assert report["total_deferred_stream_count"] == 1
     assert report["version_counts"] == {"0.4.0.0": 2}
     assert report["decoded_property_use_counts"] == {
