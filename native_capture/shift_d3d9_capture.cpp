@@ -327,9 +327,10 @@ std::string capture_texture_snapshot_dir() {
     return value;
 }
 
-bool texture_snapshot_stage_selected(DWORD stage) {
+std::vector<DWORD> configured_texture_snapshot_stages() {
     const char* stages = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_STAGES");
     std::string list = (stages && *stages) ? stages : "0,1,2,3,4";
+    std::vector<DWORD> result;
     std::size_t begin = 0;
     while (begin < list.size()) {
         std::size_t end = list.find(',', begin);
@@ -337,12 +338,24 @@ bool texture_snapshot_stage_selected(DWORD stage) {
         std::string token = list.substr(begin, end - begin);
         char* parse_end = nullptr;
         unsigned long value = std::strtoul(token.c_str(), &parse_end, 0);
-        if (parse_end != token.c_str() && *parse_end == '\0' && value == stage) {
-            return true;
+        if (
+            parse_end != token.c_str()
+            && *parse_end == '\0'
+            && value <= std::numeric_limits<DWORD>::max()
+        ) {
+            const DWORD stage = static_cast<DWORD>(value);
+            if (std::find(result.begin(), result.end(), stage) == result.end()) {
+                result.push_back(stage);
+            }
         }
         begin = end + 1;
     }
-    return false;
+    return result;
+}
+
+bool texture_snapshot_stage_selected(DWORD stage) {
+    const auto stages = configured_texture_snapshot_stages();
+    return std::find(stages.begin(), stages.end(), stage) != stages.end();
 }
 
 bool texture_snapshot_stage_enabled(DWORD stage) {
@@ -1159,6 +1172,49 @@ HRESULT STDMETHODCALLTYPE hook_create_device(
     return hr;
 }
 
+unsigned long long consume_draw_index(IDirect3DDevice9* device) {
+    std::lock_guard<std::mutex> lock(g_draw_index_mutex);
+    return g_draw_index_by_device[device]++;
+}
+
+void reset_draw_index(IDirect3DDevice9* device) {
+    std::lock_guard<std::mutex> lock(g_draw_index_mutex);
+    g_draw_index_by_device[device] = 0;
+}
+
+void emit_draw_texture_snapshots(
+    IDirect3DDevice9* device,
+    unsigned long long frame,
+    unsigned long long draw_index) {
+    if (!env_enabled("SHIFT_D3D9_CAPTURE_DRAW_TEXTURE_SNAPSHOT")) return;
+
+    for (const DWORD stage : configured_texture_snapshot_stages()) {
+        if (!draw_texture_snapshot_stage_enabled(stage)) continue;
+        IDirect3DBaseTexture9* texture = nullptr;
+        if (FAILED(device->GetTexture(stage, &texture)) || !texture) {
+            continue;
+        }
+
+        std::ostringstream suffix;
+        suffix << "_f" << frame << "_d" << draw_index;
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(device)
+               << ",\"draw_index\":" << draw_index
+               << ",\"stage\":" << stage
+               << ",\"texture_ptr\":" << CaptureWriter::ptr(texture);
+        append_texture_descriptor_json(fields, texture);
+        append_texture_snapshot_payload_json(
+            fields,
+            device,
+            stage,
+            texture,
+            suffix.str());
+        writer().write_event("draw_texture_snapshot", fields.str());
+        texture->Release();
+    }
+}
+
+
 HRESULT STDMETHODCALLTYPE hook_present(
     IDirect3DDevice9* self,
     const RECT* src,
@@ -1190,7 +1246,10 @@ HRESULT STDMETHODCALLTYPE hook_present(
     const HRESULT hr = g_real_present
         ? g_real_present(self, src, dst, override_window, dirty_region)
         : E_FAIL;
-    if (SUCCEEDED(hr)) g_frame.fetch_add(1);
+    if (SUCCEEDED(hr)) {
+        g_frame.fetch_add(1);
+        reset_draw_index(self);
+    }
     return hr;
 }
 
@@ -1583,8 +1642,11 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
             num_vertices, start_index, primitive_count)
         : E_FAIL;
     if (SUCCEEDED(hr)) {
+        const unsigned long long draw_index = consume_draw_index(self);
+        const unsigned long long frame = g_frame.load();
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"draw_index\":" << draw_index
           << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
           << ",\"base_vertex_index\":" << base_vertex_index
           << ",\"min_vertex_index\":" << min_vertex_index
@@ -1592,6 +1654,7 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
           << ",\"start_index\":" << start_index
           << ",\"primitive_count\":" << primitive_count;
         writer().write_event("draw_indexed_primitive", f.str());
+        emit_draw_texture_snapshots(self, frame, draw_index);
     }
     return hr;
 }
