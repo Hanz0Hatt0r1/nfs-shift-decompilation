@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import struct
 from pathlib import Path
 from typing import Any
@@ -74,6 +75,160 @@ def _bounds(vertices: list[list[float]]) -> tuple[list[float], float]:
 
 
 
+
+
+def _scene_world_matrix(command: dict[str, Any]) -> list[float]:
+    raw = command.get("world_matrix")
+    if (
+        isinstance(raw, list)
+        and len(raw) == 4
+        and all(isinstance(row, list) and len(row) == 4 for row in raw)
+    ):
+        raw = [item for row in raw for item in row]
+    if not isinstance(raw, list) or len(raw) != 16:
+        raise ValueError(
+            "scene world transform requires a numeric 4x4 RenderCommand world_matrix"
+        )
+    matrix: list[float] = []
+    for value in raw:
+        if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+            raise ValueError("scene world matrix contains a non-finite scalar")
+        matrix.append(float(value))
+    if (
+        abs(matrix[3]) > 1e-6
+        or abs(matrix[7]) > 1e-6
+        or abs(matrix[11]) > 1e-6
+        or abs(matrix[15] - 1.0) > 1e-6
+    ):
+        raise ValueError(
+            "scene world matrix must be affine in the recovered D3D row-vector layout"
+        )
+    a, b, c = matrix[0], matrix[1], matrix[2]
+    d, e, f = matrix[4], matrix[5], matrix[6]
+    g, h, i = matrix[8], matrix[9], matrix[10]
+    determinant = (
+        a * (e * i - f * h)
+        - b * (d * i - f * g)
+        + c * (d * h - e * g)
+    )
+    if abs(determinant) <= 1e-12:
+        raise ValueError("scene world matrix has a singular 3x3 linear transform")
+    return matrix
+
+
+def _transform_point_row(
+    value: Any,
+    matrix: list[float],
+) -> list[float]:
+    if not isinstance(value, (list, tuple)) or len(value) < 3:
+        raise ValueError("scene position does not contain three coordinates")
+    x, y, z = float(value[0]), float(value[1]), float(value[2])
+    return [
+        x * matrix[0] + y * matrix[4] + z * matrix[8] + matrix[12],
+        x * matrix[1] + y * matrix[5] + z * matrix[9] + matrix[13],
+        x * matrix[2] + y * matrix[6] + z * matrix[10] + matrix[14],
+        *[float(item) for item in value[3:]],
+    ]
+
+
+def _transform_direction_row(
+    value: Any,
+    matrix: list[float],
+) -> list[float]:
+    if not isinstance(value, (list, tuple)) or len(value) < 3:
+        raise ValueError("scene direction does not contain three coordinates")
+    x, y, z = float(value[0]), float(value[1]), float(value[2])
+    transformed = [
+        x * matrix[0] + y * matrix[4] + z * matrix[8],
+        x * matrix[1] + y * matrix[5] + z * matrix[9],
+        x * matrix[2] + y * matrix[6] + z * matrix[10],
+    ]
+    length = math.sqrt(sum(component * component for component in transformed))
+    if length <= 1e-12:
+        raise ValueError("scene direction collapses under world transform")
+    return [
+        *(component / length for component in transformed),
+        *[float(item) for item in value[3:]],
+    ]
+
+
+def _inverse_transpose3(matrix: list[float]) -> list[float]:
+    a, b, c = matrix[0], matrix[1], matrix[2]
+    d, e, f = matrix[4], matrix[5], matrix[6]
+    g, h, i = matrix[8], matrix[9], matrix[10]
+    determinant = (
+        a * (e * i - f * h)
+        - b * (d * i - f * g)
+        + c * (d * h - e * g)
+    )
+    if abs(determinant) <= 1e-12:
+        raise ValueError("scene normal transform is singular")
+    inv = 1.0 / determinant
+    return [
+        (e * i - f * h) * inv,
+        (f * g - d * i) * inv,
+        (d * h - e * g) * inv,
+        (c * h - b * i) * inv,
+        (a * i - c * g) * inv,
+        (b * g - a * h) * inv,
+        (b * f - c * e) * inv,
+        (c * d - a * f) * inv,
+        (a * e - b * d) * inv,
+    ]
+
+
+def _transform_normal_row(
+    value: Any,
+    matrix: list[float],
+) -> list[float]:
+    normal_matrix = _inverse_transpose3(matrix)
+    if not isinstance(value, (list, tuple)) or len(value) < 3:
+        raise ValueError("scene normal does not contain three coordinates")
+    x, y, z = float(value[0]), float(value[1]), float(value[2])
+    transformed = [
+        x * normal_matrix[0] + y * normal_matrix[3] + z * normal_matrix[6],
+        x * normal_matrix[1] + y * normal_matrix[4] + z * normal_matrix[7],
+        x * normal_matrix[2] + y * normal_matrix[5] + z * normal_matrix[8],
+    ]
+    length = math.sqrt(sum(component * component for component in transformed))
+    if length <= 1e-12:
+        raise ValueError("scene normal collapses under world transform")
+    return [
+        *(component / length for component in transformed),
+        *[float(item) for item in value[3:]],
+    ]
+
+
+def _apply_scene_world_transform(
+    sources: dict[str, list[Any] | None],
+    matrix: list[float],
+) -> list[str]:
+    applied: list[str] = []
+    position_rows = sources.get("200")
+    if isinstance(position_rows, list):
+        sources["200"] = [
+            _transform_point_row(value, matrix)
+            for value in position_rows
+        ]
+        applied.append("200")
+
+    normal_rows = sources.get("220")
+    if isinstance(normal_rows, list):
+        sources["220"] = [
+            _transform_normal_row(value, matrix)
+            for value in normal_rows
+        ]
+        applied.append("220")
+
+    for property_id in ("240", "250"):
+        rows = sources.get(property_id)
+        if isinstance(rows, list):
+            sources[property_id] = [
+                _transform_direction_row(value, matrix)
+                for value in rows
+            ]
+            applied.append(property_id)
+    return applied
 
 
 def _source_values(mesh: dict[str, Any], property_id: str) -> list[Any] | None:
@@ -213,6 +368,7 @@ def export_vulkan_geometry_packet(
     output: str | Path,
     *,
     submesh_index: int = 0,
+    apply_world_matrix: bool = False,
 ) -> dict[str, Any]:
     command = _load(render_command) if isinstance(render_command, (str, Path)) else dict(render_command)
     mesh_data = _load(mesh) if isinstance(mesh, (str, Path)) else dict(mesh)
@@ -269,6 +425,19 @@ def export_vulkan_geometry_packet(
             raise ValueError(
                 f"RenderCommand attribute {row['property_id']} has no complete neutral mesh source"
             )
+
+    scene_matrix = None
+    transformed_properties: list[str] = []
+    if apply_world_matrix:
+        scene_matrix = _scene_world_matrix(command)
+        transformed_properties = _apply_scene_world_transform(
+            sources,
+            scene_matrix,
+        )
+        vertices = [
+            [float(value) for value in row[:3]]
+            for row in (sources.get("200") or [])
+        ]
 
     center, scale = _bounds(vertices)
 
@@ -329,11 +498,35 @@ def export_vulkan_geometry_packet(
         "normalization": {
             "center": center,
             "scale": scale,
-            "source_space": "neutral object space",
+            "source_space": (
+                "scene world space"
+                if apply_world_matrix
+                else "neutral object space"
+            ),
             "source_mesh_format": mesh_data.get("format"),
             "source_serialized_format": mesh_data.get("source_format"),
-            "target_space": "Vulkan clip-space cube",
-            "purpose": "geometry-only checkpoint",
+            "target_space": "Vulkan geometry packet space",
+            "purpose": (
+                "scene-world geometry preparation"
+                if apply_world_matrix
+                else "geometry-only checkpoint"
+            ),
+        },
+        "scene_transform": {
+            "requested": apply_world_matrix,
+            "executed": apply_world_matrix,
+            "mode": (
+                "cpu-baked-row-vector-affine"
+                if apply_world_matrix
+                else "not-applied"
+            ),
+            "world_matrix": scene_matrix,
+            "transformed_properties": transformed_properties,
+            "normal_transform": (
+                "inverse-transpose-3x3"
+                if apply_world_matrix and "220" in transformed_properties
+                else None
+            ),
         },
         "binary_header": {
             "magic": "SVGP",
@@ -350,12 +543,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("mesh")
     parser.add_argument("output")
     parser.add_argument("--submesh-index", type=int, default=0)
+    parser.add_argument(
+        "--apply-world-matrix",
+        action="store_true",
+        help="bake RenderCommand world_matrix into neutral geometry",
+    )
     args = parser.parse_args(argv)
     report = export_vulkan_geometry_packet(
         args.render_command,
         args.mesh,
         args.output,
         submesh_index=args.submesh_index,
+        apply_world_matrix=args.apply_world_matrix,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
