@@ -33,7 +33,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- neutral SGB scene placement handoff to RenderBinding and unresolved FLAT +0x20..+0x34/source runtime class identities;
+- source-backed SGB resource/render-node + world-transform admission into RenderBinding; unresolved FLAT +0x20..+0x34/source runtime class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
