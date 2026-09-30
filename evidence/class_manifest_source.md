@@ -41,12 +41,13 @@ On the supplied retail source/executable pair the joined view contains:
 | registered classes | 315 |
 | resolved class names | 315 |
 | classes with direct reflected fields | 245 |
-| direct reflection fields | 3122 |
+| direct reflection fields | 2379 |
 | classes with a unique PE vtable candidate | 267 |
 
-The joined counts reproduce the underlying RTTI and reflection extractor
-results. No additional class identity, field offset or vtable is invented by
-the manifest layer.
+The joined counts reproduce the underlying RTTI and de-duplicated reflection
+extractor results. The raw recovered source contains 3122 reflection calls; 743
+are paired thunk/non-thunk copies of the same semantic call. No additional
+class identity, field offset or vtable is invented by the manifest layer.
 
 ## Track/path slice
 
