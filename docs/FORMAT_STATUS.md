@@ -29,7 +29,7 @@
 | Camera runtime | config/state/event/control primitives + native six-word snapshot/double-buffer handoff |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
-| Physics runtime | wheel/contact/body/solver boundaries |
+| Physics runtime | wheel/contact/body/solver boundaries + native structural participant registry/selector handoff |
 
 ## Major open areas
 
