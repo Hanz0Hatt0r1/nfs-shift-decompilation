@@ -236,6 +236,136 @@ uint32_t json_u32_field(
     return static_cast<uint32_t>(value);
 }
 
+int32_t json_i32_field(
+    const std::string& path,
+    const std::string& field) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("cannot open JSON manifest: " + path);
+    }
+    const std::string text(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>());
+    const std::string key = "\"" + field + "\"";
+    const size_t key_pos = text.find(key);
+    if (key_pos == std::string::npos) {
+        throw std::runtime_error("manifest field is missing: " + field);
+    }
+    const size_t colon = text.find(':', key_pos + key.size());
+    if (colon == std::string::npos) {
+        throw std::runtime_error("manifest field has no value: " + field);
+    }
+    size_t cursor = colon + 1;
+    while (cursor < text.size() &&
+           std::isspace(static_cast<unsigned char>(text[cursor]))) {
+        ++cursor;
+    }
+    bool negative = false;
+    if (cursor < text.size() && text[cursor] == '-') {
+        negative = true;
+        ++cursor;
+    }
+    if (cursor == text.size() ||
+        !std::isdigit(static_cast<unsigned char>(text[cursor]))) {
+        throw std::runtime_error(
+            "manifest field is not an integer: " + field);
+    }
+    int64_t magnitude = 0;
+    while (cursor < text.size() &&
+           std::isdigit(static_cast<unsigned char>(text[cursor]))) {
+        magnitude =
+            magnitude * 10 +
+            static_cast<int64_t>(text[cursor] - '0');
+        if (magnitude >
+            static_cast<int64_t>(
+                std::numeric_limits<int32_t>::max()) + 1) {
+            throw std::runtime_error(
+                "manifest field exceeds int32: " + field);
+        }
+        ++cursor;
+    }
+    const int64_t value = negative ? -magnitude : magnitude;
+    if (value < std::numeric_limits<int32_t>::min() ||
+        value > std::numeric_limits<int32_t>::max()) {
+        throw std::runtime_error(
+            "manifest field exceeds int32: " + field);
+    }
+    return static_cast<int32_t>(value);
+}
+
+bool json_bool_field(
+    const std::string& path,
+    const std::string& field) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("cannot open JSON manifest: " + path);
+    }
+    const std::string text(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>());
+    const std::string key = "\"" + field + "\"";
+    const size_t key_pos = text.find(key);
+    if (key_pos == std::string::npos) {
+        throw std::runtime_error("manifest field is missing: " + field);
+    }
+    const size_t colon = text.find(':', key_pos + key.size());
+    if (colon == std::string::npos) {
+        throw std::runtime_error("manifest field has no value: " + field);
+    }
+    size_t cursor = colon + 1;
+    while (cursor < text.size() &&
+           std::isspace(static_cast<unsigned char>(text[cursor]))) {
+        ++cursor;
+    }
+    if (text.compare(cursor, 4, "true") == 0) {
+        return true;
+    }
+    if (text.compare(cursor, 5, "false") == 0) {
+        return false;
+    }
+    throw std::runtime_error(
+        "manifest field is not boolean: " + field);
+}
+
+void load_camera_state_bridge(
+    const std::string& path,
+    shift::runtime::CameraBufferRuntime& camera) {
+    if (!file_contains(
+            path,
+            "\"format\": \"SHIFT.NativeCameraStateBridge/1\"") ||
+        !file_contains(path, "\"ready\": true")) {
+        throw std::runtime_error(
+            "native camera state bridge is invalid or blocked");
+    }
+
+    const uint32_t active_index =
+        json_u32_field(path, "native_active_index");
+    const uint32_t sub_flag =
+        json_u32_field(path, "native_active_buffer_sub_flag");
+    if (active_index >=
+            shift::runtime::CameraBufferRuntime::buffer_count ||
+        sub_flag > 0xFFu) {
+        throw std::runtime_error(
+            "native camera state bridge field is out of range");
+    }
+
+    const bool applied = camera.apply_evidence_snapshot(
+        active_index,
+        json_bool_field(
+            path,
+            "native_update_in_progress"),
+        json_i32_field(path, "native_manager_mode"),
+        json_i32_field(path, "native_buffer_sub_index"),
+        json_i32_field(path, "native_camera_id"),
+        json_i32_field(path, "native_active_group"),
+        json_i32_field(path, "native_group_restore_value"),
+        static_cast<uint8_t>(sub_flag));
+    if (!applied) {
+        throw std::runtime_error(
+            "native camera state bridge could not be applied");
+    }
+}
+
 VkCullModeFlags load_bundle_cull_mode(const std::string& root) {
     const std::string path = root + "/pipeline_state.json";
     if (!std::filesystem::is_regular_file(path)) {
@@ -2617,6 +2747,7 @@ struct Args {
     std::string bundle;
     std::string bundle_set;
     std::string scene_set;
+    std::string camera_state;
     std::string physics_manifest;
     std::string shader_dir;
     int frames = kDefaultFrames;
@@ -2630,6 +2761,7 @@ Args parse_args(int argc, char** argv) {
         if (option == "--mesh" || option == "--bundle" ||
             option == "--bundle-set" ||
             option == "--scene-set" ||
+            option == "--camera-state" ||
             option == "--physics-manifest" ||
             option == "--shader-dir" || option == "--frames") {
             if (i + 1 >= argc) {
@@ -2641,6 +2773,7 @@ Args parse_args(int argc, char** argv) {
             else if (option == "--bundle") args.bundle = value;
             else if (option == "--bundle-set") args.bundle_set = value;
             else if (option == "--scene-set") args.scene_set = value;
+            else if (option == "--camera-state") args.camera_state = value;
             else if (option == "--physics-manifest") {
                 args.physics_manifest = value;
             } else if (option == "--shader-dir") {
@@ -2654,7 +2787,8 @@ Args parse_args(int argc, char** argv) {
             std::cout
                 << "usage: shift_runtime "
                 << "(--mesh FILE | --bundle DIR | --bundle-set DIR | --scene-set DIR) "
-                << "--shader-dir DIR [--frames N] [--validation]\n";
+                << "--shader-dir DIR [--camera-state FILE] "
+                << "[--frames N] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
             throw std::runtime_error(
@@ -2851,6 +2985,13 @@ int main(int argc, char** argv) {
         bool quit = false;
         InputState input{};
         shift::runtime::NativeRuntimeState native_state{};
+        const bool camera_state_bridge_loaded =
+            !args.camera_state.empty();
+        if (camera_state_bridge_loaded) {
+            load_camera_state_bridge(
+                args.camera_state,
+                native_state.camera);
+        }
         if (!args.physics_manifest.empty()) {
             native_state.physics.workspace =
                 load_physics_manifest(
@@ -2912,6 +3053,9 @@ int main(int argc, char** argv) {
             << "\"SHIFT.NativeRuntimeInput/1\",\n"
             << "  \"state_layer\": "
             << "\"SHIFT.NativeRuntimeState/1\",\n"
+            << "  \"camera_state_bridge_loaded\": "
+            << (camera_state_bridge_loaded ? "true" : "false")
+            << ",\n"
             << "  \"camera_active_buffer\": "
             << native_state.camera.active_index << ",\n"
             << "  \"camera_update_in_progress\": "
@@ -2927,6 +3071,21 @@ int main(int argc, char** argv) {
             << native_state.camera.last_snapshot.camera_id << ",\n"
             << "  \"camera_schedule\": "
             << "\"native-fixed-step-non-retail-timing\",\n"
+            << "  \"camera_manager_mode\": "
+            << native_state.camera.active().manager_mode << ",\n"
+            << "  \"camera_buffer_sub_index\": "
+            << native_state.camera.active().buffer_sub_index << ",\n"
+            << "  \"camera_id\": "
+            << native_state.camera.active().camera_id << ",\n"
+            << "  \"camera_active_group\": "
+            << native_state.camera.active().active_group << ",\n"
+            << "  \"camera_group_restore_value\": "
+            << native_state.camera.active().group_restore_value
+            << ",\n"
+            << "  \"camera_active_buffer_sub_flag\": "
+            << static_cast<unsigned>(
+                native_state.camera.active().active_buffer_sub_flag)
+            << ",\n"
             << "  \"vehicle_control_steer_axis\": "
             << native_state.physics.last_input.steer_axis()
             << ",\n"
