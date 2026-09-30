@@ -451,8 +451,7 @@ def main(argv: list[str] | None = None) -> int:
     report = validate_files(args.target_set, args.runtime_report)
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
-        + "
-",
+        + "\\n",
         encoding="utf-8",
     )
     print(json.dumps({
