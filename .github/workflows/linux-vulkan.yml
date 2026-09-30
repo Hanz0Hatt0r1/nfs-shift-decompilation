@@ -80,6 +80,67 @@ jobs:
         run: cmake --build native_runtime/build --config Release --parallel
       - name: Prepare mixed-resource BMW bundle
         run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
+      - name: Prepare neutral Vulkan runtime admission fixture
+        run: |
+          cp -a out/vulkan/bundle/bundle out/vulkan/neutral_bundle
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("out/vulkan/neutral_bundle")
+          manifest_path = root / "bundle_manifest.json"
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["format"] = "SHIFT.VulkanDrawBundle/1"
+          manifest_path.write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          (root / "runtime_provenance_gate.json").write_text(
+              json.dumps({
+                  "format": "SHIFT.VulkanDrawRuntimeProvenanceGate/1",
+                  "required": True,
+                  "ready": True,
+                  "blocking_reasons": [],
+                  "provenance": {
+                      "format": "SHIFT.RuntimeProvenDraw/1",
+                      "status": "proven",
+                  },
+              }, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 src/render/vulkan/vulkan_bundle_run.py \
+            out/vulkan/neutral_bundle \
+            --validator glslangValidator --prepare-only \
+            > out/vulkan/neutral_bundle/runner.json
+          python3 shift_importer.py vulkan-world-transform-packet \
+            out/vulkan/world_transform.json \
+            out/vulkan/neutral_bundle/world_transform.svwt \
+            > out/vulkan/neutral_bundle/world_transform_packet.json
+          grep -q '"format": "SHIFT.VulkanBundleRunner/1"' \
+            out/vulkan/neutral_bundle/runner.json
+          grep -q '"format": "SHIFT.VulkanInterfaceGate/1"' \
+            out/vulkan/neutral_bundle/vulkan_interface.json
+      - name: Native neutral Vulkan runtime frame loop
+        run: |
+          set -o pipefail
+          mkdir -p out/vulkan/runtime
+          xvfb-run -a native_runtime/build/shift_runtime \
+            --bundle out/vulkan/neutral_bundle \
+            --shader-dir native_runtime/build/shaders \
+            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --frames 3 --validation | tee out/vulkan/runtime/neutral.json
+      - name: Assert native neutral runtime admission
+        run: |
+          grep -q '"geometry_source": "SHIFT.VulkanDrawBundle/1"' \
+            out/vulkan/runtime/neutral.json
+          grep -q '"frames_rendered": 3' out/vulkan/runtime/neutral.json
+          grep -q '"bundle_world_transforms_loaded": 1' \
+            out/vulkan/runtime/neutral.json
+          grep -q '"bundle_world_transform_execution": "not-applied"' \
+            out/vulkan/runtime/neutral.json
+          grep -q '"validation_errors": 0' out/vulkan/runtime/neutral.json
+          grep -q '"status": "ok"' out/vulkan/runtime/neutral.json
       - name: Native Linux runtime frame loop
         run: |
           set -o pipefail
