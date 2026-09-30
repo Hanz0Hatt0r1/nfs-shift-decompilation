@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 602.**
+**Current mainline: Phase 603.**
 
 
 
@@ -26,6 +26,8 @@ Phase 599 connects the already-recovered CameraManager six-word snapshot and gua
 Phase 601 adds `SHIFT.NativeRuntimeInputScript/1`, a fail-closed deterministic per-fixed-step throttle/brake/steer source. The same `PhysicsTickBoundary::tick()` that receives live keyboard intent records script-driven activity counters in CI, without assigning retail gamepad curves, filters or vehicle-force semantics.
 
 Phase 602 adds `SHIFT.NativePhysicsParticipantBoundary/1`, joining the source-backed participant gate, `DAT_00c109e0` registry ABI, separate `DAT_00bbc600` selector context and IGPhaseVehicle writeback slots. Native runtime admits only this structural ABI; concrete participant/provider identity remains capture-gated.
+
+Phase 603 separates the manager registry index (`PhysicsParticipant+0x3c`) from the selector ordinal (`IGPhaseVehicle+0x454`) in both the native contract and fixed-step telemetry. Both remain `-1` and the identity join remains false until authentic runtime evidence proves the relationship.
 
 ## Immediate execution order
 
