@@ -122,3 +122,20 @@ source-derived execution program.
 
 
 For low-stop capture, `preflight_specialized_provider_capture.py` and `run_sdf_solver_probe.py` accept `--provider-only`. This mode omits builtin/per-frame solver breakpoints and keeps provider solve/reset and scalar-reset hooks.
+
+
+## Phase 601 native participant structural handoff
+
+`SHIFT.NativePhysicsParticipantBoundary/1` joins the already source-backed
+participant gate, PhysicsParticipantManager registry/update contract, separate
+selector context, and IGPhaseVehicle process/writeback slots into one
+fail-closed native structural ABI.
+
+The handoff requires registry manager `DAT_00c109e0`, selector context
+`DAT_00bbc600`, explicit object separation, registry stride `0x1fa0`,
+participant descriptor type `3`, and the established selected
+pointer/ordinal/state slots.
+
+It does not promote static evidence into a runtime participant:
+`participant_instance_ready=false`, index/mode stay `-1`, and provider
+identity/numeric equivalence remain capture-dependent.
