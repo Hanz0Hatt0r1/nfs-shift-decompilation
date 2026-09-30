@@ -33,7 +33,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- numeric SGB MultiMatrix hierarchy evaluation and final placement/object-transform admission into RenderBinding; unresolved FLAT +0x20..+0x34/source runtime class identities;
+- final SGB placement/resource/world-transform admission into RenderBinding, dynamic MultiMatrix operation types, and unresolved FLAT +0x20..+0x34/source runtime class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
