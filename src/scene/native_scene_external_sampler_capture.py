@@ -13,13 +13,22 @@ import json
 from pathlib import Path, PureWindowsPath
 from typing import Any, Mapping
 
+from native_scene_external_sampler_cube_snapshots import (
+    FORMAT as CUBE_SNAPSHOT_FORMAT,
+    reference_cube_sha256,
+    validate_external_sampler_cube_snapshot_contract,
+)
 from native_scene_external_sampler_snapshots import (
     FORMAT as SNAPSHOT_FORMAT,
     PROVENANCE_FORMAT,
     reference_texture_sha256,
     validate_external_sampler_snapshot_contract,
 )
-from runtime_texture_reference import ppm_to_reference_texture
+from runtime_texture_reference import (
+    ppm_to_reference_texture,
+    ppms_to_reference_cube,
+)
+from texture_reference import CUBE_FACES
 
 FORMAT = "SHIFT.NativeSceneExternalSamplerCaptureAdapter/1"
 SCENE_FORMAT = "SHIFT.NativeSceneBundle/1"
@@ -105,6 +114,134 @@ def _external_sampler2d_declarations(
             "sampler_type": sampler_type,
         })
     return result, blockers
+
+
+def _external_sampler_cube_declarations(
+    bridge: Mapping[str, Any],
+    scene_draw: Mapping[str, Any],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    blockers: list[str] = []
+    render_binding = bridge.get("render_binding")
+    if not isinstance(render_binding, Mapping):
+        return [], ["scene-external-capture:render-binding-missing"]
+    commands = render_binding.get("render_commands")
+    if not isinstance(commands, list):
+        return [], ["scene-external-capture:render-commands-missing"]
+
+    command_index = _safe_int(scene_draw.get("command_index"))
+    submesh_index = _safe_int(scene_draw.get("submesh_index"))
+    if command_index is None or not 0 <= command_index < len(commands):
+        return [], ["scene-external-capture:command-index-invalid"]
+    command = commands[command_index]
+    if not isinstance(command, Mapping):
+        return [], ["scene-external-capture:render-command-invalid"]
+    submeshes = command.get("submeshes")
+    if (
+        not isinstance(submeshes, list)
+        or submesh_index is None
+        or not 0 <= submesh_index < len(submeshes)
+    ):
+        return [], ["scene-external-capture:submesh-index-invalid"]
+    submesh = submeshes[submesh_index]
+    if not isinstance(submesh, Mapping):
+        return [], ["scene-external-capture:submesh-invalid"]
+
+    result: list[dict[str, Any]] = []
+    for raw in submesh.get("external_samplers") or []:
+        if not isinstance(raw, Mapping):
+            continue
+        if str(raw.get("sampler_type") or "") != "samplerCube":
+            continue
+        register = _safe_int(
+            raw.get("d3d9_sampler_register", raw.get("slot"))
+        )
+        if register != 3:
+            blockers.append(
+                "scene-external-capture:external-cube-register-not-proven-s3"
+            )
+            continue
+        result.append({
+            "register": 3,
+            "sampler": raw.get("sampler") or raw.get("name"),
+            "sampler_type": "samplerCube",
+        })
+    if len(result) > 1:
+        blockers.append(
+            "scene-external-capture:duplicate-external-cube-s3"
+        )
+    return result, blockers
+
+
+def _cube_face_name(raw_path: str) -> str | None:
+    stem = PureWindowsPath(raw_path).stem.lower()
+    for face in CUBE_FACES:
+        if stem.endswith("_face_" + face):
+            return face
+    return None
+
+
+def _matching_cube_rows(
+    observations: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for observation in observations:
+        if observation.get("status") != "observed":
+            continue
+        for binding in observation.get("active_texture_bindings") or []:
+            if not isinstance(binding, Mapping):
+                continue
+            if _safe_int(binding.get("stage")) != 3:
+                continue
+            creation = binding.get("resource_creation")
+            if (
+                binding.get("resource_creation_status") != "observed"
+                or not isinstance(creation, Mapping)
+                or creation.get("resource_type") != "cube_texture"
+            ):
+                continue
+            paths = [
+                str(path)
+                for path in (binding.get("snapshot_paths") or [])
+                if isinstance(path, str) and path
+            ]
+            face_paths: dict[str, str] = {}
+            invalid = False
+            for path in paths:
+                face = _cube_face_name(path)
+                if face is None or face in face_paths:
+                    invalid = True
+                    break
+                face_paths[face] = path
+            if (
+                binding.get("snapshot_status") != "captured"
+                or invalid
+                or len(paths) != len(CUBE_FACES)
+                or set(face_paths) != set(CUBE_FACES)
+            ):
+                continue
+            rows.append({
+                "frame": observation.get("frame"),
+                "draw_index": observation.get("draw_index"),
+                "stage": 3,
+                "texture_ptr": binding.get("texture_ptr"),
+                "resource_creation": dict(creation),
+                "snapshot_paths": face_paths,
+            })
+    return rows
+
+
+def _cube_source_sha256(face_sources: Mapping[str, Mapping[str, Any]]) -> str:
+    payload = {
+        face: str(face_sources[face]["source_sha256"])
+        for face in CUBE_FACES
+    }
+    return hashlib.sha256(
+        json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
 
 
 def _pipeline_texture_observations(
@@ -293,23 +430,33 @@ def build_scene_external_sampler_capture_adapter(
 
     texture_by_binding = _pipeline_texture_observations(capture_pipeline)
     snapshots: list[dict[str, Any]] = []
+    cube_snapshots: list[dict[str, Any]] = []
     rows: list[dict[str, Any]] = []
+    cube_rows: list[dict[str, Any]] = []
     required_count = 0
+    required_cube_count = 0
 
     for binding_index in sorted(scene_by_binding):
         draws = scene_by_binding[binding_index]
         external_decl_sets = []
+        cube_decl_sets = []
         for draw in draws:
             declarations, declaration_blockers = (
                 _external_sampler2d_declarations(scene_bridge, draw)
             )
+            cube_declarations, cube_declaration_blockers = (
+                _external_sampler_cube_declarations(scene_bridge, draw)
+            )
             blockers.extend(
                 f"scene-external-capture:binding-{binding_index}:{reason}"
-                for reason in declaration_blockers
+                for reason in (
+                    declaration_blockers + cube_declaration_blockers
+                )
             )
             external_decl_sets.append(declarations)
+            cube_decl_sets.append(cube_declarations)
 
-        needs_external = any(external_decl_sets)
+        needs_external = any(external_decl_sets) or any(cube_decl_sets)
         if not needs_external:
             continue
 
@@ -317,7 +464,9 @@ def build_scene_external_sampler_capture_adapter(
         if len(draws) == 1:
             draw = draws[0]
             declarations = external_decl_sets[0]
+            cube_declarations = cube_decl_sets[0]
             required_count += len(declarations)
+            required_cube_count += len(cube_declarations)
         else:
             match = instance_match_by_binding.get(binding_index)
             selected_order = (
@@ -334,6 +483,10 @@ def build_scene_external_sampler_capture_adapter(
                 required_count += sum(
                     len(declarations)
                     for declarations in external_decl_sets
+                )
+                required_cube_count += sum(
+                    len(declarations)
+                    for declarations in cube_decl_sets
                 )
                 blockers.append(
                     f"scene-external-capture:binding-{binding_index}:"
@@ -360,13 +513,19 @@ def build_scene_external_sampler_capture_adapter(
                     len(declarations)
                     for declarations in external_decl_sets
                 )
+                required_cube_count += sum(
+                    len(declarations)
+                    for declarations in cube_decl_sets
+                )
                 blockers.append(
                     f"scene-external-capture:binding-{binding_index}:"
                     "instance-match-draw-identity-mismatch"
                 )
                 continue
             declarations = external_decl_sets[selected_index]
+            cube_declarations = cube_decl_sets[selected_index]
             required_count += len(declarations)
+            required_cube_count += len(cube_declarations)
             selected_instance_match = dict(match)
 
         observations = texture_by_binding.get(binding_index, [])
@@ -494,13 +653,151 @@ def build_scene_external_sampler_capture_adapter(
                 "blocking_reasons": row_blockers,
             })
 
+        for declaration in cube_declarations:
+            candidates = _matching_cube_rows(observations)
+            row_blockers: list[str] = []
+            if len(candidates) != 1:
+                row_blockers.append(
+                    f"cube-capture-observation-count:{len(candidates)}"
+                )
+            cube_snapshot_row = None
+            if len(candidates) == 1 and root.is_dir():
+                candidate = candidates[0]
+                resolved_faces: dict[str, Path] = {}
+                face_sources: dict[str, dict[str, Any]] = {}
+                for face in CUBE_FACES:
+                    raw_path = candidate["snapshot_paths"][face]
+                    resolved, resolution, path_blockers = (
+                        _resolve_snapshot_path(raw_path, root)
+                    )
+                    row_blockers.extend(
+                        f"face-{face}:{reason}"
+                        for reason in path_blockers
+                    )
+                    if resolved is None or path_blockers:
+                        continue
+                    resolved_faces[face] = resolved
+                    face_sources[face] = {
+                        "snapshot_path": raw_path,
+                        "resolved_snapshot_path": str(resolved),
+                        "path_resolution": resolution,
+                        "source_sha256": _sha256_bytes(resolved),
+                    }
+
+                if (
+                    not row_blockers
+                    and set(resolved_faces) == set(CUBE_FACES)
+                ):
+                    try:
+                        cube = ppms_to_reference_cube(resolved_faces)
+                    except Exception as error:
+                        row_blockers.append(
+                            "snapshot-cube-ppm-decode-failed:"
+                            + type(error).__name__
+                        )
+                    else:
+                        for face in CUBE_FACES:
+                            face_row = cube["faces"][face]
+                            if isinstance(face_row, dict):
+                                face_row.pop("source_path", None)
+                        cube_sha = reference_cube_sha256(cube)
+                        resource = draw.get("resource")
+                        if not isinstance(resource, Mapping):
+                            row_blockers.append(
+                                "scene-resource-identity-missing"
+                            )
+                        else:
+                            cube_snapshot_row = {
+                                "draw_identity_sha256": (
+                                    (draw.get("hashes") or {}).get(
+                                        "draw_identity_sha256"
+                                    )
+                                ),
+                                "resource": {
+                                    "archive": resource.get("archive"),
+                                    "path": resource.get("path"),
+                                    "sha256": resource.get("sha256"),
+                                },
+                                "primitive_index": draw.get(
+                                    "primitive_index"
+                                ),
+                                "d3d9_sampler_register": 3,
+                                "sampler_type": "samplerCube",
+                                "cube": cube,
+                                "cube_sha256": cube_sha,
+                                "provenance": {
+                                    "format": PROVENANCE_FORMAT,
+                                    "source_kind": "D3D9_CAPTURE_PPM_CUBE",
+                                    "source_sha256": _cube_source_sha256(
+                                        face_sources
+                                    ),
+                                    "capture_frame": candidate.get("frame"),
+                                    "capture_draw_index": candidate.get(
+                                        "draw_index"
+                                    ),
+                                    "texture_ptr": candidate.get(
+                                        "texture_ptr"
+                                    ),
+                                    "resource_creation": candidate.get(
+                                        "resource_creation"
+                                    ),
+                                    "face_sources": face_sources,
+                                    "scene_instance_transform_match": (
+                                        {
+                                            "format": INSTANCE_MATCH_FORMAT,
+                                            "binding_index": binding_index,
+                                            "selected_draw_order": (
+                                                selected_instance_match.get(
+                                                    "selected_draw_order"
+                                                )
+                                            ),
+                                            "selected_draw_identity_sha256": (
+                                                selected_instance_match.get(
+                                                    "selected_draw_identity_sha256"
+                                                )
+                                            ),
+                                        }
+                                        if selected_instance_match is not None
+                                        else None
+                                    ),
+                                },
+                            }
+
+            if row_blockers:
+                blockers.extend(
+                    f"scene-external-capture:binding-{binding_index}:"
+                    f"s3:{reason}"
+                    for reason in row_blockers
+                )
+            elif cube_snapshot_row is not None:
+                cube_snapshots.append(cube_snapshot_row)
+
+            cube_rows.append({
+                "binding_index": binding_index,
+                "draw_order": draw.get("draw_order"),
+                "register": 3,
+                "sampler": declaration.get("sampler"),
+                "sampler_type": "samplerCube",
+                "candidate_observation_count": len(candidates),
+                "snapshot_ready": (
+                    cube_snapshot_row is not None and not row_blockers
+                ),
+                "blocking_reasons": row_blockers,
+            })
+
     blockers = list(dict.fromkeys(blockers))
     provisional_contract = {
         "format": SNAPSHOT_FORMAT,
         "version": 1,
         "snapshots": snapshots,
     }
+    cube_provisional_contract = {
+        "format": CUBE_SNAPSHOT_FORMAT,
+        "version": 1,
+        "snapshots": cube_snapshots,
+    }
     contract_validation = None
+    cube_contract_validation = None
     if not blockers:
         contract_validation = (
             validate_external_sampler_snapshot_contract(
@@ -514,11 +811,26 @@ def build_scene_external_sampler_capture_adapter(
             )
         )
         blockers = list(dict.fromkeys(blockers))
+        if not blockers:
+            cube_contract_validation = (
+                validate_external_sampler_cube_snapshot_contract(
+                    cube_provisional_contract
+                )
+            )
+            blockers.extend(
+                "scene-external-capture:phase592:" + str(reason)
+                for reason in (
+                    cube_contract_validation.get("blocking_reasons") or []
+                )
+            )
+            blockers = list(dict.fromkeys(blockers))
 
     ready = (
         not blockers
         and all(row["snapshot_ready"] for row in rows)
+        and all(row["snapshot_ready"] for row in cube_rows)
         and len(snapshots) == required_count
+        and len(cube_snapshots) == required_cube_count
     )
     status = (
         "ready"
@@ -528,6 +840,7 @@ def build_scene_external_sampler_capture_adapter(
         else "blocked"
     )
     contract = provisional_contract if ready else None
+    cube_contract = cube_provisional_contract if ready else None
     return {
         "format": FORMAT,
         "version": 1,
@@ -535,9 +848,13 @@ def build_scene_external_sampler_capture_adapter(
         "ready": ready,
         "blocking_reasons": blockers,
         "required_external_sampler2d_count": required_count,
+        "required_external_samplercube_count": required_cube_count,
         "snapshot_count": len(snapshots),
+        "cube_snapshot_count": len(cube_snapshots),
         "rows": rows,
+        "cube_rows": cube_rows,
         "snapshot_contract": contract,
+        "cube_snapshot_contract": cube_contract,
         "phase589_validation": (
             {
                 "format": contract_validation.get("format"),
@@ -551,6 +868,21 @@ def build_scene_external_sampler_capture_adapter(
                 ),
             }
             if isinstance(contract_validation, Mapping)
+            else None
+        ),
+        "phase592_validation": (
+            {
+                "format": cube_contract_validation.get("format"),
+                "ready": cube_contract_validation.get("ready") is True,
+                "snapshot_count": cube_contract_validation.get(
+                    "snapshot_count"
+                ),
+                "blocking_reasons": list(
+                    cube_contract_validation.get("blocking_reasons")
+                    or []
+                ),
+            }
+            if isinstance(cube_contract_validation, Mapping)
             else None
         ),
         "boundary": {
@@ -568,7 +900,8 @@ def build_scene_external_sampler_capture_adapter(
             "requires_observed_texture2d_creation": True,
             "requires_exactly_one_ppm_snapshot_path": True,
             "material_textures_promoted": False,
-            "sampler_cube_promoted": False,
+            "sampler_cube_promoted": True,
+            "sampler_cube_register_policy": "s3-only",
             "manual_scene_identity_guessing": False,
         },
     }
