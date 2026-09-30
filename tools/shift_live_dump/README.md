@@ -249,6 +249,27 @@ name is dynamic. PE-backed string resolution also handles reflected names stored
 as `DAT_...` or `PTR_s_...` symbols. See
 [reflection field evidence](../../evidence/reflection_fields_source.md).
 
+For class-centric work, join both sources into one manifest:
+
+```bash
+python3 tools/shift_live_dump/build_shift_class_manifest.py \
+  /path/to/SHIFT.exe.c \
+  --exe /path/to/SHIFT.exe \
+  --prefix AI \
+  --only-reflected \
+  --json-out /tmp/shift-ai-classes.json \
+  --csv-out /tmp/shift-ai-classes.csv
+```
+
+The class manifest keeps registration identity, descriptor, parent/ancestry,
+direct children, reflection metadata/builders, direct reflected fields, RTTI
+getters and vtable candidates together in one row per class. Inherited fields
+are not flattened into derived classes; `ancestry` remains a separate evidence
+chain. On the supplied retail pair it joins all 315 registered classes, 245
+classes with direct reflected fields, 3122 direct fields, and 267 classes with
+a unique PE vtable candidate. See
+[class manifest evidence](../../evidence/class_manifest_source.md).
+
 Track/path layout dictionaries can then be checked directly against those
 recovered fields:
 
