@@ -13,11 +13,63 @@ def _header(flags: int = 0) -> bytes:
     return b" \x42\x47\x53" + struct.pack("<III", 0x10, flags, 0)
 
 
+def _node_sgb() -> bytes:
+    # One retail-layout NODE record: 0x1c metadata followed by an inline
+    # 0x28-byte OBJECT payload. Strings live after the END chunk and all
+    # relative offsets are from the complete SGB base.
+    stride = 0x1C + 0x28
+    node_payload = struct.pack("<I", 1) + b"\0" * stride
+    buf = bytearray(
+        _header()
+        + _chunk("NODE", node_payload)
+        + _chunk("END ", b"")
+    )
+
+    def add(text: str) -> int:
+        offset = len(buf)
+        buf.extend(text.encode("utf-8") + b"\0")
+        return offset
+
+    node_name = add("NODE_NAME")
+    node_resource = add("NODE_RESOURCE")
+    palette = add("PALETTE")
+    kind = add("OBJECT")
+    source = add("OBJECT_SOURCE")
+    meb = add("tracks/test/object.meb")
+
+    record = 16 + 8 + 4
+    obj = record + 0x1C
+    struct.pack_into("<I", buf, record + 0x00, stride)
+    struct.pack_into("<I", buf, record + 0x04, 0)
+    struct.pack_into("<I", buf, record + 0x08, node_name)
+    struct.pack_into("<I", buf, record + 0x0C, node_resource)
+    struct.pack_into("<I", buf, record + 0x10, palette)
+    struct.pack_into("<I", buf, record + 0x14, 2)
+    buf[record + 0x18] = 7
+    struct.pack_into("<h", buf, record + 0x1A, 3)
+
+    struct.pack_into("<III", buf, obj, kind, source, meb)
+    struct.pack_into("<I", buf, obj + 0x0C, 2)
+    struct.pack_into("<4f", buf, obj + 0x10, 0.0, 1.0, 2.0, 3.0)
+    struct.pack_into("<bBBB", buf, obj + 0x20, 0, 0, 0, 0)
+    struct.pack_into("<I", buf, obj + 0x24, 0x110)
+    return bytes(buf)
+
+
 def test_header_and_end_chunk():
     report = parse_sgb_runtime(_header() + _chunk("END ", b""))
     assert report["ready"] is True
     assert report["header"]["word_1"] == 0x10
     assert report["chunks"][0]["tag"] == "END "
+    assert report["post_end_reference_bytes"] == 0
+
+
+def test_post_end_reference_arena_is_not_mislabeled_as_trailing_garbage():
+    data = _header() + _chunk("END ", b"") + b"OBJECT\0RESOURCE\0"
+    report = parse_sgb_runtime(data)
+    assert report["ready"] is True
+    assert report["trailing_bytes"] == 0
+    assert report["post_end_reference_bytes"] == len(b"OBJECT\0RESOURCE\0")
 
 
 def test_part_record_uses_exact_source_layout_and_one_based_child_table():
@@ -69,21 +121,22 @@ def test_part_record_uses_exact_source_layout_and_one_based_child_table():
 
 
 def test_node_header_and_flags():
-    record = struct.pack("<IIIIIIII", 32, 0, 32, 0, 0, 2, 0, 0)
-    data = _header() + _chunk("NODE", struct.pack("<I", 1) + record) + _chunk("END ", b"")
-    row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
-    assert row["stride"] == 32
+    row = parse_sgb_runtime(_node_sgb())["chunks"][0]["records"][0]
+    assert row["stride"] == 0x44
+    assert row["metadata_bytes"] == 0x1C
     assert row["instances"] == 2
-    assert row["flags"]["raw"] == 0
-    assert row["flags"]["bit0"] is False
-    assert row["flags"]["bit1"] is False
-    assert row["flags"]["bit2"] is False
-    assert row["variation_index"] == 0
+    assert row["flags"]["raw"] == 7
+    assert row["flags"]["bit0"] is True
+    assert row["flags"]["bit1"] is True
+    assert row["flags"]["bit2"] is True
+    assert row["variation_index"] == 3
+    assert row["name"]["text"] == "NODE_NAME"
+    assert row["resource"]["text"] == "NODE_RESOURCE"
+    assert row["variation_palette_file"]["text"] == "PALETTE"
+
 
 def test_node_runtime_wrapper_mapping_is_source_backed():
-    record = struct.pack("<IIIIIIII", 32, 0, 32, 0x100, 0x120, 0x140, 3, 0x180)
-    data = _header() + _chunk("NODE", struct.pack("<I", 1) + record) + _chunk("END ", b"")
-    row = parse_sgb_runtime(data, strict=False)["chunks"][0]["records"][0]
+    row = parse_sgb_runtime(_node_sgb())["chunks"][0]["records"][0]
     wrapper = row["runtime_wrapper"]
     assert wrapper["vtable"] == 0x00AF78EC
     assert wrapper["payload_field_offset"] == 0x08
@@ -94,6 +147,7 @@ def test_node_runtime_wrapper_mapping_is_source_backed():
     assert wrapper["flag_byte_offsets"] == {"bit0": 0x15, "bit1": 0x16, "bit2": 0x17}
     assert wrapper["name_hash_field_offset"] == 0x28
     assert wrapper["name_hash_field_size"] == 0x08
+    assert "record +0x1c inline" in wrapper["source_mapping"]["object_payload"]
 
 
 def test_summ_and_occl_fixed_record_shape():
@@ -152,15 +206,17 @@ def test_invalid_magic_rejected():
         parse_sgb_runtime(b"not-sgb")
 
 
-def test_node_object_payload_is_decoded_when_bounded():
-    object_header = struct.pack("<9I", 40, 48, 56, 0, 0, 0, 0, 0, 0)
-    object_data = object_header + b"\0\0\0\0" + b"OBJECT\0SOURCE\0AUX\0"
-    node_record = struct.pack("<IIIIIIII", 32, 0, 48, 0, 0, 1, 0, 44)
-    payload = struct.pack("<I", 1) + node_record + object_data
-    data = _header() + _chunk("NODE", payload) + _chunk("END ", b"")
-    row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
-    assert row["object_payload"]["decoded"] is True
-    assert row["object_payload"]["report"]["kind"]["text"] == "OBJECT"
+def test_node_object_payload_is_inline_and_decoded_against_sgb_base():
+    row = parse_sgb_runtime(_node_sgb())["chunks"][0]["records"][0]
+    payload = row["object_payload"]
+    assert payload["layout"] == "inline-after-node-metadata"
+    assert payload["inline_offset"] == 0x1C
+    assert payload["decoded"] is True
+    assert payload["report"]["kind"]["text"] == "OBJECT"
+    assert payload["report"]["source_string"]["text"] == "OBJECT_SOURCE"
+    assert payload["report"]["resource_filename"]["text"] == (
+        "tracks/test/object.meb"
+    )
 
 
 def test_flat_chunk_decodes_embedded_runtime_tree():
