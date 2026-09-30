@@ -275,6 +275,14 @@ def build_render_command(static_draw: dict[str, Any], resources: dict[str, Any],
             "shader": {
                 "vertex": linked_pair.get("vertex_glsl") if linked_pair else None,
                 "pixel": linked_pair.get("pixel_glsl") if linked_pair else None,
+                "vulkan_vertex_glsl": (
+                    linked_pair.get("vulkan_vertex_glsl")
+                    if linked_pair else None
+                ),
+                "vulkan_pixel_glsl": (
+                    linked_pair.get("vulkan_pixel_glsl")
+                    if linked_pair else None
+                ),
                 "vertex_program": linked_pair.get("vertex") if linked_pair else None,
                 "pixel_program": linked_pair.get("pixel") if linked_pair else None,
                 "varying_locations": linked_pair.get("varying_locations", []) if linked_pair else [],
