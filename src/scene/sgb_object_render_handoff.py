@@ -219,9 +219,7 @@ def build_object_render_handoff(
                     "ready": True,
                     "blocking_reasons": [],
                     "current_root_source": "explicit-root-world-matrix",
-                    "current_root_world_matrix": [
-                        float(value) for value in resolved_root
-                    ],
+                    "current_root_world_matrix": list(resolved_root),
                 }
 
             evaluation = build_multimatrix_evaluation(
