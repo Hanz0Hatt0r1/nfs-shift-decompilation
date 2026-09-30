@@ -1,0 +1,129 @@
+{
+  "format": "SHIFT.SilverstoneEra3MultiMatrixObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 Silverstone Era3 visual corpus",
+  "runtime": {
+    "allocator": "FUN_006b144b",
+    "local_builder": "FUN_0068cbb0",
+    "updater": "FUN_006b1620",
+    "matrix_multiply": "FUN_00401610/FUN_00401619",
+    "initial_operation_type": 1,
+    "case1_world_rule": "local * parent_world",
+    "local_matrix_stride": 64,
+    "world_matrix_stride": 64,
+    "metadata_stride": 16,
+    "parent_byte_offset": "0x0b",
+    "source_slot_byte_offset": "0x0c"
+  },
+  "variants": [
+    {
+      "name": "Drift",
+      "sgb_sha256": "a8ad0608889627bedb42529b729f9a52529afedc03b66e73de86148dcd3ecf25",
+      "object_count": 5181,
+      "multimatrix_object_count": 4987,
+      "explicit_object_count": 194,
+      "owned_context_count": 2453,
+      "inherited_container_count": 170,
+      "owned_lod_context_count": 2368,
+      "owned_hierarchy_context_count": 85,
+      "evaluated_world_slot_count": 2623,
+      "owned_parent_histogram": {
+        "0": 170,
+        "-1": 2453
+      },
+      "blocker_count": 0
+    },
+    {
+      "name": "GrandPrix",
+      "sgb_sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+      "object_count": 13652,
+      "multimatrix_object_count": 13125,
+      "explicit_object_count": 527,
+      "owned_context_count": 6862,
+      "inherited_container_count": 512,
+      "owned_lod_context_count": 6605,
+      "owned_hierarchy_context_count": 257,
+      "evaluated_world_slot_count": 7376,
+      "owned_parent_histogram": {
+        "0": 514,
+        "-1": 6862
+      },
+      "blocker_count": 0
+    },
+    {
+      "name": "International",
+      "sgb_sha256": "fb6a534b4890a8c046f234f10e702962913a5a03377b7a158581f0a7c74ea2b6",
+      "object_count": 11177,
+      "multimatrix_object_count": 10708,
+      "explicit_object_count": 469,
+      "owned_context_count": 5500,
+      "inherited_container_count": 472,
+      "owned_lod_context_count": 5264,
+      "owned_hierarchy_context_count": 236,
+      "evaluated_world_slot_count": 5972,
+      "owned_parent_histogram": {
+        "0": 472,
+        "-1": 5500
+      },
+      "blocker_count": 0
+    },
+    {
+      "name": "National",
+      "sgb_sha256": "b3f94c2b65bc74d9e309774d793c522bcd2aff5ebfa8a7e7f46ba4d484e5ad93",
+      "object_count": 10930,
+      "multimatrix_object_count": 10489,
+      "explicit_object_count": 441,
+      "owned_context_count": 5315,
+      "inherited_container_count": 402,
+      "owned_lod_context_count": 5113,
+      "owned_hierarchy_context_count": 202,
+      "evaluated_world_slot_count": 5719,
+      "owned_parent_histogram": {
+        "0": 404,
+        "-1": 5315
+      },
+      "blocker_count": 0
+    }
+  ],
+  "totals": {
+    "object_count": 40940,
+    "multimatrix_object_count": 39309,
+    "explicit_object_count": 1631,
+    "owned_context_count": 20130,
+    "inherited_container_count": 1556,
+    "owned_lod_context_count": 19350,
+    "owned_hierarchy_context_count": 780,
+    "evaluated_world_slot_count": 21690,
+    "owned_parent_histogram": {
+      "0": 1560,
+      "-1": 20130
+    },
+    "blocker_count": 0
+  },
+  "observed_context_shapes": [
+    {
+      "owner_kind": "LOD",
+      "matrix_count": 1,
+      "parent_sequence": [
+        -1
+      ],
+      "owned_context_count": 19350
+    },
+    {
+      "owner_kind": "HIERARCHY",
+      "matrix_count": 3,
+      "parent_sequence": [
+        -1,
+        0,
+        0
+      ],
+      "owned_context_count": 780
+    }
+  ],
+  "observations": [
+    "FUN_006b1620 case 1 computes world = local * parent_world; PE disassembly proves EDX=local and stack operand=parent world at the FUN_00401610 call.",
+    "Slot 0 is not processed by the update loop and remains the initial local-to-world copy.",
+    "When LOD/HIERARCHY receives a parent MultiMatrix context, its serialized local matrix table is not used to create a new context; MatrixNumber selects the inherited context and children receive that same context.",
+    "All 40940 observed OBJECT payloads resolve an initial numeric world matrix: 39309 from MultiMatrix slots and 1631 from explicit OBJECT transforms.",
+    "The evaluation covers initial operation type 1 only; later runtime mutations to MultiMatrix operation types 2/3/5/6 remain outside this static scene contract."
+  ]
+}
