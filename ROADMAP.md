@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 540.**
+**Current mainline: Phase 542.**
 
 
 
@@ -68,15 +68,17 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 44. Build a per-primitive runtime shader target set from every statically tied top-rank permutation/pair/hash without selecting one — Phase 538 implemented.
 45. Match the Phase 538 target set against exact MEB identity, indexed draw ranges and same-instance D3D9 shader hashes — Phase 539 implemented.
 46. Prefilter raw D3D9 JSONL by target shader byte hashes and canonical draw ranges before full runtime reconstruction — Phase 540 implemented.
-47. Capture one real BMW M3 body frame with the existing D3D9 producer and close the concrete retail FXO permutation attribution.
-48. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
-49. Expand the desktop reference renderer against real BMW material/shader permutations.
-50. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
-51. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
-52. Continue with deeper OBJECT/HIERARCHY fields and FLAT leaf semantics.
-53. Derive proven animation poses from the BAB runtime grammar.
-54. Port the stable native render/runtime boundary to Android.
-55. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+47. Apply archive content-identity deduplication to downstream retail material-slice BMT/MEB/FX/DDS lookup — Phase 541 implemented.
+48. Capture one real BMW M3 body frame with the existing D3D9 producer and close the concrete retail FXO permutation attribution.
+49. Close enabled alpha-test, bias and stencil only from additional source/runtime evidence.
+50. Expand the desktop reference renderer against real BMW material/shader permutations.
+51. Map the source-backed SGB OCCL Name/Resource/PositionTL/TR/BL/BR record into its 0x120 concrete runtime object and the header-bit1 wrapper/batch admission modes — Phase 534 implemented.
+52. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
+53. Normalize production FLAT signed terminal spans and map the proven +0x38 direct-object / +0x3c runtime-index consumer lifecycle — Phase 542 implemented.
+54. Continue with deeper OBJECT/HIERARCHY fields and the remaining FLAT direct-record payload semantics.
+55. Derive proven animation poses from the BAB runtime grammar.
+56. Port the stable native render/runtime boundary to Android.
+57. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -85,11 +87,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | BFF/XMem-LZX | verified | broader uncommon-variant coverage |
 | Resource IR | active | remaining format-specific joins |
 | MEB / vertex ABI | strong static | more runtime same-instance proofs |
-| Material/shader linking | raw + reconstructed BMW capture matchers implemented | one authentic D3D9 BMW body capture |
+| Material/shader linking | raw/reconstructed BMW matchers + retail material-slice dedup implemented | one authentic D3D9 BMW body capture |
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | partial; OCCL object + PART partition tree mapped | deeper OBJECT/HIERARCHY/FLAT leaf consumers |
+| SGB scene | production FLAT normalization + OCCL/PART runtime mapped | deeper OBJECT/HIERARCHY and remaining FLAT payload semantics |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
