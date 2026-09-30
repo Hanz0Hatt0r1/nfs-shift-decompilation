@@ -386,9 +386,10 @@ def test_native_scene_vulkan_set_builds_ordered_runtime_proven_child(
     assert (tmp_path / "vulkan-set/draw_0000/geometry.svpk").is_file()
     assert (tmp_path / "vulkan-set/draw_0000/world_transform.svwt").is_file()
     assert (tmp_path / "vulkan-set/bundle_set_manifest.json").is_file()
-    assert (tmp_path / "vulkan-set/bundle_set.paths").read_text().strip().endswith(
-        "draw_0000"
-    )
+    assert (
+        tmp_path / "vulkan-set/bundle_set.paths"
+    ).read_text().strip() == "draw_0000"
+    assert report["boundary"]["bundle_paths_relative_to_set_root"] is True
 
     assert report["native_scene_submission"]["ready"] is False
     assert (
