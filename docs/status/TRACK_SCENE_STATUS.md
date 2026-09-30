@@ -64,3 +64,15 @@ Track placement identity, culling geometry, MultiMatrix arithmetic, root-transfo
 ## Next
 
 `SHIFT.SGBRenderBindingBridge/1` now feeds admitted MEB and v0.4 IMB instances into generic `SHIFT.RenderBinding/1`; IMB is normalized through `SHIFT.IMBNeutralGeometry/1` without being relabeled as MEB. Phase 585 now prepares ordered `SHIFT.NativeSceneVulkanSet/1` children through neutral SPIR-V/interface/provenance/SVWT gates without touching retail material constants or relabeling them as BMW. The immediate implementation step is teaching `native_runtime` to load the neutral set/child formats and apply per-child SVWT before upload; the immediate external evidence step remains an authentic Silverstone D3D9 capture; after that come native scene loading, the IMX XML adapter, or recovery/capture of transform-update history for blocked MatrixNumber instances.
+
+
+## Phase 589 external sampler2D scene admission
+
+`SHIFT.SceneExternalTextureSnapshotSet/1` can now supply explicit
+`SHIFT.ReferenceTexture/1` resources to a neutral scene draw. Admission
+revalidates the Phase 578 draw-identity hash plus sampler name/type/register
+before forwarding the snapshot through the Phase 588 SVTP channel.
+
+A missing, stale, mismatched or unused snapshot remains fail-closed. The new
+contract does not infer renderer-owned DDS identity and does not claim that
+caller-supplied provenance is an authentic retail capture.
