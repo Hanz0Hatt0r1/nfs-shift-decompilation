@@ -78,6 +78,21 @@ jobs:
         run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
       - name: Native Linux runtime build
         run: cmake --build native_runtime/build --config Release --parallel
+      - name: Native builtin sparse solver parity
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_builtin_sparse_solver
+          mkdir -p out/vulkan/runtime
+          native_runtime/build/shift_runtime_builtin_solver_check \
+            | tee out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"format": "SHIFT.NativeBuiltinSparseSolverCheck/1"' \
+            out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"source_function": "FUN_007b0f20"' \
+            out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"cases": 4' \
+            out/vulkan/runtime/builtin_sparse_solver.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/builtin_sparse_solver.json
       - name: Prepare mixed-resource BMW bundle
         run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
       - name: Legacy SVGP v2 compatibility smoke
