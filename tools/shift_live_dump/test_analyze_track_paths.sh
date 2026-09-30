@@ -43,13 +43,22 @@ struct.pack_into("<I", blob, boundary_poff + 0x20, 0x00610000)
 blob[boundary_poff + 0x24:boundary_poff + 0x28] = bytes((1, 0, 0, 1))
 
 # An Incident.PathOwner candidate sits exactly at the end of the region.
-# This guards the scanner against using a too-short fixed tail limit.
+# The reflected owner class is AIArea; FUN_006c3a20 writes 0x00AFC048.
+# This also guards the scanner against using a too-short fixed tail limit.
 ioff = size - 0x124
-struct.pack_into("<I", blob, ioff, 0x00401000)
+struct.pack_into("<I", blob, ioff, 0x00AFC048)
 struct.pack_into("<IIfff f III", blob, ioff + 0xD4, 1, 0x00610000, 1.0, 2.0, 3.0, 10.0, 1, 1, 0)
 struct.pack_into("<fff", blob, ioff + 0x30, 11.0, 12.0, 13.0)
 struct.pack_into("<fffff", blob, ioff + 0x100, 20.0, 0.5, 2.0, 3.0, 25.0)
 struct.pack_into("<IIII", blob, ioff + 0x114, 2, 7, 3, 1)
+
+# The same AIArea field shape with a generic executable vtable must be rejected.
+false_area_off = 0x1200
+struct.pack_into("<I", blob, false_area_off, 0x00401000)
+struct.pack_into("<IIfff f III", blob, false_area_off + 0xD4, 1, 0x00610000, 1.0, 2.0, 3.0, 10.0, 1, 1, 0)
+struct.pack_into("<fff", blob, false_area_off + 0x30, 11.0, 12.0, 13.0)
+struct.pack_into("<fffff", blob, false_area_off + 0x100, 20.0, 0.5, 2.0, 3.0, 25.0)
+struct.pack_into("<IIII", blob, false_area_off + 0x114, 2, 7, 3, 1)
 
 # Synthetic AISegmentPath using the fields explicitly reflected by
 # FUN_006d0690.
