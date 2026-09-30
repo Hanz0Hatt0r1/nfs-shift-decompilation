@@ -452,6 +452,7 @@ jobs:
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
             --camera-state out/vulkan/camera/native_camera.json \
+            --participant-boundary out/vulkan/runtime/native_physics_participant_boundary.json \
             --input-script out/vulkan/runtime/native_input.script \
             --validation | tee out/vulkan/runtime/input_script.json
       - name: Assert scripted native input reaches physics tick
@@ -462,6 +463,10 @@ jobs:
           grep -q '"frames_rendered": 5' out/vulkan/runtime/input_script.json
           grep -q '"simulation_steps": 5' out/vulkan/runtime/input_script.json
           grep -q '"camera_state_bridge_loaded": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_contract_ready": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_registry_ready": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_selector_context_separate": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_ready": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_throttle": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_brake": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_steer_left": false' out/vulkan/runtime/input_script.json
