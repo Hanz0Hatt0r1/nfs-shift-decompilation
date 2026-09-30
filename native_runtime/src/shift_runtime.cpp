@@ -2738,6 +2738,7 @@ int main(int argc, char** argv) {
         size_t geometry_vertices = 0;
         size_t geometry_indices = 0;
         size_t world_transform_draws = 0;
+        size_t affine_world_transform_draws = 0;
         std::string geometry_source;
         if (material_mode) {
             geometry_source = scene_set_mode
@@ -2750,6 +2751,9 @@ int main(int argc, char** argv) {
                 geometry_indices += geometry.indices.size();
                 if (geometry.world_transform_applied) {
                     ++world_transform_draws;
+                    if (geometry.world_transform_mode != "translation") {
+                        ++affine_world_transform_draws;
+                    }
                 }
             }
         } else {
@@ -2779,6 +2783,8 @@ int main(int argc, char** argv) {
             << material_geometry.size() << ",\n"
             << "  \"world_transform_draws\": "
             << world_transform_draws << ",\n"
+            << "  \"affine_world_transform_draws\": "
+            << affine_world_transform_draws << ",\n"
             << "  \"frames_requested\": "
             << args.frames << "\n"
             << "}\n";
