@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from imb_neutral_geometry import build_imb_neutral_geometry
-from material_linker import link_material
+from material_linker import _selection_evidence_key, link_material
 from render_pipeline import shader_family
 from resource_formats import parse_bmt_material
 from shift_importer import BFF
@@ -103,6 +103,22 @@ def _compact_candidate(row: dict[str, Any] | None) -> dict[str, Any] | None:
             row.get("specialization_unexpected") or []
         ),
     }
+
+
+def _top_rank_candidates(binding: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = [
+        dict(row)
+        for row in (binding.get("fxo_candidates") or [])
+        if isinstance(row, dict)
+    ]
+    if not rows:
+        return []
+    best_rank = _selection_evidence_key(rows[0])
+    return [
+        row
+        for row in rows
+        if _selection_evidence_key(row) == best_rank
+    ]
 
 
 def summarize_ranking_rows(rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
@@ -402,6 +418,14 @@ def audit_imb_material_shader_ranking(
                 )
                 if candidate is not None
             ]
+            top_rank = [
+                candidate
+                for candidate in (
+                    _compact_candidate(row)
+                    for row in _top_rank_candidates(linked)
+                )
+                if candidate is not None
+            ]
             blockers: list[str] = []
             if status != "unique":
                 blockers.append(f"shader-selection:{status}")
@@ -425,6 +449,8 @@ def audit_imb_material_shader_ranking(
                 ),
                 "selected_fxo": selected,
                 "ambiguous_candidates": ambiguous,
+                "top_rank_candidate_count": len(top_rank),
+                "top_rank_candidates": top_rank,
                 "unresolved_textures": list(
                     linked.get("unresolved_textures") or []
                 ),

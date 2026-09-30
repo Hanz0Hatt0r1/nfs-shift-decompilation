@@ -1,0 +1,120 @@
+{
+  "boundary": {
+    "all_bindings_capture_ready": true,
+    "all_bindings_exact_pair_attribution_ready": false,
+    "next_gate": "prefilter retail D3D9 capture by these byte hashes, then correlate per-primitive same-instance draw evidence",
+    "render_admission": false,
+    "selects_permutation": false
+  },
+  "families": [
+    {
+      "family": "basicinstanced",
+      "pixel_shader_sha256": [
+        "05daff6ea7eab8ff31eff8dc0d4b70de8da51698112c7b6937012feb2fc02bdc",
+        "184aa739872d739a0b4ea07e573db5979196c8d6d1a034c7288e4bd73035817b",
+        "1f9cf95f5fb9f1af4e79a4520814756fe78fdf940af6ef0b5b10d930b6602b37",
+        "297a89cdb018f161ea24b16d6d108bee1baf635c956155e4e121aa64ecf7f8cc",
+        "4cf6386d52c5e9472a3a65b49f70342d6171c7577ae190552941a4c91fc63abb",
+        "5af68e3c210e17d51fed7c3229326c7da5564ff91d423df656267cb6de931623",
+        "61da7ba1199459efe0be1cee7a00583154713886c94235d919eb62bb9ff70e72",
+        "8bda8f44e8a8cc8a390d4fd54120666d952d038e2324eabbe1264c45aa0f33f8",
+        "adb15d7e73c899c1891b3d0dcd7eedb5447d7c4387da883fda39e534c65f4add",
+        "ef64041b041fa30367d00f5fcabbe7032a5263be260a899b2d4d9eb30d5a72dd",
+        "f71a39ae0431ec04f866343fb47438babd76286cea0a51c843ea989a62ed8bcb"
+      ],
+      "pixel_target_count": 11
+    },
+    {
+      "family": "crowdgeninstanced",
+      "pixel_shader_sha256": [
+        "102d3a1c93864ddaf9b160c0ebad57fde8458b892166e18dc3d7160d07747c1b",
+        "2070c3751db3f240ca62f331c281d03451ec680bd516df936306ec06116fe457",
+        "3f042cf28471b6867ae8d9303429f03a0c5d0356270051dd18999b411d489cfc",
+        "3fa58c178ecde336ffd397ddaad209815626f4e01ec6b95312f9c56f767b1154",
+        "41121a36bd00d6a364964462aee58f2160e03db2a7d198d7290558611f4acbaf",
+        "5074730744ab180ea1849860d8e37014173e1bc6950f3e28da79f1cf6aa52473",
+        "68511e55e69a2d92443c19953fcdaf623a53701ea6565a961548714c1572431b",
+        "753b4ab6408223e3367fd97e117427741f3394acce590977a8835dbc99fbe7b8",
+        "9165d33182bb9ad5461feed2f22cfb1a0c2f406e36ee3f8bd9ee6f6614efcb56",
+        "a5435523fe10e916e53ac4695c1a1a05f51850d8a24d897bc7239d94fc3c42d4",
+        "ad9e3888b81d9ba1f3d4a70719eb8171ad9961f8e822b233baf941444435e30a",
+        "bb6fda1e85d7b699fe307c1b8047fd3e6c30520f645686807100ce1b13bbc53e",
+        "d3b58bff7d66171c7e5506b2844dd50b0f096445eadcfdcde3f6a62ea3183c31",
+        "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
+        "dd0f6e0331a448e50fc46440d0b395e77bdec56741e1b39442dc4dc359277542",
+        "e861203a92e4b7b986e702ef549878f40d0c94eb8cff35ad129663cb5d8d9b4d",
+        "eb15c8a20f6a911ae157273280ac5c4ff1fab2da5b32da376e0afe1133408cfd",
+        "eba68ff23ccaf5ff0df4690da7805a7cbd33a09af273099c51b3f801f1c3ff1f",
+        "faae8ddd500df5bd50fffb97c9a95c859400d404555cc33ac1988868e3efde5f",
+        "fdd525360223208a0fa22ae13092eea1405078ab937f7665a640abf522c44bee"
+      ],
+      "pixel_target_count": 20
+    },
+    {
+      "family": "crowdgeninstancedbillboard",
+      "pixel_shader_sha256": [
+        "0c8a98760e224ee85825d3723409c43f7e611a85c6c715a4f580c9d748d2e75c",
+        "19441c56d8f9e816f9164ef23bdf7e27420783e5b4304665809671a5ff68f06e",
+        "2e4fd52ac3a903bdb2625ac9bf00d2c18c93d02bade3d630e4ea17e9c3a6d1e5",
+        "6523e2b1e94245ca9ce1a83eb56dd4edc27d38ae027ab5ea4482b54df78c26a0",
+        "6b1bc99d47aa5257b3fe8a60e8cd46ae7d4c4b9eb6da15862893a881a1e51d62",
+        "8649d5910884460f8b4661318a9628c6c9b16922b5ac5e821e1a597e9e0e9d3a",
+        "a8cb832182886d32f0e61b85f95bb34479499a37ee45f0290ff15a6d41576fdf",
+        "e197d28526cc21c5dd9542114942287f985bee8f3f3a641ea61b7c3915ddf1b1",
+        "e21da5552fab5f0f42ed29006578002cd069b2662b5400c90115b595c6f751cc",
+        "f35c4f2a2fbf03dc4b4768d8c610fba1fb1ce3713daf9f669831a6619ec3cad2"
+      ],
+      "pixel_target_count": 10
+    },
+    {
+      "family": "foliageinstanced",
+      "pixel_shader_sha256": [
+        "0a5df7bdf7097d43698c882160512cd18907970cd849f9b091acf0ff3e00bec4",
+        "4c7b4d96853bb13191559a71239eb3d0c7d6f767d603a38018b2c933dd2e5be2",
+        "58cd6cf20a14fe3347dce15fc76fa4ecd85e0e616ea44ce907e747bdea534986",
+        "70b08343dba3ac0d27770f021fc7d9b69de463230585d7ccc7123f0a44243a37",
+        "a6d18d61a7c03316395c0ae07eb3845d2490512c01b5b3b5e52d7251d8f2dd40"
+      ],
+      "pixel_target_count": 5
+    },
+    {
+      "family": "skintestinstanced",
+      "pixel_shader_sha256": [
+        "1a1b9679f26eee6234a58cbfc1f052d1bc7dc0a62d45d9e80785e9f4ef3da1d9",
+        "1f84d5947d0dbfc99183e71e19536ae82545f2f3664a29be961eea36ad35f99f",
+        "48490686b67ac62ebba71386f2ca60b6b7d81d0bf67deaf4467c00445d3824b7",
+        "c877f36a3c1298654bd004a9e0d7aa86c71fa5676afa65ee19bcd702e9795fe9",
+        "f40f9c80d776ec5b734964f940cc313bc9813399bef02cdd8a2e332b87044ad4"
+      ],
+      "pixel_target_count": 5
+    }
+  ],
+  "format": "SHIFT.IMBRuntimeShaderTargetSetEvidence/1",
+  "result": {
+    "attribution_ready_binding_count": 0,
+    "binding_hash_target_count_distribution": {
+      "10": 73,
+      "15": 24,
+      "5": 175,
+      "6": 156
+    },
+    "binding_target_count": 428,
+    "capture_ready_binding_count": 428,
+    "prefilter_only_target_count": 51,
+    "strong_hash_target_count": 0,
+    "target_kind_counts": {
+      "pixel": 51
+    },
+    "unique_hash_target_count": 51
+  },
+  "source_ranking": {
+    "format": "SHIFT.IMBMaterialShaderRanking/1",
+    "primitive_binding_count": 428,
+    "selection_status_counts": {
+      "ambiguous": 428
+    },
+    "unique_rank_context_count": 239
+  },
+  "verification_scope": "phase-568-silverstone-era3-runtime-shader-targets",
+  "version": 1
+}
