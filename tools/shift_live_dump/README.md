@@ -217,8 +217,8 @@ Outputs:
 
 - `track_path_analysis.json` — structure-hit counts, pointer clusters, and next capture windows.
 - `{profile}.csv` — structural candidates for each recovered profile. `aipolylinepath.csv` additionally records whether `array[-4]` matches `num nodes`, whether the first array element has the `AIPolyPathNode` vtable, and how many consecutive `0x24`-byte nodes were validated.
-- `aipolylinepath_nodes.csv` — decoded elements of every fully validated `AIPolylinePath.array`, including node address/index, 2D position/tangent and cumulative distance.
-- `aisegmentpath_nodes.csv` — complete reference-snapshot `AISegmentPath.array` instances with matching count prefix and concrete `AIPathNode` vtable, including reflected node fields.
+- `aipolylinepath_nodes.csv` — decoded elements of every fully validated `AIPolylinePath.array`, exported only when the count prefix and complete concrete-vtable sequence agree across every supplied snapshot; includes node address/index, 2D position/tangent and cumulative distance.
+- `aisegmentpath_nodes.csv` — complete reference-snapshot `AISegmentPath.array` instances exported only when the count prefix and complete `AIPathNode` vtable sequence agree across every supplied snapshot, including reflected node fields.
 - `aispline_knot_arrays.csv` / `aispline_knots.csv` — complete count-prefixed `Knot` arrays and their reflected fields from the reference snapshot.
 - `aispline_knot_links.csv` — exact `AISpline` candidate pointer/count joins to validated `Knot` arrays across every supplied snapshot, with owner ambiguity counts. The object's concrete vtable remains unidentified.
 - `aiw_next_edges.csv` — normalized `WP_PTRS.next` graph edges from the selected AIW resources, including waypoint indices and lap-distance delta.
