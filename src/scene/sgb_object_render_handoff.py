@@ -14,7 +14,9 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
+
+from sgb_multimatrix import build_multimatrix_evaluation
 
 FORMAT = "SHIFT.SGBObjectRenderHandoffSet/1"
 SGB_FORMAT = "SHIFT.SGBRuntime/1"
