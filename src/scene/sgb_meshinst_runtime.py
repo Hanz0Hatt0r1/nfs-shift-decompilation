@@ -1,8 +1,10 @@
 """Source-backed runtime contract for retail SGB MeshInst resources.
 
 Phase 554 proves that .imb/.imx OBJECT resources are promoted to renderer
-factory type 7 (MeshInst).  Phase 555 follows the concrete type-7 constructor
-and loader path without inventing the serialized IMB/IMX payload grammar.
+factory type 7 (MeshInst). Phase 555 follows the concrete type-7 constructor
+and loader path. Phases 556-560 progressively recover the binary IMB payload
+through a neutral geometry adapter while keeping IMX and higher-level scene
+material binding separate.
 """
 from __future__ import annotations
 
@@ -26,6 +28,8 @@ _LOADER_BY_EXTENSION = {
         "partial_decoder_format": "SHIFT.IMBBinaryMeshSchema/1",
         "partial_decoder": "imb_format.parse_imb_binary_mesh",
         "prefix_auto_detection": "source-backed",
+        "neutral_geometry_format": "SHIFT.IMBNeutralGeometry/1",
+        "neutral_geometry_adapter": "imb_neutral_geometry.build_imb_neutral_geometry",
     },
     "imx": {
         "mode": "xml",
@@ -162,8 +166,13 @@ def build_meshinst_runtime_contract(
                 "0x40-byte elements; exact higher-level matrix/instance "
                 "semantics not promoted beyond observed storage use"
             ),
-            "serialized_payload_decode": "partial-prefix-header-streams",
-            "neutral_geometry_adapter": "not-implemented",
+            "serialized_payload_decode": (
+                "source-backed v0.4 prefix/header/streams/primitives"
+            ),
+            "neutral_geometry_adapter": (
+                "SHIFT.IMBNeutralGeometry/1 implemented; "
+                "scene material/RenderBinding integration remains separate"
+            ),
             "meb_equivalence": False,
         },
     }
