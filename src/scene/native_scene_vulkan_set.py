@@ -539,9 +539,17 @@ def build_native_scene_vulkan_set(
 
         if child_report is not None:
             transform = child_report.get("scene_transform") or {}
-            if transform.get("blocking_for_scene_native_submission") is True:
-                native_blockers.append(
-                    f"draw-{draw_order}:scene-world-transform-not-executed"
+            if (
+                command is not None
+                and command.get("world_matrix") is not None
+                and not (
+                    (child_report.get("artifacts") or {})
+                    .get("world_transform", {})
+                    .get("ready") is True
+                )
+            ):
+                child_blockers.append(
+                    "scene-world-transform-packet-not-ready"
                 )
 
         child_ready = child_report is not None and not child_blockers
@@ -630,7 +638,7 @@ def build_native_scene_vulkan_set(
             "ready": native_scene_submission_ready,
             "blocking_reasons": native_blockers,
             "world_transform_execution": (
-                "required-before-native-scene-submit"
+                "supported-by-native-runtime-phase585"
             ),
             "external_runtime_resources": (
                 "must-be-explicitly-bound"
@@ -651,10 +659,11 @@ def build_native_scene_vulkan_set(
             "material_2d_dds_resolved_from_ir": True,
             "world_transform_serialized": True,
             "world_transform_executed": False,
+            "world_transform_runtime_execution_ready": True,
             "unresolved_external_samplers_promoted": False,
             "next_stage": (
-                "execute SGB world transform in the Vulkan/native draw path "
-                "and index these children for native_runtime"
+                "prepare and admit this ordered neutral scene set directly "
+                "into native_runtime"
             ),
         },
     }
@@ -670,10 +679,7 @@ def build_native_scene_vulkan_set(
     paths_file.write_text(
         "".join(
             str(
-                (
-                    out
-                    / str(row["bundle"]["manifest_path"])
-                ).parent
+                Path(str(row["bundle"]["manifest_path"])).parent
             )
             + "\n"
             for row in child_rows
