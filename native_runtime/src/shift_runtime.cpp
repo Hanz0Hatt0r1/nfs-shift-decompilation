@@ -503,6 +503,13 @@ void load_participant_boundary(
         throw std::runtime_error(
             "native physics participant boundary is missing or not ready");
     }
+    if (!file_contains(path, "\"registry_contract_ready\": true") ||
+        !file_contains(path, "\"participant_gate_ready\": true") ||
+        !file_contains(path, "\"participant_process_ready\": true") ||
+        !file_contains(path, "\"selector_context_ready\": true")) {
+        throw std::runtime_error(
+            "native physics participant source contracts are not all ready");
+    }
     if (!file_contains(
             path,
             "\"registry_manager_global\": \"DAT_00c109e0\"") ||
