@@ -18,7 +18,7 @@ from extract_shift_rtti_registry import (
     extract_registry,
 )
 
-FORMAT = "SHIFT-REFLECTION-FIELDS/1"
+FORMAT = "SHIFT-REFLECTION-FIELDS/2"
 
 _FIELD_CALL = re.compile(
     r"FUN_0063a280\(&(?P<meta>DAT_[0-9a-fA-F]{8})\s*,\s*"
@@ -76,6 +76,81 @@ def _reflection_function(
     index = bisect_right(positions, position) - 1
     return names[index] if index >= 0 else None
 
+
+def _canonical_reflection_function(name: str | None) -> str | None:
+    if name is None:
+        return None
+    return name.removeprefix("thunk_")
+
+
+def _deduplicate_thunk_fields(fields: list[dict]) -> tuple[list[dict], int]:
+    """Drop duplicate reflection calls emitted for thunk/non-thunk builder pairs.
+
+    Repeated identical calls inside the same concrete function are preserved.
+    When both thunk_FUN_x and FUN_x contain the same semantic call, the
+    non-thunk row is preferred and aliases are recorded on the surviving row.
+    """
+    groups: dict[tuple, list[int]] = {}
+    for index, row in enumerate(fields):
+        function = row.get("reflection_function")
+        canonical = _canonical_reflection_function(function)
+        name_key = row.get("field_name")
+        if name_key is None:
+            name_key = row.get("field_name_token")
+        key = (
+            canonical,
+            row.get("reflection_metadata_symbol"),
+            row.get("type_expression"),
+            name_key,
+            row.get("offset_expression"),
+            row.get("flags_expression"),
+        )
+        groups.setdefault(key, []).append(index)
+
+    suppressed: set[int] = set()
+    aliases_by_index: dict[int, list[str]] = {}
+    removed = 0
+    for indices in groups.values():
+        thunk_indices = [
+            index
+            for index in indices
+            if str(fields[index].get("reflection_function") or "").startswith("thunk_")
+        ]
+        concrete_indices = [
+            index
+            for index in indices
+            if fields[index].get("reflection_function")
+            and not str(fields[index]["reflection_function"]).startswith("thunk_")
+        ]
+        if not thunk_indices or not concrete_indices:
+            continue
+
+        pair_count = min(len(thunk_indices), len(concrete_indices))
+        alias_names = sorted({
+            str(fields[index]["reflection_function"])
+            for index in indices
+            if fields[index].get("reflection_function")
+        })
+        for index in concrete_indices:
+            aliases_by_index[index] = alias_names
+        for index in thunk_indices[:pair_count]:
+            suppressed.add(index)
+        removed += pair_count
+
+    deduplicated: list[dict] = []
+    for index, row in enumerate(fields):
+        if index in suppressed:
+            continue
+        item = dict(row)
+        function = item.get("reflection_function")
+        item["reflection_function_canonical"] = _canonical_reflection_function(function)
+        item["reflection_function_aliases"] = aliases_by_index.get(
+            index,
+            [function] if function else [],
+        )
+        deduplicated.append(item)
+    return deduplicated, removed
+
 def _resolve_name_token(
     token: str | None,
     exe_data: bytes | None,
@@ -118,7 +193,7 @@ def extract_reflection_fields(
         if row["reflection_metadata_symbol"] is not None
     }
 
-    fields: list[dict] = []
+    raw_fields: list[dict] = []
     for match in _FIELD_CALL.finditer(text):
         metadata = match.group("meta")
         owner = by_metadata.get(metadata)
@@ -130,7 +205,7 @@ def extract_reflection_fields(
         type_expression = match.group("type").strip()
         offset_expression = match.group("offset").strip()
         flags_expression = match.group("flags").strip()
-        fields.append({
+        raw_fields.append({
             "class_name": owner["name"] if owner is not None else None,
             "class_descriptor": owner["descriptor"] if owner is not None else None,
             "reflection_metadata_symbol": metadata,
@@ -150,6 +225,8 @@ def extract_reflection_fields(
             "flags_expression": flags_expression,
         })
 
+    fields, duplicate_thunk_field_call_count = _deduplicate_thunk_fields(raw_fields)
+
     return {
         "format": FORMAT,
         "source": str(source),
@@ -158,6 +235,8 @@ def extract_reflection_fields(
         "exe_sha256": (
             hashlib.sha256(exe_data).hexdigest() if exe_data is not None else None
         ),
+        "raw_field_call_count": len(raw_fields),
+        "duplicate_thunk_field_call_count": duplicate_thunk_field_call_count,
         "field_call_count": len(fields),
         "mapped_class_count": sum(row["class_name"] is not None for row in fields),
         "resolved_field_name_count": sum(
@@ -189,6 +268,8 @@ def _write_csv(path: Path, fields: list[dict]) -> None:
         "class_descriptor",
         "reflection_metadata_symbol",
         "reflection_function",
+        "reflection_function_canonical",
+        "reflection_function_aliases",
         "field_name",
         "field_name_token",
         "name_argument",
@@ -203,7 +284,12 @@ def _write_csv(path: Path, fields: list[dict]) -> None:
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=columns)
         writer.writeheader()
-        writer.writerows({key: row.get(key) for key in columns} for row in fields)
+        for row in fields:
+            rendered = {key: row.get(key) for key in columns}
+            rendered["reflection_function_aliases"] = ";".join(
+                str(value) for value in (row.get("reflection_function_aliases") or [])
+            )
+            writer.writerow(rendered)
 
 
 def main() -> int:
