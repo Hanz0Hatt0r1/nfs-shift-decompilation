@@ -2792,6 +2792,12 @@ int main(int argc, char** argv) {
         if (input_script_mode) {
             input_script = load_input_script(
                 args.input_script);
+            if (input_script.steps.size() >
+                static_cast<size_t>(
+                    std::numeric_limits<int>::max())) {
+                throw std::runtime_error(
+                    "native input script has too many fixed-step rows");
+            }
             if (args.frames_explicit &&
                 static_cast<size_t>(args.frames) !=
                     input_script.steps.size()) {
