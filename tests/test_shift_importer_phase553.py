@@ -235,3 +235,24 @@ def test_phase594_cli_accepts_multimatrix_runtime_root_solve():
     assert args.output == "root-solve.json"
     assert args.tolerance == 1.0e-6
     assert args.fn.__name__ == "cmd_sgb_multimatrix_root_solve"
+
+
+def test_phase595_cli_accepts_runtime_object_candidate_join():
+    parser = build_parser()
+    args = parser.parse_args([
+        "sgb-runtime-object-candidate-join",
+        "scene-placement.json",
+        "object-handoffs.json",
+        "runtime-capture.json",
+        "out/ir",
+        "runtime-object-candidates.json",
+    ])
+
+    assert args.scene_placement == "scene-placement.json"
+    assert args.object_handoffs == "object-handoffs.json"
+    assert args.capture_pipeline == "runtime-capture.json"
+    assert args.ir_root == "out/ir"
+    assert args.output == "runtime-object-candidates.json"
+    assert args.fn.__name__ == (
+        "cmd_sgb_runtime_object_candidate_join"
+    )
