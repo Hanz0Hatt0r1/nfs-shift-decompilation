@@ -159,11 +159,46 @@ def build_multimatrix_runtime_coverage(
         capture_pipeline,
         ir_manifest,
     )
-    consensus = build_multimatrix_root_consensus(
-        sgb_runtime,
-        candidate_join,
-        capture_pipeline,
-    )
+    consensus_input_blockers: list[str] = []
+    if capture_pipeline.get("pipeline_ready") is not True:
+        consensus_input_blockers.append(
+            "multimatrix-coverage:capture-pipeline-not-ready"
+        )
+    if candidate_join.get("ready") is not True:
+        consensus_input_blockers.extend(
+            str(reason)
+            for reason in candidate_join.get("blocking_reasons") or [
+                "multimatrix-coverage:candidate-join-not-ready"
+            ]
+        )
+
+    if consensus_input_blockers:
+        consensus = {
+            "format": "SHIFT.SGBMultiMatrixRootConsensus/1",
+            "version": 1,
+            "status": "blocked",
+            "ready": False,
+            "blocking_reasons": list(
+                dict.fromkeys(consensus_input_blockers)
+            ),
+            "hypothesis_count": 0,
+            "eligible_root_count": 0,
+            "ready_consensus_count": 0,
+            "ambiguous_consensus_count": 0,
+            "consensus": [],
+            "boundary": {
+                "phase595_ready_required": True,
+                "phase596_executed": False,
+                "scenegraph_update_history_recovered": False,
+                "authorizes_render_admission": False,
+            },
+        }
+    else:
+        consensus = build_multimatrix_root_consensus(
+            sgb_runtime,
+            candidate_join,
+            capture_pipeline,
+        )
 
     if consensus.get("ready") is True:
         promoted_handoffs = build_sgb_object_render_handoff_set(
@@ -228,19 +263,9 @@ def build_multimatrix_runtime_coverage(
         and baseline_bindings.get(key) is not True
     ]
 
-    audit_blockers: list[str] = []
-    if capture_pipeline.get("pipeline_ready") is not True:
-        audit_blockers.append(
-            "multimatrix-coverage:capture-pipeline-not-ready"
-        )
-    if candidate_join.get("ready") is not True:
-        audit_blockers.extend(
-            str(reason)
-            for reason in candidate_join.get("blocking_reasons") or [
-                "multimatrix-coverage:candidate-join-not-ready"
-            ]
-        )
-    audit_blockers = list(dict.fromkeys(audit_blockers))
+    audit_blockers = list(
+        dict.fromkeys(consensus_input_blockers)
+    )
     ready = not audit_blockers
 
     consensus_rows = [
@@ -403,6 +428,7 @@ def build_multimatrix_runtime_coverage(
             "new_transform_inference": False,
             "phase595_candidate_join_reused": True,
             "phase596_owner_consensus_reused": True,
+            "phase596_requires_ready_phase595_join": True,
             "phase597_handoff_application_reused": True,
             "ordinary_scene_admission_reused": True,
             "scenegraph_update_history_recovered": False,
