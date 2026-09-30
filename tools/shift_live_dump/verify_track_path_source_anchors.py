@@ -6,8 +6,9 @@ import argparse
 import ast
 import hashlib
 import json
-import struct
 from pathlib import Path
+
+from extract_shift_rtti_registry import build_pe_rtti_index
 
 FORMAT = "SHIFT-TRACK-PATH-SOURCE-ANCHORS/1"
 
@@ -91,92 +92,15 @@ def symbol_address(symbol: str) -> int:
     return int(symbol.rsplit("_", 1)[-1], 16)
 
 
-def _pe_sections(data: bytes) -> tuple[int, dict[str, dict[str, int]]]:
-    if len(data) < 0x40 or data[:2] != b"MZ":
-        raise ValueError("not a PE image")
-    pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
-    if pe_offset + 24 > len(data) or data[pe_offset:pe_offset + 4] != b"PE\0\0":
-        raise ValueError("invalid PE signature")
-    section_count = struct.unpack_from("<H", data, pe_offset + 6)[0]
-    optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
-    optional = pe_offset + 24
-    if optional + optional_size > len(data):
-        raise ValueError("truncated PE optional header")
-    magic = struct.unpack_from("<H", data, optional)[0]
-    if magic == 0x10B:
-        image_base = struct.unpack_from("<I", data, optional + 28)[0]
-    elif magic == 0x20B:
-        image_base = struct.unpack_from("<Q", data, optional + 24)[0]
-    else:
-        raise ValueError(f"unsupported PE optional-header magic 0x{magic:04x}")
-
-    section_table = optional + optional_size
-    sections: dict[str, dict[str, int]] = {}
-    for index in range(section_count):
-        offset = section_table + index * 40
-        if offset + 40 > len(data):
-            raise ValueError("truncated PE section table")
-        name = data[offset:offset + 8].split(b"\0", 1)[0].decode("ascii", errors="replace")
-        virtual_size, virtual_address, raw_size, raw_offset = struct.unpack_from(
-            "<IIII", data, offset + 8
-        )
-        sections[name] = {
-            "virtual_address": virtual_address,
-            "virtual_size": virtual_size,
-            "raw_offset": raw_offset,
-            "raw_size": raw_size,
-        }
-    return int(image_base), sections
-
-
-def _section_bounds(data: bytes, section: dict[str, int]) -> tuple[int, int]:
-    start = int(section["raw_offset"])
-    end = min(len(data), start + int(section["raw_size"]))
-    if start < 0 or start > end:
-        raise ValueError("invalid PE section raw range")
-    return start, end
-
-
 def scan_pe_rtti_vtables(data: bytes, known: dict[str, int]) -> dict:
-    """Recover dedicated vtables through tiny descriptor-returning RTTI getters."""
-    image_base, sections = _pe_sections(data)
-    if ".text" not in sections or ".rdata" not in sections:
-        raise ValueError("PE lacks .text or .rdata")
-    text_section = sections[".text"]
-    rdata_section = sections[".rdata"]
-    text_start, text_end = _section_bounds(data, text_section)
-    rdata_start, rdata_end = _section_bounds(data, rdata_section)
-    text_va = image_base + int(text_section["virtual_address"])
-    rdata_va = image_base + int(rdata_section["virtual_address"])
-    text_virtual_end = text_va + max(
-        int(text_section["virtual_size"]), int(text_section["raw_size"])
-    )
-
+    """Recover dedicated vtables through the shared PE RTTI index."""
+    pe = build_pe_rtti_index(data)
     rows = []
     for class_name, descriptor in RTTI_DESCRIPTORS.items():
-        getter_pattern = b"\xB8" + struct.pack("<I", descriptor) + b"\xC3"
-        getters: list[int] = []
-        cursor = text_start
-        while True:
-            offset = data.find(getter_pattern, cursor, text_end)
-            if offset < 0:
-                break
-            getters.append(text_va + (offset - text_start))
-            cursor = offset + 1
-
-        candidate_vtables: set[int] = set()
-        for getter in getters:
-            encoded = struct.pack("<I", getter)
-            for offset in range(rdata_start + 4, rdata_end - 3, 4):
-                if data[offset:offset + 4] != encoded:
-                    continue
-                first_entry = struct.unpack_from("<I", data, offset - 4)[0]
-                if text_va <= first_entry < text_virtual_end:
-                    candidate_vtables.add(rdata_va + (offset - rdata_start) - 4)
-
+        getters = list(pe["getter_addresses"].get(descriptor, ()))
+        candidates = list(pe["vtable_candidates"].get(descriptor, ()))
         analyzer_vtable = known.get(class_name)
         expected_absent = class_name in RTTI_GETTER_EXPECTED_ABSENT
-        candidates = sorted(candidate_vtables)
         if expected_absent:
             match = not getters and not candidates and analyzer_vtable is None
         else:
@@ -196,7 +120,7 @@ def scan_pe_rtti_vtables(data: bytes, known: dict[str, int]) -> dict:
         })
 
     return {
-        "image_base": image_base,
+        "image_base": pe["image_base"],
         "rows": rows,
         "ready": all(row["match"] for row in rows),
     }
