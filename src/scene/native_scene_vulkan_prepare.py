@@ -87,6 +87,27 @@ def prepare_native_scene_vulkan_set(
                 blockers.append("native-scene-prepare:draw-count-mismatch")
             if ready_count != len(draw_rows):
                 blockers.append("native-scene-prepare:ready-draw-count-mismatch")
+            for index, row in enumerate(draw_rows):
+                try:
+                    draw_order = int(row.get("draw_order"))
+                except (TypeError, ValueError):
+                    blockers.append(
+                        f"native-scene-prepare:draw-order-invalid:{index}"
+                    )
+                    continue
+                if draw_order != index:
+                    blockers.append(
+                        f"native-scene-prepare:draw-order-not-contiguous:{index}"
+                    )
+                if row.get("ready") is not True:
+                    blockers.append(
+                        f"native-scene-prepare:source-draw-not-ready:{index}"
+                    )
+                bundle = row.get("bundle")
+                if not isinstance(bundle, Mapping):
+                    blockers.append(
+                        f"native-scene-prepare:source-bundle-missing:{index}"
+                    )
 
     native_submission = (
         manifest.get("native_scene_submission") if manifest is not None else {}
@@ -220,7 +241,12 @@ def prepare_native_scene_vulkan_set(
             })
 
     blockers = list(dict.fromkeys(blockers))
-    ready = bool(prepared_draws) and not blockers
+    ready = (
+        bool(draw_rows)
+        and len(prepared_draws) == len(draw_rows)
+        and all(row.get("ready") is True for row in prepared_draws)
+        and not blockers
+    )
     result = {
         "format": FORMAT,
         "version": 1,
@@ -240,13 +266,18 @@ def prepare_native_scene_vulkan_set(
                 _sha256(paths_path) if paths_path.is_file() else None
             ),
         },
-        "draw_count": len(prepared_draws),
+        "draw_count": len(draw_rows),
+        "prepared_draw_count": len(prepared_draws),
         "draws": prepared_draws,
-        "resolved_native_blockers": [
-            reason
-            for reason in inherited_native_blockers
-            if reason.endswith(TRANSFORM_BLOCKER_SUFFIX)
-        ],
+        "resolved_native_blockers": (
+            [
+                reason
+                for reason in inherited_native_blockers
+                if reason.endswith(TRANSFORM_BLOCKER_SUFFIX)
+            ]
+            if ready
+            else []
+        ),
         "remaining_native_blockers": non_transform_native_blockers,
         "boundary": {
             "ordered_neutral_children_prepared": ready,
