@@ -1,4 +1,5 @@
 #include <vulkan/vulkan.h>
+#include "shift_vulkan_validation.hpp"
 
 #include <cstdint>
 #include <cstddef>
@@ -177,7 +178,7 @@ struct CubePacket {
     std::vector<uint8_t> bytes;
 };
 
-void destroy(Context& context) {
+void destroy(Context& context, shift::vulkan::Validation& validation) {
     if (context.device) {
         vkDeviceWaitIdle(context.device);
         if (context.command_pool) {
@@ -186,13 +187,13 @@ void destroy(Context& context) {
         vkDestroyDevice(context.device, nullptr);
     }
     if (context.instance) {
+        validation.detach(context.instance);
         vkDestroyInstance(context.instance, nullptr);
     }
+    context = {};
 }
 
-Context create_context() {
-    Context context{};
-
+void create_context(Context& context, shift::vulkan::Validation& validation) {
     VkApplicationInfo app{};
     app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app.pApplicationName = "SHIFT Vulkan Bundle Execute";
@@ -204,8 +205,7 @@ Context create_context() {
     VkInstanceCreateInfo instance{};
     instance.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instance.pApplicationInfo = &app;
-    check(vkCreateInstance(&instance, nullptr, &context.instance),
-          "vkCreateInstance failed");
+    validation.create_instance(instance, {}, context.instance);
 
     uint32_t device_count = 0;
     check(vkEnumeratePhysicalDevices(context.instance, &device_count, nullptr),
@@ -263,8 +263,6 @@ Context create_context() {
     check(vkCreateCommandPool(
         context.device, &pool, nullptr, &context.command_pool),
         "vkCreateCommandPool failed");
-
-    return context;
 }
 
 std::vector<uint8_t> read_bytes(const std::filesystem::path& path) {
@@ -567,7 +565,8 @@ void create_image(
     VkFormat format,
     VkImageCreateFlags flags,
     VkImageUsageFlags usage,
-    Image& out) {
+    Image& out,
+    VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) {
 
     VkImageCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -602,7 +601,7 @@ void create_image(
     view.image = out.handle;
     view.viewType = layers == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
     view.format = format;
-    view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    view.subresourceRange.aspectMask = aspect;
     view.subresourceRange.levelCount = 1;
     view.subresourceRange.layerCount = layers;
     check(vkCreateImageView(ctx.device, &view, nullptr, &out.view),
@@ -847,14 +846,25 @@ void destroy_image(Context& ctx, Image& image) {
 int main(int argc, char** argv) {
     if (argc < 2) {
         std::cerr
-            << "usage: shift_vulkan_bundle_execute <bundle_dir> [output.ppm]\n";
+            << "usage: shift_vulkan_bundle_execute <bundle_dir> [output.ppm] [--validation]\n";
         return EXIT_FAILURE;
     }
 
     const std::filesystem::path root = argv[1];
-    const std::filesystem::path output =
-        argc >= 3 ? std::filesystem::path(argv[2]) :
-                    root / "vulkan_render.ppm";
+    std::filesystem::path output = root / "vulkan_render.ppm";
+    shift::vulkan::Validation validation;
+    bool has_output = false;
+    for (int i = 2; i < argc; ++i) {
+        if (std::string(argv[i]) == "--validation") {
+            validation.enabled = true;
+        } else if (!has_output && argv[i][0] != '-') {
+            output = argv[i];
+            has_output = true;
+        } else {
+            std::cerr << "unexpected argument: " << argv[i] << "\n";
+            return EXIT_FAILURE;
+        }
+    }
 
     Context ctx{};
     Buffer vertex_buffer{};
@@ -905,7 +915,7 @@ int main(int argc, char** argv) {
         const auto vertex_spirv = find_shader(root, ".vertex.glsl.spv");
         const auto pixel_spirv = find_shader(root, ".pixel.glsl.spv");
 
-        ctx = create_context();
+        create_context(ctx, validation);
 
         create_buffer(
             ctx, geometry.vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -1180,7 +1190,6 @@ int main(int argc, char** argv) {
                 nullptr);
         }
 
-        create_color_image:
         create_image(
             ctx, kRenderWidth, kRenderHeight, 1, VK_FORMAT_R8G8B8A8_UNORM, 0,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
@@ -1197,21 +1206,7 @@ int main(int argc, char** argv) {
         create_image(
             ctx, kRenderWidth, kRenderHeight, 1, depth_format, 0,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            depth);
-
-        VkImageViewCreateInfo depth_view{};
-        depth_view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        depth_view.image = depth.handle;
-        depth_view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        depth_view.format = depth_format;
-        depth_view.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        depth_view.subresourceRange.levelCount = 1;
-        depth_view.subresourceRange.layerCount = 1;
-        vkDestroyImageView(ctx.device, depth.view, nullptr);
-        depth.view = VK_NULL_HANDLE;
-        check(vkCreateImageView(
-            ctx.device, &depth_view, nullptr, &depth.view),
-            "vkCreateImageView depth failed");
+            depth, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         VkAttachmentDescription attachments[2]{};
         attachments[0].format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1582,15 +1577,6 @@ int main(int argc, char** argv) {
 
         VkPhysicalDeviceProperties props{};
         vkGetPhysicalDeviceProperties(ctx.physical, &props);
-        std::cout << "{\n";
-        std::cout << "  \"format\": \"SHIFT.VulkanBundleExecution/1\",\n";
-        std::cout << "  \"device\": \"" << props.deviceName << "\",\n";
-        std::cout << "  \"vertex_count\": " << geometry.header.vertex_count << ",\n";
-        std::cout << "  \"index_count\": " << geometry.header.index_count << ",\n";
-        std::cout << "  \"texture_count\": " << textures.size() << ",\n";
-        std::cout << "  \"has_cube\": " << (has_cube ? "true" : "false") << ",\n";
-        std::cout << "  \"output\": \"" << output.string() << "\"\n";
-        std::cout << "}\n";
 
         if (command) vkFreeCommandBuffers(ctx.device, ctx.command_pool, 1, &command);
         destroy_buffer(ctx, readback);
@@ -1619,7 +1605,23 @@ int main(int argc, char** argv) {
         destroy_buffer(ctx, vertex_constants);
         destroy_buffer(ctx, index_buffer);
         destroy_buffer(ctx, vertex_buffer);
-        destroy(ctx);
+        destroy(ctx, validation);
+        if (validation.error_count() != 0) {
+            std::cerr << "Vulkan validation failed: " << validation.error_count()
+                      << " error(s)\n";
+            return EXIT_FAILURE;
+        }
+        std::cout << "{\n";
+        std::cout << "  \"format\": \"SHIFT.VulkanBundleExecution/1\",\n";
+        std::cout << "  \"device\": \"" << props.deviceName << "\",\n";
+        std::cout << "  \"vertex_count\": " << geometry.header.vertex_count << ",\n";
+        std::cout << "  \"index_count\": " << geometry.header.index_count << ",\n";
+        std::cout << "  \"texture_count\": " << textures.size() << ",\n";
+        std::cout << "  \"has_cube\": " << (has_cube ? "true" : "false") << ",\n";
+        std::cout << "  \"validation_enabled\": " << (validation.enabled ? "true" : "false") << ",\n";
+        std::cout << "  \"validation_errors\": " << validation.error_count() << ",\n";
+        std::cout << "  \"output\": \"" << output.string() << "\"\n";
+        std::cout << "}\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
         std::cerr << "shift_vulkan_bundle_execute: " << error.what() << "\n";
@@ -1652,7 +1654,7 @@ int main(int argc, char** argv) {
             destroy_buffer(ctx, index_buffer);
             destroy_buffer(ctx, vertex_buffer);
         }
-        destroy(ctx);
+        destroy(ctx, validation);
         return EXIT_FAILURE;
     }
 }

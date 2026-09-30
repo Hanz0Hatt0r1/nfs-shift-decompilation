@@ -76,6 +76,7 @@ def run_bmw_vulkan_bundle(
     validator: str | None = None,
     output: str | Path | None = None,
     prepare_only: bool = False,
+    validation: bool = False,
 ) -> dict[str, Any]:
     root = Path(bundle_dir)
     if not (root / "bundle_manifest.json").is_file():
@@ -120,6 +121,7 @@ def run_bmw_vulkan_bundle(
         },
         "native": {
             "status": "not-run",
+            "validation_requested": validation,
             "executable": str(executable),
             "output": str(output or root / "vulkan_render.ppm"),
         },
@@ -193,8 +195,11 @@ def run_bmw_vulkan_bundle(
 
     output_path = Path(output) if output is not None else root / "vulkan_render.ppm"
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    command = [str(exe), str(root), str(output_path)]
+    if validation:
+        command.append("--validation")
     proc = subprocess.run(
-        [str(exe), str(root), str(output_path)],
+        command,
         capture_output=True,
         text=True,
         check=False,
@@ -234,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--validator")
     parser.add_argument("--output")
     parser.add_argument("--prepare-only", action="store_true")
+    parser.add_argument("--validation", action="store_true")
     args = parser.parse_args(argv)
 
     result = run_bmw_vulkan_bundle(
@@ -242,6 +248,7 @@ def main(argv: list[str] | None = None) -> int:
         validator=args.validator,
         output=args.output,
         prepare_only=args.prepare_only,
+        validation=args.validation,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["status"] in {"ready", "rendered"} else 2

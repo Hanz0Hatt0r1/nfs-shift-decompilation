@@ -1,4 +1,7 @@
 import json
+import subprocess
+
+import pytest
 from pathlib import Path
 
 from bmw_vulkan_bundle import TARGET_MEB
@@ -190,3 +193,44 @@ def test_runner_prepare_only_reports_gate_but_does_not_require_it(
     assert result["status"] == "ready"
     assert result["ready"] is True
     assert result["gates"]["native_submission"]["status"] == "blocked"
+
+
+@pytest.mark.parametrize("validation", [False, True])
+@pytest.mark.parametrize("returncode", [0, 1])
+def test_runner_native_validation_failure_overrides_existing_output(
+    monkeypatch, tmp_path, validation, returncode
+):
+    _bundle(tmp_path)
+    monkeypatch.setattr(
+        "vulkan_bundle_run.compile_bmw_vulkan_bundle",
+        lambda root, validator=None: _compiled_report(),
+    )
+    monkeypatch.setattr(
+        "vulkan_bundle_run.validate_bmw_vulkan_interface",
+        lambda root, report: {"ready": True, "blocking_reasons": []},
+    )
+    executable = tmp_path / "executor"
+    executable.touch()
+    output = tmp_path / "render.ppm"
+    output.write_bytes(b"P6\n1 1\n255\n\xff\x00\x00")
+    commands = []
+
+    def execute(command, **kwargs):
+        commands.append(command)
+        return subprocess.CompletedProcess(
+            command, returncode, stdout="", stderr="validation error" if returncode else ""
+        )
+
+    monkeypatch.setattr("vulkan_bundle_run.subprocess.run", execute)
+    result = run_bmw_vulkan_bundle(
+        tmp_path, executable=executable, output=output, validation=validation,
+    )
+    assert commands == [[str(executable), str(tmp_path), str(output)] + (
+        ["--validation"] if validation else []
+    )]
+    assert result["native"]["validation_requested"] is validation
+    assert result["status"] == ("failed" if returncode else "rendered")
+    assert result["ready"] is (returncode == 0)
+    if returncode:
+        assert result["blocking_reasons"] == ["vulkan-runner:native-execution-failed"]
+        assert "output_sha256" not in result["native"]

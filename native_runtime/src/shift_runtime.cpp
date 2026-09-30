@@ -3,6 +3,7 @@
 
 #include "shift_ir.hpp"
 #include "runtime_state.hpp"
+#include "shift_vulkan_validation.hpp"
 
 #include <algorithm>
 #include <array>
@@ -870,6 +871,7 @@ struct MaterialDraw {
 
 struct Runtime {
     Window* window = nullptr;
+    shift::vulkan::Validation validation;
 
     VkInstance instance = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -899,7 +901,8 @@ struct Runtime {
     std::vector<VkCommandBuffer> command_buffers;
 
     std::array<VkSemaphore, kFramesInFlight> image_available{};
-    std::array<VkSemaphore, kFramesInFlight> render_finished{};
+    // Presentation completion follows the acquired image, not the frame fence.
+    std::vector<VkSemaphore> render_finished;
     std::array<VkFence, kFramesInFlight> fences{};
     size_t frame_slot = 0;
 
@@ -912,7 +915,7 @@ struct Runtime {
     std::vector<MaterialDraw> material_draws;
 
     void create_instance() {
-        const char* extensions[] = {
+        const std::vector<const char*> extensions = {
             VK_KHR_SURFACE_EXTENSION_NAME,
             VK_KHR_XCB_SURFACE_EXTENSION_NAME
         };
@@ -928,11 +931,7 @@ struct Runtime {
         VkInstanceCreateInfo create{};
         create.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         create.pApplicationInfo = &app;
-        create.enabledExtensionCount = 2;
-        create.ppEnabledExtensionNames = extensions;
-
-        vk_check(vkCreateInstance(&create, nullptr, &instance),
-                 "vkCreateInstance failed");
+        validation.create_instance(create, extensions, instance);
     }
 
     void create_surface() {
@@ -1988,7 +1987,7 @@ struct Runtime {
                      device, &pool, nullptr, &command_pool),
                  "vkCreateCommandPool failed");
 
-        command_buffers.resize(framebuffers.size());
+        command_buffers.resize(kFramesInFlight);
         VkCommandBufferAllocateInfo allocate{};
         allocate.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocate.commandPool = command_pool;
@@ -2010,12 +2009,14 @@ struct Runtime {
             vk_check(vkCreateSemaphore(
                          device, &semaphore, nullptr, &image_available[i]),
                      "vkCreateSemaphore failed");
-            vk_check(vkCreateSemaphore(
-                         device, &semaphore, nullptr, &render_finished[i]),
-                     "vkCreateSemaphore failed");
             vk_check(vkCreateFence(
                          device, &fence, nullptr, &fences[i]),
                      "vkCreateFence failed");
+        }
+        render_finished.resize(swapchain_images.size(), VK_NULL_HANDLE);
+        for (auto& finished : render_finished) {
+            vk_check(vkCreateSemaphore(device, &semaphore, nullptr, &finished),
+                     "vkCreateSemaphore presentation failed");
         }
     }
 
@@ -2125,10 +2126,10 @@ struct Runtime {
                      device, 1, &fences[slot]),
                  "vkResetFences failed");
         vk_check(vkResetCommandBuffer(
-                     command_buffers[image_index], 0),
+                     command_buffers[slot], 0),
                  "vkResetCommandBuffer failed");
 
-        record(command_buffers[image_index], image_index);
+        record(command_buffers[slot], image_index);
 
         const VkPipelineStageFlags wait_stage =
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -2138,9 +2139,9 @@ struct Runtime {
         submit.pWaitSemaphores = &image_available[slot];
         submit.pWaitDstStageMask = &wait_stage;
         submit.commandBufferCount = 1;
-        submit.pCommandBuffers = &command_buffers[image_index];
+        submit.pCommandBuffers = &command_buffers[slot];
         submit.signalSemaphoreCount = 1;
-        submit.pSignalSemaphores = &render_finished[slot];
+        submit.pSignalSemaphores = &render_finished[image_index];
 
         vk_check(vkQueueSubmit(
                      graphics_queue, 1, &submit, fences[slot]),
@@ -2149,7 +2150,7 @@ struct Runtime {
         VkPresentInfoKHR present{};
         present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         present.waitSemaphoreCount = 1;
-        present.pWaitSemaphores = &render_finished[slot];
+        present.pWaitSemaphores = &render_finished[image_index];
         present.swapchainCount = 1;
         present.pSwapchains = &swapchain;
         present.pImageIndices = &image_index;
@@ -2182,13 +2183,15 @@ struct Runtime {
             if (image_available[i]) {
                 vkDestroySemaphore(device, image_available[i], nullptr);
             }
-            if (render_finished[i]) {
-                vkDestroySemaphore(device, render_finished[i], nullptr);
-            }
             if (fences[i]) {
                 vkDestroyFence(device, fences[i], nullptr);
             }
         }
+
+        for (auto finished : render_finished) {
+            if (finished) vkDestroySemaphore(device, finished, nullptr);
+        }
+        render_finished.clear();
 
         if (command_pool) {
             vkDestroyCommandPool(device, command_pool, nullptr);
@@ -2228,6 +2231,7 @@ struct Runtime {
             vkDestroySurfaceKHR(instance, surface, nullptr);
         }
         if (instance) {
+            validation.detach(instance);
             vkDestroyInstance(instance, nullptr);
         }
 
@@ -2245,6 +2249,7 @@ struct Args {
     std::string physics_manifest;
     std::string shader_dir;
     int frames = kDefaultFrames;
+    bool validation = false;
 };
 
 Args parse_args(int argc, char** argv) {
@@ -2270,11 +2275,13 @@ Args parse_args(int argc, char** argv) {
             } else {
                 args.frames = std::max(1, std::stoi(value));
             }
+        } else if (option == "--validation") {
+            args.validation = true;
         } else if (option == "--help") {
             std::cout
                 << "usage: shift_runtime "
                 << "(--mesh FILE | --bundle DIR | --bundle-set DIR) "
-                << "--shader-dir DIR [--frames N]\n";
+                << "--shader-dir DIR [--frames N] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
             throw std::runtime_error(
@@ -2305,6 +2312,7 @@ int main(int argc, char** argv) {
 
     try {
         const Args args = parse_args(argc, argv);
+        runtime.validation.enabled = args.validation;
 
         PacketGeometry mesh_geometry;
         std::vector<PacketGeometry> material_geometry;
@@ -2489,6 +2497,12 @@ int main(int argc, char** argv) {
                             VK_NULL_HANDLE;
         }
 
+        const auto material_draw_count = runtime.material_draws.size();
+        const auto depth_buffer_count = runtime.depth_images.size();
+        runtime.destroy();
+        window.destroy();
+        const auto validation_errors = runtime.validation.error_count();
+
         std::cout
             << "{\n"
             << "  \"format\": "
@@ -2533,22 +2547,24 @@ int main(int argc, char** argv) {
             << (bundle_set_mode ? "true" : "false")
             << ",\n"
             << "  \"material_draws\": "
-            << runtime.material_draws.size() << ",\n"
+            << material_draw_count << ",\n"
             << "  \"bundle_2d_textures\": "
             << texture_count << ",\n"
             << "  \"bundle_cube\": "
             << (has_cube ? "true" : "false") << ",\n"
             << "  \"depth_buffers\": "
-            << runtime.depth_images.size() << ",\n"
+            << depth_buffer_count << ",\n"
             << "  \"depth_test\": true,\n"
             << "  \"elapsed_ms\": "
             << elapsed_ms << ",\n"
-            << "  \"status\": \"ok\"\n"
+            << "  \"validation_enabled\": "
+            << (args.validation ? "true" : "false") << ",\n"
+            << "  \"validation_errors\": " << validation_errors << ",\n"
+            << "  \"status\": \""
+            << (validation_errors == 0 ? "ok" : "validation-failed") << "\"\n"
             << "}\n";
 
-        runtime.destroy();
-        window.destroy();
-        return rendered > 0 ?
+        return rendered > 0 && validation_errors == 0 ?
             EXIT_SUCCESS : EXIT_FAILURE;
     } catch (const std::exception& error) {
         std::cerr
