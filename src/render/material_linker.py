@@ -10,7 +10,7 @@ import hashlib
 from pathlib import Path
 from typing import Iterable
 from shader_ir import parse_shader_blobs
-from shader_interface import pair_selected_pixel
+from shader_interface import pair_exact_offsets, pair_selected_pixel
 from uniform_linker import link_selected_pair, reflect_constants
 from specialization import feature_indicators, feature_signature_score, material_specialisations
 from shader_backend import translate_pair_blob
@@ -88,6 +88,7 @@ def _selection_sort_key(candidate: dict) -> tuple:
         -evidence[8],
         candidate["file"],
         candidate["program_offset"],
+        candidate.get("vertex_program_offset", -1),
     )
 
 
@@ -134,68 +135,161 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
     fxo_payloads={}
     for name,data in fxo_candidates:
         programs=reflect_fxo(data)
+        shader_blobs=parse_shader_blobs(data)
+        blobs_by_offset={blob.offset:blob for blob in shader_blobs}
         for p in (x for x in programs if x["stage"]=="pixel"):
             names={s["name"] for s in p["samplers"]}
             sampler_score=len(expected & names)
             wrong_camera="motionBlurMap" in names and "motionBlurTexture" not in param_names
             exact=expected <= names and not wrong_camera
-            if not wrong_camera and (sampler_score or not expected):
-                pair=pair_selected_pixel(data,p["offset"],properties=vertex_properties) if exact else None
+            if wrong_camera or not (sampler_score or not expected):
+                continue
+
+            selected_pair=(
+                pair_selected_pixel(
+                    data,
+                    p["offset"],
+                    properties=vertex_properties,
+                )
+                if exact
+                else None
+            )
+            pair_rows=[]
+            if selected_pair:
+                if selected_pair.get("selection_status")=="ambiguous":
+                    vertex_offsets=sorted({
+                        int(row["vertex_offset"])
+                        for row in (
+                            selected_pair.get("ambiguous_candidates") or []
+                        )
+                        if row.get("vertex_offset") is not None
+                    })
+                else:
+                    vertex_offsets=[int(selected_pair["vertex_offset"])]
+                for vertex_offset in vertex_offsets:
+                    pair_contract=pair_exact_offsets(
+                        data,
+                        vertex_offset,
+                        int(p["offset"]),
+                        properties=vertex_properties,
+                    )
+                    if pair_contract is not None:
+                        pair_rows.append(pair_contract)
+            if not pair_rows:
+                pair_rows=[None]
+
+            pixel_sha256=hashlib.sha256(
+                data[p["offset"]:p["end"]]
+            ).hexdigest()
+
+            for pair in pair_rows:
                 pair_score=pair["score"] if pair else 0.0
-                pair_ok=bool(pair and pair.get("interface",{}).get("valid") and pair.get("vertex_format",{}).get("valid",True))
-                pair_selection_status=pair.get("selection_status","unique") if pair else "none"
-                offsets=[p["offset"]] + ([pair["vertex_offset"]] if pair else [])
+                pair_ok=bool(
+                    pair
+                    and pair.get("interface",{}).get("valid")
+                    and pair.get("vertex_format",{}).get("valid",True)
+                )
+                vertex_offset=(
+                    int(pair["vertex_offset"])
+                    if pair is not None
+                    else None
+                )
+                offsets=[p["offset"]] + (
+                    [vertex_offset] if vertex_offset is not None else []
+                )
                 all_constants=set()
                 for off in offsets:
-                    all_constants.update(x["name"] for x in reflect_constants(data,off) if x.get("register_set")==2 and x.get("name"))
-                uniform_matches=sorted(material_uniform_names & all_constants)
-                uniform_score=(len(uniform_matches)/len(material_uniform_names)) if material_uniform_names else 1.0
-                feature_score=feature_signature_score(material, constants=all_constants, samplers=names)
-                pixel_sha256=hashlib.sha256(data[p["offset"]:p["end"]]).hexdigest()
+                    all_constants.update(
+                        x["name"]
+                        for x in reflect_constants(data,off)
+                        if x.get("register_set")==2 and x.get("name")
+                    )
+                uniform_matches=sorted(
+                    material_uniform_names & all_constants
+                )
+                uniform_score=(
+                    len(uniform_matches)/len(material_uniform_names)
+                    if material_uniform_names else 1.0
+                )
+                feature_score=feature_signature_score(
+                    material,
+                    constants=all_constants,
+                    samplers=names,
+                )
+
                 vertex_sha256=None
                 pair_sha256=None
                 permutation_identity=None
                 permutation_identity_error=None
-                if pair:
-                    try:
-                        for vb in parse_shader_blobs(data):
-                            if vb.offset==pair["vertex_offset"]:
-                                vertex_sha256=hashlib.sha256(data[vb.offset:vb.end]).hexdigest()
-                                pair_sha256=hashlib.sha256(data[vb.offset:vb.end]+data[p["offset"]:p["end"]]).hexdigest()
-                                try:
-                                    permutation_identity=build_shader_permutation_identity(
-                                        data,
-                                        vertex_offset=int(vb.offset),
-                                        pixel_offset=int(p["offset"]),
-                                    )
-                                except Exception as exc:
-                                    permutation_identity=None
-                                    permutation_identity_error=f"{type(exc).__name__}: {exc}"
-                                break
-                    except Exception:
-                        pass
+                if vertex_offset is not None:
+                    vb=blobs_by_offset.get(vertex_offset)
+                    if vb is not None and vb.stage=="vertex":
+                        vertex_bytes=data[vb.offset:vb.end]
+                        pixel_bytes=data[p["offset"]:p["end"]]
+                        vertex_sha256=hashlib.sha256(
+                            vertex_bytes
+                        ).hexdigest()
+                        pair_sha256=hashlib.sha256(
+                            vertex_bytes + pixel_bytes
+                        ).hexdigest()
+                        try:
+                            permutation_identity=(
+                                build_shader_permutation_identity(
+                                    data,
+                                    vertex_offset=vertex_offset,
+                                    pixel_offset=int(p["offset"]),
+                                )
+                            )
+                        except Exception as exc:
+                            permutation_identity_error=(
+                                f"{type(exc).__name__}: {exc}"
+                            )
+
                 fxo_payloads[(name,p["offset"])]=data
                 fxo.append({
-                    "file":name,"program_offset":p["offset"],"samplers":p["samplers"],
+                    "file":name,
+                    "program_offset":p["offset"],
+                    "vertex_program_offset":vertex_offset,
+                    "samplers":p["samplers"],
                     "payload_sha256":hashlib.sha256(data).hexdigest(),
-                    "score":sampler_score,"expected_count":len(expected),"exact":exact,
-                    "uniform_matches":uniform_matches,"uniform_expected":len(material_uniform_names),
+                    "score":sampler_score,
+                    "expected_count":len(expected),
+                    "exact":exact,
+                    "uniform_matches":uniform_matches,
+                    "uniform_expected":len(material_uniform_names),
                     "uniform_coverage":uniform_score,
-                    "vertex_pair_score":pair_score,"vertex_pair_valid":pair_ok,
-                    "vertex_pair_selection_status":pair_selection_status,
+                    "vertex_pair_score":pair_score,
+                    "vertex_pair_valid":pair_ok,
+                    "vertex_pair_selection_status":(
+                        "unique" if pair else "none"
+                    ),
+                    "source_vertex_pair_selection_status":(
+                        selected_pair.get("selection_status")
+                        if selected_pair else "none"
+                    ),
                     "pixel_sha256":pixel_sha256,
                     "vertex_sha256":vertex_sha256,
                     "pair_sha256":pair_sha256,
                     "permutation_identity":permutation_identity,
-                    "permutation_identity_error":permutation_identity_error,
+                    "permutation_identity_error":(
+                        permutation_identity_error
+                    ),
                     "specialization_score":feature_score["score"],
                     "specialization_matched":feature_score["matched"],
-                    "specialization_contradicted":feature_score["contradicted"],
-                    "specialization_unexpected":feature_score.get("unexpected",[]),
+                    "specialization_contradicted":(
+                        feature_score["contradicted"]
+                    ),
+                    "specialization_unexpected":(
+                        feature_score.get("unexpected",[])
+                    ),
                 })
     seen=set(); uniq=[]
     for x in fxo:
-        k=(x["file"],x["program_offset"])
+        k=(
+            x["file"],
+            x["program_offset"],
+            x.get("vertex_program_offset"),
+        )
         if k not in seen:
             seen.add(k); uniq.append(x)
     fxo=sorted(uniq, key=_selection_sort_key)
@@ -223,7 +317,19 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
             if b["sampler"] in regmap: b["d3d9_sampler_register"]=regmap[b["sampler"]]
         payload=fxo_payloads.get((best["file"],best["program_offset"]))
         if payload is not None:
-            shader_pair=pair_selected_pixel(payload,best["program_offset"],properties=vertex_properties)
+            if best.get("vertex_program_offset") is not None:
+                shader_pair=pair_exact_offsets(
+                    payload,
+                    int(best["vertex_program_offset"]),
+                    int(best["program_offset"]),
+                    properties=vertex_properties,
+                )
+            else:
+                shader_pair=pair_selected_pixel(
+                    payload,
+                    best["program_offset"],
+                    properties=vertex_properties,
+                )
             if shader_pair and shader_pair.get("selection_status") == "unique":
                 try:
                     linked_shader_pair = translate_pair_blob(
