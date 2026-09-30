@@ -10,7 +10,7 @@
 
 - VHF references resolve to MEB;
 - scene-admitted SGB MEB instances can enter the same resource path with their source-backed world matrices;
-- the retail SGB OBJECT factory is classified separately as MeshType/type 0 or MeshInst/type 7 (`.imb/.imx`); `.imx` uses the XML mesh loader while `.imb` now auto-decodes its packed version/control/name prefix plus fixed header, bones and Type/Usage/Channel stream table; the existing MEB path remains a separate neutral adapter;
+- the retail SGB OBJECT factory is classified separately as MeshType/type 0 or MeshInst/type 7 (`.imb/.imx`); `.imb` decodes through `SHIFT.IMBNeutralGeometry/1`, while Phase 592 reconstructs the source-backed `.imx` XML grammar into `SHIFT.IMXNeutralGeometry/1`; both feed the neutral renderer without asserting serialized-container equivalence, and the existing MEB path remains separate;
 - MEB primitive material references resolve through BMT/MTX;
 - BMT connects to FX sources and FXO permutations;
 - CTAB reflection supplies sampler registers and material constants;
@@ -36,4 +36,4 @@ Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets
 
 ## Remaining work
 
-Broaden exact BMW shader/material execution, close more runtime same-instance evidence, obtain authentic Silverstone capture content, disambiguate repeated scene instances where required, and cover remaining renderer-owned resource types, implement the IMX XML neutral adapter, carry scene visibility/streaming semantics beyond the SGB resource bridge, and close remaining alpha-test/bias/stencil Vulkan state. Missing renderer-owned resources remain fail-closed.
+Broaden exact BMW shader/material execution, close more runtime same-instance evidence, obtain authentic Silverstone capture content, disambiguate repeated scene instances where required, and cover remaining renderer-owned resource types, establish IMX runtime same-instance evidence when available, carry scene visibility/streaming semantics beyond the SGB resource bridge, and close remaining alpha-test/bias/stencil Vulkan state. Missing renderer-owned resources remain fail-closed.
