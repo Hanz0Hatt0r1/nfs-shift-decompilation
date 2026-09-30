@@ -89,6 +89,39 @@ def test_native_runtime_accepts_bmw_physics_manifest():
     assert "evidence/bmw_m3_vehicle_physics_manifest.json" in workflow
     assert "physics_workspace_scalars" in source
 
+def test_phase602_native_runtime_admits_structural_participant_boundary():
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(
+        encoding="utf-8"
+    )
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "participant_contract_ready = false" in header
+    assert "participant_registry_ready = false" in header
+    assert "selector_context_separate = false" in header
+    assert "registry_slot_stride = 0" in header
+    assert "participant_descriptor_type = 0" in header
+    assert "participant_ready = false" in header
+    assert "participant_index = -1" in header
+    assert "participant_mode = -1" in header
+
+    assert '"--participant-boundary"' in source
+    assert "args.participant_boundary = value" in source
+    assert "load_participant_boundary" in source
+    assert "SHIFT.NativePhysicsParticipantBoundary/1" in source
+    assert "DAT_00c109e0" in source
+    assert "DAT_00bbc600" in source
+    assert "slot_stride != 0x1fa0u" in source
+    assert "descriptor_type != 3u" in source
+    assert "participant boundary overclaims runtime instance" in source
+    assert "\\\"physics_participant_contract_ready\\\":" in source
+    assert "\\\"physics_participant_registry_ready\\\":" in source
+    assert "\\\"physics_selector_context_separate\\\":" in source
+    assert "\\\"physics_registry_slot_stride\\\":" in source
+    assert "\\\"physics_participant_descriptor_type\\\":" in source
+
+
 def test_native_camera_defaults_match_recovered_view_constructor():
     header = Path("native_runtime/src/runtime_state.hpp").read_text(encoding="utf-8")
 
@@ -294,3 +327,18 @@ def test_phase601_native_input_script_reaches_physics_tick_boundary():
     assert "neutral_input_steps" in header
     assert "if (input.throttle) ++throttle_steps" in header
     assert "if (input.brake) ++brake_steps" in header
+
+
+def test_phase602_native_participant_loader_requires_all_source_contracts_ready():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert '"registry_contract_ready\\": true"' in source
+    assert '"participant_gate_ready\\": true"' in source
+    assert '"participant_process_ready\\": true"' in source
+    assert '"selector_context_ready\\": true"' in source
+    assert (
+        "native physics participant source contracts are not all ready"
+        in source
+    )

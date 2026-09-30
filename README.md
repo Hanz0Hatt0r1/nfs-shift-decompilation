@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 600. Current development: Phase 601.**
+**Merged baseline: Phase 601. Current development: Phase 602.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -138,7 +138,7 @@ prepared native IR / Vulkan bundles
 
 The runtime supports the established prepared bundle path, multi-draw material
 sets, per-draw pipeline state, constant buffers, 2D textures, optional cube
-resources and validation-layer coverage. Phase 599 makes the recovered six-word CameraManager snapshot and guarded two-buffer swap live inside `SHIFT.NativeRuntimeState/1`; Phase 600 seeds that scheduler from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same `VehicleControlIntent` → physics-tick boundary as the live keyboard path. Vehicle-control intent and a physics participant/tick boundary remain represented without fabricating unknown retail integration semantics.
+resources and validation-layer coverage. Phase 599 makes the recovered six-word CameraManager snapshot and guarded two-buffer swap live inside `SHIFT.NativeRuntimeState/1`; Phase 600 seeds that scheduler from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same `VehicleControlIntent` → physics-tick boundary as the live keyboard path. Phase 602 admits the source-backed participant registry/selector structural ABI into `SHIFT.NativeRuntimeState/1` while keeping concrete participant identity, provider selection and numerical physics capture-gated.
 
 The Linux target intentionally excludes EA services, DRM, login/profile/cloud,
 matchmaking/online networking and Bink/video playback.
@@ -159,7 +159,7 @@ matchmaking/online networking and Bink/video playback.
 | Camera | config/state/event/control + native snapshot/double-buffer handoff active | retail update timing, controller behavior and exact render/view integration |
 | Native input | live X11 keyboard + deterministic fixed-step control script | gamepad/analog normalization and retail filtering semantics |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
-| Vehicle physics | structural reconstruction active | exact specialized-provider numeric parity |
+| Vehicle physics | structural reconstruction active; Phase 602 participant registry/selector ABI admitted to native state | concrete runtime participant/provider identity and exact specialized-provider numeric parity |
 | Specialized providers | capture-ready | authentic runtime frame |
 | BAB animation | evidence-backed grammar | remaining axis/order/trailing semantics |
 | Android | deferred | waits for stable desktop/native runtime boundary |

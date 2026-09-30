@@ -122,3 +122,32 @@ source-derived execution program.
 
 
 For low-stop capture, `preflight_specialized_provider_capture.py` and `run_sdf_solver_probe.py` accept `--provider-only`. This mode omits builtin/per-frame solver breakpoints and keeps provider solve/reset and scalar-reset hooks.
+
+
+## Phase 602 native participant structural handoff
+
+`SHIFT.NativePhysicsParticipantBoundary/1` joins the source-backed participant
+gate, PhysicsParticipantManager registry/update contract, separate selector
+context, and IGPhaseVehicle process/writeback slots into a fail-closed native
+structural ABI. It requires manager `DAT_00c109e0`, selector
+`DAT_00bbc600`, explicit object separation, registry stride `0x1fa0`, and
+participant descriptor type `3`.
+
+The handoff deliberately leaves the concrete participant instance, index/mode,
+provider identity, and numerical equivalence unresolved.
+
+
+## Native participant structural admission
+
+Phase 602 adds `SHIFT.NativePhysicsParticipantBoundary/1`. It revalidates the
+source-backed participant gate, participant registry/update contract, selector
+context and process/reselection slots before exposing a structural boundary to
+`native_runtime`.
+
+The contract preserves the proven separation between the
+`DAT_00c109e0` participant manager and the `DAT_00bbc600` selector context.
+It does not create a runtime participant and fixes ready/index/mode to
+`false/-1/-1` until independent runtime evidence exists.
+
+This closes the native structural handoff only. Provider identity and numerical
+parity remain capture-gated.
