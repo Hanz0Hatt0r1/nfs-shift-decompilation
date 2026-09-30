@@ -2927,7 +2927,7 @@ int main(int argc, char** argv) {
             << native_state.camera.last_snapshot.camera_id << ",\n"
             << "  \"camera_schedule\": "
             << "\"native-fixed-step-non-retail-timing\",\n"
-            << "  \"vehicle_control_steer_axis\": 
+            << "  \"vehicle_control_steer_axis\": "
             << native_state.physics.last_input.steer_axis()
             << ",\n"
             << "  \"physics_participant_ready\": "
