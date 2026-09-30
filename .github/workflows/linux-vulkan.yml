@@ -419,6 +419,14 @@ jobs:
             out/vulkan/runtime/native_physics_participant_boundary.json
           grep -q '"participant_instance_ready": false' \
             out/vulkan/runtime/native_physics_participant_boundary.json
+          grep -q '"registry_selector_identity_join_proven": false' \
+            out/vulkan/runtime/native_physics_participant_boundary.json
+          grep -q '"participant_registry_index": -1' \
+            out/vulkan/runtime/native_physics_participant_boundary.json
+          grep -q '"selector_ordinal": -1' \
+            out/vulkan/runtime/native_physics_participant_boundary.json
+          grep -q '"participant_process_state": -1' \
+            out/vulkan/runtime/native_physics_participant_boundary.json
       - name: Native Linux runtime neutral scene-set frame loop
         run: |
           set -o pipefail
@@ -443,7 +451,14 @@ jobs:
           grep -q '"physics_selector_context_separate": true' out/vulkan/runtime/scene_set.json
           grep -q '"physics_registry_slot_stride": 8096' out/vulkan/runtime/scene_set.json
           grep -q '"physics_participant_descriptor_type": 3' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_identity_join_proven": false' out/vulkan/runtime/scene_set.json
           grep -q '"physics_participant_ready": false' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_registry_index": -1' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_selector_ordinal": -1' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_process_state": -1' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_topology_steps": 3' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_ready_steps": 0' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_participant_unresolved_steps": 3' out/vulkan/runtime/scene_set.json
           grep -q '"physics_participant_index": -1' out/vulkan/runtime/scene_set.json
           grep -q '"physics_participant_mode": -1' out/vulkan/runtime/scene_set.json
           grep -q '"validation_errors": 0' out/vulkan/runtime/scene_set.json
@@ -481,7 +496,14 @@ jobs:
           grep -q '"physics_participant_contract_ready": true' out/vulkan/runtime/input_script.json
           grep -q '"physics_participant_registry_ready": true' out/vulkan/runtime/input_script.json
           grep -q '"physics_selector_context_separate": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_identity_join_proven": false' out/vulkan/runtime/input_script.json
           grep -q '"physics_participant_ready": false' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_registry_index": -1' out/vulkan/runtime/input_script.json
+          grep -q '"physics_selector_ordinal": -1' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_process_state": -1' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_topology_steps": 5' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_ready_steps": 0' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_unresolved_steps": 5' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_throttle": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_brake": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_steer_left": false' out/vulkan/runtime/input_script.json
