@@ -65,7 +65,26 @@ def _object_row(
         "handoff": {
             "format": "SHIFT.SGBObjectRenderHandoff/1",
             "ready": True,
-            "resource": {"reference": resource},
+            "resource": {
+                "reference": resource,
+                "factory_classification": {
+                    "format": "SHIFT.SGBObjectResourceFactory/1",
+                    "factory_type": (
+                        7
+                        if str(resource or "").lower().endswith(
+                            (".imb", ".imx")
+                        )
+                        else 0
+                    ),
+                    "factory_name": (
+                        "MeshInst"
+                        if str(resource or "").lower().endswith(
+                            (".imb", ".imx")
+                        )
+                        else "MeshType"
+                    ),
+                },
+            },
             "transform": {
                 "mode": "explicit-object-transform",
                 "world_matrix": matrix if world_ready else None,
@@ -97,6 +116,8 @@ def test_flat_summ_wrapper_joins_to_ready_object_binding():
     assert row["placement"]["wrapper_chunk"] == "SUMM"
     assert row["object"]["object_path"] == [0]
     assert row["object"]["resource_reference"] == "tracks/test/object.meb"
+    assert row["object"]["resource_factory"]["factory_type"] == 0
+    assert row["object"]["resource_factory"]["factory_name"] == "MeshType"
     assert row["object"]["world_matrix"][12:15] == pytest.approx(
         [10.0, 20.0, 30.0]
     )
