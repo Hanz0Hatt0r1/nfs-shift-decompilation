@@ -1,12 +1,12 @@
-"""Decode embedded SGB NODE object payloads using the retail binary grammar.
+"""Source-backed decoder for inline SGB NODE/SUMM object payloads.
 
-FUN_006a4b40 passes the inline payload at NODE record +0x1c to FUN_0069bc50.
-FUN_0069a6c0 then dispatches by a kind string whose offset is relative to the
-base of the complete SGB resource, not relative to the object payload.
+The binary runtime enters these payloads through FUN_0069bc50 and dispatches in
+FUN_0069a6c0.  NODE/SUMM record +0x1c is the payload itself; the dword string
+references inside the payload are offsets from the SGB file base.
 
-The source and matching XML loader prove four binary kinds: LOD, HIERARCHY,
-OBJECT and DAMAGE.  Matrix records are shared by LOD/HIERARCHY and use the
-same Offset/Orientation/Scale/parent semantics as FUN_006990d0.
+The production binary dispatcher handles LOD, HIERARCHY and OBJECT.  DAMAGE is
+constructed by the parallel XML object loader but is not claimed as a binary
+NODE/SUMM branch.
 """
 from __future__ import annotations
 
@@ -16,29 +16,27 @@ from typing import Any
 
 
 FORMAT = "SHIFT.SGBObjectRuntime/1"
-KINDS = {"LOD", "HIERARCHY", "OBJECT", "DAMAGE"}
+BINARY_KINDS = {"LOD", "HIERARCHY", "OBJECT"}
+ALTERNATE_RUNTIME_KINDS = {"DAMAGE"}
+KINDS = BINARY_KINDS | ALTERNATE_RUNTIME_KINDS
 
-COMMON_HEADER_BYTES = 0x24
 MATRIX_RECORD_BYTES = 0x24
-RUNTIME_MATRIX_ELEMENT_BYTES = 0x28
-
-# FUN_0069a6c0 copies each serialized MATRIX record (9 dwords / 0x24 bytes)
-# into the same 0x28-byte runtime matrix element produced by FUN_006990d0.
+MATRIX_RUNTIME_ELEMENT_BYTES = 0x28
 MATRIX_RUNTIME_DESTINATION_WORDS = {
-    0x00: 6,  # Orientation.w
-    0x04: 3,  # Orientation.x
-    0x08: 4,  # Orientation.y
-    0x0C: 5,  # Orientation.z
-    0x10: 0,  # Offset.x
-    0x14: 1,  # Offset.y
-    0x18: 2,  # Offset.z
-    0x1C: 7,  # Scale
-    0x20: 8,  # parent
+    0x00: 6,
+    0x04: 3,
+    0x08: 4,
+    0x0C: 5,
+    0x10: 0,
+    0x14: 1,
+    0x18: 2,
+    0x1C: 7,
+    0x20: 8,
 }
 
-# Compatibility aliases for Phase 521 names.  These records are matrix
-# records, not child-object records.
-HIERARCHY_RUNTIME_ELEMENT_BYTES = RUNTIME_MATRIX_ELEMENT_BYTES
+# Compatibility aliases for older callers.  The records are matrices rather
+# than generic hierarchy children; Phase 543 corrects the semantic label.
+HIERARCHY_RUNTIME_ELEMENT_BYTES = MATRIX_RUNTIME_ELEMENT_BYTES
 HIERARCHY_RUNTIME_DESTINATION_WORDS = MATRIX_RUNTIME_DESTINATION_WORDS
 
 
@@ -51,22 +49,24 @@ RUNTIME_WRAPPERS = {
         "constructor": "FUN_00698a90",
         "vtable": 0x00AF8660,
         "allocation_bytes": 0xA0,
+        "binary_node_dispatch": True,
         "proven_fields": {
-            "subobject_count": 0x80,
-            "matrix_count": 0x84,
+            "subobjects": 0x80,
+            "matrices": 0x84,
             "runtime_matrix_array": 0x88,
             "runtime_subobject_array": 0x8C,
             "matrix_number": 0x94,
-            "lod_distances": 0x98,
+            "distance_array": 0x98,
         },
     },
     "HIERARCHY": {
         "constructor": "FUN_00698a20",
         "vtable": 0x00AF8620,
         "allocation_bytes": 0xA0,
+        "binary_node_dispatch": True,
         "proven_fields": {
-            "subobject_count": 0x80,
-            "matrix_count": 0x84,
+            "subobjects": 0x80,
+            "matrices": 0x84,
             "runtime_matrix_array": 0x88,
             "runtime_subobject_array": 0x8C,
             "matrix_number": 0x94,
@@ -77,11 +77,12 @@ RUNTIME_WRAPPERS = {
         "initializer": "FUN_00698dd0",
         "vtable": 0x00AF86B0,
         "allocation_bytes": 0xB0,
+        "binary_node_dispatch": True,
         "proven_fields": {
             "resource_object": 0x80,
             "matrix_number": 0x84,
-            "orientation_wxyz": 0x88,
-            "offset_xyz": 0x98,
+            "orientation": 0x88,
+            "offset": 0x98,
             "scale": 0xA4,
         },
     },
@@ -89,12 +90,9 @@ RUNTIME_WRAPPERS = {
         "constructor": "FUN_00698b00",
         "vtable": 0x00AF7C88,
         "allocation_bytes": 0xA0,
-        "proven_fields": {
-            "matrix_count": 0x80,
-            "runtime_matrix_array": 0x84,
-            "runtime_subobject_array": 0x88,
-            "matrix_number": 0x90,
-        },
+        "binary_node_dispatch": False,
+        "alternate_loader": "FUN_00699b10/FUN_0069b1c0",
+        "proven_fields": {},
     },
 }
 
@@ -119,10 +117,10 @@ def _f32(data: bytes, off: int) -> float:
 
 def _string(
     data: bytes,
-    relative_base: int,
+    reference_base: int,
     rel: int,
 ) -> dict[str, Any]:
-    absolute = relative_base + rel
+    absolute = reference_base + rel
     text = None
     if rel and 0 <= absolute < len(data):
         stop = data.find(b"\0", absolute)
@@ -130,7 +128,7 @@ def _string(
             text = data[absolute:stop].decode("utf-8", "replace")
     return {
         "relative_offset": rel,
-        "relative_base": relative_base,
+        "reference_base_offset": reference_base,
         "absolute_offset": absolute if text is not None else None,
         "text": text,
     }
@@ -142,7 +140,7 @@ def parse_matrix_records(
     end: int,
     count: int,
 ) -> list[dict[str, Any]]:
-    """Decode the serialized MATRIX records copied by FUN_0069a6c0."""
+    """Decode the 9-dword MATRIX records copied by FUN_0069a6c0."""
     rows: list[dict[str, Any]] = []
     cursor = start
     for index in range(count):
@@ -151,25 +149,24 @@ def parse_matrix_records(
                 f"MATRIX record {index} exceeds object payload"
             )
         words = [_u32(data, cursor + 4 * i) for i in range(9)]
+        floats = [_f32(data, cursor + 4 * i) for i in range(8)]
         rows.append({
             "index": index,
             "offset": cursor,
             "record_bytes": MATRIX_RECORD_BYTES,
             "raw_u32": words,
-            "offset_xyz": [
-                _f32(data, cursor + 0x00),
-                _f32(data, cursor + 0x04),
-                _f32(data, cursor + 0x08),
+            "offset_xyz": floats[0:3],
+            "orientation_serialized": floats[3:7],
+            "orientation_runtime_order": [
+                floats[6],
+                floats[3],
+                floats[4],
+                floats[5],
             ],
-            "orientation_xyzw": [
-                _f32(data, cursor + 0x0C),
-                _f32(data, cursor + 0x10),
-                _f32(data, cursor + 0x14),
-                _f32(data, cursor + 0x18),
-            ],
-            "scale": _f32(data, cursor + 0x1C),
+            "scale": floats[7],
             "parent": _i32(data, cursor + 0x20),
-            "runtime_element_bytes": RUNTIME_MATRIX_ELEMENT_BYTES,
+            "runtime_copy_order": [6, 3, 4, 5, 0, 1, 2, 7, 8],
+            "runtime_element_bytes": MATRIX_RUNTIME_ELEMENT_BYTES,
             "runtime_destination_word_offsets": {
                 f"0x{offset:02x}": source_word
                 for offset, source_word
@@ -180,8 +177,12 @@ def parse_matrix_records(
                 for offset, source_word
                 in MATRIX_RUNTIME_DESTINATION_WORDS.items()
             },
-            "runtime_orientation_order": "wxyz",
-            "runtime_reserved_offset": 0x24,
+            "semantic_evidence": {
+                "offset": "FUN_006990d0 XML field Offset",
+                "orientation": "FUN_006990d0 XML field Orientation",
+                "scale": "FUN_006990d0 XML field Scale",
+                "parent": "FUN_006990d0 XML field parent",
+            },
         })
         cursor += MATRIX_RECORD_BYTES
     return rows
@@ -193,88 +194,34 @@ def parse_hierarchy_children(
     end: int,
     count: int,
 ) -> list[dict[str, Any]]:
-    """Compatibility alias for the Phase 521 matrix-record parser."""
+    """Compatibility alias for the Phase 521 matrix-record decoder."""
     return parse_matrix_records(data, start, end, count)
 
 
-def _subobject_offsets(
-    data: bytes,
-    start: int,
-    end: int,
-    count: int,
-    *,
-    relative_base: int,
-) -> tuple[list[int], list[int], int]:
-    byte_count = count * 4
-    if start + byte_count > end:
-        raise SGBObjectDecodeError(
-            f"subobject offset table requires {byte_count} bytes"
-        )
-    raw = [_u32(data, start + 4 * i) for i in range(count)]
-    resolved = [relative_base + value for value in raw]
-    return raw, resolved, start + byte_count
-
-
-def _decode_subobjects(
-    data: bytes,
-    offsets: list[int],
-    *,
+def _child_bounds(
+    absolute_refs: list[int],
     parent_start: int,
     parent_end: int,
-    relative_base: int,
-    strict: bool,
-) -> list[dict[str, Any]]:
-    if not offsets:
-        return []
-
-    valid = [
-        value
-        for value in offsets
-        if parent_start < value < parent_end
-    ]
-    sorted_unique = sorted(set(valid))
-    next_bound = {
-        value: (
-            sorted_unique[index + 1]
-            if index + 1 < len(sorted_unique)
-            else parent_end
-        )
-        for index, value in enumerate(sorted_unique)
-    }
-
-    rows: list[dict[str, Any]] = []
-    for index, absolute in enumerate(offsets):
-        row: dict[str, Any] = {
-            "index": index,
-            "absolute_offset": absolute,
-            "within_parent_span": parent_start < absolute < parent_end,
-            "decoded": False,
-        }
-        if absolute not in next_bound:
-            row["blocking_reason"] = "subobject-offset-outside-parent-span"
-            if strict:
-                raise SGBObjectDecodeError(
-                    f"subobject {index} offset 0x{absolute:x} "
-                    f"is outside parent span "
-                    f"0x{parent_start:x}..0x{parent_end:x}"
-                )
+    data_end: int,
+) -> dict[int, int]:
+    unique = sorted({value for value in absolute_refs if value})
+    bounds: dict[int, int] = {}
+    for index, value in enumerate(unique):
+        next_value = unique[index + 1] if index + 1 < len(unique) else None
+        if parent_start <= value < parent_end:
+            bounds[value] = (
+                next_value
+                if next_value is not None
+                and value < next_value <= parent_end
+                else parent_end
+            )
         else:
-            child_end = next_bound[absolute]
-            try:
-                row["report"] = parse_sgb_object_payload(
-                    data,
-                    base_offset=absolute,
-                    end_offset=child_end,
-                    relative_base=relative_base,
-                    strict=strict,
-                )
-                row["decoded"] = bool(row["report"].get("decoded"))
-            except SGBObjectDecodeError as exc:
-                row["blocking_reason"] = str(exc)
-                if strict:
-                    raise
-        rows.append(row)
-    return rows
+            bounds[value] = (
+                next_value
+                if next_value is not None and value < next_value <= data_end
+                else data_end
+            )
+    return bounds
 
 
 def parse_sgb_object_payload(
@@ -282,244 +229,320 @@ def parse_sgb_object_payload(
     *,
     base_offset: int = 0,
     end_offset: int | None = None,
-    relative_base: int | None = None,
+    reference_base_offset: int | None = None,
     strict: bool = True,
+    max_depth: int = 16,
+    _depth: int = 0,
+    _visited: frozenset[int] | None = None,
 ) -> dict[str, Any]:
-    """Decode one binary NODE object payload and proven recursive layout."""
+    """Decode one inline binary object payload and its proven subobject graph."""
     end = len(data) if end_offset is None else end_offset
+    reference_base = (
+        base_offset
+        if reference_base_offset is None
+        else reference_base_offset
+    )
     if not 0 <= base_offset < end <= len(data):
         raise SGBObjectDecodeError("invalid object payload bounds")
-    if base_offset + COMMON_HEADER_BYTES > end:
+    if base_offset + 36 > end:
         raise SGBObjectDecodeError(
-            "object payload is smaller than the common 0x24-byte header"
+            "object payload is smaller than the 0x24-byte common header"
+        )
+    if _depth > max_depth:
+        raise SGBObjectDecodeError(
+            "object payload exceeded maximum recursion depth"
         )
 
-    reference_base = base_offset if relative_base is None else relative_base
+    visited = _visited or frozenset()
+    if base_offset in visited:
+        raise SGBObjectDecodeError(
+            f"recursive object cycle at 0x{base_offset:x}"
+        )
+    visited = visited | {base_offset}
+
+    kind = _string(
+        data,
+        reference_base,
+        _i32(data, base_offset),
+    )
+    source = _string(
+        data,
+        reference_base,
+        _i32(data, base_offset + 4),
+    )
+    aux = _string(
+        data,
+        reference_base,
+        _i32(data, base_offset + 8),
+    )
     words = [_u32(data, base_offset + 4 * i) for i in range(9)]
+    matrix_number = struct.unpack_from(
+        "<b", data, base_offset + 0x20
+    )[0]
+    control_byte_21 = data[base_offset + 0x21]
+    matrices = data[base_offset + 0x22]
+    subobjects = data[base_offset + 0x23]
 
-    kind = _string(data, reference_base, words[0])
-    source = _string(data, reference_base, words[1])
-    third = _string(data, reference_base, words[2])
     kind_text = kind["text"]
-
-    matrix_number = struct.unpack_from("<b", data, base_offset + 0x20)[0]
-    unknown_byte_21 = data[base_offset + 0x21]
-    matrix_count = data[base_offset + 0x22]
-    subobject_count = data[base_offset + 0x23]
-
-    if kind_text and kind_text not in KINDS:
-        status = "unknown-kind"
+    if kind_text in BINARY_KINDS:
+        kind_status = "recognized-binary-kind"
+        decoded = True
+        blockers: list[str] = []
+    elif kind_text in ALTERNATE_RUNTIME_KINDS:
+        kind_status = "alternate-runtime-kind-not-binary-node"
+        decoded = False
+        blockers = [f"object-kind:not-in-binary-dispatch:{kind_text}"]
     else:
-        status = "recognized-kind" if kind_text else "kind-unresolved"
+        kind_status = (
+            "unknown-kind" if kind_text else "kind-unresolved"
+        )
+        decoded = False
+        blockers = [
+            f"object-kind:{kind_status}:{kind_text or '<null>'}"
+        ]
 
     report: dict[str, Any] = {
         "format": FORMAT,
         "version": 1,
         "base_offset": base_offset,
         "end_offset": end,
-        "size": end - base_offset,
-        "relative_base": reference_base,
-        "common_header_bytes": COMMON_HEADER_BYTES,
+        "reference_base_offset": reference_base,
+        "size_bound": end - base_offset,
+        "header_bytes": 0x24,
         "header_words": words,
         "kind": kind,
         "source_string": source,
-        "third_string": third,
+        "aux_string": aux,
         "instances": words[3],
-        "sphere": {
-            "center_xyz": [
-                _f32(data, base_offset + 0x10),
-                _f32(data, base_offset + 0x14),
-                _f32(data, base_offset + 0x18),
-            ],
-            "radius": _f32(data, base_offset + 0x1C),
-            "source": "SCENE XML SPHERE/Centre + Radius",
-        },
         "matrix_number": matrix_number,
-        "unknown_byte_21": unknown_byte_21,
-        "matrix_count": matrix_count,
-        "subobject_count": subobject_count,
-        "kind_status": status,
+        "control_byte_21": control_byte_21,
+        "matrices": matrices,
+        "subobjects": subobjects,
+        "kind_status": kind_status,
         "hash_sha256": hashlib.sha256(
             data[base_offset:end]
         ).hexdigest(),
-        "decoded": status == "recognized-kind",
+        "decoded": decoded,
+        "status": "decoded" if decoded else "blocked",
+        "blockers": blockers,
         "runtime_wrapper": (
-            {**RUNTIME_WRAPPERS[kind_text], "kind": kind_text}
+            {
+                **RUNTIME_WRAPPERS[kind_text],
+                "kind": kind_text,
+            }
             if kind_text in RUNTIME_WRAPPERS
             else {"kind": kind_text, "resolved": False}
         ),
         "evidence": {
             "entry": "FUN_0069bc50",
-            "dispatcher": "FUN_0069a6c0",
-            "xml_crosscheck": "FUN_0069b1c0",
-            "matrix_xml_loader": "FUN_006990d0",
-            "matrix_copy": "FUN_0069a6c0",
+            "binary_dispatcher": "FUN_0069a6c0",
+            "xml_cross_path": "FUN_00699b10/FUN_0069b1c0",
+            "matrix_record_loader": "FUN_006990d0/FUN_0069a6c0",
             "runtime_wrapper_constructors": {
                 "LOD": "FUN_00698a90",
                 "HIERARCHY": "FUN_00698a20",
-                "OBJECT": "FUN_00698dc0",
-                "DAMAGE": "FUN_00698b00",
+                "OBJECT": "FUN_00698dc0/FUN_00698dd0",
+                "DAMAGE": "FUN_00698b00 (XML path only)",
+            },
+            "field_names": {
+                "matrix_number": (
+                    "XML MatrixNumber -> binary byte +0x20"
+                ),
+                "matrices": (
+                    "XML matrices -> binary byte +0x22"
+                ),
+                "subobjects": (
+                    "XML subobjects -> binary byte +0x23"
+                ),
             },
         },
         "limitations": [
-            "Byte +0x21 remains unnamed because no direct source consumer is proven.",
-            "DAMAGE-specific serialized payload after the common header remains conservative.",
+            (
+                "The semantic role of source_string and aux_string is "
+                "kept generic outside branch-specific consumers."
+            ),
+            (
+                "DAMAGE has a concrete alternate/XML runtime wrapper but "
+                "is not present in the binary FUN_0069a6c0 dispatch."
+            ),
         ],
     }
 
-    if status != "recognized-kind":
+    if not decoded:
         return report
 
     if kind_text in {"LOD", "HIERARCHY"}:
-        matrix_start = base_offset + COMMON_HEADER_BYTES
-        matrix_end = matrix_start + matrix_count * MATRIX_RECORD_BYTES
+        matrix_start = base_offset + 0x24
+        matrix_end = matrix_start + matrices * MATRIX_RECORD_BYTES
         if matrix_end > end:
             message = (
                 f"{kind_text} matrix table requires "
-                f"{matrix_count * MATRIX_RECORD_BYTES} bytes"
+                f"{matrices * MATRIX_RECORD_BYTES} bytes"
             )
             if strict:
                 raise SGBObjectDecodeError(message)
-            report.update({
-                "decoded": False,
-                "status": "blocked",
-                "blockers": [f"{kind_text.lower()}:{message}"],
-            })
+            report["decoded"] = False
+            report["status"] = "blocked"
+            report["blockers"].append(f"matrix-table:{message}")
             return report
 
-        report["matrix_records"] = parse_matrix_records(
-            data, matrix_start, matrix_end, matrix_count
+        matrix_records = parse_matrix_records(
+            data, matrix_start, matrix_end, matrices
         )
+        report["matrix_records"] = matrix_records
         report["matrix_table_offset"] = matrix_start
         report["matrix_table_size"] = (
-            matrix_count * MATRIX_RECORD_BYTES
+            matrices * MATRIX_RECORD_BYTES
         )
-        cursor = matrix_end
 
+        cursor = matrix_end
         if kind_text == "LOD":
-            distance_bytes = subobject_count * 4
-            if cursor + distance_bytes > end:
+            distance_end = cursor + subobjects * 4
+            if distance_end > end:
                 message = (
-                    f"LOD distance table requires {distance_bytes} bytes"
+                    "LOD distance table exceeds object payload"
                 )
                 if strict:
                     raise SGBObjectDecodeError(message)
-                report.update({
-                    "decoded": False,
-                    "status": "blocked",
-                    "blockers": [f"lod:{message}"],
-                })
+                report["decoded"] = False
+                report["status"] = "blocked"
+                report["blockers"].append(
+                    f"lod-distance-table:{message}"
+                )
                 return report
-            report["lod_distances"] = [
+            report["lod_distances_serialized"] = [
                 _f32(data, cursor + 4 * i)
-                for i in range(subobject_count)
+                for i in range(subobjects)
             ]
             report["lod_distance_table_offset"] = cursor
-            report["lod_distance_table_size"] = distance_bytes
-            report["lod_distance_runtime"] = {
-                "runtime_field_offset": 0x98,
+            report["lod_distance_table_size"] = subobjects * 4
+            report["lod_distance_runtime_rule"] = {
+                "consumer": "FUN_0069a6c0",
                 "zero_value_fallback": (
-                    "FUN_006993f0 or (1 << index) * 100, "
-                    "then scaled by DAT_00b89dcc"
+                    "FUN_006993f0(name,index) or "
+                    "(1<<index)*100, then global scale"
                 ),
             }
-            cursor += distance_bytes
+            cursor = distance_end
 
-        raw_offsets, resolved_offsets, cursor = _subobject_offsets(
-            data,
-            cursor,
-            end,
-            subobject_count,
-            relative_base=reference_base,
-        )
-        report["subobject_offset_table_offset"] = (
-            cursor - subobject_count * 4
-        )
-        report["subobject_offset_table_size"] = (
-            subobject_count * 4
-        )
-        report["subobject_relative_offsets"] = raw_offsets
-        report["subobject_absolute_offsets"] = resolved_offsets
-        report["subobjects"] = _decode_subobjects(
-            data,
-            resolved_offsets,
-            parent_start=base_offset,
-            parent_end=end,
-            relative_base=reference_base,
-            strict=strict,
-        )
-        report["serialized_fixed_region_end"] = cursor
-
-    elif kind_text == "OBJECT":
-        # Binary OBJECT stores userflags immediately after the 0x24-byte
-        # common header.  If MatrixNumber == -1 it then embeds the same
-        # MATRIX transform fields as the XML MATRIX element.
-        if base_offset + 0x28 > end:
-            message = "OBJECT payload has no userflags word"
+        reference_end = cursor + subobjects * 4
+        if reference_end > end:
+            message = (
+                f"{kind_text} subobject reference table exceeds "
+                "object payload"
+            )
             if strict:
                 raise SGBObjectDecodeError(message)
-            report.update({
-                "decoded": False,
-                "status": "blocked",
-                "blockers": [f"object:{message}"],
-            })
+            report["decoded"] = False
+            report["status"] = "blocked"
+            report["blockers"].append(
+                f"subobject-reference-table:{message}"
+            )
             return report
 
-        report["resource_filename"] = third
-        report["userflags"] = _u32(data, base_offset + 0x24)
-        report["userflags_offset"] = 0x24
-        report["runtime_wrapper"]["userflags_i64_offset"] = 0x50
+        serialized_refs = [
+            _u32(data, cursor + 4 * i)
+            for i in range(subobjects)
+        ]
+        absolute_refs = [
+            reference_base + value if value else 0
+            for value in serialized_refs
+        ]
+        bounds = _child_bounds(
+            absolute_refs,
+            base_offset,
+            end,
+            len(data),
+        )
 
+        subobject_rows: list[dict[str, Any]] = []
+        for index, (serialized, absolute) in enumerate(
+            zip(serialized_refs, absolute_refs)
+        ):
+            row: dict[str, Any] = {
+                "index": index,
+                "serialized_offset": serialized,
+                "reference_base_offset": reference_base,
+                "absolute_offset": absolute if serialized else None,
+                "contained_in_parent_record": bool(
+                    serialized
+                    and base_offset <= absolute < end
+                ),
+                "decoded": False,
+            }
+            if serialized:
+                if not 0 <= absolute < len(data):
+                    message = (
+                        f"subobject {index} points outside SGB: "
+                        f"0x{absolute:x}"
+                    )
+                    if strict:
+                        raise SGBObjectDecodeError(message)
+                    row["decode_error"] = message
+                else:
+                    child_end = bounds[absolute]
+                    try:
+                        child = parse_sgb_object_payload(
+                            data,
+                            base_offset=absolute,
+                            end_offset=child_end,
+                            reference_base_offset=reference_base,
+                            strict=strict,
+                            max_depth=max_depth,
+                            _depth=_depth + 1,
+                            _visited=visited,
+                        )
+                        row["report"] = child
+                        row["decoded"] = bool(child.get("decoded"))
+                    except SGBObjectDecodeError as exc:
+                        row["decode_error"] = str(exc)
+                        if strict:
+                            raise
+            subobject_rows.append(row)
+
+        report["subobject_reference_table_offset"] = cursor
+        report["subobject_reference_table_size"] = subobjects * 4
+        report["subobject_references"] = subobject_rows
+        report["recursive_subobject_decoder"] = "FUN_0069bc50"
+
+    if kind_text == "OBJECT":
+        report["resource_filename"] = aux
+        if base_offset + 0x28 <= end:
+            report["user_flags_word"] = _u32(
+                data, base_offset + 0x24
+            )
         if matrix_number == -1:
-            if base_offset + 0x48 > end:
+            explicit_end = base_offset + 0x48
+            if explicit_end > end:
                 message = (
-                    "OBJECT MatrixNumber=-1 requires embedded "
-                    "0x20-byte MATRIX transform"
+                    "OBJECT MatrixNumber=-1 explicit matrix exceeds "
+                    "object payload"
                 )
                 if strict:
                     raise SGBObjectDecodeError(message)
-                report.update({
-                    "decoded": False,
-                    "status": "blocked",
-                    "blockers": [f"object:{message}"],
-                })
+                report["decoded"] = False
+                report["status"] = "blocked"
+                report["blockers"].append(
+                    f"object-explicit-matrix:{message}"
+                )
                 return report
-            transform = {
+            report["explicit_matrix"] = {
                 "offset_xyz": [
-                    _f32(data, base_offset + 0x28),
-                    _f32(data, base_offset + 0x2C),
-                    _f32(data, base_offset + 0x30),
+                    _f32(data, base_offset + 0x28 + 4 * i)
+                    for i in range(3)
                 ],
-                "orientation_xyzw": [
+                "orientation_serialized": [
+                    _f32(data, base_offset + 0x34 + 4 * i)
+                    for i in range(4)
+                ],
+                "orientation_runtime_order": [
+                    _f32(data, base_offset + 0x40),
                     _f32(data, base_offset + 0x34),
                     _f32(data, base_offset + 0x38),
                     _f32(data, base_offset + 0x3C),
-                    _f32(data, base_offset + 0x40),
                 ],
                 "scale": _f32(data, base_offset + 0x44),
-                "source_offsets": {
-                    "offset_xyz": 0x28,
-                    "orientation_xyzw": 0x34,
-                    "scale": 0x44,
-                },
-                "runtime_offsets": {
-                    "orientation_wxyz": 0x88,
-                    "offset_xyz": 0x98,
-                    "scale": 0xA4,
-                },
+                "source": "FUN_00698f40/FUN_0069a6c0",
             }
-            report["embedded_matrix"] = transform
-            report["serialized_fixed_region_end"] = base_offset + 0x48
-        else:
-            report["serialized_fixed_region_end"] = base_offset + 0x28
-
-    elif kind_text == "DAMAGE":
-        report["damage_serialized_layout"] = {
-            "status": "partial",
-            "matrix_count_offset": 0x22,
-            "subobject_count_offset": 0x23,
-            "runtime_matrix_loader": "FUN_00699870",
-            "runtime_subobject_array_offset": 0x88,
-        }
 
     return report

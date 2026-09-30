@@ -153,67 +153,75 @@ def _tag(raw: bytes) -> str:
     return raw[::-1].decode("ascii", "replace")
 
 
-def _parse_node(
+def _parse_wrapper_records(
     data: bytes,
     start: int,
     end: int,
     count: int,
     *,
-    relative_base: int = 0,
-    strict: bool = True,
+    strict: bool,
+    wrapper_kind: str,
 ) -> list[dict[str, Any]]:
-    """Decode NODE records as 0x1c metadata + inline object payload."""
-    from sgb_object_runtime import parse_sgb_object_payload
+    """Decode the shared variable-stride NODE/SUMM record grammar."""
+    from sgb_object_runtime import (
+        SGBObjectDecodeError,
+        parse_sgb_object_payload,
+    )
 
     rows: list[dict[str, Any]] = []
     cursor = start + 12
     for index in range(count):
-        if cursor + 0x1C > end:
+        if cursor + 32 > end:
             raise SGBRuntimeDecodeError(
-                f"NODE record {index} metadata exceeds chunk"
+                f"{wrapper_kind} record {index} header exceeds chunk"
             )
-
         stride = _u32(data, cursor)
-        if stride < 0x1C + 0x24:
+        if stride < 32 or cursor + stride > end:
             raise SGBRuntimeDecodeError(
-                f"NODE record {index} stride {stride} is smaller than "
-                "metadata+object header"
+                f"invalid {wrapper_kind} stride {stride} at record {index}"
             )
         record_end = cursor + stride
-        if record_end > end or record_end <= cursor:
-            raise SGBRuntimeDecodeError(
-                f"invalid NODE stride {stride} at record {index}"
+        words = [_u32(data, cursor + 4 * i) for i in range(8)]
+        flags = data[cursor + 24]
+        variation = struct.unpack_from("<h", data, cursor + 26)[0]
+
+        object_base = cursor + 0x1C
+        try:
+            object_report = parse_sgb_object_payload(
+                data,
+                base_offset=object_base,
+                end_offset=record_end,
+                reference_base_offset=0,
+                strict=strict,
             )
+        except SGBObjectDecodeError as exc:
+            if strict:
+                raise SGBRuntimeDecodeError(
+                    f"{wrapper_kind} object {index}: {exc}"
+                ) from exc
+            object_report = {
+                "format": "SHIFT.SGBObjectRuntime/1",
+                "decoded": False,
+                "status": "blocked",
+                "blockers": [f"object:{exc}"],
+            }
 
-        words = [_u32(data, cursor + 4 * i) for i in range(7)]
-        flags = data[cursor + 0x18]
-        variation = struct.unpack_from("<h", data, cursor + 0x1A)[0]
-        object_start = cursor + 0x1C
-
-        object_report = parse_sgb_object_payload(
-            data,
-            base_offset=object_start,
-            end_offset=record_end,
-            relative_base=relative_base,
-            strict=strict,
-        )
-
-        rows.append({
+        row = {
             "index": index,
             "offset": cursor,
-            "record_end": record_end,
             "stride": stride,
             "metadata_bytes": 0x1C,
-            "raw_u32_metadata": words,
+            "record_end": record_end,
+            "raw_u32_header": words,
             "unknown_word_1": words[1],
             "name": _resolve_string(
-                data, relative_base, _i32(data, cursor + 0x08)
+                data, 0, _i32(data, cursor + 8)
             ),
             "resource": _resolve_string(
-                data, relative_base, _i32(data, cursor + 0x0C)
+                data, 0, _i32(data, cursor + 12)
             ),
             "variation_palette_file": _resolve_string(
-                data, relative_base, _i32(data, cursor + 0x10)
+                data, 0, _i32(data, cursor + 16)
             ),
             "instances": words[5],
             "flags": {
@@ -226,13 +234,18 @@ def _parse_node(
             "object_payload": {
                 "layout": "inline-after-node-metadata",
                 "inline_offset": 0x1C,
-                "absolute_offset": object_start,
-                "size": record_end - object_start,
+                "inline_offset_in_record": 0x1C,
+                "absolute_offset": object_base,
+                "record_end": record_end,
+                "reference_base_offset": 0,
                 "decoder": "FUN_0069bc50",
                 "decoded": bool(object_report.get("decoded")),
                 "report": object_report,
             },
-            "runtime_wrapper": {
+        }
+
+        if wrapper_kind == "NODE":
+            row["runtime_wrapper"] = {
                 "vtable": NODE_RUNTIME_VTABLE,
                 "payload_field_offset": 0x08,
                 "resource_field_offset": 0x18,
@@ -250,33 +263,54 @@ def _parse_node(
                     "object_payload": (
                         "record +0x1c inline -> FUN_0069bc50"
                     ),
-                    "resource": (
-                        "record +0x0c relative-to-SGB -> wrapper +0x18"
-                    ),
+                    "resource": "record +0x0c + SGB base -> wrapper +0x18",
                     "variation_palette": (
-                        "record +0x10 relative-to-SGB -> wrapper +0x1c"
+                        "record +0x10 + SGB base -> wrapper +0x1c"
                     ),
-                    "variation_index": (
-                        "record +0x1a -> wrapper +0x20"
-                    ),
+                    "variation_index": "record +0x1a -> wrapper +0x20",
                     "instances": "record +0x14 -> wrapper +0x24",
-                    "flags": (
-                        "record +0x18 -> wrapper +0x15/+0x16/+0x17"
-                    ),
+                    "flags": "record +0x18 -> wrapper +0x15/+0x16/+0x17",
                     "name_hash": (
-                        "record +0x08 relative-to-SGB -> "
-                        "wrapper +0x28/+0x2c via FUN_0064eba0"
+                        "record +0x08 + SGB base -> wrapper "
+                        "+0x28/+0x2c via FUN_0064eba0"
                     ),
                 },
-            },
-        })
+            }
+        else:
+            row["runtime_wrapper"] = {
+                **SUMM_RUNTIME_WRAPPER,
+                "kind": "SUMM",
+                "object_payload_inline_offset": 0x1C,
+                "record_stride_source": "record +0x00",
+            }
+
+        rows.append(row)
         cursor = record_end
 
     if cursor != end:
         raise SGBRuntimeDecodeError(
-            f"NODE records end at 0x{cursor:x}, chunk ends at 0x{end:x}"
+            f"{wrapper_kind} records stop at 0x{cursor:x}, "
+            f"expected chunk end 0x{end:x}"
         )
     return rows
+
+
+def _parse_node(
+    data: bytes,
+    start: int,
+    end: int,
+    count: int,
+    *,
+    strict: bool,
+) -> list[dict[str, Any]]:
+    return _parse_wrapper_records(
+        data,
+        start,
+        end,
+        count,
+        strict=strict,
+        wrapper_kind="NODE",
+    )
 
 
 def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str, Any]]:
@@ -413,45 +447,22 @@ def _parse_part(data: bytes, start: int, end: int, count: int) -> list[dict[str,
     return rows
 
 
-def _parse_summ_fixed14(
+def _parse_summ(
     data: bytes,
     start: int,
     end: int,
     count: int,
+    *,
+    strict: bool,
 ) -> list[dict[str, Any]]:
-    """Preserve the existing compact SUMM view while keeping its wrapper map."""
-    rows = []
-    cursor = start + 12
-    for index in range(count):
-        if cursor + 56 > end:
-            raise SGBRuntimeDecodeError(f"SUMM record {index} exceeds chunk")
-        a = _i32(data, cursor)
-        b = _i32(data, cursor + 4)
-        vectors = [
-            [
-                _f32(data, cursor + 8 + 12 * n),
-                _f32(data, cursor + 12 + 12 * n),
-                _f32(data, cursor + 16 + 12 * n),
-            ]
-            for n in range(4)
-        ]
-        rows.append({
-            "index": index,
-            "offset": cursor,
-            "raw_u32": [_u32(data, cursor + 4 * i) for i in range(14)],
-            "string_a": _resolve_string(data, 0, a),
-            "string_b": _resolve_string(data, 0, b),
-            "vectors": vectors,
-            "record_bytes": 56,
-            "runtime_wrapper": {
-                **SUMM_RUNTIME_WRAPPER,
-                "kind": "SUMM",
-                "name_hash_producer": "FUN_0064eba0",
-                "name_hash_resolved": False,
-            },
-        })
-        cursor += 56
-    return rows
+    return _parse_wrapper_records(
+        data,
+        start,
+        end,
+        count,
+        strict=strict,
+        wrapper_kind="SUMM",
+    )
 
 
 def _parse_occl(
@@ -578,7 +589,6 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
                     cursor,
                     chunk_end,
                     count,
-                    relative_base=0,
                     strict=strict,
                 )
                 row["decoder"] = "FUN_006a4b40 -> FUN_0069bc50"
@@ -590,10 +600,14 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
                 row["records"] = _parse_part(data, cursor, chunk_end, count)
                 row["decoder"] = "FUN_006a4d10"
             elif tag == "SUMM":
-                row["records"] = _parse_summ_fixed14(
-                    data, cursor, chunk_end, count
+                row["records"] = _parse_summ(
+                    data,
+                    cursor,
+                    chunk_end,
+                    count,
+                    strict=strict,
                 )
-                row["decoder"] = "FUN_006a4900"
+                row["decoder"] = "FUN_006a4900 -> FUN_0069bc50"
             elif tag == "OCCL":
                 row["records"] = _parse_occl(
                     data,
@@ -676,9 +690,9 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
             "OCCL": "FUN_006a4f10",
         },
         "limitations": [
-            "NODE object payload is inline at record +0x1c and decoded against the complete SGB-relative reference arena; byte +0x21 and DAMAGE-specific payload fields remain unresolved.",
+            "NODE/SUMM object payload is inline at record +0x1c and decoded against the complete SGB-relative reference arena; byte +0x21 remains unresolved, and DAMAGE belongs to the alternate XML object path rather than binary FUN_0069a6c0.",
             "FLAT signed terminal spans are normalized exactly when SGB header bit2 is clear, matching FUN_006a5270 -> FUN_006a48d0 -> FUN_006af6c0.",
-            "SUMM vectors remain positional; their semantic names are not proven by FUN_006a4900.",
+            "SUMM now uses the source-backed variable-stride wrapper/object grammar; higher-level meaning of individual scene objects remains kind-specific.",
             "OCCL Name/Resource and PositionTL/TR/BL/BR semantics are source-backed by the matching XML constructor FUN_006a3c40 and binary loader FUN_006a4f10.",
             "PART AABB, child-partition IDs and one-based child-object references are source-backed through FUN_006a4d10, FUN_0068a360 and FUN_00689a30; child virtual kind codes remain numeric rather than class-named.",
             "SUMM runtime wrapper field copies are source-backed; the 64-bit name hash is retained as provenance-only until FUN_0040b831 is normalized.",

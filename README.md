@@ -39,7 +39,7 @@ Use explicit states such as `proven`, `verified`, `inferred`, `ambiguous`, `unkn
 | Desktop reference renderer | active oracle | geometry, DDS, multi-sampler, samplerCube, VS→PS, explicit semantics, skinned command path |
 | Skinning | contract implemented | MEB 310/580, explicit SkinPose, CPU reference, GLES parity |
 | BAB animation | evidence-backed | bank/channel grammar reconstructed; remaining axis/order/trailing semantics explicit |
-| SGB / scene | production FLAT + NODE/LOD/HIERARCHY object grammar | retail FLAT spans, inline NODE payloads, MATRIX/subobject tables, OCCL/SUMM and hierarchical PART partition tree |
+| SGB / scene | production FLAT + NODE/SUMM recursive object grammar | retail FLAT spans, inline wrappers, LOD/HIERARCHY/OBJECT MATRIX/subobject graphs, OCCL and hierarchical PART tree |
 | Camera | active | loader/state/event/control primitives reconstructed |
 | Vehicle physics | active | CDF/EDF/GDF/SDF and wheel/contact/solver boundaries |
 | Builtin solver | source-backed | sparse-solver lifecycle and matrix/kernel layers |

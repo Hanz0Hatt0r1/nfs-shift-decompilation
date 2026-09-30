@@ -56,6 +56,47 @@ def _node_sgb() -> bytes:
     return bytes(buf)
 
 
+def _summ_sgb() -> bytes:
+    stride = 0x1C + 0x28
+    payload = struct.pack("<I", 1) + b"\0" * stride
+    buf = bytearray(
+        _header()
+        + _chunk("SUMM", payload)
+        + _chunk("END ", b"")
+    )
+
+    def add(text: str) -> int:
+        offset = len(buf)
+        buf.extend(text.encode("utf-8") + b"\0")
+        return offset
+
+    wrapper_name = add("SUMM_NAME")
+    wrapper_resource = add("SUMM_RESOURCE")
+    palette = add("SUMM_PALETTE")
+    kind = add("OBJECT")
+    source = add("SUMM_OBJECT")
+    meb = add("tracks/test/summ_object.meb")
+
+    record = 16 + 8 + 4
+    obj = record + 0x1C
+    struct.pack_into("<I", buf, record + 0x00, stride)
+    struct.pack_into("<I", buf, record + 0x04, 0)
+    struct.pack_into("<I", buf, record + 0x08, wrapper_name)
+    struct.pack_into("<I", buf, record + 0x0C, wrapper_resource)
+    struct.pack_into("<I", buf, record + 0x10, palette)
+    struct.pack_into("<I", buf, record + 0x14, 3)
+    buf[record + 0x18] = 5
+    struct.pack_into("<h", buf, record + 0x1A, -2)
+
+    struct.pack_into("<III", buf, obj, kind, source, meb)
+    struct.pack_into("<I", buf, obj + 0x0C, 1)
+    buf[obj + 0x20] = 0
+    buf[obj + 0x22] = 0
+    buf[obj + 0x23] = 0
+    struct.pack_into("<I", buf, obj + 0x24, 0x100)
+    return bytes(buf)
+
+
 def test_header_and_end_chunk():
     report = parse_sgb_runtime(_header() + _chunk("END ", b""))
     assert report["ready"] is True
@@ -150,48 +191,46 @@ def test_node_runtime_wrapper_mapping_is_source_backed():
     assert "record +0x1c inline" in wrapper["source_mapping"]["object_payload"]
 
 
-def test_summ_and_occl_fixed_record_shape():
-    # Two zero relative offsets plus four vec3 values.
+def test_occl_fixed_record_shape():
     record = struct.pack("<14I", 0, 0, *([0] * 12))
-    for tag in ("SUMM", "OCCL"):
-        data = _header() + _chunk(tag, struct.pack("<I", 1) + record) + _chunk("END ", b"")
-        row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
-        assert row["record_bytes"] == 56
-
-
-def test_summ_runtime_wrapper_mapping_is_source_backed():
-    record = struct.pack(
-        "<14I",
-        56, 0, 64, 72, 80, 3, 7, 0x030201, 0, 0, 0, 0, 0, 0
+    data = (
+        _header()
+        + _chunk("OCCL", struct.pack("<I", 1) + record)
+        + _chunk("END ", b"")
     )
-    data = _header() + _chunk(
-        "SUMM", struct.pack("<I", 1) + record
-    ) + _chunk("END ", b"")
     row = parse_sgb_runtime(data)["chunks"][0]["records"][0]
+    assert row["record_bytes"] == 56
+
+
+def test_summ_uses_variable_stride_wrapper_and_inline_object_payload():
+    row = parse_sgb_runtime(_summ_sgb())["chunks"][0]["records"][0]
+
+    assert row["stride"] == 0x44
+    assert row["metadata_bytes"] == 0x1C
+    assert row["name"]["text"] == "SUMM_NAME"
+    assert row["resource"]["text"] == "SUMM_RESOURCE"
+    assert row["variation_palette_file"]["text"] == "SUMM_PALETTE"
+    assert row["instances"] == 3
+    assert row["flags"]["raw"] == 5
+    assert row["variation_index"] == -2
+
+    payload = row["object_payload"]
+    assert payload["layout"] == "inline-after-node-metadata"
+    assert payload["inline_offset"] == 0x1C
+    assert payload["decoded"] is True
+    assert payload["report"]["kind"]["text"] == "OBJECT"
+    assert payload["report"]["source_string"]["text"] == "SUMM_OBJECT"
+    assert payload["report"]["resource_filename"]["text"] == (
+        "tracks/test/summ_object.meb"
+    )
+
     wrapper = row["runtime_wrapper"]
     assert wrapper["vtable"] == 0x00AF78EC
     assert wrapper["instance_bytes"] == 0x38
-    assert wrapper["source_field_offsets"] == {
-        "name": 0x08,
-        "resource": 0x0C,
-        "variation_palette": 0x10,
-        "instances": 0x14,
-        "flags": 0x18,
-        "variation_index": 0x1A,
-        "object_payload": 0x1C,
-    }
+    assert wrapper["source_field_offsets"]["object_payload"] == 0x1C
     assert wrapper["runtime_field_offsets"]["payload"] == 0x08
-    assert wrapper["runtime_field_offsets"]["resource"] == 0x18
-    assert wrapper["runtime_field_offsets"]["variation_palette"] == 0x1C
-    assert wrapper["runtime_field_offsets"]["variation_index"] == 0x20
-    assert wrapper["runtime_field_offsets"]["instances"] == 0x24
-    assert wrapper["runtime_field_offsets"]["flag_bit0"] == 0x15
-    assert wrapper["runtime_field_offsets"]["flag_bit1"] == 0x16
-    assert wrapper["runtime_field_offsets"]["flag_bit2"] == 0x17
-    assert wrapper["runtime_field_offsets"]["name_hash_lo"] == 0x28
-    assert wrapper["runtime_field_offsets"]["name_hash_hi"] == 0x2C
-    assert wrapper["name_hash_producer"] == "FUN_0064eba0"
-    assert wrapper["name_hash_resolved"] is False
+    assert wrapper["object_payload_inline_offset"] == 0x1C
+    assert wrapper["record_stride_source"] == "record +0x00"
 
 
 def test_truncated_chunk_blocks_non_strict():

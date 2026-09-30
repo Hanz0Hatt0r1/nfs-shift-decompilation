@@ -1,0 +1,128 @@
+{
+  "format": "SHIFT.SilverstoneEra3GrandPrixSGBObjectObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 corpus",
+  "sgb": {
+    "path": "tracks/silverstone_era3_grandprix/silverstone_era3_grandprix.sgb",
+    "size": 2176990,
+    "sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+    "header_flags": 3,
+    "chunks": [
+      {
+        "tag": "OCCL",
+        "offset": 16,
+        "size": 1188,
+        "record_count": 21
+      },
+      {
+        "tag": "NODE",
+        "offset": 1204,
+        "size": 8112,
+        "record_count": 41
+      },
+      {
+        "tag": "FLAT",
+        "offset": 9316,
+        "size": 531500,
+        "record_count_word": 1
+      },
+      {
+        "tag": "SUMM",
+        "offset": 540816,
+        "size": 1420328,
+        "record_count": 7348
+      },
+      {
+        "tag": "END ",
+        "offset": 1961144,
+        "size": 12
+      }
+    ],
+    "chunk_stream_end": 1961156,
+    "post_end_reference_bytes": 215834
+  },
+  "node": {
+    "record_count": 41,
+    "exact_chunk_consumption": true,
+    "stride_histogram": {
+      "196": 40,
+      "260": 1
+    },
+    "top_level_kind_histogram": {
+      "LOD": 40,
+      "HIERARCHY": 1
+    },
+    "top_level_lod_shape": {
+      "matrix_number": -1,
+      "matrices": 1,
+      "subobjects": 2
+    },
+    "top_level_hierarchy_shape": {
+      "matrix_number": 0,
+      "matrices": 3,
+      "subobjects": 2
+    },
+    "recursive_object_count": 82
+  },
+  "summ": {
+    "record_count": 7348,
+    "exact_chunk_consumption": true,
+    "stride_histogram": {
+      "104": 527,
+      "148": 3275,
+      "196": 1624,
+      "244": 1666,
+      "564": 14,
+      "612": 242
+    },
+    "top_level_kind_histogram": {
+      "LOD": 6565,
+      "OBJECT": 527,
+      "HIERARCHY": 256
+    },
+    "lod_subobject_count_histogram": {
+      "1": 3275,
+      "2": 1624,
+      "3": 1666
+    },
+    "top_level_object_shape": {
+      "matrix_number": -1,
+      "matrices": 0,
+      "subobjects": 0
+    },
+    "top_level_hierarchy_shape": {
+      "matrix_number": 0,
+      "matrices": 3,
+      "subobjects": 2
+    }
+  },
+  "recursive_graph": {
+    "kind_histogram": {
+      "LOD": 7117,
+      "OBJECT": 13652,
+      "HIERARCHY": 257
+    },
+    "edge_histogram": {
+      "LOD->OBJECT": 13123,
+      "HIERARCHY->LOD": 512,
+      "HIERARCHY->OBJECT": 2
+    },
+    "max_depth": 2,
+    "structural_error_count": 0,
+    "damage_observed": false
+  },
+  "source_join": {
+    "node_loader": "FUN_006a4b40",
+    "summ_loader": "FUN_006a4900",
+    "object_entry": "FUN_0069bc50",
+    "binary_dispatcher": "FUN_0069a6c0",
+    "matrix_xml_cross_path": "FUN_006990d0",
+    "object_xml_cross_path": "FUN_00699b10/FUN_0069b1c0"
+  },
+  "observations": [
+    "NODE and SUMM both use a variable-stride wrapper record with inline object payload at record +0x1c.",
+    "Wrapper and object string/subobject offsets are relative to the complete SGB base and can point into data after the END chunk.",
+    "The binary object dispatcher observed in FUN_0069a6c0 covers LOD, HIERARCHY and OBJECT; DAMAGE belongs to the alternate XML object construction path.",
+    "Binary object byte +0x20 is MatrixNumber, +0x22 is matrices and +0x23 is subobjects, matching the parallel XML loader.",
+    "The Silverstone NODE and SUMM chunks consume exactly with zero recursive structural errors under the corrected grammar."
+  ]
+}

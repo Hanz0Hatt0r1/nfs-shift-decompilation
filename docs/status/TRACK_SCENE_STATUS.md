@@ -18,7 +18,7 @@ Covered boundaries include:
 - OCCL fixed 0x38-byte source records with source-backed Name/Resource and PositionTL/TR/BL/BR semantics;
 - OCCL concrete 0x120-byte runtime objects plus header-bit1 wrapper/batch admission modes;
 - FLAT;
-- NODE object payload routing into LOD/HIERARCHY/OBJECT/DAMAGE;
+- binary NODE/SUMM object routing into LOD/HIERARCHY/OBJECT; DAMAGE is retained only as a concrete alternate XML-path runtime kind;
 - recursive FLAT tree structure with 0x40-byte direct records;
 - production signed-terminal FLAT span normalization controlled by SGB header bit2;
 - FLAT +0x3c runtime index table joins and +0x38 direct-object lookup/refcount teardown consumers.
@@ -28,12 +28,12 @@ Covered boundaries include:
 The project does not invent:
 
 - semantics of the remaining FLAT direct-record payload words and the concrete class behind populated +0x38 runtime object pointers;
-- DAMAGE-specific object payload fields and the unnamed NODE/object byte +0x21;
-- complete NODE placement/transform semantics;
+- the unnamed common object byte +0x21 and higher-level roles of individual LOD/HIERARCHY objects;
+- placement joins from recursive NODE/SUMM transforms into PART/FLAT spatial structures;
 - full scene streaming and LOD behavior.
 
 Track placement remains an evidence question.
 
 ## Next
 
-Continue with DAMAGE-specific payload consumers, the remaining unnamed NODE/object byte and FLAT float payload fields, using the Silverstone production corpus as the regression oracle before joining proven scene data into RenderBinding.
+Join the proven recursive LOD/HIERARCHY/OBJECT transform graph to PART/FLAT placement structures, then resolve only the remaining FLAT payload fields required by that join before exposing scene placement to RenderBinding.
