@@ -223,6 +223,12 @@ def test_two_independent_resources_recover_one_wrapper_root():
         "chunk": "SUMM",
         "source_record_index": 7,
     }
+    assert consensus["owner_path"] == []
+    assert (
+        consensus["authorizes_current_multimatrix_owner_root"]
+        is True
+    )
+    assert consensus["authorizes_current_wrapper_root"] is True
     assert consensus["root_world_matrix"] == pytest.approx(root)
     assert consensus["support_resource_count"] == 2
     assert consensus["distinct_cumulative_local_count"] == 2
