@@ -243,9 +243,9 @@ python3 tools/shift_live_dump/analyze_track_paths.py \
 The AIW parser reads the `[Waypoint]` records, `wp_pos`, `wp_branchID`,
 `wp_score` and `WP_PTRS`. Runtime correlation first uses exact
 `AIPolyPathNode` candidates when present, matching their 2D coordinates against
-the selected AIW plane (default `x/z`), and falls back to the generic 3-float
-scan when no exact node candidates are available. It then looks for long
-`waypoint N -> N+1` address sequences with a constant stride.
+the selected AIW plane (default `x/z`). For each selected AIW resource without
+an exact node match, it falls back to the generic 3-float scan. It then looks
+for long `WP_PTRS.next` address sequences with a constant stride.
 
 Outputs:
 
