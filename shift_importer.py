@@ -2287,7 +2287,7 @@ def cmd_camera_state_snapshot(args: argparse.Namespace) -> int:
     )
     print(json.dumps({
         "format": result["format"],
-        "status": result["status"],
+        "status": result.get("status", "snapshot"),
         "action": args.action,
     }, ensure_ascii=False, indent=2))
     return 0
