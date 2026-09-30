@@ -47,3 +47,20 @@ That gate requires complete FXO payload provenance and
 `SHIFT.ShaderPermutationIdentity/1` for the shader pair.
 
 This is a provenance gate, not a claim of runtime shader equivalence.
+
+
+## Validate native bundle execution
+
+```bash
+python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
+# Or execute an already prepared bundle directly:
+native_vulkan/build/shift_vulkan_bundle_execute out/vulkan/bundle/bundle --validation
+```
+
+`--validation` explicitly enables `VK_LAYER_KHRONOS_validation` and its debug
+messenger. Install `vulkan-validationlayers` on Ubuntu/Debian. If the layer or
+extension is missing, startup fails. Any validation error makes native execution
+fail even if a PPM was produced; the Python runner propagates that failure.
+Successful native JSON includes `validation_enabled` and `validation_errors`.
+Warnings go to stderr. CI requires validation for the mixed-resource smoke run.
+Depth image views are created with the depth aspect directly.

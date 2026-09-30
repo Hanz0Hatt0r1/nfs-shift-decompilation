@@ -182,5 +182,6 @@ endif()
 
 if(Vulkan_FOUND)
   add_executable(shift_vulkan_bundle_execute src/vulkan_bundle_execute.cpp)
+  target_include_directories(shift_vulkan_bundle_execute PRIVATE include)
   target_link_libraries(shift_vulkan_bundle_execute PRIVATE Vulkan::Vulkan)
 endif()

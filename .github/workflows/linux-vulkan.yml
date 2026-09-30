@@ -8,6 +8,7 @@ on:
       - "native_vulkan/**"
       - "*.py"
       - "tools/**"
+      - "src/**"
       - "tests/**"
   pull_request:
     paths:
@@ -16,6 +17,7 @@ on:
       - "native_vulkan/**"
       - "*.py"
       - "tools/**"
+      - "src/**"
       - "tests/**"
 
 jobs:
@@ -26,7 +28,7 @@ jobs:
       - name: Install Vulkan software stack
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ libvulkan-dev glslang-tools mesa-vulkan-drivers vulkan-tools libxcb1-dev xvfb
+          sudo apt-get install -y cmake g++ libvulkan-dev glslang-tools mesa-vulkan-drivers vulkan-tools libxcb1-dev xvfb vulkan-validationlayers
       - name: Show Vulkan devices
         run: vulkaninfo --summary
       - name: Configure
@@ -55,7 +57,7 @@ jobs:
       - name: Native Linux runtime build
         run: cmake --build native_runtime/build --config Release --parallel
       - name: Prepare mixed-resource BMW bundle
-        run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle
+        run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
       - name: Native Linux runtime frame loop
         run: |
           set -o pipefail
@@ -64,12 +66,12 @@ jobs:
             --bundle out/vulkan/bundle/bundle \
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
-            --frames 3 | tee out/vulkan/runtime/runtime.json
+            --frames 12 --validation | tee out/vulkan/runtime/runtime.json
       - name: Assert native runtime output
         run: |
           grep -q '"format": "SHIFT.NativeRuntimeFrameLoop/1"' out/vulkan/runtime/runtime.json
-          grep -q '"frames_rendered": 3' out/vulkan/runtime/runtime.json
-          grep -q '"simulation_steps": 3' out/vulkan/runtime/runtime.json
+          grep -q '"frames_rendered": 12' out/vulkan/runtime/runtime.json
+          grep -q '"simulation_steps": 12' out/vulkan/runtime/runtime.json
           grep -q '"material_mode": true' out/vulkan/runtime/runtime.json
           grep -q '"depth_test": true' out/vulkan/runtime/runtime.json
           grep -q '"bundle_2d_textures": 1' out/vulkan/runtime/runtime.json
@@ -77,6 +79,8 @@ jobs:
           grep -q '"state_layer": "SHIFT.NativeRuntimeState/1"' out/vulkan/runtime/runtime.json
           grep -q '"physics_workspace_ready": true' out/vulkan/runtime/runtime.json
           grep -q '"physics_workspace_scalars": 40' out/vulkan/runtime/runtime.json
+          grep -q '"validation_enabled": true' out/vulkan/runtime/runtime.json
+          grep -q '"validation_errors": 0' out/vulkan/runtime/runtime.json
           grep -q '"status": "ok"' out/vulkan/runtime/runtime.json
       - name: Native Linux runtime multi-draw frame loop
         run: |
@@ -85,12 +89,12 @@ jobs:
             --bundle-set out/vulkan/bundle/bundle_set \
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
-            --frames 3 | tee out/vulkan/runtime/multidraw.json
+            --frames 12 --validation | tee out/vulkan/runtime/multidraw.json
       - name: Assert native multi-draw runtime output
         run: |
           grep -q '"format": "SHIFT.NativeRuntimeFrameLoop/1"' out/vulkan/runtime/multidraw.json
-          grep -q '"frames_rendered": 3' out/vulkan/runtime/multidraw.json
-          grep -q '"simulation_steps": 3' out/vulkan/runtime/multidraw.json
+          grep -q '"frames_rendered": 12' out/vulkan/runtime/multidraw.json
+          grep -q '"simulation_steps": 12' out/vulkan/runtime/multidraw.json
           grep -q '"material_mode": true' out/vulkan/runtime/multidraw.json
           grep -q '"bundle_set_mode": true' out/vulkan/runtime/multidraw.json
           grep -q '"material_draws": 2' out/vulkan/runtime/multidraw.json
@@ -98,6 +102,8 @@ jobs:
           grep -q '"bundle_cube": true' out/vulkan/runtime/multidraw.json
           grep -q '"depth_test": true' out/vulkan/runtime/multidraw.json
           grep -q '"physics_workspace_scalars": 40' out/vulkan/runtime/multidraw.json
+          grep -q '"validation_enabled": true' out/vulkan/runtime/multidraw.json
+          grep -q '"validation_errors": 0' out/vulkan/runtime/multidraw.json
           grep -q '"status": "ok"' out/vulkan/runtime/multidraw.json
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

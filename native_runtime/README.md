@@ -64,3 +64,36 @@ retail depth-test/write/compare and ordinary alpha-blend factors/operations.
 The native runtime consumes these values independently for every prepared draw.
 Enabled alpha-test and unmapped/bias state are rejected by bundle preparation
 rather than approximated.
+
+
+## Vulkan validation on Linux
+
+Install `vulkan-validationlayers` (Ubuntu/Debian), then add `--validation` to
+`shift_runtime`. The runtime requires `VK_LAYER_KHRONOS_validation` and
+`VK_EXT_debug_utils` when requested; missing support fails startup. Validation
+errors, including resource destruction errors, produce a nonzero exit status.
+The final frame-loop report includes `validation_enabled` and
+`validation_errors`; warnings are written to stderr without failing the run.
+
+A software Vulkan smoke run, from the repository root:
+
+```bash
+python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
+xvfb-run -a native_runtime/build/shift_runtime \
+  --bundle-set out/vulkan/bundle/bundle_set \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --frames 120 --validation
+```
+
+Build `native_vulkan` first for bundle preparation. Select Mesa lavapipe using
+`VK_ICD_FILENAMES` if the machine has multiple Vulkan drivers; the ICD JSON path
+varies by distribution. An existing X11 display can be used without `xvfb-run`.
+The generated fixture exercises indexed draws, constants, a 2D texture and a
+cubemap; it is synthetic test geometry, not a playable game scene.
+
+Command buffers and acquire semaphores follow the frame fence. Presentation
+semaphores follow the acquired swapchain image so they are not reused while
+presentation still owns them, as described in the
+[Khronos Vulkan guide](https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html).
+Linux CI validates both single-draw and multi-draw runs across 12 frames.

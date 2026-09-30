@@ -174,6 +174,7 @@ def main():
     parser.add_argument("output_dir")
     parser.add_argument("--executable", default="native_vulkan/build/shift_vulkan_bundle_execute")
     parser.add_argument("--validator", default="glslangValidator")
+    parser.add_argument("--validation", action="store_true")
     args = parser.parse_args()
 
     root = Path(args.output_dir)
@@ -198,6 +199,7 @@ def main():
     result = run_bmw_vulkan_bundle(
         bundle_dir,
         executable=args.executable,
+        validation=args.validation,
         validator=args.validator,
         output=bundle_dir / "bundle.ppm",
     )

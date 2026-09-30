@@ -44,6 +44,7 @@ add_custom_target(shift_runtime_shaders
 add_executable(shift_runtime src/shift_runtime.cpp)
 add_dependencies(shift_runtime shift_runtime_shaders)
 target_include_directories(shift_runtime PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../native_vulkan/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../native_ir/include)
 target_link_libraries(shift_runtime PRIVATE
   shift_ir
