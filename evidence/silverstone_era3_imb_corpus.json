@@ -1,0 +1,102 @@
+{
+  "format": "SHIFT.IMBCorpusAuditEvidence/1",
+  "version": 1,
+  "verification_scope": "phase-562-silverstone-era3-imb-corpus",
+  "source_archive": {
+    "name": "Silverstone_Era3_.zip",
+    "sha256": "5423f5a0356e664a504f90c812e32bbbd4e2a0abe83c546fdc658305661a1e2f"
+  },
+  "archives": [
+    {
+      "name": "Silverstone_Era3_Drift.bff",
+      "sha256": "ea0078c88155978ac1d9d8513698d8c793fd1eed92bac38da34a9e8a9381308a",
+      "imb_count": 117
+    },
+    {
+      "name": "Silverstone_Era3_Drift_Physics.bff",
+      "sha256": "34303056d2bdc51e7c2fb4a043b57c893a0251c6403a116c9fafc4c68004f5b7",
+      "imb_count": 0
+    },
+    {
+      "name": "Silverstone_Era3_GrandPrix.bff",
+      "sha256": "aac2e1fe721aec25494d0bfc84eac2bd49d1628fe55b165097ae694ef7a7d56c",
+      "imb_count": 103
+    },
+    {
+      "name": "Silverstone_Era3_GrandPrix_Physics.bff",
+      "sha256": "b90b70a1965260599570efef5bce4a76e5f96732c9831e6614e8541b886edbd7",
+      "imb_count": 0
+    },
+    {
+      "name": "Silverstone_Era3_International.bff",
+      "sha256": "634984a4053012e7edd89c1fa47e89583cb6b34c139feeb8a01fa9a44bca5863",
+      "imb_count": 99
+    },
+    {
+      "name": "Silverstone_Era3_International_Physics.bff",
+      "sha256": "8f9eac6a53e395f44fd3031b67a1daee5f48f5c72814102b0c0c388c1fb43cb5",
+      "imb_count": 0
+    },
+    {
+      "name": "Silverstone_Era3_National.bff",
+      "sha256": "58c2a9476804c8a29fd87eeaa5e99e8656b03e3ee21d773acb8c7f8a84f522ea",
+      "imb_count": 108
+    },
+    {
+      "name": "Silverstone_Era3_National_Physics.bff",
+      "sha256": "db7dd2d94f75b59b592fd9bc9183e66782762118a2b7b4666e9af132519357e3",
+      "imb_count": 0
+    }
+  ],
+  "result": {
+    "resource_count": 427,
+    "decoded_count": 427,
+    "decode_error_count": 0,
+    "version_counts": {
+      "0.4.0.0": 427
+    },
+    "total_vertex_count": 96872,
+    "total_primitive_count": 428,
+    "total_triangle_count": 105336,
+    "bone_resource_count": 92,
+    "trailing_byte_counts": {
+      "0": 427
+    },
+    "decoded_property_use_counts": {
+      "130": 427,
+      "200": 427,
+      "220": 427,
+      "231": 61,
+      "240": 235,
+      "250": 235,
+      "310": 92,
+      "460": 427,
+      "580": 92
+    },
+    "decoded_property_set_counts": {
+      "200,460,220,130": 192,
+      "200,460,220,240,250,130": 82,
+      "200,460,220,240,250,130,231": 61,
+      "200,460,220,240,250,130,580,310": 92
+    },
+    "stream_count_distribution": {
+      "4": 192,
+      "6": 82,
+      "7": 61,
+      "8": 92
+    },
+    "primitive_count_distribution": {
+      "1": 426,
+      "2": 1
+    }
+  },
+  "boundary": {
+    "bff_type2_decode": "existing source-equivalent XMem/LZX algorithm",
+    "imb_layout": "source-backed v0.4 prefix/header/stream/primitive grammar",
+    "all_observed_property_ids_supported_by_phase560_adapter": true,
+    "material_extension_observed": ".mtx",
+    "material_and_shader_resolution_verified_here": false,
+    "scene_transform_history_verified_here": false,
+    "native_draw_output_verified_here": false
+  }
+}
