@@ -20,7 +20,7 @@ MGEO → native IR → XCB window → Vulkan swapchain → indexed draw → fram
 
 The renderer consumes normalized native IR. Original BFF parsing remains upstream in the existing Python importer/resource pipeline.
 
-The runtime accepts either a single MGEO mesh or a prepared `SHIFT.BMWVulkanBundle/1`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`, with evidence-shaped camera double-buffer state, vehicle control intent and a physics participant/tick boundary. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
+The runtime accepts a single MGEO mesh, a prepared `SHIFT.BMWVulkanBundle/1`, a prepared BMW bundle set, or a Phase 585 prepared `SHIFT.NativeSceneVulkanSet/1` through `--scene-set`. Bundle mode validates the native-submission, SPIR-V and Vulkan-interface gates, preserves the packet vertex layout, loads semantic-aware SVGP v3 geometry (while retaining v1/v2 compatibility), loads the bundle vertex/pixel SPIR-V, uploads the `SVCP` constant buffers plus `SVTP` 2D textures and optional cube, creates descriptor sets 0/1, and submits the prepared shader/material path directly. The frame loop also exposes a fixed 60 Hz simulation boundary through `SHIFT.NativeRuntimeState/1`, with evidence-shaped camera double-buffer state, vehicle control intent and a physics participant/tick boundary. The state layer deliberately does not synthesize unknown retail force/integration semantics. `Esc` or `Q` exits the harness.
 
 ## Build
 
@@ -31,19 +31,13 @@ cmake --build native_runtime/build --parallel
 
 ## Run
 
-```bash
-native_runtime/build/shift_runtime \
-  --bundle out/example-bundle \
-  --shader-dir native_runtime/build/shaders \
-  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
-  --frames 120
-```
+```bash\nnative_runtime/build/shift_runtime \\\n  --bundle out/example-bundle \\\n  --shader-dir native_runtime/build/shaders \\\n  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \\\n  --frames 120\n\n# Phase 585 neutral scene scheduling\npython shift_importer.py native-scene-vulkan-prepare \\\n  out/native-scene-vulkan --validator glslangValidator\n\nnative_runtime/build/shift_runtime \\\n  --scene-set out/native-scene-vulkan \\\n  --shader-dir native_runtime/build/shaders \\\n  --frames 120\n```
 
 On CI or a headless workstation, run it through Xvfb.
 
 ## Design boundary
 
-This target is deliberately small. Scene streaming and full multi-submesh RenderCommand scheduling are still separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
+This target is deliberately small. Phase 585 admits already-proven ordered scene draws, but retail scene streaming/LOD, unresolved renderer-owned resources and complete gameplay scheduling remain separate gates. The current native state boundary already accepts the real BMW physics manifest and sizes the proven SDF workspace; numerical force/integration semantics remain a separate evidence-backed backend task.
 
 
 ## Phase 530 per-draw cull state
