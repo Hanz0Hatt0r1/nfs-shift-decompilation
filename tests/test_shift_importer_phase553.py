@@ -127,6 +127,8 @@ def test_phase590_cli_accepts_capture_to_scene_snapshot_adapter():
         "capture",
         "--snapshot-output",
         "out/scene-external-snapshots.json",
+        "--cube-snapshot-output",
+        "out/scene-external-cube-snapshots.json",
         "--instance-transform-match",
         "out/scene-instance-transform-match.json",
     ])
@@ -140,12 +142,33 @@ def test_phase590_cli_accepts_capture_to_scene_snapshot_adapter():
     assert args.snapshot_output == (
         "out/scene-external-snapshots.json"
     )
+    assert args.cube_snapshot_output == (
+        "out/scene-external-cube-snapshots.json"
+    )
     assert args.instance_transform_match == (
         "out/scene-instance-transform-match.json"
     )
     assert args.fn.__name__ == (
         "cmd_native_scene_external_capture"
     )
+
+
+def test_phase592_cli_accepts_scene_external_sampler_cube_snapshots():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-scene-vulkan-set",
+        "native-scene-bundle.json",
+        "scene-render-binding.json",
+        "out/ir",
+        "out/native-scene-vulkan",
+        "--external-sampler-cube-snapshots",
+        "scene-external-cube-snapshots.json",
+    ])
+
+    assert args.external_sampler_cube_snapshots == (
+        "scene-external-cube-snapshots.json"
+    )
+    assert args.fn.__name__ == "cmd_native_scene_vulkan_set"
 
 
 def test_phase589_cli_accepts_scene_external_sampler_snapshots():

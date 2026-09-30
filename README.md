@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 591. Current development: Phase 592.**
+**Merged baseline: Phase 592. Current development: Phase 593.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -121,6 +121,7 @@ only strong-attributed draw-local texture observations from the D3D9 capture
 pipeline and converts an unambiguous captured PPM directly into that exact
 Phase 589 contract. Phase 591 adds repeated-instance transform matching from
 strong-attributed VS constant windows. Phase 592 reconstructs the retail `.imx`
+Phase 593 adds exact six-face external `samplerCube` capture→scene→native transport at the proven s3 boundary.
 XML mesh grammar and admits IMX MeshInst resources to generic RenderBinding.
 
 ### Native Linux runtime
@@ -155,7 +156,7 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | authentic capture content/remaining renderer-owned resource types; remaining alpha-test/bias/stencil state |
+| Vulkan | active native backend | authentic capture content/renderer-owned resource types beyond sampler2D/samplerCube-s3; remaining alpha-test/bias/stencil state |
 | SGB / scene | strong structural/render handoff | authentic Silverstone capture content, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
@@ -316,14 +317,16 @@ python shift_importer.py native-scene-external-capture \
   out/silverstone-runtime-attribution.json \
   out/scene-external-capture.json \
   --capture-root out/capture \
-  --snapshot-output out/scene-external-snapshots.json
+  --snapshot-output out/scene-external-snapshots.json \
+  --cube-snapshot-output out/scene-external-cube-snapshots.json
 
 python shift_importer.py native-scene-vulkan-set \
   out/native-scene-bundle.json \
   out/scene-render-binding.json \
   out/ir \
   out/native-scene-vulkan \
-  --external-sampler-snapshots out/scene-external-snapshots.json
+  --external-sampler-snapshots out/scene-external-snapshots.json \
+  --external-sampler-cube-snapshots out/scene-external-cube-snapshots.json
 
 python shift_importer.py native-scene-vulkan-prepare \
   out/native-scene-vulkan \

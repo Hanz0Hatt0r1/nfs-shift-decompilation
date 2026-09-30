@@ -118,6 +118,77 @@ def _pipeline(snapshot_path, *, observations=1):
     }
 
 
+def _cube_bridge():
+    bridge = _bridge()
+    bridge["render_binding"]["render_commands"][0]["submeshes"][0] = {
+        "external_samplers": [{
+            "sampler": "environmentMap",
+            "sampler_type": "samplerCube",
+            "d3d9_sampler_register": 3,
+        }],
+    }
+    return bridge
+
+
+def _cube_ppms(root: Path):
+    paths = {}
+    colors = {
+        "px": (255, 0, 0),
+        "nx": (0, 255, 0),
+        "py": (0, 0, 255),
+        "ny": (255, 255, 0),
+        "pz": (255, 0, 255),
+        "nz": (0, 255, 255),
+    }
+    for face, rgb in colors.items():
+        path = root / "textures" / f"s3_face_{face}.ppm"
+        _ppm(path, rgb)
+        paths[face] = f"textures/s3_face_{face}.ppm"
+    return paths
+
+
+def _cube_pipeline(paths):
+    row = {
+        "binding_index": 17,
+        "frame": 12,
+        "draw_index": 0,
+        "status": "observed",
+        "blocking_reasons": [],
+        "constant_state": {"vertex": {}, "pixel": {}},
+        "active_texture_bindings": [{
+            "stage": 3,
+            "texture_ptr": "0x3333",
+            "resource_creation_status": "observed",
+            "resource_creation": {
+                "resource_type": "cube_texture",
+                "texture_ptr": "0x3333",
+                "edge_length": 1,
+                "width": 1,
+                "height": 1,
+                "level_count": 1,
+            },
+            "snapshot_status": "captured",
+            "snapshot_paths": [
+                paths[face]
+                for face in ("px", "nx", "py", "ny", "pz", "nz")
+            ],
+        }],
+    }
+    return {
+        "format": "SHIFT.IMBRuntimeCapturePipeline/1",
+        "pipeline_ready": True,
+        "boundary": {
+            "attributed_texture_observation_contract": (
+                "selected-strong-variant-draw-textures-v1"
+            ),
+        },
+        "resource_results": [{
+            "resource_index": 0,
+            "attributed_texture_observations": [row],
+        }],
+    }
+
+
 def test_capture_adapter_builds_phase589_contract_from_exact_ppm(tmp_path):
     ppm = tmp_path / "textures" / "shadow.ppm"
     _ppm(ppm)
@@ -151,6 +222,60 @@ def test_capture_adapter_builds_phase589_contract_from_exact_ppm(tmp_path):
     )
     assert snapshot["provenance"]["capture_frame"] == 12
     assert snapshot["provenance"]["capture_draw_index"] == 0
+
+
+def test_capture_adapter_builds_exact_sampler_cube_s3_contract(
+    tmp_path,
+):
+    paths = _cube_ppms(tmp_path)
+
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(_scene_draw()),
+        _cube_bridge(),
+        _cube_pipeline(paths),
+        capture_root=tmp_path,
+    )
+
+    assert report["ready"] is True, report["blocking_reasons"]
+    assert report["required_external_sampler2d_count"] == 0
+    assert report["required_external_samplercube_count"] == 1
+    assert report["cube_snapshot_count"] == 1
+    contract = report["cube_snapshot_contract"]
+    assert contract["format"] == (
+        "SHIFT.NativeSceneExternalSamplerCubeSnapshots/1"
+    )
+    snapshot = contract["snapshots"][0]
+    assert snapshot["d3d9_sampler_register"] == 3
+    assert snapshot["sampler_type"] == "samplerCube"
+    assert set(snapshot["cube"]["faces"]) == {
+        "px", "nx", "py", "ny", "pz", "nz"
+    }
+    assert snapshot["provenance"]["source_kind"] == (
+        "D3D9_CAPTURE_PPM_CUBE"
+    )
+    assert report["phase592_validation"]["ready"] is True
+
+
+def test_capture_adapter_blocks_incomplete_sampler_cube_faces(tmp_path):
+    paths = _cube_ppms(tmp_path)
+    pipeline = _cube_pipeline(paths)
+    binding = pipeline["resource_results"][0][
+        "attributed_texture_observations"
+    ][0]["active_texture_bindings"][0]
+    binding["snapshot_paths"].pop()
+
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(_scene_draw()),
+        _cube_bridge(),
+        pipeline,
+        capture_root=tmp_path,
+    )
+
+    assert report["ready"] is False
+    assert any(
+        "cube-capture-observation-count:0" in reason
+        for reason in report["blocking_reasons"]
+    )
 
 
 def test_capture_adapter_requires_versioned_texture_observation_contract(
