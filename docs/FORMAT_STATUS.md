@@ -15,7 +15,7 @@
 | FX / FXH / FXO | source inventory, shader parsing and permutation linking |
 | DDS | metadata, DXT decode, cubemap decode |
 | MEB | geometry/indices/material refs → MGEO |
-| IMB / IMX | MeshInst/type 7; IMB 4/6/11/11 packed version/prefix, fixed header, optional bones and Type/Usage/Channel descriptor-then-vertex blocks decoded for retail-supported binary Types; primitive section located and v0.4 material/palette/index/bounds records optionally decoded; IMX XML loader mapped; full neutral adapters remain open |
+| IMB / IMX | MeshInst/type 7; IMB v0.4 binary neutral geometry active; IMX `FUN_008587e0` XML MESH/STREAM/ITEM/INDEXBUFFER/TRIANGLE grammar and proven neutral semantics active; unrecovered XML value types remain raw/fail-closed |
 | CSM | collision geometry → CMES |
 | VHF/CAR | scene/resource graph |
 | LOD XML | loose parser for known malformed retail forms |
@@ -25,7 +25,7 @@
 | SDF | BODY/JOINT/HINGE/BAR schema + runtime reconstruction |
 | VehiclePhysicsAssetGraph/1 | CDF/EDF/GDF/SDF neutral join |
 | BAB/BAS | skeleton parsing, name linkage, animation evidence |
-| SGB | NODE/SUMM object graphs, SGBScenePlacement/1, proven FLAT spatial geometry, OBJECT/MultiMatrix/root handoff, MeshType/MeshInst resource factory, SGBRenderBindingAdmission/1, admitted-MEB SGBRenderBindingBridge/1, OCCL and PART tree mapped |
+| SGB | NODE/SUMM object graphs, SGBScenePlacement/1, proven FLAT spatial geometry, OBJECT/MultiMatrix/root handoff, MeshType/MeshInst resource factory, SGBRenderBindingAdmission/1, admitted MEB/IMB/IMX SGBRenderBindingBridge/1, OCCL and PART tree mapped |
 | Camera runtime | config/state/event/control primitives |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
@@ -34,7 +34,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- full IMB vertex+primitive payload, neutral IMB/IMX adapters, concrete per-instance SGB SceneGraph transform-update history for blocked MatrixNumber rows, and higher-level streaming/visibility behavior; unresolved runtime class identities;
+- broader IMB/IMX variants, concrete per-instance SGB SceneGraph transform-update history for blocked MatrixNumber rows, and higher-level streaming/visibility behavior; unresolved runtime class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
