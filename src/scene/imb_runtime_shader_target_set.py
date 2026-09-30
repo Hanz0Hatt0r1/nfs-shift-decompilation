@@ -80,7 +80,14 @@ def _binding_identity(row: Mapping[str, Any]) -> dict[str, Any]:
         "archive": row.get("archive"),
         "imb_path": row.get("imb_path"),
         "imb_entry_index": row.get("imb_entry_index"),
+        "imb_sha256": row.get("imb_sha256"),
         "primitive_index": row.get("primitive_index"),
+        "draw_range": dict(row.get("draw_range") or {}),
+        "property_descriptors": [
+            dict(value)
+            for value in (row.get("property_descriptors") or [])
+            if isinstance(value, Mapping)
+        ],
         "material_reference": row.get("material_reference"),
         "bmt": row.get("bmt"),
         "bmt_sha256": row.get("bmt_sha256"),
@@ -150,16 +157,52 @@ def build_imb_runtime_shader_target_set(
             )
             if key not in dedup:
                 dedup[key] = {
-                    **target,
+                    "identity_kind": target["identity_kind"],
+                    "identity_value": target["identity_value"],
+                    "strength": target["strength"],
                     "candidate_locations": [],
+                    "candidate_variants": [],
                 }
+            variant = {
+                "permutation_identity_sha256": target.get(
+                    "permutation_identity_sha256"
+                ),
+                "pair_byte_sha256": target.get("pair_byte_sha256"),
+                "vertex_byte_sha256": target.get("vertex_byte_sha256"),
+                "pixel_byte_sha256": target.get("pixel_byte_sha256"),
+                "candidate_file": target.get("candidate_file"),
+                "candidate_program_offset": target.get(
+                    "candidate_program_offset"
+                ),
+                "vertex_pair_selection_status": target.get(
+                    "vertex_pair_selection_status"
+                ),
+                "exact": target.get("exact") is True,
+            }
+            dedup[key]["candidate_variants"].append(variant)
             dedup[key]["candidate_locations"].append({
                 "file": target.get("candidate_file"),
                 "program_offset": target.get(
                     "candidate_program_offset"
                 ),
             })
+
         targets = list(dedup.values())
+        for target in targets:
+            variants = target["candidate_variants"]
+            for field in (
+                "permutation_identity_sha256",
+                "pair_byte_sha256",
+                "vertex_byte_sha256",
+                "pixel_byte_sha256",
+            ):
+                values = {
+                    variant.get(field)
+                    for variant in variants
+                    if variant.get(field)
+                }
+                target[field] = next(iter(values)) if len(values) == 1 else None
+            target["candidate_variant_count"] = len(variants)
 
         if not targets:
             row_blockers.append("no-hash-targets")
@@ -185,7 +228,11 @@ def build_imb_runtime_shader_target_set(
             capture_ready
             and all(
                 target.get("strength") == "exact-pair"
-                and target.get("exact") is True
+                and target.get("candidate_variants")
+                and all(
+                    variant.get("exact") is True
+                    for variant in target["candidate_variants"]
+                )
                 for target in targets
             )
         )
@@ -231,10 +278,14 @@ def build_imb_runtime_shader_target_set(
                 "pixel_byte_sha256": target.get(
                     "pixel_byte_sha256"
                 ),
+                "candidate_variant_count": 0,
                 "binding_indices": [],
                 "shader_families": [],
                 "imb_paths": [],
             })
+            aggregate["candidate_variant_count"] += int(
+                target.get("candidate_variant_count") or 0
+            )
             if ordinal not in aggregate["binding_indices"]:
                 aggregate["binding_indices"].append(ordinal)
             family = row.get("shader_family")
@@ -314,6 +365,13 @@ def build_imb_runtime_shader_target_set(
             "render_admission": False,
             "selects_permutation": False,
             "requires_complete_top_rank_set": True,
+            "preserves_candidate_variants": True,
+            "resource_identity_fields": [
+                "archive", "imb_path", "imb_sha256"
+            ],
+            "draw_identity_fields": [
+                "primitive_index", "draw_range", "property_descriptors"
+            ],
             "purpose": (
                 "prefilter runtime D3D9 shader objects and constrain "
                 "same-instance IMB primitive attribution"
