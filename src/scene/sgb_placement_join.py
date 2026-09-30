@@ -48,6 +48,7 @@ def _flatten_flat_records(
             "tree_path": list(path),
             "node_offset": node.get("offset"),
             "node_depth": node.get("depth"),
+            "node_aabbox": node.get("aabbox"),
             "leaf_local_index": local_index,
             "leaf": record,
         })
@@ -153,7 +154,11 @@ def _join_flat_summ(
                 "tree_path": row["tree_path"],
                 "node_offset": row["node_offset"],
                 "node_depth": row["node_depth"],
+                "node_aabbox": row.get("node_aabbox"),
                 "leaf_offset": leaf.get("offset"),
+                "filter_masks": leaf.get("filter_masks"),
+                "bounding_sphere": leaf.get("bounding_sphere"),
+                "spatial_bounds": leaf.get("spatial_bounds"),
                 "direct_object_pointer_word": (
                     leaf.get("direct_object_pointer_word")
                 ),
@@ -305,6 +310,11 @@ def _join_part_node(
                 "source_child_object_id": source_id,
                 "node_registry_index": node_index,
                 "node": _record_summary(node),
+                "partition_aabbox": {
+                    "min_xyz": part.get("aabbox_min"),
+                    "max_xyz": part.get("aabbox_max"),
+                    "source": "PART record +0x04..+0x18",
+                },
                 "runtime_join": {
                     "lookup": "FUN_006885b0(scene_wrapper_list, source_id - 1)",
                     "node_registry_owner_offset": 0x54,
