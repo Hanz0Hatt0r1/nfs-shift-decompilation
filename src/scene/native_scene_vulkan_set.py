@@ -587,6 +587,15 @@ def build_native_scene_vulkan_set(
                         .get("geometry", {})
                         .get("sha256")
                     ),
+                    "world_transform": (
+                        (child_report.get("artifacts") or {})
+                        .get("world_transform")
+                    ),
+                    "world_transform_serialized": (
+                        (child_report.get("boundary") or {})
+                        .get("scene_world_transform_serialized")
+                        is True
+                    ),
                     "runtime_provenance_gate_ready": (
                         (child_report.get("runtime_provenance_gate") or {})
                         .get("ready")
@@ -640,6 +649,7 @@ def build_native_scene_vulkan_set(
             "exact_primitive_range_revalidated": True,
             "scene_hashes_revalidated": True,
             "material_2d_dds_resolved_from_ir": True,
+            "world_transform_serialized": True,
             "world_transform_executed": False,
             "unresolved_external_samplers_promoted": False,
             "next_stage": (

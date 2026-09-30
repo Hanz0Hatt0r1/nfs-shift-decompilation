@@ -378,7 +378,13 @@ def test_native_scene_vulkan_set_builds_ordered_runtime_proven_child(
     assert child["bundle"]["format"] == "SHIFT.VulkanDrawBundle/1"
     assert child["bundle"]["runtime_provenance_gate_ready"] is True
     assert child["bundle"]["manifest_sha256"]
+    assert child["bundle"]["world_transform_serialized"] is True
+    assert child["bundle"]["world_transform"]["ready"] is True
+    assert child["bundle"]["world_transform"]["format"] == (
+        "SHIFT.VulkanWorldTransformPacket/1"
+    )
     assert (tmp_path / "vulkan-set/draw_0000/geometry.svpk").is_file()
+    assert (tmp_path / "vulkan-set/draw_0000/world_transform.svwt").is_file()
     assert (tmp_path / "vulkan-set/bundle_set_manifest.json").is_file()
     assert (tmp_path / "vulkan-set/bundle_set.paths").read_text().strip().endswith(
         "draw_0000"
@@ -389,6 +395,7 @@ def test_native_scene_vulkan_set_builds_ordered_runtime_proven_child(
         "draw-0:scene-world-transform-not-executed"
         in report["native_scene_submission"]["blocking_reasons"]
     )
+    assert report["boundary"]["world_transform_serialized"] is True
     assert report["boundary"]["world_transform_executed"] is False
 
 
