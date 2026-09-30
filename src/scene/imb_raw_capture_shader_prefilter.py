@@ -70,14 +70,21 @@ def _score_target(
         and target.get("pixel_byte_sha256") == pixel_sha
     )
     evidence: list[str] = []
-    if vertex:
-        evidence.append("vertex_byte_sha256")
-    if pixel:
-        evidence.append("pixel_byte_sha256")
-    if exact_pair_target and vertex and pixel:
-        return 80, evidence
-    if vertex or pixel:
-        return 40, evidence
+    if exact_pair_target:
+        if vertex:
+            evidence.append("vertex_byte_sha256")
+        if pixel:
+            evidence.append("pixel_byte_sha256")
+        if vertex and pixel:
+            return 80, evidence
+        return (40, evidence) if evidence else (0, [])
+
+    identity_kind = str(target.get("identity_kind") or "")
+    identity_value = str(target.get("identity_value") or "")
+    if identity_kind == "pixel" and pixel_sha == identity_value:
+        return 40, ["pixel_byte_sha256"]
+    if identity_kind == "vertex" and vertex_sha == identity_value:
+        return 40, ["vertex_byte_sha256"]
     return 0, []
 
 
@@ -90,15 +97,36 @@ def _target_indexes(
         "pair": {},
     }
     for target in targets:
+        strength = str(target.get("strength") or "")
+        identity_kind = str(target.get("identity_kind") or "")
+        identity_value = str(target.get("identity_value") or "")
         vertex = target.get("vertex_byte_sha256")
         pixel = target.get("pixel_byte_sha256")
         pair = target.get("pair_byte_sha256")
-        if vertex:
-            result["vertex"].setdefault(str(vertex), []).append(target)
-        if pixel:
-            result["pixel"].setdefault(str(pixel), []).append(target)
-        if target.get("strength") == "exact-pair" and pair:
-            result["pair"].setdefault(str(pair), []).append(target)
+
+        if strength == "exact-pair":
+            if vertex:
+                result["vertex"].setdefault(
+                    str(vertex), []
+                ).append(target)
+            if pixel:
+                result["pixel"].setdefault(
+                    str(pixel), []
+                ).append(target)
+            if pair:
+                result["pair"].setdefault(
+                    str(pair), []
+                ).append(target)
+            continue
+
+        if identity_kind == "vertex" and identity_value:
+            result["vertex"].setdefault(
+                identity_value, []
+            ).append(target)
+        elif identity_kind == "pixel" and identity_value:
+            result["pixel"].setdefault(
+                identity_value, []
+            ).append(target)
     return result
 
 
