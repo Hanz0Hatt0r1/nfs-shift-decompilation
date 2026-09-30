@@ -102,7 +102,7 @@ def test_prepare_native_scene_set_resolves_phase584_transform_blocker(
     assert calls[0][0] == tmp_path / "draw_0000"
     assert calls[0][1]["validator"] == "fake-validator"
     assert result["boundary"]["relabels_scene_as_bmw"] is False
-    assert result["boundary"]["native_runtime_scene_set_loader_available"] is False
+    assert result["boundary"]["native_runtime_scene_set_loader_available"] is True
     assert (tmp_path / "bundle_set_prepare.json").is_file()
 
 
