@@ -139,9 +139,8 @@ DrawIndexedPrimitiveFn g_real_draw_indexed_primitive = nullptr;
 std::mutex g_hook_mutex;
 std::atomic<unsigned long long> g_event_index{0};
 std::atomic<unsigned long long> g_frame{0};
+std::atomic<unsigned long long> g_draw_index{0};
 std::atomic<bool> g_proxy_entry_reported{false};
-std::mutex g_draw_index_mutex;
-std::unordered_map<IDirect3DDevice9*, unsigned long long> g_draw_index_by_device;
 
 struct CaptureWriter {
     std::mutex mutex;
@@ -1172,14 +1171,12 @@ HRESULT STDMETHODCALLTYPE hook_create_device(
     return hr;
 }
 
-unsigned long long consume_draw_index(IDirect3DDevice9* device) {
-    std::lock_guard<std::mutex> lock(g_draw_index_mutex);
-    return g_draw_index_by_device[device]++;
+unsigned long long consume_draw_index() {
+    return g_draw_index.fetch_add(1);
 }
 
-void reset_draw_index(IDirect3DDevice9* device) {
-    std::lock_guard<std::mutex> lock(g_draw_index_mutex);
-    g_draw_index_by_device[device] = 0;
+void reset_draw_index() {
+    g_draw_index.store(0);
 }
 
 void emit_draw_texture_snapshots(
@@ -1248,7 +1245,7 @@ HRESULT STDMETHODCALLTYPE hook_present(
         : E_FAIL;
     if (SUCCEEDED(hr)) {
         g_frame.fetch_add(1);
-        reset_draw_index(self);
+        reset_draw_index();
     }
     return hr;
 }
@@ -1642,7 +1639,7 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
             num_vertices, start_index, primitive_count)
         : E_FAIL;
     if (SUCCEEDED(hr)) {
-        const unsigned long long draw_index = consume_draw_index(self);
+        const unsigned long long draw_index = consume_draw_index();
         const unsigned long long frame = g_frame.load();
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
