@@ -30,3 +30,25 @@ def test_phase576_cli_accepts_runtime_shader_admission():
         args.runtime_shader_admission
         == "runtime-shader-admission.json"
     )
+
+
+def test_phase578_cli_exposes_native_scene_bundle():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-scene-bundle",
+        "scene-render-binding.json",
+        "out/ir",
+        "out/silverstone-native",
+        "--environment-cube",
+        "environment-cube.json",
+        "--prepare",
+        "--validator",
+        "glslangValidator",
+    ])
+
+    assert args.bridge == "scene-render-binding.json"
+    assert args.ir_root == "out/ir"
+    assert args.output_dir == "out/silverstone-native"
+    assert args.environment_cube == "environment-cube.json"
+    assert args.prepare is True
+    assert args.validator == "glslangValidator"
