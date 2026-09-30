@@ -1,0 +1,71 @@
+{
+  "format": "SHIFT.IMBBinaryMeshSchemaSourceEvidence/1",
+  "source": "retail Need for Speed SHIFT v1.02 SHIFT.exe / Ghidra decompilation",
+  "loader": "FUN_00859800",
+  "retail_name": "MWL::Renderer::WinRenderer::CMeshPrimitiveType::LoadBinaryMeshFromResource",
+  "source_file": ".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",
+  "fixed_header_base": "aligned position after version-dependent prefix and NUL-terminated embedded resource name",
+  "common_header": [
+    {"offset": 0, "semantic": "vertex_count", "runtime_offset": 24},
+    {"offset": 4, "semantic": "stream_count"},
+    {"offset": 8, "semantic": "primitive_count", "runtime_offset": 40},
+    {"offset": 12, "semantic": "bounding_sphere_center_x", "runtime_offset": 48},
+    {"offset": 16, "semantic": "bounding_sphere_center_y", "runtime_offset": 52},
+    {"offset": 20, "semantic": "bounding_sphere_center_z", "runtime_offset": 56},
+    {"offset": 24, "semantic": "bounding_sphere_radius", "runtime_offset": 60},
+    {"offset": 28, "semantic": "aabb_min_x", "runtime_offset": 64},
+    {"offset": 32, "semantic": "aabb_min_y", "runtime_offset": 68},
+    {"offset": 36, "semantic": "aabb_min_z", "runtime_offset": 72},
+    {"offset": 40, "semantic": "aabb_max_x", "runtime_offset": 80},
+    {"offset": 44, "semantic": "aabb_max_y", "runtime_offset": 84},
+    {"offset": 48, "semantic": "aabb_max_z", "runtime_offset": 88}
+  ],
+  "optional_bone_header": {
+    "gate": "version/feature comparison in FUN_00859800",
+    "count_offset": 52,
+    "matrix_block_relative_offset_field": 56,
+    "names_start_offset": 60,
+    "matrix_offset_base": 60,
+    "source_matrix_stride": 48,
+    "runtime_matrix_stride": 64,
+    "runtime_name_array_offset": 100,
+    "runtime_matrix_array_offset": 104,
+    "runtime_inverse_matrix_array_offset": 108,
+    "inverse_function": "FUN_006308b0"
+  },
+  "stream_descriptor": {
+    "stride": 12,
+    "fields": [
+      {"offset": 0, "semantic": "type_ordinal", "mapper": "FUN_00853c20"},
+      {"offset": 4, "semantic": "usage_ordinal", "mapper": "FUN_00853c40"},
+      {"offset": 8, "semantic": "channel"}
+    ],
+    "runtime_declaration_stride": 8,
+    "runtime_declaration_array_offset": 28,
+    "runtime_vertex_buffer_wrapper_offset": 36,
+    "observation": "loader repacks source stream attributes into one interleaved runtime vertex buffer"
+  },
+  "runtime_primitive": {
+    "array_offset": 44,
+    "stride": 80,
+    "fields": {
+      "bounds_sphere": "+0x00..+0x0c",
+      "aabb_min": "+0x10..+0x1c",
+      "aabb_max": "+0x20..+0x2c",
+      "primitive_type": "+0x30 = 4",
+      "material_handle": "+0x34",
+      "primitive_count": "+0x38",
+      "index_count": "+0x3c",
+      "index_buffer": "+0x40",
+      "bone_palette_count": "+0x44",
+      "bone_palette": "+0x48",
+      "vertex_range_u16_pair": "+0x4c/+0x4e"
+    }
+  },
+  "limits": [
+    "The variable version/name prefix is not yet auto-decoded.",
+    "Vertex payload byte consumption remains type/version dependent and is not parsed in Phase 556.",
+    "Primitive source records are partially mapped but their source section offset depends on vertex payload consumption.",
+    "No MEB container equivalence is asserted."
+  ]
+}
