@@ -45,7 +45,7 @@ Use explicit states such as `proven`, `verified`, `inferred`, `ambiguous`, `unkn
 | BAB animation | evidence-backed | bank/channel grammar reconstructed; remaining axis/order/trailing semantics explicit |
 | SGB / scene | placement → OBJECT → MeshInst/IMB schema → generic RenderBinding active | IMB packed version/prefix, fixed header, bones and stream triples are source-backed and auto-decoded; full vertex/primitive payload + IMX neutral adapters and unresolved MatrixNumber history remain blocked |
 | Camera | active | loader/state/event/control primitives reconstructed |
-| AI database | source-backed structural/load/query core | retail `AIDatabase` singleton identity, AIW persistent/fallback load lifecycle and meta-section generation reconstructed; exact `WayPointBase` 0x1bc layout plus simple Branch-ID 0/1 nearest queries implemented; parser internals and higher-level path-selection/generation remain open |
+| AI database | source-backed structural/load/query core | retail `AIDatabase` singleton identity, AIW persistent/fallback load lifecycle and meta-section generation reconstructed; exact `WayPointBase` 0x1bc layout, reflected Prev/Next/Branch index → runtime-pointer resolution, and simple Branch-ID 0/1 nearest queries implemented; parser internals and higher-level path-selection/generation remain open |
 | Track metadata | source-backed structural core | retail `TrackDetails` identity, exact 0x1d4 allocation, 44 direct reflected fields, constructor defaults and load/destructor entry points recovered; track-list ownership, selection and loader semantics remain open |
 | Vehicle physics | active | CDF/EDF/GDF/SDF and wheel/contact/solver boundaries |
 | Builtin solver | source-backed | sparse-solver lifecycle and matrix/kernel layers |
