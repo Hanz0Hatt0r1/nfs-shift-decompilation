@@ -29,9 +29,9 @@ def test_native_vulkan_bundle_executor_contract():
     assert "apply_world_transform_affine" in source
     assert "affine-semantic-v3" in source
     assert "SVWT affine linear transform is singular" in source
-    assert "property_id == 220u" in source
-    assert "property_id == 240u" in source
-    assert "property_id == 250u" in source
+    assert "case 220u:" in source
+    assert "case 240u:" in source
+    assert "case 250u:" in source
     assert "transpose(inverse(A))" in source
     assert "world_transform_executed" in source
     assert "world_transform_mode" in source
