@@ -31,6 +31,7 @@ from sgb_meshinst_runtime import build_meshinst_runtime_contract
 FORMAT = "SHIFT.SGBObjectRenderHandoffSet/1"
 SGB_FORMAT = "SHIFT.SGBRuntime/1"
 OBJECT_FORMAT = "SHIFT.SGBObjectRuntime/1"
+ROOT_CONSENSUS_FORMAT = "SHIFT.SGBMultiMatrixRootConsensus/1"
 
 
 def _kind(report: Mapping[str, Any]) -> str | None:
@@ -114,13 +115,14 @@ def build_object_render_handoff(
     parent_multimatrix_root_matrix: Sequence[float] | None = None,
     parent_scenegraph_updates: Sequence[Sequence[float]] | None = None,
     parent_selected_slot_world_matrix: Sequence[float] | None = None,
+    parent_multimatrix_root_provenance: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if object_report.get("format") != OBJECT_FORMAT:
         raise ValueError("object input must be SHIFT.SGBObjectRuntime/1")
     if _kind(object_report) != "OBJECT":
         raise ValueError("render handoff currently accepts OBJECT payloads only")
 
-    blockers: list[str] = []
+    blockers: list[str] = list(application_blockers)
     resource = object_report.get("resource_filename") or {}
     resource_ref = (
         resource.get("text")
@@ -197,13 +199,30 @@ def build_object_render_handoff(
             root_state_summary = None
             root_solve_summary = None
             if resolved_root is not None:
+                consensus_provenance = (
+                    dict(parent_multimatrix_root_provenance)
+                    if isinstance(
+                        parent_multimatrix_root_provenance,
+                        Mapping,
+                    )
+                    else None
+                )
                 root_state_summary = {
                     "format": "SHIFT.SGBRootTransformState/1",
-                    "status": "provided-explicitly",
+                    "status": (
+                        "runtime-consensus"
+                        if consensus_provenance is not None
+                        else "provided-explicitly"
+                    ),
                     "ready": True,
                     "blocking_reasons": [],
-                    "current_root_source": "explicit-root-world-matrix",
+                    "current_root_source": (
+                        "phase596-runtime-root-consensus"
+                        if consensus_provenance is not None
+                        else "explicit-root-world-matrix"
+                    ),
                     "current_root_world_matrix": list(resolved_root),
+                    "runtime_root_consensus": consensus_provenance,
                 }
             elif parent_scenegraph_updates is not None:
                 root_state = build_root_transform_state(
@@ -428,12 +447,52 @@ def _walk_object(
     path: list[int],
     out: list[dict[str, Any]],
     wrapper: Mapping[str, Any],
+    consensus_roots: Mapping[
+        tuple[str, Any, tuple[int, ...]],
+        Mapping[str, Any],
+    ] | None = None,
 ) -> None:
     kind = _kind(report)
     if kind == "OBJECT":
+        owner_key = (
+            str(wrapper.get("chunk")),
+            wrapper.get("source_record_index"),
+            tuple(path[:-1]),
+        )
+        consensus_row = (
+            consensus_roots.get(owner_key)
+            if consensus_roots is not None
+            else None
+        )
+        consensus_root = (
+            consensus_row.get("root_world_matrix")
+            if isinstance(consensus_row, Mapping)
+            else None
+        )
+        provenance = (
+            {
+                "format": ROOT_CONSENSUS_FORMAT,
+                "wrapper": consensus_row.get("wrapper"),
+                "owner_path": consensus_row.get("owner_path"),
+                "root_float32_hex": consensus_row.get(
+                    "root_float32_hex"
+                ),
+                "support_resource_count": consensus_row.get(
+                    "support_resource_count"
+                ),
+                "distinct_cumulative_local_count": consensus_row.get(
+                    "distinct_cumulative_local_count"
+                ),
+                "witness_count": consensus_row.get("witness_count"),
+            }
+            if isinstance(consensus_row, Mapping)
+            else None
+        )
         handoff = build_object_render_handoff(
             report,
             parent_object_report=parent,
+            parent_multimatrix_root_matrix=consensus_root,
+            parent_multimatrix_root_provenance=provenance,
         )
         out.append({
             "wrapper": dict(wrapper),
@@ -456,14 +515,78 @@ def _walk_object(
             path=[*path, index],
             out=out,
             wrapper=wrapper,
+            consensus_roots=consensus_roots,
         )
 
 
 def build_sgb_object_render_handoff_set(
     sgb_report: Mapping[str, Any],
+    *,
+    root_consensus: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if sgb_report.get("format") != SGB_FORMAT:
         raise ValueError("input must be SHIFT.SGBRuntime/1")
+
+    application_blockers: list[str] = []
+    consensus_roots: dict[
+        tuple[str, Any, tuple[int, ...]],
+        Mapping[str, Any],
+    ] = {}
+    if root_consensus is not None:
+        if root_consensus.get("format") != ROOT_CONSENSUS_FORMAT:
+            raise ValueError(
+                "root consensus must be "
+                "SHIFT.SGBMultiMatrixRootConsensus/1"
+            )
+        if root_consensus.get("ready") is not True:
+            application_blockers.append(
+                "object-render:root-consensus-not-ready"
+            )
+        for row in root_consensus.get("consensus") or []:
+            if (
+                not isinstance(row, Mapping)
+                or row.get("ready") is not True
+                or row.get(
+                    "authorizes_current_multimatrix_owner_root"
+                ) is not True
+            ):
+                continue
+            wrapper = row.get("wrapper")
+            owner_path = row.get("owner_path")
+            root = row.get("root_world_matrix")
+            if (
+                not isinstance(wrapper, Mapping)
+                or not isinstance(owner_path, list)
+                or not isinstance(root, list)
+                or len(root) != 16
+            ):
+                application_blockers.append(
+                    "object-render:root-consensus-row-invalid"
+                )
+                continue
+            try:
+                path_key = tuple(int(value) for value in owner_path)
+                root_values = [float(value) for value in root]
+            except (TypeError, ValueError):
+                application_blockers.append(
+                    "object-render:root-consensus-row-invalid"
+                )
+                continue
+            key = (
+                str(wrapper.get("chunk")),
+                wrapper.get("source_record_index"),
+                path_key,
+            )
+            existing = consensus_roots.get(key)
+            if existing is not None:
+                application_blockers.append(
+                    "object-render:duplicate-owner-root-consensus:"
+                    + repr(key)
+                )
+                continue
+            normalized = dict(row)
+            normalized["root_world_matrix"] = root_values
+            consensus_roots[key] = normalized
 
     rows: list[dict[str, Any]] = []
     for chunk in sgb_report.get("chunks") or []:
@@ -497,6 +620,7 @@ def build_sgb_object_render_handoff_set(
                 path=[],
                 out=rows,
                 wrapper=wrapper,
+                consensus_roots=consensus_roots,
             )
 
     blockers: list[str] = []
@@ -522,6 +646,15 @@ def build_sgb_object_render_handoff_set(
     )
     numeric_ready = sum(
         row["handoff"]["transform"].get("world_matrix_ready") is True
+        for row in rows
+    )
+    consensus_applied = sum(
+        (
+            row["handoff"].get("transform", {})
+            .get("multimatrix_evaluation", {})
+            .get("root_transform_state", {})
+            .get("current_root_source")
+        ) == "phase596-runtime-root-consensus"
         for row in rows
     )
     mesh_type_count = sum(
@@ -552,6 +685,8 @@ def build_sgb_object_render_handoff_set(
         "explicit_transform_count": explicit,
         "parent_multimatrix_slot_count": parent_slot,
         "numeric_world_matrix_ready_count": numeric_ready,
+        "runtime_root_consensus_available_count": len(consensus_roots),
+        "runtime_root_consensus_applied_object_count": consensus_applied,
         "mesh_type_resource_count": mesh_type_count,
         "mesh_inst_resource_count": mesh_inst_count,
         "objects": rows,
@@ -566,16 +701,35 @@ def build_sgb_object_render_handoff_set(
                 "SHIFT.SGBMultiMatrixRootSolve/1"
             ),
             "root_solve_recovers_scenegraph_history": False,
+            "runtime_root_consensus_format": ROOT_CONSENSUS_FORMAT,
+            "runtime_root_consensus_scope": (
+                "wrapper + recursive MultiMatrix owner_path"
+            ),
+            "runtime_root_consensus_recovers_scenegraph_history": False,
             "draw_admission": False,
         },
     }
 
 
-def validate_file(path: str | Path) -> dict[str, Any]:
+def validate_file(
+    path: str | Path,
+    *,
+    root_consensus_path: str | Path | None = None,
+) -> dict[str, Any]:
     value = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(value, Mapping):
         raise ValueError("SGB runtime input must be a JSON object")
-    return build_sgb_object_render_handoff_set(value)
+    root_consensus = None
+    if root_consensus_path is not None:
+        root_consensus = json.loads(
+            Path(root_consensus_path).read_text(encoding="utf-8")
+        )
+        if not isinstance(root_consensus, Mapping):
+            raise ValueError("root consensus JSON must be an object")
+    return build_sgb_object_render_handoff_set(
+        value,
+        root_consensus=root_consensus,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
