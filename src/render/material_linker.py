@@ -59,6 +59,19 @@ def reflect_fxo(data: bytes) -> list[dict]:
              "instruction_count":b.instruction_count,"samplers":b.ctab_samplers,"constants":b.ctab_constants}
             for b in parse_shader_blobs(data)]
 
+def _constant_register_map(rows: Iterable[dict]) -> dict[str, int]:
+    """Return float constant register indices keyed by CTAB name."""
+    out: dict[str, int] = {}
+    for row in rows:
+        if row.get("register_set") != 2 or not row.get("name"):
+            continue
+        register = row.get("register_index")
+        if register is None:
+            continue
+        out[str(row["name"])] = int(register)
+    return out
+
+
 def _selection_evidence_key(candidate: dict) -> tuple:
     """Return only evidence-bearing ranking fields; exclude file/offset identity."""
     return (
@@ -144,10 +157,18 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                 pair_score=pair["score"] if pair else 0.0
                 pair_ok=bool(pair and pair.get("interface",{}).get("valid") and pair.get("vertex_format",{}).get("valid",True))
                 pair_selection_status=pair.get("selection_status","unique") if pair else "none"
+                pixel_constants=reflect_constants(data,p["offset"])
+                vertex_constants=(
+                    reflect_constants(data,pair["vertex_offset"])
+                    if pair else []
+                )
                 offsets=[p["offset"]] + ([pair["vertex_offset"]] if pair else [])
                 all_constants=set()
-                for off in offsets:
-                    all_constants.update(x["name"] for x in reflect_constants(data,off) if x.get("register_set")==2 and x.get("name"))
+                for rows_for_stage in (pixel_constants, vertex_constants):
+                    all_constants.update(
+                        x["name"] for x in rows_for_stage
+                        if x.get("register_set")==2 and x.get("name")
+                    )
                 uniform_matches=sorted(material_uniform_names & all_constants)
                 uniform_score=(len(uniform_matches)/len(material_uniform_names)) if material_uniform_names else 1.0
                 feature_score=feature_signature_score(material, constants=all_constants, samplers=names)
@@ -186,6 +207,8 @@ def link_material(material: dict, fx_source: str | bytes, *, fxo_candidates: Ite
                     "pixel_sha256":pixel_sha256,
                     "vertex_sha256":vertex_sha256,
                     "pair_sha256":pair_sha256,
+                    "vertex_constant_registers":_constant_register_map(vertex_constants),
+                    "pixel_constant_registers":_constant_register_map(pixel_constants),
                     "permutation_identity":permutation_identity,
                     "permutation_identity_error":permutation_identity_error,
                     "specialization_score":feature_score["score"],
