@@ -13,6 +13,8 @@ The evidence is from `SHIFT.exe` SHA-256
 and its `SHIFT.exe.c` decompilation SHA-256
 `512753a5f91898885263c91664a3d3a5f89c402a00760ee9`.
 
+`FUN_006d8490` (`SHIFT.exe.c:650369`, PE `0x006d8490`) is the concrete path factory. When given the `AISegmentPath` RTTI object at `0x00c0d668`, it allocates `0x38` bytes and calls `FUN_006cfe70`. That constructor writes vtable `0x00afc930` after initializing the recovered `AISegmentPath` fields. This also disambiguates `FUN_006d0fe0` / `0x00afca70`: the latter belongs to the later `AIMarker` descriptor, not `AISegmentPath`.
+
 `FUN_006cfc10` (`SHIFT.exe.c:644589`, PE `0x006cfc10`) reads the serialized
 element count, writes it to `AISegmentPath+0x10`, allocates `count * 0x38 + 4`
 bytes, writes the count into the four-byte prefix, and stores the first
