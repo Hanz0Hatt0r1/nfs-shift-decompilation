@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any, Iterable
 
 FORMAT = "SHIFT.BMWVulkanInterfaceGate/1"
+GENERIC_FORMAT = "SHIFT.VulkanInterfaceGate/1"
+BMW_BUNDLE_FORMAT = "SHIFT.BMWVulkanBundle/1"
+NEUTRAL_BUNDLE_FORMAT = "SHIFT.VulkanDrawBundle/1"
+SUPPORTED_BUNDLE_FORMATS = {BMW_BUNDLE_FORMAT, NEUTRAL_BUNDLE_FORMAT}
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -28,9 +32,12 @@ def _descriptor_rows(compile_report: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
-def validate_bmw_vulkan_interface(
+def _validate_vulkan_interface(
     bundle_dir: str | Path,
     compile_report: str | Path | dict[str, Any],
+    *,
+    allowed_bundle_formats: set[str],
+    output_format: str,
 ) -> dict[str, Any]:
     root = Path(bundle_dir)
     manifest = _load(root / "bundle_manifest.json")
@@ -41,7 +48,8 @@ def validate_bmw_vulkan_interface(
     )
 
     blockers: list[str] = []
-    if manifest.get("format") != "SHIFT.BMWVulkanBundle/1":
+    bundle_format = str(manifest.get("format") or "")
+    if bundle_format not in allowed_bundle_formats:
         blockers.append("vulkan-interface:invalid-bundle-format")
     if report.get("format") != "SHIFT.VulkanBundleSPIRV/1":
         blockers.append("vulkan-interface:invalid-spirv-report")
@@ -129,8 +137,9 @@ def validate_bmw_vulkan_interface(
         })
 
     return {
-        "format": FORMAT,
+        "format": output_format,
         "version": 1,
+        "bundle_format": bundle_format,
         "ready": not blockers,
         "status": "ready" if not blockers else "blocked",
         "blocking_reasons": list(dict.fromkeys(blockers)),
@@ -146,6 +155,30 @@ def validate_bmw_vulkan_interface(
             "extra_resources_allowed": True,
         },
     }
+
+
+def validate_bmw_vulkan_interface(
+    bundle_dir: str | Path,
+    compile_report: str | Path | dict[str, Any],
+) -> dict[str, Any]:
+    return _validate_vulkan_interface(
+        bundle_dir,
+        compile_report,
+        allowed_bundle_formats={BMW_BUNDLE_FORMAT},
+        output_format=FORMAT,
+    )
+
+
+def validate_vulkan_bundle_interface(
+    bundle_dir: str | Path,
+    compile_report: str | Path | dict[str, Any],
+) -> dict[str, Any]:
+    return _validate_vulkan_interface(
+        bundle_dir,
+        compile_report,
+        allowed_bundle_formats=SUPPORTED_BUNDLE_FORMATS,
+        output_format=GENERIC_FORMAT,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
