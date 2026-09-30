@@ -663,7 +663,7 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
     # relative offsets continue to use the complete SGB base.
     post_end_reference = data[cursor:]
 
-    return {
+    report = {
         "format": FORMAT,
         "version": 1,
         "ready": not blockers,
@@ -698,3 +698,8 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
             "SUMM runtime wrapper field copies are source-backed; the 64-bit name hash is retained as provenance-only until FUN_0040b831 is normalized.",
         ],
     }
+
+    from sgb_part_flat_bridge import build_sgb_part_flat_bridge
+
+    report["spatial_bridge"] = build_sgb_part_flat_bridge(report)
+    return report
