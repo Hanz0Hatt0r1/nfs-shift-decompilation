@@ -123,3 +123,15 @@ path consumes them without a special renderer-side resource class.
 The upstream bundle metadata preserves whether each SVTP record came from a
 material texture or an external runtime snapshot. Missing external resources
 remain unresolved and are not synthesized by `native_runtime`.
+
+
+## Phase 589 exact external sampler2D scene admission
+
+Phase 589 does not change the native binary texture ABI. An exact scene-bound
+external `sampler2D` snapshot is admitted upstream into the existing SVTP
+descriptor-set-1 packet only after draw/resource/primitive/register/type/hash
+and provenance revalidation. `native_runtime` consumes the resulting record
+through its existing 2D texture upload path.
+
+Unsupplied or mismatched external resources remain fail-closed, and other
+renderer-owned resource types are not promoted by this phase.
