@@ -249,6 +249,23 @@ name is dynamic. PE-backed string resolution also handles reflected names stored
 as `DAT_...` or `PTR_s_...` symbols. See
 [reflection field evidence](../../evidence/reflection_fields_source.md).
 
+Track/path layout dictionaries can then be checked directly against those
+recovered fields:
+
+```bash
+python3 tools/shift_live_dump/verify_track_path_reflection_layouts.py \
+  /path/to/SHIFT.exe.c \
+  --exe /path/to/SHIFT.exe \
+  --analyzer tools/shift_live_dump/analyze_track_paths.py
+```
+
+The current verifier covers 62 reflected base offsets across `AIPathInfo`,
+`AIArea`, `AISegmentPath`, `AIPathNode`, `AIPolylinePath`,
+`AIPolyPathNode`, `Knot`, and `AISpline`. Vector-like reflected fields
+are checked at their source base offset only; the verifier does not infer an
+undocumented component count from the numeric reflection type code. See
+[track/path reflection validation](../../evidence/track_path_reflection_layout_validation.md).
+
 Before changing a concrete path vtable, validate the analyzer against the recovered
 retail decompilation:
 
