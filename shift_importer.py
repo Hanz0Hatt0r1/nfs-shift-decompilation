@@ -1901,6 +1901,37 @@ def cmd_sgb_multimatrix_root_consensus(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_sgb_multimatrix_root_promotion(args: argparse.Namespace) -> int:
+    """Apply ready wrapper-root consensus to SGB OBJECT handoffs."""
+    from sgb_multimatrix_root_promotion import validate_files
+
+    report = validate_files(
+        args.sgb_runtime,
+        args.root_consensus,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+    promotion = report["runtime_root_promotion"]
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "wrapper_root_count": promotion["wrapper_root_count"],
+        "promoted_matrix_object_count": promotion[
+            "promoted_matrix_object_count"
+        ],
+        "remaining_unresolved_matrix_object_count": promotion[
+            "remaining_unresolved_matrix_object_count"
+        ],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_sgb_runtime_object_candidate_join(args: argparse.Namespace) -> int:
     """Join runtime IMB resource evidence to pre-admission SGB candidates."""
     from sgb_runtime_object_candidate_join import validate_files
@@ -4585,6 +4616,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="SHIFT.SGBMultiMatrixRootConsensus/1 JSON output",
     )
     p.set_defaults(fn=cmd_sgb_multimatrix_root_consensus)
+
+    p = sp.add_parser(
+        "sgb-multimatrix-root-promotion",
+        help=(
+            "apply ready Phase 596 wrapper roots to blocked MatrixNumber "
+            "OBJECT handoffs without inventing SceneGraph update history"
+        ),
+    )
+    p.add_argument(
+        "sgb_runtime",
+        help="SHIFT.SGBRuntime/1 JSON",
+    )
+    p.add_argument(
+        "root_consensus",
+        help="SHIFT.SGBMultiMatrixRootConsensus/1 JSON",
+    )
+    p.add_argument(
+        "output",
+        help="root-promoted SHIFT.SGBObjectRenderHandoffSet/1 JSON",
+    )
+    p.set_defaults(fn=cmd_sgb_multimatrix_root_promotion)
 
     p = sp.add_parser(
         "sgb-runtime-object-candidate-join",
