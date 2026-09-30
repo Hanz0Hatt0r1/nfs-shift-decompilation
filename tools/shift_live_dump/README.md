@@ -324,10 +324,13 @@ The verifier checks the source function/vtable anchors for `AIPathInfo`,
 `AIArea`, `AISegmentPath`, `AIPathNode`, `AIPolylinePath`,
 `AIPolyPathNode`, and `Knot`, verifies the factory RTTI-to-constructor links
 for the two concrete path containers, and requires the recovered addresses to
-match `KNOWN_VTABLES` in `analyze_track_paths.py`. With `--exe`, it uses
-the shared generic PE RTTI index to recover the same vtables and asserts that
-`AISpline`/`AISplineInfo` do not expose a dedicated getter through this
-mechanism. A mismatch exits non-zero. See
+match `KNOWN_VTABLES` in `analyze_track_paths.py`. It also verifies the
+registry hierarchy `BPersistent → AIPathObj → AIPath → concrete path`,
+source/PE-backed `AIPathObj` vtable `0x00afc630`, both concrete destructor
+transitions to that base, and the absence of a dedicated `AIPath` vtable.
+With `--exe`, it further asserts that `AISpline`/`AISplineInfo` do not
+expose a dedicated getter through this mechanism. A mismatch exits non-zero.
+See [AIPath hierarchy evidence](../../evidence/ai_path_hierarchy.md) and
 [track/path RTTI vtable evidence](../../evidence/track_path_rtti_vtables.md).
 
 Every newly generated `track_path_analysis.json` embeds a canonical evidence

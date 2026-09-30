@@ -37,6 +37,8 @@ This is implemented by
 
 | Class | Reflection descriptor | RTTI getter | Dedicated vtable |
 |---|---:|---:|---:|
+| `AIPathObj` | `0x00c0dc64` | `0x006cc220` | `0x00afc630` |
+| `AIPath` | `0x00c0d698` | not present | not established |
 | `AIPathInfo` | `0x00c0d5a4` | `0x006bc3e0` | `0x00afb150` |
 | `AIArea` | `0x00c0d588` | `0x006c3c30` | `0x00afc048` |
 | `AIPolylinePath` | `0x00c0d608` | `0x006cc3b0` | `0x00afc678` |
@@ -47,9 +49,11 @@ This is implemented by
 | `AIPolyPathNode` | `0x00c0d678` | `0x006c3950` | `0x00afbfa8` |
 | `AIPathNode` | `0x00c0d688` | `0x006c3940` | `0x00afbf60` |
 
-The seven recovered concrete vtables, including the legacy `Path` /
-`Incident.PathOwner` profiles' retail `AIPathInfo` / `AIArea` identities,
-match both the constructor/loader source anchors and the analyzer constants.
+The analyzer-filtered concrete vtables match both their constructor/loader
+source anchors and analyzer constants. In addition, the shared path base
+`AIPathObj` has source/PE-backed vtable `0x00afc630`; `AIPath` itself
+exposes no separate descriptor-returning getter/vtable. See
+[AIPath hierarchy evidence](ai_path_hierarchy.md).
 
 ## AISpline boundary
 
