@@ -215,13 +215,13 @@ def _parse_wrapper_records(
             "raw_u32_header": words,
             "unknown_word_1": words[1],
             "name": _resolve_string(
-                data, 0, len(data), _i32(data, cursor + 8)
+                data, 0, _i32(data, cursor + 8)
             ),
             "resource": _resolve_string(
-                data, 0, len(data), _i32(data, cursor + 12)
+                data, 0, _i32(data, cursor + 12)
             ),
             "variation_palette_file": _resolve_string(
-                data, 0, len(data), _i32(data, cursor + 16)
+                data, 0, _i32(data, cursor + 16)
             ),
             "instances": words[5],
             "flags": {
