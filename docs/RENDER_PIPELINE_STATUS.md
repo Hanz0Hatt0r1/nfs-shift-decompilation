@@ -9,6 +9,7 @@
 ### Resource/material linking
 
 - VHF references resolve to MEB;
+- scene-admitted SGB MEB instances can enter the same resource path with their source-backed world matrices;
 - MEB primitive material references resolve through BMT/MTX;
 - BMT connects to FX sources and FXO permutations;
 - CTAB reflection supplies sampler registers and material constants;
@@ -34,4 +35,4 @@ Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets
 
 ## Remaining work
 
-Broaden exact BMW shader/material execution, close more runtime same-instance evidence, and complete full RenderCommand submission on Vulkan.
+Broaden exact BMW shader/material execution, close more runtime same-instance evidence, carry scene visibility/streaming semantics beyond the SGB resource bridge, and complete full RenderCommand submission on Vulkan.
