@@ -1165,16 +1165,16 @@ def correlate_aiw_runtime(
     for idx in indexes[1:]:
         common &= set(idx)
 
-    # A small neighborhood avoids missing a float that rounds on the other
-    # side of a tolerance bucket while keeping the scan linear in capture size.
-    candidate_keys = {}
-    for key in pos_index:
-        candidate_keys[key] = [
-            (key[0] + dx, key[1] + dy, key[2] + dz)
-            for dx in (-1, 0, 1)
-            for dy in (-1, 0, 1)
-            for dz in (-1, 0, 1)
-        ]
+    # Index every runtime bucket that can match a static waypoint. This
+    # includes neighboring buckets absent from the static index and keeps
+    # the memory scan to one dictionary lookup per position.
+    candidate_index: dict[tuple[int, int, int], list[tuple[int, int, dict]]] = {}
+    for key, candidates in pos_index.items():
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    nearby = (key[0] + dx, key[1] + dy, key[2] + dz)
+                    candidate_index.setdefault(nearby, []).extend(candidates)
 
     node_pos_index: dict[tuple[int, int], list[tuple[int, int, dict]]] = {}
     for doc_id, doc in enumerate(aiw_docs):
@@ -1192,13 +1192,12 @@ def correlate_aiw_runtime(
                 [],
             ).append((doc_id, wp["index"], wp))
 
-    node_candidate_keys = {}
-    for key in node_pos_index:
-        node_candidate_keys[key] = [
-            (key[0] + dx, key[1] + dy)
-            for dx in (-1, 0, 1)
-            for dy in (-1, 0, 1)
-        ]
+    node_candidate_index: dict[tuple[int, int], list[tuple[int, int, dict]]] = {}
+    for key, candidates in node_pos_index.items():
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                nearby = (key[0] + dx, key[1] + dy)
+                node_candidate_index.setdefault(nearby, []).extend(candidates)
 
     matches: list[dict] = []
     seen: set[tuple[str, int, int]] = set()
@@ -1214,48 +1213,47 @@ def correlate_aiw_runtime(
         if not all(isinstance(v, (int, float)) and math.isfinite(float(v)) for v in (nx, ny)):
             continue
         key = _position_key2(float(nx), float(ny), tolerance)
-        for nearby in node_candidate_keys.get(key, ()):
-            for doc_id, wp_index, wp in node_pos_index.get(nearby, ()):
-                if node_plane == "xz":
-                    wx, wz = wp["x"], wp["z"]
-                    rx, rz = float(nx), float(ny)
-                    runtime_xyz = (rx, None, rz)
-                elif node_plane == "xy":
-                    wx, wz = wp["x"], wp["y"]
-                    rx, rz = float(nx), float(ny)
-                    runtime_xyz = (rx, rz, None)
-                else:
-                    wx, wz = wp["y"], wp["z"]
-                    rx, rz = float(nx), float(ny)
-                    runtime_xyz = (None, rx, rz)
-                plane_distance = math.hypot(rx - wx, rz - wz)
-                if plane_distance > tolerance:
-                    continue
-                ident = (wp["source"], wp_index, address)
-                if ident in seen:
-                    continue
-                seen.add(ident)
-                node_matches = True
-                node_distance = row.get("distance")
-                distance_delta = None
-                if isinstance(node_distance, (int, float)) and math.isfinite(float(node_distance)):
-                    distance_delta = float(node_distance) - float(wp.get("lap_distance", 0.0))
-                matches.append({
-                    "aiw_source": wp["source"],
-                    "waypoint_index": wp_index,
-                    "branch_id": wp["branch_id"],
-                    "runtime_address": address,
-                    "region_start": int(row.get("region_start", address)),
-                    "region_offset": address - int(row.get("region_start", address)),
-                    "distance": plane_distance,
-                    "x": runtime_xyz[0],
-                    "y": runtime_xyz[1],
-                    "z": runtime_xyz[2],
-                    "runtime_source": "AIPolyPathNode",
-                    "position_plane": node_plane,
-                    "lap_distance": node_distance,
-                    "lap_distance_delta": distance_delta,
-                })
+        for doc_id, wp_index, wp in node_candidate_index.get(key, ()):
+            if node_plane == "xz":
+                wx, wz = wp["x"], wp["z"]
+                rx, rz = float(nx), float(ny)
+                runtime_xyz = (rx, None, rz)
+            elif node_plane == "xy":
+                wx, wz = wp["x"], wp["y"]
+                rx, rz = float(nx), float(ny)
+                runtime_xyz = (rx, rz, None)
+            else:
+                wx, wz = wp["y"], wp["z"]
+                rx, rz = float(nx), float(ny)
+                runtime_xyz = (None, rx, rz)
+            plane_distance = math.hypot(rx - wx, rz - wz)
+            if plane_distance > tolerance:
+                continue
+            ident = (wp["source"], wp_index, address)
+            if ident in seen:
+                continue
+            seen.add(ident)
+            node_matches = True
+            node_distance = row.get("distance")
+            distance_delta = None
+            if isinstance(node_distance, (int, float)) and math.isfinite(float(node_distance)):
+                distance_delta = float(node_distance) - float(wp.get("lap_distance", 0.0))
+            matches.append({
+                "aiw_source": wp["source"],
+                "waypoint_index": wp_index,
+                "branch_id": wp["branch_id"],
+                "runtime_address": address,
+                "region_start": int(row.get("region_start", address)),
+                "region_offset": address - int(row.get("region_start", address)),
+                "distance": plane_distance,
+                "x": runtime_xyz[0],
+                "y": runtime_xyz[1],
+                "z": runtime_xyz[2],
+                "runtime_source": "AIPolyPathNode",
+                "position_plane": node_plane,
+                "lap_distance": node_distance,
+                "lap_distance_delta": distance_delta,
+            })
 
     for st in sorted(common):
         rec = indexes[0][st]
@@ -1282,30 +1280,29 @@ def correlate_aiw_runtime(
                 if not all(finite(v, 1e7) for v in (x, y, z)):
                     continue
                 key = _position_key(x, y, z, tolerance)
-                for nearby in candidate_keys.get(key, ()):
-                    for doc_id, wp_index, wp in pos_index.get(nearby, ()):
-                        dx, dy, dz = x - wp["x"], y - wp["y"], z - wp["z"]
-                        distance = math.sqrt(dx * dx + dy * dy + dz * dz)
-                        if distance > tolerance:
-                            continue
-                        ident = (wp["source"], wp_index, st + off)
-                        if ident in seen:
-                            continue
-                        seen.add(ident)
-                        matches.append({
-                            "aiw_source": wp["source"],
-                            "waypoint_index": wp_index,
-                            "branch_id": wp["branch_id"],
-                            "runtime_address": st + off,
-                            "region_start": st,
-                            "region_offset": off,
-                            "distance": distance,
-                            "x": x, "y": y, "z": z,
-                            "runtime_source": "float3",
-                            "position_plane": "xyz",
-                            "lap_distance": None,
-                            "lap_distance_delta": None,
-                        })
+                for doc_id, wp_index, wp in candidate_index.get(key, ()):
+                    dx, dy, dz = x - wp["x"], y - wp["y"], z - wp["z"]
+                    distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+                    if distance > tolerance:
+                        continue
+                    ident = (wp["source"], wp_index, st + off)
+                    if ident in seen:
+                        continue
+                    seen.add(ident)
+                    matches.append({
+                        "aiw_source": wp["source"],
+                        "waypoint_index": wp_index,
+                        "branch_id": wp["branch_id"],
+                        "runtime_address": st + off,
+                        "region_start": st,
+                        "region_offset": off,
+                        "distance": distance,
+                        "x": x, "y": y, "z": z,
+                        "runtime_source": "float3",
+                        "position_plane": "xyz",
+                        "lap_distance": None,
+                        "lap_distance_delta": None,
+                    })
 
     sequences: list[dict] = []
     by_source: dict[str, list[dict]] = {}
@@ -1314,9 +1311,9 @@ def correlate_aiw_runtime(
             by_source.setdefault(row["aiw_source"], []).append(row)
 
     for source, rows in by_source.items():
-        by_wp: dict[int, list[int]] = {}
+        by_wp: dict[int, set[int]] = {}
         for row in rows:
-            by_wp.setdefault(row["waypoint_index"], []).append(row["runtime_address"])
+            by_wp.setdefault(row["waypoint_index"], set()).add(row["runtime_address"])
 
         source_doc = next(d for d in aiw_docs if d["source"] == source)
         waypoint_next = {
@@ -1342,27 +1339,21 @@ def correlate_aiw_runtime(
         stride, stride_count = delta_counts.most_common(1)[0]
         chains = []
         for start_wp in sorted(by_wp):
-            current = start_wp
-            first_addr = by_wp[start_wp][0]
-            last_addr = first_addr
-            count = 1
-            visited = set()
-            while current not in visited:
-                visited.add(current)
-                next_index = waypoint_next.get(current, -1)
-                if next_index in visited:
-                    break
-                candidates = [
-                    address for address in by_wp.get(next_index, ())
-                    if address - last_addr == stride
-                ]
-                if not candidates:
-                    break
-                last_addr = candidates[0]
-                current = next_index
-                count += 1
-            if count >= 4:
-                chains.append((count, start_wp, current, first_addr, last_addr))
+            for first_addr in sorted(by_wp[start_wp]):
+                current = start_wp
+                last_addr = first_addr
+                count = 1
+                visited = set()
+                while current not in visited:
+                    visited.add(current)
+                    next_index = waypoint_next.get(current, -1)
+                    if next_index in visited or last_addr + stride not in by_wp.get(next_index, ()):
+                        break
+                    last_addr += stride
+                    current = next_index
+                    count += 1
+                if count >= 4:
+                    chains.append((count, start_wp, current, first_addr, last_addr))
 
         if chains:
             count, first_wp, last_wp, first_addr, last_addr = max(chains)
