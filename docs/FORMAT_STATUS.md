@@ -34,7 +34,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- broader IMB/IMX variants, consumption of independently proven runtime wrapper roots for previously blocked MatrixNumber OBJECTs, the remaining historical SGB SceneGraph update sequence, and higher-level streaming/visibility behavior; unresolved runtime class identities;
+- broader IMB/IMX variants, production validation/coverage of owner-scoped runtime-root consensus for MatrixNumber OBJECTs, the remaining historical SGB SceneGraph update sequence, and higher-level streaming/visibility behavior; unresolved runtime class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
