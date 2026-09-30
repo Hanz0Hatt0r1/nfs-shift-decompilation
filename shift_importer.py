@@ -1943,6 +1943,28 @@ def cmd_sgb_render_binding_bridge(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_native_scene_bundle(args: argparse.Namespace) -> int:
+    """Freeze runtime-proven SGB RenderCommands into NativeSceneBundle."""
+    from native_scene_bundle import validate_file
+
+    report = validate_file(args.scene_bridge)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "draw_count": report["draw_count"],
+        "coverage": report["coverage"],
+        "blockers": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_sgb_placement_join(args: argparse.Namespace) -> int:
     """Join decoded SGB wrappers to PART/FLAT spatial placement."""
     from sgb_placement_join import validate_file
@@ -4276,6 +4298,23 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p.set_defaults(fn=cmd_sgb_render_binding_bridge)
+
+    p = sp.add_parser(
+        "native-scene-bundle",
+        help=(
+            "freeze runtime-proven SGB RenderCommands into "
+            "SHIFT.NativeSceneBundle/1"
+        ),
+    )
+    p.add_argument(
+        "scene_bridge",
+        help="SHIFT.SGBRenderBindingBridge/1 JSON",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.NativeSceneBundle/1 JSON output",
+    )
+    p.set_defaults(fn=cmd_native_scene_bundle)
 
     p = sp.add_parser(
         "sgb-placement-join",
