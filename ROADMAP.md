@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 605.**
+**Current mainline: Phase 606.**
 
 
 
@@ -34,7 +34,9 @@ Phase 603 ports the source-backed builtin sparse numeric kernel `FUN_007b0f20` i
 Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `sample+0x70 & 1` evidence rather than inferred statically.
 
 
-Phase 605 composes the native source-backed builtin reset and solve kernels as explicit reset nodes → `FUN_007b2210` → `FUN_007b0f20`, returning both intermediate and solved state. It remains a provider-absent numerical slice, not a complete `FUN_007b3f40` frame.
+Phase 605 separates the PhysicsParticipantManager registry index from the IGPhaseVehicle selector ordinal in native state and keeps both unresolved without runtime observation.
+
+Phase 606 composes the native source-backed builtin reset and solve kernels as explicit reset nodes → `FUN_007b2210` → `FUN_007b0f20`, returning both intermediate and solved state. It remains a provider-absent numerical slice, not a complete `FUN_007b3f40` frame.
 
 ## Immediate execution order
 
@@ -118,7 +120,8 @@ Phase 605 composes the native source-backed builtin reset and solve kernels as e
 76. Admit the source-backed participant registry/selector structural ABI into native state while preserving manager/selector separation and unresolved runtime participant identity — Phase 602 implemented as SHIFT.NativePhysicsParticipantBoundary/1.
 77. Port the exact source-backed builtin sparse solver kernel to native C++ and verify deterministic numerical parity independently of full-frame assembly — Phase 603 implemented for FUN_007b0f20.
 78. Port the exact builtin diagonal-reset mutation while keeping reset-node selection runtime-evidence-gated — Phase 604 implemented for FUN_007b2210.
-79. Compose explicit reset-node application and builtin sparse solve into one reusable provider-absent native frame slice without inventing matrix assembly or dispatch — Phase 605 implemented.
+79. Preserve participant-manager registry index and IGPhaseVehicle selector ordinal as separate unresolved native identity domains — Phase 605 implemented.
+80. Compose explicit reset-node application and builtin sparse solve into one reusable provider-absent native frame slice without inventing matrix assembly or dispatch — Phase 606 implemented.
 
 ## Workstream status
 
