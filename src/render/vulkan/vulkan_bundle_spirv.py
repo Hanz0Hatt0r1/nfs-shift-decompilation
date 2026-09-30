@@ -17,6 +17,7 @@ from typing import Any
 from spirv_reflection import reflect_spirv_file
 
 FORMAT = "SHIFT.VulkanBundleSPIRV/1"
+BUNDLE_FORMATS = {"SHIFT.BMWVulkanBundle/1", "SHIFT.VulkanDrawBundle/1"}
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -36,8 +37,11 @@ def compile_bmw_vulkan_bundle(
     if not manifest_path.is_file():
         raise ValueError("bundle manifest is missing")
     manifest = _load(manifest_path)
-    if manifest.get("format") != "SHIFT.BMWVulkanBundle/1":
-        raise ValueError("input is not SHIFT.BMWVulkanBundle/1")
+    bundle_format = manifest.get("format")
+    if bundle_format not in BUNDLE_FORMATS:
+        raise ValueError(
+            "input must be SHIFT.BMWVulkanBundle/1 or SHIFT.VulkanDrawBundle/1"
+        )
 
     compiler = validator or shutil.which("glslangValidator")
     shader_rows = manifest.get("artifacts", {}).get("shaders") or []
@@ -51,6 +55,7 @@ def compile_bmw_vulkan_bundle(
             "validator": None,
             "shader_results": [],
             "blocking_reasons": ["vulkan-bundle-spirv:validator-unavailable"],
+            "source_bundle_format": bundle_format,
         }
 
     blockers: list[str] = []
@@ -118,6 +123,7 @@ def compile_bmw_vulkan_bundle(
         "validator": compiler,
         "shader_results": results,
         "blocking_reasons": list(dict.fromkeys(blockers)),
+        "source_bundle_format": bundle_format,
     }
 
 
@@ -138,7 +144,7 @@ def write_compile_report(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Compile Vulkan shaders from SHIFT.BMWVulkanBundle/1")
+    parser = argparse.ArgumentParser(description="Compile Vulkan shaders from a prepared SHIFT Vulkan draw bundle")
     parser.add_argument("bundle_dir")
     parser.add_argument("output")
     parser.add_argument("--validator")
