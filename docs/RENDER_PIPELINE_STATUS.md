@@ -14,7 +14,7 @@
 - MEB primitive material references resolve through BMT/MTX;
 - BMT connects to FX sources and FXO permutations;
 - CTAB reflection supplies sampler registers and material constants;
-- renderer-global samplers remain explicit external resources; Phase 588 transports an explicitly supplied external `sampler2D` snapshot through SVTP without reclassifying it as a material texture; Phase 589 admits that snapshot at scene level only after exact draw/resource/primitive/register/type/hash/provenance matching; Phase 590 converts strong-attributed draw-local native D3D9 PPM evidence into that exact scene contract only when scene-instance and texture observations are unambiguous.
+- renderer-global samplers remain explicit external resources; Phase 588 transports an explicitly supplied external `sampler2D` snapshot through SVTP without reclassifying it as a material texture; Phase 589 admits that snapshot at scene level only after exact draw/resource/primitive/register/type/hash/provenance matching; Phase 590 converts strong-attributed draw-local native D3D9 PPM evidence into that exact scene contract only when scene-instance and texture observations are unambiguous; Phase 592 performs the corresponding six-face capture→scene admission for `samplerCube` only at the already-proven s3 cube ABI.
 
 ### Vertex ABI
 
@@ -32,8 +32,8 @@ Real captured draws additionally require exact MEB identity, draw-local snapshot
 
 ## Current native direction
 
-Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets, SPIR-V interface validation, the BMW material→DDS adapter, neutral scene-set execution, an explicit external-`sampler2D` snapshot channel in the existing SVTP binary ABI, exact scene-level admission for provenance-bearing sampler2D snapshots, and an automatic strong-attributed D3D9 PPM→scene snapshot adapter.
+Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets, SPIR-V interface validation, the BMW material→DDS adapter, neutral scene-set execution, exact external-`sampler2D` SVTP admission, exact external-`samplerCube` s3 cube-packet admission, and automatic strong-attributed D3D9 PPM→scene snapshot adapters.
 
 ## Remaining work
 
-Broaden exact BMW shader/material execution, close more runtime same-instance evidence, obtain authentic Silverstone capture content, disambiguate repeated scene instances where required, and cover remaining renderer-owned resource types, implement the IMX XML neutral adapter, carry scene visibility/streaming semantics beyond the SGB resource bridge, and close remaining alpha-test/bias/stencil Vulkan state. Missing renderer-owned resources remain fail-closed.
+Broaden exact BMW shader/material execution, close more runtime same-instance evidence, obtain authentic Silverstone capture content and cover renderer-owned resource types beyond the proven sampler2D/samplerCube-s3 channels, implement the IMX XML neutral adapter, carry scene visibility/streaming semantics beyond the SGB resource bridge, and close remaining alpha-test/bias/stencil Vulkan state. Missing renderer-owned resources remain fail-closed.
