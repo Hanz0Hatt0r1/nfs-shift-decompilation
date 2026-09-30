@@ -46,14 +46,21 @@ The 239 BMT occurrences reduce to only five shader-source families:
 None of those shader sources live inside the supplied Silverstone BFFs. They
 are renderer-global dependencies, not missing track-local assets.
 
+The game's global `RENDER.bff` was then added to the same audit. All five exact
+FX paths resolve exactly once there as BFF Type 2 entries; their decoded payload
+SHA-256 identities are frozen in the Phase 564 evidence file. With
+`Silverstone_Era3_.zip + RENDER.bff`, all 239 material occurrences pass the
+source-dependency gate.
+
 The dependency gate therefore distinguishes:
 
 - **local_ready** — BMT parses and every texture resolves inside the same BFF;
 - **ready** — local_ready plus an exact shader-source match among all supplied
   BFFs.
 
-The Silverstone-only corpus is local-ready for all 239 materials and globally
-blocked only by the five shader paths above.
+The Silverstone-only corpus is local-ready for all 239 materials. Adding the
+retail `RENDER.bff` closes those five global shader-source paths, making all 239
+materials source-dependency-ready.
 
 ## Reusable audit
 
@@ -83,5 +90,6 @@ python tools/audit_imb_material_dependencies.py \
 ## Boundary
 
 This phase does not select FXO permutations, translate shaders, provide
-renderer-global textures, or prove native Vulkan output. It narrows the next
-external dependency search to five exact FX source paths.
+renderer-global runtime resources, or prove native Vulkan output. The next
+render blocker is no longer FX source discovery; it is compiled FXO/permutation
+selection for these five source families.
