@@ -807,6 +807,7 @@ def extract_segment_nodes(
             rows.extend(owner_rows)
     return rows
 
+
 def resolve_path_start_nodes(
     candidates: list[dict],
     snapshots: list[Path],
@@ -1658,9 +1659,8 @@ def main() -> int:
     path_root_candidates = list(candidates["Path"])
     aiw_node_candidates = list(candidates["AIPolyPathNode"])
 
-    # Resolve exact AIPolylinePath -> count-prefixed AIPolyPathNode arrays
-    # after the global scan because the target array can live in another
-    # selected memory region.
+    # Resolve path-node arrays after the global scan because their targets
+    # can live in another selected memory region.
     validate_prefixed_array_link(
         candidates["AISegmentPath"], sns, idx,
         KNOWN_VTABLES["AIPathNode"], 0x38,
