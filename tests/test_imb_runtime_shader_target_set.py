@@ -52,6 +52,10 @@ def _row(
         "imb_sha256": imb_sha256,
         "primitive_index": 0,
         "draw_range": draw_range,
+        "property_descriptors": [
+            {"id": "200", "words": [2, 0, 0]},
+            {"id": "460", "words": [4, 6, 0]},
+        ],
         "material_reference": "materials/test.mtx",
         "bmt": "materials/test.bmt",
         "bmt_sha256": _sha("e"),
@@ -150,6 +154,51 @@ def test_pair_ambiguous_candidate_falls_back_to_pixel_prefilter_target():
     assert target["identity_value"] == _sha("9")
     assert target["strength"] == "prefilter-only"
 
+
+
+def test_pixel_target_keeps_all_collapsed_pair_variants():
+    first = _candidate(
+        "1",
+        pair="2",
+        vertex="3",
+        pixel="9",
+        pair_status="ambiguous",
+    )
+    second = _candidate(
+        "4",
+        pair="5",
+        vertex="6",
+        pixel="9",
+        pair_status="ambiguous",
+    )
+    report = build_imb_runtime_shader_target_set(
+        _ranking(_row(0, [first, second]))
+    )
+
+    assert report["capture_ready"] is True
+    assert report["same_instance_match_ready"] is True
+    row = report["binding_targets"][0]
+    assert row["property_descriptors"] == [
+        {"id": "200", "words": [2, 0, 0]},
+        {"id": "460", "words": [4, 6, 0]},
+    ]
+    assert row["hash_target_count"] == 1
+
+    target = row["targets"][0]
+    assert target["identity_kind"] == "pixel"
+    assert target["identity_value"] == _sha("9")
+    assert target["candidate_variant_count"] == 2
+    assert target["pair_byte_sha256"] is None
+    assert target["vertex_byte_sha256"] is None
+    assert {
+        variant["pair_byte_sha256"]
+        for variant in target["candidate_variants"]
+    } == {_sha("2"), _sha("5")}
+    assert {
+        variant["vertex_byte_sha256"]
+        for variant in target["candidate_variants"]
+    } == {_sha("3"), _sha("6")}
+    assert report["boundary"]["preserves_candidate_variants"] is True
 
 def test_incomplete_top_rank_list_fails_closed():
     report = build_imb_runtime_shader_target_set(
