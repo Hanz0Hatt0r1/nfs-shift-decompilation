@@ -6,12 +6,17 @@
     "name": "Silverstone_Era3_.zip",
     "sha256": "5423f5a0356e664a504f90c812e32bbbd4e2a0abe83c546fdc658305661a1e2f"
   },
+  "global_render_archive": {
+    "name": "RENDER.bff",
+    "sha256": "b0b03960ba7e620b7ad5e2b027ed13de67afffe168eb8b30da73c2a632a7c0af"
+  },
   "result": {
     "logical_bmt_reference_count": 84,
     "archive_bmt_occurrence_count": 239,
     "material_parse_count": 239,
     "material_parse_error_count": 0,
     "local_ready_count": 239,
+    "fully_source_ready_count": 239,
     "shader_reference_count": 239,
     "unique_shader_reference_count": 5,
     "shader_reference_use_counts": {
@@ -22,6 +27,7 @@
       "render/shaders/skintest_instanced.fx": 4
     },
     "shader_source_matches_inside_silverstone_count": 0,
+    "shader_source_matches_in_render_count": 239,
     "texture_reference_count": 563,
     "unique_texture_reference_count": 120,
     "same_archive_texture_resolved_count": 563,
@@ -38,19 +44,54 @@
       "skintest": 44
     }
   },
-  "external_shader_blockers": [
-    "render/shaders/basic_instanced.fx",
-    "render/shaders/crowd_geninstanced.fx",
-    "render/shaders/crowd_geninstanced_billboard.fx",
-    "render/shaders/foliage_instanced.fx",
-    "render/shaders/skintest_instanced.fx"
+  "shader_sources": [
+    {
+      "path": "render/shaders/basic_instanced.fx",
+      "entry_index": 8,
+      "bff_type": 2,
+      "decoded_size": 38399,
+      "decoded_sha256": "3309a2c25570d6f3de59ad0c760602706e0343b08aa48517557e958e5f7b8e5d",
+      "material_use_count": 114
+    },
+    {
+      "path": "render/shaders/crowd_geninstanced.fx",
+      "entry_index": 607,
+      "bff_type": 2,
+      "decoded_size": 44531,
+      "decoded_sha256": "1f563e402025a63e0283cc01cd8f0ea8d1a7aa7c60085f35e332f7b6c5d0fb3b",
+      "material_use_count": 40
+    },
+    {
+      "path": "render/shaders/crowd_geninstanced_billboard.fx",
+      "entry_index": 608,
+      "bff_type": 2,
+      "decoded_size": 48078,
+      "decoded_sha256": "0c371297cb5f7cb28037a99ad4c6cd2db98274a54ddf8e2a84de35e3f4090b1e",
+      "material_use_count": 44
+    },
+    {
+      "path": "render/shaders/foliage_instanced.fx",
+      "entry_index": 622,
+      "bff_type": 2,
+      "decoded_size": 58452,
+      "decoded_sha256": "9670485914a5e18a82dea982dc90059edd5a8608d58fb455cd5558e3e131119c",
+      "material_use_count": 37
+    },
+    {
+      "path": "render/shaders/skintest_instanced.fx",
+      "entry_index": 667,
+      "bff_type": 2,
+      "decoded_size": 38909,
+      "decoded_sha256": "946302ac6a0f22d3e8be6993c1de4e1fd6ba495000215e546553a09e7b50c047",
+      "material_use_count": 4
+    }
   ],
   "boundary": {
     "bmt_payload_parse": "resource_formats-compatible BLMY material tree",
     "all_material_occurrences_parse": true,
     "all_texture_references_resolve_in_same_silverstone_bff": true,
-    "shader_refs_are_global_render_resources": true,
-    "shader_source_payloads_present_in_supplied_silverstone_zip": false,
+    "all_five_shader_sources_resolve_exactly_once_in_render_bff": true,
+    "shader_source_payloads_present_in_silverstone_zip": false,
     "fxo_permutation_verified_here": false,
     "native_draw_ready_verified_here": false
   }
