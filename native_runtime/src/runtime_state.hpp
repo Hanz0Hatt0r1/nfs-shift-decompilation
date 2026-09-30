@@ -183,10 +183,69 @@ struct PhysicsTickBoundary {
     uint64_t steer_left_steps = 0;
     uint64_t steer_right_steps = 0;
     uint64_t neutral_input_steps = 0;
+    // Phase 602 keeps the manager-registry index and selector ordinal
+    // separate until runtime evidence proves an identity join.
+    bool participant_topology_ready = false;
+    bool participant_manager_selector_distinct = false;
+    bool participant_identity_join_proven = false;
     bool participant_ready = false;
+    int32_t participant_registry_index = -1;
+    int32_t selector_ordinal = -1;
+    int32_t participant_process_state = -1;
+
+    // Legacy compatibility fields remain inert until an exact observed join.
     int32_t participant_index = -1;
     int32_t participant_mode = -1;
+
+    uint64_t participant_topology_steps = 0;
+    uint64_t participant_ready_steps = 0;
+    uint64_t participant_unresolved_steps = 0;
     PhysicsWorkspaceBoundary workspace{};
+
+    bool apply_participant_bridge(
+        bool topology_ready,
+        bool manager_selector_distinct,
+        bool identity_join_proven,
+        bool observed_participant_ready,
+        int32_t registry_index,
+        int32_t observed_selector_ordinal,
+        int32_t process_state) {
+
+        if (!topology_ready || !manager_selector_distinct) {
+            return false;
+        }
+        if (!observed_participant_ready) {
+            if (identity_join_proven ||
+                registry_index != -1 ||
+                observed_selector_ordinal != -1 ||
+                process_state != -1) {
+                return false;
+            }
+        } else {
+            if (!identity_join_proven ||
+                registry_index < 0 ||
+                observed_selector_ordinal < 0) {
+                return false;
+            }
+        }
+
+        participant_topology_ready = topology_ready;
+        participant_manager_selector_distinct =
+            manager_selector_distinct;
+        participant_identity_join_proven =
+            identity_join_proven;
+        participant_ready = observed_participant_ready;
+        participant_registry_index = registry_index;
+        selector_ordinal = observed_selector_ordinal;
+        participant_process_state = process_state;
+
+        // Preserve the old fields only as explicit aliases after a proven join.
+        participant_index =
+            observed_participant_ready ? registry_index : -1;
+        participant_mode =
+            observed_participant_ready ? process_state : -1;
+        return true;
+    }
 
     void tick(const VehicleControlIntent& input) {
         last_input = input;
@@ -200,6 +259,14 @@ struct PhysicsTickBoundary {
             !input.steer_left &&
             !input.steer_right) {
             ++neutral_input_steps;
+        }
+        if (participant_topology_ready) {
+            ++participant_topology_steps;
+            if (participant_ready) {
+                ++participant_ready_steps;
+            } else {
+                ++participant_unresolved_steps;
+            }
         }
         // Physics integration intentionally remains outside this shell.
         // The retail participant/provider semantics are not synthesized here.
