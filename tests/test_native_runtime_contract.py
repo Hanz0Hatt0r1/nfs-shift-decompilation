@@ -294,3 +294,34 @@ def test_phase601_native_input_script_reaches_physics_tick_boundary():
     assert "neutral_input_steps" in header
     assert "if (input.throttle) ++throttle_steps" in header
     assert "if (input.brake) ++brake_steps" in header
+
+
+def test_phase602_native_participant_topology_stays_unresolved_without_capture():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert '"--participant-bridge"' in source
+    assert "SHIFT.NativeVehicleParticipantBridge/1" in source
+    assert "DAT_00c109e0" in source
+    assert "DAT_00bbc600" in source
+    assert "manager_slot_stride_bytes" in source
+    assert "manager_registry_index_source_offset" in source
+    assert "igphase_selector_ordinal_offset" in source
+    assert "physics_participant_topology_ready" in source
+    assert "physics_participant_identity_join_proven" in source
+    assert "physics_participant_registry_index" in source
+    assert "physics_selector_ordinal" in source
+    assert "physics_participant_unresolved_steps" in source
+
+    assert "participant_registry_index = -1" in header
+    assert "selector_ordinal = -1" in header
+    assert "participant_identity_join_proven = false" in header
+    assert "participant_unresolved_steps = 0" in header
+    assert "apply_participant_bridge" in header
+    assert "observed_participant_ready" in header
+    assert "registry_index != -1" in header
+    assert "observed_selector_ordinal != -1" in header
