@@ -270,6 +270,28 @@ classes with direct reflected fields, 3122 direct fields, and 267 classes with
 a unique PE vtable candidate. See
 [class manifest evidence](../../evidence/class_manifest_source.md).
 
+To isolate classes whose basic structure is fully source/PE-backed, run the
+structural evidence audit:
+
+```bash
+python3 tools/shift_live_dump/audit_shift_class_candidates.py \
+  /path/to/SHIFT.exe.c \
+  --exe /path/to/SHIFT.exe \
+  --ready-only \
+  --prefix AI \
+  --json-out /tmp/shift-ai-ready.json \
+  --csv-out /tmp/shift-ai-ready.csv
+```
+
+A class is marked `structural_ready` only when it has a resolved registration
+name, reflection metadata with at least one direct field, exactly one PE vtable
+candidate, resolved direct field names, static type/offset/flags, and a resolved
+reflection builder. Every failed gate is kept in `blockers` instead of being
+filled by inference. The supplied retail pair currently yields 227 such
+classes. This is a layout/identity gate, not proof of ownership, constructor
+defaults, method semantics or gameplay behavior. See
+[class candidate evidence](../../evidence/class_decompilation_candidates.md).
+
 Track/path layout dictionaries can then be checked directly against those
 recovered fields:
 
