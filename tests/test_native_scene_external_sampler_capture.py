@@ -118,6 +118,39 @@ def _pipeline(snapshot_path, *, observations=1):
     }
 
 
+def _pipeline_v2(
+    set_snapshot_path,
+    draw_snapshot_path,
+    *,
+    draw_status="captured",
+    draw_active_match=True,
+):
+    pipeline = _pipeline(set_snapshot_path)
+    pipeline["boundary"][
+        "attributed_texture_observation_contract"
+    ] = "selected-strong-variant-draw-textures-v2"
+    observation = pipeline["resource_results"][0][
+        "attributed_texture_observations"
+    ][0]
+    observation["draw_texture_snapshots"] = [{
+        "stage": 7,
+        "texture_ptr": "0x700",
+        "active_binding_texture_ptr": "0x700",
+        "active_binding_match": draw_active_match,
+        "resource_creation_status": "observed",
+        "resource_creation": {
+            "resource_type": "texture2d",
+            "texture_ptr": "0x700",
+            "width": 1,
+            "height": 1,
+        },
+        "snapshot_status": draw_status,
+        "snapshot_paths": [str(draw_snapshot_path)],
+        "event_index": 44,
+    }]
+    return pipeline
+
+
 def test_capture_adapter_builds_phase589_contract_from_exact_ppm(tmp_path):
     ppm = tmp_path / "textures" / "shadow.ppm"
     _ppm(ppm)
@@ -151,6 +184,88 @@ def test_capture_adapter_builds_phase589_contract_from_exact_ppm(tmp_path):
     )
     assert snapshot["provenance"]["capture_frame"] == 12
     assert snapshot["provenance"]["capture_draw_index"] == 0
+
+
+def test_capture_adapter_prefers_draw_boundary_ppm(tmp_path):
+    set_ppm = tmp_path / "textures" / "set.ppm"
+    draw_ppm = tmp_path / "textures" / "draw.ppm"
+    _ppm(set_ppm, rgb=(1, 2, 3))
+    _ppm(draw_ppm, rgb=(9, 8, 7))
+
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(_scene_draw()),
+        _bridge(),
+        _pipeline_v2(
+            "textures/set.ppm",
+            "textures/draw.ppm",
+        ),
+        capture_root=tmp_path,
+    )
+
+    assert report["ready"] is True, report["blocking_reasons"]
+    assert report["rows"][0]["snapshot_time"] == (
+        "draw-boundary-post-draw"
+    )
+    snapshot = report["snapshot_contract"]["snapshots"][0]
+    assert snapshot["texture"]["pixels"] == [9, 8, 7, 255]
+    provenance = snapshot["provenance"]
+    assert provenance["source_kind"] == "D3D9_DRAW_CAPTURE_PPM"
+    assert provenance["snapshot_time"] == "draw-boundary-post-draw"
+    assert provenance["draw_snapshot_event_index"] == 44
+    assert report["boundary"]["draw_boundary_snapshot_preferred"] is True
+
+
+def test_capture_adapter_does_not_fallback_when_draw_capture_failed(
+    tmp_path,
+):
+    set_ppm = tmp_path / "textures" / "set.ppm"
+    draw_ppm = tmp_path / "textures" / "draw.ppm"
+    _ppm(set_ppm, rgb=(1, 2, 3))
+    _ppm(draw_ppm, rgb=(9, 8, 7))
+
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(_scene_draw()),
+        _bridge(),
+        _pipeline_v2(
+            "textures/set.ppm",
+            "textures/draw.ppm",
+            draw_status="capture-failed",
+        ),
+        capture_root=tmp_path,
+    )
+
+    assert report["ready"] is False
+    assert report["snapshot_contract"] is None
+    assert any(
+        "capture-observation-count:0" in reason
+        for reason in report["blocking_reasons"]
+    )
+
+
+def test_capture_adapter_does_not_fallback_on_draw_pointer_mismatch(
+    tmp_path,
+):
+    set_ppm = tmp_path / "textures" / "set.ppm"
+    draw_ppm = tmp_path / "textures" / "draw.ppm"
+    _ppm(set_ppm, rgb=(1, 2, 3))
+    _ppm(draw_ppm, rgb=(9, 8, 7))
+
+    report = build_scene_external_sampler_capture_adapter(
+        _scene_bundle(_scene_draw()),
+        _bridge(),
+        _pipeline_v2(
+            "textures/set.ppm",
+            "textures/draw.ppm",
+            draw_active_match=False,
+        ),
+        capture_root=tmp_path,
+    )
+
+    assert report["ready"] is False
+    assert any(
+        "capture-observation-count:0" in reason
+        for reason in report["blocking_reasons"]
+    )
 
 
 def test_capture_adapter_requires_versioned_texture_observation_contract(
