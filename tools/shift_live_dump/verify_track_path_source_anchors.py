@@ -12,6 +12,7 @@ from pathlib import Path
 FORMAT = "SHIFT-TRACK-PATH-SOURCE-ANCHORS/1"
 
 ANCHORS = {
+    "AIPathInfo": ("FUN_006bc3a0", "PTR_FUN_00afb150"),
     "AISegmentPath": ("FUN_006cfe70", "PTR_FUN_00afc930"),
     "AIPathNode": ("FUN_006cfc10", "PTR_FUN_00afbf60"),
     "AIPolylinePath": ("FUN_006cc900", "PTR_FUN_00afc678"),
@@ -25,6 +26,7 @@ FACTORY_LINKS = (
 )
 
 RTTI_DESCRIPTORS = {
+    "AIPathInfo": 0x00C0D5A4,
     "AIPolylinePath": 0x00C0D608,
     "Knot": 0x00C0D638,
     "AISpline": 0x00C0D648,
@@ -34,8 +36,8 @@ RTTI_DESCRIPTORS = {
     "AIPathNode": 0x00C0D688,
 }
 
-# In the retail PE, the concrete polymorphic track/path classes above expose a
-# tiny virtual RTTI getter of the form "mov eax, <descriptor>; ret". AISpline
+# In the retail PE, AIPathInfo and the concrete polymorphic track/path classes
+# above expose a tiny virtual RTTI getter of the form "mov eax, <descriptor>; ret". AISpline
 # and AISplineInfo are reflected, but no dedicated getter/vtable is present via
 # that same mechanism. Keep this absence explicit instead of inventing a
 # concrete AISpline vtable from address proximity.
