@@ -222,11 +222,12 @@ def main():
     (root / "smoke_result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True)+"\n", encoding="utf-8")
     if result["status"] != "rendered":
         raise SystemExit(2)
-    native_stdout = str(result["native"].get("stdout") or "")
-    if '"world_transform_present": true' not in native_stdout:
+    if result["native"].get("world_transform_present") is not True:
         raise SystemExit("material executor did not observe SVWT")
-    if '"world_transform_executed": true' not in native_stdout:
+    if result["native"].get("world_transform_executed") is not True:
         raise SystemExit("material executor did not execute SVWT translation")
+    if result["native"].get("world_translation_xyz") != [0.1, 0, 0]:
+        raise SystemExit("material executor reported unexpected SVWT translation")
     output = Path(result["native"]["output"])
     if output.read_bytes()[:2] != b"P6":
         raise SystemExit("not a PPM")
