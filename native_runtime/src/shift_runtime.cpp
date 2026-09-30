@@ -236,6 +236,101 @@ uint32_t json_u32_field(
     return static_cast<uint32_t>(value);
 }
 
+int32_t json_i32_field(
+    const std::string& path,
+    const std::string& field) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("cannot open JSON manifest: " + path);
+    }
+    const std::string text(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>());
+    const std::string key = "\"" + field + "\"";
+    const size_t key_pos = text.find(key);
+    if (key_pos == std::string::npos) {
+        throw std::runtime_error("manifest field is missing: " + field);
+    }
+    const size_t colon = text.find(':', key_pos + key.size());
+    if (colon == std::string::npos) {
+        throw std::runtime_error("manifest field has no value: " + field);
+    }
+    size_t cursor = colon + 1;
+    while (cursor < text.size() &&
+           std::isspace(static_cast<unsigned char>(text[cursor]))) {
+        ++cursor;
+    }
+    bool negative = false;
+    if (cursor < text.size() && text[cursor] == '-') {
+        negative = true;
+        ++cursor;
+    }
+    if (cursor == text.size() ||
+        !std::isdigit(static_cast<unsigned char>(text[cursor]))) {
+        throw std::runtime_error(
+            "manifest field is not a signed integer: " + field);
+    }
+    int64_t value = 0;
+    while (cursor < text.size() &&
+           std::isdigit(static_cast<unsigned char>(text[cursor]))) {
+        value = value * 10 +
+            static_cast<int64_t>(text[cursor] - '0');
+        const int64_t max_i32 =
+            static_cast<int64_t>(
+                std::numeric_limits<int32_t>::max());
+        const int64_t limit =
+            negative ? max_i32 + 1 : max_i32;
+        if (value > limit) {
+            throw std::runtime_error(
+                "manifest field exceeds int32: " + field);
+        }
+        ++cursor;
+    }
+    return static_cast<int32_t>(negative ? -value : value);
+}
+
+shift::runtime::CameraBufferRuntime load_native_camera_state(
+    const std::string& path) {
+    if (!file_contains(
+            path,
+            "\"format\": \"SHIFT.NativeCameraState/1\"") ||
+        !file_contains(path, "\"ready\": true")) {
+        throw std::runtime_error(
+            "native camera state is missing or not ready");
+    }
+
+    const uint32_t active_index =
+        json_u32_field(path, "active_buffer_index");
+    const uint32_t sub_flag =
+        json_u32_field(path, "active_buffer_sub_flag");
+    if (active_index >=
+            shift::runtime::CameraBufferRuntime::buffer_count ||
+        sub_flag > 0xFFu) {
+        throw std::runtime_error(
+            "native camera state contains invalid buffer fields");
+    }
+
+    shift::runtime::CameraBufferRuntime out{};
+    out.active_index = active_index;
+    out.update_in_progress = false;
+
+    shift::runtime::CameraState state{};
+    state.manager_mode =
+        json_i32_field(path, "manager_mode");
+    state.buffer_sub_index =
+        json_i32_field(path, "buffer_sub_index");
+    state.camera_id =
+        json_i32_field(path, "camera_id");
+    state.active_group =
+        json_i32_field(path, "active_group");
+    state.group_restore_value =
+        json_i32_field(path, "group_restore_value");
+    state.active_buffer_sub_flag =
+        static_cast<uint8_t>(sub_flag);
+    out.buffers[active_index] = state;
+    return out;
+}
+
 VkCullModeFlags load_bundle_cull_mode(const std::string& root) {
     const std::string path = root + "/pipeline_state.json";
     if (!std::filesystem::is_regular_file(path)) {
@@ -2618,6 +2713,7 @@ struct Args {
     std::string bundle_set;
     std::string scene_set;
     std::string physics_manifest;
+    std::string camera_state;
     std::string shader_dir;
     int frames = kDefaultFrames;
     bool validation = false;
@@ -2631,6 +2727,7 @@ Args parse_args(int argc, char** argv) {
             option == "--bundle-set" ||
             option == "--scene-set" ||
             option == "--physics-manifest" ||
+            option == "--camera-state" ||
             option == "--shader-dir" || option == "--frames") {
             if (i + 1 >= argc) {
                 throw std::runtime_error(
@@ -2643,6 +2740,8 @@ Args parse_args(int argc, char** argv) {
             else if (option == "--scene-set") args.scene_set = value;
             else if (option == "--physics-manifest") {
                 args.physics_manifest = value;
+            } else if (option == "--camera-state") {
+                args.camera_state = value;
             } else if (option == "--shader-dir") {
                 args.shader_dir = value;
             } else {
@@ -2654,7 +2753,8 @@ Args parse_args(int argc, char** argv) {
             std::cout
                 << "usage: shift_runtime "
                 << "(--mesh FILE | --bundle DIR | --bundle-set DIR | --scene-set DIR) "
-                << "--shader-dir DIR [--frames N] [--validation]\n";
+                << "--shader-dir DIR [--camera-state FILE] "
+                << "[--frames N] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
             throw std::runtime_error(
@@ -2851,6 +2951,12 @@ int main(int argc, char** argv) {
         bool quit = false;
         InputState input{};
         shift::runtime::NativeRuntimeState native_state{};
+        const bool camera_state_loaded =
+            !args.camera_state.empty();
+        if (camera_state_loaded) {
+            native_state.camera =
+                load_native_camera_state(args.camera_state);
+        }
         if (!args.physics_manifest.empty()) {
             native_state.physics.workspace =
                 load_physics_manifest(
@@ -2912,8 +3018,46 @@ int main(int argc, char** argv) {
             << "\"SHIFT.NativeRuntimeInput/1\",\n"
             << "  \"state_layer\": "
             << "\"SHIFT.NativeRuntimeState/1\",\n"
+            << "  \"camera_state_loaded\": "
+            << (camera_state_loaded ? "true" : "false")
+            << ",\n"
+            << "  \"camera_state_source\": \""
+            << (camera_state_loaded
+                ? "SHIFT.NativeCameraState/1"
+                : "constructor-defaults")
+            << "\",\n"
             << "  \"camera_active_buffer\": "
             << native_state.camera.active_index << ",\n"
+            << "  \"camera_manager_mode\": "
+            << native_state.camera.buffers[
+                native_state.camera.active_index
+            ].manager_mode << ",\n"
+            << "  \"camera_buffer_sub_index\": "
+            << native_state.camera.buffers[
+                native_state.camera.active_index
+            ].buffer_sub_index << ",\n"
+            << "  \"camera_id\": "
+            << native_state.camera.buffers[
+                native_state.camera.active_index
+            ].camera_id << ",\n"
+            << "  \"camera_active_group\": "
+            << native_state.camera.buffers[
+                native_state.camera.active_index
+            ].active_group << ",\n"
+            << "  \"camera_group_restore_value\": "
+            << native_state.camera.buffers[
+                native_state.camera.active_index
+            ].group_restore_value << ",\n"
+            << "  \"camera_active_buffer_sub_flag\": "
+            << static_cast<unsigned>(
+                native_state.camera.buffers[
+                    native_state.camera.active_index
+                ].active_buffer_sub_flag)
+            << ",\n"
+            << "  \"camera_update_in_progress\": "
+            << (native_state.camera.update_in_progress
+                ? "true" : "false")
+            << ",\n"
             << "  \"vehicle_control_steer_axis\": "
             << native_state.physics.last_input.steer_axis()
             << ",\n"
