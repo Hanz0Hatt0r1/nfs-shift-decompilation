@@ -69,7 +69,7 @@ shader identity is unique.
 
 The expensive linker pass is cached by:
 
-`(decoded BMT SHA-256, vertex property tuple, shader family)`.
+`(archive, decoded BMT SHA-256, decoded FX-source SHA-256, vertex property tuple, shader family)`.
 
 This avoids re-ranking identical material/geometry contexts while retaining all
 428 primitive occurrences in the final report.
