@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 583. Current development: Phase 584.**
+**Merged baseline: Phase 584. Current development: Phase 585.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -82,7 +82,8 @@ SGB
   → RuntimeProvenDraw
   → NativeSceneBundle
   → NativeSceneVulkanSet
-  → ordered VulkanDrawBundle children
+  → NativeSceneVulkanSetPrepare
+  → ordered prepared VulkanDrawBundle children
 ```
 
 Key contracts near the native boundary:
@@ -106,7 +107,9 @@ translation-only execution. Phase 583 upgrades the native geometry packet to
 semantic-aware SVGP v3 so POSITION 200, NORMAL 220, TANGENT 240 and TANGENT2
 250 are explicit. Phase 584 uses those semantics for full non-singular affine
 execution in the standalone native material path: affine POSITION transform,
-inverse-transpose NORMAL and linear normalized tangent bases.
+inverse-transpose NORMAL and linear normalized tangent bases. Phase 585 adds
+neutral per-child SPIR-V/interface/provenance preparation and an ordered
+`SHIFT.NativeSceneVulkanSetPrepare/1` without relabeling scene draws as BMW.
 
 ### Native Linux runtime
 
@@ -140,7 +143,7 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | neutral scene-set preparation/admission into native_runtime |
+| Vulkan | active native backend | neutral prepared scene-set loader in native_runtime |
 | SGB / scene | strong structural/render handoff | external runtime resources, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
@@ -300,6 +303,10 @@ python shift_importer.py native-scene-vulkan-set \
   out/scene-render-binding.json \
   out/ir \
   out/native-scene-vulkan
+
+python shift_importer.py native-scene-vulkan-prepare \
+  out/native-scene-vulkan \
+  --validator glslangValidator
 ```
 
 Build a neutral atomic Vulkan draw:
@@ -347,10 +354,10 @@ These are independent; resolving one does not justify guessing another.
 
 1. **Silverstone exact shader attribution** — authentic D3D9 capture required
    for tied IMB permutations.
-2. **Neutral scene-set runtime admission** — Phase 584 closes affine SVWT
-   execution in the standalone native material executor, but `native_runtime`
-   still consumes the established BMW bundle/set contract rather than
-   `SHIFT.NativeSceneVulkanSet/1` directly.
+2. **Neutral scene-set runtime admission** — Phase 585 now prepares every
+   `SHIFT.NativeSceneVulkanSet/1` child through neutral SPIR-V/interface/
+   provenance gates and emits `SHIFT.NativeSceneVulkanSetPrepare/1`, but
+   `native_runtime` still accepts only its established BMW-specific set loader.
 3. **Renderer-owned scene resources** — external samplers/resources need an
    explicit runtime binding contract.
 4. **Scene runtime completeness** — some per-instance MatrixNumber update
@@ -391,7 +398,7 @@ For current state, prefer operational status documents over old phase notes:
 - `docs/PHASE580_NATIVE_SCENE_VULKAN_SET.md`;
 - `docs/PHASE581_VULKAN_WORLD_TRANSFORM_PACKET.md`;
 - `docs/PHASE582_NATIVE_TRANSLATION_SVWT.md`;
-- `docs/PHASE583_SVGP_SEMANTIC_ABI.md`;\n- `docs/PHASE584_AFFINE_SVWT_EXECUTION.md`.
+- `docs/PHASE583_SVGP_SEMANTIC_ABI.md`;\n- `docs/PHASE584_AFFINE_SVWT_EXECUTION.md`;\n- `docs/PHASE585_NATIVE_SCENE_VULKAN_PREPARE.md`.
 
 Historical phase files preserve the evidence trail and are not rewritten
 retroactively when newer work changes the current operational boundary.
