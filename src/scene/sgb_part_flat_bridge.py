@@ -365,11 +365,14 @@ def _build_generated_flat(
 
     root_node = walk(root)
 
-    unreachable = [
-        int(row.get("partition_id"))
-        for row in part_rows
-        if int(row.get("partition_id")) not in visited
-    ]
+    unreachable: list[int] = []
+    for row in part_rows:
+        try:
+            partition_id = int(row.get("partition_id"))
+        except (TypeError, ValueError):
+            continue
+        if partition_id not in visited:
+            unreachable.append(partition_id)
     for partition_id in unreachable:
         blockers.append(
             f"part-flat:partition-unreachable:{partition_id}"
