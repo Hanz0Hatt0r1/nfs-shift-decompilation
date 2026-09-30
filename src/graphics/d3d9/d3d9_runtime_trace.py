@@ -29,6 +29,7 @@ EVENTS = {
     "set_stream_source",
     "set_indices",
     "set_texture",
+    "draw_texture_snapshot",
     "create_texture",
     "create_cube_texture",
     "create_vertex_buffer",
@@ -144,7 +145,7 @@ def build_runtime_binding_evidence(
     index_buffers: dict[str, dict[str, Any]] = {}
     frames: defaultdict[str, dict[str, Any]] = defaultdict(lambda: {
         "frame": None, "vertex_declaration": None, "vertex_shader": None, "pixel_shader": None,
-        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "texture_payloads": [], "buffer_payloads": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
+        "constant_writes": [], "stream_sources": [], "index_binding": None, "texture_bindings": [], "draw_texture_snapshots": [], "texture_payloads": [], "buffer_payloads": [], "screenshot_events": [], "draws": [], "draw_snapshots": [],
         "vertex_buffer_creations": [], "index_buffer_creations": [],
     })
     blockers: list[dict[str, Any]] = []
@@ -278,6 +279,43 @@ def build_runtime_binding_evidence(
             binding["snapshot_status"] = row.get("snapshot_status")
             binding["snapshot_paths"] = list(row.get("snapshot_paths") or [])
             frame["texture_bindings"].append(binding)
+        elif event == "draw_texture_snapshot":
+            pointer = _ptr(row.get("texture_ptr"))
+            snapshot_row = {
+                "draw_index": row.get("draw_index"),
+                "stage": row.get("stage"),
+                "texture_ptr": pointer,
+                "snapshot_status": row.get("snapshot_status"),
+                "snapshot_paths": list(row.get("snapshot_paths") or []),
+                "event_index": row.get("event_index"),
+                "line": row.get("_line"),
+            }
+            descriptor = {
+                key: row.get(key)
+                for key in (
+                    "resource_descriptor_status",
+                    "resource_type",
+                    "resource_type_name",
+                    "width",
+                    "height",
+                    "depth",
+                    "format",
+                    "pool",
+                    "level_count",
+                )
+                if key in row
+            }
+            if descriptor:
+                snapshot_row["resource_descriptor"] = descriptor
+            creation = texture_resources.get(pointer) if pointer else None
+            if pointer is None:
+                snapshot_row["resource_creation_status"] = "null"
+            elif creation is not None:
+                snapshot_row["resource_creation_status"] = "observed"
+                snapshot_row["resource_creation"] = dict(creation)
+            else:
+                snapshot_row["resource_creation_status"] = "not-observed"
+            frame["draw_texture_snapshots"].append(snapshot_row)
         elif event == "buffer_payload":
             frame["buffer_payloads"].append({
                 "buffer_ptr": _ptr(row.get("buffer_ptr")),
@@ -375,7 +413,22 @@ def build_runtime_binding_evidence(
                 "line": row.get("_line"),
             })
         elif event == "draw_indexed_primitive":
+            expected_draw_index = len(frame["draws"])
+            producer_draw_index = row.get("draw_index")
+            if (
+                producer_draw_index is not None
+                and producer_draw_index != expected_draw_index
+            ):
+                blockers.append({
+                    "line": row.get("_line"),
+                    "reason": (
+                        "draw-index:mismatch:"
+                        f"{expected_draw_index}:{producer_draw_index}"
+                    ),
+                })
             draw = {
+                "draw_index": expected_draw_index,
+                "producer_draw_index": producer_draw_index,
                 "primitive_count": row.get("primitive_count"),
                 "start_index": row.get("start_index"),
                 "base_vertex_index": row.get("base_vertex_index"),
@@ -420,7 +473,7 @@ def build_runtime_binding_evidence(
             snapshot = {
                 "format": "SHIFT.D3D9DrawStateSnapshot/1",
                 "frame": frame.get("frame"),
-                "draw_index": len(frame["draws"]) - 1,
+                "draw_index": expected_draw_index,
                 "draw": dict(draw),
                 "vertex_declaration": dict(frame["vertex_declaration"] or {}),
                 "vertex_shader": dict(frame["vertex_shader"] or {}),
@@ -430,6 +483,7 @@ def build_runtime_binding_evidence(
                 "index_binding": dict(frame["index_binding"] or {}),
                 "texture_bindings": [dict(x) for x in frame["texture_bindings"]],
                 "active_texture_bindings": [active_textures[key] for key in sorted(active_textures)],
+                "draw_texture_snapshots": [],
                 "texture_payloads": [dict(x) for x in frame["texture_payloads"]],
                 "buffer_payloads": [dict(x) for x in frame["buffer_payloads"]],
                 "constant_writes": [dict(x) for x in frame["constant_writes"]],
@@ -462,6 +516,68 @@ def build_runtime_binding_evidence(
                     for reason in snapshot_reasons
                 )
             frame["draw_snapshots"].append(snapshot)
+
+    # draw_texture_snapshot events are emitted immediately after a successful
+    # DrawIndexedPrimitive. Attach them to the frozen draw state by explicit
+    # frame-local draw_index and prove the captured pointer was active at the
+    # same sampler stage for that draw.
+    for frame in frames.values():
+        snapshots_by_index = {
+            snapshot.get("draw_index"): snapshot
+            for snapshot in frame.get("draw_snapshots") or []
+            if isinstance(snapshot, Mapping)
+        }
+        for texture_snapshot in frame.get("draw_texture_snapshots") or []:
+            draw_index = texture_snapshot.get("draw_index")
+            target = snapshots_by_index.get(draw_index)
+            if not isinstance(target, dict):
+                blockers.append({
+                    "line": texture_snapshot.get("line"),
+                    "reason": (
+                        "draw-texture-snapshot:draw-not-found:"
+                        f"{draw_index}"
+                    ),
+                })
+                continue
+
+            try:
+                stage = int(texture_snapshot.get("stage"))
+            except (TypeError, ValueError):
+                stage = -1
+            active = None
+            for binding in target.get("active_texture_bindings") or []:
+                try:
+                    binding_stage = int(binding.get("stage"))
+                except (TypeError, ValueError):
+                    continue
+                if binding_stage == stage:
+                    active = binding
+                    break
+
+            active_ptr = (
+                _ptr(active.get("texture_ptr"))
+                if isinstance(active, Mapping)
+                else None
+            )
+            snapshot_ptr = _ptr(texture_snapshot.get("texture_ptr"))
+            active_match = (
+                stage >= 0
+                and active_ptr is not None
+                and snapshot_ptr is not None
+                and active_ptr == snapshot_ptr
+            )
+            normalized = dict(texture_snapshot)
+            normalized["active_binding_texture_ptr"] = active_ptr
+            normalized["active_binding_match"] = active_match
+            target["draw_texture_snapshots"].append(normalized)
+            if not active_match:
+                blockers.append({
+                    "line": texture_snapshot.get("line"),
+                    "reason": (
+                        "draw-texture-snapshot:"
+                        f"active-binding-mismatch:s{stage}"
+                    ),
+                })
 
     correlation: dict[str, Any] = {
         "status": "not-supplied",
@@ -656,6 +772,10 @@ def build_runtime_binding_evidence(
             "decoded_shader_count": sum(1 for x in shaders.values() if x.get("decoded")),
             "texture_object_count": len(texture_resources),
             "texture_set_binding_count": sum(len(x.get("texture_bindings", [])) for x in frame_rows),
+            "draw_texture_snapshot_event_count": sum(
+                len(x.get("draw_texture_snapshots", []))
+                for x in frame_rows
+            ),
             "vertex_buffer_object_count": len(vertex_buffers),
             "index_buffer_object_count": len(index_buffers),
             "texture_payload_event_count": sum(len(x.get("texture_payloads", [])) for x in frame_rows),
