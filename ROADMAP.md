@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 598.**
+**Current mainline: Phase 599.**
 
 
 
@@ -96,6 +96,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 70. Derive proven animation poses from the BAB runtime grammar.
 71. Port the stable native render/runtime boundary to Android.
 72. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+73. Bridge the evidence-backed CameraManager snapshot/double-buffer scalar contract into native_runtime without transporting opaque camera-source semantics — Phase 599 implemented as SHIFT.NativeCameraStateBridge/1 plus --camera-state runtime admission.
 
 ## Workstream status
 
