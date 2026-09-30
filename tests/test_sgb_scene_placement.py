@@ -37,10 +37,10 @@ def _flat_mode():
                     "center_xyz": [1.0, 2.0, 3.0],
                     "radius": 25.0,
                 },
-                "spatial_bounds_candidate": {
+                "spatial_bounds": {
                     "min_xyz": [-1.0, -2.0, -3.0],
                     "max_xyz": [3.0, 6.0, 9.0],
-                    "source_consumer_proven": False,
+                    "source_consumer_proven": True,
                 },
             },
             "summ": _object(),
@@ -107,12 +107,12 @@ def test_flat_summ_scene_placement_preserves_only_proven_geometry():
         "node_aabbox",
         "filter_masks",
         "bounding_sphere",
+        "spatial_bounds",
     ]
-
-    candidate = row["spatial"]["bounds_candidate"]
-    assert candidate["source_consumer_proven"] is False
-    assert candidate["admission"] == "advisory-only"
-    assert candidate["used_as_proven_aabb"] is False
+    assert row["spatial"]["spatial_bounds"]["ordered_axes"] is True
+    assert row["spatial"]["spatial_bounds"]["min_xyz"] == [
+        -1.0, -2.0, -3.0
+    ]
 
     handoff = row["render_binding_handoff"]
     assert handoff["world_transform_status"] == "not-emitted"
@@ -182,7 +182,7 @@ def test_render_binding_boundary_remains_fail_closed_on_world_transform():
     assert boundary["spatial_query_geometry_ready"] is True
     assert boundary["world_transform_emitted"] is False
     assert boundary["draw_admission"] is False
-    assert boundary["corpus_bounds_candidate_is_advisory"] is True
+    assert boundary["leaf_spatial_bounds_source_proven"] is True
 
 
 def test_wrong_input_format_is_rejected():
@@ -192,3 +192,17 @@ def test_wrong_input_format_is_rejected():
         assert "SGBPlacementJoin" in str(error)
     else:
         raise AssertionError("wrong input format must be rejected")
+
+
+
+def test_missing_proven_flat_bounds_blocks_scene_placement():
+    value = _join()
+    del value["flat_summ"]["links"][0]["flat"]["spatial_bounds"]
+
+    report = build_sgb_scene_placement(value)
+
+    assert report["ready"] is False
+    assert (
+        "scene-placement:flat-summ:0:spatial-bounds-missing"
+        in report["blocking_reasons"]
+    )
