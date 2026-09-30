@@ -18,13 +18,15 @@ Covered boundaries include:
 - OCCL concrete 0x120-byte runtime objects plus header-bit1 wrapper/batch admission modes;
 - FLAT;
 - NODE object payload routing into OBJECT/HIERARCHY/DAMAGE;
-- recursive FLAT tree structure with 0x40-byte leaf records.
+- recursive FLAT tree structure with 0x40-byte direct records;
+- production signed-terminal FLAT span normalization controlled by SGB header bit2;
+- FLAT +0x3c runtime index table joins and +0x38 direct-object lookup/refcount teardown consumers.
 
 ## Explicitly unresolved
 
 The project does not invent:
 
-- FLAT leaf semantics;
+- semantics of the remaining FLAT direct-record payload words and the concrete class behind populated +0x38 runtime object pointers;
 - deeper object field meanings;
 - complete NODE placement/transform semantics;
 - full scene streaming and LOD behavior.
@@ -33,4 +35,4 @@ Track placement remains an evidence question.
 
 ## Next
 
-Continue with deeper OBJECT/HIERARCHY fields and FLAT leaf consumers, then correlate those mappings against real SGB samples before joining proven scene data into RenderBinding.
+Continue with deeper OBJECT/HIERARCHY consumers and the remaining FLAT float payload fields, using the Silverstone production corpus as the regression oracle before joining proven scene data into RenderBinding.
