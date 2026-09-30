@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 583. Current development: Phase 584.**
+**Merged baseline: Phase 584. Current development: Phase 585.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -104,9 +104,7 @@ Phase 581 proves the SVWT transport convention without assigning any retail
 shader constant register. Phase 582 begins real material-path consumption with
 translation-only execution. Phase 583 upgrades the native geometry packet to
 semantic-aware SVGP v3 so POSITION 200, NORMAL 220, TANGENT 240 and TANGENT2
-250 are explicit. Phase 584 uses those semantics for full non-singular affine
-execution in the standalone native material path: affine POSITION transform,
-inverse-transpose NORMAL and linear normalized tangent bases.
+250 are explicit. Phase 584 uses those semantics for full non-singular affine\nexecution in the standalone native material path: affine POSITION transform,\ninverse-transpose NORMAL and linear normalized tangent bases. Phase 585 adds\nneutral `NativeSceneVulkanSet` preparation and direct `native_runtime --scene-set`\nadmission, executing the same SVWT semantics before child GPU upload.
 
 ### Native Linux runtime
 
@@ -120,9 +118,7 @@ prepared native IR / Vulkan bundles
   → fixed 60 Hz state/tick boundary
 ```
 
-The runtime supports the established prepared bundle path, multi-draw material
-sets, per-draw pipeline state, constant buffers, 2D textures, optional cube
-resources and validation-layer coverage. Camera state, vehicle-control intent
+The runtime supports the established prepared bundle path, BMW multi-draw sets\nand neutral `SHIFT.NativeSceneVulkanSet/1` scheduling, per-draw pipeline state,\nconstant buffers, 2D textures, optional cube resources and validation-layer\ncoverage. Camera state, vehicle-control intent
 and a physics participant/tick boundary are represented without fabricating
 unknown retail integration semantics.
 
@@ -140,7 +136,7 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | neutral scene-set preparation/admission into native_runtime |
+| Vulkan | active native backend | authentic scene resources/captures beyond the synthetic neutral scene-set smoke |
 | SGB / scene | strong structural/render handoff | external runtime resources, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
