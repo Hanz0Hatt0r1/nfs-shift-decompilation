@@ -16,6 +16,8 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from sgb_multimatrix_runtime import matrix_from_wxyz_transform
+
 FORMAT = "SHIFT.SGBObjectRenderHandoffSet/1"
 SGB_FORMAT = "SHIFT.SGBRuntime/1"
 OBJECT_FORMAT = "SHIFT.SGBObjectRuntime/1"
@@ -38,32 +40,9 @@ def _matrix_from_explicit(explicit: Mapping[str, Any]) -> list[float]:
     ):
         raise ValueError("explicit OBJECT transform is incomplete")
     try:
-        w, x, y, z = [float(value) for value in q]
-        tx, ty, tz = [float(value) for value in offset]
-        s = float(scale)
+        return matrix_from_wxyz_transform(q, offset, scale)
     except (TypeError, ValueError) as exc:
         raise ValueError("explicit OBJECT transform is non-numeric") from exc
-
-    # Exact storage/order used by FUN_00445ec0(param_3=1), followed by
-    # FUN_0068c560 scale and OBJECT translation writes in 0x00699230.
-    matrix = [0.0] * 16
-    matrix[0] = 1.0 - 2.0 * y * y - 2.0 * z * z
-    matrix[5] = 1.0 - 2.0 * x * x - 2.0 * z * z
-    matrix[10] = 1.0 - 2.0 * x * x - 2.0 * y * y
-    matrix[1] = 2.0 * x * y + 2.0 * w * z
-    matrix[4] = 2.0 * x * y - 2.0 * w * z
-    matrix[2] = 2.0 * x * z - 2.0 * w * y
-    matrix[8] = 2.0 * w * y + 2.0 * x * z
-    matrix[6] = 2.0 * w * x + 2.0 * y * z
-    matrix[9] = 2.0 * y * z - 2.0 * x * w
-    matrix[15] = 1.0
-    for index in (0, 1, 2, 4, 5, 6, 8, 9, 10):
-        matrix[index] *= s
-    matrix[12] = tx
-    matrix[13] = ty
-    matrix[14] = tz
-    return matrix
-
 
 def _matrix_record_summary(
     parent: Mapping[str, Any] | None,
