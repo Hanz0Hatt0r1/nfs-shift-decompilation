@@ -138,7 +138,7 @@ prepared native IR / Vulkan bundles
 
 The runtime supports the established prepared bundle path, multi-draw material
 sets, per-draw pipeline state, constant buffers, 2D textures, optional cube
-resources and validation-layer coverage. Phase 599 makes the recovered six-word CameraManager snapshot and guarded two-buffer swap live inside `SHIFT.NativeRuntimeState/1`; Phase 600 seeds that scheduler from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same `VehicleControlIntent` → physics-tick boundary as the live keyboard path. Vehicle-control intent and a physics participant/tick boundary remain represented without fabricating unknown retail integration semantics.
+resources and validation-layer coverage. Phase 599 makes the recovered six-word CameraManager snapshot and guarded two-buffer swap live inside `SHIFT.NativeRuntimeState/1`; Phase 600 seeds that scheduler from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same `VehicleControlIntent` → physics-tick boundary as the live keyboard path. Phase 602 admits the source-backed participant registry/selector structural ABI into `SHIFT.NativeRuntimeState/1` while keeping concrete participant identity, provider selection and numerical physics capture-gated.
 
 The Linux target intentionally excludes EA services, DRM, login/profile/cloud,
 matchmaking/online networking and Bink/video playback.
