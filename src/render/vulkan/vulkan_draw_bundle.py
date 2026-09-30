@@ -82,6 +82,32 @@ def _mapped_registers(
     return result
 
 
+def _external_sampler_status(
+    row: Mapping[str, Any],
+    *,
+    packet_external_registers: set[int],
+    cube_ready: bool,
+) -> str:
+    try:
+        register = int(
+            row.get(
+                "d3d9_sampler_register",
+                row.get("slot", -1),
+            )
+        )
+    except (TypeError, ValueError):
+        return "requires-runtime-resource"
+    sampler_type = str(row.get("sampler_type") or "")
+    if (
+        sampler_type == "sampler2D"
+        and register in packet_external_registers
+    ):
+        return "provided-to-vulkan-texture-packet"
+    if sampler_type == "samplerCube" and register == 3 and cube_ready:
+        return "provided-to-vulkan-cube-packet"
+    return "requires-runtime-resource"
+
+
 def _neutral_mesh(value: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     source = dict(value)
     if source.get("format") == "SHIFT.IMBNeutralGeometry/1":
@@ -525,29 +551,10 @@ def build_vulkan_draw_bundle(
                 "d3d9_sampler_register",
                 row.get("slot"),
             ),
-            "status": (
-                "provided-to-vulkan-texture-packet"
-                if (
-                    str(row.get("sampler_type") or "") == "sampler2D"
-                    and int(
-                        row.get(
-                            "d3d9_sampler_register",
-                            row.get("slot", -1),
-                        )
-                    ) in packet_external_registers
-                )
-                else "provided-to-vulkan-cube-packet"
-                if (
-                    str(row.get("sampler_type") or "") == "samplerCube"
-                    and int(
-                        row.get(
-                            "d3d9_sampler_register",
-                            row.get("slot", -1),
-                        )
-                    ) == 3
-                    and cube_report is not None
-                )
-                else "requires-runtime-resource"
+            "status": _external_sampler_status(
+                row,
+                packet_external_registers=packet_external_registers,
+                cube_ready=cube_report is not None,
             ),
         }
         for row in (selected_submesh.get("external_samplers") or [])
