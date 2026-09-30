@@ -27,11 +27,18 @@ struct GeometryHeader {
     float scale;
 };
 
+struct LegacyGeometryAttribute {
+    uint32_t location;
+    uint32_t format;
+    uint32_t offset;
+    uint32_t stride;
+};
 struct GeometryAttribute {
     uint32_t location;
     uint32_t format;
     uint32_t offset;
     uint32_t stride;
+    uint32_t property_id;
 };
 
 struct ConstantHeader {
@@ -73,7 +80,8 @@ struct CubeHeader {
 #pragma pack(pop)
 
 static_assert(sizeof(GeometryHeader) == 44);
-static_assert(sizeof(GeometryAttribute) == 16);
+static_assert(sizeof(LegacyGeometryAttribute) == 16);
+static_assert(sizeof(GeometryAttribute) == 20);
 static_assert(sizeof(ConstantHeader) == 28);
 static_assert(sizeof(TextureHeader) == 20);
 static_assert(sizeof(TextureRecord) == 24);
@@ -248,7 +256,9 @@ Geometry load_geometry(const std::string& path) {
     Geometry out{};
     std::memcpy(&out.header, data.data(), sizeof(out.header));
     if (std::memcmp(out.header.magic, "SVGP", 4) != 0 ||
-        (out.header.version != 1 && out.header.version != 2)) {
+        (out.header.version != 1 &&
+         out.header.version != 2 &&
+         out.header.version != 3)) {
         throw std::runtime_error("unsupported geometry packet");
     }
     if (!out.header.vertex_count || !out.header.index_count ||
@@ -257,8 +267,12 @@ Geometry load_geometry(const std::string& path) {
         out.header.index_count % 3 != 0) {
         throw std::runtime_error("invalid geometry header");
     }
+    const size_t attribute_record_bytes =
+        out.header.version >= 3
+            ? sizeof(GeometryAttribute)
+            : sizeof(LegacyGeometryAttribute);
     const size_t attr_bytes =
-        static_cast<size_t>(out.header.attribute_count) * sizeof(GeometryAttribute);
+        static_cast<size_t>(out.header.attribute_count) * attribute_record_bytes;
     const size_t vertex_bytes =
         static_cast<size_t>(out.header.vertex_count) * out.header.stride;
     const size_t index_bytes =
@@ -267,7 +281,28 @@ Geometry load_geometry(const std::string& path) {
     if (required != data.size()) throw std::runtime_error("geometry packet size mismatch");
 
     out.attributes.resize(out.header.attribute_count);
-    std::memcpy(out.attributes.data(), data.data() + sizeof(GeometryHeader), attr_bytes);
+    if (out.header.version >= 3) {
+        std::memcpy(
+            out.attributes.data(),
+            data.data() + sizeof(GeometryHeader),
+            attr_bytes);
+    } else {
+        for (uint32_t index = 0; index < out.header.attribute_count; ++index) {
+            LegacyGeometryAttribute legacy{};
+            std::memcpy(
+                &legacy,
+                data.data() + sizeof(GeometryHeader) +
+                    static_cast<size_t>(index) * sizeof(LegacyGeometryAttribute),
+                sizeof(legacy));
+            out.attributes[index] = {
+                legacy.location,
+                legacy.format,
+                legacy.offset,
+                legacy.stride,
+                legacy.location == 0u ? 200u : 0u,
+            };
+        }
+    }
     size_t vertex_offset = sizeof(GeometryHeader) + attr_bytes;
     size_t index_offset = vertex_offset + vertex_bytes;
     out.vertex_bytes.assign(
@@ -280,8 +315,14 @@ Geometry load_geometry(const std::string& path) {
             attribute.stride != out.header.stride) {
             throw std::runtime_error("invalid geometry attribute");
         }
-        if (attribute.location == 0 && attribute.format != 2) {
-            throw std::runtime_error("POSITION0 must be FLOAT3");
+        if (out.header.version >= 3 && attribute.property_id == 0u) {
+            throw std::runtime_error(
+                "SVGP v3 attribute is missing SHIFT property identity");
+        }
+        if (attribute.location == 0 &&
+            (attribute.format != 2 || attribute.property_id != 200u)) {
+            throw std::runtime_error(
+                "POSITION0 must be FLOAT3 property 200");
         }
     }
     return out;
