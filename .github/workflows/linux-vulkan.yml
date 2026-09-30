@@ -394,6 +394,19 @@ jobs:
           python3 shift_importer.py native-scene-vulkan-prepare             out/vulkan/native_scene_set             --validator glslangValidator             > out/vulkan/native_scene_set/prepare_stdout.json
           grep -q '"format": "SHIFT.NativeSceneVulkanSetPrepare/1"'             out/vulkan/native_scene_set/bundle_set_prepare.json
           grep -q '"ready": true'             out/vulkan/native_scene_set/bundle_set_prepare.json
+      - name: Prepare native physics workspace evidence boundary
+        run: |
+          python3 src/physics/native_physics_workspace_boundary.py \
+            --scalar-count 40 \
+            -o out/vulkan/runtime/native_physics_workspace_boundary.json
+          grep -q '"format": "SHIFT.NativePhysicsWorkspaceBoundary/1"' \
+            out/vulkan/runtime/native_physics_workspace_boundary.json
+          grep -q '"matrix_double_count": 1600' \
+            out/vulkan/runtime/native_physics_workspace_boundary.json
+          grep -q '"retail_row_pointer_bytes": 160' \
+            out/vulkan/runtime/native_physics_workspace_boundary.json
+          grep -q '"rhs_bytes": 320' \
+            out/vulkan/runtime/native_physics_workspace_boundary.json
       - name: Prepare native physics participant structural boundary
         run: |
           python3 src/physics/native_physics_participant_boundary.py \
@@ -431,6 +444,17 @@ jobs:
           grep -q '"physics_participant_ready": false' out/vulkan/runtime/scene_set.json
           grep -q '"physics_participant_index": -1' out/vulkan/runtime/scene_set.json
           grep -q '"physics_participant_mode": -1' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_workspace_materialized": true' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_workspace_matrix_doubles": 1600' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_workspace_row_indices": 40' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_workspace_rhs_scalars": 40' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_workspace_matrix_bytes": 12800' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_workspace_row_pointer_bytes": 160' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_workspace_rhs_bytes": 320' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_provider_absent_clears": 3' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_provider_bound": false' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_numerical_backend_ready": false' out/vulkan/runtime/scene_set.json
+          grep -q '"physics_solver_execution_count": 0' out/vulkan/runtime/scene_set.json
           grep -q '"validation_errors": 0' out/vulkan/runtime/scene_set.json
           grep -q '"status": "ok"' out/vulkan/runtime/scene_set.json
       - name: Write deterministic native input script
@@ -477,6 +501,9 @@ jobs:
           grep -q '"vehicle_control_steer_left_steps": 2' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_steer_right_steps": 2' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_neutral_steps": 1' out/vulkan/runtime/input_script.json
+          grep -q '"physics_provider_absent_clears": 5' out/vulkan/runtime/input_script.json
+          grep -q '"physics_numerical_backend_ready": false' out/vulkan/runtime/input_script.json
+          grep -q '"physics_solver_execution_count": 0' out/vulkan/runtime/input_script.json
           grep -q '"validation_errors": 0' out/vulkan/runtime/input_script.json
           grep -q '"status": "ok"' out/vulkan/runtime/input_script.json
       - name: Upload artifacts
