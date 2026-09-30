@@ -10,6 +10,10 @@ inline constexpr const char* kBuiltinSparseSolverFormat =
     "SHIFT.NativeBuiltinSparseSolver/1";
 inline constexpr const char* kBuiltinSparseSolverSourceFunction =
     "FUN_007b0f20";
+inline constexpr const char* kBuiltinDiagonalResetFormat =
+    "SHIFT.NativeBuiltinDiagonalReset/1";
+inline constexpr const char* kBuiltinDiagonalResetSourceFunction =
+    "FUN_007b2210";
 
 struct SparseForwardItem {
     std::size_t node = 0;
@@ -29,6 +33,17 @@ struct BuiltinSparseSolveResult {
     std::vector<std::vector<double>> factorized_matrix;
     std::vector<double> solution;
 };
+
+struct BuiltinDiagonalResetResult {
+    std::vector<std::vector<double>> matrix;
+    std::vector<double> rhs;
+    std::vector<std::size_t> nodes;
+};
+
+BuiltinDiagonalResetResult apply_builtin_diagonal_reset(
+    const std::vector<std::vector<double>>& matrix,
+    const std::vector<double>& rhs,
+    const std::vector<std::size_t>& nodes);
 
 BuiltinSparseSolveResult solve_builtin_sparse(
     const std::vector<std::vector<double>>& matrix,
