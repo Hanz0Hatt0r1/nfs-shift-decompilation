@@ -85,6 +85,7 @@ def audit(analysis_path: Path, analyzer_path: Path) -> dict:
             "layouts",
             "array_contracts",
             "identity_policies",
+            "relations",
         ):
             if observed_manifest.get(section) != current_manifest.get(section):
                 changed_sections.append(section)
