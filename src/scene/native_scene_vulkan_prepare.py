@@ -195,7 +195,12 @@ def prepare_native_scene_vulkan_set(
                 if child_result is not None
                 else None
             )
-            if not isinstance(transform, Mapping) or transform.get("ready") is not True:
+            if (
+                not isinstance(transform, Mapping)
+                or transform.get("ready") is not True
+                or transform.get("format")
+                != "SHIFT.VulkanWorldTransformPacket/1"
+            ):
                 child_blockers.append("world-transform-not-prepared")
 
             child_ready = not child_blockers
