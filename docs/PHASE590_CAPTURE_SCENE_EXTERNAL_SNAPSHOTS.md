@@ -134,11 +134,14 @@ Zero or multiple basename matches remain fail-closed.
 The adapter report contains a `snapshot_contract` only when the complete join
 is ready.
 
-That contract is exactly:
+For external sampler2D the contract remains exactly:
 
 `SHIFT.NativeSceneExternalSamplerSnapshots/1`
 
 and is revalidated through the Phase 589 validator before being exposed.
+Phase 593 additionally emits a separate
+`SHIFT.NativeSceneExternalSamplerCubeSnapshots/1` for the proven samplerCube
+s3 boundary.
 
 A blocked adapter cannot accidentally masquerade as a valid Phase 589
 snapshot manifest.
@@ -155,7 +158,8 @@ python shift_importer.py native-scene-external-capture \
   out/scene-external-capture.json \
   --capture-root out/capture \
   --instance-transform-match out/scene-instance-transform-match.json \\
-  --snapshot-output out/scene-external-snapshots.json
+  --snapshot-output out/scene-external-snapshots.json \
+  --cube-snapshot-output out/scene-external-cube-snapshots.json
 ```
 
 The resulting snapshot manifest can be passed directly to Phase 589:
@@ -166,7 +170,8 @@ python shift_importer.py native-scene-vulkan-set \
   out/scene-render-binding.json \
   out/ir \
   out/native-scene-vulkan \
-  --external-sampler-snapshots out/scene-external-snapshots.json
+  --external-sampler-snapshots out/scene-external-snapshots.json \
+  --external-sampler-cube-snapshots out/scene-external-cube-snapshots.json
 ```
 
 ## Fail-closed cases
@@ -176,7 +181,7 @@ The adapter blocks rather than guessing when:
 - one binding appears in multiple NativeSceneBundle instances without a ready Phase 591 exact transform match;
 - more than one attributed runtime draw can supply the register;
 - texture creation is not observed;
-- the runtime object is a cube instead of a 2D texture;
+- the runtime object type does not match the declared sampler type;
 - no PPM is captured;
 - multiple snapshot paths exist;
 - capture path resolution is missing or ambiguous;
@@ -196,6 +201,6 @@ Still external/evidence-gated:
   sampler snapshots;
 - repeated-instance disambiguation is available through Phase 591 when exact
   draw-local VS constant windows uniquely identify one world matrix; otherwise it remains blocked;
-- external `samplerCube` and other renderer-owned resource types;
+- Phase 593 closes external `samplerCube` only at proven s3; other renderer-owned resource types or cube registers remain gated;
 - unresolved scene streaming/LOD and MatrixNumber update history;
 - IMX XML neutral adaptation.
