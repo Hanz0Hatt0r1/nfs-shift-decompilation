@@ -1,0 +1,199 @@
+{
+  "ambiguous_candidate_count_distribution": {
+    "120": 24,
+    "20": 118,
+    "30": 20,
+    "40": 25,
+    "5": 37,
+    "6": 156,
+    "60": 48
+  },
+  "boundary": {
+    "all_contexts_ranked": true,
+    "heuristic_or_missing_selection": false,
+    "next_gate": "emit per-primitive runtime shader target sets from tied top-rank permutation identities; correlate same-instance D3D9 draw shader hashes",
+    "production_contexts_complete": true,
+    "ranking_contract": "SHIFT.IMBMaterialShaderRanking/1 / material_linker.link_material evidence key",
+    "runtime_shader_attribution_required": true,
+    "static_unique_selection": false
+  },
+  "families": [
+    {
+      "ambiguous_candidate_count_distribution": {
+        "20": 82,
+        "6": 156
+      },
+      "distinct_tied_permutation_identity_count": 11,
+      "family": "basicinstanced",
+      "primitive_binding_count": 238,
+      "selection_status_counts": {
+        "ambiguous": 238
+      },
+      "tied_permutation_identity_sha256": [
+        "05daff6ea7eab8ff31eff8dc0d4b70de8da51698112c7b6937012feb2fc02bdc",
+        "1f9cf95f5fb9f1af4e79a4520814756fe78fdf940af6ef0b5b10d930b6602b37",
+        "297a89cdb018f161ea24b16d6d108bee1baf635c956155e4e121aa64ecf7f8cc",
+        "4a697312b1ab66bd9ea17e2860764086022b89eeb07e2c915fffd9e0835ce3cd",
+        "5af68e3c210e17d51fed7c3229326c7da5564ff91d423df656267cb6de931623",
+        "a6293a5919d54795bdd8fb38e368a98c64e2f3b672e171fa47d2719a84b3d8a8",
+        "adb15d7e73c899c1891b3d0dcd7eedb5447d7c4387da883fda39e534c65f4add",
+        "e0dc385e4268d74a4ff5aa21c2233847989b4aba523fdc028aa74c38dc6dfd35",
+        "e53aa3a18cc811c58fd8ade54c6b6c396db9824fcce06b34ade58b60f543c636",
+        "eede12288d8b7b04a6eccd27fce84ea286e761c73ccbcc88bd15a0210ec494f4",
+        "ff9c2440e5575f21e4b2ad080633de13c4d8c6916234b054520014bfdf410620"
+      ],
+      "unique_rank_context_count": 114
+    },
+    {
+      "ambiguous_candidate_count_distribution": {
+        "120": 24,
+        "30": 12,
+        "60": 48
+      },
+      "distinct_tied_permutation_identity_count": 20,
+      "family": "crowdgeninstanced",
+      "primitive_binding_count": 84,
+      "selection_status_counts": {
+        "ambiguous": 84
+      },
+      "tied_permutation_identity_sha256": [
+        "102d3a1c93864ddaf9b160c0ebad57fde8458b892166e18dc3d7160d07747c1b",
+        "2070c3751db3f240ca62f331c281d03451ec680bd516df936306ec06116fe457",
+        "3f042cf28471b6867ae8d9303429f03a0c5d0356270051dd18999b411d489cfc",
+        "3fa58c178ecde336ffd397ddaad209815626f4e01ec6b95312f9c56f767b1154",
+        "41121a36bd00d6a364964462aee58f2160e03db2a7d198d7290558611f4acbaf",
+        "5074730744ab180ea1849860d8e37014173e1bc6950f3e28da79f1cf6aa52473",
+        "68511e55e69a2d92443c19953fcdaf623a53701ea6565a961548714c1572431b",
+        "753b4ab6408223e3367fd97e117427741f3394acce590977a8835dbc99fbe7b8",
+        "9165d33182bb9ad5461feed2f22cfb1a0c2f406e36ee3f8bd9ee6f6614efcb56",
+        "a5435523fe10e916e53ac4695c1a1a05f51850d8a24d897bc7239d94fc3c42d4",
+        "ad9e3888b81d9ba1f3d4a70719eb8171ad9961f8e822b233baf941444435e30a",
+        "bb6fda1e85d7b699fe307c1b8047fd3e6c30520f645686807100ce1b13bbc53e",
+        "d3b58bff7d66171c7e5506b2844dd50b0f096445eadcfdcde3f6a62ea3183c31",
+        "d7859ccad24d2884b4e4eebeb2f520ea6fcdfbbd65cdc475c22f86a4200d351a",
+        "dd0f6e0331a448e50fc46440d0b395e77bdec56741e1b39442dc4dc359277542",
+        "e861203a92e4b7b986e702ef549878f40d0c94eb8cff35ad129663cb5d8d9b4d",
+        "eb15c8a20f6a911ae157273280ac5c4ff1fab2da5b32da376e0afe1133408cfd",
+        "eba68ff23ccaf5ff0df4690da7805a7cbd33a09af273099c51b3f801f1c3ff1f",
+        "faae8ddd500df5bd50fffb97c9a95c859400d404555cc33ac1988868e3efde5f",
+        "fdd525360223208a0fa22ae13092eea1405078ab937f7665a640abf522c44bee"
+      ],
+      "unique_rank_context_count": 40
+    },
+    {
+      "ambiguous_candidate_count_distribution": {
+        "20": 36,
+        "40": 25
+      },
+      "distinct_tied_permutation_identity_count": 10,
+      "family": "crowdgeninstancedbillboard",
+      "primitive_binding_count": 61,
+      "selection_status_counts": {
+        "ambiguous": 61
+      },
+      "tied_permutation_identity_sha256": [
+        "0c8a98760e224ee85825d3723409c43f7e611a85c6c715a4f580c9d748d2e75c",
+        "19441c56d8f9e816f9164ef23bdf7e27420783e5b4304665809671a5ff68f06e",
+        "2e4fd52ac3a903bdb2625ac9bf00d2c18c93d02bade3d630e4ea17e9c3a6d1e5",
+        "6523e2b1e94245ca9ce1a83eb56dd4edc27d38ae027ab5ea4482b54df78c26a0",
+        "6b1bc99d47aa5257b3fe8a60e8cd46ae7d4c4b9eb6da15862893a881a1e51d62",
+        "8649d5910884460f8b4661318a9628c6c9b16922b5ac5e821e1a597e9e0e9d3a",
+        "a8cb832182886d32f0e61b85f95bb34479499a37ee45f0290ff15a6d41576fdf",
+        "e197d28526cc21c5dd9542114942287f985bee8f3f3a641ea61b7c3915ddf1b1",
+        "e21da5552fab5f0f42ed29006578002cd069b2662b5400c90115b595c6f751cc",
+        "f35c4f2a2fbf03dc4b4768d8c610fba1fb1ce3713daf9f669831a6619ec3cad2"
+      ],
+      "unique_rank_context_count": 44
+    },
+    {
+      "ambiguous_candidate_count_distribution": {
+        "5": 37
+      },
+      "distinct_tied_permutation_identity_count": 5,
+      "family": "foliageinstanced",
+      "primitive_binding_count": 37,
+      "selection_status_counts": {
+        "ambiguous": 37
+      },
+      "tied_permutation_identity_sha256": [
+        "0262b92b398a7991c2abf88bf27bfa01f1088f8b3b789544e62a7b75c0194fb5",
+        "37ae89f6902a2d425807aff5e8f358c730e1ba0f30fe78028c949dedec0254c2",
+        "71ea037608ce477f770c0e8b2ba116da43fbee97f1313eedb48c0993e71fa10b",
+        "7ce11a70978986a541e70fe6e64c483b700d8574295baeb9e9f946bf36950002",
+        "8f76dd405eb0c03a0a37a6a77e1df9633c91c58726501f0c53231f1fdc05217f"
+      ],
+      "unique_rank_context_count": 37
+    },
+    {
+      "ambiguous_candidate_count_distribution": {
+        "30": 8
+      },
+      "distinct_tied_permutation_identity_count": 5,
+      "family": "skintestinstanced",
+      "primitive_binding_count": 8,
+      "selection_status_counts": {
+        "ambiguous": 8
+      },
+      "tied_permutation_identity_sha256": [
+        "1a1b9679f26eee6234a58cbfc1f052d1bc7dc0a62d45d9e80785e9f4ef3da1d9",
+        "1f84d5947d0dbfc99183e71e19536ae82545f2f3664a29be961eea36ad35f99f",
+        "48490686b67ac62ebba71386f2ca60b6b7d81d0bf67deaf4467c00445d3824b7",
+        "c877f36a3c1298654bd004a9e0d7aa86c71fa5676afa65ee19bcd702e9795fe9",
+        "f40f9c80d776ec5b734964f940cc313bc9813399bef02cdd8a2e332b87044ad4"
+      ],
+      "unique_rank_context_count": 4
+    }
+  ],
+  "family_status_counts": {
+    "basicinstanced:ambiguous": 238,
+    "crowdgeninstanced:ambiguous": 84,
+    "crowdgeninstancedbillboard:ambiguous": 61,
+    "foliageinstanced:ambiguous": 37,
+    "skintestinstanced:ambiguous": 8
+  },
+  "format": "SHIFT.IMBMaterialShaderRankingEvidence/1",
+  "result": {
+    "ambiguous_selection_count": 428,
+    "context_status_counts": {
+      "ambiguous": 239
+    },
+    "fxo_unique_payload_counts": {
+      "basicinstanced": 48,
+      "crowdgeninstanced": 96,
+      "crowdgeninstancedbillboard": 80,
+      "foliageinstanced": 112,
+      "skintestinstanced": 32
+    },
+    "heuristic_selection_count": 0,
+    "no_selection_count": 0,
+    "primitive_binding_count": 428,
+    "runtime_target_count": 428,
+    "selection_status_counts": {
+      "ambiguous": 428
+    },
+    "unique_rank_context_count": 239,
+    "unique_selection_count": 0
+  },
+  "source_archives": {
+    "render": {
+      "name": "RENDER.bff",
+      "sha256": "b0b03960ba7e620b7ad5e2b027ed13de67afffe168eb8b30da73c2a632a7c0af"
+    },
+    "silverstone": {
+      "name": "Silverstone_Era3_.zip",
+      "sha256": "5423f5a0356e664a504f90c812e32bbbd4e2a0abe83c546fdc658305661a1e2f"
+    }
+  },
+  "verification_scope": "phase-567-silverstone-era3-material-shader-ranking",
+  "version": 1,
+  "vertex_layout_ambiguity_distribution": [
+    {"ambiguous_candidate_count":5,"primitive_binding_count":37,"vertex_properties":["200","460","220","130"]},
+    {"ambiguous_candidate_count":6,"primitive_binding_count":156,"vertex_properties":["200","460","220","130"]},
+    {"ambiguous_candidate_count":20,"primitive_binding_count":82,"vertex_properties":["200","460","220","240","250","130"]},
+    {"ambiguous_candidate_count":20,"primitive_binding_count":36,"vertex_properties":["200","460","220","240","250","130","231"]},
+    {"ambiguous_candidate_count":40,"primitive_binding_count":25,"vertex_properties":["200","460","220","240","250","130","231"]},
+    {"ambiguous_candidate_count":30,"primitive_binding_count":20,"vertex_properties":["200","460","220","240","250","130","580","310"]},
+    {"ambiguous_candidate_count":60,"primitive_binding_count":48,"vertex_properties":["200","460","220","240","250","130","580","310"]},
+    {"ambiguous_candidate_count":120,"primitive_binding_count":24,"vertex_properties":["200","460","220","240","250","130","580","310"]}
+  ]
+}
