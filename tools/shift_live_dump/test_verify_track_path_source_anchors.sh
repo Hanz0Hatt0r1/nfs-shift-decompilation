@@ -5,6 +5,46 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
 cat >"$tmp/SHIFT.exe.c" <<'EOF'
+void FUN_00100000(void)
+{
+    int local_8;
+    FUN_00631740(&local_8,"BPersistent");
+    _DAT_00bfa608 = &PTR_FUN_00aaa988;
+    _DAT_00bfa610 = &DAT_00bfa000;
+}
+
+void FUN_00100020(void)
+{
+    int local_8;
+    FUN_00631740(&local_8,"AIPathObj");
+    _DAT_00c0dc64 = &PTR_FUN_00aaa988;
+    _DAT_00c0dc6c = &DAT_00bfa608;
+}
+
+void FUN_00100040(void)
+{
+    int local_8;
+    FUN_00631740(&local_8,"AIPath");
+    _DAT_00c0d698 = &PTR_FUN_00aaa988;
+    _DAT_00c0d6a0 = &DAT_00c0dc64;
+}
+
+void FUN_00100060(void)
+{
+    int local_8;
+    FUN_00631740(&local_8,"AIPolylinePath");
+    _DAT_00c0d608 = &PTR_FUN_00aaa988;
+    _DAT_00c0d610 = &DAT_00c0d698;
+}
+
+void FUN_00100080(void)
+{
+    int local_8;
+    FUN_00631740(&local_8,"AISegmentPath");
+    _DAT_00c0d668 = &PTR_FUN_00aaa988;
+    _DAT_00c0d670 = &DAT_00c0d698;
+}
+
 void * FUN_006bc3a0(void *this)
 {
     *(void ***)this = &PTR_FUN_00afb150;
@@ -42,6 +82,24 @@ void FUN_006cc730(void *this)
 void FUN_006cdf70(void *this)
 {
     *(void ***)this = &PTR_FUN_00afbe28;
+}
+
+void FUN_006d0ef0(void *this)
+{
+    *(void ***)this = &PTR_FUN_00afc630;
+    FUN_006383f0(this);
+}
+
+void FUN_006cc390(void *this)
+{
+    *(void ***)this = &PTR_FUN_00afc678;
+    FUN_006d0ef0(this);
+}
+
+void FUN_006ce660(void *this)
+{
+    *(void ***)this = &PTR_FUN_00afc930;
+    FUN_006d0ef0(this);
 }
 
 void * FUN_006d8490(void *param_1)
@@ -113,6 +171,7 @@ section(0, ".text", text_size, text_rva, text_size, text_raw, 0x60000020)
 section(1, ".rdata", rdata_size, rdata_rva, rdata_size, rdata_raw, 0x40000040)
 
 getters = {
+    0x006CC220: 0x00C0DC64,  # AIPathObj
     0x006BC3E0: 0x00C0D5A4,  # AIPathInfo
     0x006C3C30: 0x00C0D588,  # AIArea
     0x006CC3B0: 0x00C0D608,  # AIPolylinePath
@@ -127,6 +186,7 @@ for address, descriptor in getters.items():
     blob[off:off + 6] = b"\xB8" + struct.pack("<I", descriptor) + b"\xC3"
 
 vtables = {
+    0x00AFC630: 0x006CC220,
     0x00AFB150: 0x006BC3E0,
     0x00AFC048: 0x006C3C30,
     0x00AFC678: 0x006CC3B0,
@@ -153,9 +213,26 @@ assert report["ready"] is True, report
 assert len(report["anchors"]) == 7, report
 assert all(row["analyzer_match"] for row in report["anchors"]), report
 assert all(row["rtti_found"] and row["constructor_found"] for row in report["factory_links"]), report
+assert all(
+    row["function_found"] and row["source_symbol_found"] and row["symbol_address_match"]
+    for row in report["source_only_vtable_anchors"]
+), report
+assert all(row["match"] for row in report["hierarchy_links"]), report
+assert all(
+    row["function_found"] and row["own_vtable_found"] and row["base_destructor_found"]
+    for row in report["destructor_chain_links"]
+), report
 pe = report["pe_rtti_vtables"]
 assert pe["ready"] is True, pe
 rows = {row["class"]: row for row in pe["rows"]}
+assert rows["AIPathObj"]["getter_addresses"] == [0x006CC220], rows
+assert rows["AIPathObj"]["candidate_vtables"] == [0x00AFC630], rows
+assert rows["AIPathObj"]["pe_only_vtable"] == 0x00AFC630, rows
+assert rows["AIPathObj"]["match"] is True, rows
+assert rows["AIPath"]["getter_addresses"] == [], rows
+assert rows["AIPath"]["candidate_vtables"] == [], rows
+assert rows["AIPath"]["expected_dedicated_vtable_absent"] is True, rows
+assert rows["AIPath"]["match"] is True, rows
 assert rows["AIPathInfo"]["getter_addresses"] == [0x006BC3E0], rows
 assert rows["AIPathInfo"]["candidate_vtables"] == [0x00AFB150], rows
 assert rows["AIArea"]["getter_addresses"] == [0x006C3C30], rows
