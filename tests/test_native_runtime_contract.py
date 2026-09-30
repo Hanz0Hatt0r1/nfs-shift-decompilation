@@ -342,3 +342,34 @@ def test_phase602_native_participant_loader_requires_all_source_contracts_ready(
         "native physics participant source contracts are not all ready"
         in source
     )
+
+
+def test_phase603_keeps_registry_index_and_selector_ordinal_distinct():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    header = Path("native_runtime/src/runtime_state.hpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "participant_identity_join_proven = false" in header
+    assert "participant_registry_index = -1" in header
+    assert "selector_ordinal = -1" in header
+    assert "participant_process_state = -1" in header
+    assert "participant_topology_steps" in header
+    assert "participant_ready_steps" in header
+    assert "participant_unresolved_steps" in header
+
+    assert '"registry_index_source_offset"' in source
+    assert '"selector_candidate_ready_offset"' in source
+    assert '"registry_selector_identity_join_proven"' in source
+    assert '"participant_registry_index"' in source
+    assert '"selector_ordinal"' in source
+    assert '"participant_process_state"' in source
+    assert "physics_participant_identity_join_proven" in source
+    assert "physics_participant_registry_index" in source
+    assert "physics_selector_ordinal" in source
+    assert "physics_participant_process_state" in source
+    assert "physics_participant_topology_steps" in source
+    assert "physics_participant_ready_steps" in source
+    assert "physics_participant_unresolved_steps" in source
