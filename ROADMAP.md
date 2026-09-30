@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 545.**
+**Current mainline: Phase 546.**
 
 
 
@@ -78,10 +78,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 54. Correct the production NODE/SUMM record to 0x1c metadata + inline payload, map LOD/HIERARCHY/OBJECT MATRIX/subobject recursion and keep DAMAGE on its alternate XML path — Phase 543 implemented.
 55. Mark common object byte +0x21 as source-unconsumed/corpus-zero and map the proven XML-only DAMAGE wrapper fields — Phase 544 implemented.
 56. Join FLAT leaf runtime indices to SUMM wrapper order and PART one-based child IDs to the NODE wrapper registry; record PART-to-FLAT runtime materialization — Phase 545 implemented.
-57. Recover only the remaining FLAT spatial/mask payload fields required to emit neutral scene placement into RenderBinding.
-58. Derive proven animation poses from the BAB runtime grammar.
-59. Port the stable native render/runtime boundary to Android.
-60. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+57. Map source-backed FLAT include/exclude masks, bounding spheres and tree-node AABBs while retaining leaf +0x20..+0x34 only as a corpus-verified bounds candidate — Phase 546 implemented.
+58. Build a neutral scene placement contract from the joined wrapper identity and proven FLAT query geometry, then hand it toward RenderBinding.
+59. Derive proven animation poses from the BAB runtime grammar.
+60. Port the stable native render/runtime boundary to Android.
+61. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -94,7 +95,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | FLAT↔SUMM and PART↔NODE placement identity joined | remaining FLAT spatial/mask fields required by RenderBinding |
+| SGB scene | placement identity + FLAT masks/sphere/node AABB mapped | neutral scene placement contract toward RenderBinding |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
