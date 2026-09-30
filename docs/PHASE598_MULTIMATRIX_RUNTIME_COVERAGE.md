@@ -80,6 +80,11 @@ Resolved and unresolved OBJECT rows preserve:
 The audit is `ready` only when the runtime capture pipeline is ready and the
 Phase 595 runtime-object candidate join is ready.
 
+If either prerequisite is blocked, Phase 596 is not executed at all and the
+coverage report records zero hypotheses/eligible roots. This prevents a
+downstream constant-window hypothesis from bypassing failed exact
+same-instance/resource identity.
+
 A valid capture may still produce zero ready owner consensuses. That is a
 measured evidence result, not a guessed root.
 
