@@ -14,7 +14,7 @@
 - MEB primitive material references resolve through BMT/MTX;
 - BMT connects to FX sources and FXO permutations;
 - CTAB reflection supplies sampler registers and material constants;
-- renderer-global samplers remain explicit external resources.
+- renderer-global samplers remain explicit external resources; Phase 588 can transport an explicitly supplied external `sampler2D` snapshot through SVTP without reclassifying it as a material texture.
 
 ### Vertex ABI
 
@@ -32,8 +32,8 @@ Real captured draws additionally require exact MEB identity, draw-local snapshot
 
 ## Current native direction
 
-Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets, SPIR-V interface validation and the BMW material→DDS adapter.
+Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets, SPIR-V interface validation, the BMW material→DDS adapter, neutral scene-set execution, and an explicit external-`sampler2D` snapshot channel in the existing SVTP binary ABI.
 
 ## Remaining work
 
-Broaden exact BMW shader/material execution, close more runtime same-instance evidence, finish IMB vertex/primitive payload decoding and the IMX XML neutral adapter, carry scene visibility/streaming semantics beyond the SGB resource bridge, and complete full RenderCommand submission on Vulkan.
+Broaden exact BMW shader/material execution, close more runtime same-instance evidence, wire provenance-bearing external snapshots into scene-level admission, implement the IMX XML neutral adapter, carry scene visibility/streaming semantics beyond the SGB resource bridge, and close remaining alpha-test/bias/stencil Vulkan state. Missing renderer-owned resources remain fail-closed.

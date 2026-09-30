@@ -1969,6 +1969,7 @@ def cmd_vulkan_draw_bundle(args: argparse.Namespace) -> int:
         args.mesh,
         args.output_dir,
         textures=args.textures,
+        external_textures=args.external_textures,
         environment_cube=args.environment_cube,
         command_index=args.command_index,
         submesh_index=args.submesh_index,
@@ -4410,6 +4411,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("mesh")
     p.add_argument("output_dir")
     p.add_argument("--textures")
+    p.add_argument(
+        "--external-textures",
+        help=(
+            "JSON mapping explicit external sampler2D registers "
+            "to SHIFT.ReferenceTexture/1 snapshots"
+        ),
+    )
     p.add_argument("--environment-cube")
     p.add_argument("--command-index", type=int, default=0)
     p.add_argument("--submesh-index", type=int, default=0)

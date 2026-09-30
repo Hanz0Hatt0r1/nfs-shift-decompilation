@@ -60,6 +60,21 @@ def test_phase579_cli_accepts_neutral_vulkan_draw_bundle_command():
     assert args.command_index == 0
     assert args.submesh_index == 2
     assert args.allow_static is False
+    assert args.external_textures is None
+    assert args.fn.__name__ == "cmd_vulkan_draw_bundle"
+
+
+def test_phase588_cli_accepts_external_sampler2d_snapshot_map():
+    parser = build_parser()
+    args = parser.parse_args([
+        "vulkan-draw-bundle",
+        "render-command.json",
+        "neutral-mesh.json",
+        "out/vulkan-draw",
+        "--external-textures",
+        "external-textures.json",
+    ])
+    assert args.external_textures == "external-textures.json"
     assert args.fn.__name__ == "cmd_vulkan_draw_bundle"
 
 
