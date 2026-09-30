@@ -30,11 +30,18 @@ struct GeometryHeader {
     float center_z;
     float scale;
 };
+struct LegacyGeometryAttribute {
+    uint32_t location;
+    uint32_t format;
+    uint32_t offset;
+    uint32_t stride;
+};
 struct GeometryAttribute {
     uint32_t location;
     uint32_t format;
     uint32_t offset;
     uint32_t stride;
+    uint32_t property_id;
 };
 struct ConstantHeader {
     char magic[4];
@@ -78,7 +85,8 @@ struct WorldTransformHeader {
 #pragma pack(pop)
 
 static_assert(sizeof(GeometryHeader) == 44);
-static_assert(sizeof(GeometryAttribute) == 16);
+static_assert(sizeof(LegacyGeometryAttribute) == 16);
+static_assert(sizeof(GeometryAttribute) == 20);
 static_assert(sizeof(ConstantHeader) == 28);
 static_assert(sizeof(TextureHeader) == 20);
 static_assert(sizeof(TextureRecord) == 24);
@@ -307,7 +315,9 @@ Geometry load_geometry(const std::filesystem::path& path) {
     std::memcpy(&geometry.header, data.data(), sizeof(geometry.header));
 
     if (std::memcmp(geometry.header.magic, "SVGP", 4) != 0 ||
-        (geometry.header.version != 1 && geometry.header.version != 2)) {
+        (geometry.header.version != 1 &&
+         geometry.header.version != 2 &&
+         geometry.header.version != 3)) {
         throw std::runtime_error("unsupported geometry packet");
     }
     if (geometry.header.vertex_count == 0 ||
@@ -319,9 +329,13 @@ Geometry load_geometry(const std::filesystem::path& path) {
         throw std::runtime_error("invalid geometry packet counts");
     }
 
+    const size_t attribute_record_bytes =
+        geometry.header.version >= 3
+            ? sizeof(GeometryAttribute)
+            : sizeof(LegacyGeometryAttribute);
     const size_t attribute_bytes =
         static_cast<size_t>(geometry.header.attribute_count) *
-        sizeof(GeometryAttribute);
+        attribute_record_bytes;
     const size_t vertex_bytes =
         static_cast<size_t>(geometry.header.vertex_count) *
         geometry.header.stride;
@@ -335,10 +349,31 @@ Geometry load_geometry(const std::filesystem::path& path) {
     }
 
     geometry.attributes.resize(geometry.header.attribute_count);
-    std::memcpy(
-        geometry.attributes.data(),
-        data.data() + sizeof(GeometryHeader),
-        attribute_bytes);
+    if (geometry.header.version >= 3) {
+        std::memcpy(
+            geometry.attributes.data(),
+            data.data() + sizeof(GeometryHeader),
+            attribute_bytes);
+    } else {
+        for (uint32_t index = 0;
+             index < geometry.header.attribute_count;
+             ++index) {
+            LegacyGeometryAttribute legacy{};
+            std::memcpy(
+                &legacy,
+                data.data() + sizeof(GeometryHeader) +
+                    static_cast<size_t>(index) *
+                        sizeof(LegacyGeometryAttribute),
+                sizeof(legacy));
+            geometry.attributes[index] = {
+                legacy.location,
+                legacy.format,
+                legacy.offset,
+                legacy.stride,
+                legacy.location == 0u ? 200u : 0u,
+            };
+        }
+    }
 
     if (geometry.header.version == 1) {
         if (geometry.header.attribute_count != 1 ||
@@ -381,9 +416,16 @@ Geometry load_geometry(const std::filesystem::path& path) {
             attribute.stride != geometry.header.stride) {
             throw std::runtime_error("invalid vertex attribute");
         }
+        if (geometry.header.version >= 3 &&
+            attribute.property_id == 0u) {
+            throw std::runtime_error(
+                "SVGP v3 attribute is missing SHIFT property identity");
+        }
         if (attribute.location == 0) {
-            if (attribute.format != 2 || position_seen) {
-                throw std::runtime_error("POSITION0 must be exactly FLOAT3 at location 0");
+            if (attribute.format != 2 || position_seen ||
+                attribute.property_id != 200u) {
+                throw std::runtime_error(
+                    "POSITION0 must be FLOAT3 property 200 at location 0");
             }
             position_seen = true;
         }
@@ -465,7 +507,8 @@ WorldTransformExecution apply_world_transform_translation(
     const GeometryAttribute* position = nullptr;
     for (const auto& attribute : geometry.attributes) {
         if (attribute.location == 0u) {
-            if (position != nullptr || attribute.format != 2u) {
+            if (position != nullptr || attribute.format != 2u ||
+                attribute.property_id != 200u) {
                 throw std::runtime_error(
                     "SVWT execution requires one FLOAT3 POSITION0 at location 0");
             }
