@@ -46,6 +46,74 @@ class SGBObjectDecodeError(ValueError):
     pass
 
 
+DAMAGE_RUNTIME_PAIR = {
+    "constructor": "FUN_00698b00",
+    "vtable": 0x00AF7C88,
+    "allocation_bytes": 0xA0,
+    "destructor": "FUN_0068cf40",
+    "consumer": "FUN_0068cfe0",
+    "matrix": {
+        "count_offset": 0x80,
+        "array_offset": 0x84,
+        "element_bytes": RUNTIME_MATRIX_ELEMENT_BYTES,
+        "consumer": "FUN_0068cfe0",
+    },
+    "subobject_pair": {
+        "array_offset": 0x88,
+        "pointer_count_consumed_by_runtime": 2,
+        "pointer_stride": 4,
+        "destructor_loop_bytes": 8,
+        "destructor_child_release_vfunc_offset": 0x00,
+    },
+    "matrix_number_offset": 0x90,
+    "proxy_vfuncs": {
+        "0x10": {
+            "function": "FUN_0068c6d0",
+            "child_vfunc_offset": 0x10,
+            "aggregation": "forward-to-both",
+        },
+        "0x14": {
+            "function": "FUN_0068c750",
+            "child_vfunc_offset": 0x14,
+            "aggregation": "forward-to-both",
+        },
+        "0x18": {
+            "function": "FUN_0068c710",
+            "child_vfunc_offset": 0x18,
+            "aggregation": "forward-to-both",
+        },
+        "0x20": {
+            "function": "FUN_0068c790",
+            "child_vfunc_offset": 0x20,
+            "aggregation": "logical-and",
+        },
+        "0x28": {
+            "function": "FUN_0068c7c0",
+            "child_vfunc_offset": 0x28,
+            "aggregation": "logical-and",
+        },
+        "0x24": {
+            "function": "FUN_0068dea0",
+            "child_probe_vfunc_offset": 0x3C,
+            "fallback_child_vfunc_offset": 0x24,
+            "aggregation": "specialized-two-child-selection",
+        },
+    },
+    "construction": {
+        "matrix_stack_builder": "FUN_0068cfe0",
+        "matrix_number_index_stride": 0x40,
+        "child_output_vfunc_offset": 0x24,
+        "child_output_fields": [0xA0, 0xA4],
+    },
+    "ownership": {
+        "matrix_array_free_base_adjust": -8,
+        "subobject_pair_array_freed": True,
+        "subobject_pair_array_cleared": True,
+    },
+    "serialized_layout_status": "partial",
+}
+
+
 RUNTIME_WRAPPERS = {
     "LOD": {
         "constructor": "FUN_00698a90",
@@ -89,12 +157,14 @@ RUNTIME_WRAPPERS = {
         "constructor": "FUN_00698b00",
         "vtable": 0x00AF7C88,
         "allocation_bytes": 0xA0,
+        "destructor": "FUN_0068cf40",
         "proven_fields": {
             "matrix_count": 0x80,
             "runtime_matrix_array": 0x84,
-            "runtime_subobject_array": 0x88,
+            "runtime_subobject_pair": 0x88,
             "matrix_number": 0x90,
         },
+        "runtime_pair_contract": DAMAGE_RUNTIME_PAIR,
     },
 }
 
@@ -519,7 +589,10 @@ def parse_sgb_object_payload(
             "matrix_count_offset": 0x22,
             "subobject_count_offset": 0x23,
             "runtime_matrix_loader": "FUN_00699870",
-            "runtime_subobject_array_offset": 0x88,
+            "runtime_subobject_pair_offset": 0x88,
+            "runtime_pair_pointer_count": 2,
+            "binary_subobject_offset_table": "not-normalized",
         }
+        report["damage_runtime_pair"] = DAMAGE_RUNTIME_PAIR
 
     return report
