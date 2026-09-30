@@ -19,6 +19,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from imb_neutral_geometry import build_imb_neutral_geometry
+from native_scene_external_sampler_cube_snapshots import (
+    FORMAT as EXTERNAL_CUBE_SNAPSHOT_FORMAT,
+    resolve_draw_external_sampler_cube_snapshot,
+    validate_external_sampler_cube_snapshot_contract,
+)
 from native_scene_external_sampler_snapshots import (
     FORMAT as EXTERNAL_SNAPSHOT_FORMAT,
     resolve_draw_external_sampler2d_snapshots,
@@ -348,6 +353,7 @@ def build_native_scene_vulkan_set(
     *,
     environment_cube_dds: str | Path | None = None,
     external_sampler_snapshots: Mapping[str, Any] | None = None,
+    external_sampler_cube_snapshots: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if scene_bundle.get("format") != SCENE_FORMAT:
         raise ValueError("scene bundle must be SHIFT.NativeSceneBundle/1")
@@ -371,10 +377,29 @@ def build_native_scene_vulkan_set(
     snapshot_contract = validate_external_sampler_snapshot_contract(
         external_sampler_snapshots
     )
+    cube_snapshot_contract = (
+        validate_external_sampler_cube_snapshot_contract(
+            external_sampler_cube_snapshots
+        )
+    )
     if snapshot_contract.get("ready") is not True:
         blockers.extend(
             str(reason)
             for reason in snapshot_contract.get("blocking_reasons") or []
+        )
+    if cube_snapshot_contract.get("ready") is not True:
+        blockers.extend(
+            str(reason)
+            for reason in (
+                cube_snapshot_contract.get("blocking_reasons") or []
+            )
+        )
+    if (
+        environment_cube_dds is not None
+        and int(cube_snapshot_contract.get("snapshot_count") or 0) > 0
+    ):
+        blockers.append(
+            "environment-cube:global-dds-conflicts-with-scene-snapshots"
         )
     if scene_bundle.get("ready") is not True:
         blockers.append("native-scene-bundle:not-ready")
@@ -511,6 +536,8 @@ def build_native_scene_vulkan_set(
 
         external_textures: dict[int, dict[str, Any]] = {}
         external_texture_sources: list[dict[str, Any]] = []
+        external_cube = None
+        external_cube_source = None
         if submesh is not None and not child_blockers:
             (
                 external_textures,
@@ -522,12 +549,29 @@ def build_native_scene_vulkan_set(
                 submesh,
             )
             child_blockers.extend(snapshot_blockers)
+            (
+                external_cube,
+                cube_snapshot_blockers,
+                external_cube_source,
+            ) = resolve_draw_external_sampler_cube_snapshot(
+                cube_snapshot_contract,
+                draw,
+                submesh,
+            )
+            child_blockers.extend(cube_snapshot_blockers)
 
+        selected_environment_cube = (
+            external_cube
+            if external_cube is not None
+            else environment_cube
+        )
         external_blockers: list[str] = []
         if submesh is not None:
             external_blockers = _external_sampler_blockers(
                 submesh,
-                environment_cube_ready=environment_cube is not None,
+                environment_cube_ready=(
+                    selected_environment_cube is not None
+                ),
                 external_2d_ready=set(external_textures),
             )
             native_blockers.extend(
@@ -553,7 +597,7 @@ def build_native_scene_vulkan_set(
                         if submesh.get("textures")
                         else None
                     ),
-                    environment_cube=environment_cube,
+                    environment_cube=selected_environment_cube,
                     external_textures=(
                         external_textures
                         if external_textures
@@ -605,6 +649,7 @@ def build_native_scene_vulkan_set(
             "resource": dict(resource) if isinstance(resource, Mapping) else {},
             "texture_sources": texture_sources,
             "external_texture_sources": external_texture_sources,
+            "external_cube_source": external_cube_source,
             "external_runtime_blocking_reasons": external_blockers,
             "bundle": (
                 None
@@ -690,6 +735,14 @@ def build_native_scene_vulkan_set(
             "external_sampler_snapshot_count": int(
                 snapshot_contract.get("snapshot_count") or 0
             ),
+            "external_sampler_cube_snapshot_format": (
+                EXTERNAL_CUBE_SNAPSHOT_FORMAT
+                if external_sampler_cube_snapshots is not None
+                else None
+            ),
+            "external_sampler_cube_snapshot_count": int(
+                cube_snapshot_contract.get("snapshot_count") or 0
+            ),
         },
         "boundary": {
             "draw_order_preserved": True,
@@ -701,6 +754,8 @@ def build_native_scene_vulkan_set(
             "world_transform_serialized": True,
             "world_transform_executed": False,
             "explicit_external_sampler2d_snapshots_admitted": True,
+            "explicit_external_samplercube_s3_snapshots_admitted": True,
+            "external_samplercube_register_policy": "s3-only",
             "unresolved_external_samplers_promoted": False,
             "next_stage": (
                 "prepare the ordered neutral children through the native "
@@ -740,6 +795,7 @@ def validate_files(
     *,
     environment_cube_dds: str | Path | None = None,
     external_sampler_snapshots_path: str | Path | None = None,
+    external_sampler_cube_snapshots_path: str | Path | None = None,
 ) -> dict[str, Any]:
     scene_bundle = _load(native_scene_bundle_path)
     scene_bridge = _load(scene_bridge_path)
@@ -759,6 +815,18 @@ def validate_files(
         raise ValueError(
             "external sampler snapshots JSON must be an object"
         )
+    external_sampler_cube_snapshots = (
+        _load(external_sampler_cube_snapshots_path)
+        if external_sampler_cube_snapshots_path is not None
+        else None
+    )
+    if (
+        external_sampler_cube_snapshots is not None
+        and not isinstance(external_sampler_cube_snapshots, Mapping)
+    ):
+        raise ValueError(
+            "external sampler cube snapshots JSON must be an object"
+        )
     return build_native_scene_vulkan_set(
         scene_bundle,
         scene_bridge,
@@ -766,6 +834,9 @@ def validate_files(
         output_dir,
         environment_cube_dds=environment_cube_dds,
         external_sampler_snapshots=external_sampler_snapshots,
+        external_sampler_cube_snapshots=(
+            external_sampler_cube_snapshots
+        ),
     )
 
 
@@ -777,6 +848,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output_dir")
     parser.add_argument("--environment-cube-dds")
     parser.add_argument("--external-sampler-snapshots")
+    parser.add_argument("--external-sampler-cube-snapshots")
     args = parser.parse_args(argv)
     report = validate_files(
         args.native_scene_bundle,
@@ -786,6 +858,9 @@ def main(argv: list[str] | None = None) -> int:
         environment_cube_dds=args.environment_cube_dds,
         external_sampler_snapshots_path=(
             args.external_sampler_snapshots
+        ),
+        external_sampler_cube_snapshots_path=(
+            args.external_sampler_cube_snapshots
         ),
     )
     print(json.dumps({
