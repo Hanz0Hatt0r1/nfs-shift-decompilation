@@ -25,6 +25,7 @@ FORMAT = "SHIFT.NativeSceneExternalSamplerCaptureAdapter/1"
 SCENE_FORMAT = "SHIFT.NativeSceneBundle/1"
 BRIDGE_FORMAT = "SHIFT.SGBRenderBindingBridge/1"
 PIPELINE_FORMAT = "SHIFT.IMBRuntimeCapturePipeline/1"
+INSTANCE_MATCH_FORMAT = "SHIFT.NativeSceneInstanceTransformMatch/1"
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -123,6 +124,46 @@ def _pipeline_texture_observations(
     return by_binding
 
 
+def _instance_match_index(
+    value: Mapping[str, Any] | None,
+) -> tuple[dict[int, Mapping[str, Any]], list[str]]:
+    if value is None:
+        return {}, []
+    blockers: list[str] = []
+    if value.get("format") != INSTANCE_MATCH_FORMAT:
+        blockers.append(
+            "scene-external-capture:instance-match-invalid-format"
+        )
+        return {}, blockers
+    if value.get("version") != 1:
+        blockers.append(
+            "scene-external-capture:instance-match-version-invalid"
+        )
+    if value.get("ready") is not True:
+        blockers.extend(
+            "scene-external-capture:instance-match:" + str(reason)
+            for reason in (
+                value.get("blocking_reasons")
+                or ["not-ready"]
+            )
+        )
+    result: dict[int, Mapping[str, Any]] = {}
+    for row in value.get("rows") or []:
+        if not isinstance(row, Mapping):
+            continue
+        binding_index = _safe_int(row.get("binding_index"))
+        if binding_index is None or row.get("ready") is not True:
+            continue
+        if binding_index in result:
+            blockers.append(
+                "scene-external-capture:instance-match-duplicate-binding:"
+                + str(binding_index)
+            )
+            continue
+        result[binding_index] = row
+    return result, list(dict.fromkeys(blockers))
+
+
 def _resolve_snapshot_path(
     raw_path: str,
     capture_root: Path,
@@ -210,6 +251,7 @@ def build_scene_external_sampler_capture_adapter(
     capture_pipeline: Mapping[str, Any],
     *,
     capture_root: str | Path,
+    instance_transform_match: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if scene_bundle.get("format") != SCENE_FORMAT:
         raise ValueError("scene input must be SHIFT.NativeSceneBundle/1")
@@ -224,6 +266,10 @@ def build_scene_external_sampler_capture_adapter(
 
     root = Path(capture_root)
     blockers: list[str] = []
+    instance_match_by_binding, instance_match_blockers = (
+        _instance_match_index(instance_transform_match)
+    )
+    blockers.extend(instance_match_blockers)
     if scene_bundle.get("ready") is not True:
         blockers.append("scene-external-capture:scene-bundle-not-ready")
     if scene_bridge.get("ready") is not True:
@@ -274,19 +320,40 @@ def build_scene_external_sampler_capture_adapter(
         needs_external = any(external_decl_sets)
         if not needs_external:
             continue
-        required_count += sum(
-            len(declarations)
-            for declarations in external_decl_sets
-        )
-        if len(draws) != 1:
-            blockers.append(
-                f"scene-external-capture:binding-{binding_index}:"
-                f"scene-draw-ambiguous:{len(draws)}"
-            )
-            continue
 
-        draw = draws[0]
-        declarations = external_decl_sets[0]
+        selected_instance_match = None
+        if len(draws) == 1:
+            draw = draws[0]
+            declarations = external_decl_sets[0]
+            required_count += len(declarations)
+        else:
+            match = instance_match_by_binding.get(binding_index)
+            selected_order = (
+                _safe_int(match.get("selected_draw_order"))
+                if isinstance(match, Mapping)
+                else None
+            )
+            matching_indices = [
+                index
+                for index, candidate in enumerate(draws)
+                if _safe_int(candidate.get("draw_order")) == selected_order
+            ]
+            if len(matching_indices) != 1:
+                required_count += sum(
+                    len(declarations)
+                    for declarations in external_decl_sets
+                )
+                blockers.append(
+                    f"scene-external-capture:binding-{binding_index}:"
+                    f"scene-draw-ambiguous:{len(draws)}"
+                )
+                continue
+            selected_index = matching_indices[0]
+            draw = draws[selected_index]
+            declarations = external_decl_sets[selected_index]
+            required_count += len(declarations)
+            selected_instance_match = dict(match)
+
         observations = texture_by_binding.get(binding_index, [])
         for declaration in declarations:
             register = int(declaration["register"])
@@ -363,6 +430,29 @@ def build_scene_external_sampler_capture_adapter(
                                     "path_resolution": resolution,
                                     "resource_creation": candidate.get(
                                         "resource_creation"
+                                    ),
+                                    "scene_instance_transform_match": (
+                                        {
+                                            "format": INSTANCE_MATCH_FORMAT,
+                                            "binding_index": binding_index,
+                                            "selected_draw_order": (
+                                                selected_instance_match.get(
+                                                    "selected_draw_order"
+                                                )
+                                            ),
+                                            "selected_draw_identity_sha256": (
+                                                selected_instance_match.get(
+                                                    "selected_draw_identity_sha256"
+                                                )
+                                            ),
+                                            "runtime_observation_count": (
+                                                selected_instance_match.get(
+                                                    "runtime_observation_count"
+                                                )
+                                            ),
+                                        }
+                                        if selected_instance_match is not None
+                                        else None
                                     ),
                                 },
                             }
@@ -449,7 +539,11 @@ def build_scene_external_sampler_capture_adapter(
             else None
         ),
         "boundary": {
-            "requires_unique_scene_draw_per_binding": True,
+            "requires_unique_scene_draw_per_binding": (
+                instance_transform_match is None
+            ),
+            "repeated_instance_transform_match_supported": True,
+            "instance_transform_match_format": INSTANCE_MATCH_FORMAT,
             "requires_phase573_strong_attribution": True,
             "requires_draw_local_texture_snapshot": True,
             "texture_snapshot_time": (
@@ -471,12 +565,19 @@ def validate_files(
     capture_pipeline_path: str | Path,
     *,
     capture_root: str | Path,
+    instance_transform_match_path: str | Path | None = None,
 ) -> dict[str, Any]:
+    instance_match = (
+        _load(instance_transform_match_path)
+        if instance_transform_match_path is not None
+        else None
+    )
     return build_scene_external_sampler_capture_adapter(
         _load(scene_bundle_path),
         _load(scene_bridge_path),
         _load(capture_pipeline_path),
         capture_root=capture_root,
+        instance_transform_match=instance_match,
     )
 
 
@@ -492,6 +593,13 @@ def main(argv: list[str] | None = None) -> int:
         help="directory containing PPM texture snapshots from native capture",
     )
     parser.add_argument(
+        "--instance-transform-match",
+        help=(
+            "optional SHIFT.NativeSceneInstanceTransformMatch/1 used "
+            "to resolve repeated scene bindings"
+        ),
+    )
+    parser.add_argument(
         "--snapshot-output",
         help=(
             "write ready SHIFT.NativeSceneExternalSamplerSnapshots/1 "
@@ -505,6 +613,7 @@ def main(argv: list[str] | None = None) -> int:
         args.scene_bridge,
         args.capture_pipeline,
         capture_root=args.capture_root,
+        instance_transform_match_path=args.instance_transform_match,
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
