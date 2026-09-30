@@ -168,7 +168,7 @@ def build_imb_runtime_shader_admission(
                 continue
 
             attributed_results += 1
-            locations = sorted({
+            locations = list({
                 (
                     str(row.get("candidate_file") or ""),
                     row.get("candidate_program_offset"),
@@ -176,6 +176,13 @@ def build_imb_runtime_shader_admission(
                 )
                 for row in equivalent_variants
             })
+            locations.sort(
+                key=lambda item: (
+                    item[0],
+                    int(item[1]) if item[1] is not None else -1,
+                    int(item[2]) if item[2] is not None else -1,
+                )
+            )
             admitted.append({
                 "match_index": report_index,
                 "binding_index": binding_index,
