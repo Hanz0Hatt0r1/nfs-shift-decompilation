@@ -1202,7 +1202,7 @@ def correlate_aiw_runtime(
     matches: list[dict] = []
     seen: set[tuple[str, int, int]] = set()
 
-    node_matches = False
+    node_doc_ids: set[int] = set()
     for row in runtime_nodes or []:
         if row.get("stable_snapshots") is not None and int(row["stable_snapshots"]) != len(sns):
             continue
@@ -1233,7 +1233,7 @@ def correlate_aiw_runtime(
             if ident in seen:
                 continue
             seen.add(ident)
-            node_matches = True
+            node_doc_ids.add(doc_id)
             node_distance = row.get("distance")
             distance_delta = None
             if isinstance(node_distance, (int, float)) and math.isfinite(float(node_distance)):
@@ -1255,10 +1255,11 @@ def correlate_aiw_runtime(
                 "lap_distance_delta": distance_delta,
             })
 
+    fallback_doc_ids = set(range(len(aiw_docs))) - node_doc_ids
     for st in sorted(common):
         rec = indexes[0][st]
         size = int(rec["size"])
-        if node_matches:
+        if not fallback_doc_ids:
             continue
         if scan_ranges and not any(max(st, a) < min(st + size, b) for a, b in scan_ranges):
             continue
@@ -1281,6 +1282,8 @@ def correlate_aiw_runtime(
                     continue
                 key = _position_key(x, y, z, tolerance)
                 for doc_id, wp_index, wp in candidate_index.get(key, ()):
+                    if doc_id not in fallback_doc_ids:
+                        continue
                     dx, dy, dz = x - wp["x"], y - wp["y"], z - wp["z"]
                     distance = math.sqrt(dx * dx + dy * dy + dz * dz)
                     if distance > tolerance:
