@@ -30,7 +30,7 @@
 | Native input | live X11 keyboard intent + deterministic `SHIFT.NativeRuntimeInputScript/1` fixed-step test/control path |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
-| Physics runtime | wheel/contact/body/solver boundaries |
+| Physics runtime | wheel/contact/body/solver boundaries + native structural participant registry/selector handoff |
 
 ## Major open areas
 
