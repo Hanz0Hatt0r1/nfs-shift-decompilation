@@ -202,6 +202,8 @@ def test_phase586_native_runtime_accepts_neutral_scene_sets():
     assert "SVWT TANGENT property 240 must be FLOAT3" in source
     assert "SVWT TANGENT2 property 250 must be FLOAT3" in source
     assert "scene_set_mode" in source
+    assert "world_transform_draws" in source
+    assert "world_transform_applied = true" in source
 
 
 def test_phase586_keeps_bmw_bundle_set_abi():
