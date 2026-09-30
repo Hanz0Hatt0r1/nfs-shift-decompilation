@@ -238,7 +238,11 @@ external evidence gate. The native fixed-step loop still does not fabricate
 that selection or a complete BMW solver frame.
 
 
-## Phase 605 provider-absent builtin solver frame
+Phase 605 keeps the participant-manager registry index and IGPhaseVehicle
+selector ordinal as separate unresolved native identity domains; neither is
+promoted from static evidence.
+
+## Phase 606 provider-absent builtin solver frame
 
 `execute_builtin_solver_frame()` composes the native source-backed numeric
 kernels in recovered order:
