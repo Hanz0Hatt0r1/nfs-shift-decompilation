@@ -46,6 +46,11 @@ Each observation contains:
 
 Pixel-only/prefilter-only shader observations are not retained here.
 
+The PPM itself is captured by the native producer at the active `SetTexture`
+boundary and then carried into the exact draw-local state snapshot. Phase 590
+does not claim that no texture mutation occurred after that binding event; that
+is a separate evidence gate.
+
 If multiple runtime draws support the same selected strong variant, all are
 preserved. Phase 573 does not choose one.
 
