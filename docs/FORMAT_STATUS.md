@@ -15,7 +15,7 @@
 | FX / FXH / FXO | source inventory, shader parsing and permutation linking |
 | DDS | metadata, DXT decode, cubemap decode |
 | MEB | geometry/indices/material refs → MGEO |
-| IMB / IMX | retail SGB resource factory classifies both as MeshInst/type 7; serialized payload adapter remains open |
+| IMB / IMX | MeshInst/type 7; `.imx` XML loader and `.imb` binary loader plus 0xb0 runtime layout/lifecycle are source-backed; neutral payload adapter remains open |
 | CSM | collision geometry → CMES |
 | VHF/CAR | scene/resource graph |
 | LOD XML | loose parser for known malformed retail forms |
@@ -34,7 +34,7 @@
 ## Major open areas
 
 - complete production D3D9 shader/control-flow/material coverage;
-- concrete per-instance SGB SceneGraph transform-update history for blocked MatrixNumber rows, neutral MeshType/MeshInst payload adapters and higher-level streaming/visibility behavior; unresolved runtime class identities;
+- concrete per-instance SGB SceneGraph transform-update history for blocked MatrixNumber rows, neutral IMX/IMB payload adapters and higher-level streaming/visibility behavior; unresolved runtime class identities;
 - complete BAB runtime pose semantics;
 - remaining camera behavior;
 - SDK/provider construction behind pre-PhysX boundaries;
