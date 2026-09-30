@@ -477,9 +477,16 @@ def build_imb_runtime_capture_pipeline(
             ),
             "retains_full_runtime_frames": False,
             "retains_attributed_draw_texture_observations": True,
+            "attributed_texture_observation_contract": (
+                "selected-strong-variant-draw-textures-v1"
+            ),
             "texture_observation_scope": (
                 "only runtime draw snapshots supporting the selected "
                 "strong shader variant"
+            ),
+            "texture_snapshot_time": (
+                "captured at SetTexture and carried into draw-local state; "
+                "no post-bind mutation exclusion is claimed"
             ),
             "purpose": (
                 "orchestrate authentic Silverstone capture attribution "
