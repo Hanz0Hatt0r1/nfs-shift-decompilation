@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 547.**
+**Current mainline: Phase 548.**
 
 
 
@@ -80,10 +80,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 56. Join FLAT leaf runtime indices to SUMM wrapper order and PART one-based child IDs to the NODE wrapper registry; record PART-to-FLAT runtime materialization — Phase 545 implemented.
 57. Map source-backed FLAT include/exclude masks, bounding spheres and tree-node AABBs while retaining leaf +0x20..+0x34 only as a corpus-verified bounds candidate — Phase 546 implemented.
 58. Normalize FLAT/SUMM and PART/NODE identity plus proven spatial geometry into fail-closed SHIFT.SGBScenePlacement/1 — Phase 547 implemented.
-59. Prove the SGB object/resource-to-render-node and world-transform handoff, then admit only proven placements into RenderBinding.
-60. Derive proven animation poses from the BAB runtime grammar.
-61. Port the stable native render/runtime boundary to Android.
-62. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+59. Prove OBJECT resource-descriptor → render-instance admission plus explicit/MatrixNumber transform selection — Phase 548 implemented.
+60. Reconstruct numeric MultiMatrix hierarchy evaluation for MatrixNumber-backed objects, then join proven placement/object transforms into RenderBinding.
+61. Derive proven animation poses from the BAB runtime grammar.
+62. Port the stable native render/runtime boundary to Android.
+63. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -96,7 +97,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | SHIFT.SGBScenePlacement/1 implemented | source-backed resource/render-node + world-transform admission to RenderBinding |
+| SGB scene | placement + OBJECT render handoff implemented | numeric MultiMatrix hierarchy evaluation + final RenderBinding admission |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
