@@ -204,11 +204,36 @@ def run_bmw_vulkan_bundle(
         text=True,
         check=False,
     )
+    native_report = None
+    if proc.returncode == 0:
+        try:
+            parsed = json.loads(proc.stdout)
+        except (TypeError, ValueError):
+            parsed = None
+        if isinstance(parsed, dict):
+            native_report = parsed
+
     result["native"].update({
         "status": "rendered" if proc.returncode == 0 else "failed",
         "returncode": proc.returncode,
         "stdout": proc.stdout,
         "stderr": proc.stderr,
+        "report": native_report,
+        "world_transform_present": (
+            native_report.get("world_transform_present")
+            if native_report is not None
+            else None
+        ),
+        "world_transform_executed": (
+            native_report.get("world_transform_executed")
+            if native_report is not None
+            else None
+        ),
+        "world_translation_xyz": (
+            native_report.get("world_translation_xyz")
+            if native_report is not None
+            else None
+        ),
     })
     if proc.returncode != 0:
         result["status"] = "failed"
