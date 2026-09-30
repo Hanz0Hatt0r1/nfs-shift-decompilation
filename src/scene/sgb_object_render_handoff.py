@@ -99,6 +99,7 @@ def build_object_render_handoff(
     object_report: Mapping[str, Any],
     *,
     parent_object_report: Mapping[str, Any] | None = None,
+    parent_multimatrix_root_matrix: Sequence[float] | None = None,
 ) -> dict[str, Any]:
     if object_report.get("format") != OBJECT_FORMAT:
         raise ValueError("object input must be SHIFT.SGBObjectRuntime/1")
@@ -164,6 +165,44 @@ def build_object_render_handoff(
         )
         if reason:
             blockers.append(reason)
+
+        evaluation_summary = None
+        numeric_world_matrix = None
+        numeric_world_matrix_ready = False
+        if selected is not None and isinstance(
+            parent_object_report,
+            Mapping,
+        ):
+            evaluation = build_multimatrix_evaluation(
+                parent_object_report,
+                root_world_matrix=parent_multimatrix_root_matrix,
+            )
+            selected_slot = None
+            slots = evaluation.get("slots") or []
+            if matrix_number < len(slots):
+                selected_slot = slots[matrix_number]
+                if (
+                    evaluation.get("ready") is True
+                    and selected_slot.get("world_matrix_ready") is True
+                ):
+                    numeric_world_matrix = selected_slot.get(
+                        "world_matrix"
+                    )
+                    numeric_world_matrix_ready = True
+            evaluation_summary = {
+                "format": evaluation.get("format"),
+                "status": evaluation.get("status"),
+                "ready": evaluation.get("ready"),
+                "root_world_matrix_required": evaluation.get(
+                    "root_world_matrix_required"
+                ),
+                "blocking_reasons": evaluation.get(
+                    "blocking_reasons"
+                ),
+                "selected_slot": selected_slot,
+                "source": evaluation.get("source"),
+            }
+
         transform = {
             "mode": "parent-multimatrix-slot",
             "matrix_number": matrix_number,
@@ -171,9 +210,10 @@ def build_object_render_handoff(
             "multimatrix_matrix_base_offset": 0x04,
             "runtime_slot_stride": 0x40,
             "runtime_slot_offset": matrix_number * 0x40,
-            "world_matrix": None,
-            "world_matrix_ready": False,
+            "world_matrix": numeric_world_matrix,
+            "world_matrix_ready": numeric_world_matrix_ready,
             "selector_ready": selected is not None,
+            "multimatrix_evaluation": evaluation_summary,
             "source": {
                 "render_vfunc": "0x00699230",
                 "multimatrix_registration": "FUN_006b1820",
