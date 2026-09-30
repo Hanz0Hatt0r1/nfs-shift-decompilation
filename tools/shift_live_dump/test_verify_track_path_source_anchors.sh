@@ -11,6 +11,12 @@ void * FUN_006bc3a0(void *this)
     return this;
 }
 
+void * FUN_006c3a20(void *this)
+{
+    *(void ***)this = &PTR_FUN_00afc048;
+    return this;
+}
+
 void * FUN_006cfe70(void *this)
 {
     *(void ***)this = &PTR_FUN_00afc930;
@@ -53,6 +59,7 @@ EOF
 cat >"$tmp/analyzer.py" <<'EOF'
 KNOWN_VTABLES = {
     "AIPathInfo": 0x00AFB150,
+    "AIArea": 0x00AFC048,
     "AISegmentPath": 0x00AFC930,
     "AIPathNode": 0x00AFBF60,
     "AIPolylinePath": 0x00AFC678,
@@ -107,6 +114,7 @@ section(1, ".rdata", rdata_size, rdata_rva, rdata_size, rdata_raw, 0x40000040)
 
 getters = {
     0x006BC3E0: 0x00C0D5A4,  # AIPathInfo
+    0x006C3C30: 0x00C0D588,  # AIArea
     0x006CC3B0: 0x00C0D608,  # AIPolylinePath
     0x006C3000: 0x00C0D638,  # Knot
     0x006CE680: 0x00C0D668,  # AISegmentPath
@@ -120,6 +128,7 @@ for address, descriptor in getters.items():
 
 vtables = {
     0x00AFB150: 0x006BC3E0,
+    0x00AFC048: 0x006C3C30,
     0x00AFC678: 0x006CC3B0,
     0x00AFBE28: 0x006C3000,
     0x00AFC930: 0x006CE680,
@@ -141,7 +150,7 @@ import sys
 
 report = json.load(open(sys.argv[1], encoding="utf-8"))
 assert report["ready"] is True, report
-assert len(report["anchors"]) == 6, report
+assert len(report["anchors"]) == 7, report
 assert all(row["analyzer_match"] for row in report["anchors"]), report
 assert all(row["rtti_found"] and row["constructor_found"] for row in report["factory_links"]), report
 pe = report["pe_rtti_vtables"]
@@ -149,6 +158,8 @@ assert pe["ready"] is True, pe
 rows = {row["class"]: row for row in pe["rows"]}
 assert rows["AIPathInfo"]["getter_addresses"] == [0x006BC3E0], rows
 assert rows["AIPathInfo"]["candidate_vtables"] == [0x00AFB150], rows
+assert rows["AIArea"]["getter_addresses"] == [0x006C3C30], rows
+assert rows["AIArea"]["candidate_vtables"] == [0x00AFC048], rows
 assert rows["AISegmentPath"]["candidate_vtables"] == [0x00AFC930], rows
 assert rows["AIPolylinePath"]["candidate_vtables"] == [0x00AFC678], rows
 assert rows["AIPathNode"]["candidate_vtables"] == [0x00AFBF60], rows
