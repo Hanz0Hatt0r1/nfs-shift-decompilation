@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 603.**
+**Current mainline: Phase 604.**
 
 
 
@@ -29,6 +29,8 @@ Phase 602 adds `SHIFT.NativePhysicsParticipantBoundary/1`, joining the source-ba
 
 
 Phase 603 ports the source-backed builtin sparse numeric kernel `FUN_007b0f20` into native C++, with deterministic 3×3/4×4 parity and fail-closed graph/zero-pivot tests. It does not execute a complete BMW frame; matrix/RHS assembly, runtime diagonal-reset flags, provider-present dispatch and body-state application remain separate gates.
+
+Phase 604 refines the participant structural ABI by preserving the manager registry index (`PhysicsParticipant+0x3c`) and selector ordinal (`IGPhaseVehicle+0x454`) as separate capture-gated identity domains. Native fixed-step telemetry now counts topology-ready versus unresolved participant steps without activating the legacy ambiguous participant-index alias.
 
 ## Immediate execution order
 
