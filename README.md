@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Current development phase: 580.**
+**Current development phase: 581.**
 
 The project is no longer only a BFF extractor. It now contains a connected
 resource, scene, render, physics, AI/track and native-runtime pipeline. The
@@ -96,9 +96,10 @@ Important contracts in the final part of that chain:
   exact IMB/DDS resources through IR and builds one Vulkan child bundle per
   admitted draw.
 
-Phase 580 keeps two boundaries explicit: the SGB world matrix is preserved but
-is not yet executed by the current Vulkan geometry path, and unresolved
-renderer-owned external samplers are not fabricated.
+Phase 581 executes each proven SGB affine world matrix by baking it into the
+neutral Vulkan geometry packet before child-bundle preparation. Legacy BMW and
+geometry-only paths remain object-space unless this behavior is explicitly
+requested. Renderer-owned external samplers are still not fabricated.
 
 ### Native Linux runtime
 
@@ -132,7 +133,7 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | active / source-backed subset | enabled alpha-test, bias/stencil where not yet proven |
 | FX / FXO | parser + runtime attribution pipeline | authentic retail captures for exact tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | scene world-transform execution and scene submission |
+| Vulkan | active native backend | neutral scene-set preparation/runtime admission and native scene submission |
 | SGB / scene | strong structural/render handoff | native world placement, streaming/LOD, some MatrixNumber history |
 | Camera | active structural state | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
@@ -308,9 +309,10 @@ re-resolves the exact IMB path/archive/SHA, checks the exact primitive range,
 resolves ordinary material 2D DDS resources from IR and emits ordered
 `SHIFT.VulkanDrawBundle/1` children.
 
-A ready child set is not yet a claim of correct world-space scene rendering.
-Native scene submission remains blocked until the backend consumes the SGB
-world transform and all required external runtime resources.
+Phase 581 automatically bakes each proven affine SGB world matrix into the
+scene child's neutral geometry. A child set can therefore clear the transform
+blocker while still remaining separate from actual `native_runtime` scene-set
+admission. Required external runtime resources remain independent blockers.
 
 ## Runtime capture
 
@@ -345,8 +347,9 @@ others.
 
 1. **Silverstone shader attribution** — authentic D3D9 capture needed to select
    concrete tied IMB shader permutations.
-2. **Vulkan scene placement** — SGB world matrices are preserved through the
-   current pipeline but are not yet executed by the Vulkan draw path.
+2. **Native scene-set admission** — Phase 581 produces transformed ordered
+   Vulkan children, but `native_runtime` still consumes the older established
+   BMW bundle/set contract rather than `SHIFT.NativeSceneVulkanSet/1` directly.
 3. **Renderer-owned scene resources** — external samplers/resources require an
    explicit runtime binding contract.
 4. **Scene runtime completeness** — some per-instance MatrixNumber update
@@ -387,7 +390,8 @@ history:
 - `docs/PHASE578_NATIVE_SCENE_BUNDLE.md` — runtime-proven scene manifest;
 - `docs/PHASE579_GENERIC_VULKAN_DRAW_BUNDLE.md` — neutral atomic Vulkan
   bundle;
-- Phase 580 documentation describes the ordered native-scene Vulkan set.
+- `docs/PHASE580_NATIVE_SCENE_VULKAN_SET.md` — ordered native-scene Vulkan set;
+- `docs/PHASE581_VULKAN_SCENE_TRANSFORM.md` — affine scene transform execution.
 
 Historical phase documents are not rewritten retroactively when newer evidence
 changes the current operational boundary.
