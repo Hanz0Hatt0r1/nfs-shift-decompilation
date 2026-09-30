@@ -415,6 +415,18 @@ jobs:
           grep -q '"camera_schedule": "native-fixed-step-non-retail-timing"' out/vulkan/runtime/scene_set.json
           grep -q '"validation_errors": 0' out/vulkan/runtime/scene_set.json
           grep -q '"status": "ok"' out/vulkan/runtime/scene_set.json
+      - name: Build native vehicle participant topology bridge
+        run: |
+          python3 shift_importer.py native-vehicle-participant-bridge \
+            out/vulkan/runtime/native_participant.json
+          grep -q '"format": "SHIFT.NativeVehicleParticipantBridge/1"' \
+            out/vulkan/runtime/native_participant.json
+          grep -q '"native_participant_topology_ready": true' \
+            out/vulkan/runtime/native_participant.json
+          grep -q '"native_participant_ready": false' \
+            out/vulkan/runtime/native_participant.json
+          grep -q '"registry_selector_identity_join_proven": false' \
+            out/vulkan/runtime/native_participant.json
       - name: Write deterministic native input script
         run: |
           cat > out/vulkan/runtime/native_input.script <<'EOF'
@@ -434,6 +446,7 @@ jobs:
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
             --camera-state out/vulkan/camera/native_camera.json \
+            --participant-bridge out/vulkan/runtime/native_participant.json \
             --input-script out/vulkan/runtime/native_input.script \
             --validation | tee out/vulkan/runtime/input_script.json
       - name: Assert scripted native input reaches physics tick
@@ -444,6 +457,16 @@ jobs:
           grep -q '"frames_rendered": 5' out/vulkan/runtime/input_script.json
           grep -q '"simulation_steps": 5' out/vulkan/runtime/input_script.json
           grep -q '"camera_state_bridge_loaded": true' out/vulkan/runtime/input_script.json
+          grep -q '"participant_bridge_loaded": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_topology_ready": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_manager_selector_distinct": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_identity_join_proven": false' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_ready": false' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_registry_index": -1' out/vulkan/runtime/input_script.json
+          grep -q '"physics_selector_ordinal": -1' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_topology_steps": 5' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_ready_steps": 0' out/vulkan/runtime/input_script.json
+          grep -q '"physics_participant_unresolved_steps": 5' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_throttle": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_brake": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_steer_left": false' out/vulkan/runtime/input_script.json
