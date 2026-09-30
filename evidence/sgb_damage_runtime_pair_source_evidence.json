@@ -1,0 +1,106 @@
+{
+  "format": "SHIFT.SGBDamageRuntimePairSourceEvidence/1",
+  "source": "retail SHIFT.exe v1.02 decompilation plus Silverstone Era3 corpus",
+  "runtime_wrapper": {
+    "constructor": "FUN_00698b00",
+    "vtable": "0x00af7c88",
+    "allocation_bytes": 160,
+    "destructor": "FUN_0068cf40",
+    "consumer": "FUN_0068cfe0",
+    "fields": {
+      "matrix_count": "0x80",
+      "runtime_matrix_array": "0x84",
+      "runtime_subobject_pair": "0x88",
+      "matrix_number": "0x90"
+    }
+  },
+  "subobject_pair": {
+    "pointer_count_consumed_by_destructor": 2,
+    "destructor_loop_bytes": 8,
+    "pointer_stride": 4,
+    "proxy_methods": [
+      {
+        "wrapper_vfunc": "0x10",
+        "function": "FUN_0068c6d0",
+        "child_vfunc": "0x10",
+        "aggregation": "forward-to-both"
+      },
+      {
+        "wrapper_vfunc": "0x14",
+        "function": "FUN_0068c750",
+        "child_vfunc": "0x14",
+        "aggregation": "forward-to-both"
+      },
+      {
+        "wrapper_vfunc": "0x18",
+        "function": "FUN_0068c710",
+        "child_vfunc": "0x18",
+        "aggregation": "forward-to-both"
+      },
+      {
+        "wrapper_vfunc": "0x20",
+        "function": "FUN_0068c790",
+        "child_vfunc": "0x20",
+        "aggregation": "logical-and"
+      },
+      {
+        "wrapper_vfunc": "0x24",
+        "function": "FUN_0068dea0",
+        "child_probe_vfunc": "0x3c",
+        "fallback_child_vfunc": "0x24",
+        "aggregation": "specialized-two-child-selection"
+      },
+      {
+        "wrapper_vfunc": "0x28",
+        "function": "FUN_0068c7c0",
+        "child_vfunc": "0x28",
+        "aggregation": "logical-and"
+      }
+    ]
+  },
+  "construction": {
+    "function": "FUN_0068cfe0",
+    "matrix_element_bytes": 40,
+    "matrix_number_index_stride": 64,
+    "child_output_vfunc": "0x24",
+    "child_output_runtime_fields": [
+      "0xa0",
+      "0xa4"
+    ]
+  },
+  "loader_evidence": {
+    "binary": "FUN_00699b10 -> FUN_00699870",
+    "xml": "FUN_0069b1c0 -> FUN_006990d0",
+    "common_matrix_count_offset": "0x22",
+    "common_subobject_count_offset": "0x23",
+    "binary_subobject_offset_table_status": "not-normalized"
+  },
+  "corpus": {
+    "damage_occurrences": 0,
+    "silverstone_variants": [
+      {
+        "name": "Drift",
+        "sgb_sha256": "a8ad0608889627bedb42529b729f9a52529afedc03b66e73de86148dcd3ecf25"
+      },
+      {
+        "name": "GrandPrix",
+        "sgb_sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7"
+      },
+      {
+        "name": "International",
+        "sgb_sha256": "fb6a534b4890a8c046f234f10e702962913a5a03377b7a158581f0a7c74ea2b6"
+      },
+      {
+        "name": "National",
+        "sgb_sha256": "b3f94c2b65bc74d9e309774d793c522bcd2aff5ebfa8a7e7f46ba4d484e5ad93"
+      }
+    ]
+  },
+  "observations": [
+    "The DAMAGE wrapper constructor initializes +0x80/+0x84/+0x88/+0x90 and installs vtable 0x00af7c88.",
+    "FUN_0068cf40 destroys exactly two child pointers from the +0x88 allocation, then frees and clears that allocation.",
+    "Multiple DAMAGE virtual methods symmetrically forward to both child objects; boolean methods require both children to succeed.",
+    "FUN_0068cfe0 consumes matrix_count +0x80, matrix_array +0x84 and MatrixNumber +0x90, and queries both child objects through vfunc +0x24.",
+    "No DAMAGE payload occurs in the four available Silverstone Era3 scene variants, so the serialized child-offset table remains intentionally partial."
+  ]
+}

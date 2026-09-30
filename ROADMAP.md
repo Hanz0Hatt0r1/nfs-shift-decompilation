@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 543.**
+**Current mainline: Phase 544.**
 
 
 
@@ -76,10 +76,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 52. Correct the PART binary layout and map its AABB, four child-partition ID/pointer slots, mask-driven tree insertion and one-based scene-wrapper references — Phase 535 implemented.
 53. Normalize production FLAT signed terminal spans and map the proven +0x38 direct-object / +0x3c runtime-index consumer lifecycle — Phase 542 implemented.
 54. Correct the production NODE record to 0x1c metadata + inline payload, add the missing LOD wrapper, map MATRIX records, matrices/subobjects counts, LOD distances and SGB-relative recursive child offsets — Phase 543 implemented.
-55. Continue with DAMAGE-specific payload fields, NODE byte +0x21 and the remaining FLAT direct-record payload semantics.
-56. Derive proven animation poses from the BAB runtime grammar.
-57. Port the stable native render/runtime boundary to Android.
-58. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+55. Map the DAMAGE two-child runtime ownership/dispatch, matrix array and MatrixNumber consumers without inventing the unobserved serialized child table — Phase 544 implemented.
+56. Find a DAMAGE-bearing SGB or continue with NODE byte +0x21 and remaining FLAT direct-record payload semantics.
+57. Derive proven animation poses from the BAB runtime grammar.
+58. Port the stable native render/runtime boundary to Android.
+59. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -92,7 +93,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | production FLAT + NODE/LOD/HIERARCHY object grammar mapped | DAMAGE payload, NODE +0x21 and remaining FLAT payload semantics |
+| SGB scene | production FLAT/NODE plus DAMAGE two-child runtime contract mapped | serialized DAMAGE child table, NODE +0x21 and remaining FLAT payload semantics |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
