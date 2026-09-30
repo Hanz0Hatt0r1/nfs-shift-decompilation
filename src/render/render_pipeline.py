@@ -387,12 +387,12 @@ def build_render_bindings_from_resource_instances(
     source_format: str | None = None,
     runtime_shader_admission: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Resolve externally placed MEB/IMB instances through the generic render path.
+    """Resolve externally placed MEB/IMB/IMX instances through the generic render path.
 
     Each instance supplies a proven resource reference and numeric 4x4 world
     matrix. Resource/material/shader resolution remains identical to the
-    existing VHF-driven path. IMB uses its independent source-backed neutral
-    geometry adapter; unsupported resource kinds stay fail-closed.
+    existing VHF-driven path. IMB and IMX use independent source-backed neutral
+    geometry adapters; unsupported resource kinds stay fail-closed.
     """
     root = Path(ir_root)
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
@@ -535,6 +535,40 @@ def build_render_bindings_from_resource_instances(
                 continue
             mesh = neutral["mesh"]
             mesh_source_kind = "IMB"
+            mesh_adapter_format = str(neutral.get("format"))
+        elif resolved_norm.endswith(".imx"):
+            from imx_neutral_geometry import build_imx_neutral_geometry
+
+            try:
+                neutral = build_imx_neutral_geometry(
+                    _load_raw(root, mesh_row)
+                )
+            except (KeyError, OSError, UnicodeDecodeError, ValueError) as exc:
+                unresolved.append({
+                    "kind": "mesh",
+                    "reason": "imx-neutral-geometry-decode-failed",
+                    "detail": str(exc),
+                    "ref": str(resource_ref),
+                    "resolved_path": mesh_row["path"],
+                    "instance_index": instance_index,
+                    "admission_binding_index": admission_binding_index,
+                })
+                continue
+            if neutral.get("ready") is not True:
+                unresolved.append({
+                    "kind": "mesh",
+                    "reason": "imx-neutral-geometry-blocked",
+                    "blocking_reasons": list(
+                        neutral.get("blocking_reasons") or []
+                    ),
+                    "ref": str(resource_ref),
+                    "resolved_path": mesh_row["path"],
+                    "instance_index": instance_index,
+                    "admission_binding_index": admission_binding_index,
+                })
+                continue
+            mesh = neutral["mesh"]
+            mesh_source_kind = "IMX"
             mesh_adapter_format = str(neutral.get("format"))
         else:
             unresolved.append({
@@ -681,10 +715,10 @@ def build_render_bindings_from_resource_instances(
             })
 
         vertex_layout = build_layout_from_summary(mesh)
-        if mesh_source_kind == "IMB":
+        if mesh_source_kind in {"IMB", "IMX"}:
             vertex_layout = {
                 **vertex_layout,
-                "source": "IMB",
+                "source": mesh_source_kind,
                 "source_adapter": mesh_adapter_format,
             }
 
