@@ -328,6 +328,7 @@ def audit_imb_material_shader_ranking(
                         **base,
                         "bmt_entry_index": int(bmt_entry.index),
                         "bmt_sha256": bmt_sha,
+                        "fx_source_sha256": hashlib.sha256(fx_source).hexdigest(),
                         "material": material,
                         "material_name": material.get("name"),
                         "technique": material.get("technique"),
@@ -364,12 +365,22 @@ def audit_imb_material_shader_ranking(
                     payload,
                 ))
 
-        result_cache: dict[tuple[str, tuple[str, ...], str], dict[str, Any]] = {}
+        result_cache: dict[
+            tuple[str, str, str, tuple[str, ...], str],
+            dict[str, Any],
+        ] = {}
         for context in contexts:
             family = str(context["shader_family"])
             bmt_sha = str(context["bmt_sha256"])
+            fx_sha = str(context["fx_source_sha256"])
             properties = tuple(context["vertex_properties"])
-            cache_key = (bmt_sha, properties, family)
+            cache_key = (
+                str(context["archive"]),
+                bmt_sha,
+                fx_sha,
+                properties,
+                family,
+            )
             linked = result_cache.get(cache_key)
             if linked is None:
                 linked = link_material(
@@ -425,7 +436,9 @@ def audit_imb_material_shader_ranking(
     report["max_imb_per_archive"] = int(max_imb_per_archive)
     report["unique_rank_context_count"] = len({
         (
+            row.get("archive"),
             row.get("bmt_sha256"),
+            row.get("fx_source_sha256"),
             tuple(row.get("vertex_properties") or []),
             row.get("shader_family"),
         )
