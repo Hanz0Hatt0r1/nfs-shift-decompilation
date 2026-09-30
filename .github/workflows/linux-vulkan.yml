@@ -356,6 +356,8 @@ jobs:
           grep -q '"scene_set_mode": true' out/vulkan/runtime/scene_set.json
           grep -q '"bundle_set_mode": false' out/vulkan/runtime/scene_set.json
           grep -q '"material_draws": 1' out/vulkan/runtime/scene_set.json
+          grep -q '"world_transform_draws": 1' out/vulkan/runtime/scene_set.json
+          grep -q '"affine_world_transform_draws": 1' out/vulkan/runtime/scene_set.json
           grep -q '"frames_rendered": 3' out/vulkan/runtime/scene_set.json
           grep -q '"simulation_steps": 3' out/vulkan/runtime/scene_set.json
           grep -q '"validation_errors": 0' out/vulkan/runtime/scene_set.json
