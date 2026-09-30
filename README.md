@@ -391,7 +391,7 @@ For current state, prefer operational status documents over old phase notes:
 - `docs/PHASE578_NATIVE_SCENE_BUNDLE.md`;
 - `docs/PHASE579_GENERIC_VULKAN_DRAW_BUNDLE.md`;
 - `docs/PHASE580_NATIVE_SCENE_VULKAN_SET.md`;
-- `docs/PHASE581_VULKAN_WORLD_TRANSFORM_PACKET.md`.
+- `docs/PHASE581_VULKAN_WORLD_TRANSFORM_PACKET.md`;\n- `docs/PHASE582_NATIVE_TRANSLATION_SVWT.md`.
 
 Historical phase files preserve the evidence trail and are not rewritten
 retroactively when newer work changes the current operational boundary.
