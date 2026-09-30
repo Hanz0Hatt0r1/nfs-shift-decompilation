@@ -169,6 +169,13 @@ def test_incomplete_top_rank_list_fails_closed():
         in report["blocking_reasons"]
     )
     assert report["binding_targets"][0]["capture_ready"] is False
+    assert report["binding_targets"][0]["same_instance_match_ready"] is False
+    assert report["binding_targets"][0]["same_instance_blocking_reasons"] == [
+        "shader-capture-not-ready"
+    ]
+    assert report["same_instance_blocking_reasons"] == [
+        "binding-0:shader-capture-not-ready"
+    ]
 
 
 def test_unhashed_top_rank_candidate_is_explicit_blocker():
@@ -211,6 +218,9 @@ def test_missing_runtime_resource_identity_does_not_break_capture_prefilter():
     assert row["resource_identity_ready"] is False
     assert row["same_instance_match_ready"] is False
     assert row["runtime_identity_blocking_reasons"] == [
+        "resource-imb-sha256-invalid"
+    ]
+    assert row["same_instance_blocking_reasons"] == [
         "resource-imb-sha256-invalid"
     ]
     assert report["blocking_reasons"] == []
