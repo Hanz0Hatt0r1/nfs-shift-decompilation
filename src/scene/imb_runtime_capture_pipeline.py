@@ -141,6 +141,150 @@ def _candidate_resources(
     return rows
 
 
+def _runtime_draw_snapshot(
+    runtime: Mapping[str, Any],
+    frame_id: Any,
+    draw_index: Any,
+) -> Mapping[str, Any] | None:
+    for frame in runtime.get("frames") or []:
+        if not isinstance(frame, Mapping):
+            continue
+        if frame.get("frame") != frame_id:
+            continue
+        for snapshot in frame.get("draw_snapshots") or []:
+            if (
+                isinstance(snapshot, Mapping)
+                and snapshot.get("draw_index") == draw_index
+            ):
+                return snapshot
+    return None
+
+
+def _selected_runtime_draw_keys(
+    result: Mapping[str, Any],
+) -> list[tuple[Any, Any]]:
+    if result.get("attributed") is not True:
+        return []
+    selected = result.get("selected_variant")
+    if not isinstance(selected, Mapping):
+        return []
+    selected_key = tuple(selected.get("variant_key") or [])
+    try:
+        best_score = int(selected.get("score"))
+    except (TypeError, ValueError):
+        return []
+    if not selected_key or best_score < 80:
+        return []
+
+    keys: set[tuple[Any, Any]] = set()
+    for observed in result.get("matches") or []:
+        if not isinstance(observed, Mapping):
+            continue
+        for variant in observed.get("variant_matches") or []:
+            if not isinstance(variant, Mapping):
+                continue
+            try:
+                score = int(variant.get("score"))
+            except (TypeError, ValueError):
+                continue
+            if (
+                score == best_score
+                and tuple(variant.get("variant_key") or [])
+                == selected_key
+            ):
+                keys.add(
+                    (
+                        observed.get("frame"),
+                        observed.get("draw_index"),
+                    )
+                )
+    return sorted(
+        keys,
+        key=lambda row: (
+            str(row[0]),
+            int(row[1]) if isinstance(row[1], int) else -1,
+        ),
+    )
+
+
+def _attributed_texture_observations(
+    runtime: Mapping[str, Any],
+    candidate_results: Iterable[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[int, Any, Any]] = set()
+    for result in candidate_results:
+        if not isinstance(result, Mapping):
+            continue
+        try:
+            binding_index = int(result.get("binding_index"))
+        except (TypeError, ValueError):
+            continue
+        for frame_id, draw_index in _selected_runtime_draw_keys(result):
+            key = (binding_index, frame_id, draw_index)
+            if key in seen:
+                continue
+            seen.add(key)
+            snapshot = _runtime_draw_snapshot(
+                runtime,
+                frame_id,
+                draw_index,
+            )
+            if snapshot is None:
+                rows.append({
+                    "binding_index": binding_index,
+                    "frame": frame_id,
+                    "draw_index": draw_index,
+                    "status": "blocked",
+                    "blocking_reasons": [
+                        "runtime-draw-snapshot-not-found"
+                    ],
+                    "active_texture_bindings": [],
+                })
+                continue
+
+            textures: list[dict[str, Any]] = []
+            for binding in (
+                snapshot.get("active_texture_bindings") or []
+            ):
+                if not isinstance(binding, Mapping):
+                    continue
+                try:
+                    stage = int(binding.get("stage"))
+                except (TypeError, ValueError):
+                    continue
+                creation = binding.get("resource_creation")
+                textures.append({
+                    "stage": stage,
+                    "texture_ptr": binding.get("texture_ptr"),
+                    "resource_creation_status": binding.get(
+                        "resource_creation_status"
+                    ),
+                    "resource_creation": (
+                        dict(creation)
+                        if isinstance(creation, Mapping)
+                        else None
+                    ),
+                    "snapshot_status": binding.get("snapshot_status"),
+                    "snapshot_paths": [
+                        str(path)
+                        for path in (
+                            binding.get("snapshot_paths") or []
+                        )
+                        if isinstance(path, str)
+                    ],
+                })
+            rows.append({
+                "binding_index": binding_index,
+                "frame": frame_id,
+                "draw_index": draw_index,
+                "status": "observed",
+                "blocking_reasons": [],
+                "active_texture_bindings": textures,
+            })
+    return rows
+
+
 def _compact_runtime(
     runtime: Mapping[str, Any],
 ) -> dict[str, Any]:
@@ -227,6 +371,10 @@ def build_imb_runtime_capture_pipeline(
             if row.get("attributed") is True:
                 attributed_candidate_indices.add(index)
 
+        texture_observations = _attributed_texture_observations(
+            runtime,
+            candidate_results,
+        )
         resource_results.append({
             "resource_index": resource.get("resource_index"),
             "archive": resource.get("archive"),
@@ -234,6 +382,7 @@ def build_imb_runtime_capture_pipeline(
             "resource_sha256": resource.get("resource_sha256"),
             "candidate_binding_indices": candidate_indices,
             "runtime_evidence": _compact_runtime(runtime),
+            "attributed_texture_observations": texture_observations,
             "variant_match": {
                 "format": match.get("format"),
                 "status": match.get("status"),
@@ -290,6 +439,14 @@ def build_imb_runtime_capture_pipeline(
             "routed_binding_count": routed_count,
             "candidate_resource_count": len(candidate_resources),
             "runtime_report_count": len(resource_results),
+            "attributed_texture_observation_count": sum(
+                len(
+                    row.get(
+                        "attributed_texture_observations"
+                    ) or []
+                )
+                for row in resource_results
+            ),
             "observed_candidate_binding_count": observed_count,
             "attributed_candidate_binding_count": attributed_count,
             "blocked_candidate_binding_count": (
@@ -319,6 +476,18 @@ def build_imb_runtime_capture_pipeline(
                 "SHIFT.IMBRuntimeShaderVariantMatch/1"
             ),
             "retains_full_runtime_frames": False,
+            "retains_attributed_draw_texture_observations": True,
+            "attributed_texture_observation_contract": (
+                "selected-strong-variant-draw-textures-v1"
+            ),
+            "texture_observation_scope": (
+                "only runtime draw snapshots supporting the selected "
+                "strong shader variant"
+            ),
+            "texture_snapshot_time": (
+                "captured at SetTexture and carried into draw-local state; "
+                "no post-bind mutation exclusion is claimed"
+            ),
             "purpose": (
                 "orchestrate authentic Silverstone capture attribution "
                 "without repeating full runtime reconstruction for "

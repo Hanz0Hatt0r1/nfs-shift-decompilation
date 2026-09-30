@@ -264,3 +264,131 @@ def test_prefilter_draw_without_range_match_does_not_spawn_runtime_reports(
     assert report["status"] == "not-found"
     assert report["summary"]["routed_binding_count"] == 0
     assert report["summary"]["runtime_report_count"] == 0
+
+
+
+def test_attributed_texture_observations_keep_only_selected_strong_draws():
+    runtime = {
+        "frames": [{
+            "frame": 9,
+            "draw_snapshots": [{
+                "draw_index": 3,
+                "active_texture_bindings": [{
+                    "stage": 7,
+                    "texture_ptr": "0x700",
+                    "resource_creation_status": "observed",
+                    "resource_creation": {
+                        "resource_type": "texture2d",
+                        "texture_ptr": "0x700",
+                    },
+                    "snapshot_status": "captured",
+                    "snapshot_paths": ["textures/s7.ppm"],
+                }],
+            }, {
+                "draw_index": 4,
+                "active_texture_bindings": [{
+                    "stage": 7,
+                    "texture_ptr": "0x701",
+                    "resource_creation_status": "observed",
+                    "resource_creation": {
+                        "resource_type": "texture2d",
+                        "texture_ptr": "0x701",
+                    },
+                    "snapshot_status": "captured",
+                    "snapshot_paths": ["textures/not-selected.ppm"],
+                }],
+            }],
+        }],
+    }
+    result = {
+        "binding_index": 17,
+        "attributed": True,
+        "selected_variant": {
+            "score": 80,
+            "variant_key": ["stages", "v", "p"],
+        },
+        "matches": [{
+            "frame": 9,
+            "draw_index": 3,
+            "variant_matches": [{
+                "score": 80,
+                "variant_key": ["stages", "v", "p"],
+            }],
+        }, {
+            "frame": 9,
+            "draw_index": 4,
+            "variant_matches": [{
+                "score": 40,
+                "variant_key": ["pixel", "p"],
+            }],
+        }],
+    }
+
+    rows = pipeline._attributed_texture_observations(
+        runtime,
+        [result],
+    )
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["binding_index"] == 17
+    assert row["frame"] == 9
+    assert row["draw_index"] == 3
+    assert row["active_texture_bindings"][0]["stage"] == 7
+    assert row["active_texture_bindings"][0]["snapshot_paths"] == [
+        "textures/s7.ppm"
+    ]
+
+
+def test_attributed_texture_observations_preserve_multiple_supporting_draws():
+    runtime = {
+        "frames": [{
+            "frame": 1,
+            "draw_snapshots": [
+                {
+                    "draw_index": 0,
+                    "active_texture_bindings": [],
+                },
+                {
+                    "draw_index": 1,
+                    "active_texture_bindings": [],
+                },
+            ],
+        }],
+    }
+    result = {
+        "binding_index": 2,
+        "attributed": True,
+        "selected_variant": {
+            "score": 90,
+            "variant_key": ["pair", "pair-sha"],
+        },
+        "matches": [
+            {
+                "frame": 1,
+                "draw_index": 0,
+                "variant_matches": [{
+                    "score": 90,
+                    "variant_key": ["pair", "pair-sha"],
+                }],
+            },
+            {
+                "frame": 1,
+                "draw_index": 1,
+                "variant_matches": [{
+                    "score": 90,
+                    "variant_key": ["pair", "pair-sha"],
+                }],
+            },
+        ],
+    }
+
+    rows = pipeline._attributed_texture_observations(
+        runtime,
+        [result],
+    )
+
+    assert [(row["frame"], row["draw_index"]) for row in rows] == [
+        (1, 0),
+        (1, 1),
+    ]

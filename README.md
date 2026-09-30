@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 588. Current development: Phase 589.**
+**Merged baseline: Phase 589. Current development: Phase 590.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -115,7 +115,10 @@ prove affine SVWT execution through runtime telemetry. Phase 588 adds explicit
 external `sampler2D` snapshot transport through the existing SVTP ABI while
 keeping unsupplied renderer-owned resources fail-closed. Phase 589 joins those
 snapshots to exact scene draw/resource/primitive/register identity before they
-can satisfy a NativeSceneVulkanSet external-resource blocker.
+can satisfy a NativeSceneVulkanSet external-resource blocker. Phase 590 carries
+only strong-attributed draw-local texture observations from the D3D9 capture
+pipeline and converts an unambiguous captured PPM directly into that exact
+Phase 589 contract.
 
 ### Native Linux runtime
 
@@ -149,8 +152,8 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | authentic external snapshots/remaining renderer-owned resource types; remaining alpha-test/bias/stencil state |
-| SGB / scene | strong structural/render handoff | authentic external-resource evidence, streaming/LOD, some MatrixNumber history |
+| Vulkan | active native backend | authentic capture content/repeated-instance disambiguation/remaining renderer-owned resource types; remaining alpha-test/bias/stencil state |
+| SGB / scene | strong structural/render handoff | authentic Silverstone capture content, repeated-instance disambiguation, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
 | Vehicle physics | structural reconstruction active | exact specialized-provider numeric parity |
@@ -304,6 +307,14 @@ python shift_importer.py native-scene-bundle \
   out/scene-render-binding.json \
   out/native-scene-bundle.json
 
+python shift_importer.py native-scene-external-capture \
+  out/native-scene-bundle.json \
+  out/scene-render-binding.json \
+  out/silverstone-runtime-attribution.json \
+  out/scene-external-capture.json \
+  --capture-root out/capture \
+  --snapshot-output out/scene-external-snapshots.json
+
 python shift_importer.py native-scene-vulkan-set \
   out/native-scene-bundle.json \
   out/scene-render-binding.json \
@@ -361,9 +372,10 @@ These are independent; resolving one does not justify guessing another.
 
 1. **Silverstone exact shader attribution** — authentic D3D9 capture required
    for tied IMB permutations.
-2. **Renderer-owned scene evidence** — Phase 589 can admit an exact,
-   provenance-bearing external `sampler2D` snapshot for one scene draw, but
-   authentic snapshots and remaining renderer-owned resource types are still
+2. **Renderer-owned scene evidence** — Phase 590 can automatically convert an
+   unambiguous strong-attributed D3D9 `CreateTexture` + captured PPM into the
+   exact Phase 589 scene contract, but authentic Silverstone capture content,
+   repeated-instance disambiguation and remaining resource types are still
    required.
 3. **Scene runtime completeness** — some per-instance MatrixNumber update
    history and higher-level streaming/LOD behavior remain unresolved.
