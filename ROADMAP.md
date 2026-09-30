@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 552.**
+**Current mainline: Phase 558.**
 
 
 
@@ -90,6 +90,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 66. Map MeshInst inheritance/runtime layout, `.imx` XML versus `.imb` binary loaders, aligned 0x40-stride instance storage and category-10 lifecycle — Phase 555 implemented.
 67. Decode the source-backed IMB fixed mesh header, optional bone block and Type/Usage/Channel stream table while keeping the variable prefix explicit — Phase 556 implemented.
 68. Recover the packed IMB version/control/name prefix and auto-locate the fixed header/bone gate — Phase 557 implemented.
+    Phase 558 corrects descriptor/vertex block sequencing, preserves supported raw vertex streams and derives the primitive section offset.
 69. Recover full IMB vertex+primitive payload consumption and implement neutral IMB/IMX scene adapters; independently recover/capture blocked SceneGraph transform-update history.
 70. Derive proven animation poses from the BAB runtime grammar.
 71. Port the stable native render/runtime boundary to Android.

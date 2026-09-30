@@ -2,8 +2,9 @@
 
 The retail binary mesh loader FUN_00859800 reaches a fixed mesh header only
 after a version-dependent prefix and embedded resource-name string. Phase 557
-reconstructs that prefix and locates the fixed header automatically while
-retaining the Phase 556 manual offset entry point for forensic use.
+reconstructs that prefix. Phase 558 follows each descriptor's vertex payload
+before reading the next descriptor and locates the primitive section for the
+retail-supported binary Types. The manual header offset remains available.
 """
 from __future__ import annotations
 
@@ -20,6 +21,11 @@ STREAM_DESCRIPTOR_SIZE = 0x0C
 BONE_SOURCE_MATRIX_SIZE = 0x30
 RUNTIME_MATRIX_SIZE = 0x40
 RUNTIME_PRIMITIVE_STRIDE = 0x50
+
+# FUN_00859800 only advances the source cursor for these mapped D3D9 Types.
+# The retail PE table at DAT_00b90088 maps these ordinals identically. Other
+# Types hit the switch default and must not be assigned a guessed byte size.
+SUPPORTED_BINARY_TYPES = {0: 4, 1: 8, 2: 12, 3: 16, 4: 4, 5: 4, 8: 4}
 
 PREFIX_FORMAT = "SHIFT.IMBBinaryPrefix/1"
 
@@ -198,7 +204,7 @@ def parse_imb_binary_mesh_schema(
     header_offset: int,
     has_bone_block: bool,
 ) -> dict[str, Any]:
-    """Decode the fixed IMB mesh header and stream descriptors.
+    """Decode the fixed IMB mesh header and descriptor/vertex stream blocks.
 
     header_offset is the aligned fixed-header base reached by FUN_00859800
     after its version-dependent prefix and NUL-terminated resource name.
@@ -249,6 +255,14 @@ def parse_imb_binary_mesh_schema(
         if matrices_start < names_start or matrices_start > len(data):
             raise ValueError("IMB bone matrix block offset is outside payload")
 
+        # Each name needs at least its NUL byte. Bound the count by the
+        # serialized name region, then validate the entire matrix allocation
+        # before iterating over any names from an untrusted file.
+        if bone_count > matrix_relative:
+            raise ValueError("IMB bone count exceeds bone-name block capacity")
+        matrix_bytes = bone_count * BONE_SOURCE_MATRIX_SIZE
+        _require(data, matrices_start, matrix_bytes, "IMB bone matrices")
+
         cursor = names_start
         for _ in range(bone_count):
             name, cursor = _read_cstring(data, cursor, matrices_start)
@@ -256,8 +270,6 @@ def parse_imb_binary_mesh_schema(
         if cursor > matrices_start:
             raise ValueError("IMB bone names overlap matrix block")
 
-        matrix_bytes = bone_count * BONE_SOURCE_MATRIX_SIZE
-        _require(data, matrices_start, matrix_bytes, "IMB bone matrices")
         for index in range(bone_count):
             source_offset = matrices_start + index * BONE_SOURCE_MATRIX_SIZE
             values = list(struct.unpack_from("<12f", data, source_offset))
@@ -305,21 +317,43 @@ def parse_imb_binary_mesh_schema(
         "IMB stream descriptor table",
     )
     streams: list[dict[str, Any]] = []
+    cursor = stream_section_offset
+    runtime_offset = 0
     for index in range(stream_count):
-        source_offset = stream_section_offset + index * STREAM_DESCRIPTOR_SIZE
+        source_offset = cursor
+        _require(data, source_offset, STREAM_DESCRIPTOR_SIZE, "IMB stream descriptor")
+        type_ordinal = _u32(data, source_offset)
+        if type_ordinal not in SUPPORTED_BINARY_TYPES:
+            raise ValueError(
+                f"unsupported IMB binary Type ordinal {type_ordinal}: "
+                "retail vertex consumption is not supported by this decoder"
+            )
+        element_size = SUPPORTED_BINARY_TYPES[type_ordinal]
+        payload_offset = source_offset + STREAM_DESCRIPTOR_SIZE
+        payload_size = vertex_count * element_size
+        _require(data, payload_offset, payload_size, "IMB stream vertex payload")
+        cursor = payload_offset + payload_size
         streams.append({
             "index": index,
             "source_offset": source_offset,
             "source_stride": STREAM_DESCRIPTOR_SIZE,
-            "type_ordinal": _u32(data, source_offset + 0x00),
+            "type_ordinal": type_ordinal,
             "usage_ordinal": _u32(data, source_offset + 0x04),
             "channel": _u32(data, source_offset + 0x08),
             "runtime_declaration_stride": 0x08,
             "runtime_type_mapper": "FUN_00853c20",
             "runtime_usage_mapper": "FUN_00853c40",
+            "vertex_payload_offset": payload_offset,
+            "vertex_payload_size": payload_size,
+            "element_size_bytes": element_size,
+            "runtime_element_offset": runtime_offset,
+            "vertex_payload_hex": data[payload_offset:cursor].hex(),
         })
+        runtime_offset += element_size
 
-    vertex_payload_offset = stream_section_offset + stream_bytes
+    vertex_payload_offset = (
+        streams[0]["vertex_payload_offset"] if streams else cursor
+    )
 
     return {
         "format": FORMAT,
@@ -360,6 +394,8 @@ def parse_imb_binary_mesh_schema(
             "offset": stream_section_offset,
             "count": stream_count,
             "source_stride": STREAM_DESCRIPTOR_SIZE,
+            "source_layout": "descriptor-then-vertices-per-stream",
+            "runtime_vertex_stride": runtime_offset,
             "records": streams,
             "runtime_declaration_array_offset": 0x1C,
             "runtime_vertex_buffer_wrapper_offset": 0x24,
@@ -373,9 +409,7 @@ def parse_imb_binary_mesh_schema(
             "count": primitive_count,
             "runtime_array_offset": 0x2C,
             "runtime_stride": RUNTIME_PRIMITIVE_STRIDE,
-            "source_section_offset": (
-                "after variable-size vertex payload; not auto-derived yet"
-            ),
+            "source_section_offset": cursor,
             "known_runtime_fields": {
                 "bounds_sphere": "record +0x00..+0x0c",
                 "aabb_min": "record +0x10..+0x1c",
@@ -394,7 +428,7 @@ def parse_imb_binary_mesh_schema(
             "fixed_header": "source-backed",
             "bone_block": "source-backed when caller supplies version gate",
             "stream_descriptor_triples": "source-backed",
-            "vertex_payload_decode": "not-yet-implemented",
+            "vertex_payload_decode": "source-backed-raw-supported-types",
             "primitive_source_decode": "partially-mapped-not-yet-parsed",
             "variable_prefix": "unresolved",
             "meb_container_equivalence": False,
@@ -415,6 +449,7 @@ def parse_imb_binary_mesh(data: bytes) -> dict[str, Any]:
     report["source"]["resource_name"] = prefix["resource_name"]
     report["source"]["packed_version"] = prefix["packed_version"]
     report["boundary"]["variable_prefix"] = "source-backed"
+    report["boundary"]["bone_block"] = "source-backed with automatic version/control gate"
     return report
 
 

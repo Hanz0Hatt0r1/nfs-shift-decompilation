@@ -1,0 +1,46 @@
+{
+  "format": "SHIFT.IMBBinaryStreamPayloadSourceEvidence/1",
+  "source": {
+    "name": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "loader": "FUN_00859800",
+    "loader_line": 934192,
+    "descriptor_vertex_loop_lines": [
+      934549,
+      934649
+    ]
+  },
+  "executable": {
+    "name": "SHIFT.exe",
+    "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1",
+    "size_bytes": 8801792
+  },
+  "type_table": {
+    "address": "0x00b90088",
+    "raw_first_17_dwords_hex": "000000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f0000000f000000",
+    "supported_ordinal_to_code": {
+      "0": 0,
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "4": 4,
+      "5": 5,
+      "8": 8
+    }
+  },
+  "source_layout": "descriptor-then-vertices-per-stream",
+  "supported_type_element_bytes": {
+    "0": 4,
+    "1": 8,
+    "2": 12,
+    "3": 16,
+    "4": 4,
+    "5": 4,
+    "8": 4
+  },
+  "unsupported_type_behavior": "switch default increments vertex iteration without source-cursor advancement; decoder rejects",
+  "limits": [
+    "Primitive source records remain unparsed.",
+    "No neutral geometry/material adapter or runtime parity is asserted."
+  ]
+}

@@ -1,8 +1,10 @@
 import struct
 
 import pytest
+import imb_format
 
 from imb_format import (
+    COMMON_HEADER_SIZE,
     FORMAT,
     VERSION_0_2_0_0,
     VERSION_0_4_0_0,
@@ -135,7 +137,10 @@ def test_fixed_header_without_bone_block_decodes_stream_triples():
     _pack_common(data, base)
     streams = base + 0x34
     struct.pack_into("<III", data, streams + 0x00, 4, 6, 0)
-    struct.pack_into("<III", data, streams + 0x0C, 2, 5, 1)
+    # First descriptor is followed immediately by three packed color values.
+    struct.pack_into("<3I", data, streams + 0x0C, 0xFF112233, 0xFF445566, 0xFF778899)
+    struct.pack_into("<III", data, streams + 0x18, 2, 5, 1)
+    struct.pack_into("<9f", data, streams + 0x24, *range(9))
 
     report = parse_imb_binary_mesh_schema(
         bytes(data),
@@ -161,7 +166,10 @@ def test_fixed_header_without_bone_block_decodes_stream_triples():
     assert report["streams"]["records"][0]["usage_ordinal"] == 6
     assert report["streams"]["records"][0]["channel"] == 0
     assert report["streams"]["records"][1]["channel"] == 1
-    assert report["vertex_payload_offset"] == streams + 0x18
+    assert report["vertex_payload_offset"] == streams + 0x0C
+    assert report["streams"]["records"][1]["source_offset"] == streams + 0x18
+    assert report["streams"]["runtime_vertex_stride"] == 16
+    assert report["primitives"]["source_section_offset"] == streams + 0x48
 
 
 def test_bone_block_decodes_names_and_expands_12_float_matrix():
@@ -227,4 +235,103 @@ def test_bone_name_must_terminate_before_matrix_block():
             bytes(data),
             header_offset=0,
             has_bone_block=True,
+        )
+
+
+@pytest.mark.parametrize("bone_count,matrix_relative", [
+    (1, 0), (2, 1), (0xFFFFFFFF, 4),
+])
+def test_bone_count_is_bounded_before_reading_names(
+    monkeypatch, bone_count, matrix_relative,
+):
+    data = bytearray(0x40)
+    _pack_common(data, 0, stream_count=0)
+    struct.pack_into("<II", data, 0x34, bone_count, matrix_relative)
+
+    def unexpected_name_read(*args):
+        pytest.fail("invalid bone count reached the name reader")
+
+    monkeypatch.setattr(imb_format, "_read_cstring", unexpected_name_read)
+    with pytest.raises(ValueError, match="bone-name block capacity"):
+        parse_imb_binary_mesh_schema(
+            bytes(data), header_offset=0, has_bone_block=True,
+        )
+
+
+def test_truncated_matrices_are_rejected_before_reading_names(monkeypatch):
+    data = bytearray(0x40)
+    _pack_common(data, 0, stream_count=0)
+    struct.pack_into("<II", data, 0x34, 1, 4)
+    data[0x3C:0x40] = b"bad!"
+
+    def unexpected_name_read(*args):
+        pytest.fail("truncated matrix block reached the name reader")
+
+    monkeypatch.setattr(imb_format, "_read_cstring", unexpected_name_read)
+    with pytest.raises(ValueError, match="IMB bone matrices"):
+        parse_imb_binary_mesh_schema(
+            bytes(data), header_offset=0, has_bone_block=True,
+        )
+
+
+@pytest.mark.parametrize("version,control,has_bones", [
+    (pack_imb_version(0, 1, 0, 0), 0x0201, False),
+    (VERSION_0_2_0_0, 1, True),
+    (pack_imb_version(0, 3, 0, 0), 0x0200, False),
+    (VERSION_0_4_0_0, 0x0201, True),
+])
+def test_every_schema_truncation_fails_closed(version, control, has_bones):
+    data = _build_prefix(version, control, "mesh")
+    base = len(data)
+    data += b"\x00" * COMMON_HEADER_SIZE
+    _pack_common(data, base, vertex_count=0, stream_count=1, primitive_count=0)
+    if has_bones:
+        # Empty bone names are structurally valid NUL-terminated strings.
+        data += struct.pack("<II", 2, 2) + b"\x00\x00"
+        data += struct.pack("<24f", *range(24))
+    data += struct.pack("<III", 4, 6, 0)
+
+    report = parse_imb_binary_mesh(bytes(data))
+    assert report["vertex_payload_offset"] == len(data)
+    assert report["bones"]["present"] is has_bones
+    assert report["bones"]["count"] == (2 if has_bones else 0)
+    assert report["boundary"]["bone_block"] == (
+        "source-backed with automatic version/control gate"
+    )
+    for length in range(len(data)):
+        with pytest.raises(ValueError):
+            parse_imb_binary_mesh(bytes(data[:length]))
+
+
+@pytest.mark.parametrize("type_ordinal,element_size", [
+    (0, 4), (1, 8), (2, 12), (3, 16), (4, 4), (5, 4), (8, 4),
+])
+def test_binary_stream_consumes_exact_source_bytes(type_ordinal, element_size):
+    data = bytearray(COMMON_HEADER_SIZE)
+    _pack_common(data, 0, vertex_count=2, stream_count=1, primitive_count=0)
+    data += struct.pack("<III", type_ordinal, 0, 3)
+    payload = bytes(range(element_size * 2))
+    data += payload
+    report = parse_imb_binary_mesh_schema(
+        bytes(data), header_offset=0, has_bone_block=False,
+    )
+    stream = report["streams"]["records"][0]
+    assert stream["vertex_payload_hex"] == payload.hex()
+    assert stream["vertex_payload_size"] == len(payload)
+    assert stream["runtime_element_offset"] == 0
+    assert report["primitives"]["source_section_offset"] == len(data)
+    with pytest.raises(ValueError, match="stream vertex payload"):
+        parse_imb_binary_mesh_schema(
+            bytes(data[:-1]), header_offset=0, has_bone_block=False,
+        )
+
+
+@pytest.mark.parametrize("type_ordinal", [6, 7, 9, 15, 16, 17, 0xFFFFFFFF])
+def test_unsupported_binary_types_do_not_guess_primitive_offset(type_ordinal):
+    data = bytearray(COMMON_HEADER_SIZE)
+    _pack_common(data, 0, vertex_count=1, stream_count=1, primitive_count=0)
+    data += struct.pack("<III", type_ordinal, 0, 0) + b"\x00" * 64
+    with pytest.raises(ValueError, match="unsupported IMB binary Type"):
+        parse_imb_binary_mesh_schema(
+            bytes(data), header_offset=0, has_bone_block=False,
         )
