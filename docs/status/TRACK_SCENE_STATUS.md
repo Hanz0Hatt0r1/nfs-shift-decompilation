@@ -21,7 +21,10 @@ Covered boundaries include:
 - binary NODE/SUMM object routing into LOD/HIERARCHY/OBJECT; DAMAGE is retained only as a concrete alternate XML-path runtime kind;
 - recursive FLAT tree structure with 0x40-byte direct records;
 - production signed-terminal FLAT span normalization controlled by SGB header bit2;
-- FLAT +0x3c runtime index table joins and +0x38 direct-object lookup/refcount teardown consumers.
+- FLAT +0x3c runtime index table joins and +0x38 direct-object lookup/refcount teardown consumers;
+- one-based OCCL/NODE wrapper catalog used by PART child-object ids;
+- source-backed PART→FLAT fallback builder with exact 0x20 node / 0x40 direct-record accounting and 0x28/0x40 runtime link tables;
+- explicit prebuilt-FLAT mode for shipped retail scenes where PART conversion is skipped.
 
 ## Explicitly unresolved
 
@@ -29,11 +32,11 @@ The project does not invent:
 
 - semantics of the remaining FLAT direct-record payload words and the concrete class behind populated +0x38 runtime object pointers;
 - the unnamed common object byte +0x21 and higher-level roles of individual LOD/HIERARCHY objects;
-- placement joins from recursive NODE/SUMM transforms into PART/FLAT spatial structures;
+- semantic names for the four dwords copied from scene-wrapper +0x0c object +0x10..+0x1c into generated FLAT direct records;
 - full scene streaming and LOD behavior.
 
 Track placement remains an evidence question.
 
 ## Next
 
-Join the proven recursive LOD/HIERARCHY/OBJECT transform graph to PART/FLAT placement structures, then resolve only the remaining FLAT payload fields required by that join before exposing scene placement to RenderBinding.
+Resolve the four source-backed generated-FLAT direct-record dwords from scene-wrapper +0x0c object +0x10..+0x1c, correlate them with the production prebuilt-FLAT payload, and expose only proven placement fields to RenderBinding.
