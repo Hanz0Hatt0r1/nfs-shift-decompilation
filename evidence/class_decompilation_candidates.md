@@ -34,9 +34,11 @@ include `no_reflection_metadata`, `no_reflected_fields`,
 ## Retail result
 
 Running the audit on the supplied retail source/executable pair yields **227
-structural-ready classes**. Rows are ordered with ready classes first and then
-by direct reflected field count, so large layouts are easy to inspect; that
-ordering is not a claim about subsystem importance or implementation priority.
+structural-ready classes**. The count is unchanged after removing 743
+thunk/non-thunk duplicate reflection calls; only per-class direct-field totals
+were corrected. Rows are ordered with ready classes first and then by direct
+reflected field count, so large layouts are easy to inspect; that ordering is
+not a claim about subsystem importance or implementation priority.
 
 Representative high-field-count ready rows include:
 
@@ -44,12 +46,12 @@ Representative high-field-count ready rows include:
 |---|---:|---:|
 | `DriverAITweaker` | 189 | `0x00b07820` |
 | `GamerProfile` | 181 | `0x00aada98` |
-| `VehicleDetails` | 148 | `0x00abbc48` |
-| `CockpitRender` | 134 | `0x00ab6890` |
-| `Participants` | 116 | `0x00ab9190` |
-| `CHUD` | 94 | `0x00ab43b0` |
-| `CarSoundConfig` | 94 | `0x00ab0db8` |
-| `TrackDetails` | 88 | `0x00abb208` |
+| `VehicleDetails` | 74 | `0x00abbc48` |
+| `CockpitRender` | 67 | `0x00ab6890` |
+| `Participants` | 58 | `0x00ab9190` |
+| `CHUD` | 47 | `0x00ab43b0` |
+| `CarSoundConfig` | 47 | `0x00ab0db8` |
+| `TrackDetails` | 44 | `0x00abb208` |
 
 Subsystem filters such as `--prefix AI`, `--prefix Vehicle`, or repeated
 `--class-name` arguments can narrow the evidence pool before manual
