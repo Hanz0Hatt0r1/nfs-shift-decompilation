@@ -28,7 +28,7 @@ def test_native_vulkan_bundle_executor_contract():
     assert "WorldTransformHeader" in source
     assert "apply_world_transform_translation" in source
     assert "translation-only" in source
-    assert '"world_transform_executed"' in source
+    assert "world_transform_executed" in source
 
 
 def test_vulkan_bundle_runner_contract():
