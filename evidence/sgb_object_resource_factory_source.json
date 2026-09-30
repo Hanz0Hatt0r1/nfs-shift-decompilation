@@ -1,0 +1,64 @@
+{
+  "format": "SHIFT.SGBObjectResourceFactorySourceEvidence/1",
+  "source": "retail Need for Speed SHIFT v1.02 SHIFT.exe / Ghidra decompilation",
+  "object_render": {
+    "address": "0x00699230",
+    "resource_descriptor_offset": "0x80",
+    "renderer_global": "DAT_00c26058",
+    "factory_vfunc_offset": "0x214",
+    "render_instance_lookup_vfunc_offset": "0x224",
+    "resource_release_vfunc_offset": "0x220",
+    "transform_vfunc_offset": "0x2c"
+  },
+  "descriptor": {
+    "base_constructor": "FUN_008362a0",
+    "object_constructor": "FUN_00836300",
+    "type_offset": "0x04",
+    "initial_type": 0
+  },
+  "factory": {
+    "vfunc_entry": "FUN_00832a50",
+    "switch_function": "FUN_00831940",
+    "extension_compare": "FUN_0040f060",
+    "extension_promotions": [
+      {
+        "data_symbol": "DAT_00b18c98",
+        "string": "imb",
+        "target_type": 7
+      },
+      {
+        "data_symbol": "DAT_00b18c94",
+        "string": "imx",
+        "target_type": 7
+      }
+    ],
+    "cases": [
+      {
+        "type": 0,
+        "cache_name": "MeshType",
+        "allocation_bytes": 128,
+        "constructor": "FUN_0085aac0"
+      },
+      {
+        "type": 7,
+        "cache_name": "MeshInst",
+        "allocation_bytes": 176,
+        "constructor": "FUN_0085ae20"
+      }
+    ]
+  },
+  "type7_object_render_branch": {
+    "condition": "resource_descriptor+0x04 == 7",
+    "render_instance_vfunc_offset": "0x04",
+    "edx_flag": 1,
+    "stack_arguments": [
+      256,
+      0
+    ]
+  },
+  "interpretation_limits": [
+    "MeshType and MeshInst are retail factory/cache class names, not claims that either serialized payload equals MEB.",
+    "The .imb/.imx promotion is source-backed; no reverse conversion to MEB is inferred.",
+    "Other factory type ids 1..6 exist in FUN_00831940 but are not selected by the proven SGB OBJECT descriptor construction path in this evidence record."
+  ]
+}

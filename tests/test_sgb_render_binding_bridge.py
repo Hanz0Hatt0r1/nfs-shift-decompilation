@@ -147,6 +147,8 @@ def test_admitted_sgb_meb_enters_generic_render_binding(tmp_path):
 
     assert report["format"] == FORMAT
     assert report["ready"] is True
+    assert report["direct_render_instance_count"] == 1
+    assert report["resource_adapter_blocked_count"] == 0
     assert report["resolved_instance_count"] == 1
     assert report["unresolved_instance_count"] == 0
 
@@ -221,10 +223,63 @@ def test_non_meb_scene_resource_is_not_guessed(tmp_path):
     )
 
     assert report["ready"] is False
+    assert report["direct_render_instance_count"] == 0
+    assert report["resource_adapter_blocked_count"] == 1
     assert (
-        "binding-0:resource-resolution:unsupported-scene-resource-kind"
+        "binding-0:scene-resource:meshtype-adapter-unimplemented"
         in report["blocking_reasons"]
     )
+    assert report["resource_adapter_blocked"][0]["factory_type"] == 0
+    assert report["resource_adapter_blocked"][0]["factory_name"] == "MeshType"
+
+
+def test_imb_scene_resource_is_classified_as_meshinst_and_stays_blocked(
+    tmp_path,
+):
+    _write_ir(tmp_path)
+    report = build_sgb_render_binding_bridge(
+        _admission(
+            _binding(resource="tracks/test/crowd_banner_01_body_loda.imb")
+        ),
+        tmp_path,
+    )
+
+    assert report["ready"] is False
+    assert report["scene_admitted_instance_count"] == 1
+    assert report["direct_render_instance_count"] == 0
+    assert report["resource_adapter_blocked_count"] == 1
+    assert (
+        "binding-0:scene-resource:meshinst-adapter-unimplemented"
+        in report["blocking_reasons"]
+    )
+    blocked = report["resource_adapter_blocked"][0]
+    assert blocked["factory_type"] == 7
+    assert blocked["factory_name"] == "MeshInst"
+
+
+def test_mixed_meb_and_meshinst_preserves_ready_meb_packet(tmp_path):
+    _write_ir(tmp_path)
+    report = build_sgb_render_binding_bridge(
+        _admission(
+            _binding(index=0, resource="tracks/test/object.meb"),
+            _binding(index=1, resource="tracks/test/crowd_banner.imb"),
+        ),
+        tmp_path,
+    )
+
+    assert report["ready"] is False
+    assert report["scene_admitted_instance_count"] == 2
+    assert report["direct_render_instance_count"] == 1
+    assert report["resolved_instance_count"] == 1
+    assert report["resource_adapter_blocked_count"] == 1
+    assert len(report["render_binding"]["packets"]) == 1
+    assert (
+        report["render_binding"]["packets"][0]["scene_binding"][
+            "admission_binding_index"
+        ]
+        == 0
+    )
+    assert report["resource_adapter_blocked"][0]["binding_index"] == 1
 
 
 def test_no_admitted_rows_is_blocked(tmp_path):
@@ -238,4 +293,5 @@ def test_no_admitted_rows_is_blocked(tmp_path):
         "sgb-render-binding-bridge:no-admitted-bindings"
         in report["blocking_reasons"]
     )
+    assert report["direct_render_instance_count"] == 0
     assert report["render_binding"]["stats"]["resource_instances"] == 0

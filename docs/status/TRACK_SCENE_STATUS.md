@@ -33,6 +33,7 @@ Covered boundaries include:
 - FLAT leaf +0x20..+0x34 consumed directly by the secondary spatial-query virtual interface as six-float bounds; all 21,580 Silverstone leaves validate as ordered min/max triples whose midpoint matches the source-backed sphere centre;
 - `SHIFT.SGBScenePlacement/1` normalizes FLAT/SUMM and PART/NODE object identity with source-backed node/leaf/partition geometry; FLAT leaf bounds are admitted as proven geometry;
 - `SHIFT.SGBObjectRenderHandoffSet/1` maps OBJECT resource descriptor +0x80 to renderer factory vfunc +0x214 and transform submission vfunc +0x2c;
+- `SHIFT.SGBObjectResourceFactory/1` maps the descriptor's default MeshType/type-0 path, `.imb/.imx` promotion to MeshInst/type 7 in `FUN_00831940`, and the additional type-7 render-instance call before the common transform submission;
 - OBJECT MatrixNumber=-1 produces a source-equivalent numeric 4x4 from WXYZ quaternion, XYZ offset and uniform scale; MatrixNumber>=0 selects a 0x40-byte parent MultiMatrix slot.
 - `SHIFT.SGBMultiMatrixEvaluation/1` reconstructs static mode-1 hierarchy arithmetic: the owner overwrites world slot 0 from its runtime root input, then evaluates slots 1..N-1 as `local * parent_world` using the low byte of the serialized parent dword.
 - `SHIFT.SGBRootTransformState/1` reconstructs the root lifecycle: constructor world slot 0 equals serialized local slot 0; SceneGraph immediate/deferred transform updates replace it with the exact transported 0x40-byte matrix. Unknown per-instance update history remains blocked.
@@ -47,8 +48,8 @@ The project does not invent:
 - higher-level roles of individual LOD/HIERARCHY objects;
 - full scene streaming and LOD behavior.
 
-Track placement identity, culling geometry, MultiMatrix arithmetic, root-transform transport, placement→OBJECT admission and admitted-MEB integration with generic RenderBinding are source-backed. Concrete per-instance SceneGraph transform-update history, non-MEB scene-resource semantics and higher-level streaming behavior remain evidence questions.
+Track placement identity, culling geometry, MultiMatrix arithmetic, root-transform transport, placement→OBJECT admission, retail MeshType/MeshInst factory selection and admitted-MEB integration with generic RenderBinding are source-backed. Concrete per-instance SceneGraph transform-update history, MeshType/MeshInst serialized payload adapters and higher-level streaming behavior remain evidence questions.
 
 ## Next
 
-`SHIFT.SGBRenderBindingBridge/1` now feeds admitted MEB instances into generic `SHIFT.RenderBinding/1`. Next scene work is either to recover/capture transform-update history for blocked MatrixNumber instances or to map additional non-MEB scene-resource/streaming visibility semantics without guessing.
+`SHIFT.SGBRenderBindingBridge/1` feeds admitted MEB instances into generic `SHIFT.RenderBinding/1`, and Phase 554 classifies the retail factory path before that neutral adapter. Next scene work is either to recover/capture transform-update history for blocked MatrixNumber instances or to decode/map MeshType/MeshInst payloads into neutral geometry/material IR without guessing.

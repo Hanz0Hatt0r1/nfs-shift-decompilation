@@ -18,6 +18,7 @@ from typing import Any, Mapping, Sequence
 
 from sgb_multimatrix import build_multimatrix_evaluation
 from sgb_root_transform import build_root_transform_state
+from sgb_resource_factory import classify_sgb_object_resource
 
 FORMAT = "SHIFT.SGBObjectRenderHandoffSet/1"
 SGB_FORMAT = "SHIFT.SGBRuntime/1"
@@ -119,6 +120,7 @@ def build_object_render_handoff(
     )
     if not resource_ref:
         blockers.append("object-render:resource-reference-missing")
+    resource_factory = classify_sgb_object_resource(resource_ref)
 
     try:
         matrix_number = int(object_report.get("matrix_number"))
@@ -291,10 +293,15 @@ def build_object_render_handoff(
             "serialized_source": "OBJECT third SGB-relative string",
             "runtime_descriptor_offset": 0x80,
             "runtime_loader": "FUN_0069a6c0",
+            "factory_classification": resource_factory,
             "render_instance_factory": {
                 "object_render_vfunc": "0x00699230",
                 "renderer_global": "DAT_00c26058",
                 "renderer_factory_vfunc_offset": 0x214,
+                "renderer_factory_entry": "FUN_00832a50",
+                "factory_switch": "FUN_00831940",
+                "render_instance_lookup_vfunc_offset": 0x224,
+                "resource_release_vfunc_offset": 0x220,
             },
         },
         "transform": transform,
@@ -306,6 +313,10 @@ def build_object_render_handoff(
             "explicit_orientation_wxyz_offset": 0x88,
             "explicit_offset_xyz_offset": 0x98,
             "explicit_scale_offset": 0xA4,
+            "resource_factory_type_offset": 0x04,
+            "meshinst_type7_extra_call": (
+                resource_factory.get("render_instance") or {}
+            ).get("meshinst_type7_extra_call"),
         },
         "render_binding_boundary": {
             "resource_identity_ready": bool(resource_ref),
@@ -424,6 +435,22 @@ def build_sgb_object_render_handoff_set(
         row["handoff"]["transform"].get("world_matrix_ready") is True
         for row in rows
     )
+    mesh_type_count = sum(
+        (
+            row["handoff"].get("resource", {})
+            .get("factory_classification", {})
+            .get("factory_type")
+        ) == 0
+        for row in rows
+    )
+    mesh_inst_count = sum(
+        (
+            row["handoff"].get("resource", {})
+            .get("factory_classification", {})
+            .get("factory_type")
+        ) == 7
+        for row in rows
+    )
 
     ready = bool(rows) and not blockers
     return {
@@ -436,10 +463,14 @@ def build_sgb_object_render_handoff_set(
         "explicit_transform_count": explicit,
         "parent_multimatrix_slot_count": parent_slot,
         "numeric_world_matrix_ready_count": numeric_ready,
+        "mesh_type_resource_count": mesh_type_count,
+        "mesh_inst_resource_count": mesh_inst_count,
         "objects": rows,
         "boundary": {
             "resource_to_runtime_descriptor": "source-backed",
             "render_instance_factory": "source-backed",
+            "resource_factory_classification": "source-backed",
+            "meshinst_extensions": ["imb", "imx"],
             "transform_selector": "source-backed",
             "parent_multimatrix_numeric_world_matrix": "runtime-context-required",
             "draw_admission": False,
@@ -476,6 +507,8 @@ def main(argv: list[str] | None = None) -> int:
         "parent_multimatrix_slot_count": report[
             "parent_multimatrix_slot_count"
         ],
+        "mesh_type_resource_count": report["mesh_type_resource_count"],
+        "mesh_inst_resource_count": report["mesh_inst_resource_count"],
         "blocking_reasons": report["blocking_reasons"],
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
