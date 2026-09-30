@@ -87,10 +87,11 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 63. Join SGB placement wrappers to recursive OBJECT resource/world-transform handoffs with independent fail-closed admission — Phase 552 implemented.
 64. Feed admitted MEB scene instances into the existing generic RenderBinding pipeline without fabricating VHF nodes — Phase 553 implemented.
 65. Recover the retail SGB OBJECT resource factory: default MeshType/type 0, `.imb/.imx` promotion to MeshInst/type 7, and the type-7 render-instance branch — Phase 554 implemented.
-66. Recover or capture concrete per-instance SceneGraph transform-update history and implement source-backed neutral adapters for remaining MeshType/MeshInst scene resources.
-67. Derive proven animation poses from the BAB runtime grammar.
-68. Port the stable native render/runtime boundary to Android.
-69. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
+66. Map MeshInst inheritance/runtime layout, `.imx` XML versus `.imb` binary loaders, aligned 0x40-stride instance storage and category-10 lifecycle — Phase 555 implemented.
+67. Recover or capture concrete per-instance SceneGraph transform-update history and implement source-backed neutral adapters for IMX/IMB scene resources.
+68. Derive proven animation poses from the BAB runtime grammar.
+69. Port the stable native render/runtime boundary to Android.
+70. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
 
 ## Workstream status
 
@@ -103,7 +104,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | placement + OBJECT handoff + MultiMatrix/root + RenderBinding bridge + MeshType/MeshInst factory classification implemented | per-instance SceneGraph update history + neutral non-MEB MeshType/MeshInst adapters |
+| SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst loader/layout/lifecycle implemented | per-instance SceneGraph update history + neutral IMX/IMB payload adapters |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |

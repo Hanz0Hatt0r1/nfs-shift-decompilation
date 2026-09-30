@@ -32,6 +32,13 @@ def test_imb_and_imx_promote_to_meshinst_type7_case_insensitively():
         assert report["allocation_bytes"] == 0xB0
         assert report["constructor"] == "FUN_0085ae20"
         assert report["extension_promotion"]["enabled"] is True
+        loader = report["resource_loader"]
+        if report["extension"] == "imb":
+            assert loader["mode"] == "binary"
+            assert loader["function"] == "FUN_00859800"
+        else:
+            assert loader["mode"] == "xml"
+            assert loader["function"] == "FUN_008587e0"
         extra = report["render_instance"]["meshinst_type7_extra_call"]
         assert extra == {
             "enabled": True,
@@ -46,6 +53,7 @@ def test_non_meshinst_extensions_stay_type0_without_meb_equivalence_claim():
     report = classify_sgb_object_resource("tracks/test/foo.meshtype")
     assert report["factory_type"] == 0
     assert report["factory_name"] == "MeshType"
+    assert report["resource_loader"] is None
     assert report["boundary"]["meb_equivalence"] == "not-asserted"
     assert report["boundary"]["meshinst_to_meb_equivalence"] == "not-asserted"
 

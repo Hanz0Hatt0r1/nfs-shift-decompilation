@@ -19,6 +19,7 @@ from typing import Any, Mapping, Sequence
 from sgb_multimatrix import build_multimatrix_evaluation
 from sgb_root_transform import build_root_transform_state
 from sgb_resource_factory import classify_sgb_object_resource
+from sgb_meshinst_runtime import build_meshinst_runtime_contract
 
 FORMAT = "SHIFT.SGBObjectRenderHandoffSet/1"
 SGB_FORMAT = "SHIFT.SGBRuntime/1"
@@ -121,6 +122,11 @@ def build_object_render_handoff(
     if not resource_ref:
         blockers.append("object-render:resource-reference-missing")
     resource_factory = classify_sgb_object_resource(resource_ref)
+    meshinst_runtime = (
+        build_meshinst_runtime_contract(str(resource_ref))
+        if resource_factory.get("factory_type") == 7
+        else None
+    )
 
     try:
         matrix_number = int(object_report.get("matrix_number"))
@@ -294,6 +300,7 @@ def build_object_render_handoff(
             "runtime_descriptor_offset": 0x80,
             "runtime_loader": "FUN_0069a6c0",
             "factory_classification": resource_factory,
+            "meshinst_runtime": meshinst_runtime,
             "render_instance_factory": {
                 "object_render_vfunc": "0x00699230",
                 "renderer_global": "DAT_00c26058",

@@ -1810,6 +1810,30 @@ def cmd_sgb_object_render_handoff(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_sgb_meshinst_runtime(args: argparse.Namespace) -> int:
+    """Emit the source-backed MeshInst runtime/layout contract."""
+    from sgb_meshinst_runtime import build_meshinst_runtime_contract
+
+    report = build_meshinst_runtime_contract(
+        args.resource,
+        descriptor_instance_count=args.instance_count,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "resource": report["reference"],
+        "loader_mode": report["resource_loader"]["mode"],
+        "instance_count": report["runtime_layout"]["instance_count"]["value"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_sgb_scene_placement(args: argparse.Namespace) -> int:
     """Build neutral render-facing placement from an SGB placement join."""
     from sgb_scene_placement import validate_file
@@ -4118,6 +4142,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="SHIFT.SGBObjectRenderHandoffSet/1 JSON output",
     )
     p.set_defaults(fn=cmd_sgb_object_render_handoff)
+
+    p = sp.add_parser(
+        "sgb-meshinst-runtime",
+        help="emit source-backed MeshInst runtime/layout and loader contract",
+    )
+    p.add_argument("resource", help=".imb or .imx resource reference")
+    p.add_argument("output", help="SHIFT.SGBMeshInstRuntime/1 JSON output")
+    p.add_argument(
+        "--instance-count",
+        type=int,
+        help="optional observed descriptor +0x30 count",
+    )
+    p.set_defaults(fn=cmd_sgb_meshinst_runtime)
 
     p = sp.add_parser(
         "sgb-scene-placement",
