@@ -687,6 +687,8 @@ def validate_prefixed_array_link(
                 sequence_field: 0,
                 f"{sequence_field}_complete": False,
                 "array_link_available": False,
+                "array_link_snapshots": 0,
+                "array_link_complete": False,
             })
             continue
         counts: list[int] = []
@@ -720,13 +722,18 @@ def validate_prefixed_array_link(
         seq = max(sequences) if sequences else 0
         row.update({
             count_field: count,
-            f"{count_field}_stable": bool(counts and len(set(counts)) == 1),
+            f"{count_field}_stable": bool(
+                len(counts) == len(snapshots) and len(set(counts)) == 1
+            ),
             sequence_field: seq,
             f"{sequence_field}_complete": bool(
-                counts and sequences and len(sequences) == len(counts)
+                len(counts) == len(snapshots)
+                and len(sequences) == len(snapshots)
                 and all(s == c for s, c in zip(sequences, counts))
             ),
             "array_link_available": bool(counts),
+            "array_link_snapshots": len(counts),
+            "array_link_complete": len(counts) == len(snapshots),
             "array_element_vtable": vtable if seq else None,
             "array_element_stride": stride,
             "array_expected_count": expected,
@@ -748,7 +755,9 @@ def extract_polyline_nodes(
     rows: list[dict] = []
     starts = sorted(region_index)
     for owner in candidates:
-        if not owner.get("array_link_available"):
+        if not owner.get("array_link_complete"):
+            continue
+        if not owner.get("array_count_stable") or not owner.get("array_node_sequence_complete"):
             continue
         if not owner.get("array_count_match") or not owner.get("array_node_vtable_match"):
             continue
@@ -818,6 +827,10 @@ def extract_segment_nodes(
     rows: list[dict] = []
     starts = sorted(region_index)
     for owner in candidates:
+        if not owner.get("array_link_complete"):
+            continue
+        if not owner.get("array_count_stable") or not owner.get("array_node_sequence_complete"):
+            continue
         if not owner.get("array_expected_count_match"):
             continue
         array = int(owner.get("array", 0))
