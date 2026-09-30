@@ -491,6 +491,59 @@ BundlePipelineState load_bundle_pipeline_state(
     return out;
 }
 
+void load_participant_boundary(
+    const std::string& path,
+    shift::runtime::PhysicsTickBoundary& physics) {
+
+    if (!file_contains(
+            path,
+            "\"format\": \"SHIFT.NativePhysicsParticipantBoundary/1\"") ||
+        !file_contains(path, "\"ready\": true")) {
+        throw std::runtime_error(
+            "native physics participant boundary is missing or not ready");
+    }
+    if (!file_contains(
+            path,
+            "\"registry_manager_global\": \"DAT_00c109e0\"") ||
+        !file_contains(
+            path,
+            "\"selector_global\": \"DAT_00bbc600\"") ||
+        !file_contains(path, "\"selector_context_separate\": true")) {
+        throw std::runtime_error(
+            "native physics participant manager/selector identity mismatch");
+    }
+
+    const uint32_t slot_stride =
+        json_u32_field(path, "registry_slot_stride");
+    const uint32_t descriptor_type =
+        json_u32_field(path, "participant_descriptor_type");
+    if (slot_stride != 0x1fa0u || descriptor_type != 3u) {
+        throw std::runtime_error(
+            "native physics participant structural ABI mismatch");
+    }
+
+    if (!file_contains(
+            path,
+            "\"participant_instance_ready\": false") ||
+        !file_contains(path, "\"participant_index\": -1") ||
+        !file_contains(path, "\"participant_mode\": -1")) {
+        throw std::runtime_error(
+            "native physics participant boundary overclaims runtime instance");
+    }
+
+    physics.participant_contract_ready = true;
+    physics.participant_registry_ready = true;
+    physics.selector_context_separate = true;
+    physics.registry_slot_stride = slot_stride;
+    physics.participant_descriptor_type = descriptor_type;
+
+    // Concrete runtime participant identity remains capture-gated.
+    physics.participant_ready = false;
+    physics.participant_index = -1;
+    physics.participant_mode = -1;
+}
+
+
 shift::runtime::PhysicsWorkspaceBoundary load_physics_manifest(
     const std::string& path) {
     if (!file_contains(
@@ -2749,6 +2802,7 @@ struct Args {
     std::string scene_set;
     std::string camera_state;
     std::string physics_manifest;
+    std::string participant_boundary;
     std::string shader_dir;
     int frames = kDefaultFrames;
     bool validation = false;
@@ -2763,6 +2817,7 @@ Args parse_args(int argc, char** argv) {
             option == "--scene-set" ||
             option == "--camera-state" ||
             option == "--physics-manifest" ||
+            option == "--participant-boundary" ||
             option == "--shader-dir" || option == "--frames") {
             if (i + 1 >= argc) {
                 throw std::runtime_error(
@@ -2788,6 +2843,7 @@ Args parse_args(int argc, char** argv) {
                 << "usage: shift_runtime "
                 << "(--mesh FILE | --bundle DIR | --bundle-set DIR | --scene-set DIR) "
                 << "--shader-dir DIR [--camera-state FILE] "
+                << "[--participant-boundary FILE] "
                 << "[--frames N] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
@@ -2997,6 +3053,11 @@ int main(int argc, char** argv) {
                 load_physics_manifest(
                     args.physics_manifest);
         }
+        if (!args.participant_boundary.empty()) {
+            load_participant_boundary(
+                args.participant_boundary,
+                native_state.physics);
+        }
         const auto start =
             std::chrono::steady_clock::now();
 
@@ -3088,6 +3149,20 @@ int main(int argc, char** argv) {
             << ",\n"
             << "  \"vehicle_control_steer_axis\": "
             << native_state.physics.last_input.steer_axis()
+            << ",\n"
+            << "  \"physics_participant_contract_ready\": "
+            << (native_state.physics.participant_contract_ready ?
+                "true" : "false") << ",\n"
+            << "  \"physics_participant_registry_ready\": "
+            << (native_state.physics.participant_registry_ready ?
+                "true" : "false") << ",\n"
+            << "  \"physics_selector_context_separate\": "
+            << (native_state.physics.selector_context_separate ?
+                "true" : "false") << ",\n"
+            << "  \"physics_registry_slot_stride\": "
+            << native_state.physics.registry_slot_stride << ",\n"
+            << "  \"physics_participant_descriptor_type\": "
+            << native_state.physics.participant_descriptor_type
             << ",\n"
             << "  \"physics_participant_ready\": "
             << (native_state.physics.participant_ready ?
