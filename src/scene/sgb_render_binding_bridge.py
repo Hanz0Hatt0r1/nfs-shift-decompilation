@@ -122,7 +122,7 @@ def build_sgb_render_binding_bridge(
         instances.append(instance)
 
         suffix = Path(str(resource_ref).replace("\\", "/")).suffix.lower()
-        if suffix == ".meb":
+        if suffix in {".meb", ".imb"}:
             direct_render_instances.append(instance)
         else:
             factory_type = resource_factory.get("factory_type")
@@ -131,8 +131,6 @@ def build_sgb_render_binding_bridge(
                 loader_mode = loader.get("mode")
                 if loader_mode == "xml":
                     adapter_reason = "meshinst-xml-adapter-unimplemented"
-                elif loader_mode == "binary":
-                    adapter_reason = "meshinst-binary-adapter-incomplete"
                 else:
                     adapter_reason = "meshinst-adapter-unimplemented"
             else:
@@ -216,10 +214,14 @@ def build_sgb_render_binding_bridge(
         "boundary": {
             "retail_resource_factory": "MeshType(type 0) / MeshInst(type 7)",
             "meshinst_extensions": ["imb", "imx"],
-            "direct_neutral_adapter": "MEB only",
-            "resource_pipeline": "MEB -> BMT/MTX -> FX/FXO -> SHIFT.RenderBinding/1",
+            "direct_neutral_adapter": "MEB + source-backed v0.4 IMB",
+            "resource_pipeline": (
+                "MEB/IMB -> neutral geometry -> BMT/MTX -> FX/FXO -> "
+                "SHIFT.RenderBinding/1"
+            ),
             "meshtype_equals_meb": False,
             "meshinst_equals_meb": False,
+            "imb_adapter_format": "SHIFT.IMBNeutralGeometry/1",
             "world_matrix_source": "SHIFT.SGBRenderBindingAdmission/1",
             "blocked_scene_rows_promoted": False,
             "generic_render_binding_packets_emitted": True,
