@@ -141,7 +141,7 @@ def _pe_string(
     )
 
 
-def _pe_rtti_index(data: bytes) -> dict:
+def build_pe_rtti_index(data: bytes) -> dict:
     image_base, sections = _pe_sections(data)
     if ".text" not in sections or ".rdata" not in sections:
         raise ValueError("PE lacks .text or .rdata")
@@ -191,7 +191,7 @@ def extract_registry(source: Path, exe: Path | None = None) -> dict:
     source_data = source.read_bytes()
     text = source_data.decode("utf-8", errors="replace")
     exe_data = exe.read_bytes() if exe is not None else None
-    pe = _pe_rtti_index(exe_data) if exe_data is not None else None
+    pe = build_pe_rtti_index(exe_data) if exe_data is not None else None
 
     classes: list[dict] = []
     for match in _REGISTRATION_CALL.finditer(text):
