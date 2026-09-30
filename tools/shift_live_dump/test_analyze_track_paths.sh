@@ -338,6 +338,28 @@ assert seq[0]["stride"] == 0x20, seq
 print("track path generic AIW duplicate/bucket test: PASS")
 PY
 
+# A matched concrete node in one AIW must not suppress float3 fallback for
+# another AIW selected from the same capture.
+python3 "$self_dir/analyze_track_paths.py" "$tmp" --out "$tmp/out-mixed-aiw" \
+  --top 20 --target-top 8 --skip-pointer-analysis \
+  --aiw "$tmp/test.aiw" --aiw "$tmp/generic.aiw" \
+  --aiw-range 0x00200400:0x180 --aiw-range 0x00202000:0x100 \
+  --runtime-root 0x002004f0 --runtime-root 0x00201ff0 \
+  >/tmp/track_path_mixed_aiw_test.out
+
+python3 - "$tmp/out-mixed-aiw/track_path_analysis.json" <<'PY'
+import json
+import sys
+
+result = json.loads(open(sys.argv[1], encoding="utf-8").read())
+assert result["aiw_match_count"] == 9, result["aiw_match_count"]
+seq = result["aiw_runtime_sequences"]
+assert len(seq) == 2, seq
+assert {row["aiw_source"] for row in seq} == {"test.aiw", "generic.aiw"}, seq
+assert {row["matched_waypoints"] for row in seq} == {4}, seq
+print("track path mixed AIW fallback test: PASS")
+PY
+
 python3 - "$tmp/out-skip-pointers/track_path_analysis.json" <<'PY'
 import json
 import sys
