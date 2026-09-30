@@ -187,9 +187,8 @@ def test_native_runtime_accepts_neutral_vulkan_draw_bundle_and_svwt():
     assert "world_transform.svwt" in source
     assert "unsupported bundle world-transform packet" in source
     assert "has_world_transform" in source
-    assert '"bundle_world_transforms_loaded"' in source
-    assert '"bundle_world_transform_execution"' in source
-    assert '"not-applied"' in source
+    assert '\\"bundle_world_transforms_loaded\\": ' in source
+    assert '\\"bundle_world_transform_execution\\": \\"not-applied\\"' in source
     assert "neutral bundle runtime provenance gate is missing or not ready" in source
 
     assert "Prepare neutral Vulkan runtime admission fixture" in workflow
