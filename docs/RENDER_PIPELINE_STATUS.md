@@ -24,6 +24,10 @@ Known BMW attributes include POSITION0, NORMAL0, TANGENT0, BINORMAL0, TEXCOORD0.
 
 RenderCommand/1 is the common submission source for the desktop reference renderer and future GLES/Vulkan backends. It preserves geometry ranges, attributes, linked shader stages, constants, samplers and external resources.
 
+## Scene placement
+
+`SHIFT.ScenePlacement/1` is an optional top-level `RenderBinding/1` attachment. It carries source-backed SGB object/resource identity, FLAT/SUMM leaf bounds/sphere/filter masks, and PART/NODE partition bounds. Attaching it does not mutate DrawPacket, StaticDraw, RenderCommand or world-matrix data.
+
 ## BMW runtime gate
 
 Real captured draws additionally require exact MEB identity, draw-local snapshot alignment and declaration/VB/IB/shader/resource correlation.
