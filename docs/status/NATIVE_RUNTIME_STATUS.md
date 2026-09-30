@@ -31,7 +31,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 ## Next integration gates
 
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
-2. Connect the existing evidence-backed camera update/snapshot contracts to the native state double buffer.
+2. Camera snapshot/double-buffer scalar transport is connected in Phase 599 through `SHIFT.NativeCameraStateBridge/1` and `--camera-state`. Camera-source/vtable execution and rendered-view behavior remain separate.
 3. Connect the vehicle physics participant registry/selector boundary to the native state without synthesizing unresolved provider semantics.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
@@ -135,3 +135,22 @@ through its existing 2D texture upload path.
 
 Unsupplied or mismatched external resources remain fail-closed, and other
 renderer-owned resource types are not promoted by this phase.
+
+
+## Phase 599 camera state bridge
+
+The native runtime now accepts an optional `--camera-state FILE` containing a
+ready `SHIFT.NativeCameraStateBridge/1`.
+
+The bridge is derived only from the recovered CameraManager snapshot and
+ordered swap/completion contracts. It loads the final active buffer index,
+update guard, manager mode, active-buffer sub-index/flag, camera id, active
+group and restore group into `SHIFT.NativeRuntimeState/1`.
+
+The opaque camera/source reference from snapshot word 0 is never serialized or
+interpreted. Native projection defaults remain unchanged and the inactive
+buffer is not inferred from unavailable retail payloads.
+
+Linux Vulkan CI executes snapshot → swap → complete → native bridge and verifies
+the transported scalar state through `SHIFT.NativeRuntimeFrameLoop/1`
+telemetry.
