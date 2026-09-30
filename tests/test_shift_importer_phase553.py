@@ -289,3 +289,22 @@ def test_phase597_cli_applies_multimatrix_root_consensus_to_handoffs():
     assert args.output == "object-handoffs.json"
     assert args.root_consensus == "root-consensus.json"
     assert args.fn.__name__ == "cmd_sgb_object_render_handoff"
+
+
+def test_phase598_cli_accepts_runtime_transform_recovery_pipeline():
+    parser = build_parser()
+    args = parser.parse_args([
+        "sgb-runtime-transform-recovery",
+        "sgb-runtime.json",
+        "scene-placement.json",
+        "runtime-capture.json",
+        "out/ir",
+        "transform-recovery.json",
+    ])
+
+    assert args.sgb_runtime == "sgb-runtime.json"
+    assert args.scene_placement == "scene-placement.json"
+    assert args.capture_pipeline == "runtime-capture.json"
+    assert args.ir_root == "out/ir"
+    assert args.output == "transform-recovery.json"
+    assert args.fn.__name__ == "cmd_sgb_runtime_transform_recovery"
