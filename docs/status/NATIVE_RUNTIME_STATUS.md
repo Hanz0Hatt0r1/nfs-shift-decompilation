@@ -32,7 +32,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Phase 599 connects the six-word CameraManager snapshot and guarded double-buffer swap to the native fixed-step scheduler. Phase 600 adds fail-closed recovered scalar evidence input through SHIFT.NativeCameraStateBridge/1 and --camera-state. Remaining camera work is retail timestamp/update scheduling, camera-source/controller behavior, gameplay view selection/attachment and exact render/view integration.
-3. Phase 602 connects the source-backed PhysicsParticipantManager registry ABI and separate selector context to native state through `SHIFT.NativePhysicsParticipantBoundary/1`. Concrete selected participant instance/index/mode and provider identity remain capture-gated.
+3. Phases 602–603 connect the source-backed participant structure while preserving separate manager-registry index and selector-ordinal identity domains. Both remain unresolved until authentic runtime evidence proves the concrete participant join; provider identity remains capture-gated.
 4. Connect the real BMW SDF solver domain/workspace contract to the fixed tick once a native numerical backend is available.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Live keyboard vehicle controls already feed the neutral intent layer. Phase 601 adds a deterministic fixed-step input script and physics-boundary activity telemetry for CI. Gamepad/analog normalization and retail filtering remain.
@@ -205,3 +205,20 @@ Structural admission never promotes static evidence into a retail participant:
 `participant_mode=-1` remain mandatory until independent runtime-instance
 evidence exists. Linux Vulkan CI verifies this boundary alongside the Phase 600
 camera evidence input and Phase 601 deterministic input path.
+
+
+## Phase 603 participant identity-domain separation
+
+The Phase 602 structural boundary now preserves two distinct capture-gated
+integer identities instead of exposing one ambiguous participant index:
+
+- manager registry index from `PhysicsParticipant+0x3c`;
+- selector ordinal stored at `IGPhaseVehicle+0x454`.
+
+The contract and native state also keep the IGPhaseVehicle process state
+separate. All three remain `-1`, and
+`participant_identity_join_proven=false`, under static evidence alone.
+
+Fixed-step telemetry counts admitted participant topology separately from
+ready/unresolved participant steps. Linux CI requires all Phase 603 topology
+steps to remain unresolved until independent runtime-instance evidence exists.
