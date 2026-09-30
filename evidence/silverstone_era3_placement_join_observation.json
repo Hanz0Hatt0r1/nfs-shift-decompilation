@@ -1,0 +1,126 @@
+{
+  "format": "SHIFT.SilverstoneEra3PlacementJoinObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 Silverstone Era3 visual corpus",
+  "join_contract": {
+    "flat_summ": {
+      "summ_slot_allocation": "FUN_006a4900 -> FUN_0068a920 -> FUN_006af330",
+      "summ_slot_append": "FUN_006a4900 -> FUN_00688510 -> FUN_006af4b0",
+      "flat_index_link": "FUN_006a4900 -> FUN_00688520 -> FUN_006af820 -> FUN_006af780",
+      "rule": "SUMM record order selects slot i; FLAT leaf +0x3c selects slot i"
+    },
+    "part_node": {
+      "node_registry_append": "FUN_006a4b40 -> FUN_004cb900(this+0x54, wrapper)",
+      "part_lookup": "FUN_0068a360/FUN_00689a30 -> FUN_006885b0(manager+0x54, source_id-1)"
+    },
+    "part_runtime_flat_materialization": {
+      "source": "FUN_0068a810 -> FUN_006afd50 -> FUN_00689db0",
+      "leaf_bytes": 64,
+      "direct_object_pointer_offset": "0x38",
+      "runtime_index_offset": "0x3c",
+      "serialized_claim": false
+    }
+  },
+  "variants": [
+    {
+      "archive": "Silverstone_Era3_Drift.bff",
+      "archive_sha256": "ea0078c88155978ac1d9d8513698d8c793fd1eed92bac38da34a9e8a9381308a",
+      "sgb_path": "tracks/silverstone_era3_drift/silverstone_era3_drift.sgb",
+      "sgb_sha256": "a8ad0608889627bedb42529b729f9a52529afedc03b66e73de86148dcd3ecf25",
+      "chunks": [
+        "OCCL",
+        "NODE",
+        "FLAT",
+        "SUMM",
+        "END "
+      ],
+      "flat_tree_nodes": 739,
+      "flat_leaf_records": 2622,
+      "flat_max_depth": 10,
+      "summ_record_count": 2622,
+      "runtime_index_min": 0,
+      "runtime_index_max": 2621,
+      "runtime_index_unique_count": 2622,
+      "runtime_index_contiguous": true,
+      "serialized_nonzero_direct_object_pointer_count": 0
+    },
+    {
+      "archive": "Silverstone_Era3_GrandPrix.bff",
+      "archive_sha256": "aac2e1fe721aec25494d0bfc84eac2bd49d1628fe55b165097ae694ef7a7d56c",
+      "sgb_path": "tracks/silverstone_era3_grandprix/silverstone_era3_grandprix.sgb",
+      "sgb_sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+      "chunks": [
+        "OCCL",
+        "NODE",
+        "FLAT",
+        "SUMM",
+        "END "
+      ],
+      "flat_tree_nodes": 1913,
+      "flat_leaf_records": 7348,
+      "flat_max_depth": 10,
+      "summ_record_count": 7348,
+      "runtime_index_min": 0,
+      "runtime_index_max": 7347,
+      "runtime_index_unique_count": 7348,
+      "runtime_index_contiguous": true,
+      "serialized_nonzero_direct_object_pointer_count": 0
+    },
+    {
+      "archive": "Silverstone_Era3_International.bff",
+      "archive_sha256": "634984a4053012e7edd89c1fa47e89583cb6b34c139feeb8a01fa9a44bca5863",
+      "sgb_path": "tracks/silverstone_era3_international/silverstone_era3_international.sgb",
+      "sgb_sha256": "fb6a534b4890a8c046f234f10e702962913a5a03377b7a158581f0a7c74ea2b6",
+      "chunks": [
+        "OCCL",
+        "NODE",
+        "FLAT",
+        "SUMM",
+        "END "
+      ],
+      "flat_tree_nodes": 1557,
+      "flat_leaf_records": 5932,
+      "flat_max_depth": 10,
+      "summ_record_count": 5932,
+      "runtime_index_min": 0,
+      "runtime_index_max": 5931,
+      "runtime_index_unique_count": 5932,
+      "runtime_index_contiguous": true,
+      "serialized_nonzero_direct_object_pointer_count": 0
+    },
+    {
+      "archive": "Silverstone_Era3_National.bff",
+      "archive_sha256": "58c2a9476804c8a29fd87eeaa5e99e8656b03e3ee21d773acb8c7f8a84f522ea",
+      "sgb_path": "tracks/silverstone_era3_national/silverstone_era3_national.sgb",
+      "sgb_sha256": "b3f94c2b65bc74d9e309774d793c522bcd2aff5ebfa8a7e7f46ba4d484e5ad93",
+      "chunks": [
+        "OCCL",
+        "NODE",
+        "FLAT",
+        "SUMM",
+        "END "
+      ],
+      "flat_tree_nodes": 1519,
+      "flat_leaf_records": 5678,
+      "flat_max_depth": 9,
+      "summ_record_count": 5678,
+      "runtime_index_min": 0,
+      "runtime_index_max": 5677,
+      "runtime_index_unique_count": 5678,
+      "runtime_index_contiguous": true,
+      "serialized_nonzero_direct_object_pointer_count": 0
+    }
+  ],
+  "totals": {
+    "flat_leaf_records": 21580,
+    "summ_record_count": 21580,
+    "runtime_index_mismatch_variants": 0,
+    "serialized_nonzero_direct_object_pointer_count": 0
+  },
+  "observations": [
+    "All four Silverstone Era3 visual SGBs use the FLAT/SUMM spatial path and contain no PART chunk.",
+    "For every variant, FLAT leaf count equals SUMM wrapper count exactly.",
+    "For every variant, FLAT leaf +0x3c values are unique and cover exactly 0..SUMM_count-1.",
+    "All serialized FLAT +0x38 direct-object pointer words are zero; source shows +0x38 is populated by the alternate PART runtime materialization path rather than persisted as a portable pointer.",
+    "PART/NODE one-based lookup remains source-backed but is not claimed as production-observed in this Silverstone corpus."
+  ]
+}
