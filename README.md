@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 587. Current development: Phase 588.**
+**Merged baseline: Phase 588. Current development: Phase 589.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -113,7 +113,9 @@ neutral per-child SPIR-V/interface/provenance preparation and an ordered
 Phases 586–587 execute that prepared neutral scene set in `native_runtime` and
 prove affine SVWT execution through runtime telemetry. Phase 588 adds explicit
 external `sampler2D` snapshot transport through the existing SVTP ABI while
-keeping unsupplied renderer-owned resources fail-closed.
+keeping unsupplied renderer-owned resources fail-closed. Phase 589 joins those
+snapshots to exact scene draw/resource/primitive/register identity before they
+can satisfy a NativeSceneVulkanSet external-resource blocker.
 
 ### Native Linux runtime
 
@@ -147,8 +149,8 @@ matchmaking/online networking and Bink/video playback.
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
-| Vulkan | active native backend | scene-level admission of authentic renderer-owned external snapshots; remaining alpha-test/bias/stencil state |
-| SGB / scene | strong structural/render handoff | external runtime resources, streaming/LOD, some MatrixNumber history |
+| Vulkan | active native backend | authentic external snapshots/remaining renderer-owned resource types; remaining alpha-test/bias/stencil state |
+| SGB / scene | strong structural/render handoff | authentic external-resource evidence, streaming/LOD, some MatrixNumber history |
 | Camera | structural state active | higher-level gameplay behavior |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
 | Vehicle physics | structural reconstruction active | exact specialized-provider numeric parity |
@@ -306,7 +308,8 @@ python shift_importer.py native-scene-vulkan-set \
   out/native-scene-bundle.json \
   out/scene-render-binding.json \
   out/ir \
-  out/native-scene-vulkan
+  out/native-scene-vulkan \
+  --external-sampler-snapshots out/scene-external-snapshots.json
 
 python shift_importer.py native-scene-vulkan-prepare \
   out/native-scene-vulkan \
@@ -358,17 +361,15 @@ These are independent; resolving one does not justify guessing another.
 
 1. **Silverstone exact shader attribution** — authentic D3D9 capture required
    for tied IMB permutations.
-2. **Neutral scene-set runtime admission** — Phase 585 now prepares every
-   `SHIFT.NativeSceneVulkanSet/1` child through neutral SPIR-V/interface/
-   provenance gates and emits `SHIFT.NativeSceneVulkanSetPrepare/1`, but
-   `native_runtime` still accepts only its established BMW-specific set loader.
-3. **Renderer-owned scene resources** — external samplers/resources need an
-   explicit runtime binding contract.
-4. **Scene runtime completeness** — some per-instance MatrixNumber update
+2. **Renderer-owned scene evidence** — Phase 589 can admit an exact,
+   provenance-bearing external `sampler2D` snapshot for one scene draw, but
+   authentic snapshots and remaining renderer-owned resource types are still
+   required.
+3. **Scene runtime completeness** — some per-instance MatrixNumber update
    history and higher-level streaming/LOD behavior remain unresolved.
-5. **Vehicle provider numeric parity** — authentic provider frame required.
-6. **BMW tied FXO selection** — authentic same-instance body capture required.
-7. **IMX** — XML MeshInst neutral adapter remains separate from the proven IMB
+4. **Vehicle provider numeric parity** — authentic provider frame required.
+5. **BMW tied FXO selection** — authentic same-instance body capture required.
+6. **IMX** — XML MeshInst neutral adapter remains separate from the proven IMB
    path.
 
 ## Repository map

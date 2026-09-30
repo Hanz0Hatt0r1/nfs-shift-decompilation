@@ -92,6 +92,25 @@ def test_phase580_cli_accepts_native_scene_vulkan_set_command():
     assert args.ir_root == "out/ir"
     assert args.output_dir == "out/native-scene-vulkan"
     assert args.environment_cube_dds is None
+    assert args.external_sampler_snapshots is None
+    assert args.fn.__name__ == "cmd_native_scene_vulkan_set"
+
+
+def test_phase589_cli_accepts_scene_external_sampler_snapshots():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-scene-vulkan-set",
+        "native-scene-bundle.json",
+        "scene-render-binding.json",
+        "out/ir",
+        "out/native-scene-vulkan",
+        "--external-sampler-snapshots",
+        "scene-external-snapshots.json",
+    ])
+
+    assert args.external_sampler_snapshots == (
+        "scene-external-snapshots.json"
+    )
     assert args.fn.__name__ == "cmd_native_scene_vulkan_set"
 
 
