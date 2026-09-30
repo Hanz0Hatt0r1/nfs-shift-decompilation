@@ -19,9 +19,15 @@ DESTRUCTOR = "FUN_007ad680"
 SIZE = 0x1BC
 POSITION_OFFSET = 0x10
 BRANCH_ID_OFFSET = 0x6C
+PREV_INDEX_OFFSET = 0x74
+NEXT_INDEX_OFFSET = 0x78
+BRANCH_INDEX_OFFSET = 0x7C
+PREV_LINK_OFFSET = 0x17C
 NEXT_LINK_OFFSET = 0x180
+BRANCH_LINK_OFFSET = 0x184
 ACTIVE_MARKER_OFFSET = 0x18E
 
+LINK_RESOLUTION_FUNCTION = "FUN_00717b90"
 NEAREST_BRANCH_ZERO_FUNCTION = "FUN_00718060"
 NEAREST_BRANCH_ONE_FUNCTION = "FUN_00718120"
 
@@ -209,6 +215,127 @@ def decode_query_fields(record: bytes | bytearray | memoryview) -> dict[str, Any
     }
 
 
+def decode_link_fields(record: bytes | bytearray | memoryview) -> dict[str, Any]:
+    """Decode the index/pointer members consumed or written by FUN_00717b90."""
+    view = memoryview(record)
+    if len(view) < SIZE:
+        raise ValueError(f"WayPointBase record requires 0x{SIZE:x} bytes")
+    return {
+        "active_marker": struct.unpack_from("<H", view, ACTIVE_MARKER_OFFSET)[0],
+        "prev_index": struct.unpack_from("<i", view, PREV_INDEX_OFFSET)[0],
+        "next_index": struct.unpack_from("<i", view, NEXT_INDEX_OFFSET)[0],
+        "branch_index": struct.unpack_from("<i", view, BRANCH_INDEX_OFFSET)[0],
+        "prev_link": struct.unpack_from("<I", view, PREV_LINK_OFFSET)[0],
+        "next_link": struct.unpack_from("<I", view, NEXT_LINK_OFFSET)[0],
+        "branch_link": struct.unpack_from("<I", view, BRANCH_LINK_OFFSET)[0],
+    }
+
+
+_LINK_SPECS = (
+    ("prev", PREV_INDEX_OFFSET, PREV_LINK_OFFSET),
+    ("next", NEXT_INDEX_OFFSET, NEXT_LINK_OFFSET),
+    ("branch", BRANCH_INDEX_OFFSET, BRANCH_LINK_OFFSET),
+)
+
+
+def resolve_waypoint_links(
+    records: bytes | bytearray | memoryview,
+    *,
+    base_address: int,
+    count: int | None = None,
+) -> dict[str, Any]:
+    """Reproduce FUN_00717b90's index-to-pointer resolution over one array.
+
+    The retail function only special-cases -1 and indices >= count. A value
+    below -1 would address memory before the waypoint array, so this recovered
+    helper rejects such malformed input instead of emulating an out-of-bounds
+    read.
+    """
+    if not 0 < int(base_address) <= 0xFFFFFFFF:
+        raise ValueError("base_address must be a non-zero 32-bit address")
+
+    view = memoryview(records)
+    available = len(view) // SIZE
+    if count is None:
+        count = available
+    if count < 0 or count > available:
+        raise ValueError("waypoint count exceeds provided record storage")
+
+    blob = bytearray(view[: count * SIZE])
+    decisions: list[dict[str, Any]] = []
+    for source_index in range(count):
+        source_offset = source_index * SIZE
+        active_marker = struct.unpack_from(
+            "<H", blob, source_offset + ACTIVE_MARKER_OFFSET
+        )[0]
+        source_row = {
+            "source_index": source_index,
+            "source_offset": source_offset,
+            "source_address": int(base_address) + source_offset,
+            "active_marker": active_marker,
+            "processed": active_marker != 0,
+            "links": {},
+        }
+
+        if active_marker == 0:
+            decisions.append(source_row)
+            continue
+
+        for name, index_offset, pointer_offset in _LINK_SPECS:
+            index_address = source_offset + index_offset
+            pointer_address = source_offset + pointer_offset
+            target_index = struct.unpack_from("<i", blob, index_address)[0]
+
+            if target_index < -1:
+                raise ValueError(
+                    f"{name} index {target_index} is below the retail -1 sentinel"
+                )
+
+            valid = target_index != -1 and target_index < count
+            target_active_marker = None
+            target_pointer = 0
+            reason = "sentinel" if target_index == -1 else "out-of-range"
+
+            if valid:
+                target_offset = target_index * SIZE
+                target_active_marker = struct.unpack_from(
+                    "<H", blob, target_offset + ACTIVE_MARKER_OFFSET
+                )[0]
+                if target_active_marker != 0:
+                    target_pointer = int(base_address) + target_offset
+                    if target_pointer > 0xFFFFFFFF:
+                        raise ValueError("resolved waypoint pointer exceeds 32 bits")
+                    reason = "resolved"
+                else:
+                    valid = False
+                    reason = "inactive-target"
+
+            if valid:
+                struct.pack_into("<I", blob, pointer_address, target_pointer)
+            else:
+                struct.pack_into("<I", blob, pointer_address, 0)
+                struct.pack_into("<i", blob, index_address, -1)
+
+            source_row["links"][name] = {
+                "input_index": target_index,
+                "output_index": (
+                    target_index if valid else -1
+                ),
+                "target_active_marker": target_active_marker,
+                "pointer": target_pointer if valid else 0,
+                "reason": reason,
+            }
+
+        decisions.append(source_row)
+
+    return {
+        "records": bytes(blob),
+        "base_address": int(base_address),
+        "count": count,
+        "decisions": decisions,
+    }
+
+
 def nearest_active_waypoint(
     records: bytes | bytearray | memoryview,
     point: tuple[float, float, float],
@@ -305,6 +432,21 @@ def describe_waypoint_base_runtime() -> dict[str, Any]:
         "direct_reflected_field_count": len(REFLECTED_FIELDS),
         "direct_reflected_fields": [dict(row) for row in REFLECTED_FIELDS],
         "reflected_constructor_defaults": dict(REFLECTED_CONSTRUCTOR_DEFAULTS),
+        "link_resolution": {
+            "function": LINK_RESOLUTION_FUNCTION,
+            "active_marker_offset": ACTIVE_MARKER_OFFSET,
+            "index_offsets": {
+                "prev": PREV_INDEX_OFFSET,
+                "next": NEXT_INDEX_OFFSET,
+                "branch": BRANCH_INDEX_OFFSET,
+            },
+            "pointer_offsets": {
+                "prev": PREV_LINK_OFFSET,
+                "next": NEXT_LINK_OFFSET,
+                "branch": BRANCH_LINK_OFFSET,
+            },
+            "invalid_index_sentinel": -1,
+        },
         "query_fields": {
             "position_offset": POSITION_OFFSET,
             "branch_id_offset": BRANCH_ID_OFFSET,
@@ -316,8 +458,9 @@ def describe_waypoint_base_runtime() -> dict[str, Any]:
             "branch_one": NEAREST_BRANCH_ONE_FUNCTION,
         },
         "evidence_boundary": (
-            "The class identity, 0x1bc element size, direct reflected layout "
-            "and two simple nearest-record queries are recovered. The active "
-            "marker and unreflected record members keep structural names only."
+            "The class identity, 0x1bc element size, direct reflected layout, "
+            "index-to-pointer link resolution and two simple nearest-record "
+            "queries are recovered. The active marker and other unreflected "
+            "record members keep structural names only."
         ),
     }
