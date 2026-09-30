@@ -2914,7 +2914,20 @@ int main(int argc, char** argv) {
             << "\"SHIFT.NativeRuntimeState/1\",\n"
             << "  \"camera_active_buffer\": "
             << native_state.camera.active_index << ",\n"
-            << "  \"vehicle_control_steer_axis\": "
+            << "  \"camera_update_in_progress\": "
+            << (native_state.camera.update_in_progress ?
+                "true" : "false") << ",\n"
+            << "  \"camera_snapshot_count\": "
+            << native_state.camera.snapshot_count << ",\n"
+            << "  \"camera_native_updates\": "
+            << native_state.camera.native_update_count << ",\n"
+            << "  \"camera_snapshot_mode\": "
+            << native_state.camera.last_snapshot.manager_mode << ",\n"
+            << "  \"camera_snapshot_id\": "
+            << native_state.camera.last_snapshot.camera_id << ",\n"
+            << "  \"camera_schedule\": "
+            << "\"native-fixed-step-non-retail-timing\",\n"
+            << "  \"vehicle_control_steer_axis\": 
             << native_state.physics.last_input.steer_axis()
             << ",\n"
             << "  \"physics_participant_ready\": "
