@@ -107,6 +107,7 @@ def test_phase601_native_runtime_admits_structural_participant_boundary():
     assert "participant_mode = -1" in header
 
     assert '"--participant-boundary"' in source
+    assert "args.participant_boundary = value" in source
     assert "load_participant_boundary" in source
     assert "SHIFT.NativePhysicsParticipantBoundary/1" in source
     assert "DAT_00c109e0" in source
