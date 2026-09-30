@@ -47,7 +47,7 @@ round-trip evaluator reproduces the observed slot world matrix.
 
 ## Consensus rule
 
-A wrapper root may be promoted only when one exact float32 root value is
+A concrete MultiMatrix owner root may be promoted only when one exact float32 root value is
 independently supported by:
 
 1. at least two distinct exact runtime resource identities
@@ -62,8 +62,7 @@ Root identity is compared as exact IEEE-754 float32 bytes after solving.
 
 ## Ambiguity
 
-If the same wrapper has two or more independently supported root values, the
-wrapper remains blocked.
+If the same owner scope has two or more independently supported root values, that owner remains blocked.
 
 The report keeps all candidate root sets and does not rank them.
 
@@ -88,9 +87,10 @@ This lookup is pre-admission and does not use a RenderBinding binding index.
 
 A unique consensus row sets:
 
-`authorizes_current_wrapper_root = true`.
+`authorizes_current_multimatrix_owner_root = true`.
 
-That authorizes only the **current root matrix for the wrapper**.
+The consensus scope is `wrapper + recursive owner_path`. The legacy
+`authorizes_current_wrapper_root` flag is true only when `owner_path == []`.
 
 It does not by itself authorize:
 
@@ -99,9 +99,9 @@ It does not by itself authorize:
 - SceneGraph update history;
 - RenderBinding or draw admission.
 
-Once a wrapper root is proven, however, all source-backed MatrixNumber child
-slots under that wrapper can be re-evaluated through the existing MultiMatrix
-contract in a later phase.
+Once an owner root is proven, all source-backed MatrixNumber child slots owned
+by that exact LOD/HIERARCHY object can be re-evaluated through the existing
+MultiMatrix contract. Nested owners under the same wrapper do not share roots.
 
 ## CLI
 
@@ -115,9 +115,9 @@ python shift_importer.py sgb-multimatrix-root-consensus \
 
 ## Next
 
-The next scene step is to consume ready Phase 596 wrapper roots back into
+The next scene step is to consume ready Phase 596 owner roots back into
 `SHIFT.SGBObjectRenderHandoffSet/1` and recompute blocked MatrixNumber world
 matrices before `SHIFT.SGBRenderBindingAdmission/1`.
 
-That promotion must remain wrapper-scoped and must not claim that the historical
+That promotion must remain owner-scoped and must not claim that the historical
 SceneGraph update sequence was recovered.

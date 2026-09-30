@@ -1939,7 +1939,10 @@ def cmd_sgb_object_render_handoff(args: argparse.Namespace) -> int:
     """Build source-backed OBJECT resource/transform render handoffs."""
     from sgb_object_render_handoff import validate_file
 
-    report = validate_file(args.input)
+    report = validate_file(
+        args.input,
+        root_consensus_path=args.root_consensus,
+    )
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(
@@ -1954,6 +1957,12 @@ def cmd_sgb_object_render_handoff(args: argparse.Namespace) -> int:
         "explicit_transform_count": report["explicit_transform_count"],
         "parent_multimatrix_slot_count": report[
             "parent_multimatrix_slot_count"
+        ],
+        "numeric_world_matrix_ready_count": report[
+            "numeric_world_matrix_ready_count"
+        ],
+        "runtime_root_consensus_applied_object_count": report[
+            "runtime_root_consensus_applied_object_count"
         ],
         "blockers": report["blocking_reasons"],
     }, ensure_ascii=False, indent=2))
@@ -4626,6 +4635,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "output",
         help="SHIFT.SGBObjectRenderHandoffSet/1 JSON output",
+    )
+    p.add_argument(
+        "--root-consensus",
+        help=(
+            "optional SHIFT.SGBMultiMatrixRootConsensus/1; applies only "
+            "ready owner-scoped current roots before handoff admission"
+        ),
     )
     p.set_defaults(fn=cmd_sgb_object_render_handoff)
 

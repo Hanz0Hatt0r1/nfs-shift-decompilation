@@ -5,9 +5,11 @@ with the Phase 594 inverse MultiMatrix root solve. No world-register semantic is
 assigned. Every contiguous four-register VS constant window is treated as an
 observation candidate in row-major and transpose layouts.
 
-A wrapper root is promoted only when the same exact float32 root is independently
-recovered from at least two exact runtime resources and at least two distinct
-cumulative local transforms. The existing MultiMatrix evaluator remains the
+A concrete MultiMatrix owner root is promoted only when the same exact float32
+root is independently recovered from at least two exact runtime resources and
+at least two distinct cumulative local transforms. Owners are scoped by wrapper
+identity plus their recursive owner path, so nested LOD/HIERARCHY tables inside
+one wrapper cannot be mixed. The existing MultiMatrix evaluator remains the
 acceptance oracle inside each Phase 594 solve.
 """
 from __future__ import annotations
@@ -338,6 +340,10 @@ def build_multimatrix_root_consensus(
                         )
                         if root is None or cumulative is None:
                             continue
+                        object_path = list(
+                            candidate.get("object_path") or []
+                        )
+                        owner_path = object_path[:-1]
                         hypotheses.append({
                             "wrapper": {
                                 "chunk": wrapper.get("chunk"),
@@ -345,6 +351,7 @@ def build_multimatrix_root_consensus(
                                     "source_record_index"
                                 ),
                             },
+                            "owner_path": owner_path,
                             "scene_candidate_index": candidate.get(
                                 "scene_candidate_index"
                             ),
@@ -380,12 +387,19 @@ def build_multimatrix_root_consensus(
                             },
                         })
 
-    groups: dict[tuple[str, Any, str], list[dict[str, Any]]] = {}
+    groups: dict[
+        tuple[str, Any, tuple[int, ...], str],
+        list[dict[str, Any]],
+    ] = {}
     for row in hypotheses:
         wrapper = row["wrapper"]
+        owner_path = tuple(
+            int(value) for value in (row.get("owner_path") or [])
+        )
         key = (
             str(wrapper.get("chunk")),
             wrapper.get("source_record_index"),
+            owner_path,
             str(row["root_float32_hex"]),
         )
         groups.setdefault(key, []).append(row)
@@ -411,7 +425,8 @@ def build_multimatrix_root_consensus(
                 "chunk": key[0],
                 "source_record_index": key[1],
             },
-            "root_float32_hex": key[2],
+            "owner_path": list(key[2]),
+            "root_float32_hex": key[3],
             "root_world_matrix": rows[0][
                 "solved_root_world_matrix"
             ],
@@ -429,22 +444,34 @@ def build_multimatrix_root_consensus(
             "witnesses": rows,
         })
 
-    eligible_by_wrapper: dict[tuple[str, Any], list[dict[str, Any]]] = {}
+    eligible_by_owner: dict[
+        tuple[str, Any, tuple[int, ...]],
+        list[dict[str, Any]],
+    ] = {}
     for row in eligible:
         wrapper = row["wrapper"]
-        eligible_by_wrapper.setdefault(
+        owner_path = tuple(
+            int(value) for value in (row.get("owner_path") or [])
+        )
+        eligible_by_owner.setdefault(
             (
                 str(wrapper.get("chunk")),
                 wrapper.get("source_record_index"),
+                owner_path,
             ),
             [],
         ).append(row)
 
     consensus_rows: list[dict[str, Any]] = []
-    for wrapper_key, rows in sorted(
-        eligible_by_wrapper.items(),
-        key=lambda item: (item[0][0], str(item[0][1])),
+    for owner_key, rows in sorted(
+        eligible_by_owner.items(),
+        key=lambda item: (
+            item[0][0],
+            str(item[0][1]),
+            item[0][2],
+        ),
     ):
+        wrapper_root = len(owner_key[2]) == 0
         if len(rows) == 1:
             selected = rows[0]
             consensus_rows.append({
@@ -452,20 +479,23 @@ def build_multimatrix_root_consensus(
                 "status": "ready",
                 "ready": True,
                 "blocking_reasons": [],
-                "authorizes_current_wrapper_root": True,
+                "authorizes_current_multimatrix_owner_root": True,
+                "authorizes_current_wrapper_root": wrapper_root,
             })
         else:
             consensus_rows.append({
                 "wrapper": {
-                    "chunk": wrapper_key[0],
-                    "source_record_index": wrapper_key[1],
+                    "chunk": owner_key[0],
+                    "source_record_index": owner_key[1],
                 },
+                "owner_path": list(owner_key[2]),
                 "status": "ambiguous",
                 "ready": False,
                 "blocking_reasons": [
                     "multiple-root-consensus-values:"
                     + str(len(rows))
                 ],
+                "authorizes_current_multimatrix_owner_root": False,
                 "authorizes_current_wrapper_root": False,
                 "candidate_roots": rows,
             })
@@ -511,7 +541,11 @@ def build_multimatrix_root_consensus(
             "minimum_independent_resources": 2,
             "minimum_distinct_cumulative_locals": 2,
             "phase594_round_trip_required": True,
-            "authorizes_current_wrapper_root_only": True,
+            "consensus_scope": "wrapper + recursive MultiMatrix owner_path",
+            "authorizes_current_multimatrix_owner_root_only": True,
+            "authorizes_current_wrapper_root_only": (
+                "only when owner_path is empty"
+            ),
             "scenegraph_update_history_recovered": False,
             "authorizes_object_runtime_attribution": False,
             "authorizes_render_admission": False,

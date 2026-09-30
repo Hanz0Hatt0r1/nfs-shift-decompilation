@@ -223,6 +223,12 @@ def test_two_independent_resources_recover_one_wrapper_root():
         "chunk": "SUMM",
         "source_record_index": 7,
     }
+    assert consensus["owner_path"] == []
+    assert (
+        consensus["authorizes_current_multimatrix_owner_root"]
+        is True
+    )
+    assert consensus["authorizes_current_wrapper_root"] is True
     assert consensus["root_world_matrix"] == pytest.approx(root)
     assert consensus["support_resource_count"] == 2
     assert consensus["distinct_cumulative_local_count"] == 2
@@ -315,3 +321,126 @@ def test_wrong_formats_are_rejected():
             _candidate_join(),
             _capture(world_a, world_b),
         )
+
+
+def test_nested_multimatrix_owners_in_one_wrapper_do_not_cross_support():
+    root = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        10.0, 20.0, 30.0, 1.0,
+    ]
+    records_a = [
+        _record(0, parent=-1, offset=(0.0, 0.0, 0.0)),
+        _record(1, parent=0, offset=(1.0, 0.0, 0.0)),
+    ]
+    records_b = [
+        _record(0, parent=-1, offset=(0.0, 0.0, 0.0)),
+        _record(1, parent=0, offset=(0.0, 2.0, 0.0)),
+    ]
+    owner_a = {
+        "format": "SHIFT.SGBObjectRuntime/1",
+        "decoded": True,
+        "kind": {"text": "LOD"},
+        "matrix_number": -1,
+        "matrix_records": records_a,
+        "subobject_references": [{
+            "index": 0,
+            "decoded": True,
+            "report": _object(1, "tracks/test/a.imb"),
+        }],
+    }
+    owner_b = {
+        "format": "SHIFT.SGBObjectRuntime/1",
+        "decoded": True,
+        "kind": {"text": "HIERARCHY"},
+        "matrix_number": -1,
+        "matrix_records": records_b,
+        "subobject_references": [{
+            "index": 0,
+            "decoded": True,
+            "report": _object(1, "tracks/test/b.imb"),
+        }],
+    }
+    wrapper_root = {
+        "format": "SHIFT.SGBObjectRuntime/1",
+        "decoded": True,
+        "kind": {"text": "HIERARCHY"},
+        "matrix_number": -1,
+        "matrix_records": [_record(
+            0, parent=-1, offset=(0.0, 0.0, 0.0)
+        )],
+        "subobject_references": [
+            {"index": 0, "decoded": True, "report": owner_a},
+            {"index": 1, "decoded": True, "report": owner_b},
+        ],
+    }
+    sgb = {
+        "format": "SHIFT.SGBRuntime/1",
+        "ready": True,
+        "chunks": [{
+            "tag": "SUMM",
+            "records": [{
+                "index": 7,
+                "object_payload": {
+                    "decoded": True,
+                    "report": wrapper_root,
+                },
+            }],
+        }],
+    }
+    candidate_join = {
+        "format": "SHIFT.SGBRuntimeObjectCandidateJoin/1",
+        "ready": True,
+        "resources": [
+            {
+                "archive": "TRACK.bff",
+                "resource_path": "tracks/test/a.imb",
+                "resource_sha256": SHA_A,
+                "scene_candidates": [{
+                    **_candidate(
+                        0,
+                        resource_path="tracks/test/a.imb",
+                        sha=SHA_A,
+                        object_path=[0, 0],
+                        matrix_number=1,
+                    ),
+                }],
+            },
+            {
+                "archive": "TRACK.bff",
+                "resource_path": "tracks/test/b.imb",
+                "resource_sha256": SHA_B,
+                "scene_candidates": [{
+                    **_candidate(
+                        1,
+                        resource_path="tracks/test/b.imb",
+                        sha=SHA_B,
+                        object_path=[1, 0],
+                        matrix_number=1,
+                    ),
+                }],
+            },
+        ],
+    }
+    world_a = matrix_multiply(
+        matrix_from_record(records_a[1]),
+        root,
+    )
+    world_b = matrix_multiply(
+        matrix_from_record(records_b[1]),
+        root,
+    )
+    capture = _capture(world_a, world_b)
+
+    report = build_multimatrix_root_consensus(
+        sgb,
+        candidate_join,
+        capture,
+    )
+
+    # The two resources support different MultiMatrix owners. They may not
+    # combine merely because the wrapper and solved root are identical.
+    assert report["ready"] is False
+    assert report["eligible_root_count"] == 0
+    assert report["ready_consensus_count"] == 0
