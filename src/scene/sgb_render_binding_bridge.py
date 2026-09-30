@@ -97,6 +97,7 @@ def build_sgb_render_binding_bridge(
             "resource_reference": str(resource_ref),
             "world_matrix": world_matrix,
             "resource_factory": dict(resource_factory),
+            "meshinst_runtime": object_row.get("meshinst_runtime"),
             "source": {
                 "admission_binding_index": binding_index,
                 "placement": row.get("placement"),
@@ -116,8 +117,16 @@ def build_sgb_render_binding_bridge(
         else:
             factory_type = resource_factory.get("factory_type")
             if factory_type == 7:
-                adapter_reason = "meshinst-adapter-unimplemented"
+                loader = resource_factory.get("resource_loader") or {}
+                loader_mode = loader.get("mode")
+                if loader_mode == "xml":
+                    adapter_reason = "meshinst-xml-adapter-unimplemented"
+                elif loader_mode == "binary":
+                    adapter_reason = "meshinst-binary-adapter-unimplemented"
+                else:
+                    adapter_reason = "meshinst-adapter-unimplemented"
             else:
+                loader_mode = None
                 adapter_reason = "meshtype-adapter-unimplemented"
             blockers.append(
                 f"binding-{binding_index}:scene-resource:{adapter_reason}"
@@ -127,6 +136,8 @@ def build_sgb_render_binding_bridge(
                 "resource_reference": str(resource_ref),
                 "factory_type": factory_type,
                 "factory_name": resource_factory.get("factory_name"),
+                "loader_mode": loader_mode,
+                "meshinst_runtime": object_row.get("meshinst_runtime"),
                 "reason": adapter_reason,
             })
 
