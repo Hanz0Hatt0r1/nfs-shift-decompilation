@@ -58,11 +58,18 @@ struct GeometryAttribute {
     uint32_t stride;
     uint32_t property_id;
 };
+struct WorldTransformHeader {
+    char magic[4];
+    uint32_t version;
+    uint32_t convention;
+    uint32_t matrix_bytes;
+};
 #pragma pack(pop)
 
 static_assert(sizeof(GeometryHeader) == 44);
 static_assert(sizeof(LegacyGeometryAttribute) == 16);
 static_assert(sizeof(GeometryAttribute) == 20);
+static_assert(sizeof(WorldTransformHeader) == 16);
 
 struct PacketGeometry {
     std::vector<float> positions;
@@ -371,10 +378,16 @@ shift::runtime::PhysicsWorkspaceBoundary load_physics_manifest(
 }
 
 BundleAssets load_bundle_assets(const std::string& root) {
-    if (!file_contains(
-            root + "/vulkan_interface.json",
-            "\"format\": \"SHIFT.BMWVulkanInterfaceGate/1\"") ||
-        !file_contains(root + "/vulkan_interface.json", "\"ready\": true") ||
+    const std::string interface_path =
+        root + "/vulkan_interface.json";
+    const bool bmw_interface = file_contains(
+        interface_path,
+        "\"format\": \"SHIFT.BMWVulkanInterfaceGate/1\"");
+    const bool neutral_interface = file_contains(
+        interface_path,
+        "\"format\": \"SHIFT.VulkanInterfaceGate/1\"");
+    if ((!bmw_interface && !neutral_interface) ||
+        !file_contains(interface_path, "\"ready\": true") ||
         !file_contains(root + "/spirv_report.json", "\"format\": \"SHIFT.VulkanBundleSPIRV/1\"") ||
         !file_contains(root + "/spirv_report.json", "\"ready\": true")) {
         throw std::runtime_error(
@@ -474,11 +487,297 @@ BundleAssets load_bundle_assets(const std::string& root) {
     return out;
 }
 
+
+void apply_bundle_world_transform(
+    const std::string& root,
+    PacketGeometry& geometry) {
+
+    const std::filesystem::path path =
+        std::filesystem::path(root) / "world_transform.svwt";
+    if (!std::filesystem::is_regular_file(path)) {
+        return;
+    }
+
+    const auto data = read_file_bytes(path.string());
+    if (data.size() !=
+        sizeof(WorldTransformHeader) + 16u * sizeof(float)) {
+        throw std::runtime_error("SVWT packet size mismatch");
+    }
+
+    WorldTransformHeader header{};
+    std::memcpy(&header, data.data(), sizeof(header));
+    if (std::memcmp(header.magic, "SVWT", 4) != 0 ||
+        header.version != 1u ||
+        header.convention != 1u ||
+        header.matrix_bytes != 16u * sizeof(float)) {
+        throw std::runtime_error("unsupported SVWT packet");
+    }
+
+    float matrix[16]{};
+    std::memcpy(
+        matrix,
+        data.data() + sizeof(header),
+        sizeof(matrix));
+    for (float value : matrix) {
+        if (!std::isfinite(value)) {
+            throw std::runtime_error(
+                "SVWT matrix contains non-finite scalar");
+        }
+    }
+
+    constexpr float kTolerance = 1.0e-5f;
+    constexpr float kSingularTolerance = 1.0e-8f;
+    if (std::fabs(matrix[3]) > kTolerance ||
+        std::fabs(matrix[7]) > kTolerance ||
+        std::fabs(matrix[11]) > kTolerance ||
+        std::fabs(matrix[15] - 1.0f) > kTolerance) {
+        throw std::runtime_error(
+            "SVWT matrix is not affine D3D row-vector form");
+    }
+
+    const float a = matrix[0];
+    const float b = matrix[1];
+    const float c0 = matrix[2];
+    const float d = matrix[4];
+    const float e = matrix[5];
+    const float f0 = matrix[6];
+    const float g = matrix[8];
+    const float h = matrix[9];
+    const float i = matrix[10];
+
+    const float determinant =
+        a * (e * i - f0 * h) -
+        b * (d * i - f0 * g) +
+        c0 * (d * h - e * g);
+    if (!std::isfinite(determinant) ||
+        std::fabs(determinant) <= kSingularTolerance) {
+        throw std::runtime_error(
+            "SVWT affine linear transform is singular");
+    }
+
+    const bool linear_identity =
+        std::fabs(a - 1.0f) <= kTolerance &&
+        std::fabs(b) <= kTolerance &&
+        std::fabs(c0) <= kTolerance &&
+        std::fabs(d) <= kTolerance &&
+        std::fabs(e - 1.0f) <= kTolerance &&
+        std::fabs(f0) <= kTolerance &&
+        std::fabs(g) <= kTolerance &&
+        std::fabs(h) <= kTolerance &&
+        std::fabs(i - 1.0f) <= kTolerance;
+
+    if (!linear_identity &&
+        geometry.attributes.size() > 1u &&
+        std::any_of(
+            geometry.attributes.begin(),
+            geometry.attributes.end(),
+            [](const GeometryAttribute& attribute) {
+                return attribute.property_id == 0u;
+            })) {
+        throw std::runtime_error(
+            "SVWT affine execution requires semantic-aware SVGP");
+    }
+
+    const float inv_det = 1.0f / determinant;
+    const float inverse[9] = {
+        (e * i - f0 * h) * inv_det,
+        (c0 * h - b * i) * inv_det,
+        (b * f0 - c0 * e) * inv_det,
+        (f0 * g - d * i) * inv_det,
+        (a * i - c0 * g) * inv_det,
+        (c0 * d - a * f0) * inv_det,
+        (d * h - e * g) * inv_det,
+        (b * g - a * h) * inv_det,
+        (a * e - b * d) * inv_det,
+    };
+
+    const GeometryAttribute* position = nullptr;
+    std::vector<const GeometryAttribute*> normals;
+    std::vector<const GeometryAttribute*> tangents;
+    std::vector<const GeometryAttribute*> tangents2;
+    for (const auto& attribute : geometry.attributes) {
+        switch (attribute.property_id) {
+            case 200u:
+                if (position != nullptr || attribute.format != 2u) {
+                    throw std::runtime_error(
+                        "SVWT execution requires one FLOAT3 POSITION property 200");
+                }
+                position = &attribute;
+                break;
+            case 220u:
+                if (attribute.format != 2u) {
+                    throw std::runtime_error(
+                        "SVWT NORMAL property 220 must be FLOAT3");
+                }
+                normals.push_back(&attribute);
+                break;
+            case 240u:
+                if (attribute.format != 2u) {
+                    throw std::runtime_error(
+                        "SVWT TANGENT property 240 must be FLOAT3");
+                }
+                tangents.push_back(&attribute);
+                break;
+            case 250u:
+                if (attribute.format != 2u) {
+                    throw std::runtime_error(
+                        "SVWT TANGENT2 property 250 must be FLOAT3");
+                }
+                tangents2.push_back(&attribute);
+                break;
+            default:
+                break;
+        }
+    }
+    if (position == nullptr) {
+        throw std::runtime_error(
+            "SVWT execution requires POSITION property 200");
+    }
+    if (geometry.stride == 0 ||
+        geometry.vertex_bytes.size() % geometry.stride != 0) {
+        throw std::runtime_error(
+            "SVWT runtime vertex buffer shape is invalid");
+    }
+
+    const uint32_t vertex_count = static_cast<uint32_t>(
+        geometry.vertex_bytes.size() / geometry.stride);
+
+    auto load_float3 = [&](uint32_t vertex,
+                           const GeometryAttribute& attribute,
+                           float out[3]) {
+        const size_t offset =
+            static_cast<size_t>(vertex) * geometry.stride +
+            attribute.offset;
+        if (offset + 3u * sizeof(float) >
+            geometry.vertex_bytes.size()) {
+            throw std::runtime_error(
+                "SVWT semantic write exceeds vertex buffer");
+        }
+        std::memcpy(
+            out,
+            geometry.vertex_bytes.data() + offset,
+            3u * sizeof(float));
+    };
+    auto store_float3 = [&](uint32_t vertex,
+                            const GeometryAttribute& attribute,
+                            const float value[3]) {
+        const size_t offset =
+            static_cast<size_t>(vertex) * geometry.stride +
+            attribute.offset;
+        std::memcpy(
+            geometry.vertex_bytes.data() + offset,
+            value,
+            3u * sizeof(float));
+    };
+    auto normalize = [&](float value[3], const char* semantic) {
+        const float length_sq =
+            value[0] * value[0] +
+            value[1] * value[1] +
+            value[2] * value[2];
+        if (!std::isfinite(length_sq) ||
+            length_sq <=
+                kSingularTolerance * kSingularTolerance) {
+            throw std::runtime_error(
+                std::string("SVWT ") + semantic +
+                " collapses under affine transform");
+        }
+        const float inv_length =
+            1.0f / std::sqrt(length_sq);
+        value[0] *= inv_length;
+        value[1] *= inv_length;
+        value[2] *= inv_length;
+    };
+    auto transform_direction = [&](float value[3]) {
+        const float x = value[0];
+        const float y = value[1];
+        const float z = value[2];
+        value[0] = x * a + y * d + z * g;
+        value[1] = x * b + y * e + z * h;
+        value[2] = x * c0 + y * f0 + z * i;
+    };
+    auto transform_normal = [&](float value[3]) {
+        const float x = value[0];
+        const float y = value[1];
+        const float z = value[2];
+        value[0] =
+            x * inverse[0] + y * inverse[1] + z * inverse[2];
+        value[1] =
+            x * inverse[3] + y * inverse[4] + z * inverse[5];
+        value[2] =
+            x * inverse[6] + y * inverse[7] + z * inverse[8];
+    };
+
+    const float translation[3] = {
+        matrix[12], matrix[13], matrix[14]
+    };
+    for (uint32_t vertex = 0; vertex < vertex_count; ++vertex) {
+        float value[3]{};
+        load_float3(vertex, *position, value);
+        const float x = value[0];
+        const float y = value[1];
+        const float z = value[2];
+        value[0] =
+            x * a + y * d + z * g + translation[0];
+        value[1] =
+            x * b + y * e + z * h + translation[1];
+        value[2] =
+            x * c0 + y * f0 + z * i + translation[2];
+        store_float3(vertex, *position, value);
+
+        for (const auto* attribute : normals) {
+            load_float3(vertex, *attribute, value);
+            transform_normal(value);
+            normalize(value, "NORMAL");
+            store_float3(vertex, *attribute, value);
+        }
+        for (const auto* attribute : tangents) {
+            load_float3(vertex, *attribute, value);
+            transform_direction(value);
+            normalize(value, "TANGENT");
+            store_float3(vertex, *attribute, value);
+        }
+        for (const auto* attribute : tangents2) {
+            load_float3(vertex, *attribute, value);
+            transform_direction(value);
+            normalize(value, "TANGENT2");
+            store_float3(vertex, *attribute, value);
+        }
+    }
+
+    geometry.positions.resize(
+        static_cast<size_t>(vertex_count) * 3u);
+    for (uint32_t vertex = 0; vertex < vertex_count; ++vertex) {
+        float value[3]{};
+        load_float3(vertex, *position, value);
+        std::memcpy(
+            geometry.positions.data() +
+                static_cast<size_t>(vertex) * 3u,
+            value,
+            3u * sizeof(float));
+    }
+}
+
 PacketGeometry load_bundle_geometry(const std::string& root) {
     const std::string manifest = root + "/bundle_manifest.json";
     const std::string gate = root + "/native_submission_gate.json";
-    if (!file_contains(manifest, "\"format\": \"SHIFT.BMWVulkanBundle/1\"")) {
-        throw std::runtime_error("bundle manifest is not SHIFT.BMWVulkanBundle/1");
+    const bool bmw_bundle = file_contains(
+        manifest, "\"format\": \"SHIFT.BMWVulkanBundle/1\"");
+    const bool neutral_bundle = file_contains(
+        manifest, "\"format\": \"SHIFT.VulkanDrawBundle/1\"");
+    if (!bmw_bundle && !neutral_bundle) {
+        throw std::runtime_error(
+            "bundle manifest is not a supported SHIFT Vulkan draw bundle");
+    }
+    if (neutral_bundle) {
+        const std::string prepare =
+            root + "/vulkan_draw_prepare.json";
+        if (!file_contains(
+                prepare,
+                "\"format\": \"SHIFT.VulkanDrawBundlePrepare/1\"") ||
+            !file_contains(prepare, "\"ready\": true")) {
+            throw std::runtime_error(
+                "neutral Vulkan draw prepare gate is missing or not ready");
+        }
     }
     if (!file_contains(gate, "\"format\": \"SHIFT.NativeSubmissionGate/1\"") ||
         !file_contains(gate, "\"ready\": true") ||
@@ -583,7 +882,9 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
     const size_t index_base = vertex_base + vertices_bytes;
 
     PacketGeometry out;
-    out.source = "SHIFT.BMWVulkanBundle/1";
+    out.source = neutral_bundle
+        ? "SHIFT.VulkanDrawBundle/1"
+        : "SHIFT.BMWVulkanBundle/1";
     out.first_index = header.first_index;
     out.stride = header.stride;
     out.attributes = attributes;
@@ -609,11 +910,14 @@ PacketGeometry load_bundle_geometry(const std::string& root) {
             throw std::runtime_error("SVGP index out of range");
         }
     }
+    apply_bundle_world_transform(root, out);
     return out;
 }
 
 
-std::vector<std::string> load_bundle_set_paths(const std::string& root) {
+std::vector<std::string> load_bundle_set_paths(
+    const std::string& root,
+    bool native_scene_set) {
     const std::filesystem::path base(root);
     const std::string manifest =
         (base / "bundle_set_manifest.json").string();
@@ -622,16 +926,20 @@ std::vector<std::string> load_bundle_set_paths(const std::string& root) {
     const std::filesystem::path order_path =
         base / "bundle_set.paths";
 
-    if (!file_contains(
-            manifest,
-            "\"format\": \"SHIFT.BMWVulkanBundleSet/1\"") ||
+    const std::string set_format =
+        native_scene_set
+            ? "\"format\": \"SHIFT.NativeSceneVulkanSet/1\""
+            : "\"format\": \"SHIFT.BMWVulkanBundleSet/1\"";
+    const std::string prepare_format =
+        native_scene_set
+            ? "\"format\": \"SHIFT.NativeSceneVulkanSetPrepare/1\""
+            : "\"format\": \"SHIFT.BMWVulkanBundleSetPrepare/1\"";
+    if (!file_contains(manifest, set_format) ||
         !file_contains(manifest, "\"ready\": true")) {
         throw std::runtime_error(
             "bundle set manifest is missing or not ready");
     }
-    if (!file_contains(
-            prepare,
-            "\"format\": \"SHIFT.BMWVulkanBundleSetPrepare/1\"") ||
+    if (!file_contains(prepare, prepare_format) ||
         !file_contains(prepare, "\"ready\": true")) {
         throw std::runtime_error(
             "bundle set prepare gate is missing or not ready");
@@ -2299,6 +2607,7 @@ struct Args {
     std::string mesh;
     std::string bundle;
     std::string bundle_set;
+    std::string scene_set;
     std::string physics_manifest;
     std::string shader_dir;
     int frames = kDefaultFrames;
@@ -2311,6 +2620,7 @@ Args parse_args(int argc, char** argv) {
         const std::string option = argv[i];
         if (option == "--mesh" || option == "--bundle" ||
             option == "--bundle-set" ||
+            option == "--scene-set" ||
             option == "--physics-manifest" ||
             option == "--shader-dir" || option == "--frames") {
             if (i + 1 >= argc) {
@@ -2321,6 +2631,7 @@ Args parse_args(int argc, char** argv) {
             if (option == "--mesh") args.mesh = value;
             else if (option == "--bundle") args.bundle = value;
             else if (option == "--bundle-set") args.bundle_set = value;
+            else if (option == "--scene-set") args.scene_set = value;
             else if (option == "--physics-manifest") {
                 args.physics_manifest = value;
             } else if (option == "--shader-dir") {
@@ -2333,7 +2644,7 @@ Args parse_args(int argc, char** argv) {
         } else if (option == "--help") {
             std::cout
                 << "usage: shift_runtime "
-                << "(--mesh FILE | --bundle DIR | --bundle-set DIR) "
+                << "(--mesh FILE | --bundle DIR | --bundle-set DIR | --scene-set DIR) "
                 << "--shader-dir DIR [--frames N] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
@@ -2345,10 +2656,11 @@ Args parse_args(int argc, char** argv) {
     const int source_count =
         (!args.mesh.empty() ? 1 : 0) +
         (!args.bundle.empty() ? 1 : 0) +
-        (!args.bundle_set.empty() ? 1 : 0);
+        (!args.bundle_set.empty() ? 1 : 0) +
+        (!args.scene_set.empty() ? 1 : 0);
     if (source_count != 1) {
         throw std::runtime_error(
-            "exactly one of --mesh, --bundle or --bundle-set is required");
+            "exactly one of --mesh, --bundle, --bundle-set or --scene-set is required");
     }
     if (args.shader_dir.empty()) {
         throw std::runtime_error(
@@ -2371,12 +2683,17 @@ int main(int argc, char** argv) {
         std::vector<PacketGeometry> material_geometry;
         std::vector<BundleAssets> material_assets;
         const bool bundle_set_mode = !args.bundle_set.empty();
+        const bool scene_set_mode = !args.scene_set.empty();
+        const bool material_set_mode =
+            bundle_set_mode || scene_set_mode;
         const bool material_mode =
-            !args.bundle.empty() || bundle_set_mode;
+            !args.bundle.empty() || material_set_mode;
 
-        if (bundle_set_mode) {
+        if (material_set_mode) {
+            const std::string& set_root =
+                scene_set_mode ? args.scene_set : args.bundle_set;
             const std::vector<std::string> children =
-                load_bundle_set_paths(args.bundle_set);
+                load_bundle_set_paths(set_root, scene_set_mode);
             material_geometry.reserve(children.size());
             material_assets.reserve(children.size());
             for (const std::string& child : children) {
@@ -2413,9 +2730,11 @@ int main(int argc, char** argv) {
         size_t geometry_indices = 0;
         std::string geometry_source;
         if (material_mode) {
-            geometry_source = bundle_set_mode ?
-                "SHIFT.BMWVulkanBundleSet/1" :
-                "SHIFT.BMWVulkanBundle/1";
+            geometry_source = scene_set_mode
+                ? "SHIFT.NativeSceneVulkanSet/1"
+                : bundle_set_mode
+                    ? "SHIFT.BMWVulkanBundleSet/1"
+                    : "SHIFT.BMWVulkanBundle/1";
             for (const auto& geometry : material_geometry) {
                 geometry_vertices += geometry.positions.size() / 3u;
                 geometry_indices += geometry.indices.size();
@@ -2441,6 +2760,8 @@ int main(int argc, char** argv) {
             << (material_mode ? "true" : "false") << ",\n"
             << "  \"bundle_set_mode\": "
             << (bundle_set_mode ? "true" : "false") << ",\n"
+            << "  \"scene_set_mode\": "
+            << (scene_set_mode ? "true" : "false") << ",\n"
             << "  \"material_draws\": "
             << material_geometry.size() << ",\n"
             << "  \"frames_requested\": "
