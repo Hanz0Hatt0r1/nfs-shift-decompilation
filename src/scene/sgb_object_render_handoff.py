@@ -663,15 +663,25 @@ def build_sgb_object_render_handoff_set(
         row["handoff"]["transform"].get("world_matrix_ready") is True
         for row in rows
     )
-    consensus_applied = sum(
-        (
-            row["handoff"].get("transform", {})
-            .get("multimatrix_evaluation", {})
-            .get("root_transform_state", {})
-            .get("current_root_source")
-        ) == "phase596-runtime-root-consensus"
-        for row in rows
-    )
+    consensus_applied = 0
+    for row in rows:
+        transform = row["handoff"].get("transform")
+        transform = (
+            transform if isinstance(transform, Mapping) else {}
+        )
+        evaluation = transform.get("multimatrix_evaluation")
+        evaluation = (
+            evaluation if isinstance(evaluation, Mapping) else {}
+        )
+        root_state = evaluation.get("root_transform_state")
+        root_state = (
+            root_state if isinstance(root_state, Mapping) else {}
+        )
+        if (
+            root_state.get("current_root_source")
+            == "phase596-runtime-root-consensus"
+        ):
+            consensus_applied += 1
     mesh_type_count = sum(
         (
             row["handoff"].get("resource", {})
@@ -753,8 +763,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("sgb_runtime")
     parser.add_argument("output")
+    parser.add_argument("--root-consensus")
     args = parser.parse_args(argv)
-    report = validate_file(args.sgb_runtime)
+    report = validate_file(
+        args.sgb_runtime,
+        root_consensus_path=args.root_consensus,
+    )
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
         + "\n",
