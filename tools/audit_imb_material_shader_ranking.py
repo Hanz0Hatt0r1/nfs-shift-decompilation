@@ -213,9 +213,9 @@ def audit_imb_material_shader_ranking(
 
             for imb in imbs:
                 try:
-                    geometry = build_imb_neutral_geometry(
-                        archive.extract_entry(imb, type2="lzx")
-                    )
+                    raw_imb = archive.extract_entry(imb, type2="lzx")
+                    geometry = build_imb_neutral_geometry(raw_imb)
+                    imb_sha256 = hashlib.sha256(raw_imb).hexdigest()
                 except Exception as exc:
                     context_rows.append({
                         "archive": archive.path.name,
@@ -228,10 +228,28 @@ def audit_imb_material_shader_ranking(
                     })
                     continue
 
+                mesh = geometry.get("mesh") or {}
                 vertex_properties = tuple(
                     str(value)
-                    for value in ((geometry.get("mesh") or {}).get("vertex_properties") or [])
+                    for value in (mesh.get("vertex_properties") or [])
                 )
+                property_descriptors = [
+                    {
+                        "id": str(attribute.get("property_id")),
+                        "words": [
+                            int(attribute.get("type_ordinal")),
+                            int(attribute.get("usage_ordinal")),
+                            int(attribute.get("channel")),
+                        ],
+                    }
+                    for attribute in (
+                        (mesh.get("vertex_layout") or {}).get("attributes") or []
+                    )
+                    if attribute.get("property_id") is not None
+                    and attribute.get("type_ordinal") is not None
+                    and attribute.get("usage_ordinal") is not None
+                    and attribute.get("channel") is not None
+                ]
                 for primitive in geometry.get("primitives") or []:
                     primitive_index = int(primitive.get("index") or 0)
                     material_reference = str(primitive.get("material") or "")
@@ -240,7 +258,21 @@ def audit_imb_material_shader_ranking(
                         "archive": archive.path.name,
                         "imb_path": imb.path.replace("\\", "/"),
                         "imb_entry_index": int(imb.index),
+                        "imb_sha256": imb_sha256,
                         "primitive_index": primitive_index,
+                        "draw_range": {
+                            "first_index": int(primitive.get("first_index") or 0),
+                            "index_count": int(primitive.get("index_count") or 0),
+                            "primitive_count": int(
+                                primitive.get("triangle_count") or 0
+                            ),
+                            "primitive_type": int(
+                                primitive.get("primitive_type") or 0
+                            ),
+                        },
+                        "property_descriptors": [
+                            dict(row) for row in property_descriptors
+                        ],
                         "material_reference": material_reference.replace("\\", "/"),
                         "bmt": bmt_ref,
                         "vertex_properties": list(vertex_properties),
