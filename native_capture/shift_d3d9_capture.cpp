@@ -140,6 +140,8 @@ std::mutex g_hook_mutex;
 std::atomic<unsigned long long> g_event_index{0};
 std::atomic<unsigned long long> g_frame{0};
 std::atomic<bool> g_proxy_entry_reported{false};
+std::mutex g_draw_index_mutex;
+std::unordered_map<IDirect3DDevice9*, unsigned long long> g_draw_index_by_device;
 
 struct CaptureWriter {
     std::mutex mutex;
@@ -325,8 +327,7 @@ std::string capture_texture_snapshot_dir() {
     return value;
 }
 
-bool texture_snapshot_stage_enabled(DWORD stage) {
-    if (!env_enabled("SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT")) return false;
+bool texture_snapshot_stage_selected(DWORD stage) {
     const char* stages = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_STAGES");
     std::string list = (stages && *stages) ? stages : "0,1,2,3,4";
     std::size_t begin = 0;
@@ -342,6 +343,16 @@ bool texture_snapshot_stage_enabled(DWORD stage) {
         begin = end + 1;
     }
     return false;
+}
+
+bool texture_snapshot_stage_enabled(DWORD stage) {
+    return env_enabled("SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT")
+        && texture_snapshot_stage_selected(stage);
+}
+
+bool draw_texture_snapshot_stage_enabled(DWORD stage) {
+    return env_enabled("SHIFT_D3D9_CAPTURE_DRAW_TEXTURE_SNAPSHOT")
+        && texture_snapshot_stage_selected(stage);
 }
 
 const char* cube_face_name(D3DCUBEMAP_FACES face) {
@@ -429,18 +440,21 @@ bool write_texture_surface_ppm(
     return ok;
 }
 
-void append_texture_snapshot_json(
+void append_texture_snapshot_payload_json(
     std::ostringstream& out,
     IDirect3DDevice9* device,
     DWORD stage,
-    IDirect3DBaseTexture9* texture) {
-    if (!texture_snapshot_stage_enabled(stage) || !texture) return;
+    IDirect3DBaseTexture9* texture,
+    const std::string& suffix) {
+    if (!texture) return;
 
     const auto type = texture->GetType();
     const std::string dir = capture_texture_snapshot_dir();
     const std::string pointer_text = CaptureWriter::ptr(texture);
     std::ostringstream prefix;
-    prefix << dir << "shift_d3d9_s" << stage << "_" << pointer_text.substr(1, pointer_text.size() - 2);
+    prefix << dir << "shift_d3d9_s" << stage << "_"
+           << pointer_text.substr(1, pointer_text.size() - 2)
+           << suffix;
 
     if (type == D3DRTYPE_TEXTURE) {
         auto* tex = static_cast<IDirect3DTexture9*>(texture);
@@ -499,6 +513,16 @@ void append_texture_snapshot_json(
     }
 
     out << ",\"snapshot_status\":\"unsupported-resource-type\"";
+}
+
+void append_texture_snapshot_json(
+    std::ostringstream& out,
+    IDirect3DDevice9* device,
+    DWORD stage,
+    IDirect3DBaseTexture9* texture) {
+    if (!texture_snapshot_stage_enabled(stage) || !texture) return;
+    append_texture_snapshot_payload_json(
+        out, device, stage, texture, "");
 }
 
 void append_texture_descriptor_json(
