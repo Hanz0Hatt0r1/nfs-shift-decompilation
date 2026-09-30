@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 590. Current development: Phase 591.**
+**Merged baseline: Phase 591. Current development: Phase 592.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -50,7 +50,7 @@ Oodle-compatible runtime.
 
 ```text
 BFF
-  → MEB / IMB / BMT / DDS / FX / FXO
+  → MEB / IMB / IMX / BMT / DDS / FX / FXO
   → DrawPacket
   → StaticDraw
   → RenderCommand
@@ -62,8 +62,8 @@ Two important render slices share this contract:
 
 - **BMW/MEB** — the established material, shader, DDS and Vulkan regression
   slice;
-- **Silverstone SGB/MeshInst/IMB** — the scene path that feeds source-backed
-  IMB geometry into the same neutral renderer boundary.
+- **SGB/MeshInst** — source-backed IMB binary and IMX XML geometry feed the
+  same neutral renderer boundary without asserting container equivalence.
 
 The desktop/reference renderer remains the deterministic oracle. Vulkan is the
 native backend direction.
@@ -76,7 +76,7 @@ SGB
   → scene placement
   → OBJECT resource + world transform
   → MeshInst
-  → IMBNeutralGeometry
+  → IMBNeutralGeometry / IMXNeutralGeometry
   → RenderBinding
   → runtime shader attribution
   → RuntimeProvenDraw
@@ -88,7 +88,8 @@ SGB
 
 Key contracts near the native boundary:
 
-- `SHIFT.IMBNeutralGeometry/1` — source-backed IMB geometry normalization;
+- `SHIFT.IMBNeutralGeometry/1` — source-backed binary MeshInst normalization;
+- `SHIFT.IMXNeutralGeometry/1` — source-backed XML MeshInst normalization;
 - `SHIFT.IMBRuntimeShaderAdmission/1` — exact runtime shader selection
   admission;
 - `SHIFT.RuntimeProvenDraw/1` — runtime proof preserved through
@@ -118,7 +119,9 @@ snapshots to exact scene draw/resource/primitive/register identity before they
 can satisfy a NativeSceneVulkanSet external-resource blocker. Phase 590 carries
 only strong-attributed draw-local texture observations from the D3D9 capture
 pipeline and converts an unambiguous captured PPM directly into that exact
-Phase 589 contract.
+Phase 589 contract. Phase 591 adds repeated-instance transform matching from
+strong-attributed VS constant windows. Phase 592 reconstructs the retail `.imx`
+XML mesh grammar and admits IMX MeshInst resources to generic RenderBinding.
 
 ### Native Linux runtime
 
@@ -148,7 +151,7 @@ matchmaking/online networking and Bink/video playback.
 | BFF / XMem-LZX | verified for active corpus | uncommon variants; external Type 3 codec |
 | Resource IR | active / verified | remaining format-specific joins |
 | MEB / vertex ABI | strong static coverage | additional same-instance proof |
-| IMB / MeshInst | source-backed v0.4 path | IMX XML adapter and broader variants |
+| MeshInst geometry | source-backed IMB v0.4 + source-backed IMX XML | broader variants and runtime IMX same-instance proof |
 | BMT / material state | source-backed subset | unresolved alpha-test/bias/stencil cases |
 | FX / FXO | parser + attribution pipeline | authentic captures for tied permutations |
 | Desktop renderer | active oracle | broader exact D3D9 parity |
@@ -382,8 +385,8 @@ These are independent; resolving one does not justify guessing another.
    history and higher-level streaming/LOD behavior remain unresolved.
 4. **Vehicle provider numeric parity** — authentic provider frame required.
 5. **BMW tied FXO selection** — authentic same-instance body capture required.
-6. **IMX** — XML MeshInst neutral adapter remains separate from the proven IMB
-   path.
+6. **IMX runtime proof** — the source-backed XML neutral adapter is implemented;
+   authentic IMX same-instance shader/resource evidence is not yet established.
 
 ## Repository map
 
