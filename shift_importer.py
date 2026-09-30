@@ -1051,7 +1051,8 @@ EXT_CATEGORY = {
     ".bmdef": "GUI_DEFINITION",
     ".bab": "ANIMATION",
     ".bas": "ANIMATION",
-    ".imb": "ANIMATION",
+    ".imb": "MESH_INSTANCE",
+    ".imx": "MESH_INSTANCE",
     ".spe": "EFFECT",
     ".lod": "LOD",
     ".lsd": "SCENE_DATA",
@@ -1096,7 +1097,7 @@ PATH_CATEGORY = [
 # Conservative path-like dependency regex; false positives are intentionally
 # allowed and marked as "hint" in the graph.
 DEP_RE = re.compile(
-    rb"(?P<q>['\"])(?P<path>[A-Za-z0-9_./\\ -]+\.(?:dds|meb|bmt|mtx|vhf|xml|bml|fxo|fx|fxh|bab|bas|imb|fsb|fev|cgp|csd|cdp|cdv|vud|gdf|edf|sdf|tbf|cpt|lod|spe|sgb|trd|new|joi))(?:['\"])?"
+    rb"(?P<q>['\"])(?P<path>[A-Za-z0-9_./\\ -]+\.(?:dds|meb|bmt|mtx|vhf|xml|bml|fxo|fx|fxh|bab|bas|imb|imx|fsb|fev|cgp|csd|cdp|cdv|vud|gdf|edf|sdf|tbf|cpt|lod|spe|sgb|trd|new|joi))(?:['\"])?"
 )
 
 
