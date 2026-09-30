@@ -28,6 +28,11 @@ def _sha_json(value: Any) -> str:
     return hashlib.sha256(_canonical_bytes(value)).hexdigest()
 
 
+def reference_texture_sha256(value: Mapping[str, Any]) -> str:
+    """Return the canonical Phase 589 ReferenceTexture object hash."""
+    return _sha_json(value)
+
+
 def _sha256(value: Any) -> str | None:
     text = str(value or "").lower()
     if len(text) != 64:
