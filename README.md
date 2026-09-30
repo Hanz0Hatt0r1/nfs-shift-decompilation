@@ -349,16 +349,15 @@ These are independent; resolving one does not justify guessing another.
    for tied IMB permutations.
 2. **Neutral scene-set runtime admission** — Phase 584 closes affine SVWT
    execution in the standalone native material executor, but `native_runtime`
-   still consumes
-   the established BMW bundle/set contract rather than
+   still consumes the established BMW bundle/set contract rather than
    `SHIFT.NativeSceneVulkanSet/1` directly.
-4. **Renderer-owned scene resources** — external samplers/resources need an
+3. **Renderer-owned scene resources** — external samplers/resources need an
    explicit runtime binding contract.
-5. **Scene runtime completeness** — some per-instance MatrixNumber update
+4. **Scene runtime completeness** — some per-instance MatrixNumber update
    history and higher-level streaming/LOD behavior remain unresolved.
-6. **Vehicle provider numeric parity** — authentic provider frame required.
-7. **BMW tied FXO selection** — authentic same-instance body capture required.
-8. **IMX** — XML MeshInst neutral adapter remains separate from the proven IMB
+5. **Vehicle provider numeric parity** — authentic provider frame required.
+6. **BMW tied FXO selection** — authentic same-instance body capture required.
+7. **IMX** — XML MeshInst neutral adapter remains separate from the proven IMB
    path.
 
 ## Repository map
