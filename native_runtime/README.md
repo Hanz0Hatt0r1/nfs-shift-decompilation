@@ -236,3 +236,26 @@ The API accepts already-selected scalar nodes only. Retail reset-node selection
 depends on the runtime constraint-sample low bit at `+0x70` and remains an
 external evidence gate. The native fixed-step loop still does not fabricate
 that selection or a complete BMW solver frame.
+
+
+Phase 605 keeps the participant-manager registry index and IGPhaseVehicle
+selector ordinal as separate unresolved native identity domains; neither is
+promoted from static evidence.
+
+## Phase 606 provider-absent builtin solver frame
+
+`execute_builtin_solver_frame()` composes the native source-backed numeric
+kernels in recovered order:
+
+```text
+explicit reset nodes
+  → FUN_007b2210-equivalent reset
+  → FUN_007b0f20-equivalent solve
+```
+
+The native regression checks both a reset 3×3 system and a no-reset system in
+addition to the Phase 603–604 cases.
+
+This API requires the caller to supply exact matrix, RHS, sparse graph and
+reset nodes. It does not infer provider-absent dispatch and is not yet invoked
+from the game fixed-step loop.

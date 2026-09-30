@@ -168,6 +168,68 @@ void check_builtin_diagonal_reset_range() {
             "out-of-range diagonal reset node was accepted");
 }
 
+void check_builtin_solver_frame_with_reset() {
+    using namespace shift::runtime::physics;
+
+    const std::vector<std::vector<double>> matrix = {
+        {4.0, 1.0, 1.0},
+        {1.0, 3.0, 0.0},
+        {1.0, 0.0, 2.0},
+    };
+    const auto graph = build_dense_solver_graph(3);
+    const auto frame = execute_builtin_solver_frame(
+        matrix,
+        {9.0, 7.0, 7.0},
+        {1u},
+        graph.first,
+        graph.second);
+
+    require(frame.reset.nodes ==
+                std::vector<std::size_t>{1u},
+            "solver frame reset-node mismatch");
+    require(nearly_equal(
+                frame.reset.matrix[1][1],
+                1.0),
+            "solver frame reset diagonal mismatch");
+    require(nearly_equal(
+                frame.solve.solution[0],
+                11.0 / 7.0),
+            "solver frame x0 mismatch");
+    require(nearly_equal(
+                frame.solve.solution[1],
+                0.0),
+            "solver frame x1 mismatch");
+    require(nearly_equal(
+                frame.solve.solution[2],
+                19.0 / 7.0),
+            "solver frame x2 mismatch");
+}
+
+void check_builtin_solver_frame_without_reset() {
+    using namespace shift::runtime::physics;
+
+    const auto graph = build_dense_solver_graph(3);
+    const auto frame = execute_builtin_solver_frame(
+        {
+            {4.0, 1.0, 1.0},
+            {1.0, 3.0, 0.0},
+            {1.0, 0.0, 2.0},
+        },
+        {9.0, 7.0, 7.0},
+        {},
+        graph.first,
+        graph.second);
+
+    require(frame.reset.nodes.empty(),
+            "empty reset set changed frame reset nodes");
+    require(nearly_equal(frame.solve.solution[0], 1.0),
+            "unreset solver frame x0 mismatch");
+    require(nearly_equal(frame.solve.solution[1], 2.0),
+            "unreset solver frame x1 mismatch");
+    require(nearly_equal(frame.solve.solution[2], 3.0),
+            "unreset solver frame x2 mismatch");
+}
+
 }  // namespace
 
 int main() {
@@ -178,6 +240,8 @@ int main() {
         check_zero_pivot();
         check_builtin_diagonal_reset();
         check_builtin_diagonal_reset_range();
+        check_builtin_solver_frame_with_reset();
+        check_builtin_solver_frame_without_reset();
 
         std::cout
             << "{\n"
@@ -189,9 +253,13 @@ int main() {
             << "  \"diagonal_reset_source_function\": "
             << "\"" << shift::runtime::physics::
                 kBuiltinDiagonalResetSourceFunction << "\",\n"
+            << "  \"builtin_frame_sequence\": \""
+            << shift::runtime::physics::
+                kBuiltinSolverFrameSequence << "\",\n"
             << "  \"solver_cases\": 4,\n"
             << "  \"diagonal_reset_cases\": 2,\n"
-            << "  \"cases\": 6,\n"
+            << "  \"builtin_frame_cases\": 2,\n"
+            << "  \"cases\": 8,\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";
         return EXIT_SUCCESS;

@@ -169,6 +169,31 @@ BuiltinSparseSolveResult solve_builtin_sparse(
     };
 }
 
+BuiltinSolverFrameResult execute_builtin_solver_frame(
+    const std::vector<std::vector<double>>& matrix,
+    const std::vector<double>& rhs,
+    const std::vector<std::size_t>& reset_nodes,
+    const std::vector<SparseForwardRecord>& forward_records,
+    const std::vector<SparseReverseRecord>& reverse_records) {
+
+    BuiltinDiagonalResetResult reset =
+        apply_builtin_diagonal_reset(
+            matrix,
+            rhs,
+            reset_nodes);
+    BuiltinSparseSolveResult solve =
+        solve_builtin_sparse(
+            reset.matrix,
+            reset.rhs,
+            forward_records,
+            reverse_records);
+
+    return {
+        std::move(reset),
+        std::move(solve),
+    };
+}
+
 std::pair<
     std::vector<SparseForwardRecord>,
     std::vector<SparseReverseRecord>>
