@@ -53,6 +53,22 @@ struct.pack_into("<f", blob, soff + 0x2c, 20.0)
 struct.pack_into("<I", blob, soff + 0x30, 2)
 struct.pack_into("<f", blob, soff + 0x34, 1.0)
 
+# AISegmentPath with a captured, count-prefixed AIPathNode array.
+segment_array_local = 0x3000
+segment_array_addr = base + segment_array_local
+soff = 0x800
+struct.pack_into("<III", blob, soff, 0x00AFCA70, 0, 1)
+struct.pack_into("<IIIf", blob, soff + 0x10, 2, 1, segment_array_addr, 20.0)
+struct.pack_into("<IIff", blob, soff + 0x20, 0, 1, 5.0, 0.0)
+struct.pack_into("<If", blob, soff + 0x30, 1, 1.0)
+struct.pack_into("<I", blob, segment_array_local - 4, 2)
+for index in range(2):
+    noff = segment_array_local + index * 0x38
+    struct.pack_into("<III", blob, noff, 0x00AFBF60, 0, 1)
+    struct.pack_into("<10f", blob, noff + 0x10,
+                     float(index * 10), 1.0, float(index * 10), -1.0,
+                     0.0, 1.0, 0.5, 0.75, float(index * 10), 0.4)
+
 # Synthetic AIPolylinePath using the concrete vtable recovered from
 # FUN_006cc390. Its array points at a count-prefixed AIPolyPathNode array.
 poff = 0x300
@@ -149,6 +165,12 @@ assert r["array_count"] == 4, r
 assert r["array_count_stable"], r
 assert r["node_sequence"] == 4, r
 assert r["node_sequence_complete"], r
+wrong_vtable = ns["extract_segment_nodes"](
+    [{"address": 0x00200800, "array": 0x00202000,
+      "array_count": 4, "array_expected_count_match": True}],
+    sns[0], idx[0],
+)
+assert wrong_vtable == [], wrong_vtable
 print("track path StartNode link test: PASS")
 PY2
 python3 - "$tmp/out/track_path_analysis.json" "$tmp/out-filtered/track_path_analysis.json" <<'PY'
@@ -159,11 +181,11 @@ import sys
 result = json.loads(open(sys.argv[1], encoding="utf-8").read())
 filtered = json.loads(open(sys.argv[2], encoding="utf-8").read())
 assert result["candidate_counts"]["Path"] >= 1, result["candidate_counts"]
-assert result["candidate_counts"]["AISegmentPath"] == 1, result["candidate_counts"]
+assert result["candidate_counts"]["AISegmentPath"] == 2, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath.csv"), newline="", encoding="utf-8") as fh:
     segment_rows = list(csv.DictReader(fh))
-assert len(segment_rows) == 1, segment_rows
-row = segment_rows[0]
+assert len(segment_rows) == 2, segment_rows
+row = next(row for row in segment_rows if int(row["address"]) == 0x00200220)
 assert int(row["nodes"]) == 8, row
 assert int(row["side"]) == 1, row
 assert int(row["array"]) == 0x00610800, row
@@ -191,6 +213,14 @@ assert int(incident["race_flag"]) == 2, incident
 assert int(incident["area_index"]) == 7, incident
 assert int(incident["n_marshals"]) == 3, incident
 assert int(incident["n_flag_marshals"]) == 1, incident
+assert result["candidate_counts"]["AISegmentPath"] >= 2, result["candidate_counts"]
+assert result["segment_node_count"] == 2, result["segment_node_count"]
+with open(sys.argv[1].replace("track_path_analysis.json", "aisegmentpath_nodes.csv"), newline="", encoding="utf-8") as fh:
+    segment_nodes = list(csv.DictReader(fh))
+assert len(segment_nodes) == 2, segment_nodes
+assert [int(row["address"]) for row in segment_nodes] == [0x00203000, 0x00203038], segment_nodes
+assert [float(row["distance"]) for row in segment_nodes] == [0.0, 10.0], segment_nodes
+assert all(int(row["vtable"]) == 0x00AFBF60 for row in segment_nodes), segment_nodes
 assert result["candidate_counts"]["AIPolylinePath"] == 1, result["candidate_counts"]
 assert result["candidate_counts"]["AIPolyPathNode"] == 4, result["candidate_counts"]
 with open(sys.argv[1].replace("track_path_analysis.json", "aipolylinepath.csv"), newline="", encoding="utf-8") as fh:
