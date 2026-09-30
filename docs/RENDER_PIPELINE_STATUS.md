@@ -10,6 +10,7 @@
 
 - VHF references resolve to MEB;
 - scene-admitted SGB MEB instances can enter the same resource path with their source-backed world matrices;
+- the retail SGB OBJECT factory is classified separately as MeshType/type 0 or MeshInst/type 7 (`.imb/.imx`); the existing MEB path is a neutral adapter and is not asserted to be equivalent to either retail serialized class;
 - MEB primitive material references resolve through BMT/MTX;
 - BMT connects to FX sources and FXO permutations;
 - CTAB reflection supplies sampler registers and material constants;
@@ -35,4 +36,4 @@ Vulkan has bootstrap, headless checks, geometry/constant/texture/cubemap packets
 
 ## Remaining work
 
-Broaden exact BMW shader/material execution, close more runtime same-instance evidence, carry scene visibility/streaming semantics beyond the SGB resource bridge, and complete full RenderCommand submission on Vulkan.
+Broaden exact BMW shader/material execution, close more runtime same-instance evidence, implement source-backed neutral adapters for non-MEB MeshType/MeshInst scene resources, carry scene visibility/streaming semantics beyond the SGB resource bridge, and complete full RenderCommand submission on Vulkan.
