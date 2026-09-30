@@ -15,7 +15,7 @@ particular captured path instance belongs to a particular AIW resource.
 
 `FUN_006cc200` (`SHIFT.exe.c:642122`, PE `0x006cc200`) resolves element `i` as
 `path.array + i * 0x24`. `FUN_006cc730` allocates this count-prefixed array and
-sets each element's vtable to `0x00afbfa8`. The geometry methods read these
+sets each element's vtable to `0x00afbfa8`. The live-memory analyzer treats this array as exportable only when its count prefix and complete vtable sequence agree across every supplied snapshot. The geometry methods read these
 fields from an element:
 
 | Offset | Observed role |
