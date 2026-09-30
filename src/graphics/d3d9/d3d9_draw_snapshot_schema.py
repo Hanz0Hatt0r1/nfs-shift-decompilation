@@ -45,6 +45,14 @@ def validate_draw_snapshot(snapshot: Mapping[str, Any]) -> list[str]:
     ):
         if not isinstance(snapshot.get(key), list):
             reasons.append(f"{key}:invalid")
+    if (
+        "draw_texture_snapshots" in snapshot
+        and not isinstance(
+            snapshot.get("draw_texture_snapshots"),
+            list,
+        )
+    ):
+        reasons.append("draw_texture_snapshots:invalid")
     if not isinstance(snapshot.get("constant_state"), Mapping):
         reasons.append("constant_state:invalid")
     for stage in ("vertex", "pixel"):
