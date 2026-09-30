@@ -1,0 +1,89 @@
+{
+  "format": "SHIFT.SGBMeshInstRuntimeSourceEvidence/1",
+  "source": "retail Need for Speed SHIFT v1.02 SHIFT.exe / Ghidra decompilation",
+  "source_file": ".\\Source\\Platforms\\Win\\CPrimitiveType.cpp",
+  "mesh_type_constructor": {
+    "function": "FUN_0085aac0",
+    "object_size_boundary": 128,
+    "in_memory_builder": "FUN_00854e70",
+    "xml_loader": {
+      "function": "FUN_008587e0",
+      "retail_name": "MWL::Renderer::WinRenderer::CMeshPrimitiveType::LoadXMLMeshFromResource",
+      "selected_for": [
+        "imx"
+      ],
+      "observed_fields": [
+        "Vertices",
+        "Streams",
+        "Buffers",
+        "EnvMapType",
+        "BOUNDSPHERE",
+        "AABBOX",
+        "BONES"
+      ]
+    },
+    "binary_loader": {
+      "function": "FUN_00859800",
+      "retail_name": "MWL::Renderer::WinRenderer::CMeshPrimitiveType::LoadBinaryMeshFromResource",
+      "selected_for": [
+        "imb"
+      ]
+    }
+  },
+  "mesh_inst_constructor": {
+    "function": "FUN_0085ae20",
+    "allocation_bytes": 176,
+    "base_constructor": "FUN_0085aac0",
+    "vtable": "PTR_FUN_00b1d480",
+    "fields": [
+      {
+        "runtime_offset": 128,
+        "source_descriptor_offset": 48,
+        "observation": "copied directly and multiplied by 0x40 for storage sizing"
+      },
+      {
+        "runtime_offset": 132,
+        "observation": "16-byte aligned pointer to count * 0x40 bytes of allocated storage"
+      }
+    ],
+    "zero_initialized_offsets": [
+      136,
+      140,
+      144,
+      148,
+      152,
+      156,
+      160,
+      164,
+      168,
+      172
+    ],
+    "renderer_registration": {
+      "function": "FUN_00834a60",
+      "renderer_global": "DAT_00c26058",
+      "category": 10,
+      "condition": "runtime +0x80 != 0"
+    }
+  },
+  "mesh_inst_destructor": {
+    "function": "FUN_0085af00",
+    "renderer_unregister": {
+      "function": "FUN_008352f0",
+      "renderer_global": "DAT_00c26058",
+      "category": 10
+    },
+    "aligned_storage_pointer_offset": 132,
+    "release_offsets": [
+      32,
+      140
+    ],
+    "release_function": "FUN_0082ea80",
+    "base_cleanup": "FUN_0085ac90"
+  },
+  "interpretation_limits": [
+    "The +0x80 value is safely a count for allocating 0x40-stride storage; higher-level per-element semantics are not promoted here.",
+    "The .imx path is source-backed as XML mesh loading and .imb as binary mesh loading.",
+    "No serialized .imb payload grammar is inferred from runtime allocation alone.",
+    "No MeshInst-to-MEB equivalence is asserted."
+  ]
+}
