@@ -257,7 +257,9 @@ def build_render_bindings_from_resource_instances(
         hits = by_base.get(Path(normalized).name, [])
         if prefer:
             same = [x for x in hits if x.get("archive") == prefer]
-            if same:                return same[0]        return hits[0] if hits else None
+            if same:
+                return same[0]
+        return hits[0] if hits else None
 
     textures = [
         row["path"]
