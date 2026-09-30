@@ -284,6 +284,22 @@ def test_attributed_texture_observations_keep_only_selected_strong_draws():
                     "snapshot_status": "captured",
                     "snapshot_paths": ["textures/s7.ppm"],
                 }],
+                "draw_texture_snapshots": [{
+                    "stage": 7,
+                    "texture_ptr": "0x700",
+                    "active_binding_texture_ptr": "0x700",
+                    "active_binding_match": True,
+                    "resource_creation_status": "observed",
+                    "resource_creation": {
+                        "resource_type": "texture2d",
+                        "texture_ptr": "0x700",
+                    },
+                    "snapshot_status": "captured",
+                    "snapshot_paths": [
+                        "textures/s7_f9_d3.ppm"
+                    ],
+                    "event_index": 99,
+                }],
             }, {
                 "draw_index": 4,
                 "active_texture_bindings": [{
@@ -338,6 +354,11 @@ def test_attributed_texture_observations_keep_only_selected_strong_draws():
     assert row["active_texture_bindings"][0]["snapshot_paths"] == [
         "textures/s7.ppm"
     ]
+    assert row["draw_texture_snapshots"][0]["snapshot_paths"] == [
+        "textures/s7_f9_d3.ppm"
+    ]
+    assert row["draw_texture_snapshots"][0]["active_binding_match"] is True
+    assert row["draw_texture_snapshots"][0]["event_index"] == 99
 
 
 def test_attributed_texture_observations_preserve_multiple_supporting_draws():
