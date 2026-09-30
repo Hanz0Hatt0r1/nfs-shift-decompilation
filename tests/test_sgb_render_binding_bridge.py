@@ -555,3 +555,32 @@ def test_one_resource_shader_admission_reuses_across_scene_instances(
     assert join["applied_admission_count"] == 1
     assert join["application_count"] == 2
     assert join["application_counts"] == {"77": 2}
+
+
+def test_empty_runtime_shader_admission_report_is_blocked(
+    tmp_path,
+    monkeypatch,
+):
+    _write_ir(tmp_path)
+    _install_runtime_link_spy(monkeypatch)
+    empty = {
+        "format": "SHIFT.IMBRuntimeShaderAdmission/1",
+        "status": "not-admitted",
+        "ready": False,
+        "admitted_bindings": [],
+        "rejected_bindings": [],
+    }
+
+    report = build_sgb_render_binding_bridge(
+        _admission(_binding(resource="tracks/test/object.imb")),
+        tmp_path,
+        runtime_shader_admission=empty,
+    )
+
+    assert report["ready"] is False
+    assert report["runtime_shader_join"]["ready"] is False
+    assert (
+        "runtime-shader-join:"
+        "runtime-shader-admission:no-admitted-bindings"
+        in report["blocking_reasons"]
+    )
