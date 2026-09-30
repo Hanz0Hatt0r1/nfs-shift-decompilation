@@ -139,14 +139,6 @@ def _instance_match_index(
         blockers.append(
             "scene-external-capture:instance-match-version-invalid"
         )
-    if value.get("ready") is not True:
-        blockers.extend(
-            "scene-external-capture:instance-match:" + str(reason)
-            for reason in (
-                value.get("blocking_reasons")
-                or ["not-ready"]
-            )
-        )
     result: dict[int, Mapping[str, Any]] = {}
     for row in value.get("rows") or []:
         if not isinstance(row, Mapping):
@@ -350,6 +342,29 @@ def build_scene_external_sampler_capture_adapter(
                 continue
             selected_index = matching_indices[0]
             draw = draws[selected_index]
+            draw_identity = (
+                (draw.get("hashes") or {}).get(
+                    "draw_identity_sha256"
+                )
+                if isinstance(draw.get("hashes"), Mapping)
+                else None
+            )
+            expected_draw_identity = match.get(
+                "selected_draw_identity_sha256"
+            )
+            if (
+                not isinstance(expected_draw_identity, str)
+                or draw_identity != expected_draw_identity
+            ):
+                required_count += sum(
+                    len(declarations)
+                    for declarations in external_decl_sets
+                )
+                blockers.append(
+                    f"scene-external-capture:binding-{binding_index}:"
+                    "instance-match-draw-identity-mismatch"
+                )
+                continue
             declarations = external_decl_sets[selected_index]
             required_count += len(declarations)
             selected_instance_match = dict(match)
