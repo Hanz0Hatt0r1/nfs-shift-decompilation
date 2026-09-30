@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -572,9 +573,23 @@ def build_sgb_object_render_handoff_set(
                     "object-render:root-consensus-row-invalid"
                 )
                 continue
+            chunk = str(wrapper.get("chunk") or "")
+            source_record_index = wrapper.get(
+                "source_record_index"
+            )
+            if (
+                chunk not in {"NODE", "SUMM"}
+                or source_record_index is None
+                or any(value < 0 for value in path_key)
+                or not all(math.isfinite(value) for value in root_values)
+            ):
+                application_blockers.append(
+                    "object-render:root-consensus-row-invalid"
+                )
+                continue
             key = (
-                str(wrapper.get("chunk")),
-                wrapper.get("source_record_index"),
+                chunk,
+                source_record_index,
                 path_key,
             )
             existing = consensus_roots.get(key)
