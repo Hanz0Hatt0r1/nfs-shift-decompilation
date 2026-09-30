@@ -1,8 +1,8 @@
 """Build neutral render-facing placement records from SGB placement joins.
 
 This contract preserves source-backed object identity and spatial query geometry.
-It does not synthesize world transforms or promote the FLAT +0x20..+0x34
-corpus candidate to source-proven AABB semantics.
+It does not synthesize world transforms. FLAT +0x20..+0x34 is accepted as
+source-consumed six-float spatial bounds only after the Phase 548 consumer join.
 """
 from __future__ import annotations
 
@@ -92,15 +92,11 @@ def _flat_summ_placements(
             )
             runtime_index = None
 
-        candidate = flat.get("spatial_bounds_candidate")
-        advisory = (
-            dict(candidate)
-            if isinstance(candidate, Mapping)
-            else None
-        )
-        if advisory is not None:
-            advisory["admission"] = "advisory-only"
-            advisory["used_as_proven_aabb"] = False
+        bounds = _aabb(flat.get("spatial_bounds"))
+        if bounds is None:
+            blockers.append(
+                f"scene-placement:flat-summ:{ordinal}:spatial-bounds-missing"
+            )
 
         placements.append({
             "placement_index": ordinal,
@@ -120,11 +116,12 @@ def _flat_summ_placements(
                 "bounding_sphere": (
                     dict(sphere) if isinstance(sphere, Mapping) else None
                 ),
-                "bounds_candidate": advisory,
+                "spatial_bounds": bounds,
                 "proven_geometry": [
                     "node_aabbox",
                     "filter_masks",
                     "bounding_sphere",
+                    "spatial_bounds",
                 ],
             },
             "render_binding_handoff": {
@@ -135,6 +132,7 @@ def _flat_summ_placements(
                     node_aabb is not None
                     and isinstance(masks, Mapping)
                     and isinstance(sphere, Mapping)
+                    and bounds is not None
                 ),
                 "draw_admission": False,
             },
@@ -144,6 +142,7 @@ def _flat_summ_placements(
                 and node_aabb is not None
                 and isinstance(masks, Mapping)
                 and isinstance(sphere, Mapping)
+                and bounds is not None
             ),
         })
 
@@ -290,11 +289,14 @@ def build_sgb_scene_placement(
                 "source-backed object/resource-to-render-node mapping",
                 "source-backed world transform or explicit identity transform",
             ],
-            "corpus_bounds_candidate_is_advisory": True,
+            "leaf_spatial_bounds_source_proven": True,
         },
         "evidence": {
             "identity_join": "SHIFT.SGBPlacementJoin/1",
-            "flat_query_geometry": "Phase 546 / FUN_006aef20/FUN_006aefe0",
+            "flat_query_geometry": (
+                "Phase 546-548 / FUN_006aef20/FUN_006aefe0 + "
+                "query vfunc +0x2c"
+            ),
             "part_partition_geometry": "FUN_006a4d10/FUN_0068a360",
         },
     }

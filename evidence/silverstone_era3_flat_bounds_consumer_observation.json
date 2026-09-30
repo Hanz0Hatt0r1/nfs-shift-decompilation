@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.SilverstoneEra3FLATBoundsConsumerObservation/1",
+  "source": "retail Need For Speed SHIFT v1.02 Silverstone Era3 visual corpus",
+  "source_consumer": {
+    "callsite": "FUN_006afb20",
+    "query_function": "FUN_006aef20",
+    "leaf_argument": "leaf + 0x20",
+    "query_argument": "query + 0x20",
+    "dispatch": "query object +0x18 vtable +0x2c",
+    "payload_bytes": 24,
+    "float_count": 6
+  },
+  "interpretation": {
+    "layout": "min_xyz/max_xyz",
+    "evidence_level": "source-consumed-corpus-validated-aabb",
+    "higher_level_query_class": "unresolved"
+  },
+  "variants": [
+    {
+      "name": "Drift",
+      "sgb_sha256": "a8ad0608889627bedb42529b729f9a52529afedc03b66e73de86148dcd3ecf25",
+      "tree_nodes": 739,
+      "leaf_records": 2622,
+      "ordered_bounds": 2622,
+      "sphere_center_inside_bounds": 2622,
+      "sphere_center_midpoint_matches": 2622,
+      "max_midpoint_error": 0.000030517578125
+    },
+    {
+      "name": "GrandPrix",
+      "sgb_sha256": "8206da9ea08aa853a09168b456d5c49691f54c20a193a0739687940865b344b7",
+      "tree_nodes": 1913,
+      "leaf_records": 7348,
+      "ordered_bounds": 7348,
+      "sphere_center_inside_bounds": 7348,
+      "sphere_center_midpoint_matches": 7348,
+      "max_midpoint_error": 0.00006103515625
+    },
+    {
+      "name": "International",
+      "sgb_sha256": "fb6a534b4890a8c046f234f10e702962913a5a03377b7a158581f0a7c74ea2b6",
+      "tree_nodes": 1557,
+      "leaf_records": 5932,
+      "ordered_bounds": 5932,
+      "sphere_center_inside_bounds": 5932,
+      "sphere_center_midpoint_matches": 5932,
+      "max_midpoint_error": 0.00006103515625
+    },
+    {
+      "name": "National",
+      "sgb_sha256": "b3f94c2b65bc74d9e309774d793c522bcd2aff5ebfa8a7e7f46ba4d484e5ad93",
+      "tree_nodes": 1519,
+      "leaf_records": 5678,
+      "ordered_bounds": 5678,
+      "sphere_center_inside_bounds": 5678,
+      "sphere_center_midpoint_matches": 5678,
+      "max_midpoint_error": 0.00006103515625
+    }
+  ],
+  "totals": {
+    "tree_nodes": 5728,
+    "leaf_records": 21580,
+    "ordered_bounds": 21580,
+    "sphere_center_inside_bounds": 21580,
+    "sphere_center_midpoint_matches": 21580,
+    "max_midpoint_error": 0.00006103515625
+  },
+  "downstream": {
+    "placement_join_field": "flat.spatial_bounds",
+    "scene_placement_field": "spatial.spatial_bounds",
+    "proven_geometry_member": "spatial_bounds",
+    "draw_admission": false,
+    "world_transform_emitted": false
+  },
+  "observations": [
+    "The +0x20 six-float block has a direct retail spatial-query consumer and is not merely a statistical candidate.",
+    "Every Silverstone Era3 leaf decodes as ordered min/max triples and contains the already source-backed leaf sphere center.",
+    "The bounds upgrade changes culling/placement evidence only; it does not prove object world transforms or draw admission."
+  ]
+}

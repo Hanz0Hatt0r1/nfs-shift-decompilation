@@ -158,9 +158,7 @@ def _join_flat_summ(
                 "leaf_offset": leaf.get("offset"),
                 "filter_masks": leaf.get("filter_masks"),
                 "bounding_sphere": leaf.get("bounding_sphere"),
-                "spatial_bounds_candidate": (
-                    leaf.get("spatial_bounds_candidate")
-                ),
+                "spatial_bounds": leaf.get("spatial_bounds"),
                 "direct_object_pointer_word": (
                     leaf.get("direct_object_pointer_word")
                 ),

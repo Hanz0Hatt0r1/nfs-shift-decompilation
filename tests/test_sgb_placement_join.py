@@ -29,10 +29,10 @@ def _flat_leaf(runtime_index, *, pointer=0, offset=0x20):
             "center_xyz": [1.0, 2.0, 3.0],
             "radius": 4.0,
         },
-        "spatial_bounds_candidate": {
+        "spatial_bounds": {
             "min_xyz": [-1.0, 0.0, 1.0],
             "max_xyz": [3.0, 4.0, 5.0],
-            "source_consumer_proven": False,
+            "source_consumer_proven": True,
         },
     }
 
@@ -118,7 +118,7 @@ def test_flat_summ_runtime_index_joins_wrapper_order():
     assert spatial["node_aabbox"]["min_xyz"] == [-10.0, -20.0, -30.0]
     assert spatial["filter_masks"]["include_words"] == [0, 0]
     assert spatial["bounding_sphere"]["radius"] == 4.0
-    assert spatial["spatial_bounds_candidate"]["source_consumer_proven"] is False
+    assert spatial["spatial_bounds"]["source_consumer_proven"] is True
 
 
 def test_flat_summ_duplicate_runtime_index_blocks():
