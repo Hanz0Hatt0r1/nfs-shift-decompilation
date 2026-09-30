@@ -90,3 +90,19 @@ def test_phase581_cli_accepts_vulkan_world_transform_packet_command():
     assert args.input == "render-command.json"
     assert args.output == "world_transform.svwt"
     assert args.fn.__name__ == "cmd_vulkan_world_transform_packet"
+
+
+def test_phase585_cli_accepts_native_scene_vulkan_prepare_command():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-scene-vulkan-prepare",
+        "out/native-scene-vulkan",
+        "--validator",
+        "glslangValidator",
+        "--output",
+        "out/native-scene-vulkan/prepare.json",
+    ])
+    assert args.bundle_set_dir == "out/native-scene-vulkan"
+    assert args.validator == "glslangValidator"
+    assert args.output == "out/native-scene-vulkan/prepare.json"
+    assert args.fn.__name__ == "cmd_native_scene_vulkan_prepare"
