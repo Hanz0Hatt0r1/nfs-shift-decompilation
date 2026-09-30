@@ -1820,6 +1820,54 @@ def cmd_imb_binary_schema(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sgb_multimatrix_root_solve(args: argparse.Namespace) -> int:
+    """Solve one MultiMatrix root from an observed selected-slot world."""
+    from sgb_multimatrix import build_multimatrix_root_solve
+
+    owner = json.loads(Path(args.owner).read_text(encoding="utf-8"))
+    observed_value = json.loads(
+        Path(args.observed_world).read_text(encoding="utf-8")
+    )
+    if not isinstance(owner, dict):
+        raise ValueError("owner JSON must be an object")
+    if isinstance(observed_value, dict):
+        observed = (
+            observed_value.get("selected_world_matrix")
+            or observed_value.get("world_matrix")
+            or observed_value.get("observed_world_matrix")
+        )
+    else:
+        observed = observed_value
+
+    report = build_multimatrix_root_solve(
+        owner,
+        args.selected_slot,
+        observed,
+        tolerance=args.tolerance,
+    )
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "selected_slot": report["selected_slot"],
+        "selected_slot_chain_to_root": report[
+            "selected_slot_chain_to_root"
+        ],
+        "max_abs_reproduction_error": report[
+            "max_abs_reproduction_error"
+        ],
+        "blocking_reasons": report["blocking_reasons"],
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_sgb_object_render_handoff(args: argparse.Namespace) -> int:
     """Build source-backed OBJECT resource/transform render handoffs."""
     from sgb_object_render_handoff import validate_file
@@ -4410,6 +4458,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="consume source-backed v0.4 material/palette/index/bounds records",
     )
     p.set_defaults(fn=cmd_imb_binary_schema)
+
+    p = sp.add_parser(
+        "sgb-multimatrix-root-solve",
+        help=(
+            "solve current MultiMatrix root from one runtime-observed "
+            "MatrixNumber slot world matrix"
+        ),
+    )
+    p.add_argument(
+        "owner",
+        help="SHIFT.SGBObjectRuntime/1 LOD/HIERARCHY owner JSON",
+    )
+    p.add_argument(
+        "selected_slot",
+        type=int,
+        help="MatrixNumber/runtime MultiMatrix slot index",
+    )
+    p.add_argument(
+        "observed_world",
+        help=(
+            "JSON 4x4 matrix or object containing selected_world_matrix/"
+            "world_matrix"
+        ),
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.SGBMultiMatrixRootSolve/1 JSON output",
+    )
+    p.add_argument(
+        "--tolerance",
+        type=float,
+        default=1.0e-5,
+        help="maximum reevaluation absolute error (default: 1e-5)",
+    )
+    p.set_defaults(fn=cmd_sgb_multimatrix_root_solve)
 
     p = sp.add_parser(
         "sgb-object-render-handoff",
