@@ -1,5 +1,7 @@
 import json
+import struct
 
+from imb_format import VERSION_0_4_0_0
 from sgb_render_binding_bridge import (
     FORMAT,
     build_sgb_render_binding_bridge,
@@ -70,6 +72,41 @@ def _admission(*rows):
     }
 
 
+def _imb_payload():
+    data = bytearray(struct.pack("<IHH", VERSION_0_4_0_0, 0, 0))
+    data += b"mesh\x00\xaa\xbb\xcc"
+    data += struct.pack(
+        "<III10f",
+        3,
+        1,
+        1,
+        0.0, 0.0, 0.0, 2.0,
+        -1.0, -1.0, -1.0,
+        1.0, 1.0, 1.0,
+    )
+    data += struct.pack("<III", 2, 0, 0)
+    data += struct.pack(
+        "<9f",
+        0.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+    )
+    material = b"tracks/test/object.bmt\x00"
+    data += material + b"\x00" * ((-len(material)) % 4)
+    data += struct.pack("<II", 0, 1)
+    data += struct.pack("<3H", 0, 1, 2)
+    data += b"\x00\x00"
+    data += struct.pack(
+        "<HH10f",
+        0,
+        2,
+        0.0, 0.0, 0.0, 2.0,
+        -1.0, -1.0, -1.0,
+        1.0, 1.0, 1.0,
+    )
+    return bytes(data)
+
+
 def _write_ir(root):
     for name in ("meshes", "materials", "shaders", "raw"):
         (root / name).mkdir()
@@ -110,6 +147,7 @@ def _write_ir(root):
         b"float4 main() : COLOR0 { return 1; }"
     )
     (root / "raw/mesh").write_bytes(b"")
+    (root / "raw/object.imb").write_bytes(_imb_payload())
     (root / "raw/material").write_bytes(b"")
 
     manifest = [
@@ -119,6 +157,12 @@ def _write_ir(root):
             "output": "meshes/object.json",
             "raw": "raw/mesh",
             "sha256": "mesh-sha",
+        },
+        {
+            "archive": "TRACK.bff",
+            "path": "tracks/test/object.imb",
+            "raw": "raw/object.imb",
+            "sha256": "imb-sha",
         },
         {
             "archive": "TRACK.bff",
@@ -233,33 +277,31 @@ def test_non_meb_scene_resource_is_not_guessed(tmp_path):
     assert report["resource_adapter_blocked"][0]["factory_name"] == "MeshType"
 
 
-def test_imb_scene_resource_is_classified_as_meshinst_and_stays_blocked(
-    tmp_path,
-):
+def test_imb_scene_resource_enters_generic_render_binding(tmp_path):
     _write_ir(tmp_path)
     report = build_sgb_render_binding_bridge(
-        _admission(
-            _binding(resource="tracks/test/crowd_banner_01_body_loda.imb")
-        ),
+        _admission(_binding(resource="tracks/test/object.imb")),
         tmp_path,
     )
 
-    assert report["ready"] is False
+    assert report["ready"] is True
     assert report["scene_admitted_instance_count"] == 1
-    assert report["direct_render_instance_count"] == 0
-    assert report["resource_adapter_blocked_count"] == 1
+    assert report["direct_render_instance_count"] == 1
+    assert report["resource_adapter_blocked_count"] == 0
+    assert report["resolved_instance_count"] == 1
+    assert report["unresolved_instance_count"] == 0
+
+    generic = report["render_binding"]
+    assert generic["stats"]["resolved_resource_instances"] == 1
+    packet = generic["packets"][0]
+    assert packet["mesh"]["ref"] == "tracks/test/object.imb"
+    assert packet["mesh"]["resolved"]["resource_sha256"] == "imb-sha"
+    assert packet["mesh"]["source_kind"] == "IMB"
+    assert packet["mesh"]["neutral_adapter_format"] == "SHIFT.IMBNeutralGeometry/1"
+    assert packet["mesh"]["vertex_layout"]["source"] == "IMB"
     assert (
-        "binding-0:scene-resource:meshinst-binary-adapter-incomplete"
-        in report["blocking_reasons"]
-    )
-    blocked = report["resource_adapter_blocked"][0]
-    assert blocked["factory_type"] == 7
-    assert blocked["factory_name"] == "MeshInst"
-    assert blocked["loader_mode"] == "binary"
-    assert blocked["meshinst_runtime"]["format"] == "SHIFT.SGBMeshInstRuntime/1"
-    assert (
-        blocked["meshinst_runtime"]["resource_loader"]["function"]
-        == "FUN_00859800"
+        packet["mesh"]["vertex_layout"]["source_adapter"]
+        == "SHIFT.IMBNeutralGeometry/1"
     )
 
 
@@ -282,29 +324,27 @@ def test_imx_scene_resource_reports_xml_adapter_gap(tmp_path):
     )
 
 
-def test_mixed_meb_and_meshinst_preserves_ready_meb_packet(tmp_path):
+def test_mixed_meb_and_imb_resolve_independently(tmp_path):
     _write_ir(tmp_path)
     report = build_sgb_render_binding_bridge(
         _admission(
             _binding(index=0, resource="tracks/test/object.meb"),
-            _binding(index=1, resource="tracks/test/crowd_banner.imb"),
+            _binding(index=1, resource="tracks/test/object.imb"),
         ),
         tmp_path,
     )
 
-    assert report["ready"] is False
+    assert report["ready"] is True
     assert report["scene_admitted_instance_count"] == 2
-    assert report["direct_render_instance_count"] == 1
-    assert report["resolved_instance_count"] == 1
-    assert report["resource_adapter_blocked_count"] == 1
-    assert len(report["render_binding"]["packets"]) == 1
-    assert (
-        report["render_binding"]["packets"][0]["scene_binding"][
-            "admission_binding_index"
-        ]
-        == 0
-    )
-    assert report["resource_adapter_blocked"][0]["binding_index"] == 1
+    assert report["direct_render_instance_count"] == 2
+    assert report["resolved_instance_count"] == 2
+    assert report["resource_adapter_blocked_count"] == 0
+    packets = report["render_binding"]["packets"]
+    assert len(packets) == 2
+    assert packets[0]["scene_binding"]["admission_binding_index"] == 0
+    assert packets[0]["mesh"]["source_kind"] == "MEB"
+    assert packets[1]["scene_binding"]["admission_binding_index"] == 1
+    assert packets[1]["mesh"]["source_kind"] == "IMB"
 
 
 def test_no_admitted_rows_is_blocked(tmp_path):

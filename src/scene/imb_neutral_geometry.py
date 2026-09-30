@@ -81,6 +81,10 @@ def build_imb_neutral_geometry(data: bytes) -> dict[str, Any]:
         "source_format": source["format"],
         "source_resource_name": (source.get("prefix") or {}).get("resource_name"),
         "vertex_count": vertex_count,
+        "triangle_count": 0,
+        "vertex_properties": [],
+        "property_layouts": [],
+        "primitives": [],
         "indices": [],
         "vertices": [],
         "normals": [],
@@ -157,6 +161,16 @@ def build_imb_neutral_geometry(data: bytes) -> dict[str, Any]:
             "normalized": normalized,
             "status": "decoded",
         })
+        mesh["property_layouts"].append({
+            "id": prop,
+            "name": field,
+            "payload_offset": int(stream["vertex_payload_offset"]),
+            "stride": int(stream["element_size_bytes"]),
+            "bytes": int(stream["vertex_payload_size"]),
+            "storage": storage,
+            "components": components,
+            "normalized": normalized,
+        })
         mesh["vertex_layout"]["attributes"].append(attribute)
 
     primitives: list[dict[str, Any]] = []
@@ -181,6 +195,9 @@ def build_imb_neutral_geometry(data: bytes) -> dict[str, Any]:
             "source_size": int(primitive["source_size"]),
         })
     mesh["indices"] = combined_indices
+    mesh["triangle_count"] = len(combined_indices) // 3
+    mesh["vertex_properties"] = list(decoded_properties)
+    mesh["primitives"] = [dict(row) for row in primitives]
 
     blockers: list[str] = []
     if not mesh["vertices"] and vertex_count:

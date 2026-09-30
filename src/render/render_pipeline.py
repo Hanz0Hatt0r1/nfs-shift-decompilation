@@ -229,11 +229,12 @@ def build_render_bindings_from_resource_instances(
     *,
     source_format: str | None = None,
 ) -> dict[str, Any]:
-    """Resolve externally placed MEB instances through the generic render path.
+    """Resolve externally placed MEB/IMB instances through the generic render path.
 
     Each instance supplies a proven resource reference and numeric 4x4 world
-    matrix.  Resource/material/shader resolution remains identical to the
-    existing VHF-driven path; unsupported resource kinds stay fail-closed.
+    matrix. Resource/material/shader resolution remains identical to the
+    existing VHF-driven path. IMB uses its independent source-backed neutral
+    geometry adapter; unsupported resource kinds stay fail-closed.
     """
     root = Path(ir_root)
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
@@ -318,22 +319,58 @@ def build_render_bindings_from_resource_instances(
                 "admission_binding_index": admission_binding_index,
             })
             continue
-        if not norm_ref(mesh_row["path"]).endswith(".meb"):
+        resolved_norm = norm_ref(mesh_row["path"])
+        mesh_source_kind: str
+        mesh_adapter_format: str | None = None
+        if resolved_norm.endswith(".meb"):
+            mesh = _load_json(root, mesh_row)
+            if mesh.get("format") not in {"SHIFT.MEB", None}:
+                unresolved.append({
+                    "kind": "mesh",
+                    "reason": "resolved-resource-not-meb",
+                    "ref": str(resource_ref),
+                    "resolved_path": mesh_row["path"],
+                    "instance_index": instance_index,
+                    "admission_binding_index": admission_binding_index,
+                })
+                continue
+            mesh_source_kind = "MEB"
+        elif resolved_norm.endswith(".imb"):
+            from imb_neutral_geometry import build_imb_neutral_geometry
+
+            try:
+                neutral = build_imb_neutral_geometry(_load_raw(root, mesh_row))
+            except (KeyError, OSError, ValueError) as exc:
+                unresolved.append({
+                    "kind": "mesh",
+                    "reason": "imb-neutral-geometry-decode-failed",
+                    "detail": str(exc),
+                    "ref": str(resource_ref),
+                    "resolved_path": mesh_row["path"],
+                    "instance_index": instance_index,
+                    "admission_binding_index": admission_binding_index,
+                })
+                continue
+            if neutral.get("ready") is not True:
+                unresolved.append({
+                    "kind": "mesh",
+                    "reason": "imb-neutral-geometry-blocked",
+                    "blocking_reasons": list(
+                        neutral.get("blocking_reasons") or []
+                    ),
+                    "ref": str(resource_ref),
+                    "resolved_path": mesh_row["path"],
+                    "instance_index": instance_index,
+                    "admission_binding_index": admission_binding_index,
+                })
+                continue
+            mesh = neutral["mesh"]
+            mesh_source_kind = "IMB"
+            mesh_adapter_format = str(neutral.get("format"))
+        else:
             unresolved.append({
                 "kind": "resource-kind",
                 "reason": "unsupported-scene-resource-kind",
-                "ref": str(resource_ref),
-                "resolved_path": mesh_row["path"],
-                "instance_index": instance_index,
-                "admission_binding_index": admission_binding_index,
-            })
-            continue
-
-        mesh = _load_json(root, mesh_row)
-        if mesh.get("format") not in {"SHIFT.MEB", None}:
-            unresolved.append({
-                "kind": "mesh",
-                "reason": "resolved-resource-not-meb",
                 "ref": str(resource_ref),
                 "resolved_path": mesh_row["path"],
                 "instance_index": instance_index,
@@ -397,6 +434,14 @@ def build_render_bindings_from_resource_instances(
                 "material": binding,
             })
 
+        vertex_layout = build_layout_from_summary(mesh)
+        if mesh_source_kind == "IMB":
+            vertex_layout = {
+                **vertex_layout,
+                "source": "IMB",
+                "source_adapter": mesh_adapter_format,
+            }
+
         packet = {
             "scene": source.get("scene"),
             "node": source.get("node"),
@@ -417,8 +462,10 @@ def build_render_bindings_from_resource_instances(
                 },
                 "vertex_count": mesh.get("vertex_count"),
                 "triangle_count": mesh.get("triangle_count"),
-                "vertex_layout": build_layout_from_summary(mesh),
+                "vertex_layout": vertex_layout,
                 "skinning": mesh.get("skinning") or {},
+                "source_kind": mesh_source_kind,
+                "neutral_adapter_format": mesh_adapter_format,
             },
             "submeshes": submeshes,
         }

@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 560.**
+**Current mainline: Phase 561.**
 
 
 
@@ -92,7 +92,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 68. Recover the packed IMB version/control/name prefix and auto-locate the fixed header/bone gate — Phase 557 implemented.
     Phase 558 corrects descriptor/vertex block sequencing, preserves supported raw vertex streams and derives the primitive section offset.
     Phase 559 adds optional source-backed v0.4 material/palette/index/bounds primitive records.
-69. Recover full IMB vertex+primitive payload consumption and implement neutral IMB/IMX scene adapters; independently recover/capture blocked SceneGraph transform-update history. Phase 560 implements the fail-closed neutral IMB geometry adapter over the proven v0.4 stream/primitive payload; SGB bridge integration, IMX adaptation and transform-update history remain.
+69. Recover full IMB vertex+primitive payload consumption and implement neutral IMB/IMX scene adapters; independently recover/capture blocked SceneGraph transform-update history. Phase 560 implements the fail-closed neutral IMB geometry adapter over the proven v0.4 stream/primitive payload. Phase 561 connects admitted `.imb` MeshInst resources through that adapter into the generic material/shader/RenderBinding pipeline. IMX adaptation and transform-update history remain.
 70. Derive proven animation poses from the BAB runtime grammar.
 71. Port the stable native render/runtime boundary to Android.
 72. Integrate gameplay/input/audio/streaming only after the core data and render/runtime contracts stabilize.
@@ -108,7 +108,7 @@ Exact retail/provider numeric parity remains open until a real runtime frame is 
 | Desktop renderer | active oracle | broader exact D3D9/material coverage |
 | Skinning | contract implemented | runtime pose production |
 | BAB animation | evidence-backed | resolve remaining semantic gaps |
-| SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed v0.4 IMB neutral geometry implemented | admitted-IMB RenderBinding integration + IMX neutral adapter + per-instance SceneGraph update history |
+| SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed v0.4 IMB neutral geometry + admitted-IMB RenderBinding integration implemented | real-corpus IMB validation + IMX neutral adapter + per-instance SceneGraph update history |
 | Camera | active | higher-level behavior |
 | Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff implemented |
 | Builtin solver | source-backed | runtime frame parity |
