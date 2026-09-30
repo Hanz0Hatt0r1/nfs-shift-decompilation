@@ -5,7 +5,7 @@ numeric SHIFT vertex property ID in every native attribute record.
 
 That closes the information gap which forced Phase 582 to execute only pure
 translation. Phase 584 uses the new semantic ABI to execute general
-non-singular affine scene transforms in the standalone native Vulkan material
+non-singular positive-orientation affine scene transforms in the standalone native Vulkan material
 path.
 
 ## Input contracts
@@ -35,9 +35,9 @@ The packet must still be affine:
 - m33 = 1;
 - all scalars finite.
 
-Phase 584 additionally requires a non-singular 3x3 linear block.
+Phase 584 additionally requires a non-singular 3x3 linear block with positive determinant.
 
-Singular transforms fail closed before any GPU upload.
+Singular transforms fail closed before any GPU upload. Reflections (negative determinant) also fail closed because they change raster winding and may require tangent-handedness handling that is not yet source-backed.
 
 ## Semantic transforms
 
@@ -149,18 +149,17 @@ CI requires the material executor to report:
 
 ## Negative proof
 
-The Linux workflow also proves two fail-closed cases:
+The Linux workflow also proves three fail-closed cases:
 
 1. a singular v3 affine matrix is rejected;
-2. a downgraded legacy v2 packet with several non-position attributes rejects
-   rotation because the old binary cannot identify their semantics.
+2. a reflected v3 matrix is rejected until raster-winding and tangent-handedness semantics are proven;
+3. a downgraded legacy v2 packet with several non-position attributes rejects rotation because the old binary cannot identify their semantics.
 
 The same legacy v2 packet still executes translation successfully.
 
 ## Boundary after Phase 584
 
-The standalone native material executor now has a complete semantic-aware
-affine scene-transform path for the supported FLOAT3 scene bases.
+The standalone native material executor now has a semantic-aware positive-orientation affine scene-transform path for the supported FLOAT3 scene bases.
 
 The next integration gap is not transform math. It is scene scheduling:
 
