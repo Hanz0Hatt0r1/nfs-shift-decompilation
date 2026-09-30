@@ -575,7 +575,24 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
                 row["raw_body_hex_prefix"] = body[:96].hex()
                 row["decoder"] = "FUN_006a48d0 -> FUN_0068a8b0"
                 from flat_runtime import parse_flat_runtime
-                flat = parse_flat_runtime(body, strict=strict)
+                normalize_signed_terminal_spans = not bool(flags & 4)
+                flat = parse_flat_runtime(
+                    body,
+                    strict=strict,
+                    normalize_signed_terminal_spans=(
+                        normalize_signed_terminal_spans
+                    ),
+                )
+                row["flat_span_normalization"] = {
+                    "header_flag_bit2": bool(flags & 4),
+                    "normalize_signed_terminal_spans": (
+                        normalize_signed_terminal_spans
+                    ),
+                    "source": (
+                        "FUN_006a5270 bit2 -> FUN_006a48d0 param_3 -> "
+                        "FUN_006afd30/FUN_006af6c0"
+                    ),
+                }
                 row["flat_runtime"] = flat
                 row["decoded"] = flat["ready"]
             elif tag == "END ":
@@ -618,7 +635,7 @@ def parse_sgb_runtime(data: bytes, *, strict: bool = True) -> dict[str, Any]:
         },
         "limitations": [
             "NODE object payload is decoded through the existing SGBObjectRuntime decoder when its bounds are known; deeper OBJECT/HIERARCHY field semantics remain raw.",
-            "FLAT body is preserved because it is forwarded to FUN_0068a8b0.",
+            "FLAT signed terminal spans are normalized exactly when SGB header bit2 is clear, matching FUN_006a5270 -> FUN_006a48d0 -> FUN_006af6c0.",
             "SUMM vectors remain positional; their semantic names are not proven by FUN_006a4900.",
             "OCCL Name/Resource and PositionTL/TR/BL/BR semantics are source-backed by the matching XML constructor FUN_006a3c40 and binary loader FUN_006a4f10.",
             "PART AABB, child-partition IDs and one-based child-object references are source-backed through FUN_006a4d10, FUN_0068a360 and FUN_00689a30; child virtual kind codes remain numeric rather than class-named.",
