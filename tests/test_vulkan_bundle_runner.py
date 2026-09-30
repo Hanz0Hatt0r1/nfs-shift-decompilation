@@ -21,3 +21,4 @@ def test_vulkan_bundle_runner_accepts_semantic_svgp_v3_and_legacy_packets():
     assert "out.header.version != 3" in source
     assert "legacy.location == 0u ? 200u : 0u" in source
     assert "attribute.property_id != 200u" in source
+    assert "invalid version-1 geometry packet" in source
