@@ -133,6 +133,14 @@ def test_flat_leaf_decodes_source_backed_filter_masks_and_sphere():
         0x18,
     ]
     assert consumer["bounding_sphere_query"]["radius_offset"] == 0x1C
+    assert consumer["spatial_bounds_query"] == {
+        "callsite": "FUN_006afb20",
+        "function": "FUN_006aef20",
+        "source_offset": 0x20,
+        "source_bytes": 0x18,
+        "consumer": "query object +0x18 vfunc +0x2c",
+        "query_argument_offset": 0x20,
+    }
 
 
 def test_flat_node_decodes_source_backed_aabb():
