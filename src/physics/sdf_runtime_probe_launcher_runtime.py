@@ -276,6 +276,8 @@ def build_attach_command(
         "set confirm off",
         "-iex",
         "set debuginfod enabled off",
+        "-iex",
+        "handle SIGUSR1 nostop noprint pass",
         "-p",
         str(int(pid)),
         "-x",
