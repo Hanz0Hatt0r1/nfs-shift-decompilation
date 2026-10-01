@@ -38,8 +38,8 @@ bash tools/run_shift_capture_wine.sh \
 ```
 
 The Wine launcher forces native-first loading for the top-level `d3d9.dll`
-proxy with `WINEDLLOVERRIDES=d3d9=n,b`. A pre-existing override string is
-preserved after that entry.
+proxy with `WINEDLLOVERRIDES=d3d9=n,b`. Existing overrides for other DLLs are
+preserved, while any stale `d3d9` override is replaced deterministically.
 
 Windows PowerShell:
 
