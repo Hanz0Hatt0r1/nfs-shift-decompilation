@@ -612,3 +612,29 @@ def test_phase641_full_attach_blocks_when_replay_mismatches(
             "1234",
         ]
     ) == 2
+
+
+
+def test_phase642_launcher_passes_capture_frame_budget_to_bundle_prepare(
+    monkeypatch,
+    tmp_path: Path,
+):
+    captured = {}
+
+    def fake_prepare(*args, **kwargs):
+        captured.update(kwargs)
+        return _manifest()
+
+    monkeypatch.setattr(tool, "prepare_probe_bundle", fake_prepare)
+
+    assert tool.main(
+        [
+            str(tmp_path / "SHIFT.exe"),
+            "--output",
+            str(tmp_path / "capture"),
+            "--capture-frames",
+            "4",
+        ]
+    ) == 0
+
+    assert captured["capture_frames"] == 4
