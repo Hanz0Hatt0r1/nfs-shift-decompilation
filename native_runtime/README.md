@@ -628,3 +628,25 @@ must match the exported global destinations with zero error.
 This stage is provider-absent only. Provider-shaped noncanonical row storage is
 rejected rather than reinterpreted, and runtime `FUN_007b3ed0` sample refresh
 is still outside the generated input boundary.
+
+
+## Phase 627 prepared generated BODY frame
+
+Prepare BODY state/sample input without embedding generated contribution values:
+
+```bash
+python shift_importer.py native-generated-body-constraint-frame \
+  generated-body-input.json \
+  out/generated-body
+
+native_runtime/build/shift_runtime_generated_body_constraint_frame_check \
+  out/generated-body/generated_body_constraints.gbcf
+```
+
+The GBCF packet contains prepared BODY state plus JOINT/HINGE/BAR samples and
+canonical row indices. Native execution derives the contribution through
+Phases 624–626 and aggregates it globally. The packet does not contain solver
+matrix/RHS contribution arrays.
+
+Fixed-step GBCF→SBFR admission and authentic `FUN_007b3ed0` sample refresh
+remain separate gates.
