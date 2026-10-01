@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <fstream>
 #include <iomanip>
 #include <limits>
@@ -547,6 +548,12 @@ void ensure_crash_diagnostics() {
     });
 }
 
+bool env_enabled(const char* name);
+unsigned long long env_u64(const char* name, unsigned long long fallback);
+bool trigger_capture_enabled();
+unsigned long long trigger_pre_frames();
+unsigned long long trigger_post_frames();
+
 struct CaptureWriter {
     std::mutex mutex;
     std::ofstream out;
@@ -622,22 +629,46 @@ struct CaptureWriter {
         return s.str();
     }
 
-    void write_event(const std::string& event, const std::string& fields) {
-        std::lock_guard<std::mutex> lock(mutex);
-        ensure_open();
-        const auto seq = g_event_index.fetch_add(1);
+    struct BufferedLine {
+        unsigned long long sequence = 0;
+        unsigned long long frame = 0;
+        std::string text;
+    };
+
+    struct BufferedFrame {
+        unsigned long long frame = 0;
+        std::vector<BufferedLine> lines;
+    };
+
+    std::deque<BufferedFrame> render_ring;
+    std::vector<BufferedLine> pending_metadata;
+    bool trigger_active = false;
+    unsigned long long active_trigger_frame = 0;
+    unsigned long long active_trigger_end_frame = 0;
+
+    BufferedLine make_line(
+        const std::string& event,
+        const std::string& fields) {
+        BufferedLine buffered;
+        buffered.sequence = g_event_index.fetch_add(1);
+        buffered.frame = g_frame.load();
         std::ostringstream line;
-        line << "{\"event_index\":" << seq
-             << ",\"frame\":" << g_frame.load()
+        line << "{\"event_index\":" << buffered.sequence
+             << ",\"frame\":" << buffered.frame
              << ",\"tick_ms\":" << GetTickCount64()
              << ",\"process_id\":" << GetCurrentProcessId()
              << ",\"thread_id\":" << GetCurrentThreadId()
              << ",\"event\":" << quote(event);
         if (!fields.empty()) line << "," << fields;
         line << "}\n";
+        buffered.text = line.str();
+        return buffered;
+    }
 
+    void emit_unlocked(const BufferedLine& line) {
+        ensure_open();
         if (out.is_open()) {
-            out << line.str();
+            out << line.text;
             const char* flush_env = std::getenv("SHIFT_D3D9_CAPTURE_FLUSH");
             if (!flush_env || std::string(flush_env) != "0") out.flush();
         }
@@ -647,8 +678,110 @@ struct CaptureWriter {
             std::string(debug_env) != "0" &&
             std::string(debug_env) != "false";
         if (debug_output || !out.is_open()) {
-            OutputDebugStringA(line.str().c_str());
+            OutputDebugStringA(line.text.c_str());
         }
+    }
+
+    void write_event(const std::string& event, const std::string& fields) {
+        std::lock_guard<std::mutex> lock(mutex);
+        ensure_open();
+        BufferedLine line = make_line(event, fields);
+        if (trigger_capture_enabled() && !trigger_active) {
+            pending_metadata.push_back(std::move(line));
+            return;
+        }
+        emit_unlocked(line);
+    }
+
+    void write_render_event(
+        const std::string& event,
+        const std::string& fields) {
+        std::lock_guard<std::mutex> lock(mutex);
+        ensure_open();
+        BufferedLine line = make_line(event, fields);
+        if (!trigger_capture_enabled()) {
+            emit_unlocked(line);
+            return;
+        }
+        if (trigger_active) {
+            emit_unlocked(line);
+            return;
+        }
+
+        if (render_ring.empty() || render_ring.back().frame != line.frame) {
+            render_ring.push_back(BufferedFrame{line.frame, {}});
+        }
+        render_ring.back().lines.push_back(std::move(line));
+
+        const std::size_t keep_frames = static_cast<std::size_t>(
+            std::min<unsigned long long>(
+                trigger_pre_frames() + 1,
+                static_cast<unsigned long long>(
+                    std::numeric_limits<std::size_t>::max())));
+        while (render_ring.size() > std::max<std::size_t>(1, keep_frames)) {
+            render_ring.pop_front();
+        }
+    }
+
+    bool trigger(unsigned long long frame) {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (!trigger_capture_enabled() || trigger_active) return false;
+        ensure_open();
+
+        std::vector<BufferedLine> flush_lines;
+        flush_lines.reserve(pending_metadata.size() + 4096);
+        for (auto& line : pending_metadata) {
+            flush_lines.push_back(std::move(line));
+        }
+        pending_metadata.clear();
+        for (auto& buffered_frame : render_ring) {
+            for (auto& line : buffered_frame.lines) {
+                flush_lines.push_back(std::move(line));
+            }
+        }
+        render_ring.clear();
+        std::sort(
+            flush_lines.begin(),
+            flush_lines.end(),
+            [](const BufferedLine& a, const BufferedLine& b) {
+                return a.sequence < b.sequence;
+            });
+        for (const auto& line : flush_lines) emit_unlocked(line);
+
+        active_trigger_frame = frame;
+        const auto post = trigger_post_frames();
+        const auto max_value = std::numeric_limits<unsigned long long>::max();
+        active_trigger_end_frame =
+            post > max_value - frame ? max_value : frame + post;
+        trigger_active = true;
+
+        std::ostringstream fields;
+        fields << "\"trigger_frame\":" << active_trigger_frame
+               << ",\"pre_frames\":" << trigger_pre_frames()
+               << ",\"post_frames\":" << post
+               << ",\"capture_end_frame\":" << active_trigger_end_frame;
+        emit_unlocked(make_line("capture_trigger", fields.str()));
+        return true;
+    }
+
+    void complete_trigger_after_present(unsigned long long next_frame) {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (!trigger_active || next_frame <= active_trigger_end_frame) return;
+
+        std::ostringstream fields;
+        fields << "\"trigger_frame\":" << active_trigger_frame
+               << ",\"capture_end_frame\":" << active_trigger_end_frame
+               << ",\"next_frame\":" << next_frame;
+        emit_unlocked(make_line("capture_trigger_complete", fields.str()));
+        trigger_active = false;
+        active_trigger_frame = 0;
+        active_trigger_end_frame = 0;
+        render_ring.clear();
+    }
+
+    bool trigger_is_active() {
+        std::lock_guard<std::mutex> lock(mutex);
+        return trigger_active;
     }
 };
 
@@ -670,6 +803,50 @@ unsigned long long env_u64(const char* name, unsigned long long fallback) {
     char* end = nullptr;
     unsigned long long parsed = std::strtoull(value, &end, 0);
     return (end && *end == '\0') ? parsed : fallback;
+}
+
+bool trigger_capture_enabled() {
+    static const bool enabled = env_enabled("SHIFT_D3D9_CAPTURE_TRIGGER");
+    return enabled;
+}
+
+unsigned long long trigger_pre_frames() {
+    static const auto value = env_u64("SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES", 2);
+    return value;
+}
+
+unsigned long long trigger_post_frames() {
+    static const auto value = env_u64("SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES", 2);
+    return value;
+}
+
+unsigned int trigger_virtual_key() {
+    static const auto value = static_cast<unsigned int>(
+        std::min<unsigned long long>(
+            env_u64("SHIFT_D3D9_CAPTURE_TRIGGER_KEY", VK_F10),
+            0xffULL));
+    return value;
+}
+
+bool capture_trigger_requested() {
+    if (!trigger_capture_enabled()) return false;
+
+    bool requested = false;
+    const unsigned int key = trigger_virtual_key();
+    if (key != 0 && (GetAsyncKeyState(static_cast<int>(key)) & 1) != 0) {
+        requested = true;
+    }
+
+    const char* trigger_file = std::getenv("SHIFT_D3D9_CAPTURE_TRIGGER_FILE");
+    if (trigger_file && *trigger_file) {
+        const DWORD attrs = GetFileAttributesA(trigger_file);
+        if (attrs != INVALID_FILE_ATTRIBUTES &&
+            !(attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+            DeleteFileA(trigger_file);
+            requested = true;
+        }
+    }
+    return requested;
 }
 
 unsigned long long capture_frame_start() {
@@ -699,6 +876,17 @@ bool capture_frame_active() {
     if (capture_mode() != CaptureMode::Capture) return false;
     const auto frame = g_frame.load();
     return frame >= capture_frame_start() && frame <= capture_frame_end();
+}
+
+bool capture_render_event_active() {
+    if (capture_mode() != CaptureMode::Capture) return false;
+    return trigger_capture_enabled() || capture_frame_active();
+}
+
+bool capture_output_frame_active() {
+    if (capture_mode() != CaptureMode::Capture) return false;
+    if (trigger_capture_enabled()) return writer().trigger_is_active();
+    return capture_frame_active();
 }
 
 bool write_backbuffer_ppm(
@@ -1813,10 +2001,10 @@ HRESULT STDMETHODCALLTYPE hook_begin_scene(IDirect3DDevice9* self) {
     const auto original = original_method_for<BeginSceneFn>(
         self, SLOT_BEGIN_SCENE, g_real_begin_scene);
     const HRESULT hr = original ? original(self) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self);
-        writer().write_event("begin_scene", fields.str());
+        writer().write_render_event("begin_scene", fields.str());
     } else if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -1830,10 +2018,10 @@ HRESULT STDMETHODCALLTYPE hook_end_scene(IDirect3DDevice9* self) {
     const auto original = original_method_for<EndSceneFn>(
         self, SLOT_END_SCENE, g_real_end_scene);
     const HRESULT hr = original ? original(self) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self);
-        writer().write_event("end_scene", fields.str());
+        writer().write_render_event("end_scene", fields.str());
     } else if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -1856,7 +2044,7 @@ HRESULT STDMETHODCALLTYPE hook_clear(
     const HRESULT hr = original
         ? original(self, count, rects, flags, color, depth, stencil)
         : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
                << ",\"rect_count\":" << count
@@ -1864,7 +2052,7 @@ HRESULT STDMETHODCALLTYPE hook_clear(
                << ",\"color\":" << static_cast<unsigned long>(color)
                << ",\"depth\":" << CaptureWriter::float_json(depth)
                << ",\"stencil\":" << stencil;
-        writer().write_event("clear", fields.str());
+        writer().write_render_event("clear", fields.str());
     } else if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -1881,7 +2069,10 @@ HRESULT STDMETHODCALLTYPE hook_present(
     const RECT* dst,
     HWND override_window,
     const RGNDATA* dirty_region) {
-    if (env_enabled("SHIFT_D3D9_CAPTURE_SCREENSHOT") && capture_frame_active()) {
+    if (trigger_capture_enabled() && capture_trigger_requested()) {
+        writer().trigger(g_frame.load());
+    }
+    if (env_enabled("SHIFT_D3D9_CAPTURE_SCREENSHOT") && capture_output_frame_active()) {
         const auto every = std::max<unsigned long long>(
             1, env_u64("SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY", 1));
         if ((g_frame.load() % every) == 0) {
@@ -1910,7 +2101,8 @@ HRESULT STDMETHODCALLTYPE hook_present(
         ? original(self, src, dst, override_window, dirty_region)
         : E_FAIL;
     const auto call_index = g_present_calls.fetch_add(1);
-    if (SUCCEEDED(hr)) g_frame.fetch_add(1);
+    unsigned long long next_frame = g_frame.load();
+    if (SUCCEEDED(hr)) next_frame = g_frame.fetch_add(1) + 1;
 
     const auto every = std::max<unsigned long long>(
         1, env_u64("SHIFT_D3D9_DIAG_PRESENT_EVERY", 300));
@@ -1921,6 +2113,9 @@ HRESULT STDMETHODCALLTYPE hook_present(
                << ",\"hresult\":" << hresult_hex(hr)
                << ",\"success\":" << (SUCCEEDED(hr) ? "true" : "false");
         writer().write_event("present_result", fields.str());
+    }
+    if (SUCCEEDED(hr) && trigger_capture_enabled()) {
+        writer().complete_trigger_after_present(next_frame);
     }
     return hr;
 }
@@ -2065,11 +2260,11 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_declaration(
     const auto original = original_method_for<SetVertexDeclarationFn>(
         self, SLOT_SET_VERTEX_DECLARATION, g_real_set_vertex_declaration);
     const HRESULT hr = original ? original(self, decl) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"declaration_ptr\":" << CaptureWriter::ptr(decl)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
-        writer().write_event("set_vertex_declaration", f.str());
+        writer().write_render_event("set_vertex_declaration", f.str());
     }
     return hr;
 }
@@ -2083,14 +2278,14 @@ HRESULT STDMETHODCALLTYPE hook_set_stream_source(
     const auto original = original_method_for<SetStreamSourceFn>(
         self, SLOT_SET_STREAM_SOURCE, g_real_set_stream_source);
     const HRESULT hr = original ? original(self, stream, buffer, offset, stride) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"vertex_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"stream\":" << stream
           << ",\"offset_in_bytes\":" << offset
           << ",\"stride\":" << stride;
-        writer().write_event("set_stream_source", f.str());
+        writer().write_render_event("set_stream_source", f.str());
     }
     return hr;
 }
@@ -2101,11 +2296,11 @@ HRESULT STDMETHODCALLTYPE hook_set_indices(
     const auto original = original_method_for<SetIndicesFn>(
         self, SLOT_SET_INDICES, g_real_set_indices);
     const HRESULT hr = original ? original(self, buffer) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"index_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
-        writer().write_event("set_indices", f.str());
+        writer().write_render_event("set_indices", f.str());
     }
     return hr;
 }
@@ -2202,13 +2397,13 @@ HRESULT STDMETHODCALLTYPE hook_set_render_target(
     const auto original = original_method_for<SetRenderTargetFn>(
         self, SLOT_SET_RENDER_TARGET, g_real_set_render_target);
     const HRESULT hr = original ? original(self, index, surface) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"render_target_index\":" << index
           << ",\"surface_ptr\":" << CaptureWriter::ptr(surface);
         append_surface_descriptor_json(f, surface);
-        writer().write_event("set_render_target", f.str());
+        writer().write_render_event("set_render_target", f.str());
     }
     return hr;
 }
@@ -2219,12 +2414,12 @@ HRESULT STDMETHODCALLTYPE hook_set_depth_stencil_surface(
     const auto original = original_method_for<SetDepthStencilSurfaceFn>(
         self, SLOT_SET_DEPTH_STENCIL_SURFACE, g_real_set_depth_stencil_surface);
     const HRESULT hr = original ? original(self, surface) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"surface_ptr\":" << CaptureWriter::ptr(surface);
         append_surface_descriptor_json(f, surface);
-        writer().write_event("set_depth_stencil_surface", f.str());
+        writer().write_render_event("set_depth_stencil_surface", f.str());
     }
     return hr;
 }
@@ -2235,7 +2430,7 @@ HRESULT STDMETHODCALLTYPE hook_set_viewport(
     const auto original = original_method_for<SetViewportFn>(
         self, SLOT_SET_VIEWPORT, g_real_set_viewport);
     const HRESULT hr = original ? original(self, viewport) : E_FAIL;
-    if (SUCCEEDED(hr) && viewport && capture_frame_active()) {
+    if (SUCCEEDED(hr) && viewport && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"x\":" << viewport->X
@@ -2244,7 +2439,7 @@ HRESULT STDMETHODCALLTYPE hook_set_viewport(
           << ",\"height\":" << viewport->Height
           << ",\"min_z\":" << CaptureWriter::float_json(viewport->MinZ)
           << ",\"max_z\":" << CaptureWriter::float_json(viewport->MaxZ);
-        writer().write_event("set_viewport", f.str());
+        writer().write_render_event("set_viewport", f.str());
     }
     return hr;
 }
@@ -2256,12 +2451,12 @@ HRESULT STDMETHODCALLTYPE hook_set_render_state(
     const auto original = original_method_for<SetRenderStateFn>(
         self, SLOT_SET_RENDER_STATE, g_real_set_render_state);
     const HRESULT hr = original ? original(self, state, value) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"state\":" << static_cast<unsigned>(state)
           << ",\"value\":" << value;
-        writer().write_event("set_render_state", f.str());
+        writer().write_render_event("set_render_state", f.str());
     }
     return hr;
 }
@@ -2274,13 +2469,13 @@ HRESULT STDMETHODCALLTYPE hook_set_texture_stage_state(
     const auto original = original_method_for<SetTextureStageStateFn>(
         self, SLOT_SET_TEXTURE_STAGE_STATE, g_real_set_texture_stage_state);
     const HRESULT hr = original ? original(self, stage, type, value) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"stage\":" << stage
           << ",\"state\":" << static_cast<unsigned>(type)
           << ",\"value\":" << value;
-        writer().write_event("set_texture_stage_state", f.str());
+        writer().write_render_event("set_texture_stage_state", f.str());
     }
     return hr;
 }
@@ -2293,13 +2488,13 @@ HRESULT STDMETHODCALLTYPE hook_set_sampler_state(
     const auto original = original_method_for<SetSamplerStateFn>(
         self, SLOT_SET_SAMPLER_STATE, g_real_set_sampler_state);
     const HRESULT hr = original ? original(self, sampler, type, value) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"sampler\":" << sampler
           << ",\"state\":" << static_cast<unsigned>(type)
           << ",\"value\":" << value;
-        writer().write_event("set_sampler_state", f.str());
+        writer().write_render_event("set_sampler_state", f.str());
     }
     return hr;
 }
@@ -2310,14 +2505,14 @@ HRESULT STDMETHODCALLTYPE hook_set_scissor_rect(
     const auto original = original_method_for<SetScissorRectFn>(
         self, SLOT_SET_SCISSOR_RECT, g_real_set_scissor_rect);
     const HRESULT hr = original ? original(self, rect) : E_FAIL;
-    if (SUCCEEDED(hr) && rect && capture_frame_active()) {
+    if (SUCCEEDED(hr) && rect && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"left\":" << rect->left
           << ",\"top\":" << rect->top
           << ",\"right\":" << rect->right
           << ",\"bottom\":" << rect->bottom;
-        writer().write_event("set_scissor_rect", f.str());
+        writer().write_render_event("set_scissor_rect", f.str());
     }
     return hr;
 }
@@ -2332,13 +2527,13 @@ HRESULT STDMETHODCALLTYPE hook_draw_primitive(
     const HRESULT hr = original
         ? original(self, primitive_type, start_vertex, primitive_count)
         : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
           << ",\"start_vertex\":" << start_vertex
           << ",\"primitive_count\":" << primitive_count;
-        writer().write_event("draw_primitive", f.str());
+        writer().write_render_event("draw_primitive", f.str());
     }
     return hr;
 }
@@ -2354,14 +2549,14 @@ HRESULT STDMETHODCALLTYPE hook_draw_primitive_up(
     const HRESULT hr = original
         ? original(self, primitive_type, primitive_count, vertex_data, vertex_stride)
         : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
           << ",\"primitive_count\":" << primitive_count
           << ",\"vertex_data_ptr\":" << CaptureWriter::ptr(vertex_data)
           << ",\"vertex_stride\":" << vertex_stride;
-        writer().write_event("draw_primitive_up", f.str());
+        writer().write_render_event("draw_primitive_up", f.str());
     }
     return hr;
 }
@@ -2383,7 +2578,7 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive_up(
             self, primitive_type, min_vertex_index, num_vertices, primitive_count,
             index_data, index_format, vertex_data, vertex_stride)
         : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
@@ -2394,7 +2589,7 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive_up(
           << ",\"index_format\":" << static_cast<unsigned>(index_format)
           << ",\"vertex_data_ptr\":" << CaptureWriter::ptr(vertex_data)
           << ",\"vertex_stride\":" << vertex_stride;
-        writer().write_event("draw_indexed_primitive_up", f.str());
+        writer().write_render_event("draw_indexed_primitive_up", f.str());
     }
     return hr;
 }
@@ -2406,14 +2601,14 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
     const auto original = original_method_for<SetTextureFn>(
         self, SLOT_SET_TEXTURE, g_real_set_texture);
     const HRESULT hr = original ? original(self, stage, texture) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"stage\":" << stage;
         append_texture_descriptor_json(f, texture);
         append_texture_snapshot_json(f, self, stage, texture);
-        writer().write_event("set_texture", f.str());
+        writer().write_render_event("set_texture", f.str());
     }
     return hr;
 }
@@ -2442,11 +2637,11 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader(
     const auto original = original_method_for<SetVertexShaderFn>(
         self, SLOT_SET_VERTEX_SHADER, g_real_set_vertex_shader);
     const HRESULT hr = original ? original(self, shader) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
-        writer().write_event("set_vertex_shader", f.str());
+        writer().write_render_event("set_vertex_shader", f.str());
     }
     return hr;
 }
@@ -2461,7 +2656,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader_constant_f(
     const HRESULT hr = original
         ? original(self, start_register, data, vector4f_count)
         : E_FAIL;
-    if (SUCCEEDED(hr) && data && vector4f_count && capture_frame_active()) {
+    if (SUCCEEDED(hr) && data && vector4f_count && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"start_register\":" << start_register
@@ -2473,7 +2668,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader_constant_f(
             f << CaptureWriter::float_json(data[i]);
         }
         f << "]";
-        writer().write_event("set_vertex_shader_constant_f", f.str());
+        writer().write_render_event("set_vertex_shader_constant_f", f.str());
     }
     return hr;
 }
@@ -2502,11 +2697,11 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader(
     const auto original = original_method_for<SetPixelShaderFn>(
         self, SLOT_SET_PIXEL_SHADER, g_real_set_pixel_shader);
     const HRESULT hr = original ? original(self, shader) : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
-        writer().write_event("set_pixel_shader", f.str());
+        writer().write_render_event("set_pixel_shader", f.str());
     }
     return hr;
 }
@@ -2521,7 +2716,7 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader_constant_f(
     const HRESULT hr = original
         ? original(self, start_register, data, vector4f_count)
         : E_FAIL;
-    if (SUCCEEDED(hr) && data && vector4f_count && capture_frame_active()) {
+    if (SUCCEEDED(hr) && data && vector4f_count && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"start_register\":" << start_register
@@ -2533,7 +2728,7 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader_constant_f(
             f << CaptureWriter::float_json(data[i]);
         }
         f << "]";
-        writer().write_event("set_pixel_shader_constant_f", f.str());
+        writer().write_render_event("set_pixel_shader_constant_f", f.str());
     }
     return hr;
 }
@@ -2553,7 +2748,7 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
             self, primitive_type, base_vertex_index, min_vertex_index,
             num_vertices, start_index, primitive_count)
         : E_FAIL;
-    if (SUCCEEDED(hr) && capture_frame_active()) {
+    if (SUCCEEDED(hr) && capture_render_event_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
@@ -2562,7 +2757,7 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
           << ",\"num_vertices\":" << num_vertices
           << ",\"start_index\":" << start_index
           << ",\"primitive_count\":" << primitive_count;
-        writer().write_event("draw_indexed_primitive", f.str());
+        writer().write_render_event("draw_indexed_primitive", f.str());
     }
     return hr;
 }
@@ -2665,7 +2860,11 @@ void patch_device(IDirect3DDevice9* device) {
            << ",\"hook_count\":" << patches.size()
            << ",\"bounded_capture\":" << (bounded_capture_enabled() ? "true" : "false")
            << ",\"capture_frame_start\":" << capture_frame_start()
-           << ",\"capture_frame_end\":" << capture_frame_end();
+           << ",\"capture_frame_end\":" << capture_frame_end()
+           << ",\"trigger_capture\":" << (trigger_capture_enabled() ? "true" : "false")
+           << ",\"trigger_pre_frames\":" << trigger_pre_frames()
+           << ",\"trigger_post_frames\":" << trigger_post_frames()
+           << ",\"trigger_virtual_key\":" << trigger_virtual_key();
     writer().write_event("device_hooks", fields.str());
 }
 
