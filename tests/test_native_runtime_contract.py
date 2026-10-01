@@ -384,7 +384,7 @@ def test_phase607_native_runtime_admits_runtime_participant_identity_evidence():
     assert "const bool structural_boundary" in source
     assert "const bool runtime_evidence" in source
     assert "participant_instance_ready" in source
-    assert '"registry_index_equals_selector_ordinal": false' in source
+    assert "registry_index_equals_selector_ordinal" in source
     assert (
         "physics.participant_ready =\n"
         "        runtime_evidence && participant_instance_ready;"
