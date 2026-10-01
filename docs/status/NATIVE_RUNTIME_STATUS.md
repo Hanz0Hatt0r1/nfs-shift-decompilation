@@ -886,3 +886,39 @@ Phase 633 does not fabricate a fixed-step trigger.
 Remaining blockers are authentic per-frame BODY/raw relation state, mutation
 event provenance/timing, provider-present execution and persistent vehicle
 transform/motion integration.
+
+## Phase 634 named vehicle-slot relation-state dispatch
+
+The Phase 633 mutation kernel now has a source-backed four-slot dispatcher for
+the recovered vehicle component layout.
+
+The dispatcher preserves the exact component geometry recovered from the retail
+binary: base `0x400`, stride `0xA80`, slots 0..3 = FL/FR/RL/RR, wheel BODY
+field `+0x420`, spindle BODY field `+0x424`, and named `rear_axle` BODY at
+vehicle `+0x2E00`.
+
+A `VehicleConstraintBodyIdentityMap` translates those names into the existing
+CSRF BODY-index domain. For a caller-supplied spindle-presence state, the
+dispatcher follows the exact `FUN_00757d2c` branch:
+
+- spindle absent: JOINT/HINGE set-only mutation for
+  `slot.wheel ↔ rear_axle`;
+- spindle present: BAR set-only mutation for every relation touching
+  `slot.spindle`.
+
+All named BODY indices are checked against the CSRF BODY domain, and slots
+outside 0..3 fail closed. The native checker executes all four component
+offsets and verifies that a repeated BAR match does not clear or re-toggle an
+already-set bit.
+
+The dispatcher is still not referenced by `shift_runtime`. Phase 634 does
+not assign the semantic identity of the triggering event, synthesize spindle
+presence, or place the call on the fixed-step timeline. The next physics
+evidence gate is a retail runtime observation of slot trigger, spindle
+presence, and call ordering relative to the solver frame before CRRF mutation
+can be scheduled.
+
+Remaining blockers are authentic per-frame BODY/raw relation state, mutation
+event provenance/timing, provider-present execution and persistent vehicle
+transform/motion integration.
+
