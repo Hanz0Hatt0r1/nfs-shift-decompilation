@@ -353,6 +353,30 @@ jobs:
             out/vulkan/runtime/constraint_relation_reset_frame.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/constraint_relation_reset_frame.json
+      - name: Native FUN_00757d2c relation state mutation
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_constraint_relation_state_mutation
+          native_runtime/build/shift_runtime_constraint_relation_state_mutation_check \
+            | tee out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"format": "SHIFT.NativeConstraintRelationStateMutationCheck/1"' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"source_function": "FUN_00757d2c"' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"pair_branch_joint_hinge": true' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"pair_match_unordered": true' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"bar_branch_endpoint_match": true' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"mutation_set_only": true' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"scheduler_integrated": false' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"event_timing_assigned": false' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/constraint_relation_state_mutation.json
       - name: Native FUN_007bc680 preprojection seed
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
