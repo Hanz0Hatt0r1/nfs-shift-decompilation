@@ -62,6 +62,7 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
     assert (output / "attach.gdb").read_text(encoding="utf-8").endswith("continue\n")
     assert result["probe"]["expected_captures"] == [
         "relation_state_mutation_events.jsonl",
+        "frame_entry_XXXXXX.json",
         "pre_solve_XXXXXX.json",
         "post_solve_XXXXXX.json",
         "provider_pre_<provider>_<hit>.json",
