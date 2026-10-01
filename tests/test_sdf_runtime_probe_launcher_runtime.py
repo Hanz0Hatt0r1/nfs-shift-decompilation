@@ -13,6 +13,7 @@ def test_build_gdb_command_file_is_deterministic(tmp_path):
     assert command == (
         f"set pagination off\n"
         f"set confirm off\n"
+        f"handle SIGUSR1 nostop noprint pass\n"
         f"source {(tmp_path / 'probe.py').resolve()}\n"
         f"sdf-probe {(tmp_path / 'capture').resolve()}\n"
         "continue\n"
@@ -28,6 +29,7 @@ def test_build_gdb_command_file_supports_provider_only_mode(tmp_path):
     assert command == (
         f"set pagination off\n"
         f"set confirm off\n"
+        f"handle SIGUSR1 nostop noprint pass\n"
         f"source {(tmp_path / 'probe.py').resolve()}\n"
         f"sdf-probe {(tmp_path / 'capture').resolve()} --provider-only\n"
         "continue\n"
@@ -194,6 +196,14 @@ def test_build_attach_command_uses_explicit_pid_and_script(monkeypatch, tmp_path
     assert command == [
         "/usr/bin/gdb",
         "-q",
+        "-iex",
+        "set pagination off",
+        "-iex",
+        "set confirm off",
+        "-iex",
+        "set debuginfod enabled off",
+        "-iex",
+        "handle SIGUSR1 nostop noprint pass",
         "-p",
         "12345",
         "-x",
@@ -284,6 +294,7 @@ def test_phase642_build_gdb_command_file_bounded_full_mode_detaches(tmp_path):
     assert command == (
         "set pagination off\n"
         "set confirm off\n"
+        "handle SIGUSR1 nostop noprint pass\n"
         f"source {(tmp_path / 'probe.py').resolve()}\n"
         f"sdf-probe {(tmp_path / 'capture').resolve()} --capture-frames 3\n"
         "continue\n"
