@@ -210,6 +210,11 @@ def test_phase638_full_attach_blocks_when_gdb_session_fails_even_if_timeline_rea
         "build_sdf_runtime_probe_evidence_bundle",
         lambda output: _bundle(),
     )
+    monkeypatch.setattr(
+        tool,
+        "verify_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _verification(),
+    )
 
     result = tool.main(
         [
@@ -299,6 +304,11 @@ def test_phase639_full_attach_reports_portable_evidence_bundle(
         tool,
         "build_sdf_runtime_probe_evidence_bundle",
         lambda output: _bundle(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "verify_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _verification(),
     )
 
     result = tool.main(
