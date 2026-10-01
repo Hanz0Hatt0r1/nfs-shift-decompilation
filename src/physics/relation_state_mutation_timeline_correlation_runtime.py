@@ -430,7 +430,6 @@ def analyze_relation_state_mutation_capture_directory(
         anchors,
         loader_errors=loader_errors,
     )
-    report["capture_directory"] = str(Path(capture_directory))
     return report
 
 
