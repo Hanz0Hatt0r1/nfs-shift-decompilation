@@ -267,6 +267,15 @@ std::unordered_map<const void*, std::string> g_vertex_shader_signatures;
 std::unordered_map<const void*, std::string> g_pixel_shader_signatures;
 std::unordered_set<std::string> g_fired_resource_triggers;
 
+struct ResourceSignatureUsage {
+    unsigned long long count = 0;
+    unsigned long long first_frame = 0;
+    unsigned long long last_frame = 0;
+    std::string bind_event;
+};
+
+std::unordered_map<std::string, ResourceSignatureUsage> g_resource_signature_usage;
+
 std::once_flag g_crash_diag_once;
 PVOID g_crash_handler = nullptr;
 HANDLE g_crash_log = INVALID_HANDLE_VALUE;
@@ -561,6 +570,7 @@ void ensure_crash_diagnostics() {
 bool env_enabled(const char* name);
 unsigned long long env_u64(const char* name, unsigned long long fallback);
 bool trigger_capture_enabled();
+bool signature_discovery_enabled();
 unsigned long long trigger_pre_frames();
 unsigned long long trigger_post_frames();
 
@@ -706,6 +716,7 @@ struct CaptureWriter {
     void write_render_event(
         const std::string& event,
         const std::string& fields) {
+        if (signature_discovery_enabled()) return;
         std::lock_guard<std::mutex> lock(mutex);
         ensure_open();
         BufferedLine line = make_line(event, fields);
@@ -813,6 +824,12 @@ unsigned long long env_u64(const char* name, unsigned long long fallback) {
     char* end = nullptr;
     unsigned long long parsed = std::strtoull(value, &end, 0);
     return (end && *end == '\0') ? parsed : fallback;
+}
+
+bool signature_discovery_enabled() {
+    static const bool enabled =
+        env_enabled("SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY");
+    return enabled;
 }
 
 bool resource_trigger_enabled() {
@@ -956,10 +973,48 @@ std::string get_resource_signature(
     return it == table.end() ? std::string{} : it->second;
 }
 
+void record_resource_signature_use(
+    const std::string& bind_event,
+    const std::string& signature,
+    const void* object) {
+    if (!signature_discovery_enabled() || signature.empty()) return;
+
+    const unsigned long long frame = g_frame.load();
+    unsigned long long count = 0;
+    unsigned long long first_frame = frame;
+    {
+        std::lock_guard<std::mutex> lock(g_resource_signature_mutex);
+        auto& usage = g_resource_signature_usage[lowercase_trimmed(signature)];
+        if (usage.count == 0) {
+            usage.first_frame = frame;
+            usage.bind_event = bind_event;
+        }
+        ++usage.count;
+        usage.last_frame = frame;
+        count = usage.count;
+        first_frame = usage.first_frame;
+    }
+
+    // Emit logarithmic checkpoints: 1,2,4,8,... This keeps a full-run
+    // discovery log compact while preserving an accurate lower bound even
+    // if the process does not exit cleanly.
+    if ((count & (count - 1)) != 0) return;
+
+    std::ostringstream fields;
+    fields << "\"bind_event\":" << CaptureWriter::quote(bind_event)
+           << ",\"resource_signature\":" << CaptureWriter::quote(signature)
+           << ",\"resource_ptr\":" << CaptureWriter::ptr(object)
+           << ",\"use_count\":" << count
+           << ",\"first_frame\":" << first_frame
+           << ",\"last_frame\":" << frame;
+    writer().write_event("resource_signature_use", fields.str());
+}
+
 bool maybe_trigger_for_resource(
     const std::string& bind_event,
     const std::string& signature,
     const void* object) {
+    record_resource_signature_use(bind_event, signature, object);
     if (signature.empty() || !resource_trigger_matches(signature)) return false;
     if (resource_trigger_already_fired(signature)) return false;
     if (!writer().trigger(g_frame.load())) return false;
@@ -3091,7 +3146,8 @@ void patch_device(IDirect3DDevice9* device) {
            << ",\"trigger_virtual_key\":" << trigger_virtual_key()
            << ",\"resource_trigger_enabled\":" << (resource_trigger_enabled() ? "true" : "false")
            << ",\"resource_trigger_rule_count\":" << resource_trigger_rules().size()
-           << ",\"resource_trigger_repeat\":" << (resource_trigger_repeat_enabled() ? "true" : "false");
+           << ",\"resource_trigger_repeat\":" << (resource_trigger_repeat_enabled() ? "true" : "false")
+           << ",\"signature_discovery\":" << (signature_discovery_enabled() ? "true" : "false");
     writer().write_event("device_hooks", fields.str());
 }
 
