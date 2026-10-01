@@ -147,6 +147,30 @@ jobs:
             out/vulkan/runtime/joint_projection.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/joint_projection.json
+      - name: Native FUN_007bac60 JOINT projection
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_joint_projection
+          native_runtime/build/shift_runtime_joint_projection_check \
+            | tee out/vulkan/runtime/joint_projection.json
+          grep -q '"format": "SHIFT.NativeJointProjectionCheck/1"' \
+            out/vulkan/runtime/joint_projection.json
+          grep -q '"source_function": "FUN_007bac60"' \
+            out/vulkan/runtime/joint_projection.json
+          grep -q '"scale_source_function": "FUN_0070fe90"' \
+            out/vulkan/runtime/joint_projection.json
+          grep -q '"sample_stride": 64' \
+            out/vulkan/runtime/joint_projection.json
+          grep -q '"scalar_width": 3' \
+            out/vulkan/runtime/joint_projection.json
+          grep -q '"range_rejected": true' \
+            out/vulkan/runtime/joint_projection.json
+          grep -q '"non_finite_rejected": true' \
+            out/vulkan/runtime/joint_projection.json
+          grep -q '"full_fun_007bc680_executed": false' \
+            out/vulkan/runtime/joint_projection.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/joint_projection.json
       - name: Native BODY solver export parity
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
