@@ -1002,3 +1002,23 @@ The output format is
 keeps `native_scheduler_admission=false` and
 `semantic_event_inference=false`. An authentic retail capture producing a
 ready report remains the next evidence gate.
+
+
+## Phase 638 automatic mutation-capture finalization
+
+The explicit-PID full-mode launcher now runs the Phase 637 timeline correlator
+automatically after the GDB session returns. A successful capture writes
+`relation_state_mutation_timeline.json` and the launcher exits successfully
+only when both the GDB return code and the correlation report are ready.
+
+Provider-only mode deliberately skips this step because it does not install
+the relation-state mutation observer or frame-entry anchor.
+
+`probe_manifest.json` now records whether automatic timeline correlation is
+applicable and the expected post-capture output path/format. The GDB probe and
+launcher also add `src/physics` explicitly to their import path so embedded
+GDB Python does not depend on project-root `sitecustomize.py` startup.
+
+This removes a manual post-processing step without changing the evidence
+boundary: missing or inconsistent runtime capture data still blocks Phase 637,
+and no native mutation scheduling is authorized.

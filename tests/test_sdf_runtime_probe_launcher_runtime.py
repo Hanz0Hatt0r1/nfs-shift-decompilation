@@ -70,6 +70,15 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
         "provider_reset_effects.jsonl",
     ]
     assert result["probe"]["mode"] == "full"
+    assert result["post_capture"] == {
+        "automatic_timeline_correlation": True,
+        "timeline_output": str(
+            output.resolve() / "relation_state_mutation_timeline.json"
+        ),
+        "timeline_format": (
+            "SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1"
+        ),
+    }
     assert result["probe"]["expected_captures"] == [
         "relation_state_mutation_events.jsonl",
         "pre_solve_XXXXXX.json",
@@ -244,6 +253,11 @@ def test_prepare_probe_bundle_provider_only_expected_captures(tmp_path, monkeypa
         provider_only=True,
     )
     assert result["probe"]["mode"] == "provider-only"
+    assert result["post_capture"] == {
+        "automatic_timeline_correlation": False,
+        "timeline_output": None,
+        "timeline_format": None,
+    }
     assert result["probe"]["expected_captures"] == [
         "provider_pre_<provider>_<hit>.json",
         "provider_post_<provider>_<hit>.json",

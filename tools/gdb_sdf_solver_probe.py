@@ -21,8 +21,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+PHYSICS_SRC = ROOT / "src" / "physics"
+for path in (ROOT, PHYSICS_SRC):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 import gdb
 

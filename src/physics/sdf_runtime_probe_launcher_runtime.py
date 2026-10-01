@@ -129,6 +129,19 @@ def prepare_probe_bundle(
             "mode": "provider-only" if provider_only else "full",
             "expected_captures": expected_captures,
         },
+        "post_capture": {
+            "automatic_timeline_correlation": not provider_only,
+            "timeline_output": (
+                None
+                if provider_only
+                else str(output / "relation_state_mutation_timeline.json")
+            ),
+            "timeline_format": (
+                None
+                if provider_only
+                else "SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1"
+            ),
+        },
         "limitations": [
             "A live 32-bit Wine SHIFT.exe process is required for capture.",
             "The launcher never guesses a target process PID.",

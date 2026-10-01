@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 636. Current development: Phase 637.**
+**Current mainline: Phase 637. Current development: Phase 638.**
 
 
 
@@ -35,6 +35,8 @@ Phase 635 extends the full retail GDB SDF probe with an observer at `FUN_00757d2
 Phase 636 closes the static caller set behind the Phase 635 return-address field. Raw executable disassembly contains exactly five direct `FUN_00757d20` calls: four fixed FL/FR/RL/RR setup calls in `FUN_0076ed60` and one slot-dynamic runtime-threshold call in `FUN_0079a050`. The probe helper classifies exact call/return addresses, source function and caller kind; fixed setup callers additionally require exact slot agreement. Unknown callers remain observable but are not call-site-ready. The next gate remains authentic capture plus fail-closed offline correlation against the existing runtime event timeline.
 
 Phase 637 adds `SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1`, an offline fail-closed join over the Phase 635 mutation stream and captured frame-entry/reset/builtin-or-provider-solve/post-solve anchors. It uses only the shared `runtime_event_sequence`, requires Phase 636 call-site readiness, validates exact frame-index/frame-entry sequence identity, rejects sequence collisions and preserves nearest before/after anchors without inferring gameplay semantics or native scheduler timing. The next evidence gate is an authentic full-mode retail capture that produces a ready correlation report.
+
+Phase 638 integrates that correlation into the explicit-PID full-mode launcher. After GDB returns, `tools/run_sdf_solver_probe.py` automatically emits `relation_state_mutation_timeline.json` and returns success only when both the GDB session and Phase 637 report are ready; provider-only mode intentionally skips the relation timeline. The GDB probe also imports `src/physics` explicitly, removing an embedded-Python dependency on root `sitecustomize.py`. The next gate remains the authentic retail capture itself, now with automatic fail-closed post-processing.
 
 Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
 
