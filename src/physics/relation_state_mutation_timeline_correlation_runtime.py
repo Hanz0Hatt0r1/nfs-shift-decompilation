@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from sdf_runtime_probe_capture_session import validate_capture_session_id
+
 FORMAT = "SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1"
 MUTATION_FORMAT = "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1"
 
@@ -85,6 +87,7 @@ def _normalize_anchor(
         "kind": kind,
         "runtime_event_sequence": _event_sequence(row),
         "frame_index": _frame_index(row),
+        "capture_session_id": row.get("capture_session_id"),
         "source": source,
     }
 
@@ -163,6 +166,7 @@ def _validate_anchor_rows(
                 "kind": kind,
                 "runtime_event_sequence": sequence,
                 "frame_index": _as_int(anchor.get("frame_index")),
+                "capture_session_id": anchor.get("capture_session_id"),
                 "source": str(source),
             }
         )
@@ -174,12 +178,47 @@ def _validate_anchor_rows(
 def _anchor_view(anchor: Mapping[str, Any] | None) -> dict[str, Any] | None:
     if anchor is None:
         return None
-    return {
+    view = {
         "kind": anchor["kind"],
         "runtime_event_sequence": anchor["runtime_event_sequence"],
         "frame_index": anchor.get("frame_index"),
         "source": anchor.get("source"),
     }
+    if anchor.get("capture_session_id") is not None:
+        view["capture_session_id"] = anchor["capture_session_id"]
+    return view
+
+
+def _try_capture_session_id(value: Any) -> str | None:
+    if value is None:
+        return None
+    try:
+        return validate_capture_session_id(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _capture_session_context(
+    mutations: Sequence[Mapping[str, Any]],
+    anchors: Sequence[Mapping[str, Any]],
+) -> tuple[bool, str | None]:
+    session_aware = any(
+        mutation.get("capture_session_id") is not None
+        for mutation in mutations
+    ) or any(
+        anchor.get("capture_session_id") is not None
+        for anchor in anchors
+    )
+    if not session_aware:
+        return False, None
+
+    for row in (*mutations, *anchors):
+        session_id = _try_capture_session_id(
+            row.get("capture_session_id")
+        )
+        if session_id is not None:
+            return True, session_id
+    return True, None
 
 
 def _nearest_anchors(
@@ -208,6 +247,36 @@ def correlate_relation_state_mutation_events(
     """Correlate mutation events with captured timeline anchors, fail closed."""
     normalized_anchors, anchor_errors = _validate_anchor_rows(anchors)
     errors = list(loader_errors) + anchor_errors
+    session_aware, capture_session_id = _capture_session_context(
+        mutations,
+        normalized_anchors,
+    )
+
+    if session_aware:
+        for anchor in normalized_anchors:
+            source = str(anchor["source"])
+            raw_session_id = anchor.get("capture_session_id")
+            if raw_session_id is None:
+                errors.append(
+                    f"anchor-capture-session-id-missing:{source}"
+                )
+                continue
+            normalized_session_id = _try_capture_session_id(
+                raw_session_id
+            )
+            if normalized_session_id is None:
+                errors.append(
+                    f"anchor-capture-session-id-invalid:{source}"
+                )
+                continue
+            anchor["capture_session_id"] = normalized_session_id
+            if (
+                capture_session_id is not None
+                and normalized_session_id != capture_session_id
+            ):
+                errors.append(
+                    f"anchor-capture-session-id-mismatch:{source}"
+                )
 
     if not mutations:
         errors.append("no-relation-state-mutation-events")
@@ -272,6 +341,29 @@ def correlate_relation_state_mutation_events(
         )
         callsite_kind = callsite_map.get("kind")
         source_function = callsite_map.get("source_function")
+        mutation_session_id = None
+
+        if session_aware:
+            raw_session_id = mutation.get("capture_session_id")
+            if raw_session_id is None:
+                event_errors.append(
+                    "mutation-capture-session-id-missing"
+                )
+            else:
+                mutation_session_id = _try_capture_session_id(
+                    raw_session_id
+                )
+                if mutation_session_id is None:
+                    event_errors.append(
+                        "mutation-capture-session-id-invalid"
+                    )
+                elif (
+                    capture_session_id is not None
+                    and mutation_session_id != capture_session_id
+                ):
+                    event_errors.append(
+                        "mutation-capture-session-id-mismatch"
+                    )
 
         if mutation.get("format") != MUTATION_FORMAT:
             event_errors.append("mutation-format-invalid")
@@ -355,8 +447,7 @@ def correlate_relation_state_mutation_events(
             f"{following['kind'] if following is not None else 'capture-end'}"
         )
 
-        correlated.append(
-            {
+        event = {
                 "event_index": index,
                 "ready": not event_errors,
                 "errors": event_errors,
@@ -386,13 +477,15 @@ def correlate_relation_state_mutation_events(
                 "next_anchor": _anchor_view(following),
                 "anchor_window": anchor_window,
             }
-        )
+        if session_aware:
+            event["capture_session_id"] = mutation_session_id
+        correlated.append(event)
         errors.extend(
             f"mutation:{index}:{error}"
             for error in event_errors
         )
 
-    return {
+    report = {
         "format": FORMAT,
         "version": 1,
         "status": "ready" if not errors else "blocked",
@@ -417,6 +510,12 @@ def correlate_relation_state_mutation_events(
             "semantic_event_inference": False,
         },
     }
+    if session_aware:
+        report["capture_session_id"] = capture_session_id
+        report["evidence_boundary"][
+            "capture_session_identity_required"
+        ] = True
+    return report
 
 
 def analyze_relation_state_mutation_capture_directory(
