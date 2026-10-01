@@ -586,3 +586,21 @@ at `1e-12` parity tolerance.
 
 HINGE↔BAR coupling inside the same retail function, complete HINGE iteration and
 sparse row-pointer writes remain separate gates.
+
+
+## Phase 622 native FUN_007bb250 HINGE↔BAR matrix coupling
+
+The native physics library now executes the remaining source-backed mixed block
+inside `FUN_007bb250`: HINGE↔BAR 2×1/1×2 coupling.
+
+The implementation reuses the Phase 621 HINGE `FUN_007aefb0` row-transform
+boundary, evaluates the exact d5/d6 BAR point/direction expressions, then
+stores them with the retail scalar-base orientation and equal/different-side
+sign rule.
+
+`shift_runtime_hinge_bar_matrix_coupling_check` freezes the existing Python
+oracle `d5=3, d6=-6`, both orientation/sign branches, bounded writes and
+range/non-finite rejection at `1e-12` parity tolerance.
+
+All currently recovered block algebra in `FUN_007bb250` is now native.
+Complete HINGE iteration/sparse writes and BAR/BAR `FUN_007bb6c0` remain.
