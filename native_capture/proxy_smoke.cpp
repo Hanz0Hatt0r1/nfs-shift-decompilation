@@ -4,6 +4,7 @@
 #include <d3d9.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 
 namespace {
@@ -24,9 +25,9 @@ int wmain(int argc, wchar_t** argv) {
         return 2;
     }
 
-    SetEnvironmentVariableW(L"SHIFT_D3D9_CAPTURE_MODE", L"passthrough");
-    SetEnvironmentVariableW(L"SHIFT_D3D9_CAPTURE_FLUSH", L"1");
-    if (argc >= 3) SetEnvironmentVariableW(L"SHIFT_D3D9_CAPTURE", argv[2]);
+    _wputenv_s(L"SHIFT_D3D9_CAPTURE_MODE", L"passthrough");
+    _wputenv_s(L"SHIFT_D3D9_CAPTURE_FLUSH", L"1");
+    if (argc >= 3) _wputenv_s(L"SHIFT_D3D9_CAPTURE", argv[2]);
 
     HMODULE proxy = LoadLibraryW(argv[1]);
     if (!proxy) {
