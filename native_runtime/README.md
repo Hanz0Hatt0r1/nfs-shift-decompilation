@@ -788,6 +788,9 @@ CRRF carries only the source-order low bit tested at retail
 GBCF sample identified by CSRF, and reset widths are fixed by relation type:
 JOINT 3, HINGE 2, BAR 1. The packet never stores reset-node indices.
 
-When CRRF is supplied, `shift_runtime` uses the derived nodes for
-`FUN_007b2210`; the SBFR reset list remains available only to the legacy
-no-CRRF execution path.
+When CRRF is supplied, `shift_runtime` reconstructs the retail reset-call
+sequence, normalizes it to a reset-node set and requires exact equality with
+`SBFR.reset_nodes` before every solve. The unchanged SBFR
+`FUN_007b2210 → FUN_007b0f20` oracle then executes. Repeated reset calls are
+preserved by the selector before set normalization, and no unsupported
+whole-domain coverage rule is imposed.
