@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 642. Current development: Phase 643.**
+**Current mainline: Phase 643. Current development: Phase 644.**
 
 
 
@@ -46,7 +46,7 @@ Phase 641 adds `SHIFT.SDFRuntimeProbeEvidenceBundleReplay/1`: after Phase 640 ve
 
 Phase 642 adds optional bounded full-mode capture through `--capture-frames N`. The Nth `FUN_007b4110` post-solve snapshot becomes the terminal GDB stop; the generated command script then detaches and quits outside the breakpoint callback. Provider-only bounded capture is rejected, and partial mid-frame evidence remains blocked by the existing Phase 637–641 gates. The next gate remains authentic retail capture, now with a short-lived debugger option.
 
-Phase 643 adds explicit capture-session identity and stale-artifact hygiene. Launcher preparation generates a fresh 128-bit session id, removes only known generated evidence from a reused output directory after executable validation, passes the id to GDB and records exactly what was removed. Every GDB evidence payload is stamped with the same session id, while the GDB command independently refuses to start if stale generated evidence is present and resets per-session event/reset/frame state on reinstall. The evidence boundary is unchanged: authentic retail capture is still required before native relation-state scheduling.
+Phase 643 adds explicit capture-session identity and stale-artifact hygiene. Launcher preparation generates a fresh 128-bit session id, removes only known generated evidence from a reused output directory after executable validation, passes the id to GDB and records exactly what was removed. Every GDB evidence payload is stamped with the same session id, while the GDB command independently refuses to start if stale generated evidence is present and resets per-session event/reset/frame state on reinstall. The evidence boundary is unchanged: authentic retail capture is still required before native relation-state scheduling.\n\nPhase 644 makes that identity a fail-closed Phase 637 correlation gate. If any timeline-contributing record is session-stamped, every relation mutation plus frame-entry, builtin/provider solve, scalar-reset and post-solve anchor must carry the same valid 32-hex capture session id. Mixed, malformed or partially unstamped session-aware captures are blocked, while historical fully unstamped fixtures retain their legacy report shape. The next gate remains an authentic retail capture.
 
 Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
 
