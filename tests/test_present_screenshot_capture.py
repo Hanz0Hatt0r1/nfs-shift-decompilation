@@ -433,3 +433,13 @@ def test_trigger_buffer_payloads_defer_disk_io_until_trigger():
     assert "write_buffer_payload_file(" in source
     assert "g_deferred_buffer_payloads.clear();" in source
     assert "discard_deferred_buffer_payload(*out_buffer);" in source
+
+
+def test_wine_launcher_warns_on_portproton_prefix_with_external_wine():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'portproton_root="${wine_prefix%%/data/prefixes/*}"' in wine
+    assert 'PW_WINE_USE' in wine
+    assert 'wine_resolved="$(command -v "$wine_command")"' in wine
+    assert 'PortProton prefix is being launched with Wine outside the PortProton tree' in wine
+    assert 'use --wine with the Wine/Proton binary selected by PortProton' in wine
