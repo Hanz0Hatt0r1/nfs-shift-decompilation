@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 645. Current development: Phase 646.**
+**Current mainline: Phase 646. Current development: Phase 647.**
 
 
 
@@ -230,3 +230,11 @@ The first reproducible native slice requires:
 - no runtime dependency on original BFF parsing.
 
 Physics equivalence is a separate workstream.
+
+
+Phase 647 changes the relation-mutation capture termination policy after an
+authentic 600-frame lightweight session produced 1200 contiguous anchors but no
+mutation. `--stop-on-relation-mutation` now stops after the first authentic
+`FUN_00757d2c` event and can be paired with a large frame budget as a fallback.
+The next evidence run should arm the probe before vehicle/race setup rather than
+guessing a short runtime window.
