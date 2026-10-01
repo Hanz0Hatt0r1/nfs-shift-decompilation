@@ -35,7 +35,12 @@ def test_joint_projection_matches_complete_retail_equation():
         side_flag=0,
     )
     assert result["source_line"] == 819089
-    assert result["lanes"] == pytest.approx([4.95, 17.95, 21.35])
+    assert result["intermediate"] == pytest.approx({
+        "d2": 0.05,
+        "d3": -0.10,
+        "d5": 0.05,
+    })
+    assert result["lanes"] == pytest.approx([9.005, 15.11, 21.515])
     assert result["destination"] == "this +0x150 + scalar_base*8"
 
     negative = runtime.evaluate_joint_projection(
@@ -49,7 +54,7 @@ def test_joint_projection_matches_complete_retail_equation():
         quadratic_scale=3.0,
         side_flag=7,
     )
-    assert negative["lanes"] == pytest.approx([-4.95, -17.95, -21.35])
+    assert negative["lanes"] == pytest.approx([-9.005, -15.11, -21.515])
 
 
 def test_joint_projection_updates_only_its_three_solver_lanes():
