@@ -108,7 +108,7 @@ HingeProjectionResult evaluate_fun_007bae40_hinge(
     double qy = ty;
     double qz = tz;
     if (input.side_flag != 0u) {
-        result.transformed_position_used = true;
+        result.frame_correction_applied = true;
         result.transformed_sample_position =
             transform_fun_007aefb0(
                 input.body_frame,
