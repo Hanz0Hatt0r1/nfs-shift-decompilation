@@ -846,6 +846,23 @@ jobs:
             out/vulkan/runtime/fixed_step_post_solve_join_check.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/fixed_step_post_solve_join_check.json
+          native_runtime/build/shift_runtime_post_solve_persistence_check \
+            out/vulkan/runtime/fixed_step_post_solve/post_solve.sbps 5 \
+            | tee out/vulkan/runtime/fixed_step_post_solve_persistence_check.json
+          grep -q '"format": "SHIFT.NativePostSolvePersistenceCheck/1"' \
+            out/vulkan/runtime/fixed_step_post_solve_persistence_check.json
+          grep -q '"steps": 5' \
+            out/vulkan/runtime/fixed_step_post_solve_persistence_check.json
+          grep -q '"body_count": 11' \
+            out/vulkan/runtime/fixed_step_post_solve_persistence_check.json
+          grep -q '"max_delta_error": 0' \
+            out/vulkan/runtime/fixed_step_post_solve_persistence_check.json
+          grep -q '"max_accumulation_error": 0' \
+            out/vulkan/runtime/fixed_step_post_solve_persistence_check.json
+          grep -q '"persistent_vehicle_state_applied": false' \
+            out/vulkan/runtime/fixed_step_post_solve_persistence_check.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/fixed_step_post_solve_persistence_check.json
       - name: Write deterministic native input script
         run: |
           cat > out/vulkan/runtime/native_input.script <<'EOF'
@@ -906,7 +923,11 @@ jobs:
           grep -q '"physics_post_solve_projection_steps": 5' out/vulkan/runtime/input_script.json
           grep -q '"physics_post_solve_projection_max_solver_join_error": 0' out/vulkan/runtime/input_script.json
           grep -q '"physics_post_solve_projection_max_oracle_error": 0' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_max_delta_error": 0' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_persistent_body_state_enabled": false' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_persistent_body_state_steps": 0' out/vulkan/runtime/input_script.json
           grep -q '"physics_solver_post_solve_body_state_applied": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_solver_persistent_body_accumulator_state_applied": false' out/vulkan/runtime/input_script.json
           grep -q '"physics_solver_persistent_vehicle_state_applied": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_throttle": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_brake": false' out/vulkan/runtime/input_script.json
@@ -920,6 +941,33 @@ jobs:
           grep -q '"vehicle_control_neutral_steps": 1' out/vulkan/runtime/input_script.json
           grep -q '"validation_errors": 0' out/vulkan/runtime/input_script.json
           grep -q '"status": "ok"' out/vulkan/runtime/input_script.json
+      - name: Native Linux runtime persistent BODY accumulator frame loop
+        run: |
+          set -o pipefail
+          xvfb-run -a native_runtime/build/shift_runtime \
+            --scene-set out/vulkan/native_scene_set \
+            --shader-dir native_runtime/build/shaders \
+            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --camera-state out/vulkan/camera/native_camera.json \
+            --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
+            --solver-frame out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
+            --post-solve-projection out/vulkan/runtime/fixed_step_post_solve/post_solve.sbps \
+            --persist-post-solve-body-state \
+            --input-script out/vulkan/runtime/native_input.script \
+            --validation | tee out/vulkan/runtime/input_script_persistent.json
+      - name: Assert persistent BODY accumulator state crosses fixed steps
+        run: |
+          grep -q '"frames_rendered": 5' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"physics_solver_frame_steps": 5' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"physics_post_solve_projection_steps": 5' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"physics_post_solve_projection_max_solver_join_error": 0' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"physics_post_solve_projection_max_delta_error": 0' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"physics_post_solve_persistent_body_state_enabled": true' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"physics_post_solve_persistent_body_state_steps": 5' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"physics_solver_persistent_body_accumulator_state_applied": true' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"physics_solver_persistent_vehicle_state_applied": false' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"validation_errors": 0' out/vulkan/runtime/input_script_persistent.json
+          grep -q '"status": "ok"' out/vulkan/runtime/input_script_persistent.json
       - name: Reject mismatched fixed-step post-solve solved vector
         run: |
           python3 - <<'PY'
