@@ -35,7 +35,7 @@ Phase 602 adds `SHIFT.NativePhysicsParticipantBoundary/1`, joining the source-ba
 Phase 603 ports the source-backed builtin sparse numeric kernel `FUN_007b0f20` into native C++, with deterministic 3×3/4×4 parity and fail-closed graph/zero-pivot tests. It does not execute a complete BMW frame; matrix/RHS assembly, runtime diagonal-reset flags, provider-present dispatch and body-state application remain separate gates.
 
 
-Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `sample+0x70 & 1` evidence rather than inferred statically.
+Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `relation+0x70 & 1` evidence rather than inferred statically.
 
 Phase 605 keeps the PhysicsParticipantManager registry index and IGPhaseVehicle selector ordinal as separate runtime identity domains until an independent join is observed.
 
