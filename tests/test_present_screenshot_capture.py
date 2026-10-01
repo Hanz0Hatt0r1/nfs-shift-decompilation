@@ -299,3 +299,24 @@ def test_resource_trigger_launchers_accept_signature_rules():
     assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER" in wine
     assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT" in wine
     assert "--trigger/--resource-trigger cannot be combined" in wine
+
+
+def test_signature_discovery_suppresses_full_render_stream():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+    powershell = Path("tools/run_shift_capture.ps1").read_text(encoding="utf-8")
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert "SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY" in source
+    assert 'writer().write_event("resource_signature_use"' in source
+    assert "(count & (count - 1)) != 0" in source
+    assert "if (signature_discovery_enabled()) return;" in source
+    assert "record_resource_signature_use(bind_event, signature, object)" in source
+
+    assert "[switch]$SignatureDiscovery" in powershell
+    assert "SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY" in powershell
+    assert "SignatureDiscovery cannot be combined with frame or trigger capture" in powershell
+
+    assert "--signature-discovery" in wine
+    assert "SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY" in wine
+    assert "--signature-discovery cannot be combined with frame or trigger capture" in wine
+    assert "resource_signatures.json" in wine
