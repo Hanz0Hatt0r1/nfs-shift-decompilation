@@ -794,3 +794,25 @@ sequence, normalizes it to a reset-node set and requires exact equality with
 `FUN_007b2210 → FUN_007b0f20` oracle then executes. Repeated reset calls are
 preserved by the selector before set normalization, and no unsupported
 whole-domain coverage rule is imposed.
+
+
+## Phase 633 relation-state mutation kernel
+
+The native physics library now includes the source-backed `FUN_00757d2c`
+bit0 mutation semantics for the relation state consumed by Phase 632.
+
+Run the deterministic regression with:
+
+```bash
+ctest --test-dir native_runtime/build --output-on-failure \\
+  -R shift_runtime_constraint_relation_state_mutation
+native_runtime/build/shift_runtime_constraint_relation_state_mutation_check
+```
+
+The pair branch uses an unordered pair of CSRF BODY identities and sets matching
+JOINT/HINGE bit0 state. The BAR branch uses one BODY identity and sets bit0 for
+every BAR relation touching that endpoint. Existing bits are never cleared.
+
+This is intentionally a library/checker boundary only. `shift_runtime` does
+not schedule the mutation because the retail event identity and timing that
+reach `FUN_00757d2c` through `FUN_00469736` are not yet proven.
