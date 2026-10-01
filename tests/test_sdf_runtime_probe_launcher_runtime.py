@@ -78,6 +78,11 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
         "timeline_format": (
             "SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1"
         ),
+        "automatic_evidence_bundle": True,
+        "evidence_bundle_output": str(
+            output.resolve() / "sdf_capture_evidence.zip"
+        ),
+        "evidence_bundle_format": "SHIFT.SDFRuntimeProbeEvidenceBundle/1",
     }
     assert result["probe"]["expected_captures"] == [
         "relation_state_mutation_events.jsonl",
@@ -257,6 +262,9 @@ def test_prepare_probe_bundle_provider_only_expected_captures(tmp_path, monkeypa
         "automatic_timeline_correlation": False,
         "timeline_output": None,
         "timeline_format": None,
+        "automatic_evidence_bundle": False,
+        "evidence_bundle_output": None,
+        "evidence_bundle_format": None,
     }
     assert result["probe"]["expected_captures"] == [
         "provider_pre_<provider>_<hit>.json",

@@ -141,6 +141,17 @@ def prepare_probe_bundle(
                 if provider_only
                 else "SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1"
             ),
+            "automatic_evidence_bundle": not provider_only,
+            "evidence_bundle_output": (
+                None
+                if provider_only
+                else str(output / "sdf_capture_evidence.zip")
+            ),
+            "evidence_bundle_format": (
+                None
+                if provider_only
+                else "SHIFT.SDFRuntimeProbeEvidenceBundle/1"
+            ),
         },
         "limitations": [
             "A live 32-bit Wine SHIFT.exe process is required for capture.",
