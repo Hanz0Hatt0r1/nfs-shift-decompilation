@@ -462,3 +462,22 @@ keeps a valid-but-mismatched SBEX fail-closed.
 
 This remains an evidence gate: `FUN_007bc680` contribution generation,
 runtime reset selection and provider-present dispatch are still external.
+
+
+## Phase 616 native FUN_007bc680 preprojection seed
+
+The native physics library now executes the deterministic front of
+`FUN_007bc680` before any constraint projection helper is called.
+
+It reproduces the three double residual expressions from BODY offsets
++0x18..+0x58, passes them through the exact `FUN_007aefb0` float-matrix /
+float-input boundary, and prepares the +0x60/+0x68/+0x70 channels scaled by
++0x90.
+
+`shift_runtime_body_preprojection_check` covers identity, nontrivial matrix,
+zero-state and non-finite rejection cases and reports
+`full_constraint_projection_executed=false`.
+
+Native JOINT/HINGE/BAR projection and matrix coupling remain separate gates;
+Phase 616 does not synthesize sampled constraint state or complete
+`FUN_007bc680`.
