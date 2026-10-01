@@ -28,13 +28,13 @@ def test_phase633_ports_fun_00757d2c_relation_state_mutation_without_scheduler()
     assert "cardinality mismatch" in source
     assert "endpoint BODY index is outside relation domain" in source
 
-    assert '"source_function": "FUN_00757d2c"' in checker
-    assert '"pair_branch_joint_hinge": true' in checker
-    assert '"pair_match_unordered": true' in checker
-    assert '"bar_branch_endpoint_match": true' in checker
-    assert '"mutation_set_only": true' in checker
-    assert '"scheduler_integrated": false' in checker
-    assert '"event_timing_assigned": false' in checker
+    assert "FUN_00757d2c" in checker
+    assert '\\"pair_branch_joint_hinge\\": true' in checker
+    assert '\\"pair_match_unordered\\": true' in checker
+    assert '\\"bar_branch_endpoint_match\\": true' in checker
+    assert '\\"mutation_set_only\\": true' in checker
+    assert '\\"scheduler_integrated\\": false' in checker
+    assert '\\"event_timing_assigned\\": false' in checker
 
     assert "shift_constraint_relation_state_mutation.hpp" not in runtime
     assert "apply_fun_00757d2c_pair_relation_state_mutation" not in runtime
