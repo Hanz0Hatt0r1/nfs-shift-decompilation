@@ -922,3 +922,32 @@ Remaining blockers are authentic per-frame BODY/raw relation state, mutation
 event provenance/timing, provider-present execution and persistent vehicle
 transform/motion integration.
 
+
+
+## Phase 635 FUN_0076ed60 relation-state initialization provenance
+
+Raw executable disassembly closes the caller event left open by Phase 634.
+`FUN_0076ed60` updates four component blocks through `FUN_00753020`, then
+tests the copied `component+0x504` bytes in FL → FR → RL → RR order and calls
+`FUN_00757d20(slot)` only for enabled setup slots.
+
+The source configuration geometry is now explicit:
+
+- component records: `param+0x88 + slot*0xA0`;
+- mutation boolean inside each record: `+0x98`;
+- resulting source offsets: `0x120`, `0x1C0`, `0x260`, `0x300`.
+
+`apply_fun_0076ed60_vehicle_relation_state_initialization` walks those slots
+in source order, skips disabled slots and chains each enabled slot through the
+Phase 634 dispatcher so relation bit0 state accumulates exactly across the
+setup sequence.
+
+The Ghidra call rendering was misleading: raw x86 at
+`0x76EE8D/0x76EE9F/0x76EEB1/0x76EEC3` pushes slot indices 0/1/2/3 while the
+vehicle remains in `ECX`.
+
+This is classified as vehicle initialization/setup provenance, not a native
+fixed-step event. `shift_runtime` still does not call this function. The
+remaining integration boundary is an evidence-backed participant-construction
+transport carrying the setup flags and spindle-pointer presence before the
+first admitted solver frame.
