@@ -90,6 +90,13 @@ target_link_libraries(shift_runtime_joint_projection_check PRIVATE
 target_compile_options(shift_runtime_joint_projection_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_bar_matrix_coupling_check
+  tests/bar_matrix_coupling_check.cpp)
+target_link_libraries(shift_runtime_bar_matrix_coupling_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_bar_matrix_coupling_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 add_executable(shift_runtime_bar_projection_check
   tests/bar_projection_check.cpp)
 target_link_libraries(shift_runtime_bar_projection_check PRIVATE
@@ -180,6 +187,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_joint_projection
     COMMAND shift_runtime_joint_projection_check)
+  add_test(
+    NAME shift_runtime_bar_matrix_coupling
+    COMMAND shift_runtime_bar_matrix_coupling_check)
   add_test(
     NAME shift_runtime_bar_projection
     COMMAND shift_runtime_bar_projection_check)
