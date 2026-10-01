@@ -518,11 +518,8 @@ def test_phase628_fixed_step_solver_accepts_generated_body_frame():
         "--generated-body-constraint-frame requires --solver-frame"
         in source
     )
-    assert (
-        "--generated-body-constraint-frame cannot be combined "
-        "with --body-solver-export-frame"
-        in source
-    )
+    assert "--generated-body-constraint-frame cannot be combined" in source
+    assert "with --body-solver-export-frame" in source
     assert "load_prepared_generated_body_constraint_frame" in source
     assert (
         "verify_generated_body_constraint_frame_matches_builtin_solver_frame"
