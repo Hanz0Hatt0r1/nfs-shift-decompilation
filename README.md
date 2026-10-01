@@ -467,7 +467,7 @@ This is provenance consistency rather than cryptographic authenticity and does
 not authorize native relation-state scheduling.
 
 
-## Phase 644 standalone SDF probe import bootstrap
+## Standalone SDF probe import bootstrap hotfix
 
 The retail SDF launcher no longer depends on root `sitecustomize.py` to find
 `src/graphics/d3d9/d3d9_pe_evidence.py`. The PE validation module now
