@@ -22,7 +22,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PHYSICS_SRC = ROOT / "src" / "physics"
-for path in (ROOT, PHYSICS_SRC):
+PROVIDERS_SRC = PHYSICS_SRC / "providers"
+for path in (ROOT, PHYSICS_SRC, PROVIDERS_SRC):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
