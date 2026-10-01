@@ -193,6 +193,22 @@ std::unordered_map<
     std::unordered_map<std::size_t, PatchedVtableSlot>>
     g_vtable_slot_patches;
 
+template <typename T>
+T original_method_for(void* object, std::size_t slot, T fallback) {
+    if (!object) return fallback;
+    void** vtable = *reinterpret_cast<void***>(object);
+    if (!vtable) return fallback;
+
+    std::lock_guard<std::mutex> lock(g_hook_mutex);
+    const auto table_it = g_vtable_slot_patches.find(vtable);
+    if (table_it == g_vtable_slot_patches.end()) return fallback;
+    const auto slot_it = table_it->second.find(slot);
+    if (slot_it == table_it->second.end() || !slot_it->second.original) {
+        return fallback;
+    }
+    return reinterpret_cast<T>(slot_it->second.original);
+}
+
 std::atomic<unsigned long long> g_event_index{0};
 std::atomic<unsigned long long> g_frame{0};
 std::atomic<bool> g_proxy_entry_reported{false};
@@ -1478,22 +1494,6 @@ struct VtablePatch {
     void* hook = nullptr;
     void** original_out = nullptr;
 };
-
-template <typename T>
-T original_method_for(void* object, std::size_t slot, T fallback) {
-    if (!object) return fallback;
-    void** vtable = *reinterpret_cast<void***>(object);
-    if (!vtable) return fallback;
-
-    std::lock_guard<std::mutex> lock(g_hook_mutex);
-    const auto table_it = g_vtable_slot_patches.find(vtable);
-    if (table_it == g_vtable_slot_patches.end()) return fallback;
-    const auto slot_it = table_it->second.find(slot);
-    if (slot_it == table_it->second.end() || !slot_it->second.original) {
-        return fallback;
-    }
-    return reinterpret_cast<T>(slot_it->second.original);
-}
 
 bool patch_object_vtable_batch(
     void* object,
