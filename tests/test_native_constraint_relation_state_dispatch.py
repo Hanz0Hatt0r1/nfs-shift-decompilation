@@ -36,12 +36,12 @@ def test_phase634_dispatches_named_vehicle_slots_without_assigning_timing():
     assert "0xE80u" in checker
     assert "0x1900u" in checker
     assert "0x2380u" in checker
-    assert '\"pair_branch_uses_wheel_rear_axle\": true' in checker
-    assert '\"bar_branch_uses_spindle\": true' in checker
-    assert '\"branch_from_spindle_presence\": true' in checker
-    assert '\"set_only_preserved_through_dispatch\": true' in checker
-    assert '\"scheduler_integrated\": false' in checker
-    assert '\"event_timing_assigned\": false' in checker
+    assert r'\\"pair_branch_uses_wheel_rear_axle\\": true' in checker
+    assert r'\\"bar_branch_uses_spindle\\": true' in checker
+    assert r'\\"branch_from_spindle_presence\\": true' in checker
+    assert r'\\"set_only_preserved_through_dispatch\\": true' in checker
+    assert r'\\"scheduler_integrated\\": false' in checker
+    assert r'\\"event_timing_assigned\\": false' in checker
 
     assert "shift_constraint_relation_state_mutation.hpp" not in runtime
     assert (
