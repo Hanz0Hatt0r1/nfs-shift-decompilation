@@ -500,3 +500,20 @@ The checker covers both `sample+0x98` branches, including the nonzero-side
 two-lane BODY solver-vector write and fail-closed range/frame/finite checks.
 Authentic sample iteration, BAR projection and matrix coupling remain separate
 gates.
+
+
+## Phase 619 native BAR projection
+
+Run the deterministic source-backed BAR kernel regression:
+
+```bash
+native_runtime/build/shift_runtime_bar_projection_check
+```
+
+The checker covers `FUN_007bb090`'s 0x60-byte sample contract, exact
+three-component inline basis, `+0x40/+0x48/+0x50` weighted one-lane
+reduction, nonzero-side `+0x38 * Q` correction, bounded solver-vector
+application and fail-closed range/finite checks.
+
+JOINT/HINGE/BAR projection primitives are now independently native. Authentic
+BODY sample iteration and the matrix-coupling stages remain separate.
