@@ -9,6 +9,7 @@ import zipfile
 from pathlib import Path
 from typing import Any, Mapping
 
+from sdf_runtime_probe_capture_session import validate_capture_session_id
 from sdf_runtime_probe_evidence_bundle import (
     FORMAT as BUNDLE_FORMAT,
     MANIFEST_NAME,
@@ -81,6 +82,54 @@ def _timeline_object(raw: bytes) -> dict[str, Any]:
     return payload
 
 
+def _evidence_records(
+    name: str,
+    raw: bytes,
+) -> tuple[list[tuple[str, Mapping[str, Any]]], list[str]]:
+    records: list[tuple[str, Mapping[str, Any]]] = []
+    errors: list[str] = []
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        return [], [
+            f"capture-session-json-invalid:{name}:"
+            f"{type(exc).__name__}:{exc}"
+        ]
+
+    if name.endswith(".jsonl"):
+        for line_number, raw_line in enumerate(text.splitlines(), 1):
+            line = raw_line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError as exc:
+                errors.append(
+                    f"capture-session-json-invalid:{name}:{line_number}:"
+                    f"{type(exc).__name__}:{exc}"
+                )
+                continue
+            if not isinstance(payload, Mapping):
+                errors.append(
+                    f"capture-session-json-object-required:"
+                    f"{name}:{line_number}"
+                )
+                continue
+            records.append((f"{name}:{line_number}", payload))
+        return records, errors
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        return [], [
+            f"capture-session-json-invalid:{name}:"
+            f"{type(exc).__name__}:{exc}"
+        ]
+    if not isinstance(payload, Mapping):
+        return [], [f"capture-session-json-object-required:{name}"]
+    return [(name, payload)], []
+
+
 def verify_sdf_runtime_probe_evidence_bundle(
     archive_path: str | Path,
 ) -> dict[str, Any]:
@@ -93,6 +142,9 @@ def verify_sdf_runtime_probe_evidence_bundle(
     package_ready = False
     capture_ready = False
     capture_status = None
+    capture_session_required = False
+    capture_session_id = None
+    evidence_payloads: dict[str, bytes] = {}
 
     if not archive.is_file():
         errors.append(f"archive-missing:{archive}")
@@ -213,6 +265,7 @@ def verify_sdf_runtime_probe_evidence_bundle(
                         continue
 
                     data = bundle.read(path)
+                    evidence_payloads[path] = data
                     if row.get("size") != len(data):
                         errors.append(f"file-size-mismatch:{path}")
                     if row.get("sha256") != _sha256(data):
@@ -287,8 +340,119 @@ def verify_sdf_runtime_probe_evidence_bundle(
                                 "manifest-timeline-status-mismatch"
                             )
 
+                manifest_session_flag_present = (
+                    "capture_session_required" in manifest
+                )
+                manifest_session_id_present = (
+                    "capture_session_id" in manifest
+                )
+
+                session_records: list[
+                    tuple[str, Mapping[str, Any]]
+                ] = []
+                session_parse_errors: list[str] = []
+                for path in declared_paths:
+                    raw = evidence_payloads.get(path)
+                    if raw is None:
+                        continue
+                    records, record_errors = _evidence_records(
+                        path,
+                        raw,
+                    )
+                    session_records.extend(records)
+                    session_parse_errors.extend(record_errors)
+
+                evidence_session_present = any(
+                    record.get("capture_session_id") is not None
+                    for _, record in session_records
+                )
+                session_aware = (
+                    manifest_session_flag_present
+                    or manifest_session_id_present
+                    or evidence_session_present
+                )
+                if session_aware:
+                    capture_session_required = True
+                    errors.extend(session_parse_errors)
+
+                    if manifest.get("capture_session_required") is not True:
+                        errors.append(
+                            "manifest-capture-session-required-invalid"
+                        )
+
+                    raw_manifest_session_id = manifest.get(
+                        "capture_session_id"
+                    )
+                    if raw_manifest_session_id is None:
+                        errors.append(
+                            "manifest-capture-session-id-missing"
+                        )
+                    else:
+                        try:
+                            capture_session_id = (
+                                validate_capture_session_id(
+                                    raw_manifest_session_id
+                                )
+                            )
+                        except (TypeError, ValueError):
+                            errors.append(
+                                "manifest-capture-session-id-invalid"
+                            )
+
+                    if capture_session_id is None:
+                        for _, record in session_records:
+                            raw_session_id = record.get(
+                                "capture_session_id"
+                            )
+                            if raw_session_id is None:
+                                continue
+                            try:
+                                capture_session_id = (
+                                    validate_capture_session_id(
+                                        raw_session_id
+                                    )
+                                )
+                            except (TypeError, ValueError):
+                                continue
+                            break
+
+                    if not session_records:
+                        errors.append("capture-session-records-missing")
+
+                    for label, record in session_records:
+                        raw_session_id = record.get(
+                            "capture_session_id"
+                        )
+                        if raw_session_id is None:
+                            errors.append(
+                                f"capture-session-id-missing:{label}"
+                            )
+                            continue
+                        try:
+                            normalized_session_id = (
+                                validate_capture_session_id(
+                                    raw_session_id
+                                )
+                            )
+                        except (TypeError, ValueError):
+                            errors.append(
+                                f"capture-session-id-invalid:{label}"
+                            )
+                            continue
+                        if (
+                            capture_session_id is not None
+                            and normalized_session_id
+                            != capture_session_id
+                        ):
+                            errors.append(
+                                f"capture-session-id-mismatch:{label}"
+                            )
+
+                    if capture_session_id is None:
+                        errors.append("capture-session-id-unresolved")
+
     ready = not errors
-    return {
+    report = {
         "format": FORMAT,
         "version": 1,
         "status": "ready" if ready else "blocked",
@@ -306,6 +470,10 @@ def verify_sdf_runtime_probe_evidence_bundle(
         "file_count": len(file_rows),
         "errors": errors,
     }
+    if capture_session_required:
+        report["capture_session_required"] = True
+        report["capture_session_id"] = capture_session_id
+    return report
 
 
 __all__ = [
