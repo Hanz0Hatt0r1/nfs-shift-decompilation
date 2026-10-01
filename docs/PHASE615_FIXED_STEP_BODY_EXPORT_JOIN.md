@@ -99,10 +99,15 @@ This is a deterministic evidence fixture, not a retail BODY-count claim.
 The existing scripted five-step runtime run now supplies that SBEX and requires
 zero RHS/matrix join error on all five steps.
 
-A second SBEX remains independently proof-valid but changes one RHS
-contribution. The runtime must reject it with:
+Fail-closed mismatch behavior remains covered by the deterministic Phase 614
+join checker, which supplies an independently proof-valid SBEX with one changed
+RHS contribution and requires:
 
 `BODY export/RHS join mismatch`.
+
+Phase 615 adds the runtime-specific proof that the same verifier executes on
+every admitted fixed step: the five-step run must report five BODY-export join
+steps with zero RHS/matrix error.
 
 ## Boundary
 
