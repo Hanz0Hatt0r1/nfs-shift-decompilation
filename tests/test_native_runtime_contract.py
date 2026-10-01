@@ -477,3 +477,28 @@ def test_phase611_persistent_post_solve_body_state_is_explicit_and_non_vehicle()
     assert '"physics_solver_persistent_vehicle_state_applied\\": false' in source
     assert "execute_post_solve_body_projection_with_state" in header
     assert "max_delta_error" in header
+
+
+def test_phase615_fixed_step_solver_requires_body_export_join_when_supplied():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    header = Path(
+        "native_runtime/include/shift_body_export_solver_join.hpp"
+    ).read_text(encoding="utf-8")
+
+    assert '#include "shift_body_export_solver_join.hpp"' in source
+    assert '#include "shift_body_solver_export_frame.hpp"' in source
+    assert '"--body-solver-export-frame"' in source
+    assert (
+        "--body-solver-export-frame requires --solver-frame"
+        in source
+    )
+    assert "load_prepared_body_solver_export_frame" in source
+    assert "verify_body_export_matches_builtin_solver_frame" in source
+    assert "BODY solver export scalar count does not match solver frame" in source
+    assert "physics_body_solver_export_frame_loaded" in source
+    assert "physics_body_solver_export_join_steps" in source
+    assert "physics_body_solver_export_max_rhs_join_error" in source
+    assert "physics_body_solver_export_max_matrix_join_error" in source
+    assert "verify_body_export_matches_builtin_solver_frame" in header
