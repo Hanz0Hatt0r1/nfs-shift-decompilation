@@ -308,8 +308,8 @@ select_fun_007b3f40_reset_nodes(
                 scalar_coverage,
                 "JOINT",
                 [](const auto& constraints)
-                    -> const auto& {
-                    return constraints.joints;
+                    -> decltype(auto) {
+                    return (constraints.joints);
                 });
         append_selected_span(
             result.reset_nodes,
@@ -331,8 +331,8 @@ select_fun_007b3f40_reset_nodes(
                 scalar_coverage,
                 "HINGE",
                 [](const auto& constraints)
-                    -> const auto& {
-                    return constraints.hinges;
+                    -> decltype(auto) {
+                    return (constraints.hinges);
                 });
         append_selected_span(
             result.reset_nodes,
@@ -354,8 +354,8 @@ select_fun_007b3f40_reset_nodes(
                 scalar_coverage,
                 "BAR",
                 [](const auto& constraints)
-                    -> const auto& {
-                    return constraints.bars;
+                    -> decltype(auto) {
+                    return (constraints.bars);
                 });
         append_selected_span(
             result.reset_nodes,
