@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 610.**
+**Current mainline: Phase 611.**
 
 
 
@@ -36,6 +36,8 @@ Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation i
 Phase 605 keeps the PhysicsParticipantManager registry index and IGPhaseVehicle selector ordinal as separate runtime identity domains until an independent join is observed.
 
 Phase 606 adds `SHIFT.NativeBuiltinSolverFrame/1`: an explicit provider-absent matrix/RHS/reset/graph packet, Python oracle and native loader/executor for the exact `FUN_007b2210 → FUN_007b0f20` sequence. It does not derive any of those runtime-only inputs.
+
+Phase 611 adds an explicit persistent BODY accumulator mode on top of the Phase 610 solve→post-solve chain. It carries only the six opaque FUN_007b4110 BODY channels between fixed steps, verifies the same prepared one-step delta on every step, and deliberately keeps persistent vehicle transform/motion state false.
 
 ## Immediate execution order
 
