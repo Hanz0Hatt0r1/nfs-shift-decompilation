@@ -478,26 +478,38 @@ class RelationStateMutationProbe(_BaseProbe):
         esp = int(gdb.parse_and_eval("$esp")) & 0xFFFFFFFF
         caller_return_address = _u32(inferior, esp)
 
-        component_block_pointer = (
-            vehicle_pointer
-            + RELATION_STATE_MUTATION_LAYOUT["component_base_offset"]
-            + component_offset
+        stride = RELATION_STATE_MUTATION_LAYOUT["component_stride"]
+        component_count = RELATION_STATE_MUTATION_LAYOUT["component_count"]
+        component_slot_valid = (
+            component_offset % stride == 0
+            and component_offset // stride < component_count
         )
-        wheel_body_pointer = _u32(
-            inferior,
-            component_block_pointer
-            + RELATION_STATE_MUTATION_LAYOUT["wheel_body_offset"],
-        )
-        spindle_body_pointer = _u32(
-            inferior,
-            component_block_pointer
-            + RELATION_STATE_MUTATION_LAYOUT["spindle_body_offset"],
-        )
-        rear_axle_body_pointer = _u32(
-            inferior,
-            vehicle_pointer
-            + RELATION_STATE_MUTATION_LAYOUT["rear_axle_body_offset"],
-        )
+
+        if component_slot_valid:
+            component_block_pointer = (
+                vehicle_pointer
+                + RELATION_STATE_MUTATION_LAYOUT["component_base_offset"]
+                + component_offset
+            )
+            wheel_body_pointer = _u32(
+                inferior,
+                component_block_pointer
+                + RELATION_STATE_MUTATION_LAYOUT["wheel_body_offset"],
+            )
+            spindle_body_pointer = _u32(
+                inferior,
+                component_block_pointer
+                + RELATION_STATE_MUTATION_LAYOUT["spindle_body_offset"],
+            )
+            rear_axle_body_pointer = _u32(
+                inferior,
+                vehicle_pointer
+                + RELATION_STATE_MUTATION_LAYOUT["rear_axle_body_offset"],
+            )
+        else:
+            wheel_body_pointer = 0
+            spindle_body_pointer = 0
+            rear_axle_body_pointer = 0
 
         event = describe_relation_state_mutation_entry(
             vehicle_pointer=vehicle_pointer,
@@ -508,6 +520,7 @@ class RelationStateMutationProbe(_BaseProbe):
             caller_return_address=caller_return_address,
         )
         event.update({
+            "body_pointer_capture_skipped": not component_slot_valid,
             "call_index": self.event_index,
             "runtime_event_sequence": runtime_event_sequence,
             "frame_index": _LAST_FRAME_ENTRY["frame_index"],
