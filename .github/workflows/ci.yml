@@ -62,6 +62,29 @@ jobs:
         run: cmake -S native_capture -B native_capture/build -A Win32
       - name: Build D3D9 capture producer
         run: cmake --build native_capture/build --config Release
+      - name: Verify D3D9 proxy has no VC runtime dependency
+        shell: pwsh
+        run: |
+          $dll = Resolve-Path "native_capture/build/Release/d3d9.dll"
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio/Installer/vswhere.exe"
+          $vs = & $vswhere -latest -products * -property installationPath
+          if (-not $vs) {
+            throw "Visual Studio installation path was not found"
+          }
+          $dumpbin = Get-ChildItem (Join-Path $vs "VC/Tools/MSVC/*/bin/Hostx64/x86/dumpbin.exe") |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $dumpbin) {
+            throw "dumpbin.exe was not found"
+          }
+          $dependents = & $dumpbin.FullName /nologo /dependents $dll
+          $forbidden = @("MSVCP", "VCRUNTIME", "api-ms-win-crt")
+          foreach ($prefix in $forbidden) {
+            if ($dependents -match [regex]::Escape($prefix)) {
+              $dependents | Write-Host
+              throw "D3D9 proxy unexpectedly depends on $prefix"
+            }
+          }
       - name: Verify D3D9 exports and passthrough forwarding
         shell: pwsh
         run: |
