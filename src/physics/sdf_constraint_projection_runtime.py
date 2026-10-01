@@ -70,21 +70,21 @@ def evaluate_joint_projection(
         (sx + bx) * quadratic_scale
         + (cx + d2) * linear_scale
         + (sz * ry - sy * rz)
-        + (by * d5 - bz * d3)
+        + (ay * d5 - az * d3)
         + lx
     )
     d6 = (
         (sy + by) * quadratic_scale
         + (cy + d3) * linear_scale
         + (sx * rz - sz * rx)
-        + (bz * d2 - bx * d5)
+        + (az * d2 - ax * d5)
         + ly
     )
     d7 = (
         (sz + bz) * quadratic_scale
         + (cz + d5) * linear_scale
         + (sy * rx - sx * ry)
-        + (bx * d3 - by * d2)
+        + (ax * d3 - ay * d2)
         + lz
     )
 
