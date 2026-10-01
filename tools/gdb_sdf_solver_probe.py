@@ -882,7 +882,7 @@ class SDFProbeCommand(gdb.Command):
 
         if provider_only and capture_frames is not None:
             raise gdb.GdbError(
-                "--capture-frames is supported only in full mode"
+                "--capture-frames is not supported in provider-only mode"
             )
 
         if len(args) != 1:
