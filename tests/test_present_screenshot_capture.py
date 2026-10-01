@@ -232,7 +232,7 @@ def test_trigger_capture_launchers_expose_scene_capture_controls():
     assert "[int]$PostFrames = 2" in powershell
     assert "SHIFT_D3D9_CAPTURE_TRIGGER_FILE" in powershell
     assert '"0x79"' in powershell
-    assert "TriggerCapture cannot be combined with FrameStart/FrameEnd" in powershell
+    assert "TriggerCapture/ResourceTrigger cannot be combined with FrameStart/FrameEnd" in powershell
 
     assert "--trigger" in wine
     assert "--pre-frames" in wine
@@ -240,4 +240,62 @@ def test_trigger_capture_launchers_expose_scene_capture_controls():
     assert "capture.trigger" in wine
     assert "SHIFT_D3D9_CAPTURE_TRIGGER_FILE" in wine
     assert "SHIFT_D3D9_CAPTURE_TRIGGER_KEY=0x79" in wine
-    assert "--trigger cannot be combined with --frame-start/--frame-end" in wine
+    assert "--trigger/--resource-trigger cannot be combined with --frame-start/--frame-end" in wine
+
+
+def test_resource_signature_trigger_is_stable_and_bind_driven():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+
+    for token in (
+        "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER",
+        "resource_trigger_rules",
+        "resource_trigger_matches",
+        "resource_trigger_match",
+        "content_fnv1a64",
+        "fnv1a64_hex",
+        '"vs:" + hash',
+        '"ps:" + hash',
+        '"decl:" + hash',
+        '"vb:" + std::to_string(length)',
+        '"ib:" << length',
+        'texture_signature("tex"',
+        '"cube", edge_length',
+        'surface_signature("rt"',
+        'surface_signature("depth"',
+    ):
+        assert token in source
+
+    # Matching is intentionally performed on stable signatures at binding time,
+    # not on per-run COM pointer values.
+    for bind_event in (
+        "set_texture",
+        "set_vertex_shader",
+        "set_pixel_shader",
+        "set_vertex_declaration",
+        "set_stream_source",
+        "set_indices",
+    ):
+        assert f'maybe_trigger_for_resource("{bind_event}"' in source
+
+    assert "resource_trigger_matches(signature)" in source
+    assert "resource_trigger_already_fired(signature)" in source
+    assert "mark_resource_trigger_fired(signature)" in source
+    assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT" in source
+    assert "table[object] = signature" in source
+
+
+def test_resource_trigger_launchers_accept_signature_rules():
+    powershell = Path("tools/run_shift_capture.ps1").read_text(encoding="utf-8")
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert '[string]$ResourceTrigger = ""' in powershell
+    assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER" in powershell
+    assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT" in powershell
+    assert "[switch]$ResourceTriggerRepeat" in powershell
+    assert "TriggerCapture/ResourceTrigger cannot be combined" in powershell
+
+    assert "--resource-trigger" in wine
+    assert "--resource-trigger-repeat" in wine
+    assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER" in wine
+    assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT" in wine
+    assert "--trigger/--resource-trigger cannot be combined" in wine
