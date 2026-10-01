@@ -60,3 +60,23 @@ def test_phase643_gdb_probe_isolates_and_stamps_capture_sessions():
     assert "_RUNTIME_EVENT_SEQUENCE = 0" in source
     assert "_SCALAR_RESET_EVENT_COUNT = 0" in source
     assert '"runtime_event_sequence": None' in source
+
+
+def test_phase646_lightweight_relation_mode_uses_metadata_only_post_solve_anchor():
+    source = Path("tools/gdb_sdf_solver_probe.py").read_text(encoding="utf-8")
+
+    assert '"--relation-timeline-only"' in source
+    assert "class PostSolveAnchorProbe(_BaseProbe)" in source
+    start = source.index("class PostSolveAnchorProbe(_BaseProbe)")
+    end = source.index("class SDFProbeCommand", start)
+    block = source[start:end]
+    assert "_next_runtime_event_sequence()" in block
+    assert 'gdb.parse_and_eval("$ecx")' in block
+    assert "_doubles(" not in block
+    assert "_u32(" not in block
+    assert '"capture_kind": "post_solve_anchor"' in block
+
+    install = source.index("if relation_timeline_only:")
+    provider_install = source.index("if not relation_timeline_only:", install)
+    assert "PostSolveAnchorProbe(" in source[install:provider_install]
+    assert "ProviderSolveProbe(" not in source[install:provider_install]
