@@ -855,3 +855,33 @@ CI also exercises the 11-BODY BMW structural shape with 4/4/20 relations,
 Remaining blockers are authentic per-frame BODY/raw-relation/reset-state
 production, provider-present execution and persistent vehicle transform/motion
 integration.
+
+
+## Phase 633 relation-state bit0 mutation
+
+The recovered runtime state writer immediately upstream of the Phase 632
+selector is now ported as a separate source-backed native kernel.
+
+The relation `+0x70` field is temporally reused: `FUN_007b1b60` first uses
+it as the setup scalar base, and `FUN_007b3820` clears it after endpoint
+sample allocation. Runtime `FUN_00757d2c` later mutates bit0 with set-only
+`| 1` stores.
+
+The zero-selector branch compares an unordered BODY pointer pair and sets bit0
+on matching JOINT and HINGE relations. The nonzero-selector branch compares
+one BODY pointer against both BAR endpoints and sets every matching BAR bit.
+Phase 633 normalizes those pointer comparisons through the already-established
+CSRF BODY-index identity domain.
+
+The native checker covers reversed pair order, unmatched no-op behavior,
+multiple BAR matches, self-endpoint BARs, preservation of pre-existing bits,
+and fail-closed cardinality/domain errors.
+
+This kernel is not scheduled by `shift_runtime`. The exact event identity,
+implicit register-selected vehicle slot and retail dispatch timing of
+`FUN_00757d2c` remain unresolved, so Phase 633 does not fabricate a fixed-step
+trigger.
+
+Remaining blockers are authentic per-frame BODY/raw relation state, mutation
+event provenance/timing, provider-present execution and persistent vehicle
+transform/motion integration.
