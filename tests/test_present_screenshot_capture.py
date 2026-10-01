@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 from tools.ppm_to_snapshot_svg import ppm_to_svg, read_ppm
 
@@ -106,3 +107,11 @@ def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
     assert 'mode="diagnostic"' in wine
     assert 'd3d9.shift_backend.dll' in wine
     assert 'WINEDLLOVERRIDES="d3d9=n,b' in wine
+
+
+
+def test_wine_capture_launcher_has_valid_bash_syntax():
+    subprocess.run(
+        ["bash", "-n", "tools/run_shift_capture_wine.sh"],
+        check=True,
+    )
