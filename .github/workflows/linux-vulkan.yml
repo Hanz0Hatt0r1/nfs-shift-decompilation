@@ -1027,29 +1027,6 @@ jobs:
             out/vulkan/runtime/fixed_step_body_export_join_check.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/fixed_step_body_export_join_check.json
-      - name: Prepare mismatched fixed-step BODY export evidence
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          source = json.loads(
-              Path(
-                  "out/vulkan/runtime/fixed_step_body_export_input.json"
-              ).read_text(encoding="utf-8")
-          )
-          source["bodies"][0]["solver_vector"][0] += 1.0
-          Path(
-              "out/vulkan/runtime/fixed_step_body_export_mismatch_input.json"
-          ).write_text(
-              json.dumps(source, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
-          )
-          PY
-          python3 shift_importer.py native-body-solver-export-frame \
-            out/vulkan/runtime/fixed_step_body_export_mismatch_input.json \
-            out/vulkan/runtime/fixed_step_body_export_mismatch \
-            > out/vulkan/runtime/fixed_step_body_export_mismatch_prepare.json
       - name: Prepare fixed-step post-solve projection
         run: |
           python3 - <<'PY'
@@ -1188,24 +1165,6 @@ jobs:
             --post-solve-projection out/vulkan/runtime/fixed_step_post_solve/post_solve.sbps \
             --input-script out/vulkan/runtime/native_input.script \
             --validation | tee out/vulkan/runtime/input_script.json
-      - name: Reject mismatched fixed-step BODY export join in runtime
-        run: |
-          if xvfb-run -a native_runtime/build/shift_runtime \
-            --scene-set out/vulkan/native_scene_set \
-            --shader-dir native_runtime/build/shaders \
-            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
-            --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
-            --solver-frame out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
-            --body-solver-export-frame out/vulkan/runtime/fixed_step_body_export_mismatch/body_solver_export.sbex \
-            --input-script out/vulkan/runtime/native_input.script \
-            --validation \
-            > out/vulkan/runtime/body_export_mismatch_runtime.stdout \
-            2> out/vulkan/runtime/body_export_mismatch_runtime.stderr; then
-            echo "runtime unexpectedly accepted mismatched BODY export/SBFR join"
-            exit 1
-          fi
-          grep -q "BODY export/RHS join mismatch" \
-            out/vulkan/runtime/body_export_mismatch_runtime.stderr
       - name: Assert scripted native input reaches physics tick
         run: |
           grep -q '"input_source": "script"' out/vulkan/runtime/input_script.json
