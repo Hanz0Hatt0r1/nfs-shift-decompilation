@@ -756,3 +756,38 @@ Each fixed step executes `FUN_007b3ed0` before the existing generated
 BODY→SBFR equality gate. GBCF and CSRF remain immutable prepared inputs; retail
 per-frame BODY motion/raw relation input production is still outside this
 boundary.
+
+
+## Phase 632 relation-state reset selection
+
+Prepare the source-order relation state packet:
+
+```bash
+python shift_importer.py native-constraint-relation-reset-frame \
+  relation-reset-input.json \
+  out/relation-reset
+```
+
+Verify a GBCF + CSRF + CRRF identity/reset join:
+
+```bash
+native_runtime/build/shift_runtime_constraint_relation_reset_frame_check \
+  out/generated-body/generated_body_constraints.gbcf \
+  out/constraint-relations/constraint_sample_relations.csrf \
+  out/relation-reset/constraint_relation_reset.crrf
+```
+
+Run the fixed-step source-derived reset path by adding:
+
+```text
+--constraint-relation-reset-frame out/relation-reset/constraint_relation_reset.crrf
+```
+
+CRRF carries only the source-order low bit tested at retail
+`relation+0x70 & 1`. Scalar bases are recovered from the positive BODY-owned
+GBCF sample identified by CSRF, and reset widths are fixed by relation type:
+JOINT 3, HINGE 2, BAR 1. The packet never stores reset-node indices.
+
+When CRRF is supplied, `shift_runtime` uses the derived nodes for
+`FUN_007b2210`; the SBFR reset list remains available only to the legacy
+no-CRRF execution path.
