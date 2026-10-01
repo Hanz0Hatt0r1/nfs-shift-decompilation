@@ -343,6 +343,12 @@ jobs:
             out/vulkan/runtime/constraint_relation_reset_frame.json
           grep -q '"selected_reset_nodes": \[0, 1, 2, 5\]' \
             out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"duplicate_reset_calls_preserved": true' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"partial_relation_layout_supported": true' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"solver_frame_join_fail_closed": true' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
           grep -q '"reset_nodes_stored_in_packet": false' \
             out/vulkan/runtime/constraint_relation_reset_frame.json
           grep -q '"status": "ok"' \
@@ -2342,7 +2348,7 @@ jobs:
             out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
           grep -q '"physics_solver_effective_reset_node_count": 40' \
             out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
-          grep -q '"physics_solver_frame_reset_nodes_consumed": false' \
+          grep -q '"physics_solver_frame_reset_nodes_consumed": true' \
             out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
           grep -q '"physics_constraint_relation_reset_frame_loaded": true' \
             out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
@@ -2358,7 +2364,11 @@ jobs:
             out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
           grep -q '"physics_constraint_relation_reset_selected_bar_count": 20' \
             out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_call_count": 40' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
           grep -q '"physics_constraint_relation_reset_node_count": 40' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_matches_solver_frame": true' \
             out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
           grep -q '"physics_constraint_relation_reset_selection_steps": 3' \
             out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
