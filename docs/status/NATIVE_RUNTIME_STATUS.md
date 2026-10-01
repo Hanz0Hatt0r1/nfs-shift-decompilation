@@ -646,3 +646,19 @@ This closes prepared sample-array orchestration only. Runtime
 `FUN_007b3ed0` sampled-state refresh, exact `BODY+0x158` sparse row-pointer
 execution and fixed-step generated-contribution→SBEX integration remain
 separate gates.
+
+
+## Phase 625 BODY sparse row storage
+
+The Phase 624 logical lower-triangle BODY matrix can now be materialized through
+the exact prepared `FUN_007bb8d0` row-index contract:
+
+`BODY+0x15c row_indices → BODY+0x158 row offsets → BODY+0x154 matrix pool`.
+
+The native helper accepts noncanonical row order, reports byte offsets from the
+pool base, rejects aliased/out-of-range row spans, and rejects any upper-
+triangle source write. The deterministic six-scalar fixture verifies all 21
+lower-domain cells through a permuted row mapping with zero readback error.
+
+Authentic `FUN_007b3ed0` sample production and the fixed-step
+generated-contribution→`FUN_007ba570` export join remain separate gates.
