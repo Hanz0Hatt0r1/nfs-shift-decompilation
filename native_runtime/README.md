@@ -817,3 +817,20 @@ This is intentionally a library/checker boundary only. `shift_runtime` does
 not schedule the mutation because raw executable/source evidence proves the 0..3 component index,
 0xA80 stride and FL/FR/RL/RR wheel/spindle plus rear-axle BODY mapping, but the
 retail event semantics and timing are not yet proven.
+
+
+## Phase 634 exact component relation-state dispatch
+
+Raw x86 disassembly now closes the branch selector around the Phase 633
+mutation primitives. `FUN_00757d20(slot)` accepts only the four source slots;
+its thunk multiplies slot by `0xA80` before `FUN_00757d2c` addresses the
+component at vehicle `+0x400`.
+
+A non-null component `+0x424` selects BAR-only endpoint mutation and sets
+component `+0x540`. A null `+0x424` selects JOINT/HINGE matching between
+component `+0x420` and vehicle `rear_axle` at `+0x2E00`. Component
+`+0x504` is set in both branches.
+
+The current BMW SDF has wheel/spindle BODY entries but no `rear_axle` BODY, so
+that lookup remains null and no synthetic BODY index is introduced. The exact
+event timing is still not scheduled by `shift_runtime`.
