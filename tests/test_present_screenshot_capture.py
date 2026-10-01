@@ -155,7 +155,10 @@ def test_d3d9_capture_supports_bounded_replay_state_stream():
         'draw_primitive_up',
         'draw_indexed_primitive_up',
     ):
-        assert f'write_event("{event}"' in source
+        assert (
+            f'write_event("{event}"' in source
+            or f'write_render_event("{event}"' in source
+        )
 
     for slot in (
         'SLOT_SET_RENDER_TARGET',
@@ -192,3 +195,49 @@ def test_bounded_capture_keeps_resource_creation_metadata_global():
             next_hook = len(source)
         body = source[start:next_hook]
         assert 'capture_frame_active()' not in body
+
+
+def test_trigger_capture_uses_hotkey_file_and_ring_buffer():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+
+    for token in (
+        "SHIFT_D3D9_CAPTURE_TRIGGER",
+        "SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES",
+        "SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES",
+        "SHIFT_D3D9_CAPTURE_TRIGGER_KEY",
+        "SHIFT_D3D9_CAPTURE_TRIGGER_FILE",
+        "GetAsyncKeyState",
+        "VK_F10",
+        "render_ring",
+        "pending_metadata",
+        "write_render_event",
+        'make_line("capture_trigger"',
+        'make_line("capture_trigger_complete"',
+    ):
+        assert token in source
+
+    assert "trigger_pre_frames() + 1" in source
+    assert "flush_lines.begin()" in source
+    assert "a.sequence < b.sequence" in source
+    assert "capture_trigger_requested()" in source
+    assert "complete_trigger_after_present" in source
+
+
+def test_trigger_capture_launchers_expose_scene_capture_controls():
+    powershell = Path("tools/run_shift_capture.ps1").read_text(encoding="utf-8")
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert "[switch]$TriggerCapture" in powershell
+    assert "[int]$PreFrames = 2" in powershell
+    assert "[int]$PostFrames = 2" in powershell
+    assert "SHIFT_D3D9_CAPTURE_TRIGGER_FILE" in powershell
+    assert '"0x79"' in powershell
+    assert "TriggerCapture cannot be combined with FrameStart/FrameEnd" in powershell
+
+    assert "--trigger" in wine
+    assert "--pre-frames" in wine
+    assert "--post-frames" in wine
+    assert "capture.trigger" in wine
+    assert "SHIFT_D3D9_CAPTURE_TRIGGER_FILE" in wine
+    assert "SHIFT_D3D9_CAPTURE_TRIGGER_KEY=0x79" in wine
+    assert "--trigger cannot be combined with --frame-start/--frame-end" in wine
