@@ -127,12 +127,15 @@ def describe_relation_state_mutation_entry(
         + RELATION_STATE_MUTATION_LAYOUT["component_base_offset"]
         + offset
     )
-    spindle_present = int(spindle_body_pointer) != 0
-    branch = (
-        "spindle-bar-endpoint"
-        if spindle_present
-        else "wheel-rear-axle-pair"
-    )
+    spindle_present: bool | None = None
+    branch: str | None = None
+    if component_slot is not None:
+        spindle_present = int(spindle_body_pointer) != 0
+        branch = (
+            "spindle-bar-endpoint"
+            if spindle_present
+            else "wheel-rear-axle-pair"
+        )
 
     return {
         "format": "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1",
