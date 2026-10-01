@@ -31,7 +31,7 @@ double compare_value(
 
 }  // namespace
 
-BodyExportSolverFrameJoinResult join_body_export_to_builtin_solver_frame(
+BodyExportSolverFrameJoinResult verify_body_export_matches_builtin_solver_frame(
     const PreparedBodySolverExportFrame& export_frame,
     const PreparedBuiltinSolverFrame& solver_frame,
     double tolerance) {
@@ -94,18 +94,32 @@ BodyExportSolverFrameJoinResult join_body_export_to_builtin_solver_frame(
         }
     }
 
-    const auto solver_result =
-        execute_prepared_builtin_solver_frame(
-            solver_frame,
-            tolerance);
-
     return {
         n,
         n * n,
         max_rhs_error,
         max_matrix_error,
-        solver_result.max_absolute_error,
+        0.0,
     };
+}
+
+BodyExportSolverFrameJoinResult join_body_export_to_builtin_solver_frame(
+    const PreparedBodySolverExportFrame& export_frame,
+    const PreparedBuiltinSolverFrame& solver_frame,
+    double tolerance) {
+
+    BodyExportSolverFrameJoinResult result =
+        verify_body_export_matches_builtin_solver_frame(
+            export_frame,
+            solver_frame,
+            tolerance);
+    const auto solver_result =
+        execute_prepared_builtin_solver_frame(
+            solver_frame,
+            tolerance);
+    result.max_solver_oracle_error =
+        solver_result.max_absolute_error;
+    return result;
 }
 
 }  // namespace shift::runtime::physics
