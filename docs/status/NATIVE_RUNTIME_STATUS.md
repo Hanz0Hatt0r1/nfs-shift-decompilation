@@ -481,3 +481,18 @@ zero-state and non-finite rejection cases and reports
 Native JOINT/HINGE/BAR projection and matrix coupling remain separate gates;
 Phase 616 does not synthesize sampled constraint state or complete
 `FUN_007bc680`.
+
+
+## Phase 617 native FUN_007bac60 JOINT projection
+
+The native physics library now executes one source-backed JOINT sample through
+`FUN_007bac60`: exact Q/L scale preparation, three corrected cross terms,
+three double scalar lanes, side-flag sign selection and bounded writes into a
+neutral solver-vector destination.
+
+During the port the older Python Phase 397 oracle was corrected: all JOINT
+cross and axis-coupling terms now use BODY +0x18/+0x20/+0x28 exactly as the
+retail function does, rather than the unrelated BODY position triplet.
+
+The phase remains a single-sample primitive. BODY-owned JOINT iteration,
+HINGE/BAR projection and all matrix-coupling kernels are still separate gates.

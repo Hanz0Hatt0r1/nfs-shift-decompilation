@@ -63,28 +63,28 @@ def evaluate_joint_projection(
     lx, ly, lz = _vec3(linear_velocity, name="linear_velocity")
 
     d2 = sz * ay - sy * az
-    d3 = bz * sx - sz * bx
-    d5 = sy * bx - by * sx
+    d3 = az * sx - sz * ax
+    d5 = sy * ax - ay * sx
 
     d4 = (
         (sx + bx) * quadratic_scale
         + (cx + d2) * linear_scale
         + (sz * ry - sy * rz)
-        + (by * d5 - bz * d3)
+        + (ay * d5 - az * d3)
         + lx
     )
     d6 = (
         (sy + by) * quadratic_scale
         + (cy + d3) * linear_scale
         + (sx * rz - sz * rx)
-        + (bz * d2 - bx * d5)
+        + (az * d2 - ax * d5)
         + ly
     )
     d7 = (
         (sz + bz) * quadratic_scale
         + (cz + d5) * linear_scale
         + (sy * rx - sx * ry)
-        + (bx * d3 - by * d2)
+        + (ax * d3 - ay * d2)
         + lz
     )
 
@@ -247,9 +247,9 @@ def describe_joint_projection_provenance() -> dict[str, Any]:
             "d2": "sample[+0x28]*body[+0x20] - sample[+0x20]*body[+0x28]",
             "d3": "body[+0x28]*sample[+0x18] - sample[+0x28]*body[+0x18]",
             "d5": "sample[+0x20]*body[+0x18] - body[+0x20]*sample[+0x18]",
-            "d4": "(sample.x+body.x)*Q + (body+0x78+d2)*L + (sample.z*residual.y-sample.y*residual.z) + (body.y*d5-body.z*d3) + linear.x",
-            "d6": "(sample.y+body.y)*Q + (body+0x80+d3)*L + (sample.x*residual.z-sample.z*residual.x) + (body.z*d2-body.x*d5) + linear.y",
-            "d7": "(sample.z+body.z)*Q + (body+0x88+d5)*L + (sample.y*residual.x-sample.x*residual.y) + (body.x*d3-body.y*d2) + linear.z",
+            "d4": "(sample.x+body.position.x)*Q + (body+0x78+d2)*L + (sample.z*residual.y-sample.y*residual.z) + (body.axis.y*d5-body.axis.z*d3) + linear.x",
+            "d6": "(sample.y+body.position.y)*Q + (body+0x80+d3)*L + (sample.x*residual.z-sample.z*residual.x) + (body.axis.z*d2-body.axis.x*d5) + linear.y",
+            "d7": "(sample.z+body.position.z)*Q + (body+0x88+d5)*L + (sample.y*residual.x-sample.x*residual.y) + (body.axis.x*d3-body.axis.y*d2) + linear.z",
         },
         "sign_rule": "sample +0x34 == 0 => add; otherwise subtract",
         "global_scales": {
