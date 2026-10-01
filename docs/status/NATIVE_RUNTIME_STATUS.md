@@ -821,3 +821,37 @@ vehicle dynamics.
 
 Remaining blockers are authentic per-frame BODY/raw relation inputs, retail
 reset-node selection, provider-present execution and persistent vehicle motion.
+
+
+## Phase 632 relation-state reset selection
+
+The provider-absent fixed-step path now has a source-backed selector for the
+rows passed to `FUN_007b2210`.
+
+Direct `SHIFT.exe.c` audit corrects an older project label: `FUN_007b3f40`
+tests `relation+0x70 & 1`, not a BODY-owned sample `+0x70` field. For a set
+bit it follows the positive sample pointer at relation `+0x7c` and reads the
+scalar base from JOINT/BAR sample `+0x30` or HINGE sample `+0x94`. Reset
+widths are 3, 2 and 1 respectively.
+
+`SHIFT.NativeConstraintRelationResetFramePacket/1` (CRRF) transports only
+those source-order relation low bits. The native selector joins them to
+GBCF+CSRF, validates endpoint side identity, common scalar bases, nonoverlapping
+complete scalar coverage and then emits reset nodes. CRRF contains no scalar
+bases, reset-node indices or matrix/RHS values.
+
+`shift_runtime --constraint-relation-reset-frame FILE.crrf` requires CSRF.
+On every admitted fixed step it derives the reset list through
+`select_fun_007b3f40_reset_nodes()` and invokes
+`execute_prepared_builtin_solver_frame_with_reset_nodes()`. In this mode the
+SBFR prepared reset list is retained for packet compatibility but is not the
+runtime reset-node source.
+
+The deterministic six-scalar checker selects `[0,1,2,5]` for
+JOINT=true/HINGE=false/BAR=true. Linux CI also exercises the 11-BODY BMW
+structural shape with 4/4/20 relations and all 40 rows selected over three
+fixed steps.
+
+Remaining blockers are authentic per-frame BODY/raw-relation/reset-state
+production, provider-present execution and persistent vehicle transform/motion
+integration.
