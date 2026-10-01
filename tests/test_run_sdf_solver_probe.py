@@ -29,6 +29,22 @@ def _timeline(*, ready=True):
     }
 
 
+def _bundle(*, ready=True, capture_ready=True):
+    return {
+        "format": "SHIFT.SDFRuntimeProbeEvidenceBundle/1",
+        "ready": ready,
+        "capture_ready": capture_ready,
+        "file_count": 7,
+        "errors": [] if ready else ["missing-required-capture-file:x"],
+        "archive": {
+            "path": "/tmp/sdf_capture_evidence.zip",
+            "size": 1234,
+            "sha256": "a" * 64,
+            "manifest_path": "evidence_manifest.json",
+        },
+    }
+
+
 def test_phase638_finalize_helper_persists_phase637_report(
     monkeypatch,
     tmp_path: Path,
@@ -72,6 +88,11 @@ def test_phase638_full_attach_automatically_finalizes_timeline(
         "finalize_relation_state_mutation_capture",
         lambda output: _timeline(),
     )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        lambda output: _bundle(),
+    )
 
     result = tool.main(
         [
@@ -111,6 +132,11 @@ def test_phase638_full_attach_blocks_when_timeline_is_not_ready(
         "finalize_relation_state_mutation_capture",
         lambda output: _timeline(ready=False),
     )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        lambda output: _bundle(capture_ready=False),
+    )
 
     result = tool.main(
         [
@@ -147,6 +173,11 @@ def test_phase638_full_attach_blocks_when_gdb_session_fails_even_if_timeline_rea
         tool,
         "finalize_relation_state_mutation_capture",
         lambda output: _timeline(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        lambda output: _bundle(),
     )
 
     result = tool.main(
@@ -186,6 +217,11 @@ def test_phase638_provider_only_attach_skips_relation_timeline_finalization(
         "finalize_relation_state_mutation_capture",
         fail_if_called,
     )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        fail_if_called,
+    )
 
     result = tool.main(
         [
@@ -199,3 +235,86 @@ def test_phase638_provider_only_attach_skips_relation_timeline_finalization(
     )
 
     assert result == 0
+
+
+
+def test_phase639_full_attach_reports_portable_evidence_bundle(
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+):
+    monkeypatch.setattr(
+        tool,
+        "prepare_probe_bundle",
+        lambda *args, **kwargs: _manifest(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_attach_command",
+        lambda **kwargs: ["gdb", "-p", "1234"],
+    )
+    monkeypatch.setattr(tool.subprocess, "call", lambda command: 0)
+    monkeypatch.setattr(
+        tool,
+        "finalize_relation_state_mutation_capture",
+        lambda output: _timeline(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        lambda output: _bundle(),
+    )
+
+    result = tool.main(
+        [
+            str(tmp_path / "SHIFT.exe"),
+            "--output",
+            str(tmp_path / "capture"),
+            "--attach-pid",
+            "1234",
+        ]
+    )
+
+    assert result == 0
+    output = capsys.readouterr().out
+    assert '"automatic_evidence_bundle": true' in output
+    assert '"evidence_bundle_ready": true' in output
+    assert '"evidence_bundle_file_count": 7' in output
+    assert '"sha256": "' + ("a" * 64) + '"' in output
+
+
+def test_phase639_full_attach_blocks_when_bundle_build_is_not_ready(
+    monkeypatch,
+    tmp_path: Path,
+):
+    monkeypatch.setattr(
+        tool,
+        "prepare_probe_bundle",
+        lambda *args, **kwargs: _manifest(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_attach_command",
+        lambda **kwargs: ["gdb", "-p", "1234"],
+    )
+    monkeypatch.setattr(tool.subprocess, "call", lambda command: 0)
+    monkeypatch.setattr(
+        tool,
+        "finalize_relation_state_mutation_capture",
+        lambda output: _timeline(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        lambda output: _bundle(ready=False),
+    )
+
+    assert tool.main(
+        [
+            str(tmp_path / "SHIFT.exe"),
+            "--output",
+            str(tmp_path / "capture"),
+            "--attach-pid",
+            "1234",
+        ]
+    ) == 2
