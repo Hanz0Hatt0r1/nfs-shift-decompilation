@@ -338,6 +338,7 @@ def main(argv: list[str] | None = None) -> int:
                 "status": "blocked",
                 "ready": False,
                 "gdb_returncode": gdb_returncode,
+                "winedbg_returncode": winedbg_returncode,
                 "post_capture": {
                     "automatic_timeline_correlation": True,
                     "timeline_output": str(
@@ -360,6 +361,7 @@ def main(argv: list[str] | None = None) -> int:
                 "status": "blocked",
                 "ready": False,
                 "gdb_returncode": gdb_returncode,
+                "winedbg_returncode": winedbg_returncode,
                 "post_capture": {
                     "automatic_timeline_correlation": True,
                     "timeline_output": str(
