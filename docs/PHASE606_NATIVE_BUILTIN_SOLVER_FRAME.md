@@ -127,7 +127,7 @@ it.
 Phase 606 does not derive or assign:
 
 - retail per-frame matrix/RHS assembly;
-- the runtime `sample+0x70 & 1` reset-node selection;
+- the runtime `relation+0x70 & 1` reset-node selection;
 - provider-present dispatch or provider acceptance;
 - concrete participant identity;
 - `FUN_007b4110` post-solve body-state application;
