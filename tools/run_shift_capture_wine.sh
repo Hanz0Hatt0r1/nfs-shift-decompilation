@@ -89,6 +89,16 @@ had_dll=0
 had_sidecar=0
 staged_backend=0
 
+# Make every recovery copy before changing the game directory.
+if [[ -f "$target_dll" ]]; then
+  cp -f "$target_dll" "$backup_dll"
+  had_dll=1
+fi
+if [[ -f "$sidecar_dll" ]]; then
+  cp -f "$sidecar_dll" "$backup_sidecar"
+  had_sidecar=1
+fi
+
 restore() {
   local rc=$?
   trap - EXIT INT TERM
@@ -106,15 +116,11 @@ restore() {
 }
 trap restore EXIT INT TERM
 
-if [[ -f "$sidecar_dll" ]]; then
-  cp -f "$sidecar_dll" "$backup_sidecar"
-  had_sidecar=1
+if ((had_sidecar)); then
   rm -f "$sidecar_dll"
 fi
 
-if [[ -f "$target_dll" ]]; then
-  cp -f "$target_dll" "$backup_dll"
-  had_dll=1
+if ((had_dll)); then
   if [[ "$(sha256sum "$target_dll" | awk '{print $1}')" != \
         "$(sha256sum "$proxy" | awk '{print $1}')" ]]; then
     cp -f "$target_dll" "$sidecar_dll"
