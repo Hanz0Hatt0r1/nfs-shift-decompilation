@@ -21,45 +21,21 @@ ports the `FUN_007b3f40` bit0 consumer.
 
 This separation matters: the runtime bit is not the setup scalar-base value.
 
-## Recovered writer: FUN_00757d2c
+## Recovered writer primitives: FUN_00757d2c
 
-The audited `SHIFT.exe.c` path contains a direct set-only mutation:
+The audited `SHIFT.exe.c` path contains direct set-only mutations:
 
 ```text
 relation+0x70 = relation+0x70 | 1
 ```
 
-for all three relation types.
+Phase 633 isolated the two relation-array operations present inside the
+function:
 
-The function has two source branches.
+- an unordered BODY-pair matcher over JOINT/HINGE relations;
+- a single BODY-endpoint matcher over BAR relations.
 
-### Pair branch
-
-When the local branch selector is zero, retail scans JOINT and then HINGE
-relations. Bit0 is set when the relation endpoints match an unordered pair of
-BODY pointers:
-
-```text
-(pos == A && neg == B) || (neg == A && pos == B)
-```
-
-The reconstructed neutral API therefore takes two CSRF BODY indices and
-performs the same unordered identity match.
-
-### BAR endpoint branch
-
-When the local branch selector is nonzero, retail scans BAR relations and sets
-bit0 when either endpoint pointer equals the selected BODY pointer:
-
-```text
-pos == A || neg == A
-```
-
-The neutral API takes one CSRF BODY index and applies the same endpoint match.
-
-## Native API
-
-Phase 633 adds:
+These are exposed as:
 
 ```cpp
 apply_fun_00757d2c_pair_relation_state_mutation(...)
@@ -67,18 +43,24 @@ apply_fun_00757d2c_bar_endpoint_state_mutation(...)
 ```
 
 Both return a copied `PreparedConstraintRelationResetFrame` plus matched and
-newly-set relation counts.
+newly-set relation counts. They are sub-operation helpers, not by themselves a
+complete model of the function's component branch selector.
 
 The implementation is intentionally set-only:
 
 - existing bit0 values are preserved;
 - matching zero bits become one;
 - no bit is cleared;
-- JOINT/HINGE pair mutation does not touch BAR state;
-- BAR endpoint mutation does not touch JOINT/HINGE state.
+- the JOINT/HINGE helper does not touch BAR state;
+- the BAR helper does not touch JOINT/HINGE state.
 
 CSRF BODY indices replace raw pointer equality only as the already-established
 neutral identity domain from Phase 630.
+
+Raw x86 audit performed immediately after Phase 633 showed that the exact
+choice between these helpers depends on component `+0x424`. Phase 634
+therefore supersedes the earlier branch interpretation and supplies the full
+component-level dispatch.
 
 ## Fail-closed checks
 
