@@ -9,7 +9,12 @@ import sdf_runtime_probe_evidence_bundle_replay as runtime
 import sdf_runtime_probe_evidence_bundle_verify as verifier
 
 
-def _write_raw_capture(root: Path, *, blocked: bool = False) -> Path:
+def _write_raw_capture(
+    root: Path,
+    *,
+    blocked: bool = False,
+    session_id: str | None = None,
+) -> Path:
     mutation = {
         "format": "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1",
         "ready": True,
@@ -33,27 +38,31 @@ def _write_raw_capture(root: Path, *, blocked: bool = False) -> Path:
             "source_function": None if blocked else "FUN_0079a050",
         },
     }
+    if session_id is not None:
+        mutation["capture_session_id"] = session_id
     (root / "relation_state_mutation_events.jsonl").write_text(
         json.dumps(mutation) + "\n",
         encoding="utf-8",
     )
+    frame_entry = {
+        "runtime_event_sequence": 1,
+        "frame_index": 1,
+    }
+    if session_id is not None:
+        frame_entry["capture_session_id"] = session_id
     (root / "frame_entry_000001.json").write_text(
-        json.dumps(
-            {
-                "runtime_event_sequence": 1,
-                "frame_index": 1,
-            }
-        )
+        json.dumps(frame_entry)
         + "\n",
         encoding="utf-8",
     )
+    scalar_reset = {
+        "runtime_event_sequence": 3,
+        "frame_index": 1,
+    }
+    if session_id is not None:
+        scalar_reset["capture_session_id"] = session_id
     (root / "scalar_reset_events.jsonl").write_text(
-        json.dumps(
-            {
-                "runtime_event_sequence": 3,
-                "frame_index": 1,
-            }
-        )
+        json.dumps(scalar_reset)
         + "\n",
         encoding="utf-8",
     )
@@ -220,3 +229,26 @@ def test_phase641_cli_returns_two_for_replay_mismatch(tmp_path: Path):
     cli = _load_cli_module()
 
     assert cli.main([str(forged)]) == 2
+
+
+def test_phase645_replays_session_bound_bundle_exactly(tmp_path: Path):
+    session_id = "ab" * 16
+    archive = _write_raw_capture(
+        tmp_path,
+        session_id=session_id,
+    )
+
+    verification = verifier.verify_sdf_runtime_probe_evidence_bundle(archive)
+    assert verification["ready"] is True
+    assert verification["capture_session_required"] is True
+    assert verification["capture_session_id"] == session_id
+
+    replay = runtime.replay_sdf_runtime_probe_evidence_bundle(archive)
+
+    assert replay["ready"] is True
+    assert replay["timeline_match"] is True
+    assert replay["evidence_ready"] is True
+    assert (
+        replay["embedded_timeline_sha256"]
+        == replay["recomputed_timeline_sha256"]
+    )

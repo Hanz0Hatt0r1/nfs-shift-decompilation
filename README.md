@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 643. Current development: Phase 644.**
+**Merged baseline: Phase 644. Current development: Phase 645.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -452,3 +452,16 @@ unstamped fixtures retain their previous report shape and behavior.
 
 This proves single-session correlation only. It is not an authenticity
 signature and does not enable native relation-state scheduling.
+
+
+## Phase 645 portable evidence session identity
+
+Session identity now survives packaging as a portable evidence invariant.
+Phase 643+ launcher captures bind `evidence_manifest.json` to the declared
+`capture_session_id`, every packaged JSON/JSONL record must agree with it, and
+the independent verifier repeats that check from archive bytes even when file
+sizes and hashes were recomputed after tampering. Fully unstamped historical
+bundles retain legacy compatibility.
+
+This is provenance consistency rather than cryptographic authenticity and does
+not authorize native relation-state scheduling.

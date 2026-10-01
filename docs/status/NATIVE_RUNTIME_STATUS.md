@@ -1138,3 +1138,21 @@ Phase 637 output shape for replay compatibility.
 This strengthens capture provenance only. The timeline still exposes
 `native_scheduler_admission=false` and does not infer mutation gameplay
 semantics or fixed-step timing.
+
+
+## Phase 645 portable evidence session identity
+
+The portable SDF evidence archive now preserves the Phase 643/644 capture
+session boundary. For a launcher-declared or otherwise session-stamped capture,
+the bundle manifest carries one normalized session id and packaging fails if any
+included JSON or JSONL record is missing, malformed or belongs to another
+session.
+
+The independent Phase 640 verifier repeats the session scan from ZIP payload
+bytes and rejects a missing portable declaration or any per-record mismatch even
+when the affected payload hash was recomputed. Phase 641 replay then recomputes
+the same session-aware timeline.
+
+Historical archives with no session declaration and no stamped evidence remain
+legacy-compatible. Session identity is not a cryptographic signature and native
+relation-state scheduler admission remains false.

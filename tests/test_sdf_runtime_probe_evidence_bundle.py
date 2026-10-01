@@ -5,53 +5,91 @@ from pathlib import Path
 import sdf_runtime_probe_evidence_bundle as runtime
 
 
-def _write_capture(root: Path, *, timeline_ready: bool = True) -> None:
+def _write_capture(
+    root: Path,
+    *,
+    timeline_ready: bool = True,
+    session_id: str | None = None,
+    declare_session: bool = False,
+) -> None:
+    def stamped(payload):
+        result = dict(payload)
+        if session_id is not None:
+            result["capture_session_id"] = session_id
+        return result
+
     (root / "relation_state_mutation_events.jsonl").write_text(
         json.dumps(
-            {
-                "format": "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1",
-                "runtime_event_sequence": 1,
-            }
+            stamped(
+                {
+                    "format": "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1",
+                    "runtime_event_sequence": 1,
+                }
+            )
         )
         + "\n",
         encoding="utf-8",
     )
     (root / "relation_state_mutation_timeline.json").write_text(
         json.dumps(
-            {
-                "format": (
-                    "SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1"
-                ),
-                "status": "ready" if timeline_ready else "blocked",
-                "ready": timeline_ready,
-                "errors": [] if timeline_ready else ["blocked-fixture"],
-            }
+            stamped(
+                {
+                    "format": (
+                        "SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1"
+                    ),
+                    "status": "ready" if timeline_ready else "blocked",
+                    "ready": timeline_ready,
+                    "errors": [] if timeline_ready else ["blocked-fixture"],
+                }
+            )
         )
         + "\n",
         encoding="utf-8",
     )
     (root / "frame_entry_000001.json").write_text(
         json.dumps(
-            {
-                "frame_index": 1,
-                "runtime_event_sequence": 2,
-            }
+            stamped(
+                {
+                    "frame_index": 1,
+                    "runtime_event_sequence": 2,
+                }
+            )
         )
         + "\n",
         encoding="utf-8",
     )
     (root / "pre_solve_000001.json").write_text(
-        '{"runtime_event_sequence":3}\n',
+        json.dumps(stamped({"runtime_event_sequence": 3})) + "\n",
         encoding="utf-8",
     )
     (root / "post_solve_000001.json").write_text(
-        '{"runtime_event_sequence":4}\n',
+        json.dumps(stamped({"runtime_event_sequence": 4})) + "\n",
         encoding="utf-8",
     )
     (root / "scalar_reset_events.jsonl").write_text(
-        '{"runtime_event_sequence":5}\n',
+        json.dumps(stamped({"runtime_event_sequence": 5})) + "\n",
         encoding="utf-8",
     )
+
+    if declare_session:
+        assert session_id is not None
+        (root / "probe_manifest.json").write_text(
+            json.dumps(
+                {
+                    "format": "SHIFT.SDFRuntimeProbeLauncher/1",
+                    "capture_session": {
+                        "format": "SHIFT.SDFRuntimeProbeCaptureSession/1",
+                        "version": 1,
+                        "id": session_id,
+                    },
+                    "probe": {
+                        "capture_session_id": session_id,
+                    },
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
 
 def test_phase639_packages_only_capture_evidence_and_manifest(tmp_path: Path):
@@ -214,3 +252,74 @@ def test_phase639_cli_returns_two_for_incomplete_capture(tmp_path: Path):
 
     assert cli.main([str(tmp_path)]) == 2
     assert (tmp_path / runtime.DEFAULT_ARCHIVE_NAME).is_file()
+
+
+SESSION_ID = "ab" * 16
+
+
+def test_phase645_manifest_binds_session_aware_capture(tmp_path: Path):
+    _write_capture(
+        tmp_path,
+        session_id=SESSION_ID,
+        declare_session=True,
+    )
+
+    report = runtime.build_sdf_runtime_probe_evidence_bundle(tmp_path)
+
+    assert report["ready"] is True
+    assert report["capture_session_required"] is True
+    assert report["capture_session_id"] == SESSION_ID
+
+    with zipfile.ZipFile(report["archive"]["path"]) as bundle:
+        manifest = json.loads(
+            bundle.read(runtime.MANIFEST_NAME).decode("utf-8")
+        )
+    assert manifest["capture_session_required"] is True
+    assert manifest["capture_session_id"] == SESSION_ID
+    assert manifest["archive_policy"]["includes_probe_manifest"] is False
+
+
+def test_phase645_probe_declared_session_rejects_missing_evidence_stamp(
+    tmp_path: Path,
+):
+    _write_capture(
+        tmp_path,
+        session_id=SESSION_ID,
+        declare_session=True,
+    )
+    post = tmp_path / "post_solve_000001.json"
+    payload = json.loads(post.read_text(encoding="utf-8"))
+    payload.pop("capture_session_id")
+    post.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+
+    report = runtime.build_sdf_runtime_probe_evidence_bundle(tmp_path)
+
+    assert report["ready"] is False
+    assert report["capture_session_required"] is True
+    assert report["capture_session_id"] == SESSION_ID
+    assert (
+        "capture-session-id-missing:post_solve_000001.json"
+        in report["errors"]
+    )
+
+
+def test_phase645_evidence_infers_session_without_probe_manifest(
+    tmp_path: Path,
+):
+    _write_capture(tmp_path, session_id=SESSION_ID)
+
+    report = runtime.build_sdf_runtime_probe_evidence_bundle(tmp_path)
+
+    assert report["ready"] is True
+    assert report["capture_session_required"] is True
+    assert report["capture_session_id"] == SESSION_ID
+
+
+def test_phase645_legacy_unstamped_manifest_stays_legacy(tmp_path: Path):
+    _write_capture(tmp_path)
+
+    report = runtime.build_sdf_runtime_probe_evidence_bundle(tmp_path)
+
+    assert report["ready"] is True
+    assert "capture_session_required" not in report
+    assert "capture_session_id" not in report
