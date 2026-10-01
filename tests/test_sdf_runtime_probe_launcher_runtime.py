@@ -640,3 +640,125 @@ def test_phase647_contract_describes_mutation_stop_mode():
     contract = runtime.describe_sdf_runtime_probe_launcher()
 
     assert "stop-after-relation-mutation" in contract["modes"]
+
+
+
+def test_phase648_build_winedbg_launch_command_holds_retail_target(
+    tmp_path,
+    monkeypatch,
+):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    monkeypatch.setattr(
+        runtime.shutil,
+        "which",
+        lambda name: "/usr/bin/winedbg" if name == "winedbg" else None,
+    )
+
+    command = runtime.build_winedbg_launch_command(
+        executable=executable,
+        port=31337,
+        game_args=["-silent"],
+    )
+
+    assert command == [
+        "/usr/bin/winedbg",
+        "--gdb",
+        "--no-start",
+        "--port",
+        "31337",
+        str(executable.resolve()),
+        "-silent",
+    ]
+
+
+def test_phase648_build_remote_gdb_command_retries_proxy_startup(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        runtime.shutil,
+        "which",
+        lambda name: "/usr/bin/gdb" if name == "gdb" else None,
+    )
+
+    command = runtime.build_remote_gdb_command(
+        port=31337,
+        gdb_command_file=tmp_path / "attach.gdb",
+        connect_timeout=45,
+    )
+
+    assert "set tcp auto-retry on" in command
+    assert "set tcp connect-timeout 45" in command
+    assert "target remote 127.0.0.1:31337" in command
+    assert command[-2:] == [
+        "-x",
+        str((tmp_path / "attach.gdb").resolve()),
+    ]
+
+
+def test_phase648_prepare_bundle_records_winedbg_startup_ordering(
+    tmp_path,
+    monkeypatch,
+):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    output = tmp_path / "capture"
+    probe = tmp_path / "probe.py"
+    probe.write_text("# probe\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        runtime,
+        "validate_probe_executable_file",
+        lambda path: {
+            "ready": True,
+            "sha256": "a" * 64,
+            "errors": [],
+            "format": "SHIFT.SDFRuntimeProbePEValidation/1",
+        },
+    )
+
+    result = runtime.prepare_probe_bundle(
+        executable,
+        output,
+        probe_script=probe,
+        relation_timeline_only=True,
+        startup_mode="winedbg-gdb-proxy",
+        gdb_proxy_port=31337,
+    )
+
+    assert result["probe"]["startup_mode"] == "winedbg-gdb-proxy"
+    assert result["probe"]["gdb_proxy_port"] == 31337
+    assert result["probe"]["startup_ordering"] == (
+        "debuggee-created-under-winedbg-and-held-before-first-continue"
+    )
+
+
+def test_phase648_prepare_bundle_rejects_proxy_port_without_proxy_mode(
+    tmp_path,
+):
+    with pytest.raises(ValueError, match="only valid"):
+        runtime.prepare_probe_bundle(
+            tmp_path / "SHIFT.exe",
+            tmp_path / "capture",
+            probe_script=tmp_path / "probe.py",
+            gdb_proxy_port=31337,
+        )
+
+
+@pytest.mark.parametrize("port", [0, 65536])
+def test_phase648_winedbg_port_is_bounded(tmp_path, monkeypatch, port):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    monkeypatch.setattr(runtime.shutil, "which", lambda name: "/usr/bin/winedbg")
+    with pytest.raises(ValueError, match="1..65535"):
+        runtime.build_winedbg_launch_command(
+            executable=executable,
+            port=port,
+        )
+
+
+def test_phase648_contract_exposes_early_launch_mode():
+    result = runtime.describe_sdf_runtime_probe_launcher()
+    assert "winedbg-early-launch" in result["modes"]
+    assert "missing WineDbg for early-launch mode" in result["fail_closed"]
