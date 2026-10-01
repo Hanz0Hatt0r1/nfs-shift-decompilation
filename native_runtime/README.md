@@ -282,3 +282,25 @@ code treats that token only as evidence; it is never dereferenced.
 A successful join sets `participant_ready=true` and transports registry index,
 selector ordinal and process state as separate fields. It does not assign a
 provider or imply that registry index equals selector ordinal.
+
+
+## Phase 608 fixed-step solver-frame mode
+
+After preparing a Phase 606 frame and supplying a ready Phase 607 participant
+evidence file, the offline runtime can execute the prepared builtin frame on
+each fixed step:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --participant-boundary out/native_physics_participant_runtime_evidence.json \
+  --solver-frame out/native-solver-frame/solver_frame.sbfr \
+  --frames 120
+```
+
+The solver-frame scalar count must exactly match the physics workspace. The
+runtime rechecks participant readiness on every step and executes only the
+provider-absent Phase 606 reset/solve path. It does not feed the solved vector
+into retail body state.
