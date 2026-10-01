@@ -394,8 +394,6 @@ class ScalarResetProbe(_BaseProbe):
         self,
         address: int,
         output_dir: Path,
-        *,
-        stop_after_hit: int | None = None,
     ) -> None:
         super().__init__(
             address,
@@ -406,7 +404,6 @@ class ScalarResetProbe(_BaseProbe):
             pointer_expr="$ecx+0x48",
         )
         self.event_index = 0
-        self.stop_after_hit = stop_after_hit
 
     def stop(self) -> bool:
         global _SCALAR_RESET_EVENT_COUNT
@@ -485,6 +482,8 @@ class RelationStateMutationProbe(_BaseProbe):
         self,
         address: int,
         output_dir: Path,
+        *,
+        stop_after_hit: int | None = None,
     ) -> None:
         super().__init__(
             address,
@@ -492,6 +491,7 @@ class RelationStateMutationProbe(_BaseProbe):
             output_dir,
         )
         self.event_index = 0
+        self.stop_after_hit = stop_after_hit
 
     def stop(self) -> bool:
         self.hit += 1
