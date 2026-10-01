@@ -294,6 +294,7 @@ def test_phase642_build_gdb_command_file_bounded_full_mode_detaches(tmp_path):
     assert command == (
         "set pagination off\n"
         "set confirm off\n"
+        "handle SIGUSR1 nostop noprint pass\n"
         f"source {(tmp_path / 'probe.py').resolve()}\n"
         f"sdf-probe {(tmp_path / 'capture').resolve()} --capture-frames 3\n"
         "continue\n"
