@@ -1104,3 +1104,21 @@ budget and whether automatic detach is enabled.
 If attachment occurs mid-frame, incomplete evidence remains fail-closed through
 the existing Phase 637–641 correlation/verification/replay chain. No mutation
 or scheduler semantics change in this phase.
+
+
+## Phase 643 capture-session identity and hygiene
+
+The retail SDF capture path now isolates each prepared run with a fresh
+`SHIFT.SDFRuntimeProbeCaptureSession/1` identifier. Known generated evidence
+from a previous run is removed only after the retail executable passes the
+existing validation gate; unrelated files and host-local launcher inputs are
+preserved.
+
+The generated GDB command receives the same session id. All JSON/JSONL evidence
+writers stamp `capture_session_id`, and the GDB command independently rejects a
+directory that still contains stale generated capture artifacts. Reinstalling
+the probe also resets the shared runtime-event sequence, scalar-reset counter and
+last-frame state.
+
+This does not alter solver, reset, provider or relation-mutation semantics and
+does not authorize native scheduler admission.
