@@ -92,3 +92,57 @@ def test_resource_signature_analyzer_tracks_pointer_reuse_by_latest_generation(t
     assert report["bound"]["vb:1024"] == 1
     assert report["bound"]["vb:4096"] == 1
     assert report["last_frame"]["vb:4096"] == 21
+
+
+def test_resource_signature_analyzer_reads_compact_discovery_checkpoints(tmp_path):
+    capture = tmp_path / "capture.jsonl"
+
+    write_jsonl(
+        capture,
+        [
+            {
+                "event": "create_texture",
+                "frame": 4,
+                "texture_ptr": "0x1000",
+                "resource_signature": "tex:2800x600:113",
+                "width": 2800,
+                "height": 600,
+                "format": 113,
+            },
+            {
+                "event": "resource_signature_use",
+                "frame": 20,
+                "bind_event": "set_texture",
+                "resource_signature": "tex:2800x600:113",
+                "use_count": 1,
+                "first_frame": 20,
+                "last_frame": 20,
+            },
+            {
+                "event": "resource_signature_use",
+                "frame": 45,
+                "bind_event": "set_texture",
+                "resource_signature": "tex:2800x600:113",
+                "use_count": 64,
+                "first_frame": 20,
+                "last_frame": 45,
+            },
+            {
+                "event": "resource_signature_use",
+                "frame": 50,
+                "bind_event": "set_render_target",
+                "resource_signature": "rt:2800x600:113",
+                "use_count": 8,
+                "first_frame": 31,
+                "last_frame": 50,
+            },
+        ],
+    )
+
+    report = analyze(capture)
+
+    assert report["created"]["tex:2800x600:113"] == 1
+    assert report["bound"]["tex:2800x600:113"] == 64
+    assert report["bound"]["rt:2800x600:113"] == 8
+    assert report["last_frame"]["tex:2800x600:113"] == 45
+    assert report["first_frame"]["rt:2800x600:113"] == 31
