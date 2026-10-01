@@ -409,7 +409,8 @@ def test_wine_launcher_exports_inferred_prefix_before_winepath_and_wine():
     assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('capture_windows="$(winepath -w "$capture_path")"')
     assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('"$wine_command" "$game"')
     assert 'echo "WINEPREFIX: $WINEPREFIX"' in wine
-    assert 'echo "Wine exe : $(command -v "$wine_command")"' in wine
+    assert 'wine_resolved="$(command -v "$wine_command")"' in wine
+    assert 'echo "Wine exe : $wine_resolved"' in wine
     assert 'echo "Winepath : $(command -v winepath)"' in wine
 
 
@@ -433,3 +434,13 @@ def test_trigger_buffer_payloads_defer_disk_io_until_trigger():
     assert "write_buffer_payload_file(" in source
     assert "g_deferred_buffer_payloads.clear();" in source
     assert "discard_deferred_buffer_payload(*out_buffer);" in source
+
+
+def test_wine_launcher_warns_on_portproton_prefix_with_external_wine():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'portproton_root="${wine_prefix%%/data/prefixes/*}"' in wine
+    assert 'PW_WINE_USE' in wine
+    assert 'wine_resolved="$(command -v "$wine_command")"' in wine
+    assert 'PortProton prefix is being launched with Wine outside the PortProton tree' in wine
+    assert 'use --wine with the Wine/Proton binary selected by PortProton' in wine

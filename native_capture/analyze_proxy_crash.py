@@ -9,6 +9,14 @@ from typing import Any
 
 ACCESS_TYPES = {0: "read", 1: "write", 8: "execute"}
 
+# Absolute VAs already backed by decompilation artifacts in this repository.
+# These are used only as nearest-known anchors; they do not claim exact
+# function extents.
+KNOWN_MAIN_FUNCTIONS = (
+    (0x0082F3C0, "FUN_0082f3c0", "vehicle-physics-selector-storage-precondition"),
+)
+KNOWN_FUNCTION_MAX_DELTA = 0x400
+
 
 def _hex(value: Any) -> int | None:
     if isinstance(value, int):
@@ -82,6 +90,25 @@ def analyze(events: list[dict[str, Any]], parse_errors: int = 0) -> dict[str, An
                     "rva": f"0x{address - base:08x}",
                 })
 
+    exception_address = _hex(crash.get("exception_address"))
+    nearest_known_function = None
+    if exception_address is not None:
+        eligible = [
+            (address, name, semantic)
+            for address, name, semantic in KNOWN_MAIN_FUNCTIONS
+            if address <= exception_address
+        ]
+        if eligible:
+            address, name, semantic = max(eligible, key=lambda item: item[0])
+            delta = exception_address - address
+            if delta <= KNOWN_FUNCTION_MAX_DELTA:
+                nearest_known_function = {
+                    "address": f"0x{address:08x}",
+                    "name": name,
+                    "semantic": semantic,
+                    "delta": f"0x{delta:x}",
+                }
+
     report.update({
         "diagnosis": diagnosis,
         "exception_code": crash.get("exception_code"),
@@ -91,6 +118,7 @@ def analyze(events: list[dict[str, Any]], parse_errors: int = 0) -> dict[str, An
         "access_address": crash.get("access_address"),
         "registers": registers,
         "main_image_stack_candidates": candidates,
+        "nearest_known_function": nearest_known_function,
     })
     return report
 
