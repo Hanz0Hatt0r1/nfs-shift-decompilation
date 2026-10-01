@@ -859,30 +859,34 @@ integration.
 
 ## Phase 633 relation-state bit0 mutation
 
-The recovered runtime state writer immediately upstream of the Phase 632
-selector is now ported as a separate source-backed native kernel.
+Phase 633 isolates the set-only relation-array primitives inside
+`FUN_00757d2c`: unordered JOINT/HINGE BODY-pair matching and BAR single-BODY
+endpoint matching. Existing set bits are preserved and unmatched relations are
+unchanged.
 
-The relation `+0x70` field is temporally reused: `FUN_007b1b60` first uses
-it as the setup scalar base, and `FUN_007b3820` clears it after endpoint
-sample allocation. Runtime `FUN_00757d2c` later mutates bit0 with set-only
-`| 1` stores.
+Raw x86 review after that phase showed that these helpers are not selected by
+an abstract pair-vs-endpoint event. The exact selector is component
+`+0x424`, which is reconstructed in Phase 634.
 
-The zero-selector branch compares an unordered BODY pointer pair and sets bit0
-on matching JOINT and HINGE relations. The nonzero-selector branch compares
-one BODY pointer against both BAR endpoints and sets every matching BAR bit.
-Phase 633 normalizes those pointer comparisons through the already-established
-CSRF BODY-index identity domain.
+## Phase 634 exact component relation-state dispatch
 
-The native checker covers reversed pair order, unmatched no-op behavior,
-multiple BAR matches, self-endpoint BARs, preservation of pre-existing bits,
-and fail-closed cardinality/domain errors.
+`FUN_00757d20(slot)` loads slot 0..3 into EAX; thunk `0x469736` multiplies
+it by `0xA80`; `FUN_00757d2c` addresses
+`vehicle+0x400+slot*0xA80`.
 
-This kernel is not scheduled by `shift_runtime`. Raw executable disassembly proves that `FUN_00757d20(index)` routes a
-0..3 component index through `FUN_00469736`, which multiplies it by the
-0xA80 component stride before `FUN_00757d2c`. The same setup resolves the slots to FL/FR/RL/RR wheel/spindle BODY names and
-`rear_axle`. Retail event identity and dispatch timing remain unresolved, so
-Phase 633 does not fabricate a fixed-step trigger.
+Every call sets component `+0x504`. If component `+0x424` is non-null,
+retail also sets `+0x540` and scans BAR relations only for that BODY endpoint.
+If `+0x424` is null, retail scans JOINT/HINGE only for the unordered pair
+(component `+0x420`, vehicle `+0x2E00` rear_axle).
 
-Remaining blockers are authentic per-frame BODY/raw relation state, mutation
-event provenance/timing, provider-present execution and persistent vehicle
-transform/motion integration.
+The native representation uses optional BODY indices so BODY index 0 remains
+distinct from a null retail pointer. The four-slot wrapper is range-checked and
+remains outside `shift_runtime`.
+
+For the current BMW M3 E36 SDF evidence, wheel/spindle bodies are present but
+`rear_axle` is absent from the 11 BODY names. The neutral model therefore
+keeps rear_axle null; it does not fabricate a BODY index.
+
+Remaining blockers are authentic event timing/call-site scheduling,
+per-frame BODY/raw relation state, provider-present execution and persistent
+vehicle transform/motion integration.
