@@ -67,7 +67,9 @@ HingeProjectionResult evaluate_fun_007bae40_hinge(
     require_finite(
         input.sample_frame_offset,
         "HINGE sample frame offset");
-    require_finite(input.body_frame, "HINGE body frame");
+    if (input.side_flag != 0u) {
+        require_finite(input.body_frame, "HINGE body frame");
+    }
     if (!std::isfinite(input.linear_scale) ||
         !std::isfinite(input.quadratic_scale)) {
         throw std::invalid_argument(
@@ -125,6 +127,8 @@ HingeProjectionResult evaluate_fun_007bae40_hinge(
             result.cross_vector[2];
     }
 
+    result.q_vector = {qx, qy, qz};
+
     const double lane0 =
         a2 * qz +
         a0 * qx +
@@ -146,6 +150,7 @@ HingeProjectionResult evaluate_fun_007bae40_hinge(
         result.sign * lane1,
     };
 
+    require_finite(result.q_vector, "FUN_007bae40 q vector");
     require_finite(result.raw_lanes, "FUN_007bae40 raw lanes");
     require_finite(
         result.signed_lanes,
