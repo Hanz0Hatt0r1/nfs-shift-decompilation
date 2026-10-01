@@ -51,6 +51,7 @@ add_library(shift_runtime_physics STATIC
   src/body_export_solver_join.cpp
   src/body_preprojection.cpp
   src/bar_projection.cpp
+  src/bar_matrix_coupling.cpp
   src/hinge_projection.cpp
   src/hinge_bar_matrix_coupling.cpp
   src/hinge_matrix_coupling.cpp
