@@ -234,7 +234,7 @@ Physics equivalence is a separate workstream.
 
 Phase 647 changes the relation-mutation capture termination policy after an
 authentic 600-frame lightweight session produced 1200 contiguous anchors but no
-mutation. `--stop-on-relation-mutation` now stops after the first authentic
+mutation. `--stop-after-relation-mutation` now stops at the first post-solve anchor after an authentic
 `FUN_00757d2c` event and can be paired with a large frame budget as a fallback.
 The next evidence run should arm the probe before vehicle/race setup rather than
 guessing a short runtime window.
