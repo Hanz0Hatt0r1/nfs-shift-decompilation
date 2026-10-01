@@ -353,3 +353,35 @@ physics workspace.
 This completes prepared reset→solve→BODY-projection scheduling. It does not
 persist the projected accumulators into vehicle motion, and it does not derive
 retail matrix/RHS/reset/constraint rows.
+
+
+## Phase 611 persistent post-solve BODY state
+
+Phase 610 remains the default behavior: each fixed step replays the BODY input
+embedded in the prepared SBPS packet.
+
+To carry only the opaque BODY accumulator channels between fixed steps:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --participant-boundary out/native_physics_participant_runtime_evidence.json \
+  --solver-frame out/native-solver-frame/solver_frame.sbfr \
+  --post-solve-projection out/native-post-solve/post_solve.sbps \
+  --persist-post-solve-body-state \
+  --frames 120
+```
+
+The stateful executor requires the same solved-vector join and verifies the
+prepared one-step `FUN_007b4110` BODY delta on every step. This is native
+accumulator continuity only; vehicle transform/motion state is still not
+integrated.
+
+A deterministic packet-only check is also available:
+
+```bash
+native_runtime/build/shift_runtime_post_solve_persistence_check \
+  out/native-post-solve/post_solve.sbps 5
+```

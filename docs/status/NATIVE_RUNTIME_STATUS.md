@@ -33,7 +33,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 1. Close real BMW per-draw state differences that are not yet represented by the current Vulkan child pipeline (blend/cull/depth and remaining renderer-global resources).
 2. Phase 599 connects the six-word CameraManager snapshot and guarded double-buffer swap to the native fixed-step scheduler. Phase 600 adds fail-closed recovered scalar evidence input through SHIFT.NativeCameraStateBridge/1 and --camera-state. Remaining camera work is retail timestamp/update scheduling, camera-source/controller behavior, gameplay view selection/attachment and exact render/view integration.
 3. Phase 602 connects the source-backed PhysicsParticipantManager registry ABI and separate selector context to native state through `SHIFT.NativePhysicsParticipantBoundary/1`. Concrete selected participant instance/index/mode and provider identity remain capture-gated.
-4. Phases 603–604 supply native source-backed `FUN_007b0f20` solve and `FUN_007b2210` reset kernels. Next, connect an exact BMW solver-frame input (matrix/RHS/graph/runtime reset-node evidence) to the fixed tick only when the provider-absent builtin path is proven.
+4. Phases 603–610 supply the provider-absent native reset→solve→post-solve chain, including exact participant evidence and fixed-step joins. Phase 611 adds explicit continuity for the six opaque BODY accumulator channels across fixed steps while keeping persistent vehicle motion false. Remaining physics evidence gates are authentic matrix/RHS/reset/constraint assembly, provider-present dispatch and rigid-body/vehicle integration.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Live keyboard vehicle controls already feed the neutral intent layer. Phase 601 adds a deterministic fixed-step input script and physics-boundary activity telemetry for CI. Gamepad/analog normalization and retail filtering remain.
 7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
@@ -379,3 +379,23 @@ Linux CI executes five synthetic 40-scalar steps with the exact BMW workspace
 cardinalities 11 BODY / 4 JOINT / 4 HINGE / 20 BAR, then independently rebuilds
 a valid SBPS packet with one mismatched scalar and requires the runtime to
 reject the solve→projection join.
+
+
+## Phase 611 persistent BODY accumulator boundary
+
+The Phase 610 solver→projection chain now has an optional native continuity
+mode, `--persist-post-solve-body-state`.
+
+When enabled, the first fixed step starts from the SBPS prepared BODY state and
+every later step starts from the previous native `FUN_007b4110` output.
+The executor checks the prepared one-step BODY delta on every step, so state
+continuity does not disable the Phase 609 numerical oracle.
+
+Telemetry distinguishes this from vehicle integration:
+
+- `physics_solver_persistent_body_accumulator_state_applied` may become true;
+- `physics_solver_persistent_vehicle_state_applied` remains false.
+
+Linux Vulkan CI preserves the old Phase 610 non-persistent run and adds a
+five-step persistent BODY run plus a deterministic standalone accumulation
+checker.

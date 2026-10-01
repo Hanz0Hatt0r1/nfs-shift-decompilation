@@ -266,9 +266,10 @@ PreparedPostSolveBodyProjection load_prepared_post_solve_body_projection(
     return out;
 }
 
-PostSolveBodyProjectionResult execute_post_solve_body_projection_with_solution(
+PostSolveBodyProjectionResult execute_post_solve_body_projection_with_state(
     const PreparedPostSolveBodyProjection& projection,
     const std::vector<double>& solver_vector,
+    const std::vector<BodyAccumulatorState>& initial_bodies,
     double tolerance) {
 
     if (!std::isfinite(tolerance) || tolerance <= 0.0) {
@@ -282,6 +283,24 @@ PostSolveBodyProjectionResult execute_post_solve_body_projection_with_solution(
     if (solver_vector.size() != projection.solver_vector.size()) {
         throw std::runtime_error(
             "post-solve solved-vector cardinality mismatch");
+    }
+    if (initial_bodies.size() != projection.bodies.size()) {
+        throw std::runtime_error(
+            "post-solve persistent BODY cardinality mismatch");
+    }
+    for (const auto& body : initial_bodies) {
+        for (double value : body.angular) {
+            if (!std::isfinite(value)) {
+                throw std::runtime_error(
+                    "post-solve persistent BODY contains non-finite angular value");
+            }
+        }
+        for (double value : body.linear) {
+            if (!std::isfinite(value)) {
+                throw std::runtime_error(
+                    "post-solve persistent BODY contains non-finite linear value");
+            }
+        }
     }
 
     double max_join_error = 0.0;
@@ -302,7 +321,7 @@ PostSolveBodyProjectionResult execute_post_solve_body_projection_with_solution(
         }
     }
 
-    std::vector<BodyAccumulatorState> bodies = projection.bodies;
+    std::vector<BodyAccumulatorState> bodies = initial_bodies;
 
     for (const auto& row : projection.joints) {
         const std::array<double, 3> solution = {
@@ -358,6 +377,7 @@ PostSolveBodyProjectionResult execute_post_solve_body_projection_with_solution(
     }
 
     double max_error = 0.0;
+    double max_delta_error = 0.0;
     for (std::size_t body = 0; body < bodies.size(); ++body) {
         for (std::size_t component = 0; component < 3; ++component) {
             for (int channel = 0; channel < 2; ++channel) {
@@ -365,23 +385,58 @@ PostSolveBodyProjectionResult execute_post_solve_body_projection_with_solution(
                     channel == 0
                         ? bodies[body].angular[component]
                         : bodies[body].linear[component];
-                const double expected =
+                const double initial =
+                    channel == 0
+                        ? initial_bodies[body].angular[component]
+                        : initial_bodies[body].linear[component];
+                const double prepared_initial =
+                    channel == 0
+                        ? projection.bodies[body].angular[component]
+                        : projection.bodies[body].linear[component];
+                const double prepared_expected =
                     channel == 0
                         ? projection.expected_bodies[body].angular[component]
                         : projection.expected_bodies[body].linear[component];
+                const double expected_delta =
+                    prepared_expected - prepared_initial;
+                const double actual_delta = actual - initial;
+                const double delta_error =
+                    std::abs(actual_delta - expected_delta);
+                const double expected = initial + expected_delta;
                 const double error = std::abs(actual - expected);
                 max_error = std::max(max_error, error);
+                max_delta_error =
+                    std::max(max_delta_error, delta_error);
                 const double limit =
-                    tolerance * std::max(1.0, std::abs(expected));
-                if (!std::isfinite(actual) || error > limit) {
+                    tolerance * std::max(1.0, std::abs(expected_delta));
+                if (!std::isfinite(actual) ||
+                    delta_error > limit ||
+                    error > tolerance * std::max(1.0, std::abs(expected))) {
                     throw std::runtime_error(
-                        "post-solve projection native/Python oracle mismatch");
+                        "post-solve projection persistent delta/oracle mismatch");
                 }
             }
         }
     }
 
-    return {std::move(bodies), max_error, max_join_error};
+    return {
+        std::move(bodies),
+        max_error,
+        max_join_error,
+        max_delta_error,
+    };
+}
+
+PostSolveBodyProjectionResult execute_post_solve_body_projection_with_solution(
+    const PreparedPostSolveBodyProjection& projection,
+    const std::vector<double>& solver_vector,
+    double tolerance) {
+
+    return execute_post_solve_body_projection_with_state(
+        projection,
+        solver_vector,
+        projection.bodies,
+        tolerance);
 }
 
 PostSolveBodyProjectionResult execute_prepared_post_solve_body_projection(
