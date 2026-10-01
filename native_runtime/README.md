@@ -729,3 +729,30 @@ reusing the Phase 628 synthetic one-sample-per-relation scheduler fixture.
 
 CSRF is not yet a `shift_runtime` fixed-step option; that join is the next
 native integration boundary.
+
+
+## Phase 631 fixed-step constraint refresh
+
+Run GBCF through the source-order relation refresh on every native fixed step:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --participant-boundary out/runtime-participant.json \
+  --solver-frame out/solver/solver_frame.sbfr \
+  --generated-body-constraint-frame out/generated-body/generated_body_constraints.gbcf \
+  --constraint-sample-relation-frame out/constraint-relations/constraint_sample_relations.csrf \
+  --frames 3
+```
+
+CSRF requires GBCF. The runtime compares CSRF relation counts to the physics
+workspace, then requires the refreshed/generated GBCF sample counts to match
+the exact Phase 630 endpoint coverage. For BMW this distinguishes 4/4/20
+relations from 8/8/40 BODY-owned endpoint samples.
+
+Each fixed step executes `FUN_007b3ed0` before the existing generated
+BODY→SBFR equality gate. GBCF and CSRF remain immutable prepared inputs; retail
+per-frame BODY motion/raw relation input production is still outside this
+boundary.
