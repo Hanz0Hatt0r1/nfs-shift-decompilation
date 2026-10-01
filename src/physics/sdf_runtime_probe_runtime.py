@@ -13,10 +13,21 @@ FORMAT = "SHIFT.SDFRuntimeProbe/1"
 IMAGE_BASE = 0x00400000
 
 FUNCTIONS = {
+    "relation_state_mutation": 0x00757D2C,
     "frame_entry": 0x007B3F40,
     "builtin_solver": 0x007B0F20,
     "post_solve": 0x007B4110,
 }
+
+RELATION_STATE_MUTATION_LAYOUT = {
+    "component_base_offset": 0x400,
+    "component_stride": 0xA80,
+    "component_count": 4,
+    "wheel_body_offset": 0x420,
+    "spindle_body_offset": 0x424,
+    "rear_axle_body_offset": 0x2E00,
+}
+RELATION_STATE_MUTATION_SLOT_NAMES = ("FL", "FR", "RL", "RR")
 
 PHYSICS_OFFSETS = {
     "solver_scalar_count": 0x34,
@@ -79,6 +90,83 @@ def describe_frame_entry_backend(
         "offsets": dict(PHYSICS_OFFSETS),
     }
 
+
+def describe_relation_state_mutation_entry(
+    *,
+    vehicle_pointer: int,
+    component_offset: int,
+    wheel_body_pointer: int,
+    spindle_body_pointer: int,
+    rear_axle_body_pointer: int,
+    caller_return_address: int | None = None,
+) -> dict[str, Any]:
+    """Normalize the source-backed FUN_00757d2c entry register/memory state.
+
+    Raw retail disassembly proves that the entry uses ECX as the vehicle
+    pointer and EAX as component_slot * 0xA80 before the first instruction
+    forms vehicle + 0x400 + EAX.
+    """
+    vehicle = int(vehicle_pointer)
+    offset = int(component_offset)
+    stride = RELATION_STATE_MUTATION_LAYOUT["component_stride"]
+    count = RELATION_STATE_MUTATION_LAYOUT["component_count"]
+
+    errors: list[str] = []
+    component_slot: int | None = None
+    if offset < 0 or offset % stride != 0:
+        errors.append("component-offset-not-slot-stride")
+    else:
+        candidate = offset // stride
+        if not 0 <= candidate < count:
+            errors.append("component-slot-out-of-range")
+        else:
+            component_slot = candidate
+
+    component_block_pointer = (
+        vehicle
+        + RELATION_STATE_MUTATION_LAYOUT["component_base_offset"]
+        + offset
+    )
+    spindle_present = int(spindle_body_pointer) != 0
+    branch = (
+        "spindle-bar-endpoint"
+        if spindle_present
+        else "wheel-rear-axle-pair"
+    )
+
+    return {
+        "format": "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1",
+        "version": 1,
+        "status": "captured" if not errors else "invalid",
+        "ready": not errors,
+        "capture_errors": errors,
+        "source_function": "FUN_00757d2c",
+        "source_address": FUNCTIONS["relation_state_mutation"],
+        "vehicle_pointer": vehicle,
+        "component_offset": offset,
+        "component_slot": component_slot,
+        "component_slot_name": (
+            None
+            if component_slot is None
+            else RELATION_STATE_MUTATION_SLOT_NAMES[component_slot]
+        ),
+        "component_block_pointer": component_block_pointer,
+        "wheel_body_pointer": int(wheel_body_pointer),
+        "spindle_body_pointer": int(spindle_body_pointer),
+        "rear_axle_body_pointer": int(rear_axle_body_pointer),
+        "spindle_body_present": spindle_present,
+        "source_branch": branch,
+        "caller_return_address": (
+            None
+            if caller_return_address is None
+            else int(caller_return_address)
+        ),
+        "entry_abi": {
+            "vehicle_pointer_register": "ECX",
+            "component_offset_register": "EAX",
+        },
+        "layout": dict(RELATION_STATE_MUTATION_LAYOUT),
+    }
 
 def capture_geometry(
     *,
@@ -147,6 +235,13 @@ def describe_sdf_runtime_probe_contract() -> dict[str, Any]:
         "ready": True,
         "image_base": IMAGE_BASE,
         "breakpoints": {
+            "relation_state_mutation": {
+                "address": FUNCTIONS["relation_state_mutation"],
+                "abi": "retail-entry-register-state",
+                "vehicle_pointer_register": "ECX",
+                "component_offset_register": "EAX",
+                "component_offset_rule": "slot * 0xA80",
+            },
             "frame_entry": {
                 "address": FUNCTIONS["frame_entry"],
                 "abi": "__fastcall",
@@ -172,6 +267,10 @@ def describe_sdf_runtime_probe_contract() -> dict[str, Any]:
             "pre_solve": "builtin solver breakpoint dumps matrix/RHS before solve",
             "post_solve": "FUN_007b4110 breakpoint dumps solved RHS/vector",
             "provider_path": "frame entry exposes provider pointer, but provider virtual slot remains opaque",
+            "relation_state_mutation": (
+                "FUN_00757d2c observer records exact slot/body-pointer branch "
+                "inputs without modifying retail state"
+            ),
         },
         "output": {
             "format": "SHIFT.SDFSolverCaptureRuntime/1",
@@ -190,9 +289,12 @@ __all__ = [
     "IMAGE_BASE",
     "FUNCTIONS",
     "PHYSICS_OFFSETS",
+    "RELATION_STATE_MUTATION_LAYOUT",
+    "RELATION_STATE_MUTATION_SLOT_NAMES",
     "solver_call_stack_layout",
     "derive_physics_system_from_solver_state",
     "capture_geometry",
+    "describe_relation_state_mutation_entry",
     "describe_frame_entry_backend",
     "validate_dump_shape",
     "describe_sdf_runtime_probe_contract",
