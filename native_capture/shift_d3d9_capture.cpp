@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cctype>
 #include <locale>
 #include <cstdint>
 #include <cstdlib>
@@ -319,7 +320,12 @@ struct CaptureWriter {
             const char* flush_env = std::getenv("SHIFT_D3D9_CAPTURE_FLUSH");
             if (!flush_env || std::string(flush_env) != "0") out.flush();
         }
-        if (env_enabled("SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT") || !out.is_open()) {
+        const char* debug_env = std::getenv("SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT");
+        const bool debug_output =
+            debug_env && *debug_env &&
+            std::string(debug_env) != "0" &&
+            std::string(debug_env) != "false";
+        if (debug_output || !out.is_open()) {
             OutputDebugStringA(line.str().c_str());
         }
     }
