@@ -385,6 +385,9 @@ def test_phase607_native_runtime_admits_runtime_participant_identity_evidence():
     assert "const bool runtime_evidence" in source
     assert "participant_instance_ready" in source
     assert "registry_index_equals_selector_ordinal" in source
+    assert "same_participant_pointer_proven" in source
+    assert "manager_registry_identity_observed" in source
+    assert "igphasevehicle_selection_observed" in source
     assert (
         "physics.participant_ready =\n"
         "        runtime_evidence && participant_instance_ready;"
