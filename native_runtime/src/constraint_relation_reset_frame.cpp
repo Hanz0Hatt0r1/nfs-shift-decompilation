@@ -1,5 +1,6 @@
 #include "shift_constraint_relation_reset_frame.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -339,6 +340,31 @@ select_fun_007b3f40_reset_nodes(
     }
 
     return result;
+}
+
+std::vector<std::size_t>
+normalize_fun_007b3f40_reset_nodes(
+    const std::vector<std::size_t>& reset_call_nodes) {
+
+    auto nodes = reset_call_nodes;
+    std::sort(nodes.begin(), nodes.end());
+    nodes.erase(
+        std::unique(nodes.begin(), nodes.end()),
+        nodes.end());
+    return nodes;
+}
+
+void verify_fun_007b3f40_reset_nodes_match(
+    const ConstraintRelationResetSelectionResult& selection,
+    const std::vector<std::size_t>& solver_frame_reset_nodes) {
+
+    if (normalize_fun_007b3f40_reset_nodes(
+            selection.reset_nodes) !=
+        normalize_fun_007b3f40_reset_nodes(
+            solver_frame_reset_nodes)) {
+        throw std::runtime_error(
+            "constraint relation reset nodes do not match solver frame");
+    }
 }
 
 }  // namespace shift::runtime::physics
