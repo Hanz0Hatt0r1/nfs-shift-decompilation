@@ -28,8 +28,10 @@
 
 namespace {
 
-constexpr std::size_t D3D9_VTABLE_COUNT = 119;
+constexpr std::size_t IDIRECT3DDEVICE9_VTABLE_COUNT = 119;
+constexpr std::size_t IDIRECT3DDEVICE9EX_VTABLE_COUNT = 134;
 constexpr std::size_t IDIRECT3D9_VTABLE_COUNT = 17;
+constexpr std::size_t IDIRECT3D9EX_VTABLE_COUNT = 22;
 constexpr std::size_t TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t CUBE_TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t BUFFER_VTABLE_COUNT = 14;
@@ -182,6 +184,15 @@ SetPixelShaderConstantFFn g_real_set_pixel_shader_constant_f = nullptr;
 DrawIndexedPrimitiveFn g_real_draw_indexed_primitive = nullptr;
 
 std::mutex g_hook_mutex;
+
+struct HookVtableContext {
+    void** original_vtable = nullptr;
+    void** clone_vtable = nullptr;
+    std::size_t count = 0;
+};
+
+std::unordered_map<void*, HookVtableContext> g_hook_vtable_contexts;
+
 std::atomic<unsigned long long> g_event_index{0};
 std::atomic<unsigned long long> g_frame{0};
 std::atomic<bool> g_proxy_entry_reported{false};
@@ -1460,7 +1471,71 @@ struct VtablePatch {
     void** original_out = nullptr;
 };
 
-bool patch_object_vtable_batch(
+bool executable_code_pointer(const void* address) {
+    if (!address) return false;
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!VirtualQuery(address, &mbi, sizeof(mbi))) return false;
+    if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
+        return false;
+    }
+    const DWORD protection = mbi.Protect & 0xff;
+    return protection == PAGE_EXECUTE ||
+           protection == PAGE_EXECUTE_READ ||
+           protection == PAGE_EXECUTE_READWRITE ||
+           protection == PAGE_EXECUTE_WRITECOPY;
+}
+
+bool readable_pointer_range(const void* address, std::size_t bytes) {
+    if (!address || !bytes) return false;
+    std::uintptr_t cursor = reinterpret_cast<std::uintptr_t>(address);
+    const std::uintptr_t end = cursor + bytes;
+    if (end < cursor) return false;
+    while (cursor < end) {
+        MEMORY_BASIC_INFORMATION mbi{};
+        if (!VirtualQuery(reinterpret_cast<const void*>(cursor), &mbi, sizeof(mbi))) {
+            return false;
+        }
+        if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
+            return false;
+        }
+        const std::uintptr_t region_end =
+            reinterpret_cast<std::uintptr_t>(mbi.BaseAddress) +
+            static_cast<std::uintptr_t>(mbi.RegionSize);
+        if (region_end <= cursor) return false;
+        cursor = std::min(end, region_end);
+    }
+    return true;
+}
+
+bool extended_vtable_looks_valid(
+    void* object,
+    std::size_t base_count,
+    std::size_t extended_count) {
+    if (!object || extended_count <= base_count) return false;
+    void** vtable = *reinterpret_cast<void***>(object);
+    if (!vtable ||
+        !readable_pointer_range(vtable, extended_count * sizeof(void*))) {
+        return false;
+    }
+    for (std::size_t slot = base_count; slot < extended_count; ++slot) {
+        if (!executable_code_pointer(vtable[slot])) return false;
+    }
+    return true;
+}
+
+template <typename T>
+T original_method_for(void* object, std::size_t slot, T fallback) {
+    std::lock_guard<std::mutex> lock(g_hook_mutex);
+    const auto it = g_hook_vtable_contexts.find(object);
+    if (it != g_hook_vtable_contexts.end() &&
+        it->second.original_vtable &&
+        slot < it->second.count) {
+        return reinterpret_cast<T>(it->second.original_vtable[slot]);
+    }
+    return fallback;
+}
+
+bool patch_object_vtable_batch_locked(
     void* object,
     std::size_t count,
     const std::vector<VtablePatch>& patches,
@@ -1468,8 +1543,16 @@ bool patch_object_vtable_batch(
 
     if (!object || patches.empty()) return false;
     auto*** object_vtable = reinterpret_cast<void***>(object);
-    void** original_vtable = *object_vtable;
-    if (!original_vtable) return false;
+    void** current_vtable = *object_vtable;
+    if (!current_vtable) return false;
+
+    void** root_original_vtable = current_vtable;
+    const auto previous = g_hook_vtable_contexts.find(object);
+    if (previous != g_hook_vtable_contexts.end() &&
+        previous->second.clone_vtable == current_vtable &&
+        previous->second.original_vtable) {
+        root_original_vtable = previous->second.original_vtable;
+    }
 
     for (const auto& patch : patches) {
         if (patch.slot >= count || !patch.hook) {
@@ -1483,6 +1566,17 @@ bool patch_object_vtable_batch(
     }
 
     const std::size_t bytes = count * sizeof(void*);
+    if (!readable_pointer_range(current_vtable, bytes)) {
+        std::ostringstream fields;
+        fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+               << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+               << ",\"vtable_ptr\":" << CaptureWriter::ptr(current_vtable)
+               << ",\"vtable_count\":" << count
+               << ",\"reason\":\"vtable-range-unreadable\"";
+        writer().write_event("vtable_patch_failed", fields.str());
+        return false;
+    }
+
     auto* clone = static_cast<void**>(HeapAlloc(GetProcessHeap(), 0, bytes));
     if (!clone) {
         writer().write_event(
@@ -1490,12 +1584,14 @@ bool patch_object_vtable_batch(
             "\"reason\":\"heap-allocation-failed\"");
         return false;
     }
-    std::memcpy(clone, original_vtable, bytes);
+    std::memcpy(clone, current_vtable, bytes);
 
     bool changed = false;
     for (const auto& patch : patches) {
-        if (original_vtable[patch.slot] == patch.hook) continue;
-        if (patch.original_out) *patch.original_out = original_vtable[patch.slot];
+        if (current_vtable[patch.slot] == patch.hook) continue;
+        if (patch.original_out) {
+            *patch.original_out = root_original_vtable[patch.slot];
+        }
         clone[patch.slot] = patch.hook;
         changed = true;
     }
@@ -1521,14 +1617,33 @@ bool patch_object_vtable_batch(
     DWORD ignored = 0;
     VirtualProtect(object_vtable, sizeof(void*), old_protect, &ignored);
 
+    g_hook_vtable_contexts[object] = {
+        root_original_vtable,
+        clone,
+        count,
+    };
+
     if (env_enabled("SHIFT_D3D9_CAPTURE_VTABLE_LOG")) {
         std::ostringstream fields;
         fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
                << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+               << ",\"original_vtable\":" << CaptureWriter::ptr(root_original_vtable)
+               << ",\"previous_vtable\":" << CaptureWriter::ptr(current_vtable)
+               << ",\"clone_vtable\":" << CaptureWriter::ptr(clone)
+               << ",\"vtable_count\":" << count
                << ",\"patch_count\":" << patches.size();
         writer().write_event("vtable_patch_installed", fields.str());
     }
     return true;
+}
+
+bool patch_object_vtable_batch(
+    void* object,
+    std::size_t count,
+    const std::vector<VtablePatch>& patches,
+    const char* label) {
+    std::lock_guard<std::mutex> lock(g_hook_mutex);
+    return patch_object_vtable_batch_locked(object, count, patches, label);
 }
 
 void patch_object_vtable(
@@ -1589,8 +1704,10 @@ HRESULT STDMETHODCALLTYPE hook_create_device(
     }
 
     if (out_device) *out_device = nullptr;
-    const HRESULT hr = g_real_create_device
-        ? g_real_create_device(self, adapter, type, window, behavior_flags, params, out_device)
+    const auto original = original_method_for<CreateDeviceFn>(
+        self, 16, g_real_create_device);
+    const HRESULT hr = original
+        ? original(self, adapter, type, window, behavior_flags, params, out_device)
         : E_FAIL;
 
     {
@@ -1607,9 +1724,9 @@ HRESULT STDMETHODCALLTYPE hook_create_device(
 }
 
 HRESULT STDMETHODCALLTYPE hook_test_cooperative_level(IDirect3DDevice9* self) {
-    const HRESULT hr = g_real_test_cooperative_level
-        ? g_real_test_cooperative_level(self)
-        : E_FAIL;
+    const auto original = original_method_for<TestCooperativeLevelFn>(
+        self, SLOT_TEST_COOPERATIVE_LEVEL, g_real_test_cooperative_level);
+    const HRESULT hr = original ? original(self) : E_FAIL;
     if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -1628,7 +1745,9 @@ HRESULT STDMETHODCALLTYPE hook_reset(
         append_present_parameters(fields, params);
         writer().write_event("reset_begin", fields.str());
     }
-    const HRESULT hr = g_real_reset ? g_real_reset(self, params) : E_FAIL;
+    const auto original = original_method_for<ResetFn>(
+        self, SLOT_RESET, g_real_reset);
+    const HRESULT hr = original ? original(self, params) : E_FAIL;
     {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -1641,7 +1760,9 @@ HRESULT STDMETHODCALLTYPE hook_reset(
 }
 
 HRESULT STDMETHODCALLTYPE hook_begin_scene(IDirect3DDevice9* self) {
-    const HRESULT hr = g_real_begin_scene ? g_real_begin_scene(self) : E_FAIL;
+    const auto original = original_method_for<BeginSceneFn>(
+        self, SLOT_BEGIN_SCENE, g_real_begin_scene);
+    const HRESULT hr = original ? original(self) : E_FAIL;
     if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -1652,7 +1773,9 @@ HRESULT STDMETHODCALLTYPE hook_begin_scene(IDirect3DDevice9* self) {
 }
 
 HRESULT STDMETHODCALLTYPE hook_end_scene(IDirect3DDevice9* self) {
-    const HRESULT hr = g_real_end_scene ? g_real_end_scene(self) : E_FAIL;
+    const auto original = original_method_for<EndSceneFn>(
+        self, SLOT_END_SCENE, g_real_end_scene);
+    const HRESULT hr = original ? original(self) : E_FAIL;
     if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -1670,8 +1793,10 @@ HRESULT STDMETHODCALLTYPE hook_clear(
     D3DCOLOR color,
     float depth,
     DWORD stencil) {
-    const HRESULT hr = g_real_clear
-        ? g_real_clear(self, count, rects, flags, color, depth, stencil)
+    const auto original = original_method_for<ClearFn>(
+        self, SLOT_CLEAR, g_real_clear);
+    const HRESULT hr = original
+        ? original(self, count, rects, flags, color, depth, stencil)
         : E_FAIL;
     if (FAILED(hr)) {
         std::ostringstream fields;
@@ -1712,8 +1837,10 @@ HRESULT STDMETHODCALLTYPE hook_present(
         }
     }
 
-    const HRESULT hr = g_real_present
-        ? g_real_present(self, src, dst, override_window, dirty_region)
+    const auto original = original_method_for<PresentFn>(
+        self, SLOT_PRESENT, g_real_present);
+    const HRESULT hr = original
+        ? original(self, src, dst, override_window, dirty_region)
         : E_FAIL;
     const auto call_index = g_present_calls.fetch_add(1);
     if (SUCCEEDED(hr)) g_frame.fetch_add(1);
@@ -2136,7 +2263,6 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
 void patch_device(IDirect3DDevice9* device) {
     if (!device || capture_mode() == CaptureMode::Passthrough) return;
 
-    std::lock_guard<std::mutex> lock(g_hook_mutex);
     std::vector<VtablePatch> patches = {
         {SLOT_TEST_COOPERATIVE_LEVEL,
          reinterpret_cast<void*>(&hook_test_cooperative_level),
@@ -2197,12 +2323,21 @@ void patch_device(IDirect3DDevice9* device) {
             std::end(capture_patches));
     }
 
+    const bool ex_vtable = extended_vtable_looks_valid(
+        device,
+        IDIRECT3DDEVICE9_VTABLE_COUNT,
+        IDIRECT3DDEVICE9EX_VTABLE_COUNT);
+    const std::size_t vtable_count = ex_vtable
+        ? IDIRECT3DDEVICE9EX_VTABLE_COUNT
+        : IDIRECT3DDEVICE9_VTABLE_COUNT;
     const bool installed = patch_object_vtable_batch(
-        device, D3D9_VTABLE_COUNT, patches, "IDirect3DDevice9");
+        device, vtable_count, patches, "IDirect3DDevice9");
     std::ostringstream fields;
     fields << "\"device_ptr\":" << CaptureWriter::ptr(device)
            << ",\"mode\":" << CaptureWriter::quote(capture_mode_name())
            << ",\"installed\":" << (installed ? "true" : "false")
+           << ",\"ex_vtable\":" << (ex_vtable ? "true" : "false")
+           << ",\"vtable_count\":" << vtable_count
            << ",\"hook_count\":" << patches.size();
     writer().write_event("device_hooks", fields.str());
 }
@@ -2210,16 +2345,20 @@ void patch_device(IDirect3DDevice9* device) {
 void patch_direct3d9(IDirect3D9* d3d) {
     if (!d3d || capture_mode() == CaptureMode::Passthrough) return;
 
-    std::lock_guard<std::mutex> lock(g_hook_mutex);
     void** vtable = *reinterpret_cast<void***>(d3d);
     if (!vtable) {
         writer().write_event("d3d9_hook_failed", "\"reason\":\"null-vtable\"");
         return;
     }
 
+    const bool ex_vtable = extended_vtable_looks_valid(
+        d3d, IDIRECT3D9_VTABLE_COUNT, IDIRECT3D9EX_VTABLE_COUNT);
+    const std::size_t vtable_count = ex_vtable
+        ? IDIRECT3D9EX_VTABLE_COUNT
+        : IDIRECT3D9_VTABLE_COUNT;
     const bool installed = patch_object_vtable_batch(
         d3d,
-        IDIRECT3D9_VTABLE_COUNT,
+        vtable_count,
         {{16, reinterpret_cast<void*>(&hook_create_device),
           reinterpret_cast<void**>(&g_real_create_device)}},
         "IDirect3D9");
@@ -2227,7 +2366,9 @@ void patch_direct3d9(IDirect3D9* d3d) {
     std::ostringstream fields;
     fields << "\"d3d9_ptr\":" << CaptureWriter::ptr(d3d)
            << ",\"mode\":" << CaptureWriter::quote(capture_mode_name())
-           << ",\"installed\":" << (installed ? "true" : "false");
+           << ",\"installed\":" << (installed ? "true" : "false")
+           << ",\"ex_vtable\":" << (ex_vtable ? "true" : "false")
+           << ",\"vtable_count\":" << vtable_count;
     writer().write_event("d3d9_hooks", fields.str());
 }
 
