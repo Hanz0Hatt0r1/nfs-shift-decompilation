@@ -406,7 +406,7 @@ def test_wine_launcher_exports_inferred_prefix_before_winepath_and_wine():
     wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
 
     assert 'export WINEPREFIX="$wine_prefix"' in wine
-    assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('capture_windows="$("$winepath_command" -w "$capture_path")"')
+    assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('capture_windows="$(to_wine_path "$capture_path")"')
     assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('"$wine_command" "$game"')
     assert 'echo "WINEPREFIX: $WINEPREFIX"' in wine
     assert 'wine_resolved="$(command -v "$wine_command")"' in wine
@@ -458,7 +458,7 @@ def test_wine_launcher_auto_selects_portproton_runtime_and_matching_winepath():
     assert '$portproton_root/data/dist/$portproton_wine_use/files/bin/wine' in wine
     assert 'sibling_winepath="${wine_resolved%/*}/winepath"' in wine
     assert 'winepath_command="$sibling_winepath"' in wine
-    assert 'capture_windows="$("$winepath_command" -w "$capture_path")"' in wine
+    assert 'capture_windows="$(to_wine_path "$capture_path")"' in wine
     assert 'Runtime : auto-selected from PW_WINE_USE=' in wine
 
 
@@ -468,3 +468,16 @@ def test_wine_launcher_parses_portproton_ppdb_without_sed_regex():
     assert 'python3 - "$ppdb"' in wine
     assert 'PW_WINE_USE\\s*=\\s*' in wine
     assert "sed -n 's/" not in wine
+
+
+def test_wine_launcher_avoids_system_winepath_when_runtime_has_none():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert "unix_to_wine_z_path()" in wine
+    assert "to_wine_path()" in wine
+    assert 'winepath_resolved="internal Z: path mapping"' in wine
+    assert 'winepath_command="winepath"' not in wine
+    assert 'capture_windows="$(to_wine_path "$capture_path")"' in wine
+    assert 'crash_windows="$(to_wine_path "$crash_path")"' in wine
+    assert 'SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$(to_wine_path "$buffer_dir")"' in wine
+    assert 'avoiding external winepath/wineserver startup' in wine
