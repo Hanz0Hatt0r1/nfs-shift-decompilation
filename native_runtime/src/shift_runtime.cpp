@@ -6,6 +6,7 @@
 #include "shift_builtin_solver_frame.hpp"
 #include "shift_body_export_solver_join.hpp"
 #include "shift_body_solver_export_frame.hpp"
+#include "shift_generated_body_constraint_frame.hpp"
 #include "shift_post_solve_projection.hpp"
 #include "shift_vulkan_validation.hpp"
 
@@ -2964,6 +2965,7 @@ struct Args {
     std::string participant_boundary;
     std::string solver_frame;
     std::string body_solver_export_frame;
+    std::string generated_body_constraint_frame;
     std::string post_solve_projection;
     std::string shader_dir;
     std::string input_script;
@@ -2985,6 +2987,7 @@ Args parse_args(int argc, char** argv) {
             option == "--participant-boundary" ||
             option == "--solver-frame" ||
             option == "--body-solver-export-frame" ||
+            option == "--generated-body-constraint-frame" ||
             option == "--post-solve-projection" ||
             option == "--shader-dir" ||
             option == "--input-script" ||
@@ -3007,6 +3010,8 @@ Args parse_args(int argc, char** argv) {
                 args.solver_frame = value;
             } else if (option == "--body-solver-export-frame") {
                 args.body_solver_export_frame = value;
+            } else if (option == "--generated-body-constraint-frame") {
+                args.generated_body_constraint_frame = value;
             } else if (option == "--post-solve-projection") {
                 args.post_solve_projection = value;
             } else if (option == "--shader-dir") {
@@ -3029,6 +3034,7 @@ Args parse_args(int argc, char** argv) {
                 << "[--participant-boundary FILE] "
                 << "[--solver-frame FILE] "
                 << "[--body-solver-export-frame FILE] "
+                << "[--generated-body-constraint-frame FILE] "
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
@@ -3196,6 +3202,10 @@ int main(int argc, char** argv) {
             << "  \"body_solver_export_frame_mode\": "
             << (!args.body_solver_export_frame.empty() ? "true" : "false")
             << ",\n"
+            << "  \"generated_body_constraint_frame_mode\": "
+            << (!args.generated_body_constraint_frame.empty() ?
+                "true" : "false")
+            << ",\n"
             << "  \"post_solve_projection_mode\": "
             << (!args.post_solve_projection.empty() ? "true" : "false")
             << ",\n"
@@ -3350,6 +3360,65 @@ int main(int argc, char** argv) {
                     solver_frame);
         }
 
+        const bool generated_body_constraint_frame_mode =
+            !args.generated_body_constraint_frame.empty();
+        shift::runtime::physics::PreparedGeneratedBodyConstraintFrame
+            generated_body_constraint_frame{};
+        uint64_t generated_body_constraint_join_steps = 0;
+        double generated_body_constraint_max_rhs_join_error = 0.0;
+        double generated_body_constraint_max_matrix_join_error = 0.0;
+        std::size_t generated_body_constraint_body_count = 0;
+        std::size_t generated_body_constraint_joint_count = 0;
+        std::size_t generated_body_constraint_hinge_count = 0;
+        std::size_t generated_body_constraint_bar_count = 0;
+        if (generated_body_constraint_frame_mode) {
+            if (!solver_frame_mode) {
+                throw std::runtime_error(
+                    "--generated-body-constraint-frame requires --solver-frame");
+            }
+            if (body_solver_export_frame_mode) {
+                throw std::runtime_error(
+                    "--generated-body-constraint-frame cannot be combined "
+                    "with --body-solver-export-frame");
+            }
+            generated_body_constraint_frame =
+                shift::runtime::physics::
+                    load_prepared_generated_body_constraint_frame(
+                        args.generated_body_constraint_frame);
+            if (generated_body_constraint_frame.scalar_count !=
+                solver_frame_scalar_count) {
+                throw std::runtime_error(
+                    "generated BODY scalar count does not match solver frame");
+            }
+            if (generated_body_constraint_frame.bodies.size() !=
+                native_state.physics.workspace.body_count) {
+                throw std::runtime_error(
+                    "generated BODY count does not match physics workspace");
+            }
+            const auto generated_join =
+                shift::runtime::physics::
+                    verify_generated_body_constraint_frame_matches_builtin_solver_frame(
+                        generated_body_constraint_frame,
+                        solver_frame);
+            generated_body_constraint_body_count =
+                generated_join.body_count;
+            generated_body_constraint_joint_count =
+                generated_join.joint_sample_count;
+            generated_body_constraint_hinge_count =
+                generated_join.hinge_sample_count;
+            generated_body_constraint_bar_count =
+                generated_join.bar_sample_count;
+            if (generated_body_constraint_joint_count !=
+                    native_state.physics.workspace.joint_hinge_count ||
+                generated_body_constraint_hinge_count !=
+                    native_state.physics.workspace.joint_hinge_count ||
+                generated_body_constraint_bar_count !=
+                    native_state.physics.workspace.bar_count) {
+                throw std::runtime_error(
+                    "generated BODY sample counts do not match physics workspace");
+            }
+        }
+
         const bool post_solve_projection_mode =
             !args.post_solve_projection.empty();
         if (args.persist_post_solve_body_state &&
@@ -3451,6 +3520,22 @@ int main(int argc, char** argv) {
                             body_solver_export_max_matrix_join_error,
                             body_join.max_matrix_join_error);
                     ++body_solver_export_join_steps;
+                }
+                if (generated_body_constraint_frame_mode) {
+                    const auto generated_join =
+                        shift::runtime::physics::
+                            verify_generated_body_constraint_frame_matches_builtin_solver_frame(
+                                generated_body_constraint_frame,
+                                solver_frame);
+                    generated_body_constraint_max_rhs_join_error =
+                        std::max(
+                            generated_body_constraint_max_rhs_join_error,
+                            generated_join.max_rhs_join_error);
+                    generated_body_constraint_max_matrix_join_error =
+                        std::max(
+                            generated_body_constraint_max_matrix_join_error,
+                            generated_join.max_matrix_join_error);
+                    ++generated_body_constraint_join_steps;
                 }
                 const auto solver_result =
                     shift::runtime::physics::
@@ -3672,6 +3757,26 @@ int main(int argc, char** argv) {
             << body_solver_export_max_rhs_join_error << ",\n"
             << "  \"physics_body_solver_export_max_matrix_join_error\": "
             << body_solver_export_max_matrix_join_error << ",\n"
+            << "  \"physics_generated_body_constraint_frame_loaded\": "
+            << (generated_body_constraint_frame_mode ? "true" : "false")
+            << ",\n"
+            << "  \"physics_generated_body_constraint_body_count\": "
+            << generated_body_constraint_body_count << ",\n"
+            << "  \"physics_generated_body_constraint_joint_count\": "
+            << generated_body_constraint_joint_count << ",\n"
+            << "  \"physics_generated_body_constraint_hinge_count\": "
+            << generated_body_constraint_hinge_count << ",\n"
+            << "  \"physics_generated_body_constraint_bar_count\": "
+            << generated_body_constraint_bar_count << ",\n"
+            << "  \"physics_generated_body_constraint_join_steps\": "
+            << generated_body_constraint_join_steps << ",\n"
+            << "  \"physics_generated_body_constraint_native_generation_steps\": "
+            << generated_body_constraint_join_steps << ",\n"
+            << "  \"physics_generated_body_constraint_max_rhs_join_error\": "
+            << generated_body_constraint_max_rhs_join_error << ",\n"
+            << "  \"physics_generated_body_constraint_max_matrix_join_error\": "
+            << generated_body_constraint_max_matrix_join_error << ",\n"
+            << "  \"physics_generated_body_constraint_values_stored_in_packet\": false,\n"
             << "  \"physics_solver_provider_present\": false,\n"
             << "  \"physics_post_solve_projection_loaded\": "
             << (post_solve_projection_mode ? "true" : "false") << ",\n"
