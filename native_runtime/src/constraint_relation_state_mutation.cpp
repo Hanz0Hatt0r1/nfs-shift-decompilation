@@ -173,6 +173,8 @@ apply_fun_00757d2c_bar_endpoint_state_mutation(
 
     ConstraintRelationStateMutationResult result{};
     result.frame = state;
+    result.branch =
+        ConstraintRelationStateMutationBranch::BarEndpoint;
 
     for (std::size_t index = 0;
          index < relations.bars.size();
@@ -189,6 +191,118 @@ apply_fun_00757d2c_bar_endpoint_state_mutation(
     }
 
     return result;
+}
+
+ConstraintRelationStateMutationResult
+apply_fun_00757d2c_component_relation_state_mutation(
+    const PreparedConstraintSampleRelationFrame& relations,
+    const PreparedConstraintRelationResetFrame& state,
+    std::optional<std::size_t> primary_body_index,
+    std::optional<std::size_t> secondary_body_index,
+    std::optional<std::size_t> rear_axle_body_index) {
+
+    validate_relation_frame(relations, state);
+
+    const auto validate_optional_body =
+        [&](const std::optional<std::size_t>& body,
+            const char* label) {
+            if (body.has_value()) {
+                validate_body_index(
+                    relations, *body, label);
+            }
+        };
+    validate_optional_body(
+        primary_body_index, "component primary");
+    validate_optional_body(
+        secondary_body_index, "component secondary");
+    validate_optional_body(
+        rear_axle_body_index, "rear axle");
+
+    ConstraintRelationStateMutationResult result{};
+    result.frame = state;
+    result.component_state_504_set = true;
+
+    if (secondary_body_index.has_value()) {
+        result.branch =
+            ConstraintRelationStateMutationBranch::BarEndpoint;
+        result.component_state_540_set = true;
+
+        for (std::size_t index = 0;
+             index < relations.bars.size();
+             ++index) {
+            const auto& relation =
+                relations.bars[index];
+            if (relation.positive.body_index ==
+                    *secondary_body_index ||
+                relation.negative.body_index ==
+                    *secondary_body_index) {
+                set_state_bit(
+                    result.frame.bar_state_bit0[index],
+                    result.matched_bar_relation_count,
+                    result.newly_set_bar_relation_count);
+            }
+        }
+        return result;
+    }
+
+    result.branch =
+        ConstraintRelationStateMutationBranch::JointHingePair;
+    if (!primary_body_index.has_value() ||
+        !rear_axle_body_index.has_value()) {
+        return result;
+    }
+
+    for (std::size_t index = 0;
+         index < relations.joints.size();
+         ++index) {
+        if (unordered_pair_matches(
+                relations.joints[index],
+                *primary_body_index,
+                *rear_axle_body_index)) {
+            set_state_bit(
+                result.frame.joint_state_bit0[index],
+                result.matched_joint_relation_count,
+                result.newly_set_joint_relation_count);
+        }
+    }
+
+    for (std::size_t index = 0;
+         index < relations.hinges.size();
+         ++index) {
+        if (unordered_pair_matches(
+                relations.hinges[index],
+                *primary_body_index,
+                *rear_axle_body_index)) {
+            set_state_bit(
+                result.frame.hinge_state_bit0[index],
+                result.matched_hinge_relation_count,
+                result.newly_set_hinge_relation_count);
+        }
+    }
+
+    return result;
+}
+
+ConstraintRelationStateMutationResult
+apply_fun_00757d20_component_slot_relation_state_mutation(
+    const PreparedConstraintSampleRelationFrame& relations,
+    const PreparedConstraintRelationResetFrame& state,
+    const ConstraintRelationVehicleComponentMap& component_map,
+    std::size_t component_slot) {
+
+    if (component_slot >= component_map.components.size()) {
+        throw std::runtime_error(
+            "FUN_00757d20 component slot is outside 0..3");
+    }
+
+    const auto& component =
+        component_map.components[component_slot];
+    return apply_fun_00757d2c_component_relation_state_mutation(
+        relations,
+        state,
+        component.primary_body_index,
+        component.secondary_body_index,
+        component_map.rear_axle_body_index);
 }
 
 }  // namespace shift::runtime::physics
