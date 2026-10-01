@@ -496,12 +496,16 @@ void load_participant_boundary(
     const std::string& path,
     shift::runtime::PhysicsTickBoundary& physics) {
 
-    if (!file_contains(
-            path,
-            "\"format\": \"SHIFT.NativePhysicsParticipantBoundary/1\"") ||
+    const bool structural_boundary = file_contains(
+        path,
+        "\"format\": \"SHIFT.NativePhysicsParticipantBoundary/1\"");
+    const bool runtime_evidence = file_contains(
+        path,
+        "\"format\": \"SHIFT.NativePhysicsParticipantRuntimeEvidence/1\"");
+    if ((!structural_boundary && !runtime_evidence) ||
         !file_contains(path, "\"ready\": true")) {
         throw std::runtime_error(
-            "native physics participant boundary is missing or not ready");
+            "native physics participant boundary/evidence is missing or not ready");
     }
     if (!file_contains(path, "\"registry_contract_ready\": true") ||
         !file_contains(path, "\"participant_gate_ready\": true") ||
@@ -547,17 +551,43 @@ void load_participant_boundary(
         json_i32_field(path, "selector_ordinal");
     const int32_t process_state =
         json_i32_field(path, "participant_process_state");
-    if (!file_contains(
-            path,
-            "\"participant_instance_ready\": false") ||
-        identity_join_proven ||
-        registry_index != -1 ||
-        selector_ordinal != -1 ||
-        process_state != -1 ||
-        !file_contains(path, "\"participant_index\": -1") ||
-        !file_contains(path, "\"participant_mode\": -1")) {
-        throw std::runtime_error(
-            "native physics participant boundary overclaims runtime instance/identity");
+    const bool participant_instance_ready =
+        json_bool_field(path, "participant_instance_ready");
+
+    if (structural_boundary) {
+        if (participant_instance_ready ||
+            identity_join_proven ||
+            registry_index != -1 ||
+            selector_ordinal != -1 ||
+            process_state != -1 ||
+            !file_contains(path, "\"participant_index\": -1") ||
+            !file_contains(path, "\"participant_mode\": -1")) {
+            throw std::runtime_error(
+                "native physics structural participant boundary overclaims runtime instance/identity");
+        }
+    } else {
+        if (!participant_instance_ready ||
+            !identity_join_proven ||
+            registry_index < 0 ||
+            selector_ordinal < 0 ||
+            process_state == -1 ||
+            !file_contains(
+                path,
+                "\"same_participant_pointer_proven\": true") ||
+            !file_contains(
+                path,
+                "\"manager_registry_identity_observed\": true") ||
+            !file_contains(
+                path,
+                "\"igphasevehicle_selection_observed\": true") ||
+            !file_contains(
+                path,
+                "\"registry_index_equals_selector_ordinal\": false") ||
+            !file_contains(path, "\"participant_index\": -1") ||
+            !file_contains(path, "\"participant_mode\": -1")) {
+            throw std::runtime_error(
+                "native physics runtime participant evidence is incomplete");
+        }
     }
 
     physics.participant_contract_ready = true;
@@ -568,9 +598,10 @@ void load_participant_boundary(
     physics.participant_identity_join_proven =
         identity_join_proven;
 
-    // Concrete runtime participant identity remains capture-gated. Registry
-    // index and selector ordinal are separate observed domains.
-    physics.participant_ready = false;
+    // Registry index and selector ordinal remain separate observed domains
+    // even after the participant pointer join is proven.
+    physics.participant_ready =
+        runtime_evidence && participant_instance_ready;
     physics.participant_registry_index = registry_index;
     physics.selector_ordinal = selector_ordinal;
     physics.participant_process_state = process_state;

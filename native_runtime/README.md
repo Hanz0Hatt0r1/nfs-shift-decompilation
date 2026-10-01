@@ -261,3 +261,24 @@ The native loader independently verifies the packet proof mask. This executable
 does not derive a BMW frame and is not yet called by the fixed-step vehicle
 scheduler. Provider-present dispatch and post-solve body-state application stay
 outside this contract.
+
+
+## Phase 607 participant runtime evidence
+
+The `--participant-boundary` option also accepts a ready
+`SHIFT.NativePhysicsParticipantRuntimeEvidence/1` produced by:
+
+```bash
+python shift_importer.py native-participant-runtime-evidence \
+  out/native_physics_participant_boundary.json \
+  participant-observation.json \
+  out/native_physics_participant_runtime_evidence.json
+```
+
+The observation must independently join the manager-registry participant and
+the selected IGPhaseVehicle participant through the same pointer token. Native
+code treats that token only as evidence; it is never dereferenced.
+
+A successful join sets `participant_ready=true` and transports registry index,
+selector ordinal and process state as separate fields. It does not assign a
+provider or imply that registry index equals selector ordinal.

@@ -272,3 +272,31 @@ to reject the packet.
 This is not fixed-step BMW integration. Retail matrix/RHS assembly, runtime
 reset selection, participant/provider identity, provider-present dispatch and
 `FUN_007b4110` body-state application remain separate evidence gates.
+
+
+## Phase 607 participant runtime identity evidence
+
+The existing `--participant-boundary FILE` input now accepts either the
+structural `SHIFT.NativePhysicsParticipantBoundary/1` contract or a ready
+`SHIFT.NativePhysicsParticipantRuntimeEvidence/1`.
+
+Runtime evidence promotes a participant only when one observed 32-bit pointer
+token independently appears in both the PhysicsParticipantManager registry
+observation and the selected `IGPhaseVehicle+0x450` pointer slot. The native
+runtime never dereferences that token.
+
+The promoted state transports three separate values:
+
+- PhysicsParticipantManager registry index;
+- IGPhaseVehicle selector ordinal;
+- IGPhaseVehicle participant process state.
+
+Registry index and selector ordinal are deliberately not equated. The Phase 602
+legacy `participant_index/mode` aliases remain `-1`.
+
+Linux Vulkan CI preserves both boundaries: the structural scene smoke remains
+unresolved for all three steps, while a synthetic runtime observation drives
+five ready participant steps with registry index 7 and selector ordinal 2.
+
+Provider identity, provider selection and numerical physics equivalence remain
+unassigned.
