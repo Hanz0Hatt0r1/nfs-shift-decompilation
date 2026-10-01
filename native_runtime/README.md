@@ -817,3 +817,39 @@ This is intentionally a library/checker boundary only. `shift_runtime` does
 not schedule the mutation because raw executable/source evidence proves the 0..3 component index,
 0xA80 stride and FL/FR/RL/RR wheel/spindle plus rear-axle BODY mapping, but the
 retail event semantics and timing are not yet proven.
+
+
+## Phase 634 named four-slot relation-state dispatch
+
+The Phase 633 kernel now exposes the recovered vehicle-slot selection logic
+without attaching it to native frame timing.
+
+`VehicleConstraintBodyIdentityMap` supplies CSRF BODY indices for the four
+named wheel/spindle pairs plus `rear_axle`. Then:
+
+```cpp
+dispatch_fun_00757d2c_vehicle_slot_relation_state_mutation(
+    relations,
+    state,
+    body_map,
+    component_slot,
+    spindle_body_present);
+```
+
+accepts only slots 0..3 and preserves the exact retail component geometry:
+base `0x400`, stride `0xA80`, wheel `+0x420`, spindle `+0x424`.
+
+If `spindle_body_present == false`, the dispatcher invokes the JOINT/HINGE
+pair mutation for `slot.wheel ↔ rear_axle`. If it is true, the dispatcher
+invokes the BAR endpoint mutation for `slot.spindle`.
+
+Run the regression with:
+
+```bash
+ctest --test-dir native_runtime/build --output-on-failure \
+  -R shift_runtime_constraint_relation_state_dispatch
+native_runtime/build/shift_runtime_constraint_relation_state_dispatch_check
+```
+
+This remains outside `shift_runtime`. The caller-provided spindle-presence
+state is not inferred, and no retail event or scheduler timing is assigned.
