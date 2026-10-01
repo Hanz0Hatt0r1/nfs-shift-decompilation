@@ -241,3 +241,34 @@ covers four solve cases plus two reset cases.
 Reset-node **selection** remains separate. The retail frame selects reset
 records through runtime `sample+0x70 & 1`; Phase 604 does not infer that bit
 from static data and does not yet invoke a complete BMW frame.
+
+
+## Phase 606 prepared builtin solver-frame boundary
+
+The native physics library now consumes
+`SHIFT.NativeBuiltinSolverFramePacket/1` (`SBFR`) through the standalone
+`shift_runtime_builtin_solver_frame_check`.
+
+A frame is executable only when the packet carries all four explicit proof
+bits:
+
+- provider absent;
+- matrix/RHS ready;
+- reset-node selection ready;
+- sparse graph ready.
+
+The execution order is the recovered builtin path:
+
+`FUN_007b2210 → FUN_007b0f20`.
+
+Python preparation executes the same source-backed reset/solve sequence first
+and stores the expected solution in the packet. Native execution compares its
+result against that oracle and fails closed on mismatch.
+
+Linux Vulkan CI prepares a synthetic 3-scalar regression frame, verifies
+native/Python parity, then clears one proof bit and requires the native loader
+to reject the packet.
+
+This is not fixed-step BMW integration. Retail matrix/RHS assembly, runtime
+reset selection, participant/provider identity, provider-present dispatch and
+`FUN_007b4110` body-state application remain separate evidence gates.
