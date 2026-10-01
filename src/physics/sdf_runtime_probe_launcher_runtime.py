@@ -83,6 +83,7 @@ def build_gdb_command_file(
     commands = (
         "set pagination off\n"
         "set confirm off\n"
+        "handle SIGUSR1 nostop noprint pass\n"
         f"source {script}\n"
         f"sdf-probe {probe_args}\n"
         "continue\n"
@@ -269,6 +270,12 @@ def build_attach_command(
     return [
         tool,
         "-q",
+        "-iex",
+        "set pagination off",
+        "-iex",
+        "set confirm off",
+        "-iex",
+        "set debuginfod enabled off",
         "-p",
         str(int(pid)),
         "-x",
