@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 631.**
+**Current mainline: Phase 632.**
 
 
 
@@ -24,6 +24,8 @@ Phase 630 adds `SHIFT.NativeConstraintSampleRelationFramePacket/1` (`CSRF`) for 
 
 Phase 631 adds `--constraint-sample-relation-frame` to the native runtime. In CSRF mode startup validates 4/4/20 BMW relation cardinality against the workspace, derives 8/8/40 endpoint samples through the Phase 630 ownership join, and every admitted fixed step executes `FUN_007b3ed0 → FUN_007bc680 → FUN_007bb8d0 → FUN_007ba570` before the exact generated matrix/RHS→SBFR gate. The legacy Phase 628 GBCF-only scheduler fixture remains supported without being promoted to authentic endpoint cardinality. The next source-backed physics boundary is runtime reset-node selection for `FUN_007b2210` from relation state.
 
+Phase 632 adds `SHIFT.NativeConstraintRelationResetFramePacket/1` (CRRF) and ports the `FUN_007b3f40` selection boundary. Direct source audit corrects the state owner to `relation+0x70 & 1`; scalar bases still come from the positive BODY-owned sample reached through `relation+0x7c`, with reset widths JOINT=3, HINGE=2 and BAR=1. CRRF stores only source-order relation low bits, while GBCF+CSRF provide endpoint/scalar identity. The selector preserves the retail reset-call sequence without inventing full-domain coverage rules; its normalized reset set must exactly match `SBFR.reset_nodes` at startup and on every admitted fixed step before the unchanged `FUN_007b2210 → FUN_007b0f20` oracle executes. The next boundary is authentic per-frame BODY/raw-relation/reset-state production, followed by provider-present dispatch and persistent vehicle-state integration.
+
 Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
 
 
@@ -35,7 +37,7 @@ Phase 602 adds `SHIFT.NativePhysicsParticipantBoundary/1`, joining the source-ba
 Phase 603 ports the source-backed builtin sparse numeric kernel `FUN_007b0f20` into native C++, with deterministic 3×3/4×4 parity and fail-closed graph/zero-pivot tests. It does not execute a complete BMW frame; matrix/RHS assembly, runtime diagonal-reset flags, provider-present dispatch and body-state application remain separate gates.
 
 
-Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `sample+0x70 & 1` evidence rather than inferred statically.
+Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `relation+0x70 & 1` evidence rather than inferred statically.
 
 Phase 605 keeps the PhysicsParticipantManager registry index and IGPhaseVehicle selector ordinal as separate runtime identity domains until an independent join is observed.
 
@@ -157,7 +159,7 @@ Phase 614 adds an exact pre-reset SBEX→SBFR join: the complete FUN_007ba570 gl
 | SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed IMB/IMX neutral geometry; Silverstone capture/matcher/admission, native scene execution, external sampler admission, Phase 594 root solve, Phase 595 candidate join, Phase 596 owner-scoped cross-resource root consensus and Phase 597 consensus→handoff application implemented | authentic Silverstone D3D9 capture content + renderer-owned resource types beyond sampler2D/samplerCube-s3 + runtime IMX same-instance proof + authentic Phase 598 production coverage numbers + historical SceneGraph update sequence |
 | Camera | source-backed manager/state primitives + native snapshot/double-buffer handoff | retail timing/controller/view-selection behavior and exact render integration |
 | Native input | live keyboard intent + deterministic fixed-step input-script path | gamepad/analog normalization and retail input filtering |
-| Vehicle physics | active; Phase 607 runtime participant promotion + Phase 608 fixed-step prepared builtin solver + Phase 609 native post-solve parity + Phase 610 solve→BODY projection + Phase 615 fixed-step SBEX→SBFR evidence gate + Phase 616 preprojection + Phase 617 JOINT + Phase 618 HINGE + Phase 619 BAR projection + Phases 620–623 JOINT/HINGE/BAR matrix block algebra + Phase 624 prepared BODY sample-array orchestration + Phase 625 exact prepared row-index/row-pointer storage + Phase 626 generated FUN_007bc680→FUN_007bb8d0→FUN_007ba570 builtin export join + Phase 627 contribution-free GBCF transport + Phase 628 per-fixed-step generated GBCF→SBFR equality gate + Phase 629 source-backed FUN_007b3ed0 refresh + Phase 630 CSRF ownership join + Phase 631 relation-aware fixed-step refresh/generation gate implemented | authentic per-frame BODY/raw-relation inputs, runtime reset-node selection, matrix-RHS observations, provider dispatch and persistent vehicle-state integration |
+| Vehicle physics | active; Phase 607 runtime participant promotion + Phase 608 fixed-step prepared builtin solver + Phase 609 native post-solve parity + Phase 610 solve→BODY projection + Phase 615 fixed-step SBEX→SBFR evidence gate + Phase 616 preprojection + Phase 617 JOINT + Phase 618 HINGE + Phase 619 BAR projection + Phases 620–623 JOINT/HINGE/BAR matrix block algebra + Phase 624 prepared BODY sample-array orchestration + Phase 625 exact prepared row-index/row-pointer storage + Phase 626 generated FUN_007bc680→FUN_007bb8d0→FUN_007ba570 builtin export join + Phase 627 contribution-free GBCF transport + Phase 628 per-fixed-step generated GBCF→SBFR equality gate + Phase 629 source-backed FUN_007b3ed0 refresh + Phase 630 CSRF ownership join + Phase 631 relation-aware fixed-step refresh/generation gate + Phase 632 relation-state-derived FUN_007b2210 reset selection implemented | authentic per-frame BODY/raw-relation/reset-state inputs, matrix-RHS observations, provider dispatch and persistent vehicle-state integration |
 | Builtin solver | source-backed + native FUN_007b0f20/FUN_007b2210/FUN_007b4110 + Phase 606/609 packets + Phase 610 fixed-step reset→solve→projection chain | authentic per-step matrix/RHS/reset/constraint-row evidence and persistent BODY integration |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |

@@ -166,7 +166,7 @@ Still open:
 - replacing Phase 628's synthetic sample-count equality with relation-aware
   endpoint cardinality;
 - authentic BMW per-frame BODY transforms and raw relation/sample inputs;
-- runtime `sample+0x70 & 1` reset-node selection;
+- runtime `relation+0x70 & 1` reset-node selection;
 - provider-present refresh/generation behavior;
 - persistent vehicle transform/motion integration.
 

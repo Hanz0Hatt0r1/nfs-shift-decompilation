@@ -118,7 +118,7 @@ It still does not derive:
 
 - BODY-local contributions from `FUN_007bc680`;
 - runtime sampled constraint state;
-- `sample+0x70 & 1` reset-node selection;
+- `relation+0x70 & 1` reset-node selection;
 - provider-present dispatch;
 - physical vehicle-state integration.
 

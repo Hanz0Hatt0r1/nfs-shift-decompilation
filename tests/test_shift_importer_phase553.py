@@ -413,3 +413,18 @@ def test_phase613_cli_accepts_prepared_body_solver_export_frame():
     assert args.input == "body-export-input.json"
     assert args.output_dir == "out/native-body-export"
     assert args.fn.__name__ == "cmd_native_body_solver_export_frame"
+
+
+def test_phase632_cli_accepts_constraint_relation_reset_frame():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-constraint-relation-reset-frame",
+        "constraint-reset.json",
+        "out/constraint-reset",
+    ])
+
+    assert args.input == "constraint-reset.json"
+    assert args.output_dir == "out/constraint-reset"
+    assert args.fn.__name__ == (
+        "cmd_native_constraint_relation_reset_frame"
+    )

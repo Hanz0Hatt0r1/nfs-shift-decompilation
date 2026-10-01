@@ -310,6 +310,49 @@ jobs:
           grep -q '"refreshed_native_generation_executed": true'             out/vulkan/runtime/constraint_sample_relation_frame.json
           grep -q '"contribution_values_stored_in_relation_packet": false'             out/vulkan/runtime/constraint_sample_relation_frame.json
           grep -q '"status": "ok"'             out/vulkan/runtime/constraint_sample_relation_frame.json
+      - name: Native FUN_007b3f40 relation reset selection
+        run: |
+          cat > out/vulkan/runtime/constraint_relation_reset_input.json <<'JSON'
+          {
+            "format": "SHIFT.NativeConstraintRelationResetFrameInput/1",
+            "version": 1,
+            "verification_scope": "phase632-relation-reset-regression",
+            "relation_state_bit0_ready": true,
+            "source_order_ready": true,
+            "provider_absent": true,
+            "joint_relation_state_bit0": [true],
+            "hinge_relation_state_bit0": [false],
+            "bar_relation_state_bit0": [true]
+          }
+          JSON
+          python3 shift_importer.py native-constraint-relation-reset-frame \
+            out/vulkan/runtime/constraint_relation_reset_input.json \
+            out/vulkan/runtime/constraint_relation_reset
+          native_runtime/build/shift_runtime_constraint_relation_reset_frame_check \
+            out/vulkan/runtime/constraint_relation_gbcf/generated_body_constraints.gbcf \
+            out/vulkan/runtime/constraint_relations/constraint_sample_relations.csrf \
+            out/vulkan/runtime/constraint_relation_reset/constraint_relation_reset.crrf \
+            | tee out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"format": "SHIFT.NativeConstraintRelationResetFrameCheck/1"' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"source_function": "FUN_007b3f40"' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"reset_function": "FUN_007b2210"' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"relation_state_offset": 112' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"selected_reset_nodes": \[0, 1, 2, 5\]' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"duplicate_reset_calls_preserved": true' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"partial_relation_layout_supported": true' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"solver_frame_join_fail_closed": true' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"reset_nodes_stored_in_packet": false' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/constraint_relation_reset_frame.json
       - name: Native FUN_007bc680 preprojection seed
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
@@ -2207,6 +2250,24 @@ jobs:
               encoding="utf-8",
           )
 
+          reset_input = {
+              "format": "SHIFT.NativeConstraintRelationResetFrameInput/1",
+              "version": 1,
+              "verification_scope": (
+                  "phase632-fixed-step-relation-reset-selection"
+              ),
+              "relation_state_bit0_ready": True,
+              "source_order_ready": True,
+              "provider_absent": True,
+              "joint_relation_state_bit0": [True] * len(joint_relations),
+              "hinge_relation_state_bit0": [True] * len(hinge_relations),
+              "bar_relation_state_bit0": [True] * len(bar_relations),
+          }
+          (root / "constraint_relation_reset_input.json").write_text(
+              json.dumps(reset_input, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+
           forward, reverse = build_dense_solver_graph(scalar_count)
           solver_input = {
               "format": "SHIFT.NativeBuiltinSolverFrameInput/1",
@@ -2234,6 +2295,7 @@ jobs:
           PY
           python3 shift_importer.py native-generated-body-constraint-frame             out/vulkan/runtime/fixed_step_constraint_refresh/generated_body_input.json             out/vulkan/runtime/fixed_step_constraint_refresh/generated
           python3 shift_importer.py native-constraint-sample-relation-frame             out/vulkan/runtime/fixed_step_constraint_refresh/constraint_relations_input.json             out/vulkan/runtime/fixed_step_constraint_refresh/relations
+          python3 shift_importer.py native-constraint-relation-reset-frame             out/vulkan/runtime/fixed_step_constraint_refresh/constraint_relation_reset_input.json             out/vulkan/runtime/fixed_step_constraint_refresh/reset
           python3 shift_importer.py native-builtin-solver-frame             out/vulkan/runtime/fixed_step_constraint_refresh/solver_frame_input.json             out/vulkan/runtime/fixed_step_constraint_refresh/solver
           native_runtime/build/shift_runtime_constraint_sample_relation_frame_check             out/vulkan/runtime/constraint_relation_gbcf/generated_body_constraints.gbcf             out/vulkan/runtime/constraint_relations/constraint_sample_relations.csrf             > out/vulkan/runtime/fixed_step_constraint_refresh/phase630_check.json
       - name: Native fixed-step constraint relation refresh loop
@@ -2264,6 +2326,66 @@ jobs:
           grep -q '"physics_generated_body_constraint_max_matrix_join_error": 0'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
           grep -q '"validation_errors": 0'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
           grep -q '"status": "ok"'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+      - name: Native fixed-step relation-derived reset selection loop
+        run: |
+          set -o pipefail
+          xvfb-run -a native_runtime/build/shift_runtime \
+            --scene-set out/vulkan/native_scene_set \
+            --shader-dir native_runtime/build/shaders \
+            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
+            --solver-frame out/vulkan/runtime/fixed_step_constraint_refresh/solver/solver_frame.sbfr \
+            --generated-body-constraint-frame out/vulkan/runtime/fixed_step_constraint_refresh/generated/generated_body_constraints.gbcf \
+            --constraint-sample-relation-frame out/vulkan/runtime/fixed_step_constraint_refresh/relations/constraint_sample_relations.csrf \
+            --constraint-relation-reset-frame out/vulkan/runtime/fixed_step_constraint_refresh/reset/constraint_relation_reset.crrf \
+            --frames 3 --validation \
+            | tee out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+      - name: Assert relation state selects FUN_007b2210 rows every fixed step
+        run: |
+          grep -q '"frames_rendered": 3' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_solver_frame_steps": 3' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_solver_effective_reset_node_count": 40' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_solver_frame_reset_nodes_consumed": true' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_frame_loaded": true' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_joint_count": 4' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_hinge_count": 4' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_bar_count": 20' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_selected_joint_count": 4' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_selected_hinge_count": 4' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_selected_bar_count": 20' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_call_count": 40' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_node_count": 40' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_matches_solver_frame": true' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_selection_steps": 3' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_state_offset": 112' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_tested_bit": 0' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_constraint_relation_reset_nodes_stored_in_packet": false' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_generated_body_constraint_max_rhs_join_error": 0' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"physics_generated_body_constraint_max_matrix_join_error": 0' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"validation_errors": 0' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/fixed_step_constraint_refresh/reset_runtime.json
       - name: Prepare fixed-step BODY export join evidence
         run: |
           python3 - <<'PY'
