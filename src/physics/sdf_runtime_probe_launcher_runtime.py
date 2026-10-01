@@ -263,6 +263,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "launch": "start retail SHIFT.exe under explicit Wine command",
             "attach": "attach GDB to explicit user-supplied PID using attach.gdb",
             "provider-only": "omit per-frame and builtin-solver breakpoints; keep provider solve/reset and scalar-reset hooks",
+            "bounded-full": "stop on the requested post-solve hit, then detach and quit GDB",
         },
         "fail_closed": [
             "wrong retail SHA-256",
@@ -270,6 +271,8 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "missing Wine",
             "missing GDB",
             "non-positive attach PID",
+            "non-positive bounded capture frame count",
+            "bounded capture requested in provider-only mode",
         ],
         "probe_targets": {
             "relation_state_mutation": "0x00757d2c",
