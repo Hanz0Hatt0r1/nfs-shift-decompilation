@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import socket
 import subprocess
 import zipfile
 from pathlib import Path
@@ -116,6 +117,8 @@ def prepare_probe_bundle(
     relation_timeline_only: bool = False,
     stop_after_relation_mutation: bool = False,
     capture_frames: int | None = None,
+    startup_mode: str = "external-attach",
+    gdb_proxy_port: int | None = None,
 ) -> dict[str, Any]:
     output = Path(output_dir).resolve()
     if provider_only and relation_timeline_only:
@@ -125,6 +128,18 @@ def prepare_probe_bundle(
     if provider_only and stop_after_relation_mutation:
         raise ValueError(
             "stop_after_relation_mutation is not supported in provider-only mode"
+        )
+    if startup_mode not in {"external-attach", "winedbg-gdb-proxy"}:
+        raise ValueError(f"unsupported startup_mode: {startup_mode}")
+    if startup_mode == "winedbg-gdb-proxy":
+        if gdb_proxy_port is None:
+            raise ValueError("winedbg-gdb-proxy startup requires gdb_proxy_port")
+        if not 1 <= int(gdb_proxy_port) <= 65535:
+            raise ValueError("gdb_proxy_port must be in range 1..65535")
+        gdb_proxy_port = int(gdb_proxy_port)
+    elif gdb_proxy_port is not None:
+        raise ValueError(
+            "gdb_proxy_port is only valid with winedbg-gdb-proxy startup"
         )
     exe = resolve_probe_executable(executable, output)
     validation = validate_probe_executable_file(exe)
@@ -212,6 +227,13 @@ def prepare_probe_bundle(
             "capture_session_id": capture_session_id,
             "capture_frames": capture_frames,
             "stop_after_relation_mutation": stop_after_relation_mutation,
+            "startup_mode": startup_mode,
+            "gdb_proxy_port": gdb_proxy_port,
+            "startup_ordering": (
+                "debuggee-created-under-winedbg-and-held-before-first-continue"
+                if startup_mode == "winedbg-gdb-proxy"
+                else "external-process-already-running-before-attach"
+            ),
             "auto_detach": (
                 capture_frames is not None
                 or stop_after_relation_mutation
@@ -244,7 +266,14 @@ def prepare_probe_bundle(
         },
         "limitations": [
             "A live 32-bit Wine SHIFT.exe process is required for capture.",
-            "The launcher never guesses a target process PID.",
+            (
+                "External attach mode never guesses a target process PID."
+                if startup_mode == "external-attach"
+                else (
+                    "winedbg early-launch creates the validated process under "
+                    "the debugger before GDB sends the first continue."
+                )
+            ),
             "The launcher never modifies SHIFT.exe.",
         ],
     }
@@ -329,6 +358,111 @@ def build_attach_command(
     ]
 
 
+def allocate_loopback_port() -> int:
+    """Reserve an ephemeral loopback TCP port for a short-lived winedbg proxy."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+def build_winedbg_launch_command(
+    *,
+    executable: str | Path,
+    port: int,
+    winedbg_command: str = "winedbg",
+    game_args: Sequence[str] = (),
+) -> list[str]:
+    """Build a winedbg GDB-proxy launch that holds the Win32 target at startup."""
+    if not 1 <= int(port) <= 65535:
+        raise ValueError("port must be in range 1..65535")
+    tool = shutil.which(winedbg_command)
+    if tool is None:
+        raise RuntimeError(f"WineDbg executable not found: {winedbg_command}")
+    exe = Path(executable).resolve()
+    if not exe.is_file():
+        raise FileNotFoundError(exe)
+    return [
+        tool,
+        "--gdb",
+        "--no-start",
+        "--port",
+        str(int(port)),
+        str(exe),
+        *[str(arg) for arg in game_args],
+    ]
+
+
+def build_remote_gdb_command(
+    *,
+    port: int,
+    gdb_command_file: str | Path,
+    gdb_command: str = "gdb",
+    connect_timeout: int = 30,
+) -> list[str]:
+    """Build GDB frontend invocation for a winedbg remote proxy."""
+    if not 1 <= int(port) <= 65535:
+        raise ValueError("port must be in range 1..65535")
+    if int(connect_timeout) <= 0:
+        raise ValueError("connect_timeout must be positive")
+    tool = shutil.which(gdb_command)
+    if tool is None:
+        raise RuntimeError(f"GDB executable not found: {gdb_command}")
+    return [
+        tool,
+        "-q",
+        "-iex",
+        "set pagination off",
+        "-iex",
+        "set confirm off",
+        "-iex",
+        "set debuginfod enabled off",
+        "-iex",
+        "set tcp auto-retry on",
+        "-iex",
+        f"set tcp connect-timeout {int(connect_timeout)}",
+        "-ex",
+        f"target remote 127.0.0.1:{int(port)}",
+        "-x",
+        str(Path(gdb_command_file).resolve()),
+    ]
+
+
+def launch_winedbg_gdb_proxy(
+    command: Sequence[str],
+    *,
+    log_path: str | Path,
+    workdir: str | Path | None = None,
+) -> subprocess.Popen[bytes]:
+    """Start winedbg with output redirected to a deterministic diagnostic log."""
+    target = Path(log_path).resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    cwd = None if workdir is None else str(Path(workdir).resolve())
+    with target.open("wb") as stream:
+        return subprocess.Popen(
+            [str(item) for item in command],
+            cwd=cwd,
+            stdout=stream,
+            stderr=subprocess.STDOUT,
+        )
+
+
+def finish_winedbg_gdb_proxy(
+    process: subprocess.Popen[bytes],
+    *,
+    timeout: float = 5.0,
+) -> int:
+    """Require the proxy to exit after the GDB frontend disconnects."""
+    try:
+        return int(process.wait(timeout=timeout))
+    except subprocess.TimeoutExpired:
+        process.terminate()
+        try:
+            return int(process.wait(timeout=2.0))
+        except subprocess.TimeoutExpired:
+            process.kill()
+            return int(process.wait(timeout=2.0))
+
+
 def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
     return {
         "format": FORMAT,
@@ -339,6 +473,10 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "prepare": "validate retail PE and write probe_manifest.json + attach.gdb",
             "launch": "start retail SHIFT.exe under explicit Wine command",
             "attach": "attach GDB to explicit user-supplied PID using attach.gdb",
+            "winedbg-early-launch": (
+                "create retail SHIFT.exe under the Wine GDB proxy and install "
+                "the probe before the first debugger continue"
+            ),
             "provider-only": "omit per-frame and builtin-solver breakpoints; keep provider solve/reset and scalar-reset hooks",
             "bounded-full": "stop on the requested post-solve hit, then detach and quit GDB",
             "relation-timeline-only": "capture only relation mutation, frame entry and post-solve anchors",
@@ -350,6 +488,8 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "invalid PE/prologue targets",
             "missing Wine",
             "missing GDB",
+            "missing WineDbg for early-launch mode",
+            "invalid WineDbg GDB-proxy port",
             "non-positive attach PID",
             "non-positive bounded capture frame count",
             "bounded capture requested in provider-only mode",
@@ -373,5 +513,10 @@ __all__ = [
     "require_runtime_tools",
     "launch_retail",
     "build_attach_command",
+    "allocate_loopback_port",
+    "build_winedbg_launch_command",
+    "build_remote_gdb_command",
+    "launch_winedbg_gdb_proxy",
+    "finish_winedbg_gdb_proxy",
     "describe_sdf_runtime_probe_launcher",
 ]
