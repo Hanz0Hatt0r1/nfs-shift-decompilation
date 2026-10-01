@@ -11,6 +11,7 @@
 #include <atomic>
 #include <cmath>
 #include <cctype>
+#include <iterator>
 #include <locale>
 #include <cstdint>
 #include <cstdlib>
@@ -196,8 +197,8 @@ CaptureMode capture_mode() {
         const char* value = std::getenv("SHIFT_D3D9_CAPTURE_MODE");
         if (!value || !*value) return CaptureMode::Capture;
         std::string text(value);
-        std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
-            return static_cast<char>(std::tolower(c));
+        std::transform(text.begin(), text.end(), text.begin(), [](unsigned char ch) {
+            return static_cast<char>(std::tolower(ch));
         });
         if (text == "passthrough" || text == "off" || text == "0") {
             return CaptureMode::Passthrough;
@@ -617,6 +618,590 @@ void append_texture_descriptor_json(
     std::ostringstream& out,
     IDirect3DBaseTexture9* texture);
 
+void patch_object_vtable(
+    void* object,
+    std::size_t count,
+    std::size_t slot,
+    void* hook,
+    void** original_out);
+
+struct BufferLockState {
+    std::string kind;
+    UINT offset = 0;
+    UINT requested_size = 0;
+    UINT buffer_length = 0;
+    DWORD flags = 0;
+    void* bits = nullptr;
+    bool full_surface = false;
+    bool active = false;
+};
+
+std::mutex g_buffer_lock_state_mutex;
+std::unordered_map<void*, BufferLockState> g_vertex_buffer_lock_states;
+std::unordered_map<void*, BufferLockState> g_index_buffer_lock_states;
+std::atomic<unsigned long long> g_buffer_payload_sequence{0};
+
+bool buffer_payload_capture_enabled() {
+    return env_enabled("SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS");
+}
+
+std::string buffer_payload_dir() {
+    const char* directory = std::getenv("SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR");
+    std::string value = (directory && *directory) ? directory : ".";
+    if (!value.empty() && value.back() != '\\' && value.back() != '/') value.push_back('\\');
+    return value;
+}
+
+std::string buffer_payload_path(
+    const char* kind,
+    const void* buffer,
+    UINT offset,
+    UINT sequence) {
+    std::ostringstream path;
+    path << buffer_payload_dir()
+         << "shift_d3d9_buffer_payload_"
+         << kind << "_"
+         << CaptureWriter::ptr(buffer).substr(1, CaptureWriter::ptr(buffer).size() - 2)
+         << "_o" << offset
+         << "_" << sequence
+         << ".bin";
+    return path.str();
+}
+
+void emit_buffer_payload(
+    const void* buffer,
+    const BufferLockState& state,
+    const std::string& path,
+    const std::vector<unsigned char>& payload,
+    const char* status) {
+    std::ostringstream f;
+    f << "\"buffer_ptr\":" << CaptureWriter::ptr(buffer)
+      << ",\"resource_type_name\":" << CaptureWriter::quote(state.kind)
+      << ",\"offset\":" << state.offset
+      << ",\"requested_size\":" << state.requested_size
+      << ",\"buffer_length\":" << state.buffer_length
+      << ",\"captured_byte_size\":" << payload.size()
+      << ",\"flags\":" << state.flags
+      << ",\"snapshot_status\":" << CaptureWriter::quote(status)
+      << ",\"payload_path\":" << CaptureWriter::quote(path);
+    writer().write_event("buffer_payload", f.str());
+}
+
+bool should_capture_full_buffer(UINT offset, UINT size, UINT length) {
+    return buffer_payload_capture_enabled()
+        && offset == 0
+        && (size == 0 || size == length)
+        && length > 0;
+}
+
+void capture_buffer_payload(
+    const void* buffer,
+    const BufferLockState& state,
+    const std::string& path,
+    std::size_t byte_size) {
+    if (!state.bits || !byte_size) return;
+    std::vector<unsigned char> payload(
+        static_cast<const unsigned char*>(state.bits),
+        static_cast<const unsigned char*>(state.bits) + byte_size);
+    std::ofstream output(path, std::ios::binary);
+    if (!output.is_open()) {
+        emit_buffer_payload(buffer, state, path, payload, "capture-failed");
+        return;
+    }
+    output.write(
+        reinterpret_cast<const char*>(payload.data()),
+        static_cast<std::streamsize>(payload.size()));
+    if (output.good()) {
+        emit_buffer_payload(buffer, state, path, payload, "captured");
+    } else {
+        emit_buffer_payload(buffer, state, path, payload, "capture-failed");
+    }
+}
+
+HRESULT STDMETHODCALLTYPE hook_vertex_buffer_lock(
+    IDirect3DVertexBuffer9* self,
+    UINT offset,
+    UINT size,
+    void** bits,
+    DWORD flags) {
+    const HRESULT hr = g_real_vertex_buffer_lock
+        ? g_real_vertex_buffer_lock(self, offset, size, bits, flags)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && bits && *bits) {
+        D3DVERTEXBUFFER_DESC desc{};
+        const bool have_desc = SUCCEEDED(self->GetDesc(&desc));
+        BufferLockState state{};
+        state.kind = "vertex_buffer";
+        state.offset = offset;
+        state.requested_size = size;
+        state.buffer_length = have_desc ? desc.Size : size;
+        state.flags = flags;
+        state.bits = *bits;
+        state.full_surface = have_desc
+            && should_capture_full_buffer(offset, size, desc.Size);
+        state.active = state.full_surface;
+        if (state.active) {
+            std::lock_guard<std::mutex> lock(g_buffer_lock_state_mutex);
+            g_vertex_buffer_lock_states[self] = state;
+        }
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_vertex_buffer_unlock(IDirect3DVertexBuffer9* self) {
+    BufferLockState state{};
+    bool captured = false;
+    {
+        std::lock_guard<std::mutex> lock(g_buffer_lock_state_mutex);
+        const auto it = g_vertex_buffer_lock_states.find(self);
+        if (it != g_vertex_buffer_lock_states.end()) {
+            state = it->second;
+            g_vertex_buffer_lock_states.erase(it);
+            captured = state.active && state.bits;
+        }
+    }
+
+    std::vector<unsigned char> payload;
+    std::string path;
+    if (captured) {
+        const std::size_t byte_size = state.buffer_length;
+        if (byte_size > 0) {
+            payload.assign(
+                static_cast<const unsigned char*>(state.bits),
+                static_cast<const unsigned char*>(state.bits) + byte_size);
+            const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
+            path = buffer_payload_path("vertex", self, state.offset, sequence);
+        }
+    }
+
+    const HRESULT hr = g_real_vertex_buffer_unlock
+        ? g_real_vertex_buffer_unlock(self)
+        : E_FAIL;
+    if (captured && SUCCEEDED(hr) && !payload.empty()) {
+        std::ofstream output(path, std::ios::binary);
+        if (output.is_open()) {
+            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
+            emit_buffer_payload(
+                self, state, path, payload,
+                output.good() ? "captured" : "capture-failed");
+        } else {
+            emit_buffer_payload(self, state, path, payload, "capture-failed");
+        }
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_index_buffer_lock(
+    IDirect3DIndexBuffer9* self,
+    UINT offset,
+    UINT size,
+    void** bits,
+    DWORD flags) {
+    const HRESULT hr = g_real_index_buffer_lock
+        ? g_real_index_buffer_lock(self, offset, size, bits, flags)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && bits && *bits) {
+        D3DINDEXBUFFER_DESC desc{};
+        const bool have_desc = SUCCEEDED(self->GetDesc(&desc));
+        BufferLockState state{};
+        state.kind = "index_buffer";
+        state.offset = offset;
+        state.requested_size = size;
+        state.buffer_length = have_desc ? desc.Size : size;
+        state.flags = flags;
+        state.bits = *bits;
+        state.full_surface = have_desc
+            && should_capture_full_buffer(offset, size, desc.Size);
+        state.active = state.full_surface;
+        if (state.active) {
+            std::lock_guard<std::mutex> lock(g_buffer_lock_state_mutex);
+            g_index_buffer_lock_states[self] = state;
+        }
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_index_buffer_unlock(IDirect3DIndexBuffer9* self) {
+    BufferLockState state{};
+    bool captured = false;
+    {
+        std::lock_guard<std::mutex> lock(g_buffer_lock_state_mutex);
+        const auto it = g_index_buffer_lock_states.find(self);
+        if (it != g_index_buffer_lock_states.end()) {
+            state = it->second;
+            g_index_buffer_lock_states.erase(it);
+            captured = state.active && state.bits;
+        }
+    }
+
+    std::vector<unsigned char> payload;
+    std::string path;
+    if (captured) {
+        const std::size_t byte_size = state.buffer_length;
+        if (byte_size > 0) {
+            payload.assign(
+                static_cast<const unsigned char*>(state.bits),
+                static_cast<const unsigned char*>(state.bits) + byte_size);
+            const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
+            path = buffer_payload_path("index", self, state.offset, sequence);
+        }
+    }
+
+    const HRESULT hr = g_real_index_buffer_unlock
+        ? g_real_index_buffer_unlock(self)
+        : E_FAIL;
+    if (captured && SUCCEEDED(hr) && !payload.empty()) {
+        std::ofstream output(path, std::ios::binary);
+        if (output.is_open()) {
+            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
+            emit_buffer_payload(
+                self, state, path, payload,
+                output.good() ? "captured" : "capture-failed");
+        } else {
+            emit_buffer_payload(self, state, path, payload, "capture-failed");
+        }
+    }
+    return hr;
+}
+
+void patch_vertex_buffer_object(IDirect3DVertexBuffer9* buffer) {
+    if (!buffer) return;
+    patch_object_vtable(
+        buffer,
+        BUFFER_VTABLE_COUNT,
+        SLOT_BUFFER_LOCK,
+        reinterpret_cast<void*>(&hook_vertex_buffer_lock),
+        reinterpret_cast<void**>(&g_real_vertex_buffer_lock));
+    patch_object_vtable(
+        buffer,
+        BUFFER_VTABLE_COUNT,
+        SLOT_BUFFER_UNLOCK,
+        reinterpret_cast<void*>(&hook_vertex_buffer_unlock),
+        reinterpret_cast<void**>(&g_real_vertex_buffer_unlock));
+}
+
+void patch_index_buffer_object(IDirect3DIndexBuffer9* buffer) {
+    if (!buffer) return;
+    patch_object_vtable(
+        buffer,
+        BUFFER_VTABLE_COUNT,
+        SLOT_BUFFER_LOCK,
+        reinterpret_cast<void*>(&hook_index_buffer_lock),
+        reinterpret_cast<void**>(&g_real_index_buffer_lock));
+    patch_object_vtable(
+        buffer,
+        BUFFER_VTABLE_COUNT,
+        SLOT_BUFFER_UNLOCK,
+        reinterpret_cast<void*>(&hook_index_buffer_unlock),
+        reinterpret_cast<void**>(&g_real_index_buffer_unlock));
+}
+
+struct TextureLockState {
+    UINT level = 0;
+    D3DLOCKED_RECT locked{};
+    D3DSURFACE_DESC desc{};
+    bool capture = false;
+};
+
+std::mutex g_texture_lock_state_mutex;
+std::unordered_map<void*, std::unordered_map<UINT, TextureLockState>> g_texture_lock_states;
+std::atomic<unsigned long long> g_texture_payload_sequence{0};
+
+struct CubeTextureLockState {
+    D3DCUBEMAP_FACES face = D3DCUBEMAP_FACE_POSITIVE_X;
+    UINT level = 0;
+    D3DLOCKED_RECT locked{};
+    D3DSURFACE_DESC desc{};
+    bool capture = false;
+};
+
+std::mutex g_cube_texture_lock_state_mutex;
+std::unordered_map<void*, std::unordered_map<std::uint64_t, CubeTextureLockState>> g_cube_texture_lock_states;
+
+bool texture_payload_capture_enabled() {
+    return env_enabled("SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS");
+}
+
+std::string texture_payload_dir() {
+    const char* directory = std::getenv("SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR");
+    std::string value = (directory && *directory) ? directory : ".";
+    if (!value.empty() && value.back() != '\\' && value.back() != '/') value.push_back('\\');
+    return value;
+}
+
+std::size_t texture_payload_byte_size(const D3DSURFACE_DESC& desc, LONG pitch) {
+    if (pitch <= 0) return 0;
+    if (desc.Format == D3DFMT_DXT1 ||
+        desc.Format == D3DFMT_DXT3 ||
+        desc.Format == D3DFMT_DXT5) {
+        const std::size_t block_rows = std::max<UINT>(1, (desc.Height + 3) / 4);
+        return static_cast<std::size_t>(pitch) * block_rows;
+    }
+    return static_cast<std::size_t>(pitch) * desc.Height;
+}
+
+std::string texture_payload_path(IDirect3DTexture9* texture, UINT level) {
+    std::ostringstream path;
+    path << texture_payload_dir()
+         << "shift_d3d9_texture_payload_"
+         << CaptureWriter::ptr(texture).substr(1, CaptureWriter::ptr(texture).size() - 2)
+         << "_l" << level
+         << "_" << g_texture_payload_sequence.fetch_add(1)
+         << ".bin";
+    return path.str();
+}
+
+void emit_texture_payload(
+    IDirect3DTexture9* texture,
+    const TextureLockState& state,
+    const std::string& path,
+    std::size_t byte_size,
+    const char* status) {
+    std::ostringstream f;
+    f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
+      << ",\"resource_type_name\":\"texture2d\""
+      << ",\"level\":" << state.level
+      << ",\"width\":" << state.desc.Width
+      << ",\"height\":" << state.desc.Height
+      << ",\"pitch\":" << state.locked.Pitch
+      << ",\"format\":" << static_cast<unsigned>(state.desc.Format)
+      << ",\"pool\":" << static_cast<unsigned>(state.desc.Pool)
+      << ",\"byte_size\":" << byte_size
+      << ",\"snapshot_status\":" << CaptureWriter::quote(status)
+      << ",\"payload_path\":" << CaptureWriter::quote(path);
+    writer().write_event("texture_payload", f.str());
+}
+
+std::uint64_t cube_lock_key(D3DCUBEMAP_FACES face, UINT level) {
+    return (static_cast<std::uint64_t>(static_cast<unsigned>(face)) << 32) |
+           static_cast<std::uint64_t>(level);
+}
+
+std::string cube_texture_payload_path(
+    IDirect3DCubeTexture9* texture,
+    D3DCUBEMAP_FACES face,
+    UINT level) {
+    std::ostringstream path;
+    path << texture_payload_dir()
+         << "shift_d3d9_cube_payload_"
+         << CaptureWriter::ptr(texture).substr(1, CaptureWriter::ptr(texture).size() - 2)
+         << "_" << cube_face_name(face)
+         << "_l" << level
+         << "_" << g_texture_payload_sequence.fetch_add(1)
+         << ".bin";
+    return path.str();
+}
+
+void emit_cube_texture_payload(
+    IDirect3DCubeTexture9* texture,
+    const CubeTextureLockState& state,
+    const std::string& path,
+    std::size_t byte_size,
+    const char* status) {
+    std::ostringstream f;
+    f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
+      << ",\"resource_type_name\":\"cube_texture\""
+      << ",\"face\":" << static_cast<unsigned>(state.face)
+      << ",\"face_name\":" << CaptureWriter::quote(cube_face_name(state.face))
+      << ",\"level\":" << state.level
+      << ",\"width\":" << state.desc.Width
+      << ",\"height\":" << state.desc.Height
+      << ",\"pitch\":" << state.locked.Pitch
+      << ",\"format\":" << static_cast<unsigned>(state.desc.Format)
+      << ",\"pool\":" << static_cast<unsigned>(state.desc.Pool)
+      << ",\"byte_size\":" << byte_size
+      << ",\"snapshot_status\":" << CaptureWriter::quote(status)
+      << ",\"payload_path\":" << CaptureWriter::quote(path);
+    writer().write_event("texture_payload", f.str());
+}
+
+HRESULT STDMETHODCALLTYPE hook_cube_texture_lock_rect(
+    IDirect3DCubeTexture9* self,
+    D3DCUBEMAP_FACES face,
+    UINT level,
+    D3DLOCKED_RECT* locked,
+    const RECT* rect,
+    DWORD flags) {
+    const HRESULT hr = g_real_cube_texture_lock_rect
+        ? g_real_cube_texture_lock_rect(self, face, level, locked, rect, flags)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && locked && texture_payload_capture_enabled() &&
+        !rect && !(flags & D3DLOCK_READONLY)) {
+        CubeTextureLockState state{};
+        state.face = face;
+        state.level = level;
+        state.locked = *locked;
+        state.capture = SUCCEEDED(self->GetLevelDesc(level, &state.desc));
+        if (state.capture && state.locked.pBits) {
+            std::lock_guard<std::mutex> lock(g_cube_texture_lock_state_mutex);
+            g_cube_texture_lock_states[self][cube_lock_key(face, level)] = state;
+        }
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_cube_texture_unlock_rect(
+    IDirect3DCubeTexture9* self,
+    D3DCUBEMAP_FACES face,
+    UINT level) {
+    CubeTextureLockState state{};
+    bool captured = false;
+    {
+        std::lock_guard<std::mutex> lock(g_cube_texture_lock_state_mutex);
+        const auto it = g_cube_texture_lock_states.find(self);
+        if (it != g_cube_texture_lock_states.end()) {
+            const auto level_it = it->second.find(cube_lock_key(face, level));
+            if (level_it != it->second.end()) {
+                state = level_it->second;
+                it->second.erase(level_it);
+                if (it->second.empty()) {
+                    g_cube_texture_lock_states.erase(it);
+                }
+                captured = state.capture && state.locked.pBits;
+            }
+        }
+    }
+
+    std::vector<unsigned char> payload;
+    std::string path;
+    if (captured) {
+        const std::size_t byte_size = texture_payload_byte_size(state.desc, state.locked.Pitch);
+        if (byte_size > 0) {
+            payload.assign(
+                static_cast<const unsigned char*>(state.locked.pBits),
+                static_cast<const unsigned char*>(state.locked.pBits) + byte_size);
+            path = cube_texture_payload_path(self, face, level);
+        }
+    }
+
+    const HRESULT hr = g_real_cube_texture_unlock_rect
+        ? g_real_cube_texture_unlock_rect(self, face, level)
+        : E_FAIL;
+
+    if (captured && SUCCEEDED(hr) && !payload.empty()) {
+        std::ofstream output(path, std::ios::binary);
+        if (output.is_open()) {
+            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
+            if (output.good()) {
+                emit_cube_texture_payload(self, state, path, payload.size(), "captured");
+                return hr;
+            }
+        }
+        emit_cube_texture_payload(self, state, path, payload.size(), "capture-failed");
+    }
+    return hr;
+}
+
+void patch_cube_texture_object(IDirect3DCubeTexture9* texture) {
+    if (!texture) return;
+    patch_object_vtable(
+        texture,
+        CUBE_TEXTURE_VTABLE_COUNT,
+        SLOT_TEXTURE_LOCK_RECT,
+        reinterpret_cast<void*>(&hook_cube_texture_lock_rect),
+        reinterpret_cast<void**>(&g_real_cube_texture_lock_rect));
+    patch_object_vtable(
+        texture,
+        CUBE_TEXTURE_VTABLE_COUNT,
+        SLOT_TEXTURE_UNLOCK_RECT,
+        reinterpret_cast<void*>(&hook_cube_texture_unlock_rect),
+        reinterpret_cast<void**>(&g_real_cube_texture_unlock_rect));
+}
+
+HRESULT STDMETHODCALLTYPE hook_texture_lock_rect(
+    IDirect3DTexture9* self,
+    UINT level,
+    D3DLOCKED_RECT* locked,
+    const RECT* rect,
+    DWORD flags) {
+    const HRESULT hr = g_real_texture_lock_rect
+        ? g_real_texture_lock_rect(self, level, locked, rect, flags)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && locked && texture_payload_capture_enabled() &&
+        !rect && !(flags & D3DLOCK_READONLY)) {
+        TextureLockState state{};
+        state.level = level;
+        state.locked = *locked;
+        IDirect3DSurface9* surface = nullptr;
+        if (SUCCEEDED(self->GetSurfaceLevel(level, &surface))) {
+            state.capture = SUCCEEDED(surface->GetDesc(&state.desc));
+            surface->Release();
+        }
+        std::lock_guard<std::mutex> lock(g_texture_lock_state_mutex);
+        if (state.capture && state.locked.pBits) {
+            g_texture_lock_states[self][level] = state;
+        }
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_texture_unlock_rect(
+    IDirect3DTexture9* self,
+    UINT level) {
+    TextureLockState state{};
+    bool captured = false;
+    {
+        std::lock_guard<std::mutex> lock(g_texture_lock_state_mutex);
+        const auto it = g_texture_lock_states.find(self);
+        if (it != g_texture_lock_states.end()) {
+            const auto level_it = it->second.find(level);
+            if (level_it != it->second.end()) {
+                state = level_it->second;
+                it->second.erase(level_it);
+                if (it->second.empty()) {
+                    g_texture_lock_states.erase(it);
+                }
+                captured = state.capture && state.locked.pBits;
+            }
+        }
+    }
+
+    std::vector<unsigned char> payload;
+    std::string path;
+    if (captured) {
+        const std::size_t byte_size = texture_payload_byte_size(state.desc, state.locked.Pitch);
+        if (byte_size > 0) {
+            payload.assign(
+                static_cast<const unsigned char*>(state.locked.pBits),
+                static_cast<const unsigned char*>(state.locked.pBits) + byte_size);
+            path = texture_payload_path(self, level);
+        }
+    }
+
+    const HRESULT hr = g_real_texture_unlock_rect
+        ? g_real_texture_unlock_rect(self, level)
+        : E_FAIL;
+
+    if (captured && SUCCEEDED(hr) && !payload.empty()) {
+        std::ofstream output(path, std::ios::binary);
+        if (output.is_open()) {
+            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
+            if (output.good()) {
+                emit_texture_payload(self, state, path, payload.size(), "captured");
+                return hr;
+            }
+        }
+        emit_texture_payload(self, state, path, payload.size(), "capture-failed");
+    }
+    return hr;
+}
+
+void patch_texture_object(IDirect3DTexture9* texture) {
+    if (!texture) return;
+    patch_object_vtable(
+        texture,
+        TEXTURE_VTABLE_COUNT,
+        SLOT_TEXTURE_LOCK_RECT,
+        reinterpret_cast<void*>(&hook_texture_lock_rect),
+        reinterpret_cast<void**>(&g_real_texture_lock_rect));
+    patch_object_vtable(
+        texture,
+        TEXTURE_VTABLE_COUNT,
+        SLOT_TEXTURE_UNLOCK_RECT,
+        reinterpret_cast<void*>(&hook_texture_unlock_rect),
+        reinterpret_cast<void**>(&g_real_texture_unlock_rect));
+}
+
 struct VtablePatch {
     std::size_t slot = 0;
     void* hook = nullptr;
@@ -648,7 +1233,9 @@ bool patch_object_vtable_batch(
     const std::size_t bytes = count * sizeof(void*);
     auto* clone = static_cast<void**>(HeapAlloc(GetProcessHeap(), 0, bytes));
     if (!clone) {
-        writer().write_event("vtable_patch_failed", "\"reason\":\"heap-allocation-failed\"");
+        writer().write_event(
+            "vtable_patch_failed",
+            "\"reason\":\"heap-allocation-failed\"");
         return false;
     }
     std::memcpy(clone, original_vtable, bytes);
@@ -656,9 +1243,7 @@ bool patch_object_vtable_batch(
     bool changed = false;
     for (const auto& patch : patches) {
         if (original_vtable[patch.slot] == patch.hook) continue;
-        if (patch.original_out) {
-            *patch.original_out = original_vtable[patch.slot];
-        }
+        if (patch.original_out) *patch.original_out = original_vtable[patch.slot];
         clone[patch.slot] = patch.hook;
         changed = true;
     }
@@ -1304,20 +1889,15 @@ void patch_device(IDirect3DDevice9* device) {
         {SLOT_TEST_COOPERATIVE_LEVEL,
          reinterpret_cast<void*>(&hook_test_cooperative_level),
          reinterpret_cast<void**>(&g_real_test_cooperative_level)},
-        {SLOT_RESET,
-         reinterpret_cast<void*>(&hook_reset),
+        {SLOT_RESET, reinterpret_cast<void*>(&hook_reset),
          reinterpret_cast<void**>(&g_real_reset)},
-        {SLOT_PRESENT,
-         reinterpret_cast<void*>(&hook_present),
+        {SLOT_PRESENT, reinterpret_cast<void*>(&hook_present),
          reinterpret_cast<void**>(&g_real_present)},
-        {SLOT_BEGIN_SCENE,
-         reinterpret_cast<void*>(&hook_begin_scene),
+        {SLOT_BEGIN_SCENE, reinterpret_cast<void*>(&hook_begin_scene),
          reinterpret_cast<void**>(&g_real_begin_scene)},
-        {SLOT_END_SCENE,
-         reinterpret_cast<void*>(&hook_end_scene),
+        {SLOT_END_SCENE, reinterpret_cast<void*>(&hook_end_scene),
          reinterpret_cast<void**>(&g_real_end_scene)},
-        {SLOT_CLEAR,
-         reinterpret_cast<void*>(&hook_clear),
+        {SLOT_CLEAR, reinterpret_cast<void*>(&hook_clear),
          reinterpret_cast<void**>(&g_real_clear)},
     };
 
