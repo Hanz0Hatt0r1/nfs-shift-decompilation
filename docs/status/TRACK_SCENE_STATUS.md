@@ -41,7 +41,7 @@ Covered boundaries include:
 - `SHIFT.SGBMultiMatrixEvaluation/1` reconstructs static mode-1 hierarchy arithmetic: the owner overwrites world slot 0 from its runtime root input, then evaluates slots 1..N-1 as `local * parent_world` using the low byte of the serialized parent dword.
 - `SHIFT.SGBRootTransformState/1` reconstructs the root lifecycle: constructor world slot 0 equals serialized local slot 0; SceneGraph immediate/deferred transform updates replace it with the exact transported 0x40-byte matrix. Unknown per-instance update history remains blocked.
 - `SHIFT.SGBRenderBindingAdmission/1` joins source-backed placement rows to recursive OBJECT resource/world transforms without promoting blocked rows.
-- `SHIFT.SGBRenderBindingBridge/1` resolves scene-admitted MEB instances through the existing MEB/BMT/FXO path into generic `SHIFT.RenderBinding/1`, preserving the admitted numeric world matrix.
+- `SHIFT.SGBRenderBindingBridge/1` resolves scene-admitted MEB and source-backed v0.4 IMB instances through the generic material/shader path into `SHIFT.RenderBinding/1`, preserving the admitted numeric world matrix and explicit resource provenance.
 
 ## Explicitly unresolved
 
