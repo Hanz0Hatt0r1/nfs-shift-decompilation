@@ -131,7 +131,7 @@ prepared SBEX contribution values when GBCF is supplied.
 Still open:
 
 - authentic `FUN_007b3ed0` sampled-state refresh and GBCF input production;
-- runtime reset-node selection from retail `sample+0x70 & 1`;
+- runtime reset-node selection from retail `relation+0x70 & 1`;
 - provider-present generation/storage/export;
 - authentic matrix/RHS/reset observations;
 - persistent vehicle transform/motion integration.
