@@ -247,9 +247,9 @@ def describe_joint_projection_provenance() -> dict[str, Any]:
             "d2": "sample[+0x28]*body[+0x20] - sample[+0x20]*body[+0x28]",
             "d3": "body[+0x28]*sample[+0x18] - sample[+0x28]*body[+0x18]",
             "d5": "sample[+0x20]*body[+0x18] - body[+0x20]*sample[+0x18]",
-            "d4": "(sample.x+body.x)*Q + (body+0x78+d2)*L + (sample.z*residual.y-sample.y*residual.z) + (body.y*d5-body.z*d3) + linear.x",
-            "d6": "(sample.y+body.y)*Q + (body+0x80+d3)*L + (sample.x*residual.z-sample.z*residual.x) + (body.z*d2-body.x*d5) + linear.y",
-            "d7": "(sample.z+body.z)*Q + (body+0x88+d5)*L + (sample.y*residual.x-sample.x*residual.y) + (body.x*d3-body.y*d2) + linear.z",
+            "d4": "(sample.x+body.position.x)*Q + (body+0x78+d2)*L + (sample.z*residual.y-sample.y*residual.z) + (body.axis.y*d5-body.axis.z*d3) + linear.x",
+            "d6": "(sample.y+body.position.y)*Q + (body+0x80+d3)*L + (sample.x*residual.z-sample.z*residual.x) + (body.axis.z*d2-body.axis.x*d5) + linear.y",
+            "d7": "(sample.z+body.position.z)*Q + (body+0x88+d5)*L + (sample.y*residual.x-sample.x*residual.y) + (body.axis.x*d3-body.axis.y*d2) + linear.z",
         },
         "sign_rule": "sample +0x34 == 0 => add; otherwise subtract",
         "global_scales": {
