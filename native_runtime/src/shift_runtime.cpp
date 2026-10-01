@@ -3,6 +3,7 @@
 
 #include "shift_ir.hpp"
 #include "runtime_state.hpp"
+#include "shift_builtin_solver_frame.hpp"
 #include "shift_vulkan_validation.hpp"
 
 #include <algorithm>
@@ -2958,6 +2959,7 @@ struct Args {
     std::string camera_state;
     std::string physics_manifest;
     std::string participant_boundary;
+    std::string solver_frame;
     std::string shader_dir;
     std::string input_script;
     int frames = kDefaultFrames;
@@ -2975,6 +2977,7 @@ Args parse_args(int argc, char** argv) {
             option == "--camera-state" ||
             option == "--physics-manifest" ||
             option == "--participant-boundary" ||
+            option == "--solver-frame" ||
             option == "--shader-dir" ||
             option == "--input-script" ||
             option == "--frames") {
@@ -2992,6 +2995,8 @@ Args parse_args(int argc, char** argv) {
                 args.physics_manifest = value;
             } else if (option == "--participant-boundary") {
                 args.participant_boundary = value;
+            } else if (option == "--solver-frame") {
+                args.solver_frame = value;
             } else if (option == "--shader-dir") {
                 args.shader_dir = value;
             } else if (option == "--input-script") {
@@ -3008,6 +3013,7 @@ Args parse_args(int argc, char** argv) {
                 << "(--mesh FILE | --bundle DIR | --bundle-set DIR | --scene-set DIR) "
                 << "--shader-dir DIR [--camera-state FILE] "
                 << "[--participant-boundary FILE] "
+                << "[--solver-frame FILE] "
                 << "[--input-script FILE] [--frames N] "
                 << "[--validation]\n";
             std::exit(EXIT_SUCCESS);
@@ -3168,6 +3174,8 @@ int main(int argc, char** argv) {
             << (input_script_mode ? "true" : "false") << ",\n"
             << "  \"input_script_steps\": "
             << input_script.steps.size() << ",\n"
+            << "  \"solver_frame_mode\": "
+            << (!args.solver_frame.empty() ? "true" : "false") << ",\n"
             << "  \"frames_requested\": "
             << frame_limit << "\n"
             << "}\n";
@@ -3251,6 +3259,47 @@ int main(int argc, char** argv) {
                 args.participant_boundary,
                 native_state.physics);
         }
+
+        const bool solver_frame_mode =
+            !args.solver_frame.empty();
+        shift::runtime::physics::PreparedBuiltinSolverFrame
+            solver_frame{};
+        uint64_t solver_frame_steps = 0;
+        double solver_frame_max_oracle_error = 0.0;
+        std::size_t solver_frame_scalar_count = 0;
+        std::size_t solver_frame_reset_node_count = 0;
+        if (solver_frame_mode) {
+            if (args.physics_manifest.empty()) {
+                throw std::runtime_error(
+                    "--solver-frame requires --physics-manifest");
+            }
+            if (args.participant_boundary.empty()) {
+                throw std::runtime_error(
+                    "--solver-frame requires --participant-boundary");
+            }
+            if (!native_state.physics.workspace.ready) {
+                throw std::runtime_error(
+                    "solver frame requires a ready physics workspace");
+            }
+            if (!native_state.physics.participant_ready ||
+                !native_state.physics.participant_identity_join_proven) {
+                throw std::runtime_error(
+                    "solver frame requires ready runtime participant evidence");
+            }
+            solver_frame =
+                shift::runtime::physics::
+                    load_prepared_builtin_solver_frame(
+                        args.solver_frame);
+            solver_frame_scalar_count =
+                solver_frame.matrix.size();
+            solver_frame_reset_node_count =
+                solver_frame.reset_nodes.size();
+            if (solver_frame_scalar_count !=
+                native_state.physics.workspace.scalar_count) {
+                throw std::runtime_error(
+                    "solver frame scalar count does not match physics workspace");
+            }
+        }
         const auto start =
             std::chrono::steady_clock::now();
 
@@ -3269,6 +3318,22 @@ int main(int argc, char** argv) {
             intent.steer_left = step_input.steer_left;
             intent.steer_right = step_input.steer_right;
             native_state.fixed_step(intent);
+            if (solver_frame_mode) {
+                if (!native_state.physics.participant_ready ||
+                    !native_state.physics.participant_identity_join_proven) {
+                    throw std::runtime_error(
+                        "solver frame lost ready participant identity");
+                }
+                const auto solver_result =
+                    shift::runtime::physics::
+                        execute_prepared_builtin_solver_frame(
+                            solver_frame);
+                solver_frame_max_oracle_error =
+                    std::max(
+                        solver_frame_max_oracle_error,
+                        solver_result.max_absolute_error);
+                ++solver_frame_steps;
+            }
             ++simulation_steps;
 
             if (!runtime.frame()) break;
@@ -3429,6 +3494,18 @@ int main(int argc, char** argv) {
             << "  \"physics_workspace_matrix_bytes\": "
             << native_state.physics.workspace.matrix_bytes
             << ",\n"
+            << "  \"physics_solver_frame_loaded\": "
+            << (solver_frame_mode ? "true" : "false") << ",\n"
+            << "  \"physics_solver_frame_scalar_count\": "
+            << solver_frame_scalar_count << ",\n"
+            << "  \"physics_solver_frame_reset_node_count\": "
+            << solver_frame_reset_node_count << ",\n"
+            << "  \"physics_solver_frame_steps\": "
+            << solver_frame_steps << ",\n"
+            << "  \"physics_solver_frame_max_oracle_error\": "
+            << solver_frame_max_oracle_error << ",\n"
+            << "  \"physics_solver_provider_present\": false,\n"
+            << "  \"physics_solver_post_solve_body_state_applied\": false,\n"
             << "  \"material_mode\": "
             << (runtime.material_mode ? "true" : "false")
             << ",\n"
