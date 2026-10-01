@@ -150,8 +150,23 @@ if ((screenshots)); then
 fi
 
 old_overrides="${WINEDLLOVERRIDES:-}"
+filtered_overrides=""
 if [[ -n "$old_overrides" ]]; then
-  export WINEDLLOVERRIDES="d3d9=n,b;$old_overrides"
+  IFS=';' read -r -a override_parts <<< "$old_overrides"
+  for entry in "${override_parts[@]}"; do
+    [[ -n "$entry" ]] || continue
+    name="${entry%%=*}"
+    if [[ "${name,,}" == "d3d9" ]]; then
+      continue
+    fi
+    if [[ -n "$filtered_overrides" ]]; then
+      filtered_overrides+=";"
+    fi
+    filtered_overrides+="$entry"
+  done
+fi
+if [[ -n "$filtered_overrides" ]]; then
+  export WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b"
 else
   export WINEDLLOVERRIDES="d3d9=n,b"
 fi
