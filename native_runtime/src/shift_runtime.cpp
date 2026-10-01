@@ -2966,6 +2966,7 @@ struct Args {
     std::string input_script;
     int frames = kDefaultFrames;
     bool frames_explicit = false;
+    bool persist_post_solve_body_state = false;
     bool validation = false;
 };
 
@@ -3010,6 +3011,8 @@ Args parse_args(int argc, char** argv) {
                 args.frames = std::max(1, std::stoi(value));
                 args.frames_explicit = true;
             }
+        } else if (option == "--persist-post-solve-body-state") {
+            args.persist_post_solve_body_state = true;
         } else if (option == "--validation") {
             args.validation = true;
         } else if (option == "--help") {
@@ -3020,6 +3023,7 @@ Args parse_args(int argc, char** argv) {
                 << "[--participant-boundary FILE] "
                 << "[--solver-frame FILE] "
                 << "[--post-solve-projection FILE] "
+                << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
                 << "[--validation]\n";
             std::exit(EXIT_SUCCESS);
@@ -3311,11 +3315,20 @@ int main(int argc, char** argv) {
         }
         const bool post_solve_projection_mode =
             !args.post_solve_projection.empty();
+        if (args.persist_post_solve_body_state &&
+            !post_solve_projection_mode) {
+            throw std::runtime_error(
+                "--persist-post-solve-body-state requires --post-solve-projection");
+        }
         shift::runtime::physics::PreparedPostSolveBodyProjection
             post_solve_projection{};
+        std::vector<shift::runtime::physics::BodyAccumulatorState>
+            persistent_post_solve_bodies;
         uint64_t post_solve_projection_steps = 0;
+        uint64_t persistent_post_solve_body_steps = 0;
         double post_solve_max_oracle_error = 0.0;
         double post_solve_max_solver_join_error = 0.0;
+        double post_solve_max_delta_error = 0.0;
         std::size_t post_solve_body_count = 0;
         std::size_t post_solve_joint_count = 0;
         std::size_t post_solve_hinge_count = 0;
@@ -3356,6 +3369,10 @@ int main(int argc, char** argv) {
                 throw std::runtime_error(
                     "post-solve projection constraint counts do not match physics workspace");
             }
+            if (args.persist_post_solve_body_state) {
+                persistent_post_solve_bodies =
+                    post_solve_projection.bodies;
+            }
         }
 
         const auto start =
@@ -3393,10 +3410,16 @@ int main(int argc, char** argv) {
                 ++solver_frame_steps;
                 if (post_solve_projection_mode) {
                     const auto projection_result =
-                        shift::runtime::physics::
-                            execute_post_solve_body_projection_with_solution(
-                                post_solve_projection,
-                                solver_result.solution);
+                        args.persist_post_solve_body_state
+                            ? shift::runtime::physics::
+                                execute_post_solve_body_projection_with_state(
+                                    post_solve_projection,
+                                    solver_result.solution,
+                                    persistent_post_solve_bodies)
+                            : shift::runtime::physics::
+                                execute_post_solve_body_projection_with_solution(
+                                    post_solve_projection,
+                                    solver_result.solution);
                     post_solve_max_oracle_error =
                         std::max(
                             post_solve_max_oracle_error,
@@ -3405,6 +3428,15 @@ int main(int argc, char** argv) {
                         std::max(
                             post_solve_max_solver_join_error,
                             projection_result.max_solver_vector_join_error);
+                    post_solve_max_delta_error =
+                        std::max(
+                            post_solve_max_delta_error,
+                            projection_result.max_delta_error);
+                    if (args.persist_post_solve_body_state) {
+                        persistent_post_solve_bodies =
+                            projection_result.bodies;
+                        ++persistent_post_solve_body_steps;
+                    }
                     ++post_solve_projection_steps;
                 }
             }
@@ -3595,10 +3627,22 @@ int main(int argc, char** argv) {
             << post_solve_max_solver_join_error << ",\n"
             << "  \"physics_post_solve_projection_max_oracle_error\": "
             << post_solve_max_oracle_error << ",\n"
+            << "  \"physics_post_solve_projection_max_delta_error\": "
+            << post_solve_max_delta_error << ",\n"
+            << "  \"physics_post_solve_persistent_body_state_enabled\": "
+            << (args.persist_post_solve_body_state ? "true" : "false")
+            << ",\n"
+            << "  \"physics_post_solve_persistent_body_state_steps\": "
+            << persistent_post_solve_body_steps << ",\n"
             << "  \"physics_solver_post_solve_body_state_applied\": "
             << (post_solve_projection_mode &&
                 post_solve_projection_steps == solver_frame_steps &&
                 post_solve_projection_steps > 0 ? "true" : "false")
+            << ",\n"
+            << "  \"physics_solver_persistent_body_accumulator_state_applied\": "
+            << (args.persist_post_solve_body_state &&
+                persistent_post_solve_body_steps == solver_frame_steps &&
+                persistent_post_solve_body_steps > 0 ? "true" : "false")
             << ",\n"
             << "  \"physics_solver_persistent_vehicle_state_applied\": false,\n"
             << "  \"material_mode\": "
