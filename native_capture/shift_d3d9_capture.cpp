@@ -1010,6 +1010,14 @@ void record_resource_signature_use(
     writer().write_event("resource_signature_use", fields.str());
 }
 
+void flush_deferred_buffer_payloads_for_trigger();
+
+bool activate_capture_trigger(unsigned long long frame) {
+    if (!writer().trigger(frame)) return false;
+    flush_deferred_buffer_payloads_for_trigger();
+    return true;
+}
+
 bool maybe_trigger_for_resource(
     const std::string& bind_event,
     const std::string& signature,
@@ -1017,7 +1025,7 @@ bool maybe_trigger_for_resource(
     record_resource_signature_use(bind_event, signature, object);
     if (signature.empty() || !resource_trigger_matches(signature)) return false;
     if (resource_trigger_already_fired(signature)) return false;
-    if (!writer().trigger(g_frame.load())) return false;
+    if (!activate_capture_trigger(g_frame.load())) return false;
     mark_resource_trigger_fired(signature);
 
     std::ostringstream fields;
@@ -1381,6 +1389,14 @@ std::unordered_map<void*, BufferLockState> g_vertex_buffer_lock_states;
 std::unordered_map<void*, BufferLockState> g_index_buffer_lock_states;
 std::atomic<unsigned long long> g_buffer_payload_sequence{0};
 
+struct DeferredBufferPayload {
+    BufferLockState state;
+    std::vector<unsigned char> payload;
+};
+
+std::mutex g_deferred_buffer_payload_mutex;
+std::unordered_map<const void*, DeferredBufferPayload> g_deferred_buffer_payloads;
+
 bool buffer_payload_capture_enabled() {
     return env_enabled("SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS");
 }
@@ -1425,6 +1441,63 @@ void emit_buffer_payload(
       << ",\"snapshot_status\":" << CaptureWriter::quote(status)
       << ",\"payload_path\":" << CaptureWriter::quote(path);
     writer().write_event("buffer_payload", f.str());
+}
+
+void write_buffer_payload_file(
+    const void* buffer,
+    const BufferLockState& state,
+    const std::vector<unsigned char>& payload) {
+    if (payload.empty()) return;
+    const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
+    const char* kind = state.kind == "index_buffer" ? "index" : "vertex";
+    const std::string path = buffer_payload_path(kind, buffer, state.offset, sequence);
+    std::ofstream output(path, std::ios::binary);
+    if (output.is_open()) {
+        output.write(
+            reinterpret_cast<const char*>(payload.data()),
+            static_cast<std::streamsize>(payload.size()));
+        emit_buffer_payload(
+            buffer, state, path, payload,
+            output.good() ? "captured" : "capture-failed");
+    } else {
+        emit_buffer_payload(buffer, state, path, payload, "capture-failed");
+    }
+}
+
+void retain_or_write_buffer_payload(
+    const void* buffer,
+    const BufferLockState& state,
+    std::vector<unsigned char> payload) {
+    if (payload.empty()) return;
+    if (trigger_capture_enabled() && !writer().trigger_is_active()) {
+        std::lock_guard<std::mutex> lock(g_deferred_buffer_payload_mutex);
+        g_deferred_buffer_payloads[buffer] =
+            DeferredBufferPayload{state, std::move(payload)};
+        return;
+    }
+    write_buffer_payload_file(buffer, state, payload);
+}
+
+void discard_deferred_buffer_payload(const void* buffer) {
+    if (!buffer) return;
+    std::lock_guard<std::mutex> lock(g_deferred_buffer_payload_mutex);
+    g_deferred_buffer_payloads.erase(buffer);
+}
+
+void flush_deferred_buffer_payloads_for_trigger() {
+    std::vector<std::pair<const void*, DeferredBufferPayload>> snapshots;
+    {
+        std::lock_guard<std::mutex> lock(g_deferred_buffer_payload_mutex);
+        snapshots.reserve(g_deferred_buffer_payloads.size());
+        for (auto& entry : g_deferred_buffer_payloads) {
+            snapshots.emplace_back(entry.first, std::move(entry.second));
+        }
+        g_deferred_buffer_payloads.clear();
+    }
+    for (auto& entry : snapshots) {
+        write_buffer_payload_file(
+            entry.first, entry.second.state, entry.second.payload);
+    }
 }
 
 bool should_capture_full_buffer(UINT offset, UINT size, UINT length) {
@@ -1504,15 +1577,12 @@ HRESULT STDMETHODCALLTYPE hook_vertex_buffer_unlock(IDirect3DVertexBuffer9* self
     }
 
     std::vector<unsigned char> payload;
-    std::string path;
     if (captured) {
         const std::size_t byte_size = state.buffer_length;
         if (byte_size > 0) {
             payload.assign(
                 static_cast<const unsigned char*>(state.bits),
                 static_cast<const unsigned char*>(state.bits) + byte_size);
-            const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
-            path = buffer_payload_path("vertex", self, state.offset, sequence);
         }
     }
 
@@ -1520,15 +1590,7 @@ HRESULT STDMETHODCALLTYPE hook_vertex_buffer_unlock(IDirect3DVertexBuffer9* self
         self, SLOT_BUFFER_UNLOCK, g_real_vertex_buffer_unlock);
     const HRESULT hr = original ? original(self) : E_FAIL;
     if (captured && SUCCEEDED(hr) && !payload.empty()) {
-        std::ofstream output(path, std::ios::binary);
-        if (output.is_open()) {
-            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
-            emit_buffer_payload(
-                self, state, path, payload,
-                output.good() ? "captured" : "capture-failed");
-        } else {
-            emit_buffer_payload(self, state, path, payload, "capture-failed");
-        }
+        retain_or_write_buffer_payload(self, state, std::move(payload));
     }
     return hr;
 }
@@ -1579,15 +1641,12 @@ HRESULT STDMETHODCALLTYPE hook_index_buffer_unlock(IDirect3DIndexBuffer9* self) 
     }
 
     std::vector<unsigned char> payload;
-    std::string path;
     if (captured) {
         const std::size_t byte_size = state.buffer_length;
         if (byte_size > 0) {
             payload.assign(
                 static_cast<const unsigned char*>(state.bits),
                 static_cast<const unsigned char*>(state.bits) + byte_size);
-            const UINT sequence = static_cast<UINT>(g_buffer_payload_sequence.fetch_add(1));
-            path = buffer_payload_path("index", self, state.offset, sequence);
         }
     }
 
@@ -1595,15 +1654,7 @@ HRESULT STDMETHODCALLTYPE hook_index_buffer_unlock(IDirect3DIndexBuffer9* self) 
         self, SLOT_BUFFER_UNLOCK, g_real_index_buffer_unlock);
     const HRESULT hr = original ? original(self) : E_FAIL;
     if (captured && SUCCEEDED(hr) && !payload.empty()) {
-        std::ofstream output(path, std::ios::binary);
-        if (output.is_open()) {
-            output.write(reinterpret_cast<const char*>(payload.data()), static_cast<std::streamsize>(payload.size()));
-            emit_buffer_payload(
-                self, state, path, payload,
-                output.good() ? "captured" : "capture-failed");
-        } else {
-            emit_buffer_payload(self, state, path, payload, "capture-failed");
-        }
+        retain_or_write_buffer_payload(self, state, std::move(payload));
     }
     return hr;
 }
@@ -2273,7 +2324,7 @@ HRESULT STDMETHODCALLTYPE hook_present(
     HWND override_window,
     const RGNDATA* dirty_region) {
     if (trigger_capture_enabled() && capture_trigger_requested()) {
-        writer().trigger(g_frame.load());
+        activate_capture_trigger(g_frame.load());
     }
     if (env_enabled("SHIFT_D3D9_CAPTURE_SCREENSHOT") && capture_output_frame_active()) {
         const auto every = std::max<unsigned long long>(
@@ -2337,6 +2388,7 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_buffer(
         ? original(self, length, usage, fvf, pool, out_buffer, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_buffer && *out_buffer) {
+        discard_deferred_buffer_payload(*out_buffer);
         const std::string signature = "vb:" + std::to_string(length);
         store_resource_signature(g_vertex_buffer_signatures, *out_buffer, signature);
         std::ostringstream f;
@@ -2367,6 +2419,7 @@ HRESULT STDMETHODCALLTYPE hook_create_index_buffer(
         ? original(self, length, usage, format, pool, out_buffer, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_buffer && *out_buffer) {
+        discard_deferred_buffer_payload(*out_buffer);
         std::ostringstream signature_stream;
         signature_stream << "ib:" << length << ":" << static_cast<unsigned>(format);
         const std::string signature = signature_stream.str();
