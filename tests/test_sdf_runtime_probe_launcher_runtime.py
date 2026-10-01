@@ -423,3 +423,38 @@ def test_phase643_prepare_probe_bundle_clears_stale_evidence_and_records_session
     assert f"--session-id {'cd' * 16}" in (
         output / "attach.gdb"
     ).read_text(encoding="utf-8")
+
+
+def test_phase643_blocked_validation_preserves_existing_capture_evidence(
+    tmp_path,
+    monkeypatch,
+):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"wrong")
+    output = tmp_path / "capture"
+    output.mkdir()
+    probe = tmp_path / "probe.py"
+    probe.write_text("# probe\n", encoding="utf-8")
+    stale = output / "relation_state_mutation_events.jsonl"
+    stale.write_text("old-evidence\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        runtime,
+        "validate_probe_executable_file",
+        lambda path: {
+            "ready": False,
+            "sha256": "b" * 64,
+            "errors": ["sha256:mismatch"],
+            "format": "SHIFT.SDFRuntimeProbePEValidation/1",
+        },
+    )
+
+    result = runtime.prepare_probe_bundle(
+        executable,
+        output,
+        probe_script=probe,
+    )
+
+    assert result["ready"] is False
+    assert result["capture_session"]["stale_artifact_count"] == 0
+    assert stale.read_text(encoding="utf-8") == "old-evidence\n"
