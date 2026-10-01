@@ -1,11 +1,13 @@
 #include "shift_post_solve_application.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <exception>
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 namespace {
 
