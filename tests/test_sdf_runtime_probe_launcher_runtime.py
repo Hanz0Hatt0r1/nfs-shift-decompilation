@@ -202,6 +202,8 @@ def test_build_attach_command_uses_explicit_pid_and_script(monkeypatch, tmp_path
         "set confirm off",
         "-iex",
         "set debuginfod enabled off",
+        "-iex",
+        "handle SIGUSR1 nostop noprint pass",
         "-p",
         "12345",
         "-x",
