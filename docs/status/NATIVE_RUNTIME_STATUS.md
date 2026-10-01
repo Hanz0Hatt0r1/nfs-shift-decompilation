@@ -1046,3 +1046,20 @@ inspection.
 The full explicit-PID launcher now automatically creates the archive after
 timeline finalization and reports archive path, size and SHA-256. Provider-only
 mode remains unchanged. No native mutation scheduling is enabled.
+
+
+## Phase 640 portable SDF evidence bundle verification
+
+Portable Phase 639 capture archives are now independently verified as untrusted
+input before use. `SHIFT.SDFRuntimeProbeEvidenceBundleVerification/1`
+checks safe root-only names, duplicate/extra/missing entries, deterministic ZIP
+metadata, manifest structure, every declared byte size/SHA-256 and exact
+readiness agreement with the embedded Phase 637 timeline.
+
+Integrity readiness, package readiness and capture readiness remain distinct.
+A blocked retail capture can be structurally authentic without becoming
+evidence-ready.
+
+The full explicit-PID launcher now self-verifies the archive it creates and
+requires successful verification before reporting success. No native mutation
+scheduling is enabled.
