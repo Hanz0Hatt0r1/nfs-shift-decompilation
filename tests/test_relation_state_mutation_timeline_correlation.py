@@ -366,3 +366,54 @@ def test_phase637_missing_mutation_stream_fails_closed(tmp_path: Path):
     assert report["ready"] is False
     assert "missing-relation-state-mutation-events" in report["errors"]
     assert "no-relation-state-mutation-events" in report["errors"]
+
+
+def _load_phase637_cli_module():
+    import importlib.util
+
+    path = Path("tools/analyze_relation_state_mutation_timeline.py")
+    spec = importlib.util.spec_from_file_location(
+        "phase637_mutation_timeline_cli",
+        path,
+    )
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_phase637_cli_writes_ready_report(tmp_path: Path):
+    mutation = _mutation(
+        sequence=1,
+        frame_index=None,
+        frame_sequence=None,
+        kind="vehicle-setup-slot",
+    )
+    (tmp_path / "relation_state_mutation_events.jsonl").write_text(
+        json.dumps(mutation) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "frame_entry_000001.json").write_text(
+        json.dumps(
+            {
+                "runtime_event_sequence": 2,
+                "frame_index": 1,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output = tmp_path / "correlation.json"
+    cli = _load_phase637_cli_module()
+    assert cli.main([str(tmp_path), "-o", str(output)]) == 0
+
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["format"] == runtime.FORMAT
+    assert report["ready"] is True
+    assert report["evidence_boundary"]["native_scheduler_admission"] is False
+
+
+def test_phase637_cli_returns_two_for_blocked_capture(tmp_path: Path):
+    cli = _load_phase637_cli_module()
+    assert cli.main([str(tmp_path)]) == 2
