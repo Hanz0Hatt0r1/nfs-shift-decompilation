@@ -321,3 +321,26 @@ post-solve-body-state-applied=false.
 Linux Vulkan CI replays a synthetic 40-scalar frame for five deterministic
 steps. This proves scheduler integration only; it does not claim retail
 matrix/RHS assembly or `FUN_007b4110` body-state semantics.
+
+
+## Phase 609 native post-solve BODY projection
+
+The native physics library now also consumes
+`SHIFT.NativePostSolveBodyProjectionPacket/1` (`SBPS`) through
+`shift_runtime_post_solve_projection_check`.
+
+Admission requires explicit proof for the solved vector, initial BODY
+accumulator state and complete JOINT/HINGE/BAR rows. The executor ports
+`FUN_007b4110` exactly: JOINT uses the recovered positive/negative body
+accumulator helpers, HINGE updates only angular channels from its two solved
+scalars, and BAR scales its direction before the same body helpers. Execution
+order remains JOINT → HINGE → BAR.
+
+Python preparation uses the existing source-backed post-solve runtime module as
+the oracle; native execution compares all six channels of every BODY and fails
+closed on mismatch. Linux CI also clears one proof bit and requires native
+rejection.
+
+Phase 609 is deliberately standalone. The Phase 608 fixed-step scheduler does
+not yet feed its solved vector into SBPS, and runtime BODY/constraint rows are
+not derived from static assets.
