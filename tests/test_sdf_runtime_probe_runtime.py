@@ -63,6 +63,8 @@ def test_relation_state_mutation_entry_rejects_non_slot_offsets(component_offset
     )
     assert result["ready"] is False
     assert result["component_slot"] is None
+    assert result["spindle_body_present"] is None
+    assert result["source_branch"] is None
     assert result["capture_errors"]
 
 
