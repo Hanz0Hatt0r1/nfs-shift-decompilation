@@ -192,7 +192,7 @@ Still open:
   records and their BODY-owned sample pointers;
 - applying refreshed endpoint values into a generated GBCF before Phase 628;
 - authentic per-frame BODY/sample input capture;
-- runtime `sample+0x70 & 1` reset-node selection;
+- runtime `relation+0x70 & 1` reset-node selection;
 - provider-present refresh/generation behavior;
 - persistent vehicle transform/motion integration.
 
