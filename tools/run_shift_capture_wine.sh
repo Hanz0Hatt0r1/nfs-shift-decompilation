@@ -8,7 +8,7 @@ Usage:
     --proxy /path/to/d3d9.dll [--output DIR] \
     [--mode passthrough|diagnostic|capture] [--debug-output] \
     [--frame-start N] [--frame-end N] \
-    [--trigger] [--resource-trigger RULES] \
+    [--trigger] [--resource-trigger RULES] [--resource-trigger-repeat] \
     [--pre-frames N] [--post-frames N] \
     [--screenshots] [--buffer-payloads] [--texture-payloads] \
     [--wine wine] [-- GAME_ARGS...]
@@ -33,6 +33,7 @@ frame_start=""
 frame_end=""
 trigger_capture=0
 resource_trigger=""
+resource_trigger_repeat=0
 pre_frames=2
 post_frames=2
 buffer_payloads=0
@@ -51,6 +52,7 @@ while (($#)); do
     --frame-end) frame_end="${2:?missing value for --frame-end}"; shift 2 ;;
     --trigger) trigger_capture=1; shift ;;
     --resource-trigger) resource_trigger="${2:?missing value for --resource-trigger}"; trigger_capture=1; shift 2 ;;
+    --resource-trigger-repeat) resource_trigger_repeat=1; trigger_capture=1; shift ;;
     --pre-frames) pre_frames="${2:?missing value for --pre-frames}"; shift 2 ;;
     --post-frames) post_frames="${2:?missing value for --post-frames}"; shift 2 ;;
     --screenshots) screenshots=1; shift ;;
@@ -204,6 +206,11 @@ if ((trigger_capture)); then
   else
     unset SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER || true
   fi
+  if ((resource_trigger_repeat)); then
+    export SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT=1
+  else
+    unset SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT || true
+  fi
 else
   unset SHIFT_D3D9_CAPTURE_TRIGGER || true
   unset SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES || true
@@ -211,6 +218,7 @@ else
   unset SHIFT_D3D9_CAPTURE_TRIGGER_KEY || true
   unset SHIFT_D3D9_CAPTURE_TRIGGER_FILE || true
   unset SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER || true
+  unset SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT || true
 fi
 
 if ((debug_output)); then
@@ -281,6 +289,7 @@ if ((trigger_capture)); then
   echo "          or: touch $trigger_file"
   if [[ -n "$resource_trigger" ]]; then
     echo "Resource: $resource_trigger"
+    if ((resource_trigger_repeat)); then echo "Repeat  : enabled"; fi
   fi
 fi
 if ((buffer_payloads)); then echo "Buffers : $buffer_dir"; fi
