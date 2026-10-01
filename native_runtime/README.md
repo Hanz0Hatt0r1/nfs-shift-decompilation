@@ -551,3 +551,16 @@ application.
 
 The checker does not execute the mixed HINGE↔BAR portion or the complete retail
 HINGE array loop.
+
+
+## Phase 622 native HINGE↔BAR matrix coupling
+
+Run the mixed HINGE/BAR regression:
+
+```bash
+native_runtime/build/shift_runtime_hinge_bar_matrix_coupling_check
+```
+
+It validates `FUN_007bb250` d5/d6 mixed-block equations, both lower-triangle
+storage orientations/sign paths and bounded matrix application. Full HINGE
+array iteration remains separate.
