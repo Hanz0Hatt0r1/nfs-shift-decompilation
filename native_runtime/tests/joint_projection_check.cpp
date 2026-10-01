@@ -162,6 +162,8 @@ int main() {
             << "  \"max_absolute_error\": "
             << std::setprecision(17)
             << max_absolute_error << ",\n"
+            << "  \"oracle_tolerance\": 1e-12,\n"
+            << "  \"oracle_within_tolerance\": true,\n"
             << "  \"full_fun_007bc680_executed\": false,\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";
