@@ -120,9 +120,15 @@ def build_sdf_runtime_probe_evidence_bundle(
                 f"timeline-json-invalid:{type(exc).__name__}:{exc}"
             )
         else:
-            if timeline.get("format") != TIMELINE_FORMAT:
+            timeline_format_ready = (
+                timeline.get("format") == TIMELINE_FORMAT
+            )
+            if not timeline_format_ready:
                 errors.append("timeline-format-mismatch")
-            timeline_ready = timeline.get("ready") is True
+            timeline_ready = (
+                timeline_format_ready
+                and timeline.get("ready") is True
+            )
             timeline_status = timeline.get("status")
             timeline_errors = timeline.get("errors")
             if isinstance(timeline_errors, list):
