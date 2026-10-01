@@ -825,32 +825,32 @@ reset-node selection, provider-present execution and persistent vehicle motion.
 
 ## Phase 632 relation-state reset selection
 
-The provider-absent fixed-step path now has a source-backed selector for the
-rows passed to `FUN_007b2210`.
+The provider-absent fixed-step path now independently reconstructs the rows
+selected for `FUN_007b2210`.
 
-Direct `SHIFT.exe.c` audit corrects an older project label: `FUN_007b3f40`
-tests `relation+0x70 & 1`, not a BODY-owned sample `+0x70` field. For a set
-bit it follows the positive sample pointer at relation `+0x7c` and reads the
-scalar base from JOINT/BAR sample `+0x30` or HINGE sample `+0x94`. Reset
-widths are 3, 2 and 1 respectively.
+Direct `SHIFT.exe.c` audit corrects an older project label:
+`FUN_007b3f40` tests `relation+0x70 & 1`, not a BODY-owned sample
+`+0x70` field. For a set bit it follows the positive endpoint pointer at
+relation `+0x7c` and reads the scalar base from JOINT/BAR sample `+0x30`
+or HINGE sample `+0x94`; reset widths are 3, 2 and 1 respectively.
 
 `SHIFT.NativeConstraintRelationResetFramePacket/1` (CRRF) transports only
 those source-order relation low bits. The native selector joins them to
-GBCF+CSRF, validates endpoint side identity, common scalar bases, nonoverlapping
-complete scalar coverage and then emits reset nodes. CRRF contains no scalar
-bases, reset-node indices or matrix/RHS values.
+GBCF+CSRF, validates endpoint identity, paired scalar bases and in-range
+type-specific spans, and preserves the retail reset-call sequence. Repeated
+calls are preserved and the selector does not impose an unsupported
+whole-domain coverage constraint.
 
-`shift_runtime --constraint-relation-reset-frame FILE.crrf` requires CSRF.
-On every admitted fixed step it derives the reset list through
-`select_fun_007b3f40_reset_nodes()` and invokes
-`execute_prepared_builtin_solver_frame_with_reset_nodes()`. In this mode the
-SBFR prepared reset list is retained for packet compatibility but is not the
-runtime reset-node source.
+The exact call sequence is normalized to a reset-node set and must match
+`SBFR.reset_nodes` before the solve is admitted. The same join is repeated on
+every fixed step. SBFR remains the executed reset/solve oracle; CRRF proves
+that the recovered retail relation state selects the same reset set rather
+than replacing SBFR with a second oracle.
 
 The deterministic six-scalar checker selects `[0,1,2,5]` for
-JOINT=true/HINGE=false/BAR=true. Linux CI also exercises the 11-BODY BMW
-structural shape with 4/4/20 relations and all 40 rows selected over three
-fixed steps.
+JOINT=true/HINGE=false/BAR=true and rejects a mismatched SBFR reset set. Linux
+CI also exercises the 11-BODY BMW structural shape with 4/4/20 relations,
+40 selected reset calls/nodes and three successful fixed steps.
 
 Remaining blockers are authentic per-frame BODY/raw-relation/reset-state
 production, provider-present execution and persistent vehicle transform/motion
