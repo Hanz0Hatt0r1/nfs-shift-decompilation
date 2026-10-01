@@ -8,7 +8,8 @@ Usage:
     --proxy /path/to/d3d9.dll [--output DIR] \
     [--mode passthrough|diagnostic|capture] [--debug-output] \
     [--frame-start N] [--frame-end N] \
-    [--trigger] [--pre-frames N] [--post-frames N] \
+    [--trigger] [--resource-trigger RULES] \
+    [--pre-frames N] [--post-frames N] \
     [--screenshots] [--buffer-payloads] [--texture-payloads] \
     [--wine wine] [-- GAME_ARGS...]
 
@@ -31,6 +32,7 @@ screenshots=0
 frame_start=""
 frame_end=""
 trigger_capture=0
+resource_trigger=""
 pre_frames=2
 post_frames=2
 buffer_payloads=0
@@ -48,6 +50,7 @@ while (($#)); do
     --frame-start) frame_start="${2:?missing value for --frame-start}"; shift 2 ;;
     --frame-end) frame_end="${2:?missing value for --frame-end}"; shift 2 ;;
     --trigger) trigger_capture=1; shift ;;
+    --resource-trigger) resource_trigger="${2:?missing value for --resource-trigger}"; trigger_capture=1; shift 2 ;;
     --pre-frames) pre_frames="${2:?missing value for --pre-frames}"; shift 2 ;;
     --post-frames) post_frames="${2:?missing value for --post-frames}"; shift 2 ;;
     --screenshots) screenshots=1; shift ;;
@@ -86,7 +89,7 @@ for count in "$pre_frames" "$post_frames"; do
   fi
 done
 if ((trigger_capture)) && [[ -n "$frame_start" || -n "$frame_end" ]]; then
-  echo "--trigger cannot be combined with --frame-start/--frame-end" >&2
+  echo "--trigger/--resource-trigger cannot be combined with --frame-start/--frame-end" >&2
   exit 2
 fi
 
@@ -196,12 +199,18 @@ if ((trigger_capture)); then
   export SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES="$post_frames"
   export SHIFT_D3D9_CAPTURE_TRIGGER_KEY=0x79
   export SHIFT_D3D9_CAPTURE_TRIGGER_FILE="$(winepath -w "$trigger_file")"
+  if [[ -n "$resource_trigger" ]]; then
+    export SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER="$resource_trigger"
+  else
+    unset SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER || true
+  fi
 else
   unset SHIFT_D3D9_CAPTURE_TRIGGER || true
   unset SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES || true
   unset SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES || true
   unset SHIFT_D3D9_CAPTURE_TRIGGER_KEY || true
   unset SHIFT_D3D9_CAPTURE_TRIGGER_FILE || true
+  unset SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER || true
 fi
 
 if ((debug_output)); then
@@ -270,6 +279,9 @@ fi
 if ((trigger_capture)); then
   echo "Trigger : F10 (pre=$pre_frames, post=$post_frames)"
   echo "          or: touch $trigger_file"
+  if [[ -n "$resource_trigger" ]]; then
+    echo "Resource: $resource_trigger"
+  fi
 fi
 if ((buffer_payloads)); then echo "Buffers : $buffer_dir"; fi
 if ((texture_payloads)); then echo "Tex raw : $texture_payload_dir"; fi
