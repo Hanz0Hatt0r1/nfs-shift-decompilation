@@ -415,6 +415,34 @@ jobs:
             out/vulkan/runtime/bar_matrix_coupling.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/bar_matrix_coupling.json
+      - name: Native BODY sparse row-index storage
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_body_sparse_matrix_storage
+          native_runtime/build/shift_runtime_body_sparse_matrix_storage_check \
+            | tee out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"format": "SHIFT.NativeBodySparseMatrixStorageCheck/1"' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"source_function": "FUN_007bb8d0"' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"matrix_base": "BODY+0x154"' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"row_pointer_table": "BODY+0x158"' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"row_index_vector": "BODY+0x15c"' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"noncanonical_row_order_verified": true' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"alias_rejected": true' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"range_rejected": true' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"upper_triangle_rejected": true' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"max_absolute_error": 0' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/body_sparse_matrix_storage.json
       - name: Native prepared BODY constraint orchestration
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \

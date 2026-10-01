@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 624.**
+**Current mainline: Phase 625.**
 
 
 
@@ -137,7 +137,7 @@ Phase 614 adds an exact pre-reset SBEX→SBFR join: the complete FUN_007ba570 gl
 86. Port the complete source-backed `FUN_007bb090` BAR projection to native C++, including the inline three-component basis, weighted one-lane reduction, nonzero-side bias correction and bounded BODY solver-vector application — Phase 619 implemented.
 87. Port the source-backed `FUN_007bbb80` JOINT matrix block algebra to native C++, covering self, JOINT↔JOINT, JOINT↔HINGE and JOINT↔BAR blocks with exact lower-triangle orientation/sign policy — Phase 620 implemented.
 88. Port the source-backed HINGE/HINGE block algebra of `FUN_007bb250` to native C++, preserving the `FUN_007aefb0` float transform boundary, self lower-triangle writes and pair transpose/sign policy — Phase 621 implemented.\n89. Port the remaining source-backed HINGE↔BAR 2x1 block algebra of `FUN_007bb250`, preserving the same transform boundary and scalar-base orientation/sign policy — Phase 622 implemented.
-90. Port the complete source-backed `FUN_007bb6c0` BAR/BAR matrix coefficient algebra to native C++, including point×direction transform, self/pair coefficients, side sign and lower-triangle cell selection — Phase 623 implemented.\n91. Join the native Phase 616–623 primitives into a prepared per-BODY `FUN_007bc680` sample-array orchestrator, preserving JOINT→HINGE→BAR projection order and JOINT→HINGE→BAR matrix ownership without deriving `FUN_007b3ed0` samples — Phase 624 implemented.
+90. Port the complete source-backed `FUN_007bb6c0` BAR/BAR matrix coefficient algebra to native C++, including point×direction transform, self/pair coefficients, side sign and lower-triangle cell selection — Phase 623 implemented.\n91. Join the native Phase 616–623 primitives into a prepared per-BODY `FUN_007bc680` sample-array orchestrator, preserving JOINT→HINGE→BAR projection order and JOINT→HINGE→BAR matrix ownership without deriving `FUN_007b3ed0` samples — Phase 624 implemented.\n92. Materialize the Phase 624 lower-triangle matrix through the source-backed per-BODY `+0x154/+0x158/+0x15c` row-index storage contract, preserving prepared noncanonical row order and fail-closed span validation — Phase 625 implemented.
 
 ## Workstream status
 
@@ -153,7 +153,7 @@ Phase 614 adds an exact pre-reset SBEX→SBFR join: the complete FUN_007ba570 gl
 | SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed IMB/IMX neutral geometry; Silverstone capture/matcher/admission, native scene execution, external sampler admission, Phase 594 root solve, Phase 595 candidate join, Phase 596 owner-scoped cross-resource root consensus and Phase 597 consensus→handoff application implemented | authentic Silverstone D3D9 capture content + renderer-owned resource types beyond sampler2D/samplerCube-s3 + runtime IMX same-instance proof + authentic Phase 598 production coverage numbers + historical SceneGraph update sequence |
 | Camera | source-backed manager/state primitives + native snapshot/double-buffer handoff | retail timing/controller/view-selection behavior and exact render integration |
 | Native input | live keyboard intent + deterministic fixed-step input-script path | gamepad/analog normalization and retail input filtering |
-| Vehicle physics | active; Phase 607 runtime participant promotion + Phase 608 fixed-step prepared builtin solver + Phase 609 native post-solve parity + Phase 610 solve→BODY projection + Phase 615 fixed-step SBEX→SBFR evidence gate + Phase 616 preprojection + Phase 617 JOINT + Phase 618 HINGE + Phase 619 BAR projection + Phases 620–623 JOINT/HINGE/BAR matrix block algebra + Phase 624 prepared BODY sample-array orchestration implemented | exact sparse row-pointer writes, authentic sampled-state/matrix-RHS/reset observations, provider dispatch and persistent vehicle-state integration |
+| Vehicle physics | active; Phase 607 runtime participant promotion + Phase 608 fixed-step prepared builtin solver + Phase 609 native post-solve parity + Phase 610 solve→BODY projection + Phase 615 fixed-step SBEX→SBFR evidence gate + Phase 616 preprojection + Phase 617 JOINT + Phase 618 HINGE + Phase 619 BAR projection + Phases 620–623 JOINT/HINGE/BAR matrix block algebra + Phase 624 prepared BODY sample-array orchestration + Phase 625 exact prepared row-index/row-pointer storage implemented | authentic sampled-state production, generated-contribution→export fixed-step join, matrix-RHS/reset observations, provider dispatch and persistent vehicle-state integration |
 | Builtin solver | source-backed + native FUN_007b0f20/FUN_007b2210/FUN_007b4110 + Phase 606/609 packets + Phase 610 fixed-step reset→solve→projection chain | authentic per-step matrix/RHS/reset/constraint-row evidence and persistent BODY integration |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |

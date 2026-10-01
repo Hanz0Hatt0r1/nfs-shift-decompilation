@@ -51,6 +51,7 @@ add_library(shift_runtime_physics STATIC
   src/body_export_solver_join.cpp
   src/body_preprojection.cpp
   src/body_constraint_assembly.cpp
+  src/body_sparse_matrix_storage.cpp
   src/bar_projection.cpp
   src/bar_matrix_coupling.cpp
   src/hinge_projection.cpp
@@ -69,6 +70,13 @@ add_executable(shift_runtime_builtin_solver_check
 target_link_libraries(shift_runtime_builtin_solver_check PRIVATE
   shift_runtime_physics)
 target_compile_options(shift_runtime_builtin_solver_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+add_executable(shift_runtime_body_sparse_matrix_storage_check
+  tests/body_sparse_matrix_storage_check.cpp)
+target_link_libraries(shift_runtime_body_sparse_matrix_storage_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_body_sparse_matrix_storage_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
 add_executable(shift_runtime_body_constraint_assembly_check
@@ -187,6 +195,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_builtin_sparse_solver
     COMMAND shift_runtime_builtin_solver_check)
+  add_test(
+    NAME shift_runtime_body_sparse_matrix_storage
+    COMMAND shift_runtime_body_sparse_matrix_storage_check)
   add_test(
     NAME shift_runtime_body_constraint_assembly
     COMMAND shift_runtime_body_constraint_assembly_check)
