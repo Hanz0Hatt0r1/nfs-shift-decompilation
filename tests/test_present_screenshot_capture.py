@@ -411,3 +411,25 @@ def test_wine_launcher_exports_inferred_prefix_before_winepath_and_wine():
     assert 'echo "WINEPREFIX: $WINEPREFIX"' in wine
     assert 'echo "Wine exe : $(command -v "$wine_command")"' in wine
     assert 'echo "Winepath : $(command -v winepath)"' in wine
+
+
+def test_trigger_buffer_payloads_defer_disk_io_until_trigger():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+
+    for token in (
+        "struct DeferredBufferPayload",
+        "g_deferred_buffer_payloads",
+        "retain_or_write_buffer_payload",
+        "flush_deferred_buffer_payloads_for_trigger",
+        "discard_deferred_buffer_payload",
+        "activate_capture_trigger",
+        "writer().trigger_is_active()",
+    ):
+        assert token in source
+
+    assert "DeferredBufferPayload{state, std::move(payload)}" in source
+    assert "if (!activate_capture_trigger(g_frame.load())) return false;" in source
+    assert "activate_capture_trigger(g_frame.load());" in source
+    assert "write_buffer_payload_file(" in source
+    assert "g_deferred_buffer_payloads.clear();" in source
+    assert "discard_deferred_buffer_payload(*out_buffer);" in source
