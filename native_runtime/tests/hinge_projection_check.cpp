@@ -80,7 +80,7 @@ int main() {
             1e-12,
             "HINGE zero-flag signed lanes",
             max_absolute_error);
-        if (positive.transformed_position_used) {
+        if (positive.frame_correction_applied) {
             throw std::runtime_error(
                 "HINGE zero-flag branch transformed sample position");
         }
@@ -99,7 +99,7 @@ int main() {
 
         const auto negative =
             evaluate_fun_007bae40_hinge(nonzero);
-        if (!negative.transformed_position_used) {
+        if (!negative.frame_correction_applied) {
             throw std::runtime_error(
                 "HINGE nonzero branch skipped sample transform");
         }
@@ -126,6 +126,39 @@ int main() {
             {-6.0, 0.0},
             1e-12,
             "HINGE nonzero signed lanes",
+            max_absolute_error);
+
+        HingeProjectionInput matrix_case = nonzero;
+        matrix_case.body_frame = {
+            1.0f, 2.0f, 3.0f,
+            4.0f, 5.0f, 6.0f,
+            7.0f, 8.0f, 9.0f,
+        };
+        const auto matrix_result =
+            evaluate_fun_007bae40_hinge(matrix_case);
+        require_close(
+            matrix_result.transformed_sample_position,
+            {14.0, 32.0, 50.0},
+            1e-12,
+            "FUN_007aefb0 non-identity transform",
+            max_absolute_error);
+        require_close(
+            matrix_result.cross_vector,
+            {50.0, 0.0, -14.0},
+            1e-12,
+            "FUN_007b1320 non-identity cross",
+            max_absolute_error);
+        require_close(
+            matrix_result.raw_lanes,
+            {100.0, 0.0},
+            1e-12,
+            "HINGE non-identity raw lanes",
+            max_absolute_error);
+        require_close(
+            matrix_result.signed_lanes,
+            {-100.0, 0.0},
+            1e-12,
+            "HINGE non-identity signed lanes",
             max_absolute_error);
 
         const std::vector<double> base = {
@@ -189,13 +222,14 @@ int main() {
             << "  \"cross_source_function\": \"FUN_007b1320\",\n"
             << "  \"sample_stride\": 160,\n"
             << "  \"scalar_width\": 2,\n"
-            << "  \"cases\": 2,\n"
+            << "  \"cases\": 3,\n"
             << "  \"range_rejected\": true,\n"
             << "  \"non_finite_rejected\": true,\n"
             << "  \"max_absolute_error\": "
             << std::setprecision(17)
             << max_absolute_error << ",\n"
             << "  \"oracle_tolerance\": 1e-12,\n"
+            << "  \"oracle_within_tolerance\": true,\n"
             << "  \"full_fun_007bc680_executed\": false,\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";
