@@ -413,3 +413,18 @@ rejection with zero numerical error.
 This closes only the export primitive. BODY contribution generation,
 `FUN_007bc680`, runtime sampled-state refresh, reset selection and complete
 retail matrix/RHS assembly remain separate gates.
+
+
+## Phase 613 prepared BODY solver export frame
+
+The native runtime physics library can now load and execute a proof-gated SBEX
+packet containing exact ordered per-BODY solver-vector/matrix contribution
+arrays.
+
+The executor starts complete global destinations at zero, invokes the Phase 612
+`FUN_007ba570` primitive for each BODY and requires exact Python-oracle parity.
+Linux CI also rejects a packet with an incomplete proof mask.
+
+Contribution generation itself remains outside this contract. Phase 613 does
+not derive `FUN_007bc680`, reset flags or retail matrix/RHS state and does not
+yet feed its result into the prepared builtin solver frame.
