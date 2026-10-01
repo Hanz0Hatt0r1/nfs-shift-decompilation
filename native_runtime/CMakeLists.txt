@@ -50,6 +50,7 @@ add_library(shift_runtime_physics STATIC
   src/body_solver_export_frame.cpp
   src/body_export_solver_join.cpp
   src/body_preprojection.cpp
+  src/joint_projection.cpp
   src/post_solve_projection.cpp)
 target_include_directories(shift_runtime_physics PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -68,6 +69,13 @@ add_executable(shift_runtime_body_preprojection_check
 target_link_libraries(shift_runtime_body_preprojection_check PRIVATE
   shift_runtime_physics)
 target_compile_options(shift_runtime_body_preprojection_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+add_executable(shift_runtime_joint_projection_check
+  tests/joint_projection_check.cpp)
+target_link_libraries(shift_runtime_joint_projection_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_joint_projection_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
 add_executable(shift_runtime_body_solver_export_check
@@ -126,6 +134,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_body_preprojection
     COMMAND shift_runtime_body_preprojection_check)
+  add_test(
+    NAME shift_runtime_joint_projection
+    COMMAND shift_runtime_joint_projection_check)
   add_test(
     NAME shift_runtime_body_solver_export
     COMMAND shift_runtime_body_solver_export_check)
