@@ -260,6 +260,8 @@ def test_resource_signature_trigger_is_stable_and_bind_driven():
         '"ib:" << length',
         'texture_signature("tex"',
         '"cube", edge_length',
+        'surface_signature("rt"',
+        'surface_signature("depth"',
     ):
         assert token in source
 
@@ -276,6 +278,9 @@ def test_resource_signature_trigger_is_stable_and_bind_driven():
         assert f'maybe_trigger_for_resource("{bind_event}"' in source
 
     assert "resource_trigger_matches(signature)" in source
+    assert "resource_trigger_already_fired(signature)" in source
+    assert "mark_resource_trigger_fired(signature)" in source
+    assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT" in source
     assert "table[object] = signature" in source
 
 
@@ -285,8 +290,12 @@ def test_resource_trigger_launchers_accept_signature_rules():
 
     assert '[string]$ResourceTrigger = ""' in powershell
     assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER" in powershell
+    assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT" in powershell
+    assert "[switch]$ResourceTriggerRepeat" in powershell
     assert "TriggerCapture/ResourceTrigger cannot be combined" in powershell
 
     assert "--resource-trigger" in wine
+    assert "--resource-trigger-repeat" in wine
     assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER" in wine
+    assert "SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT" in wine
     assert "--trigger/--resource-trigger cannot be combined" in wine
