@@ -489,6 +489,100 @@ jobs:
             out/vulkan/runtime/body_constraint_assembly.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/body_constraint_assembly.json
+      - name: Prepared generated BODY constraint frame
+        run: |
+          cat > out/vulkan/runtime/generated_body_constraints_input.json <<'JSON'
+          {
+            "format": "SHIFT.NativeGeneratedBodyConstraintFrameInput/1",
+            "version": 1,
+            "verification_scope": "phase627-ci-regression",
+            "sample_values_ready": true,
+            "body_order_ready": true,
+            "row_layout_ready": true,
+            "provider_absent": true,
+            "body_count": 1,
+            "solver_scalar_count": 6,
+            "bodies": [
+              {
+                "body_index": 0,
+                "body_position": [1.0, 2.0, 3.0],
+                "body_correction": [0.0, 0.0, 0.0],
+                "body_axis": [0.25, 0.5, 0.75],
+                "angular_state": [0.125, 0.25, 0.5],
+                "linear_state": [0.5, 0.75, 1.0],
+                "inverse_scalar": 1.0,
+                "body_frame": [
+                  1.0, 0.0, 0.0,
+                  0.0, 1.0, 0.0,
+                  0.0, 0.0, 1.0
+                ],
+                "body_tensor": [
+                  [1.0, 0.0, 0.0],
+                  [0.0, 1.0, 0.0],
+                  [0.0, 0.0, 1.0]
+                ],
+                "scales": {
+                  "linear_scale": 2.0,
+                  "quadratic_scale": 3.0
+                },
+                "row_indices": [0, 6, 12, 18, 24, 30],
+                "matrix_double_count": 36,
+                "joints": [
+                  {
+                    "position": [1.5, 2.5, 3.5],
+                    "scalar_base": 0,
+                    "side_flag": 0
+                  }
+                ],
+                "hinges": [
+                  {
+                    "angular": [1.0, 2.0, 3.0],
+                    "linear": [4.0, 5.0, 6.0],
+                    "position": [1.0, 2.0, 3.0],
+                    "frame_offset": [0.5, 1.0, 1.5],
+                    "scalar_base": 3,
+                    "side_flag": 0
+                  }
+                ],
+                "bars": [
+                  {
+                    "point": [2.0, 1.0, 3.0],
+                    "direction": [1.0, 2.0, 1.0],
+                    "side_bias": 0.5,
+                    "scalar_base": 5,
+                    "side_flag": 0
+                  }
+                ]
+              }
+            ]
+          }
+          JSON
+          python3 shift_importer.py native-generated-body-constraint-frame \
+            out/vulkan/runtime/generated_body_constraints_input.json \
+            out/vulkan/runtime/generated_body_constraints
+          native_runtime/build/shift_runtime_generated_body_constraint_frame_check \
+            out/vulkan/runtime/generated_body_constraints/generated_body_constraints.gbcf \
+            | tee out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"format": "SHIFT.NativeGeneratedBodyConstraintFrameCheck/1"' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"packet_format": "SHIFT.NativeGeneratedBodyConstraintFramePacket/1"' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"generation_function": "FUN_007bc680"' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"storage_function": "FUN_007bb8d0"' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"export_function": "FUN_007ba570"' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"contribution_values_stored_in_packet": false' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"native_generation_executed": true' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"sampled_state_refresh_executed": false' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"max_absolute_error": 0' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/generated_body_constraint_frame.json
       - name: Native generated BODY contribution export join
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
