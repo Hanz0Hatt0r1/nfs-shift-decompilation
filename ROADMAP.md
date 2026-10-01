@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 613.**
+**Current mainline: Phase 614.**
 
 
 
@@ -42,6 +42,8 @@ Phase 611 adds an explicit persistent BODY accumulator mode on top of the Phase 
 Phase 612 ports the source-backed `FUN_007ba570` per-BODY additive solver-vector/matrix export to native C++ with deterministic multi-BODY accumulation parity. Contribution generation (`FUN_007bc680`/runtime sampled state) remains evidence-gated, so this is a pre-solve primitive rather than complete retail matrix/RHS assembly.
 
 Phase 613 wraps that primitive in `SHIFT.NativeBodySolverExportFrame/1`: explicit proof-gated per-BODY `+0x150/+0x154` contributions are replayed in exact BODY order into zero-initialized complete solver destinations and checked against a Python oracle. Contribution generation remains external evidence, and the result is not yet joined to the prepared builtin solver frame.
+
+Phase 614 adds an exact pre-reset SBEX→SBFR join: the complete FUN_007ba570 global vector must equal the prepared RHS and every N² matrix double must equal the prepared solver matrix before FUN_007b2210/FUN_007b0f20 execution is admitted. A valid but mismatched SBEX remains fail-closed.
 
 ## Immediate execution order
 

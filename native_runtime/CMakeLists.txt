@@ -48,6 +48,7 @@ add_library(shift_runtime_physics STATIC
   src/builtin_solver_frame.cpp
   src/body_solver_export.cpp
   src/body_solver_export_frame.cpp
+  src/body_export_solver_join.cpp
   src/post_solve_projection.cpp)
 target_include_directories(shift_runtime_physics PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -73,6 +74,13 @@ add_executable(shift_runtime_body_solver_export_frame_check
 target_link_libraries(shift_runtime_body_solver_export_frame_check PRIVATE
   shift_runtime_physics)
 target_compile_options(shift_runtime_body_solver_export_frame_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+add_executable(shift_runtime_body_export_solver_join_check
+  tests/body_export_solver_join_check.cpp)
+target_link_libraries(shift_runtime_body_export_solver_join_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_body_export_solver_join_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
 add_executable(shift_runtime_builtin_solver_frame_check
@@ -115,6 +123,13 @@ if(BUILD_TESTING)
     COMMAND shift_runtime_body_solver_export_frame_check)
   set_tests_properties(
     shift_runtime_body_solver_export_frame_usage
+    PROPERTIES WILL_FAIL TRUE)
+
+  add_test(
+    NAME shift_runtime_body_export_solver_join_usage
+    COMMAND shift_runtime_body_export_solver_join_check)
+  set_tests_properties(
+    shift_runtime_body_export_solver_join_usage
     PROPERTIES WILL_FAIL TRUE)
   add_test(
     NAME shift_runtime_builtin_solver_frame_usage
