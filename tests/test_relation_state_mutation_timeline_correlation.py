@@ -651,3 +651,40 @@ def test_phase644_legacy_unstamped_capture_keeps_legacy_report_shape():
     assert "capture_session_id" not in report
     assert "capture_session_identity_required" not in report["evidence_boundary"]
     assert "capture_session_id" not in report["events"][0]
+
+
+def test_phase644_rejects_unstamped_mutation_in_session_aware_capture():
+    report = runtime.correlate_relation_state_mutation_events(
+        [
+            _mutation(
+                sequence=2,
+                frame_index=1,
+                frame_sequence=1,
+                kind="runtime-threshold-slot",
+                return_address=0x0079A5C1,
+            )
+        ],
+        [
+            _anchor(
+                "frame-entry",
+                1,
+                frame_index=1,
+                source="frame_entry_000001.json",
+                session_id=SESSION_A,
+            ),
+            _anchor(
+                "post-solve",
+                3,
+                frame_index=1,
+                source="post_solve_000001.json",
+                session_id=SESSION_A,
+            ),
+        ],
+    )
+
+    assert report["ready"] is False
+    assert report["capture_session_id"] == SESSION_A
+    assert (
+        "mutation-capture-session-id-missing"
+        in report["events"][0]["errors"]
+    )
