@@ -165,6 +165,41 @@ def test_frame_entry_backend_reports_provider_when_provider_is_present():
     assert result["provider"] == 0x20000000
 
 
+def test_phase636_callsite_table_is_complete_for_all_five_direct_calls():
+    assert runtime.RELATION_STATE_MUTATION_CALLSITES == {
+        0x0076EE96: {
+            "call_address": 0x0076EE91,
+            "source_function": "FUN_0076ed60",
+            "kind": "vehicle-setup-slot",
+            "expected_slot": 0,
+        },
+        0x0076EEA8: {
+            "call_address": 0x0076EEA3,
+            "source_function": "FUN_0076ed60",
+            "kind": "vehicle-setup-slot",
+            "expected_slot": 1,
+        },
+        0x0076EEBA: {
+            "call_address": 0x0076EEB5,
+            "source_function": "FUN_0076ed60",
+            "kind": "vehicle-setup-slot",
+            "expected_slot": 2,
+        },
+        0x0076EECC: {
+            "call_address": 0x0076EEC7,
+            "source_function": "FUN_0076ed60",
+            "kind": "vehicle-setup-slot",
+            "expected_slot": 3,
+        },
+        0x0079A5C1: {
+            "call_address": 0x0079A5BC,
+            "source_function": "FUN_0079a050",
+            "kind": "runtime-threshold-slot",
+            "expected_slot": None,
+        },
+    }
+
+
 @pytest.mark.parametrize(
     ("return_address", "call_address", "expected_slot"),
     [
