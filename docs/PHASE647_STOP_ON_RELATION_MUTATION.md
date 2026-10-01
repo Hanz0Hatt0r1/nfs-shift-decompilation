@@ -1,4 +1,4 @@
-# Phase 647 — stop on the first relation-state mutation
+# Phase 647 — anchored stop after relation-state mutation
 
 Phase 646 made long relation-timeline observation cheap enough to run under
 Wine/GDB. The first authentic long-window capture then established a useful
