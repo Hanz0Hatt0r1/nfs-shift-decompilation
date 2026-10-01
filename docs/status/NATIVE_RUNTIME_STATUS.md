@@ -490,9 +490,9 @@ The native physics library now executes one source-backed JOINT sample through
 three double scalar lanes, side-flag sign selection and bounded writes into a
 neutral solver-vector destination.
 
-During the port the older Python Phase 397 oracle was corrected: d3/d5 now use
-BODY +0x18/+0x20/+0x28 exactly as the retail function does, rather than the
-unrelated BODY position triplet.
+During the port the older Python Phase 397 oracle was corrected: all JOINT
+cross and axis-coupling terms now use BODY +0x18/+0x20/+0x28 exactly as the
+retail function does, rather than the unrelated BODY position triplet.
 
 The phase remains a single-sample primitive. BODY-owned JOINT iteration,
 HINGE/BAR projection and all matrix-coupling kernels are still separate gates.
