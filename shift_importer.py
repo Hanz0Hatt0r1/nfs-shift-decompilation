@@ -2470,6 +2470,29 @@ def cmd_native_builtin_solver_frame(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_native_post_solve_projection(args: argparse.Namespace) -> int:
+    """Prepare explicit FUN_007b4110 body-state projection for native parity."""
+    from native_post_solve_body_projection import (
+        build_native_post_solve_body_projection_file,
+    )
+
+    report = build_native_post_solve_body_projection_file(
+        args.input,
+        args.output_dir,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "body_count": report["body_count"],
+        "scalar_count": report["scalar_count"],
+        "constraint_counts": report["constraint_counts"],
+        "packet_sha256": report["packet"]["sha256"],
+        "verification_scope": report.get("verification_scope"),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_native_participant_runtime_evidence(
     args: argparse.Namespace,
 ) -> int:
@@ -5035,6 +5058,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="directory for solver_frame_manifest.json and solver_frame.sbfr",
     )
     p.set_defaults(fn=cmd_native_builtin_solver_frame)
+
+    p = sp.add_parser(
+        "native-post-solve-projection",
+        help=(
+            "prepare exact solved-vector BODY/JOINT/HINGE/BAR evidence "
+            "for native FUN_007b4110 parity"
+        ),
+    )
+    p.add_argument(
+        "input",
+        help="SHIFT.NativePostSolveBodyProjectionInput/1 JSON",
+    )
+    p.add_argument(
+        "output_dir",
+        help="directory for post_solve_manifest.json and post_solve.sbps",
+    )
+    p.set_defaults(fn=cmd_native_post_solve_projection)
 
     p = sp.add_parser(
         "native-participant-runtime-evidence",
