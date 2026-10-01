@@ -62,3 +62,42 @@ jobs:
         run: cmake -S native_capture -B native_capture/build -A Win32
       - name: Build D3D9 capture producer
         run: cmake --build native_capture/build --config Release
+      - name: Verify D3D9 proxy exports
+        shell: pwsh
+        run: |
+          $dll = Resolve-Path "native_capture/build/Release/d3d9.dll"
+          $exports = & dumpbin /nologo /exports $dll
+          $required = @(
+            "Direct3DCreate9",
+            "Direct3DCreate9Ex",
+            "D3DPERF_BeginEvent",
+            "D3DPERF_EndEvent",
+            "D3DPERF_GetStatus",
+            "D3DPERF_QueryRepeatFrame",
+            "D3DPERF_SetMarker",
+            "D3DPERF_SetOptions",
+            "D3DPERF_SetRegion",
+            "DebugSetLevel",
+            "DebugSetMute"
+          )
+          foreach ($name in $required) {
+            if (-not ($exports -match ("\\b" + [regex]::Escape($name) + "\\b"))) {
+              throw "missing D3D9 proxy export: $name"
+            }
+          }
+      - name: Run D3D9 passthrough smoke test
+        shell: pwsh
+        run: |
+          $dll = Resolve-Path "native_capture/build/Release/d3d9.dll"
+          $smoke = Resolve-Path "native_capture/build/Release/shift_d3d9_proxy_smoke.exe"
+          $log = Join-Path $env:RUNNER_TEMP "shift_d3d9_proxy_smoke.jsonl"
+          & $smoke $dll $log
+          if ($LASTEXITCODE -ne 0) {
+            throw "D3D9 proxy smoke test failed with exit code $LASTEXITCODE"
+          }
+          if (-not (Test-Path $log)) {
+            throw "D3D9 proxy smoke log was not created"
+          }
+          Get-Content $log | ForEach-Object {
+            $_ | ConvertFrom-Json | Out-Null
+          }
