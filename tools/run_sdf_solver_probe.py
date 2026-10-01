@@ -29,6 +29,10 @@ from sdf_runtime_probe_evidence_bundle import (
     build_sdf_runtime_probe_evidence_bundle,
 )
 
+from sdf_runtime_probe_evidence_bundle_verify import (
+    verify_sdf_runtime_probe_evidence_bundle,
+)
+
 TIMELINE_OUTPUT_NAME = "relation_state_mutation_timeline.json"
 
 
@@ -198,10 +202,17 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(final, ensure_ascii=False, indent=2))
             return 2
 
+        evidence_bundle_verification = (
+            verify_sdf_runtime_probe_evidence_bundle(
+                evidence_bundle["archive"]["path"]
+            )
+        )
+
         final_ready = (
             gdb_returncode == 0
             and bool(timeline["ready"])
             and bool(evidence_bundle["ready"])
+            and bool(evidence_bundle_verification["ready"])
         )
         final = {
             **result,
@@ -234,6 +245,16 @@ def main(argv: list[str] | None = None) -> int:
                 ],
                 "evidence_bundle_archive": evidence_bundle["archive"],
                 "evidence_bundle_errors": evidence_bundle["errors"],
+                "evidence_bundle_verified": True,
+                "evidence_bundle_verification_ready": bool(
+                    evidence_bundle_verification["ready"]
+                ),
+                "evidence_bundle_evidence_ready": bool(
+                    evidence_bundle_verification["evidence_ready"]
+                ),
+                "evidence_bundle_verification_errors": (
+                    evidence_bundle_verification["errors"]
+                ),
             },
         }
         print(json.dumps(final, ensure_ascii=False, indent=2))
