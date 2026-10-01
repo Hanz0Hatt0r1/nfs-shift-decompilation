@@ -232,7 +232,7 @@ def test_trigger_capture_launchers_expose_scene_capture_controls():
     assert "[int]$PostFrames = 2" in powershell
     assert "SHIFT_D3D9_CAPTURE_TRIGGER_FILE" in powershell
     assert '"0x79"' in powershell
-    assert "TriggerCapture cannot be combined with FrameStart/FrameEnd" in powershell
+    assert "TriggerCapture/ResourceTrigger cannot be combined with FrameStart/FrameEnd" in powershell
 
     assert "--trigger" in wine
     assert "--pre-frames" in wine
