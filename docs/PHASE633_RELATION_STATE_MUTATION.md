@@ -140,21 +140,34 @@ A recovered load/restore caller, `FUN_0076ed60`, passes literal indices
 A second audited call site around `0x79A5BC` passes the current four-slot loop
 index to the global vehicle object at `0xC13700`.
 
-Therefore the component-slot index itself is proven. What remains unresolved
-is the semantic name of the event at every call site, the exact BODY identity
-meaning of component fields `+0x420/+0x424` for all runtime states, and the
-correct scheduler/frame timing for the Linux path.
+The vehicle solver setup in `FUN_007615c0` also closes the BODY identities
+behind those component fields:
+
+| Slot | Vehicle field | Source BODY name |
+|---:|---:|---|
+| 0 | `+0x820 / +0x824` | `fl_wheel / fl_spindle` |
+| 1 | `+0x12A0 / +0x12A4` | `fr_wheel / fr_spindle` |
+| 2 | `+0x1D20 / +0x1D24` | `rl_wheel / rl_spindle` |
+| 3 | `+0x27A0 / +0x27A4` | `rr_wheel / rr_spindle` |
+
+Those addresses are exactly component-relative `+0x420/+0x424` after the
+`vehicle+0x400+slot*0xA80` calculation. The same setup stores the named
+`rear_axle` BODY at vehicle `+0x2E00`.
+
+Therefore the component-slot index and BODY identities are both statically
+proven. The remaining uncertainty is the semantic identity of every triggering
+event and the correct scheduler/frame timing for the Linux path.
 
 ## Deliberate boundary
 
 Phase 633 does not call the mutation kernel from `shift_runtime`.
 
-The source mutation and the 0..3 component-slot trampoline are statically
-recovered, but scheduling a prepared mutation still requires a proven
-component-field BODY mapping and event timing. Phase 633 therefore reconstructs
-the state transition itself while keeping dispatch evidence-gated.
+The source mutation, 0..3 component-slot trampoline and named wheel/spindle/
+rear-axle BODY mapping are statically recovered. Scheduling still requires
+evidence for the triggering event semantics and frame timing. Phase 633
+therefore reconstructs the state transition itself while keeping dispatch
+evidence-gated.
 
-The next safe step is to normalize the four component slots and their
-`+0x420/+0x424` BODY references into an evidence packet, or obtain a runtime
-observation tying those fields and the triggering event to a concrete frame,
+The next safe step is a named four-slot dispatcher that consumes those proven
+BODY identities without assigning timing, followed by runtime event evidence
 before connecting mutation to the fixed-step CRRF path.
