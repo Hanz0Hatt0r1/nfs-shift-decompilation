@@ -5,7 +5,9 @@ import hashlib
 import json
 import zipfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
+
+from sdf_runtime_probe_capture_session import validate_capture_session_id
 
 FORMAT = "SHIFT.SDFRuntimeProbeEvidenceBundle/1"
 TIMELINE_FORMAT = "SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1"
@@ -41,6 +43,86 @@ def _read_json_object(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("top-level JSON value must be an object")
     return payload
+
+
+def _read_capture_records(
+    path: Path,
+) -> tuple[list[tuple[str, Mapping[str, Any]]], list[str]]:
+    records: list[tuple[str, Mapping[str, Any]]] = []
+    errors: list[str] = []
+    if path.suffix.lower() == ".jsonl":
+        for line_number, raw_line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(),
+            1,
+        ):
+            line = raw_line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError as exc:
+                errors.append(
+                    f"capture-session-json-invalid:{path.name}:{line_number}:"
+                    f"{type(exc).__name__}:{exc}"
+                )
+                continue
+            if not isinstance(payload, Mapping):
+                errors.append(
+                    f"capture-session-json-object-required:"
+                    f"{path.name}:{line_number}"
+                )
+                continue
+            records.append((f"{path.name}:{line_number}", payload))
+        return records, errors
+
+    try:
+        payload = _read_json_object(path)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        errors.append(
+            f"capture-session-json-invalid:{path.name}:"
+            f"{type(exc).__name__}:{exc}"
+        )
+        return records, errors
+    records.append((path.name, payload))
+    return records, errors
+
+
+def _probe_manifest_capture_session(
+    root: Path,
+) -> tuple[bool, str | None, list[str]]:
+    path = root / "probe_manifest.json"
+    if not path.is_file():
+        return False, None, []
+
+    try:
+        payload = _read_json_object(path)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return False, None, []
+    if payload.get("format") != "SHIFT.SDFRuntimeProbeLauncher/1":
+        return False, None, []
+
+    candidates: list[Any] = []
+    capture_session = payload.get("capture_session")
+    if isinstance(capture_session, Mapping) and "id" in capture_session:
+        candidates.append(capture_session.get("id"))
+    probe = payload.get("probe")
+    if isinstance(probe, Mapping) and "capture_session_id" in probe:
+        candidates.append(probe.get("capture_session_id"))
+    if not candidates:
+        return False, None, []
+
+    errors: list[str] = []
+    normalized: list[str] = []
+    for value in candidates:
+        try:
+            normalized.append(validate_capture_session_id(value))
+        except (TypeError, ValueError):
+            errors.append("probe-manifest-capture-session-id-invalid")
+
+    session_id = normalized[0] if normalized else None
+    if any(value != session_id for value in normalized[1:]):
+        errors.append("probe-manifest-capture-session-id-mismatch")
+    return True, session_id, errors
 
 
 def _classify_capture_files(
@@ -87,8 +169,19 @@ def build_sdf_runtime_probe_evidence_bundle(
     rows: list[dict[str, Any]] = []
     payloads: list[tuple[str, bytes]] = []
     kind_counts: dict[str, int] = {}
+    capture_records: list[tuple[str, Mapping[str, Any]]] = []
+    capture_record_errors: list[str] = []
+    declared_session = False
+    capture_session_id = None
 
     if root.is_dir():
+        (
+            declared_session,
+            capture_session_id,
+            probe_session_errors,
+        ) = _probe_manifest_capture_session(root)
+        errors.extend(probe_session_errors)
+
         classified = _classify_capture_files(root)
         for kind, path in classified:
             data = path.read_bytes()
@@ -102,11 +195,58 @@ def build_sdf_runtime_probe_evidence_bundle(
                 }
             )
             kind_counts[kind] = kind_counts.get(kind, 0) + 1
+            records, record_errors = _read_capture_records(path)
+            capture_records.extend(records)
+            capture_record_errors.extend(record_errors)
 
         present = {row["path"] for row in rows}
         for required in _REQUIRED_CAPTURE_FILES:
             if required not in present:
                 errors.append(f"missing-required-capture-file:{required}")
+
+    evidence_session_present = any(
+        record.get("capture_session_id") is not None
+        for _, record in capture_records
+    )
+    capture_session_required = declared_session or evidence_session_present
+    if capture_session_required:
+        errors.extend(capture_record_errors)
+        if not capture_records:
+            errors.append("capture-session-records-missing")
+
+        if capture_session_id is None:
+            for _, record in capture_records:
+                raw_session_id = record.get("capture_session_id")
+                if raw_session_id is None:
+                    continue
+                try:
+                    capture_session_id = validate_capture_session_id(
+                        raw_session_id
+                    )
+                except (TypeError, ValueError):
+                    continue
+                break
+
+        for label, record in capture_records:
+            raw_session_id = record.get("capture_session_id")
+            if raw_session_id is None:
+                errors.append(f"capture-session-id-missing:{label}")
+                continue
+            try:
+                normalized_session_id = validate_capture_session_id(
+                    raw_session_id
+                )
+            except (TypeError, ValueError):
+                errors.append(f"capture-session-id-invalid:{label}")
+                continue
+            if (
+                capture_session_id is not None
+                and normalized_session_id != capture_session_id
+            ):
+                errors.append(f"capture-session-id-mismatch:{label}")
+
+        if capture_session_id is None:
+            errors.append("capture-session-id-unresolved")
 
     timeline_path = root / "relation_state_mutation_timeline.json"
     timeline_ready = False
@@ -160,6 +300,10 @@ def build_sdf_runtime_probe_evidence_bundle(
         },
         "errors": errors,
     }
+    if capture_session_required:
+        manifest["capture_session_required"] = True
+        manifest["capture_session_id"] = capture_session_id
+
     manifest_bytes = (
         json.dumps(
             manifest,
