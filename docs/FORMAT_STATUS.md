@@ -30,7 +30,7 @@
 | Native input | live X11 keyboard intent + deterministic `SHIFT.NativeRuntimeInputScript/1` fixed-step test/control path |
 | D3D9 capture | runtime producer and draw-local evidence |
 | Vulkan | bootstrap, packets, reflection gates, BMW material/DDS bridge |
-| Physics runtime | Phase 607 runtime participant identity evidence + native FUN_007b0f20/FUN_007b2210/FUN_007b4110 + SHIFT.NativeBuiltinSolverFrame/1 + SHIFT.NativePostSolveBodyProjection/1 + Phase 610 fixed-step reset→solve→projection join + Phase 611 optional persistent BODY accumulator continuity + Phase 612 native FUN_007ba570 BODY solver export + Phase 613 proof-gated ordered BODY export frame + Phase 614 exact SBEX→SBFR matrix/RHS join |
+| Physics runtime | Phase 607 runtime participant identity evidence + native FUN_007b0f20/FUN_007b2210/FUN_007b4110 + SHIFT.NativeBuiltinSolverFrame/1 + SHIFT.NativePostSolveBodyProjection/1 + Phase 610 fixed-step reset→solve→projection join + Phase 611 persistent BODY accumulators + Phase 612–615 BODY export/join chain + Phase 616 FUN_007bc680 preprojection + Phase 617 native FUN_007bac60 JOINT + Phase 618 native FUN_007bae40 HINGE projection |
 
 ## Major open areas
 
