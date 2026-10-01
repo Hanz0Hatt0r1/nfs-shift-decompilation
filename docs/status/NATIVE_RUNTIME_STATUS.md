@@ -1022,3 +1022,27 @@ GDB Python does not depend on project-root `sitecustomize.py` startup.
 This removes a manual post-processing step without changing the evidence
 boundary: missing or inconsistent runtime capture data still blocks Phase 637,
 and no native mutation scheduling is authorized.
+
+
+## Phase 639 portable SDF capture evidence bundle
+
+Full-mode retail capture output can now be reduced to one deterministic
+`sdf_capture_evidence.zip` carrying
+`SHIFT.SDFRuntimeProbeEvidenceBundle/1`.
+
+The archive includes only relation-mutation/timeline, frame-entry,
+builtin/provider solve, scalar-reset/provider-reset-effect and post-solve
+evidence. `SHIFT.exe`, `attach.gdb`, launcher manifest and preflight
+manifest are excluded.
+
+Every evidence file is recorded in `evidence_manifest.json` with byte size
+and SHA-256. ZIP entry ordering, timestamps, permissions and storage mode are
+fixed so identical capture bytes produce identical archive bytes.
+
+Packaging readiness is kept separate from Phase 637 `capture_ready`; a
+blocked timeline remains blocked even when it is packaged successfully for
+inspection.
+
+The full explicit-PID launcher now automatically creates the archive after
+timeline finalization and reports archive path, size and SHA-256. Provider-only
+mode remains unchanged. No native mutation scheduling is enabled.
