@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 612. Current development: Phase 613.**
+**Merged baseline: Phase 613. Current development: Phase 614.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
