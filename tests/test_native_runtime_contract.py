@@ -373,3 +373,23 @@ def test_phase603_keeps_registry_index_and_selector_ordinal_distinct():
     assert "physics_participant_topology_steps" in source
     assert "physics_participant_ready_steps" in source
     assert "physics_participant_unresolved_steps" in source
+
+
+def test_phase607_native_runtime_admits_runtime_participant_identity_evidence():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert "SHIFT.NativePhysicsParticipantRuntimeEvidence/1" in source
+    assert "const bool structural_boundary" in source
+    assert "const bool runtime_evidence" in source
+    assert "participant_instance_ready" in source
+    assert '"registry_index_equals_selector_ordinal": false' in source
+    assert (
+        "physics.participant_ready =\n"
+        "        runtime_evidence && participant_instance_ready;"
+        in source
+    )
+    assert "registry_index < 0" in source
+    assert "selector_ordinal < 0" in source
+    assert "process_state == -1" in source
