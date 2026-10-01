@@ -623,3 +623,26 @@ rejects range/non-finite inputs at `1e-12` parity tolerance.
 With Phases 620–623, all currently recovered JOINT/HINGE/BAR matrix block
 algebra is native. Full BODY-owned sample iteration and sparse row-pointer
 orchestration remain the next contribution-builder boundary.
+
+
+## Phase 624 prepared BODY constraint orchestration
+
+The native physics library now joins the Phase 616–623 source-backed primitives
+into one prepared per-BODY `FUN_007bc680` contribution build.
+
+`assemble_fun_007bc680_body_constraints()` consumes explicit refreshed sample
+values, validates non-overlapping JOINT/HINGE/BAR scalar ranges, executes the
+recovered JOINT→HINGE→BAR projection order, then executes JOINT-owned,
+HINGE-owned and BAR-owned matrix passes without duplicate pair writes.
+
+The deterministic mixed fixture produces:
+
+- solver vector `[7.125, 15, 20.3125, 9.125, 20.75, 52.5]`;
+- a six-scalar lower-triangle matrix with all JOINT/HINGE/BAR self and mixed
+  blocks;
+- exact source-order stage counts at `1e-12` tolerance.
+
+This closes prepared sample-array orchestration only. Runtime
+`FUN_007b3ed0` sampled-state refresh, exact `BODY+0x158` sparse row-pointer
+execution and fixed-step generated-contribution→SBEX integration remain
+separate gates.
