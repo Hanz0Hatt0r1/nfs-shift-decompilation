@@ -2,8 +2,13 @@
 from __future__ import annotations
 
 import hashlib
+import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+
+D3D9_SRC = Path(__file__).resolve().parents[1] / "graphics" / "d3d9"
+if str(D3D9_SRC) not in sys.path:
+    sys.path.insert(0, str(D3D9_SRC))
 
 from d3d9_pe_evidence import PEImage, parse_pe
 from sdf_runtime_probe_runtime import FUNCTIONS, IMAGE_BASE

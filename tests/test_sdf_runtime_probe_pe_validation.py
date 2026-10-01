@@ -100,3 +100,28 @@ def test_probe_cli_parser_supports_sha_override():
         "--allow-other-sha256",
     ])
     assert args.allow_other_sha256 is True
+
+
+def test_phase644_pe_validation_imports_without_sitecustomize(tmp_path):
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[1]
+    physics = repo / "src" / "physics"
+    code = (
+        "import sys;"
+        f"sys.path.insert(0, {str(physics)!r});"
+        "import sdf_runtime_probe_pe_validation as m;"
+        "print(m.FORMAT)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-S", "-c", code],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == runtime.FORMAT

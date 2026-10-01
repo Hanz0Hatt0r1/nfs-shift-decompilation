@@ -638,3 +638,28 @@ def test_phase642_launcher_passes_capture_frame_budget_to_bundle_prepare(
     ) == 0
 
     assert captured["capture_frames"] == 4
+
+
+def test_phase644_cli_imports_without_sitecustomize(tmp_path):
+    import subprocess
+    import sys
+
+    script = Path("tools/run_sdf_solver_probe.py").resolve()
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-S",
+            str(script),
+            str(tmp_path / "SHIFT.exe"),
+            "--print-contract",
+        ],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["format"] == "SHIFT.SDFRuntimeProbeLauncher/1"
+    assert payload["ready"] is True
