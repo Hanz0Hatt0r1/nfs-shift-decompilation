@@ -240,7 +240,7 @@ def test_trigger_capture_launchers_expose_scene_capture_controls():
     assert "capture.trigger" in wine
     assert "SHIFT_D3D9_CAPTURE_TRIGGER_FILE" in wine
     assert "SHIFT_D3D9_CAPTURE_TRIGGER_KEY=0x79" in wine
-    assert "--trigger cannot be combined with --frame-start/--frame-end" in wine
+    assert "--trigger/--resource-trigger cannot be combined with --frame-start/--frame-end" in wine
 
 
 def test_resource_signature_trigger_is_stable_and_bind_driven():
