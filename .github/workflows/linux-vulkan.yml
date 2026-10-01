@@ -99,6 +99,30 @@ jobs:
             out/vulkan/runtime/builtin_sparse_solver.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/builtin_sparse_solver.json
+      - name: Native post-solve application parity
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_post_solve_application
+          native_runtime/build/shift_runtime_post_solve_check \
+            | tee out/vulkan/runtime/post_solve_application.json
+          grep -q '"format": "SHIFT.NativePostSolveApplicationCheck/1"' \
+            out/vulkan/runtime/post_solve_application.json
+          grep -q '"post_solve_source_function": "FUN_007b4110"' \
+            out/vulkan/runtime/post_solve_application.json
+          grep -q '"positive_helper": "FUN_007baa70"' \
+            out/vulkan/runtime/post_solve_application.json
+          grep -q '"negative_helper": "FUN_007baaf0"' \
+            out/vulkan/runtime/post_solve_application.json
+          grep -q '"joint_width": 3' \
+            out/vulkan/runtime/post_solve_application.json
+          grep -q '"hinge_width": 2' \
+            out/vulkan/runtime/post_solve_application.json
+          grep -q '"bar_width": 1' \
+            out/vulkan/runtime/post_solve_application.json
+          grep -q '"scheduler_integration": false' \
+            out/vulkan/runtime/post_solve_application.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/post_solve_application.json
       - name: Prepared native builtin solver frame
         run: |
           mkdir -p out/vulkan/runtime/solver_frame
