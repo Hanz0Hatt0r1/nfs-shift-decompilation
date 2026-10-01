@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 641. Current development: Phase 642.**
+**Merged baseline: Phase 642. Current development: Phase 643.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -425,3 +425,18 @@ For current state, prefer operational status documents over old phase notes:
 
 Historical phase files preserve the evidence trail and are not rewritten
 retroactively when newer work changes the current operational boundary.
+
+
+## Phase 643 capture-session hygiene
+
+Retail SDF capture preparation now creates an explicit 128-bit session identity,
+removes only known generated evidence from a previously reused output directory
+after the retail executable validates, and passes that identity into the GDB
+probe. Every GDB-produced JSON/JSONL evidence record is stamped with the same
+`capture_session_id`. GDB also refuses to install the probe if stale generated
+evidence is still present, and resets the shared event/reset/frame counters when
+a new probe session is installed.
+
+This is provenance/output hygiene only. It does not infer mutation semantics or
+enable native relation-state scheduling; authentic full-mode retail evidence
+remains required.
