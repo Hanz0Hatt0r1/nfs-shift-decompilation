@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 611.**
+**Current mainline: Phase 612.**
 
 
 
@@ -38,6 +38,8 @@ Phase 605 keeps the PhysicsParticipantManager registry index and IGPhaseVehicle 
 Phase 606 adds `SHIFT.NativeBuiltinSolverFrame/1`: an explicit provider-absent matrix/RHS/reset/graph packet, Python oracle and native loader/executor for the exact `FUN_007b2210 → FUN_007b0f20` sequence. It does not derive any of those runtime-only inputs.
 
 Phase 611 adds an explicit persistent BODY accumulator mode on top of the Phase 610 solve→post-solve chain. It carries only the six opaque FUN_007b4110 BODY channels between fixed steps, verifies the same prepared one-step delta on every step, and deliberately keeps persistent vehicle transform/motion state false.
+
+Phase 612 ports the source-backed `FUN_007ba570` per-BODY additive solver-vector/matrix export to native C++ with deterministic multi-BODY accumulation parity. Contribution generation (`FUN_007bc680`/runtime sampled state) remains evidence-gated, so this is a pre-solve primitive rather than complete retail matrix/RHS assembly.
 
 ## Immediate execution order
 

@@ -399,3 +399,17 @@ Telemetry distinguishes this from vehicle integration:
 Linux Vulkan CI preserves the old Phase 610 non-persistent run and adds a
 five-step persistent BODY run plus a deterministic standalone accumulation
 checker.
+
+
+## Phase 612 native BODY solver export
+
+`shift_runtime_physics` now contains the exact source-backed
+`FUN_007ba570` additive export from BODY-local solver-vector/matrix
+contributions into caller-owned global solver destinations.
+
+The native checker covers sequential multi-BODY accumulation and short-buffer
+rejection with zero numerical error.
+
+This closes only the export primitive. BODY contribution generation,
+`FUN_007bc680`, runtime sampled-state refresh, reset selection and complete
+retail matrix/RHS assembly remain separate gates.
