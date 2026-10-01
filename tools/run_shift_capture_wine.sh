@@ -279,7 +279,7 @@ if [[ -n "$old_overrides" ]]; then
   for entry in "${override_parts[@]}"; do
     [[ -n "$entry" ]] || continue
     name="${entry%%=*}"
-    if [[ "${name,,}" == "d3d9" ]]; then
+    if [[ "${name,,}" == "d3d9" || "${name,,}" == "d3dx9_41" ]]; then
       continue
     fi
     if [[ -n "$filtered_overrides" ]]; then
@@ -289,15 +289,16 @@ if [[ -n "$old_overrides" ]]; then
   done
 fi
 if [[ -n "$filtered_overrides" ]]; then
-  export WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b"
+  export WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n,b"
 else
-  export WINEDLLOVERRIDES="d3d9=n,b"
+  export WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n,b"
 fi
 
 echo "Launching: $game"
 echo "Capture : $capture_path"
 echo "Crash   : $crash_path"
 echo "Mode    : $mode"
+echo "DLL ovrd: d3d9=n,b; d3dx9_41=n,b"
 if ((signature_discovery)); then
   echo "Discover: compact resource-signature pass"
 fi
