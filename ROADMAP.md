@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 612.**
+**Current mainline: Phase 613.**
 
 
 
@@ -40,6 +40,8 @@ Phase 606 adds `SHIFT.NativeBuiltinSolverFrame/1`: an explicit provider-absent m
 Phase 611 adds an explicit persistent BODY accumulator mode on top of the Phase 610 solve→post-solve chain. It carries only the six opaque FUN_007b4110 BODY channels between fixed steps, verifies the same prepared one-step delta on every step, and deliberately keeps persistent vehicle transform/motion state false.
 
 Phase 612 ports the source-backed `FUN_007ba570` per-BODY additive solver-vector/matrix export to native C++ with deterministic multi-BODY accumulation parity. Contribution generation (`FUN_007bc680`/runtime sampled state) remains evidence-gated, so this is a pre-solve primitive rather than complete retail matrix/RHS assembly.
+
+Phase 613 wraps that primitive in `SHIFT.NativeBodySolverExportFrame/1`: explicit proof-gated per-BODY `+0x150/+0x154` contributions are replayed in exact BODY order into zero-initialized complete solver destinations and checked against a Python oracle. Contribution generation remains external evidence, and the result is not yet joined to the prepared builtin solver frame.
 
 ## Immediate execution order
 
