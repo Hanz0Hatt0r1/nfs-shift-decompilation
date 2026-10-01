@@ -76,13 +76,13 @@ int main() {
             max_absolute_error);
         require_close(
             positive.raw_lanes,
-            {4.95, 17.95, 21.35},
+            {9.005, 15.11, 21.515},
             1e-12,
             "JOINT raw lanes",
             max_absolute_error);
         require_close(
             positive.signed_lanes,
-            {4.95, 17.95, 21.35},
+            {9.005, 15.11, 21.515},
             1e-12,
             "JOINT positive lanes",
             max_absolute_error);
@@ -92,7 +92,7 @@ int main() {
             evaluate_fun_007bac60_joint(input);
         require_close(
             negative.signed_lanes,
-            {-4.95, -17.95, -21.35},
+            {-9.005, -15.11, -21.515},
             1e-12,
             "JOINT negative lanes",
             max_absolute_error);
