@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 644. Current development: Phase 645.**
+**Current mainline: Phase 645. Current development: Phase 646.**
 
 
 
@@ -51,6 +51,8 @@ Phase 643 adds explicit capture-session identity and stale-artifact hygiene. Lau
 Phase 644 makes that identity a fail-closed Phase 637 correlation gate. If any timeline-contributing record is session-stamped, every relation mutation plus frame-entry, builtin/provider solve, scalar-reset and post-solve anchor must carry the same valid 32-hex capture session id. Mixed, malformed or partially unstamped session-aware captures are blocked, while historical fully unstamped fixtures retain their legacy report shape. The next gate remains an authentic retail capture.
 
 Phase 645 binds portable evidence to the same capture-session identity. The builder copies the Phase 643 launcher declaration into `evidence_manifest.json` without packaging the host-local probe manifest, requires every packaged JSON/JSONL evidence record to match it, and the Phase 640 verifier independently repeats that check from archive bytes. Rehashed mixed or stripped session records are blocked before replay; legacy fully unstamped bundles remain compatible. Authentic retail capture remains the integration gate.
+
+Phase 646 adds a lightweight `--relation-timeline-only` GDB mode for that authentic capture gate. It installs only relation mutation, frame-entry and post-solve ordering breakpoints; the post-solve hook records metadata only instead of reading the full RHS vector. It remains compatible with bounded `--capture-frames N`, session identity, timeline correlation, evidence packaging, verification and replay. This reduces Wine/GDB capture overhead without assigning any new runtime semantics.
 
 Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
 
