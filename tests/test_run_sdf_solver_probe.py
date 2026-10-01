@@ -56,6 +56,17 @@ def _verification(*, ready=True, evidence_ready=True):
     }
 
 
+def _replay(*, ready=True, evidence_ready=True):
+    return {
+        "format": "SHIFT.SDFRuntimeProbeEvidenceBundleReplay/1",
+        "ready": ready,
+        "evidence_ready": ready and evidence_ready,
+        "timeline_match": ready,
+        "recomputed_timeline_sha256": "b" * 64,
+        "errors": [] if ready else ["embedded-timeline-replay-mismatch"],
+    }
+
+
 def test_phase638_finalize_helper_persists_phase637_report(
     monkeypatch,
     tmp_path: Path,
@@ -111,6 +122,11 @@ def test_phase638_full_attach_automatically_finalizes_timeline(
     )
     monkeypatch.setattr(
         tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
+    )
+    monkeypatch.setattr(
+        tool,
         "verify_sdf_runtime_probe_evidence_bundle",
         lambda archive: _verification(),
     )
@@ -118,6 +134,11 @@ def test_phase638_full_attach_automatically_finalizes_timeline(
         tool,
         "verify_sdf_runtime_probe_evidence_bundle",
         lambda archive: _verification(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
     )
 
     result = tool.main(
@@ -168,6 +189,11 @@ def test_phase638_full_attach_blocks_when_timeline_is_not_ready(
         "verify_sdf_runtime_probe_evidence_bundle",
         lambda archive: _verification(),
     )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
+    )
 
     result = tool.main(
         [
@@ -214,6 +240,11 @@ def test_phase638_full_attach_blocks_when_gdb_session_fails_even_if_timeline_rea
         tool,
         "verify_sdf_runtime_probe_evidence_bundle",
         lambda archive: _verification(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
     )
 
     result = tool.main(
@@ -263,6 +294,11 @@ def test_phase638_provider_only_attach_skips_relation_timeline_finalization(
         "verify_sdf_runtime_probe_evidence_bundle",
         fail_if_called,
     )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        fail_if_called,
+    )
 
     result = tool.main(
         [
@@ -309,6 +345,11 @@ def test_phase639_full_attach_reports_portable_evidence_bundle(
         tool,
         "verify_sdf_runtime_probe_evidence_bundle",
         lambda archive: _verification(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
     )
 
     result = tool.main(
@@ -359,6 +400,11 @@ def test_phase639_full_attach_blocks_when_bundle_build_is_not_ready(
         "verify_sdf_runtime_probe_evidence_bundle",
         lambda archive: _verification(),
     )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
+    )
 
     assert tool.main(
         [
@@ -402,6 +448,11 @@ def test_phase640_full_attach_reports_verified_bundle(
         tool,
         "verify_sdf_runtime_probe_evidence_bundle",
         lambda archive: _verification(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
     )
 
     assert tool.main(
@@ -449,6 +500,107 @@ def test_phase640_full_attach_blocks_when_bundle_verification_fails(
         tool,
         "verify_sdf_runtime_probe_evidence_bundle",
         lambda archive: _verification(ready=False),
+    )
+
+    assert tool.main(
+        [
+            str(tmp_path / "SHIFT.exe"),
+            "--output",
+            str(tmp_path / "capture"),
+            "--attach-pid",
+            "1234",
+        ]
+    ) == 2
+
+
+
+def test_phase641_full_attach_reports_replayed_bundle(
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+):
+    monkeypatch.setattr(
+        tool,
+        "prepare_probe_bundle",
+        lambda *args, **kwargs: _manifest(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_attach_command",
+        lambda **kwargs: ["gdb", "-p", "1234"],
+    )
+    monkeypatch.setattr(tool.subprocess, "call", lambda command: 0)
+    monkeypatch.setattr(
+        tool,
+        "finalize_relation_state_mutation_capture",
+        lambda output: _timeline(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        lambda output: _bundle(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "verify_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _verification(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
+    )
+
+    assert tool.main(
+        [
+            str(tmp_path / "SHIFT.exe"),
+            "--output",
+            str(tmp_path / "capture"),
+            "--attach-pid",
+            "1234",
+        ]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert '"evidence_bundle_replay_ready": true' in output
+    assert '"evidence_bundle_replay_timeline_match": true' in output
+    assert '"evidence_bundle_recomputed_timeline_sha256": "' + ("b" * 64) + '"' in output
+
+
+def test_phase641_full_attach_blocks_when_replay_mismatches(
+    monkeypatch,
+    tmp_path: Path,
+):
+    monkeypatch.setattr(
+        tool,
+        "prepare_probe_bundle",
+        lambda *args, **kwargs: _manifest(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_attach_command",
+        lambda **kwargs: ["gdb", "-p", "1234"],
+    )
+    monkeypatch.setattr(tool.subprocess, "call", lambda command: 0)
+    monkeypatch.setattr(
+        tool,
+        "finalize_relation_state_mutation_capture",
+        lambda output: _timeline(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        lambda output: _bundle(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "verify_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _verification(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(ready=False),
     )
 
     assert tool.main(
