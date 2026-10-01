@@ -106,6 +106,29 @@ def test_hinge_projection_flag_nonzero_uses_transformed_position_cross_offset():
     assert result["lanes"] == pytest.approx([-6.0, -0.0])
 
 
+def test_hinge_projection_nonidentity_frame_matches_retail_transform_order():
+    result = runtime.evaluate_hinge_projection(
+        body_axis=(1.0, 0.0, 0.0),
+        residual_vector=(0.0, 0.0, 0.0),
+        sample_angular=(1.0, 0.0, 0.0),
+        sample_linear=(0.0, 1.0, 0.0),
+        sample_position=(1.0, 2.0, 3.0),
+        sample_frame_offset=(0.0, 1.0, 0.0),
+        body_frame=Matrix3x3(1, 2, 3, 4, 5, 6, 7, 8, 9),
+        linear_scale=0.0,
+        quadratic_scale=2.0,
+        side_flag=3,
+    )
+    assert result["branch_details"]["transformed_sample_position"] == pytest.approx(
+        [14.0, 32.0, 50.0]
+    )
+    assert result["branch_details"]["cross_vector"] == pytest.approx(
+        [50.0, 0.0, -14.0]
+    )
+    assert result["raw_lanes"] == pytest.approx([100.0, 0.0])
+    assert result["lanes"] == pytest.approx([-100.0, -0.0])
+
+
 def test_joint_projection_provenance_is_now_complete():
     report = runtime.describe_joint_projection_provenance()
     assert report["status"] == "source-backed"
