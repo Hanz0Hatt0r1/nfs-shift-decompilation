@@ -1686,6 +1686,24 @@ jobs:
           )
 
           forward, reverse = build_dense_solver_graph(scalar_count)
+          # With zero JOINT positions/body tensor, FUN_007bbb80 still
+          # contributes inverse_scalar=1 on each JOINT lane. Four same-side
+          # JOINT samples therefore form four mutually coupled 3-lane
+          # identity blocks. HINGE/BAR zero rows contribute no matrix terms.
+          expected_matrix = [
+              [0.0 for _ in range(scalar_count)]
+              for _ in range(scalar_count)
+          ]
+          joint_bases = (0, 5, 10, 15)
+          for outer_index, outer_base in enumerate(joint_bases):
+              for lane in range(3):
+                  expected_matrix[outer_base + lane][outer_base + lane] += 1.0
+              for inner_base in joint_bases[outer_index + 1:]:
+                  row_base = max(outer_base, inner_base)
+                  column_base = min(outer_base, inner_base)
+                  for lane in range(3):
+                      expected_matrix[row_base + lane][column_base + lane] += 1.0
+
           solver_input = {
               "format": "SHIFT.NativeBuiltinSolverFrameInput/1",
               "version": 1,
@@ -1696,10 +1714,7 @@ jobs:
               "matrix_rhs_ready": True,
               "reset_selection_ready": True,
               "sparse_graph_ready": True,
-              "matrix": [
-                  [0.0 for _ in range(scalar_count)]
-                  for _ in range(scalar_count)
-              ],
+              "matrix": expected_matrix,
               "rhs": [0.0 for _ in range(scalar_count)],
               "reset_nodes": list(range(scalar_count)),
               "forward_records": forward,
