@@ -219,9 +219,10 @@ if [[ "$proxy" == "$target_dll" ]]; then
   echo "--proxy must point to the built artifact, not the game's d3d9.dll" >&2
   exit 2
 fi
-if [[ -n "$d3dx9_41" && "$d3dx9_41" == "$target_d3dx" ]]; then
-  echo "--d3dx9-41 must point to a source DLL outside the Wine Windows DLL directory" >&2
-  exit 2
+
+d3dx_same_file=0
+if [[ -n "$d3dx9_41" && -e "$target_d3dx" && "$d3dx9_41" -ef "$target_d3dx" ]]; then
+  d3dx_same_file=1
 fi
 
 mkdir -p "$output"
@@ -242,6 +243,7 @@ if ((texture_payloads)); then rm -rf "$output/texture-payloads"; fi
 had_dll=0
 had_sidecar=0
 had_d3dx=0
+d3dx_mutated=0
 staged_backend=0
 
 # Make every recovery copy before changing the game directory.
@@ -253,7 +255,7 @@ if [[ -f "$sidecar_dll" ]]; then
   cp -f "$sidecar_dll" "$backup_sidecar"
   had_sidecar=1
 fi
-if [[ -n "$d3dx9_41" && -f "$target_d3dx" ]]; then
+if [[ -n "$d3dx9_41" ]] && (( ! d3dx_same_file )) && [[ -f "$target_d3dx" ]]; then
   cp -f "$target_d3dx" "$backup_d3dx"
   had_d3dx=1
 fi
@@ -271,7 +273,7 @@ restore() {
   else
     rm -f "$sidecar_dll"
   fi
-  if [[ -n "$d3dx9_41" ]]; then
+  if ((d3dx_mutated)); then
     if ((had_d3dx)); then
       cp -f "$backup_d3dx" "$target_d3dx"
     else
@@ -295,9 +297,10 @@ if ((had_dll)); then
 fi
 
 cp -f "$proxy" "$target_dll"
-if [[ -n "$d3dx9_41" ]]; then
+if [[ -n "$d3dx9_41" ]] && (( ! d3dx_same_file )); then
   mkdir -p "${target_d3dx%/*}"
   cp -f "$d3dx9_41" "$target_d3dx"
+  d3dx_mutated=1
 fi
 
 capture_windows="$(winepath -w "$capture_path")"
@@ -418,6 +421,11 @@ if [[ -n "$d3dx9_41" ]]; then
   echo "Prefix  : $wine_prefix"
   echo "PE arch : game=$(pe_machine_name "$game_machine") d3dx=$(pe_machine_name "$d3dx_machine")"
   echo "D3DX9   : $d3dx9_41 -> $target_d3dx"
+  if ((d3dx_same_file)); then
+    echo "D3DX9   : source already resolves to the Wine prefix DLL; no copy needed"
+  else
+    echo "D3DX9   : staged temporarily; original prefix DLL will be restored"
+  fi
   echo "D3DX9 sha256: $(sha256sum "$target_d3dx" | awk '{print $1}')"
 else
   echo "D3DX9   : no explicit source DLL supplied"

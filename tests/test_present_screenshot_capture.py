@@ -358,7 +358,7 @@ def test_capture_launchers_accept_explicit_d3dx9_41_source_path():
     assert 'backup_d3dx="$output/original_d3dx9_41.dll"' in wine
     assert 'cp -f "$d3dx9_41" "$target_d3dx"' in wine
     assert 'cp -f "$backup_d3dx" "$target_d3dx"' in wine
-    assert 'source DLL outside the Wine Windows DLL directory' in wine
+    assert 'd3dx_same_file=1' in wine
 
     assert '[string]$D3DX9_41 = ""' in powershell
     assert '$targetD3DX = Join-Path $gameDir "d3dx9_41.dll"' in powershell
@@ -390,3 +390,13 @@ def test_wine_launcher_rejects_d3dx_architecture_mismatch():
     assert "d3dx9_41.dll architecture mismatch:" in wine
     assert 'game_machine" == "0x014c"' in wine
     assert 'PE arch : game=' in wine
+
+
+def test_wine_launcher_skips_copy_when_d3dx_source_is_prefix_target():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert '"$d3dx9_41" -ef "$target_d3dx"' in wine
+    assert "d3dx_same_file=1" in wine
+    assert "(( ! d3dx_same_file ))" in wine
+    assert "if ((d3dx_mutated)); then" in wine
+    assert "source already resolves to the Wine prefix DLL; no copy needed" in wine
