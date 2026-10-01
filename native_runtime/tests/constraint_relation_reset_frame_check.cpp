@@ -76,6 +76,18 @@ int main(int argc, char** argv) {
                 "constraint relation reset selection oracle mismatch");
         }
 
+        verify_fun_007b3f40_reset_nodes_match(
+            selected,
+            expected);
+        require_runtime_error(
+            [&]() {
+                verify_fun_007b3f40_reset_nodes_match(
+                    selected,
+                    std::vector<std::size_t>{0u, 1u, 2u, 4u});
+            },
+            "do not match solver frame",
+            "reset selection solver-frame mismatch");
+
         require_runtime_error(
             [&]() {
                 auto bad = reset_state;
@@ -171,6 +183,7 @@ int main(int argc, char** argv) {
             << "  \"side_identity_fail_closed\": true,\n"
             << "  \"duplicate_reset_calls_preserved\": true,\n"
             << "  \"partial_relation_layout_supported\": true,\n"
+            << "  \"solver_frame_join_fail_closed\": true,\n"
             << "  \"reset_nodes_stored_in_packet\": false,\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";
