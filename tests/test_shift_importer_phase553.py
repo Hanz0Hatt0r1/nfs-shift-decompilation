@@ -342,3 +342,18 @@ def test_phase606_cli_accepts_native_builtin_solver_frame():
     assert args.input == "solver-frame-input.json"
     assert args.output_dir == "out/native-solver-frame"
     assert args.fn.__name__ == "cmd_native_builtin_solver_frame"
+
+
+def test_phase607_cli_accepts_runtime_participant_evidence_join():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-participant-runtime-evidence",
+        "participant-boundary.json",
+        "participant-observation.json",
+        "participant-runtime-evidence.json",
+    ])
+
+    assert args.boundary == "participant-boundary.json"
+    assert args.observation == "participant-observation.json"
+    assert args.output == "participant-runtime-evidence.json"
+    assert args.fn.__name__ == "cmd_native_participant_runtime_evidence"
