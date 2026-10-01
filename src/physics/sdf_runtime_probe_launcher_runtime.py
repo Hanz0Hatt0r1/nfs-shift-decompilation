@@ -56,18 +56,23 @@ def build_gdb_command_file(
     probe_script: str | Path,
     output_dir: str | Path,
     provider_only: bool = False,
+    relation_timeline_only: bool = False,
     capture_frames: int | None = None,
     capture_session_id: str | None = None,
 ) -> str:
     script = Path(probe_script).resolve()
     output = Path(output_dir).resolve()
+    if provider_only and relation_timeline_only:
+        raise ValueError(
+            "provider_only and relation_timeline_only are mutually exclusive"
+        )
     if capture_frames is not None:
         capture_frames = int(capture_frames)
         if capture_frames <= 0:
             raise ValueError("capture_frames must be positive")
         if provider_only:
             raise ValueError(
-                "capture_frames is supported only in full probe mode"
+                "capture_frames is not supported in provider-only mode"
             )
 
     probe_args = f"{output}"
@@ -77,6 +82,8 @@ def build_gdb_command_file(
         )
     if provider_only:
         probe_args += " --provider-only"
+    if relation_timeline_only:
+        probe_args += " --relation-timeline-only"
     if capture_frames is not None:
         probe_args += f" --capture-frames {capture_frames}"
 
@@ -99,9 +106,14 @@ def prepare_probe_bundle(
     *,
     probe_script: str | Path,
     provider_only: bool = False,
+    relation_timeline_only: bool = False,
     capture_frames: int | None = None,
 ) -> dict[str, Any]:
     output = Path(output_dir).resolve()
+    if provider_only and relation_timeline_only:
+        raise ValueError(
+            "provider_only and relation_timeline_only are mutually exclusive"
+        )
     exe = resolve_probe_executable(executable, output)
     validation = validate_probe_executable_file(exe)
     output.mkdir(parents=True, exist_ok=True)
@@ -116,16 +128,23 @@ def prepare_probe_bundle(
         stale_artifacts_removed=stale_artifacts_removed,
     )
 
-    expected_captures = (
-        [
+    if provider_only:
+        expected_captures = [
             "provider_pre_<provider>_<hit>.json",
             "provider_post_<provider>_<hit>.json",
             "scalar_reset_events.jsonl",
             "provider_reset_effects.jsonl",
         ]
-        if provider_only
-        else [
+    elif relation_timeline_only:
+        expected_captures = [
             "relation_state_mutation_events.jsonl",
+            "frame_entry_XXXXXX.json",
+            "post_solve_XXXXXX.json",
+        ]
+    else:
+        expected_captures = [
+            "relation_state_mutation_events.jsonl",
+            "frame_entry_XXXXXX.json",
             "pre_solve_XXXXXX.json",
             "post_solve_XXXXXX.json",
             "provider_pre_<provider>_<hit>.json",
@@ -133,7 +152,6 @@ def prepare_probe_bundle(
             "scalar_reset_events.jsonl",
             "provider_reset_effects.jsonl",
         ]
-    )
 
     command_file = output / "attach.gdb"
     command_file.write_text(
@@ -141,6 +159,7 @@ def prepare_probe_bundle(
             probe_script=probe_script,
             output_dir=output,
             provider_only=provider_only,
+            relation_timeline_only=relation_timeline_only,
             capture_frames=capture_frames,
             capture_session_id=capture_session_id,
         ),
@@ -168,7 +187,15 @@ def prepare_probe_bundle(
             "script": str(Path(probe_script).resolve()),
             "gdb_command_file": str(command_file),
             "output_dir": str(output),
-            "mode": "provider-only" if provider_only else "full",
+            "mode": (
+                "provider-only"
+                if provider_only
+                else (
+                    "relation-timeline-only"
+                    if relation_timeline_only
+                    else "full"
+                )
+            ),
             "capture_session_id": capture_session_id,
             "capture_frames": capture_frames,
             "auto_detach": capture_frames is not None,
@@ -297,6 +324,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "attach": "attach GDB to explicit user-supplied PID using attach.gdb",
             "provider-only": "omit per-frame and builtin-solver breakpoints; keep provider solve/reset and scalar-reset hooks",
             "bounded-full": "stop on the requested post-solve hit, then detach and quit GDB",
+            "relation-timeline-only": "capture only relation mutation, frame entry and post-solve anchors",
             "capture-session": "isolate one output directory to one fresh evidence session",
         },
         "fail_closed": [
@@ -307,6 +335,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "non-positive attach PID",
             "non-positive bounded capture frame count",
             "bounded capture requested in provider-only mode",
+            "provider-only combined with relation-timeline-only",
             "invalid capture-session identifier",
         ],
         "probe_targets": {

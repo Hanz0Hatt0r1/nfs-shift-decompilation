@@ -78,10 +78,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gdb", default="gdb")
     parser.add_argument("--provider-only", action="store_true")
     parser.add_argument(
+        "--relation-timeline-only",
+        action="store_true",
+        help=(
+            "install only relation mutation, frame-entry and post-solve "
+            "breakpoints to reduce debugger overhead"
+        ),
+    )
+    parser.add_argument(
         "--capture-frames",
         type=int,
         help=(
-            "full mode only: stop on the Nth post-solve hit, "
+            "full or relation-timeline mode: stop on the Nth post-solve hit, "
             "then detach and quit GDB"
         ),
     )
@@ -107,6 +115,7 @@ def main(argv: list[str] | None = None) -> int:
             args.output,
             probe_script=args.probe_script,
             provider_only=args.provider_only,
+            relation_timeline_only=args.relation_timeline_only,
             capture_frames=args.capture_frames,
         )
     except Exception as exc:
@@ -134,6 +143,15 @@ def main(argv: list[str] | None = None) -> int:
         "ready": True,
         "manifest": str(args.output / "probe_manifest.json"),
         "gdb_command_file": str(args.output / "attach.gdb"),
+        "mode": (
+            "provider-only"
+            if args.provider_only
+            else (
+                "relation-timeline-only"
+                if args.relation_timeline_only
+                else "full"
+            )
+        ),
         "capture_frames": args.capture_frames,
         "auto_detach": args.capture_frames is not None,
     }

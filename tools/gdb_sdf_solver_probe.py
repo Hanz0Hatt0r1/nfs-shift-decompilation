@@ -778,6 +778,44 @@ class PostSolveProbe(_BaseProbe):
         )
 
 
+class PostSolveAnchorProbe(_BaseProbe):
+    """Record only the post-solve ordering anchor for lightweight capture."""
+
+    def __init__(
+        self,
+        address: int,
+        label: str,
+        output_dir: Path,
+        *,
+        stop_after_hit: int | None = None,
+    ) -> None:
+        super().__init__(address, label, output_dir)
+        self.stop_after_hit = stop_after_hit
+
+    def stop(self) -> bool:
+        self.hit += 1
+        runtime_event_sequence = _next_runtime_event_sequence()
+        physics_system = int(gdb.parse_and_eval("$ecx"))
+        payload = {
+            "format": "SHIFT.SDFSolverPostSolveAnchorProbe/1",
+            "version": 1,
+            "status": "captured",
+            "ready": True,
+            "capture_kind": "post_solve_anchor",
+            "frame_index": self.hit,
+            "runtime_event_sequence": runtime_event_sequence,
+            "image_base": 0x00400000,
+            "physics_system": physics_system,
+            "source_function": "FUN_007b4110",
+            "source_address": FUNCTIONS["post_solve"],
+        }
+        self.write_json(f"post_solve_{self.hit:06d}.json", payload)
+        return (
+            self.stop_after_hit is not None
+            and self.hit >= self.stop_after_hit
+        )
+
+
 class SDFProbeCommand(gdb.Command):
     """Install or replace the SHIFT SDF solver runtime probe."""
 
@@ -792,12 +830,22 @@ class SDFProbeCommand(gdb.Command):
 
         args = gdb.string_to_argv(argument)
         provider_only = False
+        relation_timeline_only = False
         capture_frames = None
         capture_session_id = None
 
         if "--provider-only" in args:
             provider_only = True
             args.remove("--provider-only")
+
+        if "--relation-timeline-only" in args:
+            relation_timeline_only = True
+            args.remove("--relation-timeline-only")
+
+        if provider_only and relation_timeline_only:
+            raise gdb.GdbError(
+                "--provider-only and --relation-timeline-only are mutually exclusive"
+            )
 
         if "--session-id" in args:
             index = args.index("--session-id")
@@ -835,12 +883,13 @@ class SDFProbeCommand(gdb.Command):
 
         if provider_only and capture_frames is not None:
             raise gdb.GdbError(
-                "--capture-frames is supported only in full mode"
+                "--capture-frames is not supported in provider-only mode"
             )
 
         if len(args) != 1:
             raise gdb.GdbError(
                 "usage: sdf-probe OUTPUT_DIR [--provider-only] "
+                "[--relation-timeline-only] "
                 "[--capture-frames N] [--session-id ID]"
             )
         output = Path(os.path.expanduser(args[0])).resolve()
@@ -882,41 +931,62 @@ class SDFProbeCommand(gdb.Command):
                     FUNCTIONS["relation_state_mutation"],
                     output,
                 ),
-                FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
-                SolverEntryProbe(FUNCTIONS["builtin_solver"], "builtin_solver", output),
-                PostSolveProbe(
-                    FUNCTIONS["post_solve"],
-                    "post_solve",
+                FrameEntryProbe(
+                    FUNCTIONS["frame_entry"],
+                    "frame_entry",
                     output,
-                    stop_after_hit=capture_frames,
                 ),
             ])
-        self.breakpoints.extend([
-            ProviderSolveProbe(
-                get_provider(0).solve_function,
-                0,
-                output,
-            ),
-            ProviderSolveProbe(
-                get_provider(1).solve_function,
-                1,
-                output,
-            ),
-            ScalarResetProbe(
-                0x007B2210,
-                output,
-            ),
-            ProviderResetProbe(
-                get_vtable_lifecycle(0).reset_function,
-                0,
-                output,
-            ),
-            ProviderResetProbe(
-                get_vtable_lifecycle(1).reset_function,
-                1,
-                output,
-            ),
-        ])
+            if relation_timeline_only:
+                self.breakpoints.append(
+                    PostSolveAnchorProbe(
+                        FUNCTIONS["post_solve"],
+                        "post_solve_anchor",
+                        output,
+                        stop_after_hit=capture_frames,
+                    )
+                )
+            else:
+                self.breakpoints.extend([
+                    SolverEntryProbe(
+                        FUNCTIONS["builtin_solver"],
+                        "builtin_solver",
+                        output,
+                    ),
+                    PostSolveProbe(
+                        FUNCTIONS["post_solve"],
+                        "post_solve",
+                        output,
+                        stop_after_hit=capture_frames,
+                    ),
+                ])
+        if not relation_timeline_only:
+            self.breakpoints.extend([
+                ProviderSolveProbe(
+                    get_provider(0).solve_function,
+                    0,
+                    output,
+                ),
+                ProviderSolveProbe(
+                    get_provider(1).solve_function,
+                    1,
+                    output,
+                ),
+                ScalarResetProbe(
+                    0x007B2210,
+                    output,
+                ),
+                ProviderResetProbe(
+                    get_vtable_lifecycle(0).reset_function,
+                    0,
+                    output,
+                ),
+                ProviderResetProbe(
+                    get_vtable_lifecycle(1).reset_function,
+                    1,
+                    output,
+                ),
+            ])
         print(
             "SDF probe installed:",
             f"relation_state_mutation=0x{FUNCTIONS['relation_state_mutation']:08x},",
@@ -927,8 +997,16 @@ class SDFProbeCommand(gdb.Command):
             f"provider0_reset=0x{get_vtable_lifecycle(0).reset_function:08x},",
             f"provider1_reset=0x{get_vtable_lifecycle(1).reset_function:08x},",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
-            f"mode={'provider-only' if provider_only else 'full'},",
-            f"capture_frames={capture_frames},",
+            (
+                "mode=provider-only,"
+                if provider_only
+                else (
+                    "mode=relation-timeline-only,"
+                    if relation_timeline_only
+                    else "mode=full,"
+                )
+            ),
+            f"capture_frames={capture_frames},"
             f"capture_session_id={capture_session_id},",
             f"output={output}",
         )
