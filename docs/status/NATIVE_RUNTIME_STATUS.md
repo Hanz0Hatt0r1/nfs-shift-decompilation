@@ -948,3 +948,29 @@ authentic retail capture followed by a fail-closed offline correlation of slot,
 spindle presence, BODY identity and mutation ordering relative to the solver
 frame.
 
+
+
+## Phase 636 exact relation-state mutation caller classification
+
+The Phase 635 observer already records the return address of every
+`FUN_00757d2c` event. Phase 636 maps that value against the complete static
+set of direct `FUN_00757d20` callers recovered from raw `SHIFT.exe`
+disassembly.
+
+There are exactly five direct calls:
+
+- `0x76EE91 → 0x76EE96`: `FUN_0076ed60`, fixed slot 0 / FL;
+- `0x76EEA3 → 0x76EEA8`: `FUN_0076ed60`, fixed slot 1 / FR;
+- `0x76EEB5 → 0x76EEBA`: `FUN_0076ed60`, fixed slot 2 / RL;
+- `0x76EEC7 → 0x76EECC`: `FUN_0076ed60`, fixed slot 3 / RR;
+- `0x79A5BC → 0x79A5C1`: `FUN_0079a050`, slot-dynamic runtime threshold path.
+
+`classify_relation_state_mutation_callsite` emits
+`SHIFT.ConstraintRelationStateMutationCallsite/1`. The four setup callers
+must agree with the captured slot, while the runtime caller accepts any valid
+0..3 slot. Unknown return addresses remain in the raw capture stream but have
+`callsite_ready=false`.
+
+This closes static caller provenance without assigning native scheduling.
+Authentic capture and offline timeline correlation are still required before
+either caller family can authorize a native relation-state mutation.
