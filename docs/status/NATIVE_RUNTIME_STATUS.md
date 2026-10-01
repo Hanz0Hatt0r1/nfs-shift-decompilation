@@ -496,3 +496,21 @@ retail function does, rather than the unrelated BODY position triplet.
 
 The phase remains a single-sample primitive. BODY-owned JOINT iteration,
 HINGE/BAR projection and all matrix-coupling kernels are still separate gates.
+
+
+## Phase 618 native FUN_007bae40 HINGE projection
+
+The native physics library now executes one source-backed HINGE sample through
+both branches of `FUN_007bae40`.
+
+The zero-side branch applies the two direct scalar lanes. The nonzero-side
+branch preserves the retail `FUN_007aefb0` float transform boundary, executes
+`FUN_007b1320` as frame-offset × transformed-position, scales that cross
+vector by Q, and subtracts the resulting two lanes.
+
+`shift_runtime_hinge_projection_check` validates both branches, two-lane
+solver-vector application, exact cross-product operand order, non-finite
+rejection and range rejection.
+
+BODY-owned HINGE iteration, BAR projection and matrix coupling remain separate
+gates.
