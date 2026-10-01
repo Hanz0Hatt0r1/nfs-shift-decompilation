@@ -698,3 +698,34 @@ direction.
 Phase 629 refreshes prepared endpoint/sample state only. It does not yet
 serialize the retail 0xA0/0xA0/0xB8 top-level relation ownership into a packet
 or replace GBCF's prepared sample fields on fixed steps.
+
+
+## Phase 630 constraint relation ownership
+
+Prepare the source-order ownership packet with:
+
+```bash
+python shift_importer.py native-constraint-sample-relation-frame \
+  constraint-relations.json \
+  out/constraint-relations
+```
+
+Then verify the relation → BODY-owned sample refresh join against a prepared
+GBCF:
+
+```bash
+native_runtime/build/shift_runtime_constraint_sample_relation_frame_check \
+  out/generated-body/generated_body_constraints.gbcf \
+  out/constraint-relations/constraint_sample_relations.csrf
+```
+
+The checker enforces exact positive/negative endpoint ownership, source-backed
+side flags, common scalar identity and complete non-duplicated coverage before
+executing `FUN_007b3ed0`.
+
+One top-level relation owns two BODY samples. Phase 630 therefore keeps
+relation counts separate from refreshed endpoint-sample counts rather than
+reusing the Phase 628 synthetic one-sample-per-relation scheduler fixture.
+
+CSRF is not yet a `shift_runtime` fixed-step option; that join is the next
+native integration boundary.
