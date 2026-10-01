@@ -1086,3 +1086,21 @@ The full explicit-PID launcher now requires Phase 641 replay in addition to
 GDB, Phase 637, Phase 639 and Phase 640. This is a reproducibility check rather
 than an external authenticity signature, and it does not enable native
 mutation scheduling.
+
+
+## Phase 642 bounded full-mode GDB capture
+
+The explicit-PID launcher now supports an optional positive
+`--capture-frames N` budget in full mode. The Nth
+`FUN_007b4110` post-solve breakpoint writes its normal snapshot and then
+returns a terminal stop. The generated GDB command file subsequently executes
+`detach` and `quit`, so detach is performed by normal GDB commands rather
+than from inside the Python breakpoint callback.
+
+Provider-only bounded capture is rejected because that mode omits the full
+frame/post-solve anchor path. The probe manifest records the requested frame
+budget and whether automatic detach is enabled.
+
+If attachment occurs mid-frame, incomplete evidence remains fail-closed through
+the existing Phase 637–641 correlation/verification/replay chain. No mutation
+or scheduler semantics change in this phase.

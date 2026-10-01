@@ -272,3 +272,82 @@ def test_prepare_probe_bundle_provider_only_expected_captures(tmp_path, monkeypa
         "scalar_reset_events.jsonl",
         "provider_reset_effects.jsonl",
     ]
+
+
+
+def test_phase642_build_gdb_command_file_bounded_full_mode_detaches(tmp_path):
+    command = runtime.build_gdb_command_file(
+        probe_script=tmp_path / "probe.py",
+        output_dir=tmp_path / "capture",
+        capture_frames=3,
+    )
+    assert command == (
+        "set pagination off\n"
+        "set confirm off\n"
+        f"source {(tmp_path / 'probe.py').resolve()}\n"
+        f"sdf-probe {(tmp_path / 'capture').resolve()} --capture-frames 3\n"
+        "continue\n"
+        "detach\n"
+        "quit\n"
+    )
+
+
+@pytest.mark.parametrize("capture_frames", [0, -1])
+def test_phase642_build_gdb_command_file_rejects_nonpositive_budget(
+    tmp_path,
+    capture_frames,
+):
+    with pytest.raises(ValueError, match="positive"):
+        runtime.build_gdb_command_file(
+            probe_script=tmp_path / "probe.py",
+            output_dir=tmp_path / "capture",
+            capture_frames=capture_frames,
+        )
+
+
+def test_phase642_bounded_capture_is_full_mode_only(tmp_path):
+    with pytest.raises(ValueError, match="full probe mode"):
+        runtime.build_gdb_command_file(
+            probe_script=tmp_path / "probe.py",
+            output_dir=tmp_path / "capture",
+            provider_only=True,
+            capture_frames=1,
+        )
+
+
+def test_phase642_prepare_probe_bundle_records_bounded_capture(
+    tmp_path,
+    monkeypatch,
+):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    probe = tmp_path / "probe.py"
+    probe.write_text("# probe\n", encoding="utf-8")
+    output = tmp_path / "capture"
+
+    monkeypatch.setattr(
+        runtime,
+        "validate_probe_executable_file",
+        lambda path: {
+            "ready": True,
+            "sha256": "a" * 64,
+            "errors": [],
+            "format": "SHIFT.SDFRuntimeProbePEValidation/1",
+        },
+    )
+
+    result = runtime.prepare_probe_bundle(
+        executable,
+        output,
+        probe_script=probe,
+        capture_frames=2,
+    )
+
+    assert result["probe"]["capture_frames"] == 2
+    assert result["probe"]["auto_detach"] is True
+    assert "--capture-frames 2" in (
+        output / "attach.gdb"
+    ).read_text(encoding="utf-8")
+    assert (output / "attach.gdb").read_text(
+        encoding="utf-8"
+    ).endswith("continue\ndetach\nquit\n")

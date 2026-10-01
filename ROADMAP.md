@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 640. Current development: Phase 641.**
+**Current mainline: Phase 641. Current development: Phase 642.**
 
 
 
@@ -43,6 +43,8 @@ Phase 639 adds `SHIFT.SDFRuntimeProbeEvidenceBundle/1`, a deterministic portable
 Phase 640 adds `SHIFT.SDFRuntimeProbeEvidenceBundleVerification/1`, an independent verifier for untrusted portable capture ZIPs. It checks safe paths, duplicate/extra/missing entries, manifest format/count, fixed ZIP metadata, per-file size/SHA-256 and exact readiness agreement with the embedded Phase 637 timeline. The full launcher self-verifies its newly built archive before success. The next gate remains authentic retail capture.
 
 Phase 641 adds `SHIFT.SDFRuntimeProbeEvidenceBundleReplay/1`: after Phase 640 verification, the raw bundled evidence is safely materialized, Phase 637 is recomputed, and the result must exactly equal the embedded timeline. Phase 637 reports are now path-independent so replay is portable. Full launcher success requires this replay gate as well. The next gate remains authentic retail capture.
+
+Phase 642 adds optional bounded full-mode capture through `--capture-frames N`. The Nth `FUN_007b4110` post-solve snapshot becomes the terminal GDB stop; the generated command script then detaches and quits outside the breakpoint callback. Provider-only bounded capture is rejected, and partial mid-frame evidence remains blocked by the existing Phase 637–641 gates. The next gate remains authentic retail capture, now with a short-lived debugger option.
 
 Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
 

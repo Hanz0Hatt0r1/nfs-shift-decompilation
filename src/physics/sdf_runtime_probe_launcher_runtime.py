@@ -50,19 +50,35 @@ def build_gdb_command_file(
     probe_script: str | Path,
     output_dir: str | Path,
     provider_only: bool = False,
+    capture_frames: int | None = None,
 ) -> str:
     script = Path(probe_script).resolve()
     output = Path(output_dir).resolve()
+    if capture_frames is not None:
+        capture_frames = int(capture_frames)
+        if capture_frames <= 0:
+            raise ValueError("capture_frames must be positive")
+        if provider_only:
+            raise ValueError(
+                "capture_frames is supported only in full probe mode"
+            )
+
     probe_args = f"{output}"
     if provider_only:
         probe_args += " --provider-only"
-    return (
+    if capture_frames is not None:
+        probe_args += f" --capture-frames {capture_frames}"
+
+    commands = (
         "set pagination off\n"
         "set confirm off\n"
         f"source {script}\n"
         f"sdf-probe {probe_args}\n"
         "continue\n"
     )
+    if capture_frames is not None:
+        commands += "detach\nquit\n"
+    return commands
 
 
 def prepare_probe_bundle(
@@ -71,6 +87,7 @@ def prepare_probe_bundle(
     *,
     probe_script: str | Path,
     provider_only: bool = False,
+    capture_frames: int | None = None,
 ) -> dict[str, Any]:
     output = Path(output_dir).resolve()
     exe = resolve_probe_executable(executable, output)
@@ -102,6 +119,7 @@ def prepare_probe_bundle(
             probe_script=probe_script,
             output_dir=output,
             provider_only=provider_only,
+            capture_frames=capture_frames,
         ),
         encoding="utf-8",
     )
@@ -127,6 +145,8 @@ def prepare_probe_bundle(
             "gdb_command_file": str(command_file),
             "output_dir": str(output),
             "mode": "provider-only" if provider_only else "full",
+            "capture_frames": capture_frames,
+            "auto_detach": capture_frames is not None,
             "expected_captures": expected_captures,
         },
         "post_capture": {
@@ -243,6 +263,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "launch": "start retail SHIFT.exe under explicit Wine command",
             "attach": "attach GDB to explicit user-supplied PID using attach.gdb",
             "provider-only": "omit per-frame and builtin-solver breakpoints; keep provider solve/reset and scalar-reset hooks",
+            "bounded-full": "stop on the requested post-solve hit, then detach and quit GDB",
         },
         "fail_closed": [
             "wrong retail SHA-256",
@@ -250,6 +271,8 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "missing Wine",
             "missing GDB",
             "non-positive attach PID",
+            "non-positive bounded capture frame count",
+            "bounded capture requested in provider-only mode",
         ],
         "probe_targets": {
             "relation_state_mutation": "0x00757d2c",
