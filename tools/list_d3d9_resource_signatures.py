@@ -103,6 +103,20 @@ def analyze(path):
                 continue
 
             name = event.get("event")
+
+            if name == "resource_signature_use":
+                sig = event.get("resource_signature")
+                use_count = event.get("use_count")
+                if isinstance(sig, str) and sig and isinstance(use_count, int):
+                    bound[sig] = max(bound[sig], use_count)
+                    first = event.get("first_frame")
+                    last = event.get("last_frame", event.get("frame"))
+                    if sig not in first_frame and isinstance(first, int):
+                        first_frame[sig] = first
+                    if isinstance(last, int):
+                        last_frame[sig] = max(last_frame.get(sig, last), last)
+                continue
+
             create_desc = CREATE_PTR.get(name)
             if create_desc:
                 kind, field = create_desc
@@ -151,7 +165,7 @@ def main():
     parser.add_argument("--top", type=int, default=50)
     parser.add_argument(
         "--kind",
-        choices=("tex", "cube", "vb", "ib", "vs", "ps", "decl"),
+        choices=("tex", "cube", "rt", "depth", "vb", "ib", "vs", "ps", "decl"),
         help="show only one signature kind",
     )
     parser.add_argument("--json", dest="json_output")
