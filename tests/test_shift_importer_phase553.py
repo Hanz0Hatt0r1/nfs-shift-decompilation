@@ -402,6 +402,21 @@ def test_phase630_cli_accepts_constraint_sample_relation_frame():
     )
 
 
+def test_phase632_cli_accepts_constraint_reset_state_frame():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-constraint-reset-state-frame",
+        "constraint-reset-state.json",
+        "out/constraint-reset-state",
+    ])
+
+    assert args.input == "constraint-reset-state.json"
+    assert args.output_dir == "out/constraint-reset-state"
+    assert args.fn.__name__ == (
+        "cmd_native_constraint_reset_state_frame"
+    )
+
+
 def test_phase613_cli_accepts_prepared_body_solver_export_frame():
     parser = build_parser()
     args = parser.parse_args([
