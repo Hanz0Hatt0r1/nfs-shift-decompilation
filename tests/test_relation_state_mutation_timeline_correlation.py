@@ -300,7 +300,7 @@ def test_phase637_directory_loader_reads_phase635_capture_files(tmp_path: Path):
     assert report["mutation_event_count"] == 1
     assert report["timeline_anchor_count"] == 3
     assert report["frame_entry_count"] == 1
-    assert report["capture_directory"] == str(tmp_path)
+    assert "capture_directory" not in report
 
 
 def test_phase637_directory_loader_reads_provider_sequence_from_metadata(
