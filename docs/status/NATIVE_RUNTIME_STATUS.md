@@ -496,3 +496,24 @@ retail function does, rather than the unrelated BODY position triplet.
 
 The phase remains a single-sample primitive. BODY-owned JOINT iteration,
 HINGE/BAR projection and all matrix-coupling kernels are still separate gates.
+
+
+## Phase 618 native FUN_007bae40 HINGE projection
+
+The native physics library now executes the complete source-backed two-lane
+equations for one HINGE sample through `FUN_007bae40`.
+
+The zero-side branch evaluates the recovered axis/residual projection
+directly. The nonzero-side branch requires the BODY frame, preserves the
+`FUN_007aefb0` float boundary, computes the recovered
+`sample_frame_offset × transformed_sample_position` helper result and applies
+the quadratic scale before evaluating both lanes. The exact zero/add versus
+nonzero/subtract rule is retained.
+
+`shift_runtime_hinge_projection_check` covers both existing Python-oracle
+fixtures, a nontrivial body-frame transform/cross case, exact two-lane solver
+vector application, invalid range, missing frame and non-finite rejection.
+
+This is still an independent primitive. Phase 618 does not synthesize HINGE
+sample arrays, run the BAR helper, assemble matrix coupling or claim a complete
+`FUN_007bc680` BODY contribution.
