@@ -58,10 +58,17 @@ struct PostSolveBodyProjectionResult {
     std::vector<BodyAccumulatorState> bodies;
     double max_absolute_error = 0.0;
     double max_solver_vector_join_error = 0.0;
+    double max_delta_error = 0.0;
 };
 
 PreparedPostSolveBodyProjection load_prepared_post_solve_body_projection(
     const std::string& path);
+
+PostSolveBodyProjectionResult execute_post_solve_body_projection_with_state(
+    const PreparedPostSolveBodyProjection& projection,
+    const std::vector<double>& solver_vector,
+    const std::vector<BodyAccumulatorState>& initial_bodies,
+    double tolerance = 1e-10);
 
 PostSolveBodyProjectionResult execute_post_solve_body_projection_with_solution(
     const PreparedPostSolveBodyProjection& projection,
