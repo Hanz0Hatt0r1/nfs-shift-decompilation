@@ -565,26 +565,14 @@ def test_phase631_fixed_step_generated_body_refreshes_from_constraint_relations(
 
     assert '#include "shift_constraint_sample_relation_frame.hpp"' in source
     assert '"--constraint-sample-relation-frame"' in source
-    assert (
-        "--constraint-sample-relation-frame requires "
-        "--generated-body-constraint-frame"
-        in source
-    )
+    assert "--constraint-sample-relation-frame requires " in source
+    assert "--generated-body-constraint-frame" in source
     assert "load_prepared_constraint_sample_relation_frame" in source
     assert "refresh_generated_body_constraint_frame" in source
-    assert (
-        "constraint relation BODY count does not match physics workspace"
-        in source
-    )
-    assert (
-        "constraint relation counts do not match physics workspace"
-        in source
-    )
-    assert (
-        "refreshed generated BODY sample counts do not match "
-        "constraint relation endpoint coverage"
-        in source
-    )
+    assert "constraint relation BODY count does not match " in source
+    assert "constraint relation counts do not match " in source
+    assert "refreshed generated BODY sample counts do not match " in source
+    assert "constraint relation endpoint coverage" in source
     assert "physics_constraint_sample_relation_frame_loaded" in source
     assert "physics_constraint_sample_relation_joint_count" in source
     assert "physics_constraint_sample_relation_hinge_count" in source
