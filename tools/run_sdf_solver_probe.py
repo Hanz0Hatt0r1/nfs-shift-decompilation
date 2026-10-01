@@ -33,6 +33,10 @@ from sdf_runtime_probe_evidence_bundle_verify import (
     verify_sdf_runtime_probe_evidence_bundle,
 )
 
+from sdf_runtime_probe_evidence_bundle_replay import (
+    replay_sdf_runtime_probe_evidence_bundle,
+)
+
 TIMELINE_OUTPUT_NAME = "relation_state_mutation_timeline.json"
 
 
@@ -208,11 +212,18 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
 
+        evidence_bundle_replay = (
+            replay_sdf_runtime_probe_evidence_bundle(
+                evidence_bundle["archive"]["path"]
+            )
+        )
+
         final_ready = (
             gdb_returncode == 0
             and bool(timeline["ready"])
             and bool(evidence_bundle["ready"])
             and bool(evidence_bundle_verification["ready"])
+            and bool(evidence_bundle_replay["ready"])
         )
         final = {
             **result,
@@ -254,6 +265,23 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 "evidence_bundle_verification_errors": (
                     evidence_bundle_verification["errors"]
+                ),
+                "evidence_bundle_replay_ready": bool(
+                    evidence_bundle_replay["ready"]
+                ),
+                "evidence_bundle_replay_timeline_match": bool(
+                    evidence_bundle_replay["timeline_match"]
+                ),
+                "evidence_bundle_replay_evidence_ready": bool(
+                    evidence_bundle_replay["evidence_ready"]
+                ),
+                "evidence_bundle_replay_errors": (
+                    evidence_bundle_replay["errors"]
+                ),
+                "evidence_bundle_recomputed_timeline_sha256": (
+                    evidence_bundle_replay[
+                        "recomputed_timeline_sha256"
+                    ]
                 ),
             },
         }
