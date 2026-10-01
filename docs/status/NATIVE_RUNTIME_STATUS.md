@@ -239,7 +239,7 @@ The native regression reports both `FUN_007b0f20` and `FUN_007b2210` and
 covers four solve cases plus two reset cases.
 
 Reset-node **selection** remains separate. The retail frame selects reset
-records through runtime `sample+0x70 & 1`; Phase 604 does not infer that bit
+records through runtime `relation+0x70 & 1`; Phase 604 does not infer that bit
 from static data and does not yet invoke a complete BMW frame.
 
 
