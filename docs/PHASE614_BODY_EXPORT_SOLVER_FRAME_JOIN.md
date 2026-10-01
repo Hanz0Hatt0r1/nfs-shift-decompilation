@@ -88,7 +88,7 @@ It still does not derive:
 
 - BODY contribution values from `FUN_007bc680`;
 - runtime constraint sampled-state refresh;
-- runtime `sample+0x70 & 1` reset selection;
+- runtime `relation+0x70 & 1` reset selection;
 - provider-present dispatch.
 
 The fixed-step runtime still consumes SBFR directly. A next integration step may
