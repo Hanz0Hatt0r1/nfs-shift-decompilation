@@ -51,6 +51,7 @@ add_library(shift_runtime_physics STATIC
   src/body_export_solver_join.cpp
   src/body_preprojection.cpp
   src/body_constraint_assembly.cpp
+  src/constraint_sample_refresh.cpp
   src/body_sparse_matrix_storage.cpp
   src/generated_body_solver_export.cpp
   src/generated_body_constraint_frame.cpp
@@ -86,6 +87,13 @@ add_executable(shift_runtime_body_constraint_assembly_check
 target_link_libraries(shift_runtime_body_constraint_assembly_check PRIVATE
   shift_runtime_physics)
 target_compile_options(shift_runtime_body_constraint_assembly_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+add_executable(shift_runtime_constraint_sample_refresh_check
+  tests/constraint_sample_refresh_check.cpp)
+target_link_libraries(shift_runtime_constraint_sample_refresh_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_constraint_sample_refresh_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
 add_executable(shift_runtime_body_preprojection_check
@@ -226,6 +234,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_body_constraint_assembly
     COMMAND shift_runtime_body_constraint_assembly_check)
+  add_test(
+    NAME shift_runtime_constraint_sample_refresh
+    COMMAND shift_runtime_constraint_sample_refresh_check)
   add_test(
     NAME shift_runtime_body_preprojection
     COMMAND shift_runtime_body_preprojection_check)

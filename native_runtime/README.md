@@ -679,3 +679,22 @@ native_runtime/build/shift_runtime \
 `--generated-body-constraint-frame` and `--body-solver-export-frame` are
 mutually exclusive. GBCF stores prepared BODY/sample inputs only; generated
 solver-vector/matrix contribution arrays are never read from the packet.
+
+
+## Phase 629 constraint sample refresh
+
+Run the source-backed `FUN_007b3ed0` numerical refresh regression:
+
+```bash
+native_runtime/build/shift_runtime_constraint_sample_refresh_check
+```
+
+The checker covers the exact JOINT/HINGE/BAR helper sequence
+`FUN_007b2da0 → FUN_007b2de0 → FUN_007b2f70`, the shared
+`FUN_007aefb0` forward transform, the HINGE `FUN_007af0a0` transpose
+transport, HINGE negative-side basis rebuild and BAR normalized endpoint
+direction.
+
+Phase 629 refreshes prepared endpoint/sample state only. It does not yet
+serialize the retail 0xA0/0xA0/0xB8 top-level relation ownership into a packet
+or replace GBCF's prepared sample fields on fixed steps.
