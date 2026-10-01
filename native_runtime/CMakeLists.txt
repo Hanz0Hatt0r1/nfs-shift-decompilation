@@ -53,6 +53,7 @@ add_library(shift_runtime_physics STATIC
   src/body_constraint_assembly.cpp
   src/body_sparse_matrix_storage.cpp
   src/generated_body_solver_export.cpp
+  src/generated_body_constraint_frame.cpp
   src/bar_projection.cpp
   src/bar_matrix_coupling.cpp
   src/hinge_projection.cpp
@@ -141,6 +142,13 @@ add_executable(shift_runtime_hinge_projection_check
 target_link_libraries(shift_runtime_hinge_projection_check PRIVATE
   shift_runtime_physics)
 target_compile_options(shift_runtime_hinge_projection_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+add_executable(shift_runtime_generated_body_constraint_frame_check
+  tests/generated_body_constraint_frame_check.cpp)
+target_link_libraries(shift_runtime_generated_body_constraint_frame_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_generated_body_constraint_frame_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
 add_executable(shift_runtime_generated_body_solver_export_check
@@ -233,6 +241,13 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_hinge_projection
     COMMAND shift_runtime_hinge_projection_check)
+  add_test(
+    NAME shift_runtime_generated_body_constraint_frame_usage
+    COMMAND shift_runtime_generated_body_constraint_frame_check)
+  set_tests_properties(
+    shift_runtime_generated_body_constraint_frame_usage
+    PROPERTIES WILL_FAIL TRUE)
+
   add_test(
     NAME shift_runtime_generated_body_solver_export
     COMMAND shift_runtime_generated_body_solver_export_check)

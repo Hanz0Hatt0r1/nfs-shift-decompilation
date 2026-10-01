@@ -687,3 +687,26 @@ The remaining fixed-step gate is replacing prepared SBEX contribution evidence
 with this generated contribution while retaining the existing exact SBEX/SBFR
 matrix/RHS verification boundary. Authentic `FUN_007b3ed0` sampled-state
 production remains independent.
+
+
+## Phase 627 generated BODY constraint frame
+
+The native physics path now has a contribution-free prepared input packet for
+BODY contribution generation.
+
+`SHIFT.NativeGeneratedBodyConstraintFramePacket/1` (GBCF) carries BODY
+state, canonical builtin row indices and ordered JOINT/HINGE/BAR sample values.
+It does not carry solver-vector/matrix contribution values.
+
+The C++ loader independently parses and validates GBCF, then
+`execute_prepared_generated_body_constraint_frame()` invokes the Phase 626
+generation/export path for every BODY and accumulates the resulting global
+matrix/RHS.
+
+The deterministic six-scalar fixture reproduces the Phase 624/626 global
+vector/matrix with zero error while reporting
+`contribution_values_stored_in_packet=false`.
+
+This remains downstream of authentic `FUN_007b3ed0` sample refresh. The next
+runtime gate is consuming GBCF on every fixed step and requiring its generated
+global matrix/RHS to match the admitted SBFR before reset/solve.

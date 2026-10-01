@@ -2448,6 +2448,30 @@ def cmd_camera_state_snapshot(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_native_generated_body_constraint_frame(
+    args: argparse.Namespace,
+) -> int:
+    """Prepare BODY sample/state inputs for native contribution generation."""
+    from native_generated_body_constraint_frame import (
+        build_native_generated_body_constraint_frame_file,
+    )
+
+    report = build_native_generated_body_constraint_frame_file(
+        args.input,
+        args.output_dir,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "body_count": report["body_count"],
+        "solver_scalar_count": report["solver_scalar_count"],
+        "sample_counts": report["sample_counts"],
+        "packet_sha256": report["packet"]["sha256"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_native_body_solver_export_frame(args: argparse.Namespace) -> int:
     """Prepare explicit per-BODY FUN_007ba570 contributions for native replay."""
     from native_body_solver_export_frame import (
@@ -5065,6 +5089,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="JSON camera manager/buffer state")
     p.add_argument("output", help="SHIFT.CameraStateSnapshotRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_state_snapshot)
+
+    p = sp.add_parser(
+        "native-generated-body-constraint-frame",
+        help=(
+            "prepare BODY state + JOINT/HINGE/BAR samples for native "
+            "FUN_007bc680 contribution generation"
+        ),
+    )
+    p.add_argument("input")
+    p.add_argument("output_dir")
+    p.set_defaults(fn=cmd_native_generated_body_constraint_frame)
 
     p = sp.add_parser(
         "native-body-solver-export-frame",
