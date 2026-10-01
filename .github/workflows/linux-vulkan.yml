@@ -123,6 +123,95 @@ jobs:
             out/vulkan/runtime/body_solver_export.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/body_solver_export.json
+      - name: Prepared native BODY solver export frame
+        run: |
+          mkdir -p out/vulkan/runtime/body_solver_export_frame
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = {
+              "format": "SHIFT.NativeBodySolverExportFrameInput/1",
+              "version": 1,
+              "verification_scope": "synthetic-body-export-regression",
+              "contribution_values_ready": True,
+              "body_order_ready": True,
+              "destination_shape_ready": True,
+              "body_count": 3,
+              "solver_scalar_count": 6,
+              "bodies": [
+                  {
+                      "body_index": 0,
+                      "solver_vector": [1.0, 2.0, 3.0],
+                      "solver_matrix": [1.0, 2.0, 3.0, 4.0],
+                  },
+                  {
+                      "body_index": 1,
+                      "solver_vector": [-1.0, 0.5],
+                      "solver_matrix": [0.5, -2.0],
+                  },
+                  {
+                      "body_index": 2,
+                      "solver_vector": [0.0, 0.0, 4.0, 5.0],
+                      "solver_matrix": [1.5],
+                  },
+              ],
+          }
+          Path(
+              "out/vulkan/runtime/body_solver_export_frame_input.json"
+          ).write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-body-solver-export-frame \
+            out/vulkan/runtime/body_solver_export_frame_input.json \
+            out/vulkan/runtime/body_solver_export_frame \
+            | tee out/vulkan/runtime/body_solver_export_frame_prepare.json
+          native_runtime/build/shift_runtime_body_solver_export_frame_check \
+            out/vulkan/runtime/body_solver_export_frame/body_solver_export.sbex \
+            | tee out/vulkan/runtime/body_solver_export_frame_check.json
+          grep -q '"format": "SHIFT.NativeBodySolverExportFrameCheck/1"' \
+            out/vulkan/runtime/body_solver_export_frame_check.json
+          grep -q '"source_function": "FUN_007ba570"' \
+            out/vulkan/runtime/body_solver_export_frame_check.json
+          grep -q '"body_count": 3' \
+            out/vulkan/runtime/body_solver_export_frame_check.json
+          grep -q '"solver_scalar_count": 6' \
+            out/vulkan/runtime/body_solver_export_frame_check.json
+          grep -q '"solver_matrix_double_count": 36' \
+            out/vulkan/runtime/body_solver_export_frame_check.json
+          grep -q '"max_error": 0' \
+            out/vulkan/runtime/body_solver_export_frame_check.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/body_solver_export_frame_check.json
+      - name: Reject incomplete BODY solver export proofs
+        run: |
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+
+          source = Path(
+              "out/vulkan/runtime/body_solver_export_frame/body_solver_export.sbex"
+          )
+          data = bytearray(source.read_bytes())
+          header = list(struct.unpack_from("<4s6I", data, 0))
+          header[5] &= ~1
+          struct.pack_into("<4s6I", data, 0, *header)
+          target = Path(
+              "out/vulkan/runtime/body_solver_export_frame/body_solver_export_unproven.sbex"
+          )
+          target.write_bytes(data)
+          PY
+          if native_runtime/build/shift_runtime_body_solver_export_frame_check \
+            out/vulkan/runtime/body_solver_export_frame/body_solver_export_unproven.sbex \
+            > out/vulkan/runtime/body_solver_export_unproven.stdout \
+            2> out/vulkan/runtime/body_solver_export_unproven.stderr; then
+            echo "BODY solver export unexpectedly accepted incomplete proofs"
+            exit 1
+          fi
+          grep -q "runtime proofs are incomplete" \
+            out/vulkan/runtime/body_solver_export_unproven.stderr
       - name: Prepared native builtin solver frame
         run: |
           mkdir -p out/vulkan/runtime/solver_frame

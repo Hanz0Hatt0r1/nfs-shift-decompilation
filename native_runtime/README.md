@@ -401,3 +401,24 @@ native_runtime/build/shift_runtime_body_solver_export_check
 This primitive accepts already-prepared BODY solver-vector and solver-matrix
 contributions and adds them into caller-owned destinations. It does not derive
 those contributions or claim complete retail matrix/RHS assembly.
+
+
+## Phase 613 prepared BODY solver export frame
+
+Prepare explicit per-BODY `FUN_007ba570` contribution evidence:
+
+```bash
+python shift_importer.py native-body-solver-export-frame \
+  body-export-input.json \
+  out/native-body-export
+```
+
+Then verify the exact ordered native accumulation:
+
+```bash
+native_runtime/build/shift_runtime_body_solver_export_frame_check \
+  out/native-body-export/body_solver_export.sbex
+```
+
+The packet carries contribution values and BODY order as evidence. Native code
+does not derive `FUN_007bc680` output or runtime reset selection.
