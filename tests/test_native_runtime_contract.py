@@ -553,3 +553,32 @@ def test_phase628_fixed_step_solver_accepts_generated_body_frame():
         "verify_generated_body_constraint_frame_matches_builtin_solver_frame"
         in header
     )
+
+
+def test_phase630_native_constraint_relation_frame_ownership():
+    header = Path(
+        "native_runtime/include/shift_constraint_relation_frame.hpp"
+    ).read_text(encoding="utf-8")
+    source = Path(
+        "native_runtime/src/constraint_relation_frame.cpp"
+    ).read_text(encoding="utf-8")
+    cmake = Path("native_runtime/CMakeLists.txt").read_text(
+        encoding="utf-8"
+    )
+
+    assert "ConstraintRelationSampleOwnership" in header
+    assert "PreparedJointSample" in header
+    assert "PreparedHingeSample" in header
+    assert "PreparedBarSample" in header
+    assert "inverse_transform_fun_007afcd0_relation" in header
+    assert "build_fun_007b1230_relation_basis" in header
+    assert "build_fun_007b3820_constraint_relation_frame" in header
+
+    assert "constraint relation scalar ranges overlap" in source
+    assert "constraint relation scalar layout has a gap" in source
+    assert "FUN_007b3820 allocates positive first, then negative" in source
+    assert "refresh_fun_007b3ed0_constraints" in source
+    assert "FUN_007bb8d0 fills only positive-side HINGE +0x78" in source
+
+    assert "src/constraint_relation_frame.cpp" in cmake
+    assert "shift_runtime_constraint_relation_frame_check" in cmake
