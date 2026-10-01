@@ -89,6 +89,7 @@ def describe_full_frame_contract(
             "seed": "FUN_007ba2b0",
             "joint_projection": "FUN_007bac60",
             "hinge_projection": "FUN_007bae40",
+            "bar_projection": "FUN_007bb090",
             "joint_matrix": "FUN_007bbb80",
             "hinge_matrix": "FUN_007bb250",
             "bar_matrix": "FUN_007bb6c0",
