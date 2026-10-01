@@ -406,12 +406,13 @@ def test_wine_launcher_exports_inferred_prefix_before_winepath_and_wine():
     wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
 
     assert 'export WINEPREFIX="$wine_prefix"' in wine
-    assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('capture_windows="$(winepath -w "$capture_path")"')
+    assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('capture_windows="$("$winepath_command" -w "$capture_path")"')
     assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('"$wine_command" "$game"')
     assert 'echo "WINEPREFIX: $WINEPREFIX"' in wine
     assert 'wine_resolved="$(command -v "$wine_command")"' in wine
+    assert 'winepath_resolved="$(command -v "$winepath_command")"' in wine
     assert 'echo "Wine exe : $wine_resolved"' in wine
-    assert 'echo "Winepath : $(command -v winepath)"' in wine
+    assert 'echo "Winepath : $winepath_resolved"' in wine
 
 
 def test_trigger_buffer_payloads_defer_disk_io_until_trigger():
@@ -444,3 +445,18 @@ def test_wine_launcher_warns_on_portproton_prefix_with_external_wine():
     assert 'wine_resolved="$(command -v "$wine_command")"' in wine
     assert 'PortProton prefix is being launched with Wine outside the PortProton tree' in wine
     assert 'use --wine with the Wine/Proton binary selected by PortProton' in wine
+
+
+def test_wine_launcher_auto_selects_portproton_runtime_and_matching_winepath():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'wine_command_explicit=0' in wine
+    assert '--wine) wine_command=' in wine
+    assert 'wine_command_explicit=1' in wine
+    assert 'portproton_wine_use=' in wine
+    assert '$portproton_root/data/dist/$portproton_wine_use/bin/wine' in wine
+    assert '$portproton_root/data/dist/$portproton_wine_use/files/bin/wine' in wine
+    assert 'sibling_winepath="${wine_resolved%/*}/winepath"' in wine
+    assert 'winepath_command="$sibling_winepath"' in wine
+    assert 'capture_windows="$("$winepath_command" -w "$capture_path")"' in wine
+    assert 'Runtime : auto-selected from PW_WINE_USE=' in wine

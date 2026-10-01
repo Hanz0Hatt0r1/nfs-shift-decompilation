@@ -69,6 +69,8 @@ d3dx9_41=""
 output="./shift-capture"
 mode="diagnostic"
 wine_command="${WINE_COMMAND:-wine}"
+wine_command_explicit=0
+winepath_command="${WINEPATH_COMMAND:-}"
 debug_output=0
 screenshots=0
 frame_start=""
@@ -90,7 +92,7 @@ while (($#)); do
     --d3dx9-41) d3dx9_41="${2:?missing value for --d3dx9-41}"; shift 2 ;;
     --output) output="${2:?missing value for --output}"; shift 2 ;;
     --mode) mode="${2:?missing value for --mode}"; shift 2 ;;
-    --wine) wine_command="${2:?missing value for --wine}"; shift 2 ;;
+    --wine) wine_command="${2:?missing value for --wine}"; wine_command_explicit=1; shift 2 ;;
     --debug-output) debug_output=1; shift ;;
     --frame-start) frame_start="${2:?missing value for --frame-start}"; shift 2 ;;
     --frame-end) frame_end="${2:?missing value for --frame-end}"; shift 2 ;;
@@ -148,14 +150,6 @@ if ((signature_discovery)); then
   mode="capture"
 fi
 
-command -v "$wine_command" >/dev/null 2>&1 || {
-  echo "Wine executable not found: $wine_command" >&2
-  exit 2
-}
-command -v winepath >/dev/null 2>&1 || {
-  echo "winepath is required to translate capture paths" >&2
-  exit 2
-}
 command -v python3 >/dev/null 2>&1 || {
   echo "python3 is required to validate PE architecture" >&2
   exit 2
@@ -213,6 +207,7 @@ export WINEPREFIX="$wine_prefix"
 
 portproton_root=""
 portproton_wine_use=""
+portproton_wine_auto=""
 if [[ "$wine_prefix" == */PortProton/data/prefixes/* ]]; then
   portproton_root="${wine_prefix%%/data/prefixes/*}"
   ppdb="$game.ppdb"
@@ -221,7 +216,38 @@ if [[ "$wine_prefix" == */PortProton/data/prefixes/* ]]; then
       sed -n 's/^[[:space:]]*export[[:space:]]\+PW_WINE_USE=["'"']\{0,1\}\([^"'"']*\)["'"']\{0,1\}[[:space:]]*$/\1/p' "$ppdb" | tail -n1
     )"
   fi
+  if (( ! wine_command_explicit )) && [[ -n "$portproton_wine_use" ]]; then
+    for candidate in \
+      "$portproton_root/data/dist/$portproton_wine_use/bin/wine" \
+      "$portproton_root/data/dist/$portproton_wine_use/files/bin/wine"; do
+      if [[ -x "$candidate" ]]; then
+        wine_command="$candidate"
+        portproton_wine_auto="$candidate"
+        break
+      fi
+    done
+  fi
 fi
+
+command -v "$wine_command" >/dev/null 2>&1 || {
+  echo "Wine executable not found: $wine_command" >&2
+  exit 2
+}
+wine_resolved="$(command -v "$wine_command")"
+
+if [[ -z "$winepath_command" ]]; then
+  sibling_winepath="${wine_resolved%/*}/winepath"
+  if [[ -x "$sibling_winepath" ]]; then
+    winepath_command="$sibling_winepath"
+  else
+    winepath_command="winepath"
+  fi
+fi
+command -v "$winepath_command" >/dev/null 2>&1 || {
+  echo "winepath executable not found: $winepath_command" >&2
+  exit 2
+}
+winepath_resolved="$(command -v "$winepath_command")"
 
 target_d3dx=""
 if [[ -n "$d3dx9_41" ]]; then
@@ -320,8 +346,8 @@ if [[ -n "$d3dx9_41" ]] && (( ! d3dx_same_file )); then
   d3dx_mutated=1
 fi
 
-capture_windows="$(winepath -w "$capture_path")"
-crash_windows="$(winepath -w "$crash_path")"
+capture_windows="$("$winepath_command" -w "$capture_path")"
+crash_windows="$("$winepath_command" -w "$crash_path")"
 export SHIFT_D3D9_CAPTURE="$capture_windows"
 export SHIFT_D3D9_CRASH_LOG="$crash_windows"
 export SHIFT_D3D9_CRASH_DIAGNOSTICS=1
@@ -352,7 +378,7 @@ if ((trigger_capture)); then
   export SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES="$pre_frames"
   export SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES="$post_frames"
   export SHIFT_D3D9_CAPTURE_TRIGGER_KEY=0x79
-  export SHIFT_D3D9_CAPTURE_TRIGGER_FILE="$(winepath -w "$trigger_file")"
+  export SHIFT_D3D9_CAPTURE_TRIGGER_FILE="$("$winepath_command" -w "$trigger_file")"
   if [[ -n "$resource_trigger" ]]; then
     export SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER="$resource_trigger"
   else
@@ -384,14 +410,14 @@ if ((screenshots)); then
   mkdir -p "$frame_dir"
   export SHIFT_D3D9_CAPTURE_SCREENSHOT=1
   export SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY=1
-  export SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR="$(winepath -w "$frame_dir")"
+  export SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR="$("$winepath_command" -w "$frame_dir")"
 fi
 
 if ((buffer_payloads)); then
   buffer_dir="$output/buffers"
   mkdir -p "$buffer_dir"
   export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS=1
-  export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$(winepath -w "$buffer_dir")"
+  export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$("$winepath_command" -w "$buffer_dir")"
 else
   unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS || true
   unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR || true
@@ -401,7 +427,7 @@ if ((texture_payloads)); then
   texture_payload_dir="$output/texture-payloads"
   mkdir -p "$texture_payload_dir"
   export SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS=1
-  export SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR="$(winepath -w "$texture_payload_dir")"
+  export SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR="$("$winepath_command" -w "$texture_payload_dir")"
 else
   unset SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS || true
   unset SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR || true
@@ -429,11 +455,13 @@ else
   export WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n"
 fi
 
-wine_resolved="$(command -v "$wine_command")"
 echo "Launching: $game"
 echo "WINEPREFIX: $WINEPREFIX"
 echo "Wine exe : $wine_resolved"
-echo "Winepath : $(command -v winepath)"
+echo "Winepath : $winepath_resolved"
+if [[ -n "$portproton_wine_auto" ]]; then
+  echo "Runtime : auto-selected from PW_WINE_USE=$portproton_wine_use"
+fi
 if [[ -n "$portproton_root" && "$wine_resolved" != "$portproton_root/"* ]]; then
   echo "warning: PortProton prefix is being launched with Wine outside the PortProton tree: $wine_resolved" >&2
   if [[ -n "$portproton_wine_use" ]]; then
