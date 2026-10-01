@@ -1063,3 +1063,26 @@ evidence-ready.
 The full explicit-PID launcher now self-verifies the archive it creates and
 requires successful verification before reporting success. No native mutation
 scheduling is enabled.
+
+
+## Phase 641 portable SDF evidence bundle replay
+
+Verified Phase 639 archives can now be independently replayed through the
+Phase 637 correlator. The verifier materializes only already-validated
+root-level evidence files into a temporary directory, recomputes the complete
+relation-state mutation timeline and requires exact equality with the embedded
+timeline.
+
+Phase 637 timeline artifacts no longer contain the host-local absolute
+capture-directory path, making replay independent of extraction location and
+preventing that local path from entering the portable archive.
+
+The output format is
+`SHIFT.SDFRuntimeProbeEvidenceBundleReplay/1`. Integrity/package/capture
+readiness remain distinct; an exactly reproducible blocked retail capture stays
+`evidence_ready=false`.
+
+The full explicit-PID launcher now requires Phase 641 replay in addition to
+GDB, Phase 637, Phase 639 and Phase 640. This is a reproducibility check rather
+than an external authenticity signature, and it does not enable native
+mutation scheduling.
