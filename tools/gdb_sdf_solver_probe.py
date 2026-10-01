@@ -28,9 +28,11 @@ import gdb
 
 from sdf_runtime_probe_runtime import (
     FUNCTIONS,
+    RELATION_STATE_MUTATION_LAYOUT,
     capture_geometry,
     derive_physics_system_from_solver_state,
     describe_frame_entry_backend,
+    describe_relation_state_mutation_entry,
 )
 from specialized_provider_capture_runtime import build_provider_capture_payload
 from specialized_provider_runtime import get_provider
@@ -61,6 +63,14 @@ def _doubles(inferior: gdb.Inferior, address: int, count: int) -> list[float]:
 
 
 _SCALAR_RESET_EVENT_COUNT = 0
+_RUNTIME_EVENT_SEQUENCE = 0
+
+
+def _next_runtime_event_sequence() -> int:
+    global _RUNTIME_EVENT_SEQUENCE
+    _RUNTIME_EVENT_SEQUENCE += 1
+    return _RUNTIME_EVENT_SEQUENCE
+
 # Stable evidence labels used by the capture schema:
 # stage="pre-solve-provider"
 # "post-solve-provider"
@@ -69,6 +79,7 @@ _SCALAR_RESET_EVENT_COUNT = 0
 _LAST_FRAME_ENTRY = {
     "frame_index": None,
     "physics_system": None,
+    "runtime_event_sequence": None,
     "scalar_reset_start_count": 0,
     "scalar_reset_end_count": 0,
 }
@@ -94,6 +105,7 @@ def _provider_snapshot(
     provider_id: int,
     stage: str,
     hit: int,
+    runtime_event_sequence: int,
 ) -> dict:
     layout = get_storage_layout(provider_id)
     workspace = _doubles(
@@ -122,6 +134,7 @@ def _provider_snapshot(
         metadata={
             "capture_kind": stage,
             "provider_solve_hit": hit,
+            "runtime_event_sequence": runtime_event_sequence,
             "scalar_reset_event_count": _SCALAR_RESET_EVENT_COUNT,
             "scalar_reset_events_since_frame_entry": (
                 _SCALAR_RESET_EVENT_COUNT
@@ -375,6 +388,7 @@ class ScalarResetProbe(_BaseProbe):
         self.hit += 1
         self.event_index += 1
         _SCALAR_RESET_EVENT_COUNT += 1
+        runtime_event_sequence = _next_runtime_event_sequence()
         _LAST_FRAME_ENTRY["scalar_reset_end_count"] = _SCALAR_RESET_EVENT_COUNT
         inferior = gdb.selected_inferior()
 
@@ -396,6 +410,10 @@ class ScalarResetProbe(_BaseProbe):
             "format": "SHIFT.SpecializedProviderScalarResetCaptureRuntime/2",
             "version": 2,
             "frame_index": _LAST_FRAME_ENTRY["frame_index"],
+            "frame_entry_runtime_event_sequence": (
+                _LAST_FRAME_ENTRY["runtime_event_sequence"]
+            ),
+            "runtime_event_sequence": runtime_event_sequence,
             "call_index": self.event_index,
             "physics_system": physics_system,
             "provider_pointer": provider_pointer,
@@ -433,9 +451,94 @@ class ScalarResetProbe(_BaseProbe):
 
 
 
+
+class RelationStateMutationProbe(_BaseProbe):
+    """Observe source-backed FUN_00757d2c slot/branch inputs without mutation."""
+
+    def __init__(
+        self,
+        address: int,
+        output_dir: Path,
+    ) -> None:
+        super().__init__(
+            address,
+            "relation_state_mutation",
+            output_dir,
+        )
+        self.event_index = 0
+
+    def stop(self) -> bool:
+        self.hit += 1
+        self.event_index += 1
+        runtime_event_sequence = _next_runtime_event_sequence()
+        inferior = gdb.selected_inferior()
+
+        vehicle_pointer = int(gdb.parse_and_eval("$ecx")) & 0xFFFFFFFF
+        component_offset = int(gdb.parse_and_eval("$eax")) & 0xFFFFFFFF
+        esp = int(gdb.parse_and_eval("$esp")) & 0xFFFFFFFF
+        caller_return_address = _u32(inferior, esp)
+
+        component_block_pointer = (
+            vehicle_pointer
+            + RELATION_STATE_MUTATION_LAYOUT["component_base_offset"]
+            + component_offset
+        )
+        wheel_body_pointer = _u32(
+            inferior,
+            component_block_pointer
+            + RELATION_STATE_MUTATION_LAYOUT["wheel_body_offset"],
+        )
+        spindle_body_pointer = _u32(
+            inferior,
+            component_block_pointer
+            + RELATION_STATE_MUTATION_LAYOUT["spindle_body_offset"],
+        )
+        rear_axle_body_pointer = _u32(
+            inferior,
+            vehicle_pointer
+            + RELATION_STATE_MUTATION_LAYOUT["rear_axle_body_offset"],
+        )
+
+        event = describe_relation_state_mutation_entry(
+            vehicle_pointer=vehicle_pointer,
+            component_offset=component_offset,
+            wheel_body_pointer=wheel_body_pointer,
+            spindle_body_pointer=spindle_body_pointer,
+            rear_axle_body_pointer=rear_axle_body_pointer,
+            caller_return_address=caller_return_address,
+        )
+        event.update({
+            "call_index": self.event_index,
+            "runtime_event_sequence": runtime_event_sequence,
+            "frame_index": _LAST_FRAME_ENTRY["frame_index"],
+            "frame_entry_runtime_event_sequence": (
+                _LAST_FRAME_ENTRY["runtime_event_sequence"]
+            ),
+            "frame_physics_system": _LAST_FRAME_ENTRY["physics_system"],
+            "scalar_reset_event_count": _SCALAR_RESET_EVENT_COUNT,
+            "scalar_reset_events_since_frame_entry": (
+                _SCALAR_RESET_EVENT_COUNT
+                - int(_LAST_FRAME_ENTRY["scalar_reset_start_count"])
+            ),
+            "registers": {
+                "eax": component_offset,
+                "ecx": vehicle_pointer,
+                "esp": esp,
+                "eip": int(gdb.parse_and_eval("$eip")),
+            },
+        })
+        _append_jsonl(
+            self.output_dir,
+            "relation_state_mutation_events.jsonl",
+            event,
+        )
+        return False
+
+
 class FrameEntryProbe(_BaseProbe):
     def stop(self) -> bool:
         self.hit += 1
+        runtime_event_sequence = _next_runtime_event_sequence()
         inferior = gdb.selected_inferior()
         physics_system = int(gdb.parse_and_eval("$ecx"))
         scalar_count = _u32(inferior, physics_system + 0x34)
@@ -449,6 +552,7 @@ class FrameEntryProbe(_BaseProbe):
         )
         _LAST_FRAME_ENTRY["frame_index"] = self.hit
         _LAST_FRAME_ENTRY["physics_system"] = physics_system
+        _LAST_FRAME_ENTRY["runtime_event_sequence"] = runtime_event_sequence
         _LAST_FRAME_ENTRY["scalar_reset_start_count"] = (
             _SCALAR_RESET_EVENT_COUNT
         )
@@ -458,6 +562,7 @@ class FrameEntryProbe(_BaseProbe):
         payload.update({
             "capture_kind": "frame_entry_backend",
             "frame_index": self.hit,
+            "runtime_event_sequence": runtime_event_sequence,
             "registers": {
                 "ecx": physics_system,
                 "eip": int(gdb.parse_and_eval("$eip")),
@@ -470,6 +575,7 @@ class FrameEntryProbe(_BaseProbe):
 class SolverEntryProbe(_BaseProbe):
     def stop(self) -> bool:
         self.hit += 1
+        runtime_event_sequence = _next_runtime_event_sequence()
         inferior = gdb.selected_inferior()
         esp = int(gdb.parse_and_eval("$esp"))
         solver_state = _u32(inferior, esp + 0x04)
@@ -490,6 +596,7 @@ class SolverEntryProbe(_BaseProbe):
         payload.update({
             "capture_kind": "pre_solve_builtin_solver",
             "frame_index": self.hit,
+            "runtime_event_sequence": runtime_event_sequence,
             "matrix": matrix,
             "rhs": rhs,
             "row_indices": [
@@ -525,11 +632,13 @@ class ProviderSolveReturnProbe(gdb.FinishBreakpoint):
 
     def stop(self) -> bool:
         inferior = gdb.selected_inferior()
+        runtime_event_sequence = _next_runtime_event_sequence()
         payload = _provider_snapshot(
             inferior,
             self.provider_id,
             "post-solve-provider",
             self.hit,
+            runtime_event_sequence,
         )
         self.output_dir.mkdir(parents=True, exist_ok=True)
         target = self.output_dir / (
@@ -567,11 +676,13 @@ class ProviderSolveProbe(_BaseProbe):
     def stop(self) -> bool:
         self.hit += 1
         inferior = gdb.selected_inferior()
+        runtime_event_sequence = _next_runtime_event_sequence()
         payload = _provider_snapshot(
             inferior,
             self.provider_id,
             "pre-solve-provider",
             self.hit,
+            runtime_event_sequence,
         )
         self.write_json(
             f"provider_pre_{self.provider_id}_{self.hit:06d}.json",
@@ -590,6 +701,7 @@ class ProviderSolveProbe(_BaseProbe):
 class PostSolveProbe(_BaseProbe):
     def stop(self) -> bool:
         self.hit += 1
+        runtime_event_sequence = _next_runtime_event_sequence()
         inferior = gdb.selected_inferior()
         physics_system = int(gdb.parse_and_eval("$ecx"))
         scalar_count = _u32(inferior, physics_system + 0x34)
@@ -602,6 +714,7 @@ class PostSolveProbe(_BaseProbe):
             "ready": True,
             "capture_kind": "post_solve",
             "frame_index": self.hit,
+            "runtime_event_sequence": runtime_event_sequence,
             "image_base": 0x00400000,
             "physics_system": physics_system,
             "scalar_count": scalar_count,
@@ -647,6 +760,10 @@ class SDFProbeCommand(gdb.Command):
         self.breakpoints = []
         if not provider_only:
             self.breakpoints.extend([
+                RelationStateMutationProbe(
+                    FUNCTIONS["relation_state_mutation"],
+                    output,
+                ),
                 FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
                 SolverEntryProbe(FUNCTIONS["builtin_solver"], "builtin_solver", output),
                 PostSolveProbe(FUNCTIONS["post_solve"], "post_solve", output),
@@ -679,6 +796,7 @@ class SDFProbeCommand(gdb.Command):
         ])
         print(
             "SDF probe installed:",
+            f"relation_state_mutation=0x{FUNCTIONS['relation_state_mutation']:08x},",
             f"builtin_solver=0x{FUNCTIONS['builtin_solver']:08x},",
             f"provider0_solver=0x{get_provider(0).solve_function:08x},",
             f"provider1_solver=0x{get_provider(1).solve_function:08x},",
