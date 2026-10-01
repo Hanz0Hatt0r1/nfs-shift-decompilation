@@ -383,6 +383,7 @@ def build_native_post_solve_body_projection(
             "derives_constraint_rows": False,
             "provider_path_supported": True,
             "fixed_step_runtime_integration": False,
+            "fixed_step_runtime_consumer_available": True,
             "assigns_physical_units": False,
         },
     }

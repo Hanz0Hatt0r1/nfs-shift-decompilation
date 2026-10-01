@@ -327,3 +327,29 @@ native_runtime/build/shift_runtime_post_solve_projection_check \
 The packet requires explicit proof for the solved vector, initial BODY state and
 JOINT/HINGE/BAR rows. It does not derive those values from static SDF assets and
 is not yet wired to the Phase 608 fixed-step solver-frame path.
+
+
+## Phase 610 fixed-step post-solve mode
+
+After preparing both the Phase 606 solver frame and Phase 609 post-solve packet,
+the offline runtime can join them on every fixed step:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --participant-boundary out/native_physics_participant_runtime_evidence.json \
+  --solver-frame out/native-solver-frame/solver_frame.sbfr \
+  --post-solve-projection out/native-post-solve/post_solve.sbps \
+  --frames 120
+```
+
+The runtime uses the actual native solver result as the `FUN_007b4110` input.
+The solved vector stored inside SBPS is only a join witness and must match the
+runtime solution. BODY and constraint counts must also match the admitted
+physics workspace.
+
+This completes prepared reset→solve→BODY-projection scheduling. It does not
+persist the projected accumulators into vehicle motion, and it does not derive
+retail matrix/RHS/reset/constraint rows.
