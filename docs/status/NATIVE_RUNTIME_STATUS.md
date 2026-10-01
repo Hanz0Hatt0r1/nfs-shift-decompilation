@@ -922,3 +922,29 @@ Remaining blockers are authentic per-frame BODY/raw relation state, mutation
 event provenance/timing, provider-present execution and persistent vehicle
 transform/motion integration.
 
+## Phase 635 retail relation-state mutation capture
+
+The retail GDB SDF probe now includes a full-mode observer at
+`FUN_00757d2c` (`0x00757d2c`) for the event provenance still missing from
+the Phase 634 native dispatcher.
+
+Raw retail disassembly fixes the observer ABI before the first instruction:
+`ECX` is the vehicle pointer and `EAX` is `slot * 0xA80`. The probe records
+the exact 0..3 FL/FR/RL/RR slot, component block, wheel/spindle/rear-axle BODY
+pointers, spindle-presence branch and caller return address into
+`relation_state_mutation_events.jsonl`.
+
+A shared monotonic `runtime_event_sequence` is also attached to frame-entry,
+builtin/provider solve, scalar-reset, post-solve and mutation observations.
+This supplies a capture-time ordering key without assigning a Linux scheduler
+event in advance.
+
+The observer is intentionally omitted by `--provider-only`, because that mode
+does not install the `FUN_007b3f40` frame-entry anchor. The launcher and
+preflight contracts expect the new event stream only in full mode.
+
+No native scheduler integration is enabled by this phase. The next gate is an
+authentic retail capture followed by a fail-closed offline correlation of slot,
+spindle presence, BODY identity and mutation ordering relative to the solver
+frame.
+
