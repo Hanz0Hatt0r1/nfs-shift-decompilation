@@ -457,3 +457,17 @@ native_runtime/build/shift_runtime \
 On every fixed step the runtime replays `FUN_007ba570`, verifies the complete
 pre-reset RHS/matrix against SBFR, and only then executes the prepared builtin
 reset/solve path. A supplied mismatch is fail-closed.
+
+
+## Phase 616 native FUN_007bc680 preprojection seed
+
+The native physics library exposes the source-backed deterministic seed that
+precedes JOINT/HINGE/BAR projection:
+
+```bash
+native_runtime/build/shift_runtime_body_preprojection_check
+```
+
+The checker reproduces the retail residual expressions, the exact
+`FUN_007aefb0` float boundary and +0x90 linear scaling. It intentionally does
+not execute the downstream constraint helpers yet.
