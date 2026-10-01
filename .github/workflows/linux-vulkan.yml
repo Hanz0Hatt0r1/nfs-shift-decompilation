@@ -377,6 +377,34 @@ jobs:
             out/vulkan/runtime/constraint_relation_state_mutation.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/constraint_relation_state_mutation.json
+      - name: Native FUN_00757d20 component relation dispatch
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_constraint_relation_component_dispatch
+          native_runtime/build/shift_runtime_constraint_relation_component_dispatch_check \
+            | tee out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"format": "SHIFT.NativeConstraintRelationComponentDispatchCheck/1"' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"wrapper_function": "FUN_00757d20"' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"thunk_address": "0x469736"' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"source_function": "FUN_00757d2c"' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"secondary_nonnull_selects_bar": true' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"secondary_null_selects_joint_hinge": true' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"joint_hinge_pair_uses_primary_and_rear_axle": true' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"null_rear_axle_matches_nothing": true' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"four_slot_wrapper_verified": true' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"scheduler_integrated": false' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/constraint_relation_component_dispatch.json
       - name: Native FUN_007bc680 preprojection seed
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
