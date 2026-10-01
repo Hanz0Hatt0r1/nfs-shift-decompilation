@@ -19,10 +19,25 @@ param(
 
     [switch]$CaptureTextureSnapshots,
 
-    [string]$TextureStages = "0,3,4"
+    [string]$TextureStages = "0,3,4",
+
+    [long]$FrameStart = -1,
+
+    [long]$FrameEnd = -1,
+
+    [switch]$CaptureBufferPayloads,
+
+    [switch]$CaptureTexturePayloads
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($FrameStart -lt -1 -or $FrameEnd -lt -1) {
+    throw "FrameStart/FrameEnd must be -1 (unset) or non-negative"
+}
+if ($FrameStart -ge 0 -and $FrameEnd -ge 0 -and $FrameEnd -lt $FrameStart) {
+    throw "FrameEnd must be >= FrameStart"
+}
 
 $gamePath = (Resolve-Path $GameExe).Path
 $proxyPath = (Resolve-Path $ProxyDll).Path
@@ -71,6 +86,12 @@ $oldScreenshotDir = $env:SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR
 $oldTextureSnapshot = $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT
 $oldTextureSnapshotDir = $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR
 $oldTextureStages = $env:SHIFT_D3D9_CAPTURE_TEXTURE_STAGES
+$oldFrameStart = $env:SHIFT_D3D9_CAPTURE_FRAME_START
+$oldFrameEnd = $env:SHIFT_D3D9_CAPTURE_FRAME_END
+$oldBufferPayloads = $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS
+$oldBufferPayloadDir = $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR
+$oldTexturePayloads = $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS
+$oldTexturePayloadDir = $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR
 
 try {
     if ($hadSidecar) {
@@ -92,6 +113,8 @@ try {
     $env:SHIFT_D3D9_CRASH_LOG = $crashPath
     $env:SHIFT_D3D9_CRASH_DIAGNOSTICS = "1"
     $env:SHIFT_D3D9_CAPTURE_MODE = $Mode.ToLowerInvariant()
+    if ($FrameStart -ge 0) { $env:SHIFT_D3D9_CAPTURE_FRAME_START = [string]$FrameStart } else { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_START -ErrorAction SilentlyContinue }
+    if ($FrameEnd -ge 0) { $env:SHIFT_D3D9_CAPTURE_FRAME_END = [string]$FrameEnd } else { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_END -ErrorAction SilentlyContinue }
     if ($stagedBackend) {
         $env:SHIFT_D3D9_BACKEND = $sidecarDll
     } else {
@@ -115,11 +138,32 @@ try {
         $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR = (Join-Path $out "textures")
         New-Item -ItemType Directory -Force -Path $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR | Out-Null
     }
+    if ($CaptureBufferPayloads) {
+        $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS = "1"
+        $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR = (Join-Path $out "buffers")
+        New-Item -ItemType Directory -Force -Path $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR | Out-Null
+    } else {
+        Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS -ErrorAction SilentlyContinue
+        Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR -ErrorAction SilentlyContinue
+    }
+    if ($CaptureTexturePayloads) {
+        $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS = "1"
+        $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR = (Join-Path $out "texture-payloads")
+        New-Item -ItemType Directory -Force -Path $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR | Out-Null
+    } else {
+        Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS -ErrorAction SilentlyContinue
+        Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR -ErrorAction SilentlyContinue
+    }
 
     Write-Host "Launching: $gamePath"
     Write-Host "Capture : $capturePath"
     Write-Host "Crash   : $crashPath"
     Write-Host "Mode    : $Mode"
+    if ($FrameStart -ge 0 -or $FrameEnd -ge 0) {
+        Write-Host "Frames  : $FrameStart..$FrameEnd"
+    }
+    if ($CaptureBufferPayloads) { Write-Host "Buffers : $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR" }
+    if ($CaptureTexturePayloads) { Write-Host "Tex raw : $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR" }
     if ($stagedBackend) {
         Write-Host "Backend : preserved local d3d9.dll via $sidecarDll"
     } else {
@@ -161,6 +205,12 @@ finally {
     if ($null -eq $oldTextureSnapshot) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT = $oldTextureSnapshot }
     if ($null -eq $oldTextureSnapshotDir) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR = $oldTextureSnapshotDir }
     if ($null -eq $oldTextureStages) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_STAGES -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_STAGES = $oldTextureStages }
+    if ($null -eq $oldFrameStart) { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_START -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_FRAME_START = $oldFrameStart }
+    if ($null -eq $oldFrameEnd) { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_END -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_FRAME_END = $oldFrameEnd }
+    if ($null -eq $oldBufferPayloads) { Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS = $oldBufferPayloads }
+    if ($null -eq $oldBufferPayloadDir) { Remove-Item Env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR = $oldBufferPayloadDir }
+    if ($null -eq $oldTexturePayloads) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS = $oldTexturePayloads }
+    if ($null -eq $oldTexturePayloadDir) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR = $oldTexturePayloadDir }
 }
 
 if ($exitCode -ne 0) {

@@ -40,6 +40,16 @@ constexpr std::size_t SLOT_PRESENT = 17;
 constexpr std::size_t SLOT_BEGIN_SCENE = 41;
 constexpr std::size_t SLOT_END_SCENE = 42;
 constexpr std::size_t SLOT_CLEAR = 43;
+constexpr std::size_t SLOT_SET_RENDER_TARGET = 37;
+constexpr std::size_t SLOT_SET_DEPTH_STENCIL_SURFACE = 39;
+constexpr std::size_t SLOT_SET_VIEWPORT = 47;
+constexpr std::size_t SLOT_SET_RENDER_STATE = 57;
+constexpr std::size_t SLOT_SET_TEXTURE_STAGE_STATE = 67;
+constexpr std::size_t SLOT_SET_SAMPLER_STATE = 69;
+constexpr std::size_t SLOT_SET_SCISSOR_RECT = 75;
+constexpr std::size_t SLOT_DRAW_PRIMITIVE = 81;
+constexpr std::size_t SLOT_DRAW_PRIMITIVE_UP = 83;
+constexpr std::size_t SLOT_DRAW_INDEXED_PRIMITIVE_UP = 84;
 constexpr std::size_t SLOT_CREATE_TEXTURE = 23;
 constexpr std::size_t SLOT_CREATE_CUBE_TEXTURE = 25;
 constexpr std::size_t SLOT_CREATE_VERTEX_BUFFER = 26;
@@ -83,6 +93,27 @@ using BeginSceneFn = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*);
 using EndSceneFn = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*);
 using ClearFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, DWORD, const D3DRECT*, DWORD, D3DCOLOR, float, DWORD);
+using SetRenderTargetFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, DWORD, IDirect3DSurface9*);
+using SetDepthStencilSurfaceFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, IDirect3DSurface9*);
+using SetViewportFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, const D3DVIEWPORT9*);
+using SetRenderStateFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, D3DRENDERSTATETYPE, DWORD);
+using SetTextureStageStateFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, DWORD, D3DTEXTURESTAGESTATETYPE, DWORD);
+using SetSamplerStateFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, DWORD, D3DSAMPLERSTATETYPE, DWORD);
+using SetScissorRectFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, const RECT*);
+using DrawPrimitiveFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, D3DPRIMITIVETYPE, UINT, UINT);
+using DrawPrimitiveUPFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, D3DPRIMITIVETYPE, UINT, const void*, UINT);
+using DrawIndexedPrimitiveUPFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, D3DPRIMITIVETYPE, UINT, UINT, UINT,
+    const void*, D3DFORMAT, const void*, UINT);
 using CreateVertexDeclarationFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const D3DVERTEXELEMENT9*, IDirect3DVertexDeclaration9**);
 using SetVertexDeclarationFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -156,6 +187,16 @@ PresentFn g_real_present = nullptr;
 BeginSceneFn g_real_begin_scene = nullptr;
 EndSceneFn g_real_end_scene = nullptr;
 ClearFn g_real_clear = nullptr;
+SetRenderTargetFn g_real_set_render_target = nullptr;
+SetDepthStencilSurfaceFn g_real_set_depth_stencil_surface = nullptr;
+SetViewportFn g_real_set_viewport = nullptr;
+SetRenderStateFn g_real_set_render_state = nullptr;
+SetTextureStageStateFn g_real_set_texture_stage_state = nullptr;
+SetSamplerStateFn g_real_set_sampler_state = nullptr;
+SetScissorRectFn g_real_set_scissor_rect = nullptr;
+DrawPrimitiveFn g_real_draw_primitive = nullptr;
+DrawPrimitiveUPFn g_real_draw_primitive_up = nullptr;
+DrawIndexedPrimitiveUPFn g_real_draw_indexed_primitive_up = nullptr;
 CreateVertexDeclarationFn g_real_create_vertex_declaration = nullptr;
 SetVertexDeclarationFn g_real_set_vertex_declaration = nullptr;
 CreateTextureFn g_real_create_texture = nullptr;
@@ -629,6 +670,35 @@ unsigned long long env_u64(const char* name, unsigned long long fallback) {
     char* end = nullptr;
     unsigned long long parsed = std::strtoull(value, &end, 0);
     return (end && *end == '\0') ? parsed : fallback;
+}
+
+unsigned long long capture_frame_start() {
+    static const auto value = env_u64("SHIFT_D3D9_CAPTURE_FRAME_START", 0);
+    return value;
+}
+
+unsigned long long capture_frame_end() {
+    static const auto value = [] {
+        const auto start = capture_frame_start();
+        const auto requested = env_u64(
+            "SHIFT_D3D9_CAPTURE_FRAME_END",
+            std::numeric_limits<unsigned long long>::max());
+        return std::max(start, requested);
+    }();
+    return value;
+}
+
+bool bounded_capture_enabled() {
+    static const bool enabled =
+        (std::getenv("SHIFT_D3D9_CAPTURE_FRAME_START") != nullptr) ||
+        (std::getenv("SHIFT_D3D9_CAPTURE_FRAME_END") != nullptr);
+    return enabled;
+}
+
+bool capture_frame_active() {
+    if (capture_mode() != CaptureMode::Capture) return false;
+    const auto frame = g_frame.load();
+    return frame >= capture_frame_start() && frame <= capture_frame_end();
 }
 
 bool write_backbuffer_ppm(
@@ -1743,7 +1813,11 @@ HRESULT STDMETHODCALLTYPE hook_begin_scene(IDirect3DDevice9* self) {
     const auto original = original_method_for<BeginSceneFn>(
         self, SLOT_BEGIN_SCENE, g_real_begin_scene);
     const HRESULT hr = original ? original(self) : E_FAIL;
-    if (FAILED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self);
+        writer().write_event("begin_scene", fields.str());
+    } else if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
                << ",\"hresult\":" << hresult_hex(hr);
@@ -1756,7 +1830,11 @@ HRESULT STDMETHODCALLTYPE hook_end_scene(IDirect3DDevice9* self) {
     const auto original = original_method_for<EndSceneFn>(
         self, SLOT_END_SCENE, g_real_end_scene);
     const HRESULT hr = original ? original(self) : E_FAIL;
-    if (FAILED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self);
+        writer().write_event("end_scene", fields.str());
+    } else if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
                << ",\"hresult\":" << hresult_hex(hr);
@@ -1778,7 +1856,16 @@ HRESULT STDMETHODCALLTYPE hook_clear(
     const HRESULT hr = original
         ? original(self, count, rects, flags, color, depth, stencil)
         : E_FAIL;
-    if (FAILED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
+               << ",\"rect_count\":" << count
+               << ",\"clear_flags\":" << flags
+               << ",\"color\":" << static_cast<unsigned long>(color)
+               << ",\"depth\":" << CaptureWriter::float_json(depth)
+               << ",\"stencil\":" << stencil;
+        writer().write_event("clear", fields.str());
+    } else if (FAILED(hr)) {
         std::ostringstream fields;
         fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
                << ",\"hresult\":" << hresult_hex(hr)
@@ -1794,7 +1881,7 @@ HRESULT STDMETHODCALLTYPE hook_present(
     const RECT* dst,
     HWND override_window,
     const RGNDATA* dirty_region) {
-    if (env_enabled("SHIFT_D3D9_CAPTURE_SCREENSHOT")) {
+    if (env_enabled("SHIFT_D3D9_CAPTURE_SCREENSHOT") && capture_frame_active()) {
         const auto every = std::max<unsigned long long>(
             1, env_u64("SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY", 1));
         if ((g_frame.load() % every) == 0) {
@@ -1978,7 +2065,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_declaration(
     const auto original = original_method_for<SetVertexDeclarationFn>(
         self, SLOT_SET_VERTEX_DECLARATION, g_real_set_vertex_declaration);
     const HRESULT hr = original ? original(self, decl) : E_FAIL;
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
         std::ostringstream f;
         f << "\"declaration_ptr\":" << CaptureWriter::ptr(decl)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -1996,7 +2083,7 @@ HRESULT STDMETHODCALLTYPE hook_set_stream_source(
     const auto original = original_method_for<SetStreamSourceFn>(
         self, SLOT_SET_STREAM_SOURCE, g_real_set_stream_source);
     const HRESULT hr = original ? original(self, stream, buffer, offset, stride) : E_FAIL;
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
         std::ostringstream f;
         f << "\"vertex_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -2014,7 +2101,7 @@ HRESULT STDMETHODCALLTYPE hook_set_indices(
     const auto original = original_method_for<SetIndicesFn>(
         self, SLOT_SET_INDICES, g_real_set_indices);
     const HRESULT hr = original ? original(self, buffer) : E_FAIL;
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
         std::ostringstream f;
         f << "\"index_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -2086,6 +2173,232 @@ void append_texture_descriptor_json(
     }
 }
 
+void append_surface_descriptor_json(
+    std::ostringstream& out,
+    IDirect3DSurface9* surface) {
+    if (!surface) {
+        out << ",\"surface_descriptor_status\":\"null\"";
+        return;
+    }
+    D3DSURFACE_DESC desc{};
+    if (FAILED(surface->GetDesc(&desc))) {
+        out << ",\"surface_descriptor_status\":\"unavailable\"";
+        return;
+    }
+    out << ",\"surface_descriptor_status\":\"observed\""
+        << ",\"surface_width\":" << desc.Width
+        << ",\"surface_height\":" << desc.Height
+        << ",\"surface_format\":" << static_cast<unsigned>(desc.Format)
+        << ",\"surface_usage\":" << desc.Usage
+        << ",\"surface_pool\":" << static_cast<unsigned>(desc.Pool)
+        << ",\"surface_multisample_type\":" << static_cast<unsigned>(desc.MultiSampleType)
+        << ",\"surface_multisample_quality\":" << desc.MultiSampleQuality;
+}
+
+HRESULT STDMETHODCALLTYPE hook_set_render_target(
+    IDirect3DDevice9* self,
+    DWORD index,
+    IDirect3DSurface9* surface) {
+    const auto original = original_method_for<SetRenderTargetFn>(
+        self, SLOT_SET_RENDER_TARGET, g_real_set_render_target);
+    const HRESULT hr = original ? original(self, index, surface) : E_FAIL;
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"render_target_index\":" << index
+          << ",\"surface_ptr\":" << CaptureWriter::ptr(surface);
+        append_surface_descriptor_json(f, surface);
+        writer().write_event("set_render_target", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_set_depth_stencil_surface(
+    IDirect3DDevice9* self,
+    IDirect3DSurface9* surface) {
+    const auto original = original_method_for<SetDepthStencilSurfaceFn>(
+        self, SLOT_SET_DEPTH_STENCIL_SURFACE, g_real_set_depth_stencil_surface);
+    const HRESULT hr = original ? original(self, surface) : E_FAIL;
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"surface_ptr\":" << CaptureWriter::ptr(surface);
+        append_surface_descriptor_json(f, surface);
+        writer().write_event("set_depth_stencil_surface", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_set_viewport(
+    IDirect3DDevice9* self,
+    const D3DVIEWPORT9* viewport) {
+    const auto original = original_method_for<SetViewportFn>(
+        self, SLOT_SET_VIEWPORT, g_real_set_viewport);
+    const HRESULT hr = original ? original(self, viewport) : E_FAIL;
+    if (SUCCEEDED(hr) && viewport && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"x\":" << viewport->X
+          << ",\"y\":" << viewport->Y
+          << ",\"width\":" << viewport->Width
+          << ",\"height\":" << viewport->Height
+          << ",\"min_z\":" << CaptureWriter::float_json(viewport->MinZ)
+          << ",\"max_z\":" << CaptureWriter::float_json(viewport->MaxZ);
+        writer().write_event("set_viewport", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_set_render_state(
+    IDirect3DDevice9* self,
+    D3DRENDERSTATETYPE state,
+    DWORD value) {
+    const auto original = original_method_for<SetRenderStateFn>(
+        self, SLOT_SET_RENDER_STATE, g_real_set_render_state);
+    const HRESULT hr = original ? original(self, state, value) : E_FAIL;
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"state\":" << static_cast<unsigned>(state)
+          << ",\"value\":" << value;
+        writer().write_event("set_render_state", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_set_texture_stage_state(
+    IDirect3DDevice9* self,
+    DWORD stage,
+    D3DTEXTURESTAGESTATETYPE type,
+    DWORD value) {
+    const auto original = original_method_for<SetTextureStageStateFn>(
+        self, SLOT_SET_TEXTURE_STAGE_STATE, g_real_set_texture_stage_state);
+    const HRESULT hr = original ? original(self, stage, type, value) : E_FAIL;
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"stage\":" << stage
+          << ",\"state\":" << static_cast<unsigned>(type)
+          << ",\"value\":" << value;
+        writer().write_event("set_texture_stage_state", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_set_sampler_state(
+    IDirect3DDevice9* self,
+    DWORD sampler,
+    D3DSAMPLERSTATETYPE type,
+    DWORD value) {
+    const auto original = original_method_for<SetSamplerStateFn>(
+        self, SLOT_SET_SAMPLER_STATE, g_real_set_sampler_state);
+    const HRESULT hr = original ? original(self, sampler, type, value) : E_FAIL;
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"sampler\":" << sampler
+          << ",\"state\":" << static_cast<unsigned>(type)
+          << ",\"value\":" << value;
+        writer().write_event("set_sampler_state", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_set_scissor_rect(
+    IDirect3DDevice9* self,
+    const RECT* rect) {
+    const auto original = original_method_for<SetScissorRectFn>(
+        self, SLOT_SET_SCISSOR_RECT, g_real_set_scissor_rect);
+    const HRESULT hr = original ? original(self, rect) : E_FAIL;
+    if (SUCCEEDED(hr) && rect && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"left\":" << rect->left
+          << ",\"top\":" << rect->top
+          << ",\"right\":" << rect->right
+          << ",\"bottom\":" << rect->bottom;
+        writer().write_event("set_scissor_rect", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_draw_primitive(
+    IDirect3DDevice9* self,
+    D3DPRIMITIVETYPE primitive_type,
+    UINT start_vertex,
+    UINT primitive_count) {
+    const auto original = original_method_for<DrawPrimitiveFn>(
+        self, SLOT_DRAW_PRIMITIVE, g_real_draw_primitive);
+    const HRESULT hr = original
+        ? original(self, primitive_type, start_vertex, primitive_count)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
+          << ",\"start_vertex\":" << start_vertex
+          << ",\"primitive_count\":" << primitive_count;
+        writer().write_event("draw_primitive", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_draw_primitive_up(
+    IDirect3DDevice9* self,
+    D3DPRIMITIVETYPE primitive_type,
+    UINT primitive_count,
+    const void* vertex_data,
+    UINT vertex_stride) {
+    const auto original = original_method_for<DrawPrimitiveUPFn>(
+        self, SLOT_DRAW_PRIMITIVE_UP, g_real_draw_primitive_up);
+    const HRESULT hr = original
+        ? original(self, primitive_type, primitive_count, vertex_data, vertex_stride)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
+          << ",\"primitive_count\":" << primitive_count
+          << ",\"vertex_data_ptr\":" << CaptureWriter::ptr(vertex_data)
+          << ",\"vertex_stride\":" << vertex_stride;
+        writer().write_event("draw_primitive_up", f.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive_up(
+    IDirect3DDevice9* self,
+    D3DPRIMITIVETYPE primitive_type,
+    UINT min_vertex_index,
+    UINT num_vertices,
+    UINT primitive_count,
+    const void* index_data,
+    D3DFORMAT index_format,
+    const void* vertex_data,
+    UINT vertex_stride) {
+    const auto original = original_method_for<DrawIndexedPrimitiveUPFn>(
+        self, SLOT_DRAW_INDEXED_PRIMITIVE_UP, g_real_draw_indexed_primitive_up);
+    const HRESULT hr = original
+        ? original(
+            self, primitive_type, min_vertex_index, num_vertices, primitive_count,
+            index_data, index_format, vertex_data, vertex_stride)
+        : E_FAIL;
+    if (SUCCEEDED(hr) && capture_frame_active()) {
+        std::ostringstream f;
+        f << "\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
+          << ",\"min_vertex_index\":" << min_vertex_index
+          << ",\"num_vertices\":" << num_vertices
+          << ",\"primitive_count\":" << primitive_count
+          << ",\"index_data_ptr\":" << CaptureWriter::ptr(index_data)
+          << ",\"index_format\":" << static_cast<unsigned>(index_format)
+          << ",\"vertex_data_ptr\":" << CaptureWriter::ptr(vertex_data)
+          << ",\"vertex_stride\":" << vertex_stride;
+        writer().write_event("draw_indexed_primitive_up", f.str());
+    }
+    return hr;
+}
+
 HRESULT STDMETHODCALLTYPE hook_set_texture(
     IDirect3DDevice9* self,
     DWORD stage,
@@ -2093,7 +2406,7 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
     const auto original = original_method_for<SetTextureFn>(
         self, SLOT_SET_TEXTURE, g_real_set_texture);
     const HRESULT hr = original ? original(self, stage, texture) : E_FAIL;
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
         std::ostringstream f;
         f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -2129,7 +2442,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader(
     const auto original = original_method_for<SetVertexShaderFn>(
         self, SLOT_SET_VERTEX_SHADER, g_real_set_vertex_shader);
     const HRESULT hr = original ? original(self, shader) : E_FAIL;
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -2148,7 +2461,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader_constant_f(
     const HRESULT hr = original
         ? original(self, start_register, data, vector4f_count)
         : E_FAIL;
-    if (SUCCEEDED(hr) && data && vector4f_count) {
+    if (SUCCEEDED(hr) && data && vector4f_count && capture_frame_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"start_register\":" << start_register
@@ -2189,7 +2502,7 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader(
     const auto original = original_method_for<SetPixelShaderFn>(
         self, SLOT_SET_PIXEL_SHADER, g_real_set_pixel_shader);
     const HRESULT hr = original ? original(self, shader) : E_FAIL;
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -2208,7 +2521,7 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader_constant_f(
     const HRESULT hr = original
         ? original(self, start_register, data, vector4f_count)
         : E_FAIL;
-    if (SUCCEEDED(hr) && data && vector4f_count) {
+    if (SUCCEEDED(hr) && data && vector4f_count && capture_frame_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"start_register\":" << start_register
@@ -2240,7 +2553,7 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
             self, primitive_type, base_vertex_index, min_vertex_index,
             num_vertices, start_index, primitive_count)
         : E_FAIL;
-    if (SUCCEEDED(hr)) {
+    if (SUCCEEDED(hr) && capture_frame_active()) {
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"primitive_type\":" << static_cast<unsigned>(primitive_type)
@@ -2275,6 +2588,29 @@ void patch_device(IDirect3DDevice9* device) {
 
     if (capture_mode() == CaptureMode::Capture) {
         const VtablePatch capture_patches[] = {
+            {SLOT_SET_RENDER_TARGET, reinterpret_cast<void*>(&hook_set_render_target),
+             reinterpret_cast<void**>(&g_real_set_render_target)},
+            {SLOT_SET_DEPTH_STENCIL_SURFACE,
+             reinterpret_cast<void*>(&hook_set_depth_stencil_surface),
+             reinterpret_cast<void**>(&g_real_set_depth_stencil_surface)},
+            {SLOT_SET_VIEWPORT, reinterpret_cast<void*>(&hook_set_viewport),
+             reinterpret_cast<void**>(&g_real_set_viewport)},
+            {SLOT_SET_RENDER_STATE, reinterpret_cast<void*>(&hook_set_render_state),
+             reinterpret_cast<void**>(&g_real_set_render_state)},
+            {SLOT_SET_TEXTURE_STAGE_STATE,
+             reinterpret_cast<void*>(&hook_set_texture_stage_state),
+             reinterpret_cast<void**>(&g_real_set_texture_stage_state)},
+            {SLOT_SET_SAMPLER_STATE, reinterpret_cast<void*>(&hook_set_sampler_state),
+             reinterpret_cast<void**>(&g_real_set_sampler_state)},
+            {SLOT_SET_SCISSOR_RECT, reinterpret_cast<void*>(&hook_set_scissor_rect),
+             reinterpret_cast<void**>(&g_real_set_scissor_rect)},
+            {SLOT_DRAW_PRIMITIVE, reinterpret_cast<void*>(&hook_draw_primitive),
+             reinterpret_cast<void**>(&g_real_draw_primitive)},
+            {SLOT_DRAW_PRIMITIVE_UP, reinterpret_cast<void*>(&hook_draw_primitive_up),
+             reinterpret_cast<void**>(&g_real_draw_primitive_up)},
+            {SLOT_DRAW_INDEXED_PRIMITIVE_UP,
+             reinterpret_cast<void*>(&hook_draw_indexed_primitive_up),
+             reinterpret_cast<void**>(&g_real_draw_indexed_primitive_up)},
             {SLOT_CREATE_TEXTURE, reinterpret_cast<void*>(&hook_create_texture),
              reinterpret_cast<void**>(&g_real_create_texture)},
             {SLOT_CREATE_CUBE_TEXTURE, reinterpret_cast<void*>(&hook_create_cube_texture),
@@ -2326,7 +2662,10 @@ void patch_device(IDirect3DDevice9* device) {
            << ",\"mode\":" << CaptureWriter::quote(capture_mode_name())
            << ",\"installed\":" << (installed ? "true" : "false")
            << ",\"strategy\":\"inplace\""
-           << ",\"hook_count\":" << patches.size();
+           << ",\"hook_count\":" << patches.size()
+           << ",\"bounded_capture\":" << (bounded_capture_enabled() ? "true" : "false")
+           << ",\"capture_frame_start\":" << capture_frame_start()
+           << ",\"capture_frame_end\":" << capture_frame_end();
     writer().write_event("device_hooks", fields.str());
 }
 

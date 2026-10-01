@@ -7,7 +7,9 @@ Usage:
   bash tools/run_shift_capture_wine.sh --game /path/to/SHIFT.exe \
     --proxy /path/to/d3d9.dll [--output DIR] \
     [--mode passthrough|diagnostic|capture] [--debug-output] \
-    [--screenshots] [--wine wine] [-- GAME_ARGS...]
+    [--frame-start N] [--frame-end N] \
+    [--screenshots] [--buffer-payloads] [--texture-payloads] \
+    [--wine wine] [-- GAME_ARGS...]
 
 The launcher temporarily installs the proxy beside SHIFT.exe. If a local
 d3d9.dll already exists (for example DXVK), it is staged as
@@ -25,6 +27,10 @@ mode="diagnostic"
 wine_command="${WINE_COMMAND:-wine}"
 debug_output=0
 screenshots=0
+frame_start=""
+frame_end=""
+buffer_payloads=0
+texture_payloads=0
 game_args=()
 
 while (($#)); do
@@ -35,7 +41,11 @@ while (($#)); do
     --mode) mode="${2:?missing value for --mode}"; shift 2 ;;
     --wine) wine_command="${2:?missing value for --wine}"; shift 2 ;;
     --debug-output) debug_output=1; shift ;;
+    --frame-start) frame_start="${2:?missing value for --frame-start}"; shift 2 ;;
+    --frame-end) frame_end="${2:?missing value for --frame-end}"; shift 2 ;;
     --screenshots) screenshots=1; shift ;;
+    --buffer-payloads) buffer_payloads=1; shift ;;
+    --texture-payloads) texture_payloads=1; shift ;;
     --) shift; game_args=("$@"); break ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -51,6 +61,17 @@ case "$mode" in
   passthrough|diagnostic|capture) ;;
   *) echo "invalid --mode: $mode" >&2; exit 2 ;;
 esac
+
+for bound in "$frame_start" "$frame_end"; do
+  if [[ -n "$bound" && ! "$bound" =~ ^[0-9]+$ ]]; then
+    echo "frame bounds must be non-negative integers" >&2
+    exit 2
+  fi
+done
+if [[ -n "$frame_start" && -n "$frame_end" ]] && ((frame_end < frame_start)); then
+  echo "--frame-end must be >= --frame-start" >&2
+  exit 2
+fi
 
 command -v "$wine_command" >/dev/null 2>&1 || {
   echo "Wine executable not found: $wine_command" >&2
@@ -139,6 +160,17 @@ export SHIFT_D3D9_CRASH_DIAGNOSTICS=1
 export SHIFT_D3D9_CAPTURE_MODE="$mode"
 unset SHIFT_D3D9_BACKEND || true
 
+if [[ -n "$frame_start" ]]; then
+  export SHIFT_D3D9_CAPTURE_FRAME_START="$frame_start"
+else
+  unset SHIFT_D3D9_CAPTURE_FRAME_START || true
+fi
+if [[ -n "$frame_end" ]]; then
+  export SHIFT_D3D9_CAPTURE_FRAME_END="$frame_end"
+else
+  unset SHIFT_D3D9_CAPTURE_FRAME_END || true
+fi
+
 if ((debug_output)); then
   export SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT=1
 else
@@ -151,6 +183,26 @@ if ((screenshots)); then
   export SHIFT_D3D9_CAPTURE_SCREENSHOT=1
   export SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY=1
   export SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR="$(winepath -w "$frame_dir")"
+fi
+
+if ((buffer_payloads)); then
+  buffer_dir="$output/buffers"
+  mkdir -p "$buffer_dir"
+  export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS=1
+  export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$(winepath -w "$buffer_dir")"
+else
+  unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS || true
+  unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR || true
+fi
+
+if ((texture_payloads)); then
+  texture_payload_dir="$output/texture-payloads"
+  mkdir -p "$texture_payload_dir"
+  export SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS=1
+  export SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR="$(winepath -w "$texture_payload_dir")"
+else
+  unset SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS || true
+  unset SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR || true
 fi
 
 old_overrides="${WINEDLLOVERRIDES:-}"
@@ -179,6 +231,11 @@ echo "Launching: $game"
 echo "Capture : $capture_path"
 echo "Crash   : $crash_path"
 echo "Mode    : $mode"
+if [[ -n "$frame_start" || -n "$frame_end" ]]; then
+  echo "Frames  : ${frame_start:-0}..${frame_end:-end}"
+fi
+if ((buffer_payloads)); then echo "Buffers : $buffer_dir"; fi
+if ((texture_payloads)); then echo "Tex raw : $texture_payload_dir"; fi
 if ((staged_backend)); then
   echo "Backend : preserved local d3d9.dll via $sidecar_dll"
 else
