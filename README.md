@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 644. Current development: Phase 645.**
+**Merged baseline: Phase 645. Current development: Phase 646.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -475,3 +475,15 @@ bootstraps that source directory explicitly, so direct
 `python tools/run_sdf_solver_probe.py ...` invocation works from a clean
 environment. CI exercises the real launcher under `python -S` to keep this
 standalone import path from regressing.
+
+
+## Phase 646 lightweight relation timeline capture
+
+A new `--relation-timeline-only` retail probe mode limits GDB to relation-state
+mutation, frame-entry and post-solve ordering breakpoints. Its post-solve hook
+records metadata only and does not read the solved RHS vector. Combined with
+`--capture-frames N`, this provides a bounded auto-detaching evidence path with
+substantially less debugger work than full solver/provider capture.
+
+The same Phase 637–645 correlation, session, packaging, verification and replay
+gates still apply; missing authentic mutation evidence remains blocked.
