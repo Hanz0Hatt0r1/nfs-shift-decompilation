@@ -29,9 +29,7 @@
 namespace {
 
 constexpr std::size_t IDIRECT3DDEVICE9_VTABLE_COUNT = 119;
-constexpr std::size_t IDIRECT3DDEVICE9EX_VTABLE_COUNT = 134;
 constexpr std::size_t IDIRECT3D9_VTABLE_COUNT = 17;
-constexpr std::size_t IDIRECT3D9EX_VTABLE_COUNT = 22;
 constexpr std::size_t TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t CUBE_TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t BUFFER_VTABLE_COUNT = 14;
@@ -185,13 +183,31 @@ DrawIndexedPrimitiveFn g_real_draw_indexed_primitive = nullptr;
 
 std::mutex g_hook_mutex;
 
-struct HookVtableContext {
-    void** original_vtable = nullptr;
-    void** clone_vtable = nullptr;
-    std::size_t count = 0;
+struct PatchedVtableSlot {
+    void* original = nullptr;
+    void* hook = nullptr;
 };
 
-std::unordered_map<void*, HookVtableContext> g_hook_vtable_contexts;
+std::unordered_map<
+    void**,
+    std::unordered_map<std::size_t, PatchedVtableSlot>>
+    g_vtable_slot_patches;
+
+template <typename T>
+T original_method_for(void* object, std::size_t slot, T fallback) {
+    if (!object) return fallback;
+    void** vtable = *reinterpret_cast<void***>(object);
+    if (!vtable) return fallback;
+
+    std::lock_guard<std::mutex> lock(g_hook_mutex);
+    const auto table_it = g_vtable_slot_patches.find(vtable);
+    if (table_it == g_vtable_slot_patches.end()) return fallback;
+    const auto slot_it = table_it->second.find(slot);
+    if (slot_it == table_it->second.end() || !slot_it->second.original) {
+        return fallback;
+    }
+    return reinterpret_cast<T>(slot_it->second.original);
+}
 
 std::atomic<unsigned long long> g_event_index{0};
 std::atomic<unsigned long long> g_frame{0};
@@ -987,8 +1003,10 @@ HRESULT STDMETHODCALLTYPE hook_vertex_buffer_lock(
     UINT size,
     void** bits,
     DWORD flags) {
-    const HRESULT hr = g_real_vertex_buffer_lock
-        ? g_real_vertex_buffer_lock(self, offset, size, bits, flags)
+    const auto original = original_method_for<VertexBufferLockFn>(
+        self, SLOT_BUFFER_LOCK, g_real_vertex_buffer_lock);
+    const HRESULT hr = original
+        ? original(self, offset, size, bits, flags)
         : E_FAIL;
     if (SUCCEEDED(hr) && bits && *bits) {
         D3DVERTEXBUFFER_DESC desc{};
@@ -1037,9 +1055,9 @@ HRESULT STDMETHODCALLTYPE hook_vertex_buffer_unlock(IDirect3DVertexBuffer9* self
         }
     }
 
-    const HRESULT hr = g_real_vertex_buffer_unlock
-        ? g_real_vertex_buffer_unlock(self)
-        : E_FAIL;
+    const auto original = original_method_for<VertexBufferUnlockFn>(
+        self, SLOT_BUFFER_UNLOCK, g_real_vertex_buffer_unlock);
+    const HRESULT hr = original ? original(self) : E_FAIL;
     if (captured && SUCCEEDED(hr) && !payload.empty()) {
         std::ofstream output(path, std::ios::binary);
         if (output.is_open()) {
@@ -1060,8 +1078,10 @@ HRESULT STDMETHODCALLTYPE hook_index_buffer_lock(
     UINT size,
     void** bits,
     DWORD flags) {
-    const HRESULT hr = g_real_index_buffer_lock
-        ? g_real_index_buffer_lock(self, offset, size, bits, flags)
+    const auto original = original_method_for<IndexBufferLockFn>(
+        self, SLOT_BUFFER_LOCK, g_real_index_buffer_lock);
+    const HRESULT hr = original
+        ? original(self, offset, size, bits, flags)
         : E_FAIL;
     if (SUCCEEDED(hr) && bits && *bits) {
         D3DINDEXBUFFER_DESC desc{};
@@ -1110,9 +1130,9 @@ HRESULT STDMETHODCALLTYPE hook_index_buffer_unlock(IDirect3DIndexBuffer9* self) 
         }
     }
 
-    const HRESULT hr = g_real_index_buffer_unlock
-        ? g_real_index_buffer_unlock(self)
-        : E_FAIL;
+    const auto original = original_method_for<IndexBufferUnlockFn>(
+        self, SLOT_BUFFER_UNLOCK, g_real_index_buffer_unlock);
+    const HRESULT hr = original ? original(self) : E_FAIL;
     if (captured && SUCCEEDED(hr) && !payload.empty()) {
         std::ofstream output(path, std::ios::binary);
         if (output.is_open()) {
@@ -1285,8 +1305,10 @@ HRESULT STDMETHODCALLTYPE hook_cube_texture_lock_rect(
     D3DLOCKED_RECT* locked,
     const RECT* rect,
     DWORD flags) {
-    const HRESULT hr = g_real_cube_texture_lock_rect
-        ? g_real_cube_texture_lock_rect(self, face, level, locked, rect, flags)
+    const auto original = original_method_for<CubeTextureLockRectFn>(
+        self, SLOT_TEXTURE_LOCK_RECT, g_real_cube_texture_lock_rect);
+    const HRESULT hr = original
+        ? original(self, face, level, locked, rect, flags)
         : E_FAIL;
     if (SUCCEEDED(hr) && locked && texture_payload_capture_enabled() &&
         !rect && !(flags & D3DLOCK_READONLY)) {
@@ -1337,9 +1359,9 @@ HRESULT STDMETHODCALLTYPE hook_cube_texture_unlock_rect(
         }
     }
 
-    const HRESULT hr = g_real_cube_texture_unlock_rect
-        ? g_real_cube_texture_unlock_rect(self, face, level)
-        : E_FAIL;
+    const auto original = original_method_for<CubeTextureUnlockRectFn>(
+        self, SLOT_TEXTURE_UNLOCK_RECT, g_real_cube_texture_unlock_rect);
+    const HRESULT hr = original ? original(self, face, level) : E_FAIL;
 
     if (captured && SUCCEEDED(hr) && !payload.empty()) {
         std::ofstream output(path, std::ios::binary);
@@ -1377,8 +1399,10 @@ HRESULT STDMETHODCALLTYPE hook_texture_lock_rect(
     D3DLOCKED_RECT* locked,
     const RECT* rect,
     DWORD flags) {
-    const HRESULT hr = g_real_texture_lock_rect
-        ? g_real_texture_lock_rect(self, level, locked, rect, flags)
+    const auto original = original_method_for<TextureLockRectFn>(
+        self, SLOT_TEXTURE_LOCK_RECT, g_real_texture_lock_rect);
+    const HRESULT hr = original
+        ? original(self, level, locked, rect, flags)
         : E_FAIL;
     if (SUCCEEDED(hr) && locked && texture_payload_capture_enabled() &&
         !rect && !(flags & D3DLOCK_READONLY)) {
@@ -1431,9 +1455,9 @@ HRESULT STDMETHODCALLTYPE hook_texture_unlock_rect(
         }
     }
 
-    const HRESULT hr = g_real_texture_unlock_rect
-        ? g_real_texture_unlock_rect(self, level)
-        : E_FAIL;
+    const auto original = original_method_for<TextureUnlockRectFn>(
+        self, SLOT_TEXTURE_UNLOCK_RECT, g_real_texture_unlock_rect);
+    const HRESULT hr = original ? original(self, level) : E_FAIL;
 
     if (captured && SUCCEEDED(hr) && !payload.empty()) {
         std::ofstream output(path, std::ios::binary);
@@ -1471,71 +1495,7 @@ struct VtablePatch {
     void** original_out = nullptr;
 };
 
-bool executable_code_pointer(const void* address) {
-    if (!address) return false;
-    MEMORY_BASIC_INFORMATION mbi{};
-    if (!VirtualQuery(address, &mbi, sizeof(mbi))) return false;
-    if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
-        return false;
-    }
-    const DWORD protection = mbi.Protect & 0xff;
-    return protection == PAGE_EXECUTE ||
-           protection == PAGE_EXECUTE_READ ||
-           protection == PAGE_EXECUTE_READWRITE ||
-           protection == PAGE_EXECUTE_WRITECOPY;
-}
-
-bool readable_pointer_range(const void* address, std::size_t bytes) {
-    if (!address || !bytes) return false;
-    std::uintptr_t cursor = reinterpret_cast<std::uintptr_t>(address);
-    const std::uintptr_t end = cursor + bytes;
-    if (end < cursor) return false;
-    while (cursor < end) {
-        MEMORY_BASIC_INFORMATION mbi{};
-        if (!VirtualQuery(reinterpret_cast<const void*>(cursor), &mbi, sizeof(mbi))) {
-            return false;
-        }
-        if (mbi.State != MEM_COMMIT || (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD))) {
-            return false;
-        }
-        const std::uintptr_t region_end =
-            reinterpret_cast<std::uintptr_t>(mbi.BaseAddress) +
-            static_cast<std::uintptr_t>(mbi.RegionSize);
-        if (region_end <= cursor) return false;
-        cursor = std::min(end, region_end);
-    }
-    return true;
-}
-
-bool extended_vtable_looks_valid(
-    void* object,
-    std::size_t base_count,
-    std::size_t extended_count) {
-    if (!object || extended_count <= base_count) return false;
-    void** vtable = *reinterpret_cast<void***>(object);
-    if (!vtable ||
-        !readable_pointer_range(vtable, extended_count * sizeof(void*))) {
-        return false;
-    }
-    for (std::size_t slot = base_count; slot < extended_count; ++slot) {
-        if (!executable_code_pointer(vtable[slot])) return false;
-    }
-    return true;
-}
-
-template <typename T>
-T original_method_for(void* object, std::size_t slot, T fallback) {
-    std::lock_guard<std::mutex> lock(g_hook_mutex);
-    const auto it = g_hook_vtable_contexts.find(object);
-    if (it != g_hook_vtable_contexts.end() &&
-        it->second.original_vtable &&
-        slot < it->second.count) {
-        return reinterpret_cast<T>(it->second.original_vtable[slot]);
-    }
-    return fallback;
-}
-
-bool patch_object_vtable_batch_locked(
+bool patch_object_vtable_batch(
     void* object,
     std::size_t count,
     const std::vector<VtablePatch>& patches,
@@ -1543,15 +1503,14 @@ bool patch_object_vtable_batch_locked(
 
     if (!object || patches.empty()) return false;
     auto*** object_vtable = reinterpret_cast<void***>(object);
-    void** current_vtable = *object_vtable;
-    if (!current_vtable) return false;
-
-    void** root_original_vtable = current_vtable;
-    const auto previous = g_hook_vtable_contexts.find(object);
-    if (previous != g_hook_vtable_contexts.end() &&
-        previous->second.clone_vtable == current_vtable &&
-        previous->second.original_vtable) {
-        root_original_vtable = previous->second.original_vtable;
+    void** vtable = *object_vtable;
+    if (!vtable) {
+        std::ostringstream fields;
+        fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+               << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+               << ",\"reason\":\"null-vtable\"";
+        writer().write_event("vtable_patch_failed", fields.str());
+        return false;
     }
 
     for (const auto& patch : patches) {
@@ -1559,91 +1518,112 @@ bool patch_object_vtable_batch_locked(
             std::ostringstream fields;
             fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
                    << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+                   << ",\"vtable_ptr\":" << CaptureWriter::ptr(vtable)
+                   << ",\"slot\":" << patch.slot
                    << ",\"reason\":\"invalid-slot-or-hook\"";
             writer().write_event("vtable_patch_failed", fields.str());
             return false;
         }
     }
 
-    const std::size_t bytes = count * sizeof(void*);
-    if (!readable_pointer_range(current_vtable, bytes)) {
-        std::ostringstream fields;
-        fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
-               << ",\"object_ptr\":" << CaptureWriter::ptr(object)
-               << ",\"vtable_ptr\":" << CaptureWriter::ptr(current_vtable)
-               << ",\"vtable_count\":" << count
-               << ",\"reason\":\"vtable-range-unreadable\"";
-        writer().write_event("vtable_patch_failed", fields.str());
-        return false;
-    }
+    std::lock_guard<std::mutex> lock(g_hook_mutex);
+    std::size_t newly_patched = 0;
 
-    auto* clone = static_cast<void**>(HeapAlloc(GetProcessHeap(), 0, bytes));
-    if (!clone) {
-        writer().write_event(
-            "vtable_patch_failed",
-            "\"reason\":\"heap-allocation-failed\"");
-        return false;
-    }
-    std::memcpy(clone, current_vtable, bytes);
-
-    bool changed = false;
     for (const auto& patch : patches) {
-        if (current_vtable[patch.slot] == patch.hook) continue;
-        if (patch.original_out) {
-            *patch.original_out = root_original_vtable[patch.slot];
+        auto& table_patches = g_vtable_slot_patches[vtable];
+        const auto known = table_patches.find(patch.slot);
+        void* current = vtable[patch.slot];
+
+        if (known != table_patches.end()) {
+            if (current != known->second.hook || known->second.hook != patch.hook) {
+                std::ostringstream fields;
+                fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+                       << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+                       << ",\"vtable_ptr\":" << CaptureWriter::ptr(vtable)
+                       << ",\"slot\":" << patch.slot
+                       << ",\"current_ptr\":" << CaptureWriter::ptr(current)
+                       << ",\"expected_hook_ptr\":" << CaptureWriter::ptr(known->second.hook)
+                       << ",\"requested_hook_ptr\":" << CaptureWriter::ptr(patch.hook)
+                       << ",\"reason\":\"patched-slot-modified\"";
+                writer().write_event("vtable_patch_failed", fields.str());
+                return false;
+            }
+            if (patch.original_out) *patch.original_out = known->second.original;
+            continue;
         }
-        clone[patch.slot] = patch.hook;
-        changed = true;
-    }
-    if (!changed) {
-        HeapFree(GetProcessHeap(), 0, clone);
-        return true;
-    }
 
-    DWORD old_protect = 0;
-    if (!VirtualProtect(object_vtable, sizeof(void*), PAGE_READWRITE, &old_protect)) {
-        const DWORD error = GetLastError();
-        HeapFree(GetProcessHeap(), 0, clone);
-        std::ostringstream fields;
-        fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
-               << ",\"object_ptr\":" << CaptureWriter::ptr(object)
-               << ",\"win32_error\":" << error
-               << ",\"reason\":\"virtual-protect-failed\"";
-        writer().write_event("vtable_patch_failed", fields.str());
-        return false;
+        if (current == patch.hook) {
+            std::ostringstream fields;
+            fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+                   << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+                   << ",\"vtable_ptr\":" << CaptureWriter::ptr(vtable)
+                   << ",\"slot\":" << patch.slot
+                   << ",\"reason\":\"hook-present-without-original\"";
+            writer().write_event("vtable_patch_failed", fields.str());
+            return false;
+        }
+
+        DWORD old_protect = 0;
+        if (!VirtualProtect(
+                &vtable[patch.slot],
+                sizeof(void*),
+                PAGE_EXECUTE_READWRITE,
+                &old_protect)) {
+            std::ostringstream fields;
+            fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+                   << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+                   << ",\"vtable_ptr\":" << CaptureWriter::ptr(vtable)
+                   << ",\"slot\":" << patch.slot
+                   << ",\"win32_error\":" << GetLastError()
+                   << ",\"reason\":\"virtual-protect-failed\"";
+            writer().write_event("vtable_patch_failed", fields.str());
+            return false;
+        }
+
+        vtable[patch.slot] = patch.hook;
+
+        DWORD ignored = 0;
+        VirtualProtect(
+            &vtable[patch.slot],
+            sizeof(void*),
+            old_protect,
+            &ignored);
+        FlushInstructionCache(
+            GetCurrentProcess(),
+            &vtable[patch.slot],
+            sizeof(void*));
+
+        table_patches.emplace(
+            patch.slot,
+            PatchedVtableSlot{current, patch.hook});
+        if (patch.original_out) *patch.original_out = current;
+        ++newly_patched;
+
+        if (env_enabled("SHIFT_D3D9_CAPTURE_VTABLE_LOG")) {
+            std::ostringstream fields;
+            fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+                   << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+                   << ",\"vtable_ptr\":" << CaptureWriter::ptr(vtable)
+                   << ",\"slot\":" << patch.slot
+                   << ",\"original_ptr\":" << CaptureWriter::ptr(current)
+                   << ",\"hook_ptr\":" << CaptureWriter::ptr(patch.hook)
+                   << ",\"strategy\":\"inplace\"";
+            writer().write_event("vtable_slot_patched", fields.str());
+        }
     }
-
-    *object_vtable = clone;
-    DWORD ignored = 0;
-    VirtualProtect(object_vtable, sizeof(void*), old_protect, &ignored);
-
-    g_hook_vtable_contexts[object] = {
-        root_original_vtable,
-        clone,
-        count,
-    };
 
     if (env_enabled("SHIFT_D3D9_CAPTURE_VTABLE_LOG")) {
         std::ostringstream fields;
         fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
                << ",\"object_ptr\":" << CaptureWriter::ptr(object)
-               << ",\"original_vtable\":" << CaptureWriter::ptr(root_original_vtable)
-               << ",\"previous_vtable\":" << CaptureWriter::ptr(current_vtable)
-               << ",\"clone_vtable\":" << CaptureWriter::ptr(clone)
-               << ",\"vtable_count\":" << count
-               << ",\"patch_count\":" << patches.size();
+               << ",\"vtable_ptr\":" << CaptureWriter::ptr(vtable)
+               << ",\"interface_slot_count\":" << count
+               << ",\"patch_count\":" << patches.size()
+               << ",\"newly_patched_count\":" << newly_patched
+               << ",\"strategy\":\"inplace\"";
         writer().write_event("vtable_patch_installed", fields.str());
     }
     return true;
-}
-
-bool patch_object_vtable_batch(
-    void* object,
-    std::size_t count,
-    const std::vector<VtablePatch>& patches,
-    const char* label) {
-    std::lock_guard<std::mutex> lock(g_hook_mutex);
-    return patch_object_vtable_batch_locked(object, count, patches, label);
 }
 
 void patch_object_vtable(
@@ -1866,8 +1846,10 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_buffer(
     D3DPOOL pool,
     IDirect3DVertexBuffer9** out_buffer,
     HANDLE* shared_handle) {
-    const HRESULT hr = g_real_create_vertex_buffer
-        ? g_real_create_vertex_buffer(self, length, usage, fvf, pool, out_buffer, shared_handle)
+    const auto original = original_method_for<CreateVertexBufferFn>(
+        self, SLOT_CREATE_VERTEX_BUFFER, g_real_create_vertex_buffer);
+    const HRESULT hr = original
+        ? original(self, length, usage, fvf, pool, out_buffer, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_buffer && *out_buffer) {
         std::ostringstream f;
@@ -1891,8 +1873,10 @@ HRESULT STDMETHODCALLTYPE hook_create_index_buffer(
     D3DPOOL pool,
     IDirect3DIndexBuffer9** out_buffer,
     HANDLE* shared_handle) {
-    const HRESULT hr = g_real_create_index_buffer
-        ? g_real_create_index_buffer(self, length, usage, format, pool, out_buffer, shared_handle)
+    const auto original = original_method_for<CreateIndexBufferFn>(
+        self, SLOT_CREATE_INDEX_BUFFER, g_real_create_index_buffer);
+    const HRESULT hr = original
+        ? original(self, length, usage, format, pool, out_buffer, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_buffer && *out_buffer) {
         std::ostringstream f;
@@ -1918,8 +1902,10 @@ HRESULT STDMETHODCALLTYPE hook_create_texture(
     D3DPOOL pool,
     IDirect3DTexture9** out_texture,
     HANDLE* shared_handle) {
-    const HRESULT hr = g_real_create_texture
-        ? g_real_create_texture(self, width, height, levels, usage, format, pool, out_texture, shared_handle)
+    const auto original = original_method_for<CreateTextureFn>(
+        self, SLOT_CREATE_TEXTURE, g_real_create_texture);
+    const HRESULT hr = original
+        ? original(self, width, height, levels, usage, format, pool, out_texture, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_texture && *out_texture) {
         std::ostringstream f;
@@ -1947,8 +1933,10 @@ HRESULT STDMETHODCALLTYPE hook_create_cube_texture(
     D3DPOOL pool,
     IDirect3DCubeTexture9** out_texture,
     HANDLE* shared_handle) {
-    const HRESULT hr = g_real_create_cube_texture
-        ? g_real_create_cube_texture(self, edge_length, levels, usage, format, pool, out_texture, shared_handle)
+    const auto original = original_method_for<CreateCubeTextureFn>(
+        self, SLOT_CREATE_CUBE_TEXTURE, g_real_create_cube_texture);
+    const HRESULT hr = original
+        ? original(self, edge_length, levels, usage, format, pool, out_texture, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_texture && *out_texture) {
         std::ostringstream f;
@@ -1970,9 +1958,9 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_declaration(
     IDirect3DDevice9* self,
     const D3DVERTEXELEMENT9* declaration,
     IDirect3DVertexDeclaration9** out_decl) {
-    const HRESULT hr = g_real_create_vertex_declaration
-        ? g_real_create_vertex_declaration(self, declaration, out_decl)
-        : E_FAIL;
+    const auto original = original_method_for<CreateVertexDeclarationFn>(
+        self, SLOT_CREATE_VERTEX_DECLARATION, g_real_create_vertex_declaration);
+    const HRESULT hr = original ? original(self, declaration, out_decl) : E_FAIL;
     if (SUCCEEDED(hr) && out_decl && *out_decl) {
         const auto bytes = copy_declaration(declaration);
         std::ostringstream f;
@@ -1987,9 +1975,9 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_declaration(
 HRESULT STDMETHODCALLTYPE hook_set_vertex_declaration(
     IDirect3DDevice9* self,
     IDirect3DVertexDeclaration9* decl) {
-    const HRESULT hr = g_real_set_vertex_declaration
-        ? g_real_set_vertex_declaration(self, decl)
-        : E_FAIL;
+    const auto original = original_method_for<SetVertexDeclarationFn>(
+        self, SLOT_SET_VERTEX_DECLARATION, g_real_set_vertex_declaration);
+    const HRESULT hr = original ? original(self, decl) : E_FAIL;
     if (SUCCEEDED(hr)) {
         std::ostringstream f;
         f << "\"declaration_ptr\":" << CaptureWriter::ptr(decl)
@@ -2005,9 +1993,9 @@ HRESULT STDMETHODCALLTYPE hook_set_stream_source(
     IDirect3DVertexBuffer9* buffer,
     UINT offset,
     UINT stride) {
-    const HRESULT hr = g_real_set_stream_source
-        ? g_real_set_stream_source(self, stream, buffer, offset, stride)
-        : E_FAIL;
+    const auto original = original_method_for<SetStreamSourceFn>(
+        self, SLOT_SET_STREAM_SOURCE, g_real_set_stream_source);
+    const HRESULT hr = original ? original(self, stream, buffer, offset, stride) : E_FAIL;
     if (SUCCEEDED(hr)) {
         std::ostringstream f;
         f << "\"vertex_buffer_ptr\":" << CaptureWriter::ptr(buffer)
@@ -2023,9 +2011,9 @@ HRESULT STDMETHODCALLTYPE hook_set_stream_source(
 HRESULT STDMETHODCALLTYPE hook_set_indices(
     IDirect3DDevice9* self,
     IDirect3DIndexBuffer9* buffer) {
-    const HRESULT hr = g_real_set_indices
-        ? g_real_set_indices(self, buffer)
-        : E_FAIL;
+    const auto original = original_method_for<SetIndicesFn>(
+        self, SLOT_SET_INDICES, g_real_set_indices);
+    const HRESULT hr = original ? original(self, buffer) : E_FAIL;
     if (SUCCEEDED(hr)) {
         std::ostringstream f;
         f << "\"index_buffer_ptr\":" << CaptureWriter::ptr(buffer)
@@ -2102,9 +2090,9 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
     IDirect3DDevice9* self,
     DWORD stage,
     IDirect3DBaseTexture9* texture) {
-    const HRESULT hr = g_real_set_texture
-        ? g_real_set_texture(self, stage, texture)
-        : E_FAIL;
+    const auto original = original_method_for<SetTextureFn>(
+        self, SLOT_SET_TEXTURE, g_real_set_texture);
+    const HRESULT hr = original ? original(self, stage, texture) : E_FAIL;
     if (SUCCEEDED(hr)) {
         std::ostringstream f;
         f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
@@ -2121,9 +2109,9 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_shader(
     IDirect3DDevice9* self,
     const DWORD* function,
     IDirect3DVertexShader9** out_shader) {
-    const HRESULT hr = g_real_create_vertex_shader
-        ? g_real_create_vertex_shader(self, function, out_shader)
-        : E_FAIL;
+    const auto original = original_method_for<CreateVertexShaderFn>(
+        self, SLOT_CREATE_VERTEX_SHADER, g_real_create_vertex_shader);
+    const HRESULT hr = original ? original(self, function, out_shader) : E_FAIL;
     if (SUCCEEDED(hr) && out_shader && *out_shader) {
         const auto bytes = copy_shader(function);
         std::ostringstream f;
@@ -2138,9 +2126,9 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_shader(
 HRESULT STDMETHODCALLTYPE hook_set_vertex_shader(
     IDirect3DDevice9* self,
     IDirect3DVertexShader9* shader) {
-    const HRESULT hr = g_real_set_vertex_shader
-        ? g_real_set_vertex_shader(self, shader)
-        : E_FAIL;
+    const auto original = original_method_for<SetVertexShaderFn>(
+        self, SLOT_SET_VERTEX_SHADER, g_real_set_vertex_shader);
+    const HRESULT hr = original ? original(self, shader) : E_FAIL;
     if (SUCCEEDED(hr)) {
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
@@ -2155,8 +2143,10 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader_constant_f(
     UINT start_register,
     const float* data,
     UINT vector4f_count) {
-    const HRESULT hr = g_real_set_vertex_shader_constant_f
-        ? g_real_set_vertex_shader_constant_f(self, start_register, data, vector4f_count)
+    const auto original = original_method_for<SetVertexShaderConstantFFn>(
+        self, SLOT_SET_VERTEX_SHADER_CONSTANT_F, g_real_set_vertex_shader_constant_f);
+    const HRESULT hr = original
+        ? original(self, start_register, data, vector4f_count)
         : E_FAIL;
     if (SUCCEEDED(hr) && data && vector4f_count) {
         std::ostringstream f;
@@ -2179,9 +2169,9 @@ HRESULT STDMETHODCALLTYPE hook_create_pixel_shader(
     IDirect3DDevice9* self,
     const DWORD* function,
     IDirect3DPixelShader9** out_shader) {
-    const HRESULT hr = g_real_create_pixel_shader
-        ? g_real_create_pixel_shader(self, function, out_shader)
-        : E_FAIL;
+    const auto original = original_method_for<CreatePixelShaderFn>(
+        self, SLOT_CREATE_PIXEL_SHADER, g_real_create_pixel_shader);
+    const HRESULT hr = original ? original(self, function, out_shader) : E_FAIL;
     if (SUCCEEDED(hr) && out_shader && *out_shader) {
         const auto bytes = copy_shader(function);
         std::ostringstream f;
@@ -2196,9 +2186,9 @@ HRESULT STDMETHODCALLTYPE hook_create_pixel_shader(
 HRESULT STDMETHODCALLTYPE hook_set_pixel_shader(
     IDirect3DDevice9* self,
     IDirect3DPixelShader9* shader) {
-    const HRESULT hr = g_real_set_pixel_shader
-        ? g_real_set_pixel_shader(self, shader)
-        : E_FAIL;
+    const auto original = original_method_for<SetPixelShaderFn>(
+        self, SLOT_SET_PIXEL_SHADER, g_real_set_pixel_shader);
+    const HRESULT hr = original ? original(self, shader) : E_FAIL;
     if (SUCCEEDED(hr)) {
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
@@ -2213,8 +2203,10 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader_constant_f(
     UINT start_register,
     const float* data,
     UINT vector4f_count) {
-    const HRESULT hr = g_real_set_pixel_shader_constant_f
-        ? g_real_set_pixel_shader_constant_f(self, start_register, data, vector4f_count)
+    const auto original = original_method_for<SetPixelShaderConstantFFn>(
+        self, SLOT_SET_PIXEL_SHADER_CONSTANT_F, g_real_set_pixel_shader_constant_f);
+    const HRESULT hr = original
+        ? original(self, start_register, data, vector4f_count)
         : E_FAIL;
     if (SUCCEEDED(hr) && data && vector4f_count) {
         std::ostringstream f;
@@ -2241,8 +2233,10 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
     UINT num_vertices,
     UINT start_index,
     UINT primitive_count) {
-    const HRESULT hr = g_real_draw_indexed_primitive
-        ? g_real_draw_indexed_primitive(
+    const auto original = original_method_for<DrawIndexedPrimitiveFn>(
+        self, SLOT_DRAW_INDEXED_PRIMITIVE, g_real_draw_indexed_primitive);
+    const HRESULT hr = original
+        ? original(
             self, primitive_type, base_vertex_index, min_vertex_index,
             num_vertices, start_index, primitive_count)
         : E_FAIL;
@@ -2323,21 +2317,15 @@ void patch_device(IDirect3DDevice9* device) {
             std::end(capture_patches));
     }
 
-    const bool ex_vtable = extended_vtable_looks_valid(
-        device,
-        IDIRECT3DDEVICE9_VTABLE_COUNT,
-        IDIRECT3DDEVICE9EX_VTABLE_COUNT);
-    const std::size_t vtable_count = ex_vtable
-        ? IDIRECT3DDEVICE9EX_VTABLE_COUNT
-        : IDIRECT3DDEVICE9_VTABLE_COUNT;
+    void** vtable = *reinterpret_cast<void***>(device);
     const bool installed = patch_object_vtable_batch(
-        device, vtable_count, patches, "IDirect3DDevice9");
+        device, IDIRECT3DDEVICE9_VTABLE_COUNT, patches, "IDirect3DDevice9");
     std::ostringstream fields;
     fields << "\"device_ptr\":" << CaptureWriter::ptr(device)
+           << ",\"vtable_ptr\":" << CaptureWriter::ptr(vtable)
            << ",\"mode\":" << CaptureWriter::quote(capture_mode_name())
            << ",\"installed\":" << (installed ? "true" : "false")
-           << ",\"ex_vtable\":" << (ex_vtable ? "true" : "false")
-           << ",\"vtable_count\":" << vtable_count
+           << ",\"strategy\":\"inplace\""
            << ",\"hook_count\":" << patches.size();
     writer().write_event("device_hooks", fields.str());
 }
@@ -2351,24 +2339,19 @@ void patch_direct3d9(IDirect3D9* d3d) {
         return;
     }
 
-    const bool ex_vtable = extended_vtable_looks_valid(
-        d3d, IDIRECT3D9_VTABLE_COUNT, IDIRECT3D9EX_VTABLE_COUNT);
-    const std::size_t vtable_count = ex_vtable
-        ? IDIRECT3D9EX_VTABLE_COUNT
-        : IDIRECT3D9_VTABLE_COUNT;
     const bool installed = patch_object_vtable_batch(
         d3d,
-        vtable_count,
+        IDIRECT3D9_VTABLE_COUNT,
         {{16, reinterpret_cast<void*>(&hook_create_device),
           reinterpret_cast<void**>(&g_real_create_device)}},
         "IDirect3D9");
 
     std::ostringstream fields;
     fields << "\"d3d9_ptr\":" << CaptureWriter::ptr(d3d)
+           << ",\"vtable_ptr\":" << CaptureWriter::ptr(vtable)
            << ",\"mode\":" << CaptureWriter::quote(capture_mode_name())
            << ",\"installed\":" << (installed ? "true" : "false")
-           << ",\"ex_vtable\":" << (ex_vtable ? "true" : "false")
-           << ",\"vtable_count\":" << vtable_count;
+           << ",\"strategy\":\"inplace\"";
     writer().write_event("d3d9_hooks", fields.str());
 }
 
