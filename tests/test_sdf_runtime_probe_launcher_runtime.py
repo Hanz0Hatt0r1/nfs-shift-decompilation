@@ -306,7 +306,7 @@ def test_phase642_build_gdb_command_file_rejects_nonpositive_budget(
 
 
 def test_phase642_bounded_capture_is_full_mode_only(tmp_path):
-    with pytest.raises(ValueError, match="full probe mode"):
+    with pytest.raises(ValueError, match="provider-only"):
         runtime.build_gdb_command_file(
             probe_script=tmp_path / "probe.py",
             output_dir=tmp_path / "capture",
