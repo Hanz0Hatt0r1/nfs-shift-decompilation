@@ -31,7 +31,12 @@ constexpr std::size_t TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t CUBE_TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t BUFFER_VTABLE_COUNT = 14;
 
+constexpr std::size_t SLOT_TEST_COOPERATIVE_LEVEL = 3;
+constexpr std::size_t SLOT_RESET = 16;
 constexpr std::size_t SLOT_PRESENT = 17;
+constexpr std::size_t SLOT_BEGIN_SCENE = 41;
+constexpr std::size_t SLOT_END_SCENE = 42;
+constexpr std::size_t SLOT_CLEAR = 43;
 constexpr std::size_t SLOT_CREATE_TEXTURE = 23;
 constexpr std::size_t SLOT_CREATE_CUBE_TEXTURE = 25;
 constexpr std::size_t SLOT_CREATE_VERTEX_BUFFER = 26;
@@ -54,10 +59,27 @@ constexpr std::size_t SLOT_SET_PIXEL_SHADER = 107;
 constexpr std::size_t SLOT_SET_PIXEL_SHADER_CONSTANT_F = 109;
 
 using Direct3DCreate9Fn = IDirect3D9* (WINAPI*)(UINT);
+using Direct3DCreate9ExFn = HRESULT (WINAPI*)(UINT, IDirect3D9Ex**);
+using D3DPERFBeginEventFn = int (WINAPI*)(D3DCOLOR, LPCWSTR);
+using D3DPERFEndEventFn = int (WINAPI*)();
+using D3DPERFGetStatusFn = DWORD (WINAPI*)();
+using D3DPERFQueryRepeatFrameFn = BOOL (WINAPI*)();
+using D3DPERFSetMarkerFn = void (WINAPI*)(D3DCOLOR, LPCWSTR);
+using D3DPERFSetOptionsFn = void (WINAPI*)(DWORD);
+using D3DPERFSetRegionFn = void (WINAPI*)(D3DCOLOR, LPCWSTR);
+using DebugSetLevelFn = void (WINAPI*)(DWORD);
+using DebugSetMuteFn = void (WINAPI*)();
 using CreateDeviceFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3D9*, UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
+using TestCooperativeLevelFn = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*);
+using ResetFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, D3DPRESENT_PARAMETERS*);
 using PresentFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*);
+using BeginSceneFn = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*);
+using EndSceneFn = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*);
+using ClearFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, DWORD, const D3DRECT*, DWORD, D3DCOLOR, float, DWORD);
 using CreateVertexDeclarationFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const D3DVERTEXELEMENT9*, IDirect3DVertexDeclaration9**);
 using SetVertexDeclarationFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -107,10 +129,29 @@ using SetPixelShaderConstantFFn = HRESULT (STDMETHODCALLTYPE*)(
 using DrawIndexedPrimitiveFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, D3DPRIMITIVETYPE, INT, UINT, UINT, UINT, UINT);
 
+HMODULE g_proxy_module = nullptr;
 HMODULE g_system_d3d9 = nullptr;
+std::once_flag g_system_d3d9_once;
+bool g_system_d3d9_ready = false;
+std::string g_system_d3d9_path;
 Direct3DCreate9Fn g_real_direct3d_create9 = nullptr;
+Direct3DCreate9ExFn g_real_direct3d_create9_ex = nullptr;
+D3DPERFBeginEventFn g_real_d3dperf_begin_event = nullptr;
+D3DPERFEndEventFn g_real_d3dperf_end_event = nullptr;
+D3DPERFGetStatusFn g_real_d3dperf_get_status = nullptr;
+D3DPERFQueryRepeatFrameFn g_real_d3dperf_query_repeat_frame = nullptr;
+D3DPERFSetMarkerFn g_real_d3dperf_set_marker = nullptr;
+D3DPERFSetOptionsFn g_real_d3dperf_set_options = nullptr;
+D3DPERFSetRegionFn g_real_d3dperf_set_region = nullptr;
+DebugSetLevelFn g_real_debug_set_level = nullptr;
+DebugSetMuteFn g_real_debug_set_mute = nullptr;
 CreateDeviceFn g_real_create_device = nullptr;
+TestCooperativeLevelFn g_real_test_cooperative_level = nullptr;
+ResetFn g_real_reset = nullptr;
 PresentFn g_real_present = nullptr;
+BeginSceneFn g_real_begin_scene = nullptr;
+EndSceneFn g_real_end_scene = nullptr;
+ClearFn g_real_clear = nullptr;
 CreateVertexDeclarationFn g_real_create_vertex_declaration = nullptr;
 SetVertexDeclarationFn g_real_set_vertex_declaration = nullptr;
 CreateTextureFn g_real_create_texture = nullptr;
@@ -140,6 +181,49 @@ std::mutex g_hook_mutex;
 std::atomic<unsigned long long> g_event_index{0};
 std::atomic<unsigned long long> g_frame{0};
 std::atomic<bool> g_proxy_entry_reported{false};
+std::atomic<unsigned long long> g_perf_event_calls{0};
+std::atomic<unsigned long long> g_present_calls{0};
+
+enum class CaptureMode {
+    Passthrough,
+    Diagnostic,
+    Capture,
+};
+
+CaptureMode capture_mode() {
+    static const CaptureMode mode = [] {
+        const char* value = std::getenv("SHIFT_D3D9_CAPTURE_MODE");
+        if (!value || !*value) return CaptureMode::Capture;
+        std::string text(value);
+        std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
+        if (text == "passthrough" || text == "off" || text == "0") {
+            return CaptureMode::Passthrough;
+        }
+        if (text == "diagnostic" || text == "diag" || text == "1") {
+            return CaptureMode::Diagnostic;
+        }
+        return CaptureMode::Capture;
+    }();
+    return mode;
+}
+
+const char* capture_mode_name() {
+    switch (capture_mode()) {
+    case CaptureMode::Passthrough: return "passthrough";
+    case CaptureMode::Diagnostic: return "diagnostic";
+    case CaptureMode::Capture: return "capture";
+    }
+    return "capture";
+}
+
+std::string hresult_hex(HRESULT hr) {
+    std::ostringstream s;
+    s << "\"0x" << std::hex << std::setw(8) << std::setfill('0')
+      << static_cast<unsigned long>(hr) << "\"";
+    return s.str();
+}
 
 struct CaptureWriter {
     std::mutex mutex;
@@ -152,6 +236,19 @@ struct CaptureWriter {
         const char* env = std::getenv("SHIFT_D3D9_CAPTURE");
         path = (env && *env) ? env : "shift_d3d9_capture.jsonl";
         out.open(path, std::ios::out | std::ios::app);
+        if (!out.is_open() && (!env || !*env)) {
+            char temp_path[MAX_PATH] = {};
+            const DWORD length = GetTempPathA(MAX_PATH, temp_path);
+            if (length > 0 && length < MAX_PATH) {
+                path.assign(temp_path, length);
+                if (!path.empty() && path.back() != '\\' && path.back() != '/') {
+                    path.push_back('\\');
+                }
+                path += "shift_d3d9_capture.jsonl";
+                out.clear();
+                out.open(path, std::ios::out | std::ios::app);
+            }
+        }
         initialized = true;
     }
 
@@ -206,16 +303,25 @@ struct CaptureWriter {
     void write_event(const std::string& event, const std::string& fields) {
         std::lock_guard<std::mutex> lock(mutex);
         ensure_open();
-        if (!out.is_open()) return;
         const auto seq = g_event_index.fetch_add(1);
-        out << "{\"event_index\":" << seq
-            << ",\"frame\":" << g_frame.load()
-            << ",\"thread_id\":" << GetCurrentThreadId()
-            << ",\"event\":" << quote(event);
-        if (!fields.empty()) out << "," << fields;
-        out << "}\n";
-        const char* flush_env = std::getenv("SHIFT_D3D9_CAPTURE_FLUSH");
-        if (!flush_env || std::string(flush_env) != "0") out.flush();
+        std::ostringstream line;
+        line << "{\"event_index\":" << seq
+             << ",\"frame\":" << g_frame.load()
+             << ",\"tick_ms\":" << GetTickCount64()
+             << ",\"process_id\":" << GetCurrentProcessId()
+             << ",\"thread_id\":" << GetCurrentThreadId()
+             << ",\"event\":" << quote(event);
+        if (!fields.empty()) line << "," << fields;
+        line << "}\n";
+
+        if (out.is_open()) {
+            out << line.str();
+            const char* flush_env = std::getenv("SHIFT_D3D9_CAPTURE_FLUSH");
+            if (!flush_env || std::string(flush_env) != "0") out.flush();
+        }
+        if (env_enabled("SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT") || !out.is_open()) {
+            OutputDebugStringA(line.str().c_str());
+        }
     }
 };
 
