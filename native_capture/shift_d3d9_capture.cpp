@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace {
 
@@ -264,6 +265,7 @@ std::unordered_map<const void*, std::string> g_texture_signatures;
 std::unordered_map<const void*, std::string> g_vertex_declaration_signatures;
 std::unordered_map<const void*, std::string> g_vertex_shader_signatures;
 std::unordered_map<const void*, std::string> g_pixel_shader_signatures;
+std::unordered_set<std::string> g_fired_resource_triggers;
 
 std::once_flag g_crash_diag_once;
 PVOID g_crash_handler = nullptr;
@@ -919,6 +921,23 @@ bool resource_trigger_matches(const std::string& signature) {
     return std::find(rules.begin(), rules.end(), wanted) != rules.end();
 }
 
+bool resource_trigger_repeat_enabled() {
+    return env_enabled("SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT");
+}
+
+bool resource_trigger_already_fired(const std::string& signature) {
+    if (resource_trigger_repeat_enabled()) return false;
+    std::lock_guard<std::mutex> lock(g_resource_signature_mutex);
+    return g_fired_resource_triggers.find(lowercase_trimmed(signature)) !=
+           g_fired_resource_triggers.end();
+}
+
+void mark_resource_trigger_fired(const std::string& signature) {
+    if (resource_trigger_repeat_enabled()) return;
+    std::lock_guard<std::mutex> lock(g_resource_signature_mutex);
+    g_fired_resource_triggers.insert(lowercase_trimmed(signature));
+}
+
 void store_resource_signature(
     std::unordered_map<const void*, std::string>& table,
     const void* object,
@@ -942,7 +961,9 @@ bool maybe_trigger_for_resource(
     const std::string& signature,
     const void* object) {
     if (signature.empty() || !resource_trigger_matches(signature)) return false;
+    if (resource_trigger_already_fired(signature)) return false;
     if (!writer().trigger(g_frame.load())) return false;
+    mark_resource_trigger_fired(signature);
 
     std::ostringstream fields;
     fields << "\"bind_event\":" << CaptureWriter::quote(bind_event)
@@ -950,6 +971,18 @@ bool maybe_trigger_for_resource(
            << ",\"resource_ptr\":" << CaptureWriter::ptr(object);
     writer().write_event("resource_trigger_match", fields.str());
     return true;
+}
+
+std::string surface_signature(
+    const char* prefix,
+    IDirect3DSurface9* surface) {
+    if (!surface) return {};
+    D3DSURFACE_DESC desc{};
+    if (FAILED(surface->GetDesc(&desc))) return {};
+    std::ostringstream out;
+    out << prefix << ":" << desc.Width << "x" << desc.Height
+        << ":" << static_cast<unsigned>(desc.Format);
+    return out.str();
 }
 
 std::string texture_signature(
@@ -2551,10 +2584,15 @@ HRESULT STDMETHODCALLTYPE hook_set_render_target(
         self, SLOT_SET_RENDER_TARGET, g_real_set_render_target);
     const HRESULT hr = original ? original(self, index, surface) : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
+        const std::string signature = surface_signature("rt", surface);
+        maybe_trigger_for_resource("set_render_target", signature, surface);
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"render_target_index\":" << index
           << ",\"surface_ptr\":" << CaptureWriter::ptr(surface);
+        if (!signature.empty()) {
+            f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
+        }
         append_surface_descriptor_json(f, surface);
         writer().write_render_event("set_render_target", f.str());
     }
@@ -2568,9 +2606,14 @@ HRESULT STDMETHODCALLTYPE hook_set_depth_stencil_surface(
         self, SLOT_SET_DEPTH_STENCIL_SURFACE, g_real_set_depth_stencil_surface);
     const HRESULT hr = original ? original(self, surface) : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
+        const std::string signature = surface_signature("depth", surface);
+        maybe_trigger_for_resource("set_depth_stencil_surface", signature, surface);
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"surface_ptr\":" << CaptureWriter::ptr(surface);
+        if (!signature.empty()) {
+            f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
+        }
         append_surface_descriptor_json(f, surface);
         writer().write_render_event("set_depth_stencil_surface", f.str());
     }
@@ -3047,7 +3090,8 @@ void patch_device(IDirect3DDevice9* device) {
            << ",\"trigger_post_frames\":" << trigger_post_frames()
            << ",\"trigger_virtual_key\":" << trigger_virtual_key()
            << ",\"resource_trigger_enabled\":" << (resource_trigger_enabled() ? "true" : "false")
-           << ",\"resource_trigger_rule_count\":" << resource_trigger_rules().size();
+           << ",\"resource_trigger_rule_count\":" << resource_trigger_rules().size()
+           << ",\"resource_trigger_repeat\":" << (resource_trigger_repeat_enabled() ? "true" : "false");
     writer().write_event("device_hooks", fields.str());
 }
 
