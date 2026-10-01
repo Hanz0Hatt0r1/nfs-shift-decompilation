@@ -213,7 +213,21 @@ if [[ "$wine_prefix" == */PortProton/data/prefixes/* ]]; then
   ppdb="$game.ppdb"
   if [[ -f "$ppdb" ]]; then
     portproton_wine_use="$(
-      sed -n 's/^[[:space:]]*export[[:space:]]\+PW_WINE_USE=["'"']\{0,1\}\([^"'"']*\)["'"']\{0,1\}[[:space:]]*$/\1/p' "$ppdb" | tail -n1
+      python3 - "$ppdb" <<'PY'
+import re
+import sys
+
+value = ""
+with open(sys.argv[1], "r", encoding="utf-8", errors="replace") as stream:
+    for line in stream:
+        match = re.match(
+            r"""^\s*(?:export\s+)?PW_WINE_USE\s*=\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))""",
+            line,
+        )
+        if match:
+            value = next((item for item in match.groups() if item is not None), "")
+print(value)
+PY
     )"
   fi
   if (( ! wine_command_explicit )) && [[ -n "$portproton_wine_use" ]]; then
