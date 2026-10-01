@@ -595,3 +595,18 @@ matrix.
 The input is intentionally downstream of `FUN_007b3ed0`: Phase 624 does not
 derive refreshed runtime sample values. It also retains a dense logical matrix
 view rather than claiming exact `BODY+0x158` sparse row-pointer execution.
+
+
+## Phase 625 BODY sparse row storage
+
+Run:
+
+```bash
+native_runtime/build/shift_runtime_body_sparse_matrix_storage_check
+```
+
+The checker remaps the Phase 624 six-scalar lower matrix through an explicit
+noncanonical `BODY+0x15c` row-index vector, verifies the corresponding
+`BODY+0x158` byte-offset view and reads every logical cell back from the
+`BODY+0x154` pool. Aliased/out-of-range rows and upper-triangle writes are
+fail-closed.
