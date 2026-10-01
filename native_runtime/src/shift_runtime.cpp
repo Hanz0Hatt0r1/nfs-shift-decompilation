@@ -573,6 +573,15 @@ void load_participant_boundary(
             process_state == -1 ||
             !file_contains(
                 path,
+                "\"same_participant_pointer_proven\": true") ||
+            !file_contains(
+                path,
+                "\"manager_registry_identity_observed\": true") ||
+            !file_contains(
+                path,
+                "\"igphasevehicle_selection_observed\": true") ||
+            !file_contains(
+                path,
                 "\"registry_index_equals_selector_ordinal\": false") ||
             !file_contains(path, "\"participant_index\": -1") ||
             !file_contains(path, "\"participant_mode\": -1")) {
