@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 from tools.ppm_to_snapshot_svg import ppm_to_svg, read_ppm
 
@@ -85,3 +86,32 @@ def test_linux_mingw_toolchain_targets_32bit_windows():
     assert "set(CMAKE_SYSTEM_NAME Windows)" in toolchain
     assert "set(CMAKE_SYSTEM_PROCESSOR x86)" in toolchain
     assert "i686-w64-mingw32-g++" in toolchain
+
+
+
+def test_d3d9_proxy_can_chainload_preserved_backend():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+    assert 'SHIFT_D3D9_BACKEND' in source
+    assert 'd3d9.shift_backend.dll' in source
+    assert 'proxy_d3d9_backend_selected' in source
+    assert 'backend-resolves-to-proxy' in source
+
+
+def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
+    powershell = Path("tools/run_shift_capture.ps1").read_text(encoding="utf-8")
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert '[string]$Mode = "Diagnostic"' in powershell
+    assert 'd3d9.shift_backend.dll' in powershell
+    assert 'SHIFT_D3D9_CAPTURE_MODE' in powershell
+    assert 'mode="diagnostic"' in wine
+    assert 'd3d9.shift_backend.dll' in wine
+    assert 'WINEDLLOVERRIDES="d3d9=n,b' in wine
+
+
+
+def test_wine_capture_launcher_has_valid_bash_syntax():
+    subprocess.run(
+        ["bash", "-n", "tools/run_shift_capture_wine.sh"],
+        check=True,
+    )

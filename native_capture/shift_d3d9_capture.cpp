@@ -136,6 +136,7 @@ HMODULE g_system_d3d9 = nullptr;
 std::once_flag g_system_d3d9_once;
 bool g_system_d3d9_ready = false;
 std::string g_system_d3d9_path;
+std::string g_d3d9_backend_source;
 Direct3DCreate9Fn g_real_direct3d_create9 = nullptr;
 Direct3DCreate9ExFn g_real_direct3d_create9_ex = nullptr;
 D3DPERFBeginEventFn g_real_d3dperf_begin_event = nullptr;
@@ -1992,31 +1993,105 @@ T resolve_system_proc(const char* name) {
         g_system_d3d9 ? GetProcAddress(g_system_d3d9, name) : nullptr);
 }
 
+std::string absolute_path_a(const std::string& input) {
+    if (input.empty()) return {};
+    char path[MAX_PATH] = {};
+    const DWORD length = GetFullPathNameA(
+        input.c_str(), MAX_PATH, path, nullptr);
+    if (!length || length >= MAX_PATH) return input;
+    return std::string(path, length);
+}
+
+bool same_path_ci(const std::string& a, const std::string& b) {
+    if (a.empty() || b.empty()) return false;
+    const std::string lhs = absolute_path_a(a);
+    const std::string rhs = absolute_path_a(b);
+    return _stricmp(lhs.c_str(), rhs.c_str()) == 0;
+}
+
+bool regular_file_exists_a(const std::string& path) {
+    if (path.empty()) return false;
+    const DWORD attributes = GetFileAttributesA(path.c_str());
+    return attributes != INVALID_FILE_ATTRIBUTES &&
+           !(attributes & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+struct D3D9BackendChoice {
+    std::string path;
+    std::string source;
+};
+
+D3D9BackendChoice choose_d3d9_backend() {
+    const char* explicit_backend = std::getenv("SHIFT_D3D9_BACKEND");
+    if (explicit_backend && *explicit_backend) {
+        return {absolute_path_a(explicit_backend), "environment"};
+    }
+
+    const std::string proxy_path = module_path_a(g_proxy_module);
+    const std::size_t separator = proxy_path.find_last_of("\\/");
+    if (separator != std::string::npos) {
+        const std::string sidecar =
+            proxy_path.substr(0, separator + 1) + "d3d9.shift_backend.dll";
+        if (regular_file_exists_a(sidecar)) {
+            return {absolute_path_a(sidecar), "sidecar"};
+        }
+    }
+
+    char system_dir[MAX_PATH] = {};
+    const UINT length = GetSystemDirectoryA(system_dir, MAX_PATH);
+    if (!length || length >= MAX_PATH) {
+        return {{}, "system"};
+    }
+    std::string system_path(system_dir, length);
+    if (!system_path.empty() &&
+        system_path.back() != '\\' &&
+        system_path.back() != '/') {
+        system_path.push_back('\\');
+    }
+    system_path += "d3d9.dll";
+    return {absolute_path_a(system_path), "system"};
+}
+
 bool ensure_system_d3d9() {
     std::call_once(g_system_d3d9_once, [] {
-        char system_dir[MAX_PATH] = {};
-        const UINT length = GetSystemDirectoryA(system_dir, MAX_PATH);
-        if (!length || length >= MAX_PATH) {
+        const D3D9BackendChoice backend = choose_d3d9_backend();
+        g_system_d3d9_path = backend.path;
+        g_d3d9_backend_source = backend.source;
+
+        {
+            std::ostringstream fields;
+            fields << "\"source\":" << CaptureWriter::quote(g_d3d9_backend_source)
+                   << ",\"path\":" << CaptureWriter::quote(g_system_d3d9_path)
+                   << ",\"proxy_path\":" << CaptureWriter::quote(
+                          module_path_a(g_proxy_module));
+            writer().write_event("proxy_d3d9_backend_selected", fields.str());
+        }
+
+        if (g_system_d3d9_path.empty()) {
             writer().write_event(
                 "proxy_system_d3d9_load_failed",
-                "\"reason\":\"GetSystemDirectoryA-failed\",\"win32_error\":" +
-                    std::to_string(GetLastError()));
+                "\"reason\":\"backend-path-unresolved\",\"source\":" +
+                    CaptureWriter::quote(g_d3d9_backend_source) +
+                    ",\"win32_error\":" + std::to_string(GetLastError()));
             return;
         }
 
-        g_system_d3d9_path.assign(system_dir, length);
-        if (!g_system_d3d9_path.empty() &&
-            g_system_d3d9_path.back() != '\\' &&
-            g_system_d3d9_path.back() != '/') {
-            g_system_d3d9_path.push_back('\\');
+        const std::string proxy_path = module_path_a(g_proxy_module);
+        if (same_path_ci(g_system_d3d9_path, proxy_path)) {
+            std::ostringstream fields;
+            fields << "\"reason\":\"backend-resolves-to-proxy\""
+                   << ",\"source\":" << CaptureWriter::quote(g_d3d9_backend_source)
+                   << ",\"path\":" << CaptureWriter::quote(g_system_d3d9_path);
+            writer().write_event("proxy_system_d3d9_load_failed", fields.str());
+            return;
         }
-        g_system_d3d9_path += "d3d9.dll";
 
         SetLastError(ERROR_SUCCESS);
         g_system_d3d9 = LoadLibraryA(g_system_d3d9_path.c_str());
         if (!g_system_d3d9) {
             std::ostringstream fields;
             fields << "\"path\":" << CaptureWriter::quote(g_system_d3d9_path)
+                   << ",\"source\":" << CaptureWriter::quote(g_d3d9_backend_source)
                    << ",\"win32_error\":" << GetLastError();
             writer().write_event("proxy_system_d3d9_load_failed", fields.str());
             return;
@@ -2049,6 +2124,7 @@ bool ensure_system_d3d9() {
 
         std::ostringstream fields;
         fields << "\"path\":" << CaptureWriter::quote(g_system_d3d9_path)
+               << ",\"source\":" << CaptureWriter::quote(g_d3d9_backend_source)
                << ",\"module_ptr\":" << CaptureWriter::ptr(g_system_d3d9)
                << ",\"direct3dcreate9\":" << (g_real_direct3d_create9 ? "true" : "false")
                << ",\"direct3dcreate9ex\":" << (g_real_direct3d_create9_ex ? "true" : "false")
