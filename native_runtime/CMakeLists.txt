@@ -54,6 +54,7 @@ add_library(shift_runtime_physics STATIC
   src/constraint_sample_refresh.cpp
   src/constraint_sample_relation_frame.cpp
   src/constraint_relation_reset_frame.cpp
+  src/constraint_relation_state_mutation.cpp
   src/body_sparse_matrix_storage.cpp
   src/generated_body_solver_export.cpp
   src/generated_body_constraint_frame.cpp
@@ -114,6 +115,15 @@ target_link_libraries(
   shift_runtime_physics)
 target_compile_options(
   shift_runtime_constraint_relation_reset_frame_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+add_executable(shift_runtime_constraint_relation_state_mutation_check
+  tests/constraint_relation_state_mutation_check.cpp)
+target_link_libraries(
+  shift_runtime_constraint_relation_state_mutation_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_constraint_relation_state_mutation_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
 add_executable(shift_runtime_body_preprojection_check
@@ -269,6 +279,9 @@ if(BUILD_TESTING)
   set_tests_properties(
     shift_runtime_constraint_relation_reset_frame_usage
     PROPERTIES WILL_FAIL TRUE)
+  add_test(
+    NAME shift_runtime_constraint_relation_state_mutation
+    COMMAND shift_runtime_constraint_relation_state_mutation_check)
   add_test(
     NAME shift_runtime_body_preprojection
     COMMAND shift_runtime_body_preprojection_check)
