@@ -3,6 +3,7 @@
 #include "shift_body_constraint_assembly.hpp"
 #include "shift_constraint_sample_refresh.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
