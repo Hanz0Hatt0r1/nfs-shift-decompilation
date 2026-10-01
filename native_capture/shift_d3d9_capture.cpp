@@ -257,6 +257,14 @@ std::atomic<bool> g_proxy_entry_reported{false};
 std::atomic<unsigned long long> g_perf_event_calls{0};
 std::atomic<unsigned long long> g_present_calls{0};
 
+std::mutex g_resource_signature_mutex;
+std::unordered_map<const void*, std::string> g_vertex_buffer_signatures;
+std::unordered_map<const void*, std::string> g_index_buffer_signatures;
+std::unordered_map<const void*, std::string> g_texture_signatures;
+std::unordered_map<const void*, std::string> g_vertex_declaration_signatures;
+std::unordered_map<const void*, std::string> g_vertex_shader_signatures;
+std::unordered_map<const void*, std::string> g_pixel_shader_signatures;
+
 std::once_flag g_crash_diag_once;
 PVOID g_crash_handler = nullptr;
 HANDLE g_crash_log = INVALID_HANDLE_VALUE;
@@ -805,8 +813,15 @@ unsigned long long env_u64(const char* name, unsigned long long fallback) {
     return (end && *end == '\0') ? parsed : fallback;
 }
 
+bool resource_trigger_enabled() {
+    const char* value = std::getenv("SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER");
+    return value && *value;
+}
+
 bool trigger_capture_enabled() {
-    static const bool enabled = env_enabled("SHIFT_D3D9_CAPTURE_TRIGGER");
+    static const bool enabled =
+        env_enabled("SHIFT_D3D9_CAPTURE_TRIGGER") ||
+        resource_trigger_enabled();
     return enabled;
 }
 
@@ -847,6 +862,106 @@ bool capture_trigger_requested() {
         }
     }
     return requested;
+}
+
+std::uint64_t fnv1a64(const std::vector<unsigned char>& bytes) {
+    std::uint64_t value = 14695981039346656037ULL;
+    for (unsigned char byte : bytes) {
+        value ^= static_cast<std::uint64_t>(byte);
+        value *= 1099511628211ULL;
+    }
+    return value;
+}
+
+std::string fnv1a64_hex(const std::vector<unsigned char>& bytes) {
+    std::ostringstream out;
+    out << std::hex << std::setw(16) << std::setfill('0') << fnv1a64(bytes);
+    return out.str();
+}
+
+std::string lowercase_trimmed(std::string value) {
+    while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front()))) {
+        value.erase(value.begin());
+    }
+    while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back()))) {
+        value.pop_back();
+    }
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::tolower(ch));
+    });
+    return value;
+}
+
+const std::vector<std::string>& resource_trigger_rules() {
+    static const std::vector<std::string> rules = [] {
+        std::vector<std::string> values;
+        const char* raw = std::getenv("SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER");
+        if (!raw || !*raw) return values;
+        std::string text(raw);
+        std::size_t begin = 0;
+        while (begin <= text.size()) {
+            std::size_t end = text.find_first_of(";,", begin);
+            if (end == std::string::npos) end = text.size();
+            std::string token = lowercase_trimmed(text.substr(begin, end - begin));
+            if (!token.empty()) values.push_back(std::move(token));
+            if (end == text.size()) break;
+            begin = end + 1;
+        }
+        return values;
+    }();
+    return rules;
+}
+
+bool resource_trigger_matches(const std::string& signature) {
+    if (!resource_trigger_enabled()) return false;
+    const std::string wanted = lowercase_trimmed(signature);
+    const auto& rules = resource_trigger_rules();
+    return std::find(rules.begin(), rules.end(), wanted) != rules.end();
+}
+
+void store_resource_signature(
+    std::unordered_map<const void*, std::string>& table,
+    const void* object,
+    const std::string& signature) {
+    if (!object || signature.empty()) return;
+    std::lock_guard<std::mutex> lock(g_resource_signature_mutex);
+    table[object] = signature;
+}
+
+std::string get_resource_signature(
+    const std::unordered_map<const void*, std::string>& table,
+    const void* object) {
+    if (!object) return {};
+    std::lock_guard<std::mutex> lock(g_resource_signature_mutex);
+    const auto it = table.find(object);
+    return it == table.end() ? std::string{} : it->second;
+}
+
+bool maybe_trigger_for_resource(
+    const std::string& bind_event,
+    const std::string& signature,
+    const void* object) {
+    if (signature.empty() || !resource_trigger_matches(signature)) return false;
+    if (!writer().trigger(g_frame.load())) return false;
+
+    std::ostringstream fields;
+    fields << "\"bind_event\":" << CaptureWriter::quote(bind_event)
+           << ",\"resource_signature\":" << CaptureWriter::quote(signature)
+           << ",\"resource_ptr\":" << CaptureWriter::ptr(object);
+    writer().write_event("resource_trigger_match", fields.str());
+    return true;
+}
+
+std::string texture_signature(
+    const char* prefix,
+    UINT width,
+    UINT height,
+    D3DFORMAT format) {
+    std::ostringstream out;
+    out << prefix << ":" << width;
+    if (std::string(prefix) == "tex") out << "x" << height;
+    out << ":" << static_cast<unsigned>(format);
+    return out.str();
 }
 
 unsigned long long capture_frame_start() {
@@ -2134,8 +2249,11 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_buffer(
         ? original(self, length, usage, fvf, pool, out_buffer, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_buffer && *out_buffer) {
+        const std::string signature = "vb:" + std::to_string(length);
+        store_resource_signature(g_vertex_buffer_signatures, *out_buffer, signature);
         std::ostringstream f;
         f << "\"vertex_buffer_ptr\":" << CaptureWriter::ptr(*out_buffer)
+          << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"length\":" << length
           << ",\"usage\":" << usage
@@ -2161,8 +2279,13 @@ HRESULT STDMETHODCALLTYPE hook_create_index_buffer(
         ? original(self, length, usage, format, pool, out_buffer, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_buffer && *out_buffer) {
+        std::ostringstream signature_stream;
+        signature_stream << "ib:" << length << ":" << static_cast<unsigned>(format);
+        const std::string signature = signature_stream.str();
+        store_resource_signature(g_index_buffer_signatures, *out_buffer, signature);
         std::ostringstream f;
         f << "\"index_buffer_ptr\":" << CaptureWriter::ptr(*out_buffer)
+          << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"length\":" << length
           << ",\"usage\":" << usage
@@ -2190,8 +2313,11 @@ HRESULT STDMETHODCALLTYPE hook_create_texture(
         ? original(self, width, height, levels, usage, format, pool, out_texture, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_texture && *out_texture) {
+        const std::string signature = texture_signature("tex", width, height, format);
+        store_resource_signature(g_texture_signatures, *out_texture, signature);
         std::ostringstream f;
         f << "\"texture_ptr\":" << CaptureWriter::ptr(*out_texture)
+          << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"width\":" << width
           << ",\"height\":" << height
@@ -2221,8 +2347,12 @@ HRESULT STDMETHODCALLTYPE hook_create_cube_texture(
         ? original(self, edge_length, levels, usage, format, pool, out_texture, shared_handle)
         : E_FAIL;
     if (SUCCEEDED(hr) && out_texture && *out_texture) {
+        const std::string signature = texture_signature(
+            "cube", edge_length, edge_length, format);
+        store_resource_signature(g_texture_signatures, *out_texture, signature);
         std::ostringstream f;
         f << "\"texture_ptr\":" << CaptureWriter::ptr(*out_texture)
+          << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"edge_length\":" << edge_length
           << ",\"levels\":" << levels
@@ -2245,9 +2375,14 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_declaration(
     const HRESULT hr = original ? original(self, declaration, out_decl) : E_FAIL;
     if (SUCCEEDED(hr) && out_decl && *out_decl) {
         const auto bytes = copy_declaration(declaration);
+        const std::string hash = fnv1a64_hex(bytes);
+        const std::string signature = "decl:" + hash;
+        store_resource_signature(g_vertex_declaration_signatures, *out_decl, signature);
         std::ostringstream f;
         f << "\"declaration_ptr\":" << CaptureWriter::ptr(*out_decl)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"resource_signature\":" << CaptureWriter::quote(signature)
+          << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
           << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
         writer().write_event("create_vertex_declaration", f.str());
     }
@@ -2261,9 +2396,15 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_declaration(
         self, SLOT_SET_VERTEX_DECLARATION, g_real_set_vertex_declaration);
     const HRESULT hr = original ? original(self, decl) : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
+        const std::string signature =
+            get_resource_signature(g_vertex_declaration_signatures, decl);
+        maybe_trigger_for_resource("set_vertex_declaration", signature, decl);
         std::ostringstream f;
         f << "\"declaration_ptr\":" << CaptureWriter::ptr(decl)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
+        if (!signature.empty()) {
+            f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
+        }
         writer().write_render_event("set_vertex_declaration", f.str());
     }
     return hr;
@@ -2279,12 +2420,18 @@ HRESULT STDMETHODCALLTYPE hook_set_stream_source(
         self, SLOT_SET_STREAM_SOURCE, g_real_set_stream_source);
     const HRESULT hr = original ? original(self, stream, buffer, offset, stride) : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
+        const std::string signature =
+            get_resource_signature(g_vertex_buffer_signatures, buffer);
+        maybe_trigger_for_resource("set_stream_source", signature, buffer);
         std::ostringstream f;
         f << "\"vertex_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"stream\":" << stream
           << ",\"offset_in_bytes\":" << offset
           << ",\"stride\":" << stride;
+        if (!signature.empty()) {
+            f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
+        }
         writer().write_render_event("set_stream_source", f.str());
     }
     return hr;
@@ -2297,9 +2444,15 @@ HRESULT STDMETHODCALLTYPE hook_set_indices(
         self, SLOT_SET_INDICES, g_real_set_indices);
     const HRESULT hr = original ? original(self, buffer) : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
+        const std::string signature =
+            get_resource_signature(g_index_buffer_signatures, buffer);
+        maybe_trigger_for_resource("set_indices", signature, buffer);
         std::ostringstream f;
         f << "\"index_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
+        if (!signature.empty()) {
+            f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
+        }
         writer().write_render_event("set_indices", f.str());
     }
     return hr;
@@ -2602,10 +2755,16 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
         self, SLOT_SET_TEXTURE, g_real_set_texture);
     const HRESULT hr = original ? original(self, stage, texture) : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
+        const std::string signature =
+            get_resource_signature(g_texture_signatures, texture);
+        maybe_trigger_for_resource("set_texture", signature, texture);
         std::ostringstream f;
         f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"stage\":" << stage;
+        if (!signature.empty()) {
+            f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
+        }
         append_texture_descriptor_json(f, texture);
         append_texture_snapshot_json(f, self, stage, texture);
         writer().write_render_event("set_texture", f.str());
@@ -2622,9 +2781,14 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_shader(
     const HRESULT hr = original ? original(self, function, out_shader) : E_FAIL;
     if (SUCCEEDED(hr) && out_shader && *out_shader) {
         const auto bytes = copy_shader(function);
+        const std::string hash = fnv1a64_hex(bytes);
+        const std::string signature = "vs:" + hash;
+        store_resource_signature(g_vertex_shader_signatures, *out_shader, signature);
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(*out_shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"resource_signature\":" << CaptureWriter::quote(signature)
+          << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
           << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
         writer().write_event("create_vertex_shader", f.str());
     }
@@ -2638,9 +2802,15 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader(
         self, SLOT_SET_VERTEX_SHADER, g_real_set_vertex_shader);
     const HRESULT hr = original ? original(self, shader) : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
+        const std::string signature =
+            get_resource_signature(g_vertex_shader_signatures, shader);
+        maybe_trigger_for_resource("set_vertex_shader", signature, shader);
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
+        if (!signature.empty()) {
+            f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
+        }
         writer().write_render_event("set_vertex_shader", f.str());
     }
     return hr;
@@ -2682,9 +2852,14 @@ HRESULT STDMETHODCALLTYPE hook_create_pixel_shader(
     const HRESULT hr = original ? original(self, function, out_shader) : E_FAIL;
     if (SUCCEEDED(hr) && out_shader && *out_shader) {
         const auto bytes = copy_shader(function);
+        const std::string hash = fnv1a64_hex(bytes);
+        const std::string signature = "ps:" + hash;
+        store_resource_signature(g_pixel_shader_signatures, *out_shader, signature);
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(*out_shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
+          << ",\"resource_signature\":" << CaptureWriter::quote(signature)
+          << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
           << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
         writer().write_event("create_pixel_shader", f.str());
     }
@@ -2698,9 +2873,15 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader(
         self, SLOT_SET_PIXEL_SHADER, g_real_set_pixel_shader);
     const HRESULT hr = original ? original(self, shader) : E_FAIL;
     if (SUCCEEDED(hr) && capture_render_event_active()) {
+        const std::string signature =
+            get_resource_signature(g_pixel_shader_signatures, shader);
+        maybe_trigger_for_resource("set_pixel_shader", signature, shader);
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
+        if (!signature.empty()) {
+            f << ",\"resource_signature\":" << CaptureWriter::quote(signature);
+        }
         writer().write_render_event("set_pixel_shader", f.str());
     }
     return hr;
@@ -2864,7 +3045,9 @@ void patch_device(IDirect3DDevice9* device) {
            << ",\"trigger_capture\":" << (trigger_capture_enabled() ? "true" : "false")
            << ",\"trigger_pre_frames\":" << trigger_pre_frames()
            << ",\"trigger_post_frames\":" << trigger_post_frames()
-           << ",\"trigger_virtual_key\":" << trigger_virtual_key();
+           << ",\"trigger_virtual_key\":" << trigger_virtual_key()
+           << ",\"resource_trigger_enabled\":" << (resource_trigger_enabled() ? "true" : "false")
+           << ",\"resource_trigger_rule_count\":" << resource_trigger_rules().size();
     writer().write_event("device_hooks", fields.str());
 }
 
