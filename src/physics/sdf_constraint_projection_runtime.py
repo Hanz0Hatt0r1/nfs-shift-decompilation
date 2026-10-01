@@ -1,4 +1,4 @@
-"""Exact JOINT/HINGE scalar projection primitives recovered from SHIFT.exe.c."""
+"""Exact JOINT/HINGE/BAR scalar projection primitives recovered from SHIFT.exe.c."""
 from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
@@ -7,6 +7,7 @@ FORMAT = "SHIFT.SDFConstraintProjectionRuntime/2"
 
 JOINT_SOURCE_LINE = 819089
 HINGE_SOURCE_LINE = 819157
+BAR_SOURCE_LINE = 819246
 CROSS_SOURCE_LINE = 811731
 GLOBAL_SCALE_SOURCE_LINE = 763749
 
@@ -214,6 +215,111 @@ def evaluate_hinge_projection(
     }
 
 
+def evaluate_bar_projection(
+    *,
+    body_position: Sequence[float | int],
+    body_axis: Sequence[float | int],
+    body_correction: Sequence[float | int],
+    sample_position: Sequence[float | int],
+    sample_weight: Sequence[float | int],
+    residual_vector: Sequence[float | int],
+    linear_velocity: Sequence[float | int],
+    linear_scale: float,
+    quadratic_scale: float,
+    side_flag: int = 0,
+    side_bias: float = 0.0,
+) -> dict[str, Any]:
+    """Reproduce FUN_007bb090's one-lane BAR projection."""
+
+    bx, by, bz = _vec3(body_position, name="body_position")
+    ax, ay, az = _vec3(body_axis, name="body_axis")
+    cx, cy, cz = _vec3(body_correction, name="body_correction")
+    sx, sy, sz = _vec3(sample_position, name="sample_position")
+    wx, wy, wz = _vec3(sample_weight, name="sample_weight")
+    rx, ry, rz = _vec3(residual_vector, name="residual_vector")
+    lx, ly, lz = _vec3(linear_velocity, name="linear_velocity")
+
+    d2 = sz * ay - sy * az
+    d3 = az * sx - sz * ax
+    d5 = sy * ax - ay * sx
+
+    basis_x = (
+        (sx + bx) * quadratic_scale
+        + (cx + d2) * linear_scale
+        + (sz * ry - sy * rz)
+        + (ay * d5 - az * d3)
+        + lx
+    )
+    basis_y = (
+        (sy + by) * quadratic_scale
+        + (cy + d3) * linear_scale
+        + (sx * rz - sz * rx)
+        + (az * d2 - ax * d5)
+        + ly
+    )
+    basis_z = (
+        (sz + bz) * quadratic_scale
+        + (cz + d5) * linear_scale
+        + (sy * rx - sx * ry)
+        + (ax * d3 - ay * d2)
+        + lz
+    )
+
+    raw_lane = wx * basis_x + wy * basis_y + wz * basis_z
+    if int(side_flag) == 0:
+        signed_lane = raw_lane
+        correction = 0.0
+        branch = "flag_zero"
+    else:
+        correction = float(side_bias) * float(quadratic_scale)
+        signed_lane = -(raw_lane - correction)
+        branch = "flag_nonzero"
+
+    return {
+        "format": FORMAT,
+        "version": 2,
+        "status": "computed",
+        "ready": True,
+        "function": "FUN_007bb090",
+        "source_line": BAR_SOURCE_LINE,
+        "side_flag": int(side_flag),
+        "branch": branch,
+        "intermediate": {
+            "d2": d2,
+            "d3": d3,
+            "d5": d5,
+            "basis_x": basis_x,
+            "basis_y": basis_y,
+            "basis_z": basis_z,
+        },
+        "sample_weight": [wx, wy, wz],
+        "side_bias": float(side_bias),
+        "side_correction": correction,
+        "raw_lane": raw_lane,
+        "lane": signed_lane,
+        "destination": "this +0x150 + scalar_base*8",
+        "sample_stride": 0x60,
+        "scalar_base_offset": "+0x30",
+        "side_flag_offset": "+0x34",
+        "side_bias_offset": "+0x38",
+        "sample_weight_offsets": ["+0x40", "+0x48", "+0x50"],
+    }
+
+
+def apply_bar_projection(
+    solver_vector: Sequence[float | int],
+    scalar_base: int,
+    lane: float | int,
+) -> list[float]:
+    """Apply BAR's already-signed one-lane update to the solver vector."""
+    base = int(scalar_base)
+    if base < 0 or base >= len(solver_vector):
+        raise ValueError("BAR scalar base is outside solver vector")
+    out = [float(value) for value in solver_vector]
+    out[base] += float(lane)
+    return out
+
+
 def apply_hinge_projection(
     solver_vector: Sequence[float | int],
     scalar_base: int,
@@ -229,6 +335,41 @@ def apply_hinge_projection(
     out[base] += float(lanes[0])
     out[base + 1] += float(lanes[1])
     return out
+
+
+def describe_bar_projection_provenance() -> dict[str, Any]:
+    return {
+        "format": FORMAT,
+        "version": 2,
+        "status": "source-backed",
+        "ready": True,
+        "function": "FUN_007bb090",
+        "source_line": BAR_SOURCE_LINE,
+        "sample_stride": 0x60,
+        "scalar_base_offset": "+0x30",
+        "side_flag_offset": "+0x34",
+        "side_bias_offset": "+0x38",
+        "sample_weight_offsets": ["+0x40", "+0x48", "+0x50"],
+        "destination": "this +0x150 + scalar_base*8",
+        "equations": {
+            "basis_x": "JOINT d4 expression from the same BODY/sample state",
+            "basis_y": "JOINT d6 expression from the same BODY/sample state",
+            "basis_z": "JOINT d7 expression from the same BODY/sample state",
+            "raw_lane": "weight.x*basis_x + weight.y*basis_y + weight.z*basis_z",
+            "flag_zero": "destination += raw_lane",
+            "flag_nonzero": "destination -= raw_lane - sample_bias*Q",
+        },
+        "source_relationship": (
+            "BAR repeats the JOINT three-component basis algebra inline; "
+            "retail FUN_007bb090 does not call FUN_007bac60"
+        ),
+        "global_scales": {
+            "Q": "_DAT_00b8d8b8",
+            "L": "_DAT_00b8d8c0",
+            "initialization": "Q=(0.8*system_value)^2; L=1.6*system_value",
+            "source_line": GLOBAL_SCALE_SOURCE_LINE,
+        },
+    }
 
 
 def describe_joint_projection_provenance() -> dict[str, Any]:
@@ -303,6 +444,9 @@ __all__ = [
     "apply_joint_projection",
     "evaluate_hinge_projection",
     "apply_hinge_projection",
+    "evaluate_bar_projection",
+    "apply_bar_projection",
     "describe_joint_projection_provenance",
     "describe_hinge_projection_provenance",
+    "describe_bar_projection_provenance",
 ]

@@ -203,6 +203,46 @@ jobs:
             out/vulkan/runtime/hinge_projection.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/hinge_projection.json
+      - name: Native FUN_007bb090 BAR projection
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_bar_projection
+          native_runtime/build/shift_runtime_bar_projection_check \
+            | tee out/vulkan/runtime/bar_projection.json
+          grep -q '"format": "SHIFT.NativeBarProjectionCheck/1"' \
+            out/vulkan/runtime/bar_projection.json
+          grep -q '"source_function": "FUN_007bb090"' \
+            out/vulkan/runtime/bar_projection.json
+          grep -q '"sample_stride": 96' \
+            out/vulkan/runtime/bar_projection.json
+          grep -q '"scalar_width": 1' \
+            out/vulkan/runtime/bar_projection.json
+          grep -q '"side_bias_offset": "+0x38"' \
+            out/vulkan/runtime/bar_projection.json
+          grep -q '"solver_vector_application_verified": true' \
+            out/vulkan/runtime/bar_projection.json
+          grep -q '"range_rejected": true' \
+            out/vulkan/runtime/bar_projection.json
+          grep -q '"non_finite_rejected": true' \
+            out/vulkan/runtime/bar_projection.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path("out/vulkan/runtime/bar_projection.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if float(report["max_absolute_error"]) > 1e-12:
+              raise SystemExit(
+                  "native BAR projection exceeded 1e-12 parity tolerance"
+              )
+          PY
+          grep -q '"full_fun_007bc680_executed": false' \
+            out/vulkan/runtime/bar_projection.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/bar_projection.json
       - name: Native BODY solver export parity
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \

@@ -517,3 +517,26 @@ vector application, invalid range, missing frame and non-finite rejection.
 This is still an independent primitive. Phase 618 does not synthesize HINGE
 sample arrays, run the BAR helper, assemble matrix coupling or claim a complete
 `FUN_007bc680` BODY contribution.
+
+
+## Phase 619 native FUN_007bb090 BAR projection
+
+The native physics library now executes one exact source-backed BAR sample
+through `FUN_007bb090`.
+
+The helper reproduces the inline three-component BODY/sample basis already seen
+algebraically in the JOINT projection, then reduces it with the BAR
+`+0x40/+0x48/+0x50` weight vector to one solver lane. The nonzero-side branch
+retains the distinct retail correction:
+
+`destination -= raw_lane - sample[+0x38] * Q`.
+
+`shift_runtime_bar_projection_check` verifies the source-backed 0x60 record
+stride, one-lane bounded write, both side branches, finite-input rejection and
+Python/native parity within `1e-12`.
+
+With Phases 617–619, all three independent JOINT/HINGE/BAR projection
+primitives used by the `FUN_007bc680` contribution path now have native
+source-backed implementations. BODY-owned sample iteration and
+`FUN_007bbb80/FUN_007bb250/FUN_007bb6c0` matrix-coupling orchestration remain
+separate gates.
