@@ -6,10 +6,64 @@ import sdf_runtime_probe_runtime as runtime
 def test_probe_function_addresses_and_image_base_are_source_backed():
     assert runtime.IMAGE_BASE == 0x00400000
     assert runtime.FUNCTIONS == {
+        "relation_state_mutation": 0x00757D2C,
         "frame_entry": 0x007B3F40,
         "builtin_solver": 0x007B0F20,
         "post_solve": 0x007B4110,
     }
+
+
+
+def test_relation_state_mutation_entry_maps_exact_component_slots_and_pair_branch():
+    result = runtime.describe_relation_state_mutation_entry(
+        vehicle_pointer=0x10000000,
+        component_offset=2 * 0xA80,
+        wheel_body_pointer=0x20000000,
+        spindle_body_pointer=0,
+        rear_axle_body_pointer=0x30000000,
+        caller_return_address=0x0076EE00,
+    )
+    assert result["ready"] is True
+    assert result["source_address"] == 0x00757D2C
+    assert result["component_slot"] == 2
+    assert result["component_slot_name"] == "RL"
+    assert result["component_block_pointer"] == 0x10001900
+    assert result["spindle_body_present"] is False
+    assert result["source_branch"] == "wheel-rear-axle-pair"
+    assert result["entry_abi"] == {
+        "vehicle_pointer_register": "ECX",
+        "component_offset_register": "EAX",
+    }
+
+
+def test_relation_state_mutation_entry_uses_spindle_bar_branch_when_pointer_present():
+    result = runtime.describe_relation_state_mutation_entry(
+        vehicle_pointer=0x10000000,
+        component_offset=3 * 0xA80,
+        wheel_body_pointer=0x20000000,
+        spindle_body_pointer=0x21000000,
+        rear_axle_body_pointer=0x30000000,
+    )
+    assert result["ready"] is True
+    assert result["component_slot"] == 3
+    assert result["component_slot_name"] == "RR"
+    assert result["component_block_pointer"] == 0x10002380
+    assert result["spindle_body_present"] is True
+    assert result["source_branch"] == "spindle-bar-endpoint"
+
+
+@pytest.mark.parametrize("component_offset", [1, 4 * 0xA80])
+def test_relation_state_mutation_entry_rejects_non_slot_offsets(component_offset):
+    result = runtime.describe_relation_state_mutation_entry(
+        vehicle_pointer=0x10000000,
+        component_offset=component_offset,
+        wheel_body_pointer=0,
+        spindle_body_pointer=0,
+        rear_axle_body_pointer=0,
+    )
+    assert result["ready"] is False
+    assert result["component_slot"] is None
+    assert result["capture_errors"]
 
 
 def test_solver_call_stack_layout_matches_thiscall_arguments():
@@ -70,6 +124,13 @@ def test_u32_from_bytes_uses_little_endian():
 
 def test_probe_contract_declares_builtin_thiscall_stack_and_post_solve_fastcall():
     report = runtime.describe_sdf_runtime_probe_contract()
+    assert report["breakpoints"]["relation_state_mutation"] == {
+        "address": 0x00757D2C,
+        "abi": "retail-entry-register-state",
+        "vehicle_pointer_register": "ECX",
+        "component_offset_register": "EAX",
+        "component_offset_rule": "slot * 0xA80",
+    }
     assert report["breakpoints"]["builtin_solver"]["abi"] == "__thiscall"
     assert report["breakpoints"]["builtin_solver"]["stack_arguments"]["scalar_count"] == "[ESP+0x10]"
     assert report["breakpoints"]["post_solve"]["abi"] == "__fastcall"
