@@ -344,3 +344,38 @@ rejection.
 Phase 609 is deliberately standalone. The Phase 608 fixed-step scheduler does
 not yet feed its solved vector into SBPS, and runtime BODY/constraint rows are
 not derived from static assets.
+
+
+## Phase 610 fixed-step solve → post-solve join
+
+The native fixed-step scheduler now accepts `--post-solve-projection FILE`
+only together with the Phase 608 `--solver-frame` path.
+
+Admission requires:
+
+- a ready Phase 607 runtime participant identity;
+- a ready physics workspace;
+- solver-frame/workspace scalar equality;
+- SBPS scalar count equal to the Phase 608 solver frame;
+- SBPS BODY count equal to the workspace BODY count;
+- SBPS JOINT and HINGE counts each equal to `joint_hinge_count`;
+- SBPS BAR count equal to `bar_count`;
+- complete Phase 609 proof bits.
+
+On every admitted fixed step the runtime executes
+`FUN_007b2210 → FUN_007b0f20`, passes the actual native
+`solver_result.solution` into the Phase 609 projection, requires it to match
+the prepared SBPS vector, then executes `FUN_007b4110`.
+
+Telemetry records post-solve counts, steps, maximum solved-vector join error and
+maximum BODY oracle error. `physics_solver_post_solve_body_state_applied=true`
+means the prepared BODY projection completed after every solver step.
+
+`physics_solver_persistent_vehicle_state_applied=false` remains explicit:
+the prepared initial BODY state is replayed for evidence/parity and the result
+is not yet integrated into persistent vehicle motion.
+
+Linux CI executes five synthetic 40-scalar steps with the exact BMW workspace
+cardinalities 11 BODY / 4 JOINT / 4 HINGE / 20 BAR, then independently rebuilds
+a valid SBPS packet with one mismatched scalar and requires the runtime to
+reject the solve→projection join.
