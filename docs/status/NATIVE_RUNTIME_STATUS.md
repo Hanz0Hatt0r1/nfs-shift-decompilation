@@ -1189,3 +1189,30 @@ as a fallback ceiling.
 This strengthens evidence acquisition only. The 600-frame no-hit capture is
 retained as negative runtime evidence and does not authorize native scheduler
 admission.
+
+
+## Phase 648 WineDbg early-launch capture
+
+The Phase 647 negative long-window result left one acquisition gap: the four
+fixed-slot setup callers of `FUN_00757d2c` can execute before a mid-session GDB
+attach. The retail launcher now closes that control-flow race with
+`--launch-under-winedbg`.
+
+In this mode WineDbg creates the validated retail `SHIFT.exe` behind its GDB
+proxy with `--no-start`. GDB connects over loopback with TCP auto-retry,
+loads the normal generated `attach.gdb`, installs `sdf-probe`, and only then
+executes its first `continue`. `probe_manifest.json` records
+`startup_mode=winedbg-gdb-proxy`, the proxy port and the explicit
+`debuggee-created-under-winedbg-and-held-before-first-continue` ordering.
+
+A direct executable in the real game directory is required; ZIP input is
+rejected for early launch rather than pretending an extracted standalone
+`SHIFT.exe` is a valid runtime installation. WineDbg output is retained only
+as the host-local `winedbg_gdb_proxy.log` diagnostic and is not added to the
+portable evidence bundle.
+
+The existing explicit-PID path remains available. Both paths feed the same
+Phase 637–647 correlation, capture-session, deterministic bundle, independent
+verification and replay gates. This phase changes capture start ordering only:
+it does not claim that setup-time mutation occurs and does not enable native
+relation-state scheduler admission.
