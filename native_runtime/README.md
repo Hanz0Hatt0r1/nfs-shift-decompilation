@@ -304,3 +304,26 @@ The solver-frame scalar count must exactly match the physics workspace. The
 runtime rechecks participant readiness on every step and executes only the
 provider-absent Phase 606 reset/solve path. It does not feed the solved vector
 into retail body state.
+
+
+## Phase 609 prepared post-solve BODY projection
+
+Prepare explicit solved-vector/BODY/constraint evidence:
+
+```bash
+python shift_importer.py native-post-solve-projection \
+  post-solve-input.json \
+  out/native-post-solve
+```
+
+Then execute the recovered `FUN_007b4110` projection and compare every BODY
+accumulator channel with the Python oracle:
+
+```bash
+native_runtime/build/shift_runtime_post_solve_projection_check \
+  out/native-post-solve/post_solve.sbps
+```
+
+The packet requires explicit proof for the solved vector, initial BODY state and
+JOINT/HINGE/BAR rows. It does not derive those values from static SDF assets and
+is not yet wired to the Phase 608 fixed-step solver-frame path.
