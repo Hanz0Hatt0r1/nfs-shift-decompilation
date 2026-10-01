@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -46,3 +47,46 @@ def test_phase634_fun_00757d2c_component_branch_matches_raw_disassembly():
         "apply_fun_00757d20_component_slot_relation_state_mutation"
         not in runtime
     )
+
+
+def test_phase634_bmw_body_identity_keeps_rear_axle_null():
+    intake = json.loads(
+        Path("evidence/bmw_m3_e36_physics_intake_phase404.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    bodies = intake["bodies"]
+
+    assert bodies == [
+        "body",
+        "fl_spindle",
+        "fr_spindle",
+        "fl_wheel",
+        "fr_wheel",
+        "rl_spindle",
+        "rr_spindle",
+        "rl_wheel",
+        "rr_wheel",
+        "fuel_tank",
+        "driver_head",
+    ]
+    assert {name: bodies.index(name) for name in (
+        "fl_wheel",
+        "fl_spindle",
+        "fr_wheel",
+        "fr_spindle",
+        "rl_wheel",
+        "rl_spindle",
+        "rr_wheel",
+        "rr_spindle",
+    )} == {
+        "fl_wheel": 3,
+        "fl_spindle": 1,
+        "fr_wheel": 4,
+        "fr_spindle": 2,
+        "rl_wheel": 7,
+        "rl_spindle": 5,
+        "rr_wheel": 8,
+        "rr_spindle": 6,
+    }
+    assert "rear_axle" not in bodies
