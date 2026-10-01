@@ -460,3 +460,11 @@ def test_wine_launcher_auto_selects_portproton_runtime_and_matching_winepath():
     assert 'winepath_command="$sibling_winepath"' in wine
     assert 'capture_windows="$("$winepath_command" -w "$capture_path")"' in wine
     assert 'Runtime : auto-selected from PW_WINE_USE=' in wine
+
+
+def test_wine_launcher_parses_portproton_ppdb_without_sed_regex():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'python3 - "$ppdb"' in wine
+    assert 'PW_WINE_USE\\s*=\\s*' in wine
+    assert "sed -n 's/" not in wine
