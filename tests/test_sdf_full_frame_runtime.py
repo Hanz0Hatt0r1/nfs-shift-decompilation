@@ -30,6 +30,7 @@ def test_full_frame_contract_contains_all_solver_lifecycle_stages():
     assert report["static_stages"]["coupling"]["JOINT"] == "FUN_007bbb80"
     assert report["static_stages"]["coupling"]["HINGE"] == "FUN_007bb250"
     assert report["static_stages"]["coupling"]["BAR"] == "FUN_007bb6c0"
+    assert report["evidence"]["bar_projection"] == "FUN_007bb090"
 
 
 def test_runtime_frame_plan_marks_identity_selector_capture_dependent():
