@@ -88,13 +88,14 @@ def test_phase647_relation_probe_can_stop_after_first_mutation():
     start = source.index("class RelationStateMutationProbe(_BaseProbe)")
     end = source.index("class FrameEntryProbe", start)
     block = source[start:end]
-    assert "stop_after_hit: int | None = None" in block
-    assert "self.stop_after_hit = stop_after_hit" in block
-    assert "self.hit >= self.stop_after_hit" in block
+    assert "global _RELATION_MUTATION_OBSERVED" in block
+    assert "_RELATION_MUTATION_OBSERVED = True" in block
+    assert "return False" in block
 
     command_start = source.index("class SDFProbeCommand")
     command_block = source[command_start:]
-    assert '"--stop-on-relation-mutation"' in command_block
-    assert "stop_on_relation_mutation = False" in command_block
-    assert "1 if stop_on_relation_mutation else None" in command_block
-    assert "--stop-on-relation-mutation is not supported in provider-only mode" in command_block
+    assert '"--stop-after-relation-mutation"' in command_block
+    assert "stop_after_relation_mutation = False" in command_block
+    assert "stop_after_relation_mutation=(" in command_block
+    assert "_RELATION_MUTATION_OBSERVED = False" in command_block
+    assert "--stop-after-relation-mutation is not supported in provider-only mode" in command_block
