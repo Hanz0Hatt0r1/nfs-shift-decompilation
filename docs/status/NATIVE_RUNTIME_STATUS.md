@@ -300,3 +300,24 @@ five ready participant steps with registry index 7 and selector ordinal 2.
 
 Provider identity, provider selection and numerical physics equivalence remain
 unassigned.
+
+
+## Phase 608 fixed-step prepared solver-frame execution
+
+The native runtime accepts an optional `--solver-frame FILE` containing the
+Phase 606 `SBFR` packet.
+
+Admission requires a ready physics workspace, a Phase 607 participant-ready
+identity join and exact solver/workspace scalar-count equality. The packet's
+provider-absent/matrix-RHS/reset-selection/sparse-graph proof mask is still
+validated by the Phase 606 native loader.
+
+When admitted, every native fixed step executes
+`FUN_007b2210 → FUN_007b0f20` and verifies the result against the Python oracle.
+Telemetry records solver-frame steps, scalar/reset counts and maximum oracle
+error while explicitly reporting provider-present=false and
+post-solve-body-state-applied=false.
+
+Linux Vulkan CI replays a synthetic 40-scalar frame for five deterministic
+steps. This proves scheduler integration only; it does not claim retail
+matrix/RHS assembly or `FUN_007b4110` body-state semantics.
