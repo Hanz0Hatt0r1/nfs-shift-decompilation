@@ -2448,6 +2448,30 @@ def cmd_camera_state_snapshot(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_native_body_solver_export_frame(args: argparse.Namespace) -> int:
+    """Prepare explicit per-BODY FUN_007ba570 contributions for native replay."""
+    from native_body_solver_export_frame import (
+        build_native_body_solver_export_frame_file,
+    )
+
+    report = build_native_body_solver_export_frame_file(
+        args.input,
+        args.output_dir,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "body_count": report["body_count"],
+        "solver_scalar_count": report["solver_scalar_count"],
+        "solver_matrix_double_count": (
+            report["solver_matrix_double_count"]
+        ),
+        "packet_sha256": report["packet"]["sha256"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_native_builtin_solver_frame(args: argparse.Namespace) -> int:
     """Prepare an evidence-gated builtin solver frame for native execution."""
     from native_builtin_solver_frame import (
@@ -5041,6 +5065,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="JSON camera manager/buffer state")
     p.add_argument("output", help="SHIFT.CameraStateSnapshotRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_state_snapshot)
+
+    p = sp.add_parser(
+        "native-body-solver-export-frame",
+        help=(
+            "prepare explicit per-BODY FUN_007ba570 contributions "
+            "for native ordered export replay"
+        ),
+    )
+    p.add_argument("input")
+    p.add_argument("output_dir")
+    p.set_defaults(fn=cmd_native_body_solver_export_frame)
 
     p = sp.add_parser(
         "native-builtin-solver-frame",
