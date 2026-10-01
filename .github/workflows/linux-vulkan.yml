@@ -99,6 +99,30 @@ jobs:
             out/vulkan/runtime/builtin_sparse_solver.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/builtin_sparse_solver.json
+      - name: Native BODY solver export parity
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_body_solver_export
+          native_runtime/build/shift_runtime_body_solver_export_check \
+            | tee out/vulkan/runtime/body_solver_export.json
+          grep -q '"format": "SHIFT.NativeBodySolverExportCheck/1"' \
+            out/vulkan/runtime/body_solver_export.json
+          grep -q '"source_function": "FUN_007ba570"' \
+            out/vulkan/runtime/body_solver_export.json
+          grep -q '"first_vector_count": 3' \
+            out/vulkan/runtime/body_solver_export.json
+          grep -q '"first_matrix_count": 2' \
+            out/vulkan/runtime/body_solver_export.json
+          grep -q '"second_vector_count": 3' \
+            out/vulkan/runtime/body_solver_export.json
+          grep -q '"second_matrix_count": 3' \
+            out/vulkan/runtime/body_solver_export.json
+          grep -q '"max_error": 0' \
+            out/vulkan/runtime/body_solver_export.json
+          grep -q '"short_destination_rejected": true' \
+            out/vulkan/runtime/body_solver_export.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/body_solver_export.json
       - name: Prepared native builtin solver frame
         run: |
           mkdir -p out/vulkan/runtime/solver_frame
