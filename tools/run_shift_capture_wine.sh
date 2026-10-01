@@ -63,6 +63,24 @@ pe_machine_name() {
   esac
 }
 
+unix_to_wine_z_path() {
+  python3 - "$1" <<'PY'
+import os
+import sys
+
+path = os.path.abspath(sys.argv[1])
+print("Z:" + path.replace("/", "\\"))
+PY
+}
+
+to_wine_path() {
+  if [[ -n "$winepath_command" ]]; then
+    "$winepath_command" -w "$1"
+  else
+    unix_to_wine_z_path "$1"
+  fi
+}
+
 game=""
 proxy=""
 d3dx9_41=""
@@ -253,15 +271,17 @@ if [[ -z "$winepath_command" ]]; then
   sibling_winepath="${wine_resolved%/*}/winepath"
   if [[ -x "$sibling_winepath" ]]; then
     winepath_command="$sibling_winepath"
-  else
-    winepath_command="winepath"
   fi
 fi
-command -v "$winepath_command" >/dev/null 2>&1 || {
-  echo "winepath executable not found: $winepath_command" >&2
-  exit 2
-}
-winepath_resolved="$(command -v "$winepath_command")"
+if [[ -n "$winepath_command" ]]; then
+  command -v "$winepath_command" >/dev/null 2>&1 || {
+    echo "winepath executable not found: $winepath_command" >&2
+    exit 2
+  }
+  winepath_resolved="$(command -v "$winepath_command")"
+else
+  winepath_resolved="internal Z: path mapping"
+fi
 
 target_d3dx=""
 if [[ -n "$d3dx9_41" ]]; then
@@ -360,8 +380,8 @@ if [[ -n "$d3dx9_41" ]] && (( ! d3dx_same_file )); then
   d3dx_mutated=1
 fi
 
-capture_windows="$("$winepath_command" -w "$capture_path")"
-crash_windows="$("$winepath_command" -w "$crash_path")"
+capture_windows="$(to_wine_path "$capture_path")"
+crash_windows="$(to_wine_path "$crash_path")"
 export SHIFT_D3D9_CAPTURE="$capture_windows"
 export SHIFT_D3D9_CRASH_LOG="$crash_windows"
 export SHIFT_D3D9_CRASH_DIAGNOSTICS=1
@@ -392,7 +412,7 @@ if ((trigger_capture)); then
   export SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES="$pre_frames"
   export SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES="$post_frames"
   export SHIFT_D3D9_CAPTURE_TRIGGER_KEY=0x79
-  export SHIFT_D3D9_CAPTURE_TRIGGER_FILE="$("$winepath_command" -w "$trigger_file")"
+  export SHIFT_D3D9_CAPTURE_TRIGGER_FILE="$(to_wine_path "$trigger_file")"
   if [[ -n "$resource_trigger" ]]; then
     export SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER="$resource_trigger"
   else
@@ -424,14 +444,14 @@ if ((screenshots)); then
   mkdir -p "$frame_dir"
   export SHIFT_D3D9_CAPTURE_SCREENSHOT=1
   export SHIFT_D3D9_CAPTURE_SCREENSHOT_EVERY=1
-  export SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR="$("$winepath_command" -w "$frame_dir")"
+  export SHIFT_D3D9_CAPTURE_SCREENSHOT_DIR="$(to_wine_path "$frame_dir")"
 fi
 
 if ((buffer_payloads)); then
   buffer_dir="$output/buffers"
   mkdir -p "$buffer_dir"
   export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS=1
-  export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$("$winepath_command" -w "$buffer_dir")"
+  export SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$(to_wine_path "$buffer_dir")"
 else
   unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOADS || true
   unset SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR || true
@@ -441,7 +461,7 @@ if ((texture_payloads)); then
   texture_payload_dir="$output/texture-payloads"
   mkdir -p "$texture_payload_dir"
   export SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS=1
-  export SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR="$("$winepath_command" -w "$texture_payload_dir")"
+  export SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR="$(to_wine_path "$texture_payload_dir")"
 else
   unset SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOADS || true
   unset SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR || true
@@ -473,6 +493,9 @@ echo "Launching: $game"
 echo "WINEPREFIX: $WINEPREFIX"
 echo "Wine exe : $wine_resolved"
 echo "Winepath : $winepath_resolved"
+if [[ "$winepath_resolved" == "internal Z: path mapping" ]]; then
+  echo "Path map : avoiding external winepath/wineserver startup"
+fi
 if [[ -n "$portproton_wine_auto" ]]; then
   echo "Runtime : auto-selected from PW_WINE_USE=$portproton_wine_use"
 fi
