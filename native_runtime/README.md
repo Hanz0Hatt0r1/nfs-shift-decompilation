@@ -610,3 +610,21 @@ noncanonical `BODY+0x15c` row-index vector, verifies the corresponding
 `BODY+0x158` byte-offset view and reads every logical cell back from the
 `BODY+0x154` pool. Aliased/out-of-range rows and upper-triangle writes are
 fail-closed.
+
+
+## Phase 626 generated BODY export join
+
+Run:
+
+```bash
+native_runtime/build/shift_runtime_generated_body_solver_export_check
+```
+
+The checker reuses the Phase 624 mixed prepared BODY fixture, materializes its
+matrix through the Phase 625 canonical builtin row layout and feeds the exact
+result to `FUN_007ba570`. The generated solver vector and 36-double matrix
+must match the exported global destinations with zero error.
+
+This stage is provider-absent only. Provider-shaped noncanonical row storage is
+rejected rather than reinterpreted, and runtime `FUN_007b3ed0` sample refresh
+is still outside the generated input boundary.

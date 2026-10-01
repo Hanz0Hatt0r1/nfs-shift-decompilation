@@ -489,6 +489,38 @@ jobs:
             out/vulkan/runtime/body_constraint_assembly.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/body_constraint_assembly.json
+      - name: Native generated BODY contribution export join
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_generated_body_solver_export
+          native_runtime/build/shift_runtime_generated_body_solver_export_check \
+            | tee out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"format": "SHIFT.NativeGeneratedBodySolverExportCheck/1"' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"generation_function": "FUN_007bc680"' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"storage_function": "FUN_007bb8d0"' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"export_function": "FUN_007ba570"' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"export_source_line": 818768' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"canonical_builtin_row_layout": true' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"generated_contribution_matches_export": true' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"sbex_contribution_shape_ready": true' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"provider_present_rejected": true' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"noncanonical_layout_rejected": true' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"sampled_state_refresh_executed": false' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"max_absolute_error": 0' \
+            out/vulkan/runtime/generated_body_solver_export.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/generated_body_solver_export.json
       - name: Native BODY solver export parity
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \

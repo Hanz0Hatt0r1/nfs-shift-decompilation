@@ -662,3 +662,28 @@ lower-domain cells through a permuted row mapping with zero readback error.
 
 Authentic `FUN_007b3ed0` sample production and the fixed-step
 generated-contribution→`FUN_007ba570` export join remain separate gates.
+
+
+## Phase 626 generated BODY export join
+
+The native physics library now connects the prepared contribution generator to
+the existing retail export primitive in the provider-absent builtin layout.
+
+`generate_and_export_fun_007bc680_body()` executes the Phase 624 prepared
+`FUN_007bc680` BODY contribution, materializes its lower matrix through the
+Phase 625 `FUN_007bb8d0` row-index storage, then supplies the resulting
+`BODY+0x150/+0x154` payloads directly to Phase 612 `FUN_007ba570`.
+
+The exact retail audit at `SHIFT.exe.c:818768` confirms that
+`FUN_007ba570` linearly adds `BODY+0xa4` vector doubles and
+`BODY+0xa8` matrix doubles; it performs no additional row-pointer remap.
+
+Phase 626 therefore requires canonical builtin row indices `row*N` and N²
+matrix storage. Provider-present and noncanonical layouts remain fail-closed.
+The deterministic six-scalar mixed fixture exports the exact Phase 624 vector
+and Phase 625 canonical matrix pool with zero error.
+
+The remaining fixed-step gate is replacing prepared SBEX contribution evidence
+with this generated contribution while retaining the existing exact SBEX/SBFR
+matrix/RHS verification boundary. Authentic `FUN_007b3ed0` sampled-state
+production remains independent.
