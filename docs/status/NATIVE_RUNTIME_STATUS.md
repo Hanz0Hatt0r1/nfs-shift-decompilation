@@ -707,6 +707,26 @@ The deterministic six-scalar fixture reproduces the Phase 624/626 global
 vector/matrix with zero error while reporting
 `contribution_values_stored_in_packet=false`.
 
-This remains downstream of authentic `FUN_007b3ed0` sample refresh. The next
-runtime gate is consuming GBCF on every fixed step and requiring its generated
-global matrix/RHS to match the admitted SBFR before reset/solve.
+This remains downstream of authentic `FUN_007b3ed0` sample refresh.
+
+## Phase 628 generated BODY fixed-step join
+
+The native runtime now accepts `--generated-body-constraint-frame FILE.gbcf`
+together with an admitted `--solver-frame`.
+
+Before every builtin solve it independently regenerates the global matrix/RHS
+through `FUN_007bc680 → FUN_007bb8d0 → FUN_007ba570` and requires exact
+equality with the prepared SBFR before `FUN_007b2210` reset and
+`FUN_007b0f20` solve. GBCF and prepared SBEX are mutually exclusive pre-solve
+evidence sources.
+
+Runtime admission also requires exact workspace cardinality: BODY count,
+JOINT/HINGE sample counts, BAR count and scalar count must match the native
+workspace. Telemetry exposes generated join/generation steps and maximum
+matrix/RHS join error.
+
+Linux CI retains the nonzero six-scalar Phase 627 oracle for arithmetic parity
+and adds a full 11-BODY / 4-JOINT / 4-HINGE / 20-BAR / 40-scalar fixed-step
+scheduler regression. Authentic `FUN_007b3ed0` sample production, retail
+reset-node selection, provider-present dispatch and persistent vehicle motion
+remain outside the prepared boundary.

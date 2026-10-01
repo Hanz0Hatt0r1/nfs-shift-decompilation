@@ -648,5 +648,34 @@ canonical row indices. Native execution derives the contribution through
 Phases 624–626 and aggregates it globally. The packet does not contain solver
 matrix/RHS contribution arrays.
 
-Fixed-step GBCF→SBFR admission and authentic `FUN_007b3ed0` sample refresh
-remain separate gates.
+Phase 628 admits this packet directly on native fixed steps. The runtime
+regenerates the global matrix/RHS and requires exact equality with the supplied
+SBFR before reset/solve. Authentic `FUN_007b3ed0` sample refresh remains a
+separate gate.
+
+## Phase 628 generated BODY fixed-step join
+
+Verify the nonzero GBCF→SBFR equality gate directly:
+
+```bash
+native_runtime/build/shift_runtime_generated_body_solver_frame_join_check \
+  out/generated-body/generated_body_constraints.gbcf \
+  out/generated-body-solver/solver_frame.sbfr
+```
+
+Run the same generated contribution path on every admitted fixed step with:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --participant-boundary out/runtime-participant.json \
+  --solver-frame out/solver/solver_frame.sbfr \
+  --generated-body-constraint-frame out/generated-body/generated_body_constraints.gbcf \
+  --frames 3
+```
+
+`--generated-body-constraint-frame` and `--body-solver-export-frame` are
+mutually exclusive. GBCF stores prepared BODY/sample inputs only; generated
+solver-vector/matrix contribution arrays are never read from the packet.

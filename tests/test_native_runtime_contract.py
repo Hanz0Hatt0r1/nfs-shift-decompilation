@@ -502,3 +502,54 @@ def test_phase615_fixed_step_solver_requires_body_export_join_when_supplied():
     assert "physics_body_solver_export_max_rhs_join_error" in source
     assert "physics_body_solver_export_max_matrix_join_error" in source
     assert "verify_body_export_matches_builtin_solver_frame" in header
+
+
+def test_phase628_fixed_step_solver_accepts_generated_body_frame():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    header = Path(
+        "native_runtime/include/shift_generated_body_constraint_frame.hpp"
+    ).read_text(encoding="utf-8")
+
+    assert '#include "shift_generated_body_constraint_frame.hpp"' in source
+    assert '"--generated-body-constraint-frame"' in source
+    assert (
+        "--generated-body-constraint-frame requires --solver-frame"
+        in source
+    )
+    assert "--generated-body-constraint-frame cannot be combined" in source
+    assert "with --body-solver-export-frame" in source
+    assert "load_prepared_generated_body_constraint_frame" in source
+    assert (
+        "verify_generated_body_constraint_frame_matches_builtin_solver_frame"
+        in source
+    )
+    assert (
+        "generated BODY scalar count does not match solver frame"
+        in source
+    )
+    assert (
+        "generated BODY count does not match physics workspace"
+        in source
+    )
+    assert (
+        "generated BODY sample counts do not match physics workspace"
+        in source
+    )
+    assert "physics_generated_body_constraint_frame_loaded" in source
+    assert "physics_generated_body_constraint_join_steps" in source
+    assert (
+        "physics_generated_body_constraint_native_generation_steps"
+        in source
+    )
+    assert "physics_generated_body_constraint_max_rhs_join_error" in source
+    assert "physics_generated_body_constraint_max_matrix_join_error" in source
+    assert (
+        "physics_generated_body_constraint_values_stored_in_packet"
+        in source
+    )
+    assert (
+        "verify_generated_body_constraint_frame_matches_builtin_solver_frame"
+        in header
+    )

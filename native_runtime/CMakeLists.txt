@@ -151,6 +151,15 @@ target_link_libraries(shift_runtime_generated_body_constraint_frame_check PRIVAT
 target_compile_options(shift_runtime_generated_body_constraint_frame_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_generated_body_solver_frame_join_check
+  tests/generated_body_solver_frame_join_check.cpp)
+target_link_libraries(
+  shift_runtime_generated_body_solver_frame_join_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_generated_body_solver_frame_join_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 add_executable(shift_runtime_generated_body_solver_export_check
   tests/generated_body_solver_export_check.cpp)
 target_link_libraries(shift_runtime_generated_body_solver_export_check PRIVATE
@@ -246,6 +255,13 @@ if(BUILD_TESTING)
     COMMAND shift_runtime_generated_body_constraint_frame_check)
   set_tests_properties(
     shift_runtime_generated_body_constraint_frame_usage
+    PROPERTIES WILL_FAIL TRUE)
+
+  add_test(
+    NAME shift_runtime_generated_body_solver_frame_join_usage
+    COMMAND shift_runtime_generated_body_solver_frame_join_check)
+  set_tests_properties(
+    shift_runtime_generated_body_solver_frame_join_usage
     PROPERTIES WILL_FAIL TRUE)
 
   add_test(
