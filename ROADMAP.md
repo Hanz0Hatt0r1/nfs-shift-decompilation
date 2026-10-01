@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 634. Current development: Phase 635.**
+**Current mainline: Phase 635. Current development: Phase 636.**
 
 
 
@@ -31,6 +31,8 @@ Phase 633 ports the recovered set-only `FUN_00757d2c` mutation semantics for rel
 Phase 634 adds the named four-slot `FUN_00757d2c` dispatcher on top of that kernel. Slots 0..3 retain the proven FL/FR/RL/RR component blocks at `0x400 + slot*0xA80`; a caller-supplied spindle-presence state selects the exact source branch, with the null-spindle branch mutating JOINT/HINGE for `wheel ↔ rear_axle` and the present-spindle branch mutating BAR relations touching `spindle`. All named BODY identities remain CSRF indices and are fail-closed against the BODY domain. The dispatcher is still not scheduled by `shift_runtime`; the next evidence gate is a retail capture of slot trigger, spindle presence and call timing relative to the solver frame.
 
 Phase 635 extends the full retail GDB SDF probe with an observer at `FUN_00757d2c` (`0x00757d2c`). Raw entry state is normalized from `ECX=vehicle` and `EAX=slot*0xA80`, and `relation_state_mutation_events.jsonl` records the exact FL/FR/RL/RR slot, wheel/spindle/rear-axle BODY pointers, spindle-presence branch and caller return address. A shared monotonic `runtime_event_sequence` now anchors mutation, frame-entry, reset, builtin/provider solve and post-solve observations. The observer is full-mode only and does not connect the Phase 634 dispatcher to `shift_runtime`; an authentic retail capture plus offline correlation remains the next gate.
+
+Phase 636 closes the static caller set behind the Phase 635 return-address field. Raw executable disassembly contains exactly five direct `FUN_00757d20` calls: four fixed FL/FR/RL/RR setup calls in `FUN_0076ed60` and one slot-dynamic runtime-threshold call in `FUN_0079a050`. The probe helper classifies exact call/return addresses, source function and caller kind; fixed setup callers additionally require exact slot agreement. Unknown callers remain observable but are not call-site-ready. The next gate remains authentic capture plus fail-closed offline correlation against the existing runtime event timeline.
 
 Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
 
