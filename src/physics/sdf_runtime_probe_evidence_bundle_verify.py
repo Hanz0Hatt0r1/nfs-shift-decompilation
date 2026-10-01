@@ -50,9 +50,9 @@ def _sha256(data: bytes) -> str:
 
 
 def _safe_root_name(name: str) -> bool:
-    if not name or name.startswith(("/", "\")):
+    if not name or name.startswith(("/", "\\")):
         return False
-    if "/" in name or "\" in name:
+    if "/" in name or "\\" in name:
         return False
     if name in (".", ".."):
         return False
