@@ -25,6 +25,10 @@ from relation_state_mutation_timeline_correlation_runtime import (
     analyze_relation_state_mutation_capture_directory,
 )
 
+from sdf_runtime_probe_evidence_bundle import (
+    build_sdf_runtime_probe_evidence_bundle,
+)
+
 TIMELINE_OUTPUT_NAME = "relation_state_mutation_timeline.json"
 
 
@@ -160,7 +164,45 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(final, ensure_ascii=False, indent=2))
             return 2
 
-        final_ready = gdb_returncode == 0 and bool(timeline["ready"])
+        try:
+            evidence_bundle = build_sdf_runtime_probe_evidence_bundle(
+                args.output
+            )
+        except Exception as exc:
+            final = {
+                **result,
+                "status": "blocked",
+                "ready": False,
+                "gdb_returncode": gdb_returncode,
+                "post_capture": {
+                    "automatic_timeline_correlation": True,
+                    "timeline_output": str(
+                        (args.output / TIMELINE_OUTPUT_NAME).resolve()
+                    ),
+                    "ready": bool(timeline["ready"]),
+                    "mutation_event_count": timeline[
+                        "mutation_event_count"
+                    ],
+                    "timeline_anchor_count": timeline[
+                        "timeline_anchor_count"
+                    ],
+                    "summary": timeline["summary"],
+                    "errors": timeline["errors"],
+                    "automatic_evidence_bundle": True,
+                    "evidence_bundle_ready": False,
+                    "evidence_bundle_error": (
+                        f"{type(exc).__name__}: {exc}"
+                    ),
+                },
+            }
+            print(json.dumps(final, ensure_ascii=False, indent=2))
+            return 2
+
+        final_ready = (
+            gdb_returncode == 0
+            and bool(timeline["ready"])
+            and bool(evidence_bundle["ready"])
+        )
         final = {
             **result,
             "status": "completed" if final_ready else "blocked",
@@ -180,6 +222,18 @@ def main(argv: list[str] | None = None) -> int:
                 ],
                 "summary": timeline["summary"],
                 "errors": timeline["errors"],
+                "automatic_evidence_bundle": True,
+                "evidence_bundle_ready": bool(
+                    evidence_bundle["ready"]
+                ),
+                "evidence_bundle_capture_ready": bool(
+                    evidence_bundle["capture_ready"]
+                ),
+                "evidence_bundle_file_count": evidence_bundle[
+                    "file_count"
+                ],
+                "evidence_bundle_archive": evidence_bundle["archive"],
+                "evidence_bundle_errors": evidence_bundle["errors"],
             },
         }
         print(json.dumps(final, ensure_ascii=False, indent=2))
