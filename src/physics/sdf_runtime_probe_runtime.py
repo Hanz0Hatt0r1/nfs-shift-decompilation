@@ -29,6 +29,39 @@ RELATION_STATE_MUTATION_LAYOUT = {
 }
 RELATION_STATE_MUTATION_SLOT_NAMES = ("FL", "FR", "RL", "RR")
 
+RELATION_STATE_MUTATION_CALLSITES = {
+    0x0076EE96: {
+        "call_address": 0x0076EE91,
+        "source_function": "FUN_0076ed60",
+        "kind": "vehicle-setup-slot",
+        "expected_slot": 0,
+    },
+    0x0076EEA8: {
+        "call_address": 0x0076EEA3,
+        "source_function": "FUN_0076ed60",
+        "kind": "vehicle-setup-slot",
+        "expected_slot": 1,
+    },
+    0x0076EEBA: {
+        "call_address": 0x0076EEB5,
+        "source_function": "FUN_0076ed60",
+        "kind": "vehicle-setup-slot",
+        "expected_slot": 2,
+    },
+    0x0076EECC: {
+        "call_address": 0x0076EEC7,
+        "source_function": "FUN_0076ed60",
+        "kind": "vehicle-setup-slot",
+        "expected_slot": 3,
+    },
+    0x0079A5C1: {
+        "call_address": 0x0079A5BC,
+        "source_function": "FUN_0079a050",
+        "kind": "runtime-threshold-slot",
+        "expected_slot": None,
+    },
+}
+
 PHYSICS_OFFSETS = {
     "solver_scalar_count": 0x34,
     "global_matrix_rows": 0x3C,
@@ -91,6 +124,78 @@ def describe_frame_entry_backend(
     }
 
 
+def classify_relation_state_mutation_callsite(
+    *,
+    caller_return_address: int | None,
+    component_slot: int | None,
+) -> dict[str, Any]:
+    """Classify one FUN_00757d20 caller from exact retail return addresses.
+
+    Raw executable disassembly contains exactly five direct calls to
+    FUN_00757d20. Four are fixed FL/FR/RL/RR setup calls in FUN_0076ed60 and
+    one is the slot-dynamic runtime call in FUN_0079a050.
+    """
+    return_address = (
+        None
+        if caller_return_address is None
+        else int(caller_return_address)
+    )
+    record = (
+        None
+        if return_address is None
+        else RELATION_STATE_MUTATION_CALLSITES.get(return_address)
+    )
+
+    if record is None:
+        return {
+            "format": "SHIFT.ConstraintRelationStateMutationCallsite/1",
+            "version": 1,
+            "ready": False,
+            "known_callsite": False,
+            "errors": [
+                (
+                    "caller-return-address-missing"
+                    if return_address is None
+                    else "caller-return-address-unclassified"
+                )
+            ],
+            "caller_return_address": return_address,
+            "caller_call_address": None,
+            "source_function": None,
+            "kind": "unclassified",
+            "expected_slot": None,
+            "observed_slot": component_slot,
+            "slot_matches": None,
+        }
+
+    expected_slot = record["expected_slot"]
+    slot_matches = (
+        True
+        if expected_slot is None
+        else component_slot == expected_slot
+    )
+    errors = []
+    if component_slot is None:
+        errors.append("component-slot-invalid")
+    if expected_slot is not None and not slot_matches:
+        errors.append("fixed-callsite-slot-mismatch")
+
+    return {
+        "format": "SHIFT.ConstraintRelationStateMutationCallsite/1",
+        "version": 1,
+        "ready": not errors,
+        "known_callsite": True,
+        "errors": errors,
+        "caller_return_address": return_address,
+        "caller_call_address": int(record["call_address"]),
+        "source_function": str(record["source_function"]),
+        "kind": str(record["kind"]),
+        "expected_slot": expected_slot,
+        "observed_slot": component_slot,
+        "slot_matches": slot_matches,
+    }
+
+
 def describe_relation_state_mutation_entry(
     *,
     vehicle_pointer: int,
@@ -137,6 +242,11 @@ def describe_relation_state_mutation_entry(
             else "wheel-rear-axle-pair"
         )
 
+    caller_classification = classify_relation_state_mutation_callsite(
+        caller_return_address=caller_return_address,
+        component_slot=component_slot,
+    )
+
     return {
         "format": "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1",
         "version": 1,
@@ -164,6 +274,8 @@ def describe_relation_state_mutation_entry(
             if caller_return_address is None
             else int(caller_return_address)
         ),
+        "caller_classification": caller_classification,
+        "callsite_ready": bool(caller_classification["ready"]),
         "entry_abi": {
             "vehicle_pointer_register": "ECX",
             "component_offset_register": "EAX",
@@ -294,6 +406,8 @@ __all__ = [
     "PHYSICS_OFFSETS",
     "RELATION_STATE_MUTATION_LAYOUT",
     "RELATION_STATE_MUTATION_SLOT_NAMES",
+    "RELATION_STATE_MUTATION_CALLSITES",
+    "classify_relation_state_mutation_callsite",
     "solver_call_stack_layout",
     "derive_physics_system_from_solver_state",
     "capture_geometry",
