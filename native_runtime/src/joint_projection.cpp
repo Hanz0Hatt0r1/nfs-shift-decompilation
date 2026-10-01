@@ -65,26 +65,26 @@ JointProjectionResult evaluate_fun_007bac60_joint(
     const double lz = input.scaled_linear[2];
 
     const double d2 = sz * ay - sy * az;
-    const double d3 = bz * sx - sz * bx;
-    const double d5 = sy * bx - by * sx;
+    const double d3 = az * sx - sz * ax;
+    const double d5 = sy * ax - ay * sx;
 
     const double d4 =
         (sx + bx) * input.quadratic_scale +
         (cx + d2) * input.linear_scale +
         (sz * ry - sy * rz) +
-        (by * d5 - bz * d3) +
+        (ay * d5 - az * d3) +
         lx;
     const double d6 =
         (sy + by) * input.quadratic_scale +
         (cy + d3) * input.linear_scale +
         (sx * rz - sz * rx) +
-        (bz * d2 - bx * d5) +
+        (az * d2 - ax * d5) +
         ly;
     const double d7 =
         (sz + bz) * input.quadratic_scale +
         (cz + d5) * input.linear_scale +
         (sy * rx - sx * ry) +
-        (bx * d3 - by * d2) +
+        (ax * d3 - ay * d2) +
         lz;
 
     JointProjectionResult result{};
