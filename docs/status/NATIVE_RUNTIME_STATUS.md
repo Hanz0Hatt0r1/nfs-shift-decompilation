@@ -730,3 +730,31 @@ and adds a full 11-BODY / 4-JOINT / 4-HINGE / 20-BAR / 40-scalar fixed-step
 scheduler regression. Authentic `FUN_007b3ed0` sample production, retail
 reset-node selection, provider-present dispatch and persistent vehicle motion
 remain outside the prepared boundary.
+
+
+## Phase 629 FUN_007b3ed0 constraint sample refresh
+
+The native physics library now contains the source-backed numerical refresh
+stage that retail executes immediately before per-BODY contribution assembly.
+
+`refresh_fun_007b3ed0_constraints()` preserves the exact top-level array order
+and record strides:
+
+- JOINT relation records: stride 0xA0 → `FUN_007b2da0`;
+- HINGE relation records: stride 0xA0 → `FUN_007b2de0`;
+- BAR relation records: stride 0xB8 → `FUN_007b2f70`.
+
+The implementation also ports both float-boundary frame transforms used by
+retail: `FUN_007aefb0` and transposed-order `FUN_007af0a0`.
+
+The refreshed outputs line up with the already-native Phase 617–624 sample
+fields: JOINT +0x18 position, HINGE +0x48/+0x60 angular/linear rows, and BAR
++0x18 point plus shared normalized +0x40/+0x48/+0x50 direction.
+
+`shift_runtime_constraint_sample_refresh_check` freezes nontrivial JOINT,
+HINGE and BAR oracles, zero-length BAR behavior, non-finite rejection and the
+JOINT→HINGE→BAR frame order at ≤1e-12 parity tolerance.
+
+This phase deliberately does not claim a complete runtime refresh packet.
+Top-level relation ownership/body-sample pointer transport, exact per-frame raw
+inputs and GBCF regeneration remain the next integration boundary.
