@@ -568,3 +568,21 @@ parity tolerance.
 This closes block algebra only. BODY-owned JOINT iteration, sparse row-pointer
 writes, `FUN_007bb250` HINGE coupling and `FUN_007bb6c0` BAR coupling remain
 separate.
+
+
+## Phase 621 native FUN_007bb250 HINGE/HINGE matrix coupling
+
+The native physics library now evaluates the exact source-backed HINGE/HINGE
+block algebra from `FUN_007bb250`.
+
+Both HINGE angular/linear rows cross the retail `FUN_007aefb0` float transform
+boundary before dot products are formed. The native port covers the self 2×2
+lower triangle and pair 2×2 block, including scalar-base transpose orientation
+and equal-side add / differing-side subtract behavior.
+
+`shift_runtime_hinge_matrix_coupling_check` freezes the existing Python
+oracles, verifies bounded block application and rejects range/non-finite input
+at `1e-12` parity tolerance.
+
+HINGE↔BAR coupling inside the same retail function, complete HINGE iteration and
+sparse row-pointer writes remain separate gates.
