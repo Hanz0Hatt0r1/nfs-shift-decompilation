@@ -102,6 +102,10 @@ if ((signature_discovery)) && { ((trigger_capture)) || [[ -n "$frame_start" || -
   exit 2
 fi
 
+if ((signature_discovery)); then
+  mode="capture"
+fi
+
 command -v "$wine_command" >/dev/null 2>&1 || {
   echo "Wine executable not found: $wine_command" >&2
   exit 2
