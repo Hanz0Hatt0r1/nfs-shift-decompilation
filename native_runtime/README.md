@@ -698,3 +698,21 @@ direction.
 Phase 629 refreshes prepared endpoint/sample state only. It does not yet
 serialize the retail 0xA0/0xA0/0xB8 top-level relation ownership into a packet
 or replace GBCF's prepared sample fields on fixed steps.
+
+
+## Phase 630 constraint relation ownership
+
+Run the source-backed `FUN_007b3820` ownership/sample construction regression:
+
+```bash
+native_runtime/build/shift_runtime_constraint_relation_frame_check
+```
+
+The checker reconstructs the positive/negative relation endpoint allocation
+contract, `FUN_007afcd0` BODY-local point conversion, `FUN_007b1230` HINGE
+basis construction and the existing Phase 629 `FUN_007b3ed0` refresh. Output
+samples use the existing `PreparedJointSample`, `PreparedHingeSample` and
+`PreparedBarSample` ABI, so no parallel BODY assembly contract is introduced.
+
+Phase 630 is still an in-memory prepared boundary. It does not emit a GBCF
+packet or claim authentic per-frame relation values.
