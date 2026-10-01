@@ -405,6 +405,32 @@ jobs:
             out/vulkan/runtime/constraint_relation_state_dispatch.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/constraint_relation_state_dispatch.json
+      - name: Native FUN_0076ed60 relation-state initialization
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_constraint_relation_state_initialization
+          native_runtime/build/shift_runtime_constraint_relation_state_initialization_check \
+            | tee out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"format": "SHIFT.NativeConstraintRelationInitializationCheck/1"' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"source_function": "FUN_0076ed60"' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"mutation_function": "FUN_00757d2c"' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"mutation_flag_source_offsets": \[288, 448, 608, 768\]' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"slot_call_order_fl_fr_rl_rr": true' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"disabled_slots_skipped": true' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"initialization_provenance_closed": true' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"fixed_step_scheduler_event": false' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"persistent_runtime_state_integrated": false' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/constraint_relation_state_initialization.json
       - name: Native FUN_007bc680 preprojection seed
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
