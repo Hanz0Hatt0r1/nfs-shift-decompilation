@@ -906,6 +906,43 @@ jobs:
           grep -q '"vehicle_control_neutral_steps": 1' out/vulkan/runtime/input_script.json
           grep -q '"validation_errors": 0' out/vulkan/runtime/input_script.json
           grep -q '"status": "ok"' out/vulkan/runtime/input_script.json
+      - name: Reject mismatched fixed-step post-solve solved vector
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path(
+              "out/vulkan/runtime/fixed_step_post_solve_input.json"
+          )
+          payload = json.loads(source.read_text(encoding="utf-8"))
+          payload["solver_vector"][0] += 1.0
+          target = Path(
+              "out/vulkan/runtime/fixed_step_post_solve_mismatch_input.json"
+          )
+          target.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-post-solve-projection \
+            out/vulkan/runtime/fixed_step_post_solve_mismatch_input.json \
+            out/vulkan/runtime/fixed_step_post_solve_mismatch
+          if xvfb-run -a native_runtime/build/shift_runtime \
+            --scene-set out/vulkan/native_scene_set \
+            --shader-dir native_runtime/build/shaders \
+            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
+            --solver-frame out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
+            --post-solve-projection out/vulkan/runtime/fixed_step_post_solve_mismatch/post_solve.sbps \
+            --frames 1 --validation \
+            > out/vulkan/runtime/post_solve_mismatch.stdout \
+            2> out/vulkan/runtime/post_solve_mismatch.stderr; then
+            echo "runtime unexpectedly accepted mismatched post-solve vector"
+            exit 1
+          fi
+          grep -q "post-solve solved-vector join mismatch" \
+            out/vulkan/runtime/post_solve_mismatch.stderr
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
