@@ -15,6 +15,11 @@ struct BodyExportSolverFrameJoinResult {
     double max_solver_oracle_error = 0.0;
 };
 
+BodyExportSolverFrameJoinResult verify_body_export_matches_builtin_solver_frame(
+    const PreparedBodySolverExportFrame& export_frame,
+    const PreparedBuiltinSolverFrame& solver_frame,
+    double tolerance = 1e-12);
+
 BodyExportSolverFrameJoinResult join_body_export_to_builtin_solver_frame(
     const PreparedBodySolverExportFrame& export_frame,
     const PreparedBuiltinSolverFrame& solver_frame,
