@@ -123,6 +123,28 @@ jobs:
             out/vulkan/runtime/body_solver_export.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/body_solver_export.json
+      - name: Native BODY projection seed parity
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_body_projection_seed
+          native_runtime/build/shift_runtime_body_projection_seed_check \
+            | tee out/vulkan/runtime/body_projection_seed.json
+          grep -q '"format": "SHIFT.NativeBodyProjectionSeedCheck/1"' \
+            out/vulkan/runtime/body_projection_seed.json
+          grep -q '"source_function": "FUN_007bc680"' \
+            out/vulkan/runtime/body_projection_seed.json
+          grep -q '"transform_function": "FUN_007aefb0"' \
+            out/vulkan/runtime/body_projection_seed.json
+          grep -q '"transformed_residual": \[140, 320, 500\]' \
+            out/vulkan/runtime/body_projection_seed.json
+          grep -q '"scaled_linear": \[0.5, -1, 2\]' \
+            out/vulkan/runtime/body_projection_seed.json
+          grep -q '"non_finite_rejected": true' \
+            out/vulkan/runtime/body_projection_seed.json
+          grep -q '"full_FUN_007bc680_implemented": false' \
+            out/vulkan/runtime/body_projection_seed.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/body_projection_seed.json
       - name: Prepared native BODY solver export frame
         run: |
           mkdir -p out/vulkan/runtime/body_solver_export_frame
