@@ -278,10 +278,8 @@ PreparedBuiltinSolverFrame load_prepared_builtin_solver_frame(
     return frame;
 }
 
-PreparedBuiltinSolverFrameResult
-execute_prepared_builtin_solver_frame_with_reset_nodes(
+PreparedBuiltinSolverFrameResult execute_prepared_builtin_solver_frame(
     const PreparedBuiltinSolverFrame& frame,
-    const std::vector<std::size_t>& reset_nodes,
     double tolerance) {
 
     if (!std::isfinite(tolerance) ||
@@ -293,7 +291,7 @@ execute_prepared_builtin_solver_frame_with_reset_nodes(
     const auto reset = apply_builtin_diagonal_reset(
         frame.matrix,
         frame.rhs,
-        reset_nodes);
+        frame.reset_nodes);
     const auto solved = solve_builtin_sparse(
         reset.matrix,
         reset.rhs,
@@ -332,16 +330,6 @@ execute_prepared_builtin_solver_frame_with_reset_nodes(
         solved.solution,
         max_error,
     };
-}
-
-PreparedBuiltinSolverFrameResult execute_prepared_builtin_solver_frame(
-    const PreparedBuiltinSolverFrame& frame,
-    double tolerance) {
-
-    return execute_prepared_builtin_solver_frame_with_reset_nodes(
-        frame,
-        frame.reset_nodes,
-        tolerance);
 }
 
 }  // namespace shift::runtime::physics
