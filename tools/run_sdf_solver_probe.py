@@ -89,7 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--capture-frames",
         type=int,
         help=(
-            "full mode only: stop on the Nth post-solve hit, "
+            "full or relation-timeline mode: stop on the Nth post-solve hit, "
             "then detach and quit GDB"
         ),
     )
