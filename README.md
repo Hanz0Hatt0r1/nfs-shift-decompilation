@@ -493,8 +493,8 @@ gates still apply; missing authentic mutation evidence remains blocked.
 
 The first authentic lightweight long-window capture covered 600 post-solve
 frames and 1200 contiguous timeline anchors without any `FUN_00757d2c` hit.
-The launcher now supports `--stop-on-relation-mutation`, which writes the
-first mutation event and then stops GDB so the generated command file can detach
-and quit immediately. It can be combined with a large `--capture-frames N`
+The launcher now supports `--stop-after-relation-mutation`, which records the
+mutation and stops at the next post-solve anchor so the generated command file
+can detach with a usable timeline neighbor. It can be combined with a large `--capture-frames N`
 fallback, allowing setup-time mutations to end the capture before the frame
 budget expires.
