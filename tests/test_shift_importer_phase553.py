@@ -372,6 +372,21 @@ def test_phase609_cli_accepts_native_post_solve_projection():
     assert args.fn.__name__ == "cmd_native_post_solve_projection"
 
 
+def test_phase627_cli_accepts_generated_body_constraint_frame():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-generated-body-constraint-frame",
+        "generated-body-input.json",
+        "out/generated-body",
+    ])
+
+    assert args.input == "generated-body-input.json"
+    assert args.output_dir == "out/generated-body"
+    assert args.fn.__name__ == (
+        "cmd_native_generated_body_constraint_frame"
+    )
+
+
 def test_phase613_cli_accepts_prepared_body_solver_export_frame():
     parser = build_parser()
     args = parser.parse_args([
