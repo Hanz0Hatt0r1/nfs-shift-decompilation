@@ -329,3 +329,16 @@ def test_phase600_cli_accepts_native_camera_state_bridge():
         "camera-complete.json",
     ]
     assert args.fn.__name__ == "cmd_native_camera_state_bridge"
+
+
+def test_phase606_cli_accepts_native_builtin_solver_frame():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-builtin-solver-frame",
+        "solver-frame-input.json",
+        "out/native-solver-frame",
+    ])
+
+    assert args.input == "solver-frame-input.json"
+    assert args.output_dir == "out/native-solver-frame"
+    assert args.fn.__name__ == "cmd_native_builtin_solver_frame"
