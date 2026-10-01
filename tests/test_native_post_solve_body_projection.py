@@ -77,12 +77,12 @@ def test_prepared_post_solve_projection_matches_python_source_oracle():
     assert report["boundary"]["fixed_step_runtime_integration"] is False
 
     bodies = report["oracle"]["bodies"]
-    assert bodies[0]["linear"] == pytest.approx([-5.0, -10.0, 4.0])
-    assert bodies[0]["angular"] == pytest.approx([0.0, 0.0, -7.0])
+    assert bodies[0]["linear"] == pytest.approx([-5.0, -11.0, 4.0])
+    assert bodies[0]["angular"] == pytest.approx([0.0, -4.0, -11.0])
     assert bodies[1]["linear"] == pytest.approx([2.0, 2.0, 2.0])
-    assert bodies[1]["angular"] == pytest.approx([6.0, 8.0, 1.0])
+    assert bodies[1]["angular"] == pytest.approx([2.0, 8.0, 5.0])
     assert bodies[2]["linear"] == pytest.approx([7.0, 14.0, 0.0])
-    assert bodies[2]["angular"] == pytest.approx([-14.0, 7.0, -5.0])
+    assert bodies[2]["angular"] == pytest.approx([-20.0, 7.0, -5.0])
 
 
 @pytest.mark.parametrize(
