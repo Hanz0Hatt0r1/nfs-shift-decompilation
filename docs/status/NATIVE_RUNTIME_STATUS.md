@@ -879,8 +879,8 @@ and fail-closed cardinality/domain errors.
 
 This kernel is not scheduled by `shift_runtime`. Raw executable disassembly proves that `FUN_00757d20(index)` routes a
 0..3 component index through `FUN_00469736`, which multiplies it by the
-0xA80 component stride before `FUN_00757d2c`. The exact event identity,
-component-field BODY mapping and retail dispatch timing remain unresolved, so
+0xA80 component stride before `FUN_00757d2c`. The same setup resolves the slots to FL/FR/RL/RR wheel/spindle BODY names and
+`rear_axle`. Retail event identity and dispatch timing remain unresolved, so
 Phase 633 does not fabricate a fixed-step trigger.
 
 Remaining blockers are authentic per-frame BODY/raw relation state, mutation
