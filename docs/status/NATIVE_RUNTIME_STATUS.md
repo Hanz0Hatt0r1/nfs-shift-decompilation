@@ -540,3 +540,31 @@ primitives used by the `FUN_007bc680` contribution path now have native
 source-backed implementations. BODY-owned sample iteration and
 `FUN_007bbb80/FUN_007bb250/FUN_007bb6c0` matrix-coupling orchestration remain
 separate gates.
+
+
+## Phase 620 native FUN_007bbb80 JOINT matrix coupling
+
+The native physics library now evaluates the exact source-backed JOINT-owned
+matrix block algebra from `FUN_007bbb80`.
+
+The port covers:
+
+- JOINT self 3×3 lower-triangle block;
+- JOINT↔JOINT 3×3 block;
+- JOINT↔HINGE 3×2 block;
+- JOINT↔BAR 3×1 block;
+- exact equal-side add / differing-side subtract behavior;
+- exact lower-triangle orientation from scalar-base ordering.
+
+The `d15` intermediate remains explicitly sourced as
+`m00*y - m01*x`, preserving the earlier correction that rejected an
+accidental `m02` substitution.
+
+`shift_runtime_joint_matrix_coupling_check` verifies all frozen Python
+oracle blocks, both storage orientations, a non-degenerate off-diagonal tensor,
+bounded matrix writes and fail-closed range/non-finite handling at `1e-12`
+parity tolerance.
+
+This closes block algebra only. BODY-owned JOINT iteration, sparse row-pointer
+writes, `FUN_007bb250` HINGE coupling and `FUN_007bb6c0` BAR coupling remain
+separate.
