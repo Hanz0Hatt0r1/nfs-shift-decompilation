@@ -33,11 +33,11 @@
   },
   "joint": {
     "d2": "sample.z*body.axis.y - sample.y*body.axis.z",
-    "d3": "body.pos.z*sample.x - sample.z*body.pos.x",
-    "d5": "sample.y*body.pos.x - body.pos.y*sample.x",
-    "d4": "(sample.x+body.pos.x)*Q + (body.correction.x+d2)*L + (sample.z*residual.y-sample.y*residual.z) + (body.pos.y*d5-body.pos.z*d3) + linear.x",
-    "d6": "(sample.y+body.pos.y)*Q + (body.correction.y+d3)*L + (sample.x*residual.z-sample.z*residual.x) + (body.pos.z*d2-body.pos.x*d5) + linear.y",
-    "d7": "(sample.z+body.pos.z)*Q + (body.correction.z+d5)*L + (sample.y*residual.x-sample.x*residual.y) + (body.pos.x*d3-body.pos.y*d2) + linear.z"
+    "d3": "body.axis.z*sample.x - sample.z*body.axis.x",
+    "d5": "sample.y*body.axis.x - body.axis.y*sample.x",
+    "d4": "(sample.x+body.pos.x)*Q + (body.correction.x+d2)*L + (sample.z*residual.y-sample.y*residual.z) + (body.axis.y*d5-body.axis.z*d3) + linear.x",
+    "d6": "(sample.y+body.pos.y)*Q + (body.correction.y+d3)*L + (sample.x*residual.z-sample.z*residual.x) + (body.axis.z*d2-body.axis.x*d5) + linear.y",
+    "d7": "(sample.z+body.pos.z)*Q + (body.correction.z+d5)*L + (sample.y*residual.x-sample.x*residual.y) + (body.axis.x*d3-body.axis.y*d2) + linear.z"
   },
   "hinge": {
     "tx": "body.axis.x*L + residual.x",
