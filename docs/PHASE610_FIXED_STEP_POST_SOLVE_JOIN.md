@@ -82,8 +82,11 @@ The five-step runtime smoke requires five solver steps and five post-solve
 steps, zero solver-vector join error, zero oracle error and BODY projection
 applied=true while persistent vehicle state remains false.
 
-A second SBPS packet is internally valid but changes one solved scalar. Native
-runtime must reject it with `post-solve solved-vector join mismatch`.
+A second SBPS packet is internally valid but changes one solved scalar. The
+deterministic `shift_runtime_solver_post_solve_join_check` executes the same
+native solver→projection API chain without X11/Vulkan and must reject it with
+`post-solve solved-vector join mismatch`. The happy path remains exercised by
+the real five-step `shift_runtime` scheduler.
 
 ## Boundary after Phase 610
 
