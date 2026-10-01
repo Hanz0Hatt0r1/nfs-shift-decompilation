@@ -443,3 +443,22 @@ does not match SBFR.
 
 This is still an evidence join. BODY contribution generation and runtime reset
 selection remain external inputs.
+
+
+## Phase 615 fixed-step BODY export gate
+
+The fixed-step runtime now accepts `--body-solver-export-frame FILE` only
+alongside `--solver-frame FILE`.
+
+Before every prepared builtin solve, the runtime replays the supplied
+proof-gated `FUN_007ba570` BODY contributions and requires exact equality with
+the SBFR pre-reset RHS and complete N×N matrix. Only then may the existing
+`FUN_007b2210 → FUN_007b0f20` path execute.
+
+Telemetry reports BODY export join-step count plus maximum RHS/matrix error.
+Linux CI runs five matching 40-scalar runtime steps and requires five zero-error
+SBEX→SBFR joins. The deterministic Phase 614 join regression independently
+keeps a valid-but-mismatched SBEX fail-closed.
+
+This remains an evidence gate: `FUN_007bc680` contribution generation,
+runtime reset selection and provider-present dispatch are still external.

@@ -4,6 +4,8 @@
 #include "shift_ir.hpp"
 #include "runtime_state.hpp"
 #include "shift_builtin_solver_frame.hpp"
+#include "shift_body_export_solver_join.hpp"
+#include "shift_body_solver_export_frame.hpp"
 #include "shift_post_solve_projection.hpp"
 #include "shift_vulkan_validation.hpp"
 
@@ -2961,6 +2963,7 @@ struct Args {
     std::string physics_manifest;
     std::string participant_boundary;
     std::string solver_frame;
+    std::string body_solver_export_frame;
     std::string post_solve_projection;
     std::string shader_dir;
     std::string input_script;
@@ -2981,6 +2984,7 @@ Args parse_args(int argc, char** argv) {
             option == "--physics-manifest" ||
             option == "--participant-boundary" ||
             option == "--solver-frame" ||
+            option == "--body-solver-export-frame" ||
             option == "--post-solve-projection" ||
             option == "--shader-dir" ||
             option == "--input-script" ||
@@ -3001,6 +3005,8 @@ Args parse_args(int argc, char** argv) {
                 args.participant_boundary = value;
             } else if (option == "--solver-frame") {
                 args.solver_frame = value;
+            } else if (option == "--body-solver-export-frame") {
+                args.body_solver_export_frame = value;
             } else if (option == "--post-solve-projection") {
                 args.post_solve_projection = value;
             } else if (option == "--shader-dir") {
@@ -3022,6 +3028,7 @@ Args parse_args(int argc, char** argv) {
                 << "--shader-dir DIR [--camera-state FILE] "
                 << "[--participant-boundary FILE] "
                 << "[--solver-frame FILE] "
+                << "[--body-solver-export-frame FILE] "
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
@@ -3186,6 +3193,9 @@ int main(int argc, char** argv) {
             << input_script.steps.size() << ",\n"
             << "  \"solver_frame_mode\": "
             << (!args.solver_frame.empty() ? "true" : "false") << ",\n"
+            << "  \"body_solver_export_frame_mode\": "
+            << (!args.body_solver_export_frame.empty() ? "true" : "false")
+            << ",\n"
             << "  \"post_solve_projection_mode\": "
             << (!args.post_solve_projection.empty() ? "true" : "false")
             << ",\n"
@@ -3313,6 +3323,33 @@ int main(int argc, char** argv) {
                     "solver frame scalar count does not match physics workspace");
             }
         }
+        const bool body_solver_export_frame_mode =
+            !args.body_solver_export_frame.empty();
+        shift::runtime::physics::PreparedBodySolverExportFrame
+            body_solver_export_frame{};
+        uint64_t body_solver_export_join_steps = 0;
+        double body_solver_export_max_rhs_join_error = 0.0;
+        double body_solver_export_max_matrix_join_error = 0.0;
+        if (body_solver_export_frame_mode) {
+            if (!solver_frame_mode) {
+                throw std::runtime_error(
+                    "--body-solver-export-frame requires --solver-frame");
+            }
+            body_solver_export_frame =
+                shift::runtime::physics::
+                    load_prepared_body_solver_export_frame(
+                        args.body_solver_export_frame);
+            if (body_solver_export_frame.scalar_count !=
+                solver_frame_scalar_count) {
+                throw std::runtime_error(
+                    "BODY solver export scalar count does not match solver frame");
+            }
+            shift::runtime::physics::
+                verify_body_export_matches_builtin_solver_frame(
+                    body_solver_export_frame,
+                    solver_frame);
+        }
+
         const bool post_solve_projection_mode =
             !args.post_solve_projection.empty();
         if (args.persist_post_solve_body_state &&
@@ -3398,6 +3435,22 @@ int main(int argc, char** argv) {
                     !native_state.physics.participant_identity_join_proven) {
                     throw std::runtime_error(
                         "solver frame lost ready participant identity");
+                }
+                if (body_solver_export_frame_mode) {
+                    const auto body_join =
+                        shift::runtime::physics::
+                            verify_body_export_matches_builtin_solver_frame(
+                                body_solver_export_frame,
+                                solver_frame);
+                    body_solver_export_max_rhs_join_error =
+                        std::max(
+                            body_solver_export_max_rhs_join_error,
+                            body_join.max_rhs_join_error);
+                    body_solver_export_max_matrix_join_error =
+                        std::max(
+                            body_solver_export_max_matrix_join_error,
+                            body_join.max_matrix_join_error);
+                    ++body_solver_export_join_steps;
                 }
                 const auto solver_result =
                     shift::runtime::physics::
@@ -3610,6 +3663,15 @@ int main(int argc, char** argv) {
             << solver_frame_steps << ",\n"
             << "  \"physics_solver_frame_max_oracle_error\": "
             << solver_frame_max_oracle_error << ",\n"
+            << "  \"physics_body_solver_export_frame_loaded\": "
+            << (body_solver_export_frame_mode ? "true" : "false")
+            << ",\n"
+            << "  \"physics_body_solver_export_join_steps\": "
+            << body_solver_export_join_steps << ",\n"
+            << "  \"physics_body_solver_export_max_rhs_join_error\": "
+            << body_solver_export_max_rhs_join_error << ",\n"
+            << "  \"physics_body_solver_export_max_matrix_join_error\": "
+            << body_solver_export_max_matrix_join_error << ",\n"
             << "  \"physics_solver_provider_present\": false,\n"
             << "  \"physics_post_solve_projection_loaded\": "
             << (post_solve_projection_mode ? "true" : "false") << ",\n"

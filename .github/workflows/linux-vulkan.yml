@@ -968,6 +968,65 @@ jobs:
             out/vulkan/runtime/fixed_step_solver_frame_check.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/fixed_step_solver_frame_check.json
+      - name: Prepare fixed-step BODY export join evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = json.loads(
+              Path(
+                  "out/vulkan/runtime/fixed_step_solver_frame_input.json"
+              ).read_text(encoding="utf-8")
+          )
+          matrix = source["matrix"]
+          rhs = source["rhs"]
+          scalar_count = len(rhs)
+          flat_matrix = [
+              value
+              for row in matrix
+              for value in row
+          ]
+          payload = {
+              "format": "SHIFT.NativeBodySolverExportFrameInput/1",
+              "version": 1,
+              "verification_scope": (
+                  "synthetic-fixed-step-body-export-solver-join"
+              ),
+              "contribution_values_ready": True,
+              "body_order_ready": True,
+              "destination_shape_ready": True,
+              "body_count": 1,
+              "solver_scalar_count": scalar_count,
+              "bodies": [{
+                  "body_index": 0,
+                  "solver_vector": rhs,
+                  "solver_matrix": flat_matrix,
+              }],
+          }
+          Path(
+              "out/vulkan/runtime/fixed_step_body_export_input.json"
+          ).write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-body-solver-export-frame \
+            out/vulkan/runtime/fixed_step_body_export_input.json \
+            out/vulkan/runtime/fixed_step_body_export \
+            > out/vulkan/runtime/fixed_step_body_export_prepare.json
+          native_runtime/build/shift_runtime_body_export_solver_join_check \
+            out/vulkan/runtime/fixed_step_body_export/body_solver_export.sbex \
+            out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
+            | tee out/vulkan/runtime/fixed_step_body_export_join_check.json
+          grep -q '"scalar_count": 40' \
+            out/vulkan/runtime/fixed_step_body_export_join_check.json
+          grep -q '"max_rhs_join_error": 0' \
+            out/vulkan/runtime/fixed_step_body_export_join_check.json
+          grep -q '"max_matrix_join_error": 0' \
+            out/vulkan/runtime/fixed_step_body_export_join_check.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/fixed_step_body_export_join_check.json
       - name: Prepare fixed-step post-solve projection
         run: |
           python3 - <<'PY'
@@ -1102,6 +1161,7 @@ jobs:
             --camera-state out/vulkan/camera/native_camera.json \
             --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
             --solver-frame out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
+            --body-solver-export-frame out/vulkan/runtime/fixed_step_body_export/body_solver_export.sbex \
             --post-solve-projection out/vulkan/runtime/fixed_step_post_solve/post_solve.sbps \
             --input-script out/vulkan/runtime/native_input.script \
             --validation | tee out/vulkan/runtime/input_script.json
@@ -1132,6 +1192,10 @@ jobs:
           grep -q '"physics_solver_frame_reset_node_count": 1' out/vulkan/runtime/input_script.json
           grep -q '"physics_solver_frame_steps": 5' out/vulkan/runtime/input_script.json
           grep -q '"physics_solver_frame_max_oracle_error": 0' out/vulkan/runtime/input_script.json
+          grep -q '"physics_body_solver_export_frame_loaded": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_body_solver_export_join_steps": 5' out/vulkan/runtime/input_script.json
+          grep -q '"physics_body_solver_export_max_rhs_join_error": 0' out/vulkan/runtime/input_script.json
+          grep -q '"physics_body_solver_export_max_matrix_join_error": 0' out/vulkan/runtime/input_script.json
           grep -q '"physics_solver_provider_present": false' out/vulkan/runtime/input_script.json
           grep -q '"physics_post_solve_projection_loaded": true' out/vulkan/runtime/input_script.json
           grep -q '"physics_post_solve_projection_body_count": 11' out/vulkan/runtime/input_script.json

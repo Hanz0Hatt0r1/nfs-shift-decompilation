@@ -437,3 +437,23 @@ native_runtime/build/shift_runtime_body_export_solver_join_check \
 
 The join is pre-reset and fail-closed. It then runs the existing reset/solve
 oracle only after the full vector and N×N matrix match.
+
+
+## Phase 615 fixed-step BODY export evidence
+
+A prepared solver frame can now be guarded by an explicit BODY export frame:
+
+```bash
+native_runtime/build/shift_runtime \
+  --scene-set out/native-scene-vulkan \
+  --shader-dir native_runtime/build/shaders \
+  --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+  --participant-boundary out/native_physics_participant_runtime_evidence.json \
+  --solver-frame out/native-solver-frame/solver_frame.sbfr \
+  --body-solver-export-frame out/native-body-export/body_solver_export.sbex \
+  --frames 120
+```
+
+On every fixed step the runtime replays `FUN_007ba570`, verifies the complete
+pre-reset RHS/matrix against SBFR, and only then executes the prepared builtin
+reset/solve path. A supplied mismatch is fail-closed.
