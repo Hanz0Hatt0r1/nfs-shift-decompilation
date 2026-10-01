@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 608.**
+**Current mainline: Phase 609.**
 
 
 
@@ -123,6 +123,7 @@ Phase 606 adds `SHIFT.NativeBuiltinSolverFrame/1`: an explicit provider-absent m
 80. Add a fail-closed prepared builtin solver-frame contract containing explicit provider-absent proof, matrix/RHS, reset nodes and exact sparse graph, then execute FUN_007b2210 → FUN_007b0f20 with Python/native oracle parity — Phase 606 implemented.
 81. Promote one concrete native participant only from independent manager-registry and IGPhaseVehicle selected-pointer runtime observations while retaining selector ordinal as a separate identity domain — Phase 607 implemented as SHIFT.NativePhysicsParticipantRuntimeEvidence/1.
 82. Execute an exact Phase 606 provider-absent solver frame on the native fixed-step scheduler only when Phase 607 participant evidence is ready and solver/workspace scalar cardinality matches — Phase 608 implemented.
+83. Port the source-backed FUN_007b4110 JOINT/HINGE/BAR post-solve arithmetic plus FUN_007baa70/baaf0 body accumulator helpers to native C++, independently of scheduler/body mapping — Phase 609 implemented.
 
 ## Workstream status
 
@@ -138,7 +139,7 @@ Phase 606 adds `SHIFT.NativeBuiltinSolverFrame/1`: an explicit provider-absent m
 | SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed IMB/IMX neutral geometry; Silverstone capture/matcher/admission, native scene execution, external sampler admission, Phase 594 root solve, Phase 595 candidate join, Phase 596 owner-scoped cross-resource root consensus and Phase 597 consensus→handoff application implemented | authentic Silverstone D3D9 capture content + renderer-owned resource types beyond sampler2D/samplerCube-s3 + runtime IMX same-instance proof + authentic Phase 598 production coverage numbers + historical SceneGraph update sequence |
 | Camera | source-backed manager/state primitives + native snapshot/double-buffer handoff | retail timing/controller/view-selection behavior and exact render integration |
 | Native input | live keyboard intent + deterministic fixed-step input-script path | gamepad/analog normalization and retail input filtering |
-| Vehicle physics | active; Phase 607 runtime participant promotion + Phase 608 fixed-step prepared builtin solver execution implemented | authentic matrix/RHS/reset observations, provider dispatch, post-solve body-state application and numerical parity |
+| Vehicle physics | Phase 607 participant promotion + Phase 608 fixed-step builtin solve + Phase 609 native post-solve arithmetic implemented | authentic matrix/RHS/reset observations, provider dispatch and exact constraint/body mapping into post-solve state |
 | Builtin solver | source-backed + native FUN_007b0f20/FUN_007b2210 + Phase 606 packet/oracle + Phase 608 fixed-step scheduling | authentic per-step matrix/RHS/reset selection and post-solve body-state parity |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
