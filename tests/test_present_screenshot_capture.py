@@ -345,3 +345,22 @@ def test_capture_launchers_clear_previous_session_outputs():
     assert 'Remove-Item -LiteralPath $crashPath -Force' in powershell
     assert 'Join-Path $out "resource_signatures.json"' in powershell
     assert 'Join-Path $out "capture.trigger"' in powershell
+
+
+def test_capture_launchers_accept_explicit_d3dx9_41_source_path():
+    powershell = Path("tools/run_shift_capture.ps1").read_text(encoding="utf-8")
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert "--d3dx9-41" in wine
+    assert 'target_d3dx="$game_dir/d3dx9_41.dll"' in wine
+    assert 'backup_d3dx="$output/original_d3dx9_41.dll"' in wine
+    assert 'cp -f "$d3dx9_41" "$target_d3dx"' in wine
+    assert 'cp -f "$backup_d3dx" "$target_d3dx"' in wine
+    assert '--d3dx9-41 must point to an external source DLL' in wine
+
+    assert '[string]$D3DX9_41 = ""' in powershell
+    assert '$targetD3DX = Join-Path $gameDir "d3dx9_41.dll"' in powershell
+    assert '$backupD3DX = Join-Path $out "original_d3dx9_41.dll"' in powershell
+    assert 'Copy-Item -LiteralPath $d3dxPath -Destination $targetD3DX -Force' in powershell
+    assert 'Copy-Item -LiteralPath $backupD3DX -Destination $targetD3DX -Force' in powershell
+    assert 'D3DX9_41 must point to an external source DLL' in powershell

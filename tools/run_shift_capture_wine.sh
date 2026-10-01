@@ -5,7 +5,7 @@ usage() {
   cat <<'EOF'
 Usage:
   bash tools/run_shift_capture_wine.sh --game /path/to/SHIFT.exe \
-    --proxy /path/to/d3d9.dll [--output DIR] \
+    --proxy /path/to/d3d9.dll [--d3dx9-41 /path/to/d3dx9_41.dll] [--output DIR] \
     [--mode passthrough|diagnostic|capture] [--debug-output] \
     [--frame-start N] [--frame-end N] \
     [--signature-discovery] \
@@ -25,6 +25,7 @@ repo_root="$(cd "$script_dir/.." && pwd)"
 
 game=""
 proxy=""
+d3dx9_41=""
 output="./shift-capture"
 mode="diagnostic"
 wine_command="${WINE_COMMAND:-wine}"
@@ -46,6 +47,7 @@ while (($#)); do
   case "$1" in
     --game) game="${2:?missing value for --game}"; shift 2 ;;
     --proxy) proxy="${2:?missing value for --proxy}"; shift 2 ;;
+    --d3dx9-41) d3dx9_41="${2:?missing value for --d3dx9-41}"; shift 2 ;;
     --output) output="${2:?missing value for --output}"; shift 2 ;;
     --mode) mode="${2:?missing value for --mode}"; shift 2 ;;
     --wine) wine_command="${2:?missing value for --wine}"; shift 2 ;;
@@ -117,10 +119,16 @@ command -v winepath >/dev/null 2>&1 || {
 
 game="$(realpath "$game")"
 proxy="$(realpath "$proxy")"
+if [[ -n "$d3dx9_41" ]]; then
+  d3dx9_41="$(realpath "$d3dx9_41")"
+fi
 output="$(realpath -m "$output")"
 
 [[ -f "$game" ]] || { echo "game not found: $game" >&2; exit 2; }
 [[ -f "$proxy" ]] || { echo "proxy not found: $proxy" >&2; exit 2; }
+if [[ -n "$d3dx9_41" ]]; then
+  [[ -f "$d3dx9_41" ]] || { echo "d3dx9_41.dll not found: $d3dx9_41" >&2; exit 2; }
+fi
 [[ "${proxy##*/}" == "d3d9.dll" ]] || {
   echo "proxy must be named d3d9.dll" >&2
   exit 2
@@ -129,9 +137,14 @@ output="$(realpath -m "$output")"
 game_dir="${game%/*}"
 target_dll="$game_dir/d3d9.dll"
 sidecar_dll="$game_dir/d3d9.shift_backend.dll"
+target_d3dx="$game_dir/d3dx9_41.dll"
 
 if [[ "$proxy" == "$target_dll" ]]; then
   echo "--proxy must point to the built artifact, not the game's d3d9.dll" >&2
+  exit 2
+fi
+if [[ -n "$d3dx9_41" && "$d3dx9_41" == "$target_d3dx" ]]; then
+  echo "--d3dx9-41 must point to an external source DLL, not the game's d3dx9_41.dll" >&2
   exit 2
 fi
 
@@ -140,6 +153,7 @@ capture_path="$output/shift_d3d9_capture.jsonl"
 crash_path="$output/shift_d3d9_crash.jsonl"
 backup_dll="$output/original_d3d9.dll"
 backup_sidecar="$output/original_d3d9.shift_backend.dll"
+backup_d3dx="$output/original_d3dx9_41.dll"
 
 # Every launcher invocation represents one capture session. The native writer
 # appends by design, so clear launcher-owned outputs here to avoid mixing
@@ -151,6 +165,7 @@ if ((texture_payloads)); then rm -rf "$output/texture-payloads"; fi
 
 had_dll=0
 had_sidecar=0
+had_d3dx=0
 staged_backend=0
 
 # Make every recovery copy before changing the game directory.
@@ -161,6 +176,10 @@ fi
 if [[ -f "$sidecar_dll" ]]; then
   cp -f "$sidecar_dll" "$backup_sidecar"
   had_sidecar=1
+fi
+if [[ -n "$d3dx9_41" && -f "$target_d3dx" ]]; then
+  cp -f "$target_d3dx" "$backup_d3dx"
+  had_d3dx=1
 fi
 
 restore() {
@@ -175,6 +194,13 @@ restore() {
     cp -f "$backup_sidecar" "$sidecar_dll"
   else
     rm -f "$sidecar_dll"
+  fi
+  if [[ -n "$d3dx9_41" ]]; then
+    if ((had_d3dx)); then
+      cp -f "$backup_d3dx" "$target_d3dx"
+    else
+      rm -f "$target_d3dx"
+    fi
   fi
   exit "$rc"
 }
@@ -193,6 +219,9 @@ if ((had_dll)); then
 fi
 
 cp -f "$proxy" "$target_dll"
+if [[ -n "$d3dx9_41" ]]; then
+  cp -f "$d3dx9_41" "$target_d3dx"
+fi
 
 capture_windows="$(winepath -w "$capture_path")"
 crash_windows="$(winepath -w "$crash_path")"
@@ -308,6 +337,11 @@ echo "Capture : $capture_path"
 echo "Crash   : $crash_path"
 echo "Mode    : $mode"
 echo "DLL ovrd: d3d9=n,b; d3dx9_41=n,b"
+if [[ -n "$d3dx9_41" ]]; then
+  echo "D3DX9  : $d3dx9_41 -> $target_d3dx"
+else
+  echo "D3DX9  : no explicit source DLL supplied"
+fi
 if ((signature_discovery)); then
   echo "Discover: compact resource-signature pass"
 fi
