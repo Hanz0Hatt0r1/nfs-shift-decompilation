@@ -384,6 +384,8 @@ def build_native_post_solve_body_projection(
             "provider_path_supported": True,
             "fixed_step_runtime_integration": False,
             "fixed_step_runtime_consumer_available": True,
+            "persistent_body_accumulator_mode_available": True,
+            "persistent_vehicle_state_available": False,
             "assigns_physical_units": False,
         },
     }
