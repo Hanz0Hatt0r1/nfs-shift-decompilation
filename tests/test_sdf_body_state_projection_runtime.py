@@ -1,3 +1,5 @@
+from matrix_vector_transform_runtime import Matrix3x3
+
 import sdf_body_state_projection_runtime as runtime
 
 
@@ -48,3 +50,43 @@ def test_post_solve_order_records_builtin_solver_then_application():
         "provider vtable +0x18 or FUN_007b0f20",
         "FUN_007b4110 solved-vector application",
     ]
+
+
+def test_fun_007bc680_preprojection_seed_matches_retail_residual_and_transform():
+    result = runtime.evaluate_fun_007bc680_preprojection(
+        body_correction=(1.0, 2.0, 3.0),
+        body_axis=(4.0, 5.0, 6.0),
+        angular_state=(10.0, 20.0, 30.0),
+        body_frame=Matrix3x3(
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ),
+        linear_state=(2.0, 4.0, 6.0),
+        inverse_scalar=0.5,
+    )
+    assert result["format"] == "SHIFT.SDFBodyPreProjectionRuntime/1"
+    assert result["source_function"] == "FUN_007bc680"
+    assert result["transform_function"] == "FUN_007aefb0"
+    assert result["residual"] == [7.0, 26.0, 27.0]
+    assert result["transformed_residual"] == [140.0, 320.0, 500.0]
+    assert result["scaled_linear"] == [1.0, 2.0, 3.0]
+    assert result["full_constraint_projection_executed"] is False
+
+
+def test_fun_007bc680_preprojection_rejects_non_finite_seed():
+    import pytest
+
+    with pytest.raises(ValueError, match="inverse_scalar must be finite"):
+        runtime.evaluate_fun_007bc680_preprojection(
+            body_correction=(0.0, 0.0, 0.0),
+            body_axis=(0.0, 0.0, 0.0),
+            angular_state=(0.0, 0.0, 0.0),
+            body_frame=Matrix3x3(
+                1.0, 0.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 0.0, 1.0,
+            ),
+            linear_state=(0.0, 0.0, 0.0),
+            inverse_scalar=float("nan"),
+        )
