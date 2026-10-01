@@ -78,13 +78,6 @@ target_link_libraries(shift_runtime_joint_projection_check PRIVATE
 target_compile_options(shift_runtime_joint_projection_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
-add_executable(shift_runtime_joint_projection_check
-  tests/joint_projection_check.cpp)
-target_link_libraries(shift_runtime_joint_projection_check PRIVATE
-  shift_runtime_physics)
-target_compile_options(shift_runtime_joint_projection_check PRIVATE
-  -Wall -Wextra -Wpedantic)
-
 add_executable(shift_runtime_body_solver_export_check
   tests/body_solver_export_check.cpp)
 target_link_libraries(shift_runtime_body_solver_export_check PRIVATE
@@ -141,9 +134,6 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_body_preprojection
     COMMAND shift_runtime_body_preprojection_check)
-  add_test(
-    NAME shift_runtime_joint_projection
-    COMMAND shift_runtime_joint_projection_check)
   add_test(
     NAME shift_runtime_joint_projection
     COMMAND shift_runtime_joint_projection_check)
