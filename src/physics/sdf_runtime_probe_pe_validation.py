@@ -13,6 +13,7 @@ FORMAT = "SHIFT.SDFRuntimeProbePEValidation/1"
 EXPECTED_EXECUTABLE_SHA256 = "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
 
 EXPECTED_PROLOGUES = {
+    "relation_state_mutation": bytes.fromhex("53568d840800040000578bb824040000"),
     "frame_entry": bytes.fromhex("558bec51568bf1837e48005775368b4e"),
     "builtin_solver": bytes.fromhex("558bec83ec208b5510535633f685d257"),
     "post_solve": bytes.fromhex("538bdc83ec0883e4f883c404558b6b04"),
