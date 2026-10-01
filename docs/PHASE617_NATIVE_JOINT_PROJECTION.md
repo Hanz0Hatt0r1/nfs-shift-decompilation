@@ -22,28 +22,28 @@ position `s`, transformed residual `r`, and scaled linear state `l`:
 
 ```text
 d2 = s.z*a.y - s.y*a.z
-d3 = b.z*s.x - s.z*b.x
-d5 = s.y*b.x - b.y*s.x
+d3 = a.z*s.x - s.z*a.x
+d5 = s.y*a.x - a.y*s.x
 
 d4 =
   (s.x+b.x)*Q
   + (c.x+d2)*L
   + (s.z*r.y-s.y*r.z)
-  + (b.y*d5-b.z*d3)
+  + (a.y*d5-a.z*d3)
   + l.x
 
 d6 =
   (s.y+b.y)*Q
   + (c.y+d3)*L
   + (s.x*r.z-s.z*r.x)
-  + (b.z*d2-b.x*d5)
+  + (a.z*d2-a.x*d5)
   + l.y
 
 d7 =
   (s.z+b.z)*Q
   + (c.z+d5)*L
   + (s.y*r.x-s.x*r.y)
-  + (b.x*d3-b.y*d2)
+  + (a.x*d3-a.y*d2)
   + l.z
 ```
 
@@ -105,8 +105,8 @@ Q                = 3
 It must produce:
 
 ```text
-d2/d3/d5 = [0.05, 1.0, -0.5]
-lanes     = [4.95, 17.95, 21.35]
+d2/d3/d5 = [0.05, -0.10, 0.05]
+lanes     = [9.005, 15.11, 21.515]
 ```
 
 A nonzero side flag must produce the exact negatives.
@@ -114,14 +114,18 @@ A nonzero side flag must produce the exact negatives.
 The regression also verifies that scalar-base writes touch only the three JOINT
 lanes, rejects out-of-range writes and rejects non-finite inputs.
 
-## Important correction during implementation
+## Oracle correction
 
-The initial branch draft incorrectly used `body_axis` for the `d3/d5`
-position terms and for the matching coupling terms.
+Direct re-check of retail `SHIFT.exe.c` at `FUN_007bac60` corrected an
+older Python semantic mix-up.
 
-Cross-checking against the existing Python oracle caught the error before
-native admission. Phase 617 uses the retail/source-backed `body_position`
-terms exactly.
+The three cross terms and the matching coupling terms all read BODY
+`+0x18/+0x20/+0x28` (the existing `body_axis` field). BODY
+`+0x00/+0x08/+0x10` is used only by the `(sample + body_position) * Q`
+terms.
+
+Phase 617 updates the Python oracle/evidence and freezes the same offsets in
+native C++ before admission.
 
 ## Boundary after Phase 617
 
