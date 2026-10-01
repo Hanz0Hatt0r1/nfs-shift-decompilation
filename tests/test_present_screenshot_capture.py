@@ -400,3 +400,14 @@ def test_wine_launcher_skips_copy_when_d3dx_source_is_prefix_target():
     assert "(( ! d3dx_same_file ))" in wine
     assert "if ((d3dx_mutated)); then" in wine
     assert "source already resolves to the Wine prefix DLL; no copy needed" in wine
+
+
+def test_wine_launcher_exports_inferred_prefix_before_winepath_and_wine():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'export WINEPREFIX="$wine_prefix"' in wine
+    assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('capture_windows="$(winepath -w "$capture_path")"')
+    assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('"$wine_command" "$game"')
+    assert 'echo "WINEPREFIX: $WINEPREFIX"' in wine
+    assert 'echo "Wine exe : $(command -v "$wine_command")"' in wine
+    assert 'echo "Winepath : $(command -v winepath)"' in wine
