@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cstdio>
 #include <cctype>
 #include <iterator>
 #include <locale>
@@ -187,6 +188,16 @@ std::atomic<bool> g_proxy_entry_reported{false};
 std::atomic<unsigned long long> g_perf_event_calls{0};
 std::atomic<unsigned long long> g_present_calls{0};
 
+std::once_flag g_crash_diag_once;
+PVOID g_crash_handler = nullptr;
+HANDLE g_crash_log = INVALID_HANDLE_VALUE;
+std::string g_crash_log_path;
+std::atomic<bool> g_crash_recorded{false};
+std::uintptr_t g_main_image_base = 0;
+std::size_t g_main_image_size = 0;
+std::uintptr_t g_proxy_image_base = 0;
+std::size_t g_proxy_image_size = 0;
+
 enum class CaptureMode {
     Passthrough,
     Diagnostic,
@@ -226,6 +237,246 @@ std::string hresult_hex(HRESULT hr) {
     s << "\"0x" << std::hex << std::setw(8) << std::setfill('0')
       << static_cast<unsigned long>(hr) << "\"";
     return s.str();
+}
+
+bool crash_diagnostics_enabled() {
+    const char* value = std::getenv("SHIFT_D3D9_CRASH_DIAGNOSTICS");
+    if (!value || !*value) return true;
+    return std::string(value) != "0" &&
+           std::string(value) != "false" &&
+           std::string(value) != "off";
+}
+
+std::size_t image_size(HMODULE module) {
+    if (!module) return 0;
+    const auto base = reinterpret_cast<const unsigned char*>(module);
+    const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+    if (dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew <= 0) return 0;
+    const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS*>(
+        base + dos->e_lfanew);
+    if (nt->Signature != IMAGE_NT_SIGNATURE) return 0;
+    return static_cast<std::size_t>(nt->OptionalHeader.SizeOfImage);
+}
+
+bool readable_stack_range(
+    const void* address,
+    std::size_t requested,
+    std::size_t& available) {
+    available = 0;
+    if (!address || requested == 0) return false;
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!VirtualQuery(address, &mbi, sizeof(mbi))) return false;
+    if (mbi.State != MEM_COMMIT) return false;
+    if (mbi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) return false;
+    const std::uintptr_t start =
+        reinterpret_cast<std::uintptr_t>(address);
+    const std::uintptr_t end =
+        reinterpret_cast<std::uintptr_t>(mbi.BaseAddress) +
+        static_cast<std::uintptr_t>(mbi.RegionSize);
+    if (start >= end) return false;
+    available = std::min<std::size_t>(
+        requested, static_cast<std::size_t>(end - start));
+    return available > 0;
+}
+
+LONG CALLBACK shift_crash_exception_handler(
+    EXCEPTION_POINTERS* pointers) {
+#if defined(_M_IX86) || defined(__i386__)
+    if (!pointers || !pointers->ExceptionRecord || !pointers->ContextRecord) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    const EXCEPTION_RECORD* record = pointers->ExceptionRecord;
+    CONTEXT* context = pointers->ContextRecord;
+    if (record->ExceptionCode != EXCEPTION_ACCESS_VIOLATION) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    const std::uintptr_t exception_address =
+        reinterpret_cast<std::uintptr_t>(record->ExceptionAddress);
+    if (!g_main_image_base || !g_main_image_size ||
+        exception_address < g_main_image_base ||
+        exception_address >= g_main_image_base + g_main_image_size) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    // Log only the first game-code AV. This avoids turning expected SEH probes
+    // into a high-volume trace while preserving the first likely crash cause.
+    bool expected = false;
+    if (!g_crash_recorded.compare_exchange_strong(expected, true)) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    unsigned long access_type = 0xffffffffUL;
+    std::uintptr_t access_address = 0;
+    if (record->NumberParameters >= 2) {
+        access_type = static_cast<unsigned long>(
+            record->ExceptionInformation[0]);
+        access_address = static_cast<std::uintptr_t>(
+            record->ExceptionInformation[1]);
+    }
+
+    char buffer[8192] = {};
+    std::size_t used = 0;
+    auto append = [&](const char* format, auto... args) {
+        if (used >= sizeof(buffer)) return;
+        const int written = std::snprintf(
+            buffer + used,
+            sizeof(buffer) - used,
+            format,
+            args...);
+        if (written <= 0) return;
+        const std::size_t amount =
+            static_cast<std::size_t>(written);
+        used += std::min(
+            amount,
+            sizeof(buffer) - used - 1);
+    };
+
+    append(
+        "{\"format\":\"SHIFT.D3D9ProxyCrash/1\","
+        "\"process_id\":%lu,\"thread_id\":%lu,"
+        "\"frame\":%llu,"
+        "\"exception_code\":\"0x%08lx\","
+        "\"exception_address\":\"0x%08lx\","
+        "\"exception_rva\":\"0x%08lx\","
+        "\"access_type\":%lu,"
+        "\"access_address\":\"0x%08lx\","
+        "\"registers\":{"
+        "\"eip\":\"0x%08lx\",\"eax\":\"0x%08lx\","
+        "\"ebx\":\"0x%08lx\",\"ecx\":\"0x%08lx\","
+        "\"edx\":\"0x%08lx\",\"esi\":\"0x%08lx\","
+        "\"edi\":\"0x%08lx\",\"ebp\":\"0x%08lx\","
+        "\"esp\":\"0x%08lx\"},"
+        "\"main_image\":{\"base\":\"0x%08lx\",\"size\":%lu},"
+        "\"proxy_image\":{\"base\":\"0x%08lx\",\"size\":%lu},"
+        "\"stack_words\":[",
+        GetCurrentProcessId(),
+        GetCurrentThreadId(),
+        g_frame.load(),
+        static_cast<unsigned long>(record->ExceptionCode),
+        static_cast<unsigned long>(exception_address),
+        static_cast<unsigned long>(exception_address - g_main_image_base),
+        access_type,
+        static_cast<unsigned long>(access_address),
+        static_cast<unsigned long>(context->Eip),
+        static_cast<unsigned long>(context->Eax),
+        static_cast<unsigned long>(context->Ebx),
+        static_cast<unsigned long>(context->Ecx),
+        static_cast<unsigned long>(context->Edx),
+        static_cast<unsigned long>(context->Esi),
+        static_cast<unsigned long>(context->Edi),
+        static_cast<unsigned long>(context->Ebp),
+        static_cast<unsigned long>(context->Esp),
+        static_cast<unsigned long>(g_main_image_base),
+        static_cast<unsigned long>(g_main_image_size),
+        static_cast<unsigned long>(g_proxy_image_base),
+        static_cast<unsigned long>(g_proxy_image_size));
+
+    DWORD stack_words[32] = {};
+    std::size_t readable = 0;
+    std::size_t stack_count = 0;
+    if (readable_stack_range(
+            reinterpret_cast<const void*>(
+                static_cast<std::uintptr_t>(context->Esp)),
+            sizeof(stack_words),
+            readable)) {
+        stack_count = std::min<std::size_t>(
+            sizeof(stack_words) / sizeof(stack_words[0]),
+            readable / sizeof(stack_words[0]));
+        if (stack_count) {
+            std::memcpy(
+                stack_words,
+                reinterpret_cast<const void*>(
+                    static_cast<std::uintptr_t>(context->Esp)),
+                stack_count * sizeof(stack_words[0]));
+        }
+    }
+
+    for (std::size_t index = 0; index < stack_count; ++index) {
+        if (index) append(",");
+        append("\"0x%08lx\"", static_cast<unsigned long>(stack_words[index]));
+    }
+    append("]}\r\n");
+
+    if (g_crash_log != INVALID_HANDLE_VALUE && used) {
+        DWORD written = 0;
+        WriteFile(
+            g_crash_log,
+            buffer,
+            static_cast<DWORD>(std::min<std::size_t>(
+                used, std::numeric_limits<DWORD>::max())),
+            &written,
+            nullptr);
+        FlushFileBuffers(g_crash_log);
+    }
+    OutputDebugStringA(buffer);
+#endif
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+std::string default_crash_log_path() {
+    const char* explicit_path = std::getenv("SHIFT_D3D9_CRASH_LOG");
+    if (explicit_path && *explicit_path) return explicit_path;
+
+    const char* capture_path = std::getenv("SHIFT_D3D9_CAPTURE");
+    if (capture_path && *capture_path) {
+        std::string value(capture_path);
+        const std::size_t separator = value.find_last_of("\\/");
+        if (separator != std::string::npos) {
+            return value.substr(0, separator + 1) +
+                   "shift_d3d9_crash.jsonl";
+        }
+    }
+    return "shift_d3d9_crash.jsonl";
+}
+
+void ensure_crash_diagnostics() {
+    if (!crash_diagnostics_enabled()) return;
+    std::call_once(g_crash_diag_once, [] {
+        HMODULE main_module = GetModuleHandleA(nullptr);
+        g_main_image_base =
+            reinterpret_cast<std::uintptr_t>(main_module);
+        g_main_image_size = image_size(main_module);
+        g_proxy_image_base =
+            reinterpret_cast<std::uintptr_t>(g_proxy_module);
+        g_proxy_image_size = image_size(g_proxy_module);
+
+        g_crash_log_path = default_crash_log_path();
+        g_crash_log = CreateFileA(
+            g_crash_log_path.c_str(),
+            FILE_APPEND_DATA,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            nullptr,
+            OPEN_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL,
+            nullptr);
+
+        if (g_crash_log == INVALID_HANDLE_VALUE) {
+            char temp_path[MAX_PATH] = {};
+            const DWORD length = GetTempPathA(MAX_PATH, temp_path);
+            if (length > 0 && length < MAX_PATH) {
+                g_crash_log_path.assign(temp_path, length);
+                if (!g_crash_log_path.empty() &&
+                    g_crash_log_path.back() != '\\' &&
+                    g_crash_log_path.back() != '/') {
+                    g_crash_log_path.push_back('\\');
+                }
+                g_crash_log_path += "shift_d3d9_crash.jsonl";
+                g_crash_log = CreateFileA(
+                    g_crash_log_path.c_str(),
+                    FILE_APPEND_DATA,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                    nullptr,
+                    OPEN_ALWAYS,
+                    FILE_ATTRIBUTE_NORMAL,
+                    nullptr);
+            }
+        }
+
+        g_crash_handler = AddVectoredExceptionHandler(
+            0, &shift_crash_exception_handler);
+    });
 }
 
 struct CaptureWriter {
@@ -2141,6 +2392,7 @@ bool ensure_system_d3d9() {
 } // namespace
 
 extern "C" IDirect3D9* WINAPI Direct3DCreate9(UINT sdk_version) {
+    ensure_crash_diagnostics();
     bool expected = false;
     if (g_proxy_entry_reported.compare_exchange_strong(expected, true)) {
         std::ostringstream fields;
@@ -2168,6 +2420,7 @@ extern "C" IDirect3D9* WINAPI Direct3DCreate9(UINT sdk_version) {
 extern "C" HRESULT WINAPI Direct3DCreate9Ex(
     UINT sdk_version,
     IDirect3D9Ex** out_d3d) {
+    ensure_crash_diagnostics();
     if (out_d3d) *out_d3d = nullptr;
     if (!ensure_system_d3d9() || !g_real_direct3d_create9_ex) {
         return E_NOINTERFACE;

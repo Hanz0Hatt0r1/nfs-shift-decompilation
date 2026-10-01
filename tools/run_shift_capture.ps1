@@ -42,6 +42,7 @@ $out = [IO.Path]::GetFullPath($OutputDir)
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 
 $capturePath = Join-Path $out "shift_d3d9_capture.jsonl"
+$crashPath = Join-Path $out "shift_d3d9_crash.jsonl"
 $sidecarDll = Join-Path $gameDir "d3d9.shift_backend.dll"
 $backupDll = Join-Path $out "original_d3d9.dll"
 $backupSidecar = Join-Path $out "original_d3d9.shift_backend.dll"
@@ -59,6 +60,8 @@ if ($hadSidecar) {
 }
 
 $oldCapture = $env:SHIFT_D3D9_CAPTURE
+$oldCrashLog = $env:SHIFT_D3D9_CRASH_LOG
+$oldCrashDiagnostics = $env:SHIFT_D3D9_CRASH_DIAGNOSTICS
 $oldMode = $env:SHIFT_D3D9_CAPTURE_MODE
 $oldBackend = $env:SHIFT_D3D9_BACKEND
 $oldDebugOutput = $env:SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT
@@ -86,6 +89,8 @@ try {
     Copy-Item -LiteralPath $proxyPath -Destination $targetDll -Force
 
     $env:SHIFT_D3D9_CAPTURE = $capturePath
+    $env:SHIFT_D3D9_CRASH_LOG = $crashPath
+    $env:SHIFT_D3D9_CRASH_DIAGNOSTICS = "1"
     $env:SHIFT_D3D9_CAPTURE_MODE = $Mode.ToLowerInvariant()
     if ($stagedBackend) {
         $env:SHIFT_D3D9_BACKEND = $sidecarDll
@@ -113,6 +118,7 @@ try {
 
     Write-Host "Launching: $gamePath"
     Write-Host "Capture : $capturePath"
+    Write-Host "Crash   : $crashPath"
     Write-Host "Mode    : $Mode"
     if ($stagedBackend) {
         Write-Host "Backend : preserved local d3d9.dll via $sidecarDll"
@@ -144,6 +150,8 @@ finally {
     }
 
     if ($null -eq $oldCapture) { Remove-Item Env:SHIFT_D3D9_CAPTURE -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE = $oldCapture }
+    if ($null -eq $oldCrashLog) { Remove-Item Env:SHIFT_D3D9_CRASH_LOG -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CRASH_LOG = $oldCrashLog }
+    if ($null -eq $oldCrashDiagnostics) { Remove-Item Env:SHIFT_D3D9_CRASH_DIAGNOSTICS -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CRASH_DIAGNOSTICS = $oldCrashDiagnostics }
     if ($null -eq $oldMode) { Remove-Item Env:SHIFT_D3D9_CAPTURE_MODE -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_MODE = $oldMode }
     if ($null -eq $oldBackend) { Remove-Item Env:SHIFT_D3D9_BACKEND -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_BACKEND = $oldBackend }
     if ($null -eq $oldDebugOutput) { Remove-Item Env:SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT = $oldDebugOutput }
@@ -164,4 +172,10 @@ if (-not (Test-Path $capturePath)) {
 }
 
 Get-Item $capturePath | Select-Object FullName, Length, LastWriteTime
+if (Test-Path $crashPath) {
+    $crash = Get-Item $crashPath
+    if ($crash.Length -gt 0) {
+        Write-Host "Crash context: $crashPath"
+    }
+}
 Write-Host "Capture completed."

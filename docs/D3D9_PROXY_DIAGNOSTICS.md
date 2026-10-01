@@ -75,6 +75,32 @@ The backend source is included in the summary. If `diagnostic` works but
 `capture` does not, the fault is narrowed to the additional resource/shader
 hook surface rather than D3D9 forwarding or backend selection.
 
+
+## Game-code crash context
+
+The proxy also records the first access violation whose instruction pointer is
+inside `SHIFT.exe`. This is intentionally observational: the exception is not
+handled or suppressed, so Wine/the game continues its normal crash path.
+
+Both launchers write the record to:
+
+```text
+<output>/shift_d3d9_crash.jsonl
+```
+
+The record includes the faulting address and RVA, read/write/execute address,
+x86 register set and up to 32 raw stack dwords. Analyze it with:
+
+```bash
+python native_capture/analyze_proxy_crash.py \
+  out/d3d9-diagnostic/shift_d3d9_crash.jsonl
+```
+
+A `game-code-near-null-access-violation` result means the game itself executed
+an instruction that touched the first 64 KiB of address space; the register and
+stack fields should then be used to map the exact failing object/table access
+back to the retail disassembly before considering any compatibility workaround.
+
 ## Evidence boundary
 
 A successful diagnostic run proves only that the proxy preserves a usable D3D9

@@ -91,6 +91,36 @@ The retail `SHIFT.exe` imports `Direct3DCreate9`, `D3DPERF_BeginEvent`, and `D3D
 
 For very noisy captures, `SHIFT_D3D9_DIAG_PRESENT_EVERY=N` controls periodic successful Present logging (default: every 300 calls); failed Present calls are always recorded.
 
+
+### Crash context capture
+
+The proxy also installs a lightweight vectored exception observer on the first
+D3D9 entry point. It does not consume or recover exceptions; it only records
+the first access violation whose instruction pointer is inside the main game
+image, then returns `EXCEPTION_CONTINUE_SEARCH` so Wine/the game keeps its
+normal crash behaviour.
+
+By default the record is written to `shift_d3d9_crash.jsonl` next to the
+capture log (when `SHIFT_D3D9_CAPTURE` contains a directory) or in the current
+working directory. Override it with:
+
+```bash
+export SHIFT_D3D9_CRASH_LOG="$PWD/shift_d3d9_crash.jsonl"
+```
+
+Disable the observer with `SHIFT_D3D9_CRASH_DIAGNOSTICS=0`.
+
+A crash record contains the exception/read-write address, EIP/EAX/EBX/ECX/EDX/
+ESI/EDI/EBP/ESP, image-relative RVA, current proxy frame counter and up to 32
+raw stack dwords. This is intended to localize null dereferences and recover
+candidate game return addresses without attaching GDB.
+
+Analyze it with:
+
+```bash
+python native_capture/analyze_proxy_crash.py shift_d3d9_crash.jsonl
+```
+
 Analyze a completed or failed startup log with:
 
 ```bash

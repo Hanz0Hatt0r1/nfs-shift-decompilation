@@ -104,8 +104,12 @@ def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
     assert '[string]$Mode = "Diagnostic"' in powershell
     assert 'd3d9.shift_backend.dll' in powershell
     assert 'SHIFT_D3D9_CAPTURE_MODE' in powershell
+    assert 'SHIFT_D3D9_CRASH_LOG' in powershell
+    assert 'SHIFT_D3D9_CRASH_DIAGNOSTICS' in powershell
     assert 'mode="diagnostic"' in wine
     assert 'd3d9.shift_backend.dll' in wine
+    assert 'SHIFT_D3D9_CRASH_LOG' in wine
+    assert 'SHIFT_D3D9_CRASH_DIAGNOSTICS' in wine
     assert 'WINEDLLOVERRIDES="d3d9=n,b' in wine
 
 

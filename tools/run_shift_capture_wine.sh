@@ -83,6 +83,7 @@ fi
 
 mkdir -p "$output"
 capture_path="$output/shift_d3d9_capture.jsonl"
+crash_path="$output/shift_d3d9_crash.jsonl"
 backup_dll="$output/original_d3d9.dll"
 backup_sidecar="$output/original_d3d9.shift_backend.dll"
 had_dll=0
@@ -131,7 +132,10 @@ fi
 cp -f "$proxy" "$target_dll"
 
 capture_windows="$(winepath -w "$capture_path")"
+crash_windows="$(winepath -w "$crash_path")"
 export SHIFT_D3D9_CAPTURE="$capture_windows"
+export SHIFT_D3D9_CRASH_LOG="$crash_windows"
+export SHIFT_D3D9_CRASH_DIAGNOSTICS=1
 export SHIFT_D3D9_CAPTURE_MODE="$mode"
 unset SHIFT_D3D9_BACKEND || true
 
@@ -173,6 +177,7 @@ fi
 
 echo "Launching: $game"
 echo "Capture : $capture_path"
+echo "Crash   : $crash_path"
 echo "Mode    : $mode"
 if ((staged_backend)); then
   echo "Backend : preserved local d3d9.dll via $sidecar_dll"
@@ -198,5 +203,9 @@ if [[ ! -f "$capture_path" ]]; then
 fi
 
 python3 "$repo_root/native_capture/analyze_proxy_log.py" "$capture_path" 2>/dev/null || true
+if [[ -s "$crash_path" ]]; then
+  python3 "$repo_root/native_capture/analyze_proxy_crash.py" "$crash_path" 2>/dev/null || true
+  echo "Crash context: $crash_path"
+fi
 echo "Capture completed: $capture_path"
 exit "$exit_code"
