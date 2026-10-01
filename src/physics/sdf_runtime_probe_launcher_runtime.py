@@ -72,7 +72,7 @@ def build_gdb_command_file(
             raise ValueError("capture_frames must be positive")
         if provider_only:
             raise ValueError(
-                "capture_frames is supported only in full probe mode"
+                "capture_frames is not supported in provider-only mode"
             )
 
     probe_args = f"{output}"
