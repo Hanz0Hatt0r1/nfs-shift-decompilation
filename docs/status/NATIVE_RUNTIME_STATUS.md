@@ -462,3 +462,24 @@ keeps a valid-but-mismatched SBEX fail-closed.
 
 This remains an evidence gate: `FUN_007bc680` contribution generation,
 runtime reset selection and provider-present dispatch are still external.
+
+
+## Phase 616 native BODY projection seed
+
+The native physics library now executes the first deterministic arithmetic
+inside `FUN_007bc680` through `build_body_projection_seed()`.
+
+The primitive reconstructs the three BODY residual channels from
+`+0x18/+0x20/+0x28`, `+0x30/+0x38/+0x40` and
+`+0x48/+0x50/+0x58`, transforms that residual through the exact
+`FUN_007aefb0` float32 3x3 coefficient ordering, and scales
+`+0x60/+0x68/+0x70` by `+0x90`.
+
+A deterministic native checker freezes the non-identity matrix case
+`[13,14,33] -> [140,320,500]`, the scaled linear result
+`[0.5,-1,2]`, and non-finite rejection.
+
+This does not yet build complete BODY solver contributions. The
+JOINT/HINGE/BAR projection helpers, same-type coupling passes,
+`FUN_007b3ed0` sampled-state refresh, runtime reset selection and
+provider-present dispatch remain open.
