@@ -149,6 +149,167 @@ jobs:
           PY
           grep -q '"status": "ok"' \
             out/vulkan/runtime/constraint_sample_refresh.json
+      - name: Native constraint relation refresh join
+        run: |
+          cat > out/vulkan/runtime/constraint_relation_gbcf_input.json <<'JSON'
+          {
+            "format": "SHIFT.NativeGeneratedBodyConstraintFrameInput/1",
+            "version": 1,
+            "verification_scope": "phase630-relation-refresh-regression",
+            "sample_values_ready": true,
+            "body_order_ready": true,
+            "row_layout_ready": true,
+            "provider_absent": true,
+            "body_count": 2,
+            "solver_scalar_count": 6,
+            "bodies": [
+              {
+                "body_index": 0,
+                "body_position": [1.0, 2.0, 3.0],
+                "body_correction": [0.0, 0.0, 0.0],
+                "body_axis": [0.0, 0.0, 0.0],
+                "angular_state": [0.0, 0.0, 0.0],
+                "linear_state": [0.0, 0.0, 0.0],
+                "inverse_scalar": 1.0,
+                "body_frame": [
+                  2.0, 0.0, 0.0,
+                  0.0, 3.0, 0.0,
+                  0.0, 0.0, 4.0
+                ],
+                "body_tensor": [
+                  [1.0, 0.0, 0.0],
+                  [0.0, 1.0, 0.0],
+                  [0.0, 0.0, 1.0]
+                ],
+                "scales": {
+                  "linear_scale": 1.0,
+                  "quadratic_scale": 1.0
+                },
+                "row_indices": [0, 6, 12, 18, 24, 30],
+                "matrix_double_count": 36,
+                "joints": [{
+                  "position": [0.5, 1.5, 3.0],
+                  "scalar_base": 0,
+                  "side_flag": 1
+                }],
+                "hinges": [{
+                  "angular": [2.0, 6.0, 12.0],
+                  "linear": [8.0, 15.0, 24.0],
+                  "position": [0.0, 1.0, 0.0],
+                  "frame_offset": [1.0, 0.0, 0.0],
+                  "scalar_base": 3,
+                  "side_flag": 1
+                }],
+                "bars": [{
+                  "point": [2.0, 0.0, 0.0],
+                  "direction": [
+                    0.8944271909999159,
+                    0.0,
+                    0.4472135954999579
+                  ],
+                  "side_bias": 0.5,
+                  "scalar_base": 5,
+                  "side_flag": 1
+                }]
+              },
+              {
+                "body_index": 1,
+                "body_position": [-1.0, 0.0, 1.0],
+                "body_correction": [0.0, 0.0, 0.0],
+                "body_axis": [0.0, 0.0, 0.0],
+                "angular_state": [0.0, 0.0, 0.0],
+                "linear_state": [0.0, 0.0, 0.0],
+                "inverse_scalar": 1.0,
+                "body_frame": [
+                  1.0, 0.0, 0.0,
+                  0.0, 2.0, 0.0,
+                  0.0, 0.0, 3.0
+                ],
+                "body_tensor": [
+                  [1.0, 0.0, 0.0],
+                  [0.0, 1.0, 0.0],
+                  [0.0, 0.0, 1.0]
+                ],
+                "scales": {
+                  "linear_scale": 1.0,
+                  "quadratic_scale": 1.0
+                },
+                "row_indices": [0, 6, 12, 18, 24, 30],
+                "matrix_double_count": 36,
+                "joints": [{
+                  "position": [-1.0, 1.0, 6.0],
+                  "scalar_base": 0,
+                  "side_flag": 0
+                }],
+                "hinges": [{
+                  "angular": [0.0, 24.0, 108.0],
+                  "linear": [0.0, -72.0, 36.0],
+                  "position": [1.0, 0.0, 0.0],
+                  "frame_offset": [1.0, 0.0, 0.0],
+                  "scalar_base": 3,
+                  "side_flag": 0
+                }],
+                "bars": [{
+                  "point": [0.0, 2.0, 0.0],
+                  "direction": [
+                    0.8944271909999159,
+                    0.0,
+                    0.4472135954999579
+                  ],
+                  "side_bias": 0.5,
+                  "scalar_base": 5,
+                  "side_flag": 0
+                }]
+              }
+            ]
+          }
+          JSON
+          cat > out/vulkan/runtime/constraint_relations_input.json <<'JSON'
+          {
+            "format": "SHIFT.NativeConstraintSampleRelationFrameInput/1",
+            "version": 1,
+            "verification_scope": "phase630-relation-refresh-regression",
+            "raw_sample_values_ready": true,
+            "ownership_ready": true,
+            "source_order_ready": true,
+            "provider_absent": true,
+            "body_count": 2,
+            "joint_relations": [{
+              "positive": {"body_index": 0, "sample_index": 0},
+              "negative": {"body_index": 1, "sample_index": 0},
+              "positive_local_position": [0.25, 0.5, 0.75],
+              "negative_local_position": [-1.0, 0.5, 2.0]
+            }],
+            "hinge_relations": [{
+              "positive": {"body_index": 0, "sample_index": 0},
+              "negative": {"body_index": 1, "sample_index": 0},
+              "positive_angular_local": [1.0, 2.0, 3.0],
+              "positive_linear_local": [4.0, 5.0, 6.0]
+            }],
+            "bar_relations": [{
+              "positive": {"body_index": 0, "sample_index": 0},
+              "negative": {"body_index": 1, "sample_index": 0},
+              "positive_local_point": [1.0, 0.0, 0.0],
+              "negative_local_point": [0.0, 1.0, 0.0]
+            }]
+          }
+          JSON
+          python3 shift_importer.py native-generated-body-constraint-frame             out/vulkan/runtime/constraint_relation_gbcf_input.json             out/vulkan/runtime/constraint_relation_gbcf
+          python3 shift_importer.py native-constraint-sample-relation-frame             out/vulkan/runtime/constraint_relations_input.json             out/vulkan/runtime/constraint_relations
+          native_runtime/build/shift_runtime_constraint_sample_relation_frame_check             out/vulkan/runtime/constraint_relation_gbcf/generated_body_constraints.gbcf             out/vulkan/runtime/constraint_relations/constraint_sample_relations.csrf             | tee out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"format": "SHIFT.NativeConstraintSampleRelationFrameCheck/1"'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"refresh_function": "FUN_007b3ed0"'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"joint_relation_count": 1'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"joint_endpoint_samples": 2'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"hinge_endpoint_samples": 2'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"bar_endpoint_samples": 2'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"positive_side_flag": 1'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"negative_side_flag": 0'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"complete_endpoint_ownership": true'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"duplicate_ownership_rejected": true'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"refreshed_native_generation_executed": true'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"contribution_values_stored_in_relation_packet": false'             out/vulkan/runtime/constraint_sample_relation_frame.json
+          grep -q '"status": "ok"'             out/vulkan/runtime/constraint_sample_relation_frame.json
       - name: Native FUN_007bc680 preprojection seed
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \

@@ -387,6 +387,21 @@ def test_phase627_cli_accepts_generated_body_constraint_frame():
     )
 
 
+def test_phase630_cli_accepts_constraint_sample_relation_frame():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-constraint-sample-relation-frame",
+        "constraint-relations.json",
+        "out/constraint-relations",
+    ])
+
+    assert args.input == "constraint-relations.json"
+    assert args.output_dir == "out/constraint-relations"
+    assert args.fn.__name__ == (
+        "cmd_native_constraint_sample_relation_frame"
+    )
+
+
 def test_phase613_cli_accepts_prepared_body_solver_export_frame():
     parser = build_parser()
     args = parser.parse_args([
