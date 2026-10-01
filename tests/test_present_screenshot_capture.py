@@ -120,8 +120,8 @@ def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
     assert '--frame-end' in wine
     assert '--buffer-payloads' in wine
     assert '--texture-payloads' in wine
-    assert 'WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n,b"' in wine
-    assert 'WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n,b"' in wine
+    assert 'WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n"' in wine
+    assert 'WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n"' in wine
 
 
 
@@ -329,7 +329,7 @@ def test_wine_launcher_forces_native_d3dx9_41_preference():
     # SHIFT's D3DX effect/technique path is unstable with Wine's builtin
     # implementation. Prefer the native runtime when it is present, while
     # retaining builtin fallback through the n,b override.
-    assert 'd3dx9_41=n,b' in wine
+    assert 'd3dx9_41=n' in wine
     assert '"${name,,}" == "d3dx9_41"' in wine
 
 
@@ -352,11 +352,13 @@ def test_capture_launchers_accept_explicit_d3dx9_41_source_path():
     wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
 
     assert "--d3dx9-41" in wine
-    assert 'target_d3dx="$game_dir/d3dx9_41.dll"' in wine
+    assert 'wine_prefix="${game%%/drive_c/*}"' in wine
+    assert 'drive_c/windows/syswow64/d3dx9_41.dll' in wine
+    assert 'drive_c/windows/system32/d3dx9_41.dll' in wine
     assert 'backup_d3dx="$output/original_d3dx9_41.dll"' in wine
     assert 'cp -f "$d3dx9_41" "$target_d3dx"' in wine
     assert 'cp -f "$backup_d3dx" "$target_d3dx"' in wine
-    assert '--d3dx9-41 must point to an external source DLL' in wine
+    assert 'source DLL outside the Wine Windows DLL directory' in wine
 
     assert '[string]$D3DX9_41 = ""' in powershell
     assert '$targetD3DX = Join-Path $gameDir "d3dx9_41.dll"' in powershell
@@ -364,3 +366,14 @@ def test_capture_launchers_accept_explicit_d3dx9_41_source_path():
     assert 'Copy-Item -LiteralPath $d3dxPath -Destination $targetD3DX -Force' in powershell
     assert 'Copy-Item -LiteralPath $backupD3DX -Destination $targetD3DX -Force' in powershell
     assert 'D3DX9_41 must point to an external source DLL' in powershell
+
+
+def test_wine_d3dx9_41_is_staged_into_prefix_and_forced_native_only():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'if [[ "$game" == */drive_c/* ]]' in wine
+    assert 'wine_prefix="${game%%/drive_c/*}"' in wine
+    assert 'drive_c/windows/syswow64/d3dx9_41.dll' in wine
+    assert 'drive_c/windows/system32/d3dx9_41.dll' in wine
+    assert 'WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n"' in wine
+    assert 'D3DX9 sha256:' in wine
