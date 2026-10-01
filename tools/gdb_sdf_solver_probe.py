@@ -394,6 +394,8 @@ class ScalarResetProbe(_BaseProbe):
         self,
         address: int,
         output_dir: Path,
+        *,
+        stop_after_hit: int | None = None,
     ) -> None:
         super().__init__(
             address,
@@ -404,6 +406,7 @@ class ScalarResetProbe(_BaseProbe):
             pointer_expr="$ecx+0x48",
         )
         self.event_index = 0
+        self.stop_after_hit = stop_after_hit
 
     def stop(self) -> bool:
         global _SCALAR_RESET_EVENT_COUNT
@@ -568,7 +571,10 @@ class RelationStateMutationProbe(_BaseProbe):
             "relation_state_mutation_events.jsonl",
             event,
         )
-        return False
+        return (
+            self.stop_after_hit is not None
+            and self.hit >= self.stop_after_hit
+        )
 
 
 class FrameEntryProbe(_BaseProbe):
@@ -831,6 +837,7 @@ class SDFProbeCommand(gdb.Command):
         args = gdb.string_to_argv(argument)
         provider_only = False
         relation_timeline_only = False
+        stop_on_relation_mutation = False
         capture_frames = None
         capture_session_id = None
 
@@ -841,6 +848,10 @@ class SDFProbeCommand(gdb.Command):
         if "--relation-timeline-only" in args:
             relation_timeline_only = True
             args.remove("--relation-timeline-only")
+
+        if "--stop-on-relation-mutation" in args:
+            stop_on_relation_mutation = True
+            args.remove("--stop-on-relation-mutation")
 
         if provider_only and relation_timeline_only:
             raise gdb.GdbError(
@@ -885,11 +896,16 @@ class SDFProbeCommand(gdb.Command):
             raise gdb.GdbError(
                 "--capture-frames is not supported in provider-only mode"
             )
+        if provider_only and stop_on_relation_mutation:
+            raise gdb.GdbError(
+                "--stop-on-relation-mutation is not supported in provider-only mode"
+            )
 
         if len(args) != 1:
             raise gdb.GdbError(
                 "usage: sdf-probe OUTPUT_DIR [--provider-only] "
                 "[--relation-timeline-only] "
+                "[--stop-on-relation-mutation] "
                 "[--capture-frames N] [--session-id ID]"
             )
         output = Path(os.path.expanduser(args[0])).resolve()
@@ -930,6 +946,9 @@ class SDFProbeCommand(gdb.Command):
                 RelationStateMutationProbe(
                     FUNCTIONS["relation_state_mutation"],
                     output,
+                    stop_after_hit=(
+                        1 if stop_on_relation_mutation else None
+                    ),
                 ),
                 FrameEntryProbe(
                     FUNCTIONS["frame_entry"],
@@ -1006,7 +1025,8 @@ class SDFProbeCommand(gdb.Command):
                     else "mode=full,"
                 )
             ),
-            f"capture_frames={capture_frames},"
+            f"capture_frames={capture_frames},",
+            f"stop_on_relation_mutation={stop_on_relation_mutation},",
             f"capture_session_id={capture_session_id},",
             f"output={output}",
         )
