@@ -194,6 +194,12 @@ def test_build_attach_command_uses_explicit_pid_and_script(monkeypatch, tmp_path
     assert command == [
         "/usr/bin/gdb",
         "-q",
+        "-iex",
+        "set pagination off",
+        "-iex",
+        "set confirm off",
+        "-iex",
+        "set debuginfod enabled off",
         "-p",
         "12345",
         "-x",
