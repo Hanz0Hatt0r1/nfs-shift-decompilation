@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 642. Current development: Phase 643.**
+**Merged baseline: Phase 643. Current development: Phase 644.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -440,3 +440,15 @@ a new probe session is installed.
 This is provenance/output hygiene only. It does not infer mutation semantics or
 enable native relation-state scheduling; authentic full-mode retail evidence
 remains required.
+
+
+## Phase 644 session-aware mutation timeline
+
+The Phase 637 correlation gate now consumes the Phase 643 capture-session
+identity. Once any mutation or timeline anchor is session-stamped, every
+timeline-contributing mutation/frame/reset/solve record must carry the same
+valid 32-hex `capture_session_id` or the report is blocked. Historical
+unstamped fixtures retain their previous report shape and behavior.
+
+This proves single-session correlation only. It is not an authenticity
+signature and does not enable native relation-state scheduling.

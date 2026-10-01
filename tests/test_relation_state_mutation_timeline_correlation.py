@@ -12,13 +12,14 @@ def _mutation(
     kind: str,
     slot: int = 0,
     return_address: int = 0x0076EE96,
+    session_id=None,
 ):
     source_function = (
         "FUN_0076ed60"
         if kind == "vehicle-setup-slot"
         else "FUN_0079a050"
     )
-    return {
+    result = {
         "format": "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1",
         "ready": True,
         "callsite_ready": True,
@@ -37,6 +38,9 @@ def _mutation(
             "source_function": source_function,
         },
     }
+    if session_id is not None:
+        result["capture_session_id"] = session_id
+    return result
 
 
 def _anchor(
@@ -45,13 +49,17 @@ def _anchor(
     *,
     frame_index=None,
     source=None,
+    session_id=None,
 ):
-    return {
+    result = {
         "kind": kind,
         "runtime_event_sequence": sequence,
         "frame_index": frame_index,
         "source": source or f"{kind}-{sequence}",
     }
+    if session_id is not None:
+        result["capture_session_id"] = session_id
+    return result
 
 
 def test_phase637_correlates_setup_mutation_before_first_frame_entry():
@@ -417,3 +425,266 @@ def test_phase637_cli_writes_ready_report(tmp_path: Path):
 def test_phase637_cli_returns_two_for_blocked_capture(tmp_path: Path):
     cli = _load_phase637_cli_module()
     assert cli.main([str(tmp_path)]) == 2
+
+
+SESSION_A = "ab" * 16
+SESSION_B = "cd" * 16
+
+
+def test_phase644_accepts_one_consistent_capture_session():
+    report = runtime.correlate_relation_state_mutation_events(
+        [
+            _mutation(
+                sequence=2,
+                frame_index=1,
+                frame_sequence=1,
+                kind="runtime-threshold-slot",
+                return_address=0x0079A5C1,
+                session_id=SESSION_A,
+            )
+        ],
+        [
+            _anchor(
+                "frame-entry",
+                1,
+                frame_index=1,
+                source="frame_entry_000001.json",
+                session_id=SESSION_A,
+            ),
+            _anchor(
+                "post-solve",
+                3,
+                frame_index=1,
+                source="post_solve_000001.json",
+                session_id=SESSION_A,
+            ),
+        ],
+    )
+
+    assert report["ready"] is True
+    assert report["capture_session_id"] == SESSION_A
+    assert report["evidence_boundary"]["capture_session_identity_required"] is True
+    assert report["events"][0]["capture_session_id"] == SESSION_A
+    assert report["events"][0]["previous_anchor"]["capture_session_id"] == SESSION_A
+    assert report["events"][0]["next_anchor"]["capture_session_id"] == SESSION_A
+
+
+def test_phase644_rejects_mixed_mutation_and_anchor_sessions():
+    report = runtime.correlate_relation_state_mutation_events(
+        [
+            _mutation(
+                sequence=2,
+                frame_index=1,
+                frame_sequence=1,
+                kind="runtime-threshold-slot",
+                return_address=0x0079A5C1,
+                session_id=SESSION_A,
+            )
+        ],
+        [
+            _anchor(
+                "frame-entry",
+                1,
+                frame_index=1,
+                source="frame_entry_000001.json",
+                session_id=SESSION_B,
+            ),
+            _anchor(
+                "post-solve",
+                3,
+                frame_index=1,
+                source="post_solve_000001.json",
+                session_id=SESSION_A,
+            ),
+        ],
+    )
+
+    assert report["ready"] is False
+    assert report["capture_session_id"] == SESSION_A
+    assert (
+        "anchor-capture-session-id-mismatch:frame_entry_000001.json"
+        in report["errors"]
+    )
+
+
+def test_phase644_rejects_partially_unstamped_session_aware_capture():
+    report = runtime.correlate_relation_state_mutation_events(
+        [
+            _mutation(
+                sequence=2,
+                frame_index=1,
+                frame_sequence=1,
+                kind="runtime-threshold-slot",
+                return_address=0x0079A5C1,
+                session_id=SESSION_A,
+            )
+        ],
+        [
+            _anchor(
+                "frame-entry",
+                1,
+                frame_index=1,
+                source="frame_entry_000001.json",
+                session_id=SESSION_A,
+            ),
+            _anchor(
+                "post-solve",
+                3,
+                frame_index=1,
+                source="post_solve_000001.json",
+            ),
+        ],
+    )
+
+    assert report["ready"] is False
+    assert (
+        "anchor-capture-session-id-missing:post_solve_000001.json"
+        in report["errors"]
+    )
+
+
+def test_phase644_rejects_invalid_mutation_session_id():
+    report = runtime.correlate_relation_state_mutation_events(
+        [
+            _mutation(
+                sequence=2,
+                frame_index=1,
+                frame_sequence=1,
+                kind="runtime-threshold-slot",
+                return_address=0x0079A5C1,
+                session_id="not-a-session",
+            )
+        ],
+        [
+            _anchor(
+                "frame-entry",
+                1,
+                frame_index=1,
+                source="frame_entry_000001.json",
+                session_id=SESSION_A,
+            ),
+            _anchor(
+                "post-solve",
+                3,
+                frame_index=1,
+                source="post_solve_000001.json",
+                session_id=SESSION_A,
+            ),
+        ],
+    )
+
+    assert report["ready"] is False
+    assert (
+        "mutation-capture-session-id-invalid"
+        in report["events"][0]["errors"]
+    )
+
+
+def test_phase644_directory_loader_preserves_session_identity(tmp_path: Path):
+    mutation = _mutation(
+        sequence=2,
+        frame_index=1,
+        frame_sequence=1,
+        kind="runtime-threshold-slot",
+        return_address=0x0079A5C1,
+        session_id=SESSION_A,
+    )
+    (tmp_path / "relation_state_mutation_events.jsonl").write_text(
+        json.dumps(mutation) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "frame_entry_000001.json").write_text(
+        json.dumps(
+            {
+                "capture_session_id": SESSION_A,
+                "runtime_event_sequence": 1,
+                "frame_index": 1,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "provider_pre_0_000001.json").write_text(
+        json.dumps(
+            {
+                "capture_session_id": SESSION_A,
+                "frame_index": 1,
+                "metadata": {
+                    "runtime_event_sequence": 3,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = runtime.analyze_relation_state_mutation_capture_directory(tmp_path)
+
+    assert report["ready"] is True
+    assert report["capture_session_id"] == SESSION_A
+    assert report["events"][0]["next_anchor"]["kind"] == "provider-solver-entry"
+    assert (
+        report["events"][0]["next_anchor"]["capture_session_id"]
+        == SESSION_A
+    )
+
+
+def test_phase644_legacy_unstamped_capture_keeps_legacy_report_shape():
+    report = runtime.correlate_relation_state_mutation_events(
+        [
+            _mutation(
+                sequence=1,
+                frame_index=None,
+                frame_sequence=None,
+                kind="vehicle-setup-slot",
+            )
+        ],
+        [
+            _anchor(
+                "frame-entry",
+                2,
+                frame_index=1,
+                source="frame_entry_000001.json",
+            )
+        ],
+    )
+
+    assert report["ready"] is True
+    assert "capture_session_id" not in report
+    assert "capture_session_identity_required" not in report["evidence_boundary"]
+    assert "capture_session_id" not in report["events"][0]
+
+
+def test_phase644_rejects_unstamped_mutation_in_session_aware_capture():
+    report = runtime.correlate_relation_state_mutation_events(
+        [
+            _mutation(
+                sequence=2,
+                frame_index=1,
+                frame_sequence=1,
+                kind="runtime-threshold-slot",
+                return_address=0x0079A5C1,
+            )
+        ],
+        [
+            _anchor(
+                "frame-entry",
+                1,
+                frame_index=1,
+                source="frame_entry_000001.json",
+                session_id=SESSION_A,
+            ),
+            _anchor(
+                "post-solve",
+                3,
+                frame_index=1,
+                source="post_solve_000001.json",
+                session_id=SESSION_A,
+            ),
+        ],
+    )
+
+    assert report["ready"] is False
+    assert report["capture_session_id"] == SESSION_A
+    assert (
+        "mutation-capture-session-id-missing"
+        in report["events"][0]["errors"]
+    )

@@ -1122,3 +1122,19 @@ last-frame state.
 
 This does not alter solver, reset, provider or relation-mutation semantics and
 does not authorize native scheduler admission.
+
+
+## Phase 644 capture-session timeline correlation
+
+The offline relation-mutation timeline now enforces the Phase 643 session
+boundary. Once any contributing record carries `capture_session_id`, all
+relation mutations and frame/reset/solve timeline anchors must carry the same
+valid normalized 32-hex identity.
+
+Mixed sessions, malformed ids and partially unstamped session-aware captures
+fail closed. Historical captures with no session ids at all retain the previous
+Phase 637 output shape for replay compatibility.
+
+This strengthens capture provenance only. The timeline still exposes
+`native_scheduler_admission=false` and does not infer mutation gameplay
+semantics or fixed-step timing.
