@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 628. Current development: Phase 629.**
+**Merged baseline: Phase 629. Current development: Phase 630.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -425,3 +425,9 @@ For current state, prefer operational status documents over old phase notes:
 
 Historical phase files preserve the evidence trail and are not rewritten
 retroactively when newer work changes the current operational boundary.
+
+
+## Phase 630 vehicle-physics relation ownership
+
+Phase 630 reconstructs `FUN_007b3820` relation-to-BODY sample ownership and
+feeds Phase 629 refresh into the existing prepared BODY sample ABI.
