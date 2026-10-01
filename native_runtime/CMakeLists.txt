@@ -126,6 +126,15 @@ target_compile_options(
   shift_runtime_constraint_relation_state_mutation_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_constraint_relation_state_dispatch_check
+  tests/constraint_relation_state_dispatch_check.cpp)
+target_link_libraries(
+  shift_runtime_constraint_relation_state_dispatch_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(
+  shift_runtime_constraint_relation_state_dispatch_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 add_executable(shift_runtime_body_preprojection_check
   tests/body_preprojection_check.cpp)
 target_link_libraries(shift_runtime_body_preprojection_check PRIVATE
@@ -282,6 +291,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_constraint_relation_state_mutation
     COMMAND shift_runtime_constraint_relation_state_mutation_check)
+  add_test(
+    NAME shift_runtime_constraint_relation_state_dispatch
+    COMMAND shift_runtime_constraint_relation_state_dispatch_check)
   add_test(
     NAME shift_runtime_body_preprojection
     COMMAND shift_runtime_body_preprojection_check)
