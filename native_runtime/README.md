@@ -457,3 +457,22 @@ native_runtime/build/shift_runtime \
 On every fixed step the runtime replays `FUN_007ba570`, verifies the complete
 pre-reset RHS/matrix against SBFR, and only then executes the prepared builtin
 reset/solve path. A supplied mismatch is fail-closed.
+
+
+## Phase 616 BODY projection seed
+
+The native physics library now exposes the first executable arithmetic from
+`FUN_007bc680`:
+
+```bash
+native_runtime/build/shift_runtime_body_projection_seed_check
+```
+
+The checker validates exact BODY residual construction, the recovered
+`FUN_007aefb0` 3x3 transform ordering, `+0x90` linear scaling and
+non-finite rejection.
+
+This is intentionally not a complete `FUN_007bc680` implementation. It does
+not yet execute JOINT/HINGE/BAR projection or matrix coupling and therefore
+does not replace the prepared BODY contribution evidence used by the Phase
+613–615 fixed-step path.
