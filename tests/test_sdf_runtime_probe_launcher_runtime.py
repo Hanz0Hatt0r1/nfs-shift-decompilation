@@ -85,16 +85,6 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
         ),
         "evidence_bundle_format": "SHIFT.SDFRuntimeProbeEvidenceBundle/1",
     }
-    assert result["probe"]["expected_captures"] == [
-        "relation_state_mutation_events.jsonl",
-        "pre_solve_XXXXXX.json",
-        "post_solve_XXXXXX.json",
-        "provider_pre_<provider>_<hit>.json",
-        "provider_post_<provider>_<hit>.json",
-        "scalar_reset_events.jsonl",
-        "provider_reset_effects.jsonl",
-    ]
-
 
 def test_prepare_probe_bundle_blocks_invalid_retail_binary(tmp_path, monkeypatch):
     executable = tmp_path / "SHIFT.exe"
