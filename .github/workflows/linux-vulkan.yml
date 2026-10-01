@@ -243,6 +243,50 @@ jobs:
             out/vulkan/runtime/bar_projection.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/bar_projection.json
+      - name: Native FUN_007bbb80 JOINT matrix coupling
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_joint_matrix_coupling
+          native_runtime/build/shift_runtime_joint_matrix_coupling_check \
+            | tee out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"format": "SHIFT.NativeJointMatrixCouplingCheck/1"' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"source_function": "FUN_007bbb80"' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"source_line": 819720' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"self_block_shape": "3x3-lower"' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"joint_pair_shape": "3x3"' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"hinge_pair_shape": "3x2"' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"bar_pair_shape": "3x1"' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"lower_triangle_orientation_verified": true' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"d15_source_offset_verified": true' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"block_application_verified": true' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path(
+                  "out/vulkan/runtime/joint_matrix_coupling.json"
+              ).read_text(encoding="utf-8")
+          )
+          if float(report["max_absolute_error"]) > 1e-12:
+              raise SystemExit(
+                  "native JOINT matrix coupling exceeded 1e-12 parity tolerance"
+              )
+          PY
+          grep -q '"full_fun_007bbb80_iteration_executed": false' \
+            out/vulkan/runtime/joint_matrix_coupling.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/joint_matrix_coupling.json
       - name: Native BODY solver export parity
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
