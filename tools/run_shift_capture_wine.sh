@@ -206,6 +206,11 @@ else
   wine_prefix="$(realpath -m "$HOME/.wine")"
 fi
 
+# Keep every Wine-facing operation on the exact same prefix. Without this,
+# staging a native DLL into an inferred PortProton prefix while wine/winepath
+# silently use ~/.wine makes the loader report the staged DLL as missing.
+export WINEPREFIX="$wine_prefix"
+
 target_d3dx=""
 if [[ -n "$d3dx9_41" ]]; then
   if [[ "$game_machine" == "0x014c" && -d "$wine_prefix/drive_c/windows/syswow64" ]]; then
@@ -413,6 +418,9 @@ else
 fi
 
 echo "Launching: $game"
+echo "WINEPREFIX: $WINEPREFIX"
+echo "Wine exe : $(command -v "$wine_command")"
+echo "Winepath : $(command -v winepath)"
 echo "Capture : $capture_path"
 echo "Crash   : $crash_path"
 echo "Mode    : $mode"
