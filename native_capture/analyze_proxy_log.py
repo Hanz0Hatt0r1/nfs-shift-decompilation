@@ -33,6 +33,14 @@ def analyze_events(events: list[dict[str, Any]], parse_errors: int = 0) -> dict[
     if proxy_entries:
         mode = proxy_entries[-1].get("mode")
 
+    backend = None
+    backend_entries = by_name.get("proxy_d3d9_backend_selected", [])
+    if backend_entries:
+        backend = {
+            "source": backend_entries[-1].get("source"),
+            "path": backend_entries[-1].get("path"),
+        }
+
     issues: list[dict[str, Any]] = []
     observations: list[str] = []
 
@@ -54,10 +62,38 @@ def analyze_events(events: list[dict[str, Any]], parse_errors: int = 0) -> dict[
             "detail": "Direct3DCreate9 never reached the proxy logger",
         })
 
+    if backend:
+        observations.append(
+            f"D3D9 backend selected from {backend.get('source') or 'unknown'}"
+        )
+
     if by_name.get("proxy_system_d3d9_load_failed"):
         issues.append({
             "kind": "system-d3d9-load-failed",
             "detail": by_name["proxy_system_d3d9_load_failed"][-1],
+        })
+
+    if by_name.get("proxy_system_d3d9_missing_required_export"):
+        issues.append({
+            "kind": "d3d9-backend-missing-required-export",
+            "detail": by_name["proxy_system_d3d9_missing_required_export"][-1],
+        })
+
+    hook_failures = list(by_name.get("vtable_patch_failed", []))
+    hook_failures.extend(by_name.get("d3d9_hook_failed", []))
+    hook_failures.extend(
+        item for item in by_name.get("d3d9_hooks", [])
+        if item.get("installed") is False
+    )
+    hook_failures.extend(
+        item for item in by_name.get("device_hooks", [])
+        if item.get("installed") is False
+    )
+    if hook_failures:
+        issues.append({
+            "kind": "proxy-hook-installation-failed",
+            "count": len(hook_failures),
+            "detail": hook_failures[-1],
         })
 
     create9 = by_name.get("direct3dcreate9_result", [])
@@ -146,8 +182,13 @@ def analyze_events(events: list[dict[str, Any]], parse_errors: int = 0) -> dict[
 
     if successful_presents and not reset_failures:
         diagnosis = "d3d9-presentation-path-alive"
-    elif by_name.get("proxy_system_d3d9_load_failed"):
+    elif (
+        by_name.get("proxy_system_d3d9_load_failed")
+        or by_name.get("proxy_system_d3d9_missing_required_export")
+    ):
         diagnosis = "system-d3d9-forwarding-failure"
+    elif hook_failures:
+        diagnosis = "proxy-hook-installation-failure"
     elif create_device and not bool(create_device[-1].get("success")):
         diagnosis = "device-creation-failure"
     elif failed_presents and not successful_presents:
@@ -162,6 +203,7 @@ def analyze_events(events: list[dict[str, Any]], parse_errors: int = 0) -> dict[
     return {
         "format": "SHIFT.D3D9ProxyDiagnosticSummary/1",
         "mode": mode,
+        "backend": backend,
         "event_count": len(events),
         "parse_error_count": parse_errors,
         "diagnosis": diagnosis,
