@@ -61,6 +61,7 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
     assert (output / "probe_manifest.json").is_file()
     assert (output / "attach.gdb").read_text(encoding="utf-8").endswith("continue\n")
     assert result["probe"]["expected_captures"] == [
+        "relation_state_mutation_events.jsonl",
         "pre_solve_XXXXXX.json",
         "post_solve_XXXXXX.json",
         "provider_pre_<provider>_<hit>.json",
@@ -70,6 +71,7 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
     ]
     assert result["probe"]["mode"] == "full"
     assert result["probe"]["expected_captures"] == [
+        "relation_state_mutation_events.jsonl",
         "pre_solve_XXXXXX.json",
         "post_solve_XXXXXX.json",
         "provider_pre_<provider>_<hit>.json",
@@ -154,6 +156,7 @@ def test_launch_retail_uses_explicit_wine_and_workdir(tmp_path, monkeypatch):
 
 def test_launcher_contract_exposes_explicit_backend_probe():
     result = runtime.describe_sdf_runtime_probe_launcher()
+    assert result["probe_targets"]["relation_state_mutation"] == "0x00757d2c"
     assert result["probe_targets"]["builtin_solver"] == "0x007b0f20"
     assert result["probe_targets"]["post_solve"] == "0x007b4110"
     assert "provider-only" in result["modes"]

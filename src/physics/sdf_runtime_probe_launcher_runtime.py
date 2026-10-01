@@ -86,6 +86,7 @@ def prepare_probe_bundle(
         ]
         if provider_only
         else [
+            "relation_state_mutation_events.jsonl",
             "pre_solve_XXXXXX.json",
             "post_solve_XXXXXX.json",
             "provider_pre_<provider>_<hit>.json",
@@ -227,6 +228,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "non-positive attach PID",
         ],
         "probe_targets": {
+            "relation_state_mutation": "0x00757d2c",
             "builtin_solver": "0x007b0f20",
             "post_solve": "0x007b4110",
         },

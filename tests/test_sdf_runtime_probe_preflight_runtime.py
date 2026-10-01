@@ -112,6 +112,9 @@ def test_preflight_is_ready_when_all_requirements_pass(monkeypatch, tmp_path: Pa
     assert result["ready"] is True
     assert result["runtime_tools"]["wine"] == "/usr/bin/wine"
     assert result["runtime_versions"]["gdb"]["version"] == "gdb-version"
+    assert result["capture"]["expected_relation_state_mutation_events"] == (
+        "relation_state_mutation_events.jsonl"
+    )
 
 
 def test_preflight_passes_provider_only_to_bundle(monkeypatch, tmp_path: Path):
@@ -151,3 +154,4 @@ def test_preflight_passes_provider_only_to_bundle(monkeypatch, tmp_path: Path):
 
     assert captured["provider_only"] is True
     assert result["capture"]["probe_mode"] == "provider-only"
+    assert result["capture"]["expected_relation_state_mutation_events"] is None

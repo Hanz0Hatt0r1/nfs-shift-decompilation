@@ -85,6 +85,10 @@ def test_probe_contract_matches_supplied_retail_executable():
     report = runtime.describe_probe_pe_validation_contract()
     assert report["executable"]["sha256"] == runtime.EXPECTED_EXECUTABLE_SHA256
     assert report["executable"]["image_base"] == "0x00400000"
+    assert report["targets"]["relation_state_mutation"]["address"] == "0x00757d2c"
+    assert report["targets"]["relation_state_mutation"]["expected_prologue"] == (
+        "53568d840800040000578bb824040000"
+    )
     assert report["targets"]["builtin_solver"]["address"] == "0x007b0f20"
     assert report["targets"]["post_solve"]["address"] == "0x007b4110"
 
