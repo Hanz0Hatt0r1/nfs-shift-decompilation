@@ -17,6 +17,9 @@ Usage:
 The launcher temporarily installs the proxy beside SHIFT.exe. If a local
 d3d9.dll already exists (for example DXVK), it is staged as
 "d3d9.shift_backend.dll" so the proxy chainloads the same renderer backend.
+When --d3dx9-41 is supplied, the requested native D3DX DLL is staged into
+the Wine prefix Windows DLL directory (syswow64 for WoW64, otherwise system32)
+and forced with a native-only Wine DLL override.
 EOF
 }
 
@@ -137,14 +140,31 @@ fi
 game_dir="${game%/*}"
 target_dll="$game_dir/d3d9.dll"
 sidecar_dll="$game_dir/d3d9.shift_backend.dll"
-target_d3dx="$game_dir/d3dx9_41.dll"
+
+wine_prefix=""
+if [[ "$game" == */drive_c/* ]]; then
+  wine_prefix="${game%%/drive_c/*}"
+elif [[ -n "${WINEPREFIX:-}" ]]; then
+  wine_prefix="$(realpath -m "$WINEPREFIX")"
+else
+  wine_prefix="$(realpath -m "$HOME/.wine")"
+fi
+
+target_d3dx=""
+if [[ -n "$d3dx9_41" ]]; then
+  if [[ -d "$wine_prefix/drive_c/windows/syswow64" ]]; then
+    target_d3dx="$wine_prefix/drive_c/windows/syswow64/d3dx9_41.dll"
+  else
+    target_d3dx="$wine_prefix/drive_c/windows/system32/d3dx9_41.dll"
+  fi
+fi
 
 if [[ "$proxy" == "$target_dll" ]]; then
   echo "--proxy must point to the built artifact, not the game's d3d9.dll" >&2
   exit 2
 fi
 if [[ -n "$d3dx9_41" && "$d3dx9_41" == "$target_d3dx" ]]; then
-  echo "--d3dx9-41 must point to an external source DLL, not the game's d3dx9_41.dll" >&2
+  echo "--d3dx9-41 must point to a source DLL outside the Wine Windows DLL directory" >&2
   exit 2
 fi
 
@@ -220,6 +240,7 @@ fi
 
 cp -f "$proxy" "$target_dll"
 if [[ -n "$d3dx9_41" ]]; then
+  mkdir -p "${target_d3dx%/*}"
   cp -f "$d3dx9_41" "$target_d3dx"
 fi
 
@@ -327,20 +348,22 @@ if [[ -n "$old_overrides" ]]; then
   done
 fi
 if [[ -n "$filtered_overrides" ]]; then
-  export WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n,b"
+  export WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n"
 else
-  export WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n,b"
+  export WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n"
 fi
 
 echo "Launching: $game"
 echo "Capture : $capture_path"
 echo "Crash   : $crash_path"
 echo "Mode    : $mode"
-echo "DLL ovrd: d3d9=n,b; d3dx9_41=n,b"
+echo "DLL ovrd: d3d9=n,b; d3dx9_41=n"
 if [[ -n "$d3dx9_41" ]]; then
-  echo "D3DX9  : $d3dx9_41 -> $target_d3dx"
+  echo "Prefix  : $wine_prefix"
+  echo "D3DX9   : $d3dx9_41 -> $target_d3dx"
+  echo "D3DX9 sha256: $(sha256sum "$target_d3dx" | awk '{print $1}')"
 else
-  echo "D3DX9  : no explicit source DLL supplied"
+  echo "D3DX9   : no explicit source DLL supplied"
 fi
 if ((signature_discovery)); then
   echo "Discover: compact resource-signature pass"
