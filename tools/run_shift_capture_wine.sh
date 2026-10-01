@@ -26,6 +26,43 @@ EOF
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
 
+pe_machine() {
+  python3 - "$1" <<'PY'
+import struct
+import sys
+
+path = sys.argv[1]
+try:
+    with open(path, "rb") as f:
+        if f.read(2) != b"MZ":
+            raise ValueError("missing MZ header")
+        f.seek(0x3C)
+        raw = f.read(4)
+        if len(raw) != 4:
+            raise ValueError("truncated DOS header")
+        pe_offset = struct.unpack("<I", raw)[0]
+        f.seek(pe_offset)
+        if f.read(4) != b"PE\0\0":
+            raise ValueError("missing PE signature")
+        raw = f.read(2)
+        if len(raw) != 2:
+            raise ValueError("truncated COFF header")
+        print(f"0x{struct.unpack('<H', raw)[0]:04x}")
+except Exception as exc:
+    print(f"error:{exc}")
+    sys.exit(1)
+PY
+}
+
+pe_machine_name() {
+  case "$1" in
+    0x014c) printf '%s' "x86" ;;
+    0x8664) printf '%s' "x64" ;;
+    0xaa64) printf '%s' "arm64" ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
 game=""
 proxy=""
 d3dx9_41=""
@@ -119,6 +156,10 @@ command -v winepath >/dev/null 2>&1 || {
   echo "winepath is required to translate capture paths" >&2
   exit 2
 }
+command -v python3 >/dev/null 2>&1 || {
+  echo "python3 is required to validate PE architecture" >&2
+  exit 2
+}
 
 game="$(realpath "$game")"
 proxy="$(realpath "$proxy")"
@@ -129,8 +170,23 @@ output="$(realpath -m "$output")"
 
 [[ -f "$game" ]] || { echo "game not found: $game" >&2; exit 2; }
 [[ -f "$proxy" ]] || { echo "proxy not found: $proxy" >&2; exit 2; }
+game_machine="$(pe_machine "$game")" || {
+  echo "failed to read PE architecture: $game" >&2
+  exit 2
+}
 if [[ -n "$d3dx9_41" ]]; then
   [[ -f "$d3dx9_41" ]] || { echo "d3dx9_41.dll not found: $d3dx9_41" >&2; exit 2; }
+  d3dx_machine="$(pe_machine "$d3dx9_41")" || {
+    echo "failed to read PE architecture: $d3dx9_41" >&2
+    exit 2
+  }
+  if [[ "$d3dx_machine" != "$game_machine" ]]; then
+    echo "d3dx9_41.dll architecture mismatch:" >&2
+    echo "  game : $(pe_machine_name "$game_machine") ($game_machine) $game" >&2
+    echo "  d3dx : $(pe_machine_name "$d3dx_machine") ($d3dx_machine) $d3dx9_41" >&2
+    echo "SHIFT requires a d3dx9_41.dll with the same PE architecture as SHIFT.exe." >&2
+    exit 2
+  fi
 fi
 [[ "${proxy##*/}" == "d3d9.dll" ]] || {
   echo "proxy must be named d3d9.dll" >&2
@@ -152,7 +208,7 @@ fi
 
 target_d3dx=""
 if [[ -n "$d3dx9_41" ]]; then
-  if [[ -d "$wine_prefix/drive_c/windows/syswow64" ]]; then
+  if [[ "$game_machine" == "0x014c" && -d "$wine_prefix/drive_c/windows/syswow64" ]]; then
     target_d3dx="$wine_prefix/drive_c/windows/syswow64/d3dx9_41.dll"
   else
     target_d3dx="$wine_prefix/drive_c/windows/system32/d3dx9_41.dll"
@@ -360,6 +416,7 @@ echo "Mode    : $mode"
 echo "DLL ovrd: d3d9=n,b; d3dx9_41=n"
 if [[ -n "$d3dx9_41" ]]; then
   echo "Prefix  : $wine_prefix"
+  echo "PE arch : game=$(pe_machine_name "$game_machine") d3dx=$(pe_machine_name "$d3dx_machine")"
   echo "D3DX9   : $d3dx9_41 -> $target_d3dx"
   echo "D3DX9 sha256: $(sha256sum "$target_d3dx" | awk '{print $1}')"
 else
