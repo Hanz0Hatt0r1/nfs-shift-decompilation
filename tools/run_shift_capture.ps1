@@ -43,29 +43,20 @@ New-Item -ItemType Directory -Force -Path $out | Out-Null
 
 $capturePath = Join-Path $out "shift_d3d9_capture.jsonl"
 $sidecarDll = Join-Path $gameDir "d3d9.shift_backend.dll"
-$backupDll = $null
-$backupSidecar = $null
+$backupDll = Join-Path $out "original_d3d9.dll"
+$backupSidecar = Join-Path $out "original_d3d9.shift_backend.dll"
+$hadDll = Test-Path $targetDll
+$hadSidecar = Test-Path $sidecarDll
 $stagedBackend = $false
+$exitCode = 0
 
-if (Test-Path $sidecarDll) {
-    $backupSidecar = Join-Path $out "original_d3d9.shift_backend.dll"
-    Copy-Item -LiteralPath $sidecarDll -Destination $backupSidecar -Force
-    Remove-Item -LiteralPath $sidecarDll -Force
-}
-
-if (Test-Path $targetDll) {
-    $backupDll = Join-Path $out "original_d3d9.dll"
+# Make all recovery copies before mutating the game directory.
+if ($hadDll) {
     Copy-Item -LiteralPath $targetDll -Destination $backupDll -Force
-
-    $existingHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $targetDll).Hash
-    $proxyHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $proxyPath).Hash
-    if ($existingHash -ne $proxyHash) {
-        Copy-Item -LiteralPath $targetDll -Destination $sidecarDll -Force
-        $stagedBackend = $true
-    }
 }
-
-Copy-Item -LiteralPath $proxyPath -Destination $targetDll -Force
+if ($hadSidecar) {
+    Copy-Item -LiteralPath $sidecarDll -Destination $backupSidecar -Force
+}
 
 $oldCapture = $env:SHIFT_D3D9_CAPTURE
 $oldMode = $env:SHIFT_D3D9_CAPTURE_MODE
@@ -79,6 +70,21 @@ $oldTextureSnapshotDir = $env:SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR
 $oldTextureStages = $env:SHIFT_D3D9_CAPTURE_TEXTURE_STAGES
 
 try {
+    if ($hadSidecar) {
+        Remove-Item -LiteralPath $sidecarDll -Force
+    }
+
+    if ($hadDll) {
+        $existingHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $targetDll).Hash
+        $proxyHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $proxyPath).Hash
+        if ($existingHash -ne $proxyHash) {
+            Copy-Item -LiteralPath $targetDll -Destination $sidecarDll -Force
+            $stagedBackend = $true
+        }
+    }
+
+    Copy-Item -LiteralPath $proxyPath -Destination $targetDll -Force
+
     $env:SHIFT_D3D9_CAPTURE = $capturePath
     $env:SHIFT_D3D9_CAPTURE_MODE = $Mode.ToLowerInvariant()
     if ($stagedBackend) {
@@ -125,13 +131,13 @@ try {
     $exitCode = $process.ExitCode
 }
 finally {
-    if ($backupDll) {
+    if ($hadDll) {
         Copy-Item -LiteralPath $backupDll -Destination $targetDll -Force
     } else {
         Remove-Item -LiteralPath $targetDll -Force -ErrorAction SilentlyContinue
     }
 
-    if ($backupSidecar) {
+    if ($hadSidecar) {
         Copy-Item -LiteralPath $backupSidecar -Destination $sidecarDll -Force
     } else {
         Remove-Item -LiteralPath $sidecarDll -Force -ErrorAction SilentlyContinue
