@@ -1172,3 +1172,19 @@ timeline/session/bundle/verification/replay gates.
 
 This is an overhead reduction only. Native scheduler admission remains false
 until authentic retail evidence supports the missing timing decision.
+
+
+## Phase 647 first-mutation stop capture
+
+An authentic Phase 646 lightweight capture observed 600 frame-entry anchors and
+600 post-solve anchors with one stable physics-system identity and a contiguous
+runtime-event sequence from 1 through 1200, but no relation-state mutation.
+
+The retail probe now supports `--stop-on-relation-mutation`. The relation
+observer persists the complete event first and only then returns a GDB stop;
+the launcher detaches and quits automatically. A frame budget may remain active
+as a fallback ceiling.
+
+This strengthens evidence acquisition only. The 600-frame no-hit capture is
+retained as negative runtime evidence and does not authorize native scheduler
+admission.
