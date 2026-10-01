@@ -720,16 +720,16 @@ equality with the prepared SBFR before `FUN_007b2210` reset and
 `FUN_007b0f20` solve. GBCF and prepared SBEX are mutually exclusive pre-solve
 evidence sources.
 
-Runtime admission also requires exact workspace cardinality: BODY count,
-JOINT/HINGE sample counts, BAR count and scalar count must match the native
-workspace. Telemetry exposes generated join/generation steps and maximum
-matrix/RHS join error.
+Phase 628 fixed-step admission currently requires its synthetic GBCF sample
+counts to match the workspace relation counts. Linux CI retains the nonzero
+six-scalar Phase 627 oracle and the 11-BODY / 4-JOINT / 4-HINGE / 20-BAR /
+40-scalar scheduler regression.
 
-Linux CI retains the nonzero six-scalar Phase 627 oracle for arithmetic parity
-and adds a full 11-BODY / 4-JOINT / 4-HINGE / 20-BAR / 40-scalar fixed-step
-scheduler regression. Authentic `FUN_007b3ed0` sample production, retail
-reset-node selection, provider-present dispatch and persistent vehicle motion
-remain outside the prepared boundary.
+Phase 630 proves that this count equality is not the authentic ownership shape:
+each retail top-level relation constructs two BODY-owned endpoint samples.
+The Phase 628 equality therefore remains a known prepared-fixture shortcut until
+CSRF is admitted on fixed steps. Telemetry still exposes generated
+join/generation steps and maximum matrix/RHS join error.
 
 
 ## Phase 629 FUN_007b3ed0 constraint sample refresh
@@ -758,3 +758,38 @@ JOINT→HINGE→BAR frame order at ≤1e-12 parity tolerance.
 This phase deliberately does not claim a complete runtime refresh packet.
 Top-level relation ownership/body-sample pointer transport, exact per-frame raw
 inputs and GBCF regeneration remain the next integration boundary.
+
+
+## Phase 630 constraint relation ownership and GBCF refresh join
+
+`SHIFT.NativeConstraintSampleRelationFramePacket/1` (`CSRF`) now carries the
+missing source-order relation ownership for the Phase 629 refresh stage.
+
+Each JOINT/HINGE/BAR relation identifies exact positive and negative GBCF
+`(body_index, sample_index)` endpoints. Direct `SHIFT.exe.c` audit confirms
+that the +0x78/positive constructor call uses side flag 1 and the
++0x80/negative call uses side flag 0 for `FUN_007ba8b0`,
+`FUN_007ba900` and `FUN_007ba990`.
+
+The packet keeps only the raw local rows needed by `FUN_007b3ed0`; BODY
+frames/positions, scalar bases, side flags, BAR side bias and generated
+matrix/RHS values are not duplicated.
+
+`refresh_generated_body_constraint_frame()` fails closed unless every
+BODY-owned sample is covered exactly once, endpoint side identity matches the
+retail constructor calls, paired scalar bases match and BAR endpoint bias
+matches. It then runs the Phase 629 numerical kernels and writes refreshed
+sample fields into a copied GBCF.
+
+The native checker freezes the critical cardinality:
+
+```text
+1 relation → 2 BODY-owned endpoint samples
+```
+
+for JOINT, HINGE and BAR, and verifies duplicate/incomplete ownership,
+side mismatch and scalar mismatch rejection.
+
+Phase 630 does not yet load CSRF through `shift_runtime`. The next boundary is
+fixed-step `CSRF → refreshed GBCF → FUN_007bc680/FUN_007bb8d0/FUN_007ba570`
+execution with relation-aware endpoint cardinality.
