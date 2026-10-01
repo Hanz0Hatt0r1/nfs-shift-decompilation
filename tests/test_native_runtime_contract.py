@@ -419,7 +419,8 @@ def test_phase608_fixed_step_solver_frame_requires_ready_runtime_evidence():
     assert "physics_solver_provider_present" in source
     assert "physics_solver_post_solve_body_state_applied" in source
     assert '"physics_solver_provider_present\\": false' in source
-    assert '"physics_solver_post_solve_body_state_applied\\": false' in source
+    assert "physics_solver_post_solve_body_state_applied" in source
+    assert '"physics_solver_persistent_vehicle_state_applied\\": false' in source
 
 
 def test_phase610_fixed_step_solver_joins_post_solve_projection():
