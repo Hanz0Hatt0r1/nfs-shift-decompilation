@@ -1156,3 +1156,19 @@ the same session-aware timeline.
 Historical archives with no session declaration and no stamped evidence remain
 legacy-compatible. Session identity is not a cryptographic signature and native
 relation-state scheduler admission remains false.
+
+
+## Phase 646 lightweight relation timeline capture
+
+The retail capture launcher now exposes `--relation-timeline-only` for the
+specific outstanding relation-mutation timing evidence. The GDB session installs
+only relation mutation, frame-entry and post-solve anchors. A dedicated
+metadata-only post-solve probe avoids scalar/RHS memory reads while preserving
+the shared runtime-event sequence and bounded auto-detach behavior.
+
+Provider solve/reset, scalar reset and builtin solver breakpoints are omitted in
+this mode. The resulting evidence still passes through the Phase 637–645
+timeline/session/bundle/verification/replay gates.
+
+This is an overhead reduction only. Native scheduler admission remains false
+until authentic retail evidence supports the missing timing decision.
