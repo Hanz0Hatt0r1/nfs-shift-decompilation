@@ -2495,6 +2495,30 @@ def cmd_native_constraint_sample_relation_frame(
     return 0
 
 
+def cmd_native_constraint_reset_state_frame(
+    args: argparse.Namespace,
+) -> int:
+    """Prepare runtime relation +0x70 state for FUN_007b2210 selection."""
+    from native_constraint_reset_state_frame import (
+        build_native_constraint_reset_state_frame_file,
+    )
+
+    report = build_native_constraint_reset_state_frame_file(
+        args.input,
+        args.output_dir,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "body_count": report["body_count"],
+        "relation_counts": report["relation_counts"],
+        "selected_low_bit_counts": report["selected_low_bit_counts"],
+        "packet_sha256": report["packet"]["sha256"],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_native_body_solver_export_frame(args: argparse.Namespace) -> int:
     """Prepare explicit per-BODY FUN_007ba570 contributions for native replay."""
     from native_body_solver_export_frame import (
@@ -5134,6 +5158,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input")
     p.add_argument("output_dir")
     p.set_defaults(fn=cmd_native_constraint_sample_relation_frame)
+
+    p = sp.add_parser(
+        "native-constraint-reset-state-frame",
+        help=(
+            "prepare source-order runtime relation +0x70 words for native "
+            "FUN_007b2210 reset-node selection"
+        ),
+    )
+    p.add_argument("input")
+    p.add_argument("output_dir")
+    p.set_defaults(fn=cmd_native_constraint_reset_state_frame)
 
     p = sp.add_parser(
         "native-body-solver-export-frame",
