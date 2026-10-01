@@ -535,3 +535,19 @@ application.
 The outer retail JOINT sample loop and sparse runtime row-pointer writes are not
 yet executed by this checker. HINGE/HINGE, HINGE/BAR and BAR/BAR coupling stay
 in their dedicated source-backed stages.
+
+
+## Phase 621 native HINGE matrix coupling
+
+Run the deterministic source-backed HINGE/HINGE matrix regression:
+
+```bash
+native_runtime/build/shift_runtime_hinge_matrix_coupling_check
+```
+
+The checker validates `FUN_007bb250` row transforms, self lower-triangle
+entries, both pair storage orientations/sign paths and bounded 2×2 matrix
+application.
+
+The checker does not execute the mixed HINGE↔BAR portion or the complete retail
+HINGE array loop.
