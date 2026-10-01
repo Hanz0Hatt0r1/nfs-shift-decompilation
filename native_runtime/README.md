@@ -485,3 +485,17 @@ It validates `FUN_007bac60` Q/L scales, exact BODY +0x18/+0x20/+0x28
 cross/coupling terms, signed three-lane output, bounded solver-vector
 application and fail-closed invalid inputs. It does not yet iterate runtime JOINT samples or execute
 HINGE/BAR contributions.
+
+
+## Phase 618 native HINGE projection
+
+Run the deterministic source-backed HINGE kernel regression:
+
+```bash
+native_runtime/build/shift_runtime_hinge_projection_check
+```
+
+It covers both `FUN_007bae40` side-flag branches, including
+`FUN_007aefb0` sample-position transform and `FUN_007b1320`
+frame-offset × transformed-position correction. Runtime HINGE iteration and
+BAR/matrix contribution stages remain separate.
