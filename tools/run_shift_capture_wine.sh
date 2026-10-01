@@ -8,6 +8,7 @@ Usage:
     --proxy /path/to/d3d9.dll [--output DIR] \
     [--mode passthrough|diagnostic|capture] [--debug-output] \
     [--frame-start N] [--frame-end N] \
+    [--signature-discovery] \
     [--trigger] [--resource-trigger RULES] [--resource-trigger-repeat] \
     [--pre-frames N] [--post-frames N] \
     [--screenshots] [--buffer-payloads] [--texture-payloads] \
@@ -32,6 +33,7 @@ screenshots=0
 frame_start=""
 frame_end=""
 trigger_capture=0
+signature_discovery=0
 resource_trigger=""
 resource_trigger_repeat=0
 pre_frames=2
@@ -50,6 +52,7 @@ while (($#)); do
     --debug-output) debug_output=1; shift ;;
     --frame-start) frame_start="${2:?missing value for --frame-start}"; shift 2 ;;
     --frame-end) frame_end="${2:?missing value for --frame-end}"; shift 2 ;;
+    --signature-discovery) signature_discovery=1; shift ;;
     --trigger) trigger_capture=1; shift ;;
     --resource-trigger) resource_trigger="${2:?missing value for --resource-trigger}"; trigger_capture=1; shift 2 ;;
     --resource-trigger-repeat) resource_trigger_repeat=1; trigger_capture=1; shift ;;
@@ -93,6 +96,14 @@ done
 if ((trigger_capture)) && [[ -n "$frame_start" || -n "$frame_end" ]]; then
   echo "--trigger/--resource-trigger cannot be combined with --frame-start/--frame-end" >&2
   exit 2
+fi
+if ((signature_discovery)) && { ((trigger_capture)) || [[ -n "$frame_start" || -n "$frame_end" ]]; }; then
+  echo "--signature-discovery cannot be combined with frame or trigger capture" >&2
+  exit 2
+fi
+
+if ((signature_discovery)); then
+  mode="capture"
 fi
 
 command -v "$wine_command" >/dev/null 2>&1 || {
@@ -181,6 +192,12 @@ export SHIFT_D3D9_CRASH_LOG="$crash_windows"
 export SHIFT_D3D9_CRASH_DIAGNOSTICS=1
 export SHIFT_D3D9_CAPTURE_MODE="$mode"
 unset SHIFT_D3D9_BACKEND || true
+
+if ((signature_discovery)); then
+  export SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY=1
+else
+  unset SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY || true
+fi
 
 if [[ -n "$frame_start" ]]; then
   export SHIFT_D3D9_CAPTURE_FRAME_START="$frame_start"
@@ -281,6 +298,9 @@ echo "Launching: $game"
 echo "Capture : $capture_path"
 echo "Crash   : $crash_path"
 echo "Mode    : $mode"
+if ((signature_discovery)); then
+  echo "Discover: compact resource-signature pass"
+fi
 if [[ -n "$frame_start" || -n "$frame_end" ]]; then
   echo "Frames  : ${frame_start:-0}..${frame_end:-end}"
 fi
@@ -318,6 +338,10 @@ if [[ ! -f "$capture_path" ]]; then
 fi
 
 python3 "$repo_root/native_capture/analyze_proxy_log.py" "$capture_path" 2>/dev/null || true
+if ((signature_discovery)); then
+  python3 "$repo_root/tools/list_d3d9_resource_signatures.py" \
+    "$capture_path" --top 100 --json "$output/resource_signatures.json" || true
+fi
 if [[ -s "$crash_path" ]]; then
   python3 "$repo_root/native_capture/analyze_proxy_crash.py" "$crash_path" 2>/dev/null || true
   echo "Crash context: $crash_path"

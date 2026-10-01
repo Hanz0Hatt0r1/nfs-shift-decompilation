@@ -31,6 +31,8 @@ param(
 
     [switch]$TriggerCapture,
 
+    [switch]$SignatureDiscovery,
+
     [string]$ResourceTrigger = "",
 
     [switch]$ResourceTriggerRepeat,
@@ -52,6 +54,13 @@ if ($FrameStart -ge 0 -and $FrameEnd -ge 0 -and $FrameEnd -lt $FrameStart) {
 }
 if (($TriggerCapture -or $ResourceTrigger) -and ($FrameStart -ge 0 -or $FrameEnd -ge 0)) {
     throw "TriggerCapture/ResourceTrigger cannot be combined with FrameStart/FrameEnd"
+}
+if ($SignatureDiscovery -and ($TriggerCapture -or $ResourceTrigger -or $FrameStart -ge 0 -or $FrameEnd -ge 0)) {
+    throw "SignatureDiscovery cannot be combined with frame or trigger capture"
+}
+
+if ($SignatureDiscovery) {
+    $Mode = "Capture"
 }
 
 $gamePath = (Resolve-Path $GameExe).Path
@@ -114,6 +123,7 @@ $oldTriggerKey = $env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY
 $oldTriggerFile = $env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE
 $oldResourceTrigger = $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER
 $oldResourceTriggerRepeat = $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT
+$oldSignatureDiscovery = $env:SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY
 
 try {
     if ($hadSidecar) {
@@ -135,6 +145,11 @@ try {
     $env:SHIFT_D3D9_CRASH_LOG = $crashPath
     $env:SHIFT_D3D9_CRASH_DIAGNOSTICS = "1"
     $env:SHIFT_D3D9_CAPTURE_MODE = $Mode.ToLowerInvariant()
+    if ($SignatureDiscovery) {
+        $env:SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY = "1"
+    } else {
+        Remove-Item Env:SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY -ErrorAction SilentlyContinue
+    }
     if ($FrameStart -ge 0) { $env:SHIFT_D3D9_CAPTURE_FRAME_START = [string]$FrameStart } else { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_START -ErrorAction SilentlyContinue }
     if ($FrameEnd -ge 0) { $env:SHIFT_D3D9_CAPTURE_FRAME_END = [string]$FrameEnd } else { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_END -ErrorAction SilentlyContinue }
     $triggerFile = Join-Path $out "capture.trigger"
@@ -208,6 +223,7 @@ try {
     Write-Host "Capture : $capturePath"
     Write-Host "Crash   : $crashPath"
     Write-Host "Mode    : $Mode"
+    if ($SignatureDiscovery) { Write-Host "Discover: compact resource-signature pass" }
     if ($FrameStart -ge 0 -or $FrameEnd -ge 0) {
         Write-Host "Frames  : $FrameStart..$FrameEnd"
     }
@@ -273,6 +289,7 @@ finally {
     if ($null -eq $oldTriggerFile) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE = $oldTriggerFile }
     if ($null -eq $oldResourceTrigger) { Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER = $oldResourceTrigger }
     if ($null -eq $oldResourceTriggerRepeat) { Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT = $oldResourceTriggerRepeat }
+    if ($null -eq $oldSignatureDiscovery) { Remove-Item Env:SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY = $oldSignatureDiscovery }
 }
 
 if ($exitCode -ne 0) {
