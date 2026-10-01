@@ -370,3 +370,16 @@ def test_phase609_cli_accepts_native_post_solve_projection():
     assert args.input == "post-solve-input.json"
     assert args.output_dir == "out/native-post-solve"
     assert args.fn.__name__ == "cmd_native_post_solve_projection"
+
+
+def test_phase613_cli_accepts_prepared_body_solver_export_frame():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-body-solver-export-frame",
+        "body-export-input.json",
+        "out/native-body-export",
+    ])
+
+    assert args.input == "body-export-input.json"
+    assert args.output_dir == "out/native-body-export"
+    assert args.fn.__name__ == "cmd_native_body_solver_export_frame"
