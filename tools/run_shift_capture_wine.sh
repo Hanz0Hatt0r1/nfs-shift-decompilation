@@ -140,6 +140,15 @@ capture_path="$output/shift_d3d9_capture.jsonl"
 crash_path="$output/shift_d3d9_crash.jsonl"
 backup_dll="$output/original_d3d9.dll"
 backup_sidecar="$output/original_d3d9.shift_backend.dll"
+
+# Every launcher invocation represents one capture session. The native writer
+# appends by design, so clear launcher-owned outputs here to avoid mixing
+# different process runs when an output directory is reused.
+rm -f "$capture_path" "$crash_path" "$output/resource_signatures.json" "$output/capture.trigger"
+if ((screenshots)); then rm -rf "$output/frames"; fi
+if ((buffer_payloads)); then rm -rf "$output/buffers"; fi
+if ((texture_payloads)); then rm -rf "$output/texture-payloads"; fi
+
 had_dll=0
 had_sidecar=0
 staged_backend=0

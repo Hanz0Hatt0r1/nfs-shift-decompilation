@@ -331,3 +331,17 @@ def test_wine_launcher_forces_native_d3dx9_41_preference():
     # retaining builtin fallback through the n,b override.
     assert 'd3dx9_41=n,b' in wine
     assert '"${name,,}" == "d3dx9_41"' in wine
+
+
+def test_capture_launchers_clear_previous_session_outputs():
+    powershell = Path("tools/run_shift_capture.ps1").read_text(encoding="utf-8")
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'rm -f "$capture_path" "$crash_path"' in wine
+    assert '"$output/resource_signatures.json"' in wine
+    assert '"$output/capture.trigger"' in wine
+
+    assert 'Remove-Item -LiteralPath $capturePath -Force' in powershell
+    assert 'Remove-Item -LiteralPath $crashPath -Force' in powershell
+    assert 'Join-Path $out "resource_signatures.json"' in powershell
+    assert 'Join-Path $out "capture.trigger"' in powershell

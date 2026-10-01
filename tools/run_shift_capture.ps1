@@ -85,6 +85,23 @@ $crashPath = Join-Path $out "shift_d3d9_crash.jsonl"
 $sidecarDll = Join-Path $gameDir "d3d9.shift_backend.dll"
 $backupDll = Join-Path $out "original_d3d9.dll"
 $backupSidecar = Join-Path $out "original_d3d9.shift_backend.dll"
+
+# The capture writer opens JSONL files in append mode. Treat every launcher
+# invocation as an independent session and remove launcher-owned outputs first.
+Remove-Item -LiteralPath $capturePath -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $crashPath -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $out "resource_signatures.json") -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $out "capture.trigger") -Force -ErrorAction SilentlyContinue
+if ($CaptureScreenshots) {
+    Remove-Item -LiteralPath (Join-Path $out "frames") -Recurse -Force -ErrorAction SilentlyContinue
+}
+if ($CaptureBufferPayloads) {
+    Remove-Item -LiteralPath (Join-Path $out "buffers") -Recurse -Force -ErrorAction SilentlyContinue
+}
+if ($CaptureTexturePayloads) {
+    Remove-Item -LiteralPath (Join-Path $out "texture-payloads") -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 $hadDll = Test-Path $targetDll
 $hadSidecar = Test-Path $sidecarDll
 $stagedBackend = $false
