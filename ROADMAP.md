@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 632. Current development: Phase 633.**
+**Current mainline: Phase 633. Current development: Phase 634.**
 
 
 
@@ -26,7 +26,7 @@ Phase 631 adds `--constraint-sample-relation-frame` to the native runtime. In CS
 
 Phase 632 adds `SHIFT.NativeConstraintRelationResetFramePacket/1` (CRRF) and ports the `FUN_007b3f40` selection boundary. Direct source audit corrects the state owner to `relation+0x70 & 1`; scalar bases still come from the positive BODY-owned sample reached through `relation+0x7c`, with reset widths JOINT=3, HINGE=2 and BAR=1. CRRF stores only source-order relation low bits, while GBCF+CSRF provide endpoint/scalar identity. The selector preserves the retail reset-call sequence without inventing full-domain coverage rules; its normalized reset set must exactly match `SBFR.reset_nodes` at startup and on every admitted fixed step before the unchanged `FUN_007b2210 → FUN_007b0f20` oracle executes. The next boundary is authentic per-frame BODY/raw-relation/reset-state production, followed by provider-present dispatch and persistent vehicle-state integration.
 
-Phase 633 ports the recovered set-only `FUN_00757d2c` mutation semantics for relation `+0x70` bit0 without inventing scheduler timing. The normalized native kernel uses the established CSRF BODY identity domain: one unordered BODY pair sets matching JOINT/HINGE relation bits, while one BODY endpoint sets every matching BAR relation bit. Existing set bits remain set and unmatched relations are unchanged. Raw executable disassembly additionally proves the 0..3 component-slot argument and the `0xA80` trampoline stride. The kernel is intentionally not wired into `shift_runtime`; the named FL/FR/RL/RR wheel/spindle and rear-axle BODY mapping is also statically proven; retail event identity/timing remains the next evidence boundary.
+Phase 633 isolates the recovered set-only mutation primitives inside `FUN_00757d2c`: unordered JOINT/HINGE BODY-pair matching and BAR single-endpoint matching. Raw x86 review then corrected the component branch interpretation, so Phase 634 adds the complete `FUN_00757d20 → 0x469736 → FUN_00757d2c` dispatcher: slot 0..3 is multiplied by `0xA80`; non-null component `+0x424` selects BAR-only mutation, while null `+0x424` selects JOINT/HINGE matching between component `+0x420` and vehicle `+0x2E00` (`rear_axle`). The current BMW SDF has no `rear_axle` BODY, so the neutral path preserves null instead of inventing an index. Runtime event timing remains the next evidence boundary.
 
 Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
 
