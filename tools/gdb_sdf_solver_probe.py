@@ -777,6 +777,44 @@ class PostSolveProbe(_BaseProbe):
         )
 
 
+class PostSolveAnchorProbe(_BaseProbe):
+    """Record only the post-solve ordering anchor for lightweight capture."""
+
+    def __init__(
+        self,
+        address: int,
+        label: str,
+        output_dir: Path,
+        *,
+        stop_after_hit: int | None = None,
+    ) -> None:
+        super().__init__(address, label, output_dir)
+        self.stop_after_hit = stop_after_hit
+
+    def stop(self) -> bool:
+        self.hit += 1
+        runtime_event_sequence = _next_runtime_event_sequence()
+        physics_system = int(gdb.parse_and_eval("$ecx"))
+        payload = {
+            "format": "SHIFT.SDFSolverPostSolveAnchorProbe/1",
+            "version": 1,
+            "status": "captured",
+            "ready": True,
+            "capture_kind": "post_solve_anchor",
+            "frame_index": self.hit,
+            "runtime_event_sequence": runtime_event_sequence,
+            "image_base": 0x00400000,
+            "physics_system": physics_system,
+            "source_function": "FUN_007b4110",
+            "source_address": FUNCTIONS["post_solve"],
+        }
+        self.write_json(f"post_solve_{self.hit:06d}.json", payload)
+        return (
+            self.stop_after_hit is not None
+            and self.hit >= self.stop_after_hit
+        )
+
+
 class SDFProbeCommand(gdb.Command):
     """Install or replace the SHIFT SDF solver runtime probe."""
 
@@ -897,21 +935,30 @@ class SDFProbeCommand(gdb.Command):
                     "frame_entry",
                     output,
                 ),
-                PostSolveProbe(
-                    FUNCTIONS["post_solve"],
-                    "post_solve",
-                    output,
-                    stop_after_hit=capture_frames,
-                ),
             ])
-            if not relation_timeline_only:
+            if relation_timeline_only:
                 self.breakpoints.append(
+                    PostSolveAnchorProbe(
+                        FUNCTIONS["post_solve"],
+                        "post_solve_anchor",
+                        output,
+                        stop_after_hit=capture_frames,
+                    )
+                )
+            else:
+                self.breakpoints.extend([
                     SolverEntryProbe(
                         FUNCTIONS["builtin_solver"],
                         "builtin_solver",
                         output,
-                    )
-                )
+                    ),
+                    PostSolveProbe(
+                        FUNCTIONS["post_solve"],
+                        "post_solve",
+                        output,
+                        stop_after_hit=capture_frames,
+                    ),
+                ])
         if not relation_timeline_only:
             self.breakpoints.extend([
                 ProviderSolveProbe(
