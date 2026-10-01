@@ -758,3 +758,31 @@ JOINT→HINGE→BAR frame order at ≤1e-12 parity tolerance.
 This phase deliberately does not claim a complete runtime refresh packet.
 Top-level relation ownership/body-sample pointer transport, exact per-frame raw
 inputs and GBCF regeneration remain the next integration boundary.
+
+
+## Phase 630 FUN_007b3820 relation-to-BODY sample ownership
+
+The native physics library now reconstructs the source-backed ownership stage
+that sits before Phase 629 refresh. `FUN_007b3820` allocates positive then
+negative endpoint samples into the owning BODY arrays, with side flags 1 and 0
+respectively, while relation BODY/sample pointer slots correspond to
+`+0x78/+0x7c/+0x80/+0x84`.
+
+JOINT and BAR point inputs use the ported `FUN_007afcd0` boundary
+(world minus BODY position, then `FUN_007af0a0`). HINGE inputs use the
+source-backed `FUN_007b1230` normalized basis construction. The bridge then
+runs the Phase 629 refresh and emits the already-existing prepared BODY sample
+types consumed by Phase 624/GBCF.
+
+The implementation also materializes the positive-side HINGE `+0x78` row
+written by `FUN_007bb8d0` from the negative BODY/sample primary row. Scalar
+layout is fail-closed against the packed 3/2/1 JOINT/HINGE/BAR widths produced
+by `FUN_007b1b60`.
+
+`shift_runtime_constraint_relation_frame_check` covers same-BODY endpoint
+ordering, BODY index validation, scalar overlap/gap rejection and deterministic
+numeric output. It deliberately reports `gbcf_packet_emitted=false`.
+
+The remaining boundary is proof-gated relation-frame transport plus a strict
+join that replaces GBCF's prepared sample arrays before the existing Phase 628
+fixed-step equality gate.
