@@ -304,3 +304,21 @@ The solver-frame scalar count must exactly match the physics workspace. The
 runtime rechecks participant readiness on every step and executes only the
 provider-absent Phase 606 reset/solve path. It does not feed the solved vector
 into retail body state.
+
+
+## Phase 609 post-solve arithmetic
+
+`shift_runtime_physics` now exposes the source-backed post-solve primitives
+for `FUN_007b4110` and `FUN_007baa70/baaf0`.
+
+Run the native parity check with:
+
+```bash
+ctest --test-dir native_runtime/build --output-on-failure \
+  -R shift_runtime_post_solve_application
+native_runtime/build/shift_runtime_post_solve_check
+```
+
+The check covers JOINT, HINGE and BAR arithmetic. These functions are not yet
+called by `--solver-frame`; fixed-step body-state mutation remains blocked
+until an exact constraint/sample/body mapping is provided.
