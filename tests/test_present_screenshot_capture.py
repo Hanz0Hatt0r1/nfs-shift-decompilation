@@ -106,10 +106,20 @@ def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
     assert 'SHIFT_D3D9_CAPTURE_MODE' in powershell
     assert 'SHIFT_D3D9_CRASH_LOG' in powershell
     assert 'SHIFT_D3D9_CRASH_DIAGNOSTICS' in powershell
+    assert 'SHIFT_D3D9_CAPTURE_FRAME_START' in powershell
+    assert 'SHIFT_D3D9_CAPTURE_FRAME_END' in powershell
+    assert 'CaptureBufferPayloads' in powershell
+    assert 'CaptureTexturePayloads' in powershell
     assert 'mode="diagnostic"' in wine
     assert 'd3d9.shift_backend.dll' in wine
     assert 'SHIFT_D3D9_CRASH_LOG' in wine
     assert 'SHIFT_D3D9_CRASH_DIAGNOSTICS' in wine
+    assert 'SHIFT_D3D9_CAPTURE_FRAME_START' in wine
+    assert 'SHIFT_D3D9_CAPTURE_FRAME_END' in wine
+    assert '--frame-start' in wine
+    assert '--frame-end' in wine
+    assert '--buffer-payloads' in wine
+    assert '--texture-payloads' in wine
     assert 'WINEDLLOVERRIDES="d3d9=n,b' in wine
 
 
