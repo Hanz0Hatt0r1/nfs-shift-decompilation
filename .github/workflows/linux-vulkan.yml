@@ -583,6 +583,107 @@ jobs:
             out/vulkan/runtime/generated_body_constraint_frame.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/generated_body_constraint_frame.json
+      - name: Join generated BODY frame to builtin solver frame
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path("src/physics").resolve()))
+          from sdf_builtin_sparse_solver_runtime import build_dense_solver_graph
+
+          matrix = [
+              [19.5, 0.0, 0.0, 0.0, 0.0, 0.0],
+              [-3.75, 15.5, 0.0, 0.0, 0.0, 0.0],
+              [-5.25, -8.75, 9.5, 0.0, 0.0, 0.0],
+              [-0.5, 1.0, -0.5, 14.0, 0.0, 0.0],
+              [2.5, -5.0, 2.5, 32.0, 77.0, 0.0],
+              [-3.0, 24.0, -13.0, 6.0, 3.0, 41.0],
+          ]
+          rhs = [7.125, 15.0, 20.3125, 9.125, 20.75, 52.5]
+          forward, reverse = build_dense_solver_graph(6)
+          payload = {
+              "format": "SHIFT.NativeBuiltinSolverFrameInput/1",
+              "version": 1,
+              "verification_scope": (
+                  "phase628-generated-body-solver-join"
+              ),
+              "provider_absent_proven": True,
+              "matrix_rhs_ready": True,
+              "reset_selection_ready": True,
+              "sparse_graph_ready": True,
+              "matrix": matrix,
+              "rhs": rhs,
+              "reset_nodes": list(range(6)),
+              "forward_records": forward,
+              "reverse_records": reverse,
+          }
+          root = Path(
+              "out/vulkan/runtime/generated_body_solver_join"
+          )
+          root.mkdir(parents=True, exist_ok=True)
+          (root / "solver_frame_input.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-builtin-solver-frame \
+            out/vulkan/runtime/generated_body_solver_join/solver_frame_input.json \
+            out/vulkan/runtime/generated_body_solver_join/solver
+          native_runtime/build/shift_runtime_generated_body_solver_frame_join_check \
+            out/vulkan/runtime/generated_body_constraints/generated_body_constraints.gbcf \
+            out/vulkan/runtime/generated_body_solver_join/solver/solver_frame.sbfr \
+            | tee out/vulkan/runtime/generated_body_solver_join.json
+          grep -q '"format": "SHIFT.NativeGeneratedBodySolverFrameJoinCheck/1"' \
+            out/vulkan/runtime/generated_body_solver_join.json
+          grep -q '"scalar_count": 6' \
+            out/vulkan/runtime/generated_body_solver_join.json
+          grep -q '"matrix_double_count": 36' \
+            out/vulkan/runtime/generated_body_solver_join.json
+          grep -q '"contribution_values_stored_in_gbcf": false' \
+            out/vulkan/runtime/generated_body_solver_join.json
+          grep -q '"native_generation_executed": true' \
+            out/vulkan/runtime/generated_body_solver_join.json
+          grep -q '"max_rhs_join_error": 0' \
+            out/vulkan/runtime/generated_body_solver_join.json
+          grep -q '"max_matrix_join_error": 0' \
+            out/vulkan/runtime/generated_body_solver_join.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/generated_body_solver_join.json
+      - name: Reject mismatched generated BODY solver join
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path(
+              "out/vulkan/runtime/generated_body_solver_join/solver_frame_input.json"
+          )
+          payload = json.loads(source.read_text(encoding="utf-8"))
+          payload["rhs"][0] += 1.0
+          target = Path(
+              "out/vulkan/runtime/generated_body_solver_join/"
+              "solver_frame_mismatch_input.json"
+          )
+          target.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-builtin-solver-frame \
+            out/vulkan/runtime/generated_body_solver_join/solver_frame_mismatch_input.json \
+            out/vulkan/runtime/generated_body_solver_join/solver_mismatch
+          if native_runtime/build/shift_runtime_generated_body_solver_frame_join_check \
+            out/vulkan/runtime/generated_body_constraints/generated_body_constraints.gbcf \
+            out/vulkan/runtime/generated_body_solver_join/solver_mismatch/solver_frame.sbfr \
+            > out/vulkan/runtime/generated_body_solver_join_mismatch.stdout \
+            2> out/vulkan/runtime/generated_body_solver_join_mismatch.stderr; then
+            echo "generated BODY/SBFR join unexpectedly accepted mismatch"
+            exit 1
+          fi
+          grep -q "generated BODY/RHS join mismatch" \
+            out/vulkan/runtime/generated_body_solver_join_mismatch.stderr
       - name: Native generated BODY contribution export join
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
