@@ -577,3 +577,21 @@ native_runtime/build/shift_runtime_bar_matrix_coupling_check
 The checker validates `FUN_007bb6c0` cross/frame transformation, self and pair
 coefficients, lower-triangle cell selection and bounded scalar application.
 Complete BAR array iteration remains separate.
+
+
+## Phase 624 prepared BODY constraint assembly
+
+Run the source-order BODY contribution regression:
+
+```bash
+native_runtime/build/shift_runtime_body_constraint_assembly_check
+```
+
+The checker supplies one explicit prepared JOINT, HINGE and BAR sample, runs
+the native `FUN_007bc680` preprojection/projection/matrix sequence and freezes
+the resulting six-lane BODY-local solver vector plus six-by-six lower-triangle
+matrix.
+
+The input is intentionally downstream of `FUN_007b3ed0`: Phase 624 does not
+derive refreshed runtime sample values. It also retains a dense logical matrix
+view rather than claiming exact `BODY+0x158` sparse row-pointer execution.
