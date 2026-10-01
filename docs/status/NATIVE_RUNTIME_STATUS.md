@@ -877,10 +877,11 @@ The native checker covers reversed pair order, unmatched no-op behavior,
 multiple BAR matches, self-endpoint BARs, preservation of pre-existing bits,
 and fail-closed cardinality/domain errors.
 
-This kernel is not scheduled by `shift_runtime`. The exact event identity,
-implicit register-selected vehicle slot and retail dispatch timing of
-`FUN_00757d2c` remain unresolved, so Phase 633 does not fabricate a fixed-step
-trigger.
+This kernel is not scheduled by `shift_runtime`. Raw executable disassembly proves that `FUN_00757d20(index)` routes a
+0..3 component index through `FUN_00469736`, which multiplies it by the
+0xA80 component stride before `FUN_00757d2c`. The exact event identity,
+component-field BODY mapping and retail dispatch timing remain unresolved, so
+Phase 633 does not fabricate a fixed-step trigger.
 
 Remaining blockers are authentic per-frame BODY/raw relation state, mutation
 event provenance/timing, provider-present execution and persistent vehicle
