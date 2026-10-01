@@ -49,13 +49,17 @@ def validate_relation_state_mutation_event(
 
     if event.get("format") != "SHIFT.ConstraintRelationStateMutationCaptureRuntime/1":
         errors.append("format")
+    if event.get("version") != 1:
+        errors.append("version")
+    if event.get("status") != "captured":
+        errors.append("status")
     if event.get("source_function") != "FUN_00757d2c":
         errors.append("source-function")
     if event.get("source_address") != FUNCTIONS["relation_state_mutation"]:
         errors.append("source-address")
     if event.get("ready") is not True:
         errors.append("capture-not-ready")
-    if event.get("body_pointer_capture_skipped") is True:
+    if event.get("body_pointer_capture_skipped") is not False:
         errors.append("body-pointer-capture-skipped")
     if event.get("capture_errors"):
         errors.append("capture-errors-present")
@@ -94,6 +98,9 @@ def validate_relation_state_mutation_event(
     ):
         errors.append("component-block-pointer")
 
+    spindle_pointer = _nonnegative_int(
+        event.get("spindle_body_pointer")
+    )
     spindle_present = event.get("spindle_body_present")
     if not isinstance(spindle_present, bool):
         errors.append("spindle-presence")
@@ -105,6 +112,9 @@ def validate_relation_state_mutation_event(
         )
         if event.get("source_branch") != expected_branch:
             errors.append("source-branch")
+        if spindle_pointer is not None:
+            if spindle_present != (spindle_pointer != 0):
+                errors.append("spindle-pointer-presence")
 
     for name in (
         "wheel_body_pointer",
