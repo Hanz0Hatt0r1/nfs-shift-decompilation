@@ -119,3 +119,66 @@ def test_wine_capture_launcher_has_valid_bash_syntax():
         ["bash", "-n", "tools/run_shift_capture_wine.sh"],
         check=True,
     )
+
+
+def test_d3d9_capture_supports_bounded_replay_state_stream():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+
+    assert 'SHIFT_D3D9_CAPTURE_FRAME_START' in source
+    assert 'SHIFT_D3D9_CAPTURE_FRAME_END' in source
+    assert 'capture_frame_active()' in source
+    assert 'bounded_capture_enabled()' in source
+
+    for event in (
+        'set_render_target',
+        'set_depth_stencil_surface',
+        'set_viewport',
+        'set_render_state',
+        'set_texture_stage_state',
+        'set_sampler_state',
+        'set_scissor_rect',
+        'begin_scene',
+        'end_scene',
+        'clear',
+        'draw_primitive',
+        'draw_indexed_primitive',
+        'draw_primitive_up',
+        'draw_indexed_primitive_up',
+    ):
+        assert f'write_event("{event}"' in source
+
+    for slot in (
+        'SLOT_SET_RENDER_TARGET',
+        'SLOT_SET_DEPTH_STENCIL_SURFACE',
+        'SLOT_SET_VIEWPORT',
+        'SLOT_SET_RENDER_STATE',
+        'SLOT_SET_TEXTURE_STAGE_STATE',
+        'SLOT_SET_SAMPLER_STATE',
+        'SLOT_SET_SCISSOR_RECT',
+        'SLOT_DRAW_PRIMITIVE',
+        'SLOT_DRAW_PRIMITIVE_UP',
+        'SLOT_DRAW_INDEXED_PRIMITIVE_UP',
+    ):
+        assert slot in source
+
+
+def test_bounded_capture_keeps_resource_creation_metadata_global():
+    source = Path("native_capture/shift_d3d9_capture.cpp").read_text(encoding="utf-8")
+
+    # Create events must stay outside capture_frame_active() gating so a
+    # bounded frame can still resolve resources created earlier in the run.
+    for function_name in (
+        'hook_create_texture',
+        'hook_create_cube_texture',
+        'hook_create_vertex_buffer',
+        'hook_create_index_buffer',
+        'hook_create_vertex_declaration',
+        'hook_create_vertex_shader',
+        'hook_create_pixel_shader',
+    ):
+        start = source.index(f'HRESULT STDMETHODCALLTYPE {function_name}(')
+        next_hook = source.find('\nHRESULT STDMETHODCALLTYPE ', start + 1)
+        if next_hook < 0:
+            next_hook = len(source)
+        body = source[start:next_hook]
+        assert 'capture_frame_active()' not in body
