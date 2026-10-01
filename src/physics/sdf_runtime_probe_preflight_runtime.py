@@ -27,6 +27,7 @@ _PROBE_MARKERS = (
     ("provider-pre-capture", "provider_pre_"),
     ("provider-post-capture", "provider_post_"),
     ("scalar-reset-capture", "scalar_reset_events.jsonl"),
+    ("relation-state-mutation-capture", "relation_state_mutation_events.jsonl"),
     ("provider-snapshot", "build_provider_capture_payload"),
 )
 
@@ -209,6 +210,11 @@ def preflight_provider_capture(
             "expected_provider_pre": "provider_pre_<provider>_<hit>.json",
             "expected_provider_post": "provider_post_<provider>_<hit>.json",
             "expected_reset_events": "scalar_reset_events.jsonl",
+            "expected_relation_state_mutation_events": (
+                None
+                if provider_only
+                else "relation_state_mutation_events.jsonl"
+            ),
         },
         "errors": list(dict.fromkeys(errors)),
         "limitations": [
