@@ -3562,23 +3562,16 @@ int main(int argc, char** argv) {
             constraint_relation_reset_call_count =
                 reset_selection.reset_nodes.size();
 
-            auto normalized_reset_nodes =
-                reset_selection.reset_nodes;
-            std::sort(
-                normalized_reset_nodes.begin(),
-                normalized_reset_nodes.end());
-            normalized_reset_nodes.erase(
-                std::unique(
-                    normalized_reset_nodes.begin(),
-                    normalized_reset_nodes.end()),
-                normalized_reset_nodes.end());
+            const auto normalized_reset_nodes =
+                shift::runtime::physics::
+                    normalize_fun_007b3f40_reset_nodes(
+                        reset_selection.reset_nodes);
             constraint_relation_reset_node_count =
                 normalized_reset_nodes.size();
-            if (normalized_reset_nodes != solver_frame.reset_nodes) {
-                throw std::runtime_error(
-                    "constraint relation reset nodes do not match "
-                    "solver frame");
-            }
+            shift::runtime::physics::
+                verify_fun_007b3f40_reset_nodes_match(
+                    reset_selection,
+                    solver_frame.reset_nodes);
             constraint_relation_reset_matches_solver_frame = true;
         }
 
@@ -3723,22 +3716,10 @@ int main(int argc, char** argv) {
                                 generated_body_constraint_frame,
                                 constraint_sample_relation_frame,
                                 constraint_relation_reset_frame);
-                    auto normalized_reset_nodes =
-                        reset_selection.reset_nodes;
-                    std::sort(
-                        normalized_reset_nodes.begin(),
-                        normalized_reset_nodes.end());
-                    normalized_reset_nodes.erase(
-                        std::unique(
-                            normalized_reset_nodes.begin(),
-                            normalized_reset_nodes.end()),
-                        normalized_reset_nodes.end());
-                    if (normalized_reset_nodes !=
-                        solver_frame.reset_nodes) {
-                        throw std::runtime_error(
-                            "constraint relation reset nodes do not match "
-                            "solver frame");
-                    }
+                    shift::runtime::physics::
+                        verify_fun_007b3f40_reset_nodes_match(
+                            reset_selection,
+                            solver_frame.reset_nodes);
                     ++constraint_relation_reset_selection_steps;
                 }
                 const auto solver_result =
