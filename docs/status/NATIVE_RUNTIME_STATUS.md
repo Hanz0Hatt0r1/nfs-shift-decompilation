@@ -727,8 +727,9 @@ six-scalar Phase 627 oracle and the 11-BODY / 4-JOINT / 4-HINGE / 20-BAR /
 
 Phase 630 proves that this count equality is not the authentic ownership shape:
 each retail top-level relation constructs two BODY-owned endpoint samples.
-The Phase 628 equality therefore remains a known prepared-fixture shortcut until
-CSRF is admitted on fixed steps. Telemetry still exposes generated
+Phase 631 now admits CSRF on fixed steps and uses relation-aware cardinality in
+that mode. The Phase 628 count equality remains only as a backward-compatible
+prepared-fixture shortcut when CSRF is absent. Telemetry exposes generated
 join/generation steps and maximum matrix/RHS join error.
 
 
@@ -793,3 +794,30 @@ side mismatch and scalar mismatch rejection.
 Phase 630 does not yet load CSRF through `shift_runtime`. The next boundary is
 fixed-step `CSRF → refreshed GBCF → FUN_007bc680/FUN_007bb8d0/FUN_007ba570`
 execution with relation-aware endpoint cardinality.
+
+
+## Phase 631 fixed-step constraint refresh
+
+The native runtime now accepts `--constraint-sample-relation-frame FILE.csrf`
+together with `--generated-body-constraint-frame FILE.gbcf`.
+
+CSRF mode separates workspace relation cardinality from BODY-owned sample
+cardinality. For the BMW structural shape, startup requires 4 JOINT, 4 HINGE
+and 20 BAR relations, while the Phase 630 ownership join must cover 8 JOINT,
+8 HINGE and 40 BAR endpoint samples.
+
+On every admitted fixed step the runtime refreshes a copy of GBCF from CSRF
+through `FUN_007b3ed0`, generates BODY contributions through
+`FUN_007bc680 → FUN_007bb8d0 → FUN_007ba570`, and requires exact matrix/RHS
+equality with SBFR before reset/solve.
+
+The legacy GBCF-only Phase 628 path remains available and unchanged.
+
+Linux Vulkan CI now carries a separate 11-BODY / 4-JOINT / 4-HINGE / 20-BAR
+relation fixture with 8/8/40 endpoint samples and three fixed steps. Zero
+prepared numerical state makes the pre-reset matrix/RHS exactly zero, so the
+regression isolates ownership/cardinality/scheduling rather than inventing
+vehicle dynamics.
+
+Remaining blockers are authentic per-frame BODY/raw relation inputs, retail
+reset-node selection, provider-present execution and persistent vehicle motion.
