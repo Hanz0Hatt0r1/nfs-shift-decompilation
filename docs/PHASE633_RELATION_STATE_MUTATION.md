@@ -115,18 +115,46 @@ scheduler_integrated = false
 event_timing_assigned = false
 ```
 
+## Component-slot trampoline provenance
+
+Raw `SHIFT.exe` disassembly closes the decompiler's implicit-`EAX` ambiguity.
+
+`FUN_00757d20` is a small wrapper that loads its stack argument into `EAX`
+and jumps to `FUN_00469736`. The thunk at `0x469736` executes:
+
+```text
+imul eax, eax, 0xA80
+jmp  FUN_00757d2c
+```
+
+`FUN_00757d2c` then addresses the repeated component block as:
+
+```text
+vehicle + 0x400 + component_index * 0xA80
+```
+
+A recovered load/restore caller, `FUN_0076ed60`, passes literal indices
+0, 1, 2 and 3 for the four repeated blocks at vehicle offsets
+`+0x400`, `+0xE80`, `+0x1900` and `+0x2380`.
+
+A second audited call site around `0x79A5BC` passes the current four-slot loop
+index to the global vehicle object at `0xC13700`.
+
+Therefore the component-slot index itself is proven. What remains unresolved
+is the semantic name of the event at every call site, the exact BODY identity
+meaning of component fields `+0x420/+0x424` for all runtime states, and the
+correct scheduler/frame timing for the Linux path.
+
 ## Deliberate boundary
 
 Phase 633 does not call the mutation kernel from `shift_runtime`.
 
-The executable reaches `FUN_00757d2c` through the small
-`FUN_00469736` thunk, but the exact event identity, the provenance of the
-implicit register-selected vehicle slot, and retail timing have not yet been
-closed strongly enough to schedule the mutation without guessing.
+The source mutation and the 0..3 component-slot trampoline are statically
+recovered, but scheduling a prepared mutation still requires a proven
+component-field BODY mapping and event timing. Phase 633 therefore reconstructs
+the state transition itself while keeping dispatch evidence-gated.
 
-Therefore Phase 633 reconstructs the state transition itself but leaves event
-dispatch evidence-gated.
-
-The next safe step is to resolve that dispatch/caller provenance, or obtain a
-runtime observation that ties the event to a concrete vehicle component and
-frame, before connecting the mutation to the fixed-step CRRF path.
+The next safe step is to normalize the four component slots and their
+`+0x420/+0x424` BODY references into an evidence packet, or obtain a runtime
+observation tying those fields and the triggering event to a concrete frame,
+before connecting mutation to the fixed-step CRRF path.
