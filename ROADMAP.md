@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 639. Current development: Phase 640.**
+**Current mainline: Phase 640. Current development: Phase 641.**
 
 
 
@@ -41,6 +41,8 @@ Phase 638 integrates that correlation into the explicit-PID full-mode launcher. 
 Phase 639 adds `SHIFT.SDFRuntimeProbeEvidenceBundle/1`, a deterministic portable ZIP over only the full-mode capture evidence. Entries are sorted, stored with fixed metadata and individually SHA-256 hashed; `SHIFT.exe`, `attach.gdb`, launcher/preflight manifests and other host-local inputs are excluded. The full launcher creates `sdf_capture_evidence.zip` automatically after Phase 637 and reports its SHA-256. Package readiness and Phase 637 capture readiness remain separate, so packaging cannot promote blocked evidence. The next gate is still the authentic retail capture, but its complete evidence can now be transferred as one reproducible archive.
 
 Phase 640 adds `SHIFT.SDFRuntimeProbeEvidenceBundleVerification/1`, an independent verifier for untrusted portable capture ZIPs. It checks safe paths, duplicate/extra/missing entries, manifest format/count, fixed ZIP metadata, per-file size/SHA-256 and exact readiness agreement with the embedded Phase 637 timeline. The full launcher self-verifies its newly built archive before success. The next gate remains authentic retail capture.
+
+Phase 641 adds `SHIFT.SDFRuntimeProbeEvidenceBundleReplay/1`: after Phase 640 verification, the raw bundled evidence is safely materialized, Phase 637 is recomputed, and the result must exactly equal the embedded timeline. Phase 637 reports are now path-independent so replay is portable. Full launcher success requires this replay gate as well. The next gate remains authentic retail capture.
 
 Phase 599 connects the already-recovered CameraManager six-word snapshot and guarded double-buffer swap into `SHIFT.NativeRuntimeState/1`. The native fixed-step scheduler exercises that boundary and exposes telemetry, while retail camera timestamp frequency, suppression timing and controller semantics remain explicitly unassigned.
 
