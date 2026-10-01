@@ -321,3 +321,19 @@ post-solve-body-state-applied=false.
 Linux Vulkan CI replays a synthetic 40-scalar frame for five deterministic
 steps. This proves scheduler integration only; it does not claim retail
 matrix/RHS assembly or `FUN_007b4110` body-state semantics.
+
+
+## Phase 609 native post-solve application arithmetic
+
+The native physics library now contains the source-backed
+`FUN_007b4110` JOINT/HINGE/BAR application primitives and the
+`FUN_007baa70/baaf0` body accumulator helpers.
+
+The native parity executable reproduces the established Python Phase 408
+vectors for positive/negative accumulator cross products, three-scalar JOINT,
+two-scalar HINGE angular updates and one-scalar BAR projection.
+
+This layer is deliberately not called from the Phase 608 fixed-step scheduler.
+Exact constraint/sample/body mapping for a concrete solver frame remains an
+independent evidence input; therefore runtime telemetry continues to report
+post-solve body-state application as false.
