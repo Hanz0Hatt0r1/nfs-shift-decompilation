@@ -96,7 +96,6 @@ std::size_t validate_relation_scalar_span(
     const PreparedGeneratedBodyConstraintFrame& frame,
     const Relation& relation,
     std::size_t width,
-    std::vector<std::uint8_t>& scalar_coverage,
     const char* label,
     SampleGetter get_samples) {
 
@@ -146,27 +145,7 @@ std::size_t validate_relation_scalar_span(
             " reset scalar span is outside solver domain");
     }
 
-    for (std::size_t lane = 0; lane < width; ++lane) {
-        const std::size_t node = base + lane;
-        if (scalar_coverage[node] != 0u) {
-            throw std::runtime_error(
-                std::string(label) +
-                " reset scalar layout overlaps another relation");
-        }
-        scalar_coverage[node] = 1u;
-    }
     return base;
-}
-
-void require_complete_scalar_coverage(
-    const std::vector<std::uint8_t>& coverage) {
-
-    for (const std::uint8_t covered : coverage) {
-        if (covered == 0u) {
-            throw std::runtime_error(
-                "constraint relation reset scalar layout is incomplete");
-        }
-    }
 }
 
 void append_selected_span(
@@ -293,10 +272,6 @@ select_fun_007b3f40_reset_nodes(
     result.hinge_relation_count = relations.hinges.size();
     result.bar_relation_count = relations.bars.size();
 
-    std::vector<std::uint8_t> scalar_coverage(
-        frame.scalar_count,
-        0u);
-
     for (std::size_t index = 0;
          index < relations.joints.size();
          ++index) {
@@ -305,7 +280,6 @@ select_fun_007b3f40_reset_nodes(
                 frame,
                 relations.joints[index],
                 3u,
-                scalar_coverage,
                 "JOINT",
                 [](const auto& constraints)
                     -> decltype(auto) {
@@ -328,7 +302,6 @@ select_fun_007b3f40_reset_nodes(
                 frame,
                 relations.hinges[index],
                 2u,
-                scalar_coverage,
                 "HINGE",
                 [](const auto& constraints)
                     -> decltype(auto) {
@@ -351,7 +324,6 @@ select_fun_007b3f40_reset_nodes(
                 frame,
                 relations.bars[index],
                 1u,
-                scalar_coverage,
                 "BAR",
                 [](const auto& constraints)
                     -> decltype(auto) {
@@ -366,8 +338,6 @@ select_fun_007b3f40_reset_nodes(
             "BAR");
     }
 
-    require_complete_scalar_coverage(
-        scalar_coverage);
     return result;
 }
 
