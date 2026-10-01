@@ -15,6 +15,9 @@ d3d9.dll already exists (for example DXVK), it is staged as
 EOF
 }
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+
 game=""
 proxy=""
 output="./shift-capture"
@@ -88,6 +91,7 @@ staged_backend=0
 
 restore() {
   local rc=$?
+  trap - EXIT INT TERM
   if ((had_dll)); then
     cp -f "$backup_dll" "$target_dll"
   else
@@ -172,6 +176,6 @@ if [[ ! -f "$capture_path" ]]; then
   exit 3
 fi
 
-python3 native_capture/analyze_proxy_log.py "$capture_path" 2>/dev/null || true
+python3 "$repo_root/native_capture/analyze_proxy_log.py" "$capture_path" 2>/dev/null || true
 echo "Capture completed: $capture_path"
 exit "$exit_code"
