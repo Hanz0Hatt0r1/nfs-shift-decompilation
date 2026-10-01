@@ -211,6 +211,18 @@ fi
 # silently use ~/.wine makes the loader report the staged DLL as missing.
 export WINEPREFIX="$wine_prefix"
 
+portproton_root=""
+portproton_wine_use=""
+if [[ "$wine_prefix" == */PortProton/data/prefixes/* ]]; then
+  portproton_root="${wine_prefix%%/data/prefixes/*}"
+  ppdb="$game.ppdb"
+  if [[ -f "$ppdb" ]]; then
+    portproton_wine_use="$(
+      sed -n 's/^[[:space:]]*export[[:space:]]\+PW_WINE_USE=["'"']\{0,1\}\([^"'"']*\)["'"']\{0,1\}[[:space:]]*$/\1/p' "$ppdb" | tail -n1
+    )"
+  fi
+fi
+
 target_d3dx=""
 if [[ -n "$d3dx9_41" ]]; then
   if [[ "$game_machine" == "0x014c" && -d "$wine_prefix/drive_c/windows/syswow64" ]]; then
@@ -417,10 +429,18 @@ else
   export WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n"
 fi
 
+wine_resolved="$(command -v "$wine_command")"
 echo "Launching: $game"
 echo "WINEPREFIX: $WINEPREFIX"
-echo "Wine exe : $(command -v "$wine_command")"
+echo "Wine exe : $wine_resolved"
 echo "Winepath : $(command -v winepath)"
+if [[ -n "$portproton_root" && "$wine_resolved" != "$portproton_root/"* ]]; then
+  echo "warning: PortProton prefix is being launched with Wine outside the PortProton tree: $wine_resolved" >&2
+  if [[ -n "$portproton_wine_use" ]]; then
+    echo "PortProton PW_WINE_USE: $portproton_wine_use" >&2
+  fi
+  echo "         use --wine with the Wine/Proton binary selected by PortProton if early startup is unstable" >&2
+fi
 echo "Capture : $capture_path"
 echo "Crash   : $crash_path"
 echo "Mode    : $mode"
