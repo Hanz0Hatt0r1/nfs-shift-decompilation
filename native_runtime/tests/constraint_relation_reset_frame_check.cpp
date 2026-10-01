@@ -104,34 +104,44 @@ int main(int argc, char** argv) {
             "side identity mismatch",
             "reset endpoint side mismatch");
 
-        require_runtime_error(
-            [&]() {
-                auto bad_relations = relations;
-                auto bad_state = reset_state;
-                bad_relations.bars.push_back(
-                    bad_relations.bars.front());
-                bad_state.bar_state_bit0.push_back(1u);
-                (void)select_fun_007b3f40_reset_nodes(
+        {
+            auto repeated_relations = relations;
+            auto repeated_state = reset_state;
+            repeated_relations.bars.push_back(
+                repeated_relations.bars.front());
+            repeated_state.bar_state_bit0.push_back(1u);
+            const auto repeated =
+                select_fun_007b3f40_reset_nodes(
                     frame,
-                    bad_relations,
-                    bad_state);
-            },
-            "scalar layout overlaps",
-            "reset scalar overlap");
+                    repeated_relations,
+                    repeated_state);
+            const std::vector<std::size_t> expected_repeated = {
+                0u, 1u, 2u, 5u, 5u,
+            };
+            if (repeated.reset_nodes != expected_repeated) {
+                throw std::runtime_error(
+                    "repeated reset calls were not preserved");
+            }
+        }
 
-        require_runtime_error(
-            [&]() {
-                auto bad_relations = relations;
-                auto bad_state = reset_state;
-                bad_relations.bars.clear();
-                bad_state.bar_state_bit0.clear();
-                (void)select_fun_007b3f40_reset_nodes(
+        {
+            auto partial_relations = relations;
+            auto partial_state = reset_state;
+            partial_relations.bars.clear();
+            partial_state.bar_state_bit0.clear();
+            const auto partial =
+                select_fun_007b3f40_reset_nodes(
                     frame,
-                    bad_relations,
-                    bad_state);
-            },
-            "scalar layout is incomplete",
-            "reset scalar gap");
+                    partial_relations,
+                    partial_state);
+            const std::vector<std::size_t> expected_partial = {
+                0u, 1u, 2u,
+            };
+            if (partial.reset_nodes != expected_partial) {
+                throw std::runtime_error(
+                    "partial reset call sequence mismatch");
+            }
+        }
 
         std::cout
             << "{\n"
@@ -159,8 +169,8 @@ int main(int argc, char** argv) {
             << "  \"selected_reset_nodes\": [0, 1, 2, 5],\n"
             << "  \"state_cardinality_fail_closed\": true,\n"
             << "  \"side_identity_fail_closed\": true,\n"
-            << "  \"scalar_overlap_fail_closed\": true,\n"
-            << "  \"scalar_gap_fail_closed\": true,\n"
+            << "  \"duplicate_reset_calls_preserved\": true,\n"
+            << "  \"partial_relation_layout_supported\": true,\n"
             << "  \"reset_nodes_stored_in_packet\": false,\n"
             << "  \"status\": \"ok\"\n"
             << "}\n";
