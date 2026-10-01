@@ -1585,6 +1585,209 @@ jobs:
             out/vulkan/runtime/fixed_step_solver_frame_check.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/fixed_step_solver_frame_check.json
+      - name: Prepare fixed-step generated BODY join evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path("src/physics").resolve()))
+          from sdf_builtin_sparse_solver_runtime import build_dense_solver_graph
+
+          scalar_count = 40
+          canonical_rows = [
+              index * scalar_count
+              for index in range(scalar_count)
+          ]
+
+          def body(index):
+              row = {
+                  "body_index": index,
+                  "body_position": [0.0, 0.0, 0.0],
+                  "body_correction": [0.0, 0.0, 0.0],
+                  "body_axis": [0.0, 0.0, 0.0],
+                  "angular_state": [0.0, 0.0, 0.0],
+                  "linear_state": [0.0, 0.0, 0.0],
+                  "inverse_scalar": 1.0,
+                  "body_frame": [
+                      1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
+                      0.0, 0.0, 1.0,
+                  ],
+                  "body_tensor": [
+                      [0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0],
+                  ],
+                  "scales": {
+                      "linear_scale": 0.0,
+                      "quadratic_scale": 0.0,
+                  },
+                  "row_indices": canonical_rows,
+                  "matrix_double_count": scalar_count * scalar_count,
+                  "joints": [],
+                  "hinges": [],
+                  "bars": [],
+              }
+              if index == 0:
+                  row["joints"] = [
+                      {
+                          "position": [0.0, 0.0, 0.0],
+                          "scalar_base": base,
+                          "side_flag": 0,
+                      }
+                      for base in (0, 5, 10, 15)
+                  ]
+                  row["hinges"] = [
+                      {
+                          "angular": [0.0, 0.0, 0.0],
+                          "linear": [0.0, 0.0, 0.0],
+                          "position": [0.0, 0.0, 0.0],
+                          "frame_offset": [0.0, 0.0, 0.0],
+                          "scalar_base": base,
+                          "side_flag": 0,
+                      }
+                      for base in (3, 8, 13, 18)
+                  ]
+                  row["bars"] = [
+                      {
+                          "point": [0.0, 0.0, 0.0],
+                          "direction": [0.0, 0.0, 0.0],
+                          "side_bias": 0.0,
+                          "scalar_base": base,
+                          "side_flag": 0,
+                      }
+                      for base in range(20, 40)
+                  ]
+              return row
+
+          gbcf_input = {
+              "format": "SHIFT.NativeGeneratedBodyConstraintFrameInput/1",
+              "version": 1,
+              "verification_scope": (
+                  "phase628-fixed-step-generated-body-join"
+              ),
+              "sample_values_ready": True,
+              "body_order_ready": True,
+              "row_layout_ready": True,
+              "provider_absent": True,
+              "body_count": 11,
+              "solver_scalar_count": scalar_count,
+              "bodies": [body(index) for index in range(11)],
+          }
+          root = Path(
+              "out/vulkan/runtime/fixed_step_generated_body"
+          )
+          root.mkdir(parents=True, exist_ok=True)
+          (root / "generated_body_input.json").write_text(
+              json.dumps(gbcf_input, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+
+          forward, reverse = build_dense_solver_graph(scalar_count)
+          solver_input = {
+              "format": "SHIFT.NativeBuiltinSolverFrameInput/1",
+              "version": 1,
+              "verification_scope": (
+                  "phase628-fixed-step-generated-body-solver"
+              ),
+              "provider_absent_proven": True,
+              "matrix_rhs_ready": True,
+              "reset_selection_ready": True,
+              "sparse_graph_ready": True,
+              "matrix": [
+                  [0.0 for _ in range(scalar_count)]
+                  for _ in range(scalar_count)
+              ],
+              "rhs": [0.0 for _ in range(scalar_count)],
+              "reset_nodes": list(range(scalar_count)),
+              "forward_records": forward,
+              "reverse_records": reverse,
+          }
+          (root / "solver_frame_input.json").write_text(
+              json.dumps(solver_input, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-generated-body-constraint-frame \
+            out/vulkan/runtime/fixed_step_generated_body/generated_body_input.json \
+            out/vulkan/runtime/fixed_step_generated_body/generated
+          python3 shift_importer.py native-builtin-solver-frame \
+            out/vulkan/runtime/fixed_step_generated_body/solver_frame_input.json \
+            out/vulkan/runtime/fixed_step_generated_body/solver
+          native_runtime/build/shift_runtime_generated_body_solver_frame_join_check \
+            out/vulkan/runtime/fixed_step_generated_body/generated/generated_body_constraints.gbcf \
+            out/vulkan/runtime/fixed_step_generated_body/solver/solver_frame.sbfr \
+            | tee out/vulkan/runtime/fixed_step_generated_body/join.json
+          grep -q '"scalar_count": 40' \
+            out/vulkan/runtime/fixed_step_generated_body/join.json
+          grep -q '"body_count": 11' \
+            out/vulkan/runtime/fixed_step_generated_body/join.json
+          grep -q '"joint_samples": 4' \
+            out/vulkan/runtime/fixed_step_generated_body/join.json
+          grep -q '"hinge_samples": 4' \
+            out/vulkan/runtime/fixed_step_generated_body/join.json
+          grep -q '"bar_samples": 20' \
+            out/vulkan/runtime/fixed_step_generated_body/join.json
+          grep -q '"max_rhs_join_error": 0' \
+            out/vulkan/runtime/fixed_step_generated_body/join.json
+          grep -q '"max_matrix_join_error": 0' \
+            out/vulkan/runtime/fixed_step_generated_body/join.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/fixed_step_generated_body/join.json
+      - name: Native fixed-step generated BODY frame loop
+        run: |
+          set -o pipefail
+          xvfb-run -a native_runtime/build/shift_runtime \
+            --scene-set out/vulkan/native_scene_set \
+            --shader-dir native_runtime/build/shaders \
+            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
+            --solver-frame out/vulkan/runtime/fixed_step_generated_body/solver/solver_frame.sbfr \
+            --generated-body-constraint-frame out/vulkan/runtime/fixed_step_generated_body/generated/generated_body_constraints.gbcf \
+            --frames 3 --validation \
+            | tee out/vulkan/runtime/fixed_step_generated_body_runtime.json
+      - name: Assert generated BODY frame gates every fixed step
+        run: |
+          grep -q '"frames_rendered": 3' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"simulation_steps": 3' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_solver_frame_loaded": true' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_solver_frame_steps": 3' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_body_solver_export_frame_loaded": false' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_body_solver_export_join_steps": 0' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_frame_loaded": true' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_body_count": 11' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_joint_count": 4' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_hinge_count": 4' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_bar_count": 20' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_join_steps": 3' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_native_generation_steps": 3' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_max_rhs_join_error": 0' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_max_matrix_join_error": 0' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_generated_body_constraint_values_stored_in_packet": false' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"physics_solver_provider_present": false' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"validation_errors": 0' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/fixed_step_generated_body_runtime.json
       - name: Prepare fixed-step BODY export join evidence
         run: |
           python3 - <<'PY'
