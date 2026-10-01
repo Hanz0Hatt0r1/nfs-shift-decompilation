@@ -72,6 +72,7 @@ def _doubles(inferior: gdb.Inferior, address: int, count: int) -> list[float]:
 
 _SCALAR_RESET_EVENT_COUNT = 0
 _RUNTIME_EVENT_SEQUENCE = 0
+_RELATION_MUTATION_OBSERVED = False
 _CAPTURE_SESSION_ID: str | None = None
 
 
@@ -491,6 +492,8 @@ class RelationStateMutationProbe(_BaseProbe):
         self.event_index = 0
 
     def stop(self) -> bool:
+        global _RELATION_MUTATION_OBSERVED
+
         self.hit += 1
         self.event_index += 1
         runtime_event_sequence = _next_runtime_event_sequence()
@@ -568,6 +571,7 @@ class RelationStateMutationProbe(_BaseProbe):
             "relation_state_mutation_events.jsonl",
             event,
         )
+        _RELATION_MUTATION_OBSERVED = True
         return False
 
 
@@ -743,9 +747,11 @@ class PostSolveProbe(_BaseProbe):
         output_dir: Path,
         *,
         stop_after_hit: int | None = None,
+        stop_after_relation_mutation: bool = False,
     ) -> None:
         super().__init__(address, label, output_dir)
         self.stop_after_hit = stop_after_hit
+        self.stop_after_relation_mutation = stop_after_relation_mutation
 
     def stop(self) -> bool:
         self.hit += 1
@@ -773,8 +779,14 @@ class PostSolveProbe(_BaseProbe):
         }
         self.write_json(f"post_solve_{self.hit:06d}.json", payload)
         return (
-            self.stop_after_hit is not None
-            and self.hit >= self.stop_after_hit
+            (
+                self.stop_after_hit is not None
+                and self.hit >= self.stop_after_hit
+            )
+            or (
+                self.stop_after_relation_mutation
+                and _RELATION_MUTATION_OBSERVED
+            )
         )
 
 
@@ -788,9 +800,11 @@ class PostSolveAnchorProbe(_BaseProbe):
         output_dir: Path,
         *,
         stop_after_hit: int | None = None,
+        stop_after_relation_mutation: bool = False,
     ) -> None:
         super().__init__(address, label, output_dir)
         self.stop_after_hit = stop_after_hit
+        self.stop_after_relation_mutation = stop_after_relation_mutation
 
     def stop(self) -> bool:
         self.hit += 1
@@ -811,8 +825,14 @@ class PostSolveAnchorProbe(_BaseProbe):
         }
         self.write_json(f"post_solve_{self.hit:06d}.json", payload)
         return (
-            self.stop_after_hit is not None
-            and self.hit >= self.stop_after_hit
+            (
+                self.stop_after_hit is not None
+                and self.hit >= self.stop_after_hit
+            )
+            or (
+                self.stop_after_relation_mutation
+                and _RELATION_MUTATION_OBSERVED
+            )
         )
 
 
@@ -827,10 +847,12 @@ class SDFProbeCommand(gdb.Command):
         global _CAPTURE_SESSION_ID
         global _RUNTIME_EVENT_SEQUENCE
         global _SCALAR_RESET_EVENT_COUNT
+        global _RELATION_MUTATION_OBSERVED
 
         args = gdb.string_to_argv(argument)
         provider_only = False
         relation_timeline_only = False
+        stop_after_relation_mutation = False
         capture_frames = None
         capture_session_id = None
 
@@ -841,6 +863,10 @@ class SDFProbeCommand(gdb.Command):
         if "--relation-timeline-only" in args:
             relation_timeline_only = True
             args.remove("--relation-timeline-only")
+
+        if "--stop-after-relation-mutation" in args:
+            stop_after_relation_mutation = True
+            args.remove("--stop-after-relation-mutation")
 
         if provider_only and relation_timeline_only:
             raise gdb.GdbError(
@@ -885,11 +911,16 @@ class SDFProbeCommand(gdb.Command):
             raise gdb.GdbError(
                 "--capture-frames is not supported in provider-only mode"
             )
+        if provider_only and stop_after_relation_mutation:
+            raise gdb.GdbError(
+                "--stop-after-relation-mutation is not supported in provider-only mode"
+            )
 
         if len(args) != 1:
             raise gdb.GdbError(
                 "usage: sdf-probe OUTPUT_DIR [--provider-only] "
                 "[--relation-timeline-only] "
+                "[--stop-after-relation-mutation] "
                 "[--capture-frames N] [--session-id ID]"
             )
         output = Path(os.path.expanduser(args[0])).resolve()
@@ -905,6 +936,7 @@ class SDFProbeCommand(gdb.Command):
         _CAPTURE_SESSION_ID = capture_session_id
         _RUNTIME_EVENT_SEQUENCE = 0
         _SCALAR_RESET_EVENT_COUNT = 0
+        _RELATION_MUTATION_OBSERVED = False
         _LAST_FRAME_ENTRY.update({
             "frame_index": None,
             "physics_system": None,
@@ -944,6 +976,9 @@ class SDFProbeCommand(gdb.Command):
                         "post_solve_anchor",
                         output,
                         stop_after_hit=capture_frames,
+                        stop_after_relation_mutation=(
+                            stop_after_relation_mutation
+                        ),
                     )
                 )
             else:
@@ -958,6 +993,9 @@ class SDFProbeCommand(gdb.Command):
                         "post_solve",
                         output,
                         stop_after_hit=capture_frames,
+                        stop_after_relation_mutation=(
+                            stop_after_relation_mutation
+                        ),
                     ),
                 ])
         if not relation_timeline_only:
@@ -1006,7 +1044,8 @@ class SDFProbeCommand(gdb.Command):
                     else "mode=full,"
                 )
             ),
-            f"capture_frames={capture_frames},"
+            f"capture_frames={capture_frames},",
+            f"stop_after_relation_mutation={stop_after_relation_mutation},",
             f"capture_session_id={capture_session_id},",
             f"output={output}",
         )

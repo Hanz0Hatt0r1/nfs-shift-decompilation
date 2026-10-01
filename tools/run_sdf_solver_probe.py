@@ -86,6 +86,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--stop-after-relation-mutation",
+        action="store_true",
+        help=(
+            "stop, detach and quit GDB at the first post-solve anchor "
+            "after a captured relation-state mutation"
+        ),
+    )
+    parser.add_argument(
         "--capture-frames",
         type=int,
         help=(
@@ -116,6 +124,7 @@ def main(argv: list[str] | None = None) -> int:
             probe_script=args.probe_script,
             provider_only=args.provider_only,
             relation_timeline_only=args.relation_timeline_only,
+            stop_after_relation_mutation=args.stop_after_relation_mutation,
             capture_frames=args.capture_frames,
         )
     except Exception as exc:
@@ -153,7 +162,11 @@ def main(argv: list[str] | None = None) -> int:
             )
         ),
         "capture_frames": args.capture_frames,
-        "auto_detach": args.capture_frames is not None,
+        "stop_after_relation_mutation": args.stop_after_relation_mutation,
+        "auto_detach": (
+            args.capture_frames is not None
+            or args.stop_after_relation_mutation
+        ),
     }
 
     if args.attach_pid is not None:

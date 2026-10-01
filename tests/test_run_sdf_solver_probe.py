@@ -694,3 +694,36 @@ def test_phase646_launcher_passes_relation_timeline_only_mode(
     output = capsys.readouterr().out
     assert '"mode": "relation-timeline-only"' in output
     assert '"auto_detach": true' in output
+
+
+def test_phase647_launcher_passes_stop_after_relation_mutation(
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+):
+    captured = {}
+
+    def fake_prepare(*args, **kwargs):
+        captured.update(kwargs)
+        return _manifest()
+
+    monkeypatch.setattr(tool, "prepare_probe_bundle", fake_prepare)
+
+    assert tool.main(
+        [
+            str(tmp_path / "SHIFT.exe"),
+            "--output",
+            str(tmp_path / "capture"),
+            "--relation-timeline-only",
+            "--stop-after-relation-mutation",
+            "--capture-frames",
+            "900",
+        ]
+    ) == 0
+
+    assert captured["relation_timeline_only"] is True
+    assert captured["stop_after_relation_mutation"] is True
+    assert captured["capture_frames"] == 900
+    output = capsys.readouterr().out
+    assert '"stop_after_relation_mutation": true' in output
+    assert '"auto_detach": true' in output
