@@ -111,6 +111,10 @@ cmake --build native_capture/build --config Release
 
 Place the resulting d3d9.dll beside the authorized test executable.
 
+The Win32 proxy is linked against the static MSVC/MinGW runtime so the deployed
+DLL does not require a modern Visual C++ redistributable to be installed in the
+SHIFT/Wine environment.
+
 ## Evidence rules
 
 The producer records runtime observations; it does not invent MEB identity.
