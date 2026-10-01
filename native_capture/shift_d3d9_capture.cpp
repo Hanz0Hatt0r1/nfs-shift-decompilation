@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cctype>
+#include <iterator>
 #include <locale>
 #include <cstdint>
 #include <cstdlib>
@@ -31,7 +33,12 @@ constexpr std::size_t TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t CUBE_TEXTURE_VTABLE_COUNT = 22;
 constexpr std::size_t BUFFER_VTABLE_COUNT = 14;
 
+constexpr std::size_t SLOT_TEST_COOPERATIVE_LEVEL = 3;
+constexpr std::size_t SLOT_RESET = 16;
 constexpr std::size_t SLOT_PRESENT = 17;
+constexpr std::size_t SLOT_BEGIN_SCENE = 41;
+constexpr std::size_t SLOT_END_SCENE = 42;
+constexpr std::size_t SLOT_CLEAR = 43;
 constexpr std::size_t SLOT_CREATE_TEXTURE = 23;
 constexpr std::size_t SLOT_CREATE_CUBE_TEXTURE = 25;
 constexpr std::size_t SLOT_CREATE_VERTEX_BUFFER = 26;
@@ -54,10 +61,27 @@ constexpr std::size_t SLOT_SET_PIXEL_SHADER = 107;
 constexpr std::size_t SLOT_SET_PIXEL_SHADER_CONSTANT_F = 109;
 
 using Direct3DCreate9Fn = IDirect3D9* (WINAPI*)(UINT);
+using Direct3DCreate9ExFn = HRESULT (WINAPI*)(UINT, IDirect3D9Ex**);
+using D3DPERFBeginEventFn = int (WINAPI*)(D3DCOLOR, LPCWSTR);
+using D3DPERFEndEventFn = int (WINAPI*)();
+using D3DPERFGetStatusFn = DWORD (WINAPI*)();
+using D3DPERFQueryRepeatFrameFn = BOOL (WINAPI*)();
+using D3DPERFSetMarkerFn = void (WINAPI*)(D3DCOLOR, LPCWSTR);
+using D3DPERFSetOptionsFn = void (WINAPI*)(DWORD);
+using D3DPERFSetRegionFn = void (WINAPI*)(D3DCOLOR, LPCWSTR);
+using DebugSetLevelFn = void (WINAPI*)(DWORD);
+using DebugSetMuteFn = void (WINAPI*)();
 using CreateDeviceFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3D9*, UINT, D3DDEVTYPE, HWND, DWORD, D3DPRESENT_PARAMETERS*, IDirect3DDevice9**);
+using TestCooperativeLevelFn = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*);
+using ResetFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, D3DPRESENT_PARAMETERS*);
 using PresentFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const RECT*, const RECT*, HWND, const RGNDATA*);
+using BeginSceneFn = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*);
+using EndSceneFn = HRESULT (STDMETHODCALLTYPE*)(IDirect3DDevice9*);
+using ClearFn = HRESULT (STDMETHODCALLTYPE*)(
+    IDirect3DDevice9*, DWORD, const D3DRECT*, DWORD, D3DCOLOR, float, DWORD);
 using CreateVertexDeclarationFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, const D3DVERTEXELEMENT9*, IDirect3DVertexDeclaration9**);
 using SetVertexDeclarationFn = HRESULT (STDMETHODCALLTYPE*)(
@@ -107,10 +131,29 @@ using SetPixelShaderConstantFFn = HRESULT (STDMETHODCALLTYPE*)(
 using DrawIndexedPrimitiveFn = HRESULT (STDMETHODCALLTYPE*)(
     IDirect3DDevice9*, D3DPRIMITIVETYPE, INT, UINT, UINT, UINT, UINT);
 
+HMODULE g_proxy_module = nullptr;
 HMODULE g_system_d3d9 = nullptr;
+std::once_flag g_system_d3d9_once;
+bool g_system_d3d9_ready = false;
+std::string g_system_d3d9_path;
 Direct3DCreate9Fn g_real_direct3d_create9 = nullptr;
+Direct3DCreate9ExFn g_real_direct3d_create9_ex = nullptr;
+D3DPERFBeginEventFn g_real_d3dperf_begin_event = nullptr;
+D3DPERFEndEventFn g_real_d3dperf_end_event = nullptr;
+D3DPERFGetStatusFn g_real_d3dperf_get_status = nullptr;
+D3DPERFQueryRepeatFrameFn g_real_d3dperf_query_repeat_frame = nullptr;
+D3DPERFSetMarkerFn g_real_d3dperf_set_marker = nullptr;
+D3DPERFSetOptionsFn g_real_d3dperf_set_options = nullptr;
+D3DPERFSetRegionFn g_real_d3dperf_set_region = nullptr;
+DebugSetLevelFn g_real_debug_set_level = nullptr;
+DebugSetMuteFn g_real_debug_set_mute = nullptr;
 CreateDeviceFn g_real_create_device = nullptr;
+TestCooperativeLevelFn g_real_test_cooperative_level = nullptr;
+ResetFn g_real_reset = nullptr;
 PresentFn g_real_present = nullptr;
+BeginSceneFn g_real_begin_scene = nullptr;
+EndSceneFn g_real_end_scene = nullptr;
+ClearFn g_real_clear = nullptr;
 CreateVertexDeclarationFn g_real_create_vertex_declaration = nullptr;
 SetVertexDeclarationFn g_real_set_vertex_declaration = nullptr;
 CreateTextureFn g_real_create_texture = nullptr;
@@ -140,6 +183,49 @@ std::mutex g_hook_mutex;
 std::atomic<unsigned long long> g_event_index{0};
 std::atomic<unsigned long long> g_frame{0};
 std::atomic<bool> g_proxy_entry_reported{false};
+std::atomic<unsigned long long> g_perf_event_calls{0};
+std::atomic<unsigned long long> g_present_calls{0};
+
+enum class CaptureMode {
+    Passthrough,
+    Diagnostic,
+    Capture,
+};
+
+CaptureMode capture_mode() {
+    static const CaptureMode mode = [] {
+        const char* value = std::getenv("SHIFT_D3D9_CAPTURE_MODE");
+        if (!value || !*value) return CaptureMode::Capture;
+        std::string text(value);
+        std::transform(text.begin(), text.end(), text.begin(), [](unsigned char ch) {
+            return static_cast<char>(std::tolower(ch));
+        });
+        if (text == "passthrough" || text == "off" || text == "0") {
+            return CaptureMode::Passthrough;
+        }
+        if (text == "diagnostic" || text == "diag" || text == "1") {
+            return CaptureMode::Diagnostic;
+        }
+        return CaptureMode::Capture;
+    }();
+    return mode;
+}
+
+const char* capture_mode_name() {
+    switch (capture_mode()) {
+    case CaptureMode::Passthrough: return "passthrough";
+    case CaptureMode::Diagnostic: return "diagnostic";
+    case CaptureMode::Capture: return "capture";
+    }
+    return "capture";
+}
+
+std::string hresult_hex(HRESULT hr) {
+    std::ostringstream s;
+    s << "\"0x" << std::hex << std::setw(8) << std::setfill('0')
+      << static_cast<unsigned long>(hr) << "\"";
+    return s.str();
+}
 
 struct CaptureWriter {
     std::mutex mutex;
@@ -152,6 +238,19 @@ struct CaptureWriter {
         const char* env = std::getenv("SHIFT_D3D9_CAPTURE");
         path = (env && *env) ? env : "shift_d3d9_capture.jsonl";
         out.open(path, std::ios::out | std::ios::app);
+        if (!out.is_open() && (!env || !*env)) {
+            char temp_path[MAX_PATH] = {};
+            const DWORD length = GetTempPathA(MAX_PATH, temp_path);
+            if (length > 0 && length < MAX_PATH) {
+                path.assign(temp_path, length);
+                if (!path.empty() && path.back() != '\\' && path.back() != '/') {
+                    path.push_back('\\');
+                }
+                path += "shift_d3d9_capture.jsonl";
+                out.clear();
+                out.open(path, std::ios::out | std::ios::app);
+            }
+        }
         initialized = true;
     }
 
@@ -206,16 +305,30 @@ struct CaptureWriter {
     void write_event(const std::string& event, const std::string& fields) {
         std::lock_guard<std::mutex> lock(mutex);
         ensure_open();
-        if (!out.is_open()) return;
         const auto seq = g_event_index.fetch_add(1);
-        out << "{\"event_index\":" << seq
-            << ",\"frame\":" << g_frame.load()
-            << ",\"thread_id\":" << GetCurrentThreadId()
-            << ",\"event\":" << quote(event);
-        if (!fields.empty()) out << "," << fields;
-        out << "}\n";
-        const char* flush_env = std::getenv("SHIFT_D3D9_CAPTURE_FLUSH");
-        if (!flush_env || std::string(flush_env) != "0") out.flush();
+        std::ostringstream line;
+        line << "{\"event_index\":" << seq
+             << ",\"frame\":" << g_frame.load()
+             << ",\"tick_ms\":" << GetTickCount64()
+             << ",\"process_id\":" << GetCurrentProcessId()
+             << ",\"thread_id\":" << GetCurrentThreadId()
+             << ",\"event\":" << quote(event);
+        if (!fields.empty()) line << "," << fields;
+        line << "}\n";
+
+        if (out.is_open()) {
+            out << line.str();
+            const char* flush_env = std::getenv("SHIFT_D3D9_CAPTURE_FLUSH");
+            if (!flush_env || std::string(flush_env) != "0") out.flush();
+        }
+        const char* debug_env = std::getenv("SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT");
+        const bool debug_output =
+            debug_env && *debug_env &&
+            std::string(debug_env) != "0" &&
+            std::string(debug_env) != "false";
+        if (debug_output || !out.is_open()) {
+            OutputDebugStringA(line.str().c_str());
+        }
     }
 };
 
@@ -1089,33 +1202,117 @@ void patch_texture_object(IDirect3DTexture9* texture) {
         reinterpret_cast<void**>(&g_real_texture_unlock_rect));
 }
 
+struct VtablePatch {
+    std::size_t slot = 0;
+    void* hook = nullptr;
+    void** original_out = nullptr;
+};
+
+bool patch_object_vtable_batch(
+    void* object,
+    std::size_t count,
+    const std::vector<VtablePatch>& patches,
+    const char* label) {
+
+    if (!object || patches.empty()) return false;
+    auto*** object_vtable = reinterpret_cast<void***>(object);
+    void** original_vtable = *object_vtable;
+    if (!original_vtable) return false;
+
+    for (const auto& patch : patches) {
+        if (patch.slot >= count || !patch.hook) {
+            std::ostringstream fields;
+            fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+                   << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+                   << ",\"reason\":\"invalid-slot-or-hook\"";
+            writer().write_event("vtable_patch_failed", fields.str());
+            return false;
+        }
+    }
+
+    const std::size_t bytes = count * sizeof(void*);
+    auto* clone = static_cast<void**>(HeapAlloc(GetProcessHeap(), 0, bytes));
+    if (!clone) {
+        writer().write_event(
+            "vtable_patch_failed",
+            "\"reason\":\"heap-allocation-failed\"");
+        return false;
+    }
+    std::memcpy(clone, original_vtable, bytes);
+
+    bool changed = false;
+    for (const auto& patch : patches) {
+        if (original_vtable[patch.slot] == patch.hook) continue;
+        if (patch.original_out) *patch.original_out = original_vtable[patch.slot];
+        clone[patch.slot] = patch.hook;
+        changed = true;
+    }
+    if (!changed) {
+        HeapFree(GetProcessHeap(), 0, clone);
+        return true;
+    }
+
+    DWORD old_protect = 0;
+    if (!VirtualProtect(object_vtable, sizeof(void*), PAGE_READWRITE, &old_protect)) {
+        const DWORD error = GetLastError();
+        HeapFree(GetProcessHeap(), 0, clone);
+        std::ostringstream fields;
+        fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+               << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+               << ",\"win32_error\":" << error
+               << ",\"reason\":\"virtual-protect-failed\"";
+        writer().write_event("vtable_patch_failed", fields.str());
+        return false;
+    }
+
+    *object_vtable = clone;
+    DWORD ignored = 0;
+    VirtualProtect(object_vtable, sizeof(void*), old_protect, &ignored);
+
+    if (env_enabled("SHIFT_D3D9_CAPTURE_VTABLE_LOG")) {
+        std::ostringstream fields;
+        fields << "\"label\":" << CaptureWriter::quote(label ? label : "unknown")
+               << ",\"object_ptr\":" << CaptureWriter::ptr(object)
+               << ",\"patch_count\":" << patches.size();
+        writer().write_event("vtable_patch_installed", fields.str());
+    }
+    return true;
+}
+
 void patch_object_vtable(
     void* object,
     std::size_t count,
     std::size_t slot,
     void* hook,
     void** original_out) {
+    patch_object_vtable_batch(
+        object,
+        count,
+        {{slot, hook, original_out}},
+        "single");
+}
 
-    if (!object || slot >= count) return;
-    auto*** object_vtable = reinterpret_cast<void***>(object);
-    void** original_vtable = *object_vtable;
-    if (!original_vtable) return;
-
-    const std::size_t bytes = count * sizeof(void*);
-    auto* clone = static_cast<void**>(HeapAlloc(GetProcessHeap(), 0, bytes));
-    if (!clone) return;
-    std::memcpy(clone, original_vtable, bytes);
-
-    if (original_out) *original_out = original_vtable[slot];
-
-    DWORD old_protect = 0;
-    if (!VirtualProtect(object_vtable, sizeof(void*), PAGE_READWRITE, &old_protect)) {
-        HeapFree(GetProcessHeap(), 0, clone);
+void append_present_parameters(
+    std::ostringstream& fields,
+    const D3DPRESENT_PARAMETERS* params) {
+    if (!params) {
+        fields << "\"present_parameters\":null";
         return;
     }
-    *object_vtable = clone;
-    VirtualProtect(object_vtable, sizeof(void*), old_protect, &old_protect);
-    clone[slot] = hook;
+    fields << "\"backbuffer_width\":" << params->BackBufferWidth
+           << ",\"backbuffer_height\":" << params->BackBufferHeight
+           << ",\"backbuffer_format\":" << static_cast<unsigned>(params->BackBufferFormat)
+           << ",\"backbuffer_count\":" << params->BackBufferCount
+           << ",\"multisample_type\":" << static_cast<unsigned>(params->MultiSampleType)
+           << ",\"multisample_quality\":" << params->MultiSampleQuality
+           << ",\"swap_effect\":" << static_cast<unsigned>(params->SwapEffect)
+           << ",\"device_window\":" << CaptureWriter::ptr(params->hDeviceWindow)
+           << ",\"windowed\":" << (params->Windowed ? "true" : "false")
+           << ",\"auto_depth_stencil\":" << (params->EnableAutoDepthStencil ? "true" : "false")
+           << ",\"depth_stencil_format\":" << static_cast<unsigned>(params->AutoDepthStencilFormat)
+           << ",\"presentation_flags\":" << params->Flags
+           << ",\"refresh_rate_hz\":" << params->FullScreen_RefreshRateInHz
+           << ",\"presentation_interval\":" << params->PresentationInterval;
 }
 
 void patch_device(IDirect3DDevice9* device);
@@ -1128,10 +1325,109 @@ HRESULT STDMETHODCALLTYPE hook_create_device(
     DWORD behavior_flags,
     D3DPRESENT_PARAMETERS* params,
     IDirect3DDevice9** out_device) {
+    {
+        std::ostringstream fields;
+        fields << "\"d3d9_ptr\":" << CaptureWriter::ptr(self)
+               << ",\"adapter\":" << adapter
+               << ",\"device_type\":" << static_cast<unsigned>(type)
+               << ",\"focus_window\":" << CaptureWriter::ptr(window)
+               << ",\"behavior_flags\":" << behavior_flags << ",";
+        append_present_parameters(fields, params);
+        writer().write_event("create_device_begin", fields.str());
+    }
+
+    if (out_device) *out_device = nullptr;
     const HRESULT hr = g_real_create_device
         ? g_real_create_device(self, adapter, type, window, behavior_flags, params, out_device)
         : E_FAIL;
+
+    {
+        std::ostringstream fields;
+        fields << "\"hresult\":" << hresult_hex(hr)
+               << ",\"success\":" << (SUCCEEDED(hr) ? "true" : "false")
+               << ",\"device_ptr\":" << CaptureWriter::ptr(
+                      out_device ? *out_device : nullptr);
+        writer().write_event("create_device_result", fields.str());
+    }
+
     if (SUCCEEDED(hr) && out_device && *out_device) patch_device(*out_device);
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_test_cooperative_level(IDirect3DDevice9* self) {
+    const HRESULT hr = g_real_test_cooperative_level
+        ? g_real_test_cooperative_level(self)
+        : E_FAIL;
+    if (FAILED(hr)) {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
+               << ",\"hresult\":" << hresult_hex(hr);
+        writer().write_event("test_cooperative_level", fields.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_reset(
+    IDirect3DDevice9* self,
+    D3DPRESENT_PARAMETERS* params) {
+    {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self) << ",";
+        append_present_parameters(fields, params);
+        writer().write_event("reset_begin", fields.str());
+    }
+    const HRESULT hr = g_real_reset ? g_real_reset(self, params) : E_FAIL;
+    {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
+               << ",\"hresult\":" << hresult_hex(hr)
+               << ",\"success\":" << (SUCCEEDED(hr) ? "true" : "false") << ",";
+        append_present_parameters(fields, params);
+        writer().write_event("reset_result", fields.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_begin_scene(IDirect3DDevice9* self) {
+    const HRESULT hr = g_real_begin_scene ? g_real_begin_scene(self) : E_FAIL;
+    if (FAILED(hr)) {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
+               << ",\"hresult\":" << hresult_hex(hr);
+        writer().write_event("begin_scene_failed", fields.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_end_scene(IDirect3DDevice9* self) {
+    const HRESULT hr = g_real_end_scene ? g_real_end_scene(self) : E_FAIL;
+    if (FAILED(hr)) {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
+               << ",\"hresult\":" << hresult_hex(hr);
+        writer().write_event("end_scene_failed", fields.str());
+    }
+    return hr;
+}
+
+HRESULT STDMETHODCALLTYPE hook_clear(
+    IDirect3DDevice9* self,
+    DWORD count,
+    const D3DRECT* rects,
+    DWORD flags,
+    D3DCOLOR color,
+    float depth,
+    DWORD stencil) {
+    const HRESULT hr = g_real_clear
+        ? g_real_clear(self, count, rects, flags, color, depth, stencil)
+        : E_FAIL;
+    if (FAILED(hr)) {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
+               << ",\"hresult\":" << hresult_hex(hr)
+               << ",\"clear_flags\":" << flags;
+        writer().write_event("clear_failed", fields.str());
+    }
     return hr;
 }
 
@@ -1163,10 +1459,23 @@ HRESULT STDMETHODCALLTYPE hook_present(
             }
         }
     }
+
     const HRESULT hr = g_real_present
         ? g_real_present(self, src, dst, override_window, dirty_region)
         : E_FAIL;
+    const auto call_index = g_present_calls.fetch_add(1);
     if (SUCCEEDED(hr)) g_frame.fetch_add(1);
+
+    const auto every = std::max<unsigned long long>(
+        1, env_u64("SHIFT_D3D9_DIAG_PRESENT_EVERY", 300));
+    if (FAILED(hr) || call_index < 8 || (call_index % every) == 0) {
+        std::ostringstream fields;
+        fields << "\"device_ptr\":" << CaptureWriter::ptr(self)
+               << ",\"present_call\":" << call_index
+               << ",\"hresult\":" << hresult_hex(hr)
+               << ",\"success\":" << (SUCCEEDED(hr) ? "true" : "false");
+        writer().write_event("present_result", fields.str());
+    }
     return hr;
 }
 
@@ -1573,110 +1882,301 @@ HRESULT STDMETHODCALLTYPE hook_draw_indexed_primitive(
 }
 
 void patch_device(IDirect3DDevice9* device) {
-    std::lock_guard<std::mutex> lock(g_hook_mutex);
+    if (!device || capture_mode() == CaptureMode::Passthrough) return;
 
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_PRESENT,
-                        reinterpret_cast<void*>(&hook_present),
-                        reinterpret_cast<void**>(&g_real_present));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_TEXTURE,
-                        reinterpret_cast<void*>(&hook_create_texture),
-                        reinterpret_cast<void**>(&g_real_create_texture));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_CUBE_TEXTURE,
-                        reinterpret_cast<void*>(&hook_create_cube_texture),
-                        reinterpret_cast<void**>(&g_real_create_cube_texture));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_VERTEX_BUFFER,
-                        reinterpret_cast<void*>(&hook_create_vertex_buffer),
-                        reinterpret_cast<void**>(&g_real_create_vertex_buffer));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_INDEX_BUFFER,
-                        reinterpret_cast<void*>(&hook_create_index_buffer),
-                        reinterpret_cast<void**>(&g_real_create_index_buffer));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_VERTEX_DECLARATION,
-                        reinterpret_cast<void*>(&hook_create_vertex_declaration),
-                        reinterpret_cast<void**>(&g_real_create_vertex_declaration));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_VERTEX_DECLARATION,
-                        reinterpret_cast<void*>(&hook_set_vertex_declaration),
-                        reinterpret_cast<void**>(&g_real_set_vertex_declaration));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_STREAM_SOURCE,
-                        reinterpret_cast<void*>(&hook_set_stream_source),
-                        reinterpret_cast<void**>(&g_real_set_stream_source));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_INDICES,
-                        reinterpret_cast<void*>(&hook_set_indices),
-                        reinterpret_cast<void**>(&g_real_set_indices));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_TEXTURE,
-                        reinterpret_cast<void*>(&hook_set_texture),
-                        reinterpret_cast<void**>(&g_real_set_texture));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_VERTEX_SHADER,
-                        reinterpret_cast<void*>(&hook_create_vertex_shader),
-                        reinterpret_cast<void**>(&g_real_create_vertex_shader));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_VERTEX_SHADER,
-                        reinterpret_cast<void*>(&hook_set_vertex_shader),
-                        reinterpret_cast<void**>(&g_real_set_vertex_shader));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_VERTEX_SHADER_CONSTANT_F,
-                        reinterpret_cast<void*>(&hook_set_vertex_shader_constant_f),
-                        reinterpret_cast<void**>(&g_real_set_vertex_shader_constant_f));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_CREATE_PIXEL_SHADER,
-                        reinterpret_cast<void*>(&hook_create_pixel_shader),
-                        reinterpret_cast<void**>(&g_real_create_pixel_shader));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_PIXEL_SHADER,
-                        reinterpret_cast<void*>(&hook_set_pixel_shader),
-                        reinterpret_cast<void**>(&g_real_set_pixel_shader));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_SET_PIXEL_SHADER_CONSTANT_F,
-                        reinterpret_cast<void*>(&hook_set_pixel_shader_constant_f),
-                        reinterpret_cast<void**>(&g_real_set_pixel_shader_constant_f));
-    patch_object_vtable(device, D3D9_VTABLE_COUNT, SLOT_DRAW_INDEXED_PRIMITIVE,
-                        reinterpret_cast<void*>(&hook_draw_indexed_primitive),
-                        reinterpret_cast<void**>(&g_real_draw_indexed_primitive));
+    std::lock_guard<std::mutex> lock(g_hook_mutex);
+    std::vector<VtablePatch> patches = {
+        {SLOT_TEST_COOPERATIVE_LEVEL,
+         reinterpret_cast<void*>(&hook_test_cooperative_level),
+         reinterpret_cast<void**>(&g_real_test_cooperative_level)},
+        {SLOT_RESET, reinterpret_cast<void*>(&hook_reset),
+         reinterpret_cast<void**>(&g_real_reset)},
+        {SLOT_PRESENT, reinterpret_cast<void*>(&hook_present),
+         reinterpret_cast<void**>(&g_real_present)},
+        {SLOT_BEGIN_SCENE, reinterpret_cast<void*>(&hook_begin_scene),
+         reinterpret_cast<void**>(&g_real_begin_scene)},
+        {SLOT_END_SCENE, reinterpret_cast<void*>(&hook_end_scene),
+         reinterpret_cast<void**>(&g_real_end_scene)},
+        {SLOT_CLEAR, reinterpret_cast<void*>(&hook_clear),
+         reinterpret_cast<void**>(&g_real_clear)},
+    };
+
+    if (capture_mode() == CaptureMode::Capture) {
+        const VtablePatch capture_patches[] = {
+            {SLOT_CREATE_TEXTURE, reinterpret_cast<void*>(&hook_create_texture),
+             reinterpret_cast<void**>(&g_real_create_texture)},
+            {SLOT_CREATE_CUBE_TEXTURE, reinterpret_cast<void*>(&hook_create_cube_texture),
+             reinterpret_cast<void**>(&g_real_create_cube_texture)},
+            {SLOT_CREATE_VERTEX_BUFFER, reinterpret_cast<void*>(&hook_create_vertex_buffer),
+             reinterpret_cast<void**>(&g_real_create_vertex_buffer)},
+            {SLOT_CREATE_INDEX_BUFFER, reinterpret_cast<void*>(&hook_create_index_buffer),
+             reinterpret_cast<void**>(&g_real_create_index_buffer)},
+            {SLOT_CREATE_VERTEX_DECLARATION, reinterpret_cast<void*>(&hook_create_vertex_declaration),
+             reinterpret_cast<void**>(&g_real_create_vertex_declaration)},
+            {SLOT_SET_VERTEX_DECLARATION, reinterpret_cast<void*>(&hook_set_vertex_declaration),
+             reinterpret_cast<void**>(&g_real_set_vertex_declaration)},
+            {SLOT_SET_STREAM_SOURCE, reinterpret_cast<void*>(&hook_set_stream_source),
+             reinterpret_cast<void**>(&g_real_set_stream_source)},
+            {SLOT_SET_INDICES, reinterpret_cast<void*>(&hook_set_indices),
+             reinterpret_cast<void**>(&g_real_set_indices)},
+            {SLOT_SET_TEXTURE, reinterpret_cast<void*>(&hook_set_texture),
+             reinterpret_cast<void**>(&g_real_set_texture)},
+            {SLOT_CREATE_VERTEX_SHADER, reinterpret_cast<void*>(&hook_create_vertex_shader),
+             reinterpret_cast<void**>(&g_real_create_vertex_shader)},
+            {SLOT_SET_VERTEX_SHADER, reinterpret_cast<void*>(&hook_set_vertex_shader),
+             reinterpret_cast<void**>(&g_real_set_vertex_shader)},
+            {SLOT_SET_VERTEX_SHADER_CONSTANT_F,
+             reinterpret_cast<void*>(&hook_set_vertex_shader_constant_f),
+             reinterpret_cast<void**>(&g_real_set_vertex_shader_constant_f)},
+            {SLOT_CREATE_PIXEL_SHADER, reinterpret_cast<void*>(&hook_create_pixel_shader),
+             reinterpret_cast<void**>(&g_real_create_pixel_shader)},
+            {SLOT_SET_PIXEL_SHADER, reinterpret_cast<void*>(&hook_set_pixel_shader),
+             reinterpret_cast<void**>(&g_real_set_pixel_shader)},
+            {SLOT_SET_PIXEL_SHADER_CONSTANT_F,
+             reinterpret_cast<void*>(&hook_set_pixel_shader_constant_f),
+             reinterpret_cast<void**>(&g_real_set_pixel_shader_constant_f)},
+            {SLOT_DRAW_INDEXED_PRIMITIVE,
+             reinterpret_cast<void*>(&hook_draw_indexed_primitive),
+             reinterpret_cast<void**>(&g_real_draw_indexed_primitive)},
+        };
+        patches.insert(
+            patches.end(),
+            std::begin(capture_patches),
+            std::end(capture_patches));
+    }
+
+    const bool installed = patch_object_vtable_batch(
+        device, D3D9_VTABLE_COUNT, patches, "IDirect3DDevice9");
+    std::ostringstream fields;
+    fields << "\"device_ptr\":" << CaptureWriter::ptr(device)
+           << ",\"mode\":" << CaptureWriter::quote(capture_mode_name())
+           << ",\"installed\":" << (installed ? "true" : "false")
+           << ",\"hook_count\":" << patches.size();
+    writer().write_event("device_hooks", fields.str());
 }
 
 void patch_direct3d9(IDirect3D9* d3d) {
+    if (!d3d || capture_mode() == CaptureMode::Passthrough) return;
+
     std::lock_guard<std::mutex> lock(g_hook_mutex);
     void** vtable = *reinterpret_cast<void***>(d3d);
-    if (!vtable) return;
-    g_real_create_device = reinterpret_cast<CreateDeviceFn>(vtable[16]);
-    patch_object_vtable(d3d, IDIRECT3D9_VTABLE_COUNT, 16,
-                        reinterpret_cast<void*>(&hook_create_device), nullptr);
+    if (!vtable) {
+        writer().write_event("d3d9_hook_failed", "\"reason\":\"null-vtable\"");
+        return;
+    }
+
+    const bool installed = patch_object_vtable_batch(
+        d3d,
+        IDIRECT3D9_VTABLE_COUNT,
+        {{16, reinterpret_cast<void*>(&hook_create_device),
+          reinterpret_cast<void**>(&g_real_create_device)}},
+        "IDirect3D9");
+
+    std::ostringstream fields;
+    fields << "\"d3d9_ptr\":" << CaptureWriter::ptr(d3d)
+           << ",\"mode\":" << CaptureWriter::quote(capture_mode_name())
+           << ",\"installed\":" << (installed ? "true" : "false");
+    writer().write_event("d3d9_hooks", fields.str());
+}
+
+std::string module_path_a(HMODULE module) {
+    char path[MAX_PATH] = {};
+    const DWORD length = GetModuleFileNameA(module, path, MAX_PATH);
+    if (!length || length >= MAX_PATH) return {};
+    return std::string(path, length);
+}
+
+template <typename T>
+T resolve_system_proc(const char* name) {
+    return reinterpret_cast<T>(
+        g_system_d3d9 ? GetProcAddress(g_system_d3d9, name) : nullptr);
 }
 
 bool ensure_system_d3d9() {
-    if (g_real_direct3d_create9) return true;
-    wchar_t system_dir[MAX_PATH] = {};
-    const UINT length = GetSystemDirectoryW(system_dir, MAX_PATH);
-    if (!length || length >= MAX_PATH) return false;
+    std::call_once(g_system_d3d9_once, [] {
+        char system_dir[MAX_PATH] = {};
+        const UINT length = GetSystemDirectoryA(system_dir, MAX_PATH);
+        if (!length || length >= MAX_PATH) {
+            writer().write_event(
+                "proxy_system_d3d9_load_failed",
+                "\"reason\":\"GetSystemDirectoryA-failed\",\"win32_error\":" +
+                    std::to_string(GetLastError()));
+            return;
+        }
 
-    std::wstring path(system_dir, length);
-    path += L"\\d3d9.dll";
-    g_system_d3d9 = LoadLibraryW(path.c_str());
-    if (!g_system_d3d9) return false;
+        g_system_d3d9_path.assign(system_dir, length);
+        if (!g_system_d3d9_path.empty() &&
+            g_system_d3d9_path.back() != '\\' &&
+            g_system_d3d9_path.back() != '/') {
+            g_system_d3d9_path.push_back('\\');
+        }
+        g_system_d3d9_path += "d3d9.dll";
 
-    g_real_direct3d_create9 =
-        reinterpret_cast<Direct3DCreate9Fn>(
-            GetProcAddress(g_system_d3d9, "Direct3DCreate9"));
-    return g_real_direct3d_create9 != nullptr;
+        SetLastError(ERROR_SUCCESS);
+        g_system_d3d9 = LoadLibraryA(g_system_d3d9_path.c_str());
+        if (!g_system_d3d9) {
+            std::ostringstream fields;
+            fields << "\"path\":" << CaptureWriter::quote(g_system_d3d9_path)
+                   << ",\"win32_error\":" << GetLastError();
+            writer().write_event("proxy_system_d3d9_load_failed", fields.str());
+            return;
+        }
+
+        g_real_direct3d_create9 =
+            resolve_system_proc<Direct3DCreate9Fn>("Direct3DCreate9");
+        g_real_direct3d_create9_ex =
+            resolve_system_proc<Direct3DCreate9ExFn>("Direct3DCreate9Ex");
+        g_real_d3dperf_begin_event =
+            resolve_system_proc<D3DPERFBeginEventFn>("D3DPERF_BeginEvent");
+        g_real_d3dperf_end_event =
+            resolve_system_proc<D3DPERFEndEventFn>("D3DPERF_EndEvent");
+        g_real_d3dperf_get_status =
+            resolve_system_proc<D3DPERFGetStatusFn>("D3DPERF_GetStatus");
+        g_real_d3dperf_query_repeat_frame =
+            resolve_system_proc<D3DPERFQueryRepeatFrameFn>("D3DPERF_QueryRepeatFrame");
+        g_real_d3dperf_set_marker =
+            resolve_system_proc<D3DPERFSetMarkerFn>("D3DPERF_SetMarker");
+        g_real_d3dperf_set_options =
+            resolve_system_proc<D3DPERFSetOptionsFn>("D3DPERF_SetOptions");
+        g_real_d3dperf_set_region =
+            resolve_system_proc<D3DPERFSetRegionFn>("D3DPERF_SetRegion");
+        g_real_debug_set_level =
+            resolve_system_proc<DebugSetLevelFn>("DebugSetLevel");
+        g_real_debug_set_mute =
+            resolve_system_proc<DebugSetMuteFn>("DebugSetMute");
+
+        g_system_d3d9_ready = g_real_direct3d_create9 != nullptr;
+
+        std::ostringstream fields;
+        fields << "\"path\":" << CaptureWriter::quote(g_system_d3d9_path)
+               << ",\"module_ptr\":" << CaptureWriter::ptr(g_system_d3d9)
+               << ",\"direct3dcreate9\":" << (g_real_direct3d_create9 ? "true" : "false")
+               << ",\"direct3dcreate9ex\":" << (g_real_direct3d_create9_ex ? "true" : "false")
+               << ",\"perf_begin\":" << (g_real_d3dperf_begin_event ? "true" : "false")
+               << ",\"perf_end\":" << (g_real_d3dperf_end_event ? "true" : "false");
+        writer().write_event(
+            g_system_d3d9_ready ? "proxy_system_d3d9_ready"
+                                : "proxy_system_d3d9_missing_required_export",
+            fields.str());
+    });
+    return g_system_d3d9_ready;
 }
 
 } // namespace
 
-extern "C" __declspec(dllexport)
-IDirect3D9* WINAPI Direct3DCreate9(UINT sdk_version) {
+extern "C" IDirect3D9* WINAPI Direct3DCreate9(UINT sdk_version) {
     bool expected = false;
     if (g_proxy_entry_reported.compare_exchange_strong(expected, true)) {
-        writer().write_event("proxy_direct3dcreate9",
-                             "sdk_version=" + std::to_string(sdk_version));
+        std::ostringstream fields;
+        fields << "\"sdk_version\":" << sdk_version
+               << ",\"mode\":" << CaptureWriter::quote(capture_mode_name())
+               << ",\"proxy_path\":" << CaptureWriter::quote(module_path_a(g_proxy_module))
+               << ",\"executable_path\":" << CaptureWriter::quote(module_path_a(nullptr));
+        writer().write_event("proxy_direct3dcreate9", fields.str());
     }
-    if (!ensure_system_d3d9()) {
-        writer().write_event("proxy_system_d3d9_load_failed",
-                             "error_code=" + std::to_string(GetLastError()));
-        return nullptr;
-    }
-    writer().write_event("proxy_system_d3d9_ready",
-                         "sdk_version=" + std::to_string(sdk_version));
+
+    if (!ensure_system_d3d9()) return nullptr;
+
     IDirect3D9* d3d = g_real_direct3d_create9(sdk_version);
-    if (d3d) patch_direct3d9(d3d);
+    {
+        std::ostringstream fields;
+        fields << "\"sdk_version\":" << sdk_version
+               << ",\"d3d9_ptr\":" << CaptureWriter::ptr(d3d)
+               << ",\"success\":" << (d3d ? "true" : "false");
+        writer().write_event("direct3dcreate9_result", fields.str());
+    }
+    if (d3d && capture_mode() != CaptureMode::Passthrough) patch_direct3d9(d3d);
     return d3d;
 }
 
+extern "C" HRESULT WINAPI Direct3DCreate9Ex(
+    UINT sdk_version,
+    IDirect3D9Ex** out_d3d) {
+    if (out_d3d) *out_d3d = nullptr;
+    if (!ensure_system_d3d9() || !g_real_direct3d_create9_ex) {
+        return E_NOINTERFACE;
+    }
+
+    const HRESULT hr = g_real_direct3d_create9_ex(sdk_version, out_d3d);
+    std::ostringstream fields;
+    fields << "\"sdk_version\":" << sdk_version
+           << ",\"hresult\":" << hresult_hex(hr)
+           << ",\"d3d9ex_ptr\":" << CaptureWriter::ptr(
+                  out_d3d ? *out_d3d : nullptr);
+    writer().write_event("direct3dcreate9ex_result", fields.str());
+
+    if (SUCCEEDED(hr) && out_d3d && *out_d3d &&
+        capture_mode() != CaptureMode::Passthrough) {
+        patch_direct3d9(static_cast<IDirect3D9*>(*out_d3d));
+    }
+    return hr;
+}
+
+extern "C" int WINAPI D3DPERF_BeginEvent(D3DCOLOR color, LPCWSTR name) {
+    if (!ensure_system_d3d9() || !g_real_d3dperf_begin_event) return -1;
+    const int result = g_real_d3dperf_begin_event(color, name);
+    const auto index = g_perf_event_calls.fetch_add(1);
+    if (index < 8) {
+        std::ostringstream fields;
+        fields << "\"call\":" << index
+               << ",\"color\":" << color
+               << ",\"result\":" << result;
+        writer().write_event("d3dperf_begin_event", fields.str());
+    }
+    return result;
+}
+
+extern "C" int WINAPI D3DPERF_EndEvent() {
+    if (!ensure_system_d3d9() || !g_real_d3dperf_end_event) return -1;
+    return g_real_d3dperf_end_event();
+}
+
+extern "C" DWORD WINAPI D3DPERF_GetStatus() {
+    return (ensure_system_d3d9() && g_real_d3dperf_get_status)
+        ? g_real_d3dperf_get_status()
+        : 0;
+}
+
+extern "C" BOOL WINAPI D3DPERF_QueryRepeatFrame() {
+    return (ensure_system_d3d9() && g_real_d3dperf_query_repeat_frame)
+        ? g_real_d3dperf_query_repeat_frame()
+        : FALSE;
+}
+
+extern "C" void WINAPI D3DPERF_SetMarker(D3DCOLOR color, LPCWSTR name) {
+    if (ensure_system_d3d9() && g_real_d3dperf_set_marker) {
+        g_real_d3dperf_set_marker(color, name);
+    }
+}
+
+extern "C" void WINAPI D3DPERF_SetOptions(DWORD options) {
+    if (ensure_system_d3d9() && g_real_d3dperf_set_options) {
+        g_real_d3dperf_set_options(options);
+    }
+}
+
+extern "C" void WINAPI D3DPERF_SetRegion(D3DCOLOR color, LPCWSTR name) {
+    if (ensure_system_d3d9() && g_real_d3dperf_set_region) {
+        g_real_d3dperf_set_region(color, name);
+    }
+}
+
+extern "C" void WINAPI DebugSetLevel(DWORD level) {
+    if (ensure_system_d3d9() && g_real_debug_set_level) {
+        g_real_debug_set_level(level);
+    }
+}
+
+extern "C" void WINAPI DebugSetMute() {
+    if (ensure_system_d3d9() && g_real_debug_set_mute) {
+        g_real_debug_set_mute();
+    }
+}
+
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
-    if (reason == DLL_PROCESS_ATTACH) DisableThreadLibraryCalls(instance);
-    if (reason == DLL_PROCESS_DETACH && g_system_d3d9) FreeLibrary(g_system_d3d9);
+    if (reason == DLL_PROCESS_ATTACH) {
+        g_proxy_module = instance;
+        DisableThreadLibraryCalls(instance);
+    }
     return TRUE;
 }
