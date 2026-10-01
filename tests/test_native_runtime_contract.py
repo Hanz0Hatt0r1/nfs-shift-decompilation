@@ -396,3 +396,27 @@ def test_phase607_native_runtime_admits_runtime_participant_identity_evidence():
     assert "registry_index < 0" in source
     assert "selector_ordinal < 0" in source
     assert "process_state == -1" in source
+
+
+def test_phase608_fixed_step_solver_frame_requires_ready_runtime_evidence():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert '#include "shift_builtin_solver_frame.hpp"' in source
+    assert '"--solver-frame"' in source
+    assert "load_prepared_builtin_solver_frame" in source
+    assert "execute_prepared_builtin_solver_frame" in source
+    assert "--solver-frame requires --physics-manifest" in source
+    assert "--solver-frame requires --participant-boundary" in source
+    assert "solver frame requires ready runtime participant evidence" in source
+    assert "solver frame scalar count does not match physics workspace" in source
+    assert "solver frame lost ready participant identity" in source
+    assert "physics_solver_frame_loaded" in source
+    assert "physics_solver_frame_scalar_count" in source
+    assert "physics_solver_frame_steps" in source
+    assert "physics_solver_frame_max_oracle_error" in source
+    assert "physics_solver_provider_present" in source
+    assert "physics_solver_post_solve_body_state_applied" in source
+    assert '"physics_solver_provider_present\\": false' in source
+    assert '"physics_solver_post_solve_body_state_applied\\": false' in source
