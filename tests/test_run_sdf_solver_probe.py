@@ -727,3 +727,185 @@ def test_phase647_launcher_passes_stop_after_relation_mutation(
     output = capsys.readouterr().out
     assert '"stop_after_relation_mutation": true' in output
     assert '"auto_detach": true' in output
+
+
+
+def test_phase648_early_launch_uses_winedbg_proxy_before_gdb_continue(
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    output_dir = tmp_path / "capture"
+    captured = {}
+
+    manifest = {
+        **_manifest(),
+        "executable": {"path": str(executable.resolve())},
+    }
+
+    def fake_prepare(*args, **kwargs):
+        captured["prepare"] = kwargs
+        return manifest
+
+    class DummyProcess:
+        pass
+
+    monkeypatch.setattr(tool, "prepare_probe_bundle", fake_prepare)
+    monkeypatch.setattr(tool, "allocate_loopback_port", lambda: 31337)
+    monkeypatch.setattr(
+        tool,
+        "build_winedbg_launch_command",
+        lambda **kwargs: [
+            "winedbg", "--gdb", "--no-start", "--port", "31337",
+            str(executable.resolve()),
+        ],
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_remote_gdb_command",
+        lambda **kwargs: ["gdb", "target-remote", "31337"],
+    )
+
+    def fake_launch(command, **kwargs):
+        captured["launch_command"] = command
+        captured["launch_kwargs"] = kwargs
+        return DummyProcess()
+
+    monkeypatch.setattr(tool, "launch_winedbg_gdb_proxy", fake_launch)
+    monkeypatch.setattr(
+        tool,
+        "finish_winedbg_gdb_proxy",
+        lambda process: 0,
+    )
+
+    def fake_call(command):
+        captured["gdb_command"] = command
+        return 0
+
+    monkeypatch.setattr(tool.subprocess, "call", fake_call)
+
+    assert tool.main(
+        [
+            str(executable),
+            "--output",
+            str(output_dir),
+            "--launch-under-winedbg",
+            "--provider-only",
+            "--game-arg=-silent",
+        ]
+    ) == 0
+
+    assert captured["prepare"]["startup_mode"] == "winedbg-gdb-proxy"
+    assert captured["prepare"]["gdb_proxy_port"] == 31337
+    assert captured["launch_command"][0] == "winedbg"
+    assert captured["gdb_command"] == ["gdb", "target-remote", "31337"]
+    output = capsys.readouterr().out
+    assert '"startup_mode": "winedbg-gdb-proxy"' in output
+    assert '"winedbg_port": 31337' in output
+
+
+def test_phase648_early_launch_rejects_zip_input_before_prepare(
+    monkeypatch,
+    tmp_path: Path,
+):
+    archive = tmp_path / "SHIFT.zip"
+    archive.write_bytes(b"not-used")
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("prepare must not run for early-launch ZIP input")
+
+    monkeypatch.setattr(tool, "prepare_probe_bundle", fail_if_called)
+
+    assert tool.main(
+        [
+            str(archive),
+            "--launch-under-winedbg",
+        ]
+    ) == 2
+
+
+def test_phase648_winedbg_options_require_early_launch(
+    monkeypatch,
+    tmp_path: Path,
+):
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("prepare must not run for invalid launch options")
+
+    monkeypatch.setattr(tool, "prepare_probe_bundle", fail_if_called)
+
+    assert tool.main(
+        [
+            str(tmp_path / "SHIFT.exe"),
+            "--winedbg-port",
+            "31337",
+        ]
+    ) == 2
+
+
+def test_phase648_full_early_launch_requires_clean_winedbg_disconnect(
+    monkeypatch,
+    tmp_path: Path,
+):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    manifest = {
+        **_manifest(),
+        "executable": {"path": str(executable.resolve())},
+    }
+
+    monkeypatch.setattr(
+        tool,
+        "prepare_probe_bundle",
+        lambda *args, **kwargs: manifest,
+    )
+    monkeypatch.setattr(tool, "allocate_loopback_port", lambda: 31337)
+    monkeypatch.setattr(
+        tool,
+        "build_winedbg_launch_command",
+        lambda **kwargs: ["winedbg"],
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_remote_gdb_command",
+        lambda **kwargs: ["gdb"],
+    )
+    monkeypatch.setattr(
+        tool,
+        "launch_winedbg_gdb_proxy",
+        lambda *args, **kwargs: object(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "finish_winedbg_gdb_proxy",
+        lambda process: 1,
+    )
+    monkeypatch.setattr(tool.subprocess, "call", lambda command: 0)
+    monkeypatch.setattr(
+        tool,
+        "finalize_relation_state_mutation_capture",
+        lambda output: _timeline(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "build_sdf_runtime_probe_evidence_bundle",
+        lambda output: _bundle(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "verify_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _verification(),
+    )
+    monkeypatch.setattr(
+        tool,
+        "replay_sdf_runtime_probe_evidence_bundle",
+        lambda archive: _replay(),
+    )
+
+    assert tool.main(
+        [
+            str(executable),
+            "--launch-under-winedbg",
+        ]
+    ) == 2

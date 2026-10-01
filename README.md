@@ -498,3 +498,28 @@ mutation and stops at the next post-solve anchor so the generated command file
 can detach with a usable timeline neighbor. It can be combined with a large `--capture-frames N`
 fallback, allowing setup-time mutations to end the capture before the frame
 budget expires.
+
+
+## Phase 648 early WineDbg probe arming
+
+The retail SDF launcher now supports `--launch-under-winedbg` for captures that
+must observe startup/setup-time relation-state mutations. WineDbg creates the
+validated retail process behind its GDB proxy and holds it until GDB connects;
+the existing `sdf-probe` command is therefore installed before the first
+debugger `continue`, removing the mid-session PID/attach race.
+
+Use a direct retail `SHIFT.exe` from the game directory:
+
+```bash
+python tools/run_sdf_solver_probe.py /path/to/SHIFT.exe \
+  --output out/relation-early \
+  --launch-under-winedbg \
+  --relation-timeline-only \
+  --stop-after-relation-mutation \
+  --capture-frames 900
+```
+
+The manifest records the startup mode, proxy port and early-arming ordering.
+All Phase 637–647 correlation/session/bundle/verification/replay gates remain
+unchanged; early launch improves evidence coverage only and does not infer
+native relation-state scheduling.

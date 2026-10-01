@@ -238,3 +238,13 @@ mutation. `--stop-after-relation-mutation` now stops at the first post-solve anc
 `FUN_00757d2c` event and can be paired with a large frame budget as a fallback.
 The next evidence run should arm the probe before vehicle/race setup rather than
 guessing a short runtime window.
+
+
+Phase 648 removes the remaining mid-session attach race from the
+relation-mutation evidence path. `--launch-under-winedbg` creates the validated
+retail `SHIFT.exe` behind WineDbg's GDB proxy and installs the existing probe
+before the first debugger `continue`. The launcher records startup provenance,
+requires a direct executable from the game directory, and preserves every
+Phase 637–647 fail-closed post-capture gate. The next authentic evidence run can
+therefore cover setup-time `FUN_00757d2c` without guessing a PID or attach
+window.

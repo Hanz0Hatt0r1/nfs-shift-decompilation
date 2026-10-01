@@ -16,8 +16,13 @@ for path in (ROOT, PHYSICS_SRC):
         sys.path.insert(0, str(path))
 
 from sdf_runtime_probe_launcher_runtime import (
+    allocate_loopback_port,
     build_attach_command,
+    build_remote_gdb_command,
+    build_winedbg_launch_command,
     describe_sdf_runtime_probe_launcher,
+    finish_winedbg_gdb_proxy,
+    launch_winedbg_gdb_proxy,
     prepare_probe_bundle,
 )
 
@@ -74,8 +79,35 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=ROOT / "tools" / "gdb_sdf_solver_probe.py",
     )
-    parser.add_argument("--attach-pid", type=int)
+    target = parser.add_mutually_exclusive_group()
+    target.add_argument("--attach-pid", type=int)
+    target.add_argument(
+        "--launch-under-winedbg",
+        action="store_true",
+        help=(
+            "create SHIFT.exe under winedbg's GDB proxy and install the "
+            "probe before the first debugger continue"
+        ),
+    )
     parser.add_argument("--gdb", default="gdb")
+    parser.add_argument("--winedbg", default="winedbg")
+    parser.add_argument(
+        "--winedbg-port",
+        type=int,
+        help="fixed loopback GDB-proxy port; default allocates an ephemeral port",
+    )
+    parser.add_argument(
+        "--gdb-connect-timeout",
+        type=int,
+        default=30,
+        help="seconds GDB retries the WineDbg proxy connection",
+    )
+    parser.add_argument(
+        "--game-arg",
+        action="append",
+        default=[],
+        help="argument passed to SHIFT.exe in --launch-under-winedbg mode",
+    )
     parser.add_argument("--provider-only", action="store_true")
     parser.add_argument(
         "--relation-timeline-only",
@@ -117,6 +149,50 @@ def main(argv: list[str] | None = None) -> int:
         ))
         return 0
 
+    if args.launch_under_winedbg and args.executable.suffix.lower() == ".zip":
+        print(json.dumps({
+            "format": "SHIFT.SDFRuntimeProbeLauncher/1",
+            "status": "blocked",
+            "ready": False,
+            "error": (
+                "--launch-under-winedbg requires a direct retail SHIFT.exe; "
+                "ZIP input is prepare/validation-only because the extracted "
+                "executable has no game directory"
+            ),
+        }, ensure_ascii=False, indent=2), file=sys.stderr)
+        return 2
+
+    if not args.launch_under_winedbg and (
+        args.winedbg_port is not None or args.game_arg
+    ):
+        print(json.dumps({
+            "format": "SHIFT.SDFRuntimeProbeLauncher/1",
+            "status": "blocked",
+            "ready": False,
+            "error": (
+                "--winedbg-port and --game-arg require "
+                "--launch-under-winedbg"
+            ),
+        }, ensure_ascii=False, indent=2), file=sys.stderr)
+        return 2
+
+    startup_port = None
+    if args.launch_under_winedbg:
+        try:
+            startup_port = (
+                int(args.winedbg_port)
+                if args.winedbg_port is not None
+                else allocate_loopback_port()
+            )
+        except Exception as exc:
+            print(json.dumps({
+                "format": "SHIFT.SDFRuntimeProbeLauncher/1",
+                "status": "blocked",
+                "ready": False,
+                "error": f"{type(exc).__name__}: {exc}",
+            }, ensure_ascii=False, indent=2), file=sys.stderr)
+            return 2
+
     try:
         manifest = prepare_probe_bundle(
             args.executable,
@@ -126,6 +202,12 @@ def main(argv: list[str] | None = None) -> int:
             relation_timeline_only=args.relation_timeline_only,
             stop_after_relation_mutation=args.stop_after_relation_mutation,
             capture_frames=args.capture_frames,
+            startup_mode=(
+                "winedbg-gdb-proxy"
+                if args.launch_under_winedbg
+                else "external-attach"
+            ),
+            gdb_proxy_port=startup_port,
         )
     except Exception as exc:
         print(json.dumps({
@@ -167,29 +249,83 @@ def main(argv: list[str] | None = None) -> int:
             args.capture_frames is not None
             or args.stop_after_relation_mutation
         ),
+        "startup_mode": (
+            "winedbg-gdb-proxy"
+            if args.launch_under_winedbg
+            else "external-attach"
+        ),
     }
 
-    if args.attach_pid is not None:
-        try:
-            command = build_attach_command(
-                pid=args.attach_pid,
-                gdb_command_file=args.output / "attach.gdb",
-                gdb_command=args.gdb,
-            )
-        except Exception as exc:
-            print(json.dumps({
-                **result,
-                "status": "blocked",
-                "ready": False,
-                "error": str(exc),
-            }, ensure_ascii=False, indent=2))
-            return 2
-        result["attach_command"] = command
-        result["status"] = "attaching"
+    if args.attach_pid is not None or args.launch_under_winedbg:
+        winedbg_process = None
+        winedbg_returncode = None
+        if args.launch_under_winedbg:
+            winedbg_log = (args.output / "winedbg_gdb_proxy.log").resolve()
+            try:
+                launch_command = build_winedbg_launch_command(
+                    executable=manifest["executable"]["path"],
+                    port=startup_port,
+                    winedbg_command=args.winedbg,
+                    game_args=args.game_arg,
+                )
+                command = build_remote_gdb_command(
+                    port=startup_port,
+                    gdb_command_file=args.output / "attach.gdb",
+                    gdb_command=args.gdb,
+                    connect_timeout=args.gdb_connect_timeout,
+                )
+                winedbg_process = launch_winedbg_gdb_proxy(
+                    launch_command,
+                    log_path=winedbg_log,
+                    workdir=Path(manifest["executable"]["path"]).parent,
+                )
+            except Exception as exc:
+                print(json.dumps({
+                    **result,
+                    "status": "blocked",
+                    "ready": False,
+                    "error": f"{type(exc).__name__}: {exc}",
+                }, ensure_ascii=False, indent=2))
+                return 2
+            result["winedbg_launch_command"] = launch_command
+            result["remote_gdb_command"] = command
+            result["winedbg_port"] = startup_port
+            result["winedbg_log"] = str(winedbg_log)
+            result["status"] = "launching-under-winedbg"
+        else:
+            try:
+                command = build_attach_command(
+                    pid=args.attach_pid,
+                    gdb_command_file=args.output / "attach.gdb",
+                    gdb_command=args.gdb,
+                )
+            except Exception as exc:
+                print(json.dumps({
+                    **result,
+                    "status": "blocked",
+                    "ready": False,
+                    "error": str(exc),
+                }, ensure_ascii=False, indent=2))
+                return 2
+            result["attach_command"] = command
+            result["status"] = "attaching"
+
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        gdb_returncode = subprocess.call(command)
+        try:
+            gdb_returncode = subprocess.call(command)
+        finally:
+            if winedbg_process is not None:
+                winedbg_returncode = finish_winedbg_gdb_proxy(
+                    winedbg_process
+                )
 
         if args.provider_only:
+            if args.launch_under_winedbg:
+                return (
+                    0
+                    if gdb_returncode == 0 and winedbg_returncode == 0
+                    else 2
+                )
             return gdb_returncode
 
         try:
@@ -202,6 +338,7 @@ def main(argv: list[str] | None = None) -> int:
                 "status": "blocked",
                 "ready": False,
                 "gdb_returncode": gdb_returncode,
+                "winedbg_returncode": winedbg_returncode,
                 "post_capture": {
                     "automatic_timeline_correlation": True,
                     "timeline_output": str(
@@ -224,6 +361,7 @@ def main(argv: list[str] | None = None) -> int:
                 "status": "blocked",
                 "ready": False,
                 "gdb_returncode": gdb_returncode,
+                "winedbg_returncode": winedbg_returncode,
                 "post_capture": {
                     "automatic_timeline_correlation": True,
                     "timeline_output": str(
@@ -262,6 +400,7 @@ def main(argv: list[str] | None = None) -> int:
 
         final_ready = (
             gdb_returncode == 0
+            and winedbg_returncode in (None, 0)
             and bool(timeline["ready"])
             and bool(evidence_bundle["ready"])
             and bool(evidence_bundle_verification["ready"])
@@ -272,6 +411,7 @@ def main(argv: list[str] | None = None) -> int:
             "status": "completed" if final_ready else "blocked",
             "ready": final_ready,
             "gdb_returncode": gdb_returncode,
+            "winedbg_returncode": winedbg_returncode,
             "post_capture": {
                 "automatic_timeline_correlation": True,
                 "timeline_output": str(
