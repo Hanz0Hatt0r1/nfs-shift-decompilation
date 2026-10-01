@@ -266,8 +266,9 @@ PreparedPostSolveBodyProjection load_prepared_post_solve_body_projection(
     return out;
 }
 
-PostSolveBodyProjectionResult execute_prepared_post_solve_body_projection(
+PostSolveBodyProjectionResult execute_post_solve_body_projection_with_solution(
     const PreparedPostSolveBodyProjection& projection,
+    const std::vector<double>& solver_vector,
     double tolerance) {
 
     if (!std::isfinite(tolerance) || tolerance <= 0.0) {
@@ -278,14 +279,36 @@ PostSolveBodyProjectionResult execute_prepared_post_solve_body_projection(
         throw std::runtime_error(
             "post-solve projection body/oracle cardinality mismatch");
     }
+    if (solver_vector.size() != projection.solver_vector.size()) {
+        throw std::runtime_error(
+            "post-solve solved-vector cardinality mismatch");
+    }
+
+    double max_join_error = 0.0;
+    for (std::size_t i = 0; i < solver_vector.size(); ++i) {
+        const double actual = solver_vector[i];
+        const double expected = projection.solver_vector[i];
+        if (!std::isfinite(actual)) {
+            throw std::runtime_error(
+                "post-solve solved-vector contains non-finite value");
+        }
+        const double error = std::abs(actual - expected);
+        max_join_error = std::max(max_join_error, error);
+        const double limit =
+            tolerance * std::max(1.0, std::abs(expected));
+        if (error > limit) {
+            throw std::runtime_error(
+                "post-solve solved-vector join mismatch");
+        }
+    }
 
     std::vector<BodyAccumulatorState> bodies = projection.bodies;
 
     for (const auto& row : projection.joints) {
         const std::array<double, 3> solution = {
-            projection.solver_vector[row.scalar_base + 0u],
-            projection.solver_vector[row.scalar_base + 1u],
-            projection.solver_vector[row.scalar_base + 2u],
+            solver_vector[row.scalar_base + 0u],
+            solver_vector[row.scalar_base + 1u],
+            solver_vector[row.scalar_base + 2u],
         };
         apply_body_delta(
             bodies[row.positive_body],
@@ -301,9 +324,9 @@ PostSolveBodyProjectionResult execute_prepared_post_solve_body_projection(
 
     for (const auto& row : projection.hinges) {
         const double s0 =
-            projection.solver_vector[row.scalar_base + 0u];
+            solver_vector[row.scalar_base + 0u];
         const double s1 =
-            projection.solver_vector[row.scalar_base + 1u];
+            solver_vector[row.scalar_base + 1u];
         for (std::size_t component = 0; component < 3; ++component) {
             bodies[row.positive_body].angular[component] +=
                 row.positive_angular_row[component] * s0 +
@@ -316,7 +339,7 @@ PostSolveBodyProjectionResult execute_prepared_post_solve_body_projection(
 
     for (const auto& row : projection.bars) {
         const double scalar =
-            projection.solver_vector[row.scalar_base];
+            solver_vector[row.scalar_base];
         const std::array<double, 3> contribution = {
             row.direction[0] * scalar,
             row.direction[1] * scalar,
@@ -358,7 +381,17 @@ PostSolveBodyProjectionResult execute_prepared_post_solve_body_projection(
         }
     }
 
-    return {std::move(bodies), max_error};
+    return {std::move(bodies), max_error, max_join_error};
+}
+
+PostSolveBodyProjectionResult execute_prepared_post_solve_body_projection(
+    const PreparedPostSolveBodyProjection& projection,
+    double tolerance) {
+
+    return execute_post_solve_body_projection_with_solution(
+        projection,
+        projection.solver_vector,
+        tolerance);
 }
 
 }  // namespace shift::runtime::physics
