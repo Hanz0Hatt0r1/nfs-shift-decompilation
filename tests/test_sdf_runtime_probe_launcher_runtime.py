@@ -13,6 +13,7 @@ def test_build_gdb_command_file_is_deterministic(tmp_path):
     assert command == (
         f"set pagination off\n"
         f"set confirm off\n"
+        f"handle SIGUSR1 nostop noprint pass\n"
         f"source {(tmp_path / 'probe.py').resolve()}\n"
         f"sdf-probe {(tmp_path / 'capture').resolve()}\n"
         "continue\n"
@@ -28,6 +29,7 @@ def test_build_gdb_command_file_supports_provider_only_mode(tmp_path):
     assert command == (
         f"set pagination off\n"
         f"set confirm off\n"
+        f"handle SIGUSR1 nostop noprint pass\n"
         f"source {(tmp_path / 'probe.py').resolve()}\n"
         f"sdf-probe {(tmp_path / 'capture').resolve()} --provider-only\n"
         "continue\n"
