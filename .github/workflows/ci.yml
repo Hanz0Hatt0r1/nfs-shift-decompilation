@@ -62,30 +62,7 @@ jobs:
         run: cmake -S native_capture -B native_capture/build -A Win32
       - name: Build D3D9 capture producer
         run: cmake --build native_capture/build --config Release
-      - name: Verify D3D9 proxy exports
-        shell: pwsh
-        run: |
-          $dll = Resolve-Path "native_capture/build/Release/d3d9.dll"
-          $exports = & dumpbin /nologo /exports $dll
-          $required = @(
-            "Direct3DCreate9",
-            "Direct3DCreate9Ex",
-            "D3DPERF_BeginEvent",
-            "D3DPERF_EndEvent",
-            "D3DPERF_GetStatus",
-            "D3DPERF_QueryRepeatFrame",
-            "D3DPERF_SetMarker",
-            "D3DPERF_SetOptions",
-            "D3DPERF_SetRegion",
-            "DebugSetLevel",
-            "DebugSetMute"
-          )
-          foreach ($name in $required) {
-            if (-not ($exports -match ("\\b" + [regex]::Escape($name) + "\\b"))) {
-              throw "missing D3D9 proxy export: $name"
-            }
-          }
-      - name: Run D3D9 passthrough smoke test
+      - name: Verify D3D9 exports and passthrough forwarding
         shell: pwsh
         run: |
           $dll = Resolve-Path "native_capture/build/Release/d3d9.dll"
@@ -101,3 +78,11 @@ jobs:
           Get-Content $log | ForEach-Object {
             $_ | ConvertFrom-Json | Out-Null
           }
+      - name: Upload D3D9 proxy build
+        uses: actions/upload-artifact@v4
+        with:
+          name: shift-d3d9-proxy-win32
+          path: |
+            native_capture/build/Release/d3d9.dll
+            native_capture/build/Release/shift_d3d9_proxy_smoke.exe
+          if-no-files-found: error
