@@ -128,7 +128,7 @@ It does not derive:
 - BODY `+0x150/+0x154` contribution values;
 - `FUN_007bc680` projection coefficients;
 - `FUN_007b3ed0` sampled-state refresh;
-- runtime `sample+0x70 & 1` reset selection;
+- runtime `relation+0x70 & 1` reset selection;
 - provider-present dispatch.
 
 It also does not yet replace the matrix/RHS embedded in
