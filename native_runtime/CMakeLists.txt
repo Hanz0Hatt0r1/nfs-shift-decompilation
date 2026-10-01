@@ -51,6 +51,7 @@ add_library(shift_runtime_physics STATIC
   src/body_export_solver_join.cpp
   src/body_preprojection.cpp
   src/bar_projection.cpp
+  src/bar_matrix_coupling.cpp
   src/hinge_projection.cpp
   src/hinge_bar_matrix_coupling.cpp
   src/hinge_matrix_coupling.cpp
@@ -88,6 +89,13 @@ add_executable(shift_runtime_joint_projection_check
 target_link_libraries(shift_runtime_joint_projection_check PRIVATE
   shift_runtime_physics)
 target_compile_options(shift_runtime_joint_projection_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+add_executable(shift_runtime_bar_matrix_coupling_check
+  tests/bar_matrix_coupling_check.cpp)
+target_link_libraries(shift_runtime_bar_matrix_coupling_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_bar_matrix_coupling_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
 add_executable(shift_runtime_bar_projection_check
@@ -180,6 +188,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_joint_projection
     COMMAND shift_runtime_joint_projection_check)
+  add_test(
+    NAME shift_runtime_bar_matrix_coupling
+    COMMAND shift_runtime_bar_matrix_coupling_check)
   add_test(
     NAME shift_runtime_bar_projection
     COMMAND shift_runtime_bar_projection_check)

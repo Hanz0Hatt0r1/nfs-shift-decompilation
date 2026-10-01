@@ -373,6 +373,48 @@ jobs:
             out/vulkan/runtime/hinge_bar_matrix_coupling.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/hinge_bar_matrix_coupling.json
+      - name: Native FUN_007bb6c0 BAR matrix coupling
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_bar_matrix_coupling
+          native_runtime/build/shift_runtime_bar_matrix_coupling_check \
+            | tee out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"format": "SHIFT.NativeBarMatrixCouplingCheck/1"' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"source_function": "FUN_007bb6c0"' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"transform_source_function": "FUN_007aefb0"' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"source_line": 819471' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"sample_stride": 96' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"self_coefficient_verified": true' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"pair_coefficient_verified": true' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"lower_triangle_cell_verified": true' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"scalar_application_verified": true' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path(
+                  "out/vulkan/runtime/bar_matrix_coupling.json"
+              ).read_text(encoding="utf-8")
+          )
+          if float(report["max_absolute_error"]) > 1e-12:
+              raise SystemExit(
+                  "native BAR matrix coupling exceeded 1e-12 parity tolerance"
+              )
+          PY
+          grep -q '"full_fun_007bb6c0_iteration_executed": false' \
+            out/vulkan/runtime/bar_matrix_coupling.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/bar_matrix_coupling.json
       - name: Native BODY solver export parity
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \

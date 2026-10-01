@@ -604,3 +604,22 @@ range/non-finite rejection at `1e-12` parity tolerance.
 
 All currently recovered block algebra in `FUN_007bb250` is now native.
 Complete HINGE iteration/sparse writes and BAR/BAR `FUN_007bb6c0` remain.
+
+
+## Phase 623 native FUN_007bb6c0 BAR/BAR matrix coupling
+
+The native physics library now executes the source-backed BAR/BAR matrix
+coefficient algebra from `FUN_007bb6c0`.
+
+The port preserves the BAR point×direction cross product, exact
+`FUN_007aefb0` float transform boundary, inverse-scalar direction terms,
+self coefficient, pair coefficient, equal/different-side sign rule and
+max-base/min-base lower-triangle cell selection.
+
+`shift_runtime_bar_matrix_coupling_check` freezes self=262 and pair=388
+oracles, verifies lower-triangle addressing and bounded scalar writes, and
+rejects range/non-finite inputs at `1e-12` parity tolerance.
+
+With Phases 620–623, all currently recovered JOINT/HINGE/BAR matrix block
+algebra is native. Full BODY-owned sample iteration and sparse row-pointer
+orchestration remain the next contribution-builder boundary.
