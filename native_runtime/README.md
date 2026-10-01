@@ -385,3 +385,19 @@ A deterministic packet-only check is also available:
 native_runtime/build/shift_runtime_post_solve_persistence_check \
   out/native-post-solve/post_solve.sbps 5
 ```
+
+
+## Phase 612 native BODY solver export
+
+The native physics library also exposes the source-backed
+`FUN_007ba570` additive BODY contribution transfer.
+
+Run its deterministic regression with:
+
+```bash
+native_runtime/build/shift_runtime_body_solver_export_check
+```
+
+This primitive accepts already-prepared BODY solver-vector and solver-matrix
+contributions and adds them into caller-owned destinations. It does not derive
+those contributions or claim complete retail matrix/RHS assembly.
