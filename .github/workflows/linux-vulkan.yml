@@ -268,6 +268,111 @@ jobs:
             out/vulkan/runtime/solver_frame_check.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/solver_frame_check.json
+      - name: Join prepared BODY export to builtin solver frame
+        run: |
+          mkdir -p out/vulkan/runtime/body_export_solver_join
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = {
+              "format": "SHIFT.NativeBodySolverExportFrameInput/1",
+              "version": 1,
+              "verification_scope": "synthetic-body-export-solver-join",
+              "contribution_values_ready": True,
+              "body_order_ready": True,
+              "destination_shape_ready": True,
+              "body_count": 3,
+              "solver_scalar_count": 3,
+              "bodies": [
+                  {
+                      "body_index": 0,
+                      "solver_vector": [9.0],
+                      "solver_matrix": [4.0, 1.0, 1.0],
+                  },
+                  {
+                      "body_index": 1,
+                      "solver_vector": [0.0, 7.0],
+                      "solver_matrix": [0.0, 0.0, 0.0, 1.0, 3.0],
+                  },
+                  {
+                      "body_index": 2,
+                      "solver_vector": [0.0, 0.0, 7.0],
+                      "solver_matrix": [
+                          0.0, 0.0, 0.0,
+                          0.0, 0.0, 0.0,
+                          1.0, 0.0, 2.0,
+                      ],
+                  },
+              ],
+          }
+          Path(
+              "out/vulkan/runtime/body_export_solver_join_input.json"
+          ).write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-body-solver-export-frame \
+            out/vulkan/runtime/body_export_solver_join_input.json \
+            out/vulkan/runtime/body_export_solver_join \
+            > out/vulkan/runtime/body_export_solver_join_prepare.json
+          native_runtime/build/shift_runtime_body_export_solver_join_check \
+            out/vulkan/runtime/body_export_solver_join/body_solver_export.sbex \
+            out/vulkan/runtime/solver_frame/solver_frame.sbfr \
+            | tee out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"format": "SHIFT.NativeBodyExportSolverFrameJoinCheck/1"' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"body_export_source_function": "FUN_007ba570"' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"reset_source_function": "FUN_007b2210"' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"solve_source_function": "FUN_007b0f20"' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"scalar_count": 3' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"matrix_double_count": 9' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"max_rhs_join_error": 0' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"max_matrix_join_error": 0' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"max_solver_oracle_error": 0' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/body_export_solver_join_check.json
+      - name: Reject mismatched BODY export solver join
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          source = Path(
+              "out/vulkan/runtime/body_export_solver_join_input.json"
+          )
+          payload = json.loads(source.read_text(encoding="utf-8"))
+          payload["bodies"][0]["solver_vector"][0] += 1.0
+          target = Path(
+              "out/vulkan/runtime/body_export_solver_join_mismatch_input.json"
+          )
+          target.write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-body-solver-export-frame \
+            out/vulkan/runtime/body_export_solver_join_mismatch_input.json \
+            out/vulkan/runtime/body_export_solver_join_mismatch
+          if native_runtime/build/shift_runtime_body_export_solver_join_check \
+            out/vulkan/runtime/body_export_solver_join_mismatch/body_solver_export.sbex \
+            out/vulkan/runtime/solver_frame/solver_frame.sbfr \
+            > out/vulkan/runtime/body_export_solver_join_mismatch.stdout \
+            2> out/vulkan/runtime/body_export_solver_join_mismatch.stderr; then
+            echo "BODY export/solver join unexpectedly accepted mismatch"
+            exit 1
+          fi
+          grep -q "BODY export/RHS join mismatch" \
+            out/vulkan/runtime/body_export_solver_join_mismatch.stderr
       - name: Reject incomplete native solver-frame proofs
         run: |
           python3 - <<'PY'
