@@ -33,6 +33,8 @@ param(
 
     [string]$ResourceTrigger = "",
 
+    [switch]$ResourceTriggerRepeat,
+
     [ValidateRange(0, 120)]
     [int]$PreFrames = 2,
 
@@ -111,6 +113,7 @@ $oldTriggerPost = $env:SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES
 $oldTriggerKey = $env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY
 $oldTriggerFile = $env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE
 $oldResourceTrigger = $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER
+$oldResourceTriggerRepeat = $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT
 
 try {
     if ($hadSidecar) {
@@ -147,6 +150,11 @@ try {
         } else {
             Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER -ErrorAction SilentlyContinue
         }
+        if ($ResourceTriggerRepeat) {
+            $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT = "1"
+        } else {
+            Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT -ErrorAction SilentlyContinue
+        }
     } else {
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER -ErrorAction SilentlyContinue
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES -ErrorAction SilentlyContinue
@@ -154,6 +162,7 @@ try {
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY -ErrorAction SilentlyContinue
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE -ErrorAction SilentlyContinue
         Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER -ErrorAction SilentlyContinue
+        Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT -ErrorAction SilentlyContinue
     }
     if ($stagedBackend) {
         $env:SHIFT_D3D9_BACKEND = $sidecarDll
@@ -206,6 +215,7 @@ try {
         Write-Host "Trigger : F10 (pre=$PreFrames, post=$PostFrames)"
         Write-Host "          or create $triggerFile"
         if ($ResourceTrigger) { Write-Host "Resource: $ResourceTrigger" }
+        if ($ResourceTriggerRepeat) { Write-Host "Repeat  : enabled" }
     }
     if ($CaptureBufferPayloads) { Write-Host "Buffers : $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR" }
     if ($CaptureTexturePayloads) { Write-Host "Tex raw : $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR" }
@@ -262,6 +272,7 @@ finally {
     if ($null -eq $oldTriggerKey) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY = $oldTriggerKey }
     if ($null -eq $oldTriggerFile) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE = $oldTriggerFile }
     if ($null -eq $oldResourceTrigger) { Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER = $oldResourceTrigger }
+    if ($null -eq $oldResourceTriggerRepeat) { Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER_REPEAT = $oldResourceTriggerRepeat }
 }
 
 if ($exitCode -ne 0) {
