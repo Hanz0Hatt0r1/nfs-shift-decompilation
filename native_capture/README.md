@@ -58,6 +58,28 @@ set SHIFT_D3D9_CAPTURE_MODE=capture
 SHIFT.exe
 ```
 
+Under Wine, prefer the native proxy explicitly and set the same mode before
+launching the game:
+
+```bash
+export WINEDLLOVERRIDES="d3d9=n,b"
+export SHIFT_D3D9_CAPTURE="$PWD/shift_d3d9_capture.jsonl"
+
+export SHIFT_D3D9_CAPTURE_MODE=passthrough
+wine SHIFT.exe
+
+# If passthrough is clean, advance to lifecycle diagnostics:
+export SHIFT_D3D9_CAPTURE_MODE=diagnostic
+wine SHIFT.exe
+
+# Enable full resource/shader/draw capture only after diagnostic mode is clean:
+export SHIFT_D3D9_CAPTURE_MODE=capture
+wine SHIFT.exe
+```
+
+Remove or rotate the JSONL log between runs so each diagnosis corresponds to a
+single launch.
+
 Interpretation:
 
 - failure in `passthrough` points to proxy loading/export/system-DLL forwarding rather than a capture hook;
