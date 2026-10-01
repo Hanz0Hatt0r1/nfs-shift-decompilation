@@ -28,6 +28,11 @@ for path in (ROOT, PHYSICS_SRC):
 
 import gdb
 
+from sdf_runtime_probe_capture_session import (
+    capture_artifact_paths,
+    new_capture_session_id,
+    validate_capture_session_id,
+)
 from sdf_runtime_probe_runtime import (
     FUNCTIONS,
     RELATION_STATE_MUTATION_LAYOUT,
@@ -66,6 +71,7 @@ def _doubles(inferior: gdb.Inferior, address: int, count: int) -> list[float]:
 
 _SCALAR_RESET_EVENT_COUNT = 0
 _RUNTIME_EVENT_SEQUENCE = 0
+_CAPTURE_SESSION_ID: str | None = None
 
 
 def _next_runtime_event_sequence() -> int:
@@ -85,6 +91,17 @@ _LAST_FRAME_ENTRY = {
     "scalar_reset_start_count": 0,
     "scalar_reset_end_count": 0,
 }
+
+
+def _stamp_capture_session(payload: dict) -> dict:
+    if _CAPTURE_SESSION_ID is None:
+        raise RuntimeError("capture session is not initialized")
+    stamped = dict(payload)
+    existing = stamped.get("capture_session_id")
+    if existing is not None and existing != _CAPTURE_SESSION_ID:
+        raise RuntimeError("capture payload session id mismatch")
+    stamped["capture_session_id"] = _CAPTURE_SESSION_ID
+    return stamped
 
 
 def _provider_vtable_condition(
@@ -161,6 +178,7 @@ def _append_jsonl(
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     target = output_dir / name
+    payload = _stamp_capture_session(payload)
     with target.open("a", encoding="utf-8") as stream:
         stream.write(
             json.dumps(
@@ -213,6 +231,7 @@ class _BaseProbe(gdb.Breakpoint):
     def write_json(self, name: str, payload: dict) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         target = self.output_dir / name
+        payload = _stamp_capture_session(payload)
         target.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
@@ -278,6 +297,7 @@ class ProviderResetReturnProbe(gdb.FinishBreakpoint):
             output_before=self.output_before,
             output_after=output_after,
         )
+        event = _stamp_capture_session(event)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         target = self.output_dir / "provider_reset_effects.jsonl"
         with target.open("a", encoding="utf-8") as stream:
@@ -655,6 +675,7 @@ class ProviderSolveReturnProbe(gdb.FinishBreakpoint):
             self.hit,
             runtime_event_sequence,
         )
+        payload = _stamp_capture_session(payload)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         target = self.output_dir / (
             f"provider_post_{self.provider_id}_{self.hit:06d}.json"
@@ -764,13 +785,33 @@ class SDFProbeCommand(gdb.Command):
         self.breakpoints: list[gdb.Breakpoint] = []
 
     def invoke(self, argument: str, from_tty: bool) -> None:
+        global _CAPTURE_SESSION_ID
+        global _RUNTIME_EVENT_SEQUENCE
+        global _SCALAR_RESET_EVENT_COUNT
+
         args = gdb.string_to_argv(argument)
         provider_only = False
         capture_frames = None
+        capture_session_id = None
 
         if "--provider-only" in args:
             provider_only = True
             args.remove("--provider-only")
+
+        if "--session-id" in args:
+            index = args.index("--session-id")
+            if index + 1 >= len(args):
+                raise gdb.GdbError(
+                    "--session-id requires a 32-character hexadecimal id"
+                )
+            raw_session_id = args[index + 1]
+            del args[index:index + 2]
+            try:
+                capture_session_id = validate_capture_session_id(
+                    raw_session_id
+                )
+            except ValueError as exc:
+                raise gdb.GdbError(str(exc)) from exc
 
         if "--capture-frames" in args:
             index = args.index("--capture-frames")
@@ -799,9 +840,28 @@ class SDFProbeCommand(gdb.Command):
         if len(args) != 1:
             raise gdb.GdbError(
                 "usage: sdf-probe OUTPUT_DIR [--provider-only] "
-                "[--capture-frames N]"
+                "[--capture-frames N] [--session-id ID]"
             )
         output = Path(os.path.expanduser(args[0])).resolve()
+        stale_artifacts = capture_artifact_paths(output)
+        if stale_artifacts:
+            names = ", ".join(path.name for path in stale_artifacts)
+            raise gdb.GdbError(
+                "capture output contains stale evidence artifacts: " + names
+            )
+
+        if capture_session_id is None:
+            capture_session_id = new_capture_session_id()
+        _CAPTURE_SESSION_ID = capture_session_id
+        _RUNTIME_EVENT_SEQUENCE = 0
+        _SCALAR_RESET_EVENT_COUNT = 0
+        _LAST_FRAME_ENTRY.update({
+            "frame_index": None,
+            "physics_system": None,
+            "runtime_event_sequence": None,
+            "scalar_reset_start_count": 0,
+            "scalar_reset_end_count": 0,
+        })
 
         for breakpoint in self.breakpoints:
             for return_breakpoint in getattr(
@@ -868,6 +928,7 @@ class SDFProbeCommand(gdb.Command):
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
             f"mode={'provider-only' if provider_only else 'full'},",
             f"capture_frames={capture_frames},",
+            f"capture_session_id={capture_session_id},",
             f"output={output}",
         )
 
