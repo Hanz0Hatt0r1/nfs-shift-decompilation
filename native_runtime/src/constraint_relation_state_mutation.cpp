@@ -262,4 +262,60 @@ dispatch_fun_00757d2c_vehicle_slot_relation_state_mutation(
     return result;
 }
 
+ConstraintRelationStateInitializationResult
+apply_fun_0076ed60_vehicle_relation_state_initialization(
+    const PreparedConstraintSampleRelationFrame& relations,
+    const PreparedConstraintRelationResetFrame& state,
+    const VehicleConstraintBodyIdentityMap& body_map,
+    const VehicleConstraintRelationInitializationState& initialization) {
+
+    validate_relation_frame(relations, state);
+    validate_vehicle_body_identity_map(relations, body_map);
+
+    ConstraintRelationStateInitializationResult result{};
+    result.frame = state;
+
+    for (std::size_t slot = 0;
+         slot < kVehicleConstraintComponentCount;
+         ++slot) {
+        if (!initialization.mutation_enabled[slot]) {
+            continue;
+        }
+
+        const auto dispatch =
+            dispatch_fun_00757d2c_vehicle_slot_relation_state_mutation(
+                relations,
+                result.frame,
+                body_map,
+                slot,
+                initialization.spindle_body_present[slot]);
+
+        result.frame = dispatch.mutation.frame;
+        result.slot_dispatched[slot] = true;
+        result.dispatched_slot_order[result.dispatched_slot_count] = slot;
+        ++result.dispatched_slot_count;
+
+        if (initialization.spindle_body_present[slot]) {
+            ++result.bar_branch_dispatch_count;
+        } else {
+            ++result.pair_branch_dispatch_count;
+        }
+
+        result.matched_joint_relation_count +=
+            dispatch.mutation.matched_joint_relation_count;
+        result.matched_hinge_relation_count +=
+            dispatch.mutation.matched_hinge_relation_count;
+        result.matched_bar_relation_count +=
+            dispatch.mutation.matched_bar_relation_count;
+        result.newly_set_joint_relation_count +=
+            dispatch.mutation.newly_set_joint_relation_count;
+        result.newly_set_hinge_relation_count +=
+            dispatch.mutation.newly_set_hinge_relation_count;
+        result.newly_set_bar_relation_count +=
+            dispatch.mutation.newly_set_bar_relation_count;
+    }
+
+    return result;
+}
+
 }  // namespace shift::runtime::physics
