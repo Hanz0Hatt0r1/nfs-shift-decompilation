@@ -62,6 +62,7 @@ def test_validate_probe_script_accepts_provider_probe(tmp_path: Path):
             "name = 'provider_pre_000000.json'",
             "name2 = 'provider_post_000000.json'",
             "path = 'scalar_reset_events.jsonl'",
+            "mutation_path = 'relation_state_mutation_events.jsonl'",
             "build_provider_capture_payload = object()",
         ]) + "\n",
         encoding="utf-8",
@@ -86,6 +87,7 @@ def test_validate_probe_script_blocks_unrelated_python(tmp_path: Path):
     assert "probe-script-missing-marker:provider-pre-capture" in report["errors"]
     assert "probe-script-missing-marker:provider-post-capture" in report["errors"]
     assert "probe-script-missing-marker:scalar-reset-capture" in report["errors"]
+    assert "probe-script-missing-marker:relation-state-mutation-capture" in report["errors"]
     assert "probe-script-missing-marker:provider-snapshot" in report["errors"]
 
 
