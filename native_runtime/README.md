@@ -517,3 +517,21 @@ application and fail-closed range/finite checks.
 
 JOINT/HINGE/BAR projection primitives are now independently native. Authentic
 BODY sample iteration and the matrix-coupling stages remain separate.
+
+
+## Phase 620 native JOINT matrix coupling
+
+Run the deterministic source-backed JOINT matrix regression:
+
+```bash
+native_runtime/build/shift_runtime_joint_matrix_coupling_check
+```
+
+The checker validates `FUN_007bbb80` JOINT self, JOINT↔JOINT,
+JOINT↔HINGE and JOINT↔BAR blocks, including lower-triangle transpose/sign
+behavior, the corrected `d15 = m00*y - m01*x` source term and bounded block
+application.
+
+The outer retail JOINT sample loop and sparse runtime row-pointer writes are not
+yet executed by this checker. HINGE/HINGE, HINGE/BAR and BAR/BAR coupling stay
+in their dedicated source-backed stages.
