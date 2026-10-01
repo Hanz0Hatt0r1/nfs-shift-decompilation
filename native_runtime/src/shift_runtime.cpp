@@ -3414,6 +3414,8 @@ int main(int argc, char** argv) {
         std::size_t constraint_relation_reset_selected_hinge_count = 0;
         std::size_t constraint_relation_reset_selected_bar_count = 0;
         std::size_t constraint_relation_reset_node_count = 0;
+        std::size_t constraint_relation_reset_call_count = 0;
+        bool constraint_relation_reset_matches_solver_frame = false;
         if (constraint_relation_reset_frame_mode &&
             !constraint_sample_relation_frame_mode) {
             throw std::runtime_error(
@@ -3557,8 +3559,27 @@ int main(int argc, char** argv) {
                 reset_selection.selected_hinge_relation_count;
             constraint_relation_reset_selected_bar_count =
                 reset_selection.selected_bar_relation_count;
-            constraint_relation_reset_node_count =
+            constraint_relation_reset_call_count =
                 reset_selection.reset_nodes.size();
+
+            auto normalized_reset_nodes =
+                reset_selection.reset_nodes;
+            std::sort(
+                normalized_reset_nodes.begin(),
+                normalized_reset_nodes.end());
+            normalized_reset_nodes.erase(
+                std::unique(
+                    normalized_reset_nodes.begin(),
+                    normalized_reset_nodes.end()),
+                normalized_reset_nodes.end());
+            constraint_relation_reset_node_count =
+                normalized_reset_nodes.size();
+            if (normalized_reset_nodes != solver_frame.reset_nodes) {
+                throw std::runtime_error(
+                    "constraint relation reset nodes do not match "
+                    "solver frame");
+            }
+            constraint_relation_reset_matches_solver_frame = true;
         }
 
         const bool post_solve_projection_mode =
@@ -3695,8 +3716,6 @@ int main(int argc, char** argv) {
                             generated_join.max_matrix_join_error);
                     ++generated_body_constraint_join_steps;
                 }
-                shift::runtime::physics::
-                    PreparedBuiltinSolverFrameResult solver_result{};
                 if (constraint_relation_reset_frame_mode) {
                     const auto reset_selection =
                         shift::runtime::physics::
@@ -3704,18 +3723,28 @@ int main(int argc, char** argv) {
                                 generated_body_constraint_frame,
                                 constraint_sample_relation_frame,
                                 constraint_relation_reset_frame);
-                    solver_result =
-                        shift::runtime::physics::
-                            execute_prepared_builtin_solver_frame_with_reset_nodes(
-                                solver_frame,
-                                reset_selection.reset_nodes);
+                    auto normalized_reset_nodes =
+                        reset_selection.reset_nodes;
+                    std::sort(
+                        normalized_reset_nodes.begin(),
+                        normalized_reset_nodes.end());
+                    normalized_reset_nodes.erase(
+                        std::unique(
+                            normalized_reset_nodes.begin(),
+                            normalized_reset_nodes.end()),
+                        normalized_reset_nodes.end());
+                    if (normalized_reset_nodes !=
+                        solver_frame.reset_nodes) {
+                        throw std::runtime_error(
+                            "constraint relation reset nodes do not match "
+                            "solver frame");
+                    }
                     ++constraint_relation_reset_selection_steps;
-                } else {
-                    solver_result =
-                        shift::runtime::physics::
-                            execute_prepared_builtin_solver_frame(
-                                solver_frame);
                 }
+                const auto solver_result =
+                    shift::runtime::physics::
+                        execute_prepared_builtin_solver_frame(
+                            solver_frame);
                 solver_frame_max_oracle_error =
                     std::max(
                         solver_frame_max_oracle_error,
@@ -3920,13 +3949,9 @@ int main(int argc, char** argv) {
             << "  \"physics_solver_frame_reset_node_count\": "
             << solver_frame_reset_node_count << ",\n"
             << "  \"physics_solver_effective_reset_node_count\": "
-            << (constraint_relation_reset_frame_mode ?
-                constraint_relation_reset_node_count :
-                solver_frame_reset_node_count)
+            << solver_frame_reset_node_count
             << ",\n"
-            << "  \"physics_solver_frame_reset_nodes_consumed\": "
-            << (constraint_relation_reset_frame_mode ? "false" : "true")
-            << ",\n"
+            << "  \"physics_solver_frame_reset_nodes_consumed\": true,\n"
             << "  \"physics_solver_frame_steps\": "
             << solver_frame_steps << ",\n"
             << "  \"physics_solver_frame_max_oracle_error\": "
@@ -3993,8 +4018,13 @@ int main(int argc, char** argv) {
             << constraint_relation_reset_selected_hinge_count << ",\n"
             << "  \"physics_constraint_relation_reset_selected_bar_count\": "
             << constraint_relation_reset_selected_bar_count << ",\n"
+            << "  \"physics_constraint_relation_reset_call_count\": "
+            << constraint_relation_reset_call_count << ",\n"
             << "  \"physics_constraint_relation_reset_node_count\": "
             << constraint_relation_reset_node_count << ",\n"
+            << "  \"physics_constraint_relation_reset_matches_solver_frame\": "
+            << (constraint_relation_reset_matches_solver_frame ?
+                "true" : "false") << ",\n"
             << "  \"physics_constraint_relation_reset_selection_steps\": "
             << constraint_relation_reset_selection_steps << ",\n"
             << "  \"physics_constraint_relation_reset_state_offset\": 112,\n"
