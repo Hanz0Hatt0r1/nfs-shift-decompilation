@@ -3492,8 +3492,7 @@ int main(int argc, char** argv) {
                     generated_join.bar_sample_count !=
                         native_state.physics.workspace.bar_count) {
                     throw std::runtime_error(
-                        "generated BODY sample counts do not match "
-                        "physics workspace");
+                        "generated BODY sample counts do not match physics workspace");
                 }
             }
 
