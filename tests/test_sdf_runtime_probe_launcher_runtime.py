@@ -64,6 +64,7 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
     assert (output / "attach.gdb").read_text(encoding="utf-8").endswith("continue\n")
     assert result["probe"]["expected_captures"] == [
         "relation_state_mutation_events.jsonl",
+        "frame_entry_XXXXXX.json",
         "pre_solve_XXXXXX.json",
         "post_solve_XXXXXX.json",
         "provider_pre_<provider>_<hit>.json",
@@ -86,16 +87,6 @@ def test_prepare_probe_bundle_writes_manifest_and_gdb_script(tmp_path, monkeypat
         ),
         "evidence_bundle_format": "SHIFT.SDFRuntimeProbeEvidenceBundle/1",
     }
-    assert result["probe"]["expected_captures"] == [
-        "relation_state_mutation_events.jsonl",
-        "pre_solve_XXXXXX.json",
-        "post_solve_XXXXXX.json",
-        "provider_pre_<provider>_<hit>.json",
-        "provider_post_<provider>_<hit>.json",
-        "scalar_reset_events.jsonl",
-        "provider_reset_effects.jsonl",
-    ]
-
 
 def test_prepare_probe_bundle_blocks_invalid_retail_binary(tmp_path, monkeypatch):
     executable = tmp_path / "SHIFT.exe"
@@ -317,7 +308,7 @@ def test_phase642_build_gdb_command_file_rejects_nonpositive_budget(
 
 
 def test_phase642_bounded_capture_is_full_mode_only(tmp_path):
-    with pytest.raises(ValueError, match="full probe mode"):
+    with pytest.raises(ValueError, match="provider-only"):
         runtime.build_gdb_command_file(
             probe_script=tmp_path / "probe.py",
             output_dir=tmp_path / "capture",
@@ -469,3 +460,93 @@ def test_phase643_blocked_validation_preserves_existing_capture_evidence(
     assert result["ready"] is False
     assert result["capture_session"]["stale_artifact_count"] == 0
     assert stale.read_text(encoding="utf-8") == "old-evidence\n"
+
+
+def test_phase646_relation_timeline_only_command_uses_bounded_auto_detach(tmp_path):
+    command = runtime.build_gdb_command_file(
+        probe_script=tmp_path / "probe.py",
+        output_dir=tmp_path / "capture",
+        relation_timeline_only=True,
+        capture_frames=2,
+        capture_session_id="ab" * 16,
+    )
+
+    assert command == (
+        "set pagination off\n"
+        "set confirm off\n"
+        "handle SIGUSR1 nostop noprint pass\n"
+        f"source {(tmp_path / 'probe.py').resolve()}\n"
+        f"sdf-probe {(tmp_path / 'capture').resolve()} "
+        f"--session-id {'ab' * 16} --relation-timeline-only "
+        "--capture-frames 2\n"
+        "continue\n"
+        "detach\n"
+        "quit\n"
+    )
+
+
+def test_phase646_relation_timeline_only_is_mutually_exclusive_with_provider_only(
+    tmp_path,
+):
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        runtime.build_gdb_command_file(
+            probe_script=tmp_path / "probe.py",
+            output_dir=tmp_path / "capture",
+            provider_only=True,
+            relation_timeline_only=True,
+        )
+
+
+def test_phase646_prepare_bundle_records_lightweight_relation_mode(
+    tmp_path,
+    monkeypatch,
+):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    output = tmp_path / "capture"
+    probe = tmp_path / "probe.py"
+    probe.write_text("# probe\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        runtime,
+        "validate_probe_executable_file",
+        lambda path: {
+            "ready": True,
+            "sha256": "a" * 64,
+            "errors": [],
+            "format": "SHIFT.SDFRuntimeProbePEValidation/1",
+        },
+    )
+    monkeypatch.setattr(
+        runtime,
+        "new_capture_session_id",
+        lambda: "cd" * 16,
+    )
+
+    result = runtime.prepare_probe_bundle(
+        executable,
+        output,
+        probe_script=probe,
+        relation_timeline_only=True,
+        capture_frames=2,
+    )
+
+    assert result["probe"]["mode"] == "relation-timeline-only"
+    assert result["probe"]["capture_frames"] == 2
+    assert result["probe"]["auto_detach"] is True
+    assert result["probe"]["expected_captures"] == [
+        "relation_state_mutation_events.jsonl",
+        "frame_entry_XXXXXX.json",
+        "post_solve_XXXXXX.json",
+    ]
+    assert result["post_capture"]["automatic_timeline_correlation"] is True
+    assert result["post_capture"]["automatic_evidence_bundle"] is True
+    command = (output / "attach.gdb").read_text(encoding="utf-8")
+    assert "--relation-timeline-only" in command
+    assert "--capture-frames 2" in command
+
+
+def test_phase646_contract_describes_lightweight_relation_mode():
+    contract = runtime.describe_sdf_runtime_probe_launcher()
+
+    assert "relation-timeline-only" in contract["modes"]
