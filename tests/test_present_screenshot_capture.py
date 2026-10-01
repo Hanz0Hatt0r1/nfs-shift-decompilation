@@ -377,3 +377,16 @@ def test_wine_d3dx9_41_is_staged_into_prefix_and_forced_native_only():
     assert 'drive_c/windows/system32/d3dx9_41.dll' in wine
     assert 'WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n"' in wine
     assert 'D3DX9 sha256:' in wine
+
+
+def test_wine_launcher_rejects_d3dx_architecture_mismatch():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert "pe_machine()" in wine
+    assert "pe_machine_name()" in wine
+    assert 'game_machine="$(pe_machine "$game")"' in wine
+    assert 'd3dx_machine="$(pe_machine "$d3dx9_41")"' in wine
+    assert 'if [[ "$d3dx_machine" != "$game_machine" ]]' in wine
+    assert "d3dx9_41.dll architecture mismatch:" in wine
+    assert 'game_machine" == "0x014c"' in wine
+    assert 'PE arch : game=' in wine
