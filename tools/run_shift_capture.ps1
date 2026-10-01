@@ -31,6 +31,8 @@ param(
 
     [switch]$TriggerCapture,
 
+    [string]$ResourceTrigger = "",
+
     [ValidateRange(0, 120)]
     [int]$PreFrames = 2,
 
@@ -46,8 +48,8 @@ if ($FrameStart -lt -1 -or $FrameEnd -lt -1) {
 if ($FrameStart -ge 0 -and $FrameEnd -ge 0 -and $FrameEnd -lt $FrameStart) {
     throw "FrameEnd must be >= FrameStart"
 }
-if ($TriggerCapture -and ($FrameStart -ge 0 -or $FrameEnd -ge 0)) {
-    throw "TriggerCapture cannot be combined with FrameStart/FrameEnd"
+if (($TriggerCapture -or $ResourceTrigger) -and ($FrameStart -ge 0 -or $FrameEnd -ge 0)) {
+    throw "TriggerCapture/ResourceTrigger cannot be combined with FrameStart/FrameEnd"
 }
 
 $gamePath = (Resolve-Path $GameExe).Path
@@ -108,6 +110,7 @@ $oldTriggerPre = $env:SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES
 $oldTriggerPost = $env:SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES
 $oldTriggerKey = $env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY
 $oldTriggerFile = $env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE
+$oldResourceTrigger = $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER
 
 try {
     if ($hadSidecar) {
@@ -132,19 +135,25 @@ try {
     if ($FrameStart -ge 0) { $env:SHIFT_D3D9_CAPTURE_FRAME_START = [string]$FrameStart } else { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_START -ErrorAction SilentlyContinue }
     if ($FrameEnd -ge 0) { $env:SHIFT_D3D9_CAPTURE_FRAME_END = [string]$FrameEnd } else { Remove-Item Env:SHIFT_D3D9_CAPTURE_FRAME_END -ErrorAction SilentlyContinue }
     $triggerFile = Join-Path $out "capture.trigger"
-    if ($TriggerCapture) {
+    if ($TriggerCapture -or $ResourceTrigger) {
         Remove-Item -LiteralPath $triggerFile -Force -ErrorAction SilentlyContinue
         $env:SHIFT_D3D9_CAPTURE_TRIGGER = "1"
         $env:SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES = [string]$PreFrames
         $env:SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES = [string]$PostFrames
         $env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY = "0x79"
         $env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE = $triggerFile
+        if ($ResourceTrigger) {
+            $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER = $ResourceTrigger
+        } else {
+            Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER -ErrorAction SilentlyContinue
+        }
     } else {
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER -ErrorAction SilentlyContinue
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES -ErrorAction SilentlyContinue
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES -ErrorAction SilentlyContinue
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY -ErrorAction SilentlyContinue
         Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE -ErrorAction SilentlyContinue
+        Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER -ErrorAction SilentlyContinue
     }
     if ($stagedBackend) {
         $env:SHIFT_D3D9_BACKEND = $sidecarDll
@@ -193,9 +202,10 @@ try {
     if ($FrameStart -ge 0 -or $FrameEnd -ge 0) {
         Write-Host "Frames  : $FrameStart..$FrameEnd"
     }
-    if ($TriggerCapture) {
+    if ($TriggerCapture -or $ResourceTrigger) {
         Write-Host "Trigger : F10 (pre=$PreFrames, post=$PostFrames)"
         Write-Host "          or create $triggerFile"
+        if ($ResourceTrigger) { Write-Host "Resource: $ResourceTrigger" }
     }
     if ($CaptureBufferPayloads) { Write-Host "Buffers : $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR" }
     if ($CaptureTexturePayloads) { Write-Host "Tex raw : $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR" }
@@ -251,6 +261,7 @@ finally {
     if ($null -eq $oldTriggerPost) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES = $oldTriggerPost }
     if ($null -eq $oldTriggerKey) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TRIGGER_KEY = $oldTriggerKey }
     if ($null -eq $oldTriggerFile) { Remove-Item Env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_TRIGGER_FILE = $oldTriggerFile }
+    if ($null -eq $oldResourceTrigger) { Remove-Item Env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE_RESOURCE_TRIGGER = $oldResourceTrigger }
 }
 
 if ($exitCode -ne 0) {
