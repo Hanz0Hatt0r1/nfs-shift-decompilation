@@ -10,14 +10,42 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+PHYSICS_SRC = ROOT / "src" / "physics"
+for path in (ROOT, PHYSICS_SRC):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 from sdf_runtime_probe_launcher_runtime import (
     build_attach_command,
     describe_sdf_runtime_probe_launcher,
     prepare_probe_bundle,
 )
+
+from relation_state_mutation_timeline_correlation_runtime import (
+    analyze_relation_state_mutation_capture_directory,
+)
+
+TIMELINE_OUTPUT_NAME = "relation_state_mutation_timeline.json"
+
+
+def finalize_relation_state_mutation_capture(
+    output_dir: str | Path,
+) -> dict:
+    """Build and persist the Phase 637 timeline report after a full capture."""
+    output = Path(output_dir).resolve()
+    report = analyze_relation_state_mutation_capture_directory(output)
+    target = output / TIMELINE_OUTPUT_NAME
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(
+            report,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ) + "\n",
+        encoding="utf-8",
+    )
+    return report
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -105,7 +133,57 @@ def main(argv: list[str] | None = None) -> int:
         result["attach_command"] = command
         result["status"] = "attaching"
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return subprocess.call(command)
+        gdb_returncode = subprocess.call(command)
+
+        if args.provider_only:
+            return gdb_returncode
+
+        try:
+            timeline = finalize_relation_state_mutation_capture(
+                args.output
+            )
+        except Exception as exc:
+            final = {
+                **result,
+                "status": "blocked",
+                "ready": False,
+                "gdb_returncode": gdb_returncode,
+                "post_capture": {
+                    "automatic_timeline_correlation": True,
+                    "timeline_output": str(
+                        (args.output / TIMELINE_OUTPUT_NAME).resolve()
+                    ),
+                    "ready": False,
+                    "error": f"{type(exc).__name__}: {exc}",
+                },
+            }
+            print(json.dumps(final, ensure_ascii=False, indent=2))
+            return 2
+
+        final_ready = gdb_returncode == 0 and bool(timeline["ready"])
+        final = {
+            **result,
+            "status": "completed" if final_ready else "blocked",
+            "ready": final_ready,
+            "gdb_returncode": gdb_returncode,
+            "post_capture": {
+                "automatic_timeline_correlation": True,
+                "timeline_output": str(
+                    (args.output / TIMELINE_OUTPUT_NAME).resolve()
+                ),
+                "ready": bool(timeline["ready"]),
+                "mutation_event_count": timeline[
+                    "mutation_event_count"
+                ],
+                "timeline_anchor_count": timeline[
+                    "timeline_anchor_count"
+                ],
+                "summary": timeline["summary"],
+                "errors": timeline["errors"],
+            },
+        }
+        print(json.dumps(final, ensure_ascii=False, indent=2))
+        return 0 if final_ready else 2
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
