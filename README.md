@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 607. Current development: Phase 608.**
+**Merged baseline: Phase 608. Current development: Phase 609.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -138,7 +138,7 @@ prepared native IR / Vulkan bundles
 
 The runtime supports the established prepared bundle path, multi-draw material
 sets, per-draw pipeline state, constant buffers, 2D textures, optional cube
-resources and validation-layer coverage. Phase 599 makes the recovered six-word CameraManager snapshot and guarded two-buffer swap live inside `SHIFT.NativeRuntimeState/1`; Phase 600 seeds that scheduler from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same `VehicleControlIntent` → physics-tick boundary as the live keyboard path. Phase 602 admits the source-backed participant registry/selector structural ABI into `SHIFT.NativeRuntimeState/1`; Phase 605 keeps registry and selector identity domains explicitly separate. Phase 607 adds a fail-closed runtime pointer join that can promote one concrete participant while preserving registry index and selector ordinal separately. Phases 603–604 port the source-backed builtin solve/reset kernels, Phase 606 adds an explicit prepared provider-absent solver-frame packet with Python/native oracle parity, and Phase 608 executes that exact frame on native fixed steps only when Phase 607 participant evidence and workspace cardinality gates are satisfied. Retail frame assembly, provider selection and post-solve body-state integration remain capture-gated.
+resources and validation-layer coverage. Phase 599 makes the recovered six-word CameraManager snapshot and guarded two-buffer swap live inside `SHIFT.NativeRuntimeState/1`; Phase 600 seeds that scheduler from recovered camera scalar evidence. Phase 601 adds deterministic `SHIFT.NativeRuntimeInputScript/1` control snapshots that traverse the same `VehicleControlIntent` → physics-tick boundary as the live keyboard path. Phase 602 admits the source-backed participant registry/selector structural ABI into `SHIFT.NativeRuntimeState/1`; Phase 605 keeps registry and selector identity domains explicitly separate. Phase 607 adds a fail-closed runtime pointer join that can promote one concrete participant while preserving registry index and selector ordinal separately. Phases 603–604 port the source-backed builtin solve/reset kernels, Phase 606 adds an explicit prepared provider-absent solver-frame packet with Python/native oracle parity, and Phase 608 executes that exact frame on native fixed steps only when Phase 607 participant evidence and workspace cardinality gates are satisfied. Retail frame assembly and provider selection remain capture-gated. Phase 609 ports the recovered FUN_007b4110 JOINT/HINGE/BAR post-solve arithmetic to native C++, while exact body/sample mapping into the fixed-step scheduler remains evidence-gated.
 
 The Linux target intentionally excludes EA services, DRM, login/profile/cloud,
 matchmaking/online networking and Bink/video playback.
@@ -159,7 +159,7 @@ matchmaking/online networking and Bink/video playback.
 | Camera | config/state/event/control + native snapshot/double-buffer handoff active | retail update timing, controller behavior and exact render/view integration |
 | Native input | live X11 keyboard + deterministic fixed-step control script | gamepad/analog normalization and retail filtering semantics |
 | AI / track | source-backed core | remaining linked/local runtime search behavior |
-| Vehicle physics | structural reconstruction active; Phase 607 runtime participant promotion + Phase 608 evidence-gated fixed-step builtin solver execution | authentic retail frame assembly/reset selection, provider dispatch and post-solve body-state/force parity |
+| Vehicle physics | Phase 607 participant promotion + Phase 608 fixed-step builtin solve + Phase 609 native FUN_007b4110 arithmetic | authentic retail frame assembly/reset selection, provider dispatch and exact body/sample mapping into post-solve state |
 | Specialized providers | capture-ready | authentic runtime frame |
 | BAB animation | evidence-backed grammar | remaining axis/order/trailing semantics |
 | Android | deferred | waits for stable desktop/native runtime boundary |
