@@ -750,6 +750,88 @@ jobs:
             out/vulkan/runtime/fixed_step_solver_frame_check.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/fixed_step_solver_frame_check.json
+      - name: Prepare fixed-step post-solve projection
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          solver_manifest = json.loads(
+              Path(
+                  "out/vulkan/runtime/fixed_step_solver_frame/"
+                  "solver_frame_manifest.json"
+              ).read_text(encoding="utf-8")
+          )
+          solution = solver_manifest["oracle"]["solution"]
+          if len(solution) != 40:
+              raise SystemExit("expected 40-scalar solver oracle")
+
+          joints = []
+          hinges = []
+          for index in range(4):
+              base = index * 5
+              joints.append({
+                  "positive_body": index,
+                  "negative_body": index + 1,
+                  "scalar_base": base,
+                  "positive_lever_arm": [1.0, 0.0, 0.0],
+                  "negative_lever_arm": [0.0, 1.0, 0.0],
+              })
+              hinges.append({
+                  "positive_body": index + 1,
+                  "negative_body": index + 2,
+                  "scalar_base": base + 3,
+                  "positive_angular_row": [1.0, 0.0, 0.0],
+                  "positive_linear_row": [0.0, 1.0, 0.0],
+                  "negative_angular_row": [0.0, 0.0, 1.0],
+                  "negative_linear_row": [1.0, 0.0, 0.0],
+              })
+
+          bars = []
+          for index in range(20):
+              bars.append({
+                  "positive_body": index % 11,
+                  "negative_body": (index + 1) % 11,
+                  "scalar_base": 20 + index,
+                  "positive_lever_arm": [0.0, 0.0, 1.0],
+                  "negative_lever_arm": [1.0, 0.0, 0.0],
+                  "direction": [1.0, 0.5, 0.25],
+              })
+
+          payload = {
+              "format": "SHIFT.NativePostSolveBodyProjectionInput/1",
+              "version": 1,
+              "verification_scope": "synthetic-fixed-step-post-solve-join",
+              "solved_vector_ready": True,
+              "body_state_ready": True,
+              "constraint_rows_ready": True,
+              "bodies": [
+                  {"angular": [0.0, 0.0, 0.0],
+                   "linear": [0.0, 0.0, 0.0]}
+                  for _ in range(11)
+              ],
+              "solver_vector": solution,
+              "joints": joints,
+              "hinges": hinges,
+              "bars": bars,
+          }
+          Path(
+              "out/vulkan/runtime/fixed_step_post_solve_input.json"
+          ).write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-post-solve-projection \
+            out/vulkan/runtime/fixed_step_post_solve_input.json \
+            out/vulkan/runtime/fixed_step_post_solve
+          native_runtime/build/shift_runtime_post_solve_projection_check \
+            out/vulkan/runtime/fixed_step_post_solve/post_solve.sbps \
+            | tee out/vulkan/runtime/fixed_step_post_solve_check.json
+          grep -q '"body_count": 11' \
+            out/vulkan/runtime/fixed_step_post_solve_check.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/fixed_step_post_solve_check.json
       - name: Write deterministic native input script
         run: |
           cat > out/vulkan/runtime/native_input.script <<'EOF'
@@ -771,6 +853,7 @@ jobs:
             --camera-state out/vulkan/camera/native_camera.json \
             --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
             --solver-frame out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
+            --post-solve-projection out/vulkan/runtime/fixed_step_post_solve/post_solve.sbps \
             --input-script out/vulkan/runtime/native_input.script \
             --validation | tee out/vulkan/runtime/input_script.json
       - name: Assert scripted native input reaches physics tick
@@ -801,7 +884,16 @@ jobs:
           grep -q '"physics_solver_frame_steps": 5' out/vulkan/runtime/input_script.json
           grep -q '"physics_solver_frame_max_oracle_error": 0' out/vulkan/runtime/input_script.json
           grep -q '"physics_solver_provider_present": false' out/vulkan/runtime/input_script.json
-          grep -q '"physics_solver_post_solve_body_state_applied": false' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_loaded": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_body_count": 11' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_joint_count": 4' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_hinge_count": 4' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_bar_count": 20' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_steps": 5' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_max_solver_join_error": 0' out/vulkan/runtime/input_script.json
+          grep -q '"physics_post_solve_projection_max_oracle_error": 0' out/vulkan/runtime/input_script.json
+          grep -q '"physics_solver_post_solve_body_state_applied": true' out/vulkan/runtime/input_script.json
+          grep -q '"physics_solver_persistent_vehicle_state_applied": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_throttle": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_brake": false' out/vulkan/runtime/input_script.json
           grep -q '"vehicle_control_steer_left": false' out/vulkan/runtime/input_script.json
