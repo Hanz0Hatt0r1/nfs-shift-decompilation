@@ -182,6 +182,98 @@ jobs:
           fi
           grep -q "runtime proofs are incomplete" \
             out/vulkan/runtime/solver_frame_unproven.stderr
+      - name: Prepared native post-solve body projection
+        run: |
+          mkdir -p out/vulkan/runtime/post_solve
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = {
+              "format": "SHIFT.NativePostSolveBodyProjectionInput/1",
+              "version": 1,
+              "verification_scope": "synthetic-post-solve-regression",
+              "solved_vector_ready": True,
+              "body_state_ready": True,
+              "constraint_rows_ready": True,
+              "bodies": [
+                  {"angular": [0, 0, 0], "linear": [0, 0, 0]},
+                  {"angular": [1, 2, 3], "linear": [4, 5, 6]},
+                  {"angular": [0, 0, 0], "linear": [0, 0, 0]},
+              ],
+              "solver_vector": [2, 3, 4, 5, 6, 7],
+              "joints": [{
+                  "positive_body": 0,
+                  "negative_body": 1,
+                  "scalar_base": 0,
+                  "positive_lever_arm": [1, 0, 0],
+                  "negative_lever_arm": [0, 1, 0],
+              }],
+              "hinges": [{
+                  "positive_body": 1,
+                  "negative_body": 2,
+                  "scalar_base": 3,
+                  "positive_angular_row": [1, 0, 0],
+                  "positive_linear_row": [0, 1, 0],
+                  "negative_angular_row": [0, 0, 1],
+                  "negative_linear_row": [1, 0, 0],
+              }],
+              "bars": [{
+                  "positive_body": 2,
+                  "negative_body": 0,
+                  "scalar_base": 5,
+                  "positive_lever_arm": [0, 0, 1],
+                  "negative_lever_arm": [1, 0, 0],
+                  "direction": [1, 2, 0],
+              }],
+          }
+          Path("out/vulkan/runtime/post_solve_input.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-post-solve-projection \
+            out/vulkan/runtime/post_solve_input.json \
+            out/vulkan/runtime/post_solve \
+            | tee out/vulkan/runtime/post_solve_prepare.json
+          native_runtime/build/shift_runtime_post_solve_projection_check \
+            out/vulkan/runtime/post_solve/post_solve.sbps \
+            | tee out/vulkan/runtime/post_solve_check.json
+          grep -q '"format": "SHIFT.NativePostSolveBodyProjectionCheck/1"' \
+            out/vulkan/runtime/post_solve_check.json
+          grep -q '"source_function": "FUN_007b4110"' \
+            out/vulkan/runtime/post_solve_check.json
+          grep -q '"body_count": 3' \
+            out/vulkan/runtime/post_solve_check.json
+          grep -q '"fixed_step_runtime_integration": false' \
+            out/vulkan/runtime/post_solve_check.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/post_solve_check.json
+      - name: Reject incomplete post-solve projection proofs
+        run: |
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+
+          source = Path("out/vulkan/runtime/post_solve/post_solve.sbps")
+          data = bytearray(source.read_bytes())
+          header = list(struct.unpack_from("<4s8I", data, 0))
+          header[7] &= ~1
+          struct.pack_into("<4s8I", data, 0, *header)
+          target = Path(
+              "out/vulkan/runtime/post_solve/post_solve_unproven.sbps"
+          )
+          target.write_bytes(data)
+          PY
+          if native_runtime/build/shift_runtime_post_solve_projection_check \
+            out/vulkan/runtime/post_solve/post_solve_unproven.sbps \
+            > out/vulkan/runtime/post_solve_unproven.stdout \
+            2> out/vulkan/runtime/post_solve_unproven.stderr; then
+            echo "post-solve projection unexpectedly accepted incomplete proofs"
+            exit 1
+          fi
+          grep -q "runtime proofs are incomplete" \
+            out/vulkan/runtime/post_solve_unproven.stderr
       - name: Prepare mixed-resource BMW bundle
         run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
       - name: Legacy SVGP v2 compatibility smoke

@@ -45,7 +45,8 @@ add_custom_target(shift_runtime_shaders
 
 add_library(shift_runtime_physics STATIC
   src/builtin_sparse_solver.cpp
-  src/builtin_solver_frame.cpp)
+  src/builtin_solver_frame.cpp
+  src/post_solve_projection.cpp)
 target_include_directories(shift_runtime_physics PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(shift_runtime_physics PRIVATE
@@ -65,6 +66,13 @@ target_link_libraries(shift_runtime_builtin_solver_frame_check PRIVATE
 target_compile_options(shift_runtime_builtin_solver_frame_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_post_solve_projection_check
+  tests/post_solve_projection_check.cpp)
+target_link_libraries(shift_runtime_post_solve_projection_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_post_solve_projection_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_builtin_sparse_solver
@@ -74,6 +82,13 @@ if(BUILD_TESTING)
     COMMAND shift_runtime_builtin_solver_frame_check)
   set_tests_properties(
     shift_runtime_builtin_solver_frame_usage
+    PROPERTIES WILL_FAIL TRUE)
+
+  add_test(
+    NAME shift_runtime_post_solve_projection_usage
+    COMMAND shift_runtime_post_solve_projection_check)
+  set_tests_properties(
+    shift_runtime_post_solve_projection_usage
     PROPERTIES WILL_FAIL TRUE)
 endif()
 

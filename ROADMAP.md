@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 608.**
+**Current mainline: Phase 609.**
 
 
 
@@ -122,7 +122,7 @@ Phase 606 adds `SHIFT.NativeBuiltinSolverFrame/1`: an explicit provider-absent m
 79. Preserve participant-manager registry identity and IGPhaseVehicle selector identity as separate native domains until an independent runtime join exists — Phase 605 implemented.
 80. Add a fail-closed prepared builtin solver-frame contract containing explicit provider-absent proof, matrix/RHS, reset nodes and exact sparse graph, then execute FUN_007b2210 → FUN_007b0f20 with Python/native oracle parity — Phase 606 implemented.
 81. Promote one concrete native participant only from independent manager-registry and IGPhaseVehicle selected-pointer runtime observations while retaining selector ordinal as a separate identity domain — Phase 607 implemented as SHIFT.NativePhysicsParticipantRuntimeEvidence/1.
-82. Execute an exact Phase 606 provider-absent solver frame on the native fixed-step scheduler only when Phase 607 participant evidence is ready and solver/workspace scalar cardinality matches — Phase 608 implemented.
+82. Execute an exact Phase 606 provider-absent solver frame on the native fixed-step scheduler only when Phase 607 participant evidence is ready and solver/workspace scalar cardinality matches — Phase 608 implemented.\n83. Port the exact source-backed `FUN_007b4110` JOINT/HINGE/BAR post-solve BODY projection to native C++ with an explicit proof-gated SBPS packet and Python/native oracle parity, independently of fixed-step integration — Phase 609 implemented.
 
 ## Workstream status
 
