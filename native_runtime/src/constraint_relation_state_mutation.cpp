@@ -32,6 +32,29 @@ void validate_body_index(
     }
 }
 
+void validate_vehicle_body_identity_map(
+    const PreparedConstraintSampleRelationFrame& relations,
+    const VehicleConstraintBodyIdentityMap& body_map) {
+
+    validate_body_index(
+        relations,
+        body_map.rear_axle_body_index,
+        "rear axle");
+
+    for (std::size_t slot = 0;
+         slot < kVehicleConstraintComponentCount;
+         ++slot) {
+        validate_body_index(
+            relations,
+            body_map.wheel_body_indices[slot],
+            "wheel");
+        validate_body_index(
+            relations,
+            body_map.spindle_body_indices[slot],
+            "spindle");
+    }
+}
+
 template <typename Relation>
 void validate_relation_endpoints(
     const PreparedConstraintSampleRelationFrame& relations,
@@ -186,6 +209,54 @@ apply_fun_00757d2c_bar_endpoint_state_mutation(
                 result.matched_bar_relation_count,
                 result.newly_set_bar_relation_count);
         }
+    }
+
+    return result;
+}
+
+ConstraintRelationStateDispatchResult
+dispatch_fun_00757d2c_vehicle_slot_relation_state_mutation(
+    const PreparedConstraintSampleRelationFrame& relations,
+    const PreparedConstraintRelationResetFrame& state,
+    const VehicleConstraintBodyIdentityMap& body_map,
+    std::size_t component_slot,
+    bool spindle_body_present) {
+
+    validate_relation_frame(relations, state);
+    validate_vehicle_body_identity_map(relations, body_map);
+
+    if (component_slot >= kVehicleConstraintComponentCount) {
+        throw std::runtime_error(
+            "FUN_00757d2c component slot is outside recovered 0..3 domain");
+    }
+
+    ConstraintRelationStateDispatchResult result{};
+    result.component_slot = component_slot;
+    result.component_block_offset =
+        kVehicleConstraintComponentBaseOffset +
+        component_slot * kVehicleConstraintComponentStride;
+    result.wheel_body_index =
+        body_map.wheel_body_indices[component_slot];
+    result.spindle_body_index =
+        body_map.spindle_body_indices[component_slot];
+    result.rear_axle_body_index =
+        body_map.rear_axle_body_index;
+    result.spindle_body_present =
+        spindle_body_present;
+
+    if (spindle_body_present) {
+        result.mutation =
+            apply_fun_00757d2c_bar_endpoint_state_mutation(
+                relations,
+                state,
+                result.spindle_body_index);
+    } else {
+        result.mutation =
+            apply_fun_00757d2c_pair_relation_state_mutation(
+                relations,
+                state,
+                result.wheel_body_index,
+                result.rear_axle_body_index);
     }
 
     return result;
