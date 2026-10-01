@@ -24,26 +24,27 @@ calls and may occur before the normal frame loop, while the fifth
 The launcher and embedded GDB probe now accept:
 
 ```bash
---stop-on-relation-mutation
+--stop-after-relation-mutation
 ```
 
-When enabled, `RelationStateMutationProbe` writes the complete event record
-first, then returns a GDB stop on its first hit. The generated command file then
-detaches and quits automatically.
+When enabled, `RelationStateMutationProbe` writes each complete event and
+sets an observation latch without stopping the inferior. The first following
+post-solve anchor writes its own timeline record and then returns a GDB stop.
+The generated command file detaches and quits automatically.
 
 The option can be combined with `--capture-frames N`. In that form the capture
 ends on whichever happens first:
 
-1. the first authentic `FUN_00757d2c` mutation; or
+1. the first post-solve anchor after an authentic `FUN_00757d2c` mutation; or
 2. the Nth post-solve anchor.
 
 This makes a large frame budget a safe fallback rather than the primary
-evidence trigger.
+evidence trigger while preserving the mutation-to-next-anchor relationship.
 
 ## Intended capture
 
 For the outstanding setup/runtime provenance question, use
-`--relation-timeline-only --stop-on-relation-mutation` and arm the probe before
+`--relation-timeline-only --stop-after-relation-mutation` and arm the probe before
 vehicle/race setup. A large `--capture-frames` value can be supplied as a
 failsafe.
 
