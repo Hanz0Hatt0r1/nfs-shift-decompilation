@@ -422,3 +422,18 @@ native_runtime/build/shift_runtime_body_solver_export_frame_check \
 
 The packet carries contribution values and BODY order as evidence. Native code
 does not derive `FUN_007bc680` output or runtime reset selection.
+
+
+## Phase 614 BODY export / solver-frame join
+
+After preparing both contracts, verify that the ordered BODY export is exactly
+the matrix/RHS consumed by the builtin solver frame:
+
+```bash
+native_runtime/build/shift_runtime_body_export_solver_join_check \
+  out/native-body-export/body_solver_export.sbex \
+  out/native-solver-frame/solver_frame.sbfr
+```
+
+The join is pre-reset and fail-closed. It then runs the existing reset/solve
+oracle only after the full vector and N×N matrix match.
