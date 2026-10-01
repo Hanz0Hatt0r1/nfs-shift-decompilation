@@ -99,6 +99,28 @@ jobs:
             out/vulkan/runtime/builtin_sparse_solver.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/builtin_sparse_solver.json
+      - name: Native FUN_007bc680 preprojection seed
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_body_preprojection
+          native_runtime/build/shift_runtime_body_preprojection_check \
+            | tee out/vulkan/runtime/body_preprojection.json
+          grep -q '"format": "SHIFT.NativeBodyPreProjectionCheck/1"' \
+            out/vulkan/runtime/body_preprojection.json
+          grep -q '"source_function": "FUN_007bc680"' \
+            out/vulkan/runtime/body_preprojection.json
+          grep -q '"transform_source_function": "FUN_007aefb0"' \
+            out/vulkan/runtime/body_preprojection.json
+          grep -q '"cases": 3' \
+            out/vulkan/runtime/body_preprojection.json
+          grep -q '"non_finite_rejected": true' \
+            out/vulkan/runtime/body_preprojection.json
+          grep -q '"max_absolute_error": 0' \
+            out/vulkan/runtime/body_preprojection.json
+          grep -q '"full_constraint_projection_executed": false' \
+            out/vulkan/runtime/body_preprojection.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/body_preprojection.json
       - name: Native BODY solver export parity
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
