@@ -7,6 +7,7 @@
 #include "shift_body_export_solver_join.hpp"
 #include "shift_body_solver_export_frame.hpp"
 #include "shift_generated_body_constraint_frame.hpp"
+#include "shift_constraint_sample_relation_frame.hpp"
 #include "shift_post_solve_projection.hpp"
 #include "shift_vulkan_validation.hpp"
 
@@ -2966,6 +2967,7 @@ struct Args {
     std::string solver_frame;
     std::string body_solver_export_frame;
     std::string generated_body_constraint_frame;
+    std::string constraint_sample_relation_frame;
     std::string post_solve_projection;
     std::string shader_dir;
     std::string input_script;
@@ -2988,6 +2990,7 @@ Args parse_args(int argc, char** argv) {
             option == "--solver-frame" ||
             option == "--body-solver-export-frame" ||
             option == "--generated-body-constraint-frame" ||
+            option == "--constraint-sample-relation-frame" ||
             option == "--post-solve-projection" ||
             option == "--shader-dir" ||
             option == "--input-script" ||
@@ -3012,6 +3015,8 @@ Args parse_args(int argc, char** argv) {
                 args.body_solver_export_frame = value;
             } else if (option == "--generated-body-constraint-frame") {
                 args.generated_body_constraint_frame = value;
+            } else if (option == "--constraint-sample-relation-frame") {
+                args.constraint_sample_relation_frame = value;
             } else if (option == "--post-solve-projection") {
                 args.post_solve_projection = value;
             } else if (option == "--shader-dir") {
@@ -3035,6 +3040,7 @@ Args parse_args(int argc, char** argv) {
                 << "[--solver-frame FILE] "
                 << "[--body-solver-export-frame FILE] "
                 << "[--generated-body-constraint-frame FILE] "
+                << "[--constraint-sample-relation-frame FILE] "
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
@@ -3206,6 +3212,10 @@ int main(int argc, char** argv) {
             << (!args.generated_body_constraint_frame.empty() ?
                 "true" : "false")
             << ",\n"
+            << "  \"constraint_sample_relation_frame_mode\": "
+            << (!args.constraint_sample_relation_frame.empty() ?
+                "true" : "false")
+            << ",\n"
             << "  \"post_solve_projection_mode\": "
             << (!args.post_solve_projection.empty() ? "true" : "false")
             << ",\n"
@@ -3362,15 +3372,32 @@ int main(int argc, char** argv) {
 
         const bool generated_body_constraint_frame_mode =
             !args.generated_body_constraint_frame.empty();
+        const bool constraint_sample_relation_frame_mode =
+            !args.constraint_sample_relation_frame.empty();
         shift::runtime::physics::PreparedGeneratedBodyConstraintFrame
             generated_body_constraint_frame{};
+        shift::runtime::physics::PreparedConstraintSampleRelationFrame
+            constraint_sample_relation_frame{};
         uint64_t generated_body_constraint_join_steps = 0;
+        uint64_t constraint_sample_relation_refresh_steps = 0;
         double generated_body_constraint_max_rhs_join_error = 0.0;
         double generated_body_constraint_max_matrix_join_error = 0.0;
         std::size_t generated_body_constraint_body_count = 0;
         std::size_t generated_body_constraint_joint_count = 0;
         std::size_t generated_body_constraint_hinge_count = 0;
         std::size_t generated_body_constraint_bar_count = 0;
+        std::size_t constraint_sample_relation_joint_count = 0;
+        std::size_t constraint_sample_relation_hinge_count = 0;
+        std::size_t constraint_sample_relation_bar_count = 0;
+        std::size_t constraint_sample_relation_refreshed_joint_samples = 0;
+        std::size_t constraint_sample_relation_refreshed_hinge_samples = 0;
+        std::size_t constraint_sample_relation_refreshed_bar_samples = 0;
+        if (constraint_sample_relation_frame_mode &&
+            !generated_body_constraint_frame_mode) {
+            throw std::runtime_error(
+                "--constraint-sample-relation-frame requires "
+                "--generated-body-constraint-frame");
+        }
         if (generated_body_constraint_frame_mode) {
             if (!solver_frame_mode) {
                 throw std::runtime_error(
@@ -3395,11 +3422,80 @@ int main(int argc, char** argv) {
                 throw std::runtime_error(
                     "generated BODY count does not match physics workspace");
             }
-            const auto generated_join =
-                shift::runtime::physics::
-                    verify_generated_body_constraint_frame_matches_builtin_solver_frame(
-                        generated_body_constraint_frame,
-                        solver_frame);
+
+            shift::runtime::physics::GeneratedBodySolverFrameJoinResult
+                generated_join{};
+            if (constraint_sample_relation_frame_mode) {
+                constraint_sample_relation_frame =
+                    shift::runtime::physics::
+                        load_prepared_constraint_sample_relation_frame(
+                            args.constraint_sample_relation_frame);
+                if (constraint_sample_relation_frame.body_count !=
+                    native_state.physics.workspace.body_count) {
+                    throw std::runtime_error(
+                        "constraint relation BODY count does not match "
+                        "physics workspace");
+                }
+                constraint_sample_relation_joint_count =
+                    constraint_sample_relation_frame.joints.size();
+                constraint_sample_relation_hinge_count =
+                    constraint_sample_relation_frame.hinges.size();
+                constraint_sample_relation_bar_count =
+                    constraint_sample_relation_frame.bars.size();
+                if (constraint_sample_relation_joint_count !=
+                        native_state.physics.workspace.joint_hinge_count ||
+                    constraint_sample_relation_hinge_count !=
+                        native_state.physics.workspace.joint_hinge_count ||
+                    constraint_sample_relation_bar_count !=
+                        native_state.physics.workspace.bar_count) {
+                    throw std::runtime_error(
+                        "constraint relation counts do not match "
+                        "physics workspace");
+                }
+
+                const auto refreshed =
+                    shift::runtime::physics::
+                        refresh_generated_body_constraint_frame(
+                            generated_body_constraint_frame,
+                            constraint_sample_relation_frame);
+                constraint_sample_relation_refreshed_joint_samples =
+                    refreshed.refreshed_joint_sample_count;
+                constraint_sample_relation_refreshed_hinge_samples =
+                    refreshed.refreshed_hinge_sample_count;
+                constraint_sample_relation_refreshed_bar_samples =
+                    refreshed.refreshed_bar_sample_count;
+                generated_join =
+                    shift::runtime::physics::
+                        verify_generated_body_constraint_frame_matches_builtin_solver_frame(
+                            refreshed.frame,
+                            solver_frame);
+                if (generated_join.joint_sample_count !=
+                        constraint_sample_relation_refreshed_joint_samples ||
+                    generated_join.hinge_sample_count !=
+                        constraint_sample_relation_refreshed_hinge_samples ||
+                    generated_join.bar_sample_count !=
+                        constraint_sample_relation_refreshed_bar_samples) {
+                    throw std::runtime_error(
+                        "refreshed generated BODY sample counts do not match "
+                        "constraint relation endpoint coverage");
+                }
+            } else {
+                generated_join =
+                    shift::runtime::physics::
+                        verify_generated_body_constraint_frame_matches_builtin_solver_frame(
+                            generated_body_constraint_frame,
+                            solver_frame);
+                if (generated_join.joint_sample_count !=
+                        native_state.physics.workspace.joint_hinge_count ||
+                    generated_join.hinge_sample_count !=
+                        native_state.physics.workspace.joint_hinge_count ||
+                    generated_join.bar_sample_count !=
+                        native_state.physics.workspace.bar_count) {
+                    throw std::runtime_error(
+                        "generated BODY sample counts do not match physics workspace");
+                }
+            }
+
             generated_body_constraint_body_count =
                 generated_join.body_count;
             generated_body_constraint_joint_count =
@@ -3408,15 +3504,6 @@ int main(int argc, char** argv) {
                 generated_join.hinge_sample_count;
             generated_body_constraint_bar_count =
                 generated_join.bar_sample_count;
-            if (generated_body_constraint_joint_count !=
-                    native_state.physics.workspace.joint_hinge_count ||
-                generated_body_constraint_hinge_count !=
-                    native_state.physics.workspace.joint_hinge_count ||
-                generated_body_constraint_bar_count !=
-                    native_state.physics.workspace.bar_count) {
-                throw std::runtime_error(
-                    "generated BODY sample counts do not match physics workspace");
-            }
         }
 
         const bool post_solve_projection_mode =
@@ -3522,11 +3609,27 @@ int main(int argc, char** argv) {
                     ++body_solver_export_join_steps;
                 }
                 if (generated_body_constraint_frame_mode) {
-                    const auto generated_join =
-                        shift::runtime::physics::
-                            verify_generated_body_constraint_frame_matches_builtin_solver_frame(
-                                generated_body_constraint_frame,
-                                solver_frame);
+                    shift::runtime::physics::
+                        GeneratedBodySolverFrameJoinResult generated_join{};
+                    if (constraint_sample_relation_frame_mode) {
+                        const auto refreshed =
+                            shift::runtime::physics::
+                                refresh_generated_body_constraint_frame(
+                                    generated_body_constraint_frame,
+                                    constraint_sample_relation_frame);
+                        generated_join =
+                            shift::runtime::physics::
+                                verify_generated_body_constraint_frame_matches_builtin_solver_frame(
+                                    refreshed.frame,
+                                    solver_frame);
+                        ++constraint_sample_relation_refresh_steps;
+                    } else {
+                        generated_join =
+                            shift::runtime::physics::
+                                verify_generated_body_constraint_frame_matches_builtin_solver_frame(
+                                    generated_body_constraint_frame,
+                                    solver_frame);
+                    }
                     generated_body_constraint_max_rhs_join_error =
                         std::max(
                             generated_body_constraint_max_rhs_join_error,
@@ -3777,6 +3880,24 @@ int main(int argc, char** argv) {
             << "  \"physics_generated_body_constraint_max_matrix_join_error\": "
             << generated_body_constraint_max_matrix_join_error << ",\n"
             << "  \"physics_generated_body_constraint_values_stored_in_packet\": false,\n"
+            << "  \"physics_constraint_sample_relation_frame_loaded\": "
+            << (constraint_sample_relation_frame_mode ? "true" : "false")
+            << ",\n"
+            << "  \"physics_constraint_sample_relation_joint_count\": "
+            << constraint_sample_relation_joint_count << ",\n"
+            << "  \"physics_constraint_sample_relation_hinge_count\": "
+            << constraint_sample_relation_hinge_count << ",\n"
+            << "  \"physics_constraint_sample_relation_bar_count\": "
+            << constraint_sample_relation_bar_count << ",\n"
+            << "  \"physics_constraint_sample_relation_refreshed_joint_samples\": "
+            << constraint_sample_relation_refreshed_joint_samples << ",\n"
+            << "  \"physics_constraint_sample_relation_refreshed_hinge_samples\": "
+            << constraint_sample_relation_refreshed_hinge_samples << ",\n"
+            << "  \"physics_constraint_sample_relation_refreshed_bar_samples\": "
+            << constraint_sample_relation_refreshed_bar_samples << ",\n"
+            << "  \"physics_constraint_sample_relation_refresh_steps\": "
+            << constraint_sample_relation_refresh_steps << ",\n"
+            << "  \"physics_constraint_sample_relation_values_stored_in_packet\": false,\n"
             << "  \"physics_solver_provider_present\": false,\n"
             << "  \"physics_post_solve_projection_loaded\": "
             << (post_solve_projection_mode ? "true" : "false") << ",\n"

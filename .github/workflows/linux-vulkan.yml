@@ -2014,6 +2014,256 @@ jobs:
             out/vulkan/runtime/fixed_step_generated_body_runtime.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/fixed_step_generated_body_runtime.json
+      - name: Prepare fixed-step constraint relation refresh evidence
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path("src/physics").resolve()))
+          from sdf_builtin_sparse_solver_runtime import build_dense_solver_graph
+
+          scalar_count = 40
+          canonical_rows = [
+              index * scalar_count
+              for index in range(scalar_count)
+          ]
+
+          def body(index):
+              return {
+                  "body_index": index,
+                  "body_position": [0.0, 0.0, 0.0],
+                  "body_correction": [0.0, 0.0, 0.0],
+                  "body_axis": [0.0, 0.0, 0.0],
+                  "angular_state": [0.0, 0.0, 0.0],
+                  "linear_state": [0.0, 0.0, 0.0],
+                  "inverse_scalar": 0.0,
+                  "body_frame": [
+                      1.0, 0.0, 0.0,
+                      0.0, 1.0, 0.0,
+                      0.0, 0.0, 1.0,
+                  ],
+                  "body_tensor": [
+                      [0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0],
+                  ],
+                  "scales": {
+                      "linear_scale": 0.0,
+                      "quadratic_scale": 0.0,
+                  },
+                  "row_indices": canonical_rows,
+                  "matrix_double_count": scalar_count * scalar_count,
+                  "joints": [],
+                  "hinges": [],
+                  "bars": [],
+              }
+
+          bodies = [body(index) for index in range(11)]
+          joint_relations = []
+          hinge_relations = []
+          bar_relations = []
+
+          def append_joint(pos, neg, scalar_base):
+              pos_index = len(bodies[pos]["joints"])
+              neg_index = len(bodies[neg]["joints"])
+              bodies[pos]["joints"].append({
+                  "position": [0.0, 0.0, 0.0],
+                  "scalar_base": scalar_base,
+                  "side_flag": 1,
+              })
+              bodies[neg]["joints"].append({
+                  "position": [0.0, 0.0, 0.0],
+                  "scalar_base": scalar_base,
+                  "side_flag": 0,
+              })
+              joint_relations.append({
+                  "positive": {
+                      "body_index": pos,
+                      "sample_index": pos_index,
+                  },
+                  "negative": {
+                      "body_index": neg,
+                      "sample_index": neg_index,
+                  },
+                  "positive_local_position": [0.0, 0.0, 0.0],
+                  "negative_local_position": [0.0, 0.0, 0.0],
+              })
+
+          def append_hinge(pos, neg, scalar_base):
+              pos_index = len(bodies[pos]["hinges"])
+              neg_index = len(bodies[neg]["hinges"])
+              common = {
+                  "angular": [0.0, 0.0, 0.0],
+                  "linear": [0.0, 0.0, 0.0],
+                  "position": [0.0, 0.0, 0.0],
+                  "frame_offset": [0.0, 0.0, 0.0],
+                  "scalar_base": scalar_base,
+              }
+              bodies[pos]["hinges"].append({
+                  **common,
+                  "side_flag": 1,
+              })
+              bodies[neg]["hinges"].append({
+                  **common,
+                  "side_flag": 0,
+              })
+              hinge_relations.append({
+                  "positive": {
+                      "body_index": pos,
+                      "sample_index": pos_index,
+                  },
+                  "negative": {
+                      "body_index": neg,
+                      "sample_index": neg_index,
+                  },
+                  "positive_angular_local": [0.0, 0.0, 0.0],
+                  "positive_linear_local": [0.0, 0.0, 0.0],
+              })
+
+          def append_bar(pos, neg, scalar_base):
+              pos_index = len(bodies[pos]["bars"])
+              neg_index = len(bodies[neg]["bars"])
+              common = {
+                  "point": [0.0, 0.0, 0.0],
+                  "direction": [0.0, 0.0, 0.0],
+                  "side_bias": 0.0,
+                  "scalar_base": scalar_base,
+              }
+              bodies[pos]["bars"].append({
+                  **common,
+                  "side_flag": 1,
+              })
+              bodies[neg]["bars"].append({
+                  **common,
+                  "side_flag": 0,
+              })
+              bar_relations.append({
+                  "positive": {
+                      "body_index": pos,
+                      "sample_index": pos_index,
+                  },
+                  "negative": {
+                      "body_index": neg,
+                      "sample_index": neg_index,
+                  },
+                  "positive_local_point": [0.0, 0.0, 0.0],
+                  "negative_local_point": [0.0, 0.0, 0.0],
+              })
+
+          for index, base in enumerate((0, 5, 10, 15)):
+              append_joint(index, index + 1, base)
+          for index, base in enumerate((3, 8, 13, 18)):
+              append_hinge(index + 4, index + 5, base)
+          for index in range(20):
+              append_bar(index % 11, (index + 1) % 11, 20 + index)
+
+          assert sum(len(row["joints"]) for row in bodies) == 8
+          assert sum(len(row["hinges"]) for row in bodies) == 8
+          assert sum(len(row["bars"]) for row in bodies) == 40
+
+          root = Path(
+              "out/vulkan/runtime/fixed_step_constraint_refresh"
+          )
+          root.mkdir(parents=True, exist_ok=True)
+
+          gbcf_input = {
+              "format": "SHIFT.NativeGeneratedBodyConstraintFrameInput/1",
+              "version": 1,
+              "verification_scope": (
+                  "phase631-fixed-step-constraint-refresh"
+              ),
+              "sample_values_ready": True,
+              "body_order_ready": True,
+              "row_layout_ready": True,
+              "provider_absent": True,
+              "body_count": len(bodies),
+              "solver_scalar_count": scalar_count,
+              "bodies": bodies,
+          }
+          (root / "generated_body_input.json").write_text(
+              json.dumps(gbcf_input, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+
+          relation_input = {
+              "format": "SHIFT.NativeConstraintSampleRelationFrameInput/1",
+              "version": 1,
+              "verification_scope": (
+                  "phase631-fixed-step-constraint-refresh"
+              ),
+              "raw_sample_values_ready": True,
+              "ownership_ready": True,
+              "source_order_ready": True,
+              "provider_absent": True,
+              "body_count": len(bodies),
+              "joint_relations": joint_relations,
+              "hinge_relations": hinge_relations,
+              "bar_relations": bar_relations,
+          }
+          (root / "constraint_relations_input.json").write_text(
+              json.dumps(relation_input, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+
+          forward, reverse = build_dense_solver_graph(scalar_count)
+          solver_input = {
+              "format": "SHIFT.NativeBuiltinSolverFrameInput/1",
+              "version": 1,
+              "verification_scope": (
+                  "phase631-fixed-step-constraint-refresh"
+              ),
+              "provider_absent_proven": True,
+              "matrix_rhs_ready": True,
+              "reset_selection_ready": True,
+              "sparse_graph_ready": True,
+              "matrix": [
+                  [0.0 for _ in range(scalar_count)]
+                  for _ in range(scalar_count)
+              ],
+              "rhs": [0.0 for _ in range(scalar_count)],
+              "reset_nodes": list(range(scalar_count)),
+              "forward_records": forward,
+              "reverse_records": reverse,
+          }
+          (root / "solver_frame_input.json").write_text(
+              json.dumps(solver_input, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-generated-body-constraint-frame             out/vulkan/runtime/fixed_step_constraint_refresh/generated_body_input.json             out/vulkan/runtime/fixed_step_constraint_refresh/generated
+          python3 shift_importer.py native-constraint-sample-relation-frame             out/vulkan/runtime/fixed_step_constraint_refresh/constraint_relations_input.json             out/vulkan/runtime/fixed_step_constraint_refresh/relations
+          python3 shift_importer.py native-builtin-solver-frame             out/vulkan/runtime/fixed_step_constraint_refresh/solver_frame_input.json             out/vulkan/runtime/fixed_step_constraint_refresh/solver
+          native_runtime/build/shift_runtime_constraint_sample_relation_frame_check             out/vulkan/runtime/constraint_relation_gbcf/generated_body_constraints.gbcf             out/vulkan/runtime/constraint_relations/constraint_sample_relations.csrf             > out/vulkan/runtime/fixed_step_constraint_refresh/phase630_check.json
+      - name: Native fixed-step constraint relation refresh loop
+        run: |
+          set -o pipefail
+          xvfb-run -a native_runtime/build/shift_runtime             --scene-set out/vulkan/native_scene_set             --shader-dir native_runtime/build/shaders             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json             --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json             --solver-frame out/vulkan/runtime/fixed_step_constraint_refresh/solver/solver_frame.sbfr             --generated-body-constraint-frame out/vulkan/runtime/fixed_step_constraint_refresh/generated/generated_body_constraints.gbcf             --constraint-sample-relation-frame out/vulkan/runtime/fixed_step_constraint_refresh/relations/constraint_sample_relations.csrf             --frames 3 --validation             | tee out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+      - name: Assert relation-aware refresh gates every fixed step
+        run: |
+          grep -q '"frames_rendered": 3'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"simulation_steps": 3'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_solver_frame_steps": 3'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_generated_body_constraint_frame_loaded": true'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_generated_body_constraint_body_count": 11'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_generated_body_constraint_joint_count": 8'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_generated_body_constraint_hinge_count": 8'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_generated_body_constraint_bar_count": 40'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_generated_body_constraint_join_steps": 3'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_frame_loaded": true'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_joint_count": 4'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_hinge_count": 4'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_bar_count": 20'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_refreshed_joint_samples": 8'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_refreshed_hinge_samples": 8'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_refreshed_bar_samples": 40'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_refresh_steps": 3'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_constraint_sample_relation_values_stored_in_packet": false'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_generated_body_constraint_max_rhs_join_error": 0'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"physics_generated_body_constraint_max_matrix_join_error": 0'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"validation_errors": 0'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
+          grep -q '"status": "ok"'             out/vulkan/runtime/fixed_step_constraint_refresh/runtime.json
       - name: Prepare fixed-step BODY export join evidence
         run: |
           python3 - <<'PY'
