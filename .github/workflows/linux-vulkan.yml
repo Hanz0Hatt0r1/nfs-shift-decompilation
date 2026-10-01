@@ -99,6 +99,89 @@ jobs:
             out/vulkan/runtime/builtin_sparse_solver.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/builtin_sparse_solver.json
+      - name: Prepared native builtin solver frame
+        run: |
+          mkdir -p out/vulkan/runtime/solver_frame
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+
+          sys.path.insert(0, str(Path("src/physics").resolve()))
+          from sdf_builtin_sparse_solver_runtime import build_dense_solver_graph
+
+          forward, reverse = build_dense_solver_graph(3)
+          payload = {
+              "format": "SHIFT.NativeBuiltinSolverFrameInput/1",
+              "version": 1,
+              "verification_scope": "synthetic-regression-fixture",
+              "provider_absent_proven": True,
+              "matrix_rhs_ready": True,
+              "reset_selection_ready": True,
+              "sparse_graph_ready": True,
+              "matrix": [
+                  [4.0, 1.0, 1.0],
+                  [1.0, 3.0, 0.0],
+                  [1.0, 0.0, 2.0],
+              ],
+              "rhs": [9.0, 7.0, 7.0],
+              "reset_nodes": [2],
+              "forward_records": forward,
+              "reverse_records": reverse,
+          }
+          Path("out/vulkan/runtime/solver_frame_input.json").write_text(
+              json.dumps(payload, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python3 shift_importer.py native-builtin-solver-frame \
+            out/vulkan/runtime/solver_frame_input.json \
+            out/vulkan/runtime/solver_frame \
+            | tee out/vulkan/runtime/solver_frame_prepare.json
+          native_runtime/build/shift_runtime_builtin_solver_frame_check \
+            out/vulkan/runtime/solver_frame/solver_frame.sbfr \
+            | tee out/vulkan/runtime/solver_frame_check.json
+          grep -q '"format": "SHIFT.NativeBuiltinSolverFrameCheck/1"' \
+            out/vulkan/runtime/solver_frame_check.json
+          grep -q '"reset_source_function": "FUN_007b2210"' \
+            out/vulkan/runtime/solver_frame_check.json
+          grep -q '"solve_source_function": "FUN_007b0f20"' \
+            out/vulkan/runtime/solver_frame_check.json
+          grep -q '"scalar_count": 3' \
+            out/vulkan/runtime/solver_frame_check.json
+          grep -q '"reset_node_count": 1' \
+            out/vulkan/runtime/solver_frame_check.json
+          grep -q '"provider_absent_proven": true' \
+            out/vulkan/runtime/solver_frame_check.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/solver_frame_check.json
+      - name: Reject incomplete native solver-frame proofs
+        run: |
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+
+          source = Path(
+              "out/vulkan/runtime/solver_frame/solver_frame.sbfr"
+          )
+          data = bytearray(source.read_bytes())
+          header = list(struct.unpack_from("<4s7I", data, 0))
+          header[6] &= ~1
+          struct.pack_into("<4s7I", data, 0, *header)
+          target = Path(
+              "out/vulkan/runtime/solver_frame/solver_frame_unproven.sbfr"
+          )
+          target.write_bytes(data)
+          PY
+          if native_runtime/build/shift_runtime_builtin_solver_frame_check \
+            out/vulkan/runtime/solver_frame/solver_frame_unproven.sbfr \
+            > out/vulkan/runtime/solver_frame_unproven.stdout \
+            2> out/vulkan/runtime/solver_frame_unproven.stderr; then
+            echo "native solver frame unexpectedly accepted incomplete proofs"
+            exit 1
+          fi
+          grep -q "runtime proofs are incomplete" \
+            out/vulkan/runtime/solver_frame_unproven.stderr
       - name: Prepare mixed-resource BMW bundle
         run: python3 tools/run_linux_vulkan_smoke.py out/vulkan/bundle --validation
       - name: Legacy SVGP v2 compatibility smoke
