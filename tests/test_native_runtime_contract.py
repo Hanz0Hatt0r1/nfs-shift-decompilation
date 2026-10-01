@@ -589,15 +589,12 @@ def test_phase631_fixed_step_generated_body_refreshes_from_constraint_relations(
     assert "RefreshedGeneratedBodyConstraintFrame" in header
 
 
-def test_phase632_fixed_step_derives_reset_nodes_from_relation_state():
+def test_phase632_fixed_step_joins_relation_reset_selection_to_solver_frame():
     source = Path("native_runtime/src/shift_runtime.cpp").read_text(
         encoding="utf-8"
     )
     reset_header = Path(
         "native_runtime/include/shift_constraint_relation_reset_frame.hpp"
-    ).read_text(encoding="utf-8")
-    solver_header = Path(
-        "native_runtime/include/shift_builtin_solver_frame.hpp"
     ).read_text(encoding="utf-8")
 
     assert '#include "shift_constraint_relation_reset_frame.hpp"' in source
@@ -606,14 +603,19 @@ def test_phase632_fixed_step_derives_reset_nodes_from_relation_state():
     assert "--constraint-sample-relation-frame" in source
     assert "load_prepared_constraint_relation_reset_frame" in source
     assert "select_fun_007b3f40_reset_nodes" in source
-    assert "execute_prepared_builtin_solver_frame_with_reset_nodes" in source
+    assert "constraint relation reset nodes do not match " in source
+    assert "solver frame" in source
+    assert "execute_prepared_builtin_solver_frame(" in source
+    assert "execute_prepared_builtin_solver_frame_with_reset_nodes" not in source
     assert "physics_solver_effective_reset_node_count" in source
     assert "physics_solver_frame_reset_nodes_consumed" in source
     assert "physics_constraint_relation_reset_frame_loaded" in source
     assert "physics_constraint_relation_reset_selected_joint_count" in source
     assert "physics_constraint_relation_reset_selected_hinge_count" in source
     assert "physics_constraint_relation_reset_selected_bar_count" in source
+    assert "physics_constraint_relation_reset_call_count" in source
     assert "physics_constraint_relation_reset_node_count" in source
+    assert "physics_constraint_relation_reset_matches_solver_frame" in source
     assert "physics_constraint_relation_reset_selection_steps" in source
     assert "physics_constraint_relation_reset_state_offset" in source
     assert "physics_constraint_relation_reset_tested_bit" in source
@@ -622,7 +624,3 @@ def test_phase632_fixed_step_derives_reset_nodes_from_relation_state():
     assert "PreparedConstraintRelationResetFrame" in reset_header
     assert "ConstraintRelationResetSelectionResult" in reset_header
     assert "select_fun_007b3f40_reset_nodes" in reset_header
-    assert (
-        "execute_prepared_builtin_solver_frame_with_reset_nodes"
-        in solver_header
-    )
