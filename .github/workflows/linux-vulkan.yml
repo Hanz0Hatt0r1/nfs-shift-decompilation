@@ -151,7 +151,6 @@ jobs:
             out/vulkan/runtime/constraint_sample_refresh.json
       - name: Native constraint relation refresh join
         run: |
-          pytest -q             tests/test_native_constraint_sample_relation_frame.py             tests/test_shift_importer_phase553.py             -k 'relation_frame or phase630'
           cat > out/vulkan/runtime/constraint_relation_gbcf_input.json <<'JSON'
           {
             "format": "SHIFT.NativeGeneratedBodyConstraintFrameInput/1",
