@@ -7,7 +7,7 @@ def test_phase642_gdb_probe_parses_positive_capture_frame_budget():
     assert '"--capture-frames" in args' in source
     assert 'capture_frames = int(raw_capture_frames)' in source
     assert 'capture_frames <= 0' in source
-    assert '"--capture-frames is supported only in full mode"' in source
+    assert '"--capture-frames is not supported in provider-only mode"' in source
 
 
 def test_phase642_post_solve_writes_snapshot_before_bounded_stop():
