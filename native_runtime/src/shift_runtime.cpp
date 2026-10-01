@@ -8,6 +8,7 @@
 #include "shift_body_solver_export_frame.hpp"
 #include "shift_generated_body_constraint_frame.hpp"
 #include "shift_constraint_sample_relation_frame.hpp"
+#include "shift_constraint_relation_reset_frame.hpp"
 #include "shift_post_solve_projection.hpp"
 #include "shift_vulkan_validation.hpp"
 
@@ -2968,6 +2969,7 @@ struct Args {
     std::string body_solver_export_frame;
     std::string generated_body_constraint_frame;
     std::string constraint_sample_relation_frame;
+    std::string constraint_relation_reset_frame;
     std::string post_solve_projection;
     std::string shader_dir;
     std::string input_script;
@@ -2991,6 +2993,7 @@ Args parse_args(int argc, char** argv) {
             option == "--body-solver-export-frame" ||
             option == "--generated-body-constraint-frame" ||
             option == "--constraint-sample-relation-frame" ||
+            option == "--constraint-relation-reset-frame" ||
             option == "--post-solve-projection" ||
             option == "--shader-dir" ||
             option == "--input-script" ||
@@ -3017,6 +3020,8 @@ Args parse_args(int argc, char** argv) {
                 args.generated_body_constraint_frame = value;
             } else if (option == "--constraint-sample-relation-frame") {
                 args.constraint_sample_relation_frame = value;
+            } else if (option == "--constraint-relation-reset-frame") {
+                args.constraint_relation_reset_frame = value;
             } else if (option == "--post-solve-projection") {
                 args.post_solve_projection = value;
             } else if (option == "--shader-dir") {
@@ -3041,6 +3046,7 @@ Args parse_args(int argc, char** argv) {
                 << "[--body-solver-export-frame FILE] "
                 << "[--generated-body-constraint-frame FILE] "
                 << "[--constraint-sample-relation-frame FILE] "
+                << "[--constraint-relation-reset-frame FILE] "
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
@@ -3216,6 +3222,10 @@ int main(int argc, char** argv) {
             << (!args.constraint_sample_relation_frame.empty() ?
                 "true" : "false")
             << ",\n"
+            << "  \"constraint_relation_reset_frame_mode\": "
+            << (!args.constraint_relation_reset_frame.empty() ?
+                "true" : "false")
+            << ",\n"
             << "  \"post_solve_projection_mode\": "
             << (!args.post_solve_projection.empty() ? "true" : "false")
             << ",\n"
@@ -3374,10 +3384,14 @@ int main(int argc, char** argv) {
             !args.generated_body_constraint_frame.empty();
         const bool constraint_sample_relation_frame_mode =
             !args.constraint_sample_relation_frame.empty();
+        const bool constraint_relation_reset_frame_mode =
+            !args.constraint_relation_reset_frame.empty();
         shift::runtime::physics::PreparedGeneratedBodyConstraintFrame
             generated_body_constraint_frame{};
         shift::runtime::physics::PreparedConstraintSampleRelationFrame
             constraint_sample_relation_frame{};
+        shift::runtime::physics::PreparedConstraintRelationResetFrame
+            constraint_relation_reset_frame{};
         uint64_t generated_body_constraint_join_steps = 0;
         uint64_t constraint_sample_relation_refresh_steps = 0;
         double generated_body_constraint_max_rhs_join_error = 0.0;
@@ -3392,6 +3406,20 @@ int main(int argc, char** argv) {
         std::size_t constraint_sample_relation_refreshed_joint_samples = 0;
         std::size_t constraint_sample_relation_refreshed_hinge_samples = 0;
         std::size_t constraint_sample_relation_refreshed_bar_samples = 0;
+        uint64_t constraint_relation_reset_selection_steps = 0;
+        std::size_t constraint_relation_reset_joint_count = 0;
+        std::size_t constraint_relation_reset_hinge_count = 0;
+        std::size_t constraint_relation_reset_bar_count = 0;
+        std::size_t constraint_relation_reset_selected_joint_count = 0;
+        std::size_t constraint_relation_reset_selected_hinge_count = 0;
+        std::size_t constraint_relation_reset_selected_bar_count = 0;
+        std::size_t constraint_relation_reset_node_count = 0;
+        if (constraint_relation_reset_frame_mode &&
+            !constraint_sample_relation_frame_mode) {
+            throw std::runtime_error(
+                "--constraint-relation-reset-frame requires "
+                "--constraint-sample-relation-frame");
+        }
         if (constraint_sample_relation_frame_mode &&
             !generated_body_constraint_frame_mode) {
             throw std::runtime_error(
@@ -3504,6 +3532,33 @@ int main(int argc, char** argv) {
                 generated_join.hinge_sample_count;
             generated_body_constraint_bar_count =
                 generated_join.bar_sample_count;
+        }
+
+        if (constraint_relation_reset_frame_mode) {
+            constraint_relation_reset_frame =
+                shift::runtime::physics::
+                    load_prepared_constraint_relation_reset_frame(
+                        args.constraint_relation_reset_frame);
+            const auto reset_selection =
+                shift::runtime::physics::
+                    select_fun_007b3f40_reset_nodes(
+                        generated_body_constraint_frame,
+                        constraint_sample_relation_frame,
+                        constraint_relation_reset_frame);
+            constraint_relation_reset_joint_count =
+                reset_selection.joint_relation_count;
+            constraint_relation_reset_hinge_count =
+                reset_selection.hinge_relation_count;
+            constraint_relation_reset_bar_count =
+                reset_selection.bar_relation_count;
+            constraint_relation_reset_selected_joint_count =
+                reset_selection.selected_joint_relation_count;
+            constraint_relation_reset_selected_hinge_count =
+                reset_selection.selected_hinge_relation_count;
+            constraint_relation_reset_selected_bar_count =
+                reset_selection.selected_bar_relation_count;
+            constraint_relation_reset_node_count =
+                reset_selection.reset_nodes.size();
         }
 
         const bool post_solve_projection_mode =
@@ -3640,10 +3695,27 @@ int main(int argc, char** argv) {
                             generated_join.max_matrix_join_error);
                     ++generated_body_constraint_join_steps;
                 }
-                const auto solver_result =
-                    shift::runtime::physics::
-                        execute_prepared_builtin_solver_frame(
-                            solver_frame);
+                shift::runtime::physics::
+                    PreparedBuiltinSolverFrameResult solver_result{};
+                if (constraint_relation_reset_frame_mode) {
+                    const auto reset_selection =
+                        shift::runtime::physics::
+                            select_fun_007b3f40_reset_nodes(
+                                generated_body_constraint_frame,
+                                constraint_sample_relation_frame,
+                                constraint_relation_reset_frame);
+                    solver_result =
+                        shift::runtime::physics::
+                            execute_prepared_builtin_solver_frame_with_reset_nodes(
+                                solver_frame,
+                                reset_selection.reset_nodes);
+                    ++constraint_relation_reset_selection_steps;
+                } else {
+                    solver_result =
+                        shift::runtime::physics::
+                            execute_prepared_builtin_solver_frame(
+                                solver_frame);
+                }
                 solver_frame_max_oracle_error =
                     std::max(
                         solver_frame_max_oracle_error,
@@ -3847,6 +3919,14 @@ int main(int argc, char** argv) {
             << solver_frame_scalar_count << ",\n"
             << "  \"physics_solver_frame_reset_node_count\": "
             << solver_frame_reset_node_count << ",\n"
+            << "  \"physics_solver_effective_reset_node_count\": "
+            << (constraint_relation_reset_frame_mode ?
+                constraint_relation_reset_node_count :
+                solver_frame_reset_node_count)
+            << ",\n"
+            << "  \"physics_solver_frame_reset_nodes_consumed\": "
+            << (constraint_relation_reset_frame_mode ? "false" : "true")
+            << ",\n"
             << "  \"physics_solver_frame_steps\": "
             << solver_frame_steps << ",\n"
             << "  \"physics_solver_frame_max_oracle_error\": "
@@ -3898,6 +3978,28 @@ int main(int argc, char** argv) {
             << "  \"physics_constraint_sample_relation_refresh_steps\": "
             << constraint_sample_relation_refresh_steps << ",\n"
             << "  \"physics_constraint_sample_relation_values_stored_in_packet\": false,\n"
+            << "  \"physics_constraint_relation_reset_frame_loaded\": "
+            << (constraint_relation_reset_frame_mode ? "true" : "false")
+            << ",\n"
+            << "  \"physics_constraint_relation_reset_joint_count\": "
+            << constraint_relation_reset_joint_count << ",\n"
+            << "  \"physics_constraint_relation_reset_hinge_count\": "
+            << constraint_relation_reset_hinge_count << ",\n"
+            << "  \"physics_constraint_relation_reset_bar_count\": "
+            << constraint_relation_reset_bar_count << ",\n"
+            << "  \"physics_constraint_relation_reset_selected_joint_count\": "
+            << constraint_relation_reset_selected_joint_count << ",\n"
+            << "  \"physics_constraint_relation_reset_selected_hinge_count\": "
+            << constraint_relation_reset_selected_hinge_count << ",\n"
+            << "  \"physics_constraint_relation_reset_selected_bar_count\": "
+            << constraint_relation_reset_selected_bar_count << ",\n"
+            << "  \"physics_constraint_relation_reset_node_count\": "
+            << constraint_relation_reset_node_count << ",\n"
+            << "  \"physics_constraint_relation_reset_selection_steps\": "
+            << constraint_relation_reset_selection_steps << ",\n"
+            << "  \"physics_constraint_relation_reset_state_offset\": 112,\n"
+            << "  \"physics_constraint_relation_reset_tested_bit\": 0,\n"
+            << "  \"physics_constraint_relation_reset_nodes_stored_in_packet\": false,\n"
             << "  \"physics_solver_provider_present\": false,\n"
             << "  \"physics_post_solve_projection_loaded\": "
             << (post_solve_projection_mode ? "true" : "false") << ",\n"
