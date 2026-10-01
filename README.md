@@ -4,7 +4,7 @@ Evidence-driven reconstruction of *Need for Speed: SHIFT* resource formats,
 runtime contracts and game systems, with an offline Linux/Vulkan runtime as the
 primary execution target.
 
-**Merged baseline: Phase 645. Current development: Phase 646.**
+**Merged baseline: Phase 646. Current development: Phase 647.**
 
 The repository has grown from a BFF extractor into a connected resource,
 scene, renderer, physics, AI/track and native-runtime reconstruction. The
@@ -487,3 +487,14 @@ substantially less debugger work than full solver/provider capture.
 
 The same Phase 637–645 correlation, session, packaging, verification and replay
 gates still apply; missing authentic mutation evidence remains blocked.
+
+
+## Phase 647 stop on first relation mutation
+
+The first authentic lightweight long-window capture covered 600 post-solve
+frames and 1200 contiguous timeline anchors without any `FUN_00757d2c` hit.
+The launcher now supports `--stop-on-relation-mutation`, which writes the
+first mutation event and then stops GDB so the generated command file can detach
+and quit immediately. It can be combined with a large `--capture-frames N`
+fallback, allowing setup-time mutations to end the capture before the frame
+budget expires.
