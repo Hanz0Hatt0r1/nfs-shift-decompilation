@@ -104,7 +104,11 @@ def prepare_probe_bundle(
     exe = resolve_probe_executable(executable, output)
     validation = validate_probe_executable_file(exe)
     output.mkdir(parents=True, exist_ok=True)
-    stale_artifacts_removed = clear_capture_artifacts(output)
+    stale_artifacts_removed = (
+        clear_capture_artifacts(output)
+        if validation["ready"]
+        else []
+    )
     capture_session_id = new_capture_session_id()
     capture_session = describe_capture_session(
         capture_session_id,
