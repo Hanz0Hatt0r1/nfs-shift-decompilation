@@ -638,3 +638,34 @@ def test_phase642_launcher_passes_capture_frame_budget_to_bundle_prepare(
     ) == 0
 
     assert captured["capture_frames"] == 4
+
+
+def test_phase646_launcher_passes_relation_timeline_only_mode(
+    monkeypatch,
+    tmp_path: Path,
+    capsys,
+):
+    captured = {}
+
+    def fake_prepare(*args, **kwargs):
+        captured.update(kwargs)
+        return _manifest()
+
+    monkeypatch.setattr(tool, "prepare_probe_bundle", fake_prepare)
+
+    assert tool.main(
+        [
+            str(tmp_path / "SHIFT.exe"),
+            "--output",
+            str(tmp_path / "capture"),
+            "--relation-timeline-only",
+            "--capture-frames",
+            "2",
+        ]
+    ) == 0
+
+    assert captured["relation_timeline_only"] is True
+    assert captured["capture_frames"] == 2
+    output = capsys.readouterr().out
+    assert '"mode": "relation-timeline-only"' in output
+    assert '"auto_detach": true' in output
