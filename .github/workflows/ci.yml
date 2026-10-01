@@ -101,6 +101,41 @@ jobs:
           Get-Content $log | ForEach-Object {
             $_ | ConvertFrom-Json | Out-Null
           }
+      - name: Verify explicit D3D9 backend chainload
+        shell: pwsh
+        run: |
+          $dll = Resolve-Path "native_capture/build/Release/d3d9.dll"
+          $smoke = Resolve-Path "native_capture/build/Release/shift_d3d9_proxy_smoke.exe"
+          $log = Join-Path $env:RUNNER_TEMP "shift_d3d9_proxy_backend_smoke.jsonl"
+          $env:SHIFT_D3D9_BACKEND = Join-Path $env:WINDIR "System32\d3d9.dll"
+          try {
+            & $smoke $dll $log
+            if ($LASTEXITCODE -ne 0) {
+              throw "D3D9 backend smoke test failed with exit code $LASTEXITCODE"
+            }
+          } finally {
+            Remove-Item Env:SHIFT_D3D9_BACKEND -ErrorAction SilentlyContinue
+          }
+          $events = Get-Content $log | ForEach-Object { $_ | ConvertFrom-Json }
+          $selected = $events | Where-Object event -eq "proxy_d3d9_backend_selected" | Select-Object -Last 1
+          if (-not $selected -or $selected.source -ne "environment") {
+            $events | ConvertTo-Json -Depth 5 | Write-Host
+            throw "proxy did not report the explicit environment backend"
+          }
+      - name: Parse PowerShell capture launcher
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path "tools/run_shift_capture.ps1"),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -ne 0) {
+            $errors | Format-List | Out-String | Write-Host
+            throw "tools/run_shift_capture.ps1 has PowerShell parse errors"
+          }
       - name: Upload D3D9 proxy build
         uses: actions/upload-artifact@v4
         with:
