@@ -63,8 +63,8 @@ def evaluate_joint_projection(
     lx, ly, lz = _vec3(linear_velocity, name="linear_velocity")
 
     d2 = sz * ay - sy * az
-    d3 = bz * sx - sz * bx
-    d5 = sy * bx - by * sx
+    d3 = az * sx - sz * ax
+    d5 = sy * ax - ay * sx
 
     d4 = (
         (sx + bx) * quadratic_scale
