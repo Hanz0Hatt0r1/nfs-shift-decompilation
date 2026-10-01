@@ -125,6 +125,18 @@ jobs:
             out/vulkan/runtime/constraint_sample_refresh.json
           grep -q '"bar_record_stride": 184' \
             out/vulkan/runtime/constraint_sample_refresh.json
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R shift_runtime_constraint_relation_frame
+          native_runtime/build/shift_runtime_constraint_relation_frame_check \
+            | tee out/vulkan/runtime/constraint_relation_frame.json
+          grep -q '"format": "SHIFT.NativeConstraintRelationFrameCheck/1"' \
+            out/vulkan/runtime/constraint_relation_frame.json
+          grep -q '"construction_function": "FUN_007b3820"' \
+            out/vulkan/runtime/constraint_relation_frame.json
+          grep -q '"same_body_insertion_order_preserved": true' \
+            out/vulkan/runtime/constraint_relation_frame.json
+          grep -q '"gbcf_packet_emitted": false' \
+            out/vulkan/runtime/constraint_relation_frame.json
           grep -q '"bar_zero_length_preserved": true' \
             out/vulkan/runtime/constraint_sample_refresh.json
           grep -q '"nonfinite_rejected": true' \
