@@ -6,6 +6,8 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$ProxyDll,
 
+    [string]$D3DX9_41 = "",
+
     [string]$OutputDir = ".\shift-capture",
 
     [ValidateSet("Passthrough", "Diagnostic", "Capture")]
@@ -65,6 +67,10 @@ if ($SignatureDiscovery) {
 
 $gamePath = (Resolve-Path $GameExe).Path
 $proxyPath = (Resolve-Path $ProxyDll).Path
+$d3dxPath = $null
+if ($D3DX9_41) {
+    $d3dxPath = (Resolve-Path $D3DX9_41).Path
+}
 $gameDir = Split-Path -Parent $gamePath
 $proxyName = Split-Path -Leaf $proxyPath
 
@@ -73,8 +79,12 @@ if ($proxyName -ine "d3d9.dll") {
 }
 
 $targetDll = Join-Path $gameDir "d3d9.dll"
+$targetD3DX = Join-Path $gameDir "d3dx9_41.dll"
 if ([IO.Path]::GetFullPath($proxyPath) -ieq [IO.Path]::GetFullPath($targetDll)) {
     throw "ProxyDll must not already be the game's d3d9.dll; use the built artifact as the source"
+}
+if ($d3dxPath -and ([IO.Path]::GetFullPath($d3dxPath) -ieq [IO.Path]::GetFullPath($targetD3DX))) {
+    throw "D3DX9_41 must point to an external source DLL, not the game's d3dx9_41.dll"
 }
 
 $out = [IO.Path]::GetFullPath($OutputDir)
@@ -85,6 +95,7 @@ $crashPath = Join-Path $out "shift_d3d9_crash.jsonl"
 $sidecarDll = Join-Path $gameDir "d3d9.shift_backend.dll"
 $backupDll = Join-Path $out "original_d3d9.dll"
 $backupSidecar = Join-Path $out "original_d3d9.shift_backend.dll"
+$backupD3DX = Join-Path $out "original_d3dx9_41.dll"
 
 # The capture writer opens JSONL files in append mode. Treat every launcher
 # invocation as an independent session and remove launcher-owned outputs first.
@@ -104,6 +115,10 @@ if ($CaptureTexturePayloads) {
 
 $hadDll = Test-Path $targetDll
 $hadSidecar = Test-Path $sidecarDll
+$hadD3DX = $false
+if ($d3dxPath) {
+    $hadD3DX = Test-Path $targetD3DX
+}
 $stagedBackend = $false
 $exitCode = 0
 
@@ -113,6 +128,9 @@ if ($hadDll) {
 }
 if ($hadSidecar) {
     Copy-Item -LiteralPath $sidecarDll -Destination $backupSidecar -Force
+}
+if ($d3dxPath -and $hadD3DX) {
+    Copy-Item -LiteralPath $targetD3DX -Destination $backupD3DX -Force
 }
 
 $oldCapture = $env:SHIFT_D3D9_CAPTURE
@@ -157,6 +175,9 @@ try {
     }
 
     Copy-Item -LiteralPath $proxyPath -Destination $targetDll -Force
+    if ($d3dxPath) {
+        Copy-Item -LiteralPath $d3dxPath -Destination $targetD3DX -Force
+    }
 
     $env:SHIFT_D3D9_CAPTURE = $capturePath
     $env:SHIFT_D3D9_CRASH_LOG = $crashPath
@@ -252,6 +273,11 @@ try {
     }
     if ($CaptureBufferPayloads) { Write-Host "Buffers : $env:SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR" }
     if ($CaptureTexturePayloads) { Write-Host "Tex raw : $env:SHIFT_D3D9_CAPTURE_TEXTURE_PAYLOAD_DIR" }
+    if ($d3dxPath) {
+        Write-Host "D3DX9   : $d3dxPath -> $targetD3DX"
+    } else {
+        Write-Host "D3DX9   : no explicit source DLL supplied"
+    }
     if ($stagedBackend) {
         Write-Host "Backend : preserved local d3d9.dll via $sidecarDll"
     } else {
@@ -279,6 +305,13 @@ finally {
         Copy-Item -LiteralPath $backupSidecar -Destination $sidecarDll -Force
     } else {
         Remove-Item -LiteralPath $sidecarDll -Force -ErrorAction SilentlyContinue
+    }
+    if ($d3dxPath) {
+        if ($hadD3DX) {
+            Copy-Item -LiteralPath $backupD3DX -Destination $targetD3DX -Force
+        } else {
+            Remove-Item -LiteralPath $targetD3DX -Force -ErrorAction SilentlyContinue
+        }
     }
 
     if ($null -eq $oldCapture) { Remove-Item Env:SHIFT_D3D9_CAPTURE -ErrorAction SilentlyContinue } else { $env:SHIFT_D3D9_CAPTURE = $oldCapture }
