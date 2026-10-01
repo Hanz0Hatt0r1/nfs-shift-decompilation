@@ -420,3 +420,32 @@ def test_phase608_fixed_step_solver_frame_requires_ready_runtime_evidence():
     assert "physics_solver_post_solve_body_state_applied" in source
     assert '"physics_solver_provider_present\\": false' in source
     assert '"physics_solver_post_solve_body_state_applied\\": false' in source
+
+
+def test_phase610_fixed_step_solver_joins_post_solve_projection():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+
+    assert '#include "shift_post_solve_projection.hpp"' in source
+    assert '"--post-solve-projection"' in source
+    assert "load_prepared_post_solve_body_projection" in source
+    assert "execute_post_solve_body_projection_with_solution" in source
+    assert "--post-solve-projection requires --solver-frame" in source
+    assert (
+        "post-solve projection scalar count does not match solver frame"
+        in source
+    )
+    assert (
+        "post-solve projection body count does not match physics workspace"
+        in source
+    )
+    assert (
+        "post-solve projection constraint counts do not match physics workspace"
+        in source
+    )
+    assert "physics_post_solve_projection_loaded" in source
+    assert "physics_post_solve_projection_steps" in source
+    assert "physics_post_solve_projection_max_solver_join_error" in source
+    assert "physics_post_solve_projection_max_oracle_error" in source
+    assert "physics_solver_persistent_vehicle_state_applied" in source
