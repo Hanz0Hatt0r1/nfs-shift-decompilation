@@ -714,6 +714,17 @@ class ProviderSolveProbe(_BaseProbe):
 
 
 class PostSolveProbe(_BaseProbe):
+    def __init__(
+        self,
+        address: int,
+        label: str,
+        output_dir: Path,
+        *,
+        stop_after_hit: int | None = None,
+    ) -> None:
+        super().__init__(address, label, output_dir)
+        self.stop_after_hit = stop_after_hit
+
     def stop(self) -> bool:
         self.hit += 1
         runtime_event_sequence = _next_runtime_event_sequence()
@@ -739,7 +750,10 @@ class PostSolveProbe(_BaseProbe):
             "source_address": FUNCTIONS["post_solve"],
         }
         self.write_json(f"post_solve_{self.hit:06d}.json", payload)
-        return False
+        return (
+            self.stop_after_hit is not None
+            and self.hit >= self.stop_after_hit
+        )
 
 
 class SDFProbeCommand(gdb.Command):
@@ -752,12 +766,40 @@ class SDFProbeCommand(gdb.Command):
     def invoke(self, argument: str, from_tty: bool) -> None:
         args = gdb.string_to_argv(argument)
         provider_only = False
+        capture_frames = None
+
         if "--provider-only" in args:
             provider_only = True
             args.remove("--provider-only")
+
+        if "--capture-frames" in args:
+            index = args.index("--capture-frames")
+            if index + 1 >= len(args):
+                raise gdb.GdbError(
+                    "--capture-frames requires a positive integer"
+                )
+            raw_capture_frames = args[index + 1]
+            del args[index:index + 2]
+            try:
+                capture_frames = int(raw_capture_frames)
+            except ValueError as exc:
+                raise gdb.GdbError(
+                    "--capture-frames requires a positive integer"
+                ) from exc
+            if capture_frames <= 0:
+                raise gdb.GdbError(
+                    "--capture-frames requires a positive integer"
+                )
+
+        if provider_only and capture_frames is not None:
+            raise gdb.GdbError(
+                "--capture-frames is supported only in full mode"
+            )
+
         if len(args) != 1:
             raise gdb.GdbError(
-                "usage: sdf-probe OUTPUT_DIR [--provider-only]"
+                "usage: sdf-probe OUTPUT_DIR [--provider-only] "
+                "[--capture-frames N]"
             )
         output = Path(os.path.expanduser(args[0])).resolve()
 
@@ -781,7 +823,12 @@ class SDFProbeCommand(gdb.Command):
                 ),
                 FrameEntryProbe(FUNCTIONS["frame_entry"], "frame_entry", output),
                 SolverEntryProbe(FUNCTIONS["builtin_solver"], "builtin_solver", output),
-                PostSolveProbe(FUNCTIONS["post_solve"], "post_solve", output),
+                PostSolveProbe(
+                    FUNCTIONS["post_solve"],
+                    "post_solve",
+                    output,
+                    stop_after_hit=capture_frames,
+                ),
             ])
         self.breakpoints.extend([
             ProviderSolveProbe(
@@ -820,6 +867,7 @@ class SDFProbeCommand(gdb.Command):
             f"provider1_reset=0x{get_vtable_lifecycle(1).reset_function:08x},",
             f"post_solve=0x{FUNCTIONS['post_solve']:08x},",
             f"mode={'provider-only' if provider_only else 'full'},",
+            f"capture_frames={capture_frames},",
             f"output={output}",
         )
 
