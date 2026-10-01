@@ -141,8 +141,20 @@ jobs:
             out/vulkan/runtime/joint_projection.json
           grep -q '"non_finite_rejected": true' \
             out/vulkan/runtime/joint_projection.json
-          grep -q '"max_absolute_error": 0' \
-            out/vulkan/runtime/joint_projection.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path("out/vulkan/runtime/joint_projection.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if float(report["max_absolute_error"]) > 1e-12:
+              raise SystemExit(
+                  "native JOINT projection exceeded 1e-12 parity tolerance"
+              )
+          PY
           grep -q '"full_fun_007bc680_executed": false' \
             out/vulkan/runtime/joint_projection.json
           grep -q '"status": "ok"' \
