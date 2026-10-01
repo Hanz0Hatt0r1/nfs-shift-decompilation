@@ -357,3 +357,16 @@ def test_phase607_cli_accepts_runtime_participant_evidence_join():
     assert args.observation == "participant-observation.json"
     assert args.output == "participant-runtime-evidence.json"
     assert args.fn.__name__ == "cmd_native_participant_runtime_evidence"
+
+
+def test_phase609_cli_accepts_native_post_solve_projection():
+    parser = build_parser()
+    args = parser.parse_args([
+        "native-post-solve-projection",
+        "post-solve-input.json",
+        "out/native-post-solve",
+    ])
+
+    assert args.input == "post-solve-input.json"
+    assert args.output_dir == "out/native-post-solve"
+    assert args.fn.__name__ == "cmd_native_post_solve_projection"
