@@ -42,4 +42,12 @@ select_fun_007b3f40_reset_nodes(
     const PreparedConstraintSampleRelationFrame& relations,
     const PreparedConstraintRelationResetFrame& reset_state);
 
+std::vector<std::size_t>
+normalize_fun_007b3f40_reset_nodes(
+    const std::vector<std::size_t>& reset_call_nodes);
+
+void verify_fun_007b3f40_reset_nodes_match(
+    const ConstraintRelationResetSelectionResult& selection,
+    const std::vector<std::size_t>& solver_frame_reset_nodes);
+
 }  // namespace shift::runtime::physics
