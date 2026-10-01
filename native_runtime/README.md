@@ -471,3 +471,17 @@ native_runtime/build/shift_runtime_body_preprojection_check
 The checker reproduces the retail residual expressions, the exact
 `FUN_007aefb0` float boundary and +0x90 linear scaling. It intentionally does
 not execute the downstream constraint helpers yet.
+
+
+## Phase 617 native JOINT projection
+
+Run the deterministic source-backed JOINT kernel regression:
+
+```bash
+native_runtime/build/shift_runtime_joint_projection_check
+```
+
+It validates `FUN_007bac60` Q/L scales, corrected BODY-axis cross terms,
+signed three-lane output, bounded solver-vector application and fail-closed
+invalid inputs. It does not yet iterate runtime JOINT samples or execute
+HINGE/BAR contributions.
