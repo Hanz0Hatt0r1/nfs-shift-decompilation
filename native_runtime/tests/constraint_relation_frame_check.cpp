@@ -208,6 +208,21 @@ int main() {
                 "overlapping scalar layout accepted");
         }
 
+        bool gap_rejected = false;
+        try {
+            auto invalid = input;
+            invalid.hinges[0].scalar_base = 4;
+            invalid.bars[0].scalar_base = 5;
+            (void)build_fun_007b3820_constraint_relation_frame(
+                invalid);
+        } catch (const std::invalid_argument&) {
+            gap_rejected = true;
+        }
+        if (!gap_rejected) {
+            throw std::runtime_error(
+                "gapped scalar layout accepted");
+        }
+
         bool body_range_rejected = false;
         try {
             auto invalid = input;
@@ -240,6 +255,7 @@ int main() {
             << result.body_sample_count << ",\n"
             << "  \"same_body_insertion_order_preserved\": true,\n"
             << "  \"scalar_layout_fail_closed\": true,\n"
+            << "  \"scalar_gap_fail_closed\": true,\n"
             << "  \"body_index_fail_closed\": true,\n"
             << "  \"gbcf_packet_emitted\": false,\n"
             << "  \"max_absolute_error\": "
