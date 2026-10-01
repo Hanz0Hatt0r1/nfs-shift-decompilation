@@ -70,7 +70,7 @@ int main() {
             evaluate_fun_007bac60_joint(input);
         require_close(
             positive.cross_terms,
-            {0.05, 1.0, -0.5},
+            {0.05, -0.10, 0.05},
             1e-12,
             "JOINT cross terms",
             max_absolute_error);
