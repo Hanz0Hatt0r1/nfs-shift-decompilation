@@ -603,8 +603,7 @@ def test_phase632_fixed_step_joins_relation_reset_selection_to_solver_frame():
     assert "--constraint-sample-relation-frame" in source
     assert "load_prepared_constraint_relation_reset_frame" in source
     assert "select_fun_007b3f40_reset_nodes" in source
-    assert "constraint relation reset nodes do not match " in source
-    assert "solver frame" in source
+    assert "verify_fun_007b3f40_reset_nodes_match" in source
     assert "execute_prepared_builtin_solver_frame(" in source
     assert "execute_prepared_builtin_solver_frame_with_reset_nodes" not in source
     assert "physics_solver_effective_reset_node_count" in source
@@ -624,3 +623,5 @@ def test_phase632_fixed_step_joins_relation_reset_selection_to_solver_frame():
     assert "PreparedConstraintRelationResetFrame" in reset_header
     assert "ConstraintRelationResetSelectionResult" in reset_header
     assert "select_fun_007b3f40_reset_nodes" in reset_header
+    assert "normalize_fun_007b3f40_reset_nodes" in reset_header
+    assert "verify_fun_007b3f40_reset_nodes_match" in reset_header
