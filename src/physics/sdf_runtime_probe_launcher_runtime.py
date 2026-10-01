@@ -57,7 +57,7 @@ def build_gdb_command_file(
     output_dir: str | Path,
     provider_only: bool = False,
     relation_timeline_only: bool = False,
-    stop_on_relation_mutation: bool = False,
+    stop_after_relation_mutation: bool = False,
     capture_frames: int | None = None,
     capture_session_id: str | None = None,
 ) -> str:
@@ -67,9 +67,9 @@ def build_gdb_command_file(
         raise ValueError(
             "provider_only and relation_timeline_only are mutually exclusive"
         )
-    if provider_only and stop_on_relation_mutation:
+    if provider_only and stop_after_relation_mutation:
         raise ValueError(
-            "stop_on_relation_mutation is not supported in provider-only mode"
+            "stop_after_relation_mutation is not supported in provider-only mode"
         )
     if capture_frames is not None:
         capture_frames = int(capture_frames)
@@ -89,8 +89,8 @@ def build_gdb_command_file(
         probe_args += " --provider-only"
     if relation_timeline_only:
         probe_args += " --relation-timeline-only"
-    if stop_on_relation_mutation:
-        probe_args += " --stop-on-relation-mutation"
+    if stop_after_relation_mutation:
+        probe_args += " --stop-after-relation-mutation"
     if capture_frames is not None:
         probe_args += f" --capture-frames {capture_frames}"
 
@@ -102,7 +102,7 @@ def build_gdb_command_file(
         f"sdf-probe {probe_args}\n"
         "continue\n"
     )
-    if capture_frames is not None or stop_on_relation_mutation:
+    if capture_frames is not None or stop_after_relation_mutation:
         commands += "detach\nquit\n"
     return commands
 
@@ -114,7 +114,7 @@ def prepare_probe_bundle(
     probe_script: str | Path,
     provider_only: bool = False,
     relation_timeline_only: bool = False,
-    stop_on_relation_mutation: bool = False,
+    stop_after_relation_mutation: bool = False,
     capture_frames: int | None = None,
 ) -> dict[str, Any]:
     output = Path(output_dir).resolve()
@@ -122,9 +122,9 @@ def prepare_probe_bundle(
         raise ValueError(
             "provider_only and relation_timeline_only are mutually exclusive"
         )
-    if provider_only and stop_on_relation_mutation:
+    if provider_only and stop_after_relation_mutation:
         raise ValueError(
-            "stop_on_relation_mutation is not supported in provider-only mode"
+            "stop_after_relation_mutation is not supported in provider-only mode"
         )
     exe = resolve_probe_executable(executable, output)
     validation = validate_probe_executable_file(exe)
@@ -172,7 +172,7 @@ def prepare_probe_bundle(
             output_dir=output,
             provider_only=provider_only,
             relation_timeline_only=relation_timeline_only,
-            stop_on_relation_mutation=stop_on_relation_mutation,
+            stop_after_relation_mutation=stop_after_relation_mutation,
             capture_frames=capture_frames,
             capture_session_id=capture_session_id,
         ),
@@ -211,10 +211,10 @@ def prepare_probe_bundle(
             ),
             "capture_session_id": capture_session_id,
             "capture_frames": capture_frames,
-            "stop_on_relation_mutation": stop_on_relation_mutation,
+            "stop_after_relation_mutation": stop_after_relation_mutation,
             "auto_detach": (
                 capture_frames is not None
-                or stop_on_relation_mutation
+                or stop_after_relation_mutation
             ),
             "expected_captures": expected_captures,
         },
@@ -342,7 +342,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "provider-only": "omit per-frame and builtin-solver breakpoints; keep provider solve/reset and scalar-reset hooks",
             "bounded-full": "stop on the requested post-solve hit, then detach and quit GDB",
             "relation-timeline-only": "capture only relation mutation, frame entry and post-solve anchors",
-            "stop-on-relation-mutation": "stop, detach and quit on the first captured relation mutation",
+            "stop-after-relation-mutation": "stop, detach and quit on the first post-solve anchor after a captured relation mutation",
             "capture-session": "isolate one output directory to one fresh evidence session",
         },
         "fail_closed": [
@@ -354,7 +354,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "non-positive bounded capture frame count",
             "bounded capture requested in provider-only mode",
             "provider-only combined with relation-timeline-only",
-            "stop-on-relation-mutation requested in provider-only mode",
+            "stop-after-relation-mutation requested in provider-only mode",
             "invalid capture-session identifier",
         ],
         "probe_targets": {
