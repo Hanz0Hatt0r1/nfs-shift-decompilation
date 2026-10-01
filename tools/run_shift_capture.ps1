@@ -59,6 +59,10 @@ if ($SignatureDiscovery -and ($TriggerCapture -or $ResourceTrigger -or $FrameSta
     throw "SignatureDiscovery cannot be combined with frame or trigger capture"
 }
 
+if ($SignatureDiscovery) {
+    $Mode = "Capture"
+}
+
 $gamePath = (Resolve-Path $GameExe).Path
 $proxyPath = (Resolve-Path $ProxyDll).Path
 $gameDir = Split-Path -Parent $gamePath
