@@ -73,6 +73,13 @@ target_link_libraries(shift_runtime_post_solve_projection_check PRIVATE
 target_compile_options(shift_runtime_post_solve_projection_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_solver_post_solve_join_check
+  tests/solver_post_solve_join_check.cpp)
+target_link_libraries(shift_runtime_solver_post_solve_join_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_solver_post_solve_join_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_builtin_sparse_solver
@@ -89,6 +96,13 @@ if(BUILD_TESTING)
     COMMAND shift_runtime_post_solve_projection_check)
   set_tests_properties(
     shift_runtime_post_solve_projection_usage
+    PROPERTIES WILL_FAIL TRUE)
+
+  add_test(
+    NAME shift_runtime_solver_post_solve_join_usage
+    COMMAND shift_runtime_solver_post_solve_join_check)
+  set_tests_properties(
+    shift_runtime_solver_post_solve_join_usage
     PROPERTIES WILL_FAIL TRUE)
 endif()
 
