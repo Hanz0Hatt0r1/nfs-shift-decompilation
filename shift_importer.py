@@ -2448,6 +2448,28 @@ def cmd_camera_state_snapshot(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_native_builtin_solver_frame(args: argparse.Namespace) -> int:
+    """Prepare an evidence-gated builtin solver frame for native execution."""
+    from native_builtin_solver_frame import (
+        build_native_builtin_solver_frame_file,
+    )
+
+    report = build_native_builtin_solver_frame_file(
+        args.input,
+        args.output_dir,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "scalar_count": report["scalar_count"],
+        "reset_node_count": report["reset_node_count"],
+        "packet_sha256": report["packet"]["sha256"],
+        "verification_scope": report.get("verification_scope"),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_native_camera_state_bridge(args: argparse.Namespace) -> int:
     """Bridge recovered CameraManager snapshot state into native_runtime."""
     from native_camera_state_bridge import validate_files
@@ -4967,6 +4989,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("input", help="JSON camera manager/buffer state")
     p.add_argument("output", help="SHIFT.CameraStateSnapshotRuntime/1 JSON output")
     p.set_defaults(fn=cmd_camera_state_snapshot)
+
+    p = sp.add_parser(
+        "native-builtin-solver-frame",
+        help=(
+            "prepare exact provider-absent matrix/RHS/reset/graph evidence "
+            "for native FUN_007b2210 -> FUN_007b0f20 execution"
+        ),
+    )
+    p.add_argument(
+        "input",
+        help="SHIFT.NativeBuiltinSolverFrameInput/1 JSON",
+    )
+    p.add_argument(
+        "output_dir",
+        help="directory for solver_frame_manifest.json and solver_frame.sbfr",
+    )
+    p.set_defaults(fn=cmd_native_builtin_solver_frame)
 
     p = sp.add_parser(
         "native-camera-state-bridge",

@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 604.**
+**Current mainline: Phase 606.**
 
 
 
@@ -31,7 +31,7 @@ Phase 602 adds `SHIFT.NativePhysicsParticipantBoundary/1`, joining the source-ba
 Phase 603 ports the source-backed builtin sparse numeric kernel `FUN_007b0f20` into native C++, with deterministic 3×3/4×4 parity and fail-closed graph/zero-pivot tests. It does not execute a complete BMW frame; matrix/RHS assembly, runtime diagonal-reset flags, provider-present dispatch and body-state application remain separate gates.
 
 
-Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `sample+0x70 & 1` evidence rather than inferred statically.
+Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation into native C++. The reset operation is executable and parity-tested, but reset-node selection remains gated by the runtime `sample+0x70 & 1` evidence rather than inferred statically.\n\nPhase 605 keeps the PhysicsParticipantManager registry index and IGPhaseVehicle selector ordinal as separate runtime identity domains until an independent join is observed.\n\nPhase 606 adds `SHIFT.NativeBuiltinSolverFrame/1`: an explicit provider-absent matrix/RHS/reset/graph packet, Python oracle and native loader/executor for the exact `FUN_007b2210 → FUN_007b0f20` sequence. It does not derive any of those runtime-only inputs.
 
 ## Immediate execution order
 
@@ -114,7 +114,7 @@ Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation i
 75. Make native vehicle-control input deterministic without inventing retail controller semantics — Phase 601 implemented as SHIFT.NativeRuntimeInputScript/1.
 76. Admit the source-backed participant registry/selector structural ABI into native state while preserving manager/selector separation and unresolved runtime participant identity — Phase 602 implemented as SHIFT.NativePhysicsParticipantBoundary/1.
 77. Port the exact source-backed builtin sparse solver kernel to native C++ and verify deterministic numerical parity independently of full-frame assembly — Phase 603 implemented for FUN_007b0f20.
-78. Port the exact builtin diagonal-reset mutation while keeping reset-node selection runtime-evidence-gated — Phase 604 implemented for FUN_007b2210.
+78. Port the exact builtin diagonal-reset mutation while keeping reset-node selection runtime-evidence-gated — Phase 604 implemented for FUN_007b2210.\n79. Preserve participant-manager registry identity and IGPhaseVehicle selector identity as separate native domains until an independent runtime join exists — Phase 605 implemented.\n80. Add a fail-closed prepared builtin solver-frame contract containing explicit provider-absent proof, matrix/RHS, reset nodes and exact sparse graph, then execute FUN_007b2210 → FUN_007b0f20 with Python/native oracle parity — Phase 606 implemented.
 
 ## Workstream status
 
@@ -130,8 +130,8 @@ Phase 604 ports the exact source-backed `FUN_007b2210` diagonal reset mutation i
 | SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed IMB/IMX neutral geometry; Silverstone capture/matcher/admission, native scene execution, external sampler admission, Phase 594 root solve, Phase 595 candidate join, Phase 596 owner-scoped cross-resource root consensus and Phase 597 consensus→handoff application implemented | authentic Silverstone D3D9 capture content + renderer-owned resource types beyond sampler2D/samplerCube-s3 + runtime IMX same-instance proof + authentic Phase 598 production coverage numbers + historical SceneGraph update sequence |
 | Camera | source-backed manager/state primitives + native snapshot/double-buffer handoff | retail timing/controller/view-selection behavior and exact render integration |
 | Native input | live keyboard intent + deterministic fixed-step input-script path | gamepad/analog normalization and retail input filtering |
-| Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff plus Phase 602 native structural participant boundary implemented |
-| Builtin solver | source-backed + native C++ FUN_007b0f20 solver and FUN_007b2210 reset kernels | exact full-frame matrix/RHS/reset-selection/body-state parity |
+| Vehicle physics | active | runtime graph, participant gate, manager event path, participant registry/update bridge, selector-context separation, participant process/reselection, selector candidate lifecycle, IGPhaseVehicle finalization, selector descriptor population, source-record admission scheduling and force-law boundaries; BFF-to-pre-PhysX handoff plus Phase 602 structural admission and Phase 605 identity-domain separation implemented |
+| Builtin solver | source-backed + native C++ FUN_007b0f20/FUN_007b2210 kernels + Phase 606 prepared exact-frame packet/oracle execution | authentic full-frame matrix/RHS/reset selection, provider-absent dispatch proof and post-solve body-state parity |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
 | Track/path runtime correlation | active | `TrackDetails`/`TrackList` structural-load-selection core and waypoint queries/links are source-backed; exit still requires a complete/unambiguous AIW → runtime → concrete path graph capture |

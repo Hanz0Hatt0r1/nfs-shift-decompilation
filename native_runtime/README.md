@@ -236,3 +236,28 @@ The API accepts already-selected scalar nodes only. Retail reset-node selection
 depends on the runtime constraint-sample low bit at `+0x70` and remains an
 external evidence gate. The native fixed-step loop still does not fabricate
 that selection or a complete BMW solver frame.
+
+
+## Phase 606 prepared builtin solver frames
+
+Prepare a frame only after the input already contains exact runtime evidence
+for provider absence, matrix/RHS, reset selection and the sparse graph:
+
+```bash
+python shift_importer.py native-builtin-solver-frame \
+  solver-frame-input.json \
+  out/native-solver-frame
+```
+
+Then execute the source-backed native reset/solve path and compare it to the
+Python oracle:
+
+```bash
+native_runtime/build/shift_runtime_builtin_solver_frame_check \
+  out/native-solver-frame/solver_frame.sbfr
+```
+
+The native loader independently verifies the packet proof mask. This executable
+does not derive a BMW frame and is not yet called by the fixed-step vehicle
+scheduler. Provider-present dispatch and post-solve body-state application stay
+outside this contract.
