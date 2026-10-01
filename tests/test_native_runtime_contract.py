@@ -587,3 +587,39 @@ def test_phase631_fixed_step_generated_body_refreshes_from_constraint_relations(
     )
     assert "PreparedConstraintSampleRelationFrame" in header
     assert "RefreshedGeneratedBodyConstraintFrame" in header
+
+
+def test_phase632_fixed_step_solver_gates_reset_nodes_on_relation_low_bits():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    header = Path(
+        "native_runtime/include/shift_constraint_reset_state_frame.hpp"
+    ).read_text(encoding="utf-8")
+
+    assert '#include "shift_constraint_reset_state_frame.hpp"' in source
+    assert '"--constraint-reset-state-frame"' in source
+    assert "--constraint-reset-state-frame requires " in source
+    assert "--constraint-sample-relation-frame" in source
+    assert "load_prepared_constraint_reset_state_frame" in source
+    assert "derive_fun_007b2210_reset_nodes" in source
+    assert "constraint reset-state BODY count does not match " in source
+    assert (
+        "constraint reset selection does not match solver frame"
+        in source
+    )
+    assert (
+        "constraint reset selection does not match "
+        in source
+    )
+    assert "solver frame on fixed step" in source
+    assert "physics_constraint_reset_state_frame_loaded" in source
+    assert "physics_constraint_reset_selected_joint_relations" in source
+    assert "physics_constraint_reset_selected_hinge_relations" in source
+    assert "physics_constraint_reset_selected_bar_relations" in source
+    assert "physics_constraint_reset_node_count" in source
+    assert "physics_constraint_reset_selection_steps" in source
+    assert "physics_constraint_reset_source_low_bit_only" in source
+    assert "physics_constraint_reset_nodes_stored_in_packet" in source
+    assert "PreparedConstraintResetStateFrame" in header
+    assert "ConstraintResetSelectionResult" in header
