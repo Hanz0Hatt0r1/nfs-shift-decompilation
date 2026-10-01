@@ -46,3 +46,17 @@ def test_phase635_runtime_event_sequence_anchors_solver_frame_order():
         next_class = source.find("\nclass ", start + 1)
         block = source[start:] if next_class < 0 else source[start:next_class]
         assert "_next_runtime_event_sequence()" in block
+
+
+def test_phase643_gdb_probe_isolates_and_stamps_capture_sessions():
+    source = Path("tools/gdb_sdf_solver_probe.py").read_text(encoding="utf-8")
+
+    assert "_CAPTURE_SESSION_ID: str | None = None" in source
+    assert "def _stamp_capture_session(payload: dict)" in source
+    assert 'stamped["capture_session_id"] = _CAPTURE_SESSION_ID' in source
+    assert '"--session-id"' in source
+    assert "capture_artifact_paths(output)" in source
+    assert "capture output contains stale evidence artifacts" in source
+    assert "_RUNTIME_EVENT_SEQUENCE = 0" in source
+    assert "_SCALAR_RESET_EVENT_COUNT = 0" in source
+    assert '"runtime_event_sequence": None' in source
