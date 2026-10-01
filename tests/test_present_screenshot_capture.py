@@ -120,7 +120,8 @@ def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
     assert '--frame-end' in wine
     assert '--buffer-payloads' in wine
     assert '--texture-payloads' in wine
-    assert 'WINEDLLOVERRIDES="d3d9=n,b' in wine
+    assert 'WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n,b"' in wine
+    assert 'WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n,b"' in wine
 
 
 
@@ -320,3 +321,13 @@ def test_signature_discovery_suppresses_full_render_stream():
     assert "SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY" in wine
     assert "--signature-discovery cannot be combined with frame or trigger capture" in wine
     assert "resource_signatures.json" in wine
+
+
+def test_wine_launcher_forces_native_d3dx9_41_preference():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    # SHIFT's D3DX effect/technique path is unstable with Wine's builtin
+    # implementation. Prefer the native runtime when it is present, while
+    # retaining builtin fallback through the n,b override.
+    assert 'd3dx9_41=n,b' in wine
+    assert '"${name,,}" == "d3dx9_41"' in wine
