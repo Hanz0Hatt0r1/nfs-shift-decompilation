@@ -2470,6 +2470,35 @@ def cmd_native_builtin_solver_frame(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def cmd_native_participant_runtime_evidence(
+    args: argparse.Namespace,
+) -> int:
+    """Join structural participant ABI with exact runtime identity evidence."""
+    from native_physics_participant_runtime_evidence import (
+        build_native_physics_participant_runtime_evidence_file,
+    )
+
+    report = build_native_physics_participant_runtime_evidence_file(
+        args.boundary,
+        args.observation,
+        args.output,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "participant_registry_index": report[
+            "participant_registry_index"
+        ],
+        "selector_ordinal": report["selector_ordinal"],
+        "participant_process_state": report[
+            "participant_process_state"
+        ],
+        "verification_scope": report.get("verification_scope"),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_native_camera_state_bridge(args: argparse.Namespace) -> int:
     """Bridge recovered CameraManager snapshot state into native_runtime."""
     from native_camera_state_bridge import validate_files
@@ -5006,6 +5035,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="directory for solver_frame_manifest.json and solver_frame.sbfr",
     )
     p.set_defaults(fn=cmd_native_builtin_solver_frame)
+
+    p = sp.add_parser(
+        "native-participant-runtime-evidence",
+        help=(
+            "join structural participant ABI with exact manager/selector "
+            "runtime identity observations"
+        ),
+    )
+    p.add_argument(
+        "boundary",
+        help="SHIFT.NativePhysicsParticipantBoundary/1 JSON",
+    )
+    p.add_argument(
+        "observation",
+        help="SHIFT.NativePhysicsParticipantObservation/1 JSON",
+    )
+    p.add_argument(
+        "output",
+        help="SHIFT.NativePhysicsParticipantRuntimeEvidence/1 JSON",
+    )
+    p.set_defaults(fn=cmd_native_participant_runtime_evidence)
 
     p = sp.add_parser(
         "native-camera-state-bridge",
