@@ -2,6 +2,7 @@
 
 #include "shift_body_solver_export.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
