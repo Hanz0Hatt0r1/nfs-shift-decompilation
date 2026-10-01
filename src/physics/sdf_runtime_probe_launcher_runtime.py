@@ -9,6 +9,12 @@ import zipfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from sdf_runtime_probe_capture_session import (
+    clear_capture_artifacts,
+    describe_capture_session,
+    new_capture_session_id,
+    validate_capture_session_id,
+)
 from sdf_runtime_probe_pe_validation import (
     EXPECTED_EXECUTABLE_SHA256,
     validate_probe_executable_file,
@@ -51,6 +57,7 @@ def build_gdb_command_file(
     output_dir: str | Path,
     provider_only: bool = False,
     capture_frames: int | None = None,
+    capture_session_id: str | None = None,
 ) -> str:
     script = Path(probe_script).resolve()
     output = Path(output_dir).resolve()
@@ -64,6 +71,10 @@ def build_gdb_command_file(
             )
 
     probe_args = f"{output}"
+    if capture_session_id is not None:
+        probe_args += (
+            f" --session-id {validate_capture_session_id(capture_session_id)}"
+        )
     if provider_only:
         probe_args += " --provider-only"
     if capture_frames is not None:
@@ -93,6 +104,12 @@ def prepare_probe_bundle(
     exe = resolve_probe_executable(executable, output)
     validation = validate_probe_executable_file(exe)
     output.mkdir(parents=True, exist_ok=True)
+    stale_artifacts_removed = clear_capture_artifacts(output)
+    capture_session_id = new_capture_session_id()
+    capture_session = describe_capture_session(
+        capture_session_id,
+        stale_artifacts_removed=stale_artifacts_removed,
+    )
 
     expected_captures = (
         [
@@ -120,6 +137,7 @@ def prepare_probe_bundle(
             output_dir=output,
             provider_only=provider_only,
             capture_frames=capture_frames,
+            capture_session_id=capture_session_id,
         ),
         encoding="utf-8",
     )
@@ -140,11 +158,13 @@ def prepare_probe_bundle(
             "validated": validation["ready"],
         },
         "validation": validation,
+        "capture_session": capture_session,
         "probe": {
             "script": str(Path(probe_script).resolve()),
             "gdb_command_file": str(command_file),
             "output_dir": str(output),
             "mode": "provider-only" if provider_only else "full",
+            "capture_session_id": capture_session_id,
             "capture_frames": capture_frames,
             "auto_detach": capture_frames is not None,
             "expected_captures": expected_captures,
@@ -264,6 +284,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "attach": "attach GDB to explicit user-supplied PID using attach.gdb",
             "provider-only": "omit per-frame and builtin-solver breakpoints; keep provider solve/reset and scalar-reset hooks",
             "bounded-full": "stop on the requested post-solve hit, then detach and quit GDB",
+            "capture-session": "isolate one output directory to one fresh evidence session",
         },
         "fail_closed": [
             "wrong retail SHA-256",
@@ -273,6 +294,7 @@ def describe_sdf_runtime_probe_launcher() -> dict[str, Any]:
             "non-positive attach PID",
             "non-positive bounded capture frame count",
             "bounded capture requested in provider-only mode",
+            "invalid capture-session identifier",
         ],
         "probe_targets": {
             "relation_state_mutation": "0x00757d2c",
