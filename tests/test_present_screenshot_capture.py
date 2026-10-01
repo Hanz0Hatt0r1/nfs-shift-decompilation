@@ -409,7 +409,8 @@ def test_wine_launcher_exports_inferred_prefix_before_winepath_and_wine():
     assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('capture_windows="$(winepath -w "$capture_path")"')
     assert wine.index('export WINEPREFIX="$wine_prefix"') < wine.index('"$wine_command" "$game"')
     assert 'echo "WINEPREFIX: $WINEPREFIX"' in wine
-    assert 'echo "Wine exe : $(command -v "$wine_command")"' in wine
+    assert 'wine_resolved="$(command -v "$wine_command")"' in wine
+    assert 'echo "Wine exe : $wine_resolved"' in wine
     assert 'echo "Winepath : $(command -v winepath)"' in wine
 
 
