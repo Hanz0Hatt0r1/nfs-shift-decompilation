@@ -428,3 +428,18 @@ Linux CI also rejects a packet with an incomplete proof mask.
 Contribution generation itself remains outside this contract. Phase 613 does
 not derive `FUN_007bc680`, reset flags or retail matrix/RHS state and does not
 yet feed its result into the prepared builtin solver frame.
+
+
+## Phase 614 BODY export / solver-frame join
+
+The native physics library can now require exact equality between a prepared
+Phase 613 `FUN_007ba570` export and the pre-reset matrix/RHS stored in a
+Phase 606 solver frame.
+
+The join compares all N RHS values and all N² matrix doubles before allowing the
+existing `FUN_007b2210 → FUN_007b0f20` executor to run. Linux CI includes a
+matching fixture and a separately valid SBEX that is rejected because its RHS
+does not match SBFR.
+
+This is still an evidence join. BODY contribution generation and runtime reset
+selection remain external inputs.
