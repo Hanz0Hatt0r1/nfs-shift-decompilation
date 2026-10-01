@@ -8,6 +8,7 @@ Usage:
     --proxy /path/to/d3d9.dll [--output DIR] \
     [--mode passthrough|diagnostic|capture] [--debug-output] \
     [--frame-start N] [--frame-end N] \
+    [--trigger] [--pre-frames N] [--post-frames N] \
     [--screenshots] [--buffer-payloads] [--texture-payloads] \
     [--wine wine] [-- GAME_ARGS...]
 
@@ -29,6 +30,9 @@ debug_output=0
 screenshots=0
 frame_start=""
 frame_end=""
+trigger_capture=0
+pre_frames=2
+post_frames=2
 buffer_payloads=0
 texture_payloads=0
 game_args=()
@@ -43,6 +47,9 @@ while (($#)); do
     --debug-output) debug_output=1; shift ;;
     --frame-start) frame_start="${2:?missing value for --frame-start}"; shift 2 ;;
     --frame-end) frame_end="${2:?missing value for --frame-end}"; shift 2 ;;
+    --trigger) trigger_capture=1; shift ;;
+    --pre-frames) pre_frames="${2:?missing value for --pre-frames}"; shift 2 ;;
+    --post-frames) post_frames="${2:?missing value for --post-frames}"; shift 2 ;;
     --screenshots) screenshots=1; shift ;;
     --buffer-payloads) buffer_payloads=1; shift ;;
     --texture-payloads) texture_payloads=1; shift ;;
@@ -70,6 +77,16 @@ for bound in "$frame_start" "$frame_end"; do
 done
 if [[ -n "$frame_start" && -n "$frame_end" ]] && ((frame_end < frame_start)); then
   echo "--frame-end must be >= --frame-start" >&2
+  exit 2
+fi
+for count in "$pre_frames" "$post_frames"; do
+  if [[ ! "$count" =~ ^[0-9]+$ ]]; then
+    echo "trigger frame counts must be non-negative integers" >&2
+    exit 2
+  fi
+done
+if ((trigger_capture)) && [[ -n "$frame_start" || -n "$frame_end" ]]; then
+  echo "--trigger cannot be combined with --frame-start/--frame-end" >&2
   exit 2
 fi
 
@@ -171,6 +188,22 @@ else
   unset SHIFT_D3D9_CAPTURE_FRAME_END || true
 fi
 
+trigger_file="$output/capture.trigger"
+if ((trigger_capture)); then
+  rm -f "$trigger_file"
+  export SHIFT_D3D9_CAPTURE_TRIGGER=1
+  export SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES="$pre_frames"
+  export SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES="$post_frames"
+  export SHIFT_D3D9_CAPTURE_TRIGGER_KEY=0x79
+  export SHIFT_D3D9_CAPTURE_TRIGGER_FILE="$(winepath -w "$trigger_file")"
+else
+  unset SHIFT_D3D9_CAPTURE_TRIGGER || true
+  unset SHIFT_D3D9_CAPTURE_TRIGGER_PRE_FRAMES || true
+  unset SHIFT_D3D9_CAPTURE_TRIGGER_POST_FRAMES || true
+  unset SHIFT_D3D9_CAPTURE_TRIGGER_KEY || true
+  unset SHIFT_D3D9_CAPTURE_TRIGGER_FILE || true
+fi
+
 if ((debug_output)); then
   export SHIFT_D3D9_CAPTURE_DEBUG_OUTPUT=1
 else
@@ -233,6 +266,10 @@ echo "Crash   : $crash_path"
 echo "Mode    : $mode"
 if [[ -n "$frame_start" || -n "$frame_end" ]]; then
   echo "Frames  : ${frame_start:-0}..${frame_end:-end}"
+fi
+if ((trigger_capture)); then
+  echo "Trigger : F10 (pre=$pre_frames, post=$post_frames)"
+  echo "          or: touch $trigger_file"
 fi
 if ((buffer_payloads)); then echo "Buffers : $buffer_dir"; fi
 if ((texture_payloads)); then echo "Tex raw : $texture_payload_dir"; fi
