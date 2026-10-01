@@ -832,6 +832,20 @@ jobs:
             out/vulkan/runtime/fixed_step_post_solve_check.json
           grep -q '"status": "ok"' \
             out/vulkan/runtime/fixed_step_post_solve_check.json
+          native_runtime/build/shift_runtime_solver_post_solve_join_check \
+            out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
+            out/vulkan/runtime/fixed_step_post_solve/post_solve.sbps \
+            | tee out/vulkan/runtime/fixed_step_post_solve_join_check.json
+          grep -q '"format": "SHIFT.NativeSolverPostSolveJoinCheck/1"' \
+            out/vulkan/runtime/fixed_step_post_solve_join_check.json
+          grep -q '"solver_scalar_count": 40' \
+            out/vulkan/runtime/fixed_step_post_solve_join_check.json
+          grep -q '"body_count": 11' \
+            out/vulkan/runtime/fixed_step_post_solve_join_check.json
+          grep -q '"max_solver_join_error": 0' \
+            out/vulkan/runtime/fixed_step_post_solve_join_check.json
+          grep -q '"status": "ok"' \
+            out/vulkan/runtime/fixed_step_post_solve_join_check.json
       - name: Write deterministic native input script
         run: |
           cat > out/vulkan/runtime/native_input.script <<'EOF'
@@ -928,26 +942,15 @@ jobs:
           python3 shift_importer.py native-post-solve-projection \
             out/vulkan/runtime/fixed_step_post_solve_mismatch_input.json \
             out/vulkan/runtime/fixed_step_post_solve_mismatch
-          set +e
-          xvfb-run -a native_runtime/build/shift_runtime \
-            --scene-set out/vulkan/native_scene_set \
-            --shader-dir native_runtime/build/shaders \
-            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
-            --camera-state out/vulkan/camera/native_camera.json \
-            --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
-            --solver-frame out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
-            --post-solve-projection out/vulkan/runtime/fixed_step_post_solve_mismatch/post_solve.sbps \
-            --input-script out/vulkan/runtime/native_input.script \
-            --validation \
+          if native_runtime/build/shift_runtime_solver_post_solve_join_check \
+            out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
+            out/vulkan/runtime/fixed_step_post_solve_mismatch/post_solve.sbps \
             > out/vulkan/runtime/post_solve_mismatch.stdout \
-            2> out/vulkan/runtime/post_solve_mismatch.stderr
-          status=$?
-          set -e
-          cat out/vulkan/runtime/post_solve_mismatch.stderr
-          if [ "$status" -eq 0 ]; then
-            echo "runtime unexpectedly accepted mismatched post-solve vector"
+            2> out/vulkan/runtime/post_solve_mismatch.stderr; then
+            echo "join checker unexpectedly accepted mismatched post-solve vector"
             exit 1
           fi
+          cat out/vulkan/runtime/post_solve_mismatch.stderr
           grep -q "post-solve solved-vector join mismatch" \
             out/vulkan/runtime/post_solve_mismatch.stderr
       - name: Upload artifacts
