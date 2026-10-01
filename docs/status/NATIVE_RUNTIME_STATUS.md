@@ -974,3 +974,31 @@ must agree with the captured slot, while the runtime caller accepts any valid
 This closes static caller provenance without assigning native scheduling.
 Authentic capture and offline timeline correlation are still required before
 either caller family can authorize a native relation-state mutation.
+
+
+## Phase 637 relation-state mutation timeline correlation
+
+The Phase 635 shared `runtime_event_sequence` and Phase 636 exact caller
+classification are now joined offline by
+`relation_state_mutation_timeline_correlation_runtime.py`.
+
+The correlator consumes the full-mode mutation JSONL stream plus captured
+frame-entry, scalar-reset, builtin/provider-solve and post-solve artifacts.
+Every mutation keeps its exact slot/branch/caller identity and receives the
+nearest preceding/following timeline anchors.
+
+Readiness fails closed on missing/empty mutation input, missing timeline
+anchors, duplicate event sequences, invalid slots, unready Phase 636 callers,
+missing frame entries, frame-entry sequence disagreement, or a no-frame event
+that appears after frame processing has begun.
+
+A setup mutation may be proven `before-first-frame-entry` only from strict
+sequence ordering. A mutation carrying a frame index is accepted only when its
+captured frame-entry sequence exactly matches that frame artifact and the
+mutation occurs later in the shared sequence.
+
+The output format is
+`SHIFT.ConstraintRelationStateMutationTimelineCorrelation/1`. It explicitly
+keeps `native_scheduler_admission=false` and
+`semantic_event_inference=false`. An authentic retail capture producing a
+ready report remains the next evidence gate.
