@@ -928,16 +928,23 @@ jobs:
           python3 shift_importer.py native-post-solve-projection \
             out/vulkan/runtime/fixed_step_post_solve_mismatch_input.json \
             out/vulkan/runtime/fixed_step_post_solve_mismatch
-          if xvfb-run -a native_runtime/build/shift_runtime \
+          set +e
+          xvfb-run -a native_runtime/build/shift_runtime \
             --scene-set out/vulkan/native_scene_set \
             --shader-dir native_runtime/build/shaders \
             --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --camera-state out/vulkan/camera/native_camera.json \
             --participant-boundary out/vulkan/runtime/native_physics_participant_runtime_evidence.json \
             --solver-frame out/vulkan/runtime/fixed_step_solver_frame/solver_frame.sbfr \
             --post-solve-projection out/vulkan/runtime/fixed_step_post_solve_mismatch/post_solve.sbps \
-            --frames 1 --validation \
+            --input-script out/vulkan/runtime/native_input.script \
+            --validation \
             > out/vulkan/runtime/post_solve_mismatch.stdout \
-            2> out/vulkan/runtime/post_solve_mismatch.stderr; then
+            2> out/vulkan/runtime/post_solve_mismatch.stderr
+          status=$?
+          set -e
+          cat out/vulkan/runtime/post_solve_mismatch.stderr
+          if [ "$status" -eq 0 ]; then
             echo "runtime unexpectedly accepted mismatched post-solve vector"
             exit 1
           fi
