@@ -3672,7 +3672,7 @@ int main(int argc, char** argv) {
             << body_solver_export_max_rhs_join_error << ",\n"
             << "  \"physics_body_solver_export_max_matrix_join_error\": "
             << body_solver_export_max_matrix_join_error << ",\n"
-            << "  \"physics_solver_provider_present\": false,\n
+            << "  \"physics_solver_provider_present\": false,\n"
             << "  \"physics_post_solve_projection_loaded\": "
             << (post_solve_projection_mode ? "true" : "false") << ",\n"
             << "  \"physics_post_solve_projection_body_count\": "
