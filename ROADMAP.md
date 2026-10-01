@@ -4,7 +4,7 @@ This document tracks the current execution order. Detailed historical work is pr
 
 ## Current milestone: specialized-provider runtime capture
 
-**Current mainline: Phase 615.**
+**Current mainline: Phase 616.**
 
 
 
@@ -43,7 +43,7 @@ Phase 612 ports the source-backed `FUN_007ba570` per-BODY additive solver-vector
 
 Phase 613 wraps that primitive in `SHIFT.NativeBodySolverExportFrame/1`: explicit proof-gated per-BODY `+0x150/+0x154` contributions are replayed in exact BODY order into zero-initialized complete solver destinations and checked against a Python oracle. Contribution generation remains external evidence, and the result is not yet joined to the prepared builtin solver frame.
 
-Phase 614 adds an exact pre-reset SBEX→SBFR join: the complete FUN_007ba570 global vector must equal the prepared RHS and every N² matrix double must equal the prepared solver matrix before FUN_007b2210/FUN_007b0f20 execution is admitted. A valid but mismatched SBEX remains fail-closed. Phase 615 moves that verification into each admitted native fixed step through `--body-solver-export-frame`, so prepared SBFR execution is gated by supplied BODY export evidence before every reset/solve.
+Phase 614 adds an exact pre-reset SBEX→SBFR join: the complete FUN_007ba570 global vector must equal the prepared RHS and every N² matrix double must equal the prepared solver matrix before FUN_007b2210/FUN_007b0f20 execution is admitted. A valid but mismatched SBEX remains fail-closed. Phase 615 moves that verification into each admitted native fixed step through `--body-solver-export-frame`, so prepared SBFR execution is gated by supplied BODY export evidence before every reset/solve. Phase 616 ports the deterministic front of `FUN_007bc680`: exact residual construction, retail `FUN_007aefb0` float boundary and +0x90 linear scaling, while leaving JOINT/HINGE/BAR projection and coupling explicitly open.
 
 ## Immediate execution order
 
@@ -148,7 +148,7 @@ Phase 614 adds an exact pre-reset SBEX→SBFR join: the complete FUN_007ba570 gl
 | SGB scene | placement + OBJECT/MultiMatrix + RenderBinding bridge + MeshInst runtime + source-backed IMB/IMX neutral geometry; Silverstone capture/matcher/admission, native scene execution, external sampler admission, Phase 594 root solve, Phase 595 candidate join, Phase 596 owner-scoped cross-resource root consensus and Phase 597 consensus→handoff application implemented | authentic Silverstone D3D9 capture content + renderer-owned resource types beyond sampler2D/samplerCube-s3 + runtime IMX same-instance proof + authentic Phase 598 production coverage numbers + historical SceneGraph update sequence |
 | Camera | source-backed manager/state primitives + native snapshot/double-buffer handoff | retail timing/controller/view-selection behavior and exact render integration |
 | Native input | live keyboard intent + deterministic fixed-step input-script path | gamepad/analog normalization and retail input filtering |
-| Vehicle physics | active; Phase 607 runtime participant promotion + Phase 608 fixed-step prepared builtin solver + Phase 609 native post-solve parity + Phase 610 solve→BODY projection + Phase 615 fixed-step SBEX→SBFR evidence gate implemented | authentic BODY contribution generation/matrix-RHS/reset observations, runtime constraint rows, provider dispatch and persistent vehicle-state integration |
+| Vehicle physics | active; Phase 607 runtime participant promotion + Phase 608 fixed-step prepared builtin solver + Phase 609 native post-solve parity + Phase 610 solve→BODY projection + Phase 615 fixed-step SBEX→SBFR evidence gate + Phase 616 native FUN_007bc680 preprojection seed implemented | native JOINT/HINGE/BAR contribution/coupling execution, authentic sampled-state/matrix-RHS/reset observations, provider dispatch and persistent vehicle-state integration |
 | Builtin solver | source-backed + native FUN_007b0f20/FUN_007b2210/FUN_007b4110 + Phase 606/609 packets + Phase 610 fixed-step reset→solve→projection chain | authentic per-step matrix/RHS/reset/constraint-row evidence and persistent BODY integration |
 | Specialized providers | capture-ready | real capture + numeric differential; source-mutation, pre-PhysX handoff, participant-manager event, selector-context separation, participant process/reselection and selector-candidate lifecycle layers implemented |
 | D3D9 capture | mature | more real same-instance evidence |
