@@ -481,7 +481,7 @@ Run the deterministic source-backed JOINT kernel regression:
 native_runtime/build/shift_runtime_joint_projection_check
 ```
 
-It validates `FUN_007bac60` Q/L scales, corrected BODY-axis cross terms,
-signed three-lane output, bounded solver-vector application and fail-closed
-invalid inputs. It does not yet iterate runtime JOINT samples or execute
+It validates `FUN_007bac60` Q/L scales, exact BODY +0x18/+0x20/+0x28
+cross/coupling terms, signed three-lane output, bounded solver-vector
+application and fail-closed invalid inputs. It does not yet iterate runtime JOINT samples or execute
 HINGE/BAR contributions.
