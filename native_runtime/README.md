@@ -814,6 +814,6 @@ JOINT/HINGE bit0 state. The BAR branch uses one BODY identity and sets bit0 for
 every BAR relation touching that endpoint. Existing bits are never cleared.
 
 This is intentionally a library/checker boundary only. `shift_runtime` does
-not schedule the mutation because, although raw executable disassembly proves the 0..3 component
-index and 0xA80 trampoline stride, the component-field BODY mapping and retail
-event timing are not yet proven.
+not schedule the mutation because raw executable/source evidence proves the 0..3 component index,
+0xA80 stride and FL/FR/RL/RR wheel/spindle plus rear-axle BODY mapping, but the
+retail event semantics and timing are not yet proven.
