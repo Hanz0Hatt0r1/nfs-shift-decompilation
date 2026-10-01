@@ -450,3 +450,30 @@ def test_phase610_fixed_step_solver_joins_post_solve_projection():
     assert "physics_post_solve_projection_max_solver_join_error" in source
     assert "physics_post_solve_projection_max_oracle_error" in source
     assert "physics_solver_persistent_vehicle_state_applied" in source
+
+
+def test_phase611_persistent_post_solve_body_state_is_explicit_and_non_vehicle():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(
+        encoding="utf-8"
+    )
+    header = Path(
+        "native_runtime/include/shift_post_solve_projection.hpp"
+    ).read_text(encoding="utf-8")
+
+    assert '"--persist-post-solve-body-state"' in source
+    assert (
+        "--persist-post-solve-body-state requires --post-solve-projection"
+        in source
+    )
+    assert "execute_post_solve_body_projection_with_state" in source
+    assert "persistent_post_solve_bodies" in source
+    assert "physics_post_solve_persistent_body_state_enabled" in source
+    assert "physics_post_solve_persistent_body_state_steps" in source
+    assert "physics_post_solve_projection_max_delta_error" in source
+    assert (
+        "physics_solver_persistent_body_accumulator_state_applied"
+        in source
+    )
+    assert '"physics_solver_persistent_vehicle_state_applied\\": false' in source
+    assert "execute_post_solve_body_projection_with_state" in header
+    assert "max_delta_error" in header
