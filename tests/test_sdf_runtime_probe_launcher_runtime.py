@@ -550,3 +550,93 @@ def test_phase646_contract_describes_lightweight_relation_mode():
     contract = runtime.describe_sdf_runtime_probe_launcher()
 
     assert "relation-timeline-only" in contract["modes"]
+
+
+def test_phase647_stop_on_relation_mutation_auto_detaches_without_frame_budget(tmp_path):
+    command = runtime.build_gdb_command_file(
+        probe_script=tmp_path / "probe.py",
+        output_dir=tmp_path / "capture",
+        relation_timeline_only=True,
+        stop_on_relation_mutation=True,
+        capture_session_id="ef" * 16,
+    )
+
+    assert command == (
+        "set pagination off\n"
+        "set confirm off\n"
+        "handle SIGUSR1 nostop noprint pass\n"
+        f"source {(tmp_path / 'probe.py').resolve()}\n"
+        f"sdf-probe {(tmp_path / 'capture').resolve()} "
+        f"--session-id {'ef' * 16} --relation-timeline-only "
+        "--stop-on-relation-mutation\n"
+        "continue\n"
+        "detach\n"
+        "quit\n"
+    )
+
+
+def test_phase647_stop_on_relation_mutation_can_use_frame_budget_as_fallback(tmp_path):
+    command = runtime.build_gdb_command_file(
+        probe_script=tmp_path / "probe.py",
+        output_dir=tmp_path / "capture",
+        relation_timeline_only=True,
+        stop_on_relation_mutation=True,
+        capture_frames=900,
+    )
+
+    assert "--stop-on-relation-mutation --capture-frames 900\n" in command
+    assert command.endswith("continue\ndetach\nquit\n")
+
+
+def test_phase647_stop_on_relation_mutation_rejects_provider_only(tmp_path):
+    with pytest.raises(ValueError, match="provider-only"):
+        runtime.build_gdb_command_file(
+            probe_script=tmp_path / "probe.py",
+            output_dir=tmp_path / "capture",
+            provider_only=True,
+            stop_on_relation_mutation=True,
+        )
+
+
+def test_phase647_prepare_bundle_records_mutation_stop_policy(
+    tmp_path,
+    monkeypatch,
+):
+    executable = tmp_path / "SHIFT.exe"
+    executable.write_bytes(b"retail")
+    output = tmp_path / "capture"
+    probe = tmp_path / "probe.py"
+    probe.write_text("# probe\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        runtime,
+        "validate_probe_executable_file",
+        lambda path: {
+            "ready": True,
+            "sha256": "a" * 64,
+            "errors": [],
+            "format": "SHIFT.SDFRuntimeProbePEValidation/1",
+        },
+    )
+
+    result = runtime.prepare_probe_bundle(
+        executable,
+        output,
+        probe_script=probe,
+        relation_timeline_only=True,
+        stop_on_relation_mutation=True,
+        capture_frames=900,
+    )
+
+    assert result["probe"]["stop_on_relation_mutation"] is True
+    assert result["probe"]["capture_frames"] == 900
+    assert result["probe"]["auto_detach"] is True
+    command = (output / "attach.gdb").read_text(encoding="utf-8")
+    assert "--stop-on-relation-mutation" in command
+    assert "--capture-frames 900" in command
+
+
+def test_phase647_contract_describes_mutation_stop_mode():
+    contract = runtime.describe_sdf_runtime_probe_launcher()
+
+    assert "stop-on-relation-mutation" in contract["modes"]
