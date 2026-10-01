@@ -32,12 +32,6 @@ struct PreparedBuiltinSolverFrameResult {
 PreparedBuiltinSolverFrame load_prepared_builtin_solver_frame(
     const std::string& path);
 
-PreparedBuiltinSolverFrameResult
-execute_prepared_builtin_solver_frame_with_reset_nodes(
-    const PreparedBuiltinSolverFrame& frame,
-    const std::vector<std::size_t>& reset_nodes,
-    double tolerance = 1e-10);
-
 PreparedBuiltinSolverFrameResult execute_prepared_builtin_solver_frame(
     const PreparedBuiltinSolverFrame& frame,
     double tolerance = 1e-10);
