@@ -69,6 +69,17 @@ The retail `SHIFT.exe` imports `Direct3DCreate9`, `D3DPERF_BeginEvent`, and `D3D
 
 For very noisy captures, `SHIFT_D3D9_DIAG_PRESENT_EVERY=N` controls periodic successful Present logging (default: every 300 calls); failed Present calls are always recorded.
 
+Analyze a completed or failed startup log with:
+
+```bash
+python native_capture/analyze_proxy_log.py shift_d3d9_capture.jsonl
+```
+
+The analyzer reports a compact diagnosis such as `passthrough-forwarding-ok`,
+`device-creation-failure`, `device-present-failure`, or
+`d3d9-presentation-path-alive`, and names common D3D9 HRESULTs such as
+`D3DERR_DEVICELOST`, `D3DERR_DEVICENOTRESET`, and `D3DERR_INVALIDCALL`.
+
 ## Build
 
 ```bash
