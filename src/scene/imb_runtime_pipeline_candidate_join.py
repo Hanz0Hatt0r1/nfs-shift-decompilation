@@ -9,9 +9,25 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Mapping
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+SOURCE_ROOT = REPOSITORY_ROOT / "src"
+_SOURCE_PATHS = [REPOSITORY_ROOT, SOURCE_ROOT]
+if SOURCE_ROOT.is_dir():
+    _SOURCE_PATHS.extend(
+        sorted(
+            (path for path in SOURCE_ROOT.rglob("*") if path.is_dir()),
+            key=lambda path: (len(path.parts), str(path)),
+        )
+    )
+for _source_path in reversed(_SOURCE_PATHS):
+    _source_value = str(_source_path)
+    if _source_value not in sys.path:
+        sys.path.insert(0, _source_value)
 
 from imb_neutral_geometry import (
     runtime_interleaved_stride_for_properties,
