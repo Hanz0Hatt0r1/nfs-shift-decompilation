@@ -1,6 +1,10 @@
 import hashlib
 import json
+import os
 import struct
+import subprocess
+import sys
+from pathlib import Path
 
 from d3d9_target_draw_signatures import (
     FORMAT,
@@ -528,4 +532,28 @@ def test_resource_shape_filters_stale_texture_stages_with_pixel_ctab():
         texture["stage"]
         for texture in shape["signature"]["texture_stages"]
     ] == [0, 2]
+
+def test_target_draw_signature_cli_imports_shader_ir_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    script = (
+        repo_root
+        / "src"
+        / "graphics"
+        / "d3d9"
+        / "d3d9_target_draw_signatures.py"
+    )
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+
+    completed = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "target-inventory" in completed.stdout
 

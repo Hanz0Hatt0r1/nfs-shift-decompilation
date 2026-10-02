@@ -4,11 +4,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from d3d9_raw_capture_audit import resolve_input_path
+
+_SHADER_DIR = Path(__file__).resolve().parents[1] / "shader"
+if str(_SHADER_DIR) not in sys.path:
+    sys.path.insert(0, str(_SHADER_DIR))
+
 from shader_ir import parse_shader_blobs
 
 FORMAT = "SHIFT.D3D9TargetDrawSignatureCatalog/1"
