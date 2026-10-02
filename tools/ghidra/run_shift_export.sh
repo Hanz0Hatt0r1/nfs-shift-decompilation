@@ -40,11 +40,20 @@ fi
 mkdir -p -- "$OUT_DIR"
 OUT_DIR=$(cd -- "$OUT_DIR" && pwd)
 
+# Ghidra 12.1 removed DefinedDataIterator.definedStrings(Program).  Prepare a
+# temporary source copy that uses Listing.getDefinedData(true) plus
+# Data.hasStringValue(), both stable APIs in current Ghidra releases.
+COMPAT_SCRIPT_DIR=$(mktemp -d)
+trap 'rm -rf -- "$COMPAT_SCRIPT_DIR"' EXIT
+python3 "$SCRIPT_DIR/prepare_shift_export.py" \
+  "$SCRIPT_DIR/ShiftEvidenceExporter.java" \
+  "$COMPAT_SCRIPT_DIR/ShiftEvidenceExporter.java"
+
 "$ANALYZE_HEADLESS" \
   "$PROJECT_DIR" "$PROJECT_NAME" \
   -process "$PROGRAM_NAME" \
   -noanalysis \
-  -scriptPath "$SCRIPT_DIR" \
+  -scriptPath "$COMPAT_SCRIPT_DIR" \
   -postScript ShiftEvidenceExporter.java "$OUT_DIR"
 
 python3 "$SCRIPT_DIR/validate_shift_export.py" "$OUT_DIR"
