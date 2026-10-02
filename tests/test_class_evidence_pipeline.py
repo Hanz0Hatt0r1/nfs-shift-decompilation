@@ -90,6 +90,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         assert ghidra_export == tmp_path / "ghidra"
         return {
             "format": "SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1",
+            "source_sha256": "source-sha",
             "target_count": 18,
             "complete_target_count": 16,
             "base_initializer_link_count": 11,
@@ -98,6 +99,20 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         }
 
     monkeypatch.setattr(module, "extract_lifecycle_evidence", fake_source_lifecycle)
+
+    def fake_deleting(source, lifecycle_path, ghidra_export):
+        lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+        assert lifecycle["target_count"] == 18
+        assert ghidra_export == tmp_path / "ghidra"
+        return {
+            "format": "SHIFT-CLASS-DELETING-WRAPPER-EVIDENCE/1",
+            "wrapper_candidate_count": 8,
+            "deleting_wrapper_shape_count": 6,
+            "ghidra_confirmed_shape_count": 5,
+            "wrappers": [],
+        }
+
+    monkeypatch.setattr(module, "extract_deleting_wrappers", fake_deleting)
 
     def fake_lifecycle(scorecard_path, ghidra_export):
         payload = json.loads(scorecard_path.read_text(encoding="utf-8"))
@@ -129,6 +144,9 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert report["counts"]["lifecycle_source_complete_targets"] == 16
     assert report["counts"]["lifecycle_source_base_initializer_links"] == 11
     assert report["counts"]["lifecycle_source_teardown_candidates"] == 9
+    assert report["counts"]["deleting_wrapper_candidates"] == 8
+    assert report["counts"]["deleting_wrapper_shapes"] == 6
+    assert report["counts"]["deleting_wrapper_ghidra_confirmed_shapes"] == 5
     assert report["counts"]["lifecycle_target_slices"] == 18
     assert report["counts"]["lifecycle_complete_slices"] == 17
     assert report["counts"]["lifecycle_incomplete_slices"] == 1
@@ -141,6 +159,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         "class_audit.json",
         "class_evidence_scorecard.json",
         "class_lifecycle_source_evidence.json",
+        "deleting_wrapper_evidence.json",
         "lifecycle_investigation_targets.json",
         "pipeline_manifest.json",
     }
@@ -150,3 +169,4 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert saved["counts"] == report["counts"]
     assert saved["scope"]["constructor_semantics_proven"] is False
     assert saved["scope"]["destructor_semantics_proven"] is False
+    assert saved["scope"]["deleting_destructor_semantics_proven"] is False
