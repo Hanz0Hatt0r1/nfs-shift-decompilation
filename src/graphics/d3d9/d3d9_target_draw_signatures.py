@@ -144,6 +144,7 @@ def _aggregate_signature(
     event_index: int | None,
     families: Iterable[str],
     draw: Mapping[str, Any],
+    stream_offsets: Mapping[int, Any] | None = None,
 ) -> None:
     row = table.get(signature_hash)
     if row is None:
@@ -159,6 +160,7 @@ def _aggregate_signature(
             "_families": set(),
             "_target_pixel_hashes": set(),
             "_ranges": Counter(),
+            "_stream_offsets": defaultdict(Counter),
             "sample_draws": [],
         }
         table[signature_hash] = row
@@ -190,6 +192,11 @@ def _aggregate_signature(
     )
     row["_ranges"][range_key] += 1
 
+    if stream_offsets:
+        for stream, offset in stream_offsets.items():
+            if isinstance(stream, int) and isinstance(offset, int):
+                row["_stream_offsets"][stream][offset] += 1
+
     if len(row["sample_draws"]) < 8:
         row["sample_draws"].append({
             "frame": frame,
@@ -210,9 +217,28 @@ def _finalize_signature_rows(
         families = row.pop("_families")
         target_hashes = row.pop("_target_pixel_hashes")
         ranges = row.pop("_ranges")
+        stream_offsets = row.pop("_stream_offsets")
         row["families"] = sorted(families)
         row["target_pixel_hashes"] = sorted(target_hashes)
         row["distinct_draw_range_count"] = len(ranges)
+        if stream_offsets:
+            row["stream_offset_observations"] = [
+                {
+                    "stream": stream,
+                    "unique_offset_count": len(offset_counts),
+                    "min_offset_in_bytes": min(offset_counts),
+                    "max_offset_in_bytes": max(offset_counts),
+                    "top_offsets": [
+                        {
+                            "offset_in_bytes": offset,
+                            "draw_count": count,
+                        }
+                        for offset, count in offset_counts.most_common(8)
+                    ],
+                }
+                for stream, offset_counts in sorted(stream_offsets.items())
+                if offset_counts
+            ]
         row["top_draw_ranges"] = [
             {
                 "primitive_type": key[0],
@@ -228,6 +254,59 @@ def _finalize_signature_rows(
         key=lambda item: (
             -int(item.get("draw_count") or 0),
             str(item.get("signature_sha256") or ""),
+        )
+    )
+    return result
+
+
+def _build_layout_cohorts(
+    pipeline_rows: Mapping[str, Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    cohorts: dict[str, dict[str, Any]] = {}
+    for row in pipeline_rows.values():
+        signature = row.get("signature") or {}
+        layout = {
+            "declaration_sha256": signature.get("declaration_sha256"),
+            "stream_layout": list(signature.get("stream_layout") or []),
+            "index_format": signature.get("index_format"),
+        }
+        layout_sha = _canonical_hash(layout)
+        cohort = cohorts.setdefault(layout_sha, {
+            "layout_sha256": layout_sha,
+            "layout": layout,
+            "draw_count": 0,
+            "pipeline_signature_sha256s": set(),
+            "vertex_shader_sha256s": set(),
+            "pixel_shader_sha256s": set(),
+            "families": set(),
+        })
+        cohort["draw_count"] += int(row.get("draw_count") or 0)
+        cohort["pipeline_signature_sha256s"].add(
+            str(row.get("signature_sha256") or "")
+        )
+        vertex = signature.get("vertex_shader_sha256")
+        pixel = signature.get("pixel_shader_sha256")
+        if vertex:
+            cohort["vertex_shader_sha256s"].add(str(vertex))
+        if pixel:
+            cohort["pixel_shader_sha256s"].add(str(pixel))
+        cohort["families"].update(row.get("_families") or [])
+
+    result = []
+    for source in cohorts.values():
+        row = dict(source)
+        for key in (
+            "pipeline_signature_sha256s",
+            "vertex_shader_sha256s",
+            "pixel_shader_sha256s",
+            "families",
+        ):
+            row[key] = sorted(row[key])
+        result.append(row)
+    result.sort(
+        key=lambda row: (
+            -int(row.get("draw_count") or 0),
+            str(row.get("layout_sha256") or ""),
         )
     )
     return result
@@ -459,6 +538,7 @@ def catalog_target_draw_signatures(
 
         stream_layout = []
         stream_shapes = []
+        stream_offsets: dict[int, int] = {}
         for stream, binding in sorted(state["streams"].items()):
             pointer = binding.get("pointer")
             buffer_shape = dict(
@@ -468,10 +548,12 @@ def catalog_target_draw_signatures(
                 "stream": stream,
                 "stride": binding.get("stride"),
             })
+            offset = binding.get("offset_in_bytes")
+            if isinstance(offset, int):
+                stream_offsets[stream] = offset
             stream_shapes.append({
                 "stream": stream,
                 "stride": binding.get("stride"),
-                "offset_in_bytes": binding.get("offset_in_bytes"),
                 **buffer_shape,
             })
 
@@ -530,9 +612,11 @@ def catalog_target_draw_signatures(
             ),
             families=families,
             draw=row,
+            stream_offsets=stream_offsets,
         )
 
     target_draw_count = sum(target_draw_counts.values())
+    layout_cohorts = _build_layout_cohorts(pipeline_rows)
     return {
         "format": FORMAT,
         "version": 1,
@@ -547,6 +631,7 @@ def catalog_target_draw_signatures(
             "first_target_frame": first_target_frame,
             "last_target_frame": last_target_frame,
             "unique_pipeline_signature_count": len(pipeline_rows),
+            "unique_layout_cohort_count": len(layout_cohorts),
             "unique_resource_shape_signature_count": len(shape_rows),
         },
         "target_draw_hashes": [
@@ -561,15 +646,24 @@ def catalog_target_draw_signatures(
             )
         ],
         "pipeline_signatures": _finalize_signature_rows(pipeline_rows),
+        "layout_cohorts": layout_cohorts,
         "resource_shape_signatures": _finalize_signature_rows(shape_rows),
         "boundary": {
             "pipeline_signature": (
                 "observational VS/PS/declaration/stream-stride/index-format "
                 "state at target draws; not a material or primitive identity"
             ),
+            "layout_cohort": (
+                "groups pipeline signatures by declaration/stream-stride/"
+                "index-format only; shader and resource identity are not claimed"
+            ),
             "resource_shape_signature": (
-                "adds runtime buffer/texture descriptor shapes but excludes "
-                "pointer identity and payload proof"
+                "adds runtime buffer/texture descriptor shapes while excluding "
+                "pointer identity, payload proof and transient stream offsets"
+            ),
+            "stream_offset_observations": (
+                "offsets are retained diagnostically per normalized shape but "
+                "do not participate in its stable identity"
             ),
             "resource_identity": "not claimed",
             "primitive_identity": "not claimed",
