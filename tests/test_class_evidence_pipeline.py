@@ -70,6 +70,8 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         assert manifest["class_count"] == 315
         return {
             "format": "SHIFT-CLASS-EVIDENCE-SCORECARD/1",
+            "source_sha256": "source-sha",
+            "exe_sha256": "exe-sha",
             "tier_counts": {
                 "lifecycle-investigation-ready": 18,
                 "registration-crosschecked": 100,
@@ -79,6 +81,23 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         }
 
     monkeypatch.setattr(module, "build_scorecard", fake_scorecard)
+
+    def fake_source_lifecycle(source, manifest_path, scorecard_path, ghidra_export):
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        scorecard = json.loads(scorecard_path.read_text(encoding="utf-8"))
+        assert manifest["class_count"] == 315
+        assert scorecard["tier_counts"]["lifecycle-investigation-ready"] == 18
+        assert ghidra_export == tmp_path / "ghidra"
+        return {
+            "format": "SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1",
+            "target_count": 18,
+            "complete_target_count": 16,
+            "base_initializer_link_count": 11,
+            "teardown_transition_candidate_count": 9,
+            "targets": [],
+        }
+
+    monkeypatch.setattr(module, "extract_lifecycle_evidence", fake_source_lifecycle)
 
     def fake_lifecycle(scorecard_path, ghidra_export):
         payload = json.loads(scorecard_path.read_text(encoding="utf-8"))
@@ -106,6 +125,10 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert report["counts"]["registered_classes"] == 315
     assert report["counts"]["structural_ready_classes"] == 227
     assert report["counts"]["lifecycle_investigation_ready_classes"] == 18
+    assert report["counts"]["lifecycle_source_targets"] == 18
+    assert report["counts"]["lifecycle_source_complete_targets"] == 16
+    assert report["counts"]["lifecycle_source_base_initializer_links"] == 11
+    assert report["counts"]["lifecycle_source_teardown_candidates"] == 9
     assert report["counts"]["lifecycle_target_slices"] == 18
     assert report["counts"]["lifecycle_complete_slices"] == 17
     assert report["counts"]["lifecycle_incomplete_slices"] == 1
@@ -117,6 +140,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         "factory_initializer_links.json",
         "class_audit.json",
         "class_evidence_scorecard.json",
+        "class_lifecycle_source_evidence.json",
         "lifecycle_investigation_targets.json",
         "pipeline_manifest.json",
     }
@@ -125,3 +149,4 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     saved = json.loads((out / "pipeline_manifest.json").read_text(encoding="utf-8"))
     assert saved["counts"] == report["counts"]
     assert saved["scope"]["constructor_semantics_proven"] is False
+    assert saved["scope"]["destructor_semantics_proven"] is False
