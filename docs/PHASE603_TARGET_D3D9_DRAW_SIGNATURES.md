@@ -34,9 +34,11 @@ A second signature adds descriptor shape, still without claiming identity:
 - bound texture stage, type, dimensions, format, levels, pool and usage.
 
 Transient stream offsets are excluded from the stable resource-shape ID and
-retained only as diagnostic observations. Two resources with the same
-descriptor shape may still be unrelated. No resource hash or payload
-equivalence is inferred.
+retained only as diagnostic observations. When pixel-shader CTAB reflection is
+available, texture shape is restricted to sampler registers actually declared
+by that shader; captures without usable CTAB retain all bound texture stages as
+a conservative fallback. Two resources with the same descriptor shape may
+still be unrelated. No resource hash or payload equivalence is inferred.
 
 ## Draw aggregation
 
