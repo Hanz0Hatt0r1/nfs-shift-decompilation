@@ -79,6 +79,72 @@ def _runtime_stream0_stride(signature: Mapping[str, Any]) -> int | None:
     return None
 
 
+def _complete_runtime_draw_ranges(
+    pipeline: Mapping[str, Any],
+) -> tuple[set[tuple[int, int]] | None, str]:
+    full = pipeline.get("observed_draw_ranges")
+    if isinstance(full, list) and full:
+        values: set[tuple[int, int]] = set()
+        for row in full:
+            if not isinstance(row, Mapping):
+                continue
+            try:
+                start_index = int(row.get("start_index"))
+                primitive_count = int(row.get("primitive_count"))
+            except (TypeError, ValueError):
+                continue
+            if start_index >= 0 and primitive_count >= 0:
+                values.add((start_index, primitive_count))
+        if values:
+            return values, "observed_draw_ranges"
+
+    top = pipeline.get("top_draw_ranges")
+    distinct = pipeline.get("distinct_draw_range_count")
+    if (
+        isinstance(top, list)
+        and top
+        and isinstance(distinct, int)
+        and distinct == len(top)
+    ):
+        values = set()
+        for row in top:
+            if not isinstance(row, Mapping):
+                continue
+            try:
+                start_index = int(row.get("start_index"))
+                primitive_count = int(row.get("primitive_count"))
+            except (TypeError, ValueError):
+                continue
+            if start_index >= 0 and primitive_count >= 0:
+                values.add((start_index, primitive_count))
+        if values:
+            return values, "complete-top-draw-ranges"
+
+    return None, "unavailable-or-truncated"
+
+
+def _filter_candidates_by_draw_range(
+    candidates: list[dict[str, Any]],
+    observed: set[tuple[int, int]] | None,
+) -> list[dict[str, Any]]:
+    if not candidates or observed is None:
+        return list(candidates)
+
+    filtered = []
+    for candidate in candidates:
+        draw_range = candidate.get("draw_range")
+        if not isinstance(draw_range, Mapping):
+            continue
+        try:
+            first_index = int(draw_range.get("first_index"))
+            primitive_count = int(draw_range.get("primitive_count"))
+        except (TypeError, ValueError):
+            continue
+        if (first_index, primitive_count) in observed:
+            filtered.append(candidate)
+    return filtered
+
+
 def _binding_summary(binding: Mapping[str, Any]) -> dict[str, Any]:
     properties = [
         str(value)
@@ -345,6 +411,11 @@ def build_runtime_pipeline_candidate_join(
     layout_pixel_pipeline_count = 0
     single_binding_draw_count = 0
     single_binding_pipeline_count = 0
+    draw_range_gate_pipeline_count = 0
+    draw_range_gate_reduced_pipeline_count = 0
+    draw_range_gate_rejected_pipeline_count = 0
+    final_candidate_pipeline_count = 0
+    final_candidate_draw_count = 0
     candidate_binding_indices: set[int] = set()
 
     for pipeline in runtime_catalog.get("pipeline_signatures") or []:
@@ -381,21 +452,44 @@ def build_runtime_pipeline_candidate_join(
 
         evidence_kind = "none"
         if exact_candidates:
-            candidates = exact_candidates
+            base_candidates = exact_candidates
             evidence_kind = "exact-vs+ps"
             exact_pair_pipeline_count += 1
             exact_pair_draw_count += draw_count
         elif layout_candidates:
-            candidates = layout_candidates
+            base_candidates = layout_candidates
             evidence_kind = "pixel+static-vertex-stride"
             layout_pixel_pipeline_count += 1
             layout_pixel_draw_count += draw_count
         else:
-            candidates = []
+            base_candidates = []
+
+        runtime_draw_ranges, draw_range_source = (
+            _complete_runtime_draw_ranges(pipeline)
+        )
+        pre_draw_range_binding_ids = _binding_ids(base_candidates)
+        candidates = _filter_candidates_by_draw_range(
+            base_candidates,
+            runtime_draw_ranges,
+        )
+        draw_range_gate_status = "not-applied"
+        if base_candidates and runtime_draw_ranges is not None:
+            draw_range_gate_pipeline_count += 1
+            if len(candidates) < len(base_candidates):
+                draw_range_gate_reduced_pipeline_count += 1
+                draw_range_gate_status = "reduced"
+            else:
+                draw_range_gate_status = "matched-all"
+            if not candidates:
+                draw_range_gate_rejected_pipeline_count += 1
+                draw_range_gate_status = "rejected-all"
+            evidence_kind = f"{evidence_kind}+draw-range"
 
         binding_ids = _binding_ids(candidates)
         if candidates:
-            if evidence_kind == "exact-vs+ps":
+            final_candidate_pipeline_count += 1
+            final_candidate_draw_count += draw_count
+            if evidence_kind.startswith("exact-vs+ps"):
                 status = (
                     "single-static-binding-candidate"
                     if len(binding_ids) == 1
@@ -414,6 +508,8 @@ def build_runtime_pipeline_candidate_join(
             if len(binding_ids) == 1:
                 single_binding_pipeline_count += 1
                 single_binding_draw_count += draw_count
+        elif base_candidates:
+            status = "draw-range-rejected-static-overlap"
         elif pixel_sha and pixel_sha in static_pixel_hashes:
             status = "pixel-only-static-overlap"
         else:
@@ -461,6 +557,24 @@ def build_runtime_pipeline_candidate_join(
                 )
             ),
             "candidate_evidence_kind": evidence_kind,
+            "draw_range_gate_status": draw_range_gate_status,
+            "runtime_draw_range_source": draw_range_source,
+            "runtime_draw_ranges": (
+                [
+                    {
+                        "start_index": start_index,
+                        "primitive_count": primitive_count,
+                    }
+                    for start_index, primitive_count in sorted(
+                        runtime_draw_ranges
+                    )
+                ]
+                if runtime_draw_ranges is not None
+                else []
+            ),
+            "pre_draw_range_candidate_binding_count": len(
+                pre_draw_range_binding_ids
+            ),
             "status": status,
             "candidate_binding_count": len(binding_ids),
             "candidate_variant_count": sum(
@@ -482,12 +596,8 @@ def build_runtime_pipeline_candidate_join(
         int(row.get("draw_count") or 0)
         for row in rows
     )
-    candidate_pipeline_count = (
-        exact_pair_pipeline_count + layout_pixel_pipeline_count
-    )
-    candidate_draw_count = (
-        exact_pair_draw_count + layout_pixel_draw_count
-    )
+    candidate_pipeline_count = final_candidate_pipeline_count
+    candidate_draw_count = final_candidate_draw_count
 
     return {
         "format": FORMAT,
@@ -515,6 +625,15 @@ def build_runtime_pipeline_candidate_join(
                 candidate_draw_count / runtime_draw_count
                 if runtime_draw_count
                 else 0.0
+            ),
+            "draw_range_gate_pipeline_count": (
+                draw_range_gate_pipeline_count
+            ),
+            "draw_range_gate_reduced_pipeline_count": (
+                draw_range_gate_reduced_pipeline_count
+            ),
+            "draw_range_gate_rejected_pipeline_count": (
+                draw_range_gate_rejected_pipeline_count
             ),
             "single_static_binding_candidate_pipeline_count": (
                 single_binding_pipeline_count
@@ -549,6 +668,11 @@ def build_runtime_pipeline_candidate_join(
                 "PS hash and its source-backed IMB vertex properties "
                 "derive the same stream-0 byte stride; VS identity is "
                 "not claimed"
+            ),
+            "draw_range_candidate_gate": (
+                "when the runtime catalogue exposes a complete draw-range "
+                "set, static candidates must match observed start_index + "
+                "primitive_count; truncated legacy top ranges do not filter"
             ),
             "single_static_binding_candidate": (
                 "one static binding survives the applicable candidate "
