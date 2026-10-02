@@ -33,6 +33,10 @@ The output directory contains:
 - `class_audit.json` — `SHIFT-CLASS-DECOMPILATION-CANDIDATES/1`, with
   initializer annotations;
 - `class_evidence_scorecard.json` — `SHIFT-CLASS-EVIDENCE-SCORECARD/1`;
+- `class_lifecycle_source_evidence.json` —
+  `SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1`, containing literal source vtable
+  writes, ancestor-vtable transition calls, initializer callers and simple
+  `this + constant_offset` assignments for lifecycle-ready classes;
 - `lifecycle_investigation_targets.json` —
   `SHIFT.LifecycleInvestigationTargets/1`, containing one-hop Ghidra context
   around lifecycle-ready registration and initializer anchors;
@@ -41,8 +45,9 @@ The output directory contains:
 
 The pipeline manifest records registered/reflected/unique-vtable counts,
 registration verification and mismatch counts, factory/initializer link counts,
-structural-ready count, lifecycle-investigation-ready count, lifecycle target
-slice completeness, scorecard tiers and next-evidence blocker totals.
+structural-ready count, lifecycle-investigation-ready count, source lifecycle
+completion/base-transition/teardown-candidate counts, lifecycle target slice
+completeness, scorecard tiers and next-evidence blocker totals.
 
 ## Evidence boundary
 
@@ -52,6 +57,11 @@ underlying tools:
 - a unique PE vtable remains class-identity/layout evidence;
 - a registration string/callgraph match remains registration evidence;
 - a factory call to a unique-vtable writer remains an initializer link;
+- a literal initializer vtable write and call to an ancestor-vtable writer are
+  source lifecycle observations, not automatic constructor semantics;
+- a non-initializer function which writes the class vtable and calls an
+  ancestor-vtable writer remains a teardown-transition candidate, not an
+  automatically named destructor;
 - `lifecycle-investigation-ready` selects good targets for the next reverse-
   engineering pass but does not prove C++ constructor semantics, ownership,
   destructor order or gameplay behavior;
