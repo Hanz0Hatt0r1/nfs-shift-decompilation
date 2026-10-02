@@ -399,11 +399,12 @@ def prefilter_imb_raw_capture(
     }
 
 
-def load_jsonl(
+def iter_jsonl(
     path: str | Path,
-) -> tuple[list[dict[str, Any]], list[str]]:
-    rows: list[dict[str, Any]] = []
-    errors: list[str] = []
+    errors: list[str] | None = None,
+) -> Iterable[dict[str, Any]]:
+    """Yield JSONL objects while preserving non-fatal parse diagnostics."""
+    diagnostics = errors if errors is not None else []
     with Path(path).open("r", encoding="utf-8") as handle:
         for line_index, line in enumerate(handle, 1):
             text = line.strip()
@@ -412,17 +413,23 @@ def load_jsonl(
             try:
                 value = json.loads(text)
             except json.JSONDecodeError:
-                errors.append(
+                diagnostics.append(
                     f"imb-raw-prefilter:line-{line_index}:json-invalid"
                 )
                 continue
             if not isinstance(value, dict):
-                errors.append(
+                diagnostics.append(
                     f"imb-raw-prefilter:line-{line_index}:event-not-object"
                 )
                 continue
-            rows.append(value)
-    return rows, errors
+            yield value
+
+
+def load_jsonl(
+    path: str | Path,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    errors: list[str] = []
+    return list(iter_jsonl(path, errors)), errors
 
 
 def validate_files(
@@ -432,8 +439,11 @@ def validate_files(
     target_set = json.loads(
         Path(target_set_path).read_text(encoding="utf-8")
     )
-    rows, load_errors = load_jsonl(capture_jsonl_path)
-    report = prefilter_imb_raw_capture(target_set, rows)
+    load_errors: list[str] = []
+    report = prefilter_imb_raw_capture(
+        target_set,
+        iter_jsonl(capture_jsonl_path, load_errors),
+    )
     if load_errors:
         report["blocking_reasons"] = list(dict.fromkeys(
             [*load_errors, *report["blocking_reasons"]]
