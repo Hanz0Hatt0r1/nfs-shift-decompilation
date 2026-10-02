@@ -630,3 +630,55 @@ def test_runtime_trace_preserves_buffer_payload_at_draw_boundary():
     assert report["trace"]["buffer_payload_event_count"] == 1
     assert report["buffer_payloads"][0]["buffer_ptr"] == "0x100"
     assert report["frames"][0]["draw_snapshots"][0]["buffer_payloads"][0]["payload_path"] == "vb.bin"
+
+def test_load_events_can_skip_raw_proxy_metadata(tmp_path):
+    trace = tmp_path / "raw_capture.jsonl"
+    rows = [
+        {
+            "event": "proxy_direct3dcreate9",
+            "frame": 0,
+            "event_index": 0,
+            "thread_id": 7,
+            "sdk_version": 32,
+        },
+        {
+            "event": "set_pixel_shader",
+            "frame": 0,
+            "event_index": 1,
+            "thread_id": 7,
+            "device_ptr": "0x10",
+            "shader_ptr": None,
+        },
+    ]
+    trace.write_text(
+        "\n".join(json.dumps(row) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+
+    events = load_events(trace, skip_unsupported=True)
+
+    assert len(events) == 1
+    assert events[0]["event"] == "set_pixel_shader"
+    assert events[0]["_line"] == 2
+
+
+def test_load_events_remains_strict_by_default(tmp_path):
+    trace = tmp_path / "raw_capture.jsonl"
+    trace.write_text(
+        json.dumps({
+            "event": "proxy_direct3dcreate9",
+            "frame": 0,
+            "event_index": 0,
+            "thread_id": 7,
+            "sdk_version": 32,
+        }) + "\n",
+        encoding="utf-8",
+    )
+
+    try:
+        load_events(trace)
+    except ValueError as error:
+        assert "unsupported event" in str(error)
+    else:
+        raise AssertionError("strict runtime trace loader must reject proxy metadata")
+
