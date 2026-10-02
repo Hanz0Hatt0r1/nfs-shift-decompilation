@@ -37,6 +37,10 @@ The output directory contains:
   `SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1`, containing literal source vtable
   writes, ancestor-vtable transition calls, initializer callers and simple
   `this + constant_offset` assignments for lifecycle-ready classes;
+- `deleting_wrapper_evidence.json` —
+  `SHIFT-CLASS-DELETING-WRAPPER-EVIDENCE/1`, narrowing teardown candidates to
+  wrappers that also call the configured release helper and recording whether
+  source order plus a bit-0 guard match the deleting-wrapper shape;
 - `lifecycle_investigation_targets.json` —
   `SHIFT.LifecycleInvestigationTargets/1`, containing one-hop Ghidra context
   around lifecycle-ready registration and initializer anchors;
@@ -46,8 +50,9 @@ The output directory contains:
 The pipeline manifest records registered/reflected/unique-vtable counts,
 registration verification and mismatch counts, factory/initializer link counts,
 structural-ready count, lifecycle-investigation-ready count, source lifecycle
-completion/base-transition/teardown-candidate counts, lifecycle target slice
-completeness, scorecard tiers and next-evidence blocker totals.
+completion/base-transition/teardown-candidate counts, deleting-wrapper candidate
+and confirmed-shape counts, lifecycle target slice completeness, scorecard tiers
+and next-evidence blocker totals.
 
 ## Evidence boundary
 
@@ -62,6 +67,9 @@ underlying tools:
 - a non-initializer function which writes the class vtable and calls an
   ancestor-vtable writer remains a teardown-transition candidate, not an
   automatically named destructor;
+- a teardown call followed by the configured release helper under a bit-0 flag
+  is recorded as a deleting-wrapper shape, not automatically renamed as a C++
+  deleting destructor;
 - `lifecycle-investigation-ready` selects good targets for the next reverse-
   engineering pass but does not prove C++ constructor semantics, ownership,
   destructor order or gameplay behavior;
