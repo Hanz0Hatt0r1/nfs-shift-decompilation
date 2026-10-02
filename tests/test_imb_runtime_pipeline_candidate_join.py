@@ -1,4 +1,8 @@
 import hashlib
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 from imb_runtime_pipeline_candidate_join import (
     FORMAT,
@@ -337,4 +341,28 @@ def test_exact_pair_target_does_not_degrade_to_pixel_stride_fallback():
     assert row["status"] == "pixel-only-static-overlap"
     assert row["candidate_binding_count"] == 0
     assert report["summary"]["layout_pixel_candidate_pipeline_count"] == 0
+
+def test_pipeline_candidate_join_cli_imports_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    script = (
+        repo_root
+        / "src"
+        / "scene"
+        / "imb_runtime_pipeline_candidate_join.py"
+    )
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+
+    completed = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "runtime_catalog" in completed.stdout
+    assert "target_set" in completed.stdout
 
