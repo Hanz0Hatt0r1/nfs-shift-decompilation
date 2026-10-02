@@ -48,6 +48,10 @@ The output directory contains:
 - `class_lifetime_pair_evidence.json` —
   `SHIFT-CLASS-LIFETIME-PAIR-EVIDENCE/1`, joining strong create and delete
   shapes by RTTI descriptor and preserving helper/literal/vtable context;
+- `lifetime_helper_families.json` —
+  `SHIFT-CLASS-LIFETIME-HELPER-FAMILIES/1`, grouping recurring unambiguous
+  create/release helper pairs and attaching their Ghidra function/callgraph
+  context;
 - `lifecycle_investigation_targets.json` —
   `SHIFT.LifecycleInvestigationTargets/1`, containing one-hop Ghidra context
   around lifecycle-ready registration and initializer anchors;
@@ -60,8 +64,8 @@ create-wrapper/value-flow counts and distinct predecessor helpers,
 structural-ready count, lifecycle-investigation-ready count, source lifecycle
 completion/base-transition/teardown-candidate counts, deleting-wrapper candidate
 and confirmed-shape counts, paired-lifetime/Ghidra-paired/helper-pair counts,
-lifecycle target slice completeness, scorecard tiers and next-evidence blocker
-totals.
+helper-family recurrence/cross-check counts, lifecycle target slice completeness,
+scorecard tiers and next-evidence blocker totals.
 
 ## Evidence boundary
 
@@ -85,6 +89,9 @@ underlying tools:
 - a paired lifetime shape means both create and guarded-release shapes exist for
   the same descriptor; it does not prove allocator ABI, object size, ownership,
   constructor identity or destructor identity;
+- recurrence of the same create/release helper pair across multiple classes is
+  helper-family discovery evidence only; even with Ghidra identity/callgraph
+  confirmation it does not prove allocator/free ABI or a shared heap arena;
 - `lifecycle-investigation-ready` selects good targets for the next reverse-
   engineering pass but does not prove C++ constructor semantics, ownership,
   destructor order or gameplay behavior;
