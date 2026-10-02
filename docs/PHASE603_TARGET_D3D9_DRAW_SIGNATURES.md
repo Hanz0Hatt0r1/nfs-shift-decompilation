@@ -29,12 +29,14 @@ The signature intentionally excludes runtime pointer values.
 
 A second signature adds descriptor shape, still without claiming identity:
 
-- vertex-buffer length/usage/FVF/pool and stream offset/stride;
+- vertex-buffer length/usage/FVF/pool and stream stride;
 - index-buffer length/usage/format/pool;
 - bound texture stage, type, dimensions, format, levels, pool and usage.
 
-Two resources with the same descriptor shape may still be unrelated. No
-resource hash or payload equivalence is inferred.
+Transient stream offsets are excluded from the stable resource-shape ID and
+retained only as diagnostic observations. Two resources with the same
+descriptor shape may still be unrelated. No resource hash or payload
+equivalence is inferred.
 
 ## Draw aggregation
 
