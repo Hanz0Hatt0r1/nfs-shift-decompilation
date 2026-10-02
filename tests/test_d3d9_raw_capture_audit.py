@@ -142,6 +142,24 @@ def test_raw_capture_audit_reports_shader_target_and_missing_payload_gates():
     assert report["target_inventory"]["pixel_target_hash_count"] == 1
     assert report["target_inventory"]["matched_pixel_target_hash_count"] == 1
     assert report["target_inventory"]["target_pixel_shader_creation_count"] == 1
+    assert report["target_inventory"]["target_pixel_draw_count"] == 1
+    assert report["target_inventory"]["target_pixel_draw_hash_count"] == 1
+    assert report["target_inventory"]["family_coverage"] == [{
+        "family": "test",
+        "target_hash_count": 1,
+        "matched_hash_count": 1,
+        "matched_hashes": [PS_SHA],
+        "shader_creation_count": 1,
+        "draw_hit_hash_count": 1,
+        "draw_hit_count": 1,
+    }]
+    assert report["target_inventory"]["hash_observations"] == [{
+        "pixel_byte_sha256": PS_SHA,
+        "shader_creation_count": 1,
+        "draw_hit_count": 1,
+        "first_draw_frame": 4,
+        "last_draw_frame": 4,
+    }]
 
 
 def test_raw_capture_audit_detects_duplicate_keys_before_json_collapses_them():
@@ -319,4 +337,77 @@ def test_resolve_input_path_reports_cwd_and_repo_attempts(monkeypatch, tmp_path)
         assert str(repo_root / "evidence" / "missing.json") in message
     else:
         raise AssertionError("missing repository-relative input must fail")
+
+def test_target_draw_coverage_tracks_device_state_and_shader_unbind():
+    target_ps = bytes.fromhex("0000ffff04000000")
+    target_sha = hashlib.sha256(target_ps).hexdigest()
+    lines = [
+        _line({
+            "event": "create_pixel_shader",
+            "frame": 1,
+            "event_index": 1,
+            "device_ptr": "0xa",
+            "shader_ptr": "0x20",
+            "bytes_hex": target_ps.hex(),
+        }),
+        _line({
+            "event": "set_pixel_shader",
+            "frame": 2,
+            "event_index": 2,
+            "device_ptr": "0xa",
+            "shader_ptr": "0x20",
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 2,
+            "event_index": 3,
+            "device_ptr": "0xa",
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 2,
+            "event_index": 4,
+            "device_ptr": "0xb",
+        }),
+        _line({
+            "event": "set_pixel_shader",
+            "frame": 3,
+            "event_index": 5,
+            "device_ptr": "0xa",
+            "shader_ptr": None,
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 3,
+            "event_index": 6,
+            "device_ptr": "0xa",
+        }),
+        _line({
+            "event": "set_pixel_shader",
+            "frame": 4,
+            "event_index": 7,
+            "device_ptr": "0xa",
+            "shader_ptr": "0x20",
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 4,
+            "event_index": 8,
+            "device_ptr": "0xa",
+        }),
+    ]
+    targets = {
+        "families": [{
+            "family": "family-a",
+            "pixel_shader_sha256": [target_sha],
+        }]
+    }
+
+    report = audit_capture_lines(lines, target_inventory=targets)
+
+    assert report["target_inventory"]["target_pixel_draw_count"] == 2
+    observation = report["target_inventory"]["hash_observations"][0]
+    assert observation["draw_hit_count"] == 2
+    assert observation["first_draw_frame"] == 2
+    assert observation["last_draw_frame"] == 4
 
