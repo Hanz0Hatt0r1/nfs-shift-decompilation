@@ -296,6 +296,22 @@ def _finalize_signature_rows(
                 for stream, offset_counts in sorted(stream_offsets.items())
                 if offset_counts
             ]
+        row["observed_draw_ranges"] = [
+            {
+                "primitive_type": key[0],
+                "base_vertex_index": key[1],
+                "start_index": key[2],
+                "primitive_count": key[3],
+                "draw_count": count,
+            }
+            for key, count in sorted(
+                ranges.items(),
+                key=lambda item: tuple(
+                    "" if value is None else str(value)
+                    for value in item[0]
+                ),
+            )
+        ]
         row["top_draw_ranges"] = [
             {
                 "primitive_type": key[0],
@@ -766,6 +782,10 @@ def catalog_target_draw_signatures(
             ),
             "resource_identity": "not claimed",
             "primitive_identity": "not claimed",
+            "observed_draw_ranges": (
+                "complete observed D3D9 draw-range tuples are preserved for "
+                "downstream candidate narrowing; this is still observational"
+            ),
             "same_instance_identity": "not claimed",
         },
     }

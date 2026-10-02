@@ -557,3 +557,91 @@ def test_target_draw_signature_cli_imports_shader_ir_without_pythonpath():
     assert completed.returncode == 0, completed.stderr
     assert "target-inventory" in completed.stdout
 
+def test_pipeline_signature_preserves_complete_observed_draw_ranges():
+    lines = [
+        _line({
+            "event": "create_vertex_shader",
+            "frame": 1,
+            "event_index": 1,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x10",
+            "bytes_hex": VS.hex(),
+        }),
+        _line({
+            "event": "create_pixel_shader",
+            "frame": 1,
+            "event_index": 2,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x20",
+            "bytes_hex": PS.hex(),
+        }),
+        _line({
+            "event": "set_vertex_shader",
+            "frame": 2,
+            "event_index": 3,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x10",
+        }),
+        _line({
+            "event": "set_pixel_shader",
+            "frame": 2,
+            "event_index": 4,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x20",
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 2,
+            "event_index": 5,
+            "device_ptr": "0x1",
+            "primitive_type": 4,
+            "base_vertex_index": 0,
+            "start_index": 0,
+            "primitive_count": 5,
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 3,
+            "event_index": 6,
+            "device_ptr": "0x1",
+            "primitive_type": 4,
+            "base_vertex_index": 0,
+            "start_index": 9,
+            "primitive_count": 2,
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 4,
+            "event_index": 7,
+            "device_ptr": "0x1",
+            "primitive_type": 4,
+            "base_vertex_index": 0,
+            "start_index": 0,
+            "primitive_count": 5,
+        }),
+    ]
+
+    report = catalog_target_draw_signatures(
+        lines,
+        target_inventory=_targets(),
+    )
+
+    pipeline = report["pipeline_signatures"][0]
+    assert pipeline["distinct_draw_range_count"] == 2
+    assert pipeline["observed_draw_ranges"] == [
+        {
+            "primitive_type": 4,
+            "base_vertex_index": 0,
+            "start_index": 0,
+            "primitive_count": 5,
+            "draw_count": 2,
+        },
+        {
+            "primitive_type": 4,
+            "base_vertex_index": 0,
+            "start_index": 9,
+            "primitive_count": 2,
+            "draw_count": 1,
+        },
+    ]
+

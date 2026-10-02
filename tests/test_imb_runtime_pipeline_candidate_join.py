@@ -366,3 +366,91 @@ def test_pipeline_candidate_join_cli_imports_without_pythonpath():
     assert "runtime_catalog" in completed.stdout
     assert "target_set" in completed.stdout
 
+def test_pipeline_candidate_join_filters_with_complete_draw_ranges():
+    first = _binding(0, "crowdgeninstanced", VS_A, PS_X)
+    second = _binding(1, "crowdgeninstanced", VS_A, PS_X)
+    second["draw_range"] = {
+        "first_index": 9,
+        "index_count": 216,
+        "primitive_count": 72,
+    }
+    pipeline = _runtime_pipeline(
+        "draw-range-filter",
+        VS_A,
+        PS_X,
+        4,
+        "crowdgeninstanced",
+    )
+    pipeline["distinct_draw_range_count"] = 1
+    pipeline["top_draw_ranges"] = [{
+        "primitive_type": 4,
+        "base_vertex_index": 0,
+        "start_index": 9,
+        "primitive_count": 72,
+        "draw_count": 4,
+    }]
+    runtime = {
+        "format": "SHIFT.D3D9TargetDrawSignatureCatalog/1",
+        "pipeline_signatures": [pipeline],
+    }
+    target_set = {
+        "format": "SHIFT.IMBRuntimeShaderTargetSet/1",
+        "binding_targets": [first, second],
+    }
+
+    report = build_runtime_pipeline_candidate_join(runtime, target_set)
+
+    row = report["pipeline_candidates"][0]
+    assert row["pre_draw_range_candidate_binding_count"] == 2
+    assert row["candidate_binding_count"] == 1
+    assert row["candidate_binding_indices"] == [1]
+    assert row["draw_range_gate_status"] == "reduced"
+    assert row["runtime_draw_range_source"] == "complete-top-draw-ranges"
+    assert row["candidate_evidence_kind"] == "exact-vs+ps+draw-range"
+    assert row["status"] == "single-static-binding-candidate"
+    assert report["summary"]["draw_range_gate_pipeline_count"] == 1
+    assert report["summary"]["draw_range_gate_reduced_pipeline_count"] == 1
+    assert report["summary"]["draw_range_gate_rejected_pipeline_count"] == 0
+
+
+def test_pipeline_candidate_join_does_not_filter_truncated_legacy_ranges():
+    first = _binding(0, "crowdgeninstanced", VS_A, PS_X)
+    second = _binding(1, "crowdgeninstanced", VS_A, PS_X)
+    second["draw_range"] = {
+        "first_index": 9,
+        "index_count": 216,
+        "primitive_count": 72,
+    }
+    pipeline = _runtime_pipeline(
+        "truncated-range-list",
+        VS_A,
+        PS_X,
+        4,
+        "crowdgeninstanced",
+    )
+    pipeline["distinct_draw_range_count"] = 2
+    pipeline["top_draw_ranges"] = [{
+        "primitive_type": 4,
+        "base_vertex_index": 0,
+        "start_index": 9,
+        "primitive_count": 72,
+        "draw_count": 3,
+    }]
+    runtime = {
+        "format": "SHIFT.D3D9TargetDrawSignatureCatalog/1",
+        "pipeline_signatures": [pipeline],
+    }
+    target_set = {
+        "format": "SHIFT.IMBRuntimeShaderTargetSet/1",
+        "binding_targets": [first, second],
+    }
+
+    report = build_runtime_pipeline_candidate_join(runtime, target_set)
+
+    row = report["pipeline_candidates"][0]
+    assert row["candidate_binding_count"] == 2
+    assert row["draw_range_gate_status"] == "not-applied"
+    assert row["runtime_draw_range_source"] == "unavailable-or-truncated"
+    assert row["status"] == "ambiguous-static-binding-candidates"
+    assert report["summary"]["draw_range_gate_pipeline_count"] == 0
+

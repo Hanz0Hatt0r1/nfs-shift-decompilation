@@ -59,6 +59,7 @@ Covered boundaries include:
 - Phase 605 parses captured pixel-shader CTAB at creation time and filters resource-shape texture stages to sampler registers actually declared by the active PS, with conservative all-bound-stage fallback when reflection is unavailable.
 - Phase 606 adds a pre-admission runtime pipeline candidate join: exact observed VS+PS byte pairs are intersected with preserved Phase 568 candidate variants to narrow primitive bindings, while single-candidate results remain explicitly below resource/draw/same-instance admission.
 - Phase 607 extends that join for prefilter-only targets with exact PS + source-derived IMB stream-0 stride matching, refuses to downgrade exact-pair targets on VS mismatch, and compacts repeated FXO-offset matches into one row per static binding.
+- Phase 608 preserves complete observed D3D9 draw ranges and applies a backward-compatible start_index + primitive_count gate to static pipeline candidates; truncated legacy top-range lists never filter.
 - `SHIFT.SGBRenderBindingAdmission/1` joins source-backed placement rows to recursive OBJECT resource/world transforms without promoting blocked rows.
 - `SHIFT.SGBRenderBindingBridge/1` resolves scene-admitted MEB instances through the existing MEB/BMT/FXO path into generic `SHIFT.RenderBinding/1`, preserving the admitted numeric world matrix.
 
