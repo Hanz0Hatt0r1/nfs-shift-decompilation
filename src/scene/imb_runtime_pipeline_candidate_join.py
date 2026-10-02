@@ -8,6 +8,7 @@ proves runtime resource, primitive, or same-instance identity.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections import Counter, defaultdict
@@ -381,6 +382,110 @@ def _binding_ids(candidates: list[Mapping[str, Any]]) -> list[int]:
     })
 
 
+def _candidate_content_key(
+    candidate: Mapping[str, Any],
+) -> tuple[Any, ...]:
+    imb_sha = _valid_sha(candidate.get("imb_sha256"))
+    bmt_sha = _valid_sha(candidate.get("bmt_sha256"))
+    draw_range = candidate.get("draw_range")
+    if not isinstance(draw_range, Mapping):
+        draw_range = {}
+    try:
+        first_index = int(draw_range.get("first_index"))
+    except (TypeError, ValueError):
+        first_index = None
+    try:
+        index_count = int(draw_range.get("index_count"))
+    except (TypeError, ValueError):
+        index_count = None
+    try:
+        primitive_count = int(draw_range.get("primitive_count"))
+    except (TypeError, ValueError):
+        primitive_count = None
+
+    # A missing payload SHA must never collapse unrelated bindings.
+    fallback_binding = (
+        None
+        if imb_sha is not None
+        else candidate.get("binding_index")
+    )
+    return (
+        imb_sha,
+        fallback_binding,
+        candidate.get("primitive_index"),
+        first_index,
+        index_count,
+        primitive_count,
+        bmt_sha,
+        candidate.get("shader_family"),
+        candidate.get("static_vertex_stride"),
+        tuple(candidate.get("vertex_properties") or []),
+        _valid_sha(candidate.get("matched_vertex_shader_sha256")),
+        _valid_sha(candidate.get("matched_pixel_shader_sha256")),
+    )
+
+
+def _content_group_sha(key: tuple[Any, ...]) -> str:
+    payload = json.dumps(
+        key,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _candidate_content_groups(
+    candidates: list[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    groups: dict[tuple[Any, ...], dict[str, Any]] = {}
+    for candidate in candidates:
+        key = _candidate_content_key(candidate)
+        group = groups.setdefault(key, {
+            "content_group_sha256": _content_group_sha(key),
+            "imb_sha256": _valid_sha(candidate.get("imb_sha256")),
+            "primitive_index": candidate.get("primitive_index"),
+            "draw_range": dict(candidate.get("draw_range") or {}),
+            "bmt_sha256": _valid_sha(candidate.get("bmt_sha256")),
+            "shader_family": candidate.get("shader_family"),
+            "static_vertex_stride": candidate.get("static_vertex_stride"),
+            "matched_vertex_shader_sha256": _valid_sha(
+                candidate.get("matched_vertex_shader_sha256")
+            ),
+            "matched_pixel_shader_sha256": _valid_sha(
+                candidate.get("matched_pixel_shader_sha256")
+            ),
+            "binding_indices": [],
+            "archives": [],
+            "imb_paths": [],
+        })
+        binding_index = candidate.get("binding_index")
+        if (
+            isinstance(binding_index, int)
+            and binding_index not in group["binding_indices"]
+        ):
+            group["binding_indices"].append(binding_index)
+        archive = candidate.get("archive")
+        if archive and archive not in group["archives"]:
+            group["archives"].append(archive)
+        imb_path = candidate.get("imb_path")
+        if imb_path and imb_path not in group["imb_paths"]:
+            group["imb_paths"].append(imb_path)
+
+    result = list(groups.values())
+    for group in result:
+        group["binding_indices"].sort()
+        group["archives"].sort()
+        group["imb_paths"].sort()
+        group["static_binding_count"] = len(group["binding_indices"])
+    result.sort(
+        key=lambda row: (
+            -int(row.get("static_binding_count") or 0),
+            str(row.get("content_group_sha256") or ""),
+        )
+    )
+    return result
+
+
 def build_runtime_pipeline_candidate_join(
     runtime_catalog: Mapping[str, Any],
     target_set: Mapping[str, Any],
@@ -411,6 +516,10 @@ def build_runtime_pipeline_candidate_join(
     layout_pixel_pipeline_count = 0
     single_binding_draw_count = 0
     single_binding_pipeline_count = 0
+    single_content_group_draw_count = 0
+    single_content_group_pipeline_count = 0
+    candidate_content_group_count_distribution: Counter[int] = Counter()
+    distinct_content_group_sha256s: set[str] = set()
     draw_range_gate_pipeline_count = 0
     draw_range_gate_reduced_pipeline_count = 0
     draw_range_gate_rejected_pipeline_count = 0
@@ -486,7 +595,23 @@ def build_runtime_pipeline_candidate_join(
             evidence_kind = f"{evidence_kind}+draw-range"
 
         binding_ids = _binding_ids(candidates)
+        content_groups = _candidate_content_groups(candidates)
+        content_group_count = len(content_groups)
+        content_status = "none"
         if candidates:
+            candidate_content_group_count_distribution[
+                content_group_count
+            ] += 1
+            distinct_content_group_sha256s.update(
+                str(group["content_group_sha256"])
+                for group in content_groups
+            )
+            if content_group_count == 1:
+                content_status = "single-content-candidate"
+                single_content_group_pipeline_count += 1
+                single_content_group_draw_count += draw_count
+            else:
+                content_status = "ambiguous-content-candidates"
             final_candidate_pipeline_count += 1
             final_candidate_draw_count += draw_count
             if evidence_kind.startswith("exact-vs+ps"):
@@ -577,6 +702,9 @@ def build_runtime_pipeline_candidate_join(
             ),
             "status": status,
             "candidate_binding_count": len(binding_ids),
+            "candidate_content_group_count": content_group_count,
+            "candidate_content_status": content_status,
+            "candidate_content_groups": content_groups,
             "candidate_variant_count": sum(
                 int(value.get("matched_variant_count") or 0)
                 for value in candidates
@@ -641,9 +769,24 @@ def build_runtime_pipeline_candidate_join(
             "single_static_binding_candidate_draw_count": (
                 single_binding_draw_count
             ),
+            "single_content_candidate_pipeline_count": (
+                single_content_group_pipeline_count
+            ),
+            "single_content_candidate_draw_count": (
+                single_content_group_draw_count
+            ),
             "distinct_static_candidate_binding_count": len(
                 candidate_binding_indices
             ),
+            "distinct_candidate_content_group_count": len(
+                distinct_content_group_sha256s
+            ),
+            "candidate_content_group_count_distribution": {
+                str(count): pipelines
+                for count, pipelines in sorted(
+                    candidate_content_group_count_distribution.items()
+                )
+            },
             "status_counts": dict(sorted(status_counts.items())),
             "candidate_binding_count_distribution": {
                 str(count): pipelines
@@ -682,6 +825,11 @@ def build_runtime_pipeline_candidate_join(
                 "candidate rows are grouped by static binding; repeated "
                 "FXO offsets are represented by matched_variant_count "
                 "instead of duplicating the binding payload"
+            ),
+            "content_candidate_group": (
+                "archive-invariant diagnostic grouping by exact IMB payload "
+                "SHA + primitive/draw range + BMT SHA + shader/layout "
+                "contract; this does not identify a runtime archive instance"
             ),
             "required_for_promotion": (
                 "exact runtime IMB resource identity + exact primitive "
