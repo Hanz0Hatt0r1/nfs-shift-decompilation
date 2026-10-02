@@ -5,13 +5,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 import tempfile
 import zipfile
 from collections import Counter
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Iterable
-import sys
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SCENE_DIR = _REPO_ROOT / "src" / "scene"
