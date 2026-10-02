@@ -387,8 +387,9 @@ def main(argv: list[str] | None = None) -> int:
         if not isinstance(target_inventory, dict):
             raise ValueError("target inventory must be a JSON object")
 
+    capture_path = resolve_input_path(args.capture_jsonl)
     report = audit_capture_file(
-        args.capture_jsonl,
+        capture_path,
         target_inventory=target_inventory,
     )
     output = Path(args.output)
