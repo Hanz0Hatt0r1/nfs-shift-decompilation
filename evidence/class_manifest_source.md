@@ -32,6 +32,39 @@ The manifest does not flatten inherited fields into the derived class. Direct
 reflection fields stay attached to the metadata block that defines them, while
 `ancestry` records the inheritance chain separately.
 
+## Optional Ghidra registration cross-check
+
+The manifest builder can now join an independently exported
+`SHIFT.GhidraEvidenceDatabase/1` directory:
+
+```bash
+python3 tools/shift_live_dump/build_shift_class_manifest.py \
+  /path/to/SHIFT.exe.c \
+  --exe /path/to/SHIFT.exe \
+  --ghidra-export out/shift_ghidra_database \
+  --json-out out/shift_class_manifest.json \
+  --csv-out out/shift_class_manifest.csv
+```
+
+For each class registration the Ghidra join normalizes the recovered
+`FUN_XXXXXXXX` registration function to its program address and independently
+checks:
+
+- that the function exists in `functions.jsonl`;
+- that the resolved class name is referenced by that exact function in
+  `strings_xrefs.jsonl`;
+- that the function directly calls registration core `0x00631740` in
+  `callgraph.jsonl`.
+
+The resulting `ghidra_registration` object also records the Ghidra function
+name and mnemonic SHA-256 fingerprint. The top-level report adds checked,
+verified and mismatch counts.
+
+This is deliberately a cross-check, not a replacement for the source/PE RTTI
+extractor. A mismatch stays visible in the class row and does not cause the
+manifest builder to invent an alternative identity. No heuristic Ghidra
+vtable/constructor/factory candidate is used by this join.
+
 ## Retail corpus summary
 
 On the supplied retail source/executable pair the joined view contains:
