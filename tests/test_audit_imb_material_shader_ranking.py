@@ -1,3 +1,8 @@
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 from tools.audit_imb_material_shader_ranking import (
     FORMAT,
     _candidate_identity,
@@ -173,3 +178,23 @@ def test_top_rank_candidates_are_not_truncated_to_diagnostic_ambiguity_limit():
 
     assert len(rows) == 20
     assert {row["program_offset"] for row in rows} == set(range(20))
+
+def test_material_ranking_cli_imports_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "tools" / "audit_imb_material_shader_ranking.py"
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+
+    completed = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "--max-imb-per-archive" in completed.stdout
+    assert "--require-selection-ready" in completed.stdout
+
