@@ -80,6 +80,20 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
 
     monkeypatch.setattr(module, "build_scorecard", fake_scorecard)
 
+    def fake_lifecycle(scorecard_path, ghidra_export):
+        payload = json.loads(scorecard_path.read_text(encoding="utf-8"))
+        assert payload["tier_counts"]["lifecycle-investigation-ready"] == 18
+        assert ghidra_export == tmp_path / "ghidra"
+        return {
+            "format": "SHIFT.LifecycleInvestigationTargets/1",
+            "target_count": 18,
+            "complete_slice_count": 17,
+            "incomplete_slice_count": 1,
+            "targets": [],
+        }
+
+    monkeypatch.setattr(module, "_build_lifecycle_targets", fake_lifecycle)
+
     out = tmp_path / "out"
     report = module.run_pipeline(
         tmp_path / "SHIFT.exe.c",
@@ -92,6 +106,9 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert report["counts"]["registered_classes"] == 315
     assert report["counts"]["structural_ready_classes"] == 227
     assert report["counts"]["lifecycle_investigation_ready_classes"] == 18
+    assert report["counts"]["lifecycle_target_slices"] == 18
+    assert report["counts"]["lifecycle_complete_slices"] == 17
+    assert report["counts"]["lifecycle_incomplete_slices"] == 1
     assert report["counts"]["ghidra_registration_mismatches"] == 1
     assert report["counts"]["initializer_ghidra_mismatch_links"] == 2
 
@@ -100,6 +117,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         "factory_initializer_links.json",
         "class_audit.json",
         "class_evidence_scorecard.json",
+        "lifecycle_investigation_targets.json",
         "pipeline_manifest.json",
     }
     assert {path.name for path in out.iterdir()} == expected
