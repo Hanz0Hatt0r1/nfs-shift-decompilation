@@ -1,7 +1,9 @@
 """Join observed D3D9 target pipelines to static IMB shader candidates.
 
-This is a pre-admission narrowing layer.  A unique static VS+PS candidate is
-not sufficient to prove runtime resource, primitive, or same-instance identity.
+This is a pre-admission narrowing layer.  Exact VS+PS matches are preferred.
+When a static target is only pixel-hash observable, the fallback also requires
+the source-backed IMB runtime vertex stride to match stream 0.  Neither path
+proves runtime resource, primitive, or same-instance identity.
 """
 from __future__ import annotations
 
@@ -10,6 +12,10 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Mapping
+
+from imb_neutral_geometry import (
+    runtime_interleaved_stride_for_properties,
+)
 
 FORMAT = "SHIFT.IMBRuntimePipelineCandidateJoin/1"
 RUNTIME_FORMAT = "SHIFT.D3D9TargetDrawSignatureCatalog/1"
@@ -43,6 +49,56 @@ def resolve_input_path(path: str | Path) -> Path:
     )
 
 
+def _runtime_stream0_stride(signature: Mapping[str, Any]) -> int | None:
+    for row in signature.get("stream_layout") or []:
+        if not isinstance(row, Mapping):
+            continue
+        try:
+            stream = int(row.get("stream"))
+            stride = int(row.get("stride"))
+        except (TypeError, ValueError):
+            continue
+        if stream == 0 and stride > 0:
+            return stride
+    return None
+
+
+def _binding_summary(binding: Mapping[str, Any]) -> dict[str, Any]:
+    properties = [
+        str(value)
+        for value in (binding.get("vertex_properties") or [])
+    ]
+    return {
+        "binding_index": binding.get("binding_index"),
+        "archive": binding.get("archive"),
+        "imb_path": binding.get("imb_path"),
+        "imb_sha256": _valid_sha(binding.get("imb_sha256")),
+        "primitive_index": binding.get("primitive_index"),
+        "draw_range": dict(binding.get("draw_range") or {}),
+        "material_reference": binding.get("material_reference"),
+        "bmt": binding.get("bmt"),
+        "bmt_sha256": _valid_sha(binding.get("bmt_sha256")),
+        "shader": binding.get("shader"),
+        "shader_family": binding.get("shader_family"),
+        "vertex_properties": properties,
+        "static_vertex_stride": (
+            runtime_interleaved_stride_for_properties(properties)
+        ),
+        "property_descriptors": [
+            dict(value)
+            for value in (binding.get("property_descriptors") or [])
+            if isinstance(value, Mapping)
+        ],
+        "resource_identity_ready": (
+            binding.get("resource_identity_ready") is True
+        ),
+        "draw_range_ready": binding.get("draw_range_ready") is True,
+        "same_instance_match_ready": (
+            binding.get("same_instance_match_ready") is True
+        ),
+    }
+
+
 def _variant_key(
     binding_index: int,
     variant: Mapping[str, Any],
@@ -59,77 +115,81 @@ def _variant_key(
     )
 
 
-def _binding_candidate(
+def _target_pixel_sha(
+    target: Mapping[str, Any],
+    variant: Mapping[str, Any] | None = None,
+) -> str | None:
+    variant = variant or {}
+    return _valid_sha(
+        variant.get("pixel_byte_sha256")
+        or target.get("pixel_byte_sha256")
+        or (
+            target.get("identity_value")
+            if target.get("identity_kind") == "pixel"
+            else None
+        )
+    )
+
+
+def _compact_match(
     binding: Mapping[str, Any],
     target: Mapping[str, Any],
-    variant: Mapping[str, Any],
+    *,
+    evidence_kind: str,
+    matched_variant_count: int,
+    vertex_sha: str | None,
+    pixel_sha: str | None,
+    pair_sha: str | None = None,
+    permutation_sha: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "binding_index": binding.get("binding_index"),
-        "archive": binding.get("archive"),
-        "imb_path": binding.get("imb_path"),
-        "imb_sha256": _valid_sha(binding.get("imb_sha256")),
-        "primitive_index": binding.get("primitive_index"),
-        "draw_range": dict(binding.get("draw_range") or {}),
-        "material_reference": binding.get("material_reference"),
-        "bmt": binding.get("bmt"),
-        "bmt_sha256": _valid_sha(binding.get("bmt_sha256")),
-        "shader": binding.get("shader"),
-        "shader_family": binding.get("shader_family"),
-        "vertex_properties": list(binding.get("vertex_properties") or []),
-        "property_descriptors": [
-            dict(value)
-            for value in (binding.get("property_descriptors") or [])
-            if isinstance(value, Mapping)
-        ],
-        "resource_identity_ready": (
-            binding.get("resource_identity_ready") is True
-        ),
-        "draw_range_ready": binding.get("draw_range_ready") is True,
-        "same_instance_match_ready": (
-            binding.get("same_instance_match_ready") is True
-        ),
+        **_binding_summary(binding),
+        "evidence_kind": evidence_kind,
         "target_strength": target.get("strength"),
         "target_identity_kind": target.get("identity_kind"),
-        "variant": {
-            "vertex_byte_sha256": _valid_sha(
-                variant.get("vertex_byte_sha256")
-            ),
-            "pixel_byte_sha256": _valid_sha(
-                variant.get("pixel_byte_sha256")
-            ),
-            "pair_byte_sha256": _valid_sha(
-                variant.get("pair_byte_sha256")
-            ),
-            "permutation_identity_sha256": _valid_sha(
-                variant.get("permutation_identity_sha256")
-            ),
-            "candidate_file": variant.get("candidate_file"),
-            "candidate_program_offset": variant.get(
-                "candidate_program_offset"
-            ),
-            "candidate_vertex_program_offset": variant.get(
-                "candidate_vertex_program_offset"
-            ),
-            "vertex_pair_selection_status": variant.get(
-                "vertex_pair_selection_status"
-            ),
-            "exact": variant.get("exact") is True,
-        },
+        "target_identity_value": target.get("identity_value"),
+        "matched_variant_count": int(matched_variant_count),
+        "matched_vertex_shader_sha256": vertex_sha,
+        "matched_pixel_shader_sha256": pixel_sha,
+        "matched_pair_byte_sha256": pair_sha,
+        "matched_permutation_identity_sha256": permutation_sha,
     }
 
 
-def _build_pair_index(
+def _finalize_index(
+    raw: Mapping[Any, Mapping[int, dict[str, Any]]],
+) -> dict[Any, list[dict[str, Any]]]:
+    out: dict[Any, list[dict[str, Any]]] = {}
+    for key, by_binding in raw.items():
+        rows = []
+        for candidate in by_binding.values():
+            row = dict(candidate)
+            variant_keys = row.pop("_variant_keys", set())
+            row["matched_variant_count"] = len(variant_keys)
+            rows.append(row)
+        rows.sort(
+            key=lambda row: int(row.get("binding_index") or -1)
+        )
+        out[key] = rows
+    return out
+
+
+def _build_static_indices(
     target_set: Mapping[str, Any],
 ) -> tuple[
     dict[tuple[str, str], list[dict[str, Any]]],
+    dict[tuple[str, int], list[dict[str, Any]]],
     set[str],
     set[int],
 ]:
-    pair_index: dict[
+    pair_raw: dict[
         tuple[str, str],
-        list[dict[str, Any]],
-    ] = defaultdict(list)
+        dict[int, dict[str, Any]],
+    ] = defaultdict(dict)
+    pixel_stride_raw: dict[
+        tuple[str, int],
+        dict[int, dict[str, Any]],
+    ] = defaultdict(dict)
     pixel_hashes: set[str] = set()
     binding_indices: set[int] = set()
 
@@ -141,12 +201,12 @@ def _build_pair_index(
         except (TypeError, ValueError):
             continue
         binding_indices.add(binding_index)
-        seen_variants: set[tuple[Any, ...]] = set()
+        summary = _binding_summary(binding)
+        static_stride = summary.get("static_vertex_stride")
 
         for target in binding.get("targets") or []:
             if not isinstance(target, Mapping):
                 continue
-
             variants = [
                 value
                 for value in (target.get("candidate_variants") or [])
@@ -155,62 +215,88 @@ def _build_pair_index(
             if not variants:
                 variants = [target]
 
+            target_pixel = _target_pixel_sha(target)
+            if target_pixel:
+                pixel_hashes.add(target_pixel)
+
+            # Strong path: every concrete variant with exact VS+PS bytes.
             for variant in variants:
                 vertex_sha = _valid_sha(
                     variant.get("vertex_byte_sha256")
                     or target.get("vertex_byte_sha256")
                 )
-                pixel_sha = _valid_sha(
-                    variant.get("pixel_byte_sha256")
-                    or target.get("pixel_byte_sha256")
-                )
+                pixel_sha = _target_pixel_sha(target, variant)
                 if pixel_sha:
                     pixel_hashes.add(pixel_sha)
                 if not vertex_sha or not pixel_sha:
                     continue
 
-                merged_variant = dict(variant)
-                merged_variant.setdefault(
-                    "vertex_byte_sha256",
-                    vertex_sha,
-                )
-                merged_variant.setdefault(
-                    "pixel_byte_sha256",
-                    pixel_sha,
-                )
-                key = _variant_key(binding_index, merged_variant)
-                if key in seen_variants:
-                    continue
-                seen_variants.add(key)
-                pair_index[(vertex_sha, pixel_sha)].append(
-                    _binding_candidate(
+                key = (vertex_sha, pixel_sha)
+                candidate = pair_raw[key].get(binding_index)
+                variant_key = _variant_key(binding_index, variant)
+                if candidate is None:
+                    candidate = _compact_match(
                         binding,
                         target,
-                        merged_variant,
+                        evidence_kind="exact-vs+ps",
+                        matched_variant_count=0,
+                        vertex_sha=vertex_sha,
+                        pixel_sha=pixel_sha,
+                        pair_sha=_valid_sha(
+                            variant.get("pair_byte_sha256")
+                            or target.get("pair_byte_sha256")
+                        ),
+                        permutation_sha=_valid_sha(
+                            variant.get("permutation_identity_sha256")
+                            or target.get(
+                                "permutation_identity_sha256"
+                            )
+                        ),
                     )
-                )
+                    candidate["_variant_keys"] = set()
+                    pair_raw[key][binding_index] = candidate
+                candidate["_variant_keys"].add(variant_key)
 
-    for candidates in pair_index.values():
-        candidates.sort(
-            key=lambda row: (
-                int(row.get("binding_index") or -1),
-                str(row.get("variant", {}).get("candidate_file") or ""),
-                int(
-                    row.get("variant", {}).get(
-                        "candidate_vertex_program_offset"
+            # Weak but source-constrained path: only targets whose static
+            # contract itself is prefilter-only may fall back to PS+stride.
+            if (
+                target.get("strength") == "prefilter-only"
+                and target_pixel
+                and isinstance(static_stride, int)
+                and static_stride > 0
+            ):
+                key = (target_pixel, static_stride)
+                candidate = pixel_stride_raw[key].get(binding_index)
+                if candidate is None:
+                    candidate = _compact_match(
+                        binding,
+                        target,
+                        evidence_kind="pixel+static-vertex-stride",
+                        matched_variant_count=0,
+                        vertex_sha=None,
+                        pixel_sha=target_pixel,
                     )
-                    or -1
-                ),
-                int(
-                    row.get("variant", {}).get(
-                        "candidate_program_offset"
+                    candidate["_variant_keys"] = set()
+                    pixel_stride_raw[key][binding_index] = candidate
+                for variant in variants:
+                    candidate["_variant_keys"].add(
+                        _variant_key(binding_index, variant)
                     )
-                    or -1
-                ),
-            )
-        )
 
-    return pair_index, pixel_hashes, binding_indices
+    return (
+        _finalize_index(pair_raw),
+        _finalize_index(pixel_stride_raw),
+        pixel_hashes,
+        binding_indices,
+    )
+
+
+def _binding_ids(candidates: list[Mapping[str, Any]]) -> list[int]:
+    return sorted({
+        int(value["binding_index"])
+        for value in candidates
+        if isinstance(value.get("binding_index"), int)
+    })
 
 
 def build_runtime_pipeline_candidate_join(
@@ -227,15 +313,21 @@ def build_runtime_pipeline_candidate_join(
             "target set must be SHIFT.IMBRuntimeShaderTargetSet/1"
         )
 
-    pair_index, static_pixel_hashes, static_bindings = (
-        _build_pair_index(target_set)
-    )
+    (
+        pair_index,
+        pixel_stride_index,
+        static_pixel_hashes,
+        static_bindings,
+    ) = _build_static_indices(target_set)
+
     rows: list[dict[str, Any]] = []
     status_counts: Counter[str] = Counter()
     candidate_binding_count_distribution: Counter[int] = Counter()
     exact_pair_draw_count = 0
-    single_binding_draw_count = 0
     exact_pair_pipeline_count = 0
+    layout_pixel_draw_count = 0
+    layout_pixel_pipeline_count = 0
+    single_binding_draw_count = 0
     single_binding_pipeline_count = 0
     candidate_binding_indices: set[int] = set()
 
@@ -252,26 +344,53 @@ def build_runtime_pipeline_candidate_join(
         pixel_sha = _valid_sha(
             signature.get("pixel_shader_sha256")
         )
+        runtime_stride = _runtime_stream0_stride(signature)
         draw_count = int(pipeline.get("draw_count") or 0)
-        candidates = (
+
+        exact_candidates = (
             list(pair_index.get((vertex_sha, pixel_sha), []))
             if vertex_sha and pixel_sha
             else []
         )
-        binding_ids = sorted({
-            int(value["binding_index"])
-            for value in candidates
-            if isinstance(value.get("binding_index"), int)
-        })
-
-        if candidates:
-            status = (
-                "single-static-binding-candidate"
-                if len(binding_ids) == 1
-                else "ambiguous-static-binding-candidates"
+        layout_candidates = (
+            list(
+                pixel_stride_index.get(
+                    (pixel_sha, runtime_stride),
+                    [],
+                )
             )
+            if pixel_sha and isinstance(runtime_stride, int)
+            else []
+        )
+
+        evidence_kind = "none"
+        if exact_candidates:
+            candidates = exact_candidates
+            evidence_kind = "exact-vs+ps"
             exact_pair_pipeline_count += 1
             exact_pair_draw_count += draw_count
+        elif layout_candidates:
+            candidates = layout_candidates
+            evidence_kind = "pixel+static-vertex-stride"
+            layout_pixel_pipeline_count += 1
+            layout_pixel_draw_count += draw_count
+        else:
+            candidates = []
+
+        binding_ids = _binding_ids(candidates)
+        if candidates:
+            if evidence_kind == "exact-vs+ps":
+                status = (
+                    "single-static-binding-candidate"
+                    if len(binding_ids) == 1
+                    else "ambiguous-static-binding-candidates"
+                )
+            else:
+                status = (
+                    "single-layout-pixel-static-binding-candidate"
+                    if len(binding_ids) == 1
+                    else "layout-pixel-static-binding-candidates"
+                )
             candidate_binding_count_distribution[
                 len(binding_ids)
             ] += 1
@@ -314,6 +433,7 @@ def build_runtime_pipeline_candidate_join(
             "stream_layout": list(
                 signature.get("stream_layout") or []
             ),
+            "runtime_vertex_stride": runtime_stride,
             "index_format": signature.get("index_format"),
             "runtime_families": runtime_families,
             "candidate_families": candidate_families,
@@ -324,9 +444,13 @@ def build_runtime_pipeline_candidate_join(
                     & set(candidate_families)
                 )
             ),
+            "candidate_evidence_kind": evidence_kind,
             "status": status,
             "candidate_binding_count": len(binding_ids),
-            "candidate_variant_count": len(candidates),
+            "candidate_variant_count": sum(
+                int(value.get("matched_variant_count") or 0)
+                for value in candidates
+            ),
             "candidate_binding_indices": binding_ids,
             "candidates": candidates,
         })
@@ -342,6 +466,12 @@ def build_runtime_pipeline_candidate_join(
         int(row.get("draw_count") or 0)
         for row in rows
     )
+    candidate_pipeline_count = (
+        exact_pair_pipeline_count + layout_pixel_pipeline_count
+    )
+    candidate_draw_count = (
+        exact_pair_draw_count + layout_pixel_draw_count
+    )
 
     return {
         "format": FORMAT,
@@ -352,10 +482,24 @@ def build_runtime_pipeline_candidate_join(
             "runtime_draw_count": runtime_draw_count,
             "static_binding_count": len(static_bindings),
             "static_vs_ps_pair_count": len(pair_index),
+            "static_pixel_stride_key_count": len(pixel_stride_index),
             "exact_vs_ps_candidate_pipeline_count": (
                 exact_pair_pipeline_count
             ),
             "exact_vs_ps_candidate_draw_count": exact_pair_draw_count,
+            "layout_pixel_candidate_pipeline_count": (
+                layout_pixel_pipeline_count
+            ),
+            "layout_pixel_candidate_draw_count": (
+                layout_pixel_draw_count
+            ),
+            "candidate_pipeline_count": candidate_pipeline_count,
+            "candidate_draw_count": candidate_draw_count,
+            "candidate_draw_coverage": (
+                candidate_draw_count / runtime_draw_count
+                if runtime_draw_count
+                else 0.0
+            ),
             "single_static_binding_candidate_pipeline_count": (
                 single_binding_pipeline_count
             ),
@@ -380,9 +524,24 @@ def build_runtime_pipeline_candidate_join(
             "resource_identity": "not evaluated",
             "primitive_identity": "not evaluated",
             "same_instance_identity": "not evaluated",
+            "exact_vs_ps_candidate": (
+                "static candidate contains the exact observed VS+PS "
+                "byte hashes"
+            ),
+            "layout_pixel_candidate": (
+                "static prefilter-only target shares the exact observed "
+                "PS hash and its source-backed IMB vertex properties "
+                "derive the same stream-0 byte stride; VS identity is "
+                "not claimed"
+            ),
             "single_static_binding_candidate": (
-                "one static binding shares the exact observed VS+PS "
-                "byte hashes; this is not runtime same-instance proof"
+                "one static binding survives the applicable candidate "
+                "gate; this is not runtime same-instance proof"
+            ),
+            "candidate_compaction": (
+                "candidate rows are grouped by static binding; repeated "
+                "FXO offsets are represented by matched_variant_count "
+                "instead of duplicating the binding payload"
             ),
             "required_for_promotion": (
                 "exact runtime IMB resource identity + exact primitive "

@@ -8,6 +8,7 @@ from imb_neutral_geometry import (
     FORMAT,
     build_imb_neutral_geometry,
     build_imb_neutral_geometry_file,
+    runtime_interleaved_stride_for_properties,
 )
 
 
@@ -169,3 +170,19 @@ def test_file_adapter_writes_stable_json(tmp_path):
     assert written["format"] == FORMAT
     assert written["mesh"]["indices"] == [0, 1, 2]
     assert written["primitives"][0]["material"] == "paint"
+
+def test_runtime_interleaved_stride_for_production_silverstone_layouts():
+    assert runtime_interleaved_stride_for_properties(
+        ["200", "460", "220", "130"]
+    ) == 36
+    assert runtime_interleaved_stride_for_properties(
+        ["200", "460", "220", "240", "250", "130"]
+    ) == 60
+    assert runtime_interleaved_stride_for_properties(
+        ["200", "460", "220", "240", "250", "130", "231"]
+    ) == 72
+    assert runtime_interleaved_stride_for_properties(
+        ["200", "460", "220", "240", "250", "130", "580", "310"]
+    ) == 80
+    assert runtime_interleaved_stride_for_properties(["870"]) is None
+

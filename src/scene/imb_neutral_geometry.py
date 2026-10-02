@@ -63,6 +63,34 @@ def _decode_payload(payload: bytes, storage: str) -> list[list[int | float]]:
     raise ValueError(f"unsupported neutral IMB storage {storage!r}")
 
 
+_STORAGE_ELEMENT_BYTES = {
+    "f32x2": 8,
+    "f32x3": 12,
+    "f32x4": 16,
+    "u8x4": 4,
+}
+
+
+def runtime_interleaved_stride_for_properties(
+    properties: list[str] | tuple[str, ...],
+) -> int | None:
+    """Return the proven interleaved byte stride for known IMB properties.
+
+    Unknown/deferred properties intentionally return None instead of guessing.
+    """
+    total = 0
+    for value in properties:
+        mapping = _FIELD_BY_PROPERTY.get(str(value))
+        if mapping is None:
+            return None
+        storage = mapping[1]
+        element_bytes = _STORAGE_ELEMENT_BYTES.get(storage)
+        if element_bytes is None:
+            return None
+        total += element_bytes
+    return total
+
+
 def _property_id(stream: dict[str, Any]) -> str:
     return (
         f"{int(stream['type_ordinal'])}"
