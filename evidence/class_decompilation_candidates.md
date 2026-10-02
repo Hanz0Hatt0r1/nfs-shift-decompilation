@@ -57,11 +57,45 @@ Subsystem filters such as `--prefix AI`, `--prefix Vehicle`, or repeated
 `--class-name` arguments can narrow the evidence pool before manual
 constructor/call-site analysis.
 
+## Optional initializer evidence
+
+The audit can additionally consume a
+`SHIFT-FACTORY-INITIALIZER-LINKS/1` report:
+
+```bash
+python3 tools/shift_live_dump/audit_shift_class_candidates.py \
+  /path/to/SHIFT.exe.c \
+  --exe /path/to/SHIFT.exe \
+  --initializer-links out/factory_initializer_links.json \
+  --initializer-linked-only \
+  --json-out out/initializer_linked_classes.json
+```
+
+This annotation is deliberately orthogonal to `structural_ready`. A class may
+have a factory/initializer link while still being structurally blocked, and a
+structurally ready class may have no initializer evidence yet.
+
+Per-class fields include:
+
+- `initializer_link_count` and `initializer_linked`;
+- source `factory_functions`;
+- `initializer_candidates` and `unambiguous_initializer` when only one target
+  survives;
+- `initializer_ghidra_confirmed`, which is `true` only when every supplied
+  source link is also present as a direct Ghidra call edge, `false` on a
+  mismatch, and `null` when no independent Ghidra decision is available.
+
+Top-level counts preserve linked, Ghidra-confirmed, and Ghidra-mismatched class
+populations separately. These annotations do not change the historical
+structural-ready count or blocker definitions.
+
 ## Boundary
 
 `structural_ready` means only that the class identity, concrete vtable and
 direct reflected layout are source/PE-backed. It does **not** establish object
 size, ownership, array semantics, update order, constructor defaults, virtual
-method meanings or gameplay behavior. Those still require constructor/factory,
-call-site and, where relevant, runtime-capture evidence before code is promoted
-into the decompiled implementation.
+method meanings or gameplay behavior. Initializer annotations narrow concrete
+factory call sites but still do not by themselves prove full C++ constructor
+semantics. Those still require additional initialization/lifetime, call-site
+and, where relevant, runtime-capture evidence before code is promoted into the
+decompiled implementation.
