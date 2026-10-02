@@ -3,8 +3,8 @@
 
 The pipeline preserves the existing evidence layers as separate JSON artifacts:
 RTTI/reflection class manifest, factory-to-initializer links, structural audit,
-the non-numeric evidence scorecard, source-level lifecycle observations, and
-one-hop Ghidra lifecycle investigation slices.
+the non-numeric evidence scorecard, source-level lifecycle observations,
+deleting-wrapper shapes, and one-hop Ghidra lifecycle investigation slices.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from audit_shift_class_candidates import audit_candidates
 from build_class_evidence_scorecard import build_scorecard
 from build_shift_class_manifest import build_manifest
 from extract_class_lifecycle_source_evidence import extract_lifecycle_evidence
+from extract_deleting_wrapper_evidence import extract_deleting_wrappers
 from extract_factory_initializer_links import extract_links
 
 FORMAT = "SHIFT-CLASS-EVIDENCE-PIPELINE/1"
@@ -51,6 +52,7 @@ def run_pipeline(
     class_audit_path = output_dir / "class_audit.json"
     scorecard_path = output_dir / "class_evidence_scorecard.json"
     lifecycle_source_path = output_dir / "class_lifecycle_source_evidence.json"
+    deleting_wrapper_path = output_dir / "deleting_wrapper_evidence.json"
     lifecycle_targets_path = output_dir / "lifecycle_investigation_targets.json"
 
     class_manifest = build_manifest(source, exe, ghidra_export)
@@ -73,6 +75,13 @@ def run_pipeline(
     )
     _write_json(lifecycle_source_path, lifecycle_source)
 
+    deleting_wrappers = extract_deleting_wrappers(
+        source,
+        lifecycle_source_path,
+        ghidra_export,
+    )
+    _write_json(deleting_wrapper_path, deleting_wrappers)
+
     lifecycle_targets = _build_lifecycle_targets(scorecard_path, ghidra_export)
     _write_json(lifecycle_targets_path, lifecycle_targets)
 
@@ -82,6 +91,7 @@ def run_pipeline(
         "class_audit": class_audit_path.name,
         "class_evidence_scorecard": scorecard_path.name,
         "class_lifecycle_source_evidence": lifecycle_source_path.name,
+        "deleting_wrapper_evidence": deleting_wrapper_path.name,
         "lifecycle_investigation_targets": lifecycle_targets_path.name,
     }
     report = {
@@ -128,6 +138,15 @@ def run_pipeline(
             "lifecycle_source_teardown_candidates": lifecycle_source.get(
                 "teardown_transition_candidate_count"
             ),
+            "deleting_wrapper_candidates": deleting_wrappers.get(
+                "wrapper_candidate_count"
+            ),
+            "deleting_wrapper_shapes": deleting_wrappers.get(
+                "deleting_wrapper_shape_count"
+            ),
+            "deleting_wrapper_ghidra_confirmed_shapes": deleting_wrappers.get(
+                "ghidra_confirmed_shape_count"
+            ),
             "lifecycle_target_slices": lifecycle_targets.get("target_count"),
             "lifecycle_complete_slices": lifecycle_targets.get("complete_slice_count"),
             "lifecycle_incomplete_slices": lifecycle_targets.get("incomplete_slice_count"),
@@ -137,12 +156,13 @@ def run_pipeline(
         "scope": {
             "constructor_semantics_proven": False,
             "destructor_semantics_proven": False,
+            "deleting_destructor_semantics_proven": False,
             "behavior_semantics_proven": False,
             "note": (
                 "This pipeline composes existing evidence artifacts, direct source "
-                "lifecycle observations and Ghidra context slices. It does not promote "
-                "initializer/teardown candidates to constructors/destructors or infer "
-                "missing class behavior."
+                "lifecycle/deleting-wrapper observations and Ghidra context slices. "
+                "It does not promote initializer/teardown/wrapper candidates to C++ "
+                "constructor/destructor identities or infer missing class behavior."
             ),
         },
     }
@@ -181,6 +201,7 @@ def main() -> int:
         f"{counts['lifecycle_investigation_ready_classes']}"
     )
     print(f"lifecycle source targets: {counts['lifecycle_source_targets']}")
+    print(f"deleting-wrapper shapes: {counts['deleting_wrapper_shapes']}")
     print(f"lifecycle target slices: {counts['lifecycle_target_slices']}")
     print(f"output: {args.out}")
 
