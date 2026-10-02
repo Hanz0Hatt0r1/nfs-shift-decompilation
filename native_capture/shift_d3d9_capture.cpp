@@ -2466,7 +2466,9 @@ HRESULT STDMETHODCALLTYPE hook_create_texture(
           << ",\"usage\":" << usage
           << ",\"format\":" << static_cast<unsigned>(format)
           << ",\"pool\":" << static_cast<unsigned>(pool);
-        append_texture_descriptor_json(f, *out_texture);
+        if (!signature_discovery_enabled()) {
+            append_texture_descriptor_json(f, *out_texture);
+        }
         writer().write_event("create_texture", f.str());
         if (!signature_discovery_enabled()) patch_texture_object(*out_texture);
     }
@@ -2500,7 +2502,9 @@ HRESULT STDMETHODCALLTYPE hook_create_cube_texture(
           << ",\"usage\":" << usage
           << ",\"format\":" << static_cast<unsigned>(format)
           << ",\"pool\":" << static_cast<unsigned>(pool);
-        append_texture_descriptor_json(f, *out_texture);
+        if (!signature_discovery_enabled()) {
+            append_texture_descriptor_json(f, *out_texture);
+        }
         writer().write_event("create_cube_texture", f.str());
         if (!signature_discovery_enabled()) patch_cube_texture_object(*out_texture);
     }
@@ -2524,7 +2528,10 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_declaration(
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
-          << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+          ;
+        if (!signature_discovery_enabled()) {
+            f << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+        }
         writer().write_event("create_vertex_declaration", f.str());
     }
     return hr;
@@ -2540,6 +2547,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_declaration(
         const std::string signature =
             get_resource_signature(g_vertex_declaration_signatures, decl);
         maybe_trigger_for_resource("set_vertex_declaration", signature, decl);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"declaration_ptr\":" << CaptureWriter::ptr(decl)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -2564,6 +2572,7 @@ HRESULT STDMETHODCALLTYPE hook_set_stream_source(
         const std::string signature =
             get_resource_signature(g_vertex_buffer_signatures, buffer);
         maybe_trigger_for_resource("set_stream_source", signature, buffer);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"vertex_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -2588,6 +2597,7 @@ HRESULT STDMETHODCALLTYPE hook_set_indices(
         const std::string signature =
             get_resource_signature(g_index_buffer_signatures, buffer);
         maybe_trigger_for_resource("set_indices", signature, buffer);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"index_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -2694,6 +2704,7 @@ HRESULT STDMETHODCALLTYPE hook_set_render_target(
     if (SUCCEEDED(hr) && capture_render_event_active()) {
         const std::string signature = surface_signature("rt", surface);
         maybe_trigger_for_resource("set_render_target", signature, surface);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"render_target_index\":" << index
@@ -2716,6 +2727,7 @@ HRESULT STDMETHODCALLTYPE hook_set_depth_stencil_surface(
     if (SUCCEEDED(hr) && capture_render_event_active()) {
         const std::string signature = surface_signature("depth", surface);
         maybe_trigger_for_resource("set_depth_stencil_surface", signature, surface);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"surface_ptr\":" << CaptureWriter::ptr(surface);
@@ -2909,6 +2921,7 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
         const std::string signature =
             get_resource_signature(g_texture_signatures, texture);
         maybe_trigger_for_resource("set_texture", signature, texture);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -2940,7 +2953,10 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_shader(
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
-          << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+          ;
+        if (!signature_discovery_enabled()) {
+            f << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+        }
         writer().write_event("create_vertex_shader", f.str());
     }
     return hr;
@@ -2956,6 +2972,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader(
         const std::string signature =
             get_resource_signature(g_vertex_shader_signatures, shader);
         maybe_trigger_for_resource("set_vertex_shader", signature, shader);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -3011,7 +3028,10 @@ HRESULT STDMETHODCALLTYPE hook_create_pixel_shader(
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
-          << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+          ;
+        if (!signature_discovery_enabled()) {
+            f << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+        }
         writer().write_event("create_pixel_shader", f.str());
     }
     return hr;
@@ -3027,6 +3047,7 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader(
         const std::string signature =
             get_resource_signature(g_pixel_shader_signatures, shader);
         maybe_trigger_for_resource("set_pixel_shader", signature, shader);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
