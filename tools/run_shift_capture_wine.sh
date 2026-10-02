@@ -81,6 +81,21 @@ to_wine_path() {
   fi
 }
 
+is_shift_capture_proxy() {
+  python3 - "$1" <<'PY'
+import sys
+
+with open(sys.argv[1], "rb") as stream:
+    data = stream.read()
+markers = (
+    b"SHIFT_D3D9_CAPTURE_MODE",
+    b"SHIFT_D3D9_CRASH_DIAGNOSTICS",
+    b"proxy_d3d9_backend_selected",
+)
+raise SystemExit(0 if all(marker in data for marker in markers) else 1)
+PY
+}
+
 game=""
 proxy=""
 d3dx9_41=""
@@ -308,11 +323,14 @@ crash_path="$output/shift_d3d9_crash.jsonl"
 backup_dll="$output/original_d3d9.dll"
 backup_sidecar="$output/original_d3d9.shift_backend.dll"
 backup_d3dx="$output/original_d3dx9_41.dll"
+stale_dll="$output/stale_capture_d3d9.dll"
+stale_sidecar="$output/stale_capture_d3d9.shift_backend.dll"
 
 # Every launcher invocation represents one capture session. The native writer
 # appends by design, so clear launcher-owned outputs here to avoid mixing
 # different process runs when an output directory is reused.
-rm -f "$capture_path" "$crash_path" "$output/resource_signatures.json" "$output/capture.trigger"
+rm -f "$capture_path" "$crash_path" "$output/resource_signatures.json" "$output/capture.trigger" \
+  "$stale_dll" "$stale_sidecar"
 if ((screenshots)); then rm -rf "$output/frames"; fi
 if ((buffer_payloads)); then rm -rf "$output/buffers"; fi
 if ((texture_payloads)); then rm -rf "$output/texture-payloads"; fi
@@ -322,15 +340,29 @@ had_sidecar=0
 had_d3dx=0
 d3dx_mutated=0
 staged_backend=0
+stale_target_proxy=0
+stale_sidecar_proxy=0
 
-# Make every recovery copy before changing the game directory.
+# Make every recovery copy before changing the game directory. Never preserve
+# an older SHIFT capture proxy as the renderer backend: that creates
+# proxy->proxy chainloading and installs two crash handlers in one process.
 if [[ -f "$target_dll" ]]; then
-  cp -f "$target_dll" "$backup_dll"
-  had_dll=1
+  if is_shift_capture_proxy "$target_dll"; then
+    cp -f "$target_dll" "$stale_dll"
+    stale_target_proxy=1
+  else
+    cp -f "$target_dll" "$backup_dll"
+    had_dll=1
+  fi
 fi
 if [[ -f "$sidecar_dll" ]]; then
-  cp -f "$sidecar_dll" "$backup_sidecar"
-  had_sidecar=1
+  if is_shift_capture_proxy "$sidecar_dll"; then
+    cp -f "$sidecar_dll" "$stale_sidecar"
+    stale_sidecar_proxy=1
+  else
+    cp -f "$sidecar_dll" "$backup_sidecar"
+    had_sidecar=1
+  fi
 fi
 if [[ -n "$d3dx9_41" ]] && (( ! d3dx_same_file )) && [[ -f "$target_d3dx" ]]; then
   cp -f "$target_d3dx" "$backup_d3dx"
@@ -361,16 +393,25 @@ restore() {
 }
 trap restore EXIT INT TERM
 
-if ((had_sidecar)); then
+if ((stale_sidecar_proxy)); then
   rm -f "$sidecar_dll"
 fi
 
 if ((had_dll)); then
+  # A genuine game-local renderer (for example DXVK) takes precedence over any
+  # pre-existing sidecar for this capture session.
+  rm -f "$sidecar_dll"
   if [[ "$(sha256sum "$target_dll" | awk '{print $1}')" != \
         "$(sha256sum "$proxy" | awk '{print $1}')" ]]; then
     cp -f "$target_dll" "$sidecar_dll"
     staged_backend=1
   fi
+elif ((had_sidecar)); then
+  # A previous interrupted launch may have left the genuine renderer in the
+  # sidecar while d3d9.dll itself is a stale capture proxy. Keep that renderer.
+  staged_backend=1
+else
+  rm -f "$sidecar_dll"
 fi
 
 cp -f "$proxy" "$target_dll"
@@ -539,8 +580,18 @@ if ((trigger_capture)); then
 fi
 if ((buffer_payloads)); then echo "Buffers : $buffer_dir"; fi
 if ((texture_payloads)); then echo "Tex raw : $texture_payload_dir"; fi
+if ((stale_target_proxy)); then
+  echo "Stale   : archived old SHIFT capture proxy as $stale_dll"
+fi
+if ((stale_sidecar_proxy)); then
+  echo "Stale   : archived old SHIFT capture sidecar as $stale_sidecar"
+fi
 if ((staged_backend)); then
-  echo "Backend : preserved local d3d9.dll via $sidecar_dll"
+  if ((had_dll)); then
+    echo "Backend : preserved local renderer via $sidecar_dll"
+  else
+    echo "Backend : preserved existing non-proxy sidecar $sidecar_dll"
+  fi
 else
   echo "Backend : Wine/system d3d9.dll"
 fi

@@ -481,3 +481,20 @@ def test_wine_launcher_avoids_system_winepath_when_runtime_has_none():
     assert 'crash_windows="$(to_wine_path "$crash_path")"' in wine
     assert 'SHIFT_D3D9_CAPTURE_BUFFER_PAYLOAD_DIR="$(to_wine_path "$buffer_dir")"' in wine
     assert 'avoiding external winepath/wineserver startup' in wine
+
+
+def test_wine_launcher_rejects_stale_shift_capture_proxy_as_backend():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert "is_shift_capture_proxy()" in wine
+    assert 'b"SHIFT_D3D9_CAPTURE_MODE"' in wine
+    assert 'b"SHIFT_D3D9_CRASH_DIAGNOSTICS"' in wine
+    assert 'b"proxy_d3d9_backend_selected"' in wine
+    assert 'stale_target_proxy=1' in wine
+    assert 'stale_sidecar_proxy=1' in wine
+    assert 'stale_capture_d3d9.dll' in wine
+    assert 'stale_capture_d3d9.shift_backend.dll' in wine
+    assert 'if ((stale_sidecar_proxy)); then' in wine
+    assert 'elif ((had_sidecar)); then' in wine
+    assert 'archived old SHIFT capture proxy' in wine
+    assert 'Backend : Wine/system d3d9.dll' in wine
