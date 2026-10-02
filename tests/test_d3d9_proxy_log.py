@@ -94,3 +94,36 @@ def test_hook_installation_failure_is_diagnosed():
         item["kind"] == "proxy-hook-installation-failed"
         for item in report["issues"]
     )
+
+
+def test_backend_call_that_never_returns_is_diagnosed():
+    report = analyze_events([
+        {"event": "proxy_direct3dcreate9", "mode": "diagnostic"},
+        {
+            "event": "proxy_d3d9_backend_selected",
+            "source": "system",
+            "path": "C:\\windows\\system32\\d3d9.dll",
+        },
+        {"event": "proxy_system_d3d9_ready"},
+        {
+            "event": "direct3dcreate9_backend_call_begin",
+            "direct3dcreate9_owner": "C:\\windows\\system32\\d3d9.dll",
+        },
+    ])
+    assert report["diagnosis"] == "d3d9-backend-call-stalled-or-crashed"
+    assert any(
+        issue["kind"] == "d3d9-backend-call-did-not-return"
+        for issue in report["issues"]
+    )
+
+
+def test_self_forwarding_backend_is_diagnosed():
+    report = analyze_events([
+        {"event": "proxy_direct3dcreate9", "mode": "diagnostic"},
+        {"event": "proxy_system_d3d9_self_forward_detected"},
+    ])
+    assert report["diagnosis"] == "system-d3d9-forwarding-failure"
+    assert any(
+        issue["kind"] == "d3d9-backend-self-forwarding"
+        for issue in report["issues"]
+    )
