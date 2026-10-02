@@ -79,6 +79,20 @@ def analyze_events(events: list[dict[str, Any]], parse_errors: int = 0) -> dict[
             "detail": by_name["proxy_system_d3d9_missing_required_export"][-1],
         })
 
+    if by_name.get("proxy_system_d3d9_self_forward_detected"):
+        issues.append({
+            "kind": "d3d9-backend-self-forwarding",
+            "detail": by_name["proxy_system_d3d9_self_forward_detected"][-1],
+        })
+
+    backend_call_begin = by_name.get("direct3dcreate9_backend_call_begin", [])
+    backend_call_result = by_name.get("direct3dcreate9_result", [])
+    if backend_call_begin and not backend_call_result:
+        issues.append({
+            "kind": "d3d9-backend-call-did-not-return",
+            "detail": backend_call_begin[-1],
+        })
+
     hook_failures = list(by_name.get("vtable_patch_failed", []))
     hook_failures.extend(by_name.get("d3d9_hook_failed", []))
     hook_failures.extend(
@@ -185,8 +199,11 @@ def analyze_events(events: list[dict[str, Any]], parse_errors: int = 0) -> dict[
     elif (
         by_name.get("proxy_system_d3d9_load_failed")
         or by_name.get("proxy_system_d3d9_missing_required_export")
+        or by_name.get("proxy_system_d3d9_self_forward_detected")
     ):
         diagnosis = "system-d3d9-forwarding-failure"
+    elif backend_call_begin and not backend_call_result:
+        diagnosis = "d3d9-backend-call-stalled-or-crashed"
     elif hook_failures:
         diagnosis = "proxy-hook-installation-failure"
     elif create_device and not bool(create_device[-1].get("success")):
