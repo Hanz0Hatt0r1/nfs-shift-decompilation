@@ -516,3 +516,11 @@ def test_wine_launcher_uses_portproton_start_environment_for_portproton_prefixes
     assert 'shlex.quote(os.environ.get("WINEDLLOVERRIDES", ""))' in wine
     assert 'echo "Launcher: $portproton_start"' in wine
     assert 'bash "$portproton_start" "$game" "${game_args[@]}"' in wine
+
+
+def test_portproton_capture_temporarily_disables_gamescope():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'stream.write("export PW_GAMESCOPE=0\\n")' in wine
+    assert 'Gamescope: disabled for capture session' in wine
+    assert 'cp -p "$backup_ppdb" "$ppdb"' in wine
