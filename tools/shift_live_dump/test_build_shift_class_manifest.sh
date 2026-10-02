@@ -121,7 +121,11 @@ for vtable, getter in (
 out.write_bytes(blob)
 PY
 
-python3 "$self_dir/build_shift_class_manifest.py"   "$tmp/SHIFT.exe.c"   --exe "$tmp/SHIFT.exe"   --json-out "$tmp/report.json"   --csv-out "$tmp/report.csv" >/dev/null
+python3 "$self_dir/build_shift_class_manifest.py" \
+  "$tmp/SHIFT.exe.c" \
+  --exe "$tmp/SHIFT.exe" \
+  --json-out "$tmp/report.json" \
+  --csv-out "$tmp/report.csv" >/dev/null
 
 python3 - "$tmp/report.json" "$tmp/report.csv" <<'PY'
 import csv
@@ -135,6 +139,8 @@ assert report["named_class_count"] == 2, report
 assert report["reflected_class_count"] == 2, report
 assert report["reflection_field_count"] == 3, report
 assert report["unique_vtable_count"] == 2, report
+assert report["ghidra_registration_checked_count"] == 0, report
+assert report["ghidra_registration_verified_count"] == 0, report
 
 rows = {row["name"]: row for row in report["classes"]}
 base = rows["Base"]
@@ -167,7 +173,12 @@ assert [row["name"] for row in csv_rows] == ["Base", "Child"], csv_rows
 assert csv_rows[1]["ancestry"] == "Base", csv_rows
 PY
 
-python3 "$self_dir/build_shift_class_manifest.py"   "$tmp/SHIFT.exe.c"   --exe "$tmp/SHIFT.exe"   --prefix Ch   --only-reflected   --json-out "$tmp/filtered.json" >/dev/null
+python3 "$self_dir/build_shift_class_manifest.py" \
+  "$tmp/SHIFT.exe.c" \
+  --exe "$tmp/SHIFT.exe" \
+  --prefix Ch \
+  --only-reflected \
+  --json-out "$tmp/filtered.json" >/dev/null
 
 python3 - "$tmp/filtered.json" <<'PY'
 import json
@@ -176,6 +187,74 @@ import sys
 report = json.load(open(sys.argv[1], encoding="utf-8"))
 assert report["selected_class_count"] == 1, report
 assert report["classes"][0]["name"] == "Child", report
+PY
+
+mkdir -p "$tmp/ghidra"
+cat >"$tmp/ghidra/functions.jsonl" <<'EOF'
+{"address":"0x00100000","name":"FUN_00100000","mnemonic_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+{"address":"0x00100090","name":"FUN_00100090","mnemonic_sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+EOF
+cat >"$tmp/ghidra/callgraph.jsonl" <<'EOF'
+{"from_function":"0x00100000","from_name":"FUN_00100000","instruction":"0x0010000c","to":"0x00631740","to_name":"FUN_00631740","indirect":false}
+{"from_function":"0x00100090","from_name":"FUN_00100090","instruction":"0x0010009c","to":"0x00631740","to_name":"FUN_00631740","indirect":false}
+EOF
+cat >"$tmp/ghidra/strings_xrefs.jsonl" <<'EOF'
+{"address":"0x00b00000","value":"Base","functions":["0x00100000"]}
+{"address":"0x00b00010","value":"Child","functions":["0x00100090"]}
+EOF
+
+python3 "$self_dir/build_shift_class_manifest.py" \
+  "$tmp/SHIFT.exe.c" \
+  --exe "$tmp/SHIFT.exe" \
+  --ghidra-export "$tmp/ghidra" \
+  --json-out "$tmp/ghidra-report.json" \
+  --csv-out "$tmp/ghidra-report.csv" >/dev/null
+
+python3 - "$tmp/ghidra-report.json" "$tmp/ghidra-report.csv" <<'PY'
+import csv
+import json
+import sys
+
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+assert report["ghidra_registration_checked_count"] == 2, report
+assert report["ghidra_registration_verified_count"] == 2, report
+assert report["ghidra_registration_mismatch_count"] == 0, report
+rows = {row["name"]: row for row in report["classes"]}
+assert rows["Base"]["ghidra_registration"]["verified"] is True, rows["Base"]
+assert rows["Child"]["ghidra_registration"]["verified"] is True, rows["Child"]
+assert rows["Child"]["ghidra_registration"]["address"] == "0x00100090", rows["Child"]
+assert rows["Child"]["ghidra_registration"]["checks"]["class_string_xref"] is True, rows["Child"]
+assert rows["Child"]["ghidra_registration"]["checks"]["registration_core_call"] is True, rows["Child"]
+
+with open(sys.argv[2], newline="", encoding="utf-8") as handle:
+    csv_rows = {row["name"]: row for row in csv.DictReader(handle)}
+assert csv_rows["Base"]["ghidra_registration_verified"] == "True", csv_rows
+assert csv_rows["Child"]["ghidra_registration_address"] == "0x00100090", csv_rows
+PY
+
+cat >"$tmp/ghidra/strings_xrefs.jsonl" <<'EOF'
+{"address":"0x00b00000","value":"Base","functions":["0x00100000"]}
+{"address":"0x00b00010","value":"WrongChild","functions":["0x00100090"]}
+EOF
+
+python3 "$self_dir/build_shift_class_manifest.py" \
+  "$tmp/SHIFT.exe.c" \
+  --exe "$tmp/SHIFT.exe" \
+  --ghidra-export "$tmp/ghidra" \
+  --json-out "$tmp/ghidra-mismatch.json" >/dev/null
+
+python3 - "$tmp/ghidra-mismatch.json" <<'PY'
+import json
+import sys
+
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+assert report["ghidra_registration_verified_count"] == 1, report
+assert report["ghidra_registration_mismatch_count"] == 1, report
+rows = {row["name"]: row for row in report["classes"]}
+assert rows["Base"]["ghidra_registration"]["verified"] is True, rows["Base"]
+assert rows["Child"]["ghidra_registration"]["verified"] is False, rows["Child"]
+assert rows["Child"]["ghidra_registration"]["checks"]["class_string_xref"] is False, rows["Child"]
+assert rows["Child"]["ghidra_registration"]["checks"]["registration_core_call"] is True, rows["Child"]
 PY
 
 echo "SHIFT class manifest test: PASS"
