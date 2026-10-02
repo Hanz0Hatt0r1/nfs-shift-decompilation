@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from d3d9_capture_schema import validate_capture_event, validate_capture_events
 
 
@@ -41,3 +43,33 @@ def test_capture_producer_rejects_invalid_stream_stride():
     row=_events()[2]
     row["stride"]=0
     assert "stream-stride:invalid" in validate_capture_event(row)
+
+def test_create_texture_events_avoid_duplicate_descriptor_keys():
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "native_capture"
+        / "shift_d3d9_capture.cpp"
+    ).read_text(encoding="utf-8")
+
+    assert source.count(
+        "append_texture_descriptor_json(f, *out_texture, false);"
+    ) == 2
+    assert "if (include_surface_fields) {" in source
+
+def test_capture_schema_accepts_explicit_shader_unbinds():
+    base = {
+        "frame": 0,
+        "event_index": 99,
+        "thread_id": 7,
+        "device_ptr": "0x10",
+        "shader_ptr": None,
+    }
+    assert validate_capture_event({
+        **base,
+        "event": "set_vertex_shader",
+    }) == []
+    assert validate_capture_event({
+        **base,
+        "event": "set_pixel_shader",
+    }) == []
+

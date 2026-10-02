@@ -1364,7 +1364,8 @@ void append_texture_snapshot_json(
 
 void append_texture_descriptor_json(
     std::ostringstream& out,
-    IDirect3DBaseTexture9* texture);
+    IDirect3DBaseTexture9* texture,
+    bool include_surface_fields = true);
 
 void patch_object_vtable(
     void* object,
@@ -2467,7 +2468,7 @@ HRESULT STDMETHODCALLTYPE hook_create_texture(
           << ",\"format\":" << static_cast<unsigned>(format)
           << ",\"pool\":" << static_cast<unsigned>(pool);
         if (!signature_discovery_enabled()) {
-            append_texture_descriptor_json(f, *out_texture);
+            append_texture_descriptor_json(f, *out_texture, false);
         }
         writer().write_event("create_texture", f.str());
         if (!signature_discovery_enabled()) patch_texture_object(*out_texture);
@@ -2503,7 +2504,7 @@ HRESULT STDMETHODCALLTYPE hook_create_cube_texture(
           << ",\"format\":" << static_cast<unsigned>(format)
           << ",\"pool\":" << static_cast<unsigned>(pool);
         if (!signature_discovery_enabled()) {
-            append_texture_descriptor_json(f, *out_texture);
+            append_texture_descriptor_json(f, *out_texture, false);
         }
         writer().write_event("create_cube_texture", f.str());
         if (!signature_discovery_enabled()) patch_cube_texture_object(*out_texture);
@@ -2622,7 +2623,8 @@ const char* d3d_resource_type_name(D3DRESOURCETYPE type) {
 
 void append_texture_descriptor_json(
     std::ostringstream& out,
-    IDirect3DBaseTexture9* texture) {
+    IDirect3DBaseTexture9* texture,
+    bool include_surface_fields) {
     if (!texture) {
         out << ",\"resource_descriptor_status\":\"null\"";
         return;
@@ -2641,11 +2643,13 @@ void append_texture_descriptor_json(
         hr = static_cast<IDirect3DCubeTexture9*>(texture)->GetLevelDesc(0, &surface);
     }
     if (SUCCEEDED(hr)) {
-        out << ",\"resource_descriptor_status\":\"observed\""
-            << ",\"width\":" << surface.Width
-            << ",\"height\":" << surface.Height
-            << ",\"format\":" << static_cast<unsigned>(surface.Format)
-            << ",\"pool\":" << static_cast<unsigned>(surface.Pool);
+        out << ",\"resource_descriptor_status\":\"observed\"";
+        if (include_surface_fields) {
+            out << ",\"width\":" << surface.Width
+                << ",\"height\":" << surface.Height
+                << ",\"format\":" << static_cast<unsigned>(surface.Format)
+                << ",\"pool\":" << static_cast<unsigned>(surface.Pool);
+        }
         // Pool is intentionally not exposed as mip_levels; replace with the
         // actual base-texture level count below.
     } else {

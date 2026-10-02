@@ -76,25 +76,49 @@ def _same_resource_identity(
     )
     return matched
 
-def load_events(path: str | Path) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    for line_no, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
-        if not line.strip():
-            continue
-        try:
-            row = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"trace line {line_no}: invalid JSON") from exc
-        if not isinstance(row, dict) or row.get("event") not in EVENTS:
-            raise ValueError(f"trace line {line_no}: unsupported event")
-        schema_reasons = validate_capture_event(row)
-        if schema_reasons:
-            raise ValueError(
-                f"trace line {line_no}: capture schema invalid: " + ", ".join(schema_reasons)
-            )
-        row["_line"] = line_no
-        rows.append(row)
-    return rows
+def iter_events(
+    path: str | Path,
+    *,
+    skip_unsupported: bool = False,
+) -> Iterable[dict[str, Any]]:
+    """Yield validated runtime-trace events without reading the whole JSONL.
+
+    ``skip_unsupported`` is intentionally opt-in. It is used by the raw
+    native-capture intake path, whose JSONL also contains proxy/device/perf
+    diagnostics that are outside the runtime evidence schema.
+    """
+    with Path(path).open("r", encoding="utf-8") as handle:
+        for line_no, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"trace line {line_no}: invalid JSON") from exc
+            if not isinstance(row, dict):
+                raise ValueError(f"trace line {line_no}: event must be an object")
+            if row.get("event") not in EVENTS:
+                if skip_unsupported:
+                    continue
+                raise ValueError(f"trace line {line_no}: unsupported event")
+            schema_reasons = validate_capture_event(row)
+            if schema_reasons:
+                raise ValueError(
+                    f"trace line {line_no}: capture schema invalid: "
+                    + ", ".join(schema_reasons)
+                )
+            row["_line"] = line_no
+            if skip_unsupported:
+                row["_event_index_gaps_allowed"] = True
+            yield row
+
+
+def load_events(
+    path: str | Path,
+    *,
+    skip_unsupported: bool = False,
+) -> list[dict[str, Any]]:
+    return list(iter_events(path, skip_unsupported=skip_unsupported))
 
 
 def _decode_declaration(row: Mapping[str, Any]) -> dict[str, Any] | None:

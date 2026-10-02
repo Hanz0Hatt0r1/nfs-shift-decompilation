@@ -1,3 +1,5 @@
+import json
+
 import imb_runtime_capture_pipeline as pipeline
 
 
@@ -404,3 +406,57 @@ def test_attributed_texture_observations_preserve_multiple_supporting_draws():
         (1, 0),
         (1, 1),
     ]
+
+def test_validate_files_filters_raw_proxy_metadata(monkeypatch, tmp_path):
+    target = tmp_path / "targets.json"
+    capture = tmp_path / "capture.jsonl"
+    usage = tmp_path / "usage.json"
+    target.write_text(json.dumps(_target_set()), encoding="utf-8")
+    usage.write_text(json.dumps({"0": 0}), encoding="utf-8")
+    capture.write_text(
+        "\n".join([
+            json.dumps({
+                "event": "proxy_direct3dcreate9",
+                "frame": 0,
+                "event_index": 0,
+                "thread_id": 7,
+                "sdk_version": 32,
+            }),
+            json.dumps({
+                "event": "set_pixel_shader",
+                "frame": 0,
+                "event_index": 1,
+                "thread_id": 7,
+                "device_ptr": "0x10",
+                "shader_ptr": None,
+            }),
+        ]) + "\n",
+        encoding="utf-8",
+    )
+
+    observed = {}
+
+    def fake_build(target_set, events, *, usage_ordinal_map):
+        observed["events"] = events
+        observed["usage"] = usage_ordinal_map
+        return {"format": pipeline.FORMAT, "status": "test"}
+
+    monkeypatch.setattr(
+        pipeline,
+        "build_imb_runtime_capture_pipeline",
+        fake_build,
+    )
+
+    report = pipeline.validate_files(
+        target,
+        capture,
+        usage_map_path=usage,
+    )
+
+    assert report["format"] == pipeline.FORMAT
+    assert [row["event"] for row in observed["events"]] == [
+        "set_pixel_shader"
+    ]
+    assert observed["events"][0]["_line"] == 2
+    assert observed["usage"] == {0: 0}
+

@@ -531,7 +531,7 @@ def validate_files(
     usage_map_path: str | Path | None = None,
 ) -> dict[str, Any]:
     target_set = _load_json(target_set_path)
-    events = load_events(capture_jsonl_path)
+    events = load_events(capture_jsonl_path, skip_unsupported=True)
     usage = _load_usage_map(usage_map_path)
     return build_imb_runtime_capture_pipeline(
         target_set,
