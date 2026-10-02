@@ -122,6 +122,10 @@ def test_capture_launchers_preserve_backend_and_default_to_diagnostics():
     assert '--texture-payloads' in wine
     assert 'WINEDLLOVERRIDES="$filtered_overrides;d3d9=n,b;d3dx9_41=n"' in wine
     assert 'WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n"' in wine
+    assert '[[ ! -s "$capture_path" ]]' in wine
+    assert 'capture trigger did not fire' in wine
+    assert 'resource trigger not observed: $resource_trigger' in wine
+    assert 'exit 4' in wine
 
 
 

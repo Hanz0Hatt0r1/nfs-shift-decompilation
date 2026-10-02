@@ -688,6 +688,20 @@ if [[ ! -f "$capture_path" ]]; then
   exit 3
 fi
 
+# Triggered capture intentionally buffers startup metadata and render events
+# until F10, the trigger file, or a resource rule fires. An empty file in this
+# mode therefore means the proxy writer was reached, but the requested trigger
+# never committed the buffered window. Do not misdiagnose that as a dead proxy.
+if ((trigger_capture)) && [[ ! -s "$capture_path" ]]; then
+  echo "capture trigger did not fire; buffered events were not committed" >&2
+  if [[ -n "$resource_trigger" ]]; then
+    echo "resource trigger not observed: $resource_trigger" >&2
+  fi
+  echo "manual trigger: press F10 or touch $trigger_file while the game is running" >&2
+  echo "capture output remains empty by design until a trigger fires: $capture_path" >&2
+  exit 4
+fi
+
 python3 "$repo_root/native_capture/analyze_proxy_log.py" "$capture_path" 2>/dev/null || true
 if ((signature_discovery)); then
   python3 "$repo_root/tools/list_d3d9_resource_signatures.py" \
