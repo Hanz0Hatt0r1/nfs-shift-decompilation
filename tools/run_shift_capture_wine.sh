@@ -96,6 +96,28 @@ raise SystemExit(0 if all(marker in data for marker in markers) else 1)
 PY
 }
 
+ppdb_export_value() {
+  python3 - "$1" "$2" <<'PY'
+import shlex
+import sys
+
+path, wanted = sys.argv[1], sys.argv[2]
+value = ""
+with open(path, "r", encoding="utf-8", errors="replace") as stream:
+    for raw in stream:
+        try:
+            parts = shlex.split(raw, comments=True, posix=True)
+        except ValueError:
+            continue
+        if parts and parts[0] == "export":
+            parts = parts[1:]
+        for part in parts:
+            if part.startswith(wanted + "="):
+                value = part.split("=", 1)[1]
+print(value)
+PY
+}
+
 game=""
 proxy=""
 d3dx9_41=""
@@ -241,27 +263,18 @@ export WINEPREFIX="$wine_prefix"
 portproton_root=""
 portproton_wine_use=""
 portproton_wine_auto=""
+portproton_start=""
+use_portproton_start=0
+ppdb=""
 if [[ "$wine_prefix" == */PortProton/data/prefixes/* ]]; then
   portproton_root="${wine_prefix%%/data/prefixes/*}"
   ppdb="$game.ppdb"
+  portproton_start="$portproton_root/data/scripts/start.sh"
   if [[ -f "$ppdb" ]]; then
-    portproton_wine_use="$(
-      python3 - "$ppdb" <<'PY'
-import re
-import sys
-
-value = ""
-with open(sys.argv[1], "r", encoding="utf-8", errors="replace") as stream:
-    for line in stream:
-        match = re.match(
-            r"""^\s*(?:export\s+)?PW_WINE_USE\s*=\s*(?:"([^"]*)"|'([^']*)'|([^#\s]+))""",
-            line,
-        )
-        if match:
-            value = next((item for item in match.groups() if item is not None), "")
-print(value)
-PY
-    )"
+    portproton_wine_use="$(ppdb_export_value "$ppdb" PW_WINE_USE)"
+    if (( ! wine_command_explicit )) && [[ -f "$portproton_start" ]]; then
+      use_portproton_start=1
+    fi
   fi
   if (( ! wine_command_explicit )) && [[ -n "$portproton_wine_use" ]]; then
     for candidate in \
@@ -323,6 +336,7 @@ crash_path="$output/shift_d3d9_crash.jsonl"
 backup_dll="$output/original_d3d9.dll"
 backup_sidecar="$output/original_d3d9.shift_backend.dll"
 backup_d3dx="$output/original_d3dx9_41.dll"
+backup_ppdb="$output/original_SHIFT.exe.ppdb"
 stale_dll="$output/stale_capture_d3d9.dll"
 stale_sidecar="$output/stale_capture_d3d9.shift_backend.dll"
 
@@ -342,6 +356,7 @@ d3dx_mutated=0
 staged_backend=0
 stale_target_proxy=0
 stale_sidecar_proxy=0
+ppdb_mutated=0
 
 # Make every recovery copy before changing the game directory. Never preserve
 # an older SHIFT capture proxy as the renderer backend: that creates
@@ -368,6 +383,9 @@ if [[ -n "$d3dx9_41" ]] && (( ! d3dx_same_file )) && [[ -f "$target_d3dx" ]]; th
   cp -f "$target_d3dx" "$backup_d3dx"
   had_d3dx=1
 fi
+if ((use_portproton_start)); then
+  cp -p "$ppdb" "$backup_ppdb"
+fi
 
 restore() {
   local rc=$?
@@ -388,6 +406,9 @@ restore() {
     else
       rm -f "$target_d3dx"
     fi
+  fi
+  if ((ppdb_mutated)); then
+    cp -p "$backup_ppdb" "$ppdb"
   fi
   exit "$rc"
 }
@@ -509,6 +530,12 @@ else
 fi
 
 old_overrides="${WINEDLLOVERRIDES:-}"
+if ((use_portproton_start)); then
+  ppdb_overrides="$(ppdb_export_value "$ppdb" WINEDLLOVERRIDES)"
+  if [[ -n "$ppdb_overrides" ]]; then
+    old_overrides="$ppdb_overrides"
+  fi
+fi
 filtered_overrides=""
 if [[ -n "$old_overrides" ]]; then
   IFS=';' read -r -a override_parts <<< "$old_overrides"
@@ -530,6 +557,30 @@ else
   export WINEDLLOVERRIDES="d3d9=n,b;d3dx9_41=n"
 fi
 
+if ((use_portproton_start)); then
+  python3 - "$ppdb" <<'PY'
+import os
+import shlex
+import sys
+
+path = sys.argv[1]
+with open(path, "a", encoding="utf-8") as stream:
+    stream.write("\n# SHIFT_CAPTURE_TEMP_BEGIN\n")
+    stream.write("export PW_GUI_DISABLED_CS=1\n")
+    stream.write("export PW_NO_AUTO_CREATE_SHORTCUT=1\n")
+    for name in sorted(os.environ):
+        if name.startswith("SHIFT_D3D9_"):
+            stream.write(f"export {name}={shlex.quote(os.environ[name])}\n")
+    stream.write(
+        "export WINEDLLOVERRIDES="
+        + shlex.quote(os.environ.get("WINEDLLOVERRIDES", ""))
+        + "\n"
+    )
+    stream.write("# SHIFT_CAPTURE_TEMP_END\n")
+PY
+  ppdb_mutated=1
+fi
+
 echo "Launching: $game"
 echo "WINEPREFIX: $WINEPREFIX"
 echo "Wine exe : $wine_resolved"
@@ -539,6 +590,10 @@ if [[ "$winepath_resolved" == "internal Z: path mapping" ]]; then
 fi
 if [[ -n "$portproton_wine_auto" ]]; then
   echo "Runtime : auto-selected from PW_WINE_USE=$portproton_wine_use"
+fi
+if ((use_portproton_start)); then
+  echo "Launcher: $portproton_start"
+  echo "PPDB    : temporary capture exports installed; original will be restored"
 fi
 if [[ -n "$portproton_root" && "$wine_resolved" != "$portproton_root/"* ]]; then
   echo "warning: PortProton prefix is being launched with Wine outside the PortProton tree: $wine_resolved" >&2
@@ -597,11 +652,19 @@ else
 fi
 
 set +e
-(
-  cd "$game_dir"
-  "$wine_command" "$game" "${game_args[@]}"
-)
-exit_code=$?
+if ((use_portproton_start)); then
+  (
+    cd "$game_dir"
+    bash "$portproton_start" "$game" "${game_args[@]}"
+  )
+  exit_code=$?
+else
+  (
+    cd "$game_dir"
+    "$wine_command" "$game" "${game_args[@]}"
+  )
+  exit_code=$?
+fi
 set -e
 
 if ((exit_code != 0)); then

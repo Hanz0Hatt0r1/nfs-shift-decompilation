@@ -465,8 +465,9 @@ def test_wine_launcher_auto_selects_portproton_runtime_and_matching_winepath():
 def test_wine_launcher_parses_portproton_ppdb_without_sed_regex():
     wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
 
-    assert 'python3 - "$ppdb"' in wine
-    assert 'PW_WINE_USE\\s*=\\s*' in wine
+    assert "ppdb_export_value()" in wine
+    assert "shlex.split(raw, comments=True, posix=True)" in wine
+    assert 'ppdb_export_value "$ppdb" PW_WINE_USE' in wine
     assert "sed -n 's/" not in wine
 
 
@@ -498,3 +499,20 @@ def test_wine_launcher_rejects_stale_shift_capture_proxy_as_backend():
     assert 'elif ((had_sidecar)); then' in wine
     assert 'archived old SHIFT capture proxy' in wine
     assert 'Backend : Wine/system d3d9.dll' in wine
+
+
+def test_wine_launcher_uses_portproton_start_environment_for_portproton_prefixes():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'portproton_start="$portproton_root/data/scripts/start.sh"' in wine
+    assert "use_portproton_start=1" in wine
+    assert 'backup_ppdb="$output/original_SHIFT.exe.ppdb"' in wine
+    assert 'cp -p "$ppdb" "$backup_ppdb"' in wine
+    assert 'if ((ppdb_mutated)); then' in wine
+    assert 'cp -p "$backup_ppdb" "$ppdb"' in wine
+    assert "# SHIFT_CAPTURE_TEMP_BEGIN" in wine
+    assert 'stream.write("export PW_GUI_DISABLED_CS=1\\n")' in wine
+    assert 'name.startswith("SHIFT_D3D9_")' in wine
+    assert 'shlex.quote(os.environ.get("WINEDLLOVERRIDES", ""))' in wine
+    assert 'echo "Launcher: $portproton_start"' in wine
+    assert 'bash "$portproton_start" "$game" "${game_args[@]}"' in wine
