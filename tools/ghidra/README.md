@@ -105,6 +105,29 @@ proof because those exporter layers are heuristic candidate sets.
 The first retail result is summarized in
 `evidence/ghidra_database_crosscheck.md`.
 
+## Subsystem manifests
+
+The next stage turns proven anchors into small machine-readable subsystem
+slices:
+
+```bash
+python3 tools/ghidra/build_subsystem_manifests.py \
+  out/shift_ghidra_database \
+  out/shift_ghidra_subsystems
+```
+
+The builder writes `renderer.json`, `physics.json`, `vehicle.json`,
+`scene_graph.json`, `ai.json` and an `index.json` containing promoted aliases.
+Promotion requires exact retail string xrefs and, for renderer boundaries where
+an independent call contract is already known, the expected direct call shape.
+
+AI class registration functions are deliberately emitted as
+`class-registration-stub` records rather than semantic function aliases. A class
+string plus the common RTTI registration call pattern proves the registration
+role, not a constructor or runtime method identity.
+
+See `evidence/ghidra_subsystem_manifests.md` for the initial retail identities.
+
 ## Evidence interpretation
 
 The strongest datasets are `functions.jsonl`, `callgraph.jsonl`,
