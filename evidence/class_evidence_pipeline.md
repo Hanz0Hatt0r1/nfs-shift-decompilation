@@ -45,6 +45,9 @@ The output directory contains:
   `SHIFT-CLASS-DELETING-WRAPPER-EVIDENCE/1`, narrowing teardown candidates to
   wrappers that also call the configured release helper and recording whether
   source order plus a bit-0 guard match the deleting-wrapper shape;
+- `class_lifetime_pair_evidence.json` —
+  `SHIFT-CLASS-LIFETIME-PAIR-EVIDENCE/1`, joining strong create and delete
+  shapes by RTTI descriptor and preserving helper/literal/vtable context;
 - `lifecycle_investigation_targets.json` —
   `SHIFT.LifecycleInvestigationTargets/1`, containing one-hop Ghidra context
   around lifecycle-ready registration and initializer anchors;
@@ -56,8 +59,9 @@ registration verification and mismatch counts, factory/initializer link counts,
 create-wrapper/value-flow counts and distinct predecessor helpers,
 structural-ready count, lifecycle-investigation-ready count, source lifecycle
 completion/base-transition/teardown-candidate counts, deleting-wrapper candidate
-and confirmed-shape counts, lifecycle target slice completeness, scorecard tiers
-and next-evidence blocker totals.
+and confirmed-shape counts, paired-lifetime/Ghidra-paired/helper-pair counts,
+lifecycle target slice completeness, scorecard tiers and next-evidence blocker
+totals.
 
 ## Evidence boundary
 
@@ -78,6 +82,9 @@ underlying tools:
 - a teardown call followed by the configured release helper under a bit-0 flag
   is recorded as a deleting-wrapper shape, not automatically renamed as a C++
   deleting destructor;
+- a paired lifetime shape means both create and guarded-release shapes exist for
+  the same descriptor; it does not prove allocator ABI, object size, ownership,
+  constructor identity or destructor identity;
 - `lifecycle-investigation-ready` selects good targets for the next reverse-
   engineering pass but does not prove C++ constructor semantics, ownership,
   destructor order or gameplay behavior;
