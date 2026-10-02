@@ -4,8 +4,8 @@
 The pipeline preserves the existing evidence layers as separate JSON artifacts:
 RTTI/reflection class manifest, factory-to-initializer links, create-wrapper
 value-flow evidence, structural audit, the non-numeric evidence scorecard,
-source-level lifecycle observations, deleting-wrapper shapes, and one-hop
-Ghidra lifecycle investigation slices.
+source-level lifecycle observations, deleting-wrapper shapes, paired lifetime
+shapes, and one-hop Ghidra lifecycle investigation slices.
 """
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from typing import Any
 
 from audit_shift_class_candidates import audit_candidates
 from build_class_evidence_scorecard import build_scorecard
+from build_class_lifetime_pair_evidence import build_lifetime_pairs
 from build_shift_class_manifest import build_manifest
 from extract_class_lifecycle_source_evidence import extract_lifecycle_evidence
 from extract_create_wrapper_evidence import extract_create_wrappers
@@ -56,6 +57,7 @@ def run_pipeline(
     scorecard_path = output_dir / "class_evidence_scorecard.json"
     lifecycle_source_path = output_dir / "class_lifecycle_source_evidence.json"
     deleting_wrapper_path = output_dir / "deleting_wrapper_evidence.json"
+    lifetime_pair_path = output_dir / "class_lifetime_pair_evidence.json"
     lifecycle_targets_path = output_dir / "lifecycle_investigation_targets.json"
 
     class_manifest = build_manifest(source, exe, ghidra_export)
@@ -92,6 +94,13 @@ def run_pipeline(
     )
     _write_json(deleting_wrapper_path, deleting_wrappers)
 
+    lifetime_pairs = build_lifetime_pairs(
+        create_wrapper_path,
+        deleting_wrapper_path,
+        lifecycle_source_path,
+    )
+    _write_json(lifetime_pair_path, lifetime_pairs)
+
     lifecycle_targets = _build_lifecycle_targets(scorecard_path, ghidra_export)
     _write_json(lifecycle_targets_path, lifecycle_targets)
 
@@ -103,6 +112,7 @@ def run_pipeline(
         "class_evidence_scorecard": scorecard_path.name,
         "class_lifecycle_source_evidence": lifecycle_source_path.name,
         "deleting_wrapper_evidence": deleting_wrapper_path.name,
+        "class_lifetime_pair_evidence": lifetime_pair_path.name,
         "lifecycle_investigation_targets": lifecycle_targets_path.name,
     }
     report = {
@@ -168,6 +178,15 @@ def run_pipeline(
             "deleting_wrapper_ghidra_confirmed_shapes": deleting_wrappers.get(
                 "ghidra_confirmed_shape_count"
             ),
+            "paired_lifetime_classes": lifetime_pairs.get(
+                "paired_lifetime_shape_count"
+            ),
+            "ghidra_paired_lifetime_classes": lifetime_pairs.get(
+                "ghidra_paired_lifetime_shape_count"
+            ),
+            "unambiguous_lifetime_helper_pairs": lifetime_pairs.get(
+                "unambiguous_helper_pair_count"
+            ),
             "lifecycle_target_slices": lifecycle_targets.get("target_count"),
             "lifecycle_complete_slices": lifecycle_targets.get("complete_slice_count"),
             "lifecycle_incomplete_slices": lifecycle_targets.get("incomplete_slice_count"),
@@ -179,12 +198,14 @@ def run_pipeline(
             "constructor_semantics_proven": False,
             "destructor_semantics_proven": False,
             "deleting_destructor_semantics_proven": False,
+            "ownership_semantics_proven": False,
             "behavior_semantics_proven": False,
             "note": (
                 "This pipeline composes existing evidence artifacts, create-wrapper "
-                "value flow, direct source lifecycle/deleting-wrapper observations and "
-                "Ghidra context slices. It does not promote helper/initializer/teardown/"
-                "wrapper candidates to allocator or C++ lifecycle identities."
+                "value flow, source lifecycle/delete observations, paired lifetime "
+                "boundaries and Ghidra context slices. It does not promote helper/"
+                "initializer/teardown/wrapper candidates to allocator or C++ lifecycle "
+                "identities."
             ),
         },
     }
@@ -225,6 +246,7 @@ def main() -> int:
     )
     print(f"lifecycle source targets: {counts['lifecycle_source_targets']}")
     print(f"deleting-wrapper shapes: {counts['deleting_wrapper_shapes']}")
+    print(f"paired lifetime classes: {counts['paired_lifetime_classes']}")
     print(f"lifecycle target slices: {counts['lifecycle_target_slices']}")
     print(f"output: {args.out}")
 

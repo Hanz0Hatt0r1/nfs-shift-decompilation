@@ -56,6 +56,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         assert ghidra_export == tmp_path / "ghidra"
         return {
             "format": "SHIFT-CLASS-CREATE-WRAPPER-EVIDENCE/1",
+            "source": str(source),
             "link_count": 42,
             "source_create_wrapper_shape_count": 28,
             "create_wrapper_shape_count": 26,
@@ -106,6 +107,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         assert ghidra_export == tmp_path / "ghidra"
         return {
             "format": "SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1",
+            "source": str(source),
             "source_sha256": "source-sha",
             "target_count": 18,
             "complete_target_count": 16,
@@ -122,6 +124,8 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         assert ghidra_export == tmp_path / "ghidra"
         return {
             "format": "SHIFT-CLASS-DELETING-WRAPPER-EVIDENCE/1",
+            "source": str(source),
+            "source_sha256": "source-sha",
             "wrapper_candidate_count": 8,
             "deleting_wrapper_shape_count": 6,
             "ghidra_confirmed_shape_count": 5,
@@ -129,6 +133,23 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         }
 
     monkeypatch.setattr(module, "extract_deleting_wrappers", fake_deleting)
+
+    def fake_pairs(create_path, deleting_path, lifecycle_path):
+        create = json.loads(create_path.read_text(encoding="utf-8"))
+        deleting = json.loads(deleting_path.read_text(encoding="utf-8"))
+        lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+        assert create["create_wrapper_shape_count"] == 26
+        assert deleting["deleting_wrapper_shape_count"] == 6
+        assert lifecycle["target_count"] == 18
+        return {
+            "format": "SHIFT-CLASS-LIFETIME-PAIR-EVIDENCE/1",
+            "paired_lifetime_shape_count": 5,
+            "ghidra_paired_lifetime_shape_count": 4,
+            "unambiguous_helper_pair_count": 3,
+            "classes": [],
+        }
+
+    monkeypatch.setattr(module, "build_lifetime_pairs", fake_pairs)
 
     def fake_lifecycle(scorecard_path, ghidra_export):
         payload = json.loads(scorecard_path.read_text(encoding="utf-8"))
@@ -168,6 +189,9 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert report["counts"]["deleting_wrapper_candidates"] == 8
     assert report["counts"]["deleting_wrapper_shapes"] == 6
     assert report["counts"]["deleting_wrapper_ghidra_confirmed_shapes"] == 5
+    assert report["counts"]["paired_lifetime_classes"] == 5
+    assert report["counts"]["ghidra_paired_lifetime_classes"] == 4
+    assert report["counts"]["unambiguous_lifetime_helper_pairs"] == 3
     assert report["counts"]["lifecycle_target_slices"] == 18
     assert report["counts"]["lifecycle_complete_slices"] == 17
     assert report["counts"]["lifecycle_incomplete_slices"] == 1
@@ -182,6 +206,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         "class_evidence_scorecard.json",
         "class_lifecycle_source_evidence.json",
         "deleting_wrapper_evidence.json",
+        "class_lifetime_pair_evidence.json",
         "lifecycle_investigation_targets.json",
         "pipeline_manifest.json",
     }
@@ -193,3 +218,4 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert saved["scope"]["constructor_semantics_proven"] is False
     assert saved["scope"]["destructor_semantics_proven"] is False
     assert saved["scope"]["deleting_destructor_semantics_proven"] is False
+    assert saved["scope"]["ownership_semantics_proven"] is False
