@@ -1,3 +1,8 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
+
 from tools.audit_imb_corpus import FORMAT, audit_decoded_imb_rows
 
 
@@ -102,3 +107,23 @@ def test_empty_corpus_is_explicitly_empty_not_ready():
     assert report["ready"] is False
     assert report["resource_count"] == 0
     assert report["rows"] == []
+
+
+def test_audit_imb_corpus_cli_imports_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(repo_root / "tools" / "audit_imb_corpus.py"),
+            "--help",
+        ],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Audit neutral IMB geometry readiness" in result.stdout
