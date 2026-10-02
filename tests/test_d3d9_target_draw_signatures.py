@@ -1,5 +1,6 @@
 import hashlib
 import json
+import struct
 
 from d3d9_target_draw_signatures import (
     FORMAT,
@@ -11,6 +12,50 @@ VS = bytes.fromhex("0000feff01000000")
 PS = bytes.fromhex("0000ffff02000000")
 VS_SHA = hashlib.sha256(VS).hexdigest()
 PS_SHA = hashlib.sha256(PS).hexdigest()
+
+
+def _reflected_pixel_shader():
+    names = [b"diffuseMap\x00", b"environmentMap\x00"]
+    header_size = 28
+    info_size = 20 * len(names)
+    type_size = 20
+    offsets = []
+    pos = header_size + info_size + type_size
+    for name in names:
+        offsets.append(pos)
+        pos += len(name)
+
+    payload = bytearray(b"CTAB")
+    payload += struct.pack(
+        "<7I",
+        header_size,
+        0,
+        0xFFFF0300,
+        len(names),
+        header_size,
+        0,
+        0,
+    )
+    for index, name_offset in enumerate(offsets):
+        payload += struct.pack(
+            "<IHHHHII",
+            name_offset,
+            3,
+            (0, 2)[index],
+            1,
+            0,
+            header_size + info_size,
+            0,
+        )
+    payload += struct.pack("<HHHHHHII", 4, 12, 1, 1, 1, 0, 0, 0)
+    payload += b"".join(names)
+    payload += b"\x00" * ((-len(payload)) % 4)
+    return (
+        struct.pack("<I", 0xFFFF0300)
+        + struct.pack("<I", ((len(payload) // 4) << 16) | 0xFFFE)
+        + payload
+        + struct.pack("<I", 0xFFFF)
+    )
 
 
 def _line(value):
@@ -190,6 +235,8 @@ def test_target_draw_signature_catalog_aggregates_pipeline_and_resource_shapes()
     assert report["summary"]["unique_pipeline_signature_count"] == 1
     assert report["summary"]["unique_layout_cohort_count"] == 1
     assert report["summary"]["unique_resource_shape_signature_count"] == 2
+    assert report["summary"]["reflected_target_draw_count"] == 0
+    assert report["summary"]["fallback_texture_state_draw_count"] == 2
 
     pipeline = report["pipeline_signatures"][0]
     assert pipeline["draw_count"] == 2
@@ -407,4 +454,78 @@ def test_resource_shape_ignores_transient_stream_offsets_but_reports_them():
     assert by_stream[1]["unique_offset_count"] == 2
     assert by_stream[1]["min_offset_in_bytes"] == 64
     assert by_stream[1]["max_offset_in_bytes"] == 128
+
+def test_resource_shape_filters_stale_texture_stages_with_pixel_ctab():
+    reflected_ps = _reflected_pixel_shader()
+    reflected_ps_sha = hashlib.sha256(reflected_ps).hexdigest()
+    targets = {
+        "families": [{
+            "family": "basicinstanced",
+            "pixel_shader_sha256": [reflected_ps_sha],
+        }]
+    }
+    lines = [
+        _line({
+            "event": "create_pixel_shader",
+            "frame": 1,
+            "event_index": 1,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x20",
+            "bytes_hex": reflected_ps.hex(),
+        }),
+        *[
+            _line({
+                "event": "create_texture",
+                "frame": 1,
+                "event_index": 2 + stage,
+                "device_ptr": "0x1",
+                "texture_ptr": f"0x{0x60 + stage:x}",
+                "width": 64 * (stage + 1),
+                "height": 64,
+                "levels": 1,
+                "usage": 0,
+                "format": 21,
+                "pool": 1,
+            })
+            for stage in range(3)
+        ],
+        _line({
+            "event": "set_pixel_shader",
+            "frame": 2,
+            "event_index": 5,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x20",
+        }),
+        *[
+            _line({
+                "event": "set_texture",
+                "frame": 2,
+                "event_index": 6 + stage,
+                "device_ptr": "0x1",
+                "stage": stage,
+                "texture_ptr": f"0x{0x60 + stage:x}",
+            })
+            for stage in range(3)
+        ],
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 2,
+            "event_index": 9,
+            "device_ptr": "0x1",
+            "primitive_count": 1,
+        }),
+    ]
+
+    report = catalog_target_draw_signatures(
+        lines,
+        target_inventory=targets,
+    )
+
+    assert report["summary"]["reflected_target_draw_count"] == 1
+    assert report["summary"]["fallback_texture_state_draw_count"] == 0
+    shape = report["resource_shape_signatures"][0]
+    assert [
+        texture["stage"]
+        for texture in shape["signature"]["texture_stages"]
+    ] == [0, 2]
 
