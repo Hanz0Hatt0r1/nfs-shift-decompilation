@@ -3,7 +3,8 @@
 
 The pipeline preserves the existing evidence layers as separate JSON artifacts:
 RTTI/reflection class manifest, factory-to-initializer links, structural audit,
-the non-numeric evidence scorecard, and one-hop lifecycle investigation slices.
+the non-numeric evidence scorecard, source-level lifecycle observations, and
+one-hop Ghidra lifecycle investigation slices.
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ from typing import Any
 from audit_shift_class_candidates import audit_candidates
 from build_class_evidence_scorecard import build_scorecard
 from build_shift_class_manifest import build_manifest
+from extract_class_lifecycle_source_evidence import extract_lifecycle_evidence
 from extract_factory_initializer_links import extract_links
 
 FORMAT = "SHIFT-CLASS-EVIDENCE-PIPELINE/1"
@@ -48,6 +50,7 @@ def run_pipeline(
     initializer_links_path = output_dir / "factory_initializer_links.json"
     class_audit_path = output_dir / "class_audit.json"
     scorecard_path = output_dir / "class_evidence_scorecard.json"
+    lifecycle_source_path = output_dir / "class_lifecycle_source_evidence.json"
     lifecycle_targets_path = output_dir / "lifecycle_investigation_targets.json"
 
     class_manifest = build_manifest(source, exe, ghidra_export)
@@ -62,6 +65,14 @@ def run_pipeline(
     scorecard = build_scorecard(class_audit_path, class_manifest_path)
     _write_json(scorecard_path, scorecard)
 
+    lifecycle_source = extract_lifecycle_evidence(
+        source,
+        class_manifest_path,
+        scorecard_path,
+        ghidra_export,
+    )
+    _write_json(lifecycle_source_path, lifecycle_source)
+
     lifecycle_targets = _build_lifecycle_targets(scorecard_path, ghidra_export)
     _write_json(lifecycle_targets_path, lifecycle_targets)
 
@@ -70,6 +81,7 @@ def run_pipeline(
         "factory_initializer_links": initializer_links_path.name,
         "class_audit": class_audit_path.name,
         "class_evidence_scorecard": scorecard_path.name,
+        "class_lifecycle_source_evidence": lifecycle_source_path.name,
         "lifecycle_investigation_targets": lifecycle_targets_path.name,
     }
     report = {
@@ -106,6 +118,16 @@ def run_pipeline(
             "lifecycle_investigation_ready_classes": (
                 scorecard.get("tier_counts", {}).get("lifecycle-investigation-ready", 0)
             ),
+            "lifecycle_source_targets": lifecycle_source.get("target_count"),
+            "lifecycle_source_complete_targets": lifecycle_source.get(
+                "complete_target_count"
+            ),
+            "lifecycle_source_base_initializer_links": lifecycle_source.get(
+                "base_initializer_link_count"
+            ),
+            "lifecycle_source_teardown_candidates": lifecycle_source.get(
+                "teardown_transition_candidate_count"
+            ),
             "lifecycle_target_slices": lifecycle_targets.get("target_count"),
             "lifecycle_complete_slices": lifecycle_targets.get("complete_slice_count"),
             "lifecycle_incomplete_slices": lifecycle_targets.get("incomplete_slice_count"),
@@ -114,11 +136,13 @@ def run_pipeline(
         "next_evidence_blockers": scorecard.get("next_evidence_blocker_counts", {}),
         "scope": {
             "constructor_semantics_proven": False,
+            "destructor_semantics_proven": False,
             "behavior_semantics_proven": False,
             "note": (
-                "This pipeline composes existing evidence artifacts and Ghidra context "
-                "slices. It does not promote initializer candidates to constructors or "
-                "infer missing class behavior."
+                "This pipeline composes existing evidence artifacts, direct source "
+                "lifecycle observations and Ghidra context slices. It does not promote "
+                "initializer/teardown candidates to constructors/destructors or infer "
+                "missing class behavior."
             ),
         },
     }
@@ -156,6 +180,7 @@ def main() -> int:
         "lifecycle-investigation-ready classes: "
         f"{counts['lifecycle_investigation_ready_classes']}"
     )
+    print(f"lifecycle source targets: {counts['lifecycle_source_targets']}")
     print(f"lifecycle target slices: {counts['lifecycle_target_slices']}")
     print(f"output: {args.out}")
 
