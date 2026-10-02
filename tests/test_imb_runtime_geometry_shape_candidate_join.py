@@ -305,3 +305,210 @@ def test_geometry_shape_join_rejects_wrong_contracts():
             assert expected in str(error)
         else:
             raise AssertionError("wrong contract must fail")
+
+
+
+def _pipeline_for_vs(vertex_sha):
+    value = _pipeline()
+    value["vertex_shader_sha256"] = vertex_sha
+    return value
+
+
+def _pipeline_join_row(
+    pipeline,
+    *,
+    groups,
+    evidence_kind,
+):
+    return {
+        "runtime_signature_sha256": _canonical(pipeline),
+        "vertex_shader_sha256": pipeline["vertex_shader_sha256"],
+        "pixel_shader_sha256": pipeline["pixel_shader_sha256"],
+        "declaration_sha256": pipeline["declaration_sha256"],
+        "stream_layout": list(pipeline["stream_layout"]),
+        "index_format": pipeline["index_format"],
+        "candidate_evidence_kind": evidence_kind,
+        "candidate_content_status": (
+            "ambiguous-content-candidates" if groups else "none"
+        ),
+        "candidate_content_groups": groups,
+    }
+
+
+def _resource_shape_for_pipeline(
+    label,
+    pipeline,
+    *,
+    primitive_count,
+    vertex_count,
+    draw_count,
+):
+    row = _resource_shape(
+        label,
+        primitive_count=primitive_count,
+        vertex_count=vertex_count,
+        draw_count=draw_count,
+        texture_width=128,
+    )
+    row["signature"].update(pipeline)
+    return row
+
+
+def test_geometry_shape_recovers_from_exact_sibling_pipeline_differing_only_vs():
+    target_vs = _sha("target-vs")
+    donor_vs = _sha("donor-vs")
+    target_pipeline = _pipeline_for_vs(target_vs)
+    donor_pipeline = _pipeline_for_vs(donor_vs)
+
+    group = _content_group("tree", primitive_count=24)
+    group["matched_vertex_shader_sha256"] = donor_vs
+
+    runtime = {
+        "format": RUNTIME_FORMAT,
+        "pipeline_signatures": [
+            {
+                "signature_sha256": _canonical(target_pipeline),
+                "signature": target_pipeline,
+            },
+            {
+                "signature_sha256": _canonical(donor_pipeline),
+                "signature": donor_pipeline,
+            },
+        ],
+        "resource_shape_signatures": [
+            _resource_shape_for_pipeline(
+                "target-resource",
+                target_pipeline,
+                primitive_count=24,
+                vertex_count=28,
+                draw_count=7,
+            )
+        ],
+    }
+    pipeline = {
+        "format": PIPELINE_FORMAT,
+        "pipeline_candidates": [
+            _pipeline_join_row(
+                target_pipeline,
+                groups=[],
+                evidence_kind="none",
+            ),
+            _pipeline_join_row(
+                donor_pipeline,
+                groups=[group],
+                evidence_kind="exact-vs+ps+draw-range",
+            ),
+        ],
+    }
+    corpus = _corpus([
+        _corpus_row("tree", vertex_count=28, triangle_count=24),
+    ])
+
+    report = build_runtime_geometry_shape_candidate_join(
+        runtime,
+        pipeline,
+        corpus,
+    )
+
+    row = report["geometry_shapes"][0]
+    assert (
+        row["pipeline_candidate_source"]
+        == "relaxed-sibling-runtime-pipeline"
+    )
+    assert row["direct_pipeline_content_group_count"] == 0
+    assert row["relaxed_pipeline_donor_count"] == 1
+    assert row["candidate_content_status"] == "single-content-candidate"
+    assert row["candidate_content_group_sha256s"] == [
+        group["content_group_sha256"]
+    ]
+    recovered = row["candidate_content_groups"][0]
+    assert (
+        recovered["pipeline_recovery_evidence_kind"]
+        == "sibling-runtime-pipeline-same-ps-layout"
+    )
+    assert (
+        recovered["pipeline_recovery_runtime_vertex_shader_sha256"]
+        == target_vs
+    )
+    assert (
+        recovered["pipeline_recovery_static_vertex_shader_mismatch"]
+        is True
+    )
+    assert recovered["descriptor_geometry_match"] is True
+
+    summary = report["summary"]
+    assert summary["relaxed_pipeline_recovery_geometry_shape_count"] == 1
+    assert summary["relaxed_pipeline_recovery_draw_count"] == 7
+    assert (
+        summary[
+            "relaxed_pipeline_recovery_candidate_geometry_shape_count"
+        ]
+        == 1
+    )
+
+
+def test_geometry_shape_does_not_recover_from_weak_sibling_pipeline():
+    target_vs = _sha("target-vs-weak")
+    donor_vs = _sha("donor-vs-weak")
+    target_pipeline = _pipeline_for_vs(target_vs)
+    donor_pipeline = _pipeline_for_vs(donor_vs)
+    group = _content_group("weak-tree", primitive_count=24)
+
+    runtime = {
+        "format": RUNTIME_FORMAT,
+        "pipeline_signatures": [
+            {
+                "signature_sha256": _canonical(target_pipeline),
+                "signature": target_pipeline,
+            },
+            {
+                "signature_sha256": _canonical(donor_pipeline),
+                "signature": donor_pipeline,
+            },
+        ],
+        "resource_shape_signatures": [
+            _resource_shape_for_pipeline(
+                "weak-target-resource",
+                target_pipeline,
+                primitive_count=24,
+                vertex_count=28,
+                draw_count=3,
+            )
+        ],
+    }
+    pipeline = {
+        "format": PIPELINE_FORMAT,
+        "pipeline_candidates": [
+            _pipeline_join_row(
+                target_pipeline,
+                groups=[],
+                evidence_kind="none",
+            ),
+            _pipeline_join_row(
+                donor_pipeline,
+                groups=[group],
+                evidence_kind="pixel+static-vertex-stride+draw-range",
+            ),
+        ],
+    }
+    corpus = _corpus([
+        _corpus_row(
+            "weak-tree",
+            vertex_count=28,
+            triangle_count=24,
+        ),
+    ])
+
+    report = build_runtime_geometry_shape_candidate_join(
+        runtime,
+        pipeline,
+        corpus,
+    )
+
+    row = report["geometry_shapes"][0]
+    assert row["pipeline_candidate_source"] == "none"
+    assert row["candidate_content_status"] == "no-pipeline-content-candidates"
+    assert row["candidate_content_group_count"] == 0
+    assert report["summary"][
+        "relaxed_pipeline_recovery_geometry_shape_count"
+    ] == 0
