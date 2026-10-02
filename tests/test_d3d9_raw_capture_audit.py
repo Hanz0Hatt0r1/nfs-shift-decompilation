@@ -1,6 +1,7 @@
 import hashlib
 import json
 
+import d3d9_raw_capture_audit as audit
 from d3d9_raw_capture_audit import FORMAT, audit_capture_lines
 
 
@@ -269,3 +270,53 @@ def test_raw_capture_audit_recognizes_exact_resource_and_snapshot_inputs():
     assert report["capabilities"]["phase593_sampler_cube_snapshot_input"] is True
     assert report["capabilities"]["phase598_raw_input_candidate"] is True
     assert report["capture_profile"] == "attribution-candidate"
+
+def test_resolve_input_path_falls_back_to_repository_root(monkeypatch, tmp_path):
+    repo_root = tmp_path / "repo"
+    module_path = repo_root / "src" / "graphics" / "d3d9" / "module.py"
+    evidence = repo_root / "evidence" / "targets.json"
+    module_path.parent.mkdir(parents=True)
+    evidence.parent.mkdir(parents=True)
+    module_path.write_text("# fixture\n", encoding="utf-8")
+    evidence.write_text("{}", encoding="utf-8")
+
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    monkeypatch.chdir(outside)
+    monkeypatch.setattr(audit, "__file__", str(module_path))
+
+    resolved = audit.resolve_input_path("evidence/targets.json")
+
+    assert resolved == evidence
+
+
+def test_resolve_input_path_keeps_existing_cwd_relative_path(monkeypatch, tmp_path):
+    local = tmp_path / "targets.json"
+    local.write_text("{}", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    resolved = audit.resolve_input_path("targets.json")
+
+    assert resolved == audit.Path("targets.json")
+    assert resolved.read_text(encoding="utf-8") == "{}"
+
+
+def test_resolve_input_path_reports_cwd_and_repo_attempts(monkeypatch, tmp_path):
+    repo_root = tmp_path / "repo"
+    module_path = repo_root / "src" / "graphics" / "d3d9" / "module.py"
+    module_path.parent.mkdir(parents=True)
+    module_path.write_text("# fixture\n", encoding="utf-8")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    monkeypatch.chdir(outside)
+    monkeypatch.setattr(audit, "__file__", str(module_path))
+
+    try:
+        audit.resolve_input_path("evidence/missing.json")
+    except FileNotFoundError as error:
+        message = str(error)
+        assert "evidence/missing.json" in message
+        assert str(repo_root / "evidence" / "missing.json") in message
+    else:
+        raise AssertionError("missing repository-relative input must fail")
+

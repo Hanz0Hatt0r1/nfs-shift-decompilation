@@ -11,6 +11,28 @@ from typing import Any, Iterable, Mapping
 FORMAT = "SHIFT.D3D9RawCaptureAudit/1"
 
 
+def resolve_input_path(path: str | Path) -> Path:
+    """Resolve a CLI input path without depending on the caller's cwd.
+
+    Existing absolute paths and existing cwd-relative paths win. If a relative
+    path does not exist from the current working directory, retry it from the
+    repository root inferred from this module's location.
+    """
+    candidate = Path(path).expanduser()
+    if candidate.is_absolute() or candidate.exists():
+        return candidate
+
+    repo_root = Path(__file__).resolve().parents[3]
+    repo_candidate = repo_root / candidate
+    if repo_candidate.exists():
+        return repo_candidate
+
+    raise FileNotFoundError(
+        f"input file not found: {candidate} "
+        f"(also tried {repo_candidate})"
+    )
+
+
 def _decode_line(text: str) -> tuple[Any, list[str]]:
     duplicate_keys: list[str] = []
 
@@ -358,14 +380,16 @@ def main(argv: list[str] | None = None) -> int:
 
     target_inventory = None
     if args.target_inventory:
+        target_inventory_path = resolve_input_path(args.target_inventory)
         target_inventory = json.loads(
-            Path(args.target_inventory).read_text(encoding="utf-8")
+            target_inventory_path.read_text(encoding="utf-8")
         )
         if not isinstance(target_inventory, dict):
             raise ValueError("target inventory must be a JSON object")
 
+    capture_path = resolve_input_path(args.capture_jsonl)
     report = audit_capture_file(
-        args.capture_jsonl,
+        capture_path,
         target_inventory=target_inventory,
     )
     output = Path(args.output)
