@@ -524,3 +524,12 @@ def test_portproton_capture_temporarily_disables_gamescope():
     assert 'stream.write("export PW_GAMESCOPE=0\\n")' in wine
     assert 'Gamescope: disabled for capture session' in wine
     assert 'cp -p "$backup_ppdb" "$ppdb"' in wine
+
+
+def test_portproton_capture_enables_low_noise_loader_diagnostics():
+    wine = Path("tools/run_shift_capture_wine.sh").read_text(encoding="utf-8")
+
+    assert 'stream.write("export WINEDEBUG=err+all\\n")' in wine
+    assert 'stream.write("export DXVK_LOG_LEVEL=info\\n")' in wine
+    assert 'Diag    : WINEDEBUG=err+all; DXVK_LOG_LEVEL=info' in wine
+    assert 'cp -p "$backup_ppdb" "$ppdb"' in wine
