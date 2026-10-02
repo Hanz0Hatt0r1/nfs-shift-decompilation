@@ -13,9 +13,14 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
     event_count = 0
     observed_event_indices: list[int] = []
     event_index_field_count = 0
+    event_index_gaps_allowed = False
 
     for line_index, raw in enumerate(events, 1):
         row = dict(raw); event_count += 1
+        event_index_gaps_allowed = (
+            event_index_gaps_allowed
+            or row.get('_event_index_gaps_allowed') is True
+        )
         if 'event_index' in row:
             event_index_field_count += 1
             if isinstance(row.get('event_index'), int):
@@ -41,8 +46,23 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
             if prior and prior[0] != raw_hex: blockers.append({'line': row.get('_line', line_index), 'reason': 'shader-pointer-reused-with-different-bytes', 'pointer': shader_ptr})
             elif shader_ptr: created_shaders[shader_ptr] = (raw_hex, row.get('_line', line_index))
         elif event in {'set_vertex_shader', 'set_pixel_shader'}:
-            if not shader_ptr or shader_ptr not in created_shaders: blockers.append({'line': row.get('_line', line_index), 'reason': 'shader-bind-before-create', 'pointer': shader_ptr or None})
-            else: state['vertex_shader' if event == 'set_vertex_shader' else 'pixel_shader'] = True
+            state_key = (
+                'vertex_shader'
+                if event == 'set_vertex_shader'
+                else 'pixel_shader'
+            )
+            if not shader_ptr:
+                # IDirect3DDevice9::Set*Shader(NULL) is an explicit unbind.
+                state[state_key] = False
+            elif shader_ptr not in created_shaders:
+                blockers.append({
+                    'line': row.get('_line', line_index),
+                    'reason': 'shader-bind-before-create',
+                    'pointer': shader_ptr,
+                })
+                state[state_key] = False
+            else:
+                state[state_key] = True
         elif event == 'set_stream_source':
             state['stream'] = True
         elif event == 'set_indices':
@@ -60,17 +80,32 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
             'event_count': event_count,
         })
     if observed_event_indices:
-        expected_indices = list(range(
-            observed_event_indices[0],
-            observed_event_indices[0] + len(observed_event_indices),
-        ))
-        if observed_event_indices != expected_indices:
-            blockers.append({
-                'line': None,
-                'reason': 'event-index-not-contiguous',
-                'first': observed_event_indices[0],
-                'last': observed_event_indices[-1],
-            })
+        if event_index_gaps_allowed:
+            if any(
+                current <= previous
+                for previous, current in zip(
+                    observed_event_indices,
+                    observed_event_indices[1:],
+                )
+            ):
+                blockers.append({
+                    'line': None,
+                    'reason': 'event-index-not-monotonic',
+                    'first': observed_event_indices[0],
+                    'last': observed_event_indices[-1],
+                })
+        else:
+            expected_indices = list(range(
+                observed_event_indices[0],
+                observed_event_indices[0] + len(observed_event_indices),
+            ))
+            if observed_event_indices != expected_indices:
+                blockers.append({
+                    'line': None,
+                    'reason': 'event-index-not-contiguous',
+                    'first': observed_event_indices[0],
+                    'last': observed_event_indices[-1],
+                })
 
     frames = []
     for frame_key, state in frame_state.items():
@@ -90,7 +125,11 @@ def validate_runtime_trace_integrity(events: Iterable[Mapping[str, Any]]) -> dic
                     'valid'
                     if event_index_field_count == event_count
                     and not any(
-                        reason.get('reason') in {'event-index-not-contiguous', 'event-index-partial'}
+                        reason.get('reason') in {
+                            'event-index-not-contiguous',
+                            'event-index-not-monotonic',
+                            'event-index-partial',
+                        }
                         for reason in blockers
                         if isinstance(reason, dict)
                     )
