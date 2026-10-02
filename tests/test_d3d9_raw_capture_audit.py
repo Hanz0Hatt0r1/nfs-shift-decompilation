@@ -297,7 +297,8 @@ def test_resolve_input_path_keeps_existing_cwd_relative_path(monkeypatch, tmp_pa
 
     resolved = audit.resolve_input_path("targets.json")
 
-    assert resolved == local
+    assert resolved == audit.Path("targets.json")
+    assert resolved.read_text(encoding="utf-8") == "{}"
 
 
 def test_resolve_input_path_reports_cwd_and_repo_attempts(monkeypatch, tmp_path):
