@@ -86,6 +86,25 @@ It checks that every expected file exists and that every JSON/JSONL record can
 be parsed. It does not attempt to prove semantic correctness of heuristic
 candidates.
 
+## Semantic cross-check
+
+After an export, run the direct-observation cross-check:
+
+```bash
+python3 tools/ghidra/analyze_shift_export.py \
+  out/shift_ghidra_database \
+  out/ghidra_crosscheck.json
+```
+
+The output format is `SHIFT.GhidraCrosscheckEvidence/1`. The analyzer currently
+checks high-value renderer/physics anchors against exact function, callgraph and
+string-xref data, and discovers the repeated RTTI registration-stub fingerprint.
+It deliberately excludes `vtables.json` and `constructors.jsonl` from semantic
+proof because those exporter layers are heuristic candidate sets.
+
+The first retail result is summarized in
+`evidence/ghidra_database_crosscheck.md`.
+
 ## Evidence interpretation
 
 The strongest datasets are `functions.jsonl`, `callgraph.jsonl`,
