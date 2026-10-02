@@ -141,6 +141,12 @@ cmake --build native_capture/build --config Release
 
 Place the resulting d3d9.dll beside the authorized test executable.
 
+For Linux/Wine runtime capture, prefer the Win32 MSVC artifact published by the
+`capture-producer` CI job (`shift-d3d9-proxy-win32`). A local MinGW
+cross-build is useful for compilation checks, but it is not the reference
+runtime artifact for SHIFT under Wine and must not replace a known-good MSVC
+proxy during capture diagnosis.
+
 The Win32 proxy is linked against the static MSVC/MinGW runtime so the deployed
 DLL does not require a modern Visual C++ redistributable to be installed in the
 SHIFT/Wine environment.
