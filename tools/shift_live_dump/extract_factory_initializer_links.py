@@ -29,7 +29,7 @@ _VTABLE_SYMBOL = re.compile(r"\b(PTR_FUN_[0-9a-fA-F]{8})\b")
 
 
 def _extract_functions(text: str) -> dict[str, str]:
-    """Extract Ghidra-style FUN_x definitions in one forward pass."""
+    """Extract Ghidra-style FUN_x function bodies in one forward pass."""
     out: dict[str, str] = {}
     cursor = 0
     while True:
@@ -54,7 +54,7 @@ def _extract_functions(text: str) -> dict[str, str]:
                     break
         if end is None:
             break
-        out.setdefault(name, text[match.start():end])
+        out.setdefault(name, text[brace + 1:end - 1])
         cursor = end
     return out
 
