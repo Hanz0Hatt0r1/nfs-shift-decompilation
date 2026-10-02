@@ -56,3 +56,20 @@ def test_create_texture_events_avoid_duplicate_descriptor_keys():
     ) == 2
     assert "if (include_surface_fields) {" in source
 
+def test_capture_schema_accepts_explicit_shader_unbinds():
+    base = {
+        "frame": 0,
+        "event_index": 99,
+        "thread_id": 7,
+        "device_ptr": "0x10",
+        "shader_ptr": None,
+    }
+    assert validate_capture_event({
+        **base,
+        "event": "set_vertex_shader",
+    }) == []
+    assert validate_capture_event({
+        **base,
+        "event": "set_pixel_shader",
+    }) == []
+
