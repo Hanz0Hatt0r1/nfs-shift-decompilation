@@ -3295,6 +3295,27 @@ std::string module_path_a(HMODULE module) {
     return std::string(path, length);
 }
 
+std::string module_path_from_address(const void* address) {
+    if (!address) return {};
+    HMODULE module = nullptr;
+    if (!GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCSTR>(address),
+            &module)) {
+        return {};
+    }
+    return module_path_a(module);
+}
+
+bool address_in_module_image(const void* address, HMODULE module) {
+    if (!address || !module) return false;
+    const auto base = reinterpret_cast<std::uintptr_t>(module);
+    const auto size = image_size(module);
+    const auto value = reinterpret_cast<std::uintptr_t>(address);
+    return size > 0 && value >= base && value < base + size;
+}
+
 template <typename T>
 T resolve_system_proc(const char* name) {
     return reinterpret_cast<T>(
@@ -3430,18 +3451,41 @@ bool ensure_system_d3d9() {
 
         g_system_d3d9_ready = g_real_direct3d_create9 != nullptr;
 
+        const std::string loaded_path = module_path_a(g_system_d3d9);
+        const std::string create9_owner =
+            module_path_from_address(reinterpret_cast<const void*>(g_real_direct3d_create9));
+        const bool create9_points_into_proxy =
+            address_in_module_image(
+                reinterpret_cast<const void*>(g_real_direct3d_create9),
+                g_proxy_module);
+
         std::ostringstream fields;
         fields << "\"path\":" << CaptureWriter::quote(g_system_d3d9_path)
+               << ",\"loaded_path\":" << CaptureWriter::quote(loaded_path)
                << ",\"source\":" << CaptureWriter::quote(g_d3d9_backend_source)
                << ",\"module_ptr\":" << CaptureWriter::ptr(g_system_d3d9)
+               << ",\"proxy_module_ptr\":" << CaptureWriter::ptr(g_proxy_module)
                << ",\"direct3dcreate9\":" << (g_real_direct3d_create9 ? "true" : "false")
+               << ",\"direct3dcreate9_ptr\":" << CaptureWriter::ptr(
+                      reinterpret_cast<const void*>(g_real_direct3d_create9))
+               << ",\"direct3dcreate9_owner\":" << CaptureWriter::quote(create9_owner)
+               << ",\"direct3dcreate9_points_into_proxy\":"
+               << (create9_points_into_proxy ? "true" : "false")
                << ",\"direct3dcreate9ex\":" << (g_real_direct3d_create9_ex ? "true" : "false")
                << ",\"perf_begin\":" << (g_real_d3dperf_begin_event ? "true" : "false")
                << ",\"perf_end\":" << (g_real_d3dperf_end_event ? "true" : "false");
         writer().write_event(
-            g_system_d3d9_ready ? "proxy_system_d3d9_ready"
-                                : "proxy_system_d3d9_missing_required_export",
+            g_system_d3d9_ready && !create9_points_into_proxy
+                ? "proxy_system_d3d9_ready"
+                : (create9_points_into_proxy
+                    ? "proxy_system_d3d9_self_forward_detected"
+                    : "proxy_system_d3d9_missing_required_export"),
             fields.str());
+
+        if (create9_points_into_proxy) {
+            g_system_d3d9_ready = false;
+            g_real_direct3d_create9 = nullptr;
+        }
     });
     return g_system_d3d9_ready;
 }
@@ -3461,6 +3505,19 @@ extern "C" IDirect3D9* WINAPI Direct3DCreate9(UINT sdk_version) {
     }
 
     if (!ensure_system_d3d9()) return nullptr;
+
+    {
+        std::ostringstream fields;
+        fields << "\"sdk_version\":" << sdk_version
+               << ",\"backend_path\":" << CaptureWriter::quote(g_system_d3d9_path)
+               << ",\"backend_module_ptr\":" << CaptureWriter::ptr(g_system_d3d9)
+               << ",\"direct3dcreate9_ptr\":" << CaptureWriter::ptr(
+                      reinterpret_cast<const void*>(g_real_direct3d_create9))
+               << ",\"direct3dcreate9_owner\":" << CaptureWriter::quote(
+                      module_path_from_address(
+                          reinterpret_cast<const void*>(g_real_direct3d_create9)));
+        writer().write_event("direct3dcreate9_backend_call_begin", fields.str());
+    }
 
     IDirect3D9* d3d = g_real_direct3d_create9(sdk_version);
     {
