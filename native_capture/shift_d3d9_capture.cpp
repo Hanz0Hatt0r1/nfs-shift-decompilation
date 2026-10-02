@@ -2400,7 +2400,7 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_buffer(
           << ",\"fvf\":" << fvf
           << ",\"pool\":" << static_cast<unsigned>(pool);
         writer().write_event("create_vertex_buffer", f.str());
-        patch_vertex_buffer_object(*out_buffer);
+        if (!signature_discovery_enabled()) patch_vertex_buffer_object(*out_buffer);
     }
     return hr;
 }
@@ -2433,7 +2433,7 @@ HRESULT STDMETHODCALLTYPE hook_create_index_buffer(
           << ",\"format\":" << static_cast<unsigned>(format)
           << ",\"pool\":" << static_cast<unsigned>(pool);
         writer().write_event("create_index_buffer", f.str());
-        patch_index_buffer_object(*out_buffer);
+        if (!signature_discovery_enabled()) patch_index_buffer_object(*out_buffer);
     }
     return hr;
 }
@@ -2466,9 +2466,11 @@ HRESULT STDMETHODCALLTYPE hook_create_texture(
           << ",\"usage\":" << usage
           << ",\"format\":" << static_cast<unsigned>(format)
           << ",\"pool\":" << static_cast<unsigned>(pool);
-        append_texture_descriptor_json(f, *out_texture);
+        if (!signature_discovery_enabled()) {
+            append_texture_descriptor_json(f, *out_texture);
+        }
         writer().write_event("create_texture", f.str());
-        patch_texture_object(*out_texture);
+        if (!signature_discovery_enabled()) patch_texture_object(*out_texture);
     }
     return hr;
 }
@@ -2500,9 +2502,11 @@ HRESULT STDMETHODCALLTYPE hook_create_cube_texture(
           << ",\"usage\":" << usage
           << ",\"format\":" << static_cast<unsigned>(format)
           << ",\"pool\":" << static_cast<unsigned>(pool);
-        append_texture_descriptor_json(f, *out_texture);
+        if (!signature_discovery_enabled()) {
+            append_texture_descriptor_json(f, *out_texture);
+        }
         writer().write_event("create_cube_texture", f.str());
-        patch_cube_texture_object(*out_texture);
+        if (!signature_discovery_enabled()) patch_cube_texture_object(*out_texture);
     }
     return hr;
 }
@@ -2524,7 +2528,10 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_declaration(
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
-          << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+          ;
+        if (!signature_discovery_enabled()) {
+            f << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+        }
         writer().write_event("create_vertex_declaration", f.str());
     }
     return hr;
@@ -2540,6 +2547,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_declaration(
         const std::string signature =
             get_resource_signature(g_vertex_declaration_signatures, decl);
         maybe_trigger_for_resource("set_vertex_declaration", signature, decl);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"declaration_ptr\":" << CaptureWriter::ptr(decl)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -2564,6 +2572,7 @@ HRESULT STDMETHODCALLTYPE hook_set_stream_source(
         const std::string signature =
             get_resource_signature(g_vertex_buffer_signatures, buffer);
         maybe_trigger_for_resource("set_stream_source", signature, buffer);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"vertex_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -2588,6 +2597,7 @@ HRESULT STDMETHODCALLTYPE hook_set_indices(
         const std::string signature =
             get_resource_signature(g_index_buffer_signatures, buffer);
         maybe_trigger_for_resource("set_indices", signature, buffer);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"index_buffer_ptr\":" << CaptureWriter::ptr(buffer)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -2694,6 +2704,7 @@ HRESULT STDMETHODCALLTYPE hook_set_render_target(
     if (SUCCEEDED(hr) && capture_render_event_active()) {
         const std::string signature = surface_signature("rt", surface);
         maybe_trigger_for_resource("set_render_target", signature, surface);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"render_target_index\":" << index
@@ -2716,6 +2727,7 @@ HRESULT STDMETHODCALLTYPE hook_set_depth_stencil_surface(
     if (SUCCEEDED(hr) && capture_render_event_active()) {
         const std::string signature = surface_signature("depth", surface);
         maybe_trigger_for_resource("set_depth_stencil_surface", signature, surface);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"surface_ptr\":" << CaptureWriter::ptr(surface);
@@ -2909,6 +2921,7 @@ HRESULT STDMETHODCALLTYPE hook_set_texture(
         const std::string signature =
             get_resource_signature(g_texture_signatures, texture);
         maybe_trigger_for_resource("set_texture", signature, texture);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"texture_ptr\":" << CaptureWriter::ptr(texture)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
@@ -2940,7 +2953,10 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_shader(
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
-          << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+          ;
+        if (!signature_discovery_enabled()) {
+            f << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+        }
         writer().write_event("create_vertex_shader", f.str());
     }
     return hr;
@@ -2956,6 +2972,7 @@ HRESULT STDMETHODCALLTYPE hook_set_vertex_shader(
         const std::string signature =
             get_resource_signature(g_vertex_shader_signatures, shader);
         maybe_trigger_for_resource("set_vertex_shader", signature, shader);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -3011,7 +3028,10 @@ HRESULT STDMETHODCALLTYPE hook_create_pixel_shader(
           << ",\"device_ptr\":" << CaptureWriter::ptr(self)
           << ",\"resource_signature\":" << CaptureWriter::quote(signature)
           << ",\"content_fnv1a64\":" << CaptureWriter::quote(hash)
-          << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+          ;
+        if (!signature_discovery_enabled()) {
+            f << ",\"bytes_hex\":\"" << CaptureWriter::hex_bytes(bytes) << "\"";
+        }
         writer().write_event("create_pixel_shader", f.str());
     }
     return hr;
@@ -3027,6 +3047,7 @@ HRESULT STDMETHODCALLTYPE hook_set_pixel_shader(
         const std::string signature =
             get_resource_signature(g_pixel_shader_signatures, shader);
         maybe_trigger_for_resource("set_pixel_shader", signature, shader);
+        if (signature_discovery_enabled()) return hr;
         std::ostringstream f;
         f << "\"shader_ptr\":" << CaptureWriter::ptr(shader)
           << ",\"device_ptr\":" << CaptureWriter::ptr(self);
@@ -3105,13 +3126,25 @@ void patch_device(IDirect3DDevice9* device) {
          reinterpret_cast<void**>(&g_real_reset)},
         {SLOT_PRESENT, reinterpret_cast<void*>(&hook_present),
          reinterpret_cast<void**>(&g_real_present)},
-        {SLOT_BEGIN_SCENE, reinterpret_cast<void*>(&hook_begin_scene),
-         reinterpret_cast<void**>(&g_real_begin_scene)},
-        {SLOT_END_SCENE, reinterpret_cast<void*>(&hook_end_scene),
-         reinterpret_cast<void**>(&g_real_end_scene)},
-        {SLOT_CLEAR, reinterpret_cast<void*>(&hook_clear),
-         reinterpret_cast<void**>(&g_real_clear)},
     };
+
+    // Signature discovery only needs Present for frame progression plus the
+    // resource create/bind hooks below. Avoid scene/clear interception so the
+    // discovery pass stays as close to the game's normal D3D9 path as possible.
+    if (!signature_discovery_enabled()) {
+        const VtablePatch lifecycle_render_patches[] = {
+            {SLOT_BEGIN_SCENE, reinterpret_cast<void*>(&hook_begin_scene),
+             reinterpret_cast<void**>(&g_real_begin_scene)},
+            {SLOT_END_SCENE, reinterpret_cast<void*>(&hook_end_scene),
+             reinterpret_cast<void**>(&g_real_end_scene)},
+            {SLOT_CLEAR, reinterpret_cast<void*>(&hook_clear),
+             reinterpret_cast<void**>(&g_real_clear)},
+        };
+        patches.insert(
+            patches.end(),
+            std::begin(lifecycle_render_patches),
+            std::end(lifecycle_render_patches));
+    }
 
     if (capture_mode() == CaptureMode::Capture) {
         const VtablePatch capture_patches[] = {
@@ -3174,10 +3207,36 @@ void patch_device(IDirect3DDevice9* device) {
              reinterpret_cast<void*>(&hook_draw_indexed_primitive),
              reinterpret_cast<void**>(&g_real_draw_indexed_primitive)},
         };
-        patches.insert(
-            patches.end(),
-            std::begin(capture_patches),
-            std::end(capture_patches));
+        if (signature_discovery_enabled()) {
+            for (const auto& patch : capture_patches) {
+                switch (patch.slot) {
+                case SLOT_SET_RENDER_TARGET:
+                case SLOT_SET_DEPTH_STENCIL_SURFACE:
+                case SLOT_CREATE_TEXTURE:
+                case SLOT_CREATE_CUBE_TEXTURE:
+                case SLOT_CREATE_VERTEX_BUFFER:
+                case SLOT_CREATE_INDEX_BUFFER:
+                case SLOT_CREATE_VERTEX_DECLARATION:
+                case SLOT_SET_VERTEX_DECLARATION:
+                case SLOT_SET_STREAM_SOURCE:
+                case SLOT_SET_INDICES:
+                case SLOT_SET_TEXTURE:
+                case SLOT_CREATE_VERTEX_SHADER:
+                case SLOT_SET_VERTEX_SHADER:
+                case SLOT_CREATE_PIXEL_SHADER:
+                case SLOT_SET_PIXEL_SHADER:
+                    patches.push_back(patch);
+                    break;
+                default:
+                    break;
+                }
+            }
+        } else {
+            patches.insert(
+                patches.end(),
+                std::begin(capture_patches),
+                std::end(capture_patches));
+        }
     }
 
     void** vtable = *reinterpret_cast<void***>(device);
