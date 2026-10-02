@@ -171,49 +171,50 @@ def _descriptor_equal(
 
 
 def _pixel_reflection_index(
-    render_archive: BFF,
+    archives: Iterable[BFF],
 ) -> dict[str, dict[str, Any]]:
     variants: dict[str, set[tuple[tuple[Any, ...], ...]]] = defaultdict(set)
     payload_seen: set[str] = set()
 
-    for entry in render_archive.entries:
-        if not _norm(entry.path).endswith(".fxo"):
-            continue
-        try:
-            payload = render_archive.extract_entry(entry, type2="lzx")
-        except Exception:
-            continue
-        payload_sha = hashlib.sha256(payload).hexdigest()
-        if payload_sha in payload_seen:
-            continue
-        payload_seen.add(payload_sha)
-        try:
-            blobs = parse_shader_blobs(payload)
-        except Exception:
-            continue
-        for blob in blobs:
-            if blob.stage != "pixel":
+    for archive in archives:
+        for entry in archive.entries:
+            if not _norm(entry.path).endswith(".fxo"):
                 continue
-            pixel_sha = hashlib.sha256(
-                payload[blob.offset:blob.end]
-            ).hexdigest()
-            rows = []
-            for sampler in blob.ctab_samplers:
-                if not isinstance(sampler, Mapping):
+            try:
+                payload = archive.extract_entry(entry, type2="lzx")
+            except Exception:
+                continue
+            payload_sha = hashlib.sha256(payload).hexdigest()
+            if payload_sha in payload_seen:
+                continue
+            payload_seen.add(payload_sha)
+            try:
+                blobs = parse_shader_blobs(payload)
+            except Exception:
+                continue
+            for blob in blobs:
+                if blob.stage != "pixel":
                     continue
-                try:
-                    register = int(sampler.get("register"))
-                    count = int(sampler.get("count", 1))
-                except (TypeError, ValueError):
-                    continue
-                if register < 0 or count <= 0:
-                    continue
-                rows.append((
-                    str(sampler.get("name") or ""),
-                    register,
-                    count,
-                ))
-            variants[pixel_sha].add(tuple(sorted(rows)))
+                pixel_sha = hashlib.sha256(
+                    payload[blob.offset:blob.end]
+                ).hexdigest()
+                rows = []
+                for sampler in blob.ctab_samplers:
+                    if not isinstance(sampler, Mapping):
+                        continue
+                    try:
+                        register = int(sampler.get("register"))
+                        count = int(sampler.get("count", 1))
+                    except (TypeError, ValueError):
+                        continue
+                    if register < 0 or count <= 0:
+                        continue
+                    rows.append((
+                        str(sampler.get("name") or ""),
+                        register,
+                        count,
+                    ))
+                variants[pixel_sha].add(tuple(sorted(rows)))
 
     result: dict[str, dict[str, Any]] = {}
     for pixel_sha, signatures in variants.items():
@@ -652,7 +653,9 @@ def build_runtime_material_descriptor_candidate_join(
             "material_descriptor_gate_fallback_resource_shape_count": fallback,
             "single_content_candidate_resource_shape_count": single_count,
             "single_content_candidate_draw_count": single_draws,
-            "ready_material_occurrence_contract_count": ready_contract_rows,
+            "evaluated_ready_material_occurrence_contract_count": (
+                ready_contract_rows
+            ),
             "material_descriptor_gate_status_counts": dict(
                 sorted(gate_status_counts.items())
             ),
@@ -706,9 +709,20 @@ def validate_files(
         raise ValueError("runtime and geometry inputs must be JSON objects")
 
     render_path = resolve_input_path(render_archive_path)
-    with BFF(render_path) as render:
+    with ExitStack() as stack:
+        source_paths = _materialize_bffs(
+            [source_archive_path],
+            stack,
+        )
+        source_archives = [
+            stack.enter_context(BFF(path))
+            for path in source_paths
+        ]
+        render = stack.enter_context(BFF(render_path))
         fx_sources = _render_fx_sources(render)
-        reflections = _pixel_reflection_index(render)
+        reflections = _pixel_reflection_index(
+            [*source_archives, render]
+        )
 
     occurrences = _build_material_occurrence_index(
         [source_archive_path],
