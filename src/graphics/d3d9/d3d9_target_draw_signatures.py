@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from d3d9_raw_capture_audit import resolve_input_path
+from shader_ir import parse_shader_blobs
 
 FORMAT = "SHIFT.D3D9TargetDrawSignatureCatalog/1"
 
@@ -31,6 +32,56 @@ def _sha_bytes_hex(row: Mapping[str, Any]) -> str | None:
     except ValueError:
         return None
     return hashlib.sha256(payload).hexdigest()
+
+
+def _pixel_shader_reflection(
+    row: Mapping[str, Any],
+) -> dict[str, Any]:
+    raw = row.get("bytes_hex")
+    if not isinstance(raw, str) or not raw or len(raw) % 2:
+        return {"status": "unavailable", "samplers": [], "sampler_registers": []}
+    try:
+        payload = bytes.fromhex(raw)
+    except ValueError:
+        return {"status": "unavailable", "samplers": [], "sampler_registers": []}
+
+    try:
+        blobs = parse_shader_blobs(payload)
+    except Exception:
+        return {"status": "error", "samplers": [], "sampler_registers": []}
+
+    pixel_blobs = [blob for blob in blobs if blob.stage == "pixel"]
+    if not pixel_blobs:
+        return {"status": "unavailable", "samplers": [], "sampler_registers": []}
+
+    samplers: list[dict[str, Any]] = []
+    registers: set[int] = set()
+    for blob in pixel_blobs:
+        for sampler in blob.ctab_samplers:
+            if not isinstance(sampler, Mapping):
+                continue
+            register = sampler.get("register")
+            count = sampler.get("count", 1)
+            try:
+                register = int(register)
+                count = int(count)
+            except (TypeError, ValueError):
+                continue
+            if register < 0 or count <= 0:
+                continue
+            for offset in range(count):
+                registers.add(register + offset)
+            samplers.append({
+                "name": sampler.get("name"),
+                "register": register,
+                "count": count,
+            })
+
+    return {
+        "status": "reflected",
+        "samplers": samplers,
+        "sampler_registers": sorted(registers),
+    }
 
 
 def _target_families(
@@ -346,6 +397,8 @@ def catalog_target_draw_signatures(
     source_line_count = 0
     first_target_frame: int | None = None
     last_target_frame: int | None = None
+    reflected_target_draw_count = 0
+    fallback_texture_state_draw_count = 0
 
     for raw_line in lines:
         if not raw_line.strip():
@@ -369,7 +422,7 @@ def catalog_target_draw_signatures(
             pointer = _ptr(row.get("shader_ptr"))
             digest = _sha_bytes_hex(row)
             if pointer and digest:
-                shaders[(device, pointer)] = {
+                shader = {
                     "sha256": digest,
                     "stage": (
                         "vertex"
@@ -377,6 +430,9 @@ def catalog_target_draw_signatures(
                         else "pixel"
                     ),
                 }
+                if event == "create_pixel_shader":
+                    shader["reflection"] = _pixel_shader_reflection(row)
+                shaders[(device, pointer)] = shader
             continue
 
         if event == "create_vertex_declaration":
@@ -565,12 +621,40 @@ def catalog_target_draw_signatures(
             )
             or {}
         )
+        reflection = (
+            pixel_shader.get("reflection")
+            if isinstance(pixel_shader, Mapping)
+            else None
+        )
+        reflection_status = (
+            reflection.get("status")
+            if isinstance(reflection, Mapping)
+            else "unavailable"
+        )
+        reflected_sampler_registers = (
+            {
+                int(value)
+                for value in (reflection.get("sampler_registers") or [])
+                if isinstance(value, int)
+            }
+            if isinstance(reflection, Mapping)
+            else set()
+        )
+        if reflection_status == "reflected":
+            reflected_target_draw_count += 1
+        else:
+            fallback_texture_state_draw_count += 1
+
         texture_shapes = [
             _texture_shape(
                 binding.get("descriptor"),
                 stage=stage,
             )
             for stage, binding in sorted(state["textures"].items())
+            if (
+                reflection_status != "reflected"
+                or stage in reflected_sampler_registers
+            )
         ]
 
         pipeline = {
@@ -633,6 +717,10 @@ def catalog_target_draw_signatures(
             "unique_pipeline_signature_count": len(pipeline_rows),
             "unique_layout_cohort_count": len(layout_cohorts),
             "unique_resource_shape_signature_count": len(shape_rows),
+            "reflected_target_draw_count": reflected_target_draw_count,
+            "fallback_texture_state_draw_count": (
+                fallback_texture_state_draw_count
+            ),
         },
         "target_draw_hashes": [
             {
@@ -664,6 +752,11 @@ def catalog_target_draw_signatures(
             "stream_offset_observations": (
                 "offsets are retained diagnostically per normalized shape but "
                 "do not participate in its stable identity"
+            ),
+            "texture_stage_filter": (
+                "when pixel-shader CTAB reflection is available, only reflected "
+                "sampler registers participate in resource-shape texture state; "
+                "otherwise all bound stages are preserved as a fallback"
             ),
             "resource_identity": "not claimed",
             "primitive_identity": "not claimed",
