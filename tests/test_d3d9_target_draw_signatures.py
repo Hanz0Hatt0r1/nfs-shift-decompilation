@@ -188,6 +188,7 @@ def test_target_draw_signature_catalog_aggregates_pipeline_and_resource_shapes()
     assert report["summary"]["first_target_frame"] == 2
     assert report["summary"]["last_target_frame"] == 3
     assert report["summary"]["unique_pipeline_signature_count"] == 1
+    assert report["summary"]["unique_layout_cohort_count"] == 1
     assert report["summary"]["unique_resource_shape_signature_count"] == 2
 
     pipeline = report["pipeline_signatures"][0]
@@ -202,6 +203,16 @@ def test_target_draw_signature_catalog_aggregates_pipeline_and_resource_shapes()
         "stride": 60,
     }]
     assert pipeline["signature"]["index_format"] == 101
+
+    cohort = report["layout_cohorts"][0]
+    assert cohort["draw_count"] == 2
+    assert cohort["families"] == ["basicinstanced"]
+    assert cohort["vertex_shader_sha256s"] == [VS_SHA]
+    assert cohort["pixel_shader_sha256s"] == [PS_SHA]
+    assert cohort["layout"]["stream_layout"] == [{
+        "stream": 0,
+        "stride": 60,
+    }]
 
     widths = sorted(
         row["signature"]["texture_stages"][0]["width"]
@@ -274,3 +285,126 @@ def test_target_draw_signature_catalog_requires_target_hashes():
         assert "no pixel shader hashes" in str(error)
     else:
         raise AssertionError("empty target inventory must fail")
+
+def test_resource_shape_ignores_transient_stream_offsets_but_reports_them():
+    lines = [
+        _line({
+            "event": "create_vertex_shader",
+            "frame": 1,
+            "event_index": 1,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x10",
+            "bytes_hex": VS.hex(),
+        }),
+        _line({
+            "event": "create_pixel_shader",
+            "frame": 1,
+            "event_index": 2,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x20",
+            "bytes_hex": PS.hex(),
+        }),
+        _line({
+            "event": "create_vertex_buffer",
+            "frame": 1,
+            "event_index": 3,
+            "device_ptr": "0x1",
+            "vertex_buffer_ptr": "0x40",
+            "length": 4096,
+            "usage": 0,
+            "fvf": 0,
+            "pool": 1,
+        }),
+        _line({
+            "event": "create_vertex_buffer",
+            "frame": 1,
+            "event_index": 4,
+            "device_ptr": "0x1",
+            "vertex_buffer_ptr": "0x41",
+            "length": 131072,
+            "usage": 520,
+            "fvf": 0,
+            "pool": 0,
+        }),
+        _line({
+            "event": "set_vertex_shader",
+            "frame": 2,
+            "event_index": 5,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x10",
+        }),
+        _line({
+            "event": "set_pixel_shader",
+            "frame": 2,
+            "event_index": 6,
+            "device_ptr": "0x1",
+            "shader_ptr": "0x20",
+        }),
+        _line({
+            "event": "set_stream_source",
+            "frame": 2,
+            "event_index": 7,
+            "device_ptr": "0x1",
+            "stream": 0,
+            "vertex_buffer_ptr": "0x40",
+            "offset_in_bytes": 0,
+            "stride": 80,
+        }),
+        _line({
+            "event": "set_stream_source",
+            "frame": 2,
+            "event_index": 8,
+            "device_ptr": "0x1",
+            "stream": 1,
+            "vertex_buffer_ptr": "0x41",
+            "offset_in_bytes": 64,
+            "stride": 64,
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 2,
+            "event_index": 9,
+            "device_ptr": "0x1",
+            "primitive_count": 10,
+        }),
+        _line({
+            "event": "set_stream_source",
+            "frame": 3,
+            "event_index": 10,
+            "device_ptr": "0x1",
+            "stream": 1,
+            "vertex_buffer_ptr": "0x41",
+            "offset_in_bytes": 128,
+            "stride": 64,
+        }),
+        _line({
+            "event": "draw_indexed_primitive",
+            "frame": 3,
+            "event_index": 11,
+            "device_ptr": "0x1",
+            "primitive_count": 10,
+        }),
+    ]
+
+    report = catalog_target_draw_signatures(
+        lines,
+        target_inventory=_targets(),
+    )
+
+    assert report["summary"]["target_draw_count"] == 2
+    assert report["summary"]["unique_resource_shape_signature_count"] == 1
+    shape = report["resource_shape_signatures"][0]
+    assert shape["draw_count"] == 2
+    assert all(
+        "offset_in_bytes" not in stream
+        for stream in shape["signature"]["stream_resource_shapes"]
+    )
+    by_stream = {
+        row["stream"]: row
+        for row in shape["stream_offset_observations"]
+    }
+    assert by_stream[0]["unique_offset_count"] == 1
+    assert by_stream[1]["unique_offset_count"] == 2
+    assert by_stream[1]["min_offset_in_bytes"] == 64
+    assert by_stream[1]["max_offset_in_bytes"] == 128
+
