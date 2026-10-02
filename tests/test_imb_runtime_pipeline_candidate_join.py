@@ -224,3 +224,117 @@ def test_pipeline_candidate_join_rejects_wrong_contracts():
         assert "target set" in str(error)
     else:
         raise AssertionError("wrong target contract must fail")
+
+def _prefilter_binding(index, family, ps, properties):
+    row = _binding(index, family, VS_A, ps)
+    row["vertex_properties"] = list(properties)
+    row["targets"] = [{
+        "identity_kind": "pixel",
+        "identity_value": ps,
+        "strength": "prefilter-only",
+        "candidate_variant_count": 2,
+        "candidate_variants": [
+            {
+                "vertex_byte_sha256": None,
+                "pixel_byte_sha256": ps,
+                "pair_byte_sha256": None,
+                "permutation_identity_sha256": None,
+                "candidate_file": f"{family}_{index}.fxo",
+                "candidate_program_offset": 100,
+                "candidate_vertex_program_offset": None,
+                "vertex_pair_selection_status": "none",
+                "exact": False,
+            },
+            {
+                "vertex_byte_sha256": None,
+                "pixel_byte_sha256": ps,
+                "pair_byte_sha256": None,
+                "permutation_identity_sha256": None,
+                "candidate_file": f"{family}_{index}.fxo",
+                "candidate_program_offset": 200,
+                "candidate_vertex_program_offset": None,
+                "vertex_pair_selection_status": "none",
+                "exact": False,
+            },
+        ],
+    }]
+    return row
+
+
+def test_pipeline_candidate_join_uses_pixel_plus_source_stride_fallback():
+    target_set = {
+        "format": "SHIFT.IMBRuntimeShaderTargetSet/1",
+        "binding_targets": [
+            _prefilter_binding(
+                10,
+                "crowdgeninstanced",
+                PS_X,
+                ["200", "460", "220", "240", "250", "130", "580", "310"],
+            ),
+            _prefilter_binding(
+                11,
+                "basicinstanced",
+                PS_X,
+                ["200", "460", "220", "130"],
+            ),
+        ],
+    }
+    runtime = {
+        "format": "SHIFT.D3D9TargetDrawSignatureCatalog/1",
+        "pipeline_signatures": [
+            _runtime_pipeline(
+                "layout-fallback",
+                VS_C,
+                PS_X,
+                7,
+                "crowdgeninstanced",
+            )
+        ],
+    }
+
+    report = build_runtime_pipeline_candidate_join(runtime, target_set)
+
+    row = report["pipeline_candidates"][0]
+    assert row["status"] == "single-layout-pixel-static-binding-candidate"
+    assert row["candidate_evidence_kind"] == "pixel+static-vertex-stride"
+    assert row["runtime_vertex_stride"] == 80
+    assert row["candidate_binding_indices"] == [10]
+    assert row["candidate_binding_count"] == 1
+    assert row["candidate_variant_count"] == 2
+    assert row["candidates"][0]["static_vertex_stride"] == 80
+    assert row["candidates"][0]["matched_variant_count"] == 2
+    assert report["summary"]["layout_pixel_candidate_pipeline_count"] == 1
+    assert report["summary"]["layout_pixel_candidate_draw_count"] == 7
+    assert report["summary"]["candidate_draw_coverage"] == 1.0
+
+
+def test_exact_pair_target_does_not_degrade_to_pixel_stride_fallback():
+    binding = _binding(0, "crowdgeninstanced", VS_A, PS_X)
+    binding["vertex_properties"] = [
+        "200", "460", "220", "240", "250", "130", "580", "310"
+    ]
+    binding["targets"][0]["strength"] = "exact-pair"
+    target_set = {
+        "format": "SHIFT.IMBRuntimeShaderTargetSet/1",
+        "binding_targets": [binding],
+    }
+    runtime = {
+        "format": "SHIFT.D3D9TargetDrawSignatureCatalog/1",
+        "pipeline_signatures": [
+            _runtime_pipeline(
+                "wrong-vs",
+                VS_C,
+                PS_X,
+                2,
+                "crowdgeninstanced",
+            )
+        ],
+    }
+
+    report = build_runtime_pipeline_candidate_join(runtime, target_set)
+
+    row = report["pipeline_candidates"][0]
+    assert row["status"] == "pixel-only-static-overlap"
+    assert row["candidate_binding_count"] == 0
+    assert report["summary"]["layout_pixel_candidate_pipeline_count"] == 0
+
