@@ -128,6 +128,37 @@ role, not a constructor or runtime method identity.
 
 See `evidence/ghidra_subsystem_manifests.md` for the initial retail identities.
 
+## Class-registration discovery
+
+Discover the registry from the Ghidra side without the heuristic constructor or
+factory candidate sets:
+
+```bash
+python3 tools/ghidra/discover_class_registrations.py \
+  out/shift_ghidra_database \
+  --json-out out/ghidra_class_registrations.json
+```
+
+A candidate must directly call `FUN_00631740`, `FUN_00630fe0`,
+`FUN_006310c0` and `_atexit`. Exact string xrefs and mnemonic fingerprints are
+then attached to that call-shape candidate; fingerprint equality alone never
+creates a class identity.
+
+The discovery can be checked in the reverse direction against a generated
+`SHIFT-CLASS-MANIFEST/1` report:
+
+```bash
+python3 tools/ghidra/discover_class_registrations.py \
+  out/shift_ghidra_database \
+  --class-manifest out/shift_class_manifest.json \
+  --json-out out/ghidra_class_registration_crosscheck.json
+```
+
+The comparison keeps verified rows, missing Ghidra candidates, exact-name
+mismatches and extra Ghidra candidates separate. It does not replace a source
+class name when Ghidra disagrees. See
+`evidence/ghidra_registration_discovery.md`.
+
 ## Evidence interpretation
 
 The strongest datasets are `functions.jsonl`, `callgraph.jsonl`,
