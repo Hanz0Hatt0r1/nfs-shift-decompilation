@@ -75,6 +75,85 @@ def _pipeline_payload(signature: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _relaxed_pipeline_payload(
+    signature: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Pipeline identity with VS intentionally removed.
+
+    This key is only used for candidate recovery.  PS, declaration, stream
+    layout and index format must still match exactly.
+    """
+    return {
+        "pixel_shader_sha256": signature.get("pixel_shader_sha256"),
+        "declaration_sha256": signature.get("declaration_sha256"),
+        "stream_layout": list(signature.get("stream_layout") or []),
+        "index_format": signature.get("index_format"),
+    }
+
+
+def _relaxed_pipeline_row_payload(
+    row: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "pixel_shader_sha256": row.get("pixel_shader_sha256"),
+        "declaration_sha256": row.get("declaration_sha256"),
+        "stream_layout": list(row.get("stream_layout") or []),
+        "index_format": row.get("index_format"),
+    }
+
+
+def _build_relaxed_pipeline_donors(
+    pipeline_join: Mapping[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    """Index strong sibling-pipeline candidates by non-VS runtime layout."""
+    raw: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+    for row in pipeline_join.get("pipeline_candidates") or []:
+        if not isinstance(row, Mapping):
+            continue
+        evidence = str(row.get("candidate_evidence_kind") or "")
+        if not evidence.startswith("exact-vs+ps"):
+            continue
+        source_signature = str(
+            row.get("runtime_signature_sha256") or ""
+        )
+        if not source_signature:
+            continue
+        relaxed_sha = _canonical_hash(
+            _relaxed_pipeline_row_payload(row)
+        )
+        for group in row.get("candidate_content_groups") or []:
+            if not isinstance(group, Mapping):
+                continue
+            group_sha = str(group.get("content_group_sha256") or "")
+            if not group_sha:
+                continue
+            existing = raw[relaxed_sha].get(group_sha)
+            if existing is None:
+                existing = dict(group)
+                existing[
+                    "relaxed_pipeline_donor_signature_sha256s"
+                ] = []
+                raw[relaxed_sha][group_sha] = existing
+            donors = existing[
+                "relaxed_pipeline_donor_signature_sha256s"
+            ]
+            if source_signature not in donors:
+                donors.append(source_signature)
+
+    result: dict[str, list[dict[str, Any]]] = {}
+    for relaxed_sha, groups in raw.items():
+        rows = list(groups.values())
+        for row in rows:
+            row["relaxed_pipeline_donor_signature_sha256s"].sort()
+        rows.sort(
+            key=lambda row: str(
+                row.get("content_group_sha256") or ""
+            )
+        )
+        result[relaxed_sha] = rows
+    return result
+
+
 def _stream0_shape(signature: Mapping[str, Any]) -> dict[str, Any]:
     for row in signature.get("stream_resource_shapes") or []:
         if not isinstance(row, Mapping):
@@ -334,6 +413,22 @@ def build_runtime_geometry_shape_candidate_join(
         if isinstance(row, Mapping)
         and row.get("runtime_signature_sha256")
     }
+    relaxed_pipeline_donors = _build_relaxed_pipeline_donors(
+        pipeline_join
+    )
+    runtime_pipeline_signatures: dict[str, Mapping[str, Any]] = {}
+    for runtime_row in runtime_catalog.get("pipeline_signatures") or []:
+        if not isinstance(runtime_row, Mapping):
+            continue
+        signature = runtime_row.get("signature")
+        if not isinstance(signature, Mapping):
+            continue
+        digest = str(runtime_row.get("signature_sha256") or "")
+        canonical = _canonical_hash(_pipeline_payload(signature))
+        if digest:
+            runtime_pipeline_signatures[digest] = signature
+        runtime_pipeline_signatures[canonical] = signature
+
     corpus_index = _corpus_geometry_index(corpus_audit)
 
     raw_geometry: dict[str, dict[str, Any]] = {}
@@ -409,6 +504,9 @@ def build_runtime_geometry_shape_candidate_join(
     descriptor_gate_applied_count = 0
     descriptor_gate_reduced_count = 0
     descriptor_gate_fallback_count = 0
+    relaxed_pipeline_recovery_shape_count = 0
+    relaxed_pipeline_recovery_draw_count = 0
+    relaxed_pipeline_recovery_candidate_shape_count = 0
     distinct_content_groups: set[str] = set()
 
     for source in raw_geometry.values():
@@ -427,7 +525,7 @@ def build_runtime_geometry_shape_candidate_join(
         pipeline_row = pipeline_candidates.get(
             str(row["pipeline_signature_sha256"])
         )
-        base_groups = (
+        direct_base_groups = (
             [
                 dict(value)
                 for value in (
@@ -438,6 +536,92 @@ def build_runtime_geometry_shape_candidate_join(
             if isinstance(pipeline_row, Mapping)
             else []
         )
+        base_groups = list(direct_base_groups)
+        pipeline_candidate_source = (
+            "exact-runtime-pipeline"
+            if base_groups
+            else "none"
+        )
+        relaxed_donor_count = 0
+
+        if not base_groups:
+            runtime_signature = runtime_pipeline_signatures.get(
+                str(row["pipeline_signature_sha256"])
+            )
+            if isinstance(runtime_signature, Mapping):
+                relaxed_sha = _canonical_hash(
+                    _relaxed_pipeline_payload(runtime_signature)
+                )
+                donor_groups = [
+                    dict(value)
+                    for value in (
+                        relaxed_pipeline_donors.get(relaxed_sha) or []
+                    )
+                    if isinstance(value, Mapping)
+                ]
+                target_families = set(row["families"])
+                filtered_donors = []
+                for donor in donor_groups:
+                    family = str(donor.get("shader_family") or "")
+                    if target_families and family not in target_families:
+                        continue
+                    donor_signatures = [
+                        str(value)
+                        for value in (
+                            donor.get(
+                                "relaxed_pipeline_donor_signature_sha256s"
+                            ) or []
+                        )
+                        if value
+                        and str(value)
+                        != str(row["pipeline_signature_sha256"])
+                    ]
+                    if not donor_signatures:
+                        continue
+                    recovered = dict(donor)
+                    recovered[
+                        "relaxed_pipeline_donor_signature_sha256s"
+                    ] = sorted(set(donor_signatures))
+                    recovered["pipeline_recovery_evidence_kind"] = (
+                        "sibling-runtime-pipeline-same-ps-layout"
+                    )
+                    donor_vertex = _valid_sha(
+                        recovered.get("matched_vertex_shader_sha256")
+                    )
+                    runtime_vertex = _valid_sha(
+                        runtime_signature.get("vertex_shader_sha256")
+                    )
+                    recovered[
+                        "pipeline_recovery_runtime_vertex_shader_sha256"
+                    ] = runtime_vertex
+                    recovered[
+                        "pipeline_recovery_static_vertex_shader_mismatch"
+                    ] = (
+                        donor_vertex is not None
+                        and runtime_vertex is not None
+                        and donor_vertex != runtime_vertex
+                    )
+                    filtered_donors.append(recovered)
+
+                if filtered_donors:
+                    base_groups = filtered_donors
+                    pipeline_candidate_source = (
+                        "relaxed-sibling-runtime-pipeline"
+                    )
+                    relaxed_donor_count = len({
+                        signature_sha
+                        for donor in filtered_donors
+                        for signature_sha in (
+                            donor.get(
+                                "relaxed_pipeline_donor_signature_sha256s"
+                            ) or []
+                        )
+                    })
+                    relaxed_pipeline_recovery_shape_count += 1
+                    relaxed_pipeline_recovery_draw_count += int(
+                        row["draw_count"]
+                    )
+
         range_groups = [
             group
             for group in base_groups
@@ -501,6 +685,13 @@ def build_runtime_geometry_shape_candidate_join(
         else:
             candidate_status = "no-range-content-candidates"
 
+        if (
+            pipeline_candidate_source
+            == "relaxed-sibling-runtime-pipeline"
+            and candidate_hashes
+        ):
+            relaxed_pipeline_recovery_candidate_shape_count += 1
+
         row.update({
             "runtime_vertex_count": runtime_vertex_count,
             "runtime_index_count": runtime_index_count,
@@ -510,6 +701,11 @@ def build_runtime_geometry_shape_candidate_join(
                 if isinstance(pipeline_row, Mapping)
                 else None
             ),
+            "pipeline_candidate_source": pipeline_candidate_source,
+            "direct_pipeline_content_group_count": len(
+                direct_base_groups
+            ),
+            "relaxed_pipeline_donor_count": relaxed_donor_count,
             "base_pipeline_content_group_count": len(base_groups),
             "range_candidate_content_group_count": len(range_groups),
             "descriptor_gate_status": gate_status,
@@ -550,6 +746,15 @@ def build_runtime_geometry_shape_candidate_join(
             "descriptor_gate_fallback_geometry_shape_count": (
                 descriptor_gate_fallback_count
             ),
+            "relaxed_pipeline_recovery_geometry_shape_count": (
+                relaxed_pipeline_recovery_shape_count
+            ),
+            "relaxed_pipeline_recovery_draw_count": (
+                relaxed_pipeline_recovery_draw_count
+            ),
+            "relaxed_pipeline_recovery_candidate_geometry_shape_count": (
+                relaxed_pipeline_recovery_candidate_shape_count
+            ),
             "single_content_candidate_geometry_shape_count": (
                 single_content_shape_count
             ),
@@ -579,6 +784,18 @@ def build_runtime_geometry_shape_candidate_join(
                 "source IMB vertex/index counts may narrow candidates only "
                 "when the runtime descriptors are exact-fit and at least one "
                 "candidate matches; otherwise the range-matched set is kept"
+            ),
+            "relaxed_pipeline_recovery": (
+                "when an exact runtime pipeline has no static content groups, "
+                "candidate-only recovery may union groups from sibling runtime "
+                "pipelines whose static evidence is exact-vs+ps and whose PS, "
+                "vertex declaration, stream layout and index format match "
+                "exactly; only VS may differ, and recovered candidates must "
+                "still pass the target draw-range and geometry descriptor gates"
+            ),
+            "relaxed_pipeline_vertex_shader_identity": (
+                "a donor VS hash is diagnostic only and never becomes the "
+                "target runtime VS identity; mismatches are retained explicitly"
             ),
             "single_content_candidate": (
                 "one archive-invariant static IMB content contract matches "
