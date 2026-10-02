@@ -85,3 +85,51 @@ def test_runtime_trace_integrity_rejects_partial_event_index_metadata():
         x["reason"] == "event-index-partial"
         for x in report["blocking_reasons"]
     )
+
+def test_runtime_trace_integrity_accepts_shader_unbind_without_draw():
+    events = _complete_events()[:-1] + [
+        {'event':'set_vertex_shader','frame':1,'shader_ptr':None},
+        {'event':'set_pixel_shader','frame':1,'shader_ptr':None},
+    ]
+    report = validate_runtime_trace_integrity(events)
+    assert not any(
+        x['reason'] == 'shader-bind-before-create'
+        for x in report['blocking_reasons']
+    )
+
+
+def test_runtime_trace_integrity_accepts_monotonic_filtered_event_indices():
+    indices = [10, 12, 14, 20, 21, 25, 31, 35, 40]
+    events = [
+        dict(
+            event,
+            event_index=index,
+            _event_index_gaps_allowed=True,
+        )
+        for event, index in zip(_complete_events(), indices)
+    ]
+    report = validate_runtime_trace_integrity(events)
+    assert report['status'] == 'observed'
+    assert report['event_index']['status'] == 'valid'
+    assert report['event_index']['first'] == 10
+    assert report['event_index']['last'] == 40
+
+
+def test_runtime_trace_integrity_rejects_nonmonotonic_filtered_indices():
+    indices = [10, 12, 14, 20, 19, 25, 31, 35, 40]
+    events = [
+        dict(
+            event,
+            event_index=index,
+            _event_index_gaps_allowed=True,
+        )
+        for event, index in zip(_complete_events(), indices)
+    ]
+    report = validate_runtime_trace_integrity(events)
+    assert report['status'] == 'partial'
+    assert report['event_index']['status'] == 'invalid'
+    assert any(
+        x['reason'] == 'event-index-not-monotonic'
+        for x in report['blocking_reasons']
+    )
+
