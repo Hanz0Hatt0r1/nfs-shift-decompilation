@@ -5,12 +5,20 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 import tempfile
 import zipfile
 from collections import Counter
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Iterable
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_SCENE_DIR = _REPO_ROOT / "src" / "scene"
+_FORMATS_DIR = _REPO_ROOT / "src" / "formats"
+for _path in (_REPO_ROOT, _SCENE_DIR, _FORMATS_DIR):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 
 from imb_neutral_geometry import build_imb_neutral_geometry
 from shift_importer import BFF
