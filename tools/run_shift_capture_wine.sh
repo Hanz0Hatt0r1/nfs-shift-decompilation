@@ -568,6 +568,10 @@ with open(path, "a", encoding="utf-8") as stream:
     stream.write("\n# SHIFT_CAPTURE_TEMP_BEGIN\n")
     stream.write("export PW_GUI_DISABLED_CS=1\n")
     stream.write("export PW_NO_AUTO_CREATE_SHORTCUT=1\n")
+    # Capture must bypass gamescope. PortProton may report gamescope as broken
+    # yet still keep PW_GAMESCOPE=1 from the saved profile, causing the primary
+    # child to exit before SHIFT reaches Direct3DCreate9.
+    stream.write("export PW_GAMESCOPE=0\n")
     for name in sorted(os.environ):
         if name.startswith("SHIFT_D3D9_"):
             stream.write(f"export {name}={shlex.quote(os.environ[name])}\n")
@@ -594,6 +598,7 @@ fi
 if ((use_portproton_start)); then
   echo "Launcher: $portproton_start"
   echo "PPDB    : temporary capture exports installed; original will be restored"
+  echo "Gamescope: disabled for capture session"
 fi
 if [[ -n "$portproton_root" && "$wine_resolved" != "$portproton_root/"* ]]; then
   echo "warning: PortProton prefix is being launched with Wine outside the PortProton tree: $wine_resolved" >&2
