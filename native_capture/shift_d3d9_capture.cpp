@@ -2400,7 +2400,7 @@ HRESULT STDMETHODCALLTYPE hook_create_vertex_buffer(
           << ",\"fvf\":" << fvf
           << ",\"pool\":" << static_cast<unsigned>(pool);
         writer().write_event("create_vertex_buffer", f.str());
-        patch_vertex_buffer_object(*out_buffer);
+        if (!signature_discovery_enabled()) patch_vertex_buffer_object(*out_buffer);
     }
     return hr;
 }
@@ -2433,7 +2433,7 @@ HRESULT STDMETHODCALLTYPE hook_create_index_buffer(
           << ",\"format\":" << static_cast<unsigned>(format)
           << ",\"pool\":" << static_cast<unsigned>(pool);
         writer().write_event("create_index_buffer", f.str());
-        patch_index_buffer_object(*out_buffer);
+        if (!signature_discovery_enabled()) patch_index_buffer_object(*out_buffer);
     }
     return hr;
 }
@@ -2468,7 +2468,7 @@ HRESULT STDMETHODCALLTYPE hook_create_texture(
           << ",\"pool\":" << static_cast<unsigned>(pool);
         append_texture_descriptor_json(f, *out_texture);
         writer().write_event("create_texture", f.str());
-        patch_texture_object(*out_texture);
+        if (!signature_discovery_enabled()) patch_texture_object(*out_texture);
     }
     return hr;
 }
@@ -2502,7 +2502,7 @@ HRESULT STDMETHODCALLTYPE hook_create_cube_texture(
           << ",\"pool\":" << static_cast<unsigned>(pool);
         append_texture_descriptor_json(f, *out_texture);
         writer().write_event("create_cube_texture", f.str());
-        patch_cube_texture_object(*out_texture);
+        if (!signature_discovery_enabled()) patch_cube_texture_object(*out_texture);
     }
     return hr;
 }
@@ -3105,13 +3105,25 @@ void patch_device(IDirect3DDevice9* device) {
          reinterpret_cast<void**>(&g_real_reset)},
         {SLOT_PRESENT, reinterpret_cast<void*>(&hook_present),
          reinterpret_cast<void**>(&g_real_present)},
-        {SLOT_BEGIN_SCENE, reinterpret_cast<void*>(&hook_begin_scene),
-         reinterpret_cast<void**>(&g_real_begin_scene)},
-        {SLOT_END_SCENE, reinterpret_cast<void*>(&hook_end_scene),
-         reinterpret_cast<void**>(&g_real_end_scene)},
-        {SLOT_CLEAR, reinterpret_cast<void*>(&hook_clear),
-         reinterpret_cast<void**>(&g_real_clear)},
     };
+
+    // Signature discovery only needs Present for frame progression plus the
+    // resource create/bind hooks below. Avoid scene/clear interception so the
+    // discovery pass stays as close to the game's normal D3D9 path as possible.
+    if (!signature_discovery_enabled()) {
+        const VtablePatch lifecycle_render_patches[] = {
+            {SLOT_BEGIN_SCENE, reinterpret_cast<void*>(&hook_begin_scene),
+             reinterpret_cast<void**>(&g_real_begin_scene)},
+            {SLOT_END_SCENE, reinterpret_cast<void*>(&hook_end_scene),
+             reinterpret_cast<void**>(&g_real_end_scene)},
+            {SLOT_CLEAR, reinterpret_cast<void*>(&hook_clear),
+             reinterpret_cast<void**>(&g_real_clear)},
+        };
+        patches.insert(
+            patches.end(),
+            std::begin(lifecycle_render_patches),
+            std::end(lifecycle_render_patches));
+    }
 
     if (capture_mode() == CaptureMode::Capture) {
         const VtablePatch capture_patches[] = {
@@ -3174,10 +3186,36 @@ void patch_device(IDirect3DDevice9* device) {
              reinterpret_cast<void*>(&hook_draw_indexed_primitive),
              reinterpret_cast<void**>(&g_real_draw_indexed_primitive)},
         };
-        patches.insert(
-            patches.end(),
-            std::begin(capture_patches),
-            std::end(capture_patches));
+        if (signature_discovery_enabled()) {
+            for (const auto& patch : capture_patches) {
+                switch (patch.slot) {
+                case SLOT_SET_RENDER_TARGET:
+                case SLOT_SET_DEPTH_STENCIL_SURFACE:
+                case SLOT_CREATE_TEXTURE:
+                case SLOT_CREATE_CUBE_TEXTURE:
+                case SLOT_CREATE_VERTEX_BUFFER:
+                case SLOT_CREATE_INDEX_BUFFER:
+                case SLOT_CREATE_VERTEX_DECLARATION:
+                case SLOT_SET_VERTEX_DECLARATION:
+                case SLOT_SET_STREAM_SOURCE:
+                case SLOT_SET_INDICES:
+                case SLOT_SET_TEXTURE:
+                case SLOT_CREATE_VERTEX_SHADER:
+                case SLOT_SET_VERTEX_SHADER:
+                case SLOT_CREATE_PIXEL_SHADER:
+                case SLOT_SET_PIXEL_SHADER:
+                    patches.push_back(patch);
+                    break;
+                default:
+                    break;
+                }
+            }
+        } else {
+            patches.insert(
+                patches.end(),
+                std::begin(capture_patches),
+                std::end(capture_patches));
+        }
     }
 
     void** vtable = *reinterpret_cast<void***>(device);
