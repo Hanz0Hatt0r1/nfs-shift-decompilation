@@ -454,3 +454,88 @@ def test_pipeline_candidate_join_does_not_filter_truncated_legacy_ranges():
     assert row["status"] == "ambiguous-static-binding-candidates"
     assert report["summary"]["draw_range_gate_pipeline_count"] == 0
 
+def test_pipeline_candidate_join_groups_archive_invariant_content():
+    first = _binding(0, "crowdgeninstanced", VS_A, PS_X)
+    second = _binding(1, "crowdgeninstanced", VS_A, PS_X)
+    second["archive"] = "Silverstone_Era3_Drift.bff"
+    second["imb_path"] = "duplicate/location/object.imb"
+    second["imb_sha256"] = first["imb_sha256"]
+    second["bmt_sha256"] = first["bmt_sha256"]
+    second["primitive_index"] = first["primitive_index"]
+    second["draw_range"] = dict(first["draw_range"])
+    second["vertex_properties"] = list(first["vertex_properties"])
+
+    runtime = {
+        "format": "SHIFT.D3D9TargetDrawSignatureCatalog/1",
+        "pipeline_signatures": [
+            _runtime_pipeline(
+                "archive-invariant-content",
+                VS_A,
+                PS_X,
+                6,
+                "crowdgeninstanced",
+            )
+        ],
+    }
+    target_set = {
+        "format": "SHIFT.IMBRuntimeShaderTargetSet/1",
+        "binding_targets": [first, second],
+    }
+
+    report = build_runtime_pipeline_candidate_join(runtime, target_set)
+
+    row = report["pipeline_candidates"][0]
+    assert row["candidate_binding_count"] == 2
+    assert row["candidate_content_group_count"] == 1
+    assert row["candidate_content_status"] == "single-content-candidate"
+    group = row["candidate_content_groups"][0]
+    assert group["imb_sha256"] == first["imb_sha256"]
+    assert group["binding_indices"] == [0, 1]
+    assert group["archives"] == [
+        "Silverstone_Era3_Drift.bff",
+        "Silverstone_Era3_GrandPrix.bff",
+    ]
+    assert group["static_binding_count"] == 2
+    assert report["summary"]["single_content_candidate_pipeline_count"] == 1
+    assert report["summary"]["single_content_candidate_draw_count"] == 6
+    assert report["summary"]["distinct_candidate_content_group_count"] == 1
+    assert report["summary"]["candidate_content_group_count_distribution"] == {
+        "1": 1,
+    }
+
+
+def test_pipeline_candidate_join_does_not_group_missing_imb_hashes():
+    first = _binding(0, "crowdgeninstanced", VS_A, PS_X)
+    second = _binding(1, "crowdgeninstanced", VS_A, PS_X)
+    first["imb_sha256"] = None
+    second["imb_sha256"] = None
+    second["bmt_sha256"] = first["bmt_sha256"]
+
+    runtime = {
+        "format": "SHIFT.D3D9TargetDrawSignatureCatalog/1",
+        "pipeline_signatures": [
+            _runtime_pipeline(
+                "missing-imb-hash",
+                VS_A,
+                PS_X,
+                2,
+                "crowdgeninstanced",
+            )
+        ],
+    }
+    target_set = {
+        "format": "SHIFT.IMBRuntimeShaderTargetSet/1",
+        "binding_targets": [first, second],
+    }
+
+    report = build_runtime_pipeline_candidate_join(runtime, target_set)
+
+    row = report["pipeline_candidates"][0]
+    assert row["candidate_binding_count"] == 2
+    assert row["candidate_content_group_count"] == 2
+    assert row["candidate_content_status"] == "ambiguous-content-candidates"
+    assert report["summary"]["single_content_candidate_pipeline_count"] == 0
+    assert report["summary"]["candidate_content_group_count_distribution"] == {
+        "2": 1,
+    }
+
