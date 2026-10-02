@@ -57,6 +57,10 @@ The Phase 568 evidence JSON is accepted directly through its
 `families[].pixel_shader_sha256` inventory. A full
 `SHIFT.IMBRuntimeShaderTargetSet/1` with `unique_targets` is also accepted.
 
+CLI input paths are cwd-relative when they already exist. Otherwise, relative
+capture and `--target-inventory` paths are retried from the repository root, so
+the script may be launched by absolute path from outside the checkout.
+
 ## Current supplied capture
 
 Manual inspection of the supplied capture established the key missing input
