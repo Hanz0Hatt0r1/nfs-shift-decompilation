@@ -2,9 +2,10 @@
 """Run the joined SHIFT class-evidence pipeline in one command.
 
 The pipeline preserves the existing evidence layers as separate JSON artifacts:
-RTTI/reflection class manifest, factory-to-initializer links, structural audit,
-the non-numeric evidence scorecard, source-level lifecycle observations,
-deleting-wrapper shapes, and one-hop Ghidra lifecycle investigation slices.
+RTTI/reflection class manifest, factory-to-initializer links, create-wrapper
+value-flow evidence, structural audit, the non-numeric evidence scorecard,
+source-level lifecycle observations, deleting-wrapper shapes, and one-hop
+Ghidra lifecycle investigation slices.
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ from audit_shift_class_candidates import audit_candidates
 from build_class_evidence_scorecard import build_scorecard
 from build_shift_class_manifest import build_manifest
 from extract_class_lifecycle_source_evidence import extract_lifecycle_evidence
+from extract_create_wrapper_evidence import extract_create_wrappers
 from extract_deleting_wrapper_evidence import extract_deleting_wrappers
 from extract_factory_initializer_links import extract_links
 
@@ -49,6 +51,7 @@ def run_pipeline(
 
     class_manifest_path = output_dir / "class_manifest.json"
     initializer_links_path = output_dir / "factory_initializer_links.json"
+    create_wrapper_path = output_dir / "create_wrapper_evidence.json"
     class_audit_path = output_dir / "class_audit.json"
     scorecard_path = output_dir / "class_evidence_scorecard.json"
     lifecycle_source_path = output_dir / "class_lifecycle_source_evidence.json"
@@ -60,6 +63,13 @@ def run_pipeline(
 
     initializer_links = extract_links(source, exe, ghidra_export)
     _write_json(initializer_links_path, initializer_links)
+
+    create_wrappers = extract_create_wrappers(
+        source,
+        initializer_links_path,
+        ghidra_export,
+    )
+    _write_json(create_wrapper_path, create_wrappers)
 
     class_audit = audit_candidates(source, exe, initializer_links_path)
     _write_json(class_audit_path, class_audit)
@@ -88,6 +98,7 @@ def run_pipeline(
     artifacts = {
         "class_manifest": class_manifest_path.name,
         "factory_initializer_links": initializer_links_path.name,
+        "create_wrapper_evidence": create_wrapper_path.name,
         "class_audit": class_audit_path.name,
         "class_evidence_scorecard": scorecard_path.name,
         "class_lifecycle_source_evidence": lifecycle_source_path.name,
@@ -124,6 +135,16 @@ def run_pipeline(
             "initializer_ghidra_mismatch_links": initializer_links.get(
                 "ghidra_mismatch_link_count"
             ),
+            "create_wrapper_links": create_wrappers.get("link_count"),
+            "source_create_wrapper_shapes": create_wrappers.get(
+                "source_create_wrapper_shape_count"
+            ),
+            "create_wrapper_shapes": create_wrappers.get(
+                "create_wrapper_shape_count"
+            ),
+            "distinct_preinitializer_helpers": create_wrappers.get(
+                "distinct_preinitializer_helper_count"
+            ),
             "structural_ready_classes": class_audit.get("structural_ready_count"),
             "lifecycle_investigation_ready_classes": (
                 scorecard.get("tier_counts", {}).get("lifecycle-investigation-ready", 0)
@@ -154,15 +175,16 @@ def run_pipeline(
         "scorecard_tiers": scorecard.get("tier_counts", {}),
         "next_evidence_blockers": scorecard.get("next_evidence_blocker_counts", {}),
         "scope": {
+            "allocation_helper_semantics_proven": False,
             "constructor_semantics_proven": False,
             "destructor_semantics_proven": False,
             "deleting_destructor_semantics_proven": False,
             "behavior_semantics_proven": False,
             "note": (
-                "This pipeline composes existing evidence artifacts, direct source "
-                "lifecycle/deleting-wrapper observations and Ghidra context slices. "
-                "It does not promote initializer/teardown/wrapper candidates to C++ "
-                "constructor/destructor identities or infer missing class behavior."
+                "This pipeline composes existing evidence artifacts, create-wrapper "
+                "value flow, direct source lifecycle/deleting-wrapper observations and "
+                "Ghidra context slices. It does not promote helper/initializer/teardown/"
+                "wrapper candidates to allocator or C++ lifecycle identities."
             ),
         },
     }
@@ -196,6 +218,7 @@ def main() -> int:
     print(f"format: {report['format']}")
     print(f"registered classes: {counts['registered_classes']}")
     print(f"structural-ready classes: {counts['structural_ready_classes']}")
+    print(f"create-wrapper shapes: {counts['create_wrapper_shapes']}")
     print(
         "lifecycle-investigation-ready classes: "
         f"{counts['lifecycle_investigation_ready_classes']}"

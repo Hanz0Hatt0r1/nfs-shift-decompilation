@@ -50,6 +50,22 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         },
     )
 
+    def fake_create(source, initializer_links, ghidra_export):
+        payload = json.loads(initializer_links.read_text(encoding="utf-8"))
+        assert payload["link_count"] == 42
+        assert ghidra_export == tmp_path / "ghidra"
+        return {
+            "format": "SHIFT-CLASS-CREATE-WRAPPER-EVIDENCE/1",
+            "link_count": 42,
+            "source_create_wrapper_shape_count": 28,
+            "create_wrapper_shape_count": 26,
+            "distinct_preinitializer_helper_count": 7,
+            "helpers": [],
+            "links": [],
+        }
+
+    monkeypatch.setattr(module, "extract_create_wrappers", fake_create)
+
     def fake_audit(source, exe, initializer_links):
         payload = json.loads(initializer_links.read_text(encoding="utf-8"))
         assert payload["link_count"] == 42
@@ -138,6 +154,11 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
 
     assert report["format"] == "SHIFT-CLASS-EVIDENCE-PIPELINE/1"
     assert report["counts"]["registered_classes"] == 315
+    assert report["counts"]["factory_initializer_links"] == 42
+    assert report["counts"]["create_wrapper_links"] == 42
+    assert report["counts"]["source_create_wrapper_shapes"] == 28
+    assert report["counts"]["create_wrapper_shapes"] == 26
+    assert report["counts"]["distinct_preinitializer_helpers"] == 7
     assert report["counts"]["structural_ready_classes"] == 227
     assert report["counts"]["lifecycle_investigation_ready_classes"] == 18
     assert report["counts"]["lifecycle_source_targets"] == 18
@@ -156,6 +177,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     expected = {
         "class_manifest.json",
         "factory_initializer_links.json",
+        "create_wrapper_evidence.json",
         "class_audit.json",
         "class_evidence_scorecard.json",
         "class_lifecycle_source_evidence.json",
@@ -167,6 +189,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
 
     saved = json.loads((out / "pipeline_manifest.json").read_text(encoding="utf-8"))
     assert saved["counts"] == report["counts"]
+    assert saved["scope"]["allocation_helper_semantics_proven"] is False
     assert saved["scope"]["constructor_semantics_proven"] is False
     assert saved["scope"]["destructor_semantics_proven"] is False
     assert saved["scope"]["deleting_destructor_semantics_proven"] is False

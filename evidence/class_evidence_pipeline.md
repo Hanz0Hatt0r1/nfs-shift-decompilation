@@ -30,6 +30,10 @@ The output directory contains:
   Ghidra registration checks;
 - `factory_initializer_links.json` —
   `SHIFT-FACTORY-INITIALIZER-LINKS/1`;
+- `create_wrapper_evidence.json` —
+  `SHIFT-CLASS-CREATE-WRAPPER-EVIDENCE/1`, preserving the immediate
+  preinitializer helper, its raw/literal arguments and local-value flow into the
+  initializer, plus recurring-helper aggregates;
 - `class_audit.json` — `SHIFT-CLASS-DECOMPILATION-CANDIDATES/1`, with
   initializer annotations;
 - `class_evidence_scorecard.json` — `SHIFT-CLASS-EVIDENCE-SCORECARD/1`;
@@ -49,6 +53,7 @@ The output directory contains:
 
 The pipeline manifest records registered/reflected/unique-vtable counts,
 registration verification and mismatch counts, factory/initializer link counts,
+create-wrapper/value-flow counts and distinct predecessor helpers,
 structural-ready count, lifecycle-investigation-ready count, source lifecycle
 completion/base-transition/teardown-candidate counts, deleting-wrapper candidate
 and confirmed-shape counts, lifecycle target slice completeness, scorecard tiers
@@ -62,6 +67,9 @@ underlying tools:
 - a unique PE vtable remains class-identity/layout evidence;
 - a registration string/callgraph match remains registration evidence;
 - a factory call to a unique-vtable writer remains an initializer link;
+- an immediate helper whose returned local flows into the initializer is a
+  create-wrapper observation, not automatic proof that the helper allocates
+  memory or that a literal argument is object size;
 - a literal initializer vtable write and call to an ancestor-vtable writer are
   source lifecycle observations, not automatic constructor semantics;
 - a non-initializer function which writes the class vtable and calls an
