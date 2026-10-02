@@ -88,6 +88,37 @@ def _target_pixel_hashes(value: Mapping[str, Any] | None) -> set[str]:
     return hashes
 
 
+def _target_pixel_families(
+    value: Mapping[str, Any] | None,
+) -> dict[str, set[str]]:
+    if not isinstance(value, Mapping):
+        return {}
+
+    families: dict[str, set[str]] = {}
+    for family in value.get("families") or []:
+        if not isinstance(family, Mapping):
+            continue
+        name = str(family.get("family") or "").strip()
+        if not name:
+            continue
+        bucket = families.setdefault(name, set())
+        for digest in family.get("pixel_shader_sha256") or []:
+            if isinstance(digest, str) and len(digest) == 64:
+                bucket.add(digest.lower())
+
+    for target in value.get("unique_targets") or []:
+        if not isinstance(target, Mapping):
+            continue
+        digest = target.get("pixel_byte_sha256")
+        if not isinstance(digest, str) or len(digest) != 64:
+            continue
+        for name in target.get("shader_families") or []:
+            name = str(name).strip()
+            if name:
+                families.setdefault(name, set()).add(digest.lower())
+    return families
+
+
 def audit_capture_lines(
     lines: Iterable[str],
     *,
@@ -117,8 +148,15 @@ def audit_capture_lines(
     unique_vertex_shader_hashes: set[str] = set()
     unique_pixel_shader_hashes: set[str] = set()
     target_pixel_hash_set = _target_pixel_hashes(target_inventory)
+    target_pixel_families = _target_pixel_families(target_inventory)
     matched_target_pixel_hashes: set[str] = set()
     target_pixel_creation_count = 0
+    target_pixel_creation_counts: Counter[str] = Counter()
+    target_pixel_draw_counts: Counter[str] = Counter()
+    target_pixel_draw_first_frame: dict[str, int] = {}
+    target_pixel_draw_last_frame: dict[str, int] = {}
+    pixel_shader_objects: dict[tuple[str, str], str] = {}
+    active_pixel_shader: dict[str, str | None] = {}
 
     for raw_line in lines:
         text = raw_line.strip()
@@ -187,9 +225,34 @@ def audit_capture_lines(
                     unique_vertex_shader_hashes.add(digest)
                 else:
                     unique_pixel_shader_hashes.add(digest)
+                    device = str(value.get("device_ptr") or "")
+                    pointer = str(value.get("shader_ptr") or "")
+                    if pointer:
+                        pixel_shader_objects[(device, pointer)] = digest
                     if digest in target_pixel_hash_set:
                         target_pixel_creation_count += 1
+                        target_pixel_creation_counts[digest] += 1
                         matched_target_pixel_hashes.add(digest)
+
+        if event == "set_pixel_shader":
+            device = str(value.get("device_ptr") or "")
+            pointer = value.get("shader_ptr")
+            if pointer in (None, ""):
+                active_pixel_shader[device] = None
+            else:
+                active_pixel_shader[device] = pixel_shader_objects.get(
+                    (device, str(pointer))
+                )
+
+        if event == "draw_indexed_primitive":
+            device = str(value.get("device_ptr") or "")
+            digest = active_pixel_shader.get(device)
+            if digest in target_pixel_hash_set:
+                target_pixel_draw_counts[digest] += 1
+                frame = value.get("frame")
+                if isinstance(frame, int):
+                    target_pixel_draw_first_frame.setdefault(digest, frame)
+                    target_pixel_draw_last_frame[digest] = frame
 
         if event == "set_texture":
             paths = [
@@ -276,6 +339,29 @@ def audit_capture_lines(
     else:
         profile = "mixed"
 
+    family_coverage = []
+    for family, hashes in sorted(target_pixel_families.items()):
+        matched = hashes & matched_target_pixel_hashes
+        draw_hashes = {
+            digest for digest in hashes
+            if target_pixel_draw_counts.get(digest, 0) > 0
+        }
+        family_coverage.append({
+            "family": family,
+            "target_hash_count": len(hashes),
+            "matched_hash_count": len(matched),
+            "matched_hashes": sorted(matched),
+            "shader_creation_count": sum(
+                target_pixel_creation_counts.get(digest, 0)
+                for digest in hashes
+            ),
+            "draw_hit_hash_count": len(draw_hashes),
+            "draw_hit_count": sum(
+                target_pixel_draw_counts.get(digest, 0)
+                for digest in hashes
+            ),
+        })
+
     return {
         "format": FORMAT,
         "version": 1,
@@ -314,9 +400,30 @@ def audit_capture_lines(
                 matched_target_pixel_hashes
             ),
             "target_pixel_shader_creation_count": target_pixel_creation_count,
+            "target_pixel_draw_count": sum(target_pixel_draw_counts.values()),
+            "target_pixel_draw_hash_count": sum(
+                1 for count in target_pixel_draw_counts.values() if count > 0
+            ),
             "matched_pixel_target_hashes": sorted(
                 matched_target_pixel_hashes
             ),
+            "family_coverage": family_coverage,
+            "hash_observations": [
+                {
+                    "pixel_byte_sha256": digest,
+                    "shader_creation_count": (
+                        target_pixel_creation_counts.get(digest, 0)
+                    ),
+                    "draw_hit_count": target_pixel_draw_counts.get(digest, 0),
+                    "first_draw_frame": target_pixel_draw_first_frame.get(
+                        digest
+                    ),
+                    "last_draw_frame": target_pixel_draw_last_frame.get(
+                        digest
+                    ),
+                }
+                for digest in sorted(matched_target_pixel_hashes)
+            ],
         },
         "capabilities": {
             "phase569_shader_prefilter_input": shader_prefilter_ready,
@@ -338,7 +445,13 @@ def audit_capture_lines(
         "blocking_reasons": blockers,
         "boundary": {
             "phase569_input_only": (
-                "shader/draw readiness does not claim an IMB match"
+                "shader/draw readiness and target draw hits do not claim "
+                "an IMB match"
+            ),
+            "target_draw_coverage": (
+                "counts draws whose currently bound pixel-shader byte hash "
+                "matches the supplied target inventory; it does not prove "
+                "resource, primitive or same-instance identity"
             ),
             "phase590_input_only": (
                 "snapshot presence does not claim scene sampler admission"
