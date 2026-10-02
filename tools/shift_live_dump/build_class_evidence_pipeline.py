@@ -5,7 +5,7 @@ The pipeline preserves the existing evidence layers as separate JSON artifacts:
 RTTI/reflection class manifest, factory-to-initializer links, create-wrapper
 value-flow evidence, structural audit, the non-numeric evidence scorecard,
 source-level lifecycle observations, deleting-wrapper shapes, paired lifetime
-shapes, and one-hop Ghidra lifecycle investigation slices.
+shapes, recurring helper-family evidence, and one-hop Ghidra lifecycle slices.
 """
 from __future__ import annotations
 
@@ -32,14 +32,33 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _build_lifecycle_targets(scorecard_path: Path, ghidra_export: Path) -> dict[str, Any]:
-    path = Path(__file__).resolve().parents[1] / "ghidra" / "build_lifecycle_investigation_targets.py"
-    spec = importlib.util.spec_from_file_location("build_lifecycle_investigation_targets", path)
+def _load_ghidra_module(filename: str, module_name: str):
+    path = Path(__file__).resolve().parents[1] / "ghidra" / filename
+    spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load lifecycle target builder: {path}")
+        raise RuntimeError(f"cannot load Ghidra postprocessor: {path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module
+
+
+def _build_lifecycle_targets(scorecard_path: Path, ghidra_export: Path) -> dict[str, Any]:
+    module = _load_ghidra_module(
+        "build_lifecycle_investigation_targets.py",
+        "build_lifecycle_investigation_targets",
+    )
     return module.build_targets(scorecard_path, ghidra_export)
+
+
+def _build_lifetime_helper_families(
+    pair_path: Path,
+    ghidra_export: Path,
+) -> dict[str, Any]:
+    module = _load_ghidra_module(
+        "build_lifetime_helper_families.py",
+        "build_lifetime_helper_families",
+    )
+    return module.build_helper_families(pair_path, ghidra_export)
 
 
 def run_pipeline(
@@ -58,6 +77,7 @@ def run_pipeline(
     lifecycle_source_path = output_dir / "class_lifecycle_source_evidence.json"
     deleting_wrapper_path = output_dir / "deleting_wrapper_evidence.json"
     lifetime_pair_path = output_dir / "class_lifetime_pair_evidence.json"
+    helper_families_path = output_dir / "lifetime_helper_families.json"
     lifecycle_targets_path = output_dir / "lifecycle_investigation_targets.json"
 
     class_manifest = build_manifest(source, exe, ghidra_export)
@@ -101,6 +121,12 @@ def run_pipeline(
     )
     _write_json(lifetime_pair_path, lifetime_pairs)
 
+    helper_families = _build_lifetime_helper_families(
+        lifetime_pair_path,
+        ghidra_export,
+    )
+    _write_json(helper_families_path, helper_families)
+
     lifecycle_targets = _build_lifecycle_targets(scorecard_path, ghidra_export)
     _write_json(lifecycle_targets_path, lifecycle_targets)
 
@@ -113,6 +139,7 @@ def run_pipeline(
         "class_lifecycle_source_evidence": lifecycle_source_path.name,
         "deleting_wrapper_evidence": deleting_wrapper_path.name,
         "class_lifetime_pair_evidence": lifetime_pair_path.name,
+        "lifetime_helper_families": helper_families_path.name,
         "lifecycle_investigation_targets": lifecycle_targets_path.name,
     }
     report = {
@@ -187,6 +214,13 @@ def run_pipeline(
             "unambiguous_lifetime_helper_pairs": lifetime_pairs.get(
                 "unambiguous_helper_pair_count"
             ),
+            "lifetime_helper_families": helper_families.get("helper_family_count"),
+            "recurrent_lifetime_helper_pairs": helper_families.get(
+                "recurrent_helper_pair_count"
+            ),
+            "crosschecked_recurrent_helper_family_candidates": helper_families.get(
+                "crosschecked_recurrent_helper_family_candidate_count"
+            ),
             "lifecycle_target_slices": lifecycle_targets.get("target_count"),
             "lifecycle_complete_slices": lifecycle_targets.get("complete_slice_count"),
             "lifecycle_incomplete_slices": lifecycle_targets.get("incomplete_slice_count"),
@@ -195,17 +229,17 @@ def run_pipeline(
         "next_evidence_blockers": scorecard.get("next_evidence_blocker_counts", {}),
         "scope": {
             "allocation_helper_semantics_proven": False,
+            "shared_allocator_family_proven": False,
             "constructor_semantics_proven": False,
             "destructor_semantics_proven": False,
             "deleting_destructor_semantics_proven": False,
             "ownership_semantics_proven": False,
             "behavior_semantics_proven": False,
             "note": (
-                "This pipeline composes existing evidence artifacts, create-wrapper "
-                "value flow, source lifecycle/delete observations, paired lifetime "
-                "boundaries and Ghidra context slices. It does not promote helper/"
-                "initializer/teardown/wrapper candidates to allocator or C++ lifecycle "
-                "identities."
+                "This pipeline composes evidence artifacts, create-wrapper value flow, "
+                "source lifecycle/delete observations, paired lifetime/helper-family "
+                "boundaries and Ghidra context slices. It does not promote helpers or "
+                "lifecycle candidates to allocator/free or C++ ABI identities."
             ),
         },
     }
@@ -244,9 +278,12 @@ def main() -> int:
         "lifecycle-investigation-ready classes: "
         f"{counts['lifecycle_investigation_ready_classes']}"
     )
-    print(f"lifecycle source targets: {counts['lifecycle_source_targets']}")
     print(f"deleting-wrapper shapes: {counts['deleting_wrapper_shapes']}")
     print(f"paired lifetime classes: {counts['paired_lifetime_classes']}")
+    print(
+        "crosschecked recurrent helper families: "
+        f"{counts['crosschecked_recurrent_helper_family_candidates']}"
+    )
     print(f"lifecycle target slices: {counts['lifecycle_target_slices']}")
     print(f"output: {args.out}")
 
