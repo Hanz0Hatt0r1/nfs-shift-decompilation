@@ -316,6 +316,14 @@ def test_signature_discovery_suppresses_full_render_stream():
     assert "(count & (count - 1)) != 0" in source
     assert "if (signature_discovery_enabled()) return;" in source
     assert "record_resource_signature_use(bind_event, signature, object)" in source
+    assert "if (!signature_discovery_enabled()) patch_vertex_buffer_object" in source
+    assert "if (!signature_discovery_enabled()) patch_index_buffer_object" in source
+    assert "if (!signature_discovery_enabled()) patch_texture_object" in source
+    assert "if (!signature_discovery_enabled()) patch_cube_texture_object" in source
+    assert "lifecycle_render_patches" in source
+    assert "case SLOT_CREATE_PIXEL_SHADER:" in source
+    assert "case SLOT_SET_PIXEL_SHADER:" in source
+    assert "case SLOT_DRAW_INDEXED_PRIMITIVE:" not in source[source.index("if (signature_discovery_enabled())", source.index("void patch_device")):source.index("} else {", source.index("if (signature_discovery_enabled())", source.index("void patch_device")))]
 
     assert "[switch]$SignatureDiscovery" in powershell
     assert "SHIFT_D3D9_CAPTURE_SIGNATURE_DISCOVERY" in powershell
