@@ -108,6 +108,8 @@ def iter_events(
                     + ", ".join(schema_reasons)
                 )
             row["_line"] = line_no
+            if skip_unsupported:
+                row["_event_index_gaps_allowed"] = True
             yield row
 
 
