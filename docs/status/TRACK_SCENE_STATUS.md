@@ -56,6 +56,7 @@ Covered boundaries include:
 - Phase 602 extends that audit with per-device target pixel-shader draw coverage: matched Phase 568 hashes now retain creation counts, draw-hit counts, first/last draw frames and per-family coverage while remaining explicitly prefilter-only evidence.
 - Phase 603 adds `SHIFT.D3D9TargetDrawSignatureCatalog/1`: target draws are streamed into pointer-free VS/PS/declaration/stride/index pipeline signatures plus descriptor-only buffer/texture resource-shape signatures, narrowing runtime render paths without claiming resource or primitive identity.
 - Phase 604 normalizes target resource-shape IDs by excluding transient stream offsets, preserves those offsets as diagnostics, and adds declaration/stride/index-format layout cohorts to expose stable geometry ABI families without promoting them to resource identity.
+- Phase 605 parses captured pixel-shader CTAB at creation time and filters resource-shape texture stages to sampler registers actually declared by the active PS, with conservative all-bound-stage fallback when reflection is unavailable.
 - `SHIFT.SGBRenderBindingAdmission/1` joins source-backed placement rows to recursive OBJECT resource/world transforms without promoting blocked rows.
 - `SHIFT.SGBRenderBindingBridge/1` resolves scene-admitted MEB instances through the existing MEB/BMT/FXO path into generic `SHIFT.RenderBinding/1`, preserving the admitted numeric world matrix.
 
