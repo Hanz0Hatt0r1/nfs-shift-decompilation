@@ -16,7 +16,7 @@ The full Ghidra export directory must contain callgraph.jsonl and
 strings_xrefs.jsonl. The runner exports only the six backend functions needed to
 cross-check allocation/free diagnostics and the release backend chain, then
 attempts fail-closed local slices for the allocation `%d` and free `%p`
-diagnostic varargs.
+diagnostic varargs plus behavior-only tracking of the release-path entry DL byte.
 EOF
 }
 
@@ -43,6 +43,7 @@ INSTRUCTIONS="$OUT_DIR/memory_backend_instructions.jsonl"
 REPORT="$OUT_DIR/memory_backend_evidence.json"
 ALLOCATION_SLICE="$OUT_DIR/memory_allocation_diagnostic_slice.json"
 FREE_SLICE="$OUT_DIR/memory_free_diagnostic_slice.json"
+RELEASE_BYTE_BEHAVIOR="$OUT_DIR/memory_release_byte_behavior.json"
 
 "$SCRIPT_DIR/run_shift_function_instructions.sh" \
   "$PROJECT_DIR" \
@@ -71,7 +72,12 @@ python3 "$SCRIPT_DIR/analyze_free_diagnostic_slice.py" \
   --ghidra-export "$GHIDRA_EXPORT" \
   --json-out "$FREE_SLICE"
 
+python3 "$SCRIPT_DIR/analyze_release_byte_behavior.py" \
+  "$INSTRUCTIONS" \
+  --json-out "$RELEASE_BYTE_BEHAVIOR"
+
 echo "memory backend instruction export: $INSTRUCTIONS"
 echo "memory backend evidence report: $REPORT"
 echo "memory allocation diagnostic slice: $ALLOCATION_SLICE"
 echo "memory free diagnostic slice: $FREE_SLICE"
+echo "memory release-byte behavior: $RELEASE_BYTE_BEHAVIOR"
