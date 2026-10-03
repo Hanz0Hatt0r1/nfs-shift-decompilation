@@ -15,3 +15,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00770e80_scalar_provider_anchor_chain
     COMMAND shift_runtime_fun_00770e80_scalar_provider_anchor_chain_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase693.cmake)
