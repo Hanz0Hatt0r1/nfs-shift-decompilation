@@ -1,5 +1,7 @@
 #include "shift_vehicle_body_pose_runtime_handoff.hpp"
 
+#include "runtime_state.hpp"
+
 #include <stdexcept>
 
 namespace shift::runtime::physics {
