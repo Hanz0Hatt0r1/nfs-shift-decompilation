@@ -1,10 +1,10 @@
 # Offline resource pipeline
 
-`tools/shift_resource_pipeline.py` is the high-level offline path from retail BFF
-inputs toward the native runtime:
+The Process 3 tooling provides a fail-closed path from retail SHIFT resources
+toward the native runtime without launching `SHIFT.exe`:
 
 ```text
-BFF / ZIP
+BFF / ZIP / BFF directory
   -> canonical shift_importer.BFF archive parsing
   -> SHIFT.OfflineResourceCatalog/1
   -> known parser validation + neutral IR summaries
@@ -13,12 +13,22 @@ BFF / ZIP
   -> SHIFT.TypedResourceClosure/1
   -> existing vehicle physics asset graph
   -> SHIFT.VehiclePhysicsResourceManifest/1
-  -> optional runtime-proven scene-set/catalog join
-  -> SHIFT.OfflineNativeResourceHandoff/1
-  -> SHIFT.OfflineResourceRuntimeAdmission/1
+  -> static scene IR / exact scene-resource closure
+  -> SHIFT.OfflineNativeSceneBuild/1
+  -> SHIFT.OfflineNativeVehicleBuild/1
+  -> SHIFT.OfflineRuntimeBootstrap/1
+  -> SHIFT.OfflineNativeRuntimeRequirements/1
+  -> SHIFT.OfflineNativeVerticalSliceProfilePrepare/1
+  -> optional SHIFT.NativeVerticalSliceLaunchPlan/1 validation
 ```
 
-The tool never launches `SHIFT.exe`.
+`tools/shift_resource_pipeline.py` owns the catalog/dependency/bootstrap layer.
+`tools/bootstrap_runtime.py` continues through the strongest currently proven
+offline native scene/vehicle bootstrap. `tools/bootstrap_native_vertical_slice.py`
+adds runtime-requirement accounting, profile preparation, and optional validation
+through the existing native vertical-slice launcher.
+
+None of these commands executes the original game or starts the native runtime.
 
 ## Evidence boundaries
 
@@ -26,24 +36,34 @@ The pipeline is deliberately fail-closed.
 
 - Archive structure and payload decoding use `shift_importer.BFF`.
 - Unknown resource extensions are indexed but are not assigned invented layouts.
-- Admission dependency edges come only from semantic parsers already present in
-  the repository (`BMT`, `MEB`, `IMB`, `VHF`).
-- `SGB` currently exposes string-scan resource references. Those references are
-  retained as diagnostic-only edges and cannot satisfy an admission gate.
+- Admission dependency edges come only from semantic parsers/contracts already
+  present in the repository.
+- For SGB, `NODE`/`SUMM`/`OCCL` resource fields decoded by the source-backed
+  `sgb_runtime` contract may become admissible exact dependency edges only when
+  that decode is fully ready. Remaining string-scan SGB candidates stay
+  diagnostic-only and cannot satisfy an admission gate.
 - Resource lookup is exact normalized path. There is no basename fallback in the
-  admission graph.
+  admission graph or the external SGB exact-closure preflight.
 - `.mtx <-> .bmt` is the only accepted alias and is recorded explicitly as the
   existing known legacy material alias.
 - Missing shaders/resources remain unresolved. Nothing is synthesized.
 - A resource-ready bootstrap does not bypass the existing native render,
   physics, runtime-evidence, or provenance gates.
-- `all` may consume an existing runtime-proven native scene set, but never
-  creates one from static BFF evidence.
-- The current legacy native physics compatibility manifest is emitted only for
-  exact `BMW_M3_E36.bff` identity. Other vehicle manifests remain neutral rather
-  than being relabeled as BMW.
+- Static SGB render bindings are not promoted to runtime draw proof. A
+  runtime-proven native scene set remains a separate gate.
+- Structural participant ABI evidence is not promoted to a concrete participant
+  identity. An optional existing `SHIFT.NativePhysicsParticipantObservation/1`
+  is joined only through the exact participant-runtime-evidence contract.
+- The current native physics compatibility manifest is emitted only for exact
+  `BMW_M3_E36.bff` identity. Other vehicle manifests remain neutral rather than
+  being relabeled as BMW.
+- Profile preparation never creates camera, BODY-feedback, input, scene, or
+  participant evidence. Missing runtime requirements must be supplied explicitly.
+- Optional launch-plan validation delegates to `tools/run_native_vertical_slice.py`;
+  Process 3 does not duplicate or weaken its format, packet-magic, path, or
+  input/frame consistency checks.
 
-## Commands
+## Resource-pipeline commands
 
 Inventory only:
 
@@ -77,7 +97,8 @@ python tools/shift_resource_pipeline.py bootstrap \
   --admission out/offline-resource-validation/native_admission.json
 ```
 
-Run the complete offline orchestration in one command:
+Run catalog + validation + selected track/vehicle bootstrap + native resource
+handoff in one command:
 
 ```bash
 python tools/shift_resource_pipeline.py all \
@@ -87,10 +108,14 @@ python tools/shift_resource_pipeline.py all \
   --vehicle Ford_Mustang_2010
 ```
 
-The `all` command now also runs the native-resource handoff stage. Without a
-runtime-proven scene set the scene side intentionally remains blocked, but the
-neutral vehicle physics resource manifest is still generated. For the current
-BMW vertical slice, an existing scene set can be joined in the same command:
+The `all` command also writes corpus-wide target-readiness diagnostics. Blockers
+for unrelated track/vehicle targets remain diagnostic and do not override the
+readiness of the explicitly selected pair.
+
+Without a runtime-proven scene set the scene side of the native-resource handoff
+intentionally remains blocked, while the neutral vehicle physics resource
+manifest can still be generated. For the current BMW vertical slice, an existing
+scene set can be joined explicitly:
 
 ```bash
 python tools/shift_resource_pipeline.py all \
@@ -102,22 +127,102 @@ python tools/shift_resource_pipeline.py all \
   --require-native-resource-handoff
 ```
 
-`--require-native-resource-handoff` changes only the command exit gate: it
-returns non-zero unless the exact scene/physics resource-input join is ready. It
-does not claim camera, participant, BODY-feedback, provider-scheduling or full
+`--require-native-resource-handoff` changes only the command exit gate. It does
+not claim camera, participant, BODY-feedback, provider-scheduling, input, or full
 runtime readiness.
 
 The standalone `native-handoff` subcommand remains available for rebuilding the
 join without re-decoding the BFF corpus.
 
 When `RENDER.bff` is not supplied, exact `.fx` dependencies referenced by
-Silverstone BMT materials remain visible as unresolved blockers. The command
-must return blocked rather than silently substituting an FXO or synthesized
-shader.
+materials remain visible as unresolved blockers. The pipeline must return
+blocked rather than silently substituting an FXO or synthesized shader.
+
+## Native bootstrap commands
+
+Build the strongest offline native bootstrap directly from retail inputs:
+
+```bash
+python tools/bootstrap_runtime.py \
+  Vehicles.zip Silverstone_Era3_.zip RENDER.bff \
+  -o out/runtime-bootstrap \
+  --track Silverstone_Era3_GrandPrix \
+  --vehicle BMW_M3_E36
+```
+
+This command automatically builds the resource pipeline, track/vehicle loads,
+scene IR, static native scene resource binding, native vehicle resource build,
+and `runtime_requirements.json`. It may report
+`offline-native-build-ready-runtime-gated`; that is not a runtime-ready claim.
+
+An existing participant observation can be joined without changing the resource
+readiness boundary:
+
+```bash
+python tools/bootstrap_runtime.py \
+  Vehicles.zip Silverstone_Era3_.zip RENDER.bff \
+  -o out/runtime-bootstrap \
+  --track Silverstone_Era3_GrandPrix \
+  --vehicle BMW_M3_E36 \
+  --participant-observation evidence/native_physics_participant_observation.json
+```
+
+`runtime_requirements.json` records which vertical-slice inputs are already
+satisfied by exact bootstrap artifacts and which still require external proven
+evidence. It never synthesizes a missing requirement.
+
+Prepare a vertical-slice profile from an existing requirements report:
+
+```bash
+python tools/prepare_native_vertical_slice_profile.py \
+  out/runtime-bootstrap/runtime_requirements.json \
+  --workspace-root . \
+  -o out/runtime-bootstrap/vertical_slice_profile.json \
+  --scene-set out/native-scene-vulkan \
+  --camera-state out/native-camera-state.json \
+  --solver-frame out/solver.sbfr \
+  --generated-body-constraint-frame out/generated.gbcf \
+  --constraint-sample-relation-frame out/relations.csrf \
+  --constraint-relation-reset-frame out/reset.crrf \
+  --post-solve-projection out/post.sbps \
+  --keyboard --frames 120 \
+  --validate-launch-plan
+```
+
+Exact physics/participant artifacts already proven by the requirements report
+are auto-filled. An explicit conflicting replacement is rejected, all profile
+paths are confined to the chosen workspace, and a stale profile/launch plan is
+removed when the current preparation is blocked.
+
+The same chain is available from retail inputs in one command:
+
+```bash
+python tools/bootstrap_native_vertical_slice.py \
+  Vehicles.zip Silverstone_Era3_.zip RENDER.bff \
+  -o out/native-vertical-slice \
+  --track Silverstone_Era3_GrandPrix \
+  --vehicle BMW_M3_E36 \
+  --workspace-root . \
+  --participant-observation evidence/native_physics_participant_observation.json \
+  --scene-set out/native-scene-vulkan \
+  --camera-state out/native-camera-state.json \
+  --solver-frame out/solver.sbfr \
+  --generated-body-constraint-frame out/generated.gbcf \
+  --constraint-sample-relation-frame out/relations.csrf \
+  --constraint-relation-reset-frame out/reset.crrf \
+  --post-solve-projection out/post.sbps \
+  --keyboard --frames 120 \
+  --validate-launch-plan
+```
+
+The one-command path refuses to prepare a profile when the selected offline
+track/vehicle bootstrap itself is blocked, even if all later runtime paths are
+supplied explicitly. `--validate-launch-plan` performs validation only; it does
+not execute `native_runtime/build/shift_runtime`.
 
 ## Outputs
 
-`all` writes:
+`shift_resource_pipeline.py all` writes, among other artifacts:
 
 - `resource_catalog.json` — archive and entry identity, category, compression,
   decoded status and hashes;
@@ -125,12 +230,14 @@ shader.
   non-admissible edges;
 - `coverage_report.json` — parsed/blocked/unsupported counts, unknown
   extensions/layouts and parser failures;
-- `scene_vehicle_bootstrap.json` — exact track/vehicle archive selection and required
-  root resource identities;
+- `bootstrap_corpus_validation.json` — exact track/vehicle target candidates,
+  loader readiness, and target-level blockers across the available corpus;
+- `scene_vehicle_bootstrap.json` — exact selected track/vehicle archives and
+  required root resource identities;
 - `typed_resources/` + `typed_resource_closure.json` — decoded bytes for the
   resolved semantic closure; unresolved dependencies are not materialized;
 - `vehicle_physics/vehicle_physics_asset_graph.json` — produced by the existing
-  `vehicle_physics_bundle.py` path for the selected vehicle;
+  vehicle physics asset-graph path for the selected vehicle;
 - `native-handoff/vehicle_physics_resource_manifest.json` — exact neutral
   vehicle BFF/physics identity join;
 - `native-handoff/native_physics_manifest.json` — current native-runtime BMW
@@ -141,11 +248,25 @@ shader.
 - `native-handoff/native_resource_handoff.json` — combined native resource-input
   admission state;
 - `native_runtime_admission.json` — explicit resource/runtime gate state;
-- `pipeline_run.json` — compact top-level reproducibility record including the
-  native-resource handoff status and artifact paths.
+- `pipeline_run.json` — top-level reproducibility record including native-resource
+  handoff and corpus target-readiness diagnostics.
 
-See `docs/OFFLINE_NATIVE_RESOURCE_HANDOFF.md` for the exact join contracts and
-non-claims.
+`bootstrap_runtime.py` additionally writes nested scene/vehicle build artifacts,
+`runtime_bootstrap.json`, and `runtime_requirements.json`.
+
+`bootstrap_native_vertical_slice.py` writes:
+
+- `runtime-bootstrap/` — the complete `bootstrap_runtime` artifact tree;
+- `runtime_requirements.json` — exact satisfied/missing runtime gates;
+- `vertical_slice_profile.prepare.json` — profile admission result;
+- `vertical_slice_profile.json` — only when the profile is complete;
+- `launch_plan.json` — only when optional launcher validation succeeds;
+- `vertical_slice_bootstrap.json` — top-level status separating offline bootstrap,
+  profile, and launch-plan readiness.
+
+See `docs/OFFLINE_NATIVE_RESOURCE_HANDOFF.md` and
+`docs/PHASE649_NATIVE_VERTICAL_SLICE_LAUNCH.md` for the exact downstream join and
+launcher contracts.
 
 ## Current attached corpus intake
 
