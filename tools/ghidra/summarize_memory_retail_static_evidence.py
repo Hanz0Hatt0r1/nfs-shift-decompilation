@@ -4,6 +4,9 @@
 This report intentionally distinguishes proved physical roles from unresolved
 semantic roles. It consumes the independent wrapper-forwarding, backend,
 diagnostic-slice, release-pointer-chain and release-byte behavior artifacts.
+When supplied, the alternate-release artifact is an optional extension: it can
+publish the diagnostic-backed released-pointer role at FUN_0064f260 without
+changing completeness of the historical static evidence chain.
 """
 from __future__ import annotations
 
@@ -20,6 +23,7 @@ EXPECTED = {
     "free_slice": "SHIFT-MEMORY-FREE-DIAGNOSTIC-SLICE/1",
     "release_chain": "SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1",
     "release_byte": "SHIFT-MEMORY-RELEASE-BYTE-BEHAVIOR/1",
+    "alternate_release": "SHIFT-MEMORY-RELEASE-ALTERNATE-BACKEND/1",
 }
 
 
@@ -37,6 +41,7 @@ def summarize_memory_retail_static_evidence(
     free_slice_path: Path,
     release_chain_path: Path,
     release_byte_path: Path,
+    alternate_release_path: Path | None = None,
 ) -> dict[str, Any]:
     forwarding = _load(forwarding_path, EXPECTED["forwarding"])
     backend = _load(backend_path, EXPECTED["backend"])
@@ -44,6 +49,11 @@ def summarize_memory_retail_static_evidence(
     free_slice = _load(free_slice_path, EXPECTED["free_slice"])
     release_chain = _load(release_chain_path, EXPECTED["release_chain"])
     release_byte = _load(release_byte_path, EXPECTED["release_byte"])
+    alternate_release = (
+        _load(alternate_release_path, EXPECTED["alternate_release"])
+        if alternate_release_path is not None
+        else None
+    )
 
     allocation_size_proven = allocation_slice.get("allocation_size_role_proven") is True
     free_pointer_local_proven = free_slice.get("free_pointer_role_proven") is True
@@ -67,6 +77,41 @@ def summarize_memory_retail_static_evidence(
             and row.get("wrapper_input_storage")
         }
     )
+
+    alternate_role_proven = False
+    alternate_storage: str | None = None
+    alternate_wrapper_storage: str | None = None
+    alternate_extension_blockers: list[str] = []
+    if alternate_release is not None:
+        candidate_storage = alternate_release.get(
+            "alternate_backend_released_pointer_entry_storage"
+        )
+        candidate_wrapper_storage = alternate_release.get(
+            "proven_released_pointer_wrapper_storage"
+        )
+        alternate_role_proven = bool(
+            alternate_release.get("released_pointer_to_alternate_backend_storage_proven")
+            is True
+            and alternate_release.get("alternate_backend") == "0x0064f260"
+            and alternate_release.get("wrapper") == "FUN_00886950"
+            and isinstance(candidate_storage, str)
+            and candidate_storage
+            and isinstance(candidate_wrapper_storage, str)
+            and candidate_wrapper_storage
+        )
+        if alternate_role_proven:
+            alternate_storage = str(candidate_storage)
+            alternate_wrapper_storage = str(candidate_wrapper_storage)
+        else:
+            raw_blockers = alternate_release.get("blockers")
+            if isinstance(raw_blockers, list):
+                alternate_extension_blockers = [
+                    str(value) for value in raw_blockers if isinstance(value, str)
+                ]
+            if not alternate_extension_blockers:
+                alternate_extension_blockers = [
+                    "alternate_release_backend_pointer_role_not_proven"
+                ]
 
     allocation_diagnostic_proven = backend.get("allocation_backend_diagnostic_proven") is True
     free_diagnostic_proven = backend.get("free_backend_diagnostic_proven") is True
@@ -127,6 +172,9 @@ def summarize_memory_retail_static_evidence(
             "free_slice": str(free_slice_path),
             "release_chain": str(release_chain_path),
             "release_byte": str(release_byte_path),
+            "alternate_release": (
+                str(alternate_release_path) if alternate_release_path is not None else None
+            ),
         },
         "wrapper_forwarding": {
             "wrapper_count": forwarding.get("wrapper_count"),
@@ -159,6 +207,21 @@ def summarize_memory_retail_static_evidence(
                 "wrapper_input_storage": released_wrapper_storage,
                 "semantic_anchor": "instruction chain to pool-free diagnostic `%p`",
             },
+            "alternate_release_backend_pointer": {
+                "proven": alternate_role_proven,
+                "function": "FUN_0064f260",
+                "entry_storage": alternate_storage,
+                "wrapper": "FUN_00886950",
+                "wrapper_input_storage": alternate_wrapper_storage,
+                "semantic_anchor": (
+                    "cross-branch identity with diagnostic-proven released pointer"
+                ),
+            },
+        },
+        "alternate_release_backend_evidence": {
+            "present": alternate_release is not None,
+            "released_pointer_role_proven": alternate_role_proven,
+            "blockers": alternate_extension_blockers,
         },
         "release_byte_behavior": dl_behavior,
         "static_evidence_chain_complete": static_chain_complete,
@@ -174,6 +237,10 @@ def summarize_memory_retail_static_evidence(
             "source_decompiler_output_required": False,
             "allocation_size_physical_role_proven": allocation_size_proven,
             "released_pointer_physical_role_proven": released_pointer_wrapper_proven,
+            "alternate_release_backend_pointer_physical_role_proven": (
+                alternate_role_proven
+            ),
+            "alternate_release_backend_function_semantics_proven": False,
             "release_byte_behavior_observed": release_byte.get("scope", {}).get(
                 "entry_dl_behavior_observed"
             ) is True,
@@ -188,7 +255,9 @@ def summarize_memory_retail_static_evidence(
             "note": (
                 "This summary consolidates static retail evidence only. Positive physical "
                 "roles are inherited from diagnostic-backed instruction traces; unresolved "
-                "semantic roles remain false regardless of argument position or apparent use."
+                "semantic roles remain false regardless of argument position or apparent use. "
+                "The optional FUN_0064f260 role is a cross-branch physical-value join and "
+                "does not prove that backend's overall semantics."
             ),
         },
     }
@@ -202,6 +271,7 @@ def main() -> int:
     parser.add_argument("--free-slice", type=Path, required=True)
     parser.add_argument("--release-chain", type=Path, required=True)
     parser.add_argument("--release-byte", type=Path, required=True)
+    parser.add_argument("--alternate-release", type=Path)
     parser.add_argument("--json-out", type=Path)
     args = parser.parse_args()
 
@@ -212,6 +282,7 @@ def main() -> int:
         args.free_slice,
         args.release_chain,
         args.release_byte,
+        args.alternate_release,
     )
     payload = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.json_out:
@@ -230,6 +301,10 @@ def main() -> int:
     print(
         "released-pointer wrapper role proven: "
         f"{report['proven_physical_roles']['released_pointer_wrapper']['proven']}"
+    )
+    print(
+        "alternate release backend pointer role proven: "
+        f"{report['proven_physical_roles']['alternate_release_backend_pointer']['proven']}"
     )
     print(f"static evidence chain complete: {report['static_evidence_chain_complete']}")
     print(f"ready for source semantic join: {report['ready_for_source_semantic_join']}")
