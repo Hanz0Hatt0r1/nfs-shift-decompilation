@@ -43,6 +43,10 @@ def _instruction(
     return row
 
 
+def _pcode(opcode, text):
+    return {"opcode": opcode, "text": text}
+
+
 def _row(address, name, instructions, *, version=1):
     return {
         "format": f"SHIFT.GhidraFunctionInstructions/{version}",
@@ -102,7 +106,7 @@ def test_validates_exact_target_set_and_instruction_count(tmp_path):
     assert report["pcode_available"] is False
 
 
-def test_validates_v2_pcode(tmp_path):
+def test_validates_v2_structured_pcode(tmp_path):
     module = _load_module()
     export = tmp_path / "functions.jsonl"
     _write(
@@ -118,8 +122,8 @@ def test_validates_v2_pcode(tmp_path):
                         "MOV",
                         "MOV dword ptr [ECX + 0x18],EAX",
                         pcode=[
-                            "unique:100 = INT_ADD ECX, 0x18",
-                            "STORE ram, unique:100, EAX",
+                            _pcode("INT_ADD", "unique:100 = INT_ADD ECX, 0x18"),
+                            _pcode("STORE", "STORE ram, unique:100, EAX"),
                         ],
                     )
                 ],
@@ -150,6 +154,24 @@ def test_v2_requires_pcode_field(tmp_path):
         module.validate_export(export, ["FUN_00886900"])
 
 
+def test_v2_rejects_unstructured_pcode_operation(tmp_path):
+    module = _load_module()
+    export = tmp_path / "functions.jsonl"
+    _write(
+        export,
+        [
+            _row(
+                "0x00886900",
+                "FUN_00886900",
+                [_instruction("0x00886900", pcode=["STORE ram, ECX, EAX"])],
+                version=2,
+            )
+        ],
+    )
+    with pytest.raises(ValueError, match="pcode operation must be an object"):
+        module.validate_export(export, ["FUN_00886900"])
+
+
 def test_rejects_mixed_export_versions(tmp_path):
     module = _load_module()
     export = tmp_path / "functions.jsonl"
@@ -165,7 +187,7 @@ def test_rejects_mixed_export_versions(tmp_path):
             _row(
                 "0x00886930",
                 "FUN_00886930",
-                [_instruction("0x00886930", "51", pcode=["COPY EAX, ECX"])],
+                [_instruction("0x00886930", "51", pcode=[_pcode("COPY", "COPY EAX, ECX")])],
                 version=2,
             ),
         ],
