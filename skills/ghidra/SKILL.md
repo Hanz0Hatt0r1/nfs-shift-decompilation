@@ -67,7 +67,7 @@ semantic roles such as size, alignment, pool selector and delete kind stay open
 until independently corroborated.
 
 When recovered `SHIFT.exe.c` and the structured Ghidra database are also
-available, run the full three-layer workflow:
+available, run the full evidence workflow:
 
 ```bash
 GHIDRA_HOME=/opt/ghidra \
@@ -78,10 +78,18 @@ GHIDRA_HOME=/opt/ghidra \
   out/memory_wrapper_full_evidence
 ```
 
-This produces source call-site evidence, targeted instruction forwarding and the
-mechanical `SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1` source-expression to backend
-storage join in one directory. The combined workflow still does not infer
-semantic argument roles.
+This produces four explicit layers in one directory:
+
+- `SHIFT-MEMORY-WRAPPER-CALLSITE-EVIDENCE/1` source calls and raw expressions;
+- `SHIFT-MEMORY-WRAPPER-FORWARDING/1` targeted instruction-level forwarding;
+- `SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1` mechanical source-expression to
+  backend-storage provenance;
+- `SHIFT-MEMORY-WRAPPER-PROVENANCE-PATTERNS/1` recurrence/stability summaries
+  grouped by wrapper, backend target and physical backend storage.
+
+A recurrent stable pattern only proves repeated mechanical provenance. The full
+workflow still does not infer semantic argument roles from position, literal
+frequency or backend storage.
 
 ## Important anchors
 
