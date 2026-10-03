@@ -19,107 +19,82 @@ def _load_module():
     return module
 
 
-def _write_json(path, payload):
+def _write(path, payload):
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
-def _write_jsonl(path, rows):
-    path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
-
-
-def _pcode(opcode):
-    return {"opcode": opcode, "text": opcode.lower()}
-
-
-def _instruction(address, mnemonic, operands, *, pcode=None, refs=None, flows=None):
-    return {
-        "address": address,
-        "bytes": "90",
-        "mnemonic": mnemonic,
-        "text": f"{mnemonic} " + ",".join(operands),
-        "operands": operands,
-        "flow_type": "FALL_THROUGH",
-        "fallthrough": None,
-        "flows": flows or [],
-        "references": refs or [],
-        "pcode": pcode or [],
-    }
-
-
-def _instruction_row(module, function, instructions):
-    return {
-        "format": module.INSTRUCTION_FORMAT,
-        "program": "SHIFT.exe",
-        "requested": function,
-        "found": True,
-        "function": {
-            "address": function,
-            "name": f"FUN_{function[2:]}",
-            "size": len(instructions) * 4,
-            "calling_convention": "__thiscall",
-        },
-        "instruction_count": len(instructions),
-        "instructions": instructions,
-    }
-
-
-def _fixture(tmp_path, *, base_register="ECX", displacement=0, prefix=None, closure_node=None):
+def _fixture(tmp_path, *, alias_state="verified", include_node=True, function="0x00102000"):
     module = _load_module()
-    function = "0x00102000"
     vtable = "0x00402200"
-    store_address = "0x00102010"
-    operand = (
-        f"dword ptr [{base_register}]"
-        if displacement == 0
-        else f"dword ptr [{base_register}+0x{displacement:x}]"
-    )
+    receiver_instruction = "0x00102030" if function == "0x00102000" else "0x00102130"
+    store_instruction = "0x00102010" if function == "0x00102000" else "0x00102110"
+    source_node = f"memory-source:{function}:{receiver_instruction}:ESI:64"
 
-    if closure_node is None:
-        closure_node = f"entry:{function}:ECX"
     pointer = {
         "format": module.POINTER_FORMAT,
         "upper_caller": "0x007155e9",
-        "nodes": [
-            {
-                "id": closure_node,
-                "kind": "function-entry-register" if closure_node.startswith("entry:") else "register-relative-load",
-                "function": function,
-                "object_identity_proven": False,
-            }
-        ],
+        "nodes": (
+            [
+                {
+                    "id": source_node,
+                    "kind": "register-relative-load",
+                    "function": function,
+                    "instruction": receiver_instruction,
+                    "base_register": "ESI",
+                    "displacement": 64,
+                    "object_identity_proven": False,
+                }
+            ]
+            if include_node
+            else []
+        ),
         "edges": [],
     }
     pointer_path = tmp_path / "pointer.json"
-    _write_json(pointer_path, pointer)
+    _write(pointer_path, pointer)
 
-    vtable_audit = {
-        "format": module.VTABLE_AUDIT_FORMAT,
-        "instruction_export_format": module.INSTRUCTION_FORMAT,
-        "store_candidates": [
+    alias = {
+        "format": module.ALIAS_FORMAT,
+        "candidate_count": 1,
+        "verified_same_pointer_table_store_count": 1 if alias_state == "verified" else 0,
+        "verified_same_pointer_offset_zero_table_store_count": 1 if alias_state == "verified" else 0,
+        "candidates": [
             {
                 "function": function,
-                "function_name": "FUN_00102000",
-                "instruction": store_address,
-                "instruction_text": f"MOV {operand},{vtable}",
-                "matching_vtable_references": [{"to": vtable, "type": "DATA"}],
-                "simple_memory_operands": [
-                    {
-                        "operand_index": 0,
-                        "operand": operand,
-                        "base_register": base_register,
-                        "displacement": displacement,
-                        "displacement_hex": f"0x{displacement:x}",
-                    }
-                ],
-                "complex_memory_operands": [],
-                "has_store": True,
-                "has_load": False,
-                "status": "heuristic-vtable-address-store-candidate",
+                "function_name": f"FUN_{function[2:]}",
+                "receiver_source_instruction": receiver_instruction,
+                "receiver_source_base_register": "ESI",
+                "receiver_source_displacement": 64,
+                "receiver_source_displacement_hex": "0x40",
+                "vtable_store_instruction": store_instruction,
+                "store_shape": {
+                    "instruction": store_instruction,
+                    "status": "exact-literal-heuristic-table-address-store",
+                    "evidence_state": "verified",
+                    "stored_address": vtable,
+                    "stored_address_matches_reference": True,
+                    "destination_base_register": "ESI",
+                    "destination_displacement": 0,
+                    "destination_displacement_hex": "0x0",
+                },
+                "base_register_value_continuity": {
+                    "status": (
+                        "linear-base-register-value-stable"
+                        if alias_state == "verified"
+                        else "control-flow-or-call-barrier"
+                    ),
+                    "evidence_state": alias_state,
+                },
+                "destination_base_matches_receiver_source_base": True,
+                "same_pointer_table_store_state": alias_state,
+                "same_pointer_offset_zero_table_store_verified": alias_state == "verified",
+                "heuristic_table_identity_state": "ambiguous",
+                "class_identity_proven": False,
             }
         ],
     }
-    vtable_path = tmp_path / "vtable.json"
-    _write_json(vtable_path, vtable_audit)
+    alias_path = tmp_path / "alias.json"
+    _write(alias_path, alias)
 
     lifecycle = {
         "format": module.LIFECYCLE_FORMAT,
@@ -146,153 +121,128 @@ def _fixture(tmp_path, *, base_register="ECX", displacement=0, prefix=None, clos
         ],
     }
     lifecycle_path = tmp_path / "lifecycle.json"
-    _write_json(lifecycle_path, lifecycle)
-
-    instructions = list(prefix or [])
-    instructions.append(
-        _instruction(
-            store_address,
-            "MOV",
-            [operand, vtable],
-            pcode=[_pcode("STORE")],
-            refs=[{"to": vtable, "type": "DATA"}],
-        )
-    )
-    export_path = tmp_path / "instructions.jsonl"
-    _write_jsonl(export_path, [_instruction_row(module, function, instructions)])
-    return module, pointer_path, vtable_path, lifecycle_path, export_path
+    _write(lifecycle_path, lifecycle)
+    return module, pointer_path, alias_path, lifecycle_path, source_node
 
 
-def test_joins_entry_register_vtable_store_to_pointer_closure(tmp_path):
-    module, pointer, vtable, lifecycle, export = _fixture(tmp_path)
-    report = module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
+def test_joins_verified_same_pointer_alias_to_unique_lifecycle_vtable(tmp_path):
+    module, pointer, alias, lifecycle, source_node = _fixture(tmp_path)
+    report = module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
 
     assert report["format"] == "SHIFT.VehicleLifecyclePointerJoin/1"
     assert report["candidate_count"] == 1
-    assert report["verified_static_value_source_join_count"] == 1
+    assert report["verified_lifecycle_pointer_join_count"] == 1
     row = report["candidates"][0]
+    assert row["stored_table_address"] == "0x00402200"
+    assert row["receiver_source_node"] == source_node
+    assert row["receiver_source_node_present_in_pointer_closure"] is True
+    assert row["pointer_closure_join_state"] == "verified"
     assert row["class_name"] == "Child"
     assert row["class_vtable_match_state"] == "verified"
-    assert row["pointer_closure_node"] == "entry:0x00102000:ECX"
-    assert row["pointer_value_join_state"] == "verified"
-    assert row["join_evidence_state"] == "verified"
     assert row["lifecycle_role"]["role"] == "initializer-candidate"
-    assert row["lifecycle_role"]["constructor_semantics_proven"] is False
+    assert row["verified_lifecycle_pointer_join"] is True
+    assert row["vptr_semantics_proven"] is False
+    assert row["constructor_semantics_proven"] is False
     assert row["whole_lifetime_class_identity_proven"] is False
-    assert row["owner_identity_proven"] is False
     assert set(report["next_instruction_export_addresses"]) == {
         "0x00102100",
         "0x00103000",
     }
 
 
-def test_register_copy_chain_can_reach_existing_entry_node(tmp_path):
-    prefix = [
-        _instruction(
-            "0x00102004",
-            "MOV",
-            ["ESI", "ECX"],
-            pcode=[_pcode("COPY")],
-        )
-    ]
-    module, pointer, vtable, lifecycle, export = _fixture(
-        tmp_path, base_register="ESI", prefix=prefix
+def test_missing_exact_pointer_closure_node_keeps_join_unknown(tmp_path):
+    module, pointer, alias, lifecycle, _ = _fixture(tmp_path, include_node=False)
+    report = module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
+    row = report["candidates"][0]
+    assert row["same_pointer_table_store_state"] == "verified"
+    assert row["pointer_closure_join_state"] == "unknown"
+    assert row["verified_lifecycle_pointer_join"] is False
+    assert any(
+        item["id"] == "alias-receiver-source-absent-from-pointer-closure"
+        for item in report["blockers"]
     )
-    report = module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
+
+
+def test_ambiguous_local_alias_is_not_promoted_by_class_match(tmp_path):
+    module, pointer, alias, lifecycle, _ = _fixture(tmp_path, alias_state="ambiguous")
+    report = module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
     row = report["candidates"][0]
-    assert row["verified_static_value_source_join"] is True
-    assert row["pointer_closure_node"] == "entry:0x00102000:ECX"
-    assert row["store_base_origin_trace"]["status"] == "register-copy-chain"
-
-
-def test_register_relative_source_can_match_memory_node(tmp_path):
-    memory_node = "memory-source:0x00102000:0x00102004:EBX:64"
-    prefix = [
-        _instruction(
-            "0x00102004",
-            "MOV",
-            ["ESI", "dword ptr [EBX+0x40]"],
-            pcode=[_pcode("LOAD"), _pcode("COPY")],
-        )
-    ]
-    module, pointer, vtable, lifecycle, export = _fixture(
-        tmp_path,
-        base_register="ESI",
-        prefix=prefix,
-        closure_node=memory_node,
+    assert row["class_vtable_match_state"] == "verified"
+    assert row["pointer_closure_join_state"] == "ambiguous"
+    assert row["join_evidence_state"] == "ambiguous"
+    assert report["verified_lifecycle_pointer_join_count"] == 0
+    assert any(
+        item["id"] == "local-table-pointer-alias-not-verified"
+        for item in report["blockers"]
     )
-    report = module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
-    row = report["candidates"][0]
-    assert row["verified_static_value_source_join"] is True
-    assert row["pointer_closure_node"] == memory_node
-    assert row["store_base_origin_trace"]["source"]["kind"] == "register-relative-load"
 
 
-def test_call_barrier_keeps_alias_ambiguous(tmp_path):
-    prefix = [
-        _instruction(
-            "0x00102008",
-            "CALL",
-            ["0x00109900"],
-            pcode=[_pcode("CALL")],
-            flows=["0x00109900"],
-        )
-    ]
-    module, pointer, vtable, lifecycle, export = _fixture(tmp_path, prefix=prefix)
-    report = module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
-    row = report["candidates"][0]
-    assert row["verified_static_value_source_join"] is False
-    assert row["pointer_value_join_state"] == "ambiguous"
-    assert row["store_base_origin_trace"]["status"] == "barrier-before-definition"
-    assert any(item["id"] == "vtable-store-not-joined-to-pointer-closure" for item in report["blockers"])
-
-
-def test_nonzero_store_offset_is_not_promoted_to_vptr(tmp_path):
-    module, pointer, vtable, lifecycle, export = _fixture(tmp_path, displacement=12)
-    report = module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
-    row = report["candidates"][0]
-    assert row["verified_static_value_source_join"] is True
-    assert row["vtable_written_at_zero_displacement"] is False
-    assert row["vptr_field_proven"] is False
-
-
-def test_duplicate_lifecycle_vtable_stays_ambiguous(tmp_path):
-    module, pointer, vtable, lifecycle, export = _fixture(tmp_path)
+def test_duplicate_class_vtable_stays_ambiguous(tmp_path):
+    module, pointer, alias, lifecycle, _ = _fixture(tmp_path)
     payload = json.loads(lifecycle.read_text(encoding="utf-8"))
     duplicate = dict(payload["targets"][0])
     duplicate["class_name"] = "OtherChild"
     duplicate["descriptor"] = 3
     payload["targets"].append(duplicate)
-    _write_json(lifecycle, payload)
+    _write(lifecycle, payload)
 
-    report = module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
+    report = module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
     assert report["candidate_count"] == 2
-    assert report["verified_static_value_source_join_count"] == 0
+    assert report["verified_lifecycle_pointer_join_count"] == 0
     assert all(row["class_vtable_match_state"] == "ambiguous" for row in report["candidates"])
-    assert any(item["id"] == "lifecycle-class-vtable-match-not-unique" for item in report["blockers"])
+    assert any(item["id"] == "class-vtable-match-not-unique" for item in report["blockers"])
 
 
-def test_raw_reference_drift_fails_closed(tmp_path):
-    module, pointer, vtable, lifecycle, export = _fixture(tmp_path)
-    rows = [json.loads(line) for line in export.read_text(encoding="utf-8").splitlines()]
-    rows[0]["instructions"][-1]["references"] = []
-    _write_jsonl(export, rows)
+def test_stored_table_absent_from_lifecycle_evidence_stays_unknown(tmp_path):
+    module, pointer, alias, lifecycle, _ = _fixture(tmp_path)
+    payload = json.loads(lifecycle.read_text(encoding="utf-8"))
+    payload["targets"] = []
+    _write(lifecycle, payload)
 
-    with pytest.raises(ValueError, match="audit/raw reference drift"):
-        module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
-
-
-def test_missing_instruction_export_function_fails_closed(tmp_path):
-    module, pointer, vtable, lifecycle, export = _fixture(tmp_path)
-    export.write_text("", encoding="utf-8")
-    with pytest.raises(ValueError, match="empty instruction export"):
-        module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
+    report = module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
+    assert report["candidate_count"] == 1
+    row = report["candidates"][0]
+    assert row["class_name"] is None
+    assert row["class_vtable_match_state"] == "unknown"
+    assert row["verified_lifecycle_pointer_join"] is False
+    assert any(item["id"] == "stored-table-absent-from-lifecycle-evidence" for item in report["blockers"])
 
 
-def test_instruction_format_drift_fails_closed(tmp_path):
-    module, pointer, vtable, lifecycle, export = _fixture(tmp_path)
-    rows = [json.loads(line) for line in export.read_text(encoding="utf-8").splitlines()]
-    rows[0]["format"] = "SHIFT.GhidraFunctionInstructions/1"
-    _write_jsonl(export, rows)
-    with pytest.raises(ValueError, match="expected only SHIFT.GhidraFunctionInstructions/2"):
-        module.build_vehicle_lifecycle_pointer_join(pointer, vtable, lifecycle, export)
+def test_teardown_candidate_role_remains_semantically_ambiguous(tmp_path):
+    module, pointer, alias, lifecycle, _ = _fixture(tmp_path, function="0x00102100")
+    report = module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
+    row = report["candidates"][0]
+    assert row["verified_lifecycle_pointer_join"] is True
+    assert row["lifecycle_role"]["role"] == "teardown-transition-candidate"
+    assert row["lifecycle_role"]["evidence_state"] == "ambiguous"
+    assert row["destructor_semantics_proven"] is False
+
+
+def test_verified_alias_with_unverified_store_shape_fails_closed(tmp_path):
+    module, pointer, alias, lifecycle, _ = _fixture(tmp_path)
+    payload = json.loads(alias.read_text(encoding="utf-8"))
+    payload["candidates"][0]["store_shape"]["evidence_state"] = "ambiguous"
+    _write(alias, payload)
+
+    with pytest.raises(ValueError, match="verified alias lacks verified exact literal table STORE"):
+        module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
+
+
+def test_verified_alias_without_base_match_fails_closed(tmp_path):
+    module, pointer, alias, lifecycle, _ = _fixture(tmp_path)
+    payload = json.loads(alias.read_text(encoding="utf-8"))
+    payload["candidates"][0]["destination_base_matches_receiver_source_base"] = False
+    _write(alias, payload)
+
+    with pytest.raises(ValueError, match="verified alias lacks base-register match"):
+        module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
+
+
+def test_input_format_drift_fails_closed(tmp_path):
+    module, pointer, alias, lifecycle, _ = _fixture(tmp_path)
+    payload = json.loads(alias.read_text(encoding="utf-8"))
+    payload["format"] = "SHIFT.VehicleVtablePointerAlias/0"
+    _write(alias, payload)
+
+    with pytest.raises(ValueError, match="expected SHIFT.VehicleVtablePointerAlias/1"):
+        module.build_vehicle_lifecycle_pointer_join(pointer, alias, lifecycle)
