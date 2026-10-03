@@ -306,6 +306,40 @@ def _resolve_ref(
     return hits
 
 
+def _validation_summary(
+    resources: Sequence[dict[str, Any]],
+    blocking_edges: Sequence[dict[str, Any]],
+) -> dict[str, int]:
+    supported = [row for row in resources if row.get("extension") in KNOWN_DECODE_EXTENSIONS]
+    blocked = [row for row in resources if row.get("decode_status") == "blocked"]
+    # Parsers currently expose generic exceptions/analysis_error for failures.
+    # Do not infer malformed or unknown-version/layout from exception text.
+    malformed = [row for row in blocked if row.get("validation_failure_kind") == "malformed"]
+    unknown_layout = [
+        row for row in blocked
+        if row.get("validation_failure_kind") == "unknown-version-or-layout"
+    ]
+    explicitly_classified = {str(row.get("id")) for row in malformed + unknown_layout}
+    unresolved_sources = {
+        str(edge.get("source_id")) for edge in blocking_edges if edge.get("source_id")
+    }
+    return {
+        "total": len(resources),
+        "supported": len(supported),
+        "verified": sum(1 for row in resources if row.get("decode_status") == "parsed"),
+        "blocked": len(blocked),
+        "unsupported": sum(1 for row in resources if row.get("decode_status") == "unsupported"),
+        "deferred": sum(1 for row in resources if row.get("decode_status") == "deferred"),
+        "malformed": len(malformed),
+        "unknown_version_layout": len(unknown_layout),
+        "unclassified_blocked": sum(
+            1 for row in blocked if str(row.get("id")) not in explicitly_classified
+        ),
+        "unresolved_dependency_edges": len(blocking_edges),
+        "unresolved_dependency_resources": len(unresolved_sources),
+    }
+
+
 def build_catalog(
     materialized: Sequence[MaterializedArchive],
     *,
@@ -511,6 +545,15 @@ def build_catalog(
         "blocked": int(decode_counts.get("blocked", 0)),
         "unsupported": int(decode_counts.get("unsupported", 0)),
         "deferred": int(decode_counts.get("deferred", 0)),
+        "validation": _validation_summary(resources, blocking_edges),
+        "validation_boundary": {
+            "supported_semantics": "extension-has-explicit-offline-decoder",
+            "verified_semantics": "decoded-and-parser-completed-without-analysis_error",
+            "malformed_requires_explicit_parser_classification": True,
+            "unknown_version_layout_requires_explicit_parser_classification": True,
+            "exception_text_classification": False,
+            "generic_parser_failures": "unclassified_blocked",
+        },
         "parser_failures": parser_failures,
         "unknown_extensions": sorted(
             ext for ext, count in extension_counts.items()

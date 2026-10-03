@@ -39,3 +39,15 @@ def test_real_vehicle_and_silverstone_corpus_catalog():
     assert catalog["summary"]["extensions"][".aiw"] > 0
     assert graph["summary"]["edges"] == 0
     assert coverage["parsed"] == 0
+
+    validation = coverage["validation"]
+    assert validation["total"] == len(catalog["resources"])
+    assert validation["supported"] + validation["unsupported"] == validation["total"]
+    assert validation["verified"] == 0
+    assert validation["supported"] == validation["deferred"]
+    assert validation["blocked"] == 0
+    assert validation["malformed"] == 0
+    assert validation["unknown_version_layout"] == 0
+    assert validation["unclassified_blocked"] == 0
+    assert validation["unresolved_dependency_edges"] == 0
+    assert validation["unresolved_dependency_resources"] == 0
