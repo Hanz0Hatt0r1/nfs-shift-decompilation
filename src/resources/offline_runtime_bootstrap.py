@@ -198,6 +198,7 @@ def build_offline_runtime_bootstrap(
             [f"native-vehicle-build-error:{type(exc).__name__}:{exc}"],
         )
         native_vehicle["resource_ready"] = False
+        native_vehicle["participant_structural_ready"] = False
         native_vehicle["runtime_physics_contract_ready"] = False
         native_vehicle["native_vehicle_runtime_ready"] = False
         _write(native_vehicle_dir / "native_vehicle_build.json", native_vehicle)
@@ -208,6 +209,7 @@ def build_offline_runtime_bootstrap(
     scene_ir_ready = scene_ir.get("ready") is True
     static_scene_ready = native_scene.get("static_resource_ready") is True
     vehicle_resource_ready = native_vehicle.get("resource_ready") is True
+    participant_structural_ready = native_vehicle.get("participant_structural_ready") is True
     runtime_scene_ready = native_scene.get("native_scene_runtime_ready") is True
     runtime_vehicle_ready = native_vehicle.get("native_vehicle_runtime_ready") is True
     runtime_ready = runtime_scene_ready and runtime_vehicle_ready
@@ -219,6 +221,7 @@ def build_offline_runtime_bootstrap(
         scene_ir_ready,
         static_scene_ready,
         vehicle_resource_ready,
+        participant_structural_ready,
     ))
 
     blockers: list[str] = []
@@ -234,6 +237,12 @@ def build_offline_runtime_bootstrap(
         blockers.extend(_prefix_blockers("native-scene", native_scene))
     if not vehicle_resource_ready:
         blockers.extend(_prefix_blockers("native-vehicle", native_vehicle))
+    if not participant_structural_ready:
+        participant_boundary = native_vehicle.get("participant_boundary") or {}
+        if isinstance(participant_boundary, Mapping):
+            blockers.extend(_prefix_blockers("participant-boundary", participant_boundary))
+        else:
+            blockers.append("participant-boundary:not-ready")
     if not runtime_scene_ready:
         blockers.append("runtime-scene:runtime-proven-draw-admission-required")
     if not runtime_vehicle_ready:
@@ -267,6 +276,7 @@ def build_offline_runtime_bootstrap(
             "scene_ir_ready": scene_ir_ready,
             "static_scene_ready": static_scene_ready,
             "vehicle_resource_ready": vehicle_resource_ready,
+            "vehicle_participant_structural_ready": participant_structural_ready,
             "vehicle_runtime_physics_contract_ready": (
                 native_vehicle.get("runtime_physics_contract_ready") is True
             ),
@@ -297,6 +307,9 @@ def build_offline_runtime_bootstrap(
             "scene_ir": str(scene_ir_dir / "scene_ir_materialization.json"),
             "native_scene": str(native_scene_dir / "native_scene_build.json"),
             "native_vehicle": str(native_vehicle_dir / "native_vehicle_build.json"),
+            "participant_boundary": str(
+                native_vehicle_dir / "native_physics_participant_boundary.json"
+            ),
         },
         "boundary": {
             "game_or_bff_inputs_to_offline_native_build_automated": True,
@@ -305,6 +318,7 @@ def build_offline_runtime_bootstrap(
             "scene_ir_legacy_dependency_hints_are_admission_proof": False,
             "exact_scene_resource_closure_required_by_native_scene_stage": True,
             "static_scene_promoted_to_runtime_draw_proof": False,
+            "vehicle_participant_structural_boundary_required": True,
             "vehicle_resource_manifest_promoted_to_participant_identity": False,
             "shader_permutation_invented": False,
             "missing_dependency_substituted": False,
