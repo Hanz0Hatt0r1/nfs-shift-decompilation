@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Inventory simple x86 register-relative memory accesses from targeted Ghidra p-code.
 
-This analyzer is deliberately syntactic.  A row such as [ECX + 0x18] is kept as
+This analyzer is deliberately syntactic. A row such as [ECX + 0x18] is kept as
 base register ECX plus displacement 0x18; ECX is not promoted to `this`, BODY,
 vehicle, wheel or any other object without independent pointer-provenance
- evidence.
+evidence.
 """
 from __future__ import annotations
 
@@ -24,7 +24,6 @@ _MEMORY_OPERAND = re.compile(
     r"(?:([+-])\s*(0x[0-9A-Fa-f]+|[0-9]+))?\s*\]\s*$",
     re.IGNORECASE,
 )
-_PCODE_MEMORY_OP = re.compile(r"(?:^|=\s*)(LOAD|STORE)\b", re.IGNORECASE)
 
 
 def _read_jsonl(path: Path) -> Iterable[dict[str, Any]]:
@@ -65,13 +64,29 @@ def _parse_memory_operand(operand: str) -> tuple[str, int] | None:
     return register, _parse_displacement(match.group(2), match.group(3))
 
 
-def _pcode_memory_kinds(pcode: list[str]) -> set[str]:
-    result: set[str] = set()
+def _validate_pcode(pcode: Any, address: str) -> list[dict[str, str]]:
+    if not isinstance(pcode, list):
+        raise ValueError(f"{address}: pcode must be a list")
+    result: list[dict[str, str]] = []
     for operation in pcode:
-        match = _PCODE_MEMORY_OP.search(operation)
-        if match:
-            result.add(match.group(1).upper())
+        if not isinstance(operation, dict):
+            raise ValueError(f"{address}: pcode operation must be an object")
+        opcode = operation.get("opcode")
+        text = operation.get("text")
+        if not isinstance(opcode, str) or not opcode:
+            raise ValueError(f"{address}: pcode opcode missing")
+        if not isinstance(text, str) or not text:
+            raise ValueError(f"{address}: pcode text missing")
+        result.append({"opcode": opcode.upper(), "text": text})
     return result
+
+
+def _pcode_memory_kinds(pcode: list[dict[str, str]]) -> set[str]:
+    return {
+        operation["opcode"]
+        for operation in pcode
+        if operation["opcode"] in {"LOAD", "STORE"}
+    }
 
 
 def _access_kind(kinds: set[str]) -> str | None:
@@ -132,13 +147,11 @@ def analyze_register_relative_accesses(
                 raise ValueError(f"{function.get('address')}: invalid instruction row")
             address = instruction.get("address")
             operands = instruction.get("operands")
-            pcode = instruction.get("pcode")
             if not isinstance(address, str):
                 raise ValueError(f"{function.get('address')}: instruction address missing")
             if not isinstance(operands, list) or any(not isinstance(value, str) for value in operands):
                 raise ValueError(f"{address}: operands must be strings")
-            if not isinstance(pcode, list) or any(not isinstance(value, str) for value in pcode):
-                raise ValueError(f"{address}: pcode must be strings")
+            pcode = _validate_pcode(instruction.get("pcode"), address)
 
             pcode_kinds = _pcode_memory_kinds(pcode)
             kind = _access_kind(pcode_kinds)
@@ -245,6 +258,8 @@ def analyze_register_relative_accesses(
         "unparsed_memory_operands": unparsed,
         "scope": {
             "pcode_load_store_required": True,
+            "structured_pcode_opcode_used": True,
+            "pcode_text_parsing_used_for_classification": False,
             "simple_register_plus_constant_operands_only": True,
             "x86_32_general_base_registers_only": True,
             "base_register_is_object_pointer": False,
