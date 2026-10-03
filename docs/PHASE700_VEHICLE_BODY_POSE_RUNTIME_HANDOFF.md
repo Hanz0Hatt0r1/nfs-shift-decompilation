@@ -88,31 +88,65 @@ participant state or scheduler state.
 
 ## Process 1 boundary
 
-The latest relevant merge is PR #1183,
-`SHIFT.VehicleNamedBodyTopologyFrontier/1`.
+The latest relevant merge is PR #1184,
+`SHIFT.VehicleNamedBodyTopologyFrontier/2`. It supersedes the v1 topology
+interpretation with already-committed Phase 404 archive evidence.
 
-It proves:
-
-- nine named BMW wheel/spindle/rear-axle BODY field roles;
-- exact retail BMW suspension SDF cardinality of 11 BODY records;
-- an optional exact hash-matched SDF path that can recover BODY name order and
-  finite residual rows.
-
-It deliberately keeps:
+The exact retail BMW suspension SDF BODY order is now frozen as:
 
 ```text
+0   body
+1   fl_spindle
+2   fr_spindle
+3   fl_wheel
+4   fr_wheel
+5   rl_spindle
+6   rr_spindle
+7   rl_wheel
+8   rr_wheel
+9   fuel_tank
+10  driver_head
+```
+
+Eight wheel/spindle vehicle fields therefore have exact SDF indices:
+
+```text
+fl_spindle = 1   fr_spindle = 2
+fl_wheel   = 3   fr_wheel   = 4
+rl_spindle = 5   rr_spindle = 6
+rl_wheel   = 7   rr_wheel   = 8
+```
+
+The correction also proves that source/vehicle semantic field role `rear_axle`
+at `vehicle+0x2e00` is **not** an SDF name. Its exact SDF BODY index remains
+unresolved.
+
+The exact non-wheel/spindle rows are now known:
+
+```text
+0   body
+9   fuel_tank
+10  driver_head
+```
+
+but none is promoted to chassis identity by name alone. The current Process 1
+handoff deliberately remains:
+
+```text
+rear_axle_BODY_index_ready = false
 main_chassis_BODY_selected = false
 selected_BODY_index = null
 vehicle_BODY_selection_ready = false
-vehicle_world_transform_ready = false
+phase698_positive_selection_admissible = false
 ```
 
-and leaves two identity joins open:
+Three direct identity blockers remain:
 
-1. main/chassis BODY semantic selection;
-2. update-child -> vehicle solver-base continuity through `FUN_007615c0`.
+1. `rear_axle` vehicle field role -> exact SDF BODY index;
+2. main/chassis BODY semantic selection;
+3. update-child -> vehicle solver-base continuity through `FUN_007615c0`.
 
-Therefore current retail evidence cannot produce a positive
+Therefore current retail evidence still cannot produce a positive
 `VehicleBodyIdentitySelection` for Phase 700. The synthetic positive index in the
 regression freezes only the downstream Process 2 transport contract.
 
