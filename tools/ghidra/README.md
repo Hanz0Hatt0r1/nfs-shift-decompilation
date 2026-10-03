@@ -158,6 +158,22 @@ membership agree. Broad `MWL::Core::*` names are intentionally not classified.
 See `evidence/ghidra_method_name_anchors.md` and
 `evidence/ghidra_subsystem_method_anchors.md`.
 
+To select the next static targets without extending the subsystem slices, build
+the one-hop method frontier:
+
+```bash
+python3 tools/ghidra/build_subsystem_method_frontier.py \
+  out/shift_ghidra_database \
+  --json-out out/ghidra_subsystem_method_frontier.json
+```
+
+`SHIFT.GhidraSubsystemMethodFrontier/1` considers only namespace-compatible
+unique method-name candidates which are not already promoted. A candidate is a
+frontier target when a direct call exists either from it to an established
+subsystem slice or from that slice to it. Indirect calls are ignored; ambiguous
+multi-method functions are audit-only. Frontier membership is prioritization,
+not semantic promotion. See `evidence/ghidra_subsystem_method_frontier.md`.
+
 ## One-command static semantic index
 
 Build all direct-observation static semantic layers together:
@@ -175,6 +191,7 @@ The output directory contains:
 crosscheck.json
 method_name_anchors.json
 subsystem_method_anchors.json
+subsystem_method_frontier.json
 physics_allocator_boundary.json
 subsystems/
     ai.json
@@ -189,19 +206,24 @@ manifest.json
 `manifest.json` uses `SHIFT.GhidraStaticSemanticIndex/1` and aggregates direct
 anchor mismatches, promoted subsystem aliases/registrations, RTTI fingerprint
 counts, unique/ambiguous method anchors, subsystem-crosschecked method-name
-candidates and the paired `MWL::Core::PhysicsAllocator::malloc/free` boundary.
-Program/MD5 identity is checked across the composed layers.
+candidates, one-hop method-frontier counts and the paired
+`MWL::Core::PhysicsAllocator::malloc/free` boundary. Program/MD5 identity is
+checked across the composed layers.
 
 The allocator boundary preserves its existing evidence limits: exact method
 strings, shared pool diagnostics and physical `__thiscall` storage can confirm
 the paired API surface, but the explicit stack-argument role, return-value ABI
 and ownership semantics remain unresolved.
 
+Frontier counts do not participate in `direct_evidence_mismatch_count` and never
+make `--fail-on-mismatch` fail. They identify the next functions for targeted
+instruction/decompiler investigation; they do not enlarge subsystem membership.
+
 The orchestration still excludes heuristic `vtables.json`, `constructors.jsonl`
 and `factories.jsonl` from semantic promotion. `--fail-on-mismatch` applies to
 failed direct anchor/alias/registration/allocator-boundary checks;
-namespace-only and ambiguous method-name observations remain explicit research
-targets rather than CI errors.
+namespace-only, frontier and ambiguous method-name observations remain explicit
+research targets rather than CI errors.
 
 ## Class-registration discovery
 
