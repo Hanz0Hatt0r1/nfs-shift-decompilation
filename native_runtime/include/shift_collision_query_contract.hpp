@@ -73,6 +73,7 @@ struct CollisionQueryOutput {
     std::optional<double> contact_height{};
     std::optional<std::uint64_t> returned_handle{};
     bool reused_cache = false;
+    CollisionQueryRecord query_record{};
 };
 
 CollisionQueryRecord build_fun_00765c40_collision_query_record(
