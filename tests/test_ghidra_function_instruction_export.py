@@ -19,8 +19,15 @@ def _load_module():
     return module
 
 
-def _instruction(address, payload="55", mnemonic="PUSH", text="PUSH EBP"):
-    return {
+def _instruction(
+    address,
+    payload="55",
+    mnemonic="PUSH",
+    text="PUSH EBP",
+    *,
+    pcode=None,
+):
+    row = {
         "address": address,
         "bytes": payload,
         "mnemonic": mnemonic,
@@ -31,11 +38,18 @@ def _instruction(address, payload="55", mnemonic="PUSH", text="PUSH EBP"):
         "flows": [],
         "references": [],
     }
+    if pcode is not None:
+        row["pcode"] = pcode
+    return row
 
 
-def _row(address, name, instructions):
+def _pcode(opcode, text):
+    return {"opcode": opcode, "text": text}
+
+
+def _row(address, name, instructions, *, version=1):
     return {
-        "format": "SHIFT.GhidraFunctionInstructions/1",
+        "format": f"SHIFT.GhidraFunctionInstructions/{version}",
         "program": "SHIFT.exe",
         "requested": address,
         "found": True,
@@ -85,9 +99,101 @@ def test_validates_exact_target_set_and_instruction_count(tmp_path):
         ],
     )
     report = module.validate_export(export, ["FUN_00886900", "0x00886930"])
+    assert report["format"] == "SHIFT.GhidraFunctionInstructions/1"
     assert report["function_count"] == 2
     assert report["instruction_count"] == 3
     assert report["functions"] == ["0x00886900", "0x00886930"]
+    assert report["pcode_available"] is False
+
+
+def test_validates_v2_structured_pcode(tmp_path):
+    module = _load_module()
+    export = tmp_path / "functions.jsonl"
+    _write(
+        export,
+        [
+            _row(
+                "0x00886900",
+                "FUN_00886900",
+                [
+                    _instruction(
+                        "0x00886900",
+                        "894118",
+                        "MOV",
+                        "MOV dword ptr [ECX + 0x18],EAX",
+                        pcode=[
+                            _pcode("INT_ADD", "unique:100 = INT_ADD ECX, 0x18"),
+                            _pcode("STORE", "STORE ram, unique:100, EAX"),
+                        ],
+                    )
+                ],
+                version=2,
+            )
+        ],
+    )
+    report = module.validate_export(export, ["FUN_00886900"])
+    assert report["format"] == "SHIFT.GhidraFunctionInstructions/2"
+    assert report["pcode_available"] is True
+
+
+def test_v2_requires_pcode_field(tmp_path):
+    module = _load_module()
+    export = tmp_path / "functions.jsonl"
+    _write(
+        export,
+        [
+            _row(
+                "0x00886900",
+                "FUN_00886900",
+                [_instruction("0x00886900")],
+                version=2,
+            )
+        ],
+    )
+    with pytest.raises(ValueError, match="pcode must be a list"):
+        module.validate_export(export, ["FUN_00886900"])
+
+
+def test_v2_rejects_unstructured_pcode_operation(tmp_path):
+    module = _load_module()
+    export = tmp_path / "functions.jsonl"
+    _write(
+        export,
+        [
+            _row(
+                "0x00886900",
+                "FUN_00886900",
+                [_instruction("0x00886900", pcode=["STORE ram, ECX, EAX"])],
+                version=2,
+            )
+        ],
+    )
+    with pytest.raises(ValueError, match="pcode operation must be an object"):
+        module.validate_export(export, ["FUN_00886900"])
+
+
+def test_rejects_mixed_export_versions(tmp_path):
+    module = _load_module()
+    export = tmp_path / "functions.jsonl"
+    _write(
+        export,
+        [
+            _row(
+                "0x00886900",
+                "FUN_00886900",
+                [_instruction("0x00886900")],
+                version=1,
+            ),
+            _row(
+                "0x00886930",
+                "FUN_00886930",
+                [_instruction("0x00886930", "51", pcode=[_pcode("COPY", "COPY EAX, ECX")])],
+                version=2,
+            ),
+        ],
+    )
+    with pytest.raises(ValueError, match="mixed instruction export formats"):
+        module.validate_export(export, ["FUN_00886900", "FUN_00886930"])
 
 
 def test_rejects_unresolved_target(tmp_path):
