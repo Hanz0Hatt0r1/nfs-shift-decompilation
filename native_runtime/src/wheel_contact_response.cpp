@@ -140,6 +140,15 @@ WheelContactQuadraticResponse build_fun_007551e0_quadratic_response(
     return result;
 }
 
+WheelContactVector3d transform_fun_00766510_response_input(
+    const ConstraintRefreshFrame3f& body_frame,
+    const WheelContactVector3d& body_source_vector) {
+
+    return transform_fun_007af0a0_refresh(
+        body_frame,
+        body_source_vector);
+}
+
 WheelContactResponse evaluate_fun_00766510_contact_response(
     double query_scalar,
     double query_limit,
@@ -166,6 +175,7 @@ WheelContactResponse evaluate_fun_00766510_contact_response(
     result.response_gain =
         (depth_slope * result.clamped_query_scalar + base_offset) *
         result.directional_factor;
+    result.response_input = response_input;
 
     const auto quadratic =
         build_fun_007551e0_quadratic_response(
@@ -174,8 +184,37 @@ WheelContactResponse evaluate_fun_00766510_contact_response(
     result.response_vector = quadratic.response_vector;
     result.auxiliary_response = quadratic.auxiliary_response;
 
+    require_finite(result.response_input, "FUN_00766510 response input");
     require_finite_value(result.response_gain, "FUN_00766510 response gain");
     return result;
+}
+
+WheelContactResponse evaluate_fun_00766510_contact_response_from_body_source(
+    double query_scalar,
+    double query_limit,
+    double depth_slope,
+    double base_offset,
+    const WheelContactCurveParameters& directional_curve,
+    const WheelContactResponseTable& response_table,
+    double tangent_x,
+    double tangent_z,
+    const ConstraintRefreshFrame3f& body_frame,
+    const WheelContactVector3d& body_source_vector) {
+
+    const auto response_input =
+        transform_fun_00766510_response_input(
+            body_frame,
+            body_source_vector);
+    return evaluate_fun_00766510_contact_response(
+        query_scalar,
+        query_limit,
+        depth_slope,
+        base_offset,
+        directional_curve,
+        response_table,
+        tangent_x,
+        tangent_z,
+        response_input);
 }
 
 }  // namespace shift::runtime::physics
