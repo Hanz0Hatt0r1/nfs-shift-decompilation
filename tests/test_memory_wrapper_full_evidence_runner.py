@@ -61,7 +61,7 @@ assert sys.argv[4] == '--forwarding'
 assert Path(sys.argv[5]).is_file()
 assert sys.argv[6] == '--json-out'
 out = Path(sys.argv[7])
-out.write_text(json.dumps({'format':'SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1','wrapper_paths':[]}) + '\\n', encoding='utf-8')
+out.write_text(json.dumps({'format':'SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1','release_pointer_to_wrapper_storage_proven':False,'wrapper_paths':[]}) + '\\n', encoding='utf-8')
 """,
         encoding="utf-8",
     )
@@ -125,6 +125,24 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-ALLOCATION-SIZE-ROLE-JOIN/1','
 """,
         encoding="utf-8",
     )
+
+    released_pointer_joiner = live_dir / "join_released_pointer_role.py"
+    released_pointer_joiner.write_text(
+        """#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+Path(os.environ['FULL_WRAPPER_RELEASED_POINTER_JOIN_LOG']).write_text('\\n'.join(sys.argv[1:]), encoding='utf-8')
+assert Path(sys.argv[1]).is_file()
+assert sys.argv[2] == '--release-chain'
+assert Path(sys.argv[3]).is_file()
+assert sys.argv[4] == '--json-out'
+out = Path(sys.argv[5])
+out.write_text(json.dumps({'format':'SHIFT-MEMORY-RELEASED-POINTER-ROLE-JOIN/1','rows':[]}) + '\\n', encoding='utf-8')
+""",
+        encoding="utf-8",
+    )
     return runner
 
 
@@ -142,6 +160,7 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
     backend_log = tmp_path / "backend.log"
     role_join_log = tmp_path / "role_join.log"
     release_chain_log = tmp_path / "release_chain.log"
+    released_pointer_join_log = tmp_path / "released_pointer_join.log"
 
     env = dict(os.environ)
     env["GHIDRA_HOME"] = "/opt/fake-ghidra"
@@ -152,6 +171,7 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
     env["FULL_WRAPPER_BACKEND_LOG"] = str(backend_log)
     env["FULL_WRAPPER_ROLE_JOIN_LOG"] = str(role_join_log)
     env["FULL_WRAPPER_RELEASE_CHAIN_LOG"] = str(release_chain_log)
+    env["FULL_WRAPPER_RELEASED_POINTER_JOIN_LOG"] = str(released_pointer_join_log)
 
     result = subprocess.run(
         [
@@ -222,6 +242,13 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
         "--json-out",
         str(resolved_output / "memory_release_pointer_chain.json"),
     ]
+    assert released_pointer_join_log.read_text(encoding="utf-8").splitlines() == [
+        str(resolved_output / "memory_wrapper_argument_join.json"),
+        "--release-chain",
+        str(resolved_output / "memory_release_pointer_chain.json"),
+        "--json-out",
+        str(resolved_output / "memory_released_pointer_role_join.json"),
+    ]
 
     joined = json.loads((output / "memory_wrapper_argument_join.json").read_text(encoding="utf-8"))
     assert joined["format"] == "SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1"
@@ -233,6 +260,8 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
     assert role_report["format"] == "SHIFT-MEMORY-ALLOCATION-SIZE-ROLE-JOIN/1"
     release_report = json.loads((output / "memory_release_pointer_chain.json").read_text(encoding="utf-8"))
     assert release_report["format"] == "SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1"
+    released_pointer_report = json.loads((output / "memory_released_pointer_role_join.json").read_text(encoding="utf-8"))
+    assert released_pointer_report["format"] == "SHIFT-MEMORY-RELEASED-POINTER-ROLE-JOIN/1"
     assert "memory wrapper callsites:" in result.stdout
     assert "memory wrapper forwarding:" in result.stdout
     assert "memory wrapper argument join:" in result.stdout
@@ -240,6 +269,7 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
     assert "memory backend evidence:" in result.stdout
     assert "memory allocation-size role join:" in result.stdout
     assert "memory release-pointer chain:" in result.stdout
+    assert "memory released-pointer role join:" in result.stdout
 
 
 def test_runner_rejects_missing_inputs_before_subtools(tmp_path):
