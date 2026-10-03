@@ -18,6 +18,7 @@ from typing import Any, Sequence
 
 PROFILE_FORMAT = "SHIFT.NativeVerticalSliceProfile/1"
 PLAN_FORMAT = "SHIFT.NativeVerticalSliceLaunchPlan/1"
+INTERACTIVE_FRAME_LIMIT = 0x7FFFFFFF
 
 JSON_INPUTS: dict[str, tuple[str, bool]] = {
     "camera_state": ("SHIFT.NativeCameraStateBridge/1", True),
@@ -274,19 +275,30 @@ def build_launch_plan(
             "ready": True,
         }
 
-    frames_raw = profile.get("frames", input_steps if input_steps else 120)
-    if isinstance(frames_raw, bool):
-        raise ProfileError("frames must be a positive integer")
-    try:
-        frames = int(frames_raw)
-    except (TypeError, ValueError) as exc:
-        raise ProfileError("frames must be a positive integer") from exc
-    if frames <= 0:
-        raise ProfileError("frames must be a positive integer")
-    if input_steps and frames != input_steps:
-        raise ProfileError(
-            f"frames must equal input script step count ({input_steps}), got {frames}"
-        )
+    interactive = profile.get("interactive", False)
+    if not isinstance(interactive, bool):
+        raise ProfileError("interactive must be a boolean")
+    if interactive and input_steps:
+        raise ProfileError("interactive mode cannot be combined with input_script")
+    if interactive and "frames" in profile:
+        raise ProfileError("interactive mode must not specify frames")
+
+    if interactive:
+        frames = INTERACTIVE_FRAME_LIMIT
+    else:
+        frames_raw = profile.get("frames", input_steps if input_steps else 120)
+        if isinstance(frames_raw, bool):
+            raise ProfileError("frames must be a positive integer")
+        try:
+            frames = int(frames_raw)
+        except (TypeError, ValueError) as exc:
+            raise ProfileError("frames must be a positive integer") from exc
+        if frames <= 0:
+            raise ProfileError("frames must be a positive integer")
+        if input_steps and frames != input_steps:
+            raise ProfileError(
+                f"frames must equal input script step count ({input_steps}), got {frames}"
+            )
 
     runtime_path = Path(runtime)
     if not runtime_path.is_absolute():
@@ -329,14 +341,27 @@ def build_launch_plan(
     if validation:
         argv.append("--validation")
 
+    if input_steps:
+        mode = "script"
+    elif interactive:
+        mode = "interactive-keyboard"
+    else:
+        mode = "keyboard"
+
     return {
         "format": PLAN_FORMAT,
         "version": 1,
         "ready": True,
         "profile": str(profile_path),
         "workspace_root": str(workspace_root),
-        "mode": "script" if input_steps else "keyboard",
+        "mode": mode,
+        "interactive": interactive,
         "frames": frames,
+        "frame_limit_policy": (
+            "int32-max-with-window-quit"
+            if interactive
+            else "explicit-bounded-frame-count"
+        ),
         "persist_post_solve_body_state": True,
         "checks": checks,
         "argv": argv,
@@ -348,6 +373,7 @@ def build_launch_plan(
             "constraint_refresh_admitted": True,
             "relation_reset_selection_admitted": True,
             "post_solve_body_accumulator_persistence_admitted": True,
+            "window_quit_drives_session_end": interactive,
             "persistent_vehicle_transform_motion_claimed": False,
             "provider_present_dispatch_claimed": False,
             "retail_game_loop_claimed": False,
