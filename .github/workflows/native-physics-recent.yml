@@ -36,12 +36,13 @@ jobs:
             shift_runtime_wheel_force_aggregate_check \
             shift_runtime_surface_probe_check \
             shift_runtime_contact_outer_kernel_check \
-            shift_runtime_aux_contact_pair_check
-      - name: Run Phase 656-664 CTest regressions
+            shift_runtime_aux_contact_pair_check \
+            shift_runtime_wheel_longitudinal_velocity_check
+      - name: Run Phase 656-665 CTest regressions
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
-            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair)$'
-      - name: Verify Phase 656-664 reports
+            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_longitudinal_velocity)$'
+      - name: Verify Phase 656-665 reports
         run: |
           mkdir -p out/native-physics-recent
           native_runtime/build/shift_runtime_body_accumulator_primitives_check \
@@ -60,6 +61,8 @@ jobs:
             | tee out/native-physics-recent/contact_outer_kernel.json
           native_runtime/build/shift_runtime_aux_contact_pair_check \
             | tee out/native-physics-recent/aux_contact_pair.json
+          native_runtime/build/shift_runtime_wheel_longitudinal_velocity_check \
+            | tee out/native-physics-recent/wheel_longitudinal_velocity.json
           grep -q '"format":"SHIFT.NativeBodyAccumulatorPrimitives/1"' \
             out/native-physics-recent/body_accumulator_primitives.json
           grep -q '"format":"SHIFT.NativeWheelContactResponse/1"' \
@@ -94,3 +97,11 @@ jobs:
             out/native-physics-recent/aux_contact_pair.json
           grep -q '"sequential_accumulator_join_proven":true' \
             out/native-physics-recent/aux_contact_pair.json
+          grep -q '"format":"SHIFT.NativeWheelLongitudinalVelocity/1"' \
+            out/native-physics-recent/wheel_longitudinal_velocity.json
+          grep -q '"single_wheel_handoff_proven":true' \
+            out/native-physics-recent/wheel_longitudinal_velocity.json
+          grep -q '"rear_pair_average_proven":true' \
+            out/native-physics-recent/wheel_longitudinal_velocity.json
+          grep -q '"transform_fun_007af010_external":true' \
+            out/native-physics-recent/wheel_longitudinal_velocity.json
