@@ -5,11 +5,18 @@
 #include "shift_constraint_sample_refresh.hpp"
 #include "shift_wheel_contact_response.hpp"
 
+#include <array>
+#include <cstddef>
+
 namespace shift::runtime::physics {
 
 inline constexpr const char* kNativeAuxContactResponseFormat =
     "SHIFT.NativeAuxContactResponse/1";
 inline constexpr const char* kAuxContactResponseFunction = "FUN_00758fc0";
+inline constexpr const char* kAuxContactResponseCallerFunction = "FUN_00766510";
+inline constexpr std::size_t kAuxContactRecordCount = 2u;
+inline constexpr std::array<std::size_t, kAuxContactRecordCount>
+    kAuxContactRecordOffsets = {0x37d8u, 0x3858u};
 
 struct AuxContactRecord {
     bool active = false;
@@ -40,7 +47,24 @@ struct AuxContactResponseResult {
     BodyAccumulatorState body_accumulator{};
 };
 
+struct AuxContactPairInput {
+    ConstraintRefreshFrame3f body_frame{};
+    BodyPointTransformState body_transform{};
+    BodyAccumulatorState body_accumulator{};
+    ConstraintRefreshVector3d reference_point{};
+    std::array<AuxContactRecord, kAuxContactRecordCount> records{};
+};
+
+struct AuxContactPairResult {
+    std::array<AuxContactResponseResult, kAuxContactRecordCount> records{};
+    BodyAccumulatorState body_accumulator{};
+    std::size_t applied_count = 0u;
+};
+
 AuxContactResponseResult execute_fun_00758fc0_aux_contact_response(
     const AuxContactResponseInput& input);
+
+AuxContactPairResult execute_fun_00766510_aux_contact_pair(
+    const AuxContactPairInput& input);
 
 }  // namespace shift::runtime::physics
