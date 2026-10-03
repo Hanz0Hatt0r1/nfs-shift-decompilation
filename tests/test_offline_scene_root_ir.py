@@ -71,6 +71,7 @@ def test_scene_root_join_requires_exact_catalog_and_ir_identity(tmp_path):
     assert report["catalog_resource"]["decoded_sha256"] == digest
     assert report["ir_resource"]["sha256"] == digest
     assert Path(report["raw_sgb_path"]).read_bytes() == b"SGB-fixture"
+    assert report["boundary"]["catalog_decoded_sha256_required"] is True
     assert report["boundary"]["basename_fallback"] is False
     assert report["boundary"]["first_duplicate_wins"] is False
 
@@ -109,6 +110,17 @@ def test_catalog_and_ir_decoded_sha_must_match(tmp_path):
     assert report["ready"] is False
     assert "ir-sgb-root-decoded-sha256-mismatch" in report["blocking_reasons"]
     assert "ir-sgb-root-raw-sha256-mismatch" in report["blocking_reasons"]
+
+
+def test_catalog_decoded_sha_is_required_for_exact_scene_root_identity(tmp_path):
+    catalog, bootstrap, ir, _, _ = _fixture(tmp_path)
+    del catalog["resources"][0]["decoded_sha256"]
+
+    report = scene_root.build_scene_root_ir_join(catalog, bootstrap, ir)
+
+    assert report["ready"] is False
+    assert "catalog-sgb-root-decoded-sha256-missing" in report["blocking_reasons"]
+    assert report["boundary"]["catalog_decoded_sha256_required"] is True
 
 
 def test_bootstrap_not_ready_keeps_join_blocked_even_when_identity_matches(tmp_path):
