@@ -85,10 +85,10 @@ int main() {
         }
 
         const std::array<WheelLongitudinalInput, kWheelLongitudinalCount> inputs = {
-            make_input(2u, 6.0),
             make_input(0u, 2.0),
-            make_input(3u, 10.0),
             make_input(1u, 4.0),
+            make_input(2u, 6.0),
+            make_input(3u, 10.0),
         };
 
         const auto unchanged = execute_fun_00763570_precomputed_batch(
@@ -163,6 +163,22 @@ int main() {
             "FUN_00763570 config gate wheel 3",
             max_error);
 
+        bool out_of_order_rejected = false;
+        try {
+            auto reordered = inputs;
+            std::swap(reordered[0], reordered[1]);
+            (void)execute_fun_00763570_precomputed_batch(
+                reordered,
+                false,
+                0,
+                false);
+        } catch (const std::invalid_argument&) {
+            out_of_order_rejected = true;
+        }
+        if (!out_of_order_rejected) {
+            throw std::runtime_error("FUN_00763570 accepted reordered wheel inputs");
+        }
+
         bool duplicate_rejected = false;
         try {
             auto duplicate = inputs;
@@ -232,6 +248,7 @@ int main() {
             << "\"wheel_count\":" << kWheelLongitudinalCount << ","
             << "\"wheel_stride\":" << kWheelLongitudinalStride << ","
             << "\"single_wheel_handoff_proven\":true,"
+            << "\"retail_wheel_order_proven\":true,"
             << "\"rear_pair_average_proven\":true,"
             << "\"transform_fun_007af010_external\":true,"
             << "\"runtime_scheduling_proven\":false,"
