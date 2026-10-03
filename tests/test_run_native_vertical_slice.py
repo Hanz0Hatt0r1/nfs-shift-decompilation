@@ -41,7 +41,7 @@ def _fixture(
     scene = root / "out" / "scene"
     scene.mkdir(parents=True)
     _write_json(
-        scene / "bundle_set.json",
+        scene / "bundle_set_manifest.json",
         {"format": "SHIFT.NativeSceneVulkanSet/1"},
     )
     _write_json(
@@ -119,6 +119,7 @@ def test_build_launch_plan_composes_full_native_chain(tmp_path):
 
     assert plan["format"] == "SHIFT.NativeVerticalSliceLaunchPlan/1"
     assert plan["ready"] is True
+    assert plan["resource_pipeline"] is None
     assert plan["mode"] == "keyboard"
     assert plan["interactive"] is False
     assert plan["frames"] == 120
@@ -145,6 +146,8 @@ def test_build_launch_plan_composes_full_native_chain(tmp_path):
     )
     assert plan["boundary"]["dynamic_body_feedback_scheduler_admitted"] is True
     assert plan["boundary"]["legacy_solver_replay_cli_disabled"] is True
+    assert plan["boundary"]["scene_and_physics_from_resource_pipeline"] is False
+    assert plan["boundary"]["resource_pipeline_replaces_runtime_evidence"] is False
     assert plan["boundary"]["window_quit_drives_session_end"] is False
     assert plan["boundary"]["persistent_vehicle_transform_motion_claimed"] is False
     assert plan["boundary"]["provider_present_dispatch_claimed"] is False

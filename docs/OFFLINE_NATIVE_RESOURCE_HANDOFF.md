@@ -6,7 +6,8 @@ the native runtime's existing render and physics resource inputs.
 Implemented in:
 
 - `src/resources/offline_native_resource_handoff.py`;
-- `tools/shift_resource_pipeline.py native-handoff`.
+- `tools/shift_resource_pipeline.py native-handoff`;
+- `tools/run_native_vertical_slice.py` resource-pipeline profile mode.
 
 The bridge does **not** create runtime evidence and does not replace any renderer
 provenance gate.
@@ -53,9 +54,10 @@ SHA-256 matches the actual `bundle_set_manifest.json` bytes.
 Therefore static BFF presence cannot promote an unproven scene draw, shader
 permutation, instance, transform or external sampler into the native scene.
 
-## Command
+## Commands
 
-After `tools/shift_resource_pipeline.py all` has produced the resource outputs:
+After `tools/shift_resource_pipeline.py all` has produced the resource outputs,
+the standalone handoff can be rebuilt without re-decoding the BFF corpus:
 
 ```bash
 python tools/shift_resource_pipeline.py native-handoff \
@@ -66,7 +68,19 @@ python tools/shift_resource_pipeline.py native-handoff \
   -o out/offline-pipeline/native-handoff
 ```
 
-Outputs:
+The preferred one-command form is:
+
+```bash
+python tools/shift_resource_pipeline.py all \
+  Vehicles.zip Silverstone_Era3_.zip RENDER.bff \
+  -o out/offline-pipeline \
+  --track Silverstone_Era3_GrandPrix \
+  --vehicle BMW_M3_E36 \
+  --scene-set out/native-scene-vulkan \
+  --require-native-resource-handoff
+```
+
+Outputs include:
 
 - `vehicle_physics_resource_manifest.json` — neutral exact BFF/physics manifest;
 - `native_physics_manifest.json` — current BMW native-runtime compatibility
@@ -74,10 +88,54 @@ Outputs:
 - `scene_catalog_join.json` — runtime-proven scene IMB ↔ offline catalog join;
 - `native_resource_handoff.json` — combined resource-input admission state.
 
-If `--scene-set` is omitted, the command remains blocked with
+If `--scene-set` is omitted, the handoff remains blocked with
 `scene-set:runtime-proven-input-required`. This is intentional: the offline
 resource pipeline cannot substitute static evidence for the existing runtime
 scene provenance chain.
+
+## Vertical-slice profile integration
+
+A ready Process D output can now replace the two manually duplicated resource
+paths in `SHIFT.NativeVerticalSliceProfile/1`:
+
+```json
+{
+  "format": "SHIFT.NativeVerticalSliceProfile/1",
+  "version": 1,
+  "workspace_root": ".",
+  "resource_pipeline": "out/offline-pipeline",
+  "camera_state": "out/native-camera-state.json",
+  "participant_boundary": "out/native_physics_participant_runtime_evidence.json",
+  "solver_frame": "out/native-solver-frame/solver_frame.sbfr",
+  "generated_body_constraint_frame": "out/native-generated/generated_body_constraints.gbcf",
+  "constraint_sample_relation_frame": "out/native-generated/constraint_sample_relations.csrf",
+  "constraint_relation_reset_frame": "out/native-generated/constraint_relation_reset.crrf",
+  "post_solve_projection": "out/native-generated/post_solve_projection.sbps",
+  "persist_post_solve_body_state": true,
+  "frames": 120
+}
+```
+
+When `resource_pipeline` is present, `scene_set` and `physics_manifest` must be
+omitted. The runner requires:
+
+- `pipeline_run.json` to be `SHIFT.OfflineResourcePipelineRun/1` with
+  `native_resource_handoff_ready=true`;
+- `native-handoff/native_resource_handoff.json` to be a ready
+  `SHIFT.OfflineNativeResourceHandoff/1` with `resource_inputs_ready=true`;
+- the recorded runtime-proven scene-set path to remain inside `workspace_root`;
+- the generated native physics manifest path and SHA-256 to match the handoff
+  artifact record;
+- the scene set itself to contain the canonical `bundle_set_manifest.json` plus
+  a ready `bundle_set_prepare.json`.
+
+This mode replaces **only** `scene_set` and `physics_manifest`. Camera state,
+participant runtime identity and all BODY feedback packets remain mandatory
+profile inputs and keep their existing validation gates. Supplying both
+`resource_pipeline` and either explicit resource path is rejected as ambiguous.
+
+The vertical-slice runner still supports the legacy explicit `scene_set` and
+`physics_manifest` profile fields when `resource_pipeline` is absent.
 
 ## Non-claims
 

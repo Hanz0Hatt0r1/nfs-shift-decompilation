@@ -91,8 +91,12 @@ def test_all_automatically_builds_native_resource_handoff(monkeypatch, tmp_path)
     assert persisted["resource_bootstrap_ready"] is True
     assert persisted["native_resource_handoff_ready"] is True
     assert persisted["native_runtime_ready"] is False
+    assert persisted["inputs"]["runtime_proven_scene_set"] == str(
+        Path(args.scene_set).resolve()
+    )
     assert persisted["boundary"]["native_resource_handoff_automated"] is True
     assert persisted["boundary"]["native_resource_handoff_is_runtime_execution"] is False
+    assert persisted["boundary"]["runtime_proven_scene_set_recorded"] is True
     assert persisted["artifacts"]["native_handoff_native_physics_manifest"].endswith(
         "native_physics_manifest.json"
     )
