@@ -50,6 +50,21 @@ flow destinations and references for every instruction in each requested
 function. Use these observations to recover register/stack forwarding. Treat
 Ghidra semantic parameter types as provisional unless corroborated separately.
 
+For the established five-function memory-wrapper cluster, prefer the pinned
+one-command workflow so the target set and postprocessor cannot drift:
+
+```bash
+GHIDRA_HOME=/path/to/ghidra \
+./tools/ghidra/run_memory_wrapper_forwarding.sh \
+  /path/to/ghidra-projects shift SHIFT.exe \
+  out/memory_wrapper_forwarding
+```
+
+That command produces both the targeted instruction JSONL and
+`SHIFT-MEMORY-WRAPPER-FORWARDING/1`. The forwarding artifact proves only
+mechanical register/stack value flow into the known backend calls; semantic
+argument names, allocator ABI and ownership remain separate evidence questions.
+
 ## Important anchors
 
 - `FUN_00854e70` — D3D9 declaration Type conversion;
