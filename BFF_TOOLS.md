@@ -13,10 +13,29 @@ runtime admission record:
 `python tools/shift_resource_pipeline.py all Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/offline-pipeline --track Silverstone_Era3_GrandPrix --vehicle Ford_Mustang_2010`
 
 Inventory-only and parser-validation modes are available through the `catalog`
-subcommand. Dependency admission uses exact semantic parser references only;
-string-scan candidates cannot satisfy the gate, missing resources remain explicit,
-and a resource-ready bootstrap does not bypass the existing render/physics/runtime
-provenance gates. See `docs/OFFLINE_RESOURCE_PIPELINE.md`.
+subcommand. Dependency admission uses exact semantic parser references only.
+Source-backed SGB `NODE`/`SUMM`/`OCCL` resource fields are admissible only when
+the SGB runtime decode is fully ready; remaining string-scan candidates stay
+diagnostic-only. Missing resources remain explicit, and a resource-ready bootstrap
+does not bypass the existing render/physics/runtime provenance gates. See
+`docs/OFFLINE_RESOURCE_PIPELINE.md`.
+
+For the strongest currently proven resource-to-native bootstrap:
+
+`python tools/bootstrap_runtime.py Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/runtime-bootstrap --track Silverstone_Era3_GrandPrix --vehicle BMW_M3_E36`
+
+This also writes `runtime_requirements.json`, which separates already-proven
+physics/participant artifacts from runtime scene, camera, BODY-feedback, and input
+gates that still require explicit evidence.
+
+To continue through fail-closed vertical-slice profile preparation in one command:
+
+`python tools/bootstrap_native_vertical_slice.py Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/native-vertical-slice --track Silverstone_Era3_GrandPrix --vehicle BMW_M3_E36 --workspace-root . --scene-set out/native-scene-vulkan --camera-state out/native-camera-state.json --solver-frame out/solver.sbfr --generated-body-constraint-frame out/generated.gbcf --constraint-sample-relation-frame out/relations.csrf --constraint-relation-reset-frame out/reset.crrf --post-solve-projection out/post.sbps --keyboard --frames 120 --validate-launch-plan`
+
+The command never supplies defaults for missing runtime evidence. A blocked selected
+offline bootstrap cannot be bypassed by later explicit runtime paths, and optional
+launch-plan validation delegates to `tools/run_native_vertical_slice.py` without
+executing the native runtime.
 
 ## Vehicle corpus inventory
 
