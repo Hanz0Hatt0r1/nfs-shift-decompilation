@@ -3,10 +3,12 @@
 #include "shift_fun_00770e80_composed_anchor_chain.hpp"
 #include "shift_fun_00770e80_contact_outer_provider_chain.hpp"
 #include "shift_fun_00770e80_scalar_provider_anchor_chain.hpp"
+#include "shift_persistent_body_pose_snapshot.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace shift::runtime {
@@ -28,7 +30,9 @@ struct ExplicitOuterUpdateRuntimeState {
     std::size_t last_contact_outer_input_provider_call_count = 0u;
     std::size_t last_contact_outer_native_call_count = 0u;
     std::size_t last_contact_outer_gate_open_count = 0u;
+    std::uint64_t body_pose_snapshot_generation = 0u;
     std::vector<std::uint8_t> body_bytes;
+    std::vector<physics::PersistentBodyPoseSnapshot> body_pose_snapshots;
 
     void initialize_body_state(
         const std::vector<std::uint8_t>& initial_body_bytes,
@@ -50,6 +54,12 @@ struct ExplicitOuterUpdateRuntimeState {
                 "explicit outer update BODY byte cardinality mismatch");
         }
 
+        auto initial_pose_snapshots =
+            physics::decode_persistent_body_pose_snapshots(
+                initial_body_bytes,
+                runtime_body_count);
+        std::vector<std::uint8_t> committed_body_bytes = initial_body_bytes;
+
         initialized = true;
         explicit_update_count = 0u;
         body_count = runtime_body_count;
@@ -63,7 +73,9 @@ struct ExplicitOuterUpdateRuntimeState {
         last_contact_outer_input_provider_call_count = 0u;
         last_contact_outer_native_call_count = 0u;
         last_contact_outer_gate_open_count = 0u;
-        body_bytes = initial_body_bytes;
+        body_pose_snapshot_generation = 0u;
+        body_bytes = std::move(committed_body_bytes);
+        body_pose_snapshots = std::move(initial_pose_snapshots);
     }
 
     void validate_runtime_boundary(
@@ -93,6 +105,10 @@ struct ExplicitOuterUpdateRuntimeState {
         if (body_byte_count != expected_bytes || body_bytes.size() != expected_bytes) {
             throw std::runtime_error(
                 "explicit outer update persistent BODY state cardinality mismatch");
+        }
+        if (body_pose_snapshots.size() != runtime_body_count) {
+            throw std::runtime_error(
+                "explicit outer update persistent BODY pose cardinality mismatch");
         }
     }
 
@@ -126,7 +142,14 @@ struct ExplicitOuterUpdateRuntimeState {
                 "explicit outer update returned malformed persistent BODY state");
         }
 
-        body_bytes = result.final_body_bytes;
+        std::vector<std::uint8_t> committed_body_bytes = result.final_body_bytes;
+        auto committed_pose_snapshots =
+            physics::decode_persistent_body_pose_snapshots(
+                committed_body_bytes,
+                runtime_body_count);
+
+        body_bytes = std::move(committed_body_bytes);
+        body_pose_snapshots = std::move(committed_pose_snapshots);
         body_byte_count = body_bytes.size();
         last_outer_timestep = outer_timestep;
         last_physics_pass_provider_call_count =
@@ -140,6 +163,7 @@ struct ExplicitOuterUpdateRuntimeState {
         last_contact_outer_native_call_count = 0u;
         last_contact_outer_gate_open_count = 0u;
         ++explicit_update_count;
+        body_pose_snapshot_generation = explicit_update_count;
         return result;
     }
 
@@ -174,7 +198,15 @@ struct ExplicitOuterUpdateRuntimeState {
                 "explicit scalar-provider outer update returned malformed BODY state");
         }
 
-        body_bytes = result.joined.final_body_bytes;
+        std::vector<std::uint8_t> committed_body_bytes =
+            result.joined.final_body_bytes;
+        auto committed_pose_snapshots =
+            physics::decode_persistent_body_pose_snapshots(
+                committed_body_bytes,
+                runtime_body_count);
+
+        body_bytes = std::move(committed_body_bytes);
+        body_pose_snapshots = std::move(committed_pose_snapshots);
         body_byte_count = body_bytes.size();
         last_outer_timestep = outer_timestep;
         last_physics_pass_provider_call_count =
@@ -188,6 +220,7 @@ struct ExplicitOuterUpdateRuntimeState {
         last_contact_outer_native_call_count = 0u;
         last_contact_outer_gate_open_count = 0u;
         ++explicit_update_count;
+        body_pose_snapshot_generation = explicit_update_count;
         return result;
     }
 
@@ -222,7 +255,15 @@ struct ExplicitOuterUpdateRuntimeState {
                 "explicit contact-outer-provider update returned malformed BODY state");
         }
 
-        body_bytes = result.joined.joined.final_body_bytes;
+        std::vector<std::uint8_t> committed_body_bytes =
+            result.joined.joined.final_body_bytes;
+        auto committed_pose_snapshots =
+            physics::decode_persistent_body_pose_snapshots(
+                committed_body_bytes,
+                runtime_body_count);
+
+        body_bytes = std::move(committed_body_bytes);
+        body_pose_snapshots = std::move(committed_pose_snapshots);
         body_byte_count = body_bytes.size();
         last_outer_timestep = outer_timestep;
         last_physics_pass_provider_call_count =
@@ -239,6 +280,7 @@ struct ExplicitOuterUpdateRuntimeState {
         last_contact_outer_gate_open_count =
             result.contact_outer_gate_open_count;
         ++explicit_update_count;
+        body_pose_snapshot_generation = explicit_update_count;
         return result;
     }
 };
