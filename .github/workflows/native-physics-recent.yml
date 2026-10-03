@@ -38,12 +38,13 @@ jobs:
             shift_runtime_contact_outer_kernel_check \
             shift_runtime_aux_contact_pair_check \
             shift_runtime_wheel_contact_factor_check \
+            shift_runtime_collision_query_contract_check \
             shift_runtime_wheel_longitudinal_velocity_check
-      - name: Run Phase 656-666 CTest regressions
+      - name: Run Phase 656-667 CTest regressions
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
-            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_contact_factor|wheel_longitudinal_velocity)$'
-      - name: Verify Phase 656-666 reports
+            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_contact_factor|collision_query_contract|wheel_longitudinal_velocity)$'
+      - name: Verify Phase 656-667 reports
         run: |
           mkdir -p out/native-physics-recent
           native_runtime/build/shift_runtime_body_accumulator_primitives_check \
@@ -64,6 +65,8 @@ jobs:
             | tee out/native-physics-recent/aux_contact_pair.json
           native_runtime/build/shift_runtime_wheel_contact_factor_check \
             | tee out/native-physics-recent/wheel_contact_factor.json
+          native_runtime/build/shift_runtime_collision_query_contract_check \
+            | tee out/native-physics-recent/collision_query_contract.json
           native_runtime/build/shift_runtime_wheel_longitudinal_velocity_check \
             | tee out/native-physics-recent/wheel_longitudinal_velocity.json
           grep -q '"format":"SHIFT.NativeBodyAccumulatorPrimitives/1"' \
@@ -106,6 +109,14 @@ jobs:
             out/native-physics-recent/wheel_contact_factor.json
           grep -q '"float32_result_rounding_proven":true' \
             out/native-physics-recent/wheel_contact_factor.json
+          grep -q '"format":"SHIFT.NativeCollisionQueryContract/1"' \
+            out/native-physics-recent/collision_query_contract.json
+          grep -q '"query_record_doubles":7' \
+            out/native-physics-recent/collision_query_contract.json
+          grep -q '"hit_normal_height_cache_writes_proven":true' \
+            out/native-physics-recent/collision_query_contract.json
+          grep -q '"collision_provider_implemented":false' \
+            out/native-physics-recent/collision_query_contract.json
           grep -q '"format":"SHIFT.NativeWheelLongitudinalVelocity/1"' \
             out/native-physics-recent/wheel_longitudinal_velocity.json
           grep -q '"single_wheel_handoff_proven":true' \
