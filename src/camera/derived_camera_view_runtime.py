@@ -5,9 +5,13 @@ Recovered from FUN_0081b0c0, FUN_0081b100 and FUN_0081b140.
 
 from __future__ import annotations
 
+from typing import Any
+
+from camera_memory_release_evidence import build_camera_release_pointer_crosscheck
 from memory_pool_runtime import release_helper_action
 
 FORMAT = "SHIFT.DerivedCameraViewRuntime/1"
+MEMORY_CROSSCHECK_FORMAT = "SHIFT.CameraDeletingWrapperMemoryCrosscheck/1"
 
 
 def describe_derived_camera_view_constructor() -> dict:
@@ -83,9 +87,13 @@ def describe_derived_camera_view_reset() -> dict:
     }
 
 
-def describe_derived_camera_view_delete() -> dict:
+def describe_derived_camera_view_delete(
+    *,
+    retail_static_summary: dict[str, Any] | None = None,
+    retail_source_semantic_summary: dict[str, Any] | None = None,
+) -> dict:
     """Reproduce FUN_0081b140's destructor/deallocation delegation."""
-    return {
+    result = {
         "format": FORMAT,
         "version": 1,
         "operation": "delete",
@@ -100,3 +108,12 @@ def describe_derived_camera_view_delete() -> dict:
             "base_delete": "FUN_0081b100",
         },
     }
+    memory_crosscheck = build_camera_release_pointer_crosscheck(
+        retail_static_summary,
+        retail_source_semantic_summary,
+        caller="FUN_0081b140",
+        format_name=MEMORY_CROSSCHECK_FORMAT,
+    )
+    if memory_crosscheck is not None:
+        result["memory_wrapper_evidence"] = memory_crosscheck
+    return result
