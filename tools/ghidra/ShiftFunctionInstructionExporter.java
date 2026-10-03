@@ -11,6 +11,7 @@ import ghidra.program.model.listing.InstructionIterator;
 import ghidra.program.model.listing.Listing;
 import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.program.model.pcode.PcodeOp;
+import ghidra.program.model.pcode.Varnode;
 import ghidra.program.model.symbol.Reference;
 
 import java.io.BufferedWriter;
@@ -169,8 +170,15 @@ public class ShiftFunctionInstructionExporter extends GhidraScript {
                 .append("\"opcode\":")
                 .append(q(PcodeOp.getMnemonic(op.getOpcode()))).append(',')
                 .append("\"text\":")
-                .append(q(op.toString()))
-                .append('}');
+                .append(q(op.toString())).append(',')
+                .append("\"output\":")
+                .append(varnodeJson(op.getOutput())).append(',')
+                .append("\"inputs\":[");
+            for (int inputIndex = 0; inputIndex < op.getNumInputs(); inputIndex++) {
+                if (inputIndex > 0) pcode.append(',');
+                pcode.append(varnodeJson(op.getInput(inputIndex)));
+            }
+            pcode.append("]}");
         }
         pcode.append(']');
 
@@ -185,6 +193,21 @@ public class ShiftFunctionInstructionExporter extends GhidraScript {
             "\"flows\":" + flows + "," +
             "\"references\":" + refs + "," +
             "\"pcode\":" + pcode +
+            "}";
+    }
+
+    private static String varnodeJson(Varnode node) {
+        if (node == null) return "null";
+        Address address = node.getAddress();
+        String space = address == null ? null : address.getAddressSpace().getName();
+        return "{" +
+            "\"text\":" + q(node.toString()) + "," +
+            "\"space\":" + q(space) + "," +
+            "\"offset\":" + q("0x" + Long.toUnsignedString(node.getOffset(), 16)) + "," +
+            "\"size\":" + node.getSize() + "," +
+            "\"constant\":" + node.isConstant() + "," +
+            "\"register\":" + node.isRegister() + "," +
+            "\"unique\":" + node.isUnique() +
             "}";
     }
 
