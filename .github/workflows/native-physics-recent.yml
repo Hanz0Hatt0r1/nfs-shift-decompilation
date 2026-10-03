@@ -38,12 +38,13 @@ jobs:
             shift_runtime_contact_outer_kernel_check \
             shift_runtime_aux_contact_pair_check \
             shift_runtime_wheel_contact_factor_check \
-            shift_runtime_collision_query_contract_check
-      - name: Run Phase 656-666 CTest regressions
+            shift_runtime_collision_query_contract_check \
+            shift_runtime_wheel_query_response_join_check
+      - name: Run Phase 656-667 CTest regressions
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
-            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_contact_factor|collision_query_contract)$'
-      - name: Verify Phase 656-666 reports
+            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_contact_factor|collision_query_contract|wheel_query_response_join)$'
+      - name: Verify Phase 656-667 reports
         run: |
           mkdir -p out/native-physics-recent
           native_runtime/build/shift_runtime_body_accumulator_primitives_check \
@@ -66,6 +67,8 @@ jobs:
             | tee out/native-physics-recent/wheel_contact_factor.json
           native_runtime/build/shift_runtime_collision_query_contract_check \
             | tee out/native-physics-recent/collision_query_contract.json
+          native_runtime/build/shift_runtime_wheel_query_response_join_check \
+            | tee out/native-physics-recent/wheel_query_response_join.json
           grep -q '"format":"SHIFT.NativeBodyAccumulatorPrimitives/1"' \
             out/native-physics-recent/body_accumulator_primitives.json
           grep -q '"format":"SHIFT.NativeWheelContactResponse/1"' \
@@ -114,3 +117,11 @@ jobs:
             out/native-physics-recent/collision_query_contract.json
           grep -q '"collision_provider_implemented":false' \
             out/native-physics-recent/collision_query_contract.json
+          grep -q '"format":"SHIFT.NativeWheelQueryResponseJoin/1"' \
+            out/native-physics-recent/wheel_query_response_join.json
+          grep -q '"hit_join_proven":true' \
+            out/native-physics-recent/wheel_query_response_join.json
+          grep -q '"miss_fallback_join_proven":true' \
+            out/native-physics-recent/wheel_query_response_join.json
+          grep -q '"lower_upper_clamp_join_proven":true' \
+            out/native-physics-recent/wheel_query_response_join.json
