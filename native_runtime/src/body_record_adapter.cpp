@@ -106,6 +106,42 @@ void write_f32_array(
     }
 }
 
+template <typename Range>
+void require_finite_range(const Range& values, const char* label) {
+    for (const auto value : values) {
+        if (!std::isfinite(static_cast<double>(value))) {
+            throw std::invalid_argument(label);
+        }
+    }
+}
+
+void require_finite_state_inputs(const BodyFrameIntegrationState& state) {
+    require_finite_range(state.origin, "BODY origin contains non-finite value");
+    require_finite_range(state.cross_vector, "BODY cross vector contains non-finite value");
+    require_finite_range(state.prepared_vector, "BODY prepared vector contains non-finite value");
+    require_finite_range(state.accumulators.angular, "BODY accumulator A contains non-finite value");
+    require_finite_range(state.accumulators.linear, "BODY accumulator B contains non-finite value");
+    require_finite_range(state.motion_triplet, "BODY motion triplet contains non-finite value");
+    if (!std::isfinite(state.scalar_0x90)) {
+        throw std::invalid_argument("BODY scalar +0x90 is non-finite");
+    }
+    require_finite_range(state.basis, "BODY basis contains non-finite value");
+    require_finite_range(
+        state.reciprocal_coefficients,
+        "BODY reciprocal coefficients contain non-finite value");
+}
+
+void require_finite_writer_result(const BodyFrameIntegrationResult& result) {
+    require_finite_range(result.state.origin, "BODY output origin contains non-finite value");
+    require_finite_range(result.state.cross_vector, "BODY output cross vector contains non-finite value");
+    require_finite_range(result.state.prepared_vector, "BODY output prepared vector contains non-finite value");
+    require_finite_range(result.state.motion_triplet, "BODY output motion triplet contains non-finite value");
+    require_finite_range(result.state.basis, "BODY output basis contains non-finite value");
+    for (const auto& row : result.symmetric_tensor) {
+        require_finite_range(row, "BODY output symmetric tensor contains non-finite value");
+    }
+}
+
 BodyRecordBytes copy_record_from_buffer(
     const std::vector<std::uint8_t>& bytes,
     std::size_t base) {
@@ -143,12 +179,14 @@ BodyFrameIntegrationState decode_fun_007bab70_body_record(
     state.basis = read_f32_array(record, body_record_offset::kBasis);
     state.reciprocal_coefficients =
         read_f64_array(record, body_record_offset::kReciprocalCoefficients);
+    require_finite_state_inputs(state);
     return state;
 }
 
 BodyRecordBytes apply_fun_007bab70_result_to_body_record(
     const BodyRecordBytes& original,
     const BodyFrameIntegrationResult& result) {
+    require_finite_writer_result(result);
     BodyRecordBytes record = original;
     write_f64_array(record, body_record_offset::kOrigin, result.state.origin);
     write_f64_array(record, body_record_offset::kCrossVector, result.state.cross_vector);
