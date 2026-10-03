@@ -43,18 +43,39 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-BACKEND-EVIDENCE/1'}) + '\\n',
 """,
         encoding="utf-8",
     )
+
+    slicer = script_dir / "analyze_allocation_diagnostic_slice.py"
+    slicer.write_text(
+        """#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+Path(os.environ['BACKEND_SLICE_LOG']).write_text('\\n'.join(sys.argv[1:]), encoding='utf-8')
+source = Path(sys.argv[1])
+assert source.is_file()
+assert sys.argv[2] == '--ghidra-export'
+assert Path(sys.argv[3]).is_dir()
+assert sys.argv[4] == '--json-out'
+out = Path(sys.argv[5])
+out.write_text(json.dumps({'format':'SHIFT-MEMORY-ALLOCATION-DIAGNOSTIC-SLICE/1'}) + '\\n', encoding='utf-8')
+""",
+        encoding="utf-8",
+    )
     return runner
 
 
-def test_runner_exports_exact_backend_cluster_then_analyzes(tmp_path):
+def test_runner_exports_backend_cluster_then_analyzes_and_slices(tmp_path):
     runner = _prepare_harness(tmp_path)
     output = tmp_path / "out"
     ghidra = tmp_path / "ghidra"
     ghidra.mkdir()
     log = tmp_path / "export_args.txt"
+    slice_log = tmp_path / "slice_args.txt"
     env = dict(os.environ)
     env["GHIDRA_HOME"] = "/opt/fake-ghidra"
     env["BACKEND_RUNNER_LOG"] = str(log)
+    env["BACKEND_SLICE_LOG"] = str(slice_log)
 
     result = subprocess.run(
         [
@@ -87,11 +108,23 @@ def test_runner_exports_exact_backend_cluster_then_analyzes(tmp_path):
         "FUN_0064f3a0",
         "FUN_00657c30",
     ]
+    assert slice_log.read_text(encoding="utf-8").splitlines() == [
+        str(output.resolve() / "memory_backend_instructions.jsonl"),
+        "--ghidra-export",
+        str(ghidra.resolve()),
+        "--json-out",
+        str(output.resolve() / "memory_allocation_diagnostic_slice.json"),
+    ]
 
     report = json.loads((output / "memory_backend_evidence.json").read_text(encoding="utf-8"))
     assert report["format"] == "SHIFT-MEMORY-BACKEND-EVIDENCE/1"
+    diagnostic_slice = json.loads(
+        (output / "memory_allocation_diagnostic_slice.json").read_text(encoding="utf-8")
+    )
+    assert diagnostic_slice["format"] == "SHIFT-MEMORY-ALLOCATION-DIAGNOSTIC-SLICE/1"
     assert "memory backend instruction export:" in result.stdout
     assert "memory backend evidence report:" in result.stdout
+    assert "memory allocation diagnostic slice:" in result.stdout
 
 
 def test_runner_rejects_wrong_argument_count(tmp_path):

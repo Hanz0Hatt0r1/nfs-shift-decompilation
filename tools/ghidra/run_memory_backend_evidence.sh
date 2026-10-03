@@ -14,7 +14,9 @@ Example:
 
 The full Ghidra export directory must contain callgraph.jsonl and
 strings_xrefs.jsonl. The runner exports only the six backend functions needed to
-cross-check allocation/free diagnostics and the release backend chain.
+cross-check allocation/free diagnostics and the release backend chain, then
+attempts a fail-closed local slice from FUN_00638020 entry storage to the `%d`
+allocation diagnostic vararg.
 EOF
 }
 
@@ -39,6 +41,7 @@ if [[ -d "$GHIDRA_EXPORT" ]]; then
 fi
 INSTRUCTIONS="$OUT_DIR/memory_backend_instructions.jsonl"
 REPORT="$OUT_DIR/memory_backend_evidence.json"
+DIAGNOSTIC_SLICE="$OUT_DIR/memory_allocation_diagnostic_slice.json"
 
 "$SCRIPT_DIR/run_shift_function_instructions.sh" \
   "$PROJECT_DIR" \
@@ -57,5 +60,11 @@ python3 "$SCRIPT_DIR/analyze_memory_backend_evidence.py" \
   --ghidra-export "$GHIDRA_EXPORT" \
   --json-out "$REPORT"
 
+python3 "$SCRIPT_DIR/analyze_allocation_diagnostic_slice.py" \
+  "$INSTRUCTIONS" \
+  --ghidra-export "$GHIDRA_EXPORT" \
+  --json-out "$DIAGNOSTIC_SLICE"
+
 echo "memory backend instruction export: $INSTRUCTIONS"
 echo "memory backend evidence report: $REPORT"
+echo "memory allocation diagnostic slice: $DIAGNOSTIC_SLICE"
