@@ -10,6 +10,7 @@ FORMAT = "SHIFT.D3D9RendererFrontierAudit/1"
 BASE_FORMAT = "SHIFT.D3D9RendererRequirementAudit/1"
 FXO_FORMAT = "SHIFT.IMBFXOPairProvenance/1"
 MATERIAL_FORMAT = "SHIFT.IMBMaterialConstantCandidateJoin/1"
+MATERIAL_TEXTURE_FORMAT = "SHIFT.IMBMaterialTextureCandidateJoin/1"
 
 
 def _summary(report: Mapping[str, Any] | None) -> Mapping[str, Any]:
@@ -25,6 +26,7 @@ def build_renderer_frontier_audit(
     *,
     fxo_provenance: Mapping[str, Any] | None = None,
     material_constants: Mapping[str, Any] | None = None,
+    material_textures: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if base.get("format") != BASE_FORMAT:
         raise ValueError(f"base audit must be {BASE_FORMAT}")
@@ -32,6 +34,8 @@ def build_renderer_frontier_audit(
         raise ValueError(f"FXO provenance must be {FXO_FORMAT}")
     if material_constants is not None and material_constants.get("format") != MATERIAL_FORMAT:
         raise ValueError(f"material constants must be {MATERIAL_FORMAT}")
+    if material_textures is not None and material_textures.get("format") != MATERIAL_TEXTURE_FORMAT:
+        raise ValueError(f"material textures must be {MATERIAL_TEXTURE_FORMAT}")
 
     requirements = [dict(row) for row in (base.get("requirements") or []) if isinstance(row, Mapping)]
     by_id = {str(row.get("requirement_id")): row for row in requirements}
@@ -105,6 +109,59 @@ def build_renderer_frontier_audit(
                 ),
             })
 
+    if material_row is not None and material_textures is not None:
+        summary = _summary(material_textures)
+        total = _int(summary.get("input_unresolved_draw_count"))
+        resolved = _int(summary.get("single_candidate_draw_count"))
+        remaining = _int(summary.get("remaining_unresolved_draw_count"))
+        resolution_counts = summary.get("resolution_status_counts")
+        resolution_counts = resolution_counts if isinstance(resolution_counts, Mapping) else {}
+        descriptor_survivors = _int(
+            resolution_counts.get("single-survivor-by-texture-contradiction-unproven")
+        )
+        if total == 0:
+            # Do not overwrite a Phase 620 exact closure; otherwise there was no
+            # unresolved material set for Phase 622 to process.
+            if material_row.get("status") != "closed-offline-exact":
+                material_row.update({
+                    "status": "no-active-blocker",
+                    "confidence": "deterministic-report-audit",
+                    "evidence": ["Phase 622 unresolved material draws=0"],
+                    "missing_observation": None,
+                    "existing_next_step": None,
+                })
+        elif remaining == 0 and resolved == total:
+            material_row.update({
+                "status": "closed-offline-exact",
+                "confidence": "exact-dds-runtime-path-sha-evidence",
+                "evidence": [
+                    f"Phase 622 unresolved material draws={total}",
+                    f"resolved by exact material texture identity={resolved}",
+                ],
+                "missing_observation": None,
+                "existing_next_step": None,
+            })
+        else:
+            evidence = [
+                f"Phase 622 unresolved material draws={total}",
+                f"resolved by exact material texture identity={resolved}",
+                f"remaining material ambiguity={remaining}",
+            ]
+            if descriptor_survivors:
+                evidence.append(
+                    f"descriptor-only single survivors still unproven={descriptor_survivors}"
+                )
+            material_row.update({
+                "status": "present-needs-tooling",
+                "confidence": "deterministic-report-audit",
+                "evidence": evidence,
+                "missing_observation": None,
+                "existing_next_step": (
+                    "continue exact offline scene/instance and candidate correlation for the Phase 622 survivors; "
+                    "descriptor compatibility is not texture identity, and portable texture path+SHA should become a hard capture requirement only if those survivors remain a proven renderer blocker"
+                ),
+            })
+
     absent = [row for row in requirements if row.get("status") == "absent-in-capture"]
     tooling = [
         row for row in requirements
@@ -130,6 +187,7 @@ def build_renderer_frontier_audit(
             "capture_required_now": bool(capture_blockers),
             "phase619_applied": fxo_provenance is not None,
             "phase620_applied": material_constants is not None,
+            "phase622_applied": material_textures is not None,
         },
         "requirements": requirements,
         "existing_data_requiring_tooling": [
@@ -153,11 +211,13 @@ def build_renderer_frontier_audit(
             "base": BASE_FORMAT,
             "fxo_provenance": fxo_provenance.get("format") if fxo_provenance else None,
             "material_constants": material_constants.get("format") if material_constants else None,
+            "material_textures": material_textures.get("format") if material_textures else None,
         },
         "policy": {
             **dict(base.get("policy") or {}),
             "later_exact_offline_evidence_updates_frontier": True,
             "ambiguity_is_not_proof": True,
+            "descriptor_compatibility_is_not_resource_identity": True,
         },
     }
     return result
@@ -178,6 +238,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output")
     parser.add_argument("--fxo-provenance")
     parser.add_argument("--material-constants")
+    parser.add_argument("--material-textures")
     args = parser.parse_args(argv)
     base = _load(args.base_audit)
     assert base is not None
@@ -185,6 +246,7 @@ def main(argv: list[str] | None = None) -> int:
         base,
         fxo_provenance=_load(args.fxo_provenance),
         material_constants=_load(args.material_constants),
+        material_textures=_load(args.material_textures),
     )
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
