@@ -72,6 +72,8 @@ source call's arguments.
 
 ## Run
 
+The join can be run directly when both input artifacts already exist:
+
 ```bash
 python3 tools/shift_live_dump/join_memory_wrapper_argument_evidence.py \
   out/memory_wrapper_callsites.json \
@@ -82,6 +84,28 @@ python3 tools/shift_live_dump/join_memory_wrapper_argument_evidence.py \
 The source callsite artifact and forwarding artifact may be produced separately;
 this tool only joins their explicit records and does not require the Ghidra
 project itself.
+
+For the current retail project, the full workflow can also be produced in one
+command:
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+./tools/ghidra/run_memory_wrapper_full_evidence.sh \
+  /path/to/SHIFT.exe.c \
+  out/shift_ghidra_database \
+  /home/pes/ghidra_projects/shift shift SHIFT.exe \
+  out/memory_wrapper_full_evidence
+```
+
+That runner creates:
+
+- `memory_wrapper_callsites.json`;
+- `forwarding/memory_wrapper_instructions.jsonl`;
+- `forwarding/memory_wrapper_forwarding.json`;
+- `memory_wrapper_argument_join.json`.
+
+It reuses the same standalone tools; the convenience runner does not weaken any
+promotion rule.
 
 ## Evidence boundary
 

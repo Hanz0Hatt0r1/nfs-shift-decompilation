@@ -51,7 +51,7 @@ function. Use these observations to recover register/stack forwarding. Treat
 Ghidra semantic parameter types as provisional unless corroborated separately.
 
 For the established five-function memory-wrapper cluster, use the one-shot
-runner instead of typing both stages manually:
+forwarding runner instead of typing both instruction stages manually:
 
 ```bash
 GHIDRA_HOME=/opt/ghidra \
@@ -65,6 +65,23 @@ It writes both `memory_wrapper_instructions.jsonl` and
 `SHIFT-MEMORY-WRAPPER-FORWARDING/1` and only promotes physical value forwarding;
 semantic roles such as size, alignment, pool selector and delete kind stay open
 until independently corroborated.
+
+When recovered `SHIFT.exe.c` and the structured Ghidra database are also
+available, run the full three-layer workflow:
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+./tools/ghidra/run_memory_wrapper_full_evidence.sh \
+  /path/to/SHIFT.exe.c \
+  out/shift_ghidra_database \
+  /home/pes/ghidra_projects/shift shift SHIFT.exe \
+  out/memory_wrapper_full_evidence
+```
+
+This produces source call-site evidence, targeted instruction forwarding and the
+mechanical `SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1` source-expression to backend
+storage join in one directory. The combined workflow still does not infer
+semantic argument roles.
 
 ## Important anchors
 
