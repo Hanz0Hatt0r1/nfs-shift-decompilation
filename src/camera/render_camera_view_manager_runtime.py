@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from camera_memory_release_evidence import build_camera_release_pointer_crosscheck
 from memory_pool_runtime import release_helper_action
 
 FORMAT = "SHIFT.RenderCameraViewManagerRuntime/1"
+MEMORY_CROSSCHECK_FORMAT = "SHIFT.CameraDeletingWrapperMemoryCrosscheck/1"
 SINGLETON_SYMBOL = "DAT_00c25760"
 INIT_GUARD_SYMBOL = "_DAT_00c259e0"
 
@@ -58,9 +60,11 @@ def describe_render_camera_view_manager_reset() -> dict[str, Any]:
 def describe_render_camera_view_manager_delete(
     *,
     delete_flag: int,
+    retail_static_summary: dict[str, Any] | None = None,
+    retail_source_semantic_summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Reproduce FUN_008112b0's conditional deallocation."""
-    return {
+    result = {
         "format": FORMAT,
         "version": 1,
         "operation": "delete",
@@ -71,6 +75,15 @@ def describe_render_camera_view_manager_delete(
         ],
         "evidence": {"function": "FUN_008112b0"},
     }
+    memory_crosscheck = build_camera_release_pointer_crosscheck(
+        retail_static_summary,
+        retail_source_semantic_summary,
+        caller="FUN_008112b0",
+        format_name=MEMORY_CROSSCHECK_FORMAT,
+    )
+    if memory_crosscheck is not None:
+        result["memory_wrapper_evidence"] = memory_crosscheck
+    return result
 
 
 def get_render_camera_view_manager_singleton(
