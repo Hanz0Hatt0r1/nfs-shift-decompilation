@@ -1,13 +1,14 @@
 """Build the canonical BMW + Silverstone playable scene from the existing corpus.
 
-Phase 644 removes the remaining manual vehicle-render handoff in front of the
-Phase 643 composite scene builder.  It materializes the already-selected retail
-BFF corpus, requires exact canonical BMW/renderer archive basenames, runs the
-existing Phase 533 BMW body material admission, then feeds its complete material
-slice set into Phase 643 together with an already-prepared Silverstone scene set.
+Phase 644 removes the manual vehicle-render handoff in front of the Phase 643
+composite scene builder. Phase 645 closes the real-corpus transform gap: Phase
+533 material slices carry no instance matrix, so the canonical BMW body matrix
+is recovered from the retail VHF hierarchy, identity-checked against the golden
+body MEB, converted to the SVWT/D3D row-vector convention, and attached to the
+material-slice set before Phase 643.
 
-No archive is selected by order or fuzzy name.  Missing or duplicated canonical
-archives remain explicit blockers.
+No archive is selected by order or fuzzy name. Missing/duplicated canonical
+archives and missing/conflicting VHF identity remain explicit blockers.
 """
 from __future__ import annotations
 
@@ -20,6 +21,10 @@ from bmw_body_material_admission import (
     DEFAULT_GOLDEN,
     build_bmw_body_material_admission,
     write_bmw_body_material_admission,
+)
+from bmw_vhf_body_world_transform import (
+    apply_bmw_vhf_body_world_transform,
+    build_bmw_vhf_body_world_transform,
 )
 from native_playable_scene_vulkan_set import build_native_playable_scene_vulkan_set
 from offline_resource_pipeline import MaterializedArchive, materialize_bff_inputs
@@ -82,6 +87,7 @@ def _blocked(
     blockers: Sequence[str],
     archive_sources: Mapping[str, Any] | None = None,
     admission: Mapping[str, Any] | None = None,
+    vhf_transform: Mapping[str, Any] | None = None,
     composition: Mapping[str, Any] | None = None,
     persist: bool = True,
 ) -> dict[str, Any]:
@@ -96,12 +102,21 @@ def _blocked(
         "blocking_reasons": list(dict.fromkeys(str(reason) for reason in blockers)),
         "archive_sources": dict(archive_sources or {}),
         "stages": {
-            "vehicle_material_admission": dict(admission) if isinstance(admission, Mapping) else None,
-            "scene_composition": dict(composition) if isinstance(composition, Mapping) else None,
+            "vehicle_material_admission": (
+                dict(admission) if isinstance(admission, Mapping) else None
+            ),
+            "vehicle_vhf_body_world_transform": (
+                dict(vhf_transform) if isinstance(vhf_transform, Mapping) else None
+            ),
+            "scene_composition": (
+                dict(composition) if isinstance(composition, Mapping) else None
+            ),
         },
         "artifacts": {
             "vehicle_material_admission": None,
             "vehicle_material_slice_set": None,
+            "vehicle_material_slice_set_with_vhf_transform": None,
+            "vehicle_vhf_body_world_transform": None,
             "scene_set_dir": None,
             "scene_composition": None,
         },
@@ -111,6 +126,7 @@ def _blocked(
             "manual_vehicle_material_slice_handoff_required": False,
             "manual_vehicle_bff_path_handoff_required": False,
             "phase643_composite_scene_consumed": False,
+            "vhf_body_world_transform_consumed": False,
             "persistent_BODY_pose_consumed": False,
             "phase700_runtime_pose_handoff_consumed": False,
             "dynamic_vehicle_world_transform_claimed": False,
@@ -135,8 +151,8 @@ def build_native_playable_scene_bootstrap(
     track_root = Path(track_scene_set).resolve()
     out = Path(output_dir).resolve()
 
-    # Never let the orchestration cleanup or diagnostics mutate its prepared
-    # track input when the caller supplies overlapping source/output paths.
+    # Never let orchestration cleanup or diagnostics mutate its prepared track
+    # input when the caller supplies overlapping source/output paths.
     if out == track_root or out in track_root.parents or track_root in out.parents:
         return _blocked(
             vehicle=vehicle,
@@ -165,9 +181,12 @@ def build_native_playable_scene_bootstrap(
         if golden_manifest is not None
         else Path(__file__).resolve().parents[2] / DEFAULT_GOLDEN
     )
+    transformed_slice_set = out / "vehicle-material-slice-set-with-vhf-transform.json"
+    vhf_transform_path = out / "vehicle-vhf-body-world-transform.json"
 
     archive_sources: dict[str, Any] = {}
     admission: Mapping[str, Any] | None = None
+    vhf_transform: Mapping[str, Any] | None = None
     composition: Mapping[str, Any] | None = None
     blockers: list[str] = []
 
@@ -212,17 +231,36 @@ def build_native_playable_scene_bootstrap(
                         for reason in admission.get("blocking_reasons") or ["not-ready"]
                     )
 
-            slice_set = admission_dir / "material_slice_set.json"
-            if not blockers and not slice_set.is_file():
+            source_slice_set = admission_dir / "material_slice_set.json"
+            if not blockers and not source_slice_set.is_file():
                 blockers.append(
                     "playable-scene-bootstrap:vehicle-material-slice-set-missing"
                 )
+
+            transformed_payload: Mapping[str, Any] | None = None
+            if not blockers:
+                try:
+                    vhf_transform = build_bmw_vhf_body_world_transform(
+                        primary,
+                        golden,
+                    )
+                    _write(vhf_transform_path, vhf_transform)
+                    transformed_payload = apply_bmw_vhf_body_world_transform(
+                        source_slice_set,
+                        vhf_transform,
+                    )
+                    _write(transformed_slice_set, transformed_payload)
+                except Exception as exc:
+                    blockers.append(
+                        "playable-scene-bootstrap:vehicle-vhf-transform-failed:"
+                        f"{type(exc).__name__}:{exc}"
+                    )
 
             if not blockers:
                 try:
                     composition = build_native_playable_scene_vulkan_set(
                         track_root,
-                        slice_set,
+                        transformed_slice_set,
                         scene_dir,
                         source_bffs=[primary, *supplemental],
                         environment_cube_dds=environment_cube_dds,
@@ -251,6 +289,8 @@ def build_native_playable_scene_bootstrap(
         not blockers
         and isinstance(admission, Mapping)
         and admission.get("ready") is True
+        and isinstance(vhf_transform, Mapping)
+        and vhf_transform.get("ready") is True
         and isinstance(composition, Mapping)
         and composition.get("ready") is True
     )
@@ -262,6 +302,7 @@ def build_native_playable_scene_bootstrap(
             blockers=blockers or ["playable-scene-bootstrap:not-ready"],
             archive_sources=archive_sources,
             admission=admission,
+            vhf_transform=vhf_transform,
             composition=composition,
         )
 
@@ -277,11 +318,14 @@ def build_native_playable_scene_bootstrap(
         "archive_sources": archive_sources,
         "stages": {
             "vehicle_material_admission": dict(admission),
+            "vehicle_vhf_body_world_transform": dict(vhf_transform),
             "scene_composition": dict(composition),
         },
         "artifacts": {
             "vehicle_material_admission": str(admission_dir / "admission.json"),
             "vehicle_material_slice_set": str(admission_dir / "material_slice_set.json"),
+            "vehicle_material_slice_set_with_vhf_transform": str(transformed_slice_set),
+            "vehicle_vhf_body_world_transform": str(vhf_transform_path),
             "scene_set_dir": str(scene_dir),
             "scene_composition": str(scene_dir / "playable_scene_composition.json"),
         },
@@ -291,6 +335,8 @@ def build_native_playable_scene_bootstrap(
             "manual_vehicle_material_slice_handoff_required": False,
             "manual_vehicle_bff_path_handoff_required": False,
             "phase533_complete_body_admission_required": True,
+            "phase645_vhf_body_world_transform_required": True,
+            "vhf_body_world_transform_consumed": True,
             "phase643_composite_scene_consumed": True,
             "track_and_vehicle_share_one_native_scene_set": True,
             "persistent_BODY_pose_consumed": False,
