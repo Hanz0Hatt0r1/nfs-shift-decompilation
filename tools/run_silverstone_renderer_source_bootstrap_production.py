@@ -5,6 +5,11 @@ Phase 637 regenerates the full runtime shader target set before delegating to th
 Phase 635 self-bootstrap path. Renderer report bundles are optional canonical
 cross-check inputs; when none are supplied an internal empty ZIP records that no
 bundle cross-check evidence was provided.
+
+When an exact OfflineRuntimeBootstrap report is supplied, Phase 638 reuses its
+hashed static scene artifacts to regenerate the optional Phase 595 OBJECT
+candidate join against the newly rebuilt capture pipeline. No manual candidate
+join JSON is required on that path.
 """
 from __future__ import annotations
 
@@ -69,7 +74,9 @@ def _load_json_map(path: Path) -> Mapping[str, Any]:
     return value
 
 
-def _validate_prebuilt_target(path: Path) -> tuple[Mapping[str, Any] | None, list[str]]:
+def _validate_prebuilt_target(
+    path: Path,
+) -> tuple[Mapping[str, Any] | None, list[str]]:
     blockers: list[str] = []
     if not path.is_file():
         return None, [f"file-not-found:{path}"]
@@ -98,6 +105,7 @@ def run_source_bootstrap_production(
     pe_evidence: str | Path | None = None,
     pe_image: str | Path | None = None,
     runtime_shader_targets: str | Path | None = None,
+    runtime_bootstrap: str | Path | None = None,
     compact_evidence: str | Path | None = None,
     compact_crosscheck: bool = True,
     max_json_bytes: int = 128 * 1024 * 1024,
@@ -178,6 +186,7 @@ def run_source_bootstrap_production(
                 output_dir=self_dir,
                 corpus=corpus,
                 runtime_shader_targets=target_path,
+                runtime_bootstrap=runtime_bootstrap,
                 max_json_bytes=max_json_bytes,
             )
         except Exception as exc:
@@ -198,6 +207,12 @@ def run_source_bootstrap_production(
     )
     ready = self_ready and not blockers
 
+    object_join = (
+        self_manifest.get("object_candidate_join")
+        if isinstance(self_manifest, Mapping)
+        and isinstance(self_manifest.get("object_candidate_join"), Mapping)
+        else None
+    )
     manifest = {
         "format": FORMAT,
         "version": 1,
@@ -213,6 +228,12 @@ def run_source_bootstrap_production(
                 )
             ),
             "bundle_crosscheck_supplied": not synthetic_empty_bundle,
+            "runtime_bootstrap_supplied": runtime_bootstrap is not None,
+            "object_candidate_join_regeneration_ready": (
+                object_join.get("regeneration_ready") is True
+                if isinstance(object_join, Mapping)
+                else False
+            ),
             "self_bootstrap_started": self_started,
             "self_bootstrap_ready": self_ready,
             "production_completed": (
@@ -251,10 +272,22 @@ def run_source_bootstrap_production(
         },
         "bundle_crosscheck": {
             "user_supplied": not synthetic_empty_bundle,
-            "inputs": [str(Path(value).expanduser()) for value in (bundles or [])],
+            "inputs": [
+                str(Path(value).expanduser()) for value in (bundles or [])
+            ],
             "effective_inputs": [str(Path(value)) for value in bundle_inputs],
             "synthetic_empty_bundle": synthetic_empty_bundle,
             "synthetic_empty_bundle_contains_evidence": False,
+        },
+        "resource_scene_evidence": {
+            "runtime_bootstrap": (
+                str(Path(runtime_bootstrap).expanduser())
+                if runtime_bootstrap is not None
+                else None
+            ),
+            "object_candidate_join": (
+                dict(object_join) if isinstance(object_join, Mapping) else None
+            ),
         },
         "self_bootstrap": {
             "format": (
@@ -289,14 +322,17 @@ def run_source_bootstrap_production(
         "blocking_reasons": blockers,
         "boundary": {
             "dependency_order": (
-                "Phase636 full shader targets -> Phase630 -> Phase634 -> "
-                "Phase633 -> Phase619-626"
+                "Phase636 full shader targets -> Phase630 -> Phase638 optional "
+                "object join -> Phase634 -> Phase633 -> Phase619-626"
             ),
             "manual_full_shader_target_handoff_required": False,
             "manual_renderer_report_bundle_required": False,
+            "manual_object_candidate_join_handoff_required_when_runtime_bootstrap_supplied": False,
+            "runtime_bootstrap_scene_artifacts_are_hash_verified_before_object_join": True,
             "bundle_inputs_are_crosscheck_only": True,
             "synthetic_empty_bundle_is_evidence": False,
             "compact_phase568_evidence_is_crosscheck_only": True,
+            "unique_scene_candidate_is_render_admission": False,
             "ranking_or_frequency_is_proof": False,
             "original_game_execution_required": False,
             "new_capture_required": False,
@@ -319,6 +355,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--corpus", action="append", default=[])
     parser.add_argument("--bundle", action="append", default=[])
     parser.add_argument("--runtime-shader-targets")
+    parser.add_argument("--runtime-bootstrap")
     parser.add_argument("--compact-evidence")
     parser.add_argument("--no-compact-crosscheck", action="store_true")
     parser.add_argument(
@@ -336,6 +373,7 @@ def main(argv: list[str] | None = None) -> int:
         corpus=args.corpus,
         bundles=args.bundle,
         runtime_shader_targets=args.runtime_shader_targets,
+        runtime_bootstrap=args.runtime_bootstrap,
         compact_evidence=args.compact_evidence,
         compact_crosscheck=not args.no_compact_crosscheck,
         max_json_bytes=args.max_json_bytes,
