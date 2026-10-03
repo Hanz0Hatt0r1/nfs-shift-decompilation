@@ -15,7 +15,8 @@ target_sources(shift_runtime_physics PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/wheel_spring_gap_batch.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/tire_thermal.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/wheel_thermal_integrator.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/body_frame_integration.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/body_frame_integration.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/body_record_adapter.cpp)
 
 add_executable(shift_runtime_wheel_force_aggregate_check
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/wheel_force_aggregate_check.cpp)
@@ -129,6 +130,13 @@ target_link_libraries(shift_runtime_body_array_basis_callback_check PRIVATE
 target_compile_options(shift_runtime_body_array_basis_callback_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_body_record_adapter_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/body_record_adapter_check.cpp)
+target_link_libraries(shift_runtime_body_record_adapter_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_body_record_adapter_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_wheel_force_aggregate
@@ -178,4 +186,7 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_body_array_basis_callback
     COMMAND shift_runtime_body_array_basis_callback_check)
+  add_test(
+    NAME shift_runtime_body_record_adapter
+    COMMAND shift_runtime_body_record_adapter_check)
 endif()
