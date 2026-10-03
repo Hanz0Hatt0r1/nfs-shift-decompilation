@@ -36,6 +36,15 @@ def _load(path: str | Path) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def _write_json(path: str | Path, value: dict) -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def cmd_catalog(args: argparse.Namespace) -> int:
     with materialize_bff_inputs(args.inputs) as archives:
         catalog, graph, coverage = build_catalog(
@@ -107,16 +116,58 @@ def cmd_native_handoff(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def _augment_all_report_with_native_handoff(
+    report: dict,
+    handoff: dict,
+    output_dir: str | Path,
+) -> dict:
+    """Persist one-command resource/handoff status without claiming runtime readiness."""
+    out = Path(output_dir)
+    combined = dict(report)
+    combined["native_resource_handoff_status"] = handoff.get("status")
+    combined["native_resource_handoff_ready"] = handoff.get("ready") is True
+    combined["native_resource_handoff_blocking_reasons"] = list(
+        handoff.get("blocking_reasons") or []
+    )
+    artifacts = dict(report.get("artifacts") or {})
+    artifacts["native_resource_handoff"] = str(
+        out / "native-handoff" / "native_resource_handoff.json"
+    )
+    for name, row in (handoff.get("artifacts") or {}).items():
+        if isinstance(row, dict) and row.get("path"):
+            artifacts[f"native_handoff_{name}"] = str(row["path"])
+    combined["artifacts"] = artifacts
+    boundary = dict(report.get("boundary") or {})
+    boundary["native_resource_handoff_automated"] = True
+    boundary["native_resource_handoff_is_runtime_execution"] = False
+    combined["boundary"] = boundary
+    _write_json(out / "pipeline_run.json", combined)
+    return combined
+
+
 def cmd_all(args: argparse.Namespace) -> int:
+    out = Path(args.output)
     report = run_offline_pipeline(
         args.inputs,
-        args.output,
+        out,
         track=args.track,
         vehicle=args.vehicle,
         decode_limit_per_archive=args.decode_limit_per_archive,
     )
+    handoff = build_native_resource_handoff_files(
+        out / "resource_catalog.json",
+        out / "scene_vehicle_bootstrap.json",
+        out / "vehicle_physics_bundle_report.json",
+        out / "native-handoff",
+        scene_set_dir=args.scene_set,
+    )
+    report = _augment_all_report_with_native_handoff(report, handoff, out)
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 0 if report["resource_bootstrap_ready"] else 2
+    if not report["resource_bootstrap_ready"]:
+        return 2
+    if args.require_native_resource_handoff and not report["native_resource_handoff_ready"]:
+        return 2
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -164,11 +215,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     native_handoff.set_defaults(fn=cmd_native_handoff)
 
-    all_cmd = sub.add_parser("all", help="run catalog + validation + graph + bootstrap in one command")
+    all_cmd = sub.add_parser(
+        "all",
+        help="run catalog + validation + graph + bootstrap + native resource handoff",
+    )
     all_cmd.add_argument("inputs", nargs="+", help=".bff, .zip, or directories containing BFFs")
     all_cmd.add_argument("-o", "--output", required=True, help="output directory")
     all_cmd.add_argument("--track", required=True)
     all_cmd.add_argument("--vehicle", required=True)
+    all_cmd.add_argument(
+        "--scene-set",
+        help=(
+            "optional existing runtime-proven native scene-set directory; "
+            "never synthesized from static resources"
+        ),
+    )
+    all_cmd.add_argument(
+        "--require-native-resource-handoff",
+        action="store_true",
+        help="return non-zero unless the native scene/physics resource-input join is ready",
+    )
     all_cmd.add_argument(
         "--decode-limit-per-archive",
         type=int,

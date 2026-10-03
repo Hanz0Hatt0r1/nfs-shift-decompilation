@@ -12,6 +12,9 @@ BFF / ZIP
   -> SHIFT.SceneVehicleBootstrap/1
   -> SHIFT.TypedResourceClosure/1
   -> existing vehicle physics asset graph
+  -> SHIFT.VehiclePhysicsResourceManifest/1
+  -> optional runtime-proven scene-set/catalog join
+  -> SHIFT.OfflineNativeResourceHandoff/1
   -> SHIFT.OfflineResourceRuntimeAdmission/1
 ```
 
@@ -34,6 +37,11 @@ The pipeline is deliberately fail-closed.
 - Missing shaders/resources remain unresolved. Nothing is synthesized.
 - A resource-ready bootstrap does not bypass the existing native render,
   physics, runtime-evidence, or provenance gates.
+- `all` may consume an existing runtime-proven native scene set, but never
+  creates one from static BFF evidence.
+- The current legacy native physics compatibility manifest is emitted only for
+  exact `BMW_M3_E36.bff` identity. Other vehicle manifests remain neutral rather
+  than being relabeled as BMW.
 
 ## Commands
 
@@ -69,7 +77,7 @@ python tools/shift_resource_pipeline.py bootstrap \
   --admission out/offline-resource-validation/native_admission.json
 ```
 
-Run the complete orchestration in one command:
+Run the complete offline orchestration in one command:
 
 ```bash
 python tools/shift_resource_pipeline.py all \
@@ -78,6 +86,29 @@ python tools/shift_resource_pipeline.py all \
   --track Silverstone_Era3_GrandPrix \
   --vehicle Ford_Mustang_2010
 ```
+
+The `all` command now also runs the native-resource handoff stage. Without a
+runtime-proven scene set the scene side intentionally remains blocked, but the
+neutral vehicle physics resource manifest is still generated. For the current
+BMW vertical slice, an existing scene set can be joined in the same command:
+
+```bash
+python tools/shift_resource_pipeline.py all \
+  Vehicles.zip Silverstone_Era3_.zip RENDER.bff \
+  -o out/offline-pipeline \
+  --track Silverstone_Era3_GrandPrix \
+  --vehicle BMW_M3_E36 \
+  --scene-set out/native-scene-vulkan \
+  --require-native-resource-handoff
+```
+
+`--require-native-resource-handoff` changes only the command exit gate: it
+returns non-zero unless the exact scene/physics resource-input join is ready. It
+does not claim camera, participant, BODY-feedback, provider-scheduling or full
+runtime readiness.
+
+The standalone `native-handoff` subcommand remains available for rebuilding the
+join without re-decoding the BFF corpus.
 
 When `RENDER.bff` is not supplied, exact `.fx` dependencies referenced by
 Silverstone BMT materials remain visible as unresolved blockers. The command
@@ -100,8 +131,21 @@ shader.
   resolved semantic closure; unresolved dependencies are not materialized;
 - `vehicle_physics/vehicle_physics_asset_graph.json` — produced by the existing
   `vehicle_physics_bundle.py` path for the selected vehicle;
+- `native-handoff/vehicle_physics_resource_manifest.json` — exact neutral
+  vehicle BFF/physics identity join;
+- `native-handoff/native_physics_manifest.json` — current native-runtime BMW
+  compatibility manifest when the exact BMW gate is satisfied;
+- `native-handoff/scene_catalog_join.json` — existing runtime-proven scene IMB
+  identities joined back to the exact offline catalog when `--scene-set` is
+  supplied;
+- `native-handoff/native_resource_handoff.json` — combined native resource-input
+  admission state;
 - `native_runtime_admission.json` — explicit resource/runtime gate state;
-- `pipeline_run.json` — compact top-level reproducibility record.
+- `pipeline_run.json` — compact top-level reproducibility record including the
+  native-resource handoff status and artifact paths.
+
+See `docs/OFFLINE_NATIVE_RESOURCE_HANDOFF.md` for the exact join contracts and
+non-claims.
 
 ## Current attached corpus intake
 
