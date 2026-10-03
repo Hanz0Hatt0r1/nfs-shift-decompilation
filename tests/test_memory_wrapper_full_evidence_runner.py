@@ -117,6 +117,15 @@ out = Path(sys.argv[sys.argv.index('--json-out') + 1])
 out.write_text(json.dumps({'format':'SHIFT-MEMORY-SOURCE-SEMANTIC-SUMMARY/1','wrapper_profiles':[],'scope':{'release_flag_role_proven':False}}) + '\n', encoding='utf-8')
 """,
     )
+    _write_script(
+        live_dir / "build_memory_wrapper_runtime_manifest.py",
+        r"""#!/usr/bin/env python3
+import json, sys
+from pathlib import Path
+out = Path(sys.argv[sys.argv.index('--json-out') + 1])
+out.write_text(json.dumps({'format':'SHIFT-MEMORY-WRAPPER-RUNTIME-MANIFEST/1','wrappers':[],'scope':{'complete_helper_abi_proven':False}}) + '\n', encoding='utf-8')
+""",
+    )
     return runner
 
 
@@ -156,6 +165,7 @@ def test_runner_builds_complete_memory_evidence_bundle(tmp_path):
         "memory_released_pointer_role_join.json": "SHIFT-MEMORY-RELEASED-POINTER-ROLE-JOIN/1",
         "memory_retail_static_summary.json": "SHIFT-MEMORY-RETAIL-STATIC-SUMMARY/1",
         "memory_source_semantic_summary.json": "SHIFT-MEMORY-SOURCE-SEMANTIC-SUMMARY/1",
+        "memory_wrapper_runtime_manifest.json": "SHIFT-MEMORY-WRAPPER-RUNTIME-MANIFEST/1",
     }
     for relative, expected_format in expected.items():
         report = json.loads((output / relative).read_text(encoding="utf-8"))
@@ -173,6 +183,7 @@ def test_runner_builds_complete_memory_evidence_bundle(tmp_path):
 
     assert "memory retail static summary:" in result.stdout
     assert "memory source semantic summary:" in result.stdout
+    assert "memory wrapper runtime manifest:" in result.stdout
 
 
 def test_runner_rejects_missing_inputs_before_subtools(tmp_path):
