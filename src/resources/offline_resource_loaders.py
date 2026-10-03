@@ -71,6 +71,38 @@ def _unique_ext(
     return None
 
 
+def _blocked_required_roots(
+    catalog: Mapping[str, Any],
+    roots: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    by_id = {
+        str(row.get("id")): row
+        for row in _catalog_rows(catalog, "resources")
+        if row.get("id")
+    }
+    blocked: list[dict[str, Any]] = []
+    for group, group_roots in roots.items():
+        if not isinstance(group_roots, Mapping):
+            continue
+        for ext, resource_id in group_roots.items():
+            if not str(ext).startswith(".") or not isinstance(resource_id, str):
+                continue
+            row = by_id.get(resource_id)
+            if row is None or row.get("decode_status") != "blocked":
+                continue
+            blocked.append({
+                "group": str(group),
+                "extension": str(ext),
+                "resource_id": resource_id,
+                "path": row.get("path"),
+                "decode_status": row.get("decode_status"),
+                "analysis_error": row.get("analysis_error"),
+                "error_kind": row.get("error_kind"),
+                "error": row.get("error"),
+            })
+    return blocked
+
+
 def _dependency_state(
     catalog: Mapping[str, Any],
     graph: Mapping[str, Any],
@@ -106,6 +138,8 @@ def _contract_boundary() -> dict[str, Any]:
         "archive_selection": "exact-filename",
         "required_root_selection": "unique-extension-within-selected-archive",
         "dependency_resolution": "admissible-semantic-edges-only",
+        "blocked_required_root_closes_gate": True,
+        "unsupported_or_deferred_root_reclassified_as_parser_failure": False,
         "heuristic_refs_close_gate": False,
         "basename_fallback": False,
         "missing_resource_synthesis": False,
@@ -150,6 +184,11 @@ def load_track(
         if row.get("extension") == ".imx" and row.get("id")
     ]
 
+    blocked_required_roots = _blocked_required_roots(catalog, roots)
+    blockers.extend(
+        f"root-validation-blocked:{row['group']}:{row['extension']}:{row['path']}"
+        for row in blocked_required_roots
+    )
     edges, unresolved = _dependency_state(catalog, graph, selected, blockers)
     blockers = list(dict.fromkeys(blockers))
     ready = not blockers
@@ -165,6 +204,7 @@ def load_track(
             if row is not None
         },
         "roots": roots,
+        "blocked_required_roots": blocked_required_roots,
         "dependency_edges": edges,
         "unresolved_dependencies": unresolved,
         "blocking_reasons": blockers,
@@ -200,6 +240,11 @@ def load_vehicle(
         for ext in VEHICLE_PHYSICS_EXTENSIONS + VEHICLE_RENDER_ROOT_EXTENSIONS
     }
 
+    blocked_required_roots = _blocked_required_roots(catalog, {"vehicle": roots})
+    blockers.extend(
+        f"root-validation-blocked:{row['group']}:{row['extension']}:{row['path']}"
+        for row in blocked_required_roots
+    )
     edges, unresolved = _dependency_state(catalog, graph, selected, blockers)
     blockers = list(dict.fromkeys(blockers))
     ready = not blockers
@@ -215,6 +260,7 @@ def load_vehicle(
             if row is not None
         },
         "roots": {"vehicle": roots},
+        "blocked_required_roots": blocked_required_roots,
         "dependency_edges": edges,
         "unresolved_dependencies": unresolved,
         "blocking_reasons": blockers,
