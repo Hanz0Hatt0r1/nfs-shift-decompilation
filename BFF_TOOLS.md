@@ -30,7 +30,7 @@ gates that still require explicit evidence.
 
 To continue through fail-closed vertical-slice profile preparation in one command:
 
-`python tools/bootstrap_native_vertical_slice.py Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/native-vertical-slice --track Silverstone_Era3_GrandPrix --vehicle BMW_M3_E36 --workspace-root . --scene-set out/native-scene-vulkan --camera-state out/native-camera-state.json --solver-frame out/solver.sbfr --generated-body-constraint-frame out/generated.gbcf --constraint-sample-relation-frame out/relations.csrf --constraint-relation-reset-frame out/reset.crrf --post-solve-projection out/post.sbps --keyboard --frames 120 --validate-launch-plan`
+`python tools/bootstrap_native_vertical_slice.py Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/native-vertical-slice --track Silverstone_Era3_GrandPrix --vehicle BMW_M3_E36 --workspace-root . --participant-observation /path/to/native_physics_participant_observation.json --scene-set out/native-scene-vulkan --camera-state out/native-camera-state.json --solver-frame out/solver.sbfr --generated-body-constraint-frame out/generated.gbcf --constraint-sample-relation-frame out/relations.csrf --constraint-relation-reset-frame out/reset.crrf --post-solve-projection out/post.sbps --keyboard --frames 120 --validate-launch-plan`
 
 The command never supplies defaults for missing runtime evidence. A blocked selected
 offline bootstrap cannot be bypassed by later explicit runtime paths, and optional
