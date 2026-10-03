@@ -29,6 +29,7 @@ from bmw_material_vulkan_adapter import (
 )
 from bmw_vulkan_bundle import TARGET_MEB
 from native_scene_vulkan_prepare import prepare_native_scene_vulkan_set
+from native_vehicle_world_transform_script import write_scene_draw_groups
 from vulkan_dds_bridge import bridge_bmw_dds_resources
 from vulkan_draw_bundle import build_vulkan_draw_bundle
 
@@ -403,12 +404,15 @@ def build_native_playable_scene_vulkan_set(
             "vehicle_children_rebuilt_with_neutral_builder": True,
             "vehicle_resource_identity_preserved": True,
             "vehicle_source_world_transform_preserved": True,
+            "draw_group_sidecar_aligned_with_bundle_set_paths": ready,
             "persistent_BODY_pose_consumed": False,
             "phase698_vehicle_BODY_selection_consumed": False,
             "dynamic_vehicle_world_transform_claimed": False,
         },
     }
     _write(out / "bundle_set_manifest.json", manifest)
+    if ready:
+        write_scene_draw_groups(out, manifest)
 
     prepare = prepare_native_scene_vulkan_set(out, validator=validator)
     if prepare.get("ready") is not True:
@@ -432,6 +436,12 @@ def build_native_playable_scene_vulkan_set(
             "path": str(out),
             "manifest_sha256": _sha(out / "bundle_set_manifest.json"),
             "ready": manifest.get("ready") is True,
+        },
+        "draw_groups": {
+            "format": "SHIFT.NativeSceneDrawGroups/1",
+            "path": str(out / "bundle_set.groups") if ready else None,
+            "sha256": _sha(out / "bundle_set.groups") if ready else None,
+            "ready": ready,
         },
         "prepare": {
             "format": prepare.get("format"),
