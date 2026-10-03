@@ -16,10 +16,10 @@ Example:
 
 This runner joins source wrapper callsites, targeted wrapper forwarding,
 source-argument -> backend-storage provenance, repeated provenance patterns,
-targeted backend instruction/diagnostic evidence, the independently proven
-allocation-size role, release-pointer provenance from the pool-free `%p`
-diagnostic back to release-wrapper entry storage, and the corresponding source
-argument role. Release-flag/delete-kind and ownership semantics remain unassigned.
+targeted backend instruction/diagnostic evidence, proven allocation-size and
+released-pointer source roles, retail static memory evidence, and behavior-only
+release-byte observations. Release-flag/delete-kind and ownership semantics
+remain unassigned.
 EOF
 }
 
@@ -63,9 +63,12 @@ BACKEND_INSTRUCTIONS="$BACKEND_DIR/memory_backend_instructions.jsonl"
 BACKEND_JSON="$BACKEND_DIR/memory_backend_evidence.json"
 DIAGNOSTIC_SLICE_JSON="$BACKEND_DIR/memory_allocation_diagnostic_slice.json"
 FREE_DIAGNOSTIC_SLICE_JSON="$BACKEND_DIR/memory_free_diagnostic_slice.json"
+RELEASE_BYTE_BEHAVIOR_JSON="$BACKEND_DIR/memory_release_byte_behavior.json"
 ALLOCATION_SIZE_ROLE_JSON="$OUT_DIR/memory_allocation_size_role_join.json"
 RELEASE_POINTER_CHAIN_JSON="$OUT_DIR/memory_release_pointer_chain.json"
 RELEASED_POINTER_ROLE_JSON="$OUT_DIR/memory_released_pointer_role_join.json"
+STATIC_SUMMARY_JSON="$OUT_DIR/memory_retail_static_summary.json"
+SOURCE_SEMANTIC_SUMMARY_JSON="$OUT_DIR/memory_source_semantic_summary.json"
 
 python3 "$LIVE_DUMP_DIR/extract_memory_wrapper_callsites.py" \
   "$SOURCE" \
@@ -110,6 +113,21 @@ python3 "$LIVE_DUMP_DIR/join_released_pointer_role.py" \
   --release-chain "$RELEASE_POINTER_CHAIN_JSON" \
   --json-out "$RELEASED_POINTER_ROLE_JSON"
 
+python3 "$SCRIPT_DIR/summarize_memory_retail_static_evidence.py" \
+  --forwarding "$FORWARDING_JSON" \
+  --backend "$BACKEND_JSON" \
+  --allocation-slice "$DIAGNOSTIC_SLICE_JSON" \
+  --free-slice "$FREE_DIAGNOSTIC_SLICE_JSON" \
+  --release-chain "$RELEASE_POINTER_CHAIN_JSON" \
+  --release-byte "$RELEASE_BYTE_BEHAVIOR_JSON" \
+  --json-out "$STATIC_SUMMARY_JSON"
+
+python3 "$LIVE_DUMP_DIR/summarize_memory_source_semantics.py" \
+  --static-summary "$STATIC_SUMMARY_JSON" \
+  --allocation-size-role "$ALLOCATION_SIZE_ROLE_JSON" \
+  --released-pointer-role "$RELEASED_POINTER_ROLE_JSON" \
+  --json-out "$SOURCE_SEMANTIC_SUMMARY_JSON"
+
 echo "memory wrapper callsites: $CALLSITES_JSON"
 echo "memory wrapper forwarding: $FORWARDING_JSON"
 echo "memory wrapper argument join: $ARGUMENT_JOIN_JSON"
@@ -118,3 +136,5 @@ echo "memory backend evidence: $BACKEND_JSON"
 echo "memory allocation-size role join: $ALLOCATION_SIZE_ROLE_JSON"
 echo "memory release-pointer chain: $RELEASE_POINTER_CHAIN_JSON"
 echo "memory released-pointer role join: $RELEASED_POINTER_ROLE_JSON"
+echo "memory retail static summary: $STATIC_SUMMARY_JSON"
+echo "memory source semantic summary: $SOURCE_SEMANTIC_SUMMARY_JSON"
