@@ -222,14 +222,15 @@ def build_body_writer_bridge_candidates(access_report: dict[str, Any]) -> dict[s
             }
         )
 
-    by_function: dict[str, set[str]] = defaultdict(set)
+    by_group: dict[tuple[str, str], set[str]] = defaultdict(set)
     for row in candidates:
-        by_function[str(row["function"])].add(str(row["kind"]))
-    combined = sorted(
-        function
-        for function, kinds in by_function.items()
+        by_group[(str(row["function"]), str(row["base_register"]))].add(str(row["kind"]))
+    combined_groups = [
+        {"function": function, "base_register": base_register}
+        for (function, base_register), kinds in sorted(by_group.items())
         if {"accumulator-to-motion", "motion-to-pose"}.issubset(kinds)
-    )
+    ]
+    combined_functions = sorted({row["function"] for row in combined_groups})
 
     return {
         "format": FORMAT,
@@ -249,8 +250,10 @@ def build_body_writer_bridge_candidates(access_report: dict[str, Any]) -> dict[s
         "motion_to_pose_candidate_count": sum(
             row["kind"] == "motion-to-pose" for row in candidates
         ),
-        "combined_bridge_function_count": len(combined),
-        "combined_bridge_functions": combined,
+        "combined_bridge_group_count": len(combined_groups),
+        "combined_bridge_groups": combined_groups,
+        "combined_bridge_function_count": len(combined_functions),
+        "combined_bridge_functions": combined_functions,
         "candidates": candidates,
         "inspected_groups": inspected_groups,
         "malformed_accesses": malformed,
@@ -258,6 +261,7 @@ def build_body_writer_bridge_candidates(access_report: dict[str, Any]) -> dict[s
             "requires_pcode_classified_access_input": True,
             "same_function_required": True,
             "same_syntactic_base_register_required": True,
+            "combined_bridge_requires_same_base_register": True,
             "read_write_access_counts_as_read_and_write": True,
             "base_register_is_body_pointer": False,
             "pointer_aliases_across_functions_resolved": False,
@@ -303,6 +307,7 @@ def main() -> int:
     print(f"bridge candidates: {report['candidate_count']}")
     print(f"accumulator -> motion: {report['accumulator_to_motion_candidate_count']}")
     print(f"motion -> pose: {report['motion_to_pose_candidate_count']}")
+    print(f"combined bridge groups: {report['combined_bridge_group_count']}")
     print(f"combined bridge functions: {report['combined_bridge_function_count']}")
     print(f"malformed accesses: {report['malformed_access_count']}")
     if args.json_out:
