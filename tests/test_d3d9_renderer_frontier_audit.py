@@ -6,6 +6,7 @@ from d3d9_renderer_frontier_audit import (
     FXO_FORMAT,
     MATERIAL_FORMAT,
     MATERIAL_TEXTURE_FORMAT,
+    RUNTIME_RESOURCE_DRAW_FORMAT,
     SCENE_GEOMETRY_FORMAT,
     build_renderer_frontier_audit,
 )
@@ -113,6 +114,28 @@ def _scene_geometry(*, total=8, single=2, lod=3, resolved=0, blocked_sgbs=0):
             "remaining_geometry_ambiguous_draw_count": total - resolved,
             "ready_sgb_count": 4,
             "blocked_sgb_count": blocked_sgbs,
+        },
+    }
+
+
+def _runtime_draw(
+    *,
+    total=4,
+    exact_resource=4,
+    exact_scene=4,
+    repeated=0,
+    conflicts=0,
+    remaining=0,
+):
+    return {
+        "format": RUNTIME_RESOURCE_DRAW_FORMAT,
+        "summary": {
+            "input_geometry_draw_count": total,
+            "exact_resource_draw_count": exact_resource,
+            "exact_scene_resource_draw_count": exact_scene,
+            "repeated_scene_instance_draw_count": repeated,
+            "conflict_draw_count": conflicts,
+            "remaining_scene_draw_ambiguity_count": remaining,
         },
     }
 
@@ -235,6 +258,82 @@ def test_phase623_blocked_sgb_decode_stays_visible():
     assert "complete source-backed SGB coverage" in row["existing_next_step"]
 
 
+def test_phase624_exact_same_event_resource_and_unique_scene_reference_closes_frontier():
+    report = build_renderer_frontier_audit(
+        _base(),
+        scene_geometry=_scene_geometry(total=4, single=1, lod=3, resolved=0),
+        runtime_resource_draw=_runtime_draw(
+            total=4,
+            exact_resource=4,
+            exact_scene=4,
+            repeated=0,
+            remaining=0,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "closed-offline-exact"
+    assert row["confidence"] == "exact-same-event-runtime-resource-plus-static-scene-evidence"
+    assert "exact same-event runtime resource draws=4" in row["evidence"]
+    assert report["summary"]["phase624_applied"] is True
+    assert report["policy"]["same_event_runtime_path_sha_is_resource_draw_identity"] is True
+    # The historical absence stays a fact even though this frontier no longer needs it.
+    assert _by_id(report)["vb_ib_payload_equality"]["status"] == "absent-in-capture"
+
+
+def test_phase624_repeated_scene_instance_does_not_reopen_geometry_capture():
+    report = build_renderer_frontier_audit(
+        _base(),
+        scene_geometry=_scene_geometry(total=3, single=0, lod=3, resolved=0),
+        runtime_resource_draw=_runtime_draw(
+            total=3,
+            exact_resource=3,
+            exact_scene=1,
+            repeated=2,
+            remaining=2,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "ambiguous"
+    assert "repeated scene instances after resource proof=2" in row["evidence"]
+    assert "world-matrix/transform" in row["existing_next_step"]
+    assert "VB/IB payload is irrelevant" in row["existing_next_step"]
+    assert report["policy"]["resource_draw_identity_is_repeated_instance_identity"] is False
+
+
+def test_phase624_conflict_stays_fail_closed_and_offline_first():
+    report = build_renderer_frontier_audit(
+        _base(),
+        runtime_resource_draw=_runtime_draw(
+            total=2,
+            exact_resource=0,
+            exact_scene=0,
+            conflicts=1,
+            remaining=2,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "ambiguous"
+    assert "runtime/static conflicts=1" in row["evidence"]
+    assert "do not rank" in row["existing_next_step"]
+    assert "do not request buffer payload" in row["existing_next_step"]
+
+
+def test_empty_phase624_does_not_overwrite_prior_scene_closure():
+    report = build_renderer_frontier_audit(
+        _base(),
+        scene_geometry=_scene_geometry(total=2, single=0, lod=0, resolved=2),
+        runtime_resource_draw=_runtime_draw(
+            total=0,
+            exact_resource=0,
+            exact_scene=0,
+            remaining=0,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "closed-offline-exact"
+    assert row["confidence"] == "exact-static-scene-plus-instance-selection-evidence"
+
+
 def test_partial_fxo_provenance_is_not_closed():
     report = build_renderer_frontier_audit(
         _base(),
@@ -299,3 +398,5 @@ def test_formats_fail_closed():
         build_renderer_frontier_audit(_base(), material_textures={"format": "wrong"})
     with pytest.raises(ValueError, match="scene geometry"):
         build_renderer_frontier_audit(_base(), scene_geometry={"format": "wrong"})
+    with pytest.raises(ValueError, match="runtime resource draw"):
+        build_renderer_frontier_audit(_base(), runtime_resource_draw={"format": "wrong"})

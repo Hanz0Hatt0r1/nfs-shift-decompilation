@@ -12,6 +12,7 @@ FXO_FORMAT = "SHIFT.IMBFXOPairProvenance/1"
 MATERIAL_FORMAT = "SHIFT.IMBMaterialConstantCandidateJoin/1"
 MATERIAL_TEXTURE_FORMAT = "SHIFT.IMBMaterialTextureCandidateJoin/1"
 SCENE_GEOMETRY_FORMAT = "SHIFT.IMBStaticSceneReferenceCandidateJoin/1"
+RUNTIME_RESOURCE_DRAW_FORMAT = "SHIFT.IMBRuntimeResourceDrawCandidateJoin/1"
 
 
 def _summary(report: Mapping[str, Any] | None) -> Mapping[str, Any]:
@@ -29,6 +30,7 @@ def build_renderer_frontier_audit(
     material_constants: Mapping[str, Any] | None = None,
     material_textures: Mapping[str, Any] | None = None,
     scene_geometry: Mapping[str, Any] | None = None,
+    runtime_resource_draw: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if base.get("format") != BASE_FORMAT:
         raise ValueError(f"base audit must be {BASE_FORMAT}")
@@ -40,6 +42,8 @@ def build_renderer_frontier_audit(
         raise ValueError(f"material textures must be {MATERIAL_TEXTURE_FORMAT}")
     if scene_geometry is not None and scene_geometry.get("format") != SCENE_GEOMETRY_FORMAT:
         raise ValueError(f"scene geometry must be {SCENE_GEOMETRY_FORMAT}")
+    if runtime_resource_draw is not None and runtime_resource_draw.get("format") != RUNTIME_RESOURCE_DRAW_FORMAT:
+        raise ValueError(f"runtime resource draw must be {RUNTIME_RESOURCE_DRAW_FORMAT}")
 
     requirements = [dict(row) for row in (base.get("requirements") or []) if isinstance(row, Mapping)]
     by_id = {str(row.get("requirement_id")): row for row in requirements}
@@ -231,6 +235,76 @@ def build_renderer_frontier_audit(
                 "existing_next_step": next_step,
             })
 
+    # Phase 624 is stronger than Phase 623 resource-only static evidence because
+    # it joins one strong, same-instance-gated runtime resource attribution to
+    # the exact raw draw event index. Repeated SGB placements of the same exact
+    # resource remain an instance-selection problem rather than a geometry one.
+    if scene_row is not None and runtime_resource_draw is not None:
+        summary = _summary(runtime_resource_draw)
+        total = _int(summary.get("input_geometry_draw_count"))
+        exact_resource = _int(summary.get("exact_resource_draw_count"))
+        exact_scene = _int(summary.get("exact_scene_resource_draw_count"))
+        repeated = _int(summary.get("repeated_scene_instance_draw_count"))
+        conflicts = _int(summary.get("conflict_draw_count"))
+        remaining = _int(summary.get("remaining_scene_draw_ambiguity_count"))
+
+        if total == 0:
+            if scene_row.get("status") != "closed-offline-exact":
+                scene_row.update({
+                    "status": "no-active-blocker",
+                    "confidence": "deterministic-report-audit",
+                    "evidence": ["Phase 624 geometry draw set=0"],
+                    "missing_observation": None,
+                    "existing_next_step": None,
+                })
+        elif remaining == 0 and exact_scene == total:
+            scene_row.update({
+                "status": "closed-offline-exact",
+                "confidence": "exact-same-event-runtime-resource-plus-static-scene-evidence",
+                "evidence": [
+                    f"Phase 624 geometry draws={total}",
+                    f"exact same-event runtime resource draws={exact_resource}",
+                    f"exact unique scene resource draws={exact_scene}",
+                ],
+                "missing_observation": None,
+                "existing_next_step": None,
+            })
+        else:
+            evidence = [
+                f"Phase 624 geometry draws={total}",
+                f"exact same-event runtime resource draws={exact_resource}",
+                f"exact unique scene resource draws={exact_scene}",
+                f"repeated scene instances after resource proof={repeated}",
+                f"runtime/static conflicts={conflicts}",
+                f"remaining scene draw ambiguity={remaining}",
+            ]
+            if conflicts:
+                next_step = (
+                    "inspect the listed exact same-event runtime/static conflicts and existing candidate provenance; "
+                    "do not rank a conflicting candidate set and do not request buffer payload while the contradiction is unresolved"
+                )
+            elif repeated:
+                next_step = (
+                    "join exact draw-local world-matrix/transform or source-backed spatial evidence to the repeated SGB references of the already-proven resource; "
+                    "VB/IB payload is irrelevant to repeated-instance selection"
+                )
+            elif exact_resource:
+                next_step = (
+                    "complete exact static scene reference/instance correlation for the resources already proven at the same draw event; "
+                    "do not recapture geometry payload"
+                )
+            else:
+                next_step = (
+                    "exhaust existing IMBRuntimeCapturePipeline same-event strong attribution rows for the Phase 623 candidate set before considering any buffer payload observation"
+                )
+            scene_row.update({
+                "status": "ambiguous",
+                "confidence": "deterministic-report-audit",
+                "evidence": evidence,
+                "missing_observation": None,
+                "existing_next_step": next_step,
+            })
+
     absent = [row for row in requirements if row.get("status") == "absent-in-capture"]
     tooling = [
         row for row in requirements
@@ -258,6 +332,7 @@ def build_renderer_frontier_audit(
             "phase620_applied": material_constants is not None,
             "phase622_applied": material_textures is not None,
             "phase623_applied": scene_geometry is not None,
+            "phase624_applied": runtime_resource_draw is not None,
         },
         "requirements": requirements,
         "existing_data_requiring_tooling": [
@@ -283,6 +358,7 @@ def build_renderer_frontier_audit(
             "material_constants": material_constants.get("format") if material_constants else None,
             "material_textures": material_textures.get("format") if material_textures else None,
             "scene_geometry": scene_geometry.get("format") if scene_geometry else None,
+            "runtime_resource_draw": runtime_resource_draw.get("format") if runtime_resource_draw else None,
         },
         "policy": {
             **dict(base.get("policy") or {}),
@@ -291,6 +367,8 @@ def build_renderer_frontier_audit(
             "descriptor_compatibility_is_not_resource_identity": True,
             "static_scene_reference_is_draw_attribution": False,
             "source_backed_lod_family_is_selected_lod": False,
+            "same_event_runtime_path_sha_is_resource_draw_identity": True,
+            "resource_draw_identity_is_repeated_instance_identity": False,
         },
     }
     return result
@@ -313,6 +391,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--material-constants")
     parser.add_argument("--material-textures")
     parser.add_argument("--scene-geometry")
+    parser.add_argument("--runtime-resource-draw")
     args = parser.parse_args(argv)
     base = _load(args.base_audit)
     assert base is not None
@@ -322,6 +401,7 @@ def main(argv: list[str] | None = None) -> int:
         material_constants=_load(args.material_constants),
         material_textures=_load(args.material_textures),
         scene_geometry=_load(args.scene_geometry),
+        runtime_resource_draw=_load(args.runtime_resource_draw),
     )
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
