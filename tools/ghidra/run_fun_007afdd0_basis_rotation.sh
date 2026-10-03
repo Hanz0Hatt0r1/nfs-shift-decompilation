@@ -53,4 +53,3 @@ python3 "$SCRIPT_DIR/analyze_fun_007afdd0_basis_rotation.py" \
 
 echo "FUN_007afdd0 instruction export: $INSTRUCTIONS"
 echo "FUN_007afdd0 static precision report: $REPORT"
-EOF
