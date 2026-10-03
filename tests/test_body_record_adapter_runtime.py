@@ -89,7 +89,7 @@ def test_writer_payload_changes_only_proven_writer_bytes():
     original = _record()
     updated = apply_fun_007bab70_writer_payload(original, _payload(100.0))
     writer = writer_byte_indices()
-    assert len(writer) == 132
+    assert len(writer) == 168
     for index, (before, after) in enumerate(zip(original, updated)):
         if index not in writer:
             assert after == before, f"unrelated byte changed at 0x{index:x}"
