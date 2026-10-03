@@ -11,7 +11,10 @@ reverse-engineering step to six retail functions:
 - `FUN_00657c30` — function carrying the pool-free diagnostic.
 
 The primary backend output format is `SHIFT-MEMORY-BACKEND-EVIDENCE/1`.
-The same run also emits `SHIFT-MEMORY-ALLOCATION-DIAGNOSTIC-SLICE/1`.
+The same run also emits:
+
+- `SHIFT-MEMORY-ALLOCATION-DIAGNOSTIC-SLICE/1`;
+- `SHIFT-MEMORY-FREE-DIAGNOSTIC-SLICE/1`.
 
 ## Run
 
@@ -32,6 +35,7 @@ out/memory_backend_evidence/
   memory_backend_instructions.jsonl
   memory_backend_evidence.json
   memory_allocation_diagnostic_slice.json
+  memory_free_diagnostic_slice.json
 ```
 
 The full Ghidra export supplies `callgraph.jsonl` and `strings_xrefs.jsonl`; the
@@ -50,19 +54,21 @@ independent structures:
 
 The existing retail evidence places
 `Unable to allocate %d bytes of memory from the pool (%s)` inside
-`FUN_00638020`, with the known xref at `0x006381b1`. The backend artifact records
-whether that exact xref is covered by the targeted instruction body rather than
-relying only on the function-level string association.
+`FUN_00638020`, with the known xref at `0x006381b1`. It also places
+`Error freeing small alloc (no head) '0x%p' from pool: '%s'` inside
+`FUN_00657c30`; existing test evidence records the retail xref as `0x00657cb1`.
+The slicers consume the xref inventory dynamically rather than hard-coding those
+addresses.
 
 ## Allocation diagnostic slice
 
 `analyze_allocation_diagnostic_slice.py` performs a deliberately narrow local
-slice around that exact allocation diagnostic. It requires a straight-line CALL
-after the diagnostic xref and reconstructs cdecl-style stack arguments from the
+slice around the allocation diagnostic. It requires a straight-line CALL after
+the diagnostic xref and reconstructs cdecl-style stack arguments from the
 preceding `PUSH` sequence. Simple register copies and standard EBP-frame stack
 loads are traced backwards to the physical entry storage of `FUN_00638020`.
 
-For the format string
+For
 
 ```text
 Unable to allocate %d bytes of memory from the pool (%s)
@@ -70,29 +76,61 @@ Unable to allocate %d bytes of memory from the pool (%s)
 
 stack argument 0 must be the exact diagnostic format string. Only then is stack
 argument 1 interpreted as the `%d` vararg. If that value resolves unambiguously
-to one of the known physical entry storages (`ECX:4`, `EDX:4`, or
-`Stack[0x4]:4`), the slice may set `allocation_size_role_proven=true` and record
-that physical storage in `allocation_size_entry_storage`.
+to one known physical entry storage, the slice may set
+`allocation_size_role_proven=true`.
 
 The `%s` vararg is retained as `pool_string_vararg`, but it is **not** promoted
-to a pool selector. A string used for diagnostics can be derived from a pool
-object/name without being the selector accepted by the allocator itself.
+to a pool selector.
 
-The slice fails closed when a branch intervenes, a volatile register crosses an
-unmodelled call, a register write is unsupported, the format string is not stack
-argument 0, or the `%d` value does not resolve to one physical entry storage.
+## Free diagnostic slice
+
+`analyze_free_diagnostic_slice.py` applies the same fail-closed local model to
+`FUN_00657c30` and
+
+```text
+Error freeing small alloc (no head) '0x%p' from pool: '%s'
+```
+
+The exact diagnostic format must be stack argument 0. Stack argument 1 is then
+the `%p` vararg and stack argument 2 the `%s` diagnostic string source. The `%p`
+value is traced backwards through simple register copies or standard EBP-frame
+loads.
+
+A positive report records only:
+
+```text
+free_pointer_role_proven = true
+free_pointer_entry_storage = <physical FUN_00657c30 entry storage>
+```
+
+This proves the physical input to `FUN_00657c30` that supplies the diagnostic
+pointer. It does **not** yet prove which input to `FUN_0064f3a0`, `0064f4c0`,
+`FUN_00886930`, or `FUN_00886950` carries that pointer. That requires a separate
+inter-function release-chain forwarding join.
+
+The free slice also deliberately does not assign the `%s` diagnostic string to
+a pool-selector role and does not interpret `DL` as delete kind or release flag.
+
+## Fail-closed behavior
+
+Both local slicers stop semantic promotion when a branch intervenes between the
+diagnostic xref and candidate call, a volatile register crosses an unmodelled
+call, a register write is unsupported, the format string is not stack argument
+0, or the target vararg does not resolve to a single physical entry storage.
 
 ## Remaining boundary
 
-Even a positive `%d` slice does not prove the complete allocator ABI. These
+Even positive `%d` and `%p` slices do not prove the complete memory ABI. These
 remain separate questions:
 
 - pool-selector semantics;
 - alignment semantics;
 - release/delete flag semantics;
+- release-chain argument provenance;
 - compiler `operator new`/`operator delete` identity;
 - ownership/lifetime policy.
 
-The same evidence discipline applies on the free side: `%p`/`%s` diagnostics
-prove participation in a pool-free path, but individual release argument roles
-must be traced through the release backend before they are named.
+The next release-side evidence step is therefore inter-function forwarding from
+the physical `%p` input of `FUN_00657c30` backwards through
+`0064f4c0 -> FUN_0064f3a0` before any wrapper/source argument is named as the
+released pointer.
