@@ -11,9 +11,14 @@ MAIN_CHASSIS_BODY_INDEX = 0
 @dataclass(frozen=True)
 class BmwChassisTopology:
     body_count: int = BODY_COUNT
+    wheel_body_indices: tuple[int, int, int, int] = (3, 4, 7, 8)
+    spindle_body_indices: tuple[int, int, int, int] = (1, 2, 5, 6)
     wheel_spindle_body_indices_ready: bool = True
+    rear_axle_body_index_ready: bool = False
     main_chassis_body_selected: bool = True
     main_chassis_body_index: int = MAIN_CHASSIS_BODY_INDEX
+    update_child_to_vehicle_solver_base_continuity_proven: bool = False
+    vehicle_body_selection_ready: bool = False
 
 
 @dataclass(frozen=True)
@@ -47,7 +52,9 @@ def contract() -> dict[str, object]:
         "phase698_selection_emitted_without_continuity": False,
         "synthetic_positive_continuity_is_retail_proof": False,
         "rear_axle_body_index_required_for_chassis_selection": False,
+        "phase700_runtime_handoff_available_after_positive_gate": True,
         "world_transform_mapping_proven": False,
+        "renderer_transport_enabled": False,
         "fixed_step_auto_schedule": False,
         "original_game_executed": False,
         "new_runtime_capture_required": False,

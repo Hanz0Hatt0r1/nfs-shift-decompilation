@@ -28,12 +28,20 @@ def test_synthetic_future_positive_continuity_emits_exact_body_zero_selection() 
 
 
 def test_topology_drift_fails_before_continuity_is_consumed() -> None:
-    drifted = replace(BmwChassisTopology(), main_chassis_body_index=9)
-    with pytest.raises(ValueError, match="proven retail BODY topology"):
-        build_selection(
-            drifted,
-            UpdateChildVehicleSolverBaseContinuity(proven=True),
-        )
+    for drifted in (
+        replace(BmwChassisTopology(), main_chassis_body_index=9),
+        replace(BmwChassisTopology(), wheel_body_indices=(3, 4, 7, 9)),
+        replace(
+            BmwChassisTopology(),
+            update_child_to_vehicle_solver_base_continuity_proven=True,
+        ),
+        replace(BmwChassisTopology(), vehicle_body_selection_ready=True),
+    ):
+        with pytest.raises(ValueError, match="proven retail BODY topology"):
+            build_selection(
+                drifted,
+                UpdateChildVehicleSolverBaseContinuity(proven=True),
+            )
 
 
 def test_contract_keeps_current_runtime_identity_and_transform_closed() -> None:
@@ -46,7 +54,9 @@ def test_contract_keeps_current_runtime_identity_and_transform_closed() -> None:
     assert payload["phase698_selection_emitted_without_continuity"] is False
     assert payload["synthetic_positive_continuity_is_retail_proof"] is False
     assert payload["rear_axle_body_index_required_for_chassis_selection"] is False
+    assert payload["phase700_runtime_handoff_available_after_positive_gate"] is True
     assert payload["world_transform_mapping_proven"] is False
+    assert payload["renderer_transport_enabled"] is False
     assert payload["fixed_step_auto_schedule"] is False
     assert payload["original_game_executed"] is False
     assert payload["new_runtime_capture_required"] is False
