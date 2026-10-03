@@ -2,10 +2,12 @@
 
 This module freezes only the static relative order:
 
-    FUN_00763570 -> existing Phase 679 feedback/integration join
+    FUN_00763570 -> FUN_007b3f40 -> FUN_007b4110 -> FUN_007b2270
 
-The callback payloads remain external and byte-identical.  It does not model
-intervening FUN_00765470 local work or claim complete half-step semantics.
+The latter three anchors are represented by the already-admitted Phase 679
+feedback/integration callback. Callback payloads remain external and byte-identical.
+The module does not model intervening FUN_00765470 local work or claim complete
+half-step semantics.
 """
 from __future__ import annotations
 
@@ -15,6 +17,7 @@ from typing import Callable
 FORMAT = "SHIFT.Fun00765470WheelFeedbackJoinRuntime/1"
 HALF_STEP = "FUN_00765470"
 WHEEL_SHARED_TRIPLET = "FUN_00763570"
+SDF_SOLVE = "FUN_007b3f40"
 POST_SOLVE_FEEDBACK = "FUN_007b4110"
 BODY_ARRAY_INTEGRATION = "FUN_007b2270"
 
@@ -43,7 +46,7 @@ def execute_wheel_feedback_join(
     output = feedback_integration(body_bytes)
     if not isinstance(output, bytes):
         raise ValueError("Phase 679 feedback/integration callback must return bytes")
-    events.extend((POST_SOLVE_FEEDBACK, BODY_ARRAY_INTEGRATION))
+    events.extend((SDF_SOLVE, POST_SOLVE_FEEDBACK, BODY_ARRAY_INTEGRATION))
 
     return JoinResult(output, tuple(events), 1)
 
@@ -54,6 +57,7 @@ def contract() -> dict[str, object]:
         "half_step": HALF_STEP,
         "required_order": [
             WHEEL_SHARED_TRIPLET,
+            SDF_SOLVE,
             POST_SOLVE_FEEDBACK,
             BODY_ARRAY_INTEGRATION,
         ],
