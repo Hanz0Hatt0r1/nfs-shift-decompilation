@@ -6,7 +6,7 @@ RTTI/reflection class manifest, factory-to-initializer links, create-wrapper
 value-flow evidence, structural audit, the non-numeric evidence scorecard,
 source-level lifecycle observations, deleting-wrapper shapes, paired lifetime
 shapes, recurring helper-family evidence, diagnostic-backed memory-pool paths,
-and one-hop Ghidra lifecycle slices.
+memory-wrapper ABI shapes, and one-hop Ghidra lifecycle slices.
 """
 from __future__ import annotations
 
@@ -73,6 +73,17 @@ def _build_memory_helper_semantics(
     return module.build_memory_helper_semantics(helper_families_path, ghidra_export)
 
 
+def _build_memory_wrapper_family(
+    memory_semantics_path: Path,
+    ghidra_export: Path,
+) -> dict[str, Any]:
+    module = _load_ghidra_module(
+        "build_memory_wrapper_family.py",
+        "build_memory_wrapper_family",
+    )
+    return module.build_memory_wrapper_family(memory_semantics_path, ghidra_export)
+
+
 def run_pipeline(
     source: Path,
     exe: Path,
@@ -91,6 +102,7 @@ def run_pipeline(
     lifetime_pair_path = output_dir / "class_lifetime_pair_evidence.json"
     helper_families_path = output_dir / "lifetime_helper_families.json"
     memory_semantics_path = output_dir / "memory_helper_semantics.json"
+    memory_wrapper_path = output_dir / "memory_wrapper_family.json"
     lifecycle_targets_path = output_dir / "lifecycle_investigation_targets.json"
 
     class_manifest = build_manifest(source, exe, ghidra_export)
@@ -146,6 +158,12 @@ def run_pipeline(
     )
     _write_json(memory_semantics_path, memory_semantics)
 
+    memory_wrapper_family = _build_memory_wrapper_family(
+        memory_semantics_path,
+        ghidra_export,
+    )
+    _write_json(memory_wrapper_path, memory_wrapper_family)
+
     lifecycle_targets = _build_lifecycle_targets(scorecard_path, ghidra_export)
     _write_json(lifecycle_targets_path, lifecycle_targets)
 
@@ -160,6 +178,7 @@ def run_pipeline(
         "class_lifetime_pair_evidence": lifetime_pair_path.name,
         "lifetime_helper_families": helper_families_path.name,
         "memory_helper_semantics": memory_semantics_path.name,
+        "memory_wrapper_family": memory_wrapper_path.name,
         "lifecycle_investigation_targets": lifecycle_targets_path.name,
     }
     report = {
@@ -248,6 +267,13 @@ def run_pipeline(
             "diagnostic_backed_pool_lifetime_families": memory_semantics.get(
                 "diagnostic_backed_pool_lifetime_family_count"
             ),
+            "memory_wrapper_members": memory_wrapper_family.get("wrapper_count"),
+            "confirmed_memory_wrapper_shapes": memory_wrapper_family.get(
+                "confirmed_wrapper_shape_count"
+            ),
+            "memory_wrapper_family_candidates": int(
+                memory_wrapper_family.get("memory_wrapper_family_candidate") is True
+            ),
             "lifecycle_target_slices": lifecycle_targets.get("target_count"),
             "lifecycle_complete_slices": lifecycle_targets.get("complete_slice_count"),
             "lifecycle_incomplete_slices": lifecycle_targets.get("incomplete_slice_count"),
@@ -256,9 +282,13 @@ def run_pipeline(
         "next_evidence_blockers": scorecard.get("next_evidence_blocker_counts", {}),
         "scope": {
             "pool_memory_path_diagnostics_used": True,
+            "memory_wrapper_physical_storage_used": True,
+            "ghidra_semantic_parameter_types_trusted": False,
             "allocation_helper_semantics_proven": False,
             "shared_allocator_family_proven": False,
             "allocator_abi_proven": False,
+            "release_abi_proven": False,
+            "argument_roles_proven": False,
             "constructor_semantics_proven": False,
             "destructor_semantics_proven": False,
             "deleting_destructor_semantics_proven": False,
@@ -266,9 +296,10 @@ def run_pipeline(
             "behavior_semantics_proven": False,
             "note": (
                 "This pipeline composes direct source/Ghidra evidence through bounded "
-                "paths to retail pool allocation/free diagnostics. Positive diagnostic "
-                "paths prove participation in those memory-pool paths, not allocator/"
-                "free ABI, ownership or C++ lifecycle identities."
+                "paths to retail pool allocation/free diagnostics and records robust "
+                "wrapper calling-convention/storage shapes. Ghidra semantic auto-types "
+                "do not participate in promotion, and argument roles/allocator ABI, "
+                "ownership and C++ lifecycle identities remain unproven."
             ),
         },
     }
@@ -308,6 +339,7 @@ def main() -> int:
         "diagnostic-backed pool lifetime families: "
         f"{counts['diagnostic_backed_pool_lifetime_families']}"
     )
+    print(f"confirmed memory wrapper shapes: {counts['confirmed_memory_wrapper_shapes']}")
     print(f"lifecycle target slices: {counts['lifecycle_target_slices']}")
     print(f"output: {args.out}")
 
