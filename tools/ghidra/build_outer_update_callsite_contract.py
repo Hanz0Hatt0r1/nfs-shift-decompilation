@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""Cross-check the source/Ghidra ABI immediately above FUN_00770e80.
+"""Cross-check source/Ghidra ABI immediately above FUN_00770e80.
 
-This tool consumes the known recovered SHIFT.exe.c snapshot plus the structured
-Ghidra export. It freezes only source-visible argument storage/forwarding,
-object offsets, direct-call counts and bounded upstream topology. It does not
-assign physical units or semantic names to the two 64-bit caller channels.
-
-The source hash is pinned so source-text matching cannot silently drift onto a
-different decompilation snapshot.
+The report freezes source-visible argument storage/forwarding, object offsets,
+direct-call counts and bounded upstream topology. It deliberately leaves the
+physical units and semantic names of the two 64-bit caller channels unknown.
 """
 from __future__ import annotations
 
@@ -27,7 +23,6 @@ OUTER_UPDATE = "0x00770e80"
 DIRECT_CALLERS = ("0x00794a30", "0x0079b2d0")
 UPSTREAM_BATCH = "0x00713050"
 UPSTREAM_OWNER = "0x00715380"
-
 SOURCE_FUNCTIONS = {
     OUTER_UPDATE: "FUN_00770e80",
     DIRECT_CALLERS[0]: "FUN_00794a30",
@@ -35,7 +30,6 @@ SOURCE_FUNCTIONS = {
     UPSTREAM_BATCH: "FUN_00713050",
     UPSTREAM_OWNER: "FUN_00715380",
 }
-
 SHARED_POST_OUTER_CALLS = (
     "FUN_0078ef00",
     "FUN_00793ca0",
@@ -63,14 +57,13 @@ def _compact(text: str) -> str:
     return re.sub(r"\s+", "", text)
 
 
-def _line_number(source: str, position: int) -> int:
-    return source.count("\n", 0, position) + 1
-
-
-def _extract_function(source: str, name: str) -> tuple[str, int, int]:
-    # Definitions in the recovered source begin at column zero. Calls are
-    # indented, so anchoring at a non-whitespace line start excludes callsites.
-    pattern = re.compile(rf"(?m)^[^\s\n][^\n]*\b{re.escape(name)}\s*\(")
+def _extract_function(source: str, name: str) -> dict[str, Any]:
+    # Calls in recovered SHIFT.exe.c are indented. Function-definition lines are
+    # column-zero and can either start with the function name (split signature)
+    # or contain the return/calling-convention prefix on the same line.
+    pattern = re.compile(
+        rf"(?m)^(?:{re.escape(name)}|[^\s\n][^\n]*\b{re.escape(name)})\s*\("
+    )
     matches = list(pattern.finditer(source))
     if len(matches) != 1:
         raise ValueError(
@@ -80,7 +73,6 @@ def _extract_function(source: str, name: str) -> tuple[str, int, int]:
     brace = source.find("{", matches[0].end())
     if brace < 0:
         raise ValueError(f"{name}: opening brace not found")
-
     depth = 0
     end = None
     for index in range(brace, len(source)):
@@ -94,16 +86,21 @@ def _extract_function(source: str, name: str) -> tuple[str, int, int]:
                 break
     if end is None:
         raise ValueError(f"{name}: closing brace not found")
-    return source[start:end], start, end
+    body = source[start:end]
+    return {
+        "name": name,
+        "body": body,
+        "compact": _compact(body),
+        "line": source.count("\n", 0, start) + 1,
+    }
 
 
-def _require_fragment(function: str, compact_body: str, fragment: str) -> None:
+def _require(function: str, compact_body: str, fragment: str) -> None:
     if _compact(fragment) not in compact_body:
         raise ValueError(f"{function}: required source fragment missing: {fragment}")
 
 
 def _require_order(function: str, compact_body: str, fragments: Iterable[str]) -> None:
-    positions = []
     cursor = 0
     for fragment in fragments:
         token = _compact(fragment)
@@ -112,30 +109,7 @@ def _require_order(function: str, compact_body: str, fragments: Iterable[str]) -
             raise ValueError(
                 f"{function}: required ordered source fragment missing: {fragment}"
             )
-        positions.append(position)
         cursor = position + len(token)
-    if positions != sorted(positions):
-        raise ValueError(f"{function}: required source order not preserved")
-
-
-def _function_line(source: str, function_start: int) -> int:
-    return _line_number(source, function_start)
-
-
-def _fragment_line(source: str, function_start: int, body: str, fragment: str) -> int:
-    compact_fragment = _compact(fragment)
-    compact_chars: list[str] = []
-    source_positions: list[int] = []
-    for index, char in enumerate(body):
-        if char.isspace():
-            continue
-        compact_chars.append(char)
-        source_positions.append(function_start + index)
-    compact_body = "".join(compact_chars)
-    position = compact_body.find(compact_fragment)
-    if position < 0:
-        raise ValueError(f"source fragment line lookup failed: {fragment}")
-    return _line_number(source, source_positions[position])
 
 
 def _edge(row: dict[str, Any]) -> dict[str, Any]:
@@ -184,8 +158,7 @@ def build_outer_update_callsite_contract(
     missing_functions = [address for address in SOURCE_FUNCTIONS if address not in functions]
     if missing_functions:
         raise ValueError(
-            "required function(s) absent from Ghidra export: "
-            + ", ".join(missing_functions)
+            "required function(s) absent from Ghidra export: " + ", ".join(missing_functions)
         )
 
     outgoing: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -193,21 +166,20 @@ def build_outer_update_callsite_contract(
     for row in read_jsonl(ghidra_root / "callgraph.jsonl"):
         if row.get("indirect") is not False:
             continue
-        source_function = row.get("from_function")
-        target = row.get("to")
-        if not isinstance(source_function, str) or not isinstance(target, str):
+        src = row.get("from_function")
+        dst = row.get("to")
+        if not isinstance(src, str) or not isinstance(dst, str):
             continue
-        outgoing[source_function].append(row)
-        incoming[target].append(row)
+        outgoing[src].append(row)
+        incoming[dst].append(row)
 
-    actual_callers = sorted(
-        {row["from_function"] for row in incoming.get(OUTER_UPDATE, [])}
-    )
+    actual_callers = sorted({row["from_function"] for row in incoming.get(OUTER_UPDATE, [])})
     if actual_callers != sorted(DIRECT_CALLERS):
         raise ValueError(
             f"{OUTER_UPDATE}: direct caller set changed: expected "
             f"{sorted(DIRECT_CALLERS)}, got {actual_callers}"
         )
+    outer_edges: dict[str, dict[str, Any]] = {}
     for caller in DIRECT_CALLERS:
         matches = [row for row in outgoing.get(caller, []) if row.get("to") == OUTER_UPDATE]
         if len(matches) != 1:
@@ -215,6 +187,7 @@ def build_outer_update_callsite_contract(
                 f"{caller}: expected exactly one direct Ghidra call to {OUTER_UPDATE}; "
                 f"found {len(matches)}"
             )
+        outer_edges[caller] = matches[0]
 
     upstream_calls = [
         row for row in outgoing.get(UPSTREAM_BATCH, []) if row.get("to") == DIRECT_CALLERS[0]
@@ -224,19 +197,16 @@ def build_outer_update_callsite_contract(
             f"{UPSTREAM_BATCH}: expected exactly three direct calls to {DIRECT_CALLERS[0]}; "
             f"found {len(upstream_calls)}"
         )
-    owner_calls = [
-        row for row in outgoing.get(UPSTREAM_OWNER, []) if row.get("to") == UPSTREAM_BATCH
-    ]
+    owner_calls = [row for row in outgoing.get(UPSTREAM_OWNER, []) if row.get("to") == UPSTREAM_BATCH]
     if len(owner_calls) != 1:
         raise ValueError(
             f"{UPSTREAM_OWNER}: expected exactly one direct call to {UPSTREAM_BATCH}; "
             f"found {len(owner_calls)}"
         )
-    second_caller_incoming = incoming.get(DIRECT_CALLERS[1], [])
-    if second_caller_incoming:
+    if incoming.get(DIRECT_CALLERS[1], []):
         raise ValueError(
             f"{DIRECT_CALLERS[1]}: expected no direct incoming call in this export; "
-            f"found {len(second_caller_incoming)}"
+            f"found {len(incoming[DIRECT_CALLERS[1]])}"
         )
 
     switches = [
@@ -245,34 +215,29 @@ def build_outer_update_callsite_contract(
         if row.get("function") == DIRECT_CALLERS[1]
     ]
     if len(switches) != 1 or switches[0].get("status") != "computed-jump-candidate":
-        raise ValueError(
-            f"{DIRECT_CALLERS[1]}: expected exactly one computed-jump candidate"
-        )
+        raise ValueError(f"{DIRECT_CALLERS[1]}: expected exactly one computed-jump candidate")
 
-    extracted: dict[str, dict[str, Any]] = {}
-    for address, name in SOURCE_FUNCTIONS.items():
-        body, start, end = _extract_function(source, name)
-        extracted[address] = {
-            "name": name,
-            "body": body,
-            "compact": _compact(body),
-            "start": start,
-            "end": end,
-            "line": _function_line(source, start),
-        }
+    extracted = {
+        address: _extract_function(source, name)
+        for address, name in SOURCE_FUNCTIONS.items()
+    }
 
     caller_a = extracted[DIRECT_CALLERS[0]]
     a = caller_a["compact"]
     a_store_b = "*(ulonglong *)((int)this + 0x1ab0) = CONCAT44(param_4,param_3);"
     a_store_a = "*(ulonglong *)((int)this + 0x1aa8) = CONCAT44(param_2,param_1);"
-    a_gate_1 = "param_5 != '\\0'"
-    a_gate_2 = "*(int *)((int)this + 0x234) == 0"
     a_outer_call = (
         "FUN_00770e80(&DAT_00c13700,CONCAT44(param_2,param_1),"
         "CONCAT44(param_4,param_3),'\\0');"
     )
-    for fragment in (a_store_b, a_store_a, a_gate_1, a_gate_2, a_outer_call):
-        _require_fragment(caller_a["name"], a, fragment)
+    for fragment in (
+        a_store_b,
+        a_store_a,
+        "param_5 != '\\0'",
+        "*(int *)((int)this + 0x234) == 0",
+        a_outer_call,
+    ):
+        _require(caller_a["name"], a, fragment)
     _require_order(
         caller_a["name"],
         a,
@@ -280,24 +245,21 @@ def build_outer_update_callsite_contract(
     )
 
     caller_b = extracted[DIRECT_CALLERS[1]]
-    b_body = caller_b["body"]
     b = caller_b["compact"]
-    b_gate = "*(int *)((int)param_1 + 0x34) != 0"
-    b_switch = "switch(*(undefined4 *)((int)param_1 + 0x234))"
-    for fragment in (b_gate, b_switch):
-        _require_fragment(caller_b["name"], b, fragment)
-    case0_start = b_body.find("case 0:")
-    case1_start = b_body.find("case 1:", case0_start + 1)
+    _require(caller_b["name"], b, "*(int *)((int)param_1 + 0x34) != 0")
+    _require(caller_b["name"], b, "switch(*(undefined4 *)((int)param_1 + 0x234))")
+    case0_start = caller_b["body"].find("case 0:")
+    case1_start = caller_b["body"].find("case 1:", case0_start + 1)
     if case0_start < 0 or case1_start < 0 or case1_start <= case0_start:
         raise ValueError(f"{caller_b['name']}: case-0 source region not recovered")
-    case0 = _compact(b_body[case0_start:case1_start])
+    case0 = _compact(caller_b["body"][case0_start:case1_start])
     b_outer_call = (
         "FUN_00770e80(&DAT_00c13700,*(undefined8 *)((int)param_1 + 0x1aa8),"
         "*(undefined8 *)((int)param_1 + 0x1ab0),'\\x01');"
     )
     b_copy = "*(undefined8 *)((int)param_1 + 200) = *(undefined8 *)((int)param_1 + 0x1aa8);"
     for fragment in (b_outer_call, b_copy):
-        _require_fragment(caller_b["name"], case0, fragment)
+        _require(caller_b["name"], case0, fragment)
     _require_order(
         caller_b["name"],
         case0,
@@ -309,20 +271,24 @@ def build_outer_update_callsite_contract(
     outer_store_b = "*(undefined8 *)((int)this + 0xa0) = param_2;"
     outer_pass = "FUN_0076d100(this,param_3);"
     outer_store_a = "*(undefined8 *)((int)this + 0x98) = param_1;"
-    _require_fragment(outer["name"], outer_body, outer_store_b)
-    _require_fragment(outer["name"], outer_body, outer_store_a)
-    if outer_body.count(_compact(outer_pass)) != 2:
+    for fragment in (outer_store_b, outer_store_a):
+        _require(outer["name"], outer_body, fragment)
+    pass_token = _compact(outer_pass)
+    if outer_body.count(pass_token) != 2:
         raise ValueError(f"{outer['name']}: expected exactly two source calls to FUN_0076d100")
-    first_pass = outer_body.find(_compact(outer_pass))
-    second_pass = outer_body.find(_compact(outer_pass), first_pass + 1)
+    first_pass = outer_body.find(pass_token)
+    second_pass = outer_body.find(pass_token, first_pass + 1)
     if not (
-        outer_body.find(_compact(outer_store_b)) < first_pass < second_pass < outer_body.find(_compact(outer_store_a))
+        outer_body.find(_compact(outer_store_b))
+        < first_pass
+        < second_pass
+        < outer_body.find(_compact(outer_store_a))
     ):
         raise ValueError(f"{outer['name']}: parameter-store/pass ordering changed")
 
     batch = extracted[UPSTREAM_BATCH]
     batch_body = batch["compact"]
-    batch_fragments = (
+    for fragment in (
         "0.0 < *(double *)((int)this + 0x348)",
         "dVar3 = (double)*(int *)(iVar6 + 0x388);",
         "local_14 = (uint)(longlong)ROUND(dVar3 * *(double *)((int)this + 0x348) + 0.5);",
@@ -333,22 +299,16 @@ def build_outer_update_callsite_contract(
         "*(int *)((int)this + 0x144)",
         "iVar7 = iVar7 + 0x1fa0;",
         "(void *)(*piVar1 + 0x340)",
-    )
-    for fragment in batch_fragments:
-        _require_fragment(batch["name"], batch_body, fragment)
-    call_token = _compact("FUN_00794a30(")
-    if batch_body.count(call_token) != 3:
-        raise ValueError(f"{batch['name']}: expected exactly three source calls to FUN_00794a30")
-    for fragment in (
         "0x20000000,0x3fa11111,'\\0');",
         "SUB84(dVar4,0),iVar6,'\\0');",
         "SUB84(dVar4,0),iVar6,'\\x01');",
     ):
-        _require_fragment(batch["name"], batch_body, fragment)
+        _require(batch["name"], batch_body, fragment)
+    if batch_body.count(_compact("FUN_00794a30(")) != 3:
+        raise ValueError(f"{batch['name']}: expected exactly three source calls to FUN_00794a30")
 
     owner = extracted[UPSTREAM_OWNER]
-    owner_call = "FUN_00713050(this,piVar2);"
-    _require_fragment(owner["name"], owner["compact"], owner_call)
+    _require(owner["name"], owner["compact"], "FUN_00713050(this,piVar2);")
 
     fixed_bits = (0x3FA11111 << 32) | 0x20000000
     fixed_value = struct.unpack("<d", struct.pack("<Q", fixed_bits))[0]
@@ -358,9 +318,7 @@ def build_outer_update_callsite_contract(
         "source": {
             "path": str(source_path),
             "sha256": source_hash,
-            "function_lines": {
-                address: row["line"] for address, row in extracted.items()
-            },
+            "function_lines": {address: row["line"] for address, row in extracted.items()},
         },
         "ghidra": {
             "root": str(ghidra_root),
@@ -387,9 +345,7 @@ def build_outer_update_callsite_contract(
             {
                 "caller": DIRECT_CALLERS[0],
                 "source_line": caller_a["line"],
-                "ghidra_call": _edge(
-                    next(row for row in outgoing[DIRECT_CALLERS[0]] if row.get("to") == OUTER_UPDATE)
-                ),
+                "ghidra_call": _edge(outer_edges[DIRECT_CALLERS[0]]),
                 "caller_channel_a_offset": "0x1aa8",
                 "caller_channel_b_offset": "0x1ab0",
                 "channels_written_from_function_arguments_before_call": True,
@@ -401,9 +357,7 @@ def build_outer_update_callsite_contract(
             {
                 "caller": DIRECT_CALLERS[1],
                 "source_line": caller_b["line"],
-                "ghidra_call": _edge(
-                    next(row for row in outgoing[DIRECT_CALLERS[1]] if row.get("to") == OUTER_UPDATE)
-                ),
+                "ghidra_call": _edge(outer_edges[DIRECT_CALLERS[1]]),
                 "caller_channel_a_offset": "0x1aa8",
                 "caller_channel_b_offset": "0x1ab0",
                 "channels_read_from_caller_object": True,
@@ -465,14 +419,10 @@ def main() -> int:
     if args.json_out:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)
         args.json_out.write_text(payload, encoding="utf-8")
-
     print(f"format: {report['format']}")
     print(f"source sha256: {report['source']['sha256']}")
     print(f"outer update: {report['outer_update']['function']}")
-    print(
-        "direct callers: "
-        + ", ".join(row["caller"] for row in report["direct_callsites"])
-    )
+    print("direct callers: " + ", ".join(row["caller"] for row in report["direct_callsites"]))
     print(
         "upstream batch calls: "
         + str(report["upstream_batch_path"]["first_caller_source_call_count"])
