@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from analyze_shift_export import analyze as analyze_shift_export
+from build_physics_allocator_boundary import build_physics_allocator_boundary
 from build_subsystem_manifests import build as build_subsystem_manifests
 from build_subsystem_manifests import write_bundle as write_subsystem_bundle
 from discover_method_name_anchors import discover_method_name_anchors
@@ -71,6 +72,7 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
     subsystem_report = build_subsystem_manifests(root)
     method_anchors = discover_method_name_anchors(root)
     subsystem_method_anchors = join_method_anchors_to_subsystems(root)
+    physics_allocator = build_physics_allocator_boundary(root)
 
     source = _validate_source_identity(crosscheck, subsystem_report, subsystem_method_anchors)
 
@@ -78,15 +80,20 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
     subsystem_dir = output_dir / "subsystems"
     method_anchor_path = output_dir / "method_name_anchors.json"
     subsystem_method_anchor_path = output_dir / "subsystem_method_anchors.json"
+    physics_allocator_path = output_dir / "physics_allocator_boundary.json"
 
     _write_json(crosscheck_path, crosscheck)
     write_subsystem_bundle(subsystem_report, subsystem_dir)
     _write_json(method_anchor_path, method_anchors)
     _write_json(subsystem_method_anchor_path, subsystem_method_anchors)
+    _write_json(physics_allocator_path, physics_allocator)
 
     subsystem_counts = _subsystem_counts(subsystem_report)
     anchor_failures = _anchor_failure_count(crosscheck)
     registry = crosscheck.get("rtti_registration_fingerprint") or {}
+    allocator_members = int(physics_allocator.get("member_count") or 0)
+    allocator_confirmed = int(physics_allocator.get("confirmed_member_count") or 0)
+    allocator_mismatches = max(0, allocator_members - allocator_confirmed)
 
     counts = {
         "crosscheck_anchor_count": len(crosscheck.get("anchors") or []),
@@ -106,12 +113,19 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
         "slice_only_unclassified_method_name_candidates": int(
             subsystem_method_anchors.get("slice_only_unclassified_candidate_count") or 0
         ),
+        "physics_allocator_members": allocator_members,
+        "physics_allocator_members_confirmed": allocator_confirmed,
+        "physics_allocator_member_mismatches": allocator_mismatches,
+        "physics_allocator_boundary_confirmed": int(
+            physics_allocator.get("physics_allocator_boundary_confirmed") is True
+        ),
     }
 
     direct_mismatch_count = (
         counts["crosscheck_anchor_failure_count"]
         + counts["semantic_alias_mismatches"]
         + counts["class_registration_mismatches"]
+        + counts["physics_allocator_member_mismatches"]
     )
     counts["direct_evidence_mismatch_count"] = direct_mismatch_count
 
@@ -126,12 +140,14 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
             "subsystem_index": str(Path(subsystem_dir.name) / "index.json"),
             "method_name_anchors": method_anchor_path.name,
             "subsystem_method_anchors": subsystem_method_anchor_path.name,
+            "physics_allocator_boundary": physics_allocator_path.name,
         },
         "counts": counts,
         "scope": {
             "functions_used": True,
             "callgraph_used": True,
             "string_xrefs_used": True,
+            "physics_allocator_boundary_used": True,
             "heuristic_vtables_used": False,
             "heuristic_constructors_used": False,
             "heuristic_factories_used": False,
@@ -142,7 +158,9 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
             "note": (
                 "This index orchestrates direct-observation static semantic layers from one "
                 "Ghidra export. Individual artifacts retain their own evidence boundaries; "
-                "namespace-only and ambiguous method anchors are not semantic promotions."
+                "namespace-only and ambiguous method anchors are not semantic promotions. "
+                "The PhysicsAllocator boundary preserves physical entry storage but does not "
+                "assign the explicit stack argument or return/ownership ABI."
             ),
         },
     }
@@ -157,7 +175,7 @@ def main() -> int:
     parser.add_argument(
         "--fail-on-mismatch",
         action="store_true",
-        help="return non-zero when a direct anchor/alias/registration check fails",
+        help="return non-zero when a direct anchor/alias/registration/boundary check fails",
     )
     args = parser.parse_args()
 
@@ -171,6 +189,10 @@ def main() -> int:
     print(
         "subsystem-crosschecked method-name candidates: "
         f"{counts['subsystem_crosschecked_method_name_candidates']}"
+    )
+    print(
+        "physics allocator members confirmed: "
+        f"{counts['physics_allocator_members_confirmed']}/{counts['physics_allocator_members']}"
     )
     print(f"direct evidence mismatches: {counts['direct_evidence_mismatch_count']}")
     print(f"output: {args.output_dir}")
