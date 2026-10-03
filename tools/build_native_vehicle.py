@@ -57,12 +57,13 @@ def main(argv: list[str] | None = None) -> int:
         "format": report["format"],
         "status": report["status"],
         "resource_ready": report["resource_ready"],
+        "participant_structural_ready": report["participant_structural_ready"],
         "runtime_physics_contract_ready": report["runtime_physics_contract_ready"],
         "native_vehicle_runtime_ready": report["native_vehicle_runtime_ready"],
         "blocking_reasons": report["blocking_reasons"],
         "artifacts": report.get("artifacts") or {},
     }, ensure_ascii=False, indent=2))
-    if not report["resource_ready"]:
+    if not report["resource_ready"] or not report["participant_structural_ready"]:
         return 2
     if args.require_runtime_physics_contract and not report["runtime_physics_contract_ready"]:
         return 2

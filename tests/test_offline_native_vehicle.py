@@ -89,10 +89,16 @@ def test_bmw_build_emits_current_runtime_physics_contract():
     assert report["format"] == FORMAT
     assert report["status"] == "runtime-physics-contract-ready"
     assert report["resource_ready"] is True
+    assert report["participant_structural_ready"] is True
     assert report["runtime_physics_contract_ready"] is True
     assert report["native_vehicle_runtime_ready"] is False
     assert report["vehicle_physics_manifest"]["ready"] is True
+    assert report["participant_boundary"]["ready"] is True
+    assert report["participant_boundary"]["participant_instance_ready"] is False
     assert report["native_physics_compatibility"]["ready"] is True
+    assert report["boundary"]["participant_structural_boundary_evaluated"] is True
+    assert report["boundary"]["participant_runtime_identity_evaluated"] is False
+    assert report["boundary"]["participant_instance_invented"] is False
     assert report["boundary"]["runtime_execution_claimed"] is False
 
 
@@ -101,6 +107,7 @@ def test_non_bmw_build_keeps_generic_resource_ready_but_runtime_blocked():
 
     assert report["status"] == "resource-ready-runtime-physics-blocked"
     assert report["resource_ready"] is True
+    assert report["participant_structural_ready"] is True
     assert report["runtime_physics_contract_ready"] is False
     assert report["native_vehicle_runtime_ready"] is False
     assert (
@@ -128,8 +135,10 @@ def test_file_builder_writes_native_manifest_only_when_exact_runtime_contract_re
         out = root / "out"
         report = build_native_vehicle_files(catalog, bootstrap, physics, out)
         assert (out / "vehicle_physics_resource_manifest.json").is_file()
+        assert (out / "native_physics_participant_boundary.json").is_file()
         assert (out / "native_vehicle_build.json").is_file()
         assert (out / "native_physics_manifest.json").is_file() is expect_native
+        assert "participant_boundary" in report["artifacts"]
         assert ("native_physics_manifest" in report["artifacts"]) is expect_native
 
 
@@ -159,4 +168,5 @@ def test_cli_can_require_current_runtime_physics_contract(tmp_path):
     assert completed.returncode == 2
     report = json.loads((tmp_path / "out" / "native_vehicle_build.json").read_text())
     assert report["resource_ready"] is True
+    assert report["participant_structural_ready"] is True
     assert report["runtime_physics_contract_ready"] is False

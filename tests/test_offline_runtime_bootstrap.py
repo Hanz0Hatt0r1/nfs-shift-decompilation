@@ -81,6 +81,16 @@ def _ready_loader(kind):
     }
 
 
+def _participant_boundary(*, ready=True):
+    return {
+        "format": "SHIFT.NativePhysicsParticipantBoundary/1",
+        "ready": ready,
+        "status": "ready" if ready else "blocked",
+        "blocking_reasons": [] if ready else ["fixture-blocked"],
+        "participant_instance_ready": False,
+    }
+
+
 def test_runtime_bootstrap_composes_existing_stages_without_claiming_runtime(
     monkeypatch,
     tmp_path,
@@ -135,6 +145,8 @@ def test_runtime_bootstrap_composes_existing_stages_without_claiming_runtime(
         report = {
             "format": "SHIFT.OfflineNativeVehicleBuild/1",
             "resource_ready": True,
+            "participant_structural_ready": True,
+            "participant_boundary": _participant_boundary(),
             "runtime_physics_contract_ready": True,
             "native_vehicle_runtime_ready": False,
             "blocking_reasons": [],
@@ -158,6 +170,7 @@ def test_runtime_bootstrap_composes_existing_stages_without_claiming_runtime(
     assert report["offline_build_ready"] is True
     assert report["runtime_ready"] is False
     assert report["status"] == "offline-native-build-ready-runtime-gated"
+    assert report["readiness"]["vehicle_participant_structural_ready"] is True
     assert report["readiness"]["vehicle_runtime_physics_contract_ready"] is True
     assert "runtime-scene:runtime-proven-draw-admission-required" in report["blocking_reasons"]
     assert (
@@ -171,6 +184,7 @@ def test_runtime_bootstrap_composes_existing_stages_without_claiming_runtime(
     assert observed["decode_limit"] == 7
     persisted = json.loads((out / "runtime_bootstrap.json").read_text(encoding="utf-8"))
     assert persisted["boundary"]["static_scene_promoted_to_runtime_draw_proof"] is False
+    assert persisted["boundary"]["vehicle_participant_structural_boundary_required"] is True
     assert persisted["boundary"]["vehicle_resource_manifest_promoted_to_participant_identity"] is False
 
 
@@ -209,6 +223,8 @@ def test_missing_exact_typed_sgb_blocks_scene_without_invoking_builder(
         lambda *args, **kwargs: {
             "format": "SHIFT.OfflineNativeVehicleBuild/1",
             "resource_ready": True,
+            "participant_structural_ready": True,
+            "participant_boundary": _participant_boundary(),
             "runtime_physics_contract_ready": False,
             "native_vehicle_runtime_ready": False,
             "blocking_reasons": [],
@@ -228,6 +244,65 @@ def test_missing_exact_typed_sgb_blocks_scene_without_invoking_builder(
         reason.startswith("native-scene:typed-root-missing:res-sgb")
         for reason in report["blocking_reasons"]
     )
+
+
+def test_participant_structural_boundary_is_an_offline_build_gate(monkeypatch, tmp_path):
+    _install_resource_pipeline_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "load_track",
+        lambda catalog, graph, *, track: _ready_loader("SHIFT.OfflineTrackLoad/1"),
+    )
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "load_vehicle",
+        lambda catalog, graph, *, vehicle: _ready_loader("SHIFT.OfflineVehicleLoad/1"),
+    )
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "build_scene_ir",
+        lambda inputs, output_dir: {
+            "format": "SHIFT.OfflineSceneIRMaterialization/1",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    )
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "build_native_scene_files",
+        lambda *args, **kwargs: {
+            "format": "SHIFT.OfflineNativeSceneBuild/1",
+            "static_resource_ready": True,
+            "native_scene_runtime_ready": False,
+            "blocking_reasons": [],
+        },
+    )
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "build_native_vehicle_files",
+        lambda *args, **kwargs: {
+            "format": "SHIFT.OfflineNativeVehicleBuild/1",
+            "resource_ready": True,
+            "participant_structural_ready": False,
+            "participant_boundary": _participant_boundary(ready=False),
+            "runtime_physics_contract_ready": True,
+            "native_vehicle_runtime_ready": False,
+            "blocking_reasons": ["participant-boundary:fixture-blocked"],
+        },
+    )
+
+    report = runtime_bootstrap.build_offline_runtime_bootstrap(
+        ["corpus.zip"],
+        tmp_path / "bootstrap",
+        track="Track",
+        vehicle="Car",
+    )
+
+    assert report["offline_build_ready"] is False
+    assert report["status"] == "offline-native-build-blocked"
+    assert report["readiness"]["vehicle_resource_ready"] is True
+    assert report["readiness"]["vehicle_participant_structural_ready"] is False
+    assert "participant-boundary:fixture-blocked" in report["blocking_reasons"]
 
 
 def test_runtime_ready_is_derived_from_future_proven_stage_outputs(monkeypatch, tmp_path):
@@ -267,6 +342,8 @@ def test_runtime_ready_is_derived_from_future_proven_stage_outputs(monkeypatch, 
         lambda *args, **kwargs: {
             "format": "SHIFT.OfflineNativeVehicleBuild/1",
             "resource_ready": True,
+            "participant_structural_ready": True,
+            "participant_boundary": _participant_boundary(),
             "runtime_physics_contract_ready": True,
             "native_vehicle_runtime_ready": True,
             "blocking_reasons": [],
