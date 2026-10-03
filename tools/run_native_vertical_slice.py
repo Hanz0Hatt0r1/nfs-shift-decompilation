@@ -1,0 +1,401 @@
+#!/usr/bin/env python3
+"""Validate and launch a complete native SHIFT vertical-slice runtime profile.
+
+The runner does not invent retail semantics. It only composes already-proven
+native_runtime inputs into one fail-closed launch contract and then executes the
+existing native binary with the same individual command-line options.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import struct
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Sequence
+
+PROFILE_FORMAT = "SHIFT.NativeVerticalSliceProfile/1"
+PLAN_FORMAT = "SHIFT.NativeVerticalSliceLaunchPlan/1"
+
+JSON_INPUTS: dict[str, tuple[str, bool]] = {
+    "camera_state": ("SHIFT.NativeCameraStateBridge/1", True),
+    "physics_manifest": ("SHIFT.BMWM3VehiclePhysicsResourceManifest/1", False),
+    "participant_boundary": ("SHIFT.NativePhysicsParticipantRuntimeEvidence/1", True),
+}
+
+BINARY_INPUTS: dict[str, tuple[bytes, str]] = {
+    "solver_frame": (b"SBFR", "SHIFT.NativeBuiltinSolverFramePacket/1"),
+    "generated_body_constraint_frame": (
+        b"GBCF",
+        "SHIFT.NativeGeneratedBodyConstraintFramePacket/1",
+    ),
+    "constraint_sample_relation_frame": (
+        b"CSRF",
+        "SHIFT.NativeConstraintSampleRelationFramePacket/1",
+    ),
+    "constraint_relation_reset_frame": (
+        b"CRRF",
+        "SHIFT.NativeConstraintRelationResetFramePacket/1",
+    ),
+    "post_solve_projection": (
+        b"SBPS",
+        "SHIFT.NativePostSolveBodyProjectionPacket/1",
+    ),
+}
+
+SCENE_FORMAT = "SHIFT.NativeSceneVulkanSet/1"
+SCENE_PREPARE_FORMAT = "SHIFT.NativeSceneVulkanSetPrepare/1"
+INPUT_SCRIPT_FORMAT = "SHIFT.NativeRuntimeInputScript/1"
+
+
+class ProfileError(ValueError):
+    """Raised when a vertical-slice profile is unsafe or internally incomplete."""
+
+
+def _load_json(path: Path, *, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise ProfileError(f"{label} not found: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise ProfileError(f"{label} is not valid JSON: {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ProfileError(f"{label} JSON must be an object: {path}")
+    return value
+
+
+def _resolve_workspace(profile_path: Path, raw: Any) -> Path:
+    text = str(raw if raw is not None else ".").strip() or "."
+    root = Path(text)
+    if root.is_absolute():
+        raise ProfileError("workspace_root must be relative to the profile")
+    return (profile_path.parent / root).resolve()
+
+
+def _resolve_member(root: Path, raw: Any, *, label: str) -> Path:
+    text = str(raw or "").strip()
+    if not text:
+        raise ProfileError(f"profile field {label!r} is required")
+    relative = Path(text)
+    if relative.is_absolute():
+        raise ProfileError(f"profile field {label!r} must be workspace-relative")
+    candidate = (root / relative).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ProfileError(
+            f"profile field {label!r} escapes workspace_root: {text}"
+        ) from exc
+    return candidate
+
+
+def _require_json_contract(
+    path: Path,
+    *,
+    expected_format: str,
+    require_ready: bool,
+    label: str,
+) -> dict[str, Any]:
+    value = _load_json(path, label=label)
+    if value.get("format") != expected_format:
+        raise ProfileError(f"{label} must be {expected_format}: {path}")
+    if require_ready and value.get("ready") is not True:
+        raise ProfileError(f"{label} is not ready: {path}")
+    return value
+
+
+def _require_binary_packet(
+    path: Path,
+    *,
+    magic: bytes,
+    packet_format: str,
+    label: str,
+) -> dict[str, Any]:
+    try:
+        with path.open("rb") as stream:
+            prefix = stream.read(8)
+    except FileNotFoundError as exc:
+        raise ProfileError(f"{label} not found: {path}") from exc
+    if len(prefix) < 8:
+        raise ProfileError(f"{label} packet is truncated: {path}")
+    if prefix[:4] != magic:
+        raise ProfileError(
+            f"{label} must be {packet_format} with magic {magic.decode('ascii')}: {path}"
+        )
+    version = struct.unpack_from("<I", prefix, 4)[0]
+    if version != 1:
+        raise ProfileError(
+            f"{label} packet version must be 1, got {version}: {path}"
+        )
+    return {
+        "format": packet_format,
+        "magic": magic.decode("ascii"),
+        "version": version,
+    }
+
+
+def _validate_scene_set(path: Path) -> dict[str, Any]:
+    if not path.is_dir():
+        raise ProfileError(f"scene_set directory not found: {path}")
+    manifest = _require_json_contract(
+        path / "bundle_set.json",
+        expected_format=SCENE_FORMAT,
+        require_ready=False,
+        label="scene set manifest",
+    )
+    prepare = _require_json_contract(
+        path / "bundle_set_prepare.json",
+        expected_format=SCENE_PREPARE_FORMAT,
+        require_ready=True,
+        label="scene set prepare report",
+    )
+    return {
+        "format": manifest["format"],
+        "prepare_format": prepare["format"],
+        "ready": True,
+    }
+
+
+def _validate_input_script(path: Path) -> int:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except FileNotFoundError as exc:
+        raise ProfileError(f"input script not found: {path}") from exc
+    data = [
+        line.strip()
+        for line in lines
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    if not data or data[0] != INPUT_SCRIPT_FORMAT:
+        raise ProfileError(
+            f"input script must begin with {INPUT_SCRIPT_FORMAT}: {path}"
+        )
+    expected = 0
+    for line in data[1:]:
+        parts = line.split()
+        if len(parts) != 5:
+            raise ProfileError(f"input script row must have 5 columns: {line!r}")
+        try:
+            step = int(parts[0])
+            states = [int(item) for item in parts[1:]]
+        except ValueError as exc:
+            raise ProfileError(f"input script row is not numeric: {line!r}") from exc
+        if step != expected:
+            raise ProfileError(
+                "input script steps must be contiguous from zero: "
+                f"expected {expected}, got {step}"
+            )
+        if any(state not in (0, 1) for state in states):
+            raise ProfileError(
+                f"input script control states must be 0 or 1: {line!r}"
+            )
+        expected += 1
+    if expected == 0:
+        raise ProfileError("input script must contain at least one fixed-step row")
+    return expected
+
+
+def build_launch_plan(
+    profile_path: str | Path,
+    *,
+    runtime: str | Path = "native_runtime/build/shift_runtime",
+    validation: bool = False,
+) -> dict[str, Any]:
+    profile_path = Path(profile_path).resolve()
+    profile = _load_json(profile_path, label="vertical-slice profile")
+    if profile.get("format") != PROFILE_FORMAT:
+        raise ProfileError(f"profile must be {PROFILE_FORMAT}")
+    if int(profile.get("version", 0)) != 1:
+        raise ProfileError("profile version must be 1")
+
+    workspace_root = _resolve_workspace(profile_path, profile.get("workspace_root", "."))
+    if not workspace_root.is_dir():
+        raise ProfileError(f"workspace_root directory not found: {workspace_root}")
+
+    resolved: dict[str, Path] = {}
+    checks: dict[str, Any] = {}
+
+    resolved["scene_set"] = _resolve_member(
+        workspace_root, profile.get("scene_set"), label="scene_set"
+    )
+    checks["scene_set"] = _validate_scene_set(resolved["scene_set"])
+
+    json_values: dict[str, dict[str, Any]] = {}
+    for key, (expected_format, require_ready) in JSON_INPUTS.items():
+        resolved[key] = _resolve_member(workspace_root, profile.get(key), label=key)
+        value = _require_json_contract(
+            resolved[key],
+            expected_format=expected_format,
+            require_ready=require_ready,
+            label=key.replace("_", " "),
+        )
+        json_values[key] = value
+        checks[key] = {
+            "format": value["format"],
+            "ready": True,
+        }
+
+    participant = json_values["participant_boundary"]
+    if participant.get("registry_selector_identity_join_proven") is not True:
+        raise ProfileError(
+            "participant runtime evidence has no proven registry/selector identity join"
+        )
+    if participant.get("participant_instance_ready") is not True:
+        raise ProfileError(
+            "participant runtime evidence has no ready participant instance"
+        )
+
+    for key, (magic, packet_format) in BINARY_INPUTS.items():
+        resolved[key] = _resolve_member(workspace_root, profile.get(key), label=key)
+        checks[key] = _require_binary_packet(
+            resolved[key],
+            magic=magic,
+            packet_format=packet_format,
+            label=key.replace("_", " "),
+        )
+
+    if profile.get("persist_post_solve_body_state") is not True:
+        raise ProfileError(
+            "persist_post_solve_body_state must be true for the vertical-slice profile"
+        )
+
+    input_script_raw = profile.get("input_script")
+    input_steps = 0
+    if input_script_raw not in (None, ""):
+        resolved["input_script"] = _resolve_member(
+            workspace_root, input_script_raw, label="input_script"
+        )
+        input_steps = _validate_input_script(resolved["input_script"])
+        checks["input_script"] = {
+            "format": INPUT_SCRIPT_FORMAT,
+            "steps": input_steps,
+            "ready": True,
+        }
+
+    frames_raw = profile.get("frames", input_steps if input_steps else 120)
+    if isinstance(frames_raw, bool):
+        raise ProfileError("frames must be a positive integer")
+    try:
+        frames = int(frames_raw)
+    except (TypeError, ValueError) as exc:
+        raise ProfileError("frames must be a positive integer") from exc
+    if frames <= 0:
+        raise ProfileError("frames must be a positive integer")
+    if input_steps and frames != input_steps:
+        raise ProfileError(
+            f"frames must equal input script step count ({input_steps}), got {frames}"
+        )
+
+    runtime_path = Path(runtime)
+    if not runtime_path.is_absolute():
+        runtime_path = (workspace_root / runtime_path).resolve()
+    if not runtime_path.is_file():
+        raise ProfileError(f"native runtime executable not found: {runtime_path}")
+    if not os.access(runtime_path, os.X_OK):
+        raise ProfileError(f"native runtime is not executable: {runtime_path}")
+
+    argv = [
+        str(runtime_path),
+        "--scene-set",
+        str(resolved["scene_set"]),
+        # The current CLI requires --shader-dir for every geometry source. The
+        # scene-set path carries child SPIR-V, so this existing directory is a
+        # compatibility value rather than a new shader-selection semantic.
+        "--shader-dir",
+        str(workspace_root),
+        "--camera-state",
+        str(resolved["camera_state"]),
+        "--physics-manifest",
+        str(resolved["physics_manifest"]),
+        "--participant-boundary",
+        str(resolved["participant_boundary"]),
+        "--solver-frame",
+        str(resolved["solver_frame"]),
+        "--generated-body-constraint-frame",
+        str(resolved["generated_body_constraint_frame"]),
+        "--constraint-sample-relation-frame",
+        str(resolved["constraint_sample_relation_frame"]),
+        "--constraint-relation-reset-frame",
+        str(resolved["constraint_relation_reset_frame"]),
+        "--post-solve-projection",
+        str(resolved["post_solve_projection"]),
+        "--persist-post-solve-body-state",
+    ]
+    if input_steps:
+        argv.extend(["--input-script", str(resolved["input_script"])])
+    argv.extend(["--frames", str(frames)])
+    if validation:
+        argv.append("--validation")
+
+    return {
+        "format": PLAN_FORMAT,
+        "version": 1,
+        "ready": True,
+        "profile": str(profile_path),
+        "workspace_root": str(workspace_root),
+        "mode": "script" if input_steps else "keyboard",
+        "frames": frames,
+        "persist_post_solve_body_state": True,
+        "checks": checks,
+        "argv": argv,
+        "boundary": {
+            "scene_render_admitted": True,
+            "camera_state_admitted": True,
+            "participant_runtime_identity_admitted": True,
+            "provider_absent_solver_chain_admitted": True,
+            "constraint_refresh_admitted": True,
+            "relation_reset_selection_admitted": True,
+            "post_solve_body_accumulator_persistence_admitted": True,
+            "persistent_vehicle_transform_motion_claimed": False,
+            "provider_present_dispatch_claimed": False,
+            "retail_game_loop_claimed": False,
+        },
+    }
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("profile", help=f"{PROFILE_FORMAT} JSON profile")
+    parser.add_argument(
+        "--runtime",
+        default="native_runtime/build/shift_runtime",
+        help="native runtime executable, workspace-relative unless absolute",
+    )
+    parser.add_argument(
+        "--validation", action="store_true", help="enable Vulkan validation"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="validate and print the launch plan only",
+    )
+    parser.add_argument("--json-out", help="optional path for the launch-plan JSON")
+    args = parser.parse_args(argv)
+
+    try:
+        plan = build_launch_plan(
+            args.profile,
+            runtime=args.runtime,
+            validation=args.validation,
+        )
+    except (OSError, ProfileError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    rendered = json.dumps(plan, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if args.json_out:
+        out = Path(args.json_out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(rendered, encoding="utf-8")
+    print(rendered, end="")
+
+    if args.dry_run:
+        return 0
+    completed = subprocess.run(plan["argv"], check=False)
+    return completed.returncode
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
