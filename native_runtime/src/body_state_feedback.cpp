@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace shift::runtime::physics {
 namespace {
@@ -54,6 +55,60 @@ void require_relation_counts(
         throw std::runtime_error(
             "BODY feedback relation/post-solve row cardinality mismatch");
     }
+}
+
+std::vector<std::vector<double>> reshape_solver_matrix(
+    const std::vector<double>& flat,
+    std::size_t scalar_count) {
+
+    if (scalar_count == 0 ||
+        flat.size() != scalar_count * scalar_count) {
+        throw std::runtime_error(
+            "BODY feedback generated solver matrix shape mismatch");
+    }
+    std::vector<std::vector<double>> matrix(
+        scalar_count,
+        std::vector<double>(scalar_count, 0.0));
+    for (std::size_t row = 0; row < scalar_count; ++row) {
+        for (std::size_t column = 0;
+             column < scalar_count;
+             ++column) {
+            matrix[row][column] =
+                flat[row * scalar_count + column];
+        }
+    }
+    return matrix;
+}
+
+double verify_matrix_anchor(
+    const std::vector<double>& generated,
+    const PreparedBuiltinSolverFrame& solver_topology,
+    std::size_t scalar_count,
+    double tolerance) {
+
+    if (solver_topology.matrix.size() != scalar_count) {
+        throw std::runtime_error(
+            "BODY feedback solver topology matrix cardinality mismatch");
+    }
+    double max_error = 0.0;
+    for (std::size_t row = 0; row < scalar_count; ++row) {
+        if (solver_topology.matrix[row].size() != scalar_count) {
+            throw std::runtime_error(
+                "BODY feedback solver topology matrix is not square");
+        }
+        for (std::size_t column = 0;
+             column < scalar_count;
+             ++column) {
+            max_error = std::max(
+                max_error,
+                compare_value(
+                    generated[row * scalar_count + column],
+                    solver_topology.matrix[row][column],
+                    tolerance,
+                    "BODY feedback solver matrix anchor"));
+        }
+    }
+    return max_error;
 }
 
 }  // namespace
@@ -271,6 +326,89 @@ PreparedGeneratedBodyConstraintFrame apply_body_accumulator_feedback(
             bodies[body].linear;
     }
     return result;
+}
+
+BodyStateFeedbackStepResult execute_body_state_feedback_step(
+    const PreparedGeneratedBodyConstraintFrame& source,
+    const PreparedConstraintSampleRelationFrame& relations,
+    const PreparedConstraintRelationResetFrame& reset_state,
+    const PreparedBuiltinSolverFrame& solver_topology,
+    const PreparedPostSolveBodyProjection& projection,
+    const std::vector<BodyAccumulatorState>& current_bodies,
+    double tolerance) {
+
+    if (!std::isfinite(tolerance) || tolerance <= 0.0) {
+        throw std::invalid_argument(
+            "BODY feedback step tolerance must be finite and positive");
+    }
+    const std::size_t scalar_count = source.scalar_count;
+    if (scalar_count == 0 ||
+        solver_topology.forward_records.size() != scalar_count + 1u ||
+        solver_topology.reverse_records.size() != scalar_count ||
+        projection.solver_vector.size() != scalar_count) {
+        throw std::runtime_error(
+            "BODY feedback step solver topology cardinality mismatch");
+    }
+
+    const auto feedback =
+        apply_body_accumulator_feedback(source, current_bodies);
+    const auto refreshed =
+        refresh_generated_body_constraint_frame(feedback, relations);
+    const auto generated =
+        execute_prepared_generated_body_constraint_frame(refreshed.frame);
+    if (generated.solver_vector.size() != scalar_count ||
+        generated.solver_matrix.size() != scalar_count * scalar_count) {
+        throw std::runtime_error(
+            "BODY feedback generated solver destination shape mismatch");
+    }
+
+    const double matrix_anchor_error =
+        verify_matrix_anchor(
+            generated.solver_matrix,
+            solver_topology,
+            scalar_count,
+            tolerance);
+    const auto matrix =
+        reshape_solver_matrix(generated.solver_matrix, scalar_count);
+
+    const auto reset_selection =
+        select_fun_007b3f40_reset_nodes(
+            refreshed.frame,
+            relations,
+            reset_state);
+    const auto reset_nodes =
+        normalize_fun_007b3f40_reset_nodes(
+            reset_selection.reset_nodes);
+    const auto reset =
+        apply_builtin_diagonal_reset(
+            matrix,
+            generated.solver_vector,
+            reset_nodes);
+    const auto solved =
+        solve_builtin_sparse(
+            reset.matrix,
+            reset.rhs,
+            solver_topology.forward_records,
+            solver_topology.reverse_records);
+    if (solved.solution.size() != scalar_count) {
+        throw std::runtime_error(
+            "BODY feedback solved-vector cardinality mismatch");
+    }
+
+    const auto next_bodies =
+        apply_post_solve_body_projection_rows(
+            projection,
+            solved.solution,
+            current_bodies);
+
+    return {
+        generated.solver_vector,
+        solved.solution,
+        next_bodies,
+        reset_selection.reset_nodes.size(),
+        reset_nodes.size(),
+        matrix_anchor_error,
+    };
 }
 
 }  // namespace shift::runtime::physics
