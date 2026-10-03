@@ -15,6 +15,7 @@ from shift_importer import BFF, classify
 from resource_formats import analyze_decoded_resource, parse_bmt_material, parse_vhf_scene
 from meb_format import read_meb
 from imb_neutral_geometry import build_imb_neutral_geometry
+from imx_neutral_geometry import build_imx_neutral_geometry
 
 CATALOG_FORMAT = "SHIFT.OfflineResourceCatalog/1"
 GRAPH_FORMAT = "SHIFT.OfflineResourceDependencyGraph/1"
@@ -23,7 +24,7 @@ BOOTSTRAP_FORMAT = "SHIFT.SceneVehicleBootstrap/1"
 ADMISSION_FORMAT = "SHIFT.OfflineResourceRuntimeAdmission/1"
 
 KNOWN_DECODE_EXTENSIONS = {
-    ".bmt", ".meb", ".vhf", ".imb", ".csm", ".bml", ".sgb",
+    ".bmt", ".meb", ".vhf", ".imb", ".imx", ".csm", ".bml", ".sgb",
     ".dds", ".xml", ".fx", ".fxh", ".bab", ".bas", ".lod",
 }
 VEHICLE_PHYSICS_EXTENSIONS = (".cdf", ".edf", ".gdf", ".sdf", ".tbf", ".bbf")
@@ -219,12 +220,19 @@ def _semantic_dependencies(
             "primitive_count": len(mesh.primitives),
             "material_reference_count": len({d["ref"].lower() for d in dependencies}),
         }
-    elif ext == ".imb":
-        parsed = build_imb_neutral_geometry(payload)
+    elif ext in {".imb", ".imx"}:
+        parser_name = (
+            "build_imb_neutral_geometry" if ext == ".imb"
+            else "build_imx_neutral_geometry"
+        )
+        parsed = (
+            build_imb_neutral_geometry(payload) if ext == ".imb"
+            else build_imx_neutral_geometry(payload)
+        )
         for primitive in parsed.get("primitives") or []:
             ref = _material_ref(primitive.get("material"))
             if ref:
-                add(ref, "material", "same-archive-exact", "build_imb_neutral_geometry")
+                add(ref, "material", "same-archive-exact", parser_name)
         neutral = {
             "format": parsed.get("format"),
             "status": parsed.get("status"),
@@ -584,6 +592,7 @@ def build_bootstrap_manifest(catalog, graph, *, track: str, vehicle: str):
         }
         if key == "track_visual":
             roots[key]["imb_resource_ids"] = [r["id"] for r in rows if r["extension"] == ".imb"]
+            roots[key]["imx_resource_ids"] = [r["id"] for r in rows if r["extension"] == ".imx"]
 
     selected_ids = {r["id"] for r in selected.values()}
     edges = [e for e in graph["edges"] if e["source_archive_id"] in selected_ids]
