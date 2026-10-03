@@ -82,26 +82,16 @@ WheelLongitudinalBatchResult execute_fun_00763570_precomputed_batch(
     bool global_config_byte) {
 
     WheelLongitudinalBatchResult result{};
-    std::array<bool, kWheelLongitudinalCount> seen{};
 
-    for (const auto& input : inputs) {
-        const auto observation =
-            execute_fun_00755f80_precomputed_handoff(input);
-        if (seen[observation.wheel_index]) {
+    for (std::size_t wheel = 0; wheel < kWheelLongitudinalCount; ++wheel) {
+        if (inputs[wheel].wheel_index != wheel) {
             throw std::invalid_argument(
-                "FUN_00763570 wheel indices must be exactly 0,1,2,3");
+                "FUN_00763570 wheel inputs must preserve retail order 0,1,2,3");
         }
-        seen[observation.wheel_index] = true;
-        result.observations[observation.wheel_index] = observation;
-        result.reported_components[observation.wheel_index] =
-            observation.longitudinal_component;
-    }
-
-    for (const bool present : seen) {
-        if (!present) {
-            throw std::invalid_argument(
-                "FUN_00763570 wheel indices must be exactly 0,1,2,3");
-        }
+        result.observations[wheel] =
+            execute_fun_00755f80_precomputed_handoff(inputs[wheel]);
+        result.reported_components[wheel] =
+            result.observations[wheel].longitudinal_component;
     }
 
     if (rear_pair_average_enabled && mode == 0 && global_config_byte) {
