@@ -42,12 +42,13 @@ jobs:
             shift_runtime_wheel_query_response_join_check \
             shift_runtime_wheel_longitudinal_velocity_check \
             shift_runtime_wheel_kinematics_check \
-            shift_runtime_spring_gap_state_check
-      - name: Run Phase 656-670 CTest regressions
+            shift_runtime_spring_gap_state_check \
+            shift_runtime_wheel_spring_gap_join_check
+      - name: Run Phase 656-671 CTest regressions
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
-            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_contact_factor|collision_query_contract|wheel_query_response_join|wheel_longitudinal_velocity|wheel_kinematics|spring_gap_state)$'
-      - name: Verify Phase 656-670 reports
+            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_contact_factor|collision_query_contract|wheel_query_response_join|wheel_longitudinal_velocity|wheel_kinematics|spring_gap_state|wheel_spring_gap_join)$'
+      - name: Verify Phase 656-671 reports
         run: |
           mkdir -p out/native-physics-recent
           native_runtime/build/shift_runtime_body_accumulator_primitives_check \
@@ -78,6 +79,8 @@ jobs:
             | tee out/native-physics-recent/wheel_kinematics.json
           native_runtime/build/shift_runtime_spring_gap_state_check \
             | tee out/native-physics-recent/spring_gap_state.json
+          native_runtime/build/shift_runtime_wheel_spring_gap_join_check \
+            | tee out/native-physics-recent/wheel_spring_gap_join.json
           grep -q '"format":"SHIFT.NativeBodyAccumulatorPrimitives/1"' \
             out/native-physics-recent/body_accumulator_primitives.json
           grep -q '"format":"SHIFT.NativeWheelContactResponse/1"' \
@@ -164,3 +167,13 @@ jobs:
             out/native-physics-recent/spring_gap_state.json
           grep -q '"caller_x87_return_proven":false' \
             out/native-physics-recent/spring_gap_state.json
+          grep -q '"format":"SHIFT.NativeWheelSpringGapJoin/1"' \
+            out/native-physics-recent/wheel_spring_gap_join.json
+          grep -q '"distance_error_join_proven":true' \
+            out/native-physics-recent/wheel_spring_gap_join.json
+          grep -q '"projection_trigger_join_proven":true' \
+            out/native-physics-recent/wheel_spring_gap_join.json
+          grep -q '"cross_contract_identity_gate_proven":true' \
+            out/native-physics-recent/wheel_spring_gap_join.json
+          grep -q '"caller_x87_return_external":true' \
+            out/native-physics-recent/wheel_spring_gap_join.json
