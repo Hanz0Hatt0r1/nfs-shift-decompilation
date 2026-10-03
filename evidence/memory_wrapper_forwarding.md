@@ -35,7 +35,7 @@ forwarding:
 It carries independent symbolic states through control-flow branches and merges
 them at joins. Different values at a merge become `unresolved`. Unsupported
 instructions poison the incoming state for downstream calls instead of being
-ignoreded or guessed through.
+ignored or guessed through.
 
 ## Known backend storage
 
