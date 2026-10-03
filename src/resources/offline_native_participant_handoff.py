@@ -58,7 +58,7 @@ def attach_participant_runtime_evidence_files(
     participant: dict[str, Any] | None = None
     try:
         participant = _load(source)
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError) as exc:
         blockers.append(
             f"participant-runtime-evidence:file-error:{type(exc).__name__}:{exc}"
         )
@@ -69,6 +69,9 @@ def attach_participant_runtime_evidence_files(
     out.mkdir(parents=True, exist_ok=True)
     destination = out / ARTIFACT_NAME
     artifacts = dict(handoff.get("artifacts") or {})
+    artifacts.pop("participant_runtime_evidence", None)
+    if destination.is_file() and source.resolve() != destination.resolve():
+        destination.unlink()
 
     if not blockers and participant is not None:
         if source.resolve() != destination.resolve():
@@ -77,11 +80,15 @@ def attach_participant_runtime_evidence_files(
             blockers.append("participant-runtime-evidence:file-missing-after-copy")
         if not blockers:
             digest = _sha256(destination)
-            artifacts["participant_runtime_evidence"] = {
-                "path": str(destination),
-                "sha256": digest,
-                "source_sha256": _sha256(source),
-            }
+            source_digest = _sha256(source)
+            if digest != source_digest:
+                blockers.append("participant-runtime-evidence:copy-sha256-mismatch")
+            else:
+                artifacts["participant_runtime_evidence"] = {
+                    "path": str(destination),
+                    "sha256": digest,
+                    "source_sha256": source_digest,
+                }
 
     updated = dict(handoff)
     updated["artifacts"] = artifacts
