@@ -2,7 +2,9 @@
 
 This module stops before launcher validation or runtime execution. Missing runtime
 inputs remain explicit and a blocked selected resource bootstrap cannot be
-bypassed with externally supplied runtime artifacts.
+bypassed with externally supplied runtime artifacts. Explicit runtime artifacts
+are admitted into the requirements ledger only after launcher-equivalent
+validation.
 """
 from __future__ import annotations
 
@@ -16,6 +18,7 @@ from offline_vertical_slice_profile import (
     FORMAT as PROFILE_PREPARE_FORMAT,
     build_vertical_slice_profile_prepare,
 )
+from runtime_input_validation import validate_explicit_runtime_inputs
 
 FORMAT = "SHIFT.OfflineNativeVerticalSliceBootstrap/1"
 
@@ -71,7 +74,7 @@ def build_offline_vertical_slice_bootstrap(
     runtime_shader_admission_path: str | Path | None = None,
     participant_observation_path: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Build offline bootstrap, runtime requirements, and a candidate launch profile."""
+    """Build offline bootstrap, exact runtime requirements, and launch profile."""
     out = Path(output_dir).resolve()
     out.mkdir(parents=True, exist_ok=True)
     bootstrap_dir = out / "runtime-bootstrap"
@@ -80,6 +83,7 @@ def build_offline_vertical_slice_bootstrap(
     prepare_path = out / "vertical_slice_profile.prepare.json"
     report_path = out / "vertical_slice_bootstrap.json"
     workspace = Path(workspace_root).resolve()
+    explicit = dict(explicit_runtime_inputs or {})
 
     runtime_bootstrap = build_offline_runtime_bootstrap(
         inputs,
@@ -91,7 +95,17 @@ def build_offline_vertical_slice_bootstrap(
         runtime_shader_admission_path=runtime_shader_admission_path,
         participant_observation_path=participant_observation_path,
     )
-    requirements = build_runtime_requirements(runtime_bootstrap)
+    validated_runtime_inputs = validate_explicit_runtime_inputs(
+        workspace_root=workspace,
+        explicit_inputs=explicit,
+        input_script=input_script,
+        interactive=interactive,
+        keyboard=keyboard,
+    )
+    requirements = build_runtime_requirements(
+        runtime_bootstrap,
+        validated_runtime_inputs=validated_runtime_inputs,
+    )
     _write(requirements_path, requirements)
 
     offline_bootstrap_ready = runtime_bootstrap.get("offline_build_ready") is True
@@ -100,7 +114,7 @@ def build_offline_vertical_slice_bootstrap(
             requirements,
             workspace_root=workspace,
             profile_path=profile_path,
-            explicit_inputs=explicit_runtime_inputs,
+            explicit_inputs=explicit,
             input_script=input_script,
             interactive=interactive,
             keyboard=keyboard,
@@ -164,6 +178,7 @@ def build_offline_vertical_slice_bootstrap(
         "blocking_reasons": blockers,
         "stages": {
             "runtime_bootstrap": runtime_bootstrap,
+            "validated_runtime_inputs": validated_runtime_inputs,
             "runtime_requirements": requirements,
             "profile_prepare": profile_prepare,
         },
@@ -172,9 +187,12 @@ def build_offline_vertical_slice_bootstrap(
             "selected_offline_bootstrap_required": True,
             "offline_bootstrap_gate_bypassed": False,
             "runtime_requirements_reused": True,
+            "explicit_runtime_inputs_launcher_validated_before_requirement_admission": True,
+            "validated_input_path_presence_is_proof": False,
             "missing_runtime_evidence_synthesized": False,
             "explicit_runtime_artifact_substitution_for_offline_failure": False,
             "launcher_validation_performed": False,
+            "launcher_validation_still_required": True,
             "runtime_execution_claimed": False,
         },
     }

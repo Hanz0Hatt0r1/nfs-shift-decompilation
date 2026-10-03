@@ -54,8 +54,20 @@ def test_ready_offline_bootstrap_composes_requirements_and_profile(monkeypatch, 
         (output / "runtime_bootstrap.json").write_text("{}\n", encoding="utf-8")
         return _runtime_bootstrap(ready=True)
 
-    def fake_requirements(bootstrap):
+    def fake_validate(**kwargs):
+        calls["validated"] = kwargs
+        return {
+            "input_binding": {
+                "format": "SHIFT.OfflineValidatedRuntimeInput/1",
+                "name": "input_binding",
+                "ready": True,
+                "artifact": None,
+            }
+        }
+
+    def fake_requirements(bootstrap, **kwargs):
         calls["requirements_bootstrap"] = bootstrap
+        calls["requirements_kwargs"] = kwargs
         return _requirements()
 
     def fake_profile(requirements, **kwargs):
@@ -79,6 +91,7 @@ def test_ready_offline_bootstrap_composes_requirements_and_profile(monkeypatch, 
         }
 
     monkeypatch.setattr(vertical, "build_offline_runtime_bootstrap", fake_bootstrap)
+    monkeypatch.setattr(vertical, "validate_explicit_runtime_inputs", fake_validate)
     monkeypatch.setattr(vertical, "build_runtime_requirements", fake_requirements)
     monkeypatch.setattr(vertical, "build_vertical_slice_profile_prepare", fake_profile)
 
@@ -103,6 +116,10 @@ def test_ready_offline_bootstrap_composes_requirements_and_profile(monkeypatch, 
     assert report["launch_plan_ready"] is False
     assert calls["bootstrap"]["decode_limit_per_archive"] == 7
     assert calls["bootstrap"]["participant_observation_path"] == "evidence/participant.json"
+    assert calls["validated"]["workspace_root"] == workspace.resolve()
+    assert calls["validated"]["explicit_inputs"] == {"scene_set": "runtime/scene"}
+    assert calls["validated"]["keyboard"] is True
+    assert calls["requirements_kwargs"]["validated_runtime_inputs"] == report["stages"]["validated_runtime_inputs"]
     assert calls["profile"]["workspace_root"] == workspace.resolve()
     assert calls["profile"]["explicit_inputs"] == {"scene_set": "runtime/scene"}
     assert calls["profile"]["keyboard"] is True
@@ -113,6 +130,7 @@ def test_ready_offline_bootstrap_composes_requirements_and_profile(monkeypatch, 
     persisted = json.loads((out / "vertical_slice_bootstrap.json").read_text())
     assert persisted["artifacts"]["launch_plan"] is None
     assert persisted["boundary"]["runtime_execution_claimed"] is False
+    assert persisted["boundary"]["explicit_runtime_inputs_launcher_validated_before_requirement_admission"] is True
 
 
 def test_blocked_offline_bootstrap_cannot_be_bypassed_by_explicit_runtime_inputs(
@@ -130,7 +148,29 @@ def test_blocked_offline_bootstrap_cannot_be_bypassed_by_explicit_runtime_inputs
         return _runtime_bootstrap(ready=False)
 
     monkeypatch.setattr(vertical, "build_offline_runtime_bootstrap", fake_bootstrap)
-    monkeypatch.setattr(vertical, "build_runtime_requirements", lambda report: _requirements())
+    monkeypatch.setattr(
+        vertical,
+        "validate_explicit_runtime_inputs",
+        lambda **kwargs: {
+            "scene_set": {
+                "format": "SHIFT.OfflineValidatedRuntimeInput/1",
+                "name": "scene_set",
+                "ready": True,
+                "artifact": "/tmp/scene",
+            },
+            "input_binding": {
+                "format": "SHIFT.OfflineValidatedRuntimeInput/1",
+                "name": "input_binding",
+                "ready": True,
+                "artifact": None,
+            },
+        },
+    )
+    monkeypatch.setattr(
+        vertical,
+        "build_runtime_requirements",
+        lambda report, **kwargs: _requirements(),
+    )
 
     def unexpected_profile(*args, **kwargs):
         raise AssertionError("profile builder must not run for blocked offline bootstrap")
@@ -174,7 +214,12 @@ def test_profile_blocker_removes_stale_profile_and_propagates_reason(monkeypatch
         "build_offline_runtime_bootstrap",
         lambda *args, **kwargs: _runtime_bootstrap(ready=True),
     )
-    monkeypatch.setattr(vertical, "build_runtime_requirements", lambda report: _requirements())
+    monkeypatch.setattr(vertical, "validate_explicit_runtime_inputs", lambda **kwargs: {})
+    monkeypatch.setattr(
+        vertical,
+        "build_runtime_requirements",
+        lambda report, **kwargs: _requirements(),
+    )
     monkeypatch.setattr(
         vertical,
         "build_vertical_slice_profile_prepare",
