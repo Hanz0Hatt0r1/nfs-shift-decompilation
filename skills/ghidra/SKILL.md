@@ -50,6 +50,22 @@ flow destinations and references for every instruction in each requested
 function. Use these observations to recover register/stack forwarding. Treat
 Ghidra semantic parameter types as provisional unless corroborated separately.
 
+For the established five-function memory-wrapper cluster, use the one-shot
+runner instead of typing both stages manually:
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+./tools/ghidra/run_memory_wrapper_forwarding.sh \
+  /home/pes/ghidra_projects/shift shift SHIFT.exe \
+  out/memory_wrapper_forwarding
+```
+
+It writes both `memory_wrapper_instructions.jsonl` and
+`memory_wrapper_forwarding.json`. The latter is
+`SHIFT-MEMORY-WRAPPER-FORWARDING/1` and only promotes physical value forwarding;
+semantic roles such as size, alignment, pool selector and delete kind stay open
+until independently corroborated.
+
 ## Important anchors
 
 - `FUN_00854e70` — D3D9 declaration Type conversion;
