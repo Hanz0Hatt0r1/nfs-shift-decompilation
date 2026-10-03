@@ -10,6 +10,7 @@ from typing import Any, Mapping
 
 FORMAT = "SHIFT.OfflineNativeRuntimeRequirements/1"
 BOOTSTRAP_FORMAT = "SHIFT.OfflineRuntimeBootstrap/1"
+RUNTIME_SCENE_HANDOFF_FORMAT = "SHIFT.RendererNativeSceneHandoff/1"
 
 
 def _artifact_path(bootstrap: Mapping[str, Any], name: str) -> str | None:
@@ -33,7 +34,32 @@ def _vehicle_artifact_path(bootstrap: Mapping[str, Any], name: str) -> str | Non
     return text or None
 
 
-def build_runtime_requirements(bootstrap: Mapping[str, Any]) -> dict[str, Any]:
+def _runtime_scene_artifact(
+    runtime_scene_handoff: Mapping[str, Any] | None,
+) -> tuple[bool, str | None]:
+    if runtime_scene_handoff is None:
+        return False, None
+    if runtime_scene_handoff.get("format") != RUNTIME_SCENE_HANDOFF_FORMAT:
+        raise ValueError(
+            f"runtime_scene_handoff must be {RUNTIME_SCENE_HANDOFF_FORMAT}"
+        )
+    if (
+        runtime_scene_handoff.get("ready") is not True
+        or runtime_scene_handoff.get("scene_set_ready") is not True
+    ):
+        return False, None
+    artifacts = runtime_scene_handoff.get("artifacts") or {}
+    if not isinstance(artifacts, Mapping):
+        return False, None
+    text = str(artifacts.get("scene_set_dir") or "").strip()
+    return (bool(text), text or None)
+
+
+def build_runtime_requirements(
+    bootstrap: Mapping[str, Any],
+    *,
+    runtime_scene_handoff: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     """Return exact satisfied/missing runtime inputs without promoting evidence."""
     if bootstrap.get("format") != BOOTSTRAP_FORMAT:
         raise ValueError(f"bootstrap must be {BOOTSTRAP_FORMAT}")
@@ -46,15 +72,25 @@ def build_runtime_requirements(bootstrap: Mapping[str, Any]) -> dict[str, Any]:
     participant_ready = (
         readiness.get("vehicle_participant_runtime_identity_ready") is True
     )
-    scene_ready = readiness.get("runtime_scene_ready") is True
+    handoff_scene_ready, handoff_scene_artifact = _runtime_scene_artifact(
+        runtime_scene_handoff
+    )
+    bootstrap_scene_ready = readiness.get("runtime_scene_ready") is True
+    scene_ready = bootstrap_scene_ready or handoff_scene_ready
+    scene_artifact = handoff_scene_artifact if handoff_scene_ready else None
+    scene_source = (
+        "runtime-proven renderer native scene handoff"
+        if handoff_scene_ready
+        else "runtime-proven draw admission"
+    )
 
     rows: list[dict[str, Any]] = [
         {
             "name": "scene_set",
             "expected_format": "SHIFT.NativeSceneVulkanSet/1",
             "satisfied": scene_ready,
-            "artifact": None,
-            "source": "runtime-proven draw admission",
+            "artifact": scene_artifact,
+            "source": scene_source,
         },
         {
             "name": "physics_manifest",
@@ -157,6 +193,8 @@ def build_runtime_requirements(bootstrap: Mapping[str, Any]) -> dict[str, Any]:
         ],
         "boundary": {
             "diagnostic_only": True,
+            "runtime_scene_handoff_format": RUNTIME_SCENE_HANDOFF_FORMAT,
+            "runtime_scene_handoff_accepted": handoff_scene_ready,
             "missing_evidence_synthesized": False,
             "artifact_substitution_allowed": False,
             "static_scene_promoted_to_runtime_scene": False,
