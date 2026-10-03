@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Run hybrid Silverstone renderer production directly from static PE image bytes.
+"""Run self-bootstrap Silverstone renderer production from static PE image bytes.
 
 The PE image is parsed as data only. It is never executed. The resulting
 SHIFT.PEImageEvidence/1 report is persisted with source SHA-256 provenance and
-then passed to the hybrid production runner with Phase 633 base-audit
-regeneration enabled.
+then passed to the Phase 635 self-bootstrap production runner, which regenerates
+Phase 618 and the renderer base audit before Phase 619-626 production.
 """
 from __future__ import annotations
 
@@ -38,7 +38,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from d3d9_pe_evidence import analyze_d3d9_pe_image_file
-from run_silverstone_renderer_hybrid_production import run_hybrid_production
+from run_silverstone_renderer_self_bootstrap_production import (
+    run_self_bootstrap_production as run_hybrid_production,
+)
 
 FORMAT = "SHIFT.SilverstoneRendererPEImageHybridProductionRun/1"
 PE_FORMAT = "SHIFT.PEImageEvidence/1"
@@ -129,7 +131,6 @@ def run_pe_image_hybrid_production(
             corpus=corpus,
             runtime_shader_targets=runtime_shader_targets,
             max_json_bytes=max_json_bytes,
-            regenerate_base_audit=True,
         )
         blockers.extend(
             f"hybrid:{reason}"
@@ -151,6 +152,7 @@ def run_pe_image_hybrid_production(
         "summary": {
             "pe_image_present": image_record["present"],
             "pe_evidence_generated": pe_report is not None,
+            "ambiguity_regeneration_requested": True,
             "base_audit_regeneration_requested": True,
             "hybrid_started": hybrid_started,
             "hybrid_ready": hybrid_ready,
@@ -184,6 +186,11 @@ def run_pe_image_hybrid_production(
                 if isinstance(hybrid_manifest, Mapping)
                 else None
             ),
+            "ambiguity_audit": (
+                hybrid_manifest.get("ambiguity_audit")
+                if isinstance(hybrid_manifest, Mapping)
+                else None
+            ),
             "base_audit": (
                 hybrid_manifest.get("base_audit")
                 if isinstance(hybrid_manifest, Mapping)
@@ -196,7 +203,7 @@ def run_pe_image_hybrid_production(
                 else None
             ),
             "manifest": (
-                str(hybrid_dir / "silverstone_renderer_hybrid_production_run.json")
+                str(hybrid_dir / "silverstone_renderer_self_bootstrap_production_run.json")
                 if hybrid_started
                 else None
             ),
@@ -212,6 +219,8 @@ def run_pe_image_hybrid_production(
                 "SHIFT.PEImageEvidence/1:decoded_tables.usage"
             ),
             "usage_mapping_allows_inference": False,
+            "bundle_ambiguity_audit_is_selection_authority": False,
+            "bundle_ambiguity_audit_is_canonical_crosscheck_only": True,
             "bundle_base_audit_is_selection_authority": False,
             "bundle_base_audit_is_canonical_crosscheck_only": True,
             "hybrid_proof_semantics_changed": False,
