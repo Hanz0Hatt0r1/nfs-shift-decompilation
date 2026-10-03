@@ -12,3 +12,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00770e80_contact_outer_runtime_state
     COMMAND shift_runtime_fun_00770e80_contact_outer_runtime_state_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase695.cmake)
