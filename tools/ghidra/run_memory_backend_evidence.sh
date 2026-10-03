@@ -15,8 +15,8 @@ Example:
 The full Ghidra export directory must contain callgraph.jsonl and
 strings_xrefs.jsonl. The runner exports only the six backend functions needed to
 cross-check allocation/free diagnostics and the release backend chain, then
-attempts fail-closed local slices for the allocation `%d` and free `%p`
-diagnostic varargs.
+builds fail-closed allocation `%d`, free `%p`, and release-pointer forwarding
+artifacts.
 EOF
 }
 
@@ -43,6 +43,7 @@ INSTRUCTIONS="$OUT_DIR/memory_backend_instructions.jsonl"
 REPORT="$OUT_DIR/memory_backend_evidence.json"
 ALLOCATION_SLICE="$OUT_DIR/memory_allocation_diagnostic_slice.json"
 FREE_SLICE="$OUT_DIR/memory_free_diagnostic_slice.json"
+RELEASE_POINTER_CHAIN="$OUT_DIR/memory_release_pointer_chain.json"
 
 "$SCRIPT_DIR/run_shift_function_instructions.sh" \
   "$PROJECT_DIR" \
@@ -71,7 +72,13 @@ python3 "$SCRIPT_DIR/analyze_free_diagnostic_slice.py" \
   --ghidra-export "$GHIDRA_EXPORT" \
   --json-out "$FREE_SLICE"
 
+python3 "$SCRIPT_DIR/analyze_release_pointer_chain.py" \
+  "$INSTRUCTIONS" \
+  --free-diagnostic-slice "$FREE_SLICE" \
+  --json-out "$RELEASE_POINTER_CHAIN"
+
 echo "memory backend instruction export: $INSTRUCTIONS"
 echo "memory backend evidence report: $REPORT"
 echo "memory allocation diagnostic slice: $ALLOCATION_SLICE"
 echo "memory free diagnostic slice: $FREE_SLICE"
+echo "memory release pointer chain: $RELEASE_POINTER_CHAIN"
