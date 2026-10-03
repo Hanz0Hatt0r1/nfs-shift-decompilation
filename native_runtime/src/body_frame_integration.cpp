@@ -167,4 +167,38 @@ execute_fun_007b2270_body_array_with_external_bases(
     return result;
 }
 
+std::vector<BodyFrameIntegrationResult>
+execute_fun_007b2270_body_array_with_basis_callback(
+    const std::vector<BodyFrameIntegrationState>& bodies,
+    double timestep,
+    const BodyBasisRotationCallback& basis_rotation) {
+
+    require_finite_value(timestep, "FUN_007b2270 timestep");
+    if (!basis_rotation) {
+        throw std::invalid_argument(
+            "FUN_007b2270 requires a basis-rotation provider");
+    }
+
+    std::vector<BodyFrameIntegrationResult> result;
+    result.reserve(bodies.size());
+    for (const auto& body : bodies) {
+        // FUN_007b2270 walks BODY records in source order.  Keep the unresolved
+        // FUN_007afdd0 boundary inside each FUN_007bab70 call instead of
+        // precomputing every basis up front: pre-basis -> external basis writer
+        // -> post-basis, then advance to the next BODY record.
+        const auto pre_basis =
+            advance_fun_007bab70_pre_basis(body, timestep);
+        const auto basis_after_fun_007afdd0 =
+            basis_rotation(
+                pre_basis.state.basis,
+                pre_basis.rotation_increment);
+        result.push_back(
+            complete_fun_007bab70_post_basis(
+                pre_basis,
+                basis_after_fun_007afdd0,
+                timestep));
+    }
+    return result;
+}
+
 }  // namespace shift::runtime::physics
