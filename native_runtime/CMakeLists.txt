@@ -63,6 +63,7 @@ add_library(shift_runtime_physics STATIC
   src/body_frame_preparation.cpp
   src/body_accumulator_primitives.cpp
   src/wheel_contact_response.cpp
+  src/body_point_transform.cpp
   src/bar_projection.cpp
   src/bar_matrix_coupling.cpp
   src/hinge_projection.cpp
@@ -313,6 +314,13 @@ target_link_libraries(shift_runtime_wheel_contact_response_check PRIVATE
 target_compile_options(shift_runtime_wheel_contact_response_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_body_point_transform_check
+  tests/body_point_transform_check.cpp)
+target_link_libraries(shift_runtime_body_point_transform_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_body_point_transform_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_builtin_sparse_solver
@@ -440,6 +448,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_wheel_contact_response
     COMMAND shift_runtime_wheel_contact_response_check)
+  add_test(
+    NAME shift_runtime_body_point_transform
+    COMMAND shift_runtime_body_point_transform_check)
 endif()
 
 add_executable(shift_runtime src/shift_runtime.cpp)
