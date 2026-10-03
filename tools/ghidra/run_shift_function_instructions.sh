@@ -45,6 +45,35 @@ if [[ ! -x "$ANALYZE_HEADLESS" ]]; then
   exit 1
 fi
 
+if [[ -d "$PROJECT_DIR" ]]; then
+  PROJECT_DIR=$(cd -- "$PROJECT_DIR" && pwd)
+fi
+
+# A previous timed-out/aborted AnalyzeHeadless may keep the project open even
+# after its launching shell has exited. Fail before starting another contender
+# instead of waiting for a project lock for the full timeout window. We match
+# only headless sessions for this exact project directory and program; GUI
+# sessions and unrelated projects are never killed or modified here.
+CONFLICTING_HEADLESS=()
+if command -v pgrep >/dev/null 2>&1; then
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    if [[ "$line" == *"ghidra.app.util.headless.AnalyzeHeadless"* \
+       && "$line" == *"$PROJECT_DIR"* \
+       && "$line" == *"-process $PROGRAM_NAME"* ]]; then
+      CONFLICTING_HEADLESS+=("$line")
+    fi
+  done < <(pgrep -af 'ghidra\.app\.util\.headless\.AnalyzeHeadless' || true)
+fi
+
+if (( ${#CONFLICTING_HEADLESS[@]} > 0 )); then
+  echo "error: existing Ghidra headless session(s) already target this project/program" >&2
+  printf '  %s\n' "${CONFLICTING_HEADLESS[@]}" >&2
+  echo "hint: stop those stale AnalyzeHeadless/java processes, then rerun this command" >&2
+  echo "hint: pgrep -af 'AnalyzeHeadless|Ghidra'" >&2
+  exit 3
+fi
+
 mkdir -p -- "$(dirname -- "$OUT_FILE")"
 OUT_DIR=$(cd -- "$(dirname -- "$OUT_FILE")" && pwd)
 OUT_FILE="$OUT_DIR/$(basename -- "$OUT_FILE")"
@@ -91,7 +120,7 @@ fi
 if [[ $HEADLESS_STATUS -eq 124 || $HEADLESS_STATUS -eq 137 ]]; then
   echo "error: Ghidra headless did not complete within ${TIMEOUT_SECONDS}s" >&2
   echo "hint: close any GUI instance using this project and check for stale AnalyzeHeadless/java processes" >&2
-  echo "hint: pgrep -af 'AnalyzeHeadless|ghidra|java'" >&2
+  echo "hint: pgrep -af 'AnalyzeHeadless|Ghidra|java'" >&2
   exit "$HEADLESS_STATUS"
 fi
 if [[ $HEADLESS_STATUS -ne 0 ]]; then

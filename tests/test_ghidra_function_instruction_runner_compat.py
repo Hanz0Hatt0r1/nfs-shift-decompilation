@@ -2,6 +2,7 @@ import json
 import os
 import stat
 import subprocess
+import time
 from pathlib import Path
 
 
@@ -163,6 +164,57 @@ time.sleep(30)
     assert "Ghidra headless did not complete within 1s" in completed.stderr
     assert "pgrep -af" in completed.stderr
     assert not output.exists()
+
+
+def test_runner_rejects_existing_headless_for_same_project(tmp_path):
+    ghidra_home = tmp_path / "ghidra"
+    support = ghidra_home / "support"
+    support.mkdir(parents=True)
+    fake_headless = support / "analyzeHeadless"
+    fake_headless.write_text("#!/usr/bin/env bash\nexit 99\n", encoding="utf-8")
+    fake_headless.chmod(fake_headless.stat().st_mode | stat.S_IXUSR)
+
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    blocker = subprocess.Popen(
+        [
+            "python3",
+            "-c",
+            "import time; time.sleep(30)",
+            "ghidra.app.util.headless.AnalyzeHeadless",
+            str(project_dir),
+            "shift",
+            "-process",
+            "SHIFT.exe",
+        ]
+    )
+    try:
+        time.sleep(0.2)
+        env = os.environ.copy()
+        env["GHIDRA_HOME"] = str(ghidra_home)
+        completed = subprocess.run(
+            [
+                "bash",
+                str(RUNNER),
+                str(project_dir),
+                "shift",
+                "SHIFT.exe",
+                str(tmp_path / "out.jsonl"),
+                "FUN_00886900",
+            ],
+            cwd=ROOT,
+            env=env,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+        assert completed.returncode == 3
+        assert "existing Ghidra headless session(s)" in completed.stderr
+        assert str(blocker.pid) in completed.stderr
+        assert "-process SHIFT.exe" in completed.stderr
+    finally:
+        blocker.terminate()
+        blocker.wait(timeout=5)
 
 
 def test_runner_rejects_invalid_timeout(tmp_path):
