@@ -316,7 +316,10 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
     target_rows = target_rows[:32]
 
     blockers = []
-    for function in (outer, physics_pass, between_pass_bridge, physics_pass_tail):
+    observed_for_indirect = sorted(
+        set(ANCHORS.values()) | {between_pass_bridge, physics_pass_tail}
+    )
+    for function in observed_for_indirect:
         for row in indirect.get(function, []):
             blockers.append(
                 {
@@ -384,6 +387,7 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
             "ordered_direct_calls": [_edge(row) for row in tail_rows],
             "required_order": [_edge(row) for row in tail_required],
         },
+        "indirect_blocker_count": len(blockers),
         "indirect_blockers": blockers,
         "instruction_export_targets": target_rows,
         "instruction_export_addresses": [row["address"] for row in target_rows],
