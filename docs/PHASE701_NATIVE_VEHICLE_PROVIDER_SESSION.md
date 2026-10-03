@@ -30,7 +30,7 @@ NativeVehicleProviderSession
   -> next explicit session step
 ```
 
-No original `SHIFT.exe` execution or new runtime capture is used.
+No original `SHIFT.exe` execution and no new runtime capture are used.
 
 ## Contract
 
@@ -155,12 +155,40 @@ chassis BODY and does not promote any persistent pose to a vehicle transform.
 
 ## Process 3 sync
 
-Process 3 Phase 642 admits validated runtime artifacts without relabeling them as
-resource-pipeline proof. It does not prove BODY/vehicle -> renderer object
-identity, world-transform convention, or the missing deep physics producers.
+Process 3 PR #1186 / native playable scene composition now closes an important
+renderer-side blocker:
 
-Phase 701 therefore does not consume renderer scene state and has no Vulkan or
-camera side effect.
+```text
+prepared Silverstone draws
++ canonical BMW vehicle draws
+-> one prepared SHIFT.NativeSceneVulkanSet/1
+```
+
+It also gives the BMW vehicle draws a durable renderer vehicle-object identity
+and preserves their source `RenderCommand.world_matrix` through the existing
+`SHIFT.VulkanWorldTransformPacket/1` path.
+
+That is renderer identity, not physics identity. The Process 3 contract still
+keeps:
+
+```text
+persistent_BODY_pose_consumed = false
+phase698_vehicle_BODY_selection_consumed = false
+dynamic_vehicle_world_transform_claimed = false
+```
+
+Therefore the remaining cross-process transform join is narrower:
+
+```text
+Process 1 proven chassis BODY selection
++ Phase 698/700 selected persistent BODY pose
++ Process 3 durable BMW renderer identity
++ proven BODY pose -> RenderCommand/SVWT matrix convention
+-> dynamic vehicle world transform
+```
+
+Phase 701 itself does not consume renderer state and has no Vulkan or camera side
+effect.
 
 ## Scheduling remains explicit
 
@@ -214,14 +242,15 @@ Using the existing Phase 697 two-BODY fixture, the regression verifies:
 ## Blocker graph after Phase 701
 
 ```text
-Phase 697 deepest explicit path                 closed
-Phase 699 exact external-provider inventory     closed
-persistent nine-boundary provider session       closed as infrastructure
-replace any one provider with proven producer   blocked on Process 1 proof
-main/chassis BODY selection                     blocked on Process 1
-BODY pose -> vehicle/world transform            blocked on Process 1
-renderer object identity                        blocked on Process 1 + Process 3
-automatic cadence                               blocked on Process 1
+Phase 697 deepest explicit path                    closed
+Phase 699 exact external-provider inventory        closed
+persistent nine-boundary provider session          closed as infrastructure
+replace any one provider with proven producer      blocked on Process 1 proof
+main/chassis BODY selection                        blocked on Process 1
+renderer vehicle-object identity                   closed on Process 3 side
+BODY pose -> RenderCommand/SVWT matrix convention  blocked on Process 1 + cross-domain proof
+dynamic vehicle world transform                    blocked behind those joins
+automatic cadence                                  blocked on Process 1
 ```
 
 ## Next Process 2 action
@@ -229,5 +258,7 @@ automatic cadence                               blocked on Process 1
 Regenerate/review the Phase 699 frontier after every new Process 1 merge. The
 first row promoted to `implement_now` should replace its corresponding Phase 701
 bundle field without changing the session callsite. If chassis identity becomes
-positive first, feed the proven selection through Phase 698/700 while keeping
-physics execution explicit until cadence ownership is separately proven.
+positive first, feed the proven selection through Phase 698/700 and join it to
+the Process 3 renderer vehicle identity only after the BODY-pose-to-SVWT matrix
+convention is proven. Keep physics execution explicit until cadence ownership is
+separately proven.
