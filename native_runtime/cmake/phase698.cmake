@@ -16,3 +16,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_vehicle_body_pose_selection
     COMMAND shift_runtime_vehicle_body_pose_selection_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase700.cmake)
