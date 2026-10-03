@@ -2,15 +2,14 @@
 
 ## Playable-slice blocker reduced
 
-Process 2 already carries persistent BODY origin/basis snapshots and Process 3
-can materialize the regenerated renderer evidence into a prepared native scene.
-The remaining transform blocker is no longer pose arithmetic: it is selecting the
-retail BODY that represents the concrete vehicle/chassis.
+Process 2 Phase 698 can select a persistent BODY pose only after Process 1
+supplies a proven BODY index. Process 3 already has a prepared native-scene
+handoff. The remaining transform blocker is therefore identity, not pose decode.
 
-This phase adds:
+The current contract is:
 
 ```text
-SHIFT.VehicleNamedBodyTopologyFrontier/1
+SHIFT.VehicleNamedBodyTopologyFrontier/2
 ```
 
 implemented by:
@@ -19,139 +18,178 @@ implemented by:
 tools/ghidra/build_vehicle_named_body_topology_frontier.py
 ```
 
-It composes the merged `SHIFT.VehicleBodyIdentityFrontier/1`, the existing
-`SHIFT.BodyPersistentStateABI/1`, and the exact
-`SHIFT.BMWM3VehiclePhysicsResourceManifest/1`.
+Version 2 supersedes v1 because existing Phase 404 archive-derived evidence
+contains the exact retail SDF BODY order and disproves one v1 assumption.
 
 No original game execution and no new runtime capture are used.
 
-## Proven vehicle BODY fields
+## Exact retail SDF order was already committed
 
-Phase 633 and `FUN_007615c0` already establish the source BODY names behind the
-vehicle solver setup, while raw disassembly/Phase 634 freezes the repeated
-component geometry:
-
-| Role | Vehicle field |
-| --- | ---: |
-| `fl_wheel` | `+0x820` |
-| `fl_spindle` | `+0x824` |
-| `fr_wheel` | `+0x12a0` |
-| `fr_spindle` | `+0x12a4` |
-| `rl_wheel` | `+0x1d20` |
-| `rl_spindle` | `+0x1d24` |
-| `rr_wheel` | `+0x27a0` |
-| `rr_spindle` | `+0x27a4` |
-| `rear_axle` | `+0x2e00` |
-
-The four component blocks start at `vehicle+0x400` with stride `0xA80`; wheel
-and spindle BODY fields are component-relative `+0x420/+0x424`.
-
-These are nine named **field roles**. The phase does not invent a distinctness
-rule for their runtime BODY indices.
-
-## Exact BMW SDF cardinality
-
-The committed retail manifest identifies:
+`evidence/bmw_m3_e36_physics_intake_phase404.json` was decoded from the
+user-supplied `BMW_M3_E36.bff`. It records the same SDF identity as the current
+vehicle physics manifest:
 
 ```text
-vehicles/physics/suspension/aarm_multilink.sdf
-SHA-256 fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed
-BODY records 11
-BODY runtime stride 0x170
+path       vehicles/physics/suspension/aarm_multilink.sdf
+entry      1091
+size       5056 bytes
+SHA-256    fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed
+BODY count 11
 ```
 
-Therefore the raw arithmetic difference is:
+and the exact archive-derived BODY order:
 
 ```text
-11 retail BODY records - 9 named vehicle BODY field roles = 2
+0   body
+1   fl_spindle
+2   fr_spindle
+3   fl_wheel
+4   fr_wheel
+5   rl_spindle
+6   rr_spindle
+7   rl_wheel
+8   rr_wheel
+9   fuel_tank
+10  driver_head
 ```
 
-but **this is not yet promoted to an exact two-row candidate set**. Phase 634
-intentionally did not prove that all named roles resolve to distinct BODY
-indices, and the manifest stores counts/hashes rather than the exact BODY name
-order.
+The contract cross-checks the Phase 404 path, entry index, decoded SHA-256,
+uncompressed size and BODY count against
+`SHIFT.BMWM3VehiclePhysicsResourceManifest/1` before accepting this name order.
 
-The report therefore emits:
+## Correction to v1: `rear_axle` is a vehicle field role, not an SDF name
+
+Phase 633 / `FUN_007615c0` proves the vehicle solver BODY fields:
+
+| Vehicle field role | Vehicle field | Exact retail SDF name/index |
+| --- | ---: | --- |
+| `fl_wheel` | `+0x820` | `fl_wheel`, 3 |
+| `fl_spindle` | `+0x824` | `fl_spindle`, 1 |
+| `fr_wheel` | `+0x12a0` | `fr_wheel`, 4 |
+| `fr_spindle` | `+0x12a4` | `fr_spindle`, 2 |
+| `rl_wheel` | `+0x1d20` | `rl_wheel`, 7 |
+| `rl_spindle` | `+0x1d24` | `rl_spindle`, 5 |
+| `rr_wheel` | `+0x27a0` | `rr_wheel`, 8 |
+| `rr_spindle` | `+0x27a4` | `rr_spindle`, 6 |
+| `rear_axle` | `+0x2e00` | **unresolved** |
+
+The exact retail SDF has no `name=rear_axle` record. Therefore v1's optional
+SDF join incorrectly required a `rear_axle` name that cannot exist in the
+hash-matched retail file.
+
+Version 2 fixes this by distinguishing:
 
 ```text
-arithmetic_difference = 2
-arithmetic_difference_is_exact_residual_candidate_count = false
-exact_residual_BODY_count = null
+source/vehicle semantic BODY field role
+!=
+exact SDF name string
 ```
 
-This removes a tempting but unsafe shortcut from the blocker graph.
+for `vehicle+0x2e00`.
 
-## Optional exact-SDF closure
+## Exact name join now closed for eight fields
 
-The same analyzer accepts:
+The eight wheel/spindle fields map directly to exact Phase 404 BODY indices.
+No ZIP extraction is required to establish these indices; the committed evidence
+already carries the archive-derived order with the exact decoded SDF hash.
+
+The exact SDF rows not consumed by those eight direct name joins are:
+
+```text
+0   body
+9   fuel_tank
+10  driver_head
+```
+
+These are recorded as **non-wheel/spindle residual rows**, not automatically as
+three chassis candidates. A BODY name by itself is not enough to promote chassis
+or renderer identity.
+
+The `rear_axle` field may still require independent source/machine pointer
+provenance to determine which exact SDF BODY it references. Phase 634 deliberately
+does not invent a distinctness rule for named BODY indices.
+
+## Optional raw-SDF cross-check
+
+The CLI still accepts:
 
 ```text
 --sdf-source /path/to/aarm_multilink.sdf
 ```
 
-Before using the file it requires the exact SHA-256 recorded in the BMW manifest.
-It then reuses `src/physics/rigid_body_sdf_runtime.py` to recover the ordered
-`BODY name=...` rows and the source-backed `0x170` lowering.
+but raw SDF bytes are no longer required for baseline name/order recovery. When
+provided, the tool checks the exact manifest SHA-256, parses the source with the
+existing SDF runtime parser and requires its ordered BODY names to match Phase
+404 byte-derived evidence exactly.
 
-Only after the exact file proves every named vehicle BODY exactly once does the
-contract emit the residual BODY rows and their runtime array indices. The exact
-candidate cardinality can then become two without relying on subtraction alone.
+## Remaining direct blockers
 
-Even at that point a residual name is not automatically declared the chassis.
-A plausible name such as `body` would still need source/static semantics tying it
-to the persistent vehicle world-pose source.
+### 1. `rear_axle` field role -> exact SDF BODY index
 
-## Remaining joins
-
-Two independent identity joins remain:
-
-1. **main/chassis BODY semantic selection** — identify which exact SDF BODY owns
-   the persistent vehicle pose used for the world transform;
-2. **update-child -> vehicle solver base continuity** — join the merged
-   `*record+0x340` update child to the vehicle base whose named BODY fields are
-   populated by `FUN_007615c0`.
-
-The finite static instruction worklist is:
+Trace value production in `FUN_007615c0` for:
 
 ```text
-0x00713050  FUN_00713050 update batch
-0x00794a30  first update child caller
-0x007615c0  named vehicle solver BODY setup
+vehicle + 0x2e00
 ```
 
-The resource-side work item is the exact `aarm_multilink.sdf`; no new runtime
-capture is required merely to obtain its BODY names/order.
+to one exact BODY pointer/index without treating the semantic label as a file
+name.
 
-## Downstream handoff
+### 2. Main/chassis BODY semantic selection
 
-Until both joins are proven the report remains:
+The exact non-wheel/spindle rows are now known, but Process 1 still needs static
+proof of which BODY supplies the persistent vehicle/chassis world pose. The
+string `body` is a strong human hint, not sufficient evidence by itself.
+
+### 3. Update child -> vehicle solver base continuity
+
+PR #1176 proves the active update child as:
+
+```text
+*record + 0x340
+```
+
+but does not prove that this pointer is the same vehicle base used by
+`FUN_007615c0`. The finite instruction worklist remains:
+
+```text
+0x00713050  update batch / *record+0x340 producer
+0x00794a30  update-child consumer
+0x007615c0  vehicle solver BODY-field setup
+```
+
+## Phase 698 handoff
+
+The contract deliberately keeps:
 
 ```text
 persistent_BODY_pose_available = true
-named_vehicle_BODY_fields_ready = true
+exact_sdf_BODY_name_order_ready = true
+wheel_spindle_BODY_indices_ready = true
+rear_axle_BODY_index_ready = false
 main_chassis_BODY_selected = false
 selected_BODY_index = null
 vehicle_BODY_selection_ready = false
-vehicle_world_transform_ready = false
-renderer_vehicle_transform_transport_ready = false
+phase698_positive_selection_admissible = false
 ```
 
-Once a chassis BODY index is proven, Process 2 can select the already persistent
-origin/basis snapshot and Process 3 can consume the resulting vehicle world
-transform through the already prepared native-scene path.
+Only after the chassis identity and update-child continuity are proven should the
+positive `SHIFT.VehicleBodyIdentityFrontier/1` fields required by Phase 698 be
+emitted.
 
 ## Fail-closed policy
 
-The analyzer rejects:
+Version 2 rejects:
 
-- BMW archive identity drift;
-- retail SDF path/hash/count/stride drift;
-- component base/stride drift;
-- wheel/spindle/rear-axle vehicle-field drift;
-- upstream contracts that already claim a BODY selection;
-- exact SDF files whose SHA-256 does not match the retail manifest;
-- duplicated exact SDF BODY names;
-- exact SDFs that do not contain every proven named vehicle BODY exactly once.
+- BMW manifest SDF path/hash/count/stride drift;
+- Phase 404 archive/path/index/hash/size/count drift;
+- duplicate Phase 404 BODY names;
+- component or vehicle BODY-field topology drift;
+- absence of any of the eight proven wheel/spindle SDF names;
+- any future exact retail `rear_axle` name appearing without a re-audit of the
+  Phase 633 semantic role;
+- raw SDF content whose SHA-256 or BODY order differs from Phase 404;
+- upstream preselection of a vehicle BODY.
 
-It never treats callgraph adjacency, offset similarity, cardinality subtraction,
-or a human-plausible BODY name as chassis identity.
+It never promotes offset similarity, a semantic field label, an SDF name, or a
+cardinality subtraction into chassis identity.
