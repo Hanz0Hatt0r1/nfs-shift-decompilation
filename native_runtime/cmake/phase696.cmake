@@ -15,3 +15,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00770e80_motion_read_effect_provider_chain
     COMMAND shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase697.cmake)

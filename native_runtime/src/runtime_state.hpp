@@ -314,6 +314,23 @@ struct NativeRuntimeState {
             post_half_step);
     }
 
+    physics::Fun00770e80MotionReadEffectProviderChainResult
+    execute_explicit_outer_update_with_fun_007682c0_motion_read_effect_provider(
+        double outer_timestep,
+        const physics::Fun0076d100MotionReadEffectProvider& physics_pass_provider,
+        const physics::Fun00765470MachineScalarHalfStepProvider& half_step_provider,
+        const physics::Fun007b8810PostHalfStepCallback& post_half_step) {
+        return outer_update.execute_with_fun_007682c0_motion_read_effect_provider(
+            physics.workspace.body_count,
+            physics.workspace.ready,
+            physics.participant_ready,
+            physics.participant_identity_join_proven,
+            outer_timestep,
+            physics_pass_provider,
+            half_step_provider,
+            post_half_step);
+    }
+
     void fixed_step(const VehicleControlIntent& input) {
         body_feedback.initialize_from_environment();
         body_feedback.validate_runtime_boundary(
