@@ -15,9 +15,9 @@ Example:
     out/memory_wrapper_full_evidence
 
 This runner joins source wrapper callsites, targeted wrapper forwarding,
-source-argument -> backend-storage provenance, repeated provenance patterns and
-targeted backend instruction/diagnostic evidence. It does not assign semantic
-argument roles.
+source-argument -> backend-storage provenance, repeated provenance patterns,
+targeted backend instruction/diagnostic evidence and any independently proven
+allocation-size semantic role. Other allocator/release roles remain unassigned.
 EOF
 }
 
@@ -58,6 +58,8 @@ ARGUMENT_JOIN_JSON="$OUT_DIR/memory_wrapper_argument_join.json"
 PATTERNS_JSON="$OUT_DIR/memory_wrapper_provenance_patterns.json"
 BACKEND_DIR="$OUT_DIR/backend"
 BACKEND_JSON="$BACKEND_DIR/memory_backend_evidence.json"
+DIAGNOSTIC_SLICE_JSON="$BACKEND_DIR/memory_allocation_diagnostic_slice.json"
+ALLOCATION_SIZE_ROLE_JSON="$OUT_DIR/memory_allocation_size_role_join.json"
 
 python3 "$LIVE_DUMP_DIR/extract_memory_wrapper_callsites.py" \
   "$SOURCE" \
@@ -86,8 +88,14 @@ python3 "$LIVE_DUMP_DIR/summarize_memory_wrapper_argument_patterns.py" \
   "$GHIDRA_EXPORT" \
   "$BACKEND_DIR"
 
+python3 "$LIVE_DUMP_DIR/join_allocation_size_role.py" \
+  "$ARGUMENT_JOIN_JSON" \
+  --diagnostic-slice "$DIAGNOSTIC_SLICE_JSON" \
+  --json-out "$ALLOCATION_SIZE_ROLE_JSON"
+
 echo "memory wrapper callsites: $CALLSITES_JSON"
 echo "memory wrapper forwarding: $FORWARDING_JSON"
 echo "memory wrapper argument join: $ARGUMENT_JOIN_JSON"
 echo "memory wrapper provenance patterns: $PATTERNS_JSON"
 echo "memory backend evidence: $BACKEND_JSON"
+echo "memory allocation-size role join: $ALLOCATION_SIZE_ROLE_JSON"
