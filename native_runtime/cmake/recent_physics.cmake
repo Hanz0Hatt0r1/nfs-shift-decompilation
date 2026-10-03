@@ -25,7 +25,8 @@ target_sources(shift_runtime_physics PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_0076d100_anchor_sequence.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00765470_wheel_feedback_join.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00763570_precomputed_feedback_join.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00763570_machine_feedback_join.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00763570_machine_feedback_join.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/fun_00770e80_composed_anchor_chain.cpp)
 
 add_executable(shift_runtime_wheel_force_aggregate_check
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/wheel_force_aggregate_check.cpp)
@@ -209,6 +210,13 @@ target_link_libraries(shift_runtime_fun_00763570_machine_feedback_join_check PRI
 target_compile_options(shift_runtime_fun_00763570_machine_feedback_join_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_fun_00770e80_composed_anchor_chain_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_00770e80_composed_anchor_chain_check.cpp)
+target_link_libraries(shift_runtime_fun_00770e80_composed_anchor_chain_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_fun_00770e80_composed_anchor_chain_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_wheel_force_aggregate
@@ -251,7 +259,7 @@ if(BUILD_TESTING)
     COMMAND shift_runtime_tire_thermal_check)
   add_test(
     NAME shift_runtime_wheel_thermal_core
-    COMMAND shift_runtime_wheel_thermal_core_check)
+    COMMAND shift_runtime_wheel_thermal_integrator_check)
   add_test(
     NAME shift_runtime_body_frame_integration
     COMMAND shift_runtime_body_frame_integration_check)
@@ -288,4 +296,7 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_fun_00763570_machine_feedback_join
     COMMAND shift_runtime_fun_00763570_machine_feedback_join_check)
+  add_test(
+    NAME shift_runtime_fun_00770e80_composed_anchor_chain
+    COMMAND shift_runtime_fun_00770e80_composed_anchor_chain_check)
 endif()
