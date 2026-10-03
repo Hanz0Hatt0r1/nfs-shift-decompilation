@@ -2,6 +2,8 @@
 
 This stage only assembles paths. It never promotes missing runtime evidence and
 it never replaces the validation performed by tools/run_native_vertical_slice.py.
+A runtime requirement may record a prevalidated explicit input for diagnostics;
+that origin remains explicit here rather than being relabeled as pipeline proof.
 """
 from __future__ import annotations
 
@@ -91,8 +93,15 @@ def build_vertical_slice_profile_prepare(
             blockers.append(f"requirements:missing-row:{name}")
             continue
 
+        # A validated explicit input is READY for diagnostics but is still an
+        # explicit user/runtime input, not a pipeline-proven artifact. Keep it
+        # on the explicit path so provenance and conflict semantics are honest.
+        artifact_origin = str(row.get("artifact_origin") or "")
         proven_artifact = None
-        if row.get("satisfied") is True:
+        if (
+            row.get("satisfied") is True
+            and artifact_origin != "explicit-validated"
+        ):
             text = str(row.get("artifact") or "").strip()
             if text:
                 proven_artifact = text
@@ -195,6 +204,7 @@ def build_vertical_slice_profile_prepare(
         "blocking_reasons": blockers,
         "boundary": {
             "requirements_artifact_identity_is_authoritative": True,
+            "validated_explicit_requirement_stays_explicit": True,
             "explicit_override_of_proven_artifact_allowed": False,
             "missing_evidence_synthesized": False,
             "path_outside_workspace_allowed": False,
