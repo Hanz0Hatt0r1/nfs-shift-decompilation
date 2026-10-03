@@ -1,0 +1,14 @@
+add_executable(shift_runtime_explicit_outer_update_runtime_state_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/explicit_outer_update_runtime_state_check.cpp)
+target_include_directories(shift_runtime_explicit_outer_update_runtime_state_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(shift_runtime_explicit_outer_update_runtime_state_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_explicit_outer_update_runtime_state_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
+if(BUILD_TESTING)
+  add_test(
+    NAME shift_runtime_explicit_outer_update_runtime_state
+    COMMAND shift_runtime_explicit_outer_update_runtime_state_check)
+endif()
