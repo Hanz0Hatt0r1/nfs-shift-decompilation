@@ -1,5 +1,7 @@
 #include "shift_native_vehicle_provider_session.hpp"
 
+#include "runtime_state.hpp"
+
 #include <stdexcept>
 #include <utility>
 
@@ -34,9 +36,6 @@ NativeVehicleProviderSessionResult
 NativeVehicleProviderSession::execute_explicit_step(
     NativeRuntimeState& runtime,
     double outer_timestep) {
-    // Re-check the persistent bundle without invoking any producer. This keeps a
-    // moved-from or externally replaced std::function from failing open before
-    // the runtime admission boundary.
     require_complete_bundle(providers_);
 
     NativeVehicleProviderSessionTelemetry telemetry{};
@@ -117,9 +116,6 @@ NativeVehicleProviderSession::execute_explicit_step(
             half_step_provider,
             post_half_step);
 
-    // Session-owned telemetry commits only after the runtime-owned BODY update
-    // committed successfully. External provider side effects are deliberately
-    // outside this transaction, matching Phase 697.
     ++step_count_;
     last_telemetry_ = telemetry;
 
