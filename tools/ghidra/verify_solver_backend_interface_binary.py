@@ -10,7 +10,19 @@ import struct
 from pathlib import Path
 from typing import Any
 
-from verify_body_frame_integration_binary import extract_va_range
+
+def _load_extract_va_range():
+    path = Path(__file__).with_name("verify_body_frame_integration_binary.py")
+    spec = importlib.util.spec_from_file_location(
+        "verify_body_frame_integration_binary_for_solver_backend", path
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module.extract_va_range
+
+
+extract_va_range = _load_extract_va_range()
 
 
 def _load_contract_module():
