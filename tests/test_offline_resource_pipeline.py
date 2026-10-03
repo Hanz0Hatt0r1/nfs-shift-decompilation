@@ -171,6 +171,57 @@ def test_catalog_uses_semantic_edges_and_keeps_missing_dependency_explicit(monke
     assert graph["summary"]["blocking_admissible_edges"] == 1
 
 
+def test_imx_is_known_and_emits_exact_material_dependencies(monkeypatch):
+    assert ".imx" in pipeline.KNOWN_DECODE_EXTENSIONS
+    monkeypatch.setattr(
+        pipeline,
+        "build_imx_neutral_geometry",
+        lambda payload: {
+            "format": "SHIFT.IMXNeutralGeometry/1",
+            "status": "ready",
+            "ready": True,
+            "primitive_count": 2,
+            "decoded_properties": ["200", "130"],
+            "deferred_stream_count": 0,
+            "blocking_reasons": [],
+            "primitives": [
+                {"material": "tracks/test/body.mtx"},
+                {"material": "tracks/test/glass.bmt"},
+            ],
+        },
+    )
+
+    deps, neutral = pipeline._semantic_dependencies(
+        "tracks/test/car.imx",
+        b"fixture-imx",
+        {"analysis": {"format": "XML"}},
+    )
+
+    assert [(row["ref"], row["kind"], row["scope"], row["parser"]) for row in deps] == [
+        (
+            "tracks/test/body.bmt",
+            "material",
+            "same-archive-exact",
+            "build_imx_neutral_geometry",
+        ),
+        (
+            "tracks/test/glass.bmt",
+            "material",
+            "same-archive-exact",
+            "build_imx_neutral_geometry",
+        ),
+    ]
+    assert neutral == {
+        "format": "SHIFT.IMXNeutralGeometry/1",
+        "status": "ready",
+        "ready": True,
+        "primitive_count": 2,
+        "decoded_properties": ["200", "130"],
+        "deferred_stream_count": 0,
+        "blocking_reasons": [],
+    }
+
+
 def _resource(archive_id: str, index: int, path: str, *, parsed: bool = True):
     return {
         "id": f"{archive_id}#{index}",
@@ -197,6 +248,7 @@ def test_bootstrap_selects_exact_archives_and_never_bypasses_native_gate():
             _resource("tv", 1, "tracks/test/data.trd"),
             _resource("tv", 2, "tracks/test/scene.lsd"),
             _resource("tv", 3, "tracks/test/mesh.imb"),
+            _resource("tv", 4, "tracks/test/mesh_xml.imx"),
             _resource("tp", 0, "tracks/_data/aiw/test.aiw"),
             _resource("tp", 1, "tracks/test/physics/test.csm"),
             _resource("veh", 0, "vehicles/test/test.cdf"),
@@ -217,6 +269,8 @@ def test_bootstrap_selects_exact_archives_and_never_bypasses_native_gate():
     )
     assert bootstrap["ready"] is True
     assert bootstrap["status"] == "ready"
+    assert bootstrap["roots"]["track_visual"]["imb_resource_ids"] == ["tv#3"]
+    assert bootstrap["roots"]["track_visual"]["imx_resource_ids"] == ["tv#4"]
     assert admission["resource_bootstrap_ready"] is True
     assert admission["native_runtime_ready"] is False
     assert admission["status"] == "resource-ready-runtime-blocked"
