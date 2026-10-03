@@ -2,19 +2,22 @@
 
 The canonical implementations live in matrix_vector_transform_runtime.py.
 This module keeps the Phase 428 SDF-facing names while binding them directly to
-the exact retail functions.
+the retail machine-backed functions. Phase 687 upgrades the numeric contract to
+preserve QWORD vector operands instead of the older decompiler-shaped f32 cast.
 """
 from __future__ import annotations
 
 from typing import Iterable, Sequence
 
 from matrix_vector_transform_runtime import (
+    FORMAT as CANONICAL_TRANSFORM_FORMAT,
     Matrix3x3,
+    build_contract as build_canonical_transform_contract,
     transform_fun_007aefb0,
     transform_fun_007af0a0,
 )
 
-FORMAT = "SHIFT.SDFTransformRuntime/2"
+FORMAT = "SHIFT.SDFTransformRuntime/3"
 MATRIX_BLOCK_BASE = 0xD4
 MATRIX_FLOAT_OFFSETS = tuple(MATRIX_BLOCK_BASE + i * 4 for i in range(9))
 
@@ -53,17 +56,21 @@ def build_matrix_block_contract() -> dict:
 
 
 def build_transform_helper_contract() -> dict:
-    canonical = __import__("matrix_vector_transform_runtime").build_contract()
+    canonical = build_canonical_transform_contract()
+    if canonical["format"] != CANONICAL_TRANSFORM_FORMAT:
+        raise ValueError("canonical transform contract format mismatch")
     return {
         "format": FORMAT,
-        "version": 2,
+        "version": 3,
         "matrix_block": build_matrix_block_contract(),
+        "canonical_transform_format": CANONICAL_TRANSFORM_FORMAT,
         "helpers": canonical["helpers"],
         "numeric_boundary": canonical["numeric_boundary"],
         "status": "ready",
         "limitations": [
             "No matrix coordinate convention or physical meaning is inferred.",
-            "No translation component is part of these two helpers.",
+            "No translation component is part of these two SDF-facing helpers.",
+            "Ambient retail x87 control-word state is not proven by this adapter.",
         ],
     }
 
