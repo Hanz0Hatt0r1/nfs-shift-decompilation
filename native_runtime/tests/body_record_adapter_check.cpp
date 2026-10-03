@@ -1,5 +1,6 @@
 #include "shift_body_record_adapter.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
