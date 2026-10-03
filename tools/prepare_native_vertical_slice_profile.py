@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
+TOOLS = ROOT / "tools"
 if SRC.is_dir():
     paths = [SRC]
     paths.extend(sorted(
@@ -19,10 +20,13 @@ if SRC.is_dir():
         value = str(path)
         if value not in sys.path:
             sys.path.insert(0, value)
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+for path in (ROOT, TOOLS):
+    value = str(path)
+    if value not in sys.path:
+        sys.path.insert(0, value)
 
 from offline_vertical_slice_profile import build_vertical_slice_profile_prepare
+from run_native_vertical_slice import ProfileError, build_launch_plan
 
 
 def _load(path: str | Path) -> dict:
@@ -30,6 +34,14 @@ def _load(path: str | Path) -> dict:
     if not isinstance(value, dict):
         raise ValueError(f"expected JSON object: {path}")
     return value
+
+
+def _write_json(path: Path, value: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -55,6 +67,25 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--interactive", action="store_true")
     mode.add_argument("--keyboard", action="store_true")
     parser.add_argument("--frames", type=int)
+    parser.add_argument(
+        "--validate-launch-plan",
+        action="store_true",
+        help="validate the completed profile through tools/run_native_vertical_slice.py",
+    )
+    parser.add_argument(
+        "--runtime",
+        default="native_runtime/build/shift_runtime",
+        help="native runtime executable used only for launch-plan validation",
+    )
+    parser.add_argument(
+        "--launch-plan",
+        help="launch-plan JSON output; defaults next to the prepared profile",
+    )
+    parser.add_argument(
+        "--validation",
+        action="store_true",
+        help="include native Vulkan validation in the generated launch plan",
+    )
     return parser
 
 
@@ -63,6 +94,11 @@ def main(argv: list[str] | None = None) -> int:
     profile_path = Path(args.output)
     report_path = Path(args.report) if args.report else profile_path.with_suffix(
         profile_path.suffix + ".prepare.json"
+    )
+    launch_plan_path = (
+        Path(args.launch_plan)
+        if args.launch_plan
+        else profile_path.with_suffix(profile_path.suffix + ".launch_plan.json")
     )
     explicit = {
         "scene_set": args.scene_set,
@@ -85,30 +121,63 @@ def main(argv: list[str] | None = None) -> int:
         keyboard=args.keyboard,
         frames=args.frames,
     )
+    report = dict(report)
+    report["profile_ready"] = report["ready"] is True
+    report["launcher_validation_requested"] = bool(args.validate_launch_plan)
+    report["launcher_validation_ready"] = False
+    report["launch_plan"] = None
 
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(
-        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    if report["ready"]:
+    if report["profile_ready"]:
         profile_path.parent.mkdir(parents=True, exist_ok=True)
-        profile_path.write_text(
-            json.dumps(report["profile"], ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n",
-            encoding="utf-8",
-        )
+        _write_json(profile_path, report["profile"])
     elif profile_path.exists():
         profile_path.unlink()
+    if not report["profile_ready"] and launch_plan_path.exists():
+        launch_plan_path.unlink()
+
+    if report["profile_ready"] and args.validate_launch_plan:
+        boundary = dict(report.get("boundary") or {})
+        boundary["launcher_validation_performed"] = True
+        boundary["launcher_validation_still_required"] = False
+        report["boundary"] = boundary
+        try:
+            launch_plan = build_launch_plan(
+                profile_path,
+                runtime=args.runtime,
+                validation=args.validation,
+            )
+        except (ProfileError, OSError, ValueError) as exc:
+            report["status"] = "launcher-validation-blocked"
+            report["ready"] = False
+            report["blocking_reasons"] = list(dict.fromkeys(
+                list(report.get("blocking_reasons") or [])
+                + [f"launcher-validation:{type(exc).__name__}:{exc}"]
+            ))
+            if launch_plan_path.exists():
+                launch_plan_path.unlink()
+        else:
+            _write_json(launch_plan_path, launch_plan)
+            report["status"] = "launch-plan-ready"
+            report["ready"] = True
+            report["launcher_validation_ready"] = True
+            report["launch_plan"] = str(launch_plan_path)
+    elif report["profile_ready"]:
+        report["ready"] = True
+
+    _write_json(report_path, report)
 
     print(json.dumps({
         "format": report["format"],
         "status": report["status"],
         "ready": report["ready"],
+        "profile_ready": report["profile_ready"],
+        "launcher_validation_requested": report["launcher_validation_requested"],
+        "launcher_validation_ready": report["launcher_validation_ready"],
         "auto_filled_inputs": report["auto_filled_inputs"],
         "explicit_filled_inputs": report["explicit_filled_inputs"],
         "blocking_reasons": report["blocking_reasons"],
-        "profile": str(profile_path) if report["ready"] else None,
+        "profile": str(profile_path) if report["profile_ready"] else None,
+        "launch_plan": report["launch_plan"],
         "report": str(report_path),
     }, ensure_ascii=False, indent=2))
     return 0 if report["ready"] else 2
