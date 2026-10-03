@@ -31,6 +31,25 @@ switches and factories. Keep `binary.json` and `manifest.json` with the bundle.
 Do not promote candidate records to recovered contracts without corroborating
 disassembly, PE bytes, call-site or runtime evidence.
 
+## Targeted instruction export
+
+When a small set of already identified functions needs argument-forwarding or
+literal-level analysis, do not expand the main database into a whole-program
+disassembly. Export only those function bodies:
+
+```bash
+GHIDRA_HOME=/path/to/ghidra \
+bash tools/ghidra/run_shift_function_instructions.sh \
+  /path/to/ghidra-projects shift SHIFT.exe \
+  out/function_instructions.jsonl \
+  FUN_00886900 FUN_00886930
+```
+
+`SHIFT.GhidraFunctionInstructions/1` records raw bytes, mnemonic, operand text,
+flow destinations and references for every instruction in each requested
+function. Use these observations to recover register/stack forwarding. Treat
+Ghidra semantic parameter types as provisional unless corroborated separately.
+
 ## Important anchors
 
 - `FUN_00854e70` — D3D9 declaration Type conversion;
