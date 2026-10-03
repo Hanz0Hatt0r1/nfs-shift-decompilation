@@ -89,6 +89,15 @@ def test_builds_static_semantic_index_and_preserves_layer_boundaries(tmp_path, m
         "namespace_only_candidate_count": 9,
         "slice_only_unclassified_candidate_count": 3,
     }
+    frontier = {
+        "format": "SHIFT.GhidraSubsystemMethodFrontier/1",
+        "source": _source(),
+        "namespace_only_candidate_count": 9,
+        "one_hop_frontier_candidate_count": 5,
+        "namespace_only_no_one_hop_link_count": 4,
+        "ambiguous_near_slice_count": 2,
+        "frontier_candidates": [],
+    }
     allocator = {
         "format": "SHIFT-PHYSICS-ALLOCATOR-BOUNDARY/1",
         "member_count": 2,
@@ -101,6 +110,7 @@ def test_builds_static_semantic_index_and_preserves_layer_boundaries(tmp_path, m
     monkeypatch.setattr(module, "build_subsystem_manifests", lambda root: subsystem)
     monkeypatch.setattr(module, "discover_method_name_anchors", lambda root: method_anchors)
     monkeypatch.setattr(module, "join_method_anchors_to_subsystems", lambda root: joined)
+    monkeypatch.setattr(module, "build_subsystem_method_frontier", lambda root: frontier)
     monkeypatch.setattr(module, "build_physics_allocator_boundary", lambda root: allocator)
 
     def fake_write_bundle(report, output_dir):
@@ -135,6 +145,9 @@ def test_builds_static_semantic_index_and_preserves_layer_boundaries(tmp_path, m
         "subsystem_crosschecked_method_name_candidates": 12,
         "namespace_only_method_name_candidates": 9,
         "slice_only_unclassified_method_name_candidates": 3,
+        "one_hop_subsystem_method_frontier_candidates": 5,
+        "namespace_only_method_candidates_without_one_hop_link": 4,
+        "ambiguous_method_anchor_functions_near_slice": 2,
         "physics_allocator_members": 2,
         "physics_allocator_members_confirmed": 1,
         "physics_allocator_member_mismatches": 1,
@@ -146,11 +159,14 @@ def test_builds_static_semantic_index_and_preserves_layer_boundaries(tmp_path, m
     assert report["scope"]["heuristic_factories_used"] is False
     assert report["scope"]["automatic_function_renaming_performed"] is False
     assert report["scope"]["physics_allocator_boundary_used"] is True
+    assert report["scope"]["subsystem_method_frontier_used"] is True
+    assert report["scope"]["frontier_membership_is_semantic_promotion"] is False
 
     expected = {
         "crosscheck.json",
         "method_name_anchors.json",
         "subsystem_method_anchors.json",
+        "subsystem_method_frontier.json",
         "physics_allocator_boundary.json",
         "manifest.json",
         "subsystems",
