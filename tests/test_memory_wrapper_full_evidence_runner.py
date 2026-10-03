@@ -24,7 +24,7 @@ def _prepare_harness(tmp_path: Path) -> Path:
 
     _write_script(
         ghidra_dir / "run_memory_wrapper_forwarding.sh",
-        """#!/usr/bin/env bash
+        r"""#!/usr/bin/env bash
 set -euo pipefail
 out=$4
 mkdir -p -- "$out"
@@ -33,7 +33,7 @@ printf '%s\n' '{"format":"SHIFT-MEMORY-WRAPPER-FORWARDING/1","wrapper_count":0,"
     )
     _write_script(
         ghidra_dir / "run_memory_backend_evidence.sh",
-        """#!/usr/bin/env bash
+        r"""#!/usr/bin/env bash
 set -euo pipefail
 out=$5
 mkdir -p -- "$out"
@@ -46,7 +46,7 @@ printf '%s\n' '{"format":"SHIFT-MEMORY-RELEASE-BYTE-BEHAVIOR/1","analysis_comple
     )
     _write_script(
         ghidra_dir / "analyze_release_pointer_chain.py",
-        """#!/usr/bin/env python3
+        r"""#!/usr/bin/env python3
 import json, sys
 from pathlib import Path
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
@@ -55,7 +55,7 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1','rele
     )
     _write_script(
         ghidra_dir / "summarize_memory_retail_static_evidence.py",
-        """#!/usr/bin/env python3
+        r"""#!/usr/bin/env python3
 import json, sys
 from pathlib import Path
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
@@ -65,7 +65,7 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-RETAIL-STATIC-SUMMARY/1','stat
 
     _write_script(
         live_dir / "extract_memory_wrapper_callsites.py",
-        """#!/usr/bin/env python3
+        r"""#!/usr/bin/env python3
 import json, sys
 from pathlib import Path
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
@@ -74,7 +74,7 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-WRAPPER-CALLSITE-EVIDENCE/1','
     )
     _write_script(
         live_dir / "join_memory_wrapper_argument_evidence.py",
-        """#!/usr/bin/env python3
+        r"""#!/usr/bin/env python3
 import json, sys
 from pathlib import Path
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
@@ -83,7 +83,7 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1','rows
     )
     _write_script(
         live_dir / "summarize_memory_wrapper_argument_patterns.py",
-        """#!/usr/bin/env python3
+        r"""#!/usr/bin/env python3
 import json, sys
 from pathlib import Path
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
@@ -92,7 +92,7 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-WRAPPER-PROVENANCE-PATTERNS/1'
     )
     _write_script(
         live_dir / "join_allocation_size_role.py",
-        """#!/usr/bin/env python3
+        r"""#!/usr/bin/env python3
 import json, sys
 from pathlib import Path
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
@@ -101,7 +101,7 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-ALLOCATION-SIZE-ROLE-JOIN/1','
     )
     _write_script(
         live_dir / "join_released_pointer_role.py",
-        """#!/usr/bin/env python3
+        r"""#!/usr/bin/env python3
 import json, sys
 from pathlib import Path
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
@@ -110,7 +110,7 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-RELEASED-POINTER-ROLE-JOIN/1',
     )
     _write_script(
         live_dir / "summarize_memory_source_semantics.py",
-        """#!/usr/bin/env python3
+        r"""#!/usr/bin/env python3
 import json, sys
 from pathlib import Path
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
