@@ -34,12 +34,13 @@ jobs:
             shift_runtime_body_point_transform_check \
             shift_runtime_aux_contact_response_check \
             shift_runtime_wheel_force_aggregate_check \
-            shift_runtime_surface_probe_check
-      - name: Run Phase 656-661 CTest regressions
+            shift_runtime_surface_probe_check \
+            shift_runtime_contact_outer_kernel_check
+      - name: Run Phase 656-662 CTest regressions
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
-            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe)$'
-      - name: Verify Phase 656-661 reports
+            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel)$'
+      - name: Verify Phase 656-662 reports
         run: |
           mkdir -p out/native-physics-recent
           native_runtime/build/shift_runtime_body_accumulator_primitives_check \
@@ -54,6 +55,8 @@ jobs:
             | tee out/native-physics-recent/wheel_force_aggregate.json
           native_runtime/build/shift_runtime_surface_probe_check \
             | tee out/native-physics-recent/surface_probe.json
+          native_runtime/build/shift_runtime_contact_outer_kernel_check \
+            | tee out/native-physics-recent/contact_outer_kernel.json
           grep -q '"format":"SHIFT.NativeBodyAccumulatorPrimitives/1"' \
             out/native-physics-recent/body_accumulator_primitives.json
           grep -q '"format":"SHIFT.NativeWheelContactResponse/1"' \
@@ -74,3 +77,9 @@ jobs:
             out/native-physics-recent/surface_probe.json
           grep -q '"same_sign_child_blend_proven":true' \
             out/native-physics-recent/surface_probe.json
+          grep -q '"format":"SHIFT.NativeContactOuterKernel/1"' \
+            out/native-physics-recent/contact_outer_kernel.json
+          grep -q '"outer_arithmetic_proven":true' \
+            out/native-physics-recent/contact_outer_kernel.json
+          grep -q '"paired_submission_scales_proven":true' \
+            out/native-physics-recent/contact_outer_kernel.json
