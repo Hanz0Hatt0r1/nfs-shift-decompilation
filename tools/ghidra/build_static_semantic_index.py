@@ -16,6 +16,7 @@ from analyze_shift_export import analyze as analyze_shift_export
 from build_physics_allocator_boundary import build_physics_allocator_boundary
 from build_subsystem_manifests import build as build_subsystem_manifests
 from build_subsystem_manifests import write_bundle as write_subsystem_bundle
+from build_subsystem_method_frontier import build_subsystem_method_frontier
 from discover_method_name_anchors import discover_method_name_anchors
 from join_method_anchors_to_subsystems import join_method_anchors_to_subsystems
 
@@ -72,20 +73,28 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
     subsystem_report = build_subsystem_manifests(root)
     method_anchors = discover_method_name_anchors(root)
     subsystem_method_anchors = join_method_anchors_to_subsystems(root)
+    method_frontier = build_subsystem_method_frontier(root)
     physics_allocator = build_physics_allocator_boundary(root)
 
-    source = _validate_source_identity(crosscheck, subsystem_report, subsystem_method_anchors)
+    source = _validate_source_identity(
+        crosscheck,
+        subsystem_report,
+        subsystem_method_anchors,
+        method_frontier,
+    )
 
     crosscheck_path = output_dir / "crosscheck.json"
     subsystem_dir = output_dir / "subsystems"
     method_anchor_path = output_dir / "method_name_anchors.json"
     subsystem_method_anchor_path = output_dir / "subsystem_method_anchors.json"
+    method_frontier_path = output_dir / "subsystem_method_frontier.json"
     physics_allocator_path = output_dir / "physics_allocator_boundary.json"
 
     _write_json(crosscheck_path, crosscheck)
     write_subsystem_bundle(subsystem_report, subsystem_dir)
     _write_json(method_anchor_path, method_anchors)
     _write_json(subsystem_method_anchor_path, subsystem_method_anchors)
+    _write_json(method_frontier_path, method_frontier)
     _write_json(physics_allocator_path, physics_allocator)
 
     subsystem_counts = _subsystem_counts(subsystem_report)
@@ -112,6 +121,15 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
         ),
         "slice_only_unclassified_method_name_candidates": int(
             subsystem_method_anchors.get("slice_only_unclassified_candidate_count") or 0
+        ),
+        "one_hop_subsystem_method_frontier_candidates": int(
+            method_frontier.get("one_hop_frontier_candidate_count") or 0
+        ),
+        "namespace_only_method_candidates_without_one_hop_link": int(
+            method_frontier.get("namespace_only_no_one_hop_link_count") or 0
+        ),
+        "ambiguous_method_anchor_functions_near_slice": int(
+            method_frontier.get("ambiguous_near_slice_count") or 0
         ),
         "physics_allocator_members": allocator_members,
         "physics_allocator_members_confirmed": allocator_confirmed,
@@ -140,6 +158,7 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
             "subsystem_index": str(Path(subsystem_dir.name) / "index.json"),
             "method_name_anchors": method_anchor_path.name,
             "subsystem_method_anchors": subsystem_method_anchor_path.name,
+            "subsystem_method_frontier": method_frontier_path.name,
             "physics_allocator_boundary": physics_allocator_path.name,
         },
         "counts": counts,
@@ -148,6 +167,8 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
             "callgraph_used": True,
             "string_xrefs_used": True,
             "physics_allocator_boundary_used": True,
+            "subsystem_method_frontier_used": True,
+            "frontier_membership_is_semantic_promotion": False,
             "heuristic_vtables_used": False,
             "heuristic_constructors_used": False,
             "heuristic_factories_used": False,
@@ -159,7 +180,8 @@ def build_static_semantic_index(root: Path, output_dir: Path) -> dict[str, Any]:
                 "This index orchestrates direct-observation static semantic layers from one "
                 "Ghidra export. Individual artifacts retain their own evidence boundaries; "
                 "namespace-only and ambiguous method anchors are not semantic promotions. "
-                "The PhysicsAllocator boundary preserves physical entry storage but does not "
+                "One-hop frontier candidates are target-selection hints only. The "
+                "PhysicsAllocator boundary preserves physical entry storage but does not "
                 "assign the explicit stack argument or return/ownership ABI."
             ),
         },
@@ -189,6 +211,10 @@ def main() -> int:
     print(
         "subsystem-crosschecked method-name candidates: "
         f"{counts['subsystem_crosschecked_method_name_candidates']}"
+    )
+    print(
+        "one-hop method frontier candidates: "
+        f"{counts['one_hop_subsystem_method_frontier_candidates']}"
     )
     print(
         "physics allocator members confirmed: "
