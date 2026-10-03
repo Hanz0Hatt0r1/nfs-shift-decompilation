@@ -19,7 +19,10 @@ struct BmwWheelSpindleBodyTopology {
         spindle_body_indices{{1u, 2u, 5u, 6u}};
     bool wheel_spindle_body_indices_ready = true;
     bool rear_axle_body_index_ready = false;
-    bool main_chassis_body_selected = false;
+    bool main_chassis_body_selected = true;
+    std::size_t main_chassis_body_index = 0u;
+    bool update_child_to_vehicle_solver_base_continuity_proven = false;
+    bool vehicle_body_selection_ready = false;
 };
 
 struct ProvenRearAxleBodyIndex {
