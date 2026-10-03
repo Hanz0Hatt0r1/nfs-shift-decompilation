@@ -46,7 +46,7 @@ FORWARDING_JSON="$OUT_DIR/memory_wrapper_forwarding.json"
   FUN_00886930 \
   FUN_00886950
 
-python3 "$SCRIPT_DIR/analyze_memory_wrapper_forwarding.py" \
+python3 "$SCRIPT_DIR/analyze_memory_wrapper_forwarding_retail.py" \
   "$INSTRUCTION_JSONL" \
   --json-out "$FORWARDING_JSON"
 
