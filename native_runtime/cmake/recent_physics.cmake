@@ -300,3 +300,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00770e80_composed_anchor_chain
     COMMAND shift_runtime_fun_00770e80_composed_anchor_chain_check)
 endif()
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/phase690.cmake)
