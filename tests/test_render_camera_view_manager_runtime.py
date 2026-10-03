@@ -20,7 +20,10 @@ def test_reset_delegates_to_00647b20():
 
 def test_delete_only_frees_when_low_bit_is_set():
     result = describe_render_camera_view_manager_delete(delete_flag=0)
-    assert result["actions"][1]["condition"] == "(delete_flag & 1) != 0"
+    assert result["actions"][1] == {
+        "action": "FUN_00886930",
+        "condition": "(delete_flag & 1) != 0",
+    }
     result = describe_render_camera_view_manager_delete(delete_flag=1)
     assert result["delete_flag"] == 1
 
