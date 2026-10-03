@@ -18,7 +18,8 @@ It also establishes the caller layout:
 - first wheel object: `this + 0x400`;
 - stride: `0xA80`;
 - count: four;
-- reported components correspond to wheel indices `0..3`;
+- caller order is wheel indices `0, 1, 2, 3`;
+- reported components correspond to those four wheel slots;
 - rear components 2 and 3 are replaced by `(component[2] + component[3]) * 0.5` only when `object+0x3EE0 != 0`, `object+0x3EB8 == 0`, and global configuration byte `0xC1286E != 0`.
 
 The Python/reference oracle remains `src/physics/wheel_longitudinal_velocity_runtime.py`, backed by `evidence/wheel_longitudinal_velocity_evidence.json`.
@@ -28,18 +29,18 @@ The Python/reference oracle remains `src/physics/wheel_longitudinal_velocity_run
 `shift_wheel_longitudinal_velocity.hpp` exposes two deliberately precomputed boundaries:
 
 - `execute_fun_00755f80_precomputed_handoff()` preserves the exact X-component extraction, object-offset mapping, and component-wise subtraction after the two external transforms have produced their vectors;
-- `execute_fun_00763570_precomputed_batch()` preserves the four-wheel index mapping and the proven three-condition rear-pair averaging branch.
+- `execute_fun_00763570_precomputed_batch()` requires the retail `0→1→2→3` caller order and preserves the proven three-condition rear-pair averaging branch.
 
 `apply_fun_00755f80_reconstructed_subtraction()` is kept separately testable so the persistent-state mutation arithmetic is not conflated with transform production or runtime scheduling.
 
-All source-visible vectors and arithmetic in this handoff use `double`. No physical units or tyre/slip semantics are assigned to the scalar or subtraction.
+The native handoff uses `double` for these vectors/scalars to match the existing Phase 368 reference-oracle representation. No physical units or tyre/slip semantics are assigned to the scalar or subtraction.
 
 ## Fail-closed behavior
 
 The native boundary rejects:
 
 - wheel indices outside `0..3`;
-- duplicate/missing wheel indices in the four-wheel batch;
+- reordered, duplicate, or otherwise malformed wheel slots in the four-wheel batch;
 - non-finite vector/scalar input;
 - non-finite subtraction results;
 - non-finite rear-pair averaging results.
@@ -53,9 +54,9 @@ This validation is a native safety contract. It does not claim that retail perfo
 - exact layout constants (`0x400`, `0xA80`, four wheels, `+0x48`, `+0xD4`);
 - single-wheel X-component extraction;
 - source-order three-component subtraction;
-- deterministic wheel-index reordering into `0..3`;
+- strict retail wheel order `0→1→2→3` and rejection of reordered/duplicate slots;
 - the exact rear-pair average and both documented gate blockers;
-- malformed wheel indices, duplicate indices, non-finite input, and overflow to non-finite output.
+- malformed wheel indices, non-finite input, and overflow to non-finite output.
 
 The target is registered through `native_runtime/cmake/recent_physics.cmake`, and `native-physics-recent` now covers Phases 656–666, retaining the already-merged Phase 665 wheel-contact-factor target.
 
