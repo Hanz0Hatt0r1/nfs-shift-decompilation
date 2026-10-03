@@ -464,6 +464,8 @@ if(BUILD_TESTING)
     COMMAND shift_runtime_aux_contact_response_check)
 endif()
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/recent_physics.cmake)
+
 add_executable(shift_runtime src/shift_runtime.cpp)
 add_dependencies(shift_runtime shift_runtime_shaders)
 target_include_directories(shift_runtime PRIVATE
