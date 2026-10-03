@@ -6,7 +6,8 @@ RTTI/reflection class manifest, factory-to-initializer links, create-wrapper
 value-flow evidence, structural audit, the non-numeric evidence scorecard,
 source-level lifecycle observations, deleting-wrapper shapes, paired lifetime
 shapes, recurring helper-family evidence, diagnostic-backed memory-pool paths,
-memory-wrapper ABI shapes, and one-hop Ghidra lifecycle slices.
+memory-wrapper ABI shapes, source wrapper call-site evidence, and one-hop Ghidra
+lifecycle slices.
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ from extract_class_lifecycle_source_evidence import extract_lifecycle_evidence
 from extract_create_wrapper_evidence import extract_create_wrappers
 from extract_deleting_wrapper_evidence import extract_deleting_wrappers
 from extract_factory_initializer_links import extract_links
+from extract_memory_wrapper_callsites import extract_memory_wrapper_callsites
 
 FORMAT = "SHIFT-CLASS-EVIDENCE-PIPELINE/1"
 
@@ -103,6 +105,7 @@ def run_pipeline(
     helper_families_path = output_dir / "lifetime_helper_families.json"
     memory_semantics_path = output_dir / "memory_helper_semantics.json"
     memory_wrapper_path = output_dir / "memory_wrapper_family.json"
+    memory_wrapper_callsites_path = output_dir / "memory_wrapper_callsites.json"
     lifecycle_targets_path = output_dir / "lifecycle_investigation_targets.json"
 
     class_manifest = build_manifest(source, exe, ghidra_export)
@@ -164,6 +167,9 @@ def run_pipeline(
     )
     _write_json(memory_wrapper_path, memory_wrapper_family)
 
+    memory_wrapper_callsites = extract_memory_wrapper_callsites(source, ghidra_export)
+    _write_json(memory_wrapper_callsites_path, memory_wrapper_callsites)
+
     lifecycle_targets = _build_lifecycle_targets(scorecard_path, ghidra_export)
     _write_json(lifecycle_targets_path, lifecycle_targets)
 
@@ -179,6 +185,7 @@ def run_pipeline(
         "lifetime_helper_families": helper_families_path.name,
         "memory_helper_semantics": memory_semantics_path.name,
         "memory_wrapper_family": memory_wrapper_path.name,
+        "memory_wrapper_callsites": memory_wrapper_callsites_path.name,
         "lifecycle_investigation_targets": lifecycle_targets_path.name,
     }
     report = {
@@ -274,6 +281,20 @@ def run_pipeline(
             "memory_wrapper_family_candidates": int(
                 memory_wrapper_family.get("memory_wrapper_family_candidate") is True
             ),
+            "memory_wrapper_callsites": memory_wrapper_callsites.get("callsite_count"),
+            "memory_wrapper_callers": memory_wrapper_callsites.get("caller_count"),
+            "parsed_memory_wrapper_callsites": memory_wrapper_callsites.get(
+                "parsed_callsite_count"
+            ),
+            "unparsed_memory_wrapper_callsites": memory_wrapper_callsites.get(
+                "unparsed_callsite_count"
+            ),
+            "memory_wrapper_ghidra_confirmed_callsites": memory_wrapper_callsites.get(
+                "ghidra_confirmed_callsite_count"
+            ),
+            "memory_wrapper_ghidra_rejected_callsites": memory_wrapper_callsites.get(
+                "ghidra_rejected_callsite_count"
+            ),
             "lifecycle_target_slices": lifecycle_targets.get("target_count"),
             "lifecycle_complete_slices": lifecycle_targets.get("complete_slice_count"),
             "lifecycle_incomplete_slices": lifecycle_targets.get("incomplete_slice_count"),
@@ -283,6 +304,8 @@ def run_pipeline(
         "scope": {
             "pool_memory_path_diagnostics_used": True,
             "memory_wrapper_physical_storage_used": True,
+            "memory_wrapper_source_callsites_used": True,
+            "memory_wrapper_callsite_ghidra_edges_crosschecked": True,
             "ghidra_semantic_parameter_types_trusted": False,
             "allocation_helper_semantics_proven": False,
             "shared_allocator_family_proven": False,
@@ -296,9 +319,10 @@ def run_pipeline(
             "behavior_semantics_proven": False,
             "note": (
                 "This pipeline composes direct source/Ghidra evidence through bounded "
-                "paths to retail pool allocation/free diagnostics and records robust "
-                "wrapper calling-convention/storage shapes. Ghidra semantic auto-types "
-                "do not participate in promotion, and argument roles/allocator ABI, "
+                "paths to retail pool allocation/free diagnostics, records robust "
+                "wrapper calling-convention/storage shapes, and preserves source "
+                "wrapper call-site argument expressions. Ghidra semantic auto-types do "
+                "not participate in promotion, and argument roles/allocator ABI, "
                 "ownership and C++ lifecycle identities remain unproven."
             ),
         },
@@ -322,8 +346,9 @@ def main() -> int:
         "--fail-on-ghidra-mismatch",
         action="store_true",
         help=(
-            "exit non-zero if registration/factory Ghidra checks mismatch or a "
-            "lifecycle-ready target cannot be resolved in the same Ghidra export"
+            "exit non-zero if registration/factory/wrapper-callsite Ghidra checks "
+            "mismatch or a lifecycle-ready target cannot be resolved in the same "
+            "Ghidra export"
         ),
     )
     args = parser.parse_args()
@@ -340,12 +365,14 @@ def main() -> int:
         f"{counts['diagnostic_backed_pool_lifetime_families']}"
     )
     print(f"confirmed memory wrapper shapes: {counts['confirmed_memory_wrapper_shapes']}")
+    print(f"memory wrapper callsites: {counts['memory_wrapper_callsites']}")
     print(f"lifecycle target slices: {counts['lifecycle_target_slices']}")
     print(f"output: {args.out}")
 
     mismatches = (
         int(counts.get("ghidra_registration_mismatches") or 0)
         + int(counts.get("initializer_ghidra_mismatch_links") or 0)
+        + int(counts.get("memory_wrapper_ghidra_rejected_callsites") or 0)
         + int(counts.get("lifecycle_incomplete_slices") or 0)
     )
     if args.fail_on_ghidra_mismatch and mismatches:
