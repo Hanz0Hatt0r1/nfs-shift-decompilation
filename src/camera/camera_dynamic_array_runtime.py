@@ -13,86 +13,11 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-from memory_pool_runtime import build_memory_pool_contract, release_helper_action
+from camera_memory_release_evidence import build_camera_release_pointer_crosscheck
+from memory_pool_runtime import release_helper_action
 
 FORMAT = "SHIFT.CameraDynamicArrayRuntime/1"
 MEMORY_CROSSCHECK_FORMAT = "SHIFT.CameraDynamicArrayMemoryCrosscheck/1"
-
-
-def _release_pointer_crosscheck(
-    retail_static_summary: dict[str, Any] | None,
-    retail_source_semantic_summary: dict[str, Any] | None,
-    *,
-    caller: str,
-) -> dict[str, Any] | None:
-    if retail_static_summary is None and retail_source_semantic_summary is None:
-        return None
-
-    contract = build_memory_pool_contract(
-        retail_static_summary,
-        retail_source_semantic_summary,
-    )
-    static_evidence = contract.get("retail_static_evidence")
-    if not isinstance(static_evidence, dict):
-        static_evidence = {}
-    source_evidence = contract.get("retail_source_semantic_evidence")
-    if not isinstance(source_evidence, dict):
-        source_evidence = {}
-
-    static_role = static_evidence.get("released_pointer")
-    if not isinstance(static_role, dict):
-        static_role = {}
-    source_role = source_evidence.get("released_pointer")
-    if not isinstance(source_role, dict):
-        source_role = {}
-
-    physical_role_proven = static_role.get("proven") is True
-    source_role_proven = source_role.get("proven") is True
-    source_index = source_role.get("source_argument_index")
-    callers = source_role.get("callers")
-    if not isinstance(callers, list):
-        callers = []
-    callers = [str(value) for value in callers if isinstance(value, str)]
-    expressions = source_role.get("observed_source_expressions")
-    if not isinstance(expressions, list):
-        expressions = []
-    expressions = [str(value) for value in expressions if isinstance(value, str)]
-
-    blockers: list[str] = []
-    if not physical_role_proven:
-        blockers.append("released_pointer_physical_role_not_proven")
-    if not source_role_proven:
-        blockers.append("released_pointer_source_role_not_proven")
-    if source_role_proven and source_index != 0:
-        blockers.append("released_pointer_source_index_mismatch")
-    if source_role_proven and caller not in callers:
-        blockers.append("release_caller_not_observed")
-
-    ready = not blockers
-    return {
-        "format": MEMORY_CROSSCHECK_FORMAT,
-        "helper": "FUN_00886930",
-        "role": "released-pointer",
-        "caller": caller,
-        "expected_source_argument_index": 0,
-        "observed_source_argument_index": source_index if source_role_proven else None,
-        "physical_role_proven": physical_role_proven,
-        "source_role_proven": source_role_proven,
-        "caller_observed": caller in callers if source_role_proven else False,
-        "proven_callsite_count": source_role.get("proven_callsite_count", 0),
-        "observed_callers": callers,
-        "observed_source_expressions": expressions,
-        "ready": ready,
-        "blockers": blockers,
-        "scope": {
-            "release_helper_identity_preserved": True,
-            "released_pointer_role_crosschecked": ready,
-            "release_abi_proven": False,
-            "release_flag_role_proven": False,
-            "delete_kind_role_proven": False,
-            "ownership_semantics_proven": False,
-        },
-    }
 
 
 def grow_uint16_array(
@@ -148,10 +73,11 @@ def grow_uint16_array(
             "copy_flag": "param_1[0xb] bit0",
         },
     }
-    memory_crosscheck = _release_pointer_crosscheck(
+    memory_crosscheck = build_camera_release_pointer_crosscheck(
         retail_static_summary,
         retail_source_semantic_summary,
         caller="FUN_00813080",
+        format_name=MEMORY_CROSSCHECK_FORMAT,
     )
     if memory_crosscheck is not None:
         result["memory_wrapper_evidence"] = memory_crosscheck
@@ -233,10 +159,11 @@ def grow_dword11_array(
             "copy_flag": "param_1[0xb] bit0",
         },
     }
-    memory_crosscheck = _release_pointer_crosscheck(
+    memory_crosscheck = build_camera_release_pointer_crosscheck(
         retail_static_summary,
         retail_source_semantic_summary,
         caller="FUN_008166b0",
+        format_name=MEMORY_CROSSCHECK_FORMAT,
     )
     if memory_crosscheck is not None:
         result["memory_wrapper_evidence"] = memory_crosscheck
