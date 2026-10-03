@@ -17,6 +17,10 @@ def test_uint16_growth_preserves_elementwise_copy_mode():
     )
     assert result["copy_method"] == "elementwise_uint16"
     assert result["copied_elements"] == [1, 2, 3]
+    assert result["actions"][-1] == {
+        "action": "FUN_00886930",
+        "release_old_storage": True,
+    }
 
 
 def test_uint16_growth_preserves_memcpy_mode():
@@ -51,6 +55,7 @@ def test_dword11_growth_requires_exactly_eleven_dwords_per_element():
     )
     assert result["copy_method"] == "elementwise_11_dword"
     assert result["copied_elements"] == [[0] * 11]
+    assert result["actions"][-1]["action"] == "FUN_00886930"
 
 
 def test_dword11_growth_preserves_memcpy_mode():
