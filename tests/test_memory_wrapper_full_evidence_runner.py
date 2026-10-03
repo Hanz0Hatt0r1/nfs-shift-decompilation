@@ -30,6 +30,19 @@ printf '%s\\n' '{\"format\":\"SHIFT-MEMORY-WRAPPER-FORWARDING/1\",\"wrappers\":[
     )
     forwarding.chmod(0o755)
 
+    backend = ghidra_dir / "run_memory_backend_evidence.sh"
+    backend.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\\n' \"$@\" > \"${FULL_WRAPPER_BACKEND_LOG:?}\"
+out=$5
+mkdir -p -- \"$out\"
+printf '%s\\n' '{\"format\":\"SHIFT-MEMORY-BACKEND-EVIDENCE/1\"}' > \"$out/memory_backend_evidence.json\"
+""",
+        encoding="utf-8",
+    )
+    backend.chmod(0o755)
+
     extractor = live_dir / "extract_memory_wrapper_callsites.py"
     extractor.write_text(
         """#!/usr/bin/env python3
@@ -74,7 +87,7 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-WRAPPER-PROVENANCE-PATTERNS/1'
     return runner
 
 
-def test_runner_builds_callsites_forwarding_join_and_patterns(tmp_path):
+def test_runner_builds_wrapper_and_backend_evidence(tmp_path):
     runner = _prepare_harness(tmp_path)
     source = tmp_path / "SHIFT.exe.c"
     source.write_text("/* recovered source */\n", encoding="utf-8")
@@ -85,6 +98,7 @@ def test_runner_builds_callsites_forwarding_join_and_patterns(tmp_path):
     forwarding_log = tmp_path / "forwarding.log"
     join_log = tmp_path / "join.log"
     pattern_log = tmp_path / "patterns.log"
+    backend_log = tmp_path / "backend.log"
 
     env = dict(os.environ)
     env["GHIDRA_HOME"] = "/opt/fake-ghidra"
@@ -92,6 +106,7 @@ def test_runner_builds_callsites_forwarding_join_and_patterns(tmp_path):
     env["FULL_WRAPPER_FORWARDING_LOG"] = str(forwarding_log)
     env["FULL_WRAPPER_JOIN_LOG"] = str(join_log)
     env["FULL_WRAPPER_PATTERN_LOG"] = str(pattern_log)
+    env["FULL_WRAPPER_BACKEND_LOG"] = str(backend_log)
 
     result = subprocess.run(
         [
@@ -139,15 +154,25 @@ def test_runner_builds_callsites_forwarding_join_and_patterns(tmp_path):
         "--json-out",
         str(resolved_output / "memory_wrapper_provenance_patterns.json"),
     ]
+    assert backend_log.read_text(encoding="utf-8").splitlines() == [
+        "/projects/shift",
+        "shift",
+        "SHIFT.exe",
+        str(resolved_export),
+        str(resolved_output / "backend"),
+    ]
 
     joined = json.loads((output / "memory_wrapper_argument_join.json").read_text(encoding="utf-8"))
     assert joined["format"] == "SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1"
     patterns = json.loads((output / "memory_wrapper_provenance_patterns.json").read_text(encoding="utf-8"))
     assert patterns["format"] == "SHIFT-MEMORY-WRAPPER-PROVENANCE-PATTERNS/1"
+    backend_report = json.loads((output / "backend" / "memory_backend_evidence.json").read_text(encoding="utf-8"))
+    assert backend_report["format"] == "SHIFT-MEMORY-BACKEND-EVIDENCE/1"
     assert "memory wrapper callsites:" in result.stdout
     assert "memory wrapper forwarding:" in result.stdout
     assert "memory wrapper argument join:" in result.stdout
     assert "memory wrapper provenance patterns:" in result.stdout
+    assert "memory backend evidence:" in result.stdout
 
 
 def test_runner_rejects_missing_inputs_before_subtools(tmp_path):
