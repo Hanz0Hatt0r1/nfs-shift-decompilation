@@ -1,10 +1,10 @@
 #include "shift_body_record_adapter.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
 #include <stdexcept>
-#include <string>
 
 namespace shift::runtime::physics {
 namespace {
