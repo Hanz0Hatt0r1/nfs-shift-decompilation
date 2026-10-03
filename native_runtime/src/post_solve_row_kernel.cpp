@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace shift::runtime::physics {
