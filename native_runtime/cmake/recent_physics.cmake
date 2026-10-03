@@ -259,7 +259,7 @@ if(BUILD_TESTING)
     COMMAND shift_runtime_tire_thermal_check)
   add_test(
     NAME shift_runtime_wheel_thermal_core
-    COMMAND shift_runtime_wheel_thermal_integrator_check)
+    COMMAND shift_runtime_wheel_thermal_core_check)
   add_test(
     NAME shift_runtime_body_frame_integration
     COMMAND shift_runtime_body_frame_integration_check)
