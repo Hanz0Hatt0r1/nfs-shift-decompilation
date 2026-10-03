@@ -10,6 +10,7 @@ import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.listing.InstructionIterator;
 import ghidra.program.model.listing.Listing;
 import ghidra.program.model.mem.MemoryAccessException;
+import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.symbol.Reference;
 
 import java.io.BufferedWriter;
@@ -22,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ShiftFunctionInstructionExporter extends GhidraScript {
-    private static final String FORMAT = "SHIFT.GhidraFunctionInstructions/1";
+    private static final String FORMAT = "SHIFT.GhidraFunctionInstructions/2";
 
     private Listing listing;
     private FunctionManager functions;
@@ -159,6 +160,14 @@ public class ShiftFunctionInstructionExporter extends GhidraScript {
         }
         flows.append(']');
 
+        StringBuilder pcode = new StringBuilder("[");
+        PcodeOp[] pcodeOps = instruction.getPcode();
+        for (int index = 0; index < pcodeOps.length; index++) {
+            if (index > 0) pcode.append(',');
+            pcode.append(q(pcodeOps[index].toString()));
+        }
+        pcode.append(']');
+
         return "{" +
             "\"address\":" + q(addr(instruction.getAddress())) + "," +
             "\"bytes\":" + q(hex(instruction.getBytes())) + "," +
@@ -168,7 +177,8 @@ public class ShiftFunctionInstructionExporter extends GhidraScript {
             "\"flow_type\":" + q(instruction.getFlowType().toString()) + "," +
             "\"fallthrough\":" + q(addr(instruction.getFallThrough())) + "," +
             "\"flows\":" + flows + "," +
-            "\"references\":" + refs +
+            "\"references\":" + refs + "," +
+            "\"pcode\":" + pcode +
             "}";
     }
 
