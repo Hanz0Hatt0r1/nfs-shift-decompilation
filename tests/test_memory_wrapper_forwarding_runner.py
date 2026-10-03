@@ -27,7 +27,7 @@ printf '%s\\n' '{\"format\":\"SHIFT.GhidraFunctionInstructions/1\"}' > \"$out\"
     )
     exporter.chmod(0o755)
 
-    analyzer = script_dir / "analyze_memory_wrapper_forwarding.py"
+    analyzer = script_dir / "analyze_memory_wrapper_forwarding_retail.py"
     analyzer.write_text(
         """#!/usr/bin/env python3
 import json
