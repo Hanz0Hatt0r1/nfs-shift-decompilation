@@ -6,6 +6,7 @@ from d3d9_renderer_frontier_audit import (
     FXO_FORMAT,
     MATERIAL_FORMAT,
     MATERIAL_TEXTURE_FORMAT,
+    SCENE_GEOMETRY_FORMAT,
     build_renderer_frontier_audit,
 )
 
@@ -30,6 +31,14 @@ def _base():
                 "evidence": ["material ambiguity"],
                 "missing_observation": None,
                 "existing_next_step": "old material step",
+            },
+            {
+                "requirement_id": "scene_resource_exact_draw_attribution",
+                "status": "ambiguous",
+                "confidence": "deterministic-report-audit",
+                "evidence": ["geometry ambiguity"],
+                "missing_observation": None,
+                "existing_next_step": "old scene step",
             },
             {
                 "requirement_id": "vb_ib_payload_equality",
@@ -89,6 +98,21 @@ def _textures(*, total=6, resolved=6, remaining=0, descriptor_survivors=0):
             "single_candidate_draw_count": resolved,
             "remaining_unresolved_draw_count": remaining,
             "resolution_status_counts": counts,
+        },
+    }
+
+
+def _scene_geometry(*, total=8, single=2, lod=3, resolved=0, blocked_sgbs=0):
+    return {
+        "format": SCENE_GEOMETRY_FORMAT,
+        "summary": {
+            "geometry_ambiguous_draw_count": total,
+            "single_scene_referenced_candidate_draw_count": single,
+            "source_backed_lod_family_draw_count": lod,
+            "draw_attribution_resolved_count": resolved,
+            "remaining_geometry_ambiguous_draw_count": total - resolved,
+            "ready_sgb_count": 4,
+            "blocked_sgb_count": blocked_sgbs,
         },
     }
 
@@ -165,6 +189,52 @@ def test_empty_phase622_does_not_overwrite_phase620_exact_closure():
     assert row["confidence"] == "exact-f32-ctab-register-evidence"
 
 
+def test_phase623_lod_family_moves_frontier_to_selection_witness_not_buffer_capture():
+    report = build_renderer_frontier_audit(
+        _base(),
+        scene_geometry=_scene_geometry(total=8, single=2, lod=3, resolved=0),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "ambiguous"
+    assert "source-backed LOD families=3" in row["evidence"]
+    assert "instance/LOD selection" in row["existing_next_step"]
+    assert "buffer payload" in row["existing_next_step"]
+    assert report["summary"]["phase623_applied"] is True
+    assert report["summary"]["capture_required_now"] is False
+
+
+def test_phase623_single_static_reference_is_not_draw_attribution():
+    report = build_renderer_frontier_audit(
+        _base(),
+        scene_geometry=_scene_geometry(total=2, single=2, lod=0, resolved=0),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "ambiguous"
+    assert "single static scene resource candidates=2" in row["evidence"]
+    assert "transform/spatial" in row["existing_next_step"]
+    assert report["policy"]["static_scene_reference_is_draw_attribution"] is False
+
+
+def test_phase623_can_close_only_with_independent_resolved_draw_attribution():
+    report = build_renderer_frontier_audit(
+        _base(),
+        scene_geometry=_scene_geometry(total=5, single=0, lod=0, resolved=5),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "closed-offline-exact"
+    assert row["confidence"] == "exact-static-scene-plus-instance-selection-evidence"
+
+
+def test_phase623_blocked_sgb_decode_stays_visible():
+    report = build_renderer_frontier_audit(
+        _base(),
+        scene_geometry=_scene_geometry(total=4, single=0, lod=0, resolved=0, blocked_sgbs=2),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert "blocked source-backed SGB decodes=2" in row["evidence"]
+    assert "complete source-backed SGB coverage" in row["existing_next_step"]
+
+
 def test_partial_fxo_provenance_is_not_closed():
     report = build_renderer_frontier_audit(
         _base(),
@@ -227,3 +297,5 @@ def test_formats_fail_closed():
         build_renderer_frontier_audit(_base(), material_constants={"format": "wrong"})
     with pytest.raises(ValueError, match="material textures"):
         build_renderer_frontier_audit(_base(), material_textures={"format": "wrong"})
+    with pytest.raises(ValueError, match="scene geometry"):
+        build_renderer_frontier_audit(_base(), scene_geometry={"format": "wrong"})
