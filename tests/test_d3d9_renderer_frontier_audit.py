@@ -6,6 +6,7 @@ from d3d9_renderer_frontier_audit import (
     FXO_FORMAT,
     MATERIAL_FORMAT,
     MATERIAL_TEXTURE_FORMAT,
+    REPEATED_INSTANCE_TRANSFORM_FORMAT,
     RUNTIME_RESOURCE_DRAW_FORMAT,
     SCENE_GEOMETRY_FORMAT,
     build_renderer_frontier_audit,
@@ -136,6 +137,47 @@ def _runtime_draw(
             "repeated_scene_instance_draw_count": repeated,
             "conflict_draw_count": conflicts,
             "remaining_scene_draw_ambiguity_count": remaining,
+        },
+    }
+
+
+def _instance_transforms(
+    *,
+    total=3,
+    already_exact=1,
+    repeated=2,
+    resolved=2,
+    upstream=0,
+    incomplete=0,
+    missing_transform=0,
+    equal_matrices=0,
+    ready=None,
+):
+    unresolved = repeated - resolved
+    remaining = unresolved + upstream
+    counts = {}
+    if resolved:
+        counts["exact-repeated-scene-instance"] = resolved
+    if incomplete:
+        counts["blocked-incomplete-scene-world-matrices"] = incomplete
+    if missing_transform:
+        counts["draw-local-transform-observation-missing"] = missing_transform
+    if equal_matrices:
+        counts["ambiguous-equal-or-multiple-world-matrix-matches"] = equal_matrices
+    if ready is None:
+        ready = remaining == 0
+    return {
+        "format": REPEATED_INSTANCE_TRANSFORM_FORMAT,
+        "ready": ready,
+        "summary": {
+            "input_geometry_draw_count": total,
+            "already_exact_scene_resource_draw_count": already_exact,
+            "repeated_instance_input_draw_count": repeated,
+            "resolved_repeated_instance_draw_count": resolved,
+            "unresolved_repeated_instance_draw_count": unresolved,
+            "upstream_non_instance_ambiguity_count": upstream,
+            "remaining_scene_draw_ambiguity_count": remaining,
+            "resolution_status_counts": counts,
         },
     }
 
@@ -276,7 +318,6 @@ def test_phase624_exact_same_event_resource_and_unique_scene_reference_closes_fr
     assert "exact same-event runtime resource draws=4" in row["evidence"]
     assert report["summary"]["phase624_applied"] is True
     assert report["policy"]["same_event_runtime_path_sha_is_resource_draw_identity"] is True
-    # The historical absence stays a fact even though this frontier no longer needs it.
     assert _by_id(report)["vb_ib_payload_equality"]["status"] == "absent-in-capture"
 
 
@@ -332,6 +373,135 @@ def test_empty_phase624_does_not_overwrite_prior_scene_closure():
     row = _by_id(report)["scene_resource_exact_draw_attribution"]
     assert row["status"] == "closed-offline-exact"
     assert row["confidence"] == "exact-static-scene-plus-instance-selection-evidence"
+
+
+def test_phase625_exact_repeated_instance_transforms_close_scene_frontier():
+    report = build_renderer_frontier_audit(
+        _base(),
+        runtime_resource_draw=_runtime_draw(
+            total=3,
+            exact_resource=3,
+            exact_scene=1,
+            repeated=2,
+            remaining=2,
+        ),
+        repeated_instance_transforms=_instance_transforms(
+            total=3,
+            already_exact=1,
+            repeated=2,
+            resolved=2,
+            upstream=0,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "closed-offline-exact"
+    assert row["confidence"] == "exact-same-draw-f32-world-matrix-instance-evidence"
+    assert "repeated instances resolved by exact float32 world matrices=2" in row["evidence"]
+    assert report["summary"]["phase625_applied"] is True
+    assert report["policy"]["exact_f32_world_matrix_is_instance_witness"] is True
+    assert report["policy"]["buffer_payload_relevant_to_repeated_instance"] is False
+    assert _by_id(report)["vb_ib_payload_equality"]["status"] == "absent-in-capture"
+
+
+def test_phase625_incomplete_world_matrix_keeps_offline_transform_frontier():
+    report = build_renderer_frontier_audit(
+        _base(),
+        repeated_instance_transforms=_instance_transforms(
+            total=2,
+            already_exact=0,
+            repeated=2,
+            resolved=1,
+            incomplete=1,
+            ready=False,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "ambiguous"
+    assert "incomplete scene world-matrix candidate sets=1" in row["evidence"]
+    assert "world-matrix materialization/root consensus" in row["existing_next_step"]
+    assert "missing candidate matrix is not a contradiction" in row["existing_next_step"]
+    assert "VB/IB payload cannot repair it" in row["existing_next_step"]
+    assert report["policy"]["incomplete_world_matrix_is_contradiction"] is False
+
+
+def test_phase625_equal_world_matrices_move_to_spatial_evidence_not_geometry_payload():
+    report = build_renderer_frontier_audit(
+        _base(),
+        repeated_instance_transforms=_instance_transforms(
+            total=2,
+            already_exact=0,
+            repeated=2,
+            resolved=1,
+            equal_matrices=1,
+            ready=False,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "ambiguous"
+    assert "equal/multiple exact world-matrix matches=1" in row["evidence"]
+    assert "placement spatial/partition/visibility" in row["existing_next_step"]
+    assert "VB/IB payload cannot distinguish" in row["existing_next_step"]
+    assert report["policy"]["equal_world_matrices_select_instance"] is False
+
+
+def test_phase625_missing_transform_observation_exhausts_existing_constants_first():
+    report = build_renderer_frontier_audit(
+        _base(),
+        repeated_instance_transforms=_instance_transforms(
+            total=1,
+            already_exact=0,
+            repeated=1,
+            resolved=0,
+            missing_transform=1,
+            ready=False,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert "same-draw transform observations missing from pipeline=1" in row["evidence"]
+    assert "existing raw/draw-local D3D9 constant state" in row["existing_next_step"]
+    assert "do not request geometry buffer payload" in row["existing_next_step"]
+
+
+def test_phase625_preserves_upstream_non_instance_ambiguity():
+    report = build_renderer_frontier_audit(
+        _base(),
+        repeated_instance_transforms=_instance_transforms(
+            total=3,
+            already_exact=1,
+            repeated=1,
+            resolved=1,
+            upstream=1,
+            ready=False,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "ambiguous"
+    assert "upstream non-instance ambiguity=1" in row["evidence"]
+    assert "Phase 624 non-instance blockers first" in row["existing_next_step"]
+
+
+def test_empty_phase625_does_not_overwrite_prior_scene_closure():
+    report = build_renderer_frontier_audit(
+        _base(),
+        runtime_resource_draw=_runtime_draw(
+            total=2,
+            exact_resource=2,
+            exact_scene=2,
+            repeated=0,
+            remaining=0,
+        ),
+        repeated_instance_transforms=_instance_transforms(
+            total=0,
+            already_exact=0,
+            repeated=0,
+            resolved=0,
+            upstream=0,
+            ready=True,
+        ),
+    )
+    row = _by_id(report)["scene_resource_exact_draw_attribution"]
+    assert row["status"] == "closed-offline-exact"
+    assert row["confidence"] == "exact-same-event-runtime-resource-plus-static-scene-evidence"
 
 
 def test_partial_fxo_provenance_is_not_closed():
@@ -400,3 +570,5 @@ def test_formats_fail_closed():
         build_renderer_frontier_audit(_base(), scene_geometry={"format": "wrong"})
     with pytest.raises(ValueError, match="runtime resource draw"):
         build_renderer_frontier_audit(_base(), runtime_resource_draw={"format": "wrong"})
+    with pytest.raises(ValueError, match="repeated instance transforms"):
+        build_renderer_frontier_audit(_base(), repeated_instance_transforms={"format": "wrong"})
