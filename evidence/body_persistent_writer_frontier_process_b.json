@@ -1,0 +1,144 @@
+{
+  "format": "SHIFT.BodyPersistentStateABI/1",
+  "version": 1,
+  "process": "B",
+  "source": {
+    "recovered_source_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "game_launched": false,
+    "evidence_kinds": [
+      "recovered retail source",
+      "retail machine code",
+      "existing phase contracts",
+      "native physics regression contracts"
+    ]
+  },
+  "body_lanes": {
+    "origin": {
+      "offsets": ["+0x00", "+0x08", "+0x10"],
+      "writers": [],
+      "evidence_level": "source-backed-read-side",
+      "writer_status": "unresolved"
+    },
+    "cross_vector": {
+      "offsets": ["+0x18", "+0x20", "+0x28"],
+      "writers": [],
+      "evidence_level": "cross-consumer-structural",
+      "writer_status": "unresolved"
+    },
+    "prepared_vector": {
+      "offsets": ["+0x30", "+0x38", "+0x40"],
+      "writers": ["FUN_007ba7e0"],
+      "evidence_level": "source-backed",
+      "writer_status": "proven"
+    },
+    "accumulator_a": {
+      "offsets": ["+0x48", "+0x50", "+0x58"],
+      "writers": ["FUN_007ba9e0", "FUN_007baa70", "FUN_007baaf0", "FUN_007b4110", "FUN_00755f80@wheel-domain"],
+      "evidence_level": "source-backed-with-object-domain-alias",
+      "writer_status": "proven"
+    },
+    "accumulator_b": {
+      "offsets": ["+0x60", "+0x68", "+0x70"],
+      "writers": ["FUN_007ba9e0", "FUN_007baa70", "FUN_007baaf0", "FUN_007b4110"],
+      "evidence_level": "source-backed",
+      "writer_status": "proven"
+    },
+    "motion_triplet": {
+      "offsets": ["+0x78", "+0x80", "+0x88"],
+      "readers": ["FUN_007537b0", "FUN_00753810", "FUN_007675f0", "FUN_007682c0", "FUN_007bac60", "FUN_007bb090"],
+      "writers": [],
+      "evidence_level": "machine-code-plus-cross-consumer-read-side",
+      "writer_status": "unresolved"
+    },
+    "basis": {
+      "offsets": ["+0xd4..+0xf4"],
+      "writers": [],
+      "evidence_level": "source-backed-read-side",
+      "writer_status": "unresolved"
+    }
+  },
+  "vehicle_topology": {
+    "component_base": "0x400",
+    "component_stride": "0xA80",
+    "component_count": 4,
+    "component_offsets": ["0x400", "0xE80", "0x1900", "0x2380"],
+    "wheel_body_pointer_relative": "+0x420",
+    "spindle_body_pointer_relative": "+0x424",
+    "wheel_body_pointer_absolute": ["+0x820", "+0x12A0", "+0x1D20", "+0x27A0"],
+    "spindle_body_pointer_absolute": ["+0x824", "+0x12A4", "+0x1D24", "+0x27A4"],
+    "rear_axle_body_pointer": "+0x2E00",
+    "wheel_state_base": "+0x848",
+    "wheel_state_stride": "0xA80",
+    "aux_contact_records": ["+0x37D8", "+0x3858"],
+    "contact_factor_record_count": 4,
+    "contact_factor_stride": "0x150",
+    "contact_factor_previous_base": "+0xA70",
+    "contact_factor_value_base": "+0xA78"
+  },
+  "confirmed_writers": [
+    {
+      "function": "FUN_00755f80",
+      "address": "0x00755f80",
+      "caller": "FUN_00763570",
+      "callees": ["FUN_007af0a0", "FUN_007af010"],
+      "object_domain": "wheel BODY-compatible object",
+      "inputs": ["+0x48/+0x50/+0x58", "+0xd4..+0xf4"],
+      "outputs": ["+0x48/+0x50/+0x58"],
+      "write": "shared_triplet -= reconstructed_transformed_longitudinal_vector",
+      "evidence_level": "source-backed"
+    },
+    {
+      "function": "FUN_007ba9e0",
+      "address": "0x007ba9e0",
+      "inputs": ["origin +0x00/+0x08/+0x10", "world point", "contribution"],
+      "outputs": ["+0x48..+0x70"],
+      "write": "linear += contribution; angular += (point-origin) x contribution",
+      "evidence_level": "source-backed"
+    },
+    {
+      "function": "FUN_007b4110",
+      "address": "0x007b4110",
+      "callees": ["FUN_007baa70", "FUN_007baaf0"],
+      "outputs": ["+0x48..+0x70"],
+      "write": "apply solved JOINT/HINGE/BAR scalars back to BODY accumulator state",
+      "evidence_level": "source-backed"
+    }
+  ],
+  "outer_ordering": {
+    "FUN_00770e80": {
+      "source_line": 765608,
+      "sequence": [
+        "FUN_0076d100 physics pass",
+        "half-timestep helper work",
+        "FUN_0076d100 physics pass",
+        "per-wheel FUN_00755a60/FUN_00760b50 post-pass work"
+      ]
+    },
+    "FUN_0076d100": {
+      "source_line": 762992,
+      "known_callee": "FUN_00758b50"
+    }
+  },
+  "persistent_graph": [
+    ["input/control", "vehicle update", "unresolved"],
+    ["vehicle update", "wheel/contact BODY accumulators", "partially-proven"],
+    ["BODY +0x48..+0x70", "constraint/solve path", "proven"],
+    ["solve", "FUN_007b4110 post-solve BODY +0x48..+0x70", "proven"],
+    ["post-solve BODY +0x48..+0x70", "BODY +0x18/+0x78 motion-side lanes", "unresolved"],
+    ["BODY +0x18/+0x78", "origin +0x00 / basis +0xd4", "unresolved"],
+    ["origin/basis/motion read-side state", "next-frame contact/solver consumers", "proven-read-side"]
+  ],
+  "priority_static_targets": [
+    "0x00770e80", "0x0076d100", "0x00763570", "0x00755f80",
+    "0x00758b50", "0x00765c40", "0x00766510", "0x007675f0",
+    "0x007b3f40", "0x007b4110", "0x007537b0", "0x00753810",
+    "0x007ba7e0", "0x007ba9e0", "0x007baa70", "0x007baaf0"
+  ],
+  "native_pose_port_ready": false,
+  "blockers": [
+    "writer from accumulator lanes into +0x18/+0x78 is not proven",
+    "writer/integrator for origin +0x00/+0x08/+0x10 is not proven",
+    "writer/integrator for basis +0xd4..+0xf4 is not proven",
+    "exact outer caller ordering between vehicle pass, SDF solve and pose integration is not closed"
+  ]
+}
