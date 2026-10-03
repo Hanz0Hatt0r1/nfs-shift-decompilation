@@ -1,6 +1,6 @@
 #pragma once
 
-#include "runtime_state.hpp"
+#include "shift_fun_00770e80_motion_read_effect_provider_chain.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -8,6 +8,8 @@
 #include <vector>
 
 namespace shift::runtime {
+
+struct NativeRuntimeState;
 
 inline constexpr const char* kNativeVehicleProviderSessionFormat =
     "SHIFT.NativeVehicleProviderSession/1";
