@@ -17,9 +17,9 @@ Example:
 This runner joins source wrapper callsites, targeted wrapper forwarding,
 source-argument -> backend-storage provenance, repeated provenance patterns,
 targeted backend instruction/diagnostic evidence, proven allocation-size and
-released-pointer source roles, retail static memory evidence, and behavior-only
-release-byte observations. Release-flag/delete-kind and ownership semantics
-remain unassigned.
+released-pointer source roles, retail static memory evidence, behavior-only
+release-byte observations, and a conservative runtime wrapper manifest.
+Release-flag/delete-kind and ownership semantics remain unassigned.
 EOF
 }
 
@@ -69,6 +69,7 @@ RELEASE_POINTER_CHAIN_JSON="$OUT_DIR/memory_release_pointer_chain.json"
 RELEASED_POINTER_ROLE_JSON="$OUT_DIR/memory_released_pointer_role_join.json"
 STATIC_SUMMARY_JSON="$OUT_DIR/memory_retail_static_summary.json"
 SOURCE_SEMANTIC_SUMMARY_JSON="$OUT_DIR/memory_source_semantic_summary.json"
+RUNTIME_MANIFEST_JSON="$OUT_DIR/memory_wrapper_runtime_manifest.json"
 
 python3 "$LIVE_DUMP_DIR/extract_memory_wrapper_callsites.py" \
   "$SOURCE" \
@@ -128,6 +129,12 @@ python3 "$LIVE_DUMP_DIR/summarize_memory_source_semantics.py" \
   --released-pointer-role "$RELEASED_POINTER_ROLE_JSON" \
   --json-out "$SOURCE_SEMANTIC_SUMMARY_JSON"
 
+python3 "$LIVE_DUMP_DIR/build_memory_wrapper_runtime_manifest.py" \
+  --forwarding "$FORWARDING_JSON" \
+  --static-summary "$STATIC_SUMMARY_JSON" \
+  --source-summary "$SOURCE_SEMANTIC_SUMMARY_JSON" \
+  --json-out "$RUNTIME_MANIFEST_JSON"
+
 echo "memory wrapper callsites: $CALLSITES_JSON"
 echo "memory wrapper forwarding: $FORWARDING_JSON"
 echo "memory wrapper argument join: $ARGUMENT_JOIN_JSON"
@@ -138,3 +145,4 @@ echo "memory release-pointer chain: $RELEASE_POINTER_CHAIN_JSON"
 echo "memory released-pointer role join: $RELEASED_POINTER_ROLE_JSON"
 echo "memory retail static summary: $STATIC_SUMMARY_JSON"
 echo "memory source semantic summary: $SOURCE_SEMANTIC_SUMMARY_JSON"
+echo "memory wrapper runtime manifest: $RUNTIME_MANIFEST_JSON"
