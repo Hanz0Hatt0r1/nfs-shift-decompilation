@@ -10,7 +10,7 @@ FUN_00770e80 receiver = &DAT_00c13700 = 0x00c13700
 ```
 
 It also proves that the anonymous `*record+0x340` update-child pointer does not
-need to be relabelled as that vehicle base.  The remaining BODY-pose identity
+need to be relabelled as that vehicle base. The remaining BODY-pose identity
 frontier is downstream:
 
 ```text
@@ -19,7 +19,7 @@ DAT_00c13700 / FUN_00770e80
   -> FUN_007b2270 BODY-array owner
 ```
 
-Process 1 #1188 already proves the retail BMW chassis is SDF BODY index 0.  If
+Process 1 #1188 already proves the retail BMW chassis is SDF BODY index 0. If
 this receiver/owner edge is positive, Process 2 Phase 698/700 can consume the
 persistent BODY 0 pose without the obsolete update-child-equality requirement.
 
@@ -50,8 +50,8 @@ The pinned outer-update source contract contains two calls:
 FUN_00765470(this, 0.5, ...)
 ```
 
-inside `FUN_00770e80`.  The new analyzer independently parses the pinned source
-and requires both calls to forward the exact `this` expression.
+inside `FUN_00770e80`. The analyzer independently parses the pinned source and
+requires both calls to forward the exact `this` expression.
 
 Together with #1194 this establishes:
 
@@ -89,7 +89,7 @@ The analyzer requires:
 ## Callee-saved register handling
 
 A simple local reverse trace is too conservative here because the half-step
-function executes solver/post-solve calls before `0x0076582a`.  The specialized
+function executes solver/post-solve calls before `0x0076582a`. The specialized
 trace therefore allows an entry receiver saved in `EBX`, `ESI`, `EDI` or `EBP`
 to cross a **direct** call only when the target has a standard supported x86 ABI
 (`__thiscall`, `__cdecl`, `__stdcall`, `__fastcall`).
@@ -136,18 +136,39 @@ It does not require or claim:
 *record+0x340 == DAT_00c13700
 ```
 
+## Process 3 Phase 645 sync
+
+Process 3 PR #1193 / Phase 645 now proves the renderer-side **static bind
+transform** from the retail BMW VHF hierarchy. The canonical vehicle root is the
+root VHF node; the `body` child is associated with body MEB ID 1416 and its bind
+translation is composed before the existing SVWT transpose/execution path.
+
+That result does not consume the persistent physics BODY pose. Therefore a
+positive BODY-owner result here no longer leaves an unconstrained generic
+"world-matrix" problem. It narrows the next cross-process blocker to:
+
+```text
+persistent BODY 0 pose frame
+  -> exact composition / frame relation
+  -> Phase 645 VHF vehicle-root + body-MEB bind frame
+  -> dynamic SVWT consumed by the prepared BMW renderer subgroup
+```
+
+The static VHF bind transform and the dynamic physics pose must remain distinct
+until that composition is proven.
+
 ## Preserved blockers
 
 Even a positive BODY-owner result does **not** prove:
 
-- BODY origin/basis -> renderer SVWT/world-matrix convention;
+- BODY 0 origin/basis -> Phase 645 VHF vehicle-root/body-MEB frame composition;
 - per-frame mutation of the Process 3 BMW renderer subgroup;
 - camera-follow convention;
 - automatic deep-physics scheduling from `fixed_step()`;
 - the exact semantic `rear_axle` SDF BODY index.
 
 After BODY selection becomes positive, the next cross-process vertical-slice
-blocker is the exact BODY pose -> renderer world-transform convention.
+blocker is the exact dynamic BODY0-pose-to-VHF-bind-frame composition.
 
 ## Offline invocation
 
@@ -171,7 +192,7 @@ capture is needed.
 
 The repository contains the static contracts and Ghidra analyzer infrastructure,
 but not the real targeted `SHIFT.GhidraFunctionInstructions/2` row for
-`FUN_00765470`.  Therefore this change prepares and regression-tests the exact
-proof without preclaiming the retail result.  Once that one offline instruction
+`FUN_00765470`. Therefore this change prepares and regression-tests the exact
+proof without preclaiming the retail result. Once that one offline instruction
 row is available, the analyzer either closes the BODY-selection gate or emits
 the exact register/clobber reason that keeps it closed.
