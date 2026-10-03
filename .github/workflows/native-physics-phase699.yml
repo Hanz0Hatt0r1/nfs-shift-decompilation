@@ -1,0 +1,70 @@
+name: native-physics-phase699
+
+on:
+  push:
+    paths:
+      - 'src/physics/native_vehicle_external_provider_frontier.py'
+      - 'tools/build_native_vehicle_external_provider_frontier.py'
+      - 'tests/test_native_vehicle_external_provider_frontier.py'
+      - 'docs/PHASE699_NATIVE_VEHICLE_EXTERNAL_PROVIDER_FRONTIER.md'
+      - 'native_runtime/include/shift_fun_00770e80_motion_read_effect_provider_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_scalar_provider_anchor_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_two_half_step_schedule.hpp'
+      - '.github/workflows/native-physics-phase699.yml'
+  pull_request:
+    paths:
+      - 'src/physics/native_vehicle_external_provider_frontier.py'
+      - 'tools/build_native_vehicle_external_provider_frontier.py'
+      - 'tests/test_native_vehicle_external_provider_frontier.py'
+      - 'docs/PHASE699_NATIVE_VEHICLE_EXTERNAL_PROVIDER_FRONTIER.md'
+      - 'native_runtime/include/shift_fun_00770e80_motion_read_effect_provider_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_scalar_provider_anchor_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_two_half_step_schedule.hpp'
+      - '.github/workflows/native-physics-phase699.yml'
+
+jobs:
+  deepest-provider-frontier:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install test dependency
+        run: python3 -m pip install --user pytest
+
+      - name: Run Phase 697 and Phase 699 boundary regressions
+        run: >-
+          PYTHONPATH=src/physics python3 -m pytest -q
+          tests/test_fun_00770e80_motion_read_runtime_state.py
+          tests/test_native_vehicle_external_provider_frontier.py
+
+      - name: Build machine-readable Process 1 handoff
+        run: |
+          mkdir -p out/native-physics-phase699
+          python3 tools/build_native_vehicle_external_provider_frontier.py \
+            out/native-physics-phase699/native_vehicle_external_provider_frontier.json
+
+      - name: Verify fail-closed provider inventory
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path(
+              'out/native-physics-phase699/native_vehicle_external_provider_frontier.json'
+          ).read_text(encoding='utf-8'))
+          assert report['format'] == 'SHIFT.NativeVehicleExternalProviderFrontier/1'
+          assert report['phase'] == 699
+          assert report['external_provider_count'] == 9
+          assert report['implement_now'] == []
+          assert len(report['process1_handoff_requests']) == 9
+          assert report['runtime_only_blocked'] == []
+          guards = report['guards']
+          assert guards['two_half_steps_preserved'] is True
+          assert guards['persistent_body_state_preserved'] is True
+          assert guards['fixed_step_auto_schedule_allowed'] is False
+          assert guards['host_sqrt_substitution_allowed'] is False
+          assert guards['host_sin_substitution_allowed'] is False
+          assert guards['host_cos_substitution_allowed'] is False
+          assert guards['body_pose_to_vehicle_transform_promotion_allowed'] is False
+          assert guards['original_game_execution_required'] is False
+          assert guards['new_runtime_capture_required'] is False
+          PY
