@@ -23,11 +23,12 @@ def _base_report(out: Path, *, offline_ready: bool = True, profile_ready: bool =
     out.mkdir(parents=True, exist_ok=True)
     runtime_bootstrap = out / "runtime-bootstrap" / "runtime_bootstrap.json"
     runtime_bootstrap.parent.mkdir(parents=True, exist_ok=True)
+    runtime_bootstrap_value = {
+        "format": "SHIFT.OfflineRuntimeBootstrap/1",
+        "offline_build_ready": offline_ready,
+    }
     runtime_bootstrap.write_text(
-        json.dumps({
-            "format": "SHIFT.OfflineRuntimeBootstrap/1",
-            "offline_build_ready": offline_ready,
-        }),
+        json.dumps(runtime_bootstrap_value),
         encoding="utf-8",
     )
     profile = out / "vertical_slice_profile.json"
@@ -56,7 +57,7 @@ def _base_report(out: Path, *, offline_ready: bool = True, profile_ready: bool =
         "track": "Silverstone_Era3_GrandPrix",
         "vehicle": "BMW_M3_E36",
         "blocking_reasons": blockers,
-        "stages": {},
+        "stages": {"runtime_bootstrap": runtime_bootstrap_value},
         "artifacts": {
             "runtime_bootstrap": str(runtime_bootstrap),
             "runtime_requirements": str(out / "runtime_requirements.json"),
@@ -117,13 +118,30 @@ def _ready_renderer():
     }
 
 
-def test_unified_cli_passes_selected_runtime_bootstrap_to_renderer(
+def _ready_scene_handoff(tmp_path: Path) -> dict:
+    root = tmp_path / "out" / "renderer-native-scene" / "native-scene-vulkan"
+    root.mkdir(parents=True, exist_ok=True)
+    return {
+        "format": "SHIFT.RendererNativeSceneHandoff/1",
+        "status": "ready",
+        "ready": True,
+        "scene_set_ready": True,
+        "blocking_reasons": [],
+        "artifacts": {
+            "scene_set_dir": str(root),
+        },
+    }
+
+
+def test_unified_cli_passes_selected_runtime_bootstrap_to_renderer_and_scene_handoff(
     monkeypatch,
     tmp_path,
 ):
     cli = _load_cli()
     out = tmp_path / "out"
-    calls = []
+    renderer_calls = []
+    scene_calls = []
+    refresh_calls = []
     monkeypatch.setattr(
         cli,
         "build_offline_vertical_slice_bootstrap",
@@ -131,10 +149,23 @@ def test_unified_cli_passes_selected_runtime_bootstrap_to_renderer(
     )
 
     def renderer(**kwargs):
-        calls.append(kwargs)
+        renderer_calls.append(kwargs)
         return _ready_renderer()
 
+    def scene_handoff(**kwargs):
+        scene_calls.append(kwargs)
+        return _ready_scene_handoff(tmp_path)
+
+    def refresh(report, **kwargs):
+        refresh_calls.append(kwargs)
+        report["profile_ready"] = True
+        report["ready"] = True
+        report["status"] = "profile-ready"
+        return []
+
     monkeypatch.setattr(cli, "run_source_bootstrap_production", renderer)
+    monkeypatch.setattr(cli, "materialize_renderer_native_scene_handoff", scene_handoff)
+    monkeypatch.setattr(cli, "_refresh_runtime_profile", refresh)
     rc = cli.main(
         _args(tmp_path)
         + [
@@ -146,24 +177,39 @@ def test_unified_cli_passes_selected_runtime_bootstrap_to_renderer(
     )
 
     assert rc == 0
-    assert len(calls) == 1
-    call = calls[0]
-    assert call["corpus"] == [
+    assert len(renderer_calls) == 1
+    renderer_call = renderer_calls[0]
+    assert renderer_call["corpus"] == [
         "Vehicles.zip",
         "Silverstone_Era3_.zip",
         "SHIFT_tail.zip",
     ]
-    assert call["runtime_bootstrap"] == str(
+    assert renderer_call["runtime_bootstrap"] == str(
         out / "runtime-bootstrap" / "runtime_bootstrap.json"
     )
-    assert call["capture_jsonl"] == "shift_d3d9_capture.jsonl"
-    assert call["pe_evidence"] == "pe.json"
-    assert call["pe_image"] is None
+    assert renderer_call["capture_jsonl"] == "shift_d3d9_capture.jsonl"
+    assert renderer_call["pe_evidence"] == "pe.json"
+    assert renderer_call["pe_image"] is None
+
+    assert len(scene_calls) == 1
+    scene_call = scene_calls[0]
+    assert scene_call["runtime_bootstrap"] == str(
+        out / "runtime-bootstrap" / "runtime_bootstrap.json"
+    )
+    assert scene_call["renderer_source_bootstrap"] == str(
+        out
+        / "renderer-evidence"
+        / "silverstone_renderer_source_bootstrap_production_run.json"
+    )
+    assert len(refresh_calls) == 1
+    assert refresh_calls[0]["runtime_scene_handoff"]["scene_set_ready"] is True
 
     persisted = json.loads((out / "vertical_slice_bootstrap.json").read_text())
     assert persisted["ready"] is True
     assert persisted["renderer_evidence_requested"] is True
     assert persisted["renderer_evidence_ready"] is True
+    assert persisted["renderer_native_scene_requested"] is True
+    assert persisted["renderer_native_scene_ready"] is True
     assert persisted["renderer_frontier"]["status"] == "continue-offline"
     assert persisted["renderer_frontier"]["capture_blockers"] == []
     assert persisted["artifacts"]["renderer_source_bootstrap"] == str(
@@ -171,11 +217,99 @@ def test_unified_cli_passes_selected_runtime_bootstrap_to_renderer(
         / "renderer-evidence"
         / "silverstone_renderer_source_bootstrap_production_run.json"
     )
+    assert persisted["artifacts"]["renderer_native_scene_handoff"] == str(
+        out / "renderer-native-scene" / "renderer_native_scene_handoff.json"
+    )
     assert (
         persisted["boundary"]["manual_resource_to_renderer_handoff_required"]
         is False
     )
     assert persisted["boundary"]["renderer_bundle_is_selection_authority"] is False
+    assert (
+        persisted["boundary"]["renderer_scene_handoff_uses_existing_phase574_to_585_chain"]
+        is True
+    )
+
+
+def test_ready_scene_handoff_replaces_old_profile_scene_blocker(
+    monkeypatch,
+    tmp_path,
+):
+    cli = _load_cli()
+    out = tmp_path / "out"
+    monkeypatch.setattr(
+        cli,
+        "build_offline_vertical_slice_bootstrap",
+        lambda *args, **kwargs: _base_report(out, profile_ready=False),
+    )
+    monkeypatch.setattr(cli, "run_source_bootstrap_production", lambda **kwargs: _ready_renderer())
+    monkeypatch.setattr(
+        cli,
+        "materialize_renderer_native_scene_handoff",
+        lambda **kwargs: _ready_scene_handoff(tmp_path),
+    )
+
+    def refresh(report, **kwargs):
+        assert kwargs["runtime_scene_handoff"]["ready"] is True
+        report["profile_ready"] = True
+        report["ready"] = True
+        report["status"] = "profile-ready"
+        return []
+
+    monkeypatch.setattr(cli, "_refresh_runtime_profile", refresh)
+    rc = cli.main(
+        _args(tmp_path)
+        + [
+            "--renderer-capture-jsonl",
+            "shift_d3d9_capture.jsonl",
+            "--renderer-pe-evidence",
+            "pe.json",
+        ]
+    )
+
+    assert rc == 0
+    persisted = json.loads((out / "vertical_slice_bootstrap.json").read_text())
+    assert persisted["status"] == "profile-ready"
+    assert persisted["profile_ready"] is True
+    assert persisted["renderer_native_scene_ready"] is True
+    assert all(
+        not reason.startswith("profile:scene-set")
+        for reason in persisted["blocking_reasons"]
+    )
+
+
+def test_explicit_scene_set_skips_renderer_native_scene_materialization(
+    monkeypatch,
+    tmp_path,
+):
+    cli = _load_cli()
+    out = tmp_path / "out"
+    monkeypatch.setattr(
+        cli,
+        "build_offline_vertical_slice_bootstrap",
+        lambda *args, **kwargs: _base_report(out),
+    )
+    monkeypatch.setattr(cli, "run_source_bootstrap_production", lambda **kwargs: _ready_renderer())
+
+    def forbidden_scene(*args, **kwargs):
+        raise AssertionError("explicit scene_set must remain authoritative")
+
+    monkeypatch.setattr(cli, "materialize_renderer_native_scene_handoff", forbidden_scene)
+    rc = cli.main(
+        _args(tmp_path)
+        + [
+            "--scene-set",
+            str(tmp_path / "existing-scene-set"),
+            "--renderer-capture-jsonl",
+            "shift_d3d9_capture.jsonl",
+            "--renderer-pe-evidence",
+            "pe.json",
+        ]
+    )
+    assert rc == 0
+    persisted = json.loads((out / "vertical_slice_bootstrap.json").read_text())
+    assert persisted["renderer_native_scene_requested"] is False
+    assert persisted["renderer_native_scene_ready"] is True
 
 
 def test_renderer_failure_blocks_unified_readiness_and_launcher_validation(
@@ -207,7 +341,11 @@ def test_renderer_failure_blocks_unified_readiness_and_launcher_validation(
     def forbidden_launcher(*args, **kwargs):
         raise AssertionError("launcher validation must not bypass renderer evidence")
 
+    def forbidden_scene(*args, **kwargs):
+        raise AssertionError("scene materialization must not bypass renderer evidence")
+
     monkeypatch.setattr(cli, "build_launch_plan", forbidden_launcher)
+    monkeypatch.setattr(cli, "materialize_renderer_native_scene_handoff", forbidden_scene)
     rc = cli.main(
         _args(tmp_path)
         + [
@@ -226,12 +364,63 @@ def test_renderer_failure_blocks_unified_readiness_and_launcher_validation(
     assert persisted["ready"] is False
     assert persisted["profile_ready"] is True
     assert persisted["renderer_evidence_ready"] is False
+    assert persisted["renderer_native_scene_ready"] is False
     assert persisted["launch_plan_ready"] is False
     assert any(
         "object-candidate-required" in reason
         for reason in persisted["blocking_reasons"]
     )
     assert persisted["boundary"]["launcher_validation_performed"] is False
+
+
+def test_renderer_scene_failure_blocks_profile_gate_without_new_capture_claim(
+    monkeypatch,
+    tmp_path,
+):
+    cli = _load_cli()
+    out = tmp_path / "out"
+    monkeypatch.setattr(
+        cli,
+        "build_offline_vertical_slice_bootstrap",
+        lambda *args, **kwargs: _base_report(out, profile_ready=False),
+    )
+    monkeypatch.setattr(cli, "run_source_bootstrap_production", lambda **kwargs: _ready_renderer())
+    monkeypatch.setattr(
+        cli,
+        "materialize_renderer_native_scene_handoff",
+        lambda **kwargs: {
+            "format": "SHIFT.RendererNativeSceneHandoff/1",
+            "status": "blocked",
+            "ready": False,
+            "scene_set_ready": False,
+            "blocking_reasons": ["phase580:external-sampler:runtime-resource-unresolved:s3:samplerCube"],
+            "artifacts": {"scene_set_dir": None},
+        },
+    )
+
+    def refresh(report, **kwargs):
+        report["profile_ready"] = False
+        report["ready"] = False
+        report["status"] = "profile-blocked"
+        return ["profile:scene_set:explicit-input-required"]
+
+    monkeypatch.setattr(cli, "_refresh_runtime_profile", refresh)
+    rc = cli.main(
+        _args(tmp_path)
+        + [
+            "--renderer-capture-jsonl",
+            "shift_d3d9_capture.jsonl",
+            "--renderer-pe-evidence",
+            "pe.json",
+        ]
+    )
+    assert rc == 2
+    persisted = json.loads((out / "vertical_slice_bootstrap.json").read_text())
+    assert persisted["status"] == "renderer-native-scene-blocked"
+    assert persisted["renderer_evidence_ready"] is True
+    assert persisted["renderer_native_scene_ready"] is False
+    assert any("external-sampler" in item for item in persisted["blocking_reasons"])
+    assert all("new-capture" not in item for item in persisted["blocking_reasons"])
 
 
 def test_renderer_is_not_started_when_selected_offline_bootstrap_is_blocked(
