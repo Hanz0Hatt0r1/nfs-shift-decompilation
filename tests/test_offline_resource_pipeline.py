@@ -81,6 +81,19 @@ def test_catalog_inventory_is_content_addressed_without_decoding(monkeypatch, tm
 
     assert graph["edges"] == []
     assert coverage["blocked"] == 0
+    assert coverage["validation"] == {
+        "total": 4,
+        "supported": 2,
+        "verified": 0,
+        "blocked": 0,
+        "unsupported": 2,
+        "deferred": 2,
+        "malformed": 0,
+        "unknown_version_layout": 0,
+        "unclassified_blocked": 0,
+        "unresolved_dependency_edges": 0,
+        "unresolved_dependency_resources": 0,
+    }
     assert catalog["archives"][0]["sha256"] == hashlib.sha256(b"archive-a").hexdigest()
     assert catalog["archives"][0]["source_kind"] == "bff"
     assert catalog["archives"][0]["encryption"] == "none"
@@ -169,6 +182,41 @@ def test_catalog_uses_semantic_edges_and_keeps_missing_dependency_explicit(monke
     assert ("tracks/test/a.dds", "resolved") in statuses
     assert ("render/shaders/missing.fx", "missing") in statuses
     assert graph["summary"]["blocking_admissible_edges"] == 1
+    assert coverage["validation"]["verified"] == 3
+    assert coverage["validation"]["unresolved_dependency_edges"] == 1
+    assert coverage["validation"]["unresolved_dependency_resources"] == 1
+
+
+def test_validation_taxonomy_never_guesses_generic_parser_failure(monkeypatch, tmp_path):
+    bff = tmp_path / "Broken.bff"
+    bff.write_bytes(b"fixture")
+    FakeBFF.entries_by_name = {
+        "Broken.bff": [FakeEntry(0, "tracks/test/broken.imb", b"broken")],
+    }
+    monkeypatch.setattr(pipeline, "BFF", FakeBFF)
+    monkeypatch.setattr(pipeline, "classify", lambda path: "MESH_INSTANCE")
+    monkeypatch.setattr(
+        pipeline,
+        "analyze_decoded_resource",
+        lambda path, payload: {"analysis": {"format": "fixture"}},
+    )
+
+    def fail_semantic(*_):
+        raise ValueError("unsupported mystery layout")
+
+    monkeypatch.setattr(pipeline, "_semantic_dependencies", fail_semantic)
+    materialized = [pipeline.MaterializedArchive(str(bff), None, bff)]
+    _, _, coverage = pipeline.build_catalog(materialized, decode_known=True)
+
+    validation = coverage["validation"]
+    assert validation["total"] == 1
+    assert validation["supported"] == 1
+    assert validation["verified"] == 0
+    assert validation["blocked"] == 1
+    assert validation["malformed"] == 0
+    assert validation["unknown_version_layout"] == 0
+    assert validation["unclassified_blocked"] == 1
+    assert coverage["validation_boundary"]["exception_text_classification"] is False
 
 
 def test_imx_is_known_and_emits_exact_material_dependencies(monkeypatch):
