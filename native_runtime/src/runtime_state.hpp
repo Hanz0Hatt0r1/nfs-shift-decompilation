@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime_body_feedback_scheduler.hpp"
+#include "runtime_explicit_outer_update_state.hpp"
 
 #include <array>
 #include <cstddef>
@@ -242,6 +243,7 @@ struct NativeRuntimeState {
     CameraBufferRuntime camera{};
     PhysicsTickBoundary physics{};
     BodyFeedbackScheduler body_feedback{};
+    ExplicitOuterUpdateRuntimeState outer_update{};
 
     static constexpr const char* format =
         "SHIFT.NativeRuntimeState/1";
@@ -252,6 +254,30 @@ struct NativeRuntimeState {
 
     void complete_camera_update() {
         camera.complete_update();
+    }
+
+    void initialize_explicit_outer_update_body_state(
+        const std::vector<std::uint8_t>& initial_body_bytes) {
+        outer_update.initialize_body_state(
+            initial_body_bytes,
+            physics.workspace.body_count,
+            physics.workspace.ready);
+    }
+
+    physics::Fun00770e80ComposedAnchorChainResult execute_explicit_outer_update(
+        double outer_timestep,
+        const physics::Fun0076d100AnchorProvider& physics_pass_provider,
+        const physics::Fun00765470MachineHalfStepProvider& half_step_provider,
+        const physics::Fun007b8810PostHalfStepCallback& post_half_step) {
+        return outer_update.execute(
+            physics.workspace.body_count,
+            physics.workspace.ready,
+            physics.participant_ready,
+            physics.participant_identity_join_proven,
+            outer_timestep,
+            physics_pass_provider,
+            half_step_provider,
+            post_half_step);
     }
 
     void fixed_step(const VehicleControlIntent& input) {
