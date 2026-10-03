@@ -211,9 +211,13 @@ def _refresh_runtime_profile(
         except Exception as exc:
             return [f"profile-refresh:runtime-bootstrap-unreadable:{type(exc).__name__}:{exc}"]
 
+    validated_runtime_inputs = stages.get("validated_runtime_inputs")
+    if not isinstance(validated_runtime_inputs, Mapping):
+        validated_runtime_inputs = None
     requirements = build_runtime_requirements(
         runtime_bootstrap,
         runtime_scene_handoff=runtime_scene_handoff,
+        validated_runtime_inputs=validated_runtime_inputs,
     )
     requirements_path = Path(
         str(artifacts.get("runtime_requirements") or (out / "runtime_requirements.json"))
@@ -322,6 +326,7 @@ def main(argv: list[str] | None = None) -> int:
     boundary["existing_capture_external_sampler_completion_enabled"] = renderer_requested
     boundary["renderer_capture_root_is_identity_proof"] = False
     boundary["runtime_requirements_refreshed_only_after_renderer_scene_attempt"] = True
+    boundary["validated_runtime_input_admission_preserved_across_renderer_refresh"] = True
     report["boundary"] = boundary
 
     artifacts = dict(report.get("artifacts") or {})
