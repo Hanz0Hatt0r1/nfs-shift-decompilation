@@ -56,7 +56,7 @@ def _fixture(tmp_path):
     tail = "0x00769ef0"
     repeated_helper = "0x007b8810"
     pass_local = "0x007b3e90"
-    bridge_local = "0x007b2270"
+    body_loop = module.ANCHORS["body_array_integrator_loop"]
     generic = "0x0070fe90"
 
     functions = set(module.ANCHORS.values()) | {
@@ -64,7 +64,6 @@ def _fixture(tmp_path):
         tail,
         repeated_helper,
         pass_local,
-        bridge_local,
         generic,
     }
     (tmp_path / "binary.json").write_text(
@@ -94,7 +93,8 @@ def _fixture(tmp_path):
         ),
         _call(bridge, "0x007657bd", module.ANCHORS["sdf_solve"]),
         _call(bridge, "0x007657c8", module.ANCHORS["post_solve_writer"]),
-        _call(bridge, "0x0076582a", bridge_local),
+        _call(bridge, "0x0076582a", body_loop),
+        _call(body_loop, "0x007b2299", module.ANCHORS["body_integrator"]),
         _call(physics_pass, "0x0076d120", pass_local),
         _call(physics_pass, "0x0076d12b", module.ANCHORS["contact_factor"]),
         _call(physics_pass, "0x0076d132", module.ANCHORS["wheel_update"]),
@@ -120,16 +120,19 @@ def _fixture(tmp_path):
         tmp_path / "functions.jsonl", [_function(x) for x in sorted(functions)]
     )
     _write_jsonl(tmp_path / "callgraph.jsonl", rows)
-    return module, bridge, tail, repeated_helper, pass_local, bridge_local, generic
+    return module, bridge, tail, repeated_helper, pass_local, body_loop, generic
 
 
-def test_recovers_schedule_without_semantic_promotion(tmp_path):
-    module, bridge, tail, repeated_helper, pass_local, bridge_local, generic = (
+def test_recovers_schedule_and_links_proven_integrator(tmp_path):
+    module, bridge, tail, repeated_helper, pass_local, body_loop, generic = (
         _fixture(tmp_path)
     )
     report = module.build_body_update_schedule_frontier(tmp_path)
 
-    assert report["format"] == "SHIFT.GhidraBodyUpdateScheduleFrontier/1"
+    assert report["format"] == "SHIFT.GhidraBodyUpdateScheduleFrontier/2"
+    assert report["imported_semantic_contracts"] == [
+        "SHIFT.BodyFrameIntegrationStatic/1"
+    ]
     assert report["recovered"]["between_pass_bridge"]["address"] == bridge
     assert report["recovered"]["between_pass_bridge"]["promoted"] is False
     assert report["recovered"]["physics_pass_tail"]["address"] == tail
@@ -137,7 +140,16 @@ def test_recovers_schedule_without_semantic_promotion(tmp_path):
         module.ANCHORS["wheel_shared_triplet_pass"],
         module.ANCHORS["sdf_solve"],
         module.ANCHORS["post_solve_writer"],
+        body_loop,
     ]
+    assert report["body_integration"]["array_loop"] == body_loop
+    assert report["body_integration"]["persistent_integrator"] == module.ANCHORS[
+        "body_integrator"
+    ]
+    assert report["body_integration"]["required_integrator_call"]["to"] == module.ANCHORS[
+        "body_integrator"
+    ]
+    assert report["body_integration"]["schedule_link_proven"] is True
     assert [row["to"] for row in report["physics_pass"]["required_order"]] == [
         module.ANCHORS["contact_factor"],
         module.ANCHORS["wheel_update"],
@@ -148,13 +160,16 @@ def test_recovers_schedule_without_semantic_promotion(tmp_path):
         module.ANCHORS["contact_outer"],
         module.ANCHORS["motion_read_gate"],
     ]
-    assert report["scope"]["pose_integration_writer_proven"] is False
-    assert report["scope"]["motion_triplet_writer_proven"] is False
+    assert report["scope"]["persistent_body_integrator_anchor_imported"] is True
+    assert report["scope"]["persistent_body_integrator_schedule_link_proven"] is True
+    assert report["scope"]["pose_integration_writer_proven_by_this_report"] is False
+    assert report["scope"]["motion_triplet_writer_proven_by_this_report"] is False
 
     targets = report["instruction_export_addresses"]
     assert targets[:3] == [bridge, tail, repeated_helper]
     assert pass_local in targets
-    assert bridge_local in targets
+    assert body_loop not in targets
+    assert module.ANCHORS["body_integrator"] not in targets
     assert generic not in targets
 
 
@@ -193,6 +208,11 @@ def test_fails_closed_when_between_pass_bridge_is_ambiguous(tmp_path):
                 "0x00760030",
                 module.ANCHORS["post_solve_writer"],
             ),
+            _call(
+                ambiguous,
+                "0x00760040",
+                module.ANCHORS["body_array_integrator_loop"],
+            ),
         ]
     )
     _write_jsonl(tmp_path / "callgraph.jsonl", rows)
@@ -210,6 +230,35 @@ def test_fails_closed_when_solve_and_post_solve_order_reverses(tmp_path):
             row["instruction"] = "0x007657d8"
         elif row["to"] == module.ANCHORS["post_solve_writer"]:
             row["instruction"] = "0x007657c8"
+    _write_jsonl(tmp_path / "callgraph.jsonl", rows)
+    with pytest.raises(ValueError, match="required direct-call order"):
+        module.build_body_update_schedule_frontier(tmp_path)
+
+
+def test_fails_closed_when_body_integrator_call_is_missing(tmp_path):
+    module, *_ = _fixture(tmp_path)
+    rows = list(module.read_jsonl(tmp_path / "callgraph.jsonl"))
+    rows = [
+        row
+        for row in rows
+        if not (
+            row["from_function"] == module.ANCHORS["body_array_integrator_loop"]
+            and row["to"] == module.ANCHORS["body_integrator"]
+        )
+    ]
+    _write_jsonl(tmp_path / "callgraph.jsonl", rows)
+    with pytest.raises(ValueError, match="expected exactly one direct call"):
+        module.build_body_update_schedule_frontier(tmp_path)
+
+
+def test_fails_closed_when_body_loop_moves_before_post_solve_writer(tmp_path):
+    module, bridge, *_ = _fixture(tmp_path)
+    rows = list(module.read_jsonl(tmp_path / "callgraph.jsonl"))
+    for row in rows:
+        if row["from_function"] != bridge:
+            continue
+        if row["to"] == module.ANCHORS["body_array_integrator_loop"]:
+            row["instruction"] = "0x007657c0"
     _write_jsonl(tmp_path / "callgraph.jsonl", rows)
     with pytest.raises(ValueError, match="required direct-call order"):
         module.build_body_update_schedule_frontier(tmp_path)
