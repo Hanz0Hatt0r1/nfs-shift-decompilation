@@ -21,6 +21,10 @@ def _load_module():
     return module
 
 
+def _op(opcode, text):
+    return {"opcode": opcode, "text": text}
+
+
 def _instruction(address, text, operands, pcode):
     return {
         "address": address,
@@ -73,8 +77,8 @@ def test_classifies_simple_register_relative_reads_writes_and_groups(tmp_path):
                         "MOV dword ptr [ECX + 0x18],EAX",
                         ["dword ptr [ECX + 0x18]", "EAX"],
                         [
-                            "unique:100 = INT_ADD ECX, 0x18",
-                            "STORE ram, unique:100, EAX",
+                            _op("INT_ADD", "unique:100 = INT_ADD ECX, 0x18"),
+                            _op("STORE", "STORE ram, unique:100, EAX"),
                         ],
                     ),
                     _instruction(
@@ -82,8 +86,8 @@ def test_classifies_simple_register_relative_reads_writes_and_groups(tmp_path):
                         "MOV EDX,dword ptr [ECX + 0xd4]",
                         ["EDX", "dword ptr [ECX + 0xd4]"],
                         [
-                            "unique:200 = INT_ADD ECX, 0xd4",
-                            "EDX = LOAD ram, unique:200",
+                            _op("INT_ADD", "unique:200 = INT_ADD ECX, 0xd4"),
+                            _op("LOAD", "EDX = LOAD ram, unique:200"),
                         ],
                     ),
                     _instruction(
@@ -91,17 +95,17 @@ def test_classifies_simple_register_relative_reads_writes_and_groups(tmp_path):
                         "ADD dword ptr [ECX + 0x20],EAX",
                         ["dword ptr [ECX + 0x20]", "EAX"],
                         [
-                            "unique:300 = INT_ADD ECX, 0x20",
-                            "unique:304 = LOAD ram, unique:300",
-                            "unique:308 = INT_ADD unique:304, EAX",
-                            "STORE ram, unique:300, unique:308",
+                            _op("INT_ADD", "unique:300 = INT_ADD ECX, 0x20"),
+                            _op("LOAD", "unique:304 = LOAD ram, unique:300"),
+                            _op("INT_ADD", "unique:308 = INT_ADD unique:304, EAX"),
+                            _op("STORE", "STORE ram, unique:300, unique:308"),
                         ],
                     ),
                     _instruction(
                         "0x0070000c",
                         "MOV dword ptr [ESI - 0x4],EAX",
                         ["dword ptr [ESI - 0x4]", "EAX"],
-                        ["STORE ram, ESI, EAX"],
+                        [_op("STORE", "STORE ram, ESI, EAX")],
                     ),
                 ]
             )
@@ -133,6 +137,8 @@ def test_classifies_simple_register_relative_reads_writes_and_groups(tmp_path):
     assert group["read_count"] == 1
     assert group["write_count"] == 1
     assert group["promoted"] is False
+    assert report["scope"]["structured_pcode_opcode_used"] is True
+    assert report["scope"]["pcode_text_parsing_used_for_classification"] is False
     assert report["scope"]["body_or_vehicle_identity_proven"] is False
     assert report["scope"]["persistent_state_writer_proven"] is False
 
@@ -149,13 +155,13 @@ def test_base_register_filter_does_not_relabel_pointer_semantics(tmp_path):
                         "0x00700000",
                         "MOV dword ptr [ECX + 0x18],EAX",
                         ["dword ptr [ECX + 0x18]", "EAX"],
-                        ["STORE ram, ECX, EAX"],
+                        [_op("STORE", "STORE ram, ECX, EAX")],
                     ),
                     _instruction(
                         "0x00700004",
                         "MOV dword ptr [ESI + 0x18],EAX",
                         ["dword ptr [ESI + 0x18]", "EAX"],
-                        ["STORE ram, ESI, EAX"],
+                        [_op("STORE", "STORE ram, ESI, EAX")],
                     ),
                 ]
             )
@@ -182,13 +188,13 @@ def test_complex_operands_and_missing_load_store_are_blockers(tmp_path):
                         "0x00700000",
                         "MOV EAX,dword ptr [ECX + EDX*4 + 0x10]",
                         ["EAX", "dword ptr [ECX + EDX*4 + 0x10]"],
-                        ["EAX = LOAD ram, unique:100"],
+                        [_op("LOAD", "EAX = LOAD ram, unique:100")],
                     ),
                     _instruction(
                         "0x00700004",
                         "LEA EAX,[ECX + 0x18]",
                         ["EAX", "[ECX + 0x18]"],
-                        ["EAX = INT_ADD ECX, 0x18"],
+                        [_op("INT_ADD", "EAX = INT_ADD ECX, 0x18")],
                     ),
                 ]
             )
@@ -209,6 +215,28 @@ def test_v1_export_fails_closed_without_pcode(tmp_path):
         module.analyze_register_relative_accesses(export)
 
 
+def test_rejects_unstructured_pcode_operation(tmp_path):
+    module = _load_module()
+    export = tmp_path / "instructions.jsonl"
+    _write(
+        export,
+        [
+            _row(
+                [
+                    _instruction(
+                        "0x00700000",
+                        "MOV dword ptr [ECX],EAX",
+                        ["dword ptr [ECX]", "EAX"],
+                        ["STORE ram, ECX, EAX"],
+                    )
+                ]
+            )
+        ],
+    )
+    with pytest.raises(ValueError, match="pcode operation must be an object"):
+        module.analyze_register_relative_accesses(export)
+
+
 def test_rejects_unknown_register_filter(tmp_path):
     module = _load_module()
     export = tmp_path / "instructions.jsonl"
@@ -221,7 +249,7 @@ def test_rejects_unknown_register_filter(tmp_path):
                         "0x00700000",
                         "NOP",
                         [],
-                        ["COPY EAX, EAX"],
+                        [_op("COPY", "COPY EAX, EAX")],
                     )
                 ]
             )
