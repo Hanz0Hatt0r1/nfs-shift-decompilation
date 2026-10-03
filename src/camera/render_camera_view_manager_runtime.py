@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from memory_pool_runtime import release_helper_action
+
 FORMAT = "SHIFT.RenderCameraViewManagerRuntime/1"
 SINGLETON_SYMBOL = "DAT_00c25760"
 INIT_GUARD_SYMBOL = "_DAT_00c259e0"
@@ -65,10 +67,7 @@ def describe_render_camera_view_manager_delete(
         "delete_flag": int(delete_flag),
         "actions": [
             {"action": "FUN_008112a0"},
-            {
-                "action": "FUN_00886930",
-                "condition": "(delete_flag & 1) != 0",
-            }
+            release_helper_action(condition="(delete_flag & 1) != 0"),
         ],
         "evidence": {"function": "FUN_008112b0"},
     }
