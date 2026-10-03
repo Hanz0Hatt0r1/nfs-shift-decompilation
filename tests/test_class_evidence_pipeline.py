@@ -207,6 +207,29 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         fake_memory_wrapper,
     )
 
+    def fake_memory_callsites(source, ghidra_export):
+        assert source == tmp_path / "SHIFT.exe.c"
+        assert ghidra_export == tmp_path / "ghidra"
+        return {
+            "format": "SHIFT-MEMORY-WRAPPER-CALLSITE-EVIDENCE/1",
+            "wrapper_count": 5,
+            "callsite_count": 12,
+            "caller_count": 8,
+            "parsed_callsite_count": 11,
+            "unparsed_callsite_count": 1,
+            "ghidra_crosscheck_available": True,
+            "ghidra_confirmed_callsite_count": 10,
+            "ghidra_rejected_callsite_count": 2,
+            "wrappers": [],
+            "callsites": [],
+        }
+
+    monkeypatch.setattr(
+        module,
+        "extract_memory_wrapper_callsites",
+        fake_memory_callsites,
+    )
+
     def fake_lifecycle(scorecard_path, ghidra_export):
         payload = json.loads(scorecard_path.read_text(encoding="utf-8"))
         assert payload["tier_counts"]["lifecycle-investigation-ready"] == 18
@@ -257,6 +280,12 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert report["counts"]["memory_wrapper_members"] == 5
     assert report["counts"]["confirmed_memory_wrapper_shapes"] == 5
     assert report["counts"]["memory_wrapper_family_candidates"] == 1
+    assert report["counts"]["memory_wrapper_callsites"] == 12
+    assert report["counts"]["memory_wrapper_callers"] == 8
+    assert report["counts"]["parsed_memory_wrapper_callsites"] == 11
+    assert report["counts"]["unparsed_memory_wrapper_callsites"] == 1
+    assert report["counts"]["memory_wrapper_ghidra_confirmed_callsites"] == 10
+    assert report["counts"]["memory_wrapper_ghidra_rejected_callsites"] == 2
     assert report["counts"]["lifecycle_target_slices"] == 18
     assert report["counts"]["lifecycle_complete_slices"] == 17
     assert report["counts"]["lifecycle_incomplete_slices"] == 1
@@ -275,6 +304,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         "lifetime_helper_families.json",
         "memory_helper_semantics.json",
         "memory_wrapper_family.json",
+        "memory_wrapper_callsites.json",
         "lifecycle_investigation_targets.json",
         "pipeline_manifest.json",
     }
@@ -284,6 +314,8 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert saved["counts"] == report["counts"]
     assert saved["scope"]["pool_memory_path_diagnostics_used"] is True
     assert saved["scope"]["memory_wrapper_physical_storage_used"] is True
+    assert saved["scope"]["memory_wrapper_source_callsites_used"] is True
+    assert saved["scope"]["memory_wrapper_callsite_ghidra_edges_crosschecked"] is True
     assert saved["scope"]["ghidra_semantic_parameter_types_trusted"] is False
     assert saved["scope"]["allocation_helper_semantics_proven"] is False
     assert saved["scope"]["shared_allocator_family_proven"] is False
