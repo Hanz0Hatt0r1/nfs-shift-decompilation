@@ -110,6 +110,7 @@ def build_offline_runtime_bootstrap(
     decode_limit_per_archive: int = 0,
     root_consensus_path: str | Path | None = None,
     runtime_shader_admission_path: str | Path | None = None,
+    participant_observation_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build the strongest currently provable track+vehicle native bootstrap."""
     out = Path(output_dir)
@@ -186,12 +187,19 @@ def build_offline_runtime_bootstrap(
         _write(native_scene_dir / "native_scene_build.json", native_scene)
 
     try:
-        native_vehicle = build_native_vehicle_files(
+        vehicle_args = (
             resources_dir / "resource_catalog.json",
             resources_dir / "scene_vehicle_bootstrap.json",
             resources_dir / "vehicle_physics_bundle_report.json",
             native_vehicle_dir,
         )
+        if participant_observation_path is None:
+            native_vehicle = build_native_vehicle_files(*vehicle_args)
+        else:
+            native_vehicle = build_native_vehicle_files(
+                *vehicle_args,
+                participant_observation_path=participant_observation_path,
+            )
     except (OSError, RuntimeError, ValueError) as exc:
         native_vehicle = _blocked_stage(
             "SHIFT.OfflineNativeVehicleBuild/1",
@@ -199,8 +207,15 @@ def build_offline_runtime_bootstrap(
         )
         native_vehicle["resource_ready"] = False
         native_vehicle["participant_structural_ready"] = False
+        native_vehicle["participant_runtime_identity_evaluated"] = (
+            participant_observation_path is not None
+        )
+        native_vehicle["participant_runtime_identity_ready"] = False
         native_vehicle["runtime_physics_contract_ready"] = False
         native_vehicle["native_vehicle_runtime_ready"] = False
+        native_vehicle["runtime_gate_blocking_reasons"] = [
+            "native-vehicle-build-failed"
+        ]
         _write(native_vehicle_dir / "native_vehicle_build.json", native_vehicle)
 
     resource_bootstrap_ready = resource_pipeline.get("resource_bootstrap_ready") is True
@@ -210,6 +225,12 @@ def build_offline_runtime_bootstrap(
     static_scene_ready = native_scene.get("static_resource_ready") is True
     vehicle_resource_ready = native_vehicle.get("resource_ready") is True
     participant_structural_ready = native_vehicle.get("participant_structural_ready") is True
+    participant_runtime_identity_evaluated = (
+        native_vehicle.get("participant_runtime_identity_evaluated") is True
+    )
+    participant_runtime_identity_ready = (
+        native_vehicle.get("participant_runtime_identity_ready") is True
+    )
     runtime_scene_ready = native_scene.get("native_scene_runtime_ready") is True
     runtime_vehicle_ready = native_vehicle.get("native_vehicle_runtime_ready") is True
     runtime_ready = runtime_scene_ready and runtime_vehicle_ready
@@ -246,9 +267,16 @@ def build_offline_runtime_bootstrap(
     if not runtime_scene_ready:
         blockers.append("runtime-scene:runtime-proven-draw-admission-required")
     if not runtime_vehicle_ready:
-        blockers.append(
-            "runtime-vehicle:participant-input-and-fixed-step-runtime-gates-required"
-        )
+        runtime_vehicle_blockers = native_vehicle.get("runtime_gate_blocking_reasons")
+        if isinstance(runtime_vehicle_blockers, list) and runtime_vehicle_blockers:
+            blockers.extend(
+                "runtime-vehicle:" + str(reason)
+                for reason in runtime_vehicle_blockers
+            )
+        else:
+            blockers.append(
+                "runtime-vehicle:participant-input-and-fixed-step-runtime-gates-required"
+            )
     blockers = list(dict.fromkeys(blockers))
 
     if not resource_bootstrap_ready or not track_load_ready or not vehicle_load_ready:
@@ -259,6 +287,38 @@ def build_offline_runtime_bootstrap(
         status = "runtime-ready"
     else:
         status = "offline-native-build-ready-runtime-gated"
+
+    artifacts = {
+        "resource_pipeline": str(resources_dir / "pipeline_run.json"),
+        "catalog": str(resources_dir / "resource_catalog.json"),
+        "dependency_graph": str(resources_dir / "dependency_graph.json"),
+        "bootstrap": str(resources_dir / "scene_vehicle_bootstrap.json"),
+        "typed_resource_closure": str(resources_dir / "typed_resource_closure.json"),
+        "vehicle_physics_bundle": str(
+            resources_dir / "vehicle_physics_bundle_report.json"
+        ),
+        "track_load": str(out / "track_load.json"),
+        "vehicle_load": str(out / "vehicle_load.json"),
+        "scene_ir": str(scene_ir_dir / "scene_ir_materialization.json"),
+        "native_scene": str(native_scene_dir / "native_scene_build.json"),
+        "native_vehicle": str(native_vehicle_dir / "native_vehicle_build.json"),
+        "participant_boundary": str(
+            native_vehicle_dir / "native_physics_participant_boundary.json"
+        ),
+    }
+    native_vehicle_artifacts = native_vehicle.get("artifacts") or {}
+    participant_runtime_artifact = (
+        native_vehicle_artifacts.get("participant_runtime_evidence")
+        if isinstance(native_vehicle_artifacts, Mapping)
+        else None
+    )
+    if (
+        isinstance(participant_runtime_artifact, Mapping)
+        and participant_runtime_artifact.get("path")
+    ):
+        artifacts["participant_runtime_evidence"] = str(
+            participant_runtime_artifact["path"]
+        )
 
     report = {
         "format": FORMAT,
@@ -277,6 +337,12 @@ def build_offline_runtime_bootstrap(
             "static_scene_ready": static_scene_ready,
             "vehicle_resource_ready": vehicle_resource_ready,
             "vehicle_participant_structural_ready": participant_structural_ready,
+            "vehicle_participant_runtime_identity_evaluated": (
+                participant_runtime_identity_evaluated
+            ),
+            "vehicle_participant_runtime_identity_ready": (
+                participant_runtime_identity_ready
+            ),
             "vehicle_runtime_physics_contract_ready": (
                 native_vehicle.get("runtime_physics_contract_ready") is True
             ),
@@ -293,24 +359,7 @@ def build_offline_runtime_bootstrap(
             "native_scene": native_scene,
             "native_vehicle": native_vehicle,
         },
-        "artifacts": {
-            "resource_pipeline": str(resources_dir / "pipeline_run.json"),
-            "catalog": str(resources_dir / "resource_catalog.json"),
-            "dependency_graph": str(resources_dir / "dependency_graph.json"),
-            "bootstrap": str(resources_dir / "scene_vehicle_bootstrap.json"),
-            "typed_resource_closure": str(resources_dir / "typed_resource_closure.json"),
-            "vehicle_physics_bundle": str(
-                resources_dir / "vehicle_physics_bundle_report.json"
-            ),
-            "track_load": str(out / "track_load.json"),
-            "vehicle_load": str(out / "vehicle_load.json"),
-            "scene_ir": str(scene_ir_dir / "scene_ir_materialization.json"),
-            "native_scene": str(native_scene_dir / "native_scene_build.json"),
-            "native_vehicle": str(native_vehicle_dir / "native_vehicle_build.json"),
-            "participant_boundary": str(
-                native_vehicle_dir / "native_physics_participant_boundary.json"
-            ),
-        },
+        "artifacts": artifacts,
         "boundary": {
             "game_or_bff_inputs_to_offline_native_build_automated": True,
             "track_and_vehicle_names_are_high_level_inputs": True,
@@ -319,6 +368,10 @@ def build_offline_runtime_bootstrap(
             "exact_scene_resource_closure_required_by_native_scene_stage": True,
             "static_scene_promoted_to_runtime_draw_proof": False,
             "vehicle_participant_structural_boundary_required": True,
+            "participant_runtime_identity_requires_exact_observation": True,
+            "participant_runtime_observation_used": (
+                participant_observation_path is not None
+            ),
             "vehicle_resource_manifest_promoted_to_participant_identity": False,
             "shader_permutation_invented": False,
             "missing_dependency_substituted": False,

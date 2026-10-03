@@ -46,6 +46,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional exact runtime shader admission evidence",
     )
     parser.add_argument(
+        "--participant-observation",
+        help=(
+            "optional existing SHIFT.NativePhysicsParticipantObservation/1 JSON; "
+            "joined exactly to the structural participant boundary"
+        ),
+    )
+    parser.add_argument(
+        "--require-participant-runtime-identity",
+        action="store_true",
+        help="return non-zero unless participant runtime identity is exactly proven",
+    )
+    parser.add_argument(
         "--require-runtime-ready",
         action="store_true",
         help="return non-zero unless all runtime gates are proven ready",
@@ -67,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
         decode_limit_per_archive=args.decode_limit_per_archive,
         root_consensus_path=args.root_consensus,
         runtime_shader_admission_path=args.runtime_shader_admission,
+        participant_observation_path=args.participant_observation,
     )
     print(json.dumps({
         "format": report["format"],
@@ -81,6 +94,11 @@ def main(argv: list[str] | None = None) -> int:
     }, ensure_ascii=False, indent=2))
 
     if not report["offline_build_ready"]:
+        return 2
+    if (
+        args.require_participant_runtime_identity
+        and not report["readiness"]["vehicle_participant_runtime_identity_ready"]
+    ):
         return 2
     if args.require_runtime_ready and not report["runtime_ready"]:
         return 2
