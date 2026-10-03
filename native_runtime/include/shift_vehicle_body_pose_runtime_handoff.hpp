@@ -1,9 +1,12 @@
 #pragma once
 
-#include "runtime_state.hpp"
 #include "shift_vehicle_body_pose_selection.hpp"
 
 #include <cstdint>
+
+namespace shift::runtime {
+struct NativeRuntimeState;
+}
 
 namespace shift::runtime::physics {
 
