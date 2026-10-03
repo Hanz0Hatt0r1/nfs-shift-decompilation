@@ -13,6 +13,7 @@ MATERIAL_FORMAT = "SHIFT.IMBMaterialConstantCandidateJoin/1"
 MATERIAL_TEXTURE_FORMAT = "SHIFT.IMBMaterialTextureCandidateJoin/1"
 SCENE_GEOMETRY_FORMAT = "SHIFT.IMBStaticSceneReferenceCandidateJoin/1"
 RUNTIME_RESOURCE_DRAW_FORMAT = "SHIFT.IMBRuntimeResourceDrawCandidateJoin/1"
+REPEATED_INSTANCE_TRANSFORM_FORMAT = "SHIFT.IMBRepeatedSceneInstanceTransformJoin/1"
 
 
 def _summary(report: Mapping[str, Any] | None) -> Mapping[str, Any]:
@@ -31,6 +32,7 @@ def build_renderer_frontier_audit(
     material_textures: Mapping[str, Any] | None = None,
     scene_geometry: Mapping[str, Any] | None = None,
     runtime_resource_draw: Mapping[str, Any] | None = None,
+    repeated_instance_transforms: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     if base.get("format") != BASE_FORMAT:
         raise ValueError(f"base audit must be {BASE_FORMAT}")
@@ -44,6 +46,8 @@ def build_renderer_frontier_audit(
         raise ValueError(f"scene geometry must be {SCENE_GEOMETRY_FORMAT}")
     if runtime_resource_draw is not None and runtime_resource_draw.get("format") != RUNTIME_RESOURCE_DRAW_FORMAT:
         raise ValueError(f"runtime resource draw must be {RUNTIME_RESOURCE_DRAW_FORMAT}")
+    if repeated_instance_transforms is not None and repeated_instance_transforms.get("format") != REPEATED_INSTANCE_TRANSFORM_FORMAT:
+        raise ValueError(f"repeated instance transforms must be {REPEATED_INSTANCE_TRANSFORM_FORMAT}")
 
     requirements = [dict(row) for row in (base.get("requirements") or []) if isinstance(row, Mapping)]
     by_id = {str(row.get("requirement_id")): row for row in requirements}
@@ -305,6 +309,95 @@ def build_renderer_frontier_audit(
                 "existing_next_step": next_step,
             })
 
+    # Phase 625 resolves only repeated scene placements after Phase 624 has
+    # already proven the exact IMB/LOD resource at the same captured draw.
+    # Exact float32 transform observations can select one placement, but missing
+    # or equal world matrices remain ambiguity rather than negative evidence.
+    if scene_row is not None and repeated_instance_transforms is not None:
+        summary = _summary(repeated_instance_transforms)
+        total = _int(summary.get("input_geometry_draw_count"))
+        already_exact = _int(summary.get("already_exact_scene_resource_draw_count"))
+        repeated = _int(summary.get("repeated_instance_input_draw_count"))
+        resolved = _int(summary.get("resolved_repeated_instance_draw_count"))
+        unresolved = _int(summary.get("unresolved_repeated_instance_draw_count"))
+        upstream = _int(summary.get("upstream_non_instance_ambiguity_count"))
+        remaining = _int(summary.get("remaining_scene_draw_ambiguity_count"))
+        resolution_counts = summary.get("resolution_status_counts")
+        resolution_counts = resolution_counts if isinstance(resolution_counts, Mapping) else {}
+        incomplete = _int(resolution_counts.get("blocked-incomplete-scene-world-matrices"))
+        missing_transform = _int(resolution_counts.get("draw-local-transform-observation-missing"))
+        equal_matrices = _int(resolution_counts.get("ambiguous-equal-or-multiple-world-matrix-matches"))
+
+        if total == 0:
+            if scene_row.get("status") != "closed-offline-exact":
+                scene_row.update({
+                    "status": "no-active-blocker",
+                    "confidence": "deterministic-report-audit",
+                    "evidence": ["Phase 625 geometry draw set=0"],
+                    "missing_observation": None,
+                    "existing_next_step": None,
+                })
+        elif repeated_instance_transforms.get("ready") is True and remaining == 0:
+            scene_row.update({
+                "status": "closed-offline-exact",
+                "confidence": "exact-same-draw-f32-world-matrix-instance-evidence",
+                "evidence": [
+                    f"Phase 625 geometry draws={total}",
+                    f"already exact unique scene resource draws={already_exact}",
+                    f"repeated instance draws={repeated}",
+                    f"repeated instances resolved by exact float32 world matrices={resolved}",
+                ],
+                "missing_observation": None,
+                "existing_next_step": None,
+            })
+        else:
+            evidence = [
+                f"Phase 625 geometry draws={total}",
+                f"already exact unique scene resource draws={already_exact}",
+                f"repeated instance draws={repeated}",
+                f"repeated instances resolved by exact float32 world matrices={resolved}",
+                f"unresolved repeated instances={unresolved}",
+                f"upstream non-instance ambiguity={upstream}",
+                f"remaining scene draw ambiguity={remaining}",
+            ]
+            if incomplete:
+                evidence.append(f"incomplete scene world-matrix candidate sets={incomplete}")
+            if missing_transform:
+                evidence.append(f"same-draw transform observations missing from pipeline={missing_transform}")
+            if equal_matrices:
+                evidence.append(f"equal/multiple exact world-matrix matches={equal_matrices}")
+
+            if upstream:
+                next_step = (
+                    "resolve the Phase 624 non-instance blockers first; Phase 625 intentionally touches only repeated placements of already-proven resources"
+                )
+            elif incomplete:
+                next_step = (
+                    "complete source-backed world-matrix materialization/root consensus for every surviving repeated scene candidate, then rerun exact float32 transform matching; "
+                    "a missing candidate matrix is not a contradiction and VB/IB payload cannot repair it"
+                )
+            elif equal_matrices:
+                next_step = (
+                    "join source-backed placement spatial/partition/visibility evidence for the equal-transform candidates; "
+                    "VB/IB payload cannot distinguish placements of the same exact mesh and equal world matrix"
+                )
+            elif missing_transform:
+                next_step = (
+                    "exhaust the existing raw/draw-local D3D9 constant state for the exact Phase 624 event before treating transform state as absent; "
+                    "do not request geometry buffer payload"
+                )
+            else:
+                next_step = (
+                    "continue exact source-backed scene placement/spatial correlation for the unresolved repeated instances; do not rank and do not request VB/IB payload"
+                )
+            scene_row.update({
+                "status": "ambiguous",
+                "confidence": "deterministic-report-audit",
+                "evidence": evidence,
+                "missing_observation": None,
+                "existing_next_step": next_step,
+            })
+
     absent = [row for row in requirements if row.get("status") == "absent-in-capture"]
     tooling = [
         row for row in requirements
@@ -333,6 +426,7 @@ def build_renderer_frontier_audit(
             "phase622_applied": material_textures is not None,
             "phase623_applied": scene_geometry is not None,
             "phase624_applied": runtime_resource_draw is not None,
+            "phase625_applied": repeated_instance_transforms is not None,
         },
         "requirements": requirements,
         "existing_data_requiring_tooling": [
@@ -359,6 +453,7 @@ def build_renderer_frontier_audit(
             "material_textures": material_textures.get("format") if material_textures else None,
             "scene_geometry": scene_geometry.get("format") if scene_geometry else None,
             "runtime_resource_draw": runtime_resource_draw.get("format") if runtime_resource_draw else None,
+            "repeated_instance_transforms": repeated_instance_transforms.get("format") if repeated_instance_transforms else None,
         },
         "policy": {
             **dict(base.get("policy") or {}),
@@ -369,6 +464,10 @@ def build_renderer_frontier_audit(
             "source_backed_lod_family_is_selected_lod": False,
             "same_event_runtime_path_sha_is_resource_draw_identity": True,
             "resource_draw_identity_is_repeated_instance_identity": False,
+            "exact_f32_world_matrix_is_instance_witness": True,
+            "incomplete_world_matrix_is_contradiction": False,
+            "equal_world_matrices_select_instance": False,
+            "buffer_payload_relevant_to_repeated_instance": False,
         },
     }
     return result
@@ -392,6 +491,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--material-textures")
     parser.add_argument("--scene-geometry")
     parser.add_argument("--runtime-resource-draw")
+    parser.add_argument("--repeated-instance-transforms")
     args = parser.parse_args(argv)
     base = _load(args.base_audit)
     assert base is not None
@@ -402,6 +502,7 @@ def main(argv: list[str] | None = None) -> int:
         material_textures=_load(args.material_textures),
         scene_geometry=_load(args.scene_geometry),
         runtime_resource_draw=_load(args.runtime_resource_draw),
+        repeated_instance_transforms=_load(args.repeated_instance_transforms),
     )
     Path(args.output).write_text(
         json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
