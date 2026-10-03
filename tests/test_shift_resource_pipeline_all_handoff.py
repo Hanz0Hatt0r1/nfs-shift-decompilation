@@ -22,6 +22,8 @@ def _args(tmp_path: Path, *, require: bool = False) -> argparse.Namespace:
         track="Silverstone_Era3_GrandPrix",
         vehicle="BMW_M3_E36",
         scene_set="out/runtime-proven-scene",
+        participant_runtime_evidence=None,
+        require_participant_runtime_identity=False,
         require_native_resource_handoff=require,
         decode_limit_per_archive=0,
     )
@@ -125,6 +127,9 @@ def test_all_automatically_builds_native_resource_handoff(monkeypatch, tmp_path)
     assert persisted["inputs"]["runtime_proven_scene_set"] == str(
         Path(args.scene_set).resolve()
     )
+    assert persisted["inputs"]["participant_runtime_evidence_source"] is None
+    assert persisted["participant_runtime_identity_evaluated"] is False
+    assert persisted["participant_runtime_identity_ready"] is False
     assert persisted["boundary"]["bootstrap_corpus_validation_automated"] is True
     assert (
         persisted["boundary"]["bootstrap_corpus_validation_is_selected_target_admission"]
@@ -134,6 +139,7 @@ def test_all_automatically_builds_native_resource_handoff(monkeypatch, tmp_path)
     assert persisted["boundary"]["native_resource_handoff_automated"] is True
     assert persisted["boundary"]["native_resource_handoff_is_runtime_execution"] is False
     assert persisted["boundary"]["runtime_proven_scene_set_recorded"] is True
+    assert persisted["boundary"]["participant_runtime_evidence_transport_automated"] is False
     assert persisted["artifacts"]["bootstrap_corpus_validation"].endswith(
         "bootstrap_corpus_validation.json"
     )
@@ -261,4 +267,6 @@ def test_all_parser_exposes_scene_set_and_strict_handoff_flag():
         "--require-native-resource-handoff",
     ])
     assert args.scene_set == "out/native-scene-vulkan"
+    assert args.participant_runtime_evidence is None
+    assert args.require_participant_runtime_identity is False
     assert args.require_native_resource_handoff is True
