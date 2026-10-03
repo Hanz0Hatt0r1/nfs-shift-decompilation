@@ -26,4 +26,7 @@ def test_derived_reset_delegates_to_base_reset():
 
 def test_derived_delete_calls_cleanup_only_when_flag_is_set():
     result = describe_derived_camera_view_delete()
-    assert result["actions"][1]["condition"] == "param_1 & 1"
+    assert result["actions"][1] == {
+        "action": "FUN_00886930",
+        "condition": "param_1 & 1",
+    }
