@@ -3,6 +3,21 @@
 The project keeps archive inventory, raw payload parity, content-addressed reuse,
 decoded physics profiling, and shader-corpus profiling as separate evidence layers.
 
+## Offline resource pipeline
+
+Use the fail-closed high-level resource pipeline to turn one or more retail BFFs,
+ZIP corpora, or BFF directories into a unified catalog, semantic dependency graph,
+coverage report, scene/vehicle bootstrap, typed resource closure, and explicit native
+runtime admission record:
+
+`python tools/shift_resource_pipeline.py all Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/offline-pipeline --track Silverstone_Era3_GrandPrix --vehicle Ford_Mustang_2010`
+
+Inventory-only and parser-validation modes are available through the `catalog`
+subcommand. Dependency admission uses exact semantic parser references only;
+string-scan candidates cannot satisfy the gate, missing resources remain explicit,
+and a resource-ready bootstrap does not bypass the existing render/physics/runtime
+provenance gates. See `docs/OFFLINE_RESOURCE_PIPELINE.md`.
+
 ## Vehicle corpus inventory
 
 `python tools/audit_vehicle_bff_corpus.py Vehicles.zip -o vehicle_corpus.json`
