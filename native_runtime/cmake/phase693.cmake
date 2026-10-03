@@ -15,3 +15,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_fun_00770e80_contact_outer_provider_chain
     COMMAND shift_runtime_fun_00770e80_contact_outer_provider_chain_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase694.cmake)
