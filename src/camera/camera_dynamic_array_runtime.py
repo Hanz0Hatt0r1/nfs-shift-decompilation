@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
+from memory_pool_runtime import release_helper_action
+
 FORMAT = "SHIFT.CameraDynamicArrayRuntime/1"
 
 
@@ -55,10 +57,7 @@ def grow_uint16_array(
                 "action": "copy allocator bookkeeping",
                 "new_count": new_cap,
             },
-            {
-                "action": "FUN_00886930",
-                "release_old_storage": True,
-            },
+            release_helper_action(release_old_storage=True),
         ],
         "evidence": {
             "function": "FUN_00813080",
@@ -133,7 +132,7 @@ def grow_dword11_array(
                 "dwords_per_element": 11,
             },
             {"action": "copy allocator bookkeeping", "new_count": new_cap},
-            {"action": "FUN_00886930", "release_old_storage": True},
+            release_helper_action(release_old_storage=True),
         ],
         "evidence": {
             "function": "FUN_008166b0",

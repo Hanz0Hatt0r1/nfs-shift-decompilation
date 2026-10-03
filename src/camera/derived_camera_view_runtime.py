@@ -5,6 +5,8 @@ Recovered from FUN_0081b0c0, FUN_0081b100 and FUN_0081b140.
 
 from __future__ import annotations
 
+from memory_pool_runtime import release_helper_action
+
 FORMAT = "SHIFT.DerivedCameraViewRuntime/1"
 
 
@@ -91,10 +93,7 @@ def describe_derived_camera_view_delete() -> dict:
             {
                 "action": "FUN_0081b100",
             },
-            {
-                "action": "FUN_00886930",
-                "condition": "param_1 & 1",
-            },
+            release_helper_action(condition="param_1 & 1"),
         ],
         "evidence": {
             "function": "FUN_0081b140",
