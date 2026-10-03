@@ -16,11 +16,11 @@ python3 tools/shift_live_dump/build_class_evidence_pipeline.py \
 ```
 
 Optional `--fail-on-ghidra-mismatch` makes the command return non-zero when the
-Ghidra registration cross-check or a factory-to-initializer call cross-check
-contains a mismatch, or when a lifecycle-ready scorecard row cannot be resolved
-back to both expected functions in the same Ghidra export. The default is
-report-only because a mismatch is evidence to inspect, not something the
-pipeline should silently repair.
+Ghidra registration cross-check, a factory-to-initializer call cross-check, or a
+source memory-wrapper caller edge disagrees with Ghidra, or when a
+lifecycle-ready scorecard row cannot be resolved back to both expected functions
+in the same Ghidra export. The default is report-only because a mismatch is
+evidence to inspect, not something the pipeline should silently repair.
 
 ## Artifacts
 
@@ -58,6 +58,10 @@ The output directory contains:
 - `memory_wrapper_family.json` — `SHIFT-MEMORY-WRAPPER-FAMILY/1`, preserving
   calling conventions, physical register/stack parameter storage and direct
   backend calls for the five-function retail memory-wrapper cluster;
+- `memory_wrapper_callsites.json` —
+  `SHIFT-MEMORY-WRAPPER-CALLSITE-EVIDENCE/1`, preserving every direct source
+  call to the five wrappers, raw argument expressions, literal positions and
+  independent Ghidra caller-edge checks;
 - `lifecycle_investigation_targets.json` —
   `SHIFT.LifecycleInvestigationTargets/1`, containing one-hop Ghidra context
   around lifecycle-ready registration and initializer anchors;
@@ -71,8 +75,9 @@ structural-ready count, lifecycle-investigation-ready count, source lifecycle
 completion/base-transition/teardown-candidate counts, deleting-wrapper candidate
 and confirmed-shape counts, paired-lifetime/Ghidra-paired/helper-pair counts,
 helper-family recurrence/cross-check counts, diagnostic-backed memory-pool path
-counts, memory-wrapper ABI-shape counts, lifecycle target slice completeness,
-scorecard tiers and next-evidence blocker totals.
+counts, memory-wrapper ABI-shape counts, wrapper call-site/caller/parser/Ghidra
+cross-check counts, lifecycle target slice completeness, scorecard tiers and
+next-evidence blocker totals.
 
 ## Evidence boundary
 
@@ -104,6 +109,10 @@ underlying tools:
 - the memory-wrapper family uses calling conventions and physical register/stack
   storage as ABI-shape evidence, but treats Ghidra semantic parameter types as
   untrusted audit metadata and does not assign argument roles;
+- wrapper call-site evidence preserves raw source argument expressions and
+  literal positions and independently cross-checks the caller edge, but repeated
+  literals still do not prove names such as size, alignment, pool selector,
+  flags or delete kind;
 - `lifecycle-investigation-ready` selects good targets for the next reverse-
   engineering pass but does not prove C++ constructor semantics, ownership,
   destructor order or gameplay behavior;
