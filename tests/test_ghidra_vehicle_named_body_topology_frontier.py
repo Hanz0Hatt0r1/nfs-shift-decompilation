@@ -170,7 +170,7 @@ def test_vehicle_BODY_topology_drift_fails_closed(tmp_path):
     value = json.loads(body.read_text())
     value["vehicle_topology"]["component_slots"]["wheel_body_pointer_absolute"][0] = 0x818
     _write(body, value)
-    with pytest.raises(ValueError, match="topology drift"):
+    with pytest.raises(ValueError, match="wheel BODY absolute fields drift"):
         module.build_vehicle_named_body_topology_frontier(identity, body, manifest)
 
 
@@ -181,5 +181,5 @@ def test_upstream_BODY_preselection_is_rejected(tmp_path):
     value["handoff"]["vehicle_BODY_selection_ready"] = True
     value["handoff"]["selected_BODY_index"] = 0
     _write(identity, value)
-    with pytest.raises(ValueError, match="already selects BODY"):
+    with pytest.raises(ValueError, match="preselects a vehicle BODY"):
         module.build_vehicle_named_body_topology_frontier(identity, body, manifest)
