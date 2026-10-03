@@ -3,7 +3,8 @@
 
 The PE image is parsed as data only. It is never executed. The resulting
 SHIFT.PEImageEvidence/1 report is persisted with source SHA-256 provenance and
-then passed to the unchanged Phase 631 hybrid production runner.
+then passed to the hybrid production runner with Phase 633 base-audit
+regeneration enabled.
 """
 from __future__ import annotations
 
@@ -128,6 +129,7 @@ def run_pe_image_hybrid_production(
             corpus=corpus,
             runtime_shader_targets=runtime_shader_targets,
             max_json_bytes=max_json_bytes,
+            regenerate_base_audit=True,
         )
         blockers.extend(
             f"hybrid:{reason}"
@@ -149,6 +151,7 @@ def run_pe_image_hybrid_production(
         "summary": {
             "pe_image_present": image_record["present"],
             "pe_evidence_generated": pe_report is not None,
+            "base_audit_regeneration_requested": True,
             "hybrid_started": hybrid_started,
             "hybrid_ready": hybrid_ready,
             "blocking_reason_count": len(unique_blockers),
@@ -166,9 +169,26 @@ def run_pe_image_hybrid_production(
             "source_pe_image_sha256": image_record.get("sha256"),
         },
         "hybrid": {
-            "format": hybrid_manifest.get("format") if isinstance(hybrid_manifest, Mapping) else None,
-            "status": hybrid_manifest.get("status") if isinstance(hybrid_manifest, Mapping) else None,
-            "summary": hybrid_manifest.get("summary") if isinstance(hybrid_manifest, Mapping) else None,
+            "format": (
+                hybrid_manifest.get("format")
+                if isinstance(hybrid_manifest, Mapping)
+                else None
+            ),
+            "status": (
+                hybrid_manifest.get("status")
+                if isinstance(hybrid_manifest, Mapping)
+                else None
+            ),
+            "summary": (
+                hybrid_manifest.get("summary")
+                if isinstance(hybrid_manifest, Mapping)
+                else None
+            ),
+            "base_audit": (
+                hybrid_manifest.get("base_audit")
+                if isinstance(hybrid_manifest, Mapping)
+                else None
+            ),
             "renderer_frontier": (
                 (hybrid_manifest.get("production") or {}).get("renderer_frontier")
                 if isinstance(hybrid_manifest, Mapping)
@@ -185,9 +205,15 @@ def run_pe_image_hybrid_production(
         "boundary": {
             "pe_image_is_read_as_static_data_only": True,
             "pe_image_is_executed": False,
-            "pe_evidence_builder": "d3d9_pe_evidence.analyze_d3d9_pe_image_file",
-            "usage_map_numeric_source": "SHIFT.PEImageEvidence/1:decoded_tables.usage",
+            "pe_evidence_builder": (
+                "d3d9_pe_evidence.analyze_d3d9_pe_image_file"
+            ),
+            "usage_map_numeric_source": (
+                "SHIFT.PEImageEvidence/1:decoded_tables.usage"
+            ),
             "usage_mapping_allows_inference": False,
+            "bundle_base_audit_is_selection_authority": False,
+            "bundle_base_audit_is_canonical_crosscheck_only": True,
             "hybrid_proof_semantics_changed": False,
             "original_game_execution_required": False,
             "new_capture_required": False,
