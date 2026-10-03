@@ -93,6 +93,8 @@ def build_scene_root_ir_join(
             blockers.append("catalog-root-selected-archive-name-mismatch")
         if str(catalog_row.get("extension") or "").lower() != ".sgb":
             blockers.append("catalog-root-not-sgb")
+        if not str(catalog_row.get("decoded_sha256") or "").strip():
+            blockers.append("catalog-sgb-root-decoded-sha256-missing")
 
     root = Path(ir_root)
     manifest_path = root / "manifest.json"
@@ -212,6 +214,7 @@ def build_scene_root_ir_join(
         "boundary": {
             "bootstrap_root_identity": "selected archive id + exact catalog resource id",
             "ir_identity": "archive filename + entry index + normalized path + decoded SHA-256",
+            "catalog_decoded_sha256_required": True,
             "raw_payload_sha256_revalidated": True,
             "basename_fallback": False,
             "similar_path_fallback": False,
