@@ -162,6 +162,42 @@ shift::runtime::physics::PreparedPostSolveBodyProjection make_projection(
     return projection;
 }
 
+shift::runtime::physics::PreparedBuiltinSolverFrame make_solver_topology(
+    const shift::runtime::physics::PreparedGeneratedBodyConstraintFrame& source,
+    const shift::runtime::physics::PreparedConstraintSampleRelationFrame& relations) {
+
+    using namespace shift::runtime::physics;
+    const auto refreshed =
+        refresh_generated_body_constraint_frame(source, relations);
+    const auto generated =
+        execute_prepared_generated_body_constraint_frame(refreshed.frame);
+
+    PreparedBuiltinSolverFrame frame{};
+    frame.matrix.assign(6, std::vector<double>(6, 0.0));
+    for (std::size_t row = 0; row < 6; ++row) {
+        for (std::size_t column = 0; column < 6; ++column) {
+            frame.matrix[row][column] =
+                generated.solver_matrix[row * 6 + column];
+        }
+    }
+    frame.rhs = generated.solver_vector;
+    frame.reset_nodes = {0, 1, 2, 3, 4, 5};
+    auto graph = build_dense_solver_graph(6);
+    frame.forward_records = std::move(graph.first);
+    frame.reverse_records = std::move(graph.second);
+    frame.expected_solution.assign(6, 0.0);
+    return frame;
+}
+
+shift::runtime::physics::PreparedConstraintRelationResetFrame make_reset_state() {
+    using namespace shift::runtime::physics;
+    PreparedConstraintRelationResetFrame reset{};
+    reset.joint_state_bit0 = {1u};
+    reset.hinge_state_bit0 = {1u};
+    reset.bar_state_bit0 = {1u};
+    return reset;
+}
+
 }  // namespace
 
 int main() {
@@ -218,6 +254,78 @@ int main() {
             }
         }
 
+        const auto solver_topology =
+            make_solver_topology(source, relations);
+        const auto reset_state = make_reset_state();
+        const auto first_step = execute_body_state_feedback_step(
+            source,
+            relations,
+            reset_state,
+            solver_topology,
+            projection,
+            projection.bodies);
+        if (first_step.reset_call_count != 6 ||
+            first_step.reset_node_count != 6 ||
+            first_step.max_matrix_anchor_error != 0.0 ||
+            first_step.solved_vector.size() != 6 ||
+            first_step.bodies.size() != 2) {
+            throw std::runtime_error(
+                "dynamic BODY feedback step did not close full solver domain");
+        }
+        for (double value : first_step.solved_vector) {
+            if (std::abs(value) > 1e-12) {
+                throw std::runtime_error(
+                    "all-reset dynamic BODY feedback solution must be zero");
+            }
+        }
+
+        auto changed_bodies = projection.bodies;
+        changed_bodies[0].angular[1] += 7.0;
+        changed_bodies[1].linear[0] -= 3.0;
+        const auto changed_step = execute_body_state_feedback_step(
+            source,
+            relations,
+            reset_state,
+            solver_topology,
+            projection,
+            changed_bodies);
+        if (changed_step.max_matrix_anchor_error != 0.0) {
+            throw std::runtime_error(
+                "BODY state feedback unexpectedly changed solver matrix");
+        }
+        for (std::size_t body = 0; body < changed_bodies.size(); ++body) {
+            for (std::size_t component = 0; component < 3; ++component) {
+                if (std::abs(
+                        changed_step.bodies[body].angular[component] -
+                        changed_bodies[body].angular[component]) > 1e-12 ||
+                    std::abs(
+                        changed_step.bodies[body].linear[component] -
+                        changed_bodies[body].linear[component]) > 1e-12) {
+                    throw std::runtime_error(
+                        "zero solved vector changed persistent BODY state");
+                }
+            }
+        }
+
+        auto bad_topology = solver_topology;
+        bad_topology.matrix[0][0] += 0.5;
+        bool matrix_rejected = false;
+        try {
+            (void)execute_body_state_feedback_step(
+                source,
+                relations,
+                reset_state,
+                bad_topology,
+                projection,
+                projection.bodies);
+        } catch (const std::runtime_error&) {
+            matrix_rejected = true;
+        }
+        if (!matrix_rejected) {
+            throw std::runtime_error(
+                "dynamic BODY feedback matrix-anchor mismatch was not rejected");
+        }
+
         auto bad_projection = projection;
         bad_projection.joints[0].positive_lever_arm[0] += 1.0;
         bool rejected = false;
@@ -233,11 +341,14 @@ int main() {
         }
 
         std::cout
-            << "{\"format\":\"SHIFT.NativeBodyStateFeedbackContract/1\","
+            << "{\"format\":\"SHIFT.NativeBodyStateFeedbackStep/1\","
             << "\"ready\":true,"
             << "\"body_count\":" << joined.body_count << ","
+            << "\"reset_node_count\":" << first_step.reset_node_count << ","
             << "\"max_seed_error\":" << joined.max_seed_error << ","
-            << "\"max_row_error\":" << joined.max_row_error << "}\n";
+            << "\"max_row_error\":" << joined.max_row_error << ","
+            << "\"max_matrix_anchor_error\":"
+            << first_step.max_matrix_anchor_error << "}\n";
         return 0;
     } catch (const std::exception& exc) {
         std::cerr << exc.what() << "\n";
