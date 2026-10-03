@@ -1,0 +1,84 @@
+{
+  "format": "SHIFT.Fun007afdd0SourceEvidence/1",
+  "source": {
+    "path": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+    "function": "FUN_007afdd0",
+    "function_line": 810824,
+    "callsite_function": "FUN_007bab70",
+    "callsite_line": 819073
+  },
+  "signature": {
+    "receiver": "void* -> contiguous 9 x f32 basis",
+    "argument": "double* -> 3 x f64 rotation increment"
+  },
+  "zero_path": {
+    "expression": "f32(ext80(z*z + x*x + y*y)) != 0.0f",
+    "zero_is_noop": true
+  },
+  "normalization": {
+    "sqrt_helper": "__CIsqrt",
+    "sqrt_result_storage": "f32 cast from float10",
+    "inverse_magnitude_storage": "f32",
+    "input_component_cast_before_axis_multiply": "f64 -> f32",
+    "normalized_axis_storage": "f32"
+  },
+  "trigonometry": {
+    "sine_helper": "FUN_00900c40",
+    "sine_role_evidence": [
+      "FUN_007afdd0 antisymmetric coefficient placement",
+      "FUN_00900c40 fast path -> FUN_0090a360 -> FUN_0090a37e small-input return approximately x"
+    ],
+    "cosine_helper": "FUN_00900b10",
+    "cosine_role_evidence": [
+      "FUN_007afdd0 uses 1.0 - helper result in Rodrigues-shaped coefficients",
+      "FUN_00900b10 fast path -> FUN_00909df0 -> FUN_00909e0e small-input return approximately 1"
+    ],
+    "helper_result_storage": "float10 -> f32"
+  },
+  "rotation_coefficients": {
+    "axis_names": ["x", "y", "z"],
+    "scalar_names": ["s", "c"],
+    "layout": [
+      "c + (1-c)*x*x",
+      "(1-c)*x*y - z*s",
+      "(1-c)*x*z + y*s",
+      "(1-c)*x*y + z*s",
+      "c + (1-c)*y*y",
+      "(1-c)*y*z - x*s",
+      "(1-c)*x*z - y*s",
+      "(1-c)*y*z + x*s",
+      "c + (1-c)*z*z"
+    ],
+    "storage": "f32 source temporaries"
+  },
+  "basis": {
+    "element_type": "f32",
+    "element_count": 9,
+    "byte_count": 36,
+    "offsets": [0, 4, 8, 12, 16, 20, 24, 28, 32],
+    "in_place_read_then_write_stripes": [
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8]
+    ]
+  },
+  "precision_boundary": {
+    "source_algebra_ready": true,
+    "machine_precision_ready": false,
+    "phase680_report_required": "SHIFT.Fun007afdd0BasisRotationStatic/1",
+    "unresolved": [
+      "exact x87 stack value passed to each CRT trig helper",
+      "x87 excess precision retained inside compound float expressions",
+      "ambient x87 control word and MXCSR assumptions",
+      "instruction-level load/store ordering and alias proof"
+    ]
+  },
+  "claims": {
+    "host_sqrt_used_by_native_core": false,
+    "host_sin_used_by_native_core": false,
+    "host_cos_used_by_native_core": false,
+    "production_basis_callback_replaced": false,
+    "complete_FUN_007afdd0_machine_parity": false
+  }
+}
