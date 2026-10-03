@@ -169,6 +169,25 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         fake_helper_families,
     )
 
+    def fake_memory_semantics(families_path, ghidra_export):
+        families = json.loads(families_path.read_text(encoding="utf-8"))
+        assert families["helper_family_count"] == 3
+        assert ghidra_export == tmp_path / "ghidra"
+        return {
+            "format": "SHIFT-MEMORY-HELPER-SEMANTICS/1",
+            "family_count": 3,
+            "allocation_path_family_count": 2,
+            "free_path_family_count": 1,
+            "diagnostic_backed_pool_lifetime_family_count": 1,
+            "families": [],
+        }
+
+    monkeypatch.setattr(
+        module,
+        "_build_memory_helper_semantics",
+        fake_memory_semantics,
+    )
+
     def fake_lifecycle(scorecard_path, ghidra_export):
         payload = json.loads(scorecard_path.read_text(encoding="utf-8"))
         assert payload["tier_counts"]["lifecycle-investigation-ready"] == 18
@@ -213,6 +232,9 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
     assert report["counts"]["lifetime_helper_families"] == 3
     assert report["counts"]["recurrent_lifetime_helper_pairs"] == 2
     assert report["counts"]["crosschecked_recurrent_helper_family_candidates"] == 1
+    assert report["counts"]["pool_allocation_path_families"] == 2
+    assert report["counts"]["pool_free_path_families"] == 1
+    assert report["counts"]["diagnostic_backed_pool_lifetime_families"] == 1
     assert report["counts"]["lifecycle_target_slices"] == 18
     assert report["counts"]["lifecycle_complete_slices"] == 17
     assert report["counts"]["lifecycle_incomplete_slices"] == 1
@@ -229,6 +251,7 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
         "deleting_wrapper_evidence.json",
         "class_lifetime_pair_evidence.json",
         "lifetime_helper_families.json",
+        "memory_helper_semantics.json",
         "lifecycle_investigation_targets.json",
         "pipeline_manifest.json",
     }
@@ -236,8 +259,10 @@ def test_pipeline_writes_joined_artifacts(tmp_path, monkeypatch):
 
     saved = json.loads((out / "pipeline_manifest.json").read_text(encoding="utf-8"))
     assert saved["counts"] == report["counts"]
+    assert saved["scope"]["pool_memory_path_diagnostics_used"] is True
     assert saved["scope"]["allocation_helper_semantics_proven"] is False
     assert saved["scope"]["shared_allocator_family_proven"] is False
+    assert saved["scope"]["allocator_abi_proven"] is False
     assert saved["scope"]["constructor_semantics_proven"] is False
     assert saved["scope"]["destructor_semantics_proven"] is False
     assert saved["scope"]["deleting_destructor_semantics_proven"] is False

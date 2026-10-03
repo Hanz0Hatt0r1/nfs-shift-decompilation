@@ -52,6 +52,9 @@ The output directory contains:
   `SHIFT-CLASS-LIFETIME-HELPER-FAMILIES/1`, grouping recurring unambiguous
   create/release helper pairs and attaching their Ghidra function/callgraph
   context;
+- `memory_helper_semantics.json` — `SHIFT-MEMORY-HELPER-SEMANTICS/1`, storing
+  bounded direct-call paths from helper families to exact retail pool-allocation
+  and pool-free diagnostic strings;
 - `lifecycle_investigation_targets.json` —
   `SHIFT.LifecycleInvestigationTargets/1`, containing one-hop Ghidra context
   around lifecycle-ready registration and initializer anchors;
@@ -64,8 +67,9 @@ create-wrapper/value-flow counts and distinct predecessor helpers,
 structural-ready count, lifecycle-investigation-ready count, source lifecycle
 completion/base-transition/teardown-candidate counts, deleting-wrapper candidate
 and confirmed-shape counts, paired-lifetime/Ghidra-paired/helper-pair counts,
-helper-family recurrence/cross-check counts, lifecycle target slice completeness,
-scorecard tiers and next-evidence blocker totals.
+helper-family recurrence/cross-check counts, diagnostic-backed memory-pool path
+counts, lifecycle target slice completeness, scorecard tiers and next-evidence
+blocker totals.
 
 ## Evidence boundary
 
@@ -90,8 +94,10 @@ underlying tools:
   the same descriptor; it does not prove allocator ABI, object size, ownership,
   constructor identity or destructor identity;
 - recurrence of the same create/release helper pair across multiple classes is
-  helper-family discovery evidence only; even with Ghidra identity/callgraph
-  confirmation it does not prove allocator/free ABI or a shared heap arena;
+  helper-family discovery evidence only;
+- a bounded path to the exact retail allocation/free pool diagnostics proves
+  participation in those memory-pool paths, but still does not establish
+  `operator new`/`operator delete` ABI, argument semantics or ownership;
 - `lifecycle-investigation-ready` selects good targets for the next reverse-
   engineering pass but does not prove C++ constructor semantics, ownership,
   destructor order or gameplay behavior;
