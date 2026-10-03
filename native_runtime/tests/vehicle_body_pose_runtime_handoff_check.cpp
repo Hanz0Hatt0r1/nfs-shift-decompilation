@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -16,6 +17,22 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
+}
+
+bool snapshots_equal(
+    const std::vector<PersistentBodyPoseSnapshot>& lhs,
+    const std::vector<PersistentBodyPoseSnapshot>& rhs) {
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+    for (std::size_t index = 0u; index < lhs.size(); ++index) {
+        if (lhs[index].body_index != rhs[index].body_index ||
+            lhs[index].origin != rhs[index].origin ||
+            lhs[index].basis != rhs[index].basis) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }  // namespace
@@ -88,7 +105,7 @@ int main() {
         require(handoff.pose.basis == committed_snapshots[1].basis,
                 "Phase 699 changed selected BODY basis");
         require(runtime.outer_update.body_bytes == committed_bytes &&
-                runtime.outer_update.body_pose_snapshots == committed_snapshots &&
+                snapshots_equal(runtime.outer_update.body_pose_snapshots, committed_snapshots) &&
                 runtime.outer_update.body_pose_snapshot_generation == committed_generation,
                 "Phase 699 read-only handoff mutated persistent runtime state");
 
