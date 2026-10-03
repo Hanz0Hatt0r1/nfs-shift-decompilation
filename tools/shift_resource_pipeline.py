@@ -120,6 +120,8 @@ def _augment_all_report_with_native_handoff(
     report: dict,
     handoff: dict,
     output_dir: str | Path,
+    *,
+    scene_set_dir: str | Path | None = None,
 ) -> dict:
     """Persist one-command resource/handoff status without claiming runtime readiness."""
     out = Path(output_dir)
@@ -129,6 +131,11 @@ def _augment_all_report_with_native_handoff(
     combined["native_resource_handoff_blocking_reasons"] = list(
         handoff.get("blocking_reasons") or []
     )
+    inputs = dict(report.get("inputs") or {})
+    inputs["runtime_proven_scene_set"] = (
+        str(Path(scene_set_dir).resolve()) if scene_set_dir is not None else None
+    )
+    combined["inputs"] = inputs
     artifacts = dict(report.get("artifacts") or {})
     artifacts["native_resource_handoff"] = str(
         out / "native-handoff" / "native_resource_handoff.json"
@@ -140,6 +147,7 @@ def _augment_all_report_with_native_handoff(
     boundary = dict(report.get("boundary") or {})
     boundary["native_resource_handoff_automated"] = True
     boundary["native_resource_handoff_is_runtime_execution"] = False
+    boundary["runtime_proven_scene_set_recorded"] = scene_set_dir is not None
     combined["boundary"] = boundary
     _write_json(out / "pipeline_run.json", combined)
     return combined
@@ -161,7 +169,12 @@ def cmd_all(args: argparse.Namespace) -> int:
         out / "native-handoff",
         scene_set_dir=args.scene_set,
     )
-    report = _augment_all_report_with_native_handoff(report, handoff, out)
+    report = _augment_all_report_with_native_handoff(
+        report,
+        handoff,
+        out,
+        scene_set_dir=args.scene_set,
+    )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     if not report["resource_bootstrap_ready"]:
         return 2

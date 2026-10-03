@@ -2,24 +2,26 @@
 """Validate and launch a complete native SHIFT vertical-slice runtime profile.
 
 The runner does not invent retail semantics. It composes already-proven
-native_runtime inputs into one fail-closed launch contract. Render/camera/
-participant inputs remain explicit CLI arguments; the admitted provider-absent
-BODY feedback packets are transported through a dedicated runtime scheduler
-environment so the legacy solver replay CLI path is not executed in parallel.
+native_runtime inputs into one fail-closed launch contract. A Process D offline
+resource pipeline may replace only the explicit scene-set and physics-manifest
+paths; camera, participant and BODY-feedback evidence remain mandatory.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import struct
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 PROFILE_FORMAT = "SHIFT.NativeVerticalSliceProfile/1"
 PLAN_FORMAT = "SHIFT.NativeVerticalSliceLaunchPlan/1"
+PIPELINE_FORMAT = "SHIFT.OfflineResourcePipelineRun/1"
+RESOURCE_HANDOFF_FORMAT = "SHIFT.OfflineNativeResourceHandoff/1"
 INTERACTIVE_FRAME_LIMIT = 0x7FFFFFFF
 
 JSON_INPUTS: dict[str, tuple[str, bool]] = {
@@ -102,6 +104,20 @@ def _resolve_member(root: Path, raw: Any, *, label: str) -> Path:
     return candidate
 
 
+def _resolve_recorded_member(root: Path, raw: Any, *, label: str) -> Path:
+    """Resolve a generated artifact path while still confining it to workspace."""
+    text = str(raw or "").strip()
+    if not text:
+        raise ProfileError(f"{label} is missing")
+    value = Path(text)
+    candidate = value.resolve() if value.is_absolute() else (root / value).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ProfileError(f"{label} escapes workspace_root: {text}") from exc
+    return candidate
+
+
 def _require_json_contract(
     path: Path,
     *,
@@ -151,7 +167,7 @@ def _validate_scene_set(path: Path) -> dict[str, Any]:
     if not path.is_dir():
         raise ProfileError(f"scene_set directory not found: {path}")
     manifest = _require_json_contract(
-        path / "bundle_set.json",
+        path / "bundle_set_manifest.json",
         expected_format=SCENE_FORMAT,
         require_ready=False,
         label="scene set manifest",
@@ -167,6 +183,97 @@ def _validate_scene_set(path: Path) -> dict[str, Any]:
         "prepare_format": prepare["format"],
         "ready": True,
     }
+
+
+def _sha256_file(path: Path) -> str:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except FileNotFoundError as exc:
+        raise ProfileError(f"resource pipeline artifact not found: {path}") from exc
+
+
+def _resolve_resource_pipeline_inputs(
+    workspace_root: Path,
+    raw: Any,
+) -> tuple[dict[str, Path], dict[str, Any]]:
+    pipeline_root = _resolve_member(
+        workspace_root,
+        raw,
+        label="resource_pipeline",
+    )
+    if not pipeline_root.is_dir():
+        raise ProfileError(f"resource_pipeline directory not found: {pipeline_root}")
+
+    pipeline = _require_json_contract(
+        pipeline_root / "pipeline_run.json",
+        expected_format=PIPELINE_FORMAT,
+        require_ready=False,
+        label="resource pipeline run",
+    )
+    if pipeline.get("native_resource_handoff_ready") is not True:
+        reasons = pipeline.get("native_resource_handoff_blocking_reasons") or []
+        raise ProfileError(
+            "resource pipeline native resource handoff is not ready: "
+            + ", ".join(str(item) for item in reasons)
+        )
+
+    handoff_path = pipeline_root / "native-handoff" / "native_resource_handoff.json"
+    handoff = _require_json_contract(
+        handoff_path,
+        expected_format=RESOURCE_HANDOFF_FORMAT,
+        require_ready=True,
+        label="native resource handoff",
+    )
+    if handoff.get("resource_inputs_ready") is not True:
+        raise ProfileError("native resource handoff resource inputs are not ready")
+
+    inputs = pipeline.get("inputs") or {}
+    if not isinstance(inputs, Mapping):
+        raise ProfileError("resource pipeline inputs must be an object")
+    scene_set = _resolve_recorded_member(
+        workspace_root,
+        inputs.get("runtime_proven_scene_set"),
+        label="resource pipeline runtime-proven scene set",
+    )
+
+    physics_manifest = pipeline_root / "native-handoff" / "native_physics_manifest.json"
+    artifacts = handoff.get("artifacts") or {}
+    if not isinstance(artifacts, Mapping):
+        raise ProfileError("native resource handoff artifacts must be an object")
+    physics_artifact = artifacts.get("native_physics_manifest")
+    if not isinstance(physics_artifact, Mapping):
+        raise ProfileError("native resource handoff has no native physics manifest artifact")
+    recorded_physics = _resolve_recorded_member(
+        workspace_root,
+        physics_artifact.get("path"),
+        label="native physics manifest artifact path",
+    )
+    if recorded_physics != physics_manifest.resolve():
+        raise ProfileError("native physics manifest artifact path disagrees with pipeline layout")
+    expected_sha = str(physics_artifact.get("sha256") or "").strip().lower()
+    if len(expected_sha) != 64:
+        raise ProfileError("native physics manifest artifact SHA-256 is missing or invalid")
+    try:
+        int(expected_sha, 16)
+    except ValueError as exc:
+        raise ProfileError("native physics manifest artifact SHA-256 is invalid") from exc
+    if _sha256_file(physics_manifest) != expected_sha:
+        raise ProfileError("native physics manifest artifact SHA-256 mismatch")
+
+    return (
+        {
+            "resource_pipeline": pipeline_root,
+            "scene_set": scene_set,
+            "physics_manifest": physics_manifest,
+        },
+        {
+            "format": pipeline["format"],
+            "handoff_format": handoff["format"],
+            "ready": True,
+            "scene_source": "runtime-proven-process-d-input",
+            "physics_source": "exact-process-d-native-compatibility-manifest",
+        },
+    )
 
 
 def _validate_input_script(path: Path) -> int:
@@ -228,14 +335,34 @@ def build_launch_plan(
     resolved: dict[str, Path] = {}
     checks: dict[str, Any] = {}
 
-    resolved["scene_set"] = _resolve_member(
-        workspace_root, profile.get("scene_set"), label="scene_set"
-    )
+    resource_pipeline_raw = profile.get("resource_pipeline")
+    use_resource_pipeline = resource_pipeline_raw not in (None, "")
+    if use_resource_pipeline:
+        if profile.get("scene_set") not in (None, ""):
+            raise ProfileError(
+                "resource_pipeline cannot be combined with explicit scene_set"
+            )
+        if profile.get("physics_manifest") not in (None, ""):
+            raise ProfileError(
+                "resource_pipeline cannot be combined with explicit physics_manifest"
+            )
+        pipeline_paths, pipeline_check = _resolve_resource_pipeline_inputs(
+            workspace_root,
+            resource_pipeline_raw,
+        )
+        resolved.update(pipeline_paths)
+        checks["resource_pipeline"] = pipeline_check
+    else:
+        resolved["scene_set"] = _resolve_member(
+            workspace_root, profile.get("scene_set"), label="scene_set"
+        )
+
     checks["scene_set"] = _validate_scene_set(resolved["scene_set"])
 
     json_values: dict[str, dict[str, Any]] = {}
     for key, (expected_format, require_ready) in JSON_INPUTS.items():
-        resolved[key] = _resolve_member(workspace_root, profile.get(key), label=key)
+        if key not in resolved:
+            resolved[key] = _resolve_member(workspace_root, profile.get(key), label=key)
         value = _require_json_contract(
             resolved[key],
             expected_format=expected_format,
@@ -357,6 +484,11 @@ def build_launch_plan(
         "ready": True,
         "profile": str(profile_path),
         "workspace_root": str(workspace_root),
+        "resource_pipeline": (
+            str(resolved["resource_pipeline"])
+            if use_resource_pipeline
+            else None
+        ),
         "mode": mode,
         "interactive": interactive,
         "frames": frames,
@@ -379,6 +511,8 @@ def build_launch_plan(
             "post_solve_body_accumulator_persistence_admitted": True,
             "dynamic_body_feedback_scheduler_admitted": True,
             "legacy_solver_replay_cli_disabled": True,
+            "scene_and_physics_from_resource_pipeline": use_resource_pipeline,
+            "resource_pipeline_replaces_runtime_evidence": False,
             "window_quit_drives_session_end": interactive,
             "persistent_vehicle_transform_motion_claimed": False,
             "provider_present_dispatch_claimed": False,
