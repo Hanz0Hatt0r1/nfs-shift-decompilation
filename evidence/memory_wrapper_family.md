@@ -78,3 +78,15 @@ python3 tools/ghidra/build_memory_wrapper_family.py \
   --ghidra-export out/shift_ghidra_database \
   --json-out out/class_evidence/memory_wrapper_family.json
 ```
+
+## Next evidence stage: physical argument forwarding
+
+After the wrapper family is confirmed, export only the five short function bodies
+with `run_shift_function_instructions.sh` and pass that JSONL to
+`analyze_memory_wrapper_forwarding.py`. The resulting
+`SHIFT-MEMORY-WRAPPER-FORWARDING/1` artifact tracks entry storage and constants
+to each known backend call through explicit x86 data flow.
+
+That next layer can prove a mapping such as `Stack[0x4]:4 -> ECX:4` or a constant
+written into `EDX:4`; it still does not attach semantic names such as `size`,
+`alignment`, `pool` or `delete kind` without independent evidence.
