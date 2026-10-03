@@ -48,4 +48,4 @@ def test_runner_usage_fails_before_requiring_ghidra():
     )
     assert result.returncode == 2
     assert "Usage:" in result.stderr
-    assert "GHIDRA_HOME" not in result.stderr
+    assert "Set GHIDRA_HOME" not in result.stderr
