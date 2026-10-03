@@ -28,18 +28,11 @@ struct VehicleControlIntent {
 };
 
 struct CameraState {
-    // FUN_0080e040 word0 is an opaque 32-bit runtime camera reference.
-    // The native shell never dereferences or fabricates retail pointer identity.
     uint32_t camera_source_token = 0;
-
-    // Projection defaults are recovered from CCameraView's initializer:
-    // FOV=0.7853982, AspectRatio=1.3333334, NearZ=0.1, FarZ=750.0.
     uint32_t fov_bits = 0x3F490FDBu;
     uint32_t aspect_ratio_bits = 0x3FAAAAABu;
     uint32_t near_z_bits = 0x3DCCCCCDu;
     uint32_t far_z_bits = 0x443B8000u;
-
-    // Manager-level snapshot fields are kept opaque/integer-shaped.
     int32_t manager_mode = 0;
     int32_t buffer_sub_index = -1;
     int32_t camera_id = -1;
@@ -54,7 +47,6 @@ struct CameraState {
 };
 
 struct CameraManagerSnapshot {
-    // Exact six-word shape written by FUN_0080e040.
     uint32_t camera_source_token = 0;
     int32_t manager_mode = 0;
     int32_t buffer_sub_index = -1;
@@ -68,8 +60,6 @@ struct CameraBufferRuntime {
     CameraState buffers[buffer_count]{};
     uint32_t active_index = 0;
     bool update_in_progress = false;
-
-    // Native-only observability counters. These do not claim retail timing.
     uint64_t snapshot_count = 0;
     uint64_t native_update_count = 0;
     CameraManagerSnapshot last_snapshot{};
@@ -90,14 +80,8 @@ struct CameraBufferRuntime {
         if (update_in_progress) {
             return false;
         }
-
-        // Native scheduler policy: retain the source-backed six-word snapshot
-        // immediately before the source-backed guarded buffer flip/copy.
-        // This ordering is a native handoff choice, not a claim about
-        // FUN_0080c920 timestamp/controller scheduling.
         last_snapshot = snapshot_active();
         ++snapshot_count;
-
         const uint32_t next = 1u - active_index;
         buffers[next] = buffers[active_index];
         active_index = next;
@@ -122,18 +106,14 @@ struct CameraBufferRuntime {
         if (index >= buffer_count) {
             return false;
         }
-
         CameraState state = buffers[index];
-        // FUN_0080e040 word0 remains opaque and is intentionally not
-        // transported by SHIFT.NativeCameraStateBridge/1.
         state.camera_source_token = 0;
         state.manager_mode = manager_mode;
         state.buffer_sub_index = buffer_sub_index;
         state.camera_id = camera_id;
         state.active_group = active_group;
         state.group_restore_value = group_restore_value;
-        state.active_buffer_sub_flag =
-            active_buffer_sub_flag;
+        state.active_buffer_sub_flag = active_buffer_sub_flag;
         buffers[index] = state;
         active_index = index;
         update_in_progress = update_busy;
@@ -160,8 +140,7 @@ struct PhysicsWorkspaceBoundary {
         uint32_t bars) {
         const uint64_t scalar_count64 =
             static_cast<uint64_t>(joint_hinges) * 5u + bars;
-        if (bodies == 0 || scalar_count64 == 0 ||
-            scalar_count64 > 4096) {
+        if (bodies == 0 || scalar_count64 == 0 || scalar_count64 > 4096) {
             ready = false;
             return;
         }
@@ -186,27 +165,18 @@ struct PhysicsTickBoundary {
     uint64_t steer_left_steps = 0;
     uint64_t steer_right_steps = 0;
     uint64_t neutral_input_steps = 0;
-
-    // Structural participant ABI may be admitted independently from an
-    // observed retail participant instance.
     bool participant_contract_ready = false;
     bool participant_registry_ready = false;
     bool selector_context_separate = false;
     uint32_t registry_slot_stride = 0;
     uint32_t participant_descriptor_type = 0;
-
-    // These identity domains remain capture-gated and deliberately distinct.
     bool participant_identity_join_proven = false;
     bool participant_ready = false;
     int32_t participant_registry_index = -1;
     int32_t selector_ordinal = -1;
     int32_t participant_process_state = -1;
-
-    // Legacy compatibility aliases. Static structural admission must never
-    // populate these from either identity domain.
     int32_t participant_index = -1;
     int32_t participant_mode = -1;
-
     uint64_t participant_topology_steps = 0;
     uint64_t participant_ready_steps = 0;
     uint64_t participant_unresolved_steps = 0;
@@ -219,10 +189,8 @@ struct PhysicsTickBoundary {
         if (input.brake) ++brake_steps;
         if (input.steer_left) ++steer_left_steps;
         if (input.steer_right) ++steer_right_steps;
-        if (!input.throttle &&
-            !input.brake &&
-            !input.steer_left &&
-            !input.steer_right) {
+        if (!input.throttle && !input.brake &&
+            !input.steer_left && !input.steer_right) {
             ++neutral_input_steps;
         }
         if (participant_contract_ready) {
@@ -233,9 +201,6 @@ struct PhysicsTickBoundary {
                 ++participant_unresolved_steps;
             }
         }
-        // Source-backed provider-absent solver feedback may be scheduled by
-        // NativeRuntimeState below. Vehicle transform/orientation integration
-        // and provider-present semantics remain outside this boundary.
     }
 };
 
@@ -245,8 +210,7 @@ struct NativeRuntimeState {
     BodyFeedbackScheduler body_feedback{};
     ExplicitOuterUpdateRuntimeState outer_update{};
 
-    static constexpr const char* format =
-        "SHIFT.NativeRuntimeState/1";
+    static constexpr const char* format = "SHIFT.NativeRuntimeState/1";
 
     bool begin_camera_update() {
         return camera.begin_swap();
@@ -280,6 +244,23 @@ struct NativeRuntimeState {
             post_half_step);
     }
 
+    physics::Fun00770e80ScalarProviderAnchorChainResult
+    execute_explicit_outer_update_with_fun_007afdd0_scalar_provider(
+        double outer_timestep,
+        const physics::Fun0076d100AnchorProvider& physics_pass_provider,
+        const physics::Fun00765470MachineScalarHalfStepProvider& half_step_provider,
+        const physics::Fun007b8810PostHalfStepCallback& post_half_step) {
+        return outer_update.execute_with_fun_007afdd0_scalar_provider(
+            physics.workspace.body_count,
+            physics.workspace.ready,
+            physics.participant_ready,
+            physics.participant_identity_join_proven,
+            outer_timestep,
+            physics_pass_provider,
+            half_step_provider,
+            post_half_step);
+    }
+
     void fixed_step(const VehicleControlIntent& input) {
         body_feedback.initialize_from_environment();
         body_feedback.validate_runtime_boundary(
@@ -288,13 +269,9 @@ struct NativeRuntimeState {
             physics.workspace.ready,
             physics.participant_ready,
             physics.participant_identity_join_proven);
-
-        const bool camera_update_started =
-            begin_camera_update();
-
+        const bool camera_update_started = begin_camera_update();
         physics.tick(input);
         body_feedback.fixed_step();
-
         if (camera_update_started) {
             complete_camera_update();
         }
