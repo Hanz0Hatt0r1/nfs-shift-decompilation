@@ -58,6 +58,7 @@ add_library(shift_runtime_physics STATIC
   src/body_sparse_matrix_storage.cpp
   src/generated_body_solver_export.cpp
   src/generated_body_constraint_frame.cpp
+  src/body_state_feedback.cpp
   src/bar_projection.cpp
   src/bar_matrix_coupling.cpp
   src/hinge_projection.cpp
@@ -65,7 +66,8 @@ add_library(shift_runtime_physics STATIC
   src/hinge_matrix_coupling.cpp
   src/joint_matrix_coupling.cpp
   src/joint_projection.cpp
-  src/post_solve_projection.cpp)
+  src/post_solve_projection.cpp
+  src/post_solve_row_kernel.cpp)
 target_include_directories(shift_runtime_physics PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(shift_runtime_physics PRIVATE
@@ -263,6 +265,13 @@ target_link_libraries(shift_runtime_post_solve_persistence_check PRIVATE
 target_compile_options(shift_runtime_post_solve_persistence_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_body_state_feedback_check
+  tests/body_state_feedback_check.cpp)
+target_link_libraries(shift_runtime_body_state_feedback_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_body_state_feedback_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_builtin_sparse_solver
@@ -371,6 +380,10 @@ if(BUILD_TESTING)
   set_tests_properties(
     shift_runtime_solver_post_solve_join_usage
     PROPERTIES WILL_FAIL TRUE)
+
+  add_test(
+    NAME shift_runtime_body_state_feedback
+    COMMAND shift_runtime_body_state_feedback_check)
 endif()
 
 add_executable(shift_runtime src/shift_runtime.cpp)
