@@ -16,8 +16,10 @@ Example:
 
 This runner joins source wrapper callsites, targeted wrapper forwarding,
 source-argument -> backend-storage provenance, repeated provenance patterns,
-targeted backend instruction/diagnostic evidence and any independently proven
-allocation-size semantic role. Other allocator/release roles remain unassigned.
+targeted backend instruction/diagnostic evidence, the independently proven
+allocation-size role, and release-pointer provenance from the pool-free `%p`
+diagnostic back to release-wrapper entry storage. Release-flag/delete-kind and
+ownership semantics remain unassigned.
 EOF
 }
 
@@ -57,9 +59,12 @@ FORWARDING_JSON="$FORWARDING_DIR/memory_wrapper_forwarding.json"
 ARGUMENT_JOIN_JSON="$OUT_DIR/memory_wrapper_argument_join.json"
 PATTERNS_JSON="$OUT_DIR/memory_wrapper_provenance_patterns.json"
 BACKEND_DIR="$OUT_DIR/backend"
+BACKEND_INSTRUCTIONS="$BACKEND_DIR/memory_backend_instructions.jsonl"
 BACKEND_JSON="$BACKEND_DIR/memory_backend_evidence.json"
 DIAGNOSTIC_SLICE_JSON="$BACKEND_DIR/memory_allocation_diagnostic_slice.json"
+FREE_DIAGNOSTIC_SLICE_JSON="$BACKEND_DIR/memory_free_diagnostic_slice.json"
 ALLOCATION_SIZE_ROLE_JSON="$OUT_DIR/memory_allocation_size_role_join.json"
+RELEASE_POINTER_CHAIN_JSON="$OUT_DIR/memory_release_pointer_chain.json"
 
 python3 "$LIVE_DUMP_DIR/extract_memory_wrapper_callsites.py" \
   "$SOURCE" \
@@ -93,9 +98,16 @@ python3 "$LIVE_DUMP_DIR/join_allocation_size_role.py" \
   --diagnostic-slice "$DIAGNOSTIC_SLICE_JSON" \
   --json-out "$ALLOCATION_SIZE_ROLE_JSON"
 
+python3 "$SCRIPT_DIR/analyze_release_pointer_chain.py" \
+  "$BACKEND_INSTRUCTIONS" \
+  --free-slice "$FREE_DIAGNOSTIC_SLICE_JSON" \
+  --forwarding "$FORWARDING_JSON" \
+  --json-out "$RELEASE_POINTER_CHAIN_JSON"
+
 echo "memory wrapper callsites: $CALLSITES_JSON"
 echo "memory wrapper forwarding: $FORWARDING_JSON"
 echo "memory wrapper argument join: $ARGUMENT_JOIN_JSON"
 echo "memory wrapper provenance patterns: $PATTERNS_JSON"
 echo "memory backend evidence: $BACKEND_JSON"
 echo "memory allocation-size role join: $ALLOCATION_SIZE_ROLE_JSON"
+echo "memory release-pointer chain: $RELEASE_POINTER_CHAIN_JSON"
