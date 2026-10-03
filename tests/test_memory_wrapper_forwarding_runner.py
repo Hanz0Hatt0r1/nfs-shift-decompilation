@@ -21,11 +21,27 @@ set -euo pipefail
 printf '%s\\n' \"$@\" > \"${WRAPPER_RUNNER_LOG:?}\"
 out=$4
 mkdir -p -- \"$(dirname -- \"$out\")\"
-printf '%s\\n' '{\"format\":\"SHIFT.GhidraFunctionInstructions/1\"}' > \"$out\"
+printf '%s\\n' '{\"format\":\"SHIFT.GhidraFunctionInstructions/2\",\"instructions\":[{\"mnemonic\":\"RET\",\"pcode\":[]}]}' > \"$out\"
 """,
         encoding="utf-8",
     )
     exporter.chmod(0o755)
+
+    normalizer = script_dir / "normalize_function_instruction_export.py"
+    normalizer.write_text(
+        """#!/usr/bin/env python3
+import json, sys
+from pathlib import Path
+source = Path(sys.argv[1]); out = Path(sys.argv[2])
+row = json.loads(source.read_text(encoding='utf-8'))
+assert row['format'] == 'SHIFT.GhidraFunctionInstructions/2'
+assert row['instructions'][0]['pcode'] == []
+row['format'] = 'SHIFT.GhidraFunctionInstructions/1'
+row['instructions'][0].pop('pcode', None)
+out.write_text(json.dumps(row) + '\\n', encoding='utf-8')
+""",
+        encoding="utf-8",
+    )
 
     analyzer = script_dir / "analyze_memory_wrapper_forwarding_retail.py"
     analyzer.write_text(
@@ -35,6 +51,9 @@ import sys
 from pathlib import Path
 source = Path(sys.argv[1])
 assert source.is_file()
+row = json.loads(source.read_text(encoding='utf-8'))
+assert row['format'] == 'SHIFT.GhidraFunctionInstructions/1'
+assert 'pcode' not in row['instructions'][0]
 assert sys.argv[2] == '--json-out'
 out = Path(sys.argv[3])
 out.write_text(json.dumps({'format': 'SHIFT-MEMORY-WRAPPER-FORWARDING/1'}) + '\\n', encoding='utf-8')
@@ -44,7 +63,7 @@ out.write_text(json.dumps({'format': 'SHIFT-MEMORY-WRAPPER-FORWARDING/1'}) + '\\
     return runner
 
 
-def test_runner_exports_exact_memory_wrapper_set_then_analyzes(tmp_path):
+def test_runner_exports_v2_memory_wrapper_set_then_normalizes_and_analyzes(tmp_path):
     runner = _prepare_harness(tmp_path)
     output = tmp_path / "out"
     log = tmp_path / "export_args.txt"
@@ -72,7 +91,7 @@ def test_runner_exports_exact_memory_wrapper_set_then_analyzes(tmp_path):
         "/projects/shift",
         "shift",
         "SHIFT.exe",
-        str(output.resolve() / "memory_wrapper_instructions.jsonl"),
+        str(output.resolve() / "memory_wrapper_instructions_v2.jsonl"),
     ]
     assert args[4:] == [
         "FUN_008868c0",
@@ -82,10 +101,18 @@ def test_runner_exports_exact_memory_wrapper_set_then_analyzes(tmp_path):
         "FUN_00886950",
     ]
 
+    raw = json.loads((output / "memory_wrapper_instructions_v2.jsonl").read_text())
+    compat = json.loads((output / "memory_wrapper_instructions.jsonl").read_text())
+    assert raw["format"] == "SHIFT.GhidraFunctionInstructions/2"
+    assert raw["instructions"][0]["pcode"] == []
+    assert compat["format"] == "SHIFT.GhidraFunctionInstructions/1"
+    assert "pcode" not in compat["instructions"][0]
+
     report_path = output / "memory_wrapper_forwarding.json"
     report = json.loads(report_path.read_text(encoding="utf-8"))
     assert report["format"] == "SHIFT-MEMORY-WRAPPER-FORWARDING/1"
-    assert "memory wrapper instruction export:" in result.stdout
+    assert "memory wrapper instruction export v2:" in result.stdout
+    assert "memory wrapper instruction compatibility export:" in result.stdout
     assert "memory wrapper forwarding report:" in result.stdout
 
 
