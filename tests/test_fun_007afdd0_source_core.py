@@ -90,7 +90,7 @@ def test_axis_inputs_are_cast_to_f32_before_normalization_product():
     expected_x = f32(f32(1.0 / f32(5.0)) * f32(increment[0]))
     expected_y = f32(f32(increment[1]) * f32(1.0 / f32(5.0)))
     assert result.normalized_axis == (expected_x, expected_y, 0.0)
-    assert result.basis == (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0)
+    assert result.basis == (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
 
 
 def test_nonzero_path_rejects_missing_or_nonfinite_scalar_boundary():
