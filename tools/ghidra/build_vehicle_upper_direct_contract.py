@@ -119,7 +119,19 @@ def build_vehicle_upper_direct_contract(frontier_path: Path) -> dict[str, Any]:
             f"{address}: unexpectedly external",
         )
 
+    expected_incoming_counts = {
+        PRIMARY_CALLER: 3,
+        BATCH: 1,
+        OWNER_FRONTIER: 1,
+    }
     rows_by_address = {PRIMARY_CALLER: primary, **upstream}
+    for address, expected_count in expected_incoming_counts.items():
+        _require(
+            rows_by_address[address].get("direct_incoming_count") == expected_count,
+            f"{address}: expected {expected_count} direct incoming call(s); "
+            f"found {rows_by_address[address].get('direct_incoming_count')}",
+        )
+
     chain_edges: list[dict[str, Any]] = []
     for parent, child, expected_count in EXPECTED_CHAIN:
         matches = _edges_to(rows_by_address[parent], child)
@@ -138,6 +150,12 @@ def build_vehicle_upper_direct_contract(frontier_path: Path) -> dict[str, Any]:
             }
         )
 
+    known_callers = {
+        UPPER_CALLER: [],
+        OWNER_FRONTIER: [UPPER_CALLER],
+        BATCH: [OWNER_FRONTIER],
+        PRIMARY_CALLER: [BATCH],
+    }
     candidates = []
     for address in (UPPER_CALLER, OWNER_FRONTIER, BATCH, PRIMARY_CALLER):
         row = rows_by_address[address]
@@ -145,7 +163,8 @@ def build_vehicle_upper_direct_contract(frontier_path: Path) -> dict[str, Any]:
             {
                 "address": address,
                 "name": row.get("name"),
-                "callers": [],
+                "callers": known_callers[address],
+                "caller_identities_complete": address != UPPER_CALLER,
                 "direct_incoming_count": row.get("direct_incoming_count"),
                 "callees": _ordered_targets(row),
                 "read_offsets": [],
