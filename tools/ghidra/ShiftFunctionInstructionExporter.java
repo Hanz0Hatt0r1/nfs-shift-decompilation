@@ -164,7 +164,13 @@ public class ShiftFunctionInstructionExporter extends GhidraScript {
         PcodeOp[] pcodeOps = instruction.getPcode();
         for (int index = 0; index < pcodeOps.length; index++) {
             if (index > 0) pcode.append(',');
-            pcode.append(q(pcodeOps[index].toString()));
+            PcodeOp op = pcodeOps[index];
+            pcode.append('{')
+                .append("\"opcode\":")
+                .append(q(PcodeOp.getMnemonic(op.getOpcode()))).append(',')
+                .append("\"text\":")
+                .append(q(op.toString()))
+                .append('}');
         }
         pcode.append(']');
 
