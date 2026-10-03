@@ -29,6 +29,7 @@ from offline_resource_pipeline import (
     run_offline_pipeline,
     write_catalog_bundle,
 )
+from offline_native_resource_handoff import build_native_resource_handoff_files
 
 
 def _load(path: str | Path) -> dict:
@@ -87,6 +88,25 @@ def cmd_bootstrap(args: argparse.Namespace) -> int:
     return 0 if bootstrap["ready"] else 2
 
 
+def cmd_native_handoff(args: argparse.Namespace) -> int:
+    report = build_native_resource_handoff_files(
+        args.catalog,
+        args.bootstrap,
+        args.physics_bundle,
+        args.output,
+        scene_set_dir=args.scene_set,
+    )
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "resource_inputs_ready": report["resource_inputs_ready"],
+        "blocking_reasons": report["blocking_reasons"],
+        "artifacts": report.get("artifacts") or {},
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
 def cmd_all(args: argparse.Namespace) -> int:
     report = run_offline_pipeline(
         args.inputs,
@@ -123,6 +143,26 @@ def build_parser() -> argparse.ArgumentParser:
     bootstrap.add_argument("-o", "--output", required=True)
     bootstrap.add_argument("--admission", required=True)
     bootstrap.set_defaults(fn=cmd_bootstrap)
+
+    native_handoff = sub.add_parser(
+        "native-handoff",
+        help="join resource bootstrap to existing native scene/physics gates",
+    )
+    native_handoff.add_argument("catalog", help="SHIFT.OfflineResourceCatalog/1 JSON")
+    native_handoff.add_argument("bootstrap", help="SHIFT.SceneVehicleBootstrap/1 JSON")
+    native_handoff.add_argument(
+        "physics_bundle",
+        help="SHIFT.VehiclePhysicsBundleExtractor/1 JSON from the all pipeline",
+    )
+    native_handoff.add_argument("-o", "--output", required=True, help="output directory")
+    native_handoff.add_argument(
+        "--scene-set",
+        help=(
+            "existing runtime-proven SHIFT.NativeSceneVulkanSet/1 directory; "
+            "when omitted the render side remains explicitly blocked"
+        ),
+    )
+    native_handoff.set_defaults(fn=cmd_native_handoff)
 
     all_cmd = sub.add_parser("all", help="run catalog + validation + graph + bootstrap in one command")
     all_cmd.add_argument("inputs", nargs="+", help=".bff, .zip, or directories containing BFFs")
