@@ -1,4 +1,5 @@
 #include "shift_post_solve_projection.hpp"
+#include "shift_body_accumulator_primitives.hpp"
 
 #include <array>
 #include <cmath>
@@ -8,17 +9,6 @@
 
 namespace shift::runtime::physics {
 namespace {
-
-std::array<double, 3> cross(
-    const std::array<double, 3>& a,
-    const std::array<double, 3>& b) {
-
-    return {
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0],
-    };
-}
 
 void require_finite_body(const BodyAccumulatorState& body) {
     for (double value : body.angular) {
@@ -32,19 +22,6 @@ void require_finite_body(const BodyAccumulatorState& body) {
             throw std::runtime_error(
                 "post-solve row kernel has non-finite linear BODY state");
         }
-    }
-}
-
-void apply_delta(
-    BodyAccumulatorState& body,
-    const std::array<double, 3>& lever,
-    const std::array<double, 3>& contribution,
-    double sign) {
-
-    const auto angular = cross(lever, contribution);
-    for (std::size_t i = 0; i < 3; ++i) {
-        body.linear[i] += sign * contribution[i];
-        body.angular[i] += sign * angular[i];
     }
 }
 
@@ -101,16 +78,14 @@ std::vector<BodyAccumulatorState> apply_post_solve_body_projection_rows(
             solver_vector[row.scalar_base + 1u],
             solver_vector[row.scalar_base + 2u],
         };
-        apply_delta(
+        apply_fun_007baa70_body_accumulator(
             bodies[row.positive_body],
             row.positive_lever_arm,
-            contribution,
-            1.0);
-        apply_delta(
+            contribution);
+        apply_fun_007baaf0_body_accumulator(
             bodies[row.negative_body],
             row.negative_lever_arm,
-            contribution,
-            -1.0);
+            contribution);
     }
 
     for (const auto& row : projection.hinges) {
@@ -145,16 +120,14 @@ std::vector<BodyAccumulatorState> apply_post_solve_body_projection_rows(
             row.direction[1] * scalar,
             row.direction[2] * scalar,
         };
-        apply_delta(
+        apply_fun_007baa70_body_accumulator(
             bodies[row.positive_body],
             row.positive_lever_arm,
-            contribution,
-            1.0);
-        apply_delta(
+            contribution);
+        apply_fun_007baaf0_body_accumulator(
             bodies[row.negative_body],
             row.negative_lever_arm,
-            contribution,
-            -1.0);
+            contribution);
     }
 
     for (const auto& body : bodies) {
