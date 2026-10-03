@@ -25,8 +25,8 @@ def _sha(path: Path) -> str:
 
 def _capture() -> dict:
     selected = {
-        "vertex_sha256": "1" * 64,
-        "pixel_sha256": "2" * 64,
+        "vertex_byte_sha256": "1" * 64,
+        "pixel_byte_sha256": "2" * 64,
         "score": 100,
     }
     result = {
@@ -39,7 +39,7 @@ def _capture() -> dict:
     return {
         "format": "SHIFT.IMBRuntimeCapturePipeline/1",
         "pipeline_ready": True,
-        "resources": [{
+        "resource_results": [{
             "resource_path": "tracks/silverstone/test.imb",
             "resource_sha256": "a" * 64,
             "candidate_binding_indices": [7],
@@ -47,7 +47,6 @@ def _capture() -> dict:
                 "format": "SHIFT.IMBRuntimeShaderVariantMatch/1",
                 "status": "ready",
                 "ready": True,
-                "candidate_binding_result_count": 1,
                 "candidate_binding_results": [result],
                 "blocking_reasons": [],
             },
@@ -55,7 +54,7 @@ def _capture() -> dict:
     }
 
 
-def test_phase572_rehydration_is_exact_transport_only():
+def test_phase572_rehydration_is_exact_phase630_transport_only():
     capture = _capture()
     reports, blockers = handoff._rehydrate_phase572_matches(capture)
     assert blockers == []
@@ -66,18 +65,19 @@ def test_phase572_rehydration_is_exact_transport_only():
         "resource_path": "tracks/silverstone/test.imb",
         "resource_sha256": "a" * 64,
     }
-    assert report["binding_results"] == capture["resources"][0]["variant_match"][
+    assert report["binding_results"] == capture["resource_results"][0]["variant_match"][
         "candidate_binding_results"
     ]
-    assert report["binding_results"] is not capture["resources"][0]["variant_match"][
+    assert report["binding_results"] is not capture["resource_results"][0]["variant_match"][
         "candidate_binding_results"
     ]
+    assert report["boundary"]["rehydrated_from_phase630_compact_transport"] is True
     assert report["boundary"]["new_attribution_performed"] is False
 
 
 def test_phase572_rehydration_rejects_result_outside_routed_binding_set():
     capture = _capture()
-    capture["resources"][0]["variant_match"]["candidate_binding_results"][0][
+    capture["resource_results"][0]["variant_match"]["candidate_binding_results"][0][
         "binding_index"
     ] = 8
     reports, blockers = handoff._rehydrate_phase572_matches(capture)
@@ -216,7 +216,7 @@ def test_handoff_builds_scene_set_only_through_existing_proof_stages(
             output / "bundle_set_manifest.json",
             {"format": "SHIFT.NativeSceneVulkanSet/1", "ready": True},
         )
-        _write(output / "bundle_set.paths", {})
+        (output / "bundle_set.paths").write_text("draw_0000\n", encoding="utf-8")
         return {
             "format": "SHIFT.NativeSceneVulkanSet/1",
             "ready": True,
@@ -258,12 +258,13 @@ def test_handoff_builds_scene_set_only_through_existing_proof_stages(
     assert report["diagnostics"]["phase574_rejected_bindings"] == [
         {"binding_index": 9}
     ]
-    assert calls["phase574"][1][0]["binding_results"] == _capture()["resources"][0][
+    assert calls["phase574"][1][0]["binding_results"] == _capture()["resource_results"][0][
         "variant_match"
     ]["candidate_binding_results"]
     assert calls["bridge"][2]["status"] == "partial"
     assert report["boundary"]["unproven_draw_promoted"] is False
     assert report["boundary"]["runtime_shader_admission_is_render_admission"] is False
+    assert report["boundary"]["phase630_resource_identity_is_phase572_target_identity"] is True
     assert Path(report["artifacts"]["scene_set_prepare"]).is_file()
 
 
