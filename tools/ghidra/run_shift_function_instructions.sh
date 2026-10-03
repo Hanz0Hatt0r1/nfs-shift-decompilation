@@ -39,11 +39,24 @@ mkdir -p -- "$(dirname -- "$OUT_FILE")"
 OUT_DIR=$(cd -- "$(dirname -- "$OUT_FILE")" && pwd)
 OUT_FILE="$OUT_DIR/$(basename -- "$OUT_FILE")"
 
+# Keep Ghidra's Java script compiler isolated from the rest of tools/ghidra.
+# Ghidra compiles Java files it discovers under -scriptPath, so pointing it at
+# the repository directory can make an unrelated script's API incompatibility
+# abort this targeted export. Copy only the requested exporter into a temporary
+# script directory and compile exactly that source.
+COMPAT_SCRIPT_DIR=$(mktemp -d)
+cleanup() {
+  rm -rf -- "$COMPAT_SCRIPT_DIR"
+}
+trap cleanup EXIT
+cp -- "$SCRIPT_DIR/ShiftFunctionInstructionExporter.java" \
+  "$COMPAT_SCRIPT_DIR/ShiftFunctionInstructionExporter.java"
+
 "$ANALYZE_HEADLESS" \
   "$PROJECT_DIR" "$PROJECT_NAME" \
   -process "$PROGRAM_NAME" \
   -noanalysis \
-  -scriptPath "$SCRIPT_DIR" \
+  -scriptPath "$COMPAT_SCRIPT_DIR" \
   -postScript ShiftFunctionInstructionExporter.java "$OUT_FILE" "${TARGETS[@]}"
 
 python3 "$SCRIPT_DIR/validate_function_instruction_export.py" \

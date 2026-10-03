@@ -50,7 +50,7 @@ public class ShiftFunctionInstructionExporter extends GhidraScript {
             new FileOutputStream(output), StandardCharsets.UTF_8)))) {
             for (int i = 1; i < args.length && !monitor.isCancelled(); i++) {
                 String token = args[i];
-                Address address = parseAddress(token);
+                Address address = parseTargetAddress(token);
                 Function function = address == null ? null : functions.getFunctionAt(address);
                 if (function == null) {
                     missing.add(token);
@@ -67,7 +67,10 @@ public class ShiftFunctionInstructionExporter extends GhidraScript {
         println("SHIFT targeted instruction export -> " + output);
     }
 
-    private Address parseAddress(String token) {
+    // Do not name this parseAddress: GhidraScript already exposes a public
+    // parseAddress(String), and a private method with that signature is an illegal
+    // weaker-access override on Ghidra 12.1.x.
+    private Address parseTargetAddress(String token) {
         if (token == null) return null;
         String value = token.trim();
         if (value.startsWith("FUN_") || value.startsWith("fun_")) {
