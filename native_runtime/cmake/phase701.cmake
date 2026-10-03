@@ -16,3 +16,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_native_vehicle_provider_session
     COMMAND shift_runtime_native_vehicle_provider_session_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase702.cmake)
