@@ -2,6 +2,7 @@
 
 #include "shift_fun_00770e80_composed_anchor_chain.hpp"
 #include "shift_fun_00770e80_contact_outer_provider_chain.hpp"
+#include "shift_fun_00770e80_motion_read_effect_provider_chain.hpp"
 #include "shift_fun_00770e80_scalar_provider_anchor_chain.hpp"
 #include "shift_persistent_body_pose_snapshot.hpp"
 
@@ -30,6 +31,9 @@ struct ExplicitOuterUpdateRuntimeState {
     std::size_t last_contact_outer_input_provider_call_count = 0u;
     std::size_t last_contact_outer_native_call_count = 0u;
     std::size_t last_contact_outer_gate_open_count = 0u;
+    std::size_t last_motion_read_effect_provider_call_count = 0u;
+    std::size_t last_motion_read_delta_consumer_call_count = 0u;
+    std::size_t last_motion_read_gate_open_count = 0u;
     std::uint64_t body_pose_snapshot_generation = 0u;
     std::vector<std::uint8_t> body_bytes;
     std::vector<physics::PersistentBodyPoseSnapshot> body_pose_snapshots;
@@ -73,6 +77,9 @@ struct ExplicitOuterUpdateRuntimeState {
         last_contact_outer_input_provider_call_count = 0u;
         last_contact_outer_native_call_count = 0u;
         last_contact_outer_gate_open_count = 0u;
+        last_motion_read_effect_provider_call_count = 0u;
+        last_motion_read_delta_consumer_call_count = 0u;
+        last_motion_read_gate_open_count = 0u;
         body_pose_snapshot_generation = 0u;
         body_bytes = std::move(committed_body_bytes);
         body_pose_snapshots = std::move(initial_pose_snapshots);
@@ -162,6 +169,9 @@ struct ExplicitOuterUpdateRuntimeState {
         last_contact_outer_input_provider_call_count = 0u;
         last_contact_outer_native_call_count = 0u;
         last_contact_outer_gate_open_count = 0u;
+        last_motion_read_effect_provider_call_count = 0u;
+        last_motion_read_delta_consumer_call_count = 0u;
+        last_motion_read_gate_open_count = 0u;
         ++explicit_update_count;
         body_pose_snapshot_generation = explicit_update_count;
         return result;
@@ -219,6 +229,9 @@ struct ExplicitOuterUpdateRuntimeState {
         last_contact_outer_input_provider_call_count = 0u;
         last_contact_outer_native_call_count = 0u;
         last_contact_outer_gate_open_count = 0u;
+        last_motion_read_effect_provider_call_count = 0u;
+        last_motion_read_delta_consumer_call_count = 0u;
+        last_motion_read_gate_open_count = 0u;
         ++explicit_update_count;
         body_pose_snapshot_generation = explicit_update_count;
         return result;
@@ -279,6 +292,77 @@ struct ExplicitOuterUpdateRuntimeState {
             result.contact_outer_native_call_count;
         last_contact_outer_gate_open_count =
             result.contact_outer_gate_open_count;
+        last_motion_read_effect_provider_call_count = 0u;
+        last_motion_read_delta_consumer_call_count = 0u;
+        last_motion_read_gate_open_count = 0u;
+        ++explicit_update_count;
+        body_pose_snapshot_generation = explicit_update_count;
+        return result;
+    }
+
+    physics::Fun00770e80MotionReadEffectProviderChainResult
+    execute_with_fun_007682c0_motion_read_effect_provider(
+        std::uint32_t runtime_body_count,
+        bool workspace_ready,
+        bool participant_ready,
+        bool participant_identity_join_proven,
+        double outer_timestep,
+        const physics::Fun0076d100MotionReadEffectProvider& physics_pass_provider,
+        const physics::Fun00765470MachineScalarHalfStepProvider& half_step_provider,
+        const physics::Fun007b8810PostHalfStepCallback& post_half_step) {
+        validate_runtime_boundary(
+            runtime_body_count,
+            workspace_ready,
+            participant_ready,
+            participant_identity_join_proven);
+
+        auto result =
+            physics::execute_fun_00770e80_motion_read_effect_provider_chain(
+                outer_timestep,
+                body_bytes,
+                physics_pass_provider,
+                half_step_provider,
+                post_half_step);
+
+        const std::size_t expected_bytes =
+            static_cast<std::size_t>(runtime_body_count) *
+            physics::kBodyRecordSize;
+        if (result.joined.joined.joined.final_body_bytes.size() != expected_bytes) {
+            throw std::runtime_error(
+                "explicit motion-read-effect update returned malformed BODY state");
+        }
+
+        std::vector<std::uint8_t> committed_body_bytes =
+            result.joined.joined.joined.final_body_bytes;
+        auto committed_pose_snapshots =
+            physics::decode_persistent_body_pose_snapshots(
+                committed_body_bytes,
+                runtime_body_count);
+
+        body_bytes = std::move(committed_body_bytes);
+        body_pose_snapshots = std::move(committed_pose_snapshots);
+        body_byte_count = body_bytes.size();
+        last_outer_timestep = outer_timestep;
+        last_physics_pass_provider_call_count =
+            result.joined.joined.joined.physics_pass_provider_call_count;
+        last_half_step_provider_call_count =
+            result.joined.joined.joined.half_step_provider_call_count;
+        last_scalar_provider_call_count =
+            result.joined.joined.scalar_provider_call_count;
+        last_applied_rotation_count = result.joined.joined.applied_rotation_count;
+        last_zero_noop_count = result.joined.joined.zero_noop_count;
+        last_contact_outer_input_provider_call_count =
+            result.joined.contact_outer_input_provider_call_count;
+        last_contact_outer_native_call_count =
+            result.joined.contact_outer_native_call_count;
+        last_contact_outer_gate_open_count =
+            result.joined.contact_outer_gate_open_count;
+        last_motion_read_effect_provider_call_count =
+            result.motion_read_effect_provider_call_count;
+        last_motion_read_delta_consumer_call_count =
+            result.motion_read_delta_consumer_call_count;
+        last_motion_read_gate_open_count =
+            result.motion_read_gate_open_count;
         ++explicit_update_count;
         body_pose_snapshot_generation = explicit_update_count;
         return result;
