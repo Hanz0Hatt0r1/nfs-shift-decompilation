@@ -1,6 +1,5 @@
 import importlib.util
 import json
-import os
 import struct
 from pathlib import Path
 
@@ -25,7 +24,12 @@ def _write_packet(path: Path, magic: bytes) -> None:
     path.write_bytes(magic + struct.pack("<I", 1) + b"fixture")
 
 
-def _fixture(tmp_path: Path, *, with_script: bool = False) -> Path:
+def _fixture(
+    tmp_path: Path,
+    *,
+    with_script: bool = False,
+    interactive: bool = False,
+) -> Path:
     root = tmp_path / "workspace"
     root.mkdir()
 
@@ -87,8 +91,12 @@ def _fixture(tmp_path: Path, *, with_script: bool = False) -> Path:
         "constraint_relation_reset_frame": "out/reset.crrf",
         "post_solve_projection": "out/post.sbps",
         "persist_post_solve_body_state": True,
-        "frames": 3 if with_script else 120,
     }
+    if interactive:
+        profile["interactive"] = True
+    else:
+        profile["frames"] = 3 if with_script else 120
+
     if with_script:
         script = root / "out" / "input.script"
         script.write_text(
@@ -112,7 +120,9 @@ def test_build_launch_plan_composes_full_native_chain(tmp_path):
     assert plan["format"] == "SHIFT.NativeVerticalSliceLaunchPlan/1"
     assert plan["ready"] is True
     assert plan["mode"] == "keyboard"
+    assert plan["interactive"] is False
     assert plan["frames"] == 120
+    assert plan["frame_limit_policy"] == "explicit-bounded-frame-count"
     assert "--scene-set" in plan["argv"]
     assert "--camera-state" in plan["argv"]
     assert "--physics-manifest" in plan["argv"]
@@ -126,6 +136,7 @@ def test_build_launch_plan_composes_full_native_chain(tmp_path):
     assert "--validation" in plan["argv"]
     assert plan["checks"]["solver_frame"]["magic"] == "SBFR"
     assert plan["checks"]["generated_body_constraint_frame"]["magic"] == "GBCF"
+    assert plan["boundary"]["window_quit_drives_session_end"] is False
     assert plan["boundary"]["persistent_vehicle_transform_motion_claimed"] is False
     assert plan["boundary"]["provider_present_dispatch_claimed"] is False
     assert plan["boundary"]["retail_game_loop_claimed"] is False
@@ -136,10 +147,45 @@ def test_input_script_controls_frame_count_and_mode(tmp_path):
     plan = MODULE.build_launch_plan(profile)
 
     assert plan["mode"] == "script"
+    assert plan["interactive"] is False
     assert plan["frames"] == 3
     assert plan["checks"]["input_script"]["steps"] == 3
     index = plan["argv"].index("--input-script")
     assert plan["argv"][index + 1].endswith("out/input.script")
+
+
+def test_interactive_keyboard_uses_window_quit_session(tmp_path):
+    profile = _fixture(tmp_path, interactive=True)
+    plan = MODULE.build_launch_plan(profile)
+
+    assert plan["mode"] == "interactive-keyboard"
+    assert plan["interactive"] is True
+    assert plan["frames"] == MODULE.INTERACTIVE_FRAME_LIMIT
+    assert plan["frame_limit_policy"] == "int32-max-with-window-quit"
+    assert plan["boundary"]["window_quit_drives_session_end"] is True
+    index = plan["argv"].index("--frames")
+    assert plan["argv"][index + 1] == str(MODULE.INTERACTIVE_FRAME_LIMIT)
+
+
+def test_interactive_mode_rejects_input_script(tmp_path):
+    profile = _fixture(tmp_path, with_script=True)
+    value = json.loads(profile.read_text(encoding="utf-8"))
+    value["interactive"] = True
+    value.pop("frames")
+    _write_json(profile, value)
+
+    with pytest.raises(MODULE.ProfileError, match="cannot be combined"):
+        MODULE.build_launch_plan(profile)
+
+
+def test_interactive_mode_rejects_explicit_frames(tmp_path):
+    profile = _fixture(tmp_path)
+    value = json.loads(profile.read_text(encoding="utf-8"))
+    value["interactive"] = True
+    _write_json(profile, value)
+
+    with pytest.raises(MODULE.ProfileError, match="must not specify frames"):
+        MODULE.build_launch_plan(profile)
 
 
 def test_rejects_unproven_participant_identity(tmp_path):
