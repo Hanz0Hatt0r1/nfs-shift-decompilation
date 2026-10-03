@@ -78,6 +78,7 @@ struct BodyFeedbackScheduler {
         max_matrix_anchor_error = 0.0;
         last_generated_rhs.clear();
         last_solved_vector.clear();
+        environment_checked = true;
         enabled = true;
     }
 
