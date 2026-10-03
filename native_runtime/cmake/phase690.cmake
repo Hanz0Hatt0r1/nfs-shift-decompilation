@@ -12,3 +12,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_explicit_outer_update_runtime_state
     COMMAND shift_runtime_explicit_outer_update_runtime_state_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase691.cmake)
