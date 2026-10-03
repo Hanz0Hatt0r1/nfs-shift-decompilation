@@ -128,6 +128,81 @@ role, not a constructor or runtime method identity.
 
 See `evidence/ghidra_subsystem_manifests.md` for the initial retail identities.
 
+## Method-name anchors
+
+Exact retail assert/debug strings sometimes spell a fully-qualified method name.
+Inventory them without renaming functions:
+
+```bash
+python3 tools/ghidra/discover_method_name_anchors.py \
+  out/shift_ghidra_database \
+  --json-out out/ghidra_method_name_anchors.json
+```
+
+`SHIFT.GhidraMethodNameAnchors/1` keeps unique and ambiguous functions separate.
+A function containing exactly one conservative `MWL::...::Method` anchor is a
+semantic-name candidate only; functions containing multiple distinct method
+anchors stay ambiguous.
+
+Cross-check those names against the already established subsystem slices:
+
+```bash
+python3 tools/ghidra/join_method_anchors_to_subsystems.py \
+  out/shift_ghidra_database \
+  --json-out out/ghidra_subsystem_method_anchors.json
+```
+
+`SHIFT.GhidraSubsystemMethodAnchors/1` promotes a subsystem-specific candidate
+only when a narrow namespace/class rule and independent one-hop subsystem slice
+membership agree. Broad `MWL::Core::*` names are intentionally not classified.
+See `evidence/ghidra_method_name_anchors.md` and
+`evidence/ghidra_subsystem_method_anchors.md`.
+
+## One-command static semantic index
+
+Build all direct-observation static semantic layers together:
+
+```bash
+python3 tools/ghidra/build_static_semantic_index.py \
+  out/shift_ghidra_database \
+  out/ghidra_static_semantic_index \
+  --fail-on-mismatch
+```
+
+The output directory contains:
+
+```text
+crosscheck.json
+method_name_anchors.json
+subsystem_method_anchors.json
+physics_allocator_boundary.json
+subsystems/
+    ai.json
+    physics.json
+    renderer.json
+    scene_graph.json
+    vehicle.json
+    index.json
+manifest.json
+```
+
+`manifest.json` uses `SHIFT.GhidraStaticSemanticIndex/1` and aggregates direct
+anchor mismatches, promoted subsystem aliases/registrations, RTTI fingerprint
+counts, unique/ambiguous method anchors, subsystem-crosschecked method-name
+candidates and the paired `MWL::Core::PhysicsAllocator::malloc/free` boundary.
+Program/MD5 identity is checked across the composed layers.
+
+The allocator boundary preserves its existing evidence limits: exact method
+strings, shared pool diagnostics and physical `__thiscall` storage can confirm
+the paired API surface, but the explicit stack-argument role, return-value ABI
+and ownership semantics remain unresolved.
+
+The orchestration still excludes heuristic `vtables.json`, `constructors.jsonl`
+and `factories.jsonl` from semantic promotion. `--fail-on-mismatch` applies to
+failed direct anchor/alias/registration/allocator-boundary checks;
+namespace-only and ambiguous method-name observations remain explicit research
+targets rather than CI errors.
+
 ## Class-registration discovery
 
 Discover the registry from the Ghidra side without the heuristic constructor or
