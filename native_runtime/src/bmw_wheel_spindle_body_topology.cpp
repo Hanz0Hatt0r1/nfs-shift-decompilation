@@ -9,6 +9,7 @@ constexpr std::array<std::size_t, kVehicleConstraintComponentCount>
     kExpectedWheelBodyIndices{{3u, 4u, 7u, 8u}};
 constexpr std::array<std::size_t, kVehicleConstraintComponentCount>
     kExpectedSpindleBodyIndices{{1u, 2u, 5u, 6u}};
+constexpr std::size_t kExpectedMainChassisBodyIndex = 0u;
 
 void validate_retail_topology(const BmwWheelSpindleBodyTopology& topology) {
     if (topology.body_count != kBmwM3E36RetailBodyCount ||
@@ -16,9 +17,12 @@ void validate_retail_topology(const BmwWheelSpindleBodyTopology& topology) {
         topology.spindle_body_indices != kExpectedSpindleBodyIndices ||
         !topology.wheel_spindle_body_indices_ready ||
         topology.rear_axle_body_index_ready ||
-        topology.main_chassis_body_selected) {
+        !topology.main_chassis_body_selected ||
+        topology.main_chassis_body_index != kExpectedMainChassisBodyIndex ||
+        topology.update_child_to_vehicle_solver_base_continuity_proven ||
+        topology.vehicle_body_selection_ready) {
         throw std::invalid_argument(
-            "BMW wheel/spindle BODY topology no longer matches the proven retail frontier");
+            "BMW BODY topology no longer matches the proven retail identity frontier");
     }
 }
 
