@@ -157,12 +157,13 @@ It therefore preserves:
 
 It does **not** attach the outer update to `NativeRuntimeState::fixed_step()`.
 
-The latest Process 1 merge at the start of this phase is PR #1173,
-`SHIFT.OuterUpdateSchedulingGate/1`. That proof narrows the source-visible
-`FUN_00713050 -> FUN_00794a30` gate to one `param_5`-eligible source call, but it
-explicitly leaves machine-callsite identity, dynamic execution multiplicity and
-cadence ownership unknown. Process 2 must therefore keep outer execution
-explicit.
+The latest Process 1 merge at the start of this phase is PR #1174,
+`SHIFT.OuterUpdateMachineGate/1`. It joins the sole eligible source-side
+`FUN_00713050 -> FUN_00794a30` gate to one unique mapped machine callsite at
+`0x007130f1`. That closes machine callsite cardinality, but it explicitly leaves
+dynamic execution multiplicity and the runtime cadence owner unproven. The
+contract therefore still reports fixed-step and render-cadence auto-scheduling
+as disallowed. Process 2 must keep outer execution explicit.
 
 ## Process 3 boundary
 
@@ -231,7 +232,8 @@ multi-update BODY path; Phase 696 isolates only the newly narrowed anchor.
 | BODY origin/basis decode | typed persistent snapshots since Phase 695 | closed |
 | BODY -> concrete vehicle identity | unproven | Process 1 |
 | BODY pose -> renderer scene identity | unproven | Process 1 + Process 3 join |
-| outer-update cadence owner | unproven after PR #1173 | keep explicit |
+| outer-update machine callsite | unique mapped callsite proven by PR #1174 | closed |
+| outer-update dynamic multiplicity / cadence owner | unproven after PR #1174 | keep explicit |
 
 ## Next blocker
 
@@ -241,7 +243,7 @@ The nearest useful follow-up is whichever proof arrives first:
    `Fun007682c0EffectProvider` with a recovered producer; or
 2. Process 1 proves concrete vehicle/BODY identity, allowing the typed delta
    consumer and Phase 695 pose snapshot to bind to a real vehicle BODY; or
-3. Process 1 closes the remaining scheduling gate obligations, allowing the
-   existing explicit outer update to move onto the proven cadence boundary.
+3. Process 1 proves dynamic execution multiplicity and the runtime cadence owner,
+   allowing the existing explicit outer update to move onto that proven boundary.
 
 No original game execution or new runtime capture is used or required.
