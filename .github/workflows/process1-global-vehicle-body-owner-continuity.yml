@@ -1,0 +1,25 @@
+name: process1-global-vehicle-body-owner-continuity
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_global_vehicle_body_owner_continuity.py'
+      - 'tests/test_ghidra_global_vehicle_body_owner_continuity.py'
+      - 'docs/PROCESS_1_GLOBAL_VEHICLE_BODY_OWNER_CONTINUITY.md'
+      - '.github/workflows/process1-global-vehicle-body-owner-continuity.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_global_vehicle_body_owner_continuity.py'
+      - 'tests/test_ghidra_global_vehicle_body_owner_continuity.py'
+      - 'docs/PROCESS_1_GLOBAL_VEHICLE_BODY_OWNER_CONTINUITY.md'
+      - '.github/workflows/process1-global-vehicle-body-owner-continuity.yml'
+
+jobs:
+  continuity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pytest
+        run: sudo apt-get update && sudo apt-get install -y python3-pytest
+      - name: Run focused Process 1 regression
+        run: python3 -m pytest -q tests/test_ghidra_global_vehicle_body_owner_continuity.py
