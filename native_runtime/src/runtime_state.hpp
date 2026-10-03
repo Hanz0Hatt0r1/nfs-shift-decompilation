@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime_body_feedback_scheduler.hpp"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -230,14 +232,16 @@ struct PhysicsTickBoundary {
                 ++participant_unresolved_steps;
             }
         }
-        // Physics integration intentionally remains outside this shell.
-        // The retail participant/provider semantics are not synthesized here.
+        // Source-backed provider-absent solver feedback may be scheduled by
+        // NativeRuntimeState below. Vehicle transform/orientation integration
+        // and provider-present semantics remain outside this boundary.
     }
 };
 
 struct NativeRuntimeState {
     CameraBufferRuntime camera{};
     PhysicsTickBoundary physics{};
+    BodyFeedbackScheduler body_feedback{};
 
     static constexpr const char* format =
         "SHIFT.NativeRuntimeState/1";
@@ -251,10 +255,19 @@ struct NativeRuntimeState {
     }
 
     void fixed_step(const VehicleControlIntent& input) {
+        body_feedback.initialize_from_environment();
+        body_feedback.validate_runtime_boundary(
+            physics.workspace.body_count,
+            physics.workspace.scalar_count,
+            physics.workspace.ready,
+            physics.participant_ready,
+            physics.participant_identity_join_proven);
+
         const bool camera_update_started =
             begin_camera_update();
 
         physics.tick(input);
+        body_feedback.fixed_step();
 
         if (camera_update_started) {
             complete_camera_update();
