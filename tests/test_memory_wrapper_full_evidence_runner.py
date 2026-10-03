@@ -37,12 +37,34 @@ set -euo pipefail
 printf '%s\\n' \"$@\" > \"${FULL_WRAPPER_BACKEND_LOG:?}\"
 out=$5
 mkdir -p -- \"$out\"
+printf '%s\\n' '{\"format\":\"SHIFT.GhidraFunctionInstructions/1\"}' > \"$out/memory_backend_instructions.jsonl\"
 printf '%s\\n' '{\"format\":\"SHIFT-MEMORY-BACKEND-EVIDENCE/1\"}' > \"$out/memory_backend_evidence.json\"
 printf '%s\\n' '{\"format\":\"SHIFT-MEMORY-ALLOCATION-DIAGNOSTIC-SLICE/1\",\"allocation_size_role_proven\":false,\"allocation_size_entry_storage\":null}' > \"$out/memory_allocation_diagnostic_slice.json\"
+printf '%s\\n' '{\"format\":\"SHIFT-MEMORY-FREE-DIAGNOSTIC-SLICE/1\",\"free_pointer_role_proven\":false,\"free_pointer_entry_storage\":null}' > \"$out/memory_free_diagnostic_slice.json\"
 """,
         encoding="utf-8",
     )
     backend.chmod(0o755)
+
+    release_chain = ghidra_dir / "analyze_release_pointer_chain.py"
+    release_chain.write_text(
+        """#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+Path(os.environ['FULL_WRAPPER_RELEASE_CHAIN_LOG']).write_text('\\n'.join(sys.argv[1:]), encoding='utf-8')
+assert Path(sys.argv[1]).is_file()
+assert sys.argv[2] == '--free-slice'
+assert Path(sys.argv[3]).is_file()
+assert sys.argv[4] == '--forwarding'
+assert Path(sys.argv[5]).is_file()
+assert sys.argv[6] == '--json-out'
+out = Path(sys.argv[7])
+out.write_text(json.dumps({'format':'SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1','wrapper_paths':[]}) + '\\n', encoding='utf-8')
+""",
+        encoding="utf-8",
+    )
 
     extractor = live_dir / "extract_memory_wrapper_callsites.py"
     extractor.write_text(
@@ -119,6 +141,7 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
     pattern_log = tmp_path / "patterns.log"
     backend_log = tmp_path / "backend.log"
     role_join_log = tmp_path / "role_join.log"
+    release_chain_log = tmp_path / "release_chain.log"
 
     env = dict(os.environ)
     env["GHIDRA_HOME"] = "/opt/fake-ghidra"
@@ -128,6 +151,7 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
     env["FULL_WRAPPER_PATTERN_LOG"] = str(pattern_log)
     env["FULL_WRAPPER_BACKEND_LOG"] = str(backend_log)
     env["FULL_WRAPPER_ROLE_JOIN_LOG"] = str(role_join_log)
+    env["FULL_WRAPPER_RELEASE_CHAIN_LOG"] = str(release_chain_log)
 
     result = subprocess.run(
         [
@@ -189,6 +213,15 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
         "--json-out",
         str(resolved_output / "memory_allocation_size_role_join.json"),
     ]
+    assert release_chain_log.read_text(encoding="utf-8").splitlines() == [
+        str(resolved_output / "backend" / "memory_backend_instructions.jsonl"),
+        "--free-slice",
+        str(resolved_output / "backend" / "memory_free_diagnostic_slice.json"),
+        "--forwarding",
+        str(resolved_output / "forwarding" / "memory_wrapper_forwarding.json"),
+        "--json-out",
+        str(resolved_output / "memory_release_pointer_chain.json"),
+    ]
 
     joined = json.loads((output / "memory_wrapper_argument_join.json").read_text(encoding="utf-8"))
     assert joined["format"] == "SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1"
@@ -198,12 +231,15 @@ def test_runner_builds_wrapper_backend_and_semantic_evidence(tmp_path):
     assert backend_report["format"] == "SHIFT-MEMORY-BACKEND-EVIDENCE/1"
     role_report = json.loads((output / "memory_allocation_size_role_join.json").read_text(encoding="utf-8"))
     assert role_report["format"] == "SHIFT-MEMORY-ALLOCATION-SIZE-ROLE-JOIN/1"
+    release_report = json.loads((output / "memory_release_pointer_chain.json").read_text(encoding="utf-8"))
+    assert release_report["format"] == "SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1"
     assert "memory wrapper callsites:" in result.stdout
     assert "memory wrapper forwarding:" in result.stdout
     assert "memory wrapper argument join:" in result.stdout
     assert "memory wrapper provenance patterns:" in result.stdout
     assert "memory backend evidence:" in result.stdout
     assert "memory allocation-size role join:" in result.stdout
+    assert "memory release-pointer chain:" in result.stdout
 
 
 def test_runner_rejects_missing_inputs_before_subtools(tmp_path):
