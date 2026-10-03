@@ -175,6 +175,7 @@ The output directory contains:
 crosscheck.json
 method_name_anchors.json
 subsystem_method_anchors.json
+physics_allocator_boundary.json
 subsystems/
     ai.json
     physics.json
@@ -187,13 +188,20 @@ manifest.json
 
 `manifest.json` uses `SHIFT.GhidraStaticSemanticIndex/1` and aggregates direct
 anchor mismatches, promoted subsystem aliases/registrations, RTTI fingerprint
-counts, unique/ambiguous method anchors and subsystem-crosschecked method-name
-candidates. Program/MD5 identity is checked across the composed layers.
+counts, unique/ambiguous method anchors, subsystem-crosschecked method-name
+candidates and the paired `MWL::Core::PhysicsAllocator::malloc/free` boundary.
+Program/MD5 identity is checked across the composed layers.
+
+The allocator boundary preserves its existing evidence limits: exact method
+strings, shared pool diagnostics and physical `__thiscall` storage can confirm
+the paired API surface, but the explicit stack-argument role, return-value ABI
+and ownership semantics remain unresolved.
 
 The orchestration still excludes heuristic `vtables.json`, `constructors.jsonl`
 and `factories.jsonl` from semantic promotion. `--fail-on-mismatch` applies to
-failed direct anchor/alias/registration checks; namespace-only and ambiguous
-method-name observations remain explicit research targets rather than CI errors.
+failed direct anchor/alias/registration/allocator-boundary checks;
+namespace-only and ambiguous method-name observations remain explicit research
+targets rather than CI errors.
 
 ## Class-registration discovery
 
