@@ -64,6 +64,11 @@ struct PostSolveBodyProjectionResult {
 PreparedPostSolveBodyProjection load_prepared_post_solve_body_projection(
     const std::string& path);
 
+std::vector<BodyAccumulatorState> apply_post_solve_body_projection_rows(
+    const PreparedPostSolveBodyProjection& projection,
+    const std::vector<double>& solver_vector,
+    const std::vector<BodyAccumulatorState>& initial_bodies);
+
 PostSolveBodyProjectionResult execute_post_solve_body_projection_with_state(
     const PreparedPostSolveBodyProjection& projection,
     const std::vector<double>& solver_vector,
