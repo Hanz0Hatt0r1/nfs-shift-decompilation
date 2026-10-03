@@ -5,8 +5,8 @@ Optional historical-capture renderer evidence can be regenerated in the same
 command. When enabled, the renderer path consumes the exact runtime-bootstrap
 artifact created earlier in this invocation. If no explicit scene-set is
 supplied, the same command then attempts the existing Phase 574 -> 585 runtime
-scene chain and only publishes that scene into runtime requirements after the
-prepared NativeSceneVulkanSet gate succeeds.
+scene chain. Phase 641 additionally exhausts existing Phase 591/590/592 scene
+instance and external-sampler evidence before leaving a Phase 580/585 blocker.
 """
 from __future__ import annotations
 
@@ -34,8 +34,8 @@ for path in (ROOT, TOOLS):
     if value not in sys.path:
         sys.path.insert(0, value)
 
-from materialize_renderer_native_scene_handoff import (
-    materialize_renderer_native_scene_handoff,
+from materialize_renderer_native_scene_capture_handoff import (
+    materialize_renderer_native_scene_capture_handoff as materialize_renderer_native_scene_handoff,
 )
 from offline_runtime_requirements import build_runtime_requirements
 from offline_vertical_slice_bootstrap import build_offline_vertical_slice_bootstrap
@@ -102,6 +102,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--renderer-capture-jsonl",
         help="historical raw D3D9 capture; enables unified renderer evidence",
     )
+    renderer.add_argument(
+        "--renderer-capture-root",
+        help=(
+            "root containing existing PPM texture snapshots; defaults to the "
+            "directory containing --renderer-capture-jsonl"
+        ),
+    )
     renderer_pe = renderer.add_mutually_exclusive_group()
     renderer_pe.add_argument("--renderer-pe-evidence")
     renderer_pe.add_argument("--renderer-pe-image")
@@ -139,6 +146,7 @@ def build_parser() -> argparse.ArgumentParser:
 def _renderer_requested(args: argparse.Namespace) -> bool:
     return bool(
         args.renderer_capture_jsonl
+        or args.renderer_capture_root
         or args.renderer_pe_evidence
         or args.renderer_pe_image
         or args.renderer_bundle
@@ -260,6 +268,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.decode_limit_per_archive < 0:
         parser.error("--decode-limit-per-archive must be non-negative")
     renderer_requested = _validate_renderer_args(parser, args)
+    renderer_capture_root = None
+    if args.renderer_capture_jsonl:
+        renderer_capture_root = (
+            Path(args.renderer_capture_root).expanduser()
+            if args.renderer_capture_root
+            else Path(args.renderer_capture_jsonl).expanduser().parent
+        )
 
     explicit = {
         "scene_set": args.scene_set,
@@ -304,6 +319,8 @@ def main(argv: list[str] | None = None) -> int:
     boundary["renderer_missing_evidence_synthesized"] = False
     boundary["renderer_evidence_ready_is_runtime_render_admission"] = False
     boundary["renderer_scene_handoff_uses_existing_phase574_to_585_chain"] = True
+    boundary["existing_capture_external_sampler_completion_enabled"] = renderer_requested
+    boundary["renderer_capture_root_is_identity_proof"] = False
     boundary["runtime_requirements_refreshed_only_after_renderer_scene_attempt"] = True
     report["boundary"] = boundary
 
@@ -380,6 +397,7 @@ def main(argv: list[str] | None = None) -> int:
                     runtime_bootstrap=runtime_bootstrap_path,
                     renderer_source_bootstrap=renderer_manifest,
                     output_dir=scene_handoff_dir,
+                    capture_root=renderer_capture_root,
                     environment_cube_dds=args.renderer_environment_cube_dds,
                     external_sampler_snapshots=args.renderer_external_sampler_snapshots,
                     external_sampler_cube_snapshots=(
@@ -450,6 +468,9 @@ def main(argv: list[str] | None = None) -> int:
     report["renderer_evidence_ready"] = renderer_ready
     report["renderer_native_scene_requested"] = scene_handoff_requested
     report["renderer_native_scene_ready"] = scene_handoff_ready
+    report["renderer_capture_root"] = (
+        str(renderer_capture_root) if renderer_capture_root is not None else None
+    )
     report["renderer_frontier"] = (
         (((renderer_report.get("self_bootstrap") or {}).get("production") or {}).get(
             "renderer_frontier"
@@ -527,6 +548,7 @@ def main(argv: list[str] | None = None) -> int:
         "renderer_evidence_ready": report["renderer_evidence_ready"],
         "renderer_native_scene_requested": report["renderer_native_scene_requested"],
         "renderer_native_scene_ready": report["renderer_native_scene_ready"],
+        "renderer_capture_root": report["renderer_capture_root"],
         "renderer_frontier": report["renderer_frontier"],
         "profile_ready": report["profile_ready"],
         "launch_plan_ready": report["launch_plan_ready"],
