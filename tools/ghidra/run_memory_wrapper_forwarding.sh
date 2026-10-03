@@ -14,6 +14,11 @@ Example:
 The Ghidra project must already contain an analyzed SHIFT.exe program. The
 runner exports only the five known memory-wrapper functions and immediately
 builds SHIFT-MEMORY-WRAPPER-FORWARDING/1 evidence from that instruction slice.
+
+The targeted exporter now emits SHIFT.GhidraFunctionInstructions/2 with p-code.
+The raw v2 export is preserved as memory_wrapper_instructions_v2.jsonl. A
+separate memory_wrapper_instructions.jsonl compatibility copy is normalized to
+version 1 for the existing memory forwarding analyzer.
 EOF
 }
 
@@ -32,6 +37,7 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 mkdir -p -- "$OUT_DIR"
 OUT_DIR=$(cd -- "$OUT_DIR" && pwd)
+INSTRUCTION_V2_JSONL="$OUT_DIR/memory_wrapper_instructions_v2.jsonl"
 INSTRUCTION_JSONL="$OUT_DIR/memory_wrapper_instructions.jsonl"
 FORWARDING_JSON="$OUT_DIR/memory_wrapper_forwarding.json"
 
@@ -39,16 +45,21 @@ FORWARDING_JSON="$OUT_DIR/memory_wrapper_forwarding.json"
   "$PROJECT_DIR" \
   "$PROJECT_NAME" \
   "$PROGRAM_NAME" \
-  "$INSTRUCTION_JSONL" \
+  "$INSTRUCTION_V2_JSONL" \
   FUN_008868c0 \
   FUN_008868d0 \
   FUN_00886900 \
   FUN_00886930 \
   FUN_00886950
 
+python3 "$SCRIPT_DIR/normalize_function_instruction_export.py" \
+  "$INSTRUCTION_V2_JSONL" \
+  "$INSTRUCTION_JSONL"
+
 python3 "$SCRIPT_DIR/analyze_memory_wrapper_forwarding_retail.py" \
   "$INSTRUCTION_JSONL" \
   --json-out "$FORWARDING_JSON"
 
-echo "memory wrapper instruction export: $INSTRUCTION_JSONL"
+echo "memory wrapper instruction export v2: $INSTRUCTION_V2_JSONL"
+echo "memory wrapper instruction compatibility export: $INSTRUCTION_JSONL"
 echo "memory wrapper forwarding report: $FORWARDING_JSON"
