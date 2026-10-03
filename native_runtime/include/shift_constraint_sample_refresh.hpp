@@ -72,6 +72,10 @@ ConstraintRefreshVector3d transform_fun_007aefb0_refresh(
     const ConstraintRefreshFrame3f& matrix,
     const ConstraintRefreshVector3d& vector);
 
+ConstraintRefreshVector3d transform_fun_007af010_refresh(
+    const ConstraintRefreshFrame3f& matrix,
+    double scalar);
+
 ConstraintRefreshVector3d transform_fun_007af0a0_refresh(
     const ConstraintRefreshFrame3f& matrix,
     const ConstraintRefreshVector3d& vector);
