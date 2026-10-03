@@ -56,6 +56,19 @@ def _bootstrap() -> dict:
     }
 
 
+def _scene_handoff(*, ready: bool = True) -> dict:
+    return {
+        "format": "SHIFT.RendererNativeSceneHandoff/1",
+        "ready": ready,
+        "scene_set_ready": ready,
+        "artifacts": {
+            "scene_set_dir": "out/renderer-native-scene/native-scene-vulkan"
+            if ready
+            else None,
+        },
+    }
+
+
 def test_requirements_reuse_only_proven_bootstrap_runtime_artifacts():
     report = build_runtime_requirements(_bootstrap())
 
@@ -83,6 +96,40 @@ def test_requirements_reuse_only_proven_bootstrap_runtime_artifacts():
     assert report["boundary"]["missing_evidence_synthesized"] is False
     assert report["boundary"]["artifact_substitution_allowed"] is False
     assert report["boundary"]["static_scene_promoted_to_runtime_scene"] is False
+
+
+def test_requirements_accept_only_ready_renderer_native_scene_handoff():
+    report = build_runtime_requirements(
+        _bootstrap(),
+        runtime_scene_handoff=_scene_handoff(),
+    )
+    rows = {row["name"]: row for row in report["requirements"]}
+
+    assert rows["scene_set"]["satisfied"] is True
+    assert rows["scene_set"]["artifact"] == (
+        "out/renderer-native-scene/native-scene-vulkan"
+    )
+    assert rows["scene_set"]["source"] == (
+        "runtime-proven renderer native scene handoff"
+    )
+    assert "scene_set" not in report["summary"]["missing"]
+    assert report["boundary"]["runtime_scene_handoff_accepted"] is True
+
+    blocked = build_runtime_requirements(
+        _bootstrap(),
+        runtime_scene_handoff=_scene_handoff(ready=False),
+    )
+    blocked_rows = {row["name"]: row for row in blocked["requirements"]}
+    assert blocked_rows["scene_set"]["satisfied"] is False
+    assert blocked_rows["scene_set"]["artifact"] is None
+
+
+def test_requirements_reject_wrong_renderer_scene_handoff_contract():
+    with pytest.raises(ValueError, match="RendererNativeSceneHandoff"):
+        build_runtime_requirements(
+            _bootstrap(),
+            runtime_scene_handoff={"format": "wrong"},
+        )
 
 
 def test_requirements_do_not_promote_structural_participant_to_runtime_identity():

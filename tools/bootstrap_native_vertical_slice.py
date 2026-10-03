@@ -3,8 +3,10 @@
 
 Optional historical-capture renderer evidence can be regenerated in the same
 command. When enabled, the renderer path consumes the exact runtime-bootstrap
-artifact created earlier in this invocation, so no manual resource->renderer
-handoff is required.
+artifact created earlier in this invocation. If no explicit scene-set is
+supplied, the same command then attempts the existing Phase 574 -> 585 runtime
+scene chain and only publishes that scene into runtime requirements after the
+prepared NativeSceneVulkanSet gate succeeds.
 """
 from __future__ import annotations
 
@@ -32,7 +34,12 @@ for path in (ROOT, TOOLS):
     if value not in sys.path:
         sys.path.insert(0, value)
 
+from materialize_renderer_native_scene_handoff import (
+    materialize_renderer_native_scene_handoff,
+)
+from offline_runtime_requirements import build_runtime_requirements
 from offline_vertical_slice_bootstrap import build_offline_vertical_slice_bootstrap
+from offline_vertical_slice_profile import build_vertical_slice_profile_prepare
 from run_native_vertical_slice import ProfileError, build_launch_plan
 from run_silverstone_renderer_source_bootstrap_production import (
     run_source_bootstrap_production,
@@ -45,6 +52,13 @@ def _write(path: Path, value: Mapping[str, Any]) -> None:
         json.dumps(dict(value), ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _load_map(path: Path) -> Mapping[str, Any]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, Mapping):
+        raise ValueError(f"JSON object expected: {path}")
+    return value
 
 
 def _unique(values: list[str]) -> list[str]:
@@ -107,6 +121,10 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=128 * 1024 * 1024,
     )
+    renderer.add_argument("--renderer-environment-cube-dds")
+    renderer.add_argument("--renderer-external-sampler-snapshots")
+    renderer.add_argument("--renderer-external-sampler-cube-snapshots")
+    renderer.add_argument("--renderer-validator")
 
     parser.add_argument("--validate-launch-plan", action="store_true")
     parser.add_argument(
@@ -126,6 +144,10 @@ def _renderer_requested(args: argparse.Namespace) -> bool:
         or args.renderer_bundle
         or args.renderer_compact_evidence
         or args.renderer_no_compact_crosscheck
+        or args.renderer_environment_cube_dds
+        or args.renderer_external_sampler_snapshots
+        or args.renderer_external_sampler_cube_snapshots
+        or args.renderer_validator
     )
 
 
@@ -133,9 +155,7 @@ def _validate_renderer_args(parser: argparse.ArgumentParser, args: argparse.Name
     requested = _renderer_requested(args)
     pe_count = int(bool(args.renderer_pe_evidence)) + int(bool(args.renderer_pe_image))
     if requested and not args.renderer_capture_jsonl:
-        parser.error(
-            "renderer evidence requires --renderer-capture-jsonl"
-        )
+        parser.error("renderer evidence requires --renderer-capture-jsonl")
     if args.renderer_capture_jsonl and pe_count != 1:
         parser.error(
             "--renderer-capture-jsonl requires exactly one of "
@@ -152,6 +172,86 @@ def _renderer_manifest_path(out: Path) -> Path:
         / "renderer-evidence"
         / "silverstone_renderer_source_bootstrap_production_run.json"
     )
+
+
+def _scene_handoff_path(out: Path) -> Path:
+    return out / "renderer-native-scene" / "renderer_native_scene_handoff.json"
+
+
+def _refresh_runtime_profile(
+    report: dict[str, Any],
+    *,
+    out: Path,
+    workspace_root: str | Path,
+    explicit: Mapping[str, str | Path | None],
+    runtime_scene_handoff: Mapping[str, Any] | None,
+    input_script: str | Path | None,
+    interactive: bool,
+    keyboard: bool,
+    frames: int | None,
+) -> list[str]:
+    """Rebuild requirements/profile after renderer scene evidence changes."""
+    stages = dict(report.get("stages") or {})
+    artifacts = dict(report.get("artifacts") or {})
+    runtime_bootstrap = stages.get("runtime_bootstrap")
+    if not isinstance(runtime_bootstrap, Mapping):
+        raw = str(artifacts.get("runtime_bootstrap") or "").strip()
+        if not raw:
+            return ["profile-refresh:runtime-bootstrap-missing"]
+        try:
+            runtime_bootstrap = _load_map(Path(raw))
+        except Exception as exc:
+            return [f"profile-refresh:runtime-bootstrap-unreadable:{type(exc).__name__}:{exc}"]
+
+    requirements = build_runtime_requirements(
+        runtime_bootstrap,
+        runtime_scene_handoff=runtime_scene_handoff,
+    )
+    requirements_path = Path(
+        str(artifacts.get("runtime_requirements") or (out / "runtime_requirements.json"))
+    )
+    profile_path = out / "vertical_slice_profile.json"
+    prepare_path = Path(
+        str(artifacts.get("profile_prepare") or (out / "vertical_slice_profile.prepare.json"))
+    )
+    _write(requirements_path, requirements)
+
+    prepare = build_vertical_slice_profile_prepare(
+        requirements,
+        workspace_root=workspace_root,
+        profile_path=profile_path,
+        explicit_inputs=explicit,
+        input_script=input_script,
+        interactive=interactive,
+        keyboard=keyboard,
+        frames=frames,
+    )
+    _write(prepare_path, prepare)
+    profile_ready = prepare.get("ready") is True
+    if profile_ready:
+        profile = prepare.get("profile")
+        if not isinstance(profile, Mapping):
+            return ["profile-refresh:ready-without-profile"]
+        _write(profile_path, profile)
+        artifacts["profile"] = str(profile_path)
+    else:
+        artifacts["profile"] = None
+        if profile_path.exists():
+            profile_path.unlink()
+
+    artifacts["runtime_requirements"] = str(requirements_path)
+    artifacts["profile_prepare"] = str(prepare_path)
+    stages["runtime_requirements"] = requirements
+    stages["profile_prepare"] = prepare
+    report["artifacts"] = artifacts
+    report["stages"] = stages
+    report["profile_ready"] = profile_ready
+    report["ready"] = profile_ready
+    report["status"] = "profile-ready" if profile_ready else "profile-blocked"
+    return [
+        f"profile:{reason}"
+        for reason in prepare.get("blocking_reasons") or []
+    ]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -193,6 +293,7 @@ def main(argv: list[str] | None = None) -> int:
     report_path = out / "vertical_slice_bootstrap.json"
     launch_plan_path = out / "launch_plan.json"
     renderer_dir = out / "renderer-evidence"
+    scene_handoff_dir = out / "renderer-native-scene"
 
     boundary = dict(report.get("boundary") or {})
     boundary["launcher_validation_requested"] = bool(args.validate_launch_plan)
@@ -202,6 +303,8 @@ def main(argv: list[str] | None = None) -> int:
     boundary["renderer_bundle_is_selection_authority"] = False
     boundary["renderer_missing_evidence_synthesized"] = False
     boundary["renderer_evidence_ready_is_runtime_render_admission"] = False
+    boundary["renderer_scene_handoff_uses_existing_phase574_to_585_chain"] = True
+    boundary["runtime_requirements_refreshed_only_after_renderer_scene_attempt"] = True
     report["boundary"] = boundary
 
     artifacts = dict(report.get("artifacts") or {})
@@ -233,19 +336,14 @@ def main(argv: list[str] | None = None) -> int:
                     max_json_bytes=args.renderer_max_json_bytes,
                 )
             except Exception as exc:
-                blockers.append(
-                    f"renderer-evidence:failed:{type(exc).__name__}:{exc}"
-                )
+                blockers.append(f"renderer-evidence:failed:{type(exc).__name__}:{exc}")
                 renderer_report = None
             if isinstance(renderer_report, Mapping):
                 renderer_ready = renderer_report.get("ready") is True
                 if not renderer_ready:
                     blockers.extend(
                         f"renderer-evidence:{reason}"
-                        for reason in (
-                            renderer_report.get("blocking_reasons")
-                            or ["not-ready"]
-                        )
+                        for reason in renderer_report.get("blocking_reasons") or ["not-ready"]
                     )
             else:
                 renderer_ready = False
@@ -267,10 +365,91 @@ def main(argv: list[str] | None = None) -> int:
                 ],
             }
 
+    scene_handoff_requested = renderer_requested and not bool(args.scene_set)
+    scene_handoff_report: Mapping[str, Any] | None = None
+    scene_handoff_ready = not scene_handoff_requested
+    if renderer_ready and scene_handoff_requested:
+        runtime_bootstrap_path = str(artifacts.get("runtime_bootstrap") or "")
+        renderer_manifest = str(artifacts.get("renderer_source_bootstrap") or "")
+        if not runtime_bootstrap_path or not renderer_manifest:
+            scene_handoff_ready = False
+            blockers.append("renderer-native-scene:required-input-artifact-missing")
+        else:
+            try:
+                scene_handoff_report = materialize_renderer_native_scene_handoff(
+                    runtime_bootstrap=runtime_bootstrap_path,
+                    renderer_source_bootstrap=renderer_manifest,
+                    output_dir=scene_handoff_dir,
+                    environment_cube_dds=args.renderer_environment_cube_dds,
+                    external_sampler_snapshots=args.renderer_external_sampler_snapshots,
+                    external_sampler_cube_snapshots=(
+                        args.renderer_external_sampler_cube_snapshots
+                    ),
+                    validator=args.renderer_validator,
+                )
+            except Exception as exc:
+                scene_handoff_ready = False
+                blockers.append(
+                    f"renderer-native-scene:failed:{type(exc).__name__}:{exc}"
+                )
+                scene_handoff_report = None
+            else:
+                scene_handoff_ready = scene_handoff_report.get("ready") is True
+                if not scene_handoff_ready:
+                    blockers.extend(
+                        f"renderer-native-scene:{reason}"
+                        for reason in scene_handoff_report.get("blocking_reasons")
+                        or ["not-ready"]
+                    )
+
+        artifacts["renderer_native_scene_handoff"] = (
+            str(_scene_handoff_path(out))
+            if isinstance(scene_handoff_report, Mapping)
+            else None
+        )
+        stages["renderer_native_scene_handoff"] = (
+            dict(scene_handoff_report)
+            if isinstance(scene_handoff_report, Mapping)
+            else {
+                "format": "SHIFT.RendererNativeSceneHandoff/1",
+                "status": "blocked",
+                "ready": False,
+                "scene_set_ready": False,
+                "blocking_reasons": [
+                    reason.removeprefix("renderer-native-scene:")
+                    for reason in blockers
+                    if reason.startswith("renderer-native-scene:")
+                ],
+            }
+        )
+
+        blockers = [reason for reason in blockers if not reason.startswith("profile:")]
+        report["artifacts"] = artifacts
+        report["stages"] = stages
+        blockers.extend(
+            _refresh_runtime_profile(
+                report,
+                out=out,
+                workspace_root=args.workspace_root,
+                explicit=explicit,
+                runtime_scene_handoff=scene_handoff_report,
+                input_script=args.input_script,
+                interactive=args.interactive,
+                keyboard=args.keyboard,
+                frames=args.frames,
+            )
+        )
+        artifacts = dict(report.get("artifacts") or {})
+        stages = dict(report.get("stages") or {})
+    else:
+        artifacts["renderer_native_scene_handoff"] = None
+
     report["artifacts"] = artifacts
     report["stages"] = stages
     report["renderer_evidence_requested"] = renderer_requested
     report["renderer_evidence_ready"] = renderer_ready
+    report["renderer_native_scene_requested"] = scene_handoff_requested
+    report["renderer_native_scene_ready"] = scene_handoff_ready
     report["renderer_frontier"] = (
         (((renderer_report.get("self_bootstrap") or {}).get("production") or {}).get(
             "renderer_frontier"
@@ -282,6 +461,7 @@ def main(argv: list[str] | None = None) -> int:
     launch_gate_ready = (
         report.get("profile_ready") is True
         and renderer_ready
+        and scene_handoff_ready
     )
     if launch_gate_ready and args.validate_launch_plan:
         profile_path = Path(str((report.get("artifacts") or {}).get("profile") or ""))
@@ -307,7 +487,7 @@ def main(argv: list[str] | None = None) -> int:
             report["ready"] = True
             report["launch_plan_ready"] = True
             artifacts["launch_plan"] = str(launch_plan_path)
-    elif args.validate_launch_plan and report.get("profile_ready") is True and not renderer_ready:
+    elif args.validate_launch_plan:
         boundary["launcher_validation_performed"] = False
         report["launch_plan_ready"] = False
         if launch_plan_path.exists():
@@ -315,20 +495,28 @@ def main(argv: list[str] | None = None) -> int:
     elif launch_plan_path.exists():
         launch_plan_path.unlink()
 
-    if (
-        renderer_requested
-        and not renderer_ready
-        and report.get("offline_bootstrap_ready") is True
-    ):
+    if report.get("offline_bootstrap_ready") is not True:
+        report["status"] = "offline-bootstrap-blocked"
+        report["ready"] = False
+        report["launch_plan_ready"] = False
+    elif renderer_requested and not renderer_ready:
         report["status"] = "renderer-evidence-blocked"
         report["ready"] = False
         report["launch_plan_ready"] = False
-    elif report.get("profile_ready") is True and not args.validate_launch_plan:
-        report["ready"] = True
-    elif report.get("profile_ready") is not True:
+    elif scene_handoff_requested and not scene_handoff_ready:
+        report["status"] = "renderer-native-scene-blocked"
         report["ready"] = False
+        report["launch_plan_ready"] = False
+    elif report.get("profile_ready") is not True:
+        report["status"] = "profile-blocked"
+        report["ready"] = False
+    elif not args.validate_launch_plan:
+        report["status"] = "profile-ready"
+        report["ready"] = True
 
     report["blocking_reasons"] = _unique(blockers)
+    report["boundary"] = boundary
+    report["artifacts"] = artifacts
     _write(report_path, report)
     print(json.dumps({
         "format": report["format"],
@@ -337,6 +525,8 @@ def main(argv: list[str] | None = None) -> int:
         "offline_bootstrap_ready": report["offline_bootstrap_ready"],
         "renderer_evidence_requested": report["renderer_evidence_requested"],
         "renderer_evidence_ready": report["renderer_evidence_ready"],
+        "renderer_native_scene_requested": report["renderer_native_scene_requested"],
+        "renderer_native_scene_ready": report["renderer_native_scene_ready"],
         "renderer_frontier": report["renderer_frontier"],
         "profile_ready": report["profile_ready"],
         "launch_plan_ready": report["launch_plan_ready"],
