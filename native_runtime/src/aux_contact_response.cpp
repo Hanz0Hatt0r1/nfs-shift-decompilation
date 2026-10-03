@@ -94,4 +94,32 @@ AuxContactResponseResult execute_fun_00758fc0_aux_contact_response(
     return result;
 }
 
+AuxContactPairResult execute_fun_00766510_aux_contact_pair(
+    const AuxContactPairInput& input) {
+
+    AuxContactPairResult result{};
+    result.body_accumulator = input.body_accumulator;
+
+    for (std::size_t record_index = 0;
+         record_index < kAuxContactRecordCount;
+         ++record_index) {
+        AuxContactResponseInput record_input{};
+        record_input.body_frame = input.body_frame;
+        record_input.body_transform = input.body_transform;
+        record_input.body_accumulator = result.body_accumulator;
+        record_input.reference_point = input.reference_point;
+        record_input.record = input.records[record_index];
+
+        result.records[record_index] =
+            execute_fun_00758fc0_aux_contact_response(record_input);
+        result.body_accumulator =
+            result.records[record_index].body_accumulator;
+        if (result.records[record_index].applied) {
+            ++result.applied_count;
+        }
+    }
+
+    return result;
+}
+
 }  // namespace shift::runtime::physics
