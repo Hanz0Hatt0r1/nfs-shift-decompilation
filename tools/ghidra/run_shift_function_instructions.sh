@@ -29,7 +29,34 @@ PROJECT_NAME=$2
 PROGRAM_NAME=$3
 OUT_FILE=$4
 shift 4
-TARGETS=("$@")
+
+# Target lists are often populated with `mapfile -t`. A file containing a blank
+# line produces one empty array element, which previously reached Ghidra as an
+# empty script argument and generated a confusing "requested functions not
+# found:" failure. Drop empty/whitespace-only entries before invoking Ghidra and
+# fail locally when nothing usable remains.
+RAW_TARGETS=("$@")
+TARGETS=()
+IGNORED_EMPTY_TARGETS=0
+for target in "${RAW_TARGETS[@]}"; do
+  trimmed=${target#"${target%%[![:space:]]*}"}
+  trimmed=${trimmed%"${trimmed##*[![:space:]]}"}
+  if [[ -z "$trimmed" ]]; then
+    ((IGNORED_EMPTY_TARGETS += 1))
+    continue
+  fi
+  TARGETS+=("$trimmed")
+done
+
+if (( ${#TARGETS[@]} == 0 )); then
+  echo "error: no non-empty function targets were supplied" >&2
+  echo "hint: inspect the generated target list before running Ghidra" >&2
+  echo "hint: sed -n 'l' <target-file>" >&2
+  exit 2
+fi
+if (( IGNORED_EMPTY_TARGETS > 0 )); then
+  echo "warning: ignored ${IGNORED_EMPTY_TARGETS} empty function target(s)" >&2
+fi
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ANALYZE_HEADLESS="$GHIDRA_HOME/support/analyzeHeadless"
