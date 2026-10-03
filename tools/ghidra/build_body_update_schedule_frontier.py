@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """Recover a fail-closed BODY/vehicle update schedule from direct Ghidra calls.
 
-This tool narrows the broad subsystem frontier to the already proven Process B
-BODY/vehicle anchors. It preserves only direct-call ordering and uses those
-anchors to recover two anonymous orchestration candidates:
+This tool narrows the broad subsystem frontier to already proven BODY/vehicle
+anchors. It preserves only direct-call ordering and uses those anchors to
+recover two anonymous orchestration candidates:
 
 * the helper repeated between the two FUN_0076d100 passes which directly calls
-  FUN_007b3f40 and FUN_007b4110;
+  FUN_007b3f40, FUN_007b4110 and the proven BODY-array integrator loop
+  FUN_007b2270;
 * the FUN_0076d100 tail helper which directly calls FUN_007675f0 and
   FUN_007682c0 in that order.
 
-Neither recovered function is semantically renamed. The report is target
-selection and ordering evidence only; BODY pointer provenance and pose/motion
-writers remain unresolved until targeted instruction/p-code evidence closes
-those boundaries.
+The BODY-array loop and FUN_007bab70 persistent integrator are imported as
+source/machine-code-backed anchors from SHIFT.BodyFrameIntegrationStatic/1.
+This report proves their position in the direct-call schedule; it does not
+re-prove their field semantics from callgraph evidence alone.
+
+Recovered anonymous functions are never semantically renamed.
 """
 from __future__ import annotations
 
@@ -23,11 +26,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-FORMAT = "SHIFT.GhidraBodyUpdateScheduleFrontier/1"
+FORMAT = "SHIFT.GhidraBodyUpdateScheduleFrontier/2"
+BODY_INTEGRATION_CONTRACT = "SHIFT.BodyFrameIntegrationStatic/1"
 
-# These are already source/machine-code-backed anchors in the Process B BODY
-# persistent-state contract. Keeping the anonymous bridge/tail OUT of this map
-# is intentional: the tool must recover them from callgraph structure.
+# These are already source/machine-code-backed anchors in the Process B / Process A
+# BODY contracts. Keeping the anonymous bridge/tail OUT of this map is intentional:
+# the tool must recover them from callgraph structure.
 ANCHORS = {
     "outer_update": "0x00770e80",
     "physics_pass": "0x0076d100",
@@ -40,6 +44,8 @@ ANCHORS = {
     "motion_read_gate": "0x007682c0",
     "sdf_solve": "0x007b3f40",
     "post_solve_writer": "0x007b4110",
+    "body_array_integrator_loop": "0x007b2270",
+    "body_integrator": "0x007bab70",
 }
 
 
@@ -166,15 +172,23 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
 
     sdf_solve = ANCHORS["sdf_solve"]
     post_solve_writer = ANCHORS["post_solve_writer"]
+    body_array_integrator_loop = ANCHORS["body_array_integrator_loop"]
+    body_integrator = ANCHORS["body_integrator"]
+
     bridge_candidates = []
     for target in repeated_targets:
         callees = {row["to"] for row in outgoing.get(target, [])}
-        if {sdf_solve, post_solve_writer}.issubset(callees):
+        if {
+            sdf_solve,
+            post_solve_writer,
+            body_array_integrator_loop,
+        }.issubset(callees):
             bridge_candidates.append(target)
     if len(bridge_candidates) != 1:
         raise ValueError(
             "expected exactly one repeated between-pass callee that directly calls "
-            "both SDF solve and post-solve writer; found " + str(bridge_candidates)
+            "SDF solve, post-solve writer and BODY-array integrator loop; found "
+            + str(bridge_candidates)
         )
     between_pass_bridge = bridge_candidates[0]
 
@@ -187,8 +201,18 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
         ),
         _single_direct_call(bridge_rows, between_pass_bridge, sdf_solve),
         _single_direct_call(bridge_rows, between_pass_bridge, post_solve_writer),
+        _single_direct_call(
+            bridge_rows, between_pass_bridge, body_array_integrator_loop
+        ),
     ]
     _require_order(between_pass_bridge, bridge_required)
+
+    body_loop_rows = outgoing[body_array_integrator_loop]
+    body_integrator_call = _single_direct_call(
+        body_loop_rows,
+        body_array_integrator_loop,
+        body_integrator,
+    )
 
     pass_rows = outgoing[physics_pass]
     tail_candidates = []
@@ -239,6 +263,9 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
                 ),
                 "calls_post_solve_writer": any(
                     row.get("to") == post_solve_writer for row in target_rows
+                ),
+                "calls_body_array_integrator_loop": any(
+                    row.get("to") == body_array_integrator_loop for row in target_rows
                 ),
                 "selected_between_pass_bridge": target == between_pass_bridge,
             }
@@ -297,6 +324,7 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
         (physics_pass, pass_rows),
         (between_pass_bridge, bridge_rows),
         (physics_pass_tail, tail_rows),
+        (body_array_integrator_loop, body_loop_rows),
     ):
         for row in rows:
             target = row["to"]
@@ -347,13 +375,14 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
             "pointer_size": binary.get("pointer_size"),
         },
         "anchors": ANCHORS,
+        "imported_semantic_contracts": [BODY_INTEGRATION_CONTRACT],
         "recovered": {
             "between_pass_bridge": {
                 "address": between_pass_bridge,
                 "name": functions[between_pass_bridge].get("name"),
                 "status": (
-                    "repeated-between-two-physics-passes-and-calls-"
-                    "sdf-solve-plus-post-solve-writer"
+                    "repeated-between-two-physics-passes-and-calls-sdf-solve-plus-"
+                    "post-solve-writer-plus-body-array-integrator-loop"
                 ),
                 "promoted": False,
             },
@@ -377,6 +406,14 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
             "ordered_direct_calls": [_edge(row) for row in bridge_rows],
             "required_order": [_edge(row) for row in bridge_required],
         },
+        "body_integration": {
+            "array_loop": body_array_integrator_loop,
+            "persistent_integrator": body_integrator,
+            "array_loop_ordered_direct_calls": [_edge(row) for row in body_loop_rows],
+            "required_integrator_call": _edge(body_integrator_call),
+            "semantic_contract": BODY_INTEGRATION_CONTRACT,
+            "schedule_link_proven": True,
+        },
         "physics_pass": {
             "function": physics_pass,
             "ordered_direct_calls": [_edge(row) for row in pass_rows],
@@ -395,15 +432,18 @@ def build_body_update_schedule_frontier(root: Path) -> dict[str, Any]:
             "direct_call_order_proven": True,
             "between_pass_bridge_semantics_proven": False,
             "physics_pass_tail_semantics_proven": False,
-            "pose_integration_writer_proven": False,
-            "motion_triplet_writer_proven": False,
+            "persistent_body_integrator_anchor_imported": True,
+            "persistent_body_integrator_schedule_link_proven": True,
+            "motion_triplet_writer_proven_by_this_report": False,
+            "pose_integration_writer_proven_by_this_report": False,
             "object_pointer_provenance_from_callgraph": False,
             "automatic_function_renaming_performed": False,
             "note": (
-                "The report proves only direct-call ordering around already proven "
-                "BODY/vehicle anchors. Recovered anonymous helpers remain instruction-"
-                "export targets until pointer provenance and STORE/LOAD evidence close "
-                "their object/state semantics."
+                "The report proves direct-call ordering around established BODY/vehicle "
+                "anchors and links the proven BODY-array loop to the proven persistent "
+                "integrator. Field semantics come from the separately corroborated "
+                "BODY integration contract, not from callgraph structure. Recovered "
+                "anonymous helpers remain unrenamed."
             ),
         },
     }
@@ -442,6 +482,10 @@ def main() -> int:
     print(
         "physics-pass tail: "
         + report["recovered"]["physics_pass_tail"]["address"]
+    )
+    print(
+        "BODY integrator: "
+        + report["body_integration"]["persistent_integrator"]
     )
     print(
         "instruction-export targets: "
