@@ -1,33 +1,27 @@
 # Process 1 — lifecycle pointer join
 
 The persistent BODY path is already closed through the solver/post-solve writer,
-and the upper vehicle-update side now has a machine-composed pointer-value graph:
+and the upper vehicle-update side now has a machine-composed pointer-value graph.
+Process 1 also has an independent local alias proof:
 
 ```text
-receiver callsite
-→ local pointer source
-→ parent-call register transfer
-→ pointer-value closure endpoint
+exact literal candidate-table STORE
+→ stable base-register value across the local interval
+→ receiver-source memory use
 ```
 
-The remaining lifecycle blocker is stricter than a vtable hit.  A useful static
-join must tie all of the following to the same value source:
+That proof is `SHIFT.VehicleVtablePointerAlias/1`. This block does not duplicate
+its register-continuity analysis. Instead it asks whether that already-verified
+local value relationship can be joined to both the persistent vehicle pointer
+graph and independent PE/source-backed class lifecycle evidence.
 
-```text
-unique PE-backed class vtable
-→ exact machine instruction referencing that vtable
-→ p-code STORE
-→ STORE destination base-register origin
-→ existing VehiclePointerValueClosure node
-```
-
-This block adds:
+Tool:
 
 ```text
 tools/ghidra/build_vehicle_lifecycle_pointer_join.py
 ```
 
-Output format:
+Output:
 
 ```text
 SHIFT.VehicleLifecyclePointerJoin/1
@@ -35,174 +29,182 @@ SHIFT.VehicleLifecyclePointerJoin/1
 
 ## Inputs
 
-The join consumes four already-existing evidence layers:
+The builder consumes exactly three existing contracts:
 
 1. `SHIFT.VehiclePointerValueClosure/1`;
-2. `SHIFT.GhidraVtableXrefInstructionAudit/1`;
-3. `SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1`;
-4. the original targeted `SHIFT.GhidraFunctionInstructions/2` slice used by the
-   vtable audit.
+2. `SHIFT.VehicleVtablePointerAlias/1`;
+3. `SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1`.
 
 Example:
 
 ```bash
 python3 tools/ghidra/build_vehicle_lifecycle_pointer_join.py \
   out/vehicle_pointer_value_closure.json \
-  out/vtable_xref_instruction_audit.json \
+  out/vehicle_vtable_pointer_alias.json \
   out/class_evidence/class_lifecycle_source_evidence.json \
-  out/vehicle_lifecycle_instructions.jsonl \
   --json-out out/vehicle_lifecycle_pointer_join.json \
   --targets-out out/vehicle_lifecycle_next_targets.txt
 ```
 
-`--require-verified-join` can be used as a strict gate when a later stage must
-not proceed without at least one exact static value-source join.
+`--require-verified-join` is a strict optional gate for consumers which require
+at least one fully joined static candidate.
 
-## Independent raw cross-check
+## Imported local alias proof
 
-The vtable instruction audit is not trusted blindly.  For every candidate this
-stage reopens the raw instruction export and requires:
-
-- the exact function to exist;
-- the exact STORE instruction to exist;
-- p-code `STORE` on that instruction;
-- the exact vtable reference reported by the earlier audit;
-- the exact simple memory operand reported by the earlier audit.
-
-Any drift aborts the builder rather than silently reusing stale candidate data.
-
-## STORE-base origin trace
-
-The STORE destination base register is traced backwards only through a very
-small linear model:
-
-- `MOV reg, reg` copies;
-- `MOV reg, [base + constant]` with p-code `LOAD`;
-- `LEA reg, [base + constant]` without p-code `LOAD`;
-- an untouched register reaching the beginning of the function.
-
-The trace stops at:
-
-- `CALL` / `CALLIND`;
-- branch/conditional-branch/return p-code;
-- x86 control-flow instructions;
-- unsupported register writers;
-- unknown/complex definition sources;
-- copy cycles or excessive copy depth.
-
-This is deliberately conservative.  It does not cross a call because caller-
-saved/callee-saved conventions alone are not pointer provenance, and it does
-not linearize control flow through a branch.
-
-## Exact closure-node requirement
-
-A trace is joined to the vehicle pointer graph only if its terminal source maps
-to the exact node ID already present in `SHIFT.VehiclePointerValueClosure/1`.
-The currently supported exact source shapes are:
+`SHIFT.VehicleVtablePointerAlias/1` already requires an exact shape equivalent
+to:
 
 ```text
-entry:<function>:<register>
+MOV [base + displacement], literal_table_address
+```
+
+with p-code `STORE`, the literal equal to the same-instruction referenced
+candidate table address, and the same local base-register value preserved across
+the interval to the receiver-source memory use.
+
+Calls, branches, returns, partial-register writes, implicit GPR writes and
+unsupported interval instructions prevent that contract from becoming
+`verified`.
+
+This lifecycle join therefore does not re-run a weaker local tracer. It imports
+that result and fails closed if an alias marked `verified` no longer contains:
+
+- a verified exact literal table STORE;
+- exact stored-address/reference equality;
+- destination-base/receiver-source-base equality.
+
+## Exact pointer-closure node
+
+For each alias candidate the builder reconstructs the exact receiver-source node
+identifier used by `SHIFT.VehiclePointerValueClosure/1`:
+
+```text
 memory-source:<function>:<instruction>:<base-register>:<displacement>
 ```
 
-Examples:
+Example:
 
 ```text
-entry:0x00102000:ECX
-memory-source:0x00102000:0x00102004:EBX:64
+memory-source:0x00715700:0x00715730:ESI:64
 ```
 
-Matching a register name in the same function is not enough.  The origin trace
-must terminate at the same syntactic source node.
+The join proceeds only if this exact node already exists in the pointer closure.
+A repeated register name, equal displacement in another function, nearby call or
+similar address is not accepted as identity evidence.
 
-## Class/lifecycle correlation
-
-`SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1` supplies the PE-backed unique vtable
-identity and source-observed lifecycle candidates.
-
-An exact numeric vtable match may associate the STORE with one class-evidence
-row.  The function is then classified, without semantic renaming, as one of:
-
-- `initializer-candidate` — source evidence says the selected initializer writes
-  its own unique vtable;
-- `teardown-transition-candidate` — source evidence records own-vtable write plus
-  an ancestor-vtable-writer call;
-- `own-vtable-writer`;
-- unclassified.
-
-These are evidence roles, not recovered C++ names.
-
-## What `verified_static_value_source_join` means
-
-A candidate becomes `verified_static_value_source_join=true` only when:
-
-1. the class lifecycle vtable match is unique;
-2. the raw STORE/reference/operand cross-check succeeds;
-3. the STORE base-register origin trace is `verified`;
-4. that terminal source node already exists in the vehicle pointer closure.
-
-This proves a static relationship of the form:
+Thus the pointer side of a verified join is:
 
 ```text
-known unique vtable address is stored through a base value
-whose proven local source is the same syntactic source represented
-in the existing vehicle pointer-value graph
+exact literal table STORE
+→ verified local same-pointer alias
+→ exact receiver-source memory node
+→ existing persistent vehicle pointer-value graph node
 ```
 
-It still does **not** prove:
+## PE/source-backed class correlation
 
-- that offset zero is definitely the final object's vptr field;
-- constructor semantics;
-- destructor semantics;
-- whole-lifetime class identity;
-- object ownership;
-- vehicle-manager identity;
-- scheduler identity;
-- input/control ownership;
-- persistence of the same object across arbitrary calls or frames.
+`SHIFT-CLASS-LIFECYCLE-SOURCE-EVIDENCE/1` independently supplies class rows with
+PE-backed unique vtable addresses and source-observed lifecycle candidates.
 
-A non-zero STORE displacement is preserved exactly and is never renamed as a
-subobject/vptr offset by guesswork.
+The stored table address from the alias report is matched numerically to
+`own_vtable`:
 
-## Duplicate or missing class-vtable identity
+- no matching lifecycle row → `unknown`;
+- more than one matching row → `ambiguous`;
+- exactly one row → class-vtable address correlation is `verified`.
 
-The join is fail-closed around class identity:
+No row is selected by file order or class name similarity.
 
-- zero lifecycle rows for a vtable → `unknown`;
-- more than one lifecycle row for the same vtable → `ambiguous`;
-- exactly one row → numeric class-vtable identity can be `verified`, but only for
-  that vtable address and source-evidence row.
+The matching function receives only the lifecycle role already supported by the
+source evidence:
 
-No class is chosen by order.
+- `initializer-candidate` when the selected initializer literally writes its own
+  unique vtable;
+- `teardown-transition-candidate` when the source evidence records the own-vtable
+  write plus ancestor-vtable-writer transition;
+- `own-vtable-writer` for another literal writer;
+- unclassified otherwise.
+
+These role labels remain evidence categories. They are not automatic C++
+constructor/destructor names.
+
+## Verified lifecycle-pointer join
+
+`verified_lifecycle_pointer_join=true` requires all of the following:
+
+1. `same_pointer_table_store_state == verified` from the independent alias
+   contract;
+2. its exact receiver-source node exists in
+   `SHIFT.VehiclePointerValueClosure/1`;
+3. the exact stored table address maps to exactly one lifecycle class row.
+
+The resulting statement is deliberately narrow:
+
+```text
+a specific candidate-table address is stored through a locally proven pointer
+value, that same receiver-source value is already represented in the persistent
+vehicle pointer graph, and the numeric table address is the unique PE-backed
+vtable recorded for one lifecycle-evidence class row
+```
+
+This materially narrows class/lifetime work without claiming more than the
+static evidence supports.
+
+## Offset zero
+
+The imported alias may report:
+
+```text
+same_pointer_offset_zero_table_store_verified = true
+```
+
+This is stronger layout evidence than a heuristic vtable xref, but even in a
+verified lifecycle-pointer join it does not prove that the field is a C++ vptr.
+Non-zero offsets are preserved exactly and are not renamed as subobject vptrs.
 
 ## Next targeted exports
 
-When a vtable maps to a lifecycle row, the report emits lifecycle neighbors as
-next instruction targets:
+For a unique lifecycle match, the builder emits the remaining lifetime neighbors:
 
 - initializer candidate;
-- direct source callers of that initializer;
+- direct source callers of the initializer;
 - teardown-transition candidates.
 
-The current STORE function is omitted from this next-target set because its
-instruction slice has already been consumed.
+The current table-STORE function is omitted when it is already the analyzed
+function.
 
-These targets are intended for the next lifetime proof stage: allocation/
-initialization transfer, teardown/deallocation transfer, and exact pointer-value
-continuity between lifecycle functions and the persistent vehicle-update graph.
+These targets are the next lifetime-transfer frontier. The next block should
+prove value continuity across initialization/allocation and teardown/deallocation
+calls, preferably by composing existing class lifetime/deleting-wrapper evidence
+rather than inventing class semantics from callgraph adjacency.
+
+## Fail-closed conditions
+
+The builder aborts on contract-format drift and on internally inconsistent
+`verified` alias rows, including a verified alias whose exact STORE is no longer
+verified or whose destination base no longer matches the receiver-source base.
+
+It emits blockers rather than guesses when:
+
+- local alias proof is ambiguous or unknown;
+- the exact receiver-source node is absent from the pointer closure;
+- the stored table address is absent from lifecycle evidence;
+- multiple lifecycle rows claim the same numeric vtable address.
 
 ## Evidence boundary
 
-The report keeps the following flags false even after a verified join:
+Even a verified join leaves all of these false:
 
 ```text
-vptr_field_proven
+vptr_semantics_proven
 constructor_semantics_proven
 destructor_semantics_proven
 whole_lifetime_class_identity_proven
 owner_identity_proven
+input_control_provenance_proven
+scheduler_identity_proven
 ```
 
-That boundary is intentional.  The stage reduces lifecycle search space and can
-prove exact local alias/source relationships without turning callgraph/vtable
-adjacency into unsupported class or ownership semantics.
+The point of this stage is to close an exact static correlation boundary while
+preserving the distinction between value provenance, layout evidence, lifecycle
+candidates and final semantic identity.
