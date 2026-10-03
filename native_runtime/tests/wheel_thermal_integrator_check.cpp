@@ -240,12 +240,6 @@ int main() {
         bool non_finite_rejected = false;
         try {
             auto invalid = base_input();
-            invalid.temperature_0 = 0.0;
-        } catch (...) {
-            // Kept empty intentionally; WheelThermalInputs has a packed triplet.
-        }
-        try {
-            auto invalid = base_input();
             invalid.temperatures[1] = std::numeric_limits<double>::infinity();
             (void)execute_fun_00755a60_thermal_integrator(invalid);
         } catch (const std::invalid_argument&) {
