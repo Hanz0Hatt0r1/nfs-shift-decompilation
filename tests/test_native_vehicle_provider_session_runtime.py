@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from native_vehicle_provider_session_runtime import (
@@ -82,8 +84,7 @@ def test_session_adapts_all_nine_boundaries_and_commits_telemetry() -> None:
 
 def test_missing_boundary_is_rejected_before_executor_or_provider_side_effects() -> None:
     events: list[str] = []
-    bundle = _bundle(events)
-    bundle.contact_response = None  # type: ignore[assignment]
+    bundle = replace(_bundle(events), contact_response=None)  # type: ignore[arg-type]
     executor_calls = 0
 
     def executor(*_args):
@@ -126,8 +127,10 @@ def test_failed_step_does_not_commit_session_owned_telemetry() -> None:
 def test_empty_scalar_provider_factory_result_fails_closed_without_session_commit() -> None:
     events: list[str] = []
     state = ProviderSessionState()
-    bundle = _bundle(events)
-    bundle.scalar_provider_factory = lambda p: events.append(f"empty-scalar:{p}")  # type: ignore[assignment]
+    bundle = replace(
+        _bundle(events),
+        scalar_provider_factory=lambda p: events.append(f"empty-scalar:{p}"),
+    )  # type: ignore[arg-type]
 
     with pytest.raises(ValueError, match="scalar provider factory"):
         execute_provider_session_step(
