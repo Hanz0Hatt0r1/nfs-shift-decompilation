@@ -158,10 +158,12 @@ It therefore preserves:
 It does **not** attach the outer update to `NativeRuntimeState::fixed_step()`.
 
 The latest Process 1 merge at the start of this phase is PR #1174,
-`SHIFT.OuterUpdateMachineGate/1`. It joins the sole eligible source-side
-`FUN_00713050 -> FUN_00794a30` gate to one unique mapped machine callsite at
-`0x007130f1`. That closes machine callsite cardinality, but it explicitly leaves
-dynamic execution multiplicity and the runtime cadence owner unproven. The
+`SHIFT.OuterUpdateMachineGate/1`. PR #1174 adds the fail-closed machine analyzer
+that can map the unique source-side `FUN_00713050 -> FUN_00794a30` gate to one
+exact CALL site once the targeted retail instruction export is supplied. It does
+not contain a committed retail instruction result and therefore does not itself
+prove one mapped machine callsite or close machine-callsite cardinality. Dynamic
+execution multiplicity and the runtime cadence owner also remain unproven. The
 contract therefore still reports fixed-step and render-cadence auto-scheduling
 as disallowed. Process 2 must keep outer execution explicit.
 
@@ -232,7 +234,7 @@ multi-update BODY path; Phase 696 isolates only the newly narrowed anchor.
 | BODY origin/basis decode | typed persistent snapshots since Phase 695 | closed |
 | BODY -> concrete vehicle identity | unproven | Process 1 |
 | BODY pose -> renderer scene identity | unproven | Process 1 + Process 3 join |
-| outer-update machine callsite | unique mapped callsite proven by PR #1174 | closed |
+| outer-update machine callsite | source gate narrowed; exact retail machine mapping remains evidence-gated by PR #1174 | targeted retail instruction export / Process 1 |
 | outer-update dynamic multiplicity / cadence owner | unproven after PR #1174 | keep explicit |
 
 ## Next blocker
