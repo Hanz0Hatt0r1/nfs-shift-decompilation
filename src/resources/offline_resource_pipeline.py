@@ -95,6 +95,55 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _sha256_file(path: Path, *, chunk_size: int = 1024 * 1024) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while True:
+            chunk = stream.read(chunk_size)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _source_kind(materialized: MaterializedArchive) -> str:
+    if materialized.member is not None:
+        return "zip-member"
+    source = Path(materialized.source)
+    if source.suffix.lower() == ".bff":
+        return "bff"
+    return "directory-bff"
+
+
+def _duplicate_identity_groups(
+    resources: Sequence[dict[str, Any]],
+    *,
+    field: str,
+    identity_kind: str,
+) -> list[dict[str, Any]]:
+    buckets: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in resources:
+        value = row.get(field)
+        if value in (None, ""):
+            continue
+        buckets[str(value)].append(row)
+
+    groups: list[dict[str, Any]] = []
+    for value, rows in buckets.items():
+        if len(rows) < 2:
+            continue
+        groups.append({
+            "identity_kind": identity_kind,
+            "identity": value,
+            "occurrences": len(rows),
+            "resource_ids": sorted(str(row["id"]) for row in rows),
+            "archive_ids": sorted({str(row["archive_id"]) for row in rows}),
+            "paths": sorted({str(row["path"]) for row in rows}),
+        })
+    groups.sort(key=lambda row: (-int(row["occurrences"]), str(row["identity"])))
+    return groups
+
+
 def _archive_id(materialized: MaterializedArchive, index: int) -> str:
     token = f"{materialized.source}\n{materialized.member or materialized.path.name}"
     return f"bff-{index:04d}-" + hashlib.sha256(token.encode("utf-8")).hexdigest()[:16]
@@ -268,15 +317,20 @@ def build_catalog(
 
     for archive_index_value, materialized_archive in enumerate(materialized):
         archive_id = _archive_id(materialized_archive, archive_index_value)
+        archive_sha256 = _sha256_file(materialized_archive.path)
         with BFF(materialized_archive.path) as archive:
+            encryption = "rc4" if int(archive.x12d) == 2 else "none"
             archive_row = {
                 "id": archive_id,
                 "source": materialized_archive.source,
                 "source_member": materialized_archive.member,
+                "source_kind": _source_kind(materialized_archive),
                 "archive_name": materialized_archive.display_name.split("/")[-1],
                 "bytes": materialized_archive.path.stat().st_size,
+                "sha256": archive_sha256,
                 "version": int(archive.version),
                 "x12d": int(archive.x12d),
+                "encryption": encryption,
                 "entry_count": len(archive.entries),
             }
             archives.append(archive_row)
@@ -287,6 +341,7 @@ def build_catalog(
                 extension_counts[ext or "<none>"] += 1
                 compression_counts[str(int(entry.type))] += 1
                 resource_id = f"{archive_id}#{int(entry.index)}"
+                raw = archive.raw_payload(entry)
                 row: dict[str, Any] = {
                     "id": resource_id,
                     "archive_id": archive_id,
@@ -296,9 +351,14 @@ def build_catalog(
                     "normalized_path": _norm(path),
                     "extension": ext,
                     "category": classify(path),
+                    "offset": int(entry.offset),
                     "compression_type": int(entry.type),
                     "compressed_size": int(entry.compressed_size),
                     "uncompressed_size": int(entry.uncompressed_size),
+                    "crc32_field": int(entry.crc32_field),
+                    "fileext": int(entry.fileext),
+                    "encryption": encryption,
+                    "raw_sha256": _sha256(raw),
                     "decode_status": "deferred" if ext in KNOWN_DECODE_EXTENSIONS else "unsupported",
                     "dependencies": [],
                 }
@@ -311,13 +371,11 @@ def build_catalog(
                 if should_decode:
                     decoded_here += 1
                     try:
-                        raw = archive.raw_payload(entry)
                         payload = archive.extract_entry(entry, type2="lzx")
                         analysis = analyze_decoded_resource(path, payload)
                         deps, neutral = _semantic_dependencies(path, payload, analysis)
                         analysis_error = analysis.get("analysis_error")
                         row.update({
-                            "raw_sha256": _sha256(raw),
                             "decoded_sha256": _sha256(payload),
                             "decoded_size": len(payload),
                             "analysis_format": (analysis.get("analysis") or {}).get("format"),
@@ -356,6 +414,16 @@ def build_catalog(
     for row in resources:
         global_index[row["normalized_path"]].append(row["id"])
         archive_path_index[row["archive_id"]][row["normalized_path"]].append(row["id"])
+
+    path_duplicates = _duplicate_identity_groups(
+        resources, field="normalized_path", identity_kind="normalized-path"
+    )
+    raw_duplicates = _duplicate_identity_groups(
+        resources, field="raw_sha256", identity_kind="stored-payload-sha256"
+    )
+    decoded_duplicates = _duplicate_identity_groups(
+        resources, field="decoded_sha256", identity_kind="decoded-payload-sha256"
+    )
 
     edges: list[dict[str, Any]] = []
     for dep in pending_dependencies:
@@ -396,6 +464,17 @@ def build_catalog(
         "version": 1,
         "archives": archives,
         "resources": resources,
+        "duplicate_identities": {
+            "normalized_path": path_duplicates,
+            "stored_payload_sha256": raw_duplicates,
+            "decoded_payload_sha256": decoded_duplicates,
+            "limitations": [
+                "Normalized-path equality does not prove payload equality.",
+                "Stored-payload SHA-256 equality proves exact BFF payload-byte equality only.",
+                "Decoded-payload SHA-256 equality proves decoded-byte equality only for resources that were decoded.",
+                "No material, shader-permutation, format-layout, or runtime semantic equivalence is inferred.",
+            ],
+        },
         "summary": {
             "archives": len(archives),
             "resources": len(resources),
@@ -403,11 +482,16 @@ def build_catalog(
             "categories": dict(sorted(category_counts.items())),
             "compression_types": dict(sorted(compression_counts.items())),
             "decode_status": dict(sorted(decode_counts.items())),
+            "duplicate_normalized_path_groups": len(path_duplicates),
+            "duplicate_stored_payload_groups": len(raw_duplicates),
+            "duplicate_decoded_payload_groups": len(decoded_duplicates),
         },
         "boundary": {
             "decode_known": bool(decode_known),
             "unknown_format_policy": "indexed-but-not-guessed",
             "runtime_evidence_substitution": False,
+            "raw_sha256_semantics": "exact-stored-bff-payload-bytes",
+            "duplicate_identity_semantics": "byte-or-path-identity-only-no-semantic-equivalence",
         },
     }
     coverage = {

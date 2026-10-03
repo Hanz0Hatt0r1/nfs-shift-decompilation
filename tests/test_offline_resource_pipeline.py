@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import zipfile
 from pathlib import Path
 
@@ -10,9 +11,12 @@ class FakeEntry:
     def __init__(self, index: int, path: str, payload: bytes = b"x", typ: int = 0):
         self.index = index
         self.path = path
+        self.offset = 0x1000 + index * 0x20
         self.type = typ
         self.compressed_size = len(payload)
         self.uncompressed_size = len(payload)
+        self.crc32_field = 0xA000 + index
+        self.fileext = 0
         self._payload = payload
 
 
@@ -49,6 +53,58 @@ def test_materialize_bff_inputs_rejects_parent_traversal(tmp_path):
         assert "unsafe ZIP member" in str(exc)
     else:
         raise AssertionError("unsafe ZIP member was accepted")
+
+
+def test_catalog_inventory_is_content_addressed_without_decoding(monkeypatch, tmp_path):
+    first = tmp_path / "A.bff"
+    second = tmp_path / "B.bff"
+    first.write_bytes(b"archive-a")
+    second.write_bytes(b"archive-b")
+    FakeBFF.entries_by_name = {
+        "A.bff": [
+            FakeEntry(0, "shared/one.fxo", b"same"),
+            FakeEntry(1, "same/path.dds", b"left"),
+        ],
+        "B.bff": [
+            FakeEntry(0, "other/two.fxo", b"same"),
+            FakeEntry(1, "same/path.dds", b"right"),
+        ],
+    }
+    monkeypatch.setattr(pipeline, "BFF", FakeBFF)
+    monkeypatch.setattr(pipeline, "classify", lambda path: "TEST")
+
+    materialized = [
+        pipeline.MaterializedArchive(str(first), None, first),
+        pipeline.MaterializedArchive(str(second), None, second),
+    ]
+    catalog, graph, coverage = pipeline.build_catalog(materialized, decode_known=False)
+
+    assert graph["edges"] == []
+    assert coverage["blocked"] == 0
+    assert catalog["archives"][0]["sha256"] == hashlib.sha256(b"archive-a").hexdigest()
+    assert catalog["archives"][0]["source_kind"] == "bff"
+    assert catalog["archives"][0]["encryption"] == "none"
+
+    first_resource = catalog["resources"][0]
+    assert first_resource["offset"] == 0x1000
+    assert first_resource["crc32_field"] == 0xA000
+    assert first_resource["fileext"] == 0
+    assert first_resource["encryption"] == "none"
+    assert first_resource["raw_sha256"] == hashlib.sha256(b"same").hexdigest()
+    assert "decoded_sha256" not in first_resource
+
+    raw_groups = catalog["duplicate_identities"]["stored_payload_sha256"]
+    assert len(raw_groups) == 1
+    assert raw_groups[0]["occurrences"] == 2
+    assert raw_groups[0]["paths"] == ["other/two.fxo", "shared/one.fxo"]
+
+    path_groups = catalog["duplicate_identities"]["normalized_path"]
+    assert len(path_groups) == 1
+    assert path_groups[0]["identity"] == "same/path.dds"
+    assert path_groups[0]["occurrences"] == 2
+    assert catalog["duplicate_identities"]["decoded_payload_sha256"] == []
+    assert catalog["summary"]["duplicate_stored_payload_groups"] == 1
+    assert catalog["boundary"]["raw_sha256_semantics"] == "exact-stored-bff-payload-bytes"
 
 
 def test_catalog_uses_semantic_edges_and_keeps_missing_dependency_explicit(monkeypatch, tmp_path):
@@ -105,6 +161,8 @@ def test_catalog_uses_semantic_edges_and_keeps_missing_dependency_explicit(monke
     catalog, graph, coverage = pipeline.build_catalog(materialized, decode_known=True)
 
     assert catalog["summary"]["resources"] == 3
+    assert catalog["archives"][0]["sha256"] == hashlib.sha256(b"fixture").hexdigest()
+    assert all(row.get("raw_sha256") for row in catalog["resources"])
     assert coverage["blocked"] == 0
     statuses = {(edge["ref"], edge["status"]) for edge in graph["edges"]}
     assert ("tracks/test/a.bmt", "resolved") in statuses
