@@ -16,3 +16,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_vehicle_body_pose_runtime_handoff
     COMMAND shift_runtime_vehicle_body_pose_runtime_handoff_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase701.cmake)
