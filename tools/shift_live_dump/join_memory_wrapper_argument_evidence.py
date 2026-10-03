@@ -49,6 +49,31 @@ def _input_storages_in_source(source: str, input_storage: list[str]) -> list[str
     return [storage for storage in input_storage if f"input:{storage}" in source]
 
 
+def _project_storage_to_source(
+    storages: list[str],
+    input_storage: list[str],
+    source_arguments: list[str],
+    positional_join_ready: bool,
+) -> list[dict[str, Any]]:
+    if not positional_join_ready:
+        return []
+    rows: list[dict[str, Any]] = []
+    for storage in storages:
+        if storage not in input_storage:
+            continue
+        index = input_storage.index(storage)
+        if index >= len(source_arguments):
+            continue
+        rows.append(
+            {
+                "entry_storage": storage,
+                "source_argument_index": index,
+                "source_argument_expression": source_arguments[index],
+            }
+        )
+    return rows
+
+
 def _join_backend_argument(
     argument: dict[str, Any],
     input_storage: list[str],
@@ -99,6 +124,10 @@ def _join_callsite(
             "forwarding_join_ready": False,
             "ghidra_crosschecked_join": False,
             "backend_calls": [],
+            "backend_forwarded_input_storage": [],
+            "declared_input_storage_not_forwarded_to_backend": [],
+            "source_arguments_forwarded_to_backend": [],
+            "source_arguments_not_forwarded_to_backend": [],
             "mapped_source_argument_indices": [],
             "unmapped_source_argument_indices": list(range(len(source_arguments))),
             "backend_argument_count": 0,
@@ -119,6 +148,26 @@ def _join_callsite(
     )
     forwarding_confirmed = forwarding.get("forwarding_confirmed") is True
     join_ready = bool(source_arity_matches_storage and forwarding_confirmed)
+
+    forwarded_storage = [
+        str(value) for value in (forwarding.get("backend_forwarded_input_storage") or [])
+    ]
+    unforwarded_storage = [
+        str(value)
+        for value in (forwarding.get("declared_input_storage_not_forwarded_to_backend") or [])
+    ]
+    forwarded_source_rows = _project_storage_to_source(
+        forwarded_storage,
+        input_storage,
+        source_arguments,
+        source_arity_matches_storage,
+    )
+    unforwarded_source_rows = _project_storage_to_source(
+        unforwarded_storage,
+        input_storage,
+        source_arguments,
+        source_arity_matches_storage,
+    )
 
     backend_calls: list[dict[str, Any]] = []
     mapped_indices: set[int] = set()
@@ -155,6 +204,7 @@ def _join_callsite(
                 "target": site.get("target"),
                 "target_name": site.get("target_name"),
                 "target_calling_convention": site.get("target_calling_convention"),
+                "transfer_kind": site.get("transfer_kind"),
                 "forwarding_arguments_resolved": site.get("arguments_resolved") is True,
                 "incoming_state_uncertain": site.get("incoming_state_uncertain") is True,
                 "arguments": joined_arguments,
@@ -174,6 +224,10 @@ def _join_callsite(
         **callsite,
         "forwarding_record_present": True,
         "forwarding_input_storage": input_storage,
+        "backend_forwarded_input_storage": forwarded_storage,
+        "declared_input_storage_not_forwarded_to_backend": unforwarded_storage,
+        "source_arguments_forwarded_to_backend": forwarded_source_rows,
+        "source_arguments_not_forwarded_to_backend": unforwarded_source_rows,
         "source_arity_matches_forwarding_input_storage": source_arity_matches_storage,
         "forwarding_confirmed": forwarding_confirmed,
         "forwarding_join_ready": join_ready,
@@ -242,6 +296,9 @@ def join_memory_wrapper_argument_evidence(
         "scope": {
             "source_expression_to_entry_storage_joined": True,
             "entry_storage_to_backend_storage_joined": True,
+            "backend_transfer_kind_preserved": True,
+            "backend_forwarded_input_storage_consumed": True,
+            "unforwarded_source_argument_semantics_proven": False,
             "argument_semantic_roles_proven": False,
             "allocation_size_role_proven": False,
             "pool_selector_role_proven": False,
@@ -253,8 +310,9 @@ def join_memory_wrapper_argument_evidence(
                 "A join-ready row proves mechanical provenance from a parsed source "
                 "argument position through wrapper entry storage to modeled backend "
                 "argument storage. Source arity must exactly match the independently "
-                "recovered forwarding input-storage count. No semantic parameter names "
-                "are inferred from position or value appearance."
+                "recovered forwarding input-storage count. Tail-call/call transfer kind "
+                "and instruction-derived forwarded-entry metadata are preserved, but no "
+                "semantic parameter names are inferred from position or value appearance."
             ),
         },
     }
