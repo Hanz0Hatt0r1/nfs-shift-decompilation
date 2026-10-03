@@ -6,8 +6,8 @@ Phase 630 compact Phase 572 results -> Phase 574 shader admission ->
 Phase 576/577 RenderCommand provenance -> Phase 578 NativeSceneBundle ->
 Phase 580 NativeSceneVulkanSet -> Phase 585 native prepare.
 
-It never promotes static uniqueness to runtime proof.  The Phase 572 wrapper is
-rehydrated only from exact fields already transported by Phase 573: one exact
+It never promotes static uniqueness to runtime proof. The Phase 572 wrapper is
+rehydrated only from exact fields already transported by Phase 630: one exact
 resource path/SHA plus byte-for-byte candidate binding result objects.
 """
 from __future__ import annotations
@@ -295,7 +295,7 @@ def _rehydrate_phase572_matches(
     if capture.get("pipeline_ready") is not True:
         blockers.append("capture-pipeline:not-ready")
 
-    for resource_index, resource in enumerate(capture.get("resources") or []):
+    for resource_index, resource in enumerate(capture.get("resource_results") or []):
         if not isinstance(resource, Mapping):
             blockers.append(f"capture-pipeline:resource-{resource_index}:invalid")
             continue
@@ -377,9 +377,9 @@ def _rehydrate_phase572_matches(
             },
             "binding_results": copied,
             "boundary": {
-                "rehydrated_from_phase573_compact_transport": True,
+                "rehydrated_from_phase630_compact_transport": True,
                 "candidate_binding_results_copied_without_mutation": True,
-                "target_resource_from_same_phase573_resource_row": True,
+                "target_resource_from_same_phase630_resource_row": True,
                 "new_attribution_performed": False,
             },
         })
@@ -627,7 +627,7 @@ def materialize_renderer_native_scene_handoff(
         "boundary": {
             "phase572_candidate_rows_recomputed": False,
             "phase572_candidate_rows_copied_without_mutation": True,
-            "phase573_resource_identity_is_phase572_target_identity": True,
+            "phase630_resource_identity_is_phase572_target_identity": True,
             "partial_phase574_admission_can_seed_only_proven_draw_subset": True,
             "unproven_draw_promoted": False,
             "static_unique_shader_promoted": False,
