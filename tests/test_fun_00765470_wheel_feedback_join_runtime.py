@@ -4,6 +4,7 @@ from fun_00765470_wheel_feedback_join_runtime import (
     BODY_ARRAY_INTEGRATION,
     FORMAT,
     POST_SOLVE_FEEDBACK,
+    SDF_SOLVE,
     WHEEL_SHARED_TRIPLET,
     contract,
     execute_wheel_feedback_join,
@@ -15,6 +16,7 @@ def test_contract_preserves_only_proven_half_step_anchors():
     assert payload["format"] == FORMAT
     assert payload["required_order"] == [
         WHEEL_SHARED_TRIPLET,
+        SDF_SOLVE,
         POST_SOLVE_FEEDBACK,
         BODY_ARRAY_INTEGRATION,
     ]
@@ -43,6 +45,7 @@ def test_wheel_anchor_runs_before_byte_exact_phase679_handoff():
     assert result.body_bytes is replacement
     assert result.events == (
         WHEEL_SHARED_TRIPLET,
+        SDF_SOLVE,
         POST_SOLVE_FEEDBACK,
         BODY_ARRAY_INTEGRATION,
     )
