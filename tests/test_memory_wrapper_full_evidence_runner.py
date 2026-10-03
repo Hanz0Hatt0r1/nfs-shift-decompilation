@@ -54,6 +54,18 @@ out.write_text(json.dumps({'format':'SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1','rele
 """,
     )
     _write_script(
+        ghidra_dir / "analyze_release_alternate_backend.py",
+        r"""#!/usr/bin/env python3
+import json, sys
+from pathlib import Path
+assert Path(sys.argv[1]).is_file()
+assert sys.argv[2] == '--forwarding'
+assert Path(sys.argv[3]).is_file()
+out = Path(sys.argv[sys.argv.index('--json-out') + 1])
+out.write_text(json.dumps({'format':'SHIFT-MEMORY-RELEASE-ALTERNATE-BACKEND/1','released_pointer_to_alternate_backend_storage_proven':False,'blockers':['wrapper_released_pointer_storage_not_proven']}) + '\n', encoding='utf-8')
+""",
+    )
+    _write_script(
         ghidra_dir / "summarize_memory_retail_static_evidence.py",
         r"""#!/usr/bin/env python3
 import json, sys
@@ -162,6 +174,7 @@ def test_runner_builds_complete_memory_evidence_bundle(tmp_path):
         "memory_wrapper_provenance_patterns.json": "SHIFT-MEMORY-WRAPPER-PROVENANCE-PATTERNS/1",
         "memory_allocation_size_role_join.json": "SHIFT-MEMORY-ALLOCATION-SIZE-ROLE-JOIN/1",
         "memory_release_pointer_chain.json": "SHIFT-MEMORY-RELEASE-POINTER-CHAIN/1",
+        "memory_release_alternate_backend.json": "SHIFT-MEMORY-RELEASE-ALTERNATE-BACKEND/1",
         "memory_released_pointer_role_join.json": "SHIFT-MEMORY-RELEASED-POINTER-ROLE-JOIN/1",
         "memory_retail_static_summary.json": "SHIFT-MEMORY-RETAIL-STATIC-SUMMARY/1",
         "memory_source_semantic_summary.json": "SHIFT-MEMORY-SOURCE-SEMANTIC-SUMMARY/1",
@@ -181,6 +194,7 @@ def test_runner_builds_complete_memory_evidence_bundle(tmp_path):
         report = json.loads((output / "backend" / relative).read_text(encoding="utf-8"))
         assert report["format"] == expected_format
 
+    assert "memory release alternate backend:" in result.stdout
     assert "memory retail static summary:" in result.stdout
     assert "memory source semantic summary:" in result.stdout
     assert "memory wrapper runtime manifest:" in result.stdout
