@@ -58,6 +58,26 @@ def _normalize_backend_tail_calls(
     return normalized, tail_sites
 
 
+def _annotate_backend_forwarded_inputs(wrapper: dict[str, Any]) -> None:
+    declared = [str(value) for value in wrapper.get("input_storage") or []]
+    argument_sources = [
+        str(argument.get("source") or "")
+        for site in wrapper.get("call_sites") or []
+        for argument in site.get("arguments") or []
+        if isinstance(argument, dict)
+    ]
+    forwarded = [
+        storage
+        for storage in declared
+        if any(f"input:{storage}" in source for source in argument_sources)
+    ]
+    wrapper["backend_forwarded_input_storage"] = forwarded
+    wrapper["declared_input_storage_not_forwarded_to_backend"] = [
+        storage for storage in declared if storage not in forwarded
+    ]
+    wrapper["backend_forwarded_input_count"] = len(forwarded)
+
+
 def analyze_memory_wrapper_forwarding_retail(path: Path) -> dict[str, Any]:
     rows = _read_rows(path)
     normalized, tail_sites = _normalize_backend_tail_calls(rows)
@@ -75,6 +95,7 @@ def analyze_memory_wrapper_forwarding_retail(path: Path) -> dict[str, Any]:
             target = base._norm_address(site.get("target"))
             is_tail = address in tail_sites and tail_sites[address] == target
             site["transfer_kind"] = "tail-call" if is_tail else "call"
+        _annotate_backend_forwarded_inputs(wrapper)
 
     report["instruction_export"] = str(path)
     report["tail_call_modeling"] = {
@@ -89,6 +110,8 @@ def analyze_memory_wrapper_forwarding_retail(path: Path) -> dict[str, Any]:
     scope = report.setdefault("scope", {})
     scope["external_backend_tail_calls_modeled"] = True
     scope["ghidra_declared_parameter_semantics_trusted"] = False
+    scope["backend_forwarded_input_storage_instruction_derived"] = True
+    scope["unforwarded_declared_storage_proves_unused_abi_parameter"] = False
     return report
 
 
