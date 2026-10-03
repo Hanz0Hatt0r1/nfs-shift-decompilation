@@ -1,0 +1,69 @@
+{
+  "format": "SHIFT.TransformMachinePrecisionEvidence/1",
+  "retail_executable": {
+    "md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "image_base": "0x00400000",
+    "architecture": "x86:LE:32"
+  },
+  "source": {
+    "file": "SHIFT.exe.c",
+    "sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9"
+  },
+  "helpers": {
+    "FUN_007aefb0": {
+      "source_line": 810220,
+      "address_start": "0x007aefb0",
+      "address_end_exclusive": "0x007af003",
+      "byte_count": 83,
+      "sha256": "76c52235cce08d3ec131d43e1b62cda623ac8528944e44f902846a0a71b14f29",
+      "matrix_load_width_bits": 32,
+      "vector_load_width_bits": 64,
+      "output_store_width_bits": 64,
+      "component_orders": [
+        ["m01*y", "m00*x", "m02*z"],
+        ["m10*x", "m11*y", "m12*z"],
+        ["m20*x", "m21*y", "m22*z"]
+      ]
+    },
+    "FUN_007af010": {
+      "source_line": 810237,
+      "address_start": "0x007af010",
+      "address_end_exclusive": "0x007af033",
+      "byte_count": 35,
+      "sha256": "f3256201dee28b97260576ee14c522e236a44d1808516ed8e42efd2e2e2e8324",
+      "matrix_load_width_bits": 32,
+      "scalar_load_width_bits": 64,
+      "output_store_width_bits": 64,
+      "matrix_offsets": ["0x00", "0x0c", "0x18"],
+      "scalar_kept_on_x87_stack_across_components": true
+    },
+    "FUN_007af0a0": {
+      "source_line": 810279,
+      "address_start": "0x007af0a0",
+      "address_end_exclusive": "0x007af0f3",
+      "byte_count": 83,
+      "sha256": "8cd039935dbbe493db7742f7af1859d9abcc7d9c40f212c3f2fa331e992c52cc",
+      "matrix_load_width_bits": 32,
+      "vector_load_width_bits": 64,
+      "output_store_width_bits": 64,
+      "component_orders": [
+        ["m10*y", "m00*x", "m20*z"],
+        ["m01*x", "m11*y", "m21*z"],
+        ["m02*x", "m12*y", "m22*z"]
+      ]
+    }
+  },
+  "correction": {
+    "previous_contract_claim": "double vector/scalar operands are cast to float32 before multiplication",
+    "machine_evidence": "FMUL m64real / FLD m64real QWORD operands; no f64-to-f32 conversion instruction",
+    "previous_claim_valid": false,
+    "native_phase687_uses_long_double_intermediates": true,
+    "ambient_x87_control_word_proven": false
+  },
+  "claims": {
+    "operand_widths_machine_proven": true,
+    "operation_order_machine_proven": true,
+    "function_bytes_machine_proven": true,
+    "complete_ambient_x87_state_proven": false
+  }
+}
