@@ -114,6 +114,9 @@ def test_composite_preserves_track_then_appends_vehicle_and_keeps_dynamic_pose_b
     assert report["track_draw_count"] == 1
     assert report["vehicle_draw_count"] == 1
     assert report["draw_count"] == 2
+    assert report["draw_groups"]["format"] == "SHIFT.NativeSceneDrawGroups/1"
+    assert report["draw_groups"]["ready"] is True
+    assert report["draw_groups"]["sha256"] == _sha(out / "bundle_set.groups")
     manifest = json.loads((out / "bundle_set_manifest.json").read_text())
     assert [row["source_group"] for row in manifest["draws"]] == ["track", "vehicle"]
     assert [row["draw_order"] for row in manifest["draws"]] == [0, 1]
@@ -121,6 +124,11 @@ def test_composite_preserves_track_then_appends_vehicle_and_keeps_dynamic_pose_b
         "draw_0000",
         "draw_0001",
     ]
+    assert (out / "bundle_set.groups").read_text().splitlines() == [
+        "track",
+        "vehicle",
+    ]
+    assert manifest["boundary"]["draw_group_sidecar_aligned_with_bundle_set_paths"] is True
     assert manifest["boundary"]["bmw_manifests_relabelled_as_neutral"] is False
     assert manifest["boundary"]["vehicle_children_rebuilt_with_neutral_builder"] is True
     assert manifest["boundary"]["phase698_vehicle_BODY_selection_consumed"] is False
