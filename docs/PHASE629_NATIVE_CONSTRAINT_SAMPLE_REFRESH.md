@@ -1,5 +1,11 @@
 # Phase 629 — native FUN_007b3ed0 constraint sample refresh
 
+> **Phase 687 precision correction:** direct retail x86 audit later proved that
+> `FUN_007aefb0` / `FUN_007af0a0` consume QWORD float64 vector operands and do
+> not perform the f64 -> f32 casts suggested by the decompiler.  The native
+> helpers now follow the machine operand widths and x87 operation order.  See
+> `docs/PHASE687_MACHINE_BACKED_TRANSFORM_PRECISION.md`.
+
 Phase 628 removes prepared BODY contribution values from the native fixed-step
 path when GBCF is supplied, but GBCF still contains already-refreshed
 JOINT/HINGE/BAR sample values.
@@ -34,16 +40,21 @@ Phase 629 preserves that JOINT → HINGE → BAR call order.
 ## Shared transform boundary
 
 Both refresh and the already-native projection/matrix code use the retail
-float-boundary helper `FUN_007aefb0`.
+float-matrix helper `FUN_007aefb0`.
 
 Phase 629 also ports `FUN_007af0a0`, the transposed coefficient order used by
 the HINGE negative-side rebuild.
 
-Both helpers:
+The original Phase 629 implementation followed the recovered C presentation and
+cast each source vector component to float32 before multiplication.  Phase 687
+supersedes that numerical detail with direct machine evidence.  The current
+native helpers therefore:
 
 - accept float32 3×3 BODY frame coefficients;
-- cast each source vector component to float32 before multiplication;
-- return the three accumulated results as doubles;
+- preserve each source vector component as float64/QWORD;
+- evaluate products and additions in retail x87 instruction order;
+- use extended intermediates before the final float64 store;
+- return three doubles;
 - reject non-finite prepared inputs.
 
 No orthonormality or physical-unit interpretation is added.
@@ -144,7 +155,7 @@ x87-style norm/sqrt path before storing doubles.
 
 ## Native API
 
-New files:
+Files:
 
 - `native_runtime/include/shift_constraint_sample_refresh.hpp`;
 - `native_runtime/src/constraint_sample_refresh.cpp`;
@@ -159,6 +170,9 @@ The API exposes:
 - `refresh_fun_007b2f70_bar()`;
 - `refresh_fun_007b3ed0_constraints()`.
 
+Phase 687 later adds the adjacent machine-backed
+`transform_fun_007af010_refresh()` to the same shared API.
+
 ## Frozen native oracle
 
 The checker covers:
@@ -172,6 +186,9 @@ The checker covers:
 - non-finite rejection;
 - maximum numerical error ≤ `1e-12`.
 
+Phase 687 adds separate machine-width/order discriminators that cannot pass with
+the former f32-input truncation.
+
 The checker explicitly reports:
 
 ```text
@@ -183,8 +200,9 @@ because this phase stops before GBCF production.
 
 ## Boundary after Phase 629
 
-The numerical refresh kernels and array order of `FUN_007b3ed0` are now
-native and source-backed.
+The numerical refresh kernels and array order of `FUN_007b3ed0` are native.
+Their shared transform arithmetic is now corrected by Phase 687 retail machine
+evidence.
 
 Still open:
 
