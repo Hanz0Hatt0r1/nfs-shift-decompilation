@@ -1,0 +1,72 @@
+name: native-physics-phase698
+
+on:
+  push:
+    paths:
+      - 'src/physics/vehicle_body_pose_selection_runtime.py'
+      - 'tests/test_vehicle_body_pose_selection_runtime.py'
+      - 'native_runtime/include/shift_vehicle_body_pose_selection.hpp'
+      - 'native_runtime/src/vehicle_body_pose_selection.cpp'
+      - 'native_runtime/tests/vehicle_body_pose_selection_check.cpp'
+      - 'native_runtime/cmake/phase697.cmake'
+      - 'native_runtime/cmake/phase698.cmake'
+      - 'docs/PHASE698_VEHICLE_BODY_POSE_SELECTION.md'
+      - '.github/workflows/native-physics-phase698.yml'
+  pull_request:
+    paths:
+      - 'src/physics/vehicle_body_pose_selection_runtime.py'
+      - 'tests/test_vehicle_body_pose_selection_runtime.py'
+      - 'native_runtime/include/shift_vehicle_body_pose_selection.hpp'
+      - 'native_runtime/src/vehicle_body_pose_selection.cpp'
+      - 'native_runtime/tests/vehicle_body_pose_selection_check.cpp'
+      - 'native_runtime/cmake/phase697.cmake'
+      - 'native_runtime/cmake/phase698.cmake'
+      - 'docs/PHASE698_VEHICLE_BODY_POSE_SELECTION.md'
+      - '.github/workflows/native-physics-phase698.yml'
+
+jobs:
+  vehicle-body-pose-selection:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Phase 698 Python selection oracle
+        run: >-
+          PYTHONPATH=src/physics python3 -m pytest -q
+          tests/test_vehicle_body_pose_selection_runtime.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 698 native regression
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_vehicle_body_pose_selection_check
+
+      - name: Run Phase 698 CTest regression
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^shift_runtime_vehicle_body_pose_selection$'
+
+      - name: Verify Phase 698 report
+        run: |
+          mkdir -p out/native-physics-phase698
+          native_runtime/build/shift_runtime_vehicle_body_pose_selection_check \
+            > out/native-physics-phase698/vehicle_body_pose_selection.json
+          grep -q '"format":"SHIFT.NativeVehicleBodyPoseSelection/1"' \
+            out/native-physics-phase698/vehicle_body_pose_selection.json
+          grep -q '"selection_requires_identity_proof":true' \
+            out/native-physics-phase698/vehicle_body_pose_selection.json
+          grep -q '"current_process1_frontier_admitted":false' \
+            out/native-physics-phase698/vehicle_body_pose_selection.json
+          grep -q '"vehicle_world_transform_proven":false' \
+            out/native-physics-phase698/vehicle_body_pose_selection.json
+          grep -q '"renderer_transport_enabled":false' \
+            out/native-physics-phase698/vehicle_body_pose_selection.json
+          grep -q '"fixed_step_auto_schedule":false' \
+            out/native-physics-phase698/vehicle_body_pose_selection.json
