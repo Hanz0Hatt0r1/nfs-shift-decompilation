@@ -69,8 +69,15 @@ def validate_instruction(
         pcode = instruction.get("pcode")
         if not isinstance(pcode, list):
             raise ValueError(f"{function_address}: pcode must be a list at {address}")
-        if any(not isinstance(operation, str) or not operation for operation in pcode):
-            raise ValueError(f"{function_address}: invalid pcode operation at {address}")
+        for operation in pcode:
+            if not isinstance(operation, dict):
+                raise ValueError(f"{function_address}: pcode operation must be an object at {address}")
+            opcode = operation.get("opcode")
+            text = operation.get("text")
+            if not isinstance(opcode, str) or not opcode:
+                raise ValueError(f"{function_address}: pcode opcode missing at {address}")
+            if not isinstance(text, str) or not text:
+                raise ValueError(f"{function_address}: pcode text missing at {address}")
 
 
 def validate_export(path: Path, expected_targets: list[str]) -> dict[str, Any]:
