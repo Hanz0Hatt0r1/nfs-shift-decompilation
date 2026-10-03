@@ -1,0 +1,77 @@
+name: native-physics-phase702
+
+on:
+  push:
+    paths:
+      - 'src/physics/bmw_wheel_spindle_body_topology_runtime.py'
+      - 'tests/test_bmw_wheel_spindle_body_topology_runtime.py'
+      - 'native_runtime/include/shift_bmw_wheel_spindle_body_topology.hpp'
+      - 'native_runtime/src/bmw_wheel_spindle_body_topology.cpp'
+      - 'native_runtime/tests/bmw_wheel_spindle_body_topology_check.cpp'
+      - 'native_runtime/cmake/phase701.cmake'
+      - 'native_runtime/cmake/phase702.cmake'
+      - 'docs/PHASE702_BMW_WHEEL_SPINDLE_BODY_TOPOLOGY.md'
+      - '.github/workflows/native-physics-phase702.yml'
+  pull_request:
+    paths:
+      - 'src/physics/bmw_wheel_spindle_body_topology_runtime.py'
+      - 'tests/test_bmw_wheel_spindle_body_topology_runtime.py'
+      - 'native_runtime/include/shift_bmw_wheel_spindle_body_topology.hpp'
+      - 'native_runtime/src/bmw_wheel_spindle_body_topology.cpp'
+      - 'native_runtime/tests/bmw_wheel_spindle_body_topology_check.cpp'
+      - 'native_runtime/cmake/phase701.cmake'
+      - 'native_runtime/cmake/phase702.cmake'
+      - 'docs/PHASE702_BMW_WHEEL_SPINDLE_BODY_TOPOLOGY.md'
+      - '.github/workflows/native-physics-phase702.yml'
+
+jobs:
+  bmw-wheel-spindle-body-topology:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Run Phase 702 Python oracle
+        run: >-
+          PYTHONPATH=src/physics python3 -m pytest -q
+          tests/test_bmw_wheel_spindle_body_topology_runtime.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 634 and 702 native regressions
+        run: >-
+          cmake --build native_runtime/build --config Release --parallel
+          --target shift_runtime_constraint_relation_state_dispatch_check
+          shift_runtime_bmw_wheel_spindle_body_topology_check
+
+      - name: Run focused CTest regressions
+        run: >-
+          ctest --test-dir native_runtime/build --output-on-failure
+          -R '^(shift_runtime_constraint_relation_state_dispatch|shift_runtime_bmw_wheel_spindle_body_topology)$'
+
+      - name: Verify Phase 702 report
+        run: |
+          mkdir -p out/native-physics-phase702
+          native_runtime/build/shift_runtime_bmw_wheel_spindle_body_topology_check \
+            > out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"format":"SHIFT.NativeBMWWheelSpindleBodyTopology/1"' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"wheel_body_indices":\[3,4,7,8\]' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"spindle_body_indices":\[1,2,5,6\]' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"rear_axle_body_index_ready":false' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"main_chassis_body_selected":false' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"full_vehicle_constraint_body_map_ready":false' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"distinct_body_indices_assumed":false' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"phase698_positive_selection_admissible":false' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
