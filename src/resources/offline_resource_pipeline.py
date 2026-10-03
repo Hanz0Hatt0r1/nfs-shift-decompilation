@@ -16,6 +16,11 @@ from resource_formats import analyze_decoded_resource, parse_bmt_material, parse
 from meb_format import read_meb
 from imb_neutral_geometry import build_imb_neutral_geometry
 from imx_neutral_geometry import build_imx_neutral_geometry
+from vehicle_cdf_runtime import parse_cdf
+from engine_edf_runtime import parse_engine_edf
+from gearbox_gdf_runtime import parse_gdf
+from rigid_body_sdf_runtime import parse_sdf
+from turbo_runtime import parse_turbo_bbf, parse_turbo_tbf
 
 CATALOG_FORMAT = "SHIFT.OfflineResourceCatalog/1"
 GRAPH_FORMAT = "SHIFT.OfflineResourceDependencyGraph/1"
@@ -23,11 +28,12 @@ COVERAGE_FORMAT = "SHIFT.OfflineResourceCoverage/1"
 BOOTSTRAP_FORMAT = "SHIFT.SceneVehicleBootstrap/1"
 ADMISSION_FORMAT = "SHIFT.OfflineResourceRuntimeAdmission/1"
 
+VEHICLE_PHYSICS_EXTENSIONS = (".cdf", ".edf", ".gdf", ".sdf", ".tbf", ".bbf")
 KNOWN_DECODE_EXTENSIONS = {
     ".bmt", ".meb", ".vhf", ".imb", ".imx", ".csm", ".bml", ".sgb",
     ".dds", ".xml", ".fx", ".fxh", ".bab", ".bas", ".lod",
+    *VEHICLE_PHYSICS_EXTENSIONS,
 }
-VEHICLE_PHYSICS_EXTENSIONS = (".cdf", ".edf", ".gdf", ".sdf", ".tbf", ".bbf")
 TRACK_VISUAL_ROOT_EXTENSIONS = (".sgb", ".trd", ".lsd")
 TRACK_PHYSICS_ROOT_EXTENSIONS = (".aiw", ".csm")
 VEHICLE_RENDER_ROOT_EXTENSIONS = (".vhf",)
@@ -173,6 +179,99 @@ def _vhf_refs(scene: dict[str, Any]) -> list[str]:
     return refs
 
 
+def _physics_parser_failure(report: dict[str, Any]) -> str | None:
+    if report.get("ready") is True:
+        return None
+    reasons = (
+        report.get("warnings")
+        or report.get("blocking_reasons")
+        or report.get("unresolved")
+        or []
+    )
+    detail = ";".join(str(value) for value in list(reasons)[:8])
+    return "source-backed-parser-not-ready" + (f":{detail}" if detail else "")
+
+
+def _analyze_known_resource(path: str, payload: bytes) -> dict[str, Any]:
+    """Use existing source-backed parsers for catalog-supported resource types."""
+    ext = Path(path.replace("\\", "/")).suffix.lower()
+    if ext not in VEHICLE_PHYSICS_EXTENSIONS:
+        return analyze_decoded_resource(path, payload)
+
+    if ext == ".cdf":
+        parsed = parse_cdf(payload, strict=False)
+    elif ext == ".edf":
+        parsed = parse_engine_edf(payload, strict=False)
+    elif ext == ".gdf":
+        parsed = parse_gdf(payload, strict=False)
+    elif ext == ".sdf":
+        parsed = parse_sdf(payload, strict=False)
+    elif ext == ".tbf":
+        parsed = parse_turbo_tbf(payload, strict=False)
+    elif ext == ".bbf":
+        parsed = parse_turbo_bbf(payload, max_value=None)
+    else:  # pragma: no cover - guarded by VEHICLE_PHYSICS_EXTENSIONS
+        raise AssertionError(ext)
+
+    result: dict[str, Any] = {
+        "path": path,
+        "extension": ext,
+        "size": len(payload),
+        "analysis": parsed,
+    }
+    failure = _physics_parser_failure(parsed)
+    if failure:
+        result["analysis_error"] = failure
+    return result
+
+
+def _vehicle_physics_neutral_summary(ext: str, parsed: dict[str, Any]) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "format": parsed.get("format"),
+        "resource_type": parsed.get("resource_type") or ext[1:].upper(),
+        "status": parsed.get("status"),
+        "ready": parsed.get("ready"),
+        "warnings": list(parsed.get("warnings") or []),
+    }
+    if ext == ".cdf":
+        summary.update({
+            "section_count": parsed.get("section_count"),
+            "entry_count": parsed.get("entry_count"),
+            "unknown_entry_count": parsed.get("unknown_entry_count"),
+        })
+    elif ext == ".edf":
+        summary.update({
+            "entry_count": parsed.get("entry_count"),
+            "unknown_entry_count": parsed.get("unknown_entry_count"),
+            "rpm_torque_point_count": (parsed.get("rpm_torque") or {}).get("point_count"),
+        })
+    elif ext == ".gdf":
+        summary.update({
+            "section_count": parsed.get("section_count"),
+            "gear_ratio_count": parsed.get("gear_ratio_count"),
+            "final_drive_ratio_count": parsed.get("final_drive_ratio_count"),
+        })
+    elif ext == ".sdf":
+        topology = parsed.get("topology") or {}
+        summary.update({
+            "record_count": parsed.get("record_count"),
+            "body_count": topology.get("body_count"),
+            "joint_hinge_count": topology.get("joint_hinge_count"),
+            "bar_count": topology.get("bar_count"),
+        })
+    elif ext == ".tbf":
+        summary.update({
+            "field_count": len(parsed.get("fields") or []),
+            "turbo_count": len(parsed.get("turbos") or []),
+        })
+    elif ext == ".bbf":
+        summary.update({
+            "field_count": len(parsed.get("fields") or []),
+            "active": (parsed.get("postload") or {}).get("active"),
+        })
+    return summary
+
+
 def _semantic_dependencies(
     path: str,
     payload: bytes,
@@ -195,7 +294,9 @@ def _semantic_dependencies(
             "admissible": True,
         })
 
-    if ext == ".bmt":
+    if ext in VEHICLE_PHYSICS_EXTENSIONS:
+        neutral = _vehicle_physics_neutral_summary(ext, analysis.get("analysis") or {})
+    elif ext == ".bmt":
         parsed = parse_bmt_material(payload)
         material = parsed.get("material") or {}
         add(material.get("shader"), "shader-source", "global-exact", "parse_bmt_material")
@@ -414,7 +515,7 @@ def build_catalog(
                     decoded_here += 1
                     try:
                         payload = archive.extract_entry(entry, type2="lzx")
-                        analysis = analyze_decoded_resource(path, payload)
+                        analysis = _analyze_known_resource(path, payload)
                         deps, neutral = _semantic_dependencies(path, payload, analysis)
                         analysis_error = analysis.get("analysis_error")
                         row.update({
@@ -498,6 +599,7 @@ def build_catalog(
             "authoritative_dependencies": "semantic-parser-only",
             "basename_fallback": False,
             "sgb_string_scan_closes_dependencies": False,
+            "vehicle_physics_dependency_inference": False,
             "known_aliases": [".mtx<->.bmt"],
         },
     }
@@ -532,6 +634,8 @@ def build_catalog(
             "decode_known": bool(decode_known),
             "unknown_format_policy": "indexed-but-not-guessed",
             "runtime_evidence_substitution": False,
+            "vehicle_physics_validation": "existing-source-backed-parsers",
+            "vehicle_physics_dependency_inference": False,
             "raw_sha256_semantics": "exact-stored-bff-payload-bytes",
             "duplicate_identity_semantics": "byte-or-path-identity-only-no-semantic-equivalence",
         },
@@ -549,6 +653,8 @@ def build_catalog(
         "validation_boundary": {
             "supported_semantics": "extension-has-explicit-offline-decoder",
             "verified_semantics": "decoded-and-parser-completed-without-analysis_error",
+            "vehicle_physics_parser_semantics": "existing-source-backed-parser-ready",
+            "vehicle_physics_dependency_inference": False,
             "malformed_requires_explicit_parser_classification": True,
             "unknown_version_layout_requires_explicit_parser_classification": True,
             "exception_text_classification": False,
