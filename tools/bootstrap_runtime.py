@@ -23,6 +23,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from offline_runtime_bootstrap import build_offline_runtime_bootstrap
+from offline_runtime_requirements import build_runtime_requirements
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -81,6 +82,14 @@ def main(argv: list[str] | None = None) -> int:
         runtime_shader_admission_path=args.runtime_shader_admission,
         participant_observation_path=args.participant_observation,
     )
+    requirements = build_runtime_requirements(report)
+    requirements_path = Path(args.output) / "runtime_requirements.json"
+    requirements_path.parent.mkdir(parents=True, exist_ok=True)
+    requirements_path.write_text(
+        json.dumps(requirements, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
     print(json.dumps({
         "format": report["format"],
         "status": report["status"],
@@ -90,6 +99,12 @@ def main(argv: list[str] | None = None) -> int:
         "vehicle": report["vehicle"],
         "readiness": report["readiness"],
         "blocking_reasons": report["blocking_reasons"],
+        "runtime_requirements": {
+            "format": requirements["format"],
+            "ready": requirements["ready"],
+            "missing": requirements["summary"]["missing"],
+            "output": str(requirements_path),
+        },
         "output": str(Path(args.output) / "runtime_bootstrap.json"),
     }, ensure_ascii=False, indent=2))
 
