@@ -67,7 +67,13 @@ jobs:
             out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
           grep -q '"rear_axle_body_index_ready":false' \
             out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
-          grep -q '"main_chassis_body_selected":false' \
+          grep -q '"main_chassis_body_selected":true' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"main_chassis_body_index":0' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"update_child_to_vehicle_solver_base_continuity_proven":false' \
+            out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
+          grep -q '"vehicle_body_selection_ready":false' \
             out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
           grep -q '"full_vehicle_constraint_body_map_ready":false' \
             out/native-physics-phase702/bmw_wheel_spindle_body_topology.json
