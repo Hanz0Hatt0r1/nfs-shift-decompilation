@@ -17,7 +17,8 @@ Example:
 This runner joins source wrapper callsites, targeted wrapper forwarding,
 source-argument -> backend-storage provenance, repeated provenance patterns,
 targeted backend instruction/diagnostic evidence, proven allocation-size and
-released-pointer source roles, retail static memory evidence, behavior-only
+released-pointer source roles, cross-branch released-pointer forwarding into the
+FUN_0064f260 alternate backend, retail static memory evidence, behavior-only
 release-byte observations, and a conservative runtime wrapper manifest.
 Release-flag/delete-kind and ownership semantics remain unassigned.
 EOF
@@ -66,6 +67,7 @@ FREE_DIAGNOSTIC_SLICE_JSON="$BACKEND_DIR/memory_free_diagnostic_slice.json"
 RELEASE_BYTE_BEHAVIOR_JSON="$BACKEND_DIR/memory_release_byte_behavior.json"
 ALLOCATION_SIZE_ROLE_JSON="$OUT_DIR/memory_allocation_size_role_join.json"
 RELEASE_POINTER_CHAIN_JSON="$OUT_DIR/memory_release_pointer_chain.json"
+RELEASE_ALTERNATE_BACKEND_JSON="$OUT_DIR/memory_release_alternate_backend.json"
 RELEASED_POINTER_ROLE_JSON="$OUT_DIR/memory_released_pointer_role_join.json"
 STATIC_SUMMARY_JSON="$OUT_DIR/memory_retail_static_summary.json"
 SOURCE_SEMANTIC_SUMMARY_JSON="$OUT_DIR/memory_source_semantic_summary.json"
@@ -109,6 +111,11 @@ python3 "$SCRIPT_DIR/analyze_release_pointer_chain.py" \
   --forwarding "$FORWARDING_JSON" \
   --json-out "$RELEASE_POINTER_CHAIN_JSON"
 
+python3 "$SCRIPT_DIR/analyze_release_alternate_backend.py" \
+  "$RELEASE_POINTER_CHAIN_JSON" \
+  --forwarding "$FORWARDING_JSON" \
+  --json-out "$RELEASE_ALTERNATE_BACKEND_JSON"
+
 python3 "$LIVE_DUMP_DIR/join_released_pointer_role.py" \
   "$ARGUMENT_JOIN_JSON" \
   --release-chain "$RELEASE_POINTER_CHAIN_JSON" \
@@ -142,6 +149,7 @@ echo "memory wrapper provenance patterns: $PATTERNS_JSON"
 echo "memory backend evidence: $BACKEND_JSON"
 echo "memory allocation-size role join: $ALLOCATION_SIZE_ROLE_JSON"
 echo "memory release-pointer chain: $RELEASE_POINTER_CHAIN_JSON"
+echo "memory release alternate backend: $RELEASE_ALTERNATE_BACKEND_JSON"
 echo "memory released-pointer role join: $RELEASED_POINTER_ROLE_JSON"
 echo "memory retail static summary: $STATIC_SUMMARY_JSON"
 echo "memory source semantic summary: $SOURCE_SEMANTIC_SUMMARY_JSON"
