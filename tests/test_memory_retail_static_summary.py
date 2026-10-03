@@ -102,6 +102,27 @@ def _inputs(tmp_path: Path, *, complete=True):
     return forwarding, backend, allocation, free, chain, release_byte
 
 
+def _alternate_release(tmp_path: Path, *, proven=True):
+    path = tmp_path / "alternate_release.json"
+    _write(
+        path,
+        {
+            "format": "SHIFT-MEMORY-RELEASE-ALTERNATE-BACKEND/1",
+            "wrapper": "FUN_00886950",
+            "alternate_backend": "0x0064f260",
+            "proven_released_pointer_wrapper_storage": (
+                "Stack[0x4]:4" if proven else None
+            ),
+            "alternate_backend_released_pointer_entry_storage": (
+                "EDX:4" if proven else None
+            ),
+            "released_pointer_to_alternate_backend_storage_proven": proven,
+            "blockers": [] if proven else ["alternate_backend_pointer_match_not_unique"],
+        },
+    )
+    return path
+
+
 def test_static_summary_reports_completed_retail_chain(tmp_path):
     module = _load_module()
     paths = _inputs(tmp_path)
@@ -117,13 +138,71 @@ def test_static_summary_reports_completed_retail_chain(tmp_path):
     assert report["proven_physical_roles"]["released_pointer_wrapper"]["wrapper_input_storage"] == [
         "Stack[0x4]:4"
     ]
+    alternate = report["proven_physical_roles"]["alternate_release_backend_pointer"]
+    assert alternate["proven"] is False
+    assert alternate["entry_storage"] is None
+    assert report["alternate_release_backend_evidence"] == {
+        "present": False,
+        "released_pointer_role_proven": False,
+        "blockers": [],
+    }
     assert report["release_byte_behavior"]["controls_conditional_branch"] is True
     assert report["static_evidence_chain_complete"] is True
     assert report["ready_for_source_semantic_join"] is True
     assert report["blockers"] == []
     assert report["scope"]["source_decompiler_output_required"] is False
+    assert report["scope"]["alternate_release_backend_pointer_physical_role_proven"] is False
     assert report["scope"]["release_flag_role_proven"] is False
     assert report["scope"]["ownership_semantics_proven"] is False
+
+
+def test_static_summary_promotes_optional_alternate_backend_pointer_role(tmp_path):
+    module = _load_module()
+    paths = _inputs(tmp_path)
+    alternate_path = _alternate_release(tmp_path)
+
+    report = module.summarize_memory_retail_static_evidence(
+        *paths,
+        alternate_path,
+    )
+
+    role = report["proven_physical_roles"]["alternate_release_backend_pointer"]
+    assert role == {
+        "proven": True,
+        "function": "FUN_0064f260",
+        "entry_storage": "EDX:4",
+        "wrapper": "FUN_00886950",
+        "wrapper_input_storage": "Stack[0x4]:4",
+        "semantic_anchor": "cross-branch identity with diagnostic-proven released pointer",
+    }
+    assert report["alternate_release_backend_evidence"] == {
+        "present": True,
+        "released_pointer_role_proven": True,
+        "blockers": [],
+    }
+    assert report["scope"]["alternate_release_backend_pointer_physical_role_proven"] is True
+    assert report["scope"]["alternate_release_backend_function_semantics_proven"] is False
+    assert report["scope"]["release_flag_role_proven"] is False
+    assert report["static_evidence_chain_complete"] is True
+    assert report["blockers"] == []
+
+
+def test_static_summary_keeps_optional_alternate_failure_separate(tmp_path):
+    module = _load_module()
+    paths = _inputs(tmp_path)
+    alternate_path = _alternate_release(tmp_path, proven=False)
+
+    report = module.summarize_memory_retail_static_evidence(
+        *paths,
+        alternate_path,
+    )
+
+    assert report["static_evidence_chain_complete"] is True
+    assert report["blockers"] == []
+    assert report["alternate_release_backend_evidence"]["released_pointer_role_proven"] is False
+    assert report["alternate_release_backend_evidence"]["blockers"] == [
+        "alternate_backend_pointer_match_not_unique"
+    ]
 
 
 def test_static_summary_lists_fail_closed_blockers(tmp_path):
@@ -154,5 +233,19 @@ def test_static_summary_rejects_wrong_input_format(tmp_path):
         module.summarize_memory_retail_static_evidence(*paths)
     except ValueError as exc:
         assert "SHIFT-MEMORY-WRAPPER-FORWARDING/1" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
+
+
+def test_static_summary_rejects_wrong_optional_alternate_format(tmp_path):
+    module = _load_module()
+    paths = _inputs(tmp_path)
+    alternate = tmp_path / "alternate.json"
+    _write(alternate, {"format": "WRONG"})
+
+    try:
+        module.summarize_memory_retail_static_evidence(*paths, alternate)
+    except ValueError as exc:
+        assert "SHIFT-MEMORY-RELEASE-ALTERNATE-BACKEND/1" in str(exc)
     else:
         raise AssertionError("expected ValueError")

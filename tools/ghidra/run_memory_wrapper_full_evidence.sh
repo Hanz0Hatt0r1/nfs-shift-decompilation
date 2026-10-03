@@ -128,6 +128,7 @@ python3 "$SCRIPT_DIR/summarize_memory_retail_static_evidence.py" \
   --free-slice "$FREE_DIAGNOSTIC_SLICE_JSON" \
   --release-chain "$RELEASE_POINTER_CHAIN_JSON" \
   --release-byte "$RELEASE_BYTE_BEHAVIOR_JSON" \
+  --alternate-release "$RELEASE_ALTERNATE_BACKEND_JSON" \
   --json-out "$STATIC_SUMMARY_JSON"
 
 python3 "$LIVE_DUMP_DIR/summarize_memory_source_semantics.py" \
