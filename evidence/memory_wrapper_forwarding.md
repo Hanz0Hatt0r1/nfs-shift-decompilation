@@ -53,9 +53,41 @@ For `__fastcall`/`__stdcall` backends, stack-parameter cleanup is included when
 propagating state past a call. This matters for create-side wrappers that call
 `FUN_00638020` and then take a fallback path into `FUN_006382b0`.
 
-## Run
+## One-command capture
 
-First export the five wrappers from the already-analyzed Ghidra project:
+For the standard five-function retail set, the preferred workflow is now:
+
+```bash
+cd /home/pes/nfs-shift-decompilation
+
+git pull
+
+GHIDRA_HOME=/opt/ghidra \
+./tools/ghidra/run_memory_wrapper_forwarding.sh \
+  /home/pes/ghidra_projects/shift \
+  shift \
+  SHIFT.exe \
+  out/memory_wrapper_forwarding
+```
+
+The runner pins the exact five wrapper addresses, invokes the targeted
+instruction exporter and its validator, then runs the forwarding analyzer. It
+writes:
+
+```text
+out/memory_wrapper_forwarding/
+  memory_wrapper_instructions.jsonl
+  memory_wrapper_forwarding.json
+```
+
+The runner is stored executable in Git, so a fresh checkout does not require a
+manual `chmod`.
+
+## Manual run
+
+The two stages can still be run separately when a different target set is being
+investigated. First export the five wrappers from the already-analyzed Ghidra
+project:
 
 ```bash
 GHIDRA_HOME=/opt/ghidra \
@@ -72,9 +104,6 @@ python3 tools/ghidra/analyze_memory_wrapper_forwarding.py \
   out/memory_wrapper_instructions.jsonl \
   --json-out out/class_evidence/memory_wrapper_forwarding.json
 ```
-
-The instruction exporter runner is stored executable in Git, so a fresh checkout
-does not require an extra `chmod`.
 
 ## Promotion rule
 
