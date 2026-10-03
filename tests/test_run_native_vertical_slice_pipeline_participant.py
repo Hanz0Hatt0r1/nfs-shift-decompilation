@@ -36,7 +36,7 @@ def _sha(path: Path) -> str:
 
 def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     root = tmp_path / "workspace"
-    root.mkdir()
+    root.mkdir(parents=True)
 
     runtime = root / "native_runtime" / "build" / "shift_runtime"
     runtime.parent.mkdir(parents=True)
