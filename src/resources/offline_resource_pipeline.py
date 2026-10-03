@@ -773,6 +773,35 @@ def _unique_ext(resources, ext, blockers, label):
     return None
 
 
+def _blocked_required_roots(catalog, roots):
+    by_id = {
+        str(row.get("id")): row
+        for row in catalog.get("resources", [])
+        if row.get("id")
+    }
+    blocked: list[dict[str, Any]] = []
+    for group, group_roots in roots.items():
+        if not isinstance(group_roots, dict):
+            continue
+        for ext, resource_id in group_roots.items():
+            if not str(ext).startswith(".") or not isinstance(resource_id, str):
+                continue
+            row = by_id.get(resource_id)
+            if row is None or row.get("decode_status") != "blocked":
+                continue
+            blocked.append({
+                "group": str(group),
+                "extension": str(ext),
+                "resource_id": resource_id,
+                "path": row.get("path"),
+                "decode_status": row.get("decode_status"),
+                "analysis_error": row.get("analysis_error"),
+                "error_kind": row.get("error_kind"),
+                "error": row.get("error"),
+            })
+    return blocked
+
+
 def build_bootstrap_manifest(catalog, graph, *, track: str, vehicle: str):
     blockers: list[str] = []
     selected: dict[str, Any] = {}
@@ -806,6 +835,11 @@ def build_bootstrap_manifest(catalog, graph, *, track: str, vehicle: str):
             roots[key]["imb_resource_ids"] = [r["id"] for r in rows if r["extension"] == ".imb"]
             roots[key]["imx_resource_ids"] = [r["id"] for r in rows if r["extension"] == ".imx"]
 
+    blocked_required_roots = _blocked_required_roots(catalog, roots)
+    blockers.extend(
+        f"root-validation-blocked:{row['group']}:{row['extension']}:{row['path']}"
+        for row in blocked_required_roots
+    )
     selected_ids = {r["id"] for r in selected.values()}
     edges = [e for e in graph["edges"] if e["source_archive_id"] in selected_ids]
     unresolved = [e for e in edges if e["admissible"] and e["status"] != "resolved"]
@@ -827,12 +861,15 @@ def build_bootstrap_manifest(catalog, graph, *, track: str, vehicle: str):
         "vehicle": vehicle,
         "selected_archives": selected,
         "roots": roots,
+        "blocked_required_roots": blocked_required_roots,
         "blocking_reasons": blockers,
         "unresolved_dependencies": unresolved,
         "boundary": {
             "archive_selection": "exact-filename",
             "required_root_selection": "unique-extension-within-selected-archive",
             "dependency_resolution": "admissible-semantic-edges-only",
+            "blocked_required_root_closes_gate": True,
+            "unsupported_or_deferred_root_reclassified_as_parser_failure": False,
             "heuristic_refs_close_gate": False,
         },
     }
