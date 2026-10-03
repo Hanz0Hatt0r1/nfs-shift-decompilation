@@ -110,6 +110,8 @@ jobs:
             out/native-physics-recent/wheel_longitudinal_velocity.json
           grep -q '"single_wheel_handoff_proven":true' \
             out/native-physics-recent/wheel_longitudinal_velocity.json
+          grep -q '"retail_wheel_order_proven":true' \
+            out/native-physics-recent/wheel_longitudinal_velocity.json
           grep -q '"rear_pair_average_proven":true' \
             out/native-physics-recent/wheel_longitudinal_velocity.json
           grep -q '"transform_fun_007af010_external":true' \
