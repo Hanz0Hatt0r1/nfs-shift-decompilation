@@ -45,12 +45,13 @@ jobs:
             shift_runtime_spring_gap_state_check \
             shift_runtime_wheel_spring_gap_join_check \
             shift_runtime_tire_thermal_check \
-            shift_runtime_wheel_thermal_core_check
-      - name: Run Phase 656-673 CTest regressions
+            shift_runtime_wheel_thermal_core_check \
+            shift_runtime_body_frame_integration_check
+      - name: Run Phase 656-674 CTest regressions
         run: |
           ctest --test-dir native_runtime/build --output-on-failure \
-            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_contact_factor|collision_query_contract|wheel_query_response_join|wheel_longitudinal_velocity|wheel_kinematics|spring_gap_state|wheel_spring_gap_join|tire_thermal|wheel_thermal_core)$'
-      - name: Verify Phase 656-673 reports
+            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response|wheel_force_aggregate|surface_probe|contact_outer_kernel|aux_contact_pair|wheel_contact_factor|collision_query_contract|wheel_query_response_join|wheel_longitudinal_velocity|wheel_kinematics|spring_gap_state|wheel_spring_gap_join|tire_thermal|wheel_thermal_core|body_frame_integration)$'
+      - name: Verify Phase 656-674 reports
         run: |
           mkdir -p out/native-physics-recent
           native_runtime/build/shift_runtime_body_accumulator_primitives_check \
@@ -87,6 +88,8 @@ jobs:
             | tee out/native-physics-recent/tire_thermal.json
           native_runtime/build/shift_runtime_wheel_thermal_core_check \
             | tee out/native-physics-recent/wheel_thermal_core.json
+          native_runtime/build/shift_runtime_body_frame_integration_check \
+            | tee out/native-physics-recent/body_frame_integration.json
           grep -q '"format":"SHIFT.NativeBodyAccumulatorPrimitives/1"' \
             out/native-physics-recent/body_accumulator_primitives.json
           grep -q '"format":"SHIFT.NativeWheelContactResponse/1"' \
@@ -205,3 +208,13 @@ jobs:
             out/native-physics-recent/wheel_thermal_core.json
           grep -q '"runtime_scheduling_proven":false' \
             out/native-physics-recent/wheel_thermal_core.json
+          grep -q '"format":"SHIFT.NativeBodyFrameIntegration/1"' \
+            out/native-physics-recent/body_frame_integration.json
+          grep -q '"translation_lane_proven":true' \
+            out/native-physics-recent/body_frame_integration.json
+          grep -q '"prepared_to_cross_proven":true' \
+            out/native-physics-recent/body_frame_integration.json
+          grep -q '"basis_rotation_helper_external":true' \
+            out/native-physics-recent/body_frame_integration.json
+          grep -q '"runtime_scheduling_proven":false' \
+            out/native-physics-recent/body_frame_integration.json
