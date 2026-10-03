@@ -13,7 +13,8 @@ target_sources(shift_runtime_physics PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/spring_gap_state.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/wheel_spring_gap_join.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/tire_thermal.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/wheel_thermal_integrator.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/wheel_thermal_integrator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/body_frame_integration.cpp)
 
 add_executable(shift_runtime_wheel_force_aggregate_check
   ${CMAKE_CURRENT_SOURCE_DIR}/tests/wheel_force_aggregate_check.cpp)
@@ -106,6 +107,13 @@ target_link_libraries(shift_runtime_wheel_thermal_core_check PRIVATE
 target_compile_options(shift_runtime_wheel_thermal_core_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_body_frame_integration_check
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/body_frame_integration_check.cpp)
+target_link_libraries(shift_runtime_body_frame_integration_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_body_frame_integration_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_wheel_force_aggregate
@@ -146,4 +154,7 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_wheel_thermal_core
     COMMAND shift_runtime_wheel_thermal_core_check)
+  add_test(
+    NAME shift_runtime_body_frame_integration
+    COMMAND shift_runtime_body_frame_integration_check)
 endif()
