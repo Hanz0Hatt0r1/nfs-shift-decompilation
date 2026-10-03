@@ -1,0 +1,60 @@
+name: native-physics-recent
+
+on:
+  push:
+    paths:
+      - ".github/workflows/native-physics-recent.yml"
+      - "native_runtime/**"
+  pull_request:
+    paths:
+      - ".github/workflows/native-physics-recent.yml"
+      - "native_runtime/**"
+
+jobs:
+  recent-native-physics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            g++ \
+            libvulkan-dev \
+            glslang-tools \
+            libxcb1-dev
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+      - name: Build recent native physics checks
+        run: |
+          cmake --build native_runtime/build --config Release --parallel --target \
+            shift_runtime_body_accumulator_primitives_check \
+            shift_runtime_wheel_contact_response_check \
+            shift_runtime_body_point_transform_check \
+            shift_runtime_aux_contact_response_check
+      - name: Run Phase 656-659 CTest regressions
+        run: |
+          ctest --test-dir native_runtime/build --output-on-failure \
+            -R 'shift_runtime_(body_accumulator_primitives|wheel_contact_response|body_point_transform|aux_contact_response)$'
+      - name: Verify Phase 656-659 reports
+        run: |
+          mkdir -p out/native-physics-recent
+          native_runtime/build/shift_runtime_body_accumulator_primitives_check \
+            | tee out/native-physics-recent/body_accumulator_primitives.json
+          native_runtime/build/shift_runtime_wheel_contact_response_check \
+            | tee out/native-physics-recent/wheel_contact_response.json
+          native_runtime/build/shift_runtime_body_point_transform_check \
+            | tee out/native-physics-recent/body_point_transform.json
+          native_runtime/build/shift_runtime_aux_contact_response_check \
+            | tee out/native-physics-recent/aux_contact_response.json
+          grep -q '"format":"SHIFT.NativeBodyAccumulatorPrimitives/1"' \
+            out/native-physics-recent/body_accumulator_primitives.json
+          grep -q '"format":"SHIFT.NativeWheelContactResponse/1"' \
+            out/native-physics-recent/wheel_contact_response.json
+          grep -q '"format":"SHIFT.NativeBodyPointTransform/1"' \
+            out/native-physics-recent/body_point_transform.json
+          grep -q '"format":"SHIFT.NativeAuxContactResponse/1"' \
+            out/native-physics-recent/aux_contact_response.json
+          grep -q '"active_application_proven":true' \
+            out/native-physics-recent/aux_contact_response.json
