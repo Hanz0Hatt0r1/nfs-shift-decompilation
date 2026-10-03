@@ -14,9 +14,9 @@ Example:
     /home/pes/ghidra_projects/shift shift SHIFT.exe \
     out/memory_wrapper_full_evidence
 
-This runner joins three independent layers without assigning semantic argument
-roles: source wrapper callsites, targeted Ghidra instruction forwarding, and the
-mechanical source-argument -> backend-storage provenance join.
+This runner joins source wrapper callsites, targeted Ghidra instruction
+forwarding and source-argument -> backend-storage provenance, then summarizes
+repeated provenance patterns. It does not assign semantic argument roles.
 EOF
 }
 
@@ -54,6 +54,7 @@ CALLSITES_JSON="$OUT_DIR/memory_wrapper_callsites.json"
 FORWARDING_DIR="$OUT_DIR/forwarding"
 FORWARDING_JSON="$FORWARDING_DIR/memory_wrapper_forwarding.json"
 ARGUMENT_JOIN_JSON="$OUT_DIR/memory_wrapper_argument_join.json"
+PATTERNS_JSON="$OUT_DIR/memory_wrapper_provenance_patterns.json"
 
 python3 "$LIVE_DUMP_DIR/extract_memory_wrapper_callsites.py" \
   "$SOURCE" \
@@ -71,6 +72,11 @@ python3 "$LIVE_DUMP_DIR/join_memory_wrapper_argument_evidence.py" \
   --forwarding "$FORWARDING_JSON" \
   --json-out "$ARGUMENT_JOIN_JSON"
 
+python3 "$LIVE_DUMP_DIR/summarize_memory_wrapper_argument_patterns.py" \
+  "$ARGUMENT_JOIN_JSON" \
+  --json-out "$PATTERNS_JSON"
+
 echo "memory wrapper callsites: $CALLSITES_JSON"
 echo "memory wrapper forwarding: $FORWARDING_JSON"
 echo "memory wrapper argument join: $ARGUMENT_JOIN_JSON"
+echo "memory wrapper provenance patterns: $PATTERNS_JSON"
