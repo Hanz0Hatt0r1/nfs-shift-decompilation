@@ -29,6 +29,7 @@ from offline_resource_pipeline import (
     run_offline_pipeline,
     write_catalog_bundle,
 )
+from offline_resource_loaders import load_track, load_vehicle
 from offline_native_resource_handoff import build_native_resource_handoff_files
 
 
@@ -66,6 +67,34 @@ def cmd_catalog(args: argparse.Namespace) -> int:
         "output": str(out),
     }, ensure_ascii=False, indent=2))
     return 0 if coverage["blocked"] == 0 else 2
+
+
+def _cmd_resource_load(args: argparse.Namespace, *, kind: str) -> int:
+    catalog = _load(args.catalog)
+    graph = _load(args.graph)
+    if kind == "track":
+        report = load_track(catalog, graph, track=args.track)
+    elif kind == "vehicle":
+        report = load_vehicle(catalog, graph, vehicle=args.vehicle)
+    else:
+        raise ValueError(f"unsupported resource load kind: {kind}")
+    _write_json(args.output, report)
+    print(json.dumps({
+        "format": report["format"],
+        "status": report["status"],
+        "ready": report["ready"],
+        "blocking_reasons": report["blocking_reasons"],
+        "output": str(Path(args.output)),
+    }, ensure_ascii=False, indent=2))
+    return 0 if report["ready"] else 2
+
+
+def cmd_load_track(args: argparse.Namespace) -> int:
+    return _cmd_resource_load(args, kind="track")
+
+
+def cmd_load_vehicle(args: argparse.Namespace) -> int:
+    return _cmd_resource_load(args, kind="vehicle")
 
 
 def cmd_bootstrap(args: argparse.Namespace) -> int:
@@ -198,6 +227,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="limit parser attempts per BFF; 0 means full known-format corpus",
     )
     catalog.set_defaults(fn=cmd_catalog)
+
+    load_track_cmd = sub.add_parser(
+        "load-track",
+        help="select one exact track resource graph from an existing catalog",
+    )
+    load_track_cmd.add_argument("catalog", help="SHIFT.OfflineResourceCatalog/1 JSON")
+    load_track_cmd.add_argument("graph", help="SHIFT.OfflineResourceDependencyGraph/1 JSON")
+    load_track_cmd.add_argument("--track", required=True, help="archive stem, e.g. Silverstone_Era3_GrandPrix")
+    load_track_cmd.add_argument("-o", "--output", required=True, help="SHIFT.OfflineTrackLoad/1 output")
+    load_track_cmd.set_defaults(fn=cmd_load_track)
+
+    load_vehicle_cmd = sub.add_parser(
+        "load-vehicle",
+        help="select one exact vehicle resource graph from an existing catalog",
+    )
+    load_vehicle_cmd.add_argument("catalog", help="SHIFT.OfflineResourceCatalog/1 JSON")
+    load_vehicle_cmd.add_argument("graph", help="SHIFT.OfflineResourceDependencyGraph/1 JSON")
+    load_vehicle_cmd.add_argument("--vehicle", required=True, help="archive stem, e.g. BMW_M3_E36")
+    load_vehicle_cmd.add_argument("-o", "--output", required=True, help="SHIFT.OfflineVehicleLoad/1 output")
+    load_vehicle_cmd.set_defaults(fn=cmd_load_vehicle)
 
     bootstrap = sub.add_parser("bootstrap", help="build exact scene+vehicle bootstrap from catalog/graph")
     bootstrap.add_argument("catalog")
