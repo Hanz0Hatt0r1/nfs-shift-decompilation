@@ -89,11 +89,19 @@ def test_builds_static_semantic_index_and_preserves_layer_boundaries(tmp_path, m
         "namespace_only_candidate_count": 9,
         "slice_only_unclassified_candidate_count": 3,
     }
+    allocator = {
+        "format": "SHIFT-PHYSICS-ALLOCATOR-BOUNDARY/1",
+        "member_count": 2,
+        "confirmed_member_count": 1,
+        "physics_allocator_boundary_confirmed": False,
+        "members": [],
+    }
 
     monkeypatch.setattr(module, "analyze_shift_export", lambda root: crosscheck)
     monkeypatch.setattr(module, "build_subsystem_manifests", lambda root: subsystem)
     monkeypatch.setattr(module, "discover_method_name_anchors", lambda root: method_anchors)
     monkeypatch.setattr(module, "join_method_anchors_to_subsystems", lambda root: joined)
+    monkeypatch.setattr(module, "build_physics_allocator_boundary", lambda root: allocator)
 
     def fake_write_bundle(report, output_dir):
         assert report is subsystem
@@ -127,17 +135,23 @@ def test_builds_static_semantic_index_and_preserves_layer_boundaries(tmp_path, m
         "subsystem_crosschecked_method_name_candidates": 12,
         "namespace_only_method_name_candidates": 9,
         "slice_only_unclassified_method_name_candidates": 3,
-        "direct_evidence_mismatch_count": 3,
+        "physics_allocator_members": 2,
+        "physics_allocator_members_confirmed": 1,
+        "physics_allocator_member_mismatches": 1,
+        "physics_allocator_boundary_confirmed": 0,
+        "direct_evidence_mismatch_count": 4,
     }
     assert report["scope"]["heuristic_vtables_used"] is False
     assert report["scope"]["heuristic_constructors_used"] is False
     assert report["scope"]["heuristic_factories_used"] is False
     assert report["scope"]["automatic_function_renaming_performed"] is False
+    assert report["scope"]["physics_allocator_boundary_used"] is True
 
     expected = {
         "crosscheck.json",
         "method_name_anchors.json",
         "subsystem_method_anchors.json",
+        "physics_allocator_boundary.json",
         "manifest.json",
         "subsystems",
     }
