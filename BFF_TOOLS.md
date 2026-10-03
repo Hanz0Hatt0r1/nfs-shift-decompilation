@@ -1,22 +1,82 @@
 # BFF / corpus tooling
 
 The project keeps archive inventory, raw payload parity, content-addressed reuse,
-decoded physics profiling, and shader-corpus profiling as separate evidence layers.
+decoded physics profiling, renderer evidence and native bootstrap admission as
+separate evidence layers.
 
 ## Offline resource pipeline
 
 Use the fail-closed high-level resource pipeline to turn one or more retail BFFs,
 ZIP corpora, or BFF directories into a unified catalog, semantic dependency graph,
-coverage report, scene/vehicle bootstrap, typed resource closure, and explicit native
-runtime admission record:
+coverage report, scene/vehicle bootstrap, typed resource closure, corpus target
+readiness report and explicit native resource admission record:
 
-`python tools/shift_resource_pipeline.py all Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/offline-pipeline --track Silverstone_Era3_GrandPrix --vehicle Ford_Mustang_2010`
+`python tools/shift_resource_pipeline.py all Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/offline-pipeline --track Silverstone_Era3_GrandPrix --vehicle BMW_M3_E36`
 
 Inventory-only and parser-validation modes are available through the `catalog`
-subcommand. Dependency admission uses exact semantic parser references only;
-string-scan candidates cannot satisfy the gate, missing resources remain explicit,
-and a resource-ready bootstrap does not bypass the existing render/physics/runtime
-provenance gates. See `docs/OFFLINE_RESOURCE_PIPELINE.md`.
+subcommand. Dependency admission uses exact semantic parser references only.
+Source-backed SGB `NODE`/`SUMM`/`OCCL` resource fields are admissible only when
+the SGB runtime decoder is ready; arbitrary SGB string-scan candidates remain
+diagnostic-only. Missing resources stay explicit and a resource-ready bootstrap
+does not bypass render/physics/runtime provenance gates.
+
+`all` also writes `bootstrap_corpus_validation.json`. That report validates every
+exactly discovered track/vehicle target through the normal fail-closed loaders,
+but blocked unrelated targets do not change the admission state of the explicitly
+selected pair.
+
+See `docs/OFFLINE_RESOURCE_PIPELINE.md` for the full contracts and boundary.
+
+## One-command Process 3 bootstrap
+
+The highest-level offline entry point is:
+
+`python tools/bootstrap_runtime.py Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/runtime-bootstrap --track Silverstone_Era3_GrandPrix --vehicle BMW_M3_E36`
+
+It composes the resource pipeline, exact track/vehicle loaders, scene IR
+materialization, selected SGB scene build, vehicle physics resource manifest and
+source-backed participant structural boundary into
+`SHIFT.OfflineRuntimeBootstrap/1`.
+
+`offline_build_ready` means the currently provable offline/native resource stages
+are complete. It does not mean the game runtime is ready. Use
+`--require-runtime-ready` only when a strict exit gate on future proven runtime
+scene + vehicle admission is desired; the tool never invents those proofs.
+
+## High-level target validation
+
+After catalog generation:
+
+`python tools/validate_bootstrap_corpus.py out/offline-pipeline/resource_catalog.json out/offline-pipeline/dependency_graph.json -o out/offline-pipeline/bootstrap_corpus_validation.json`
+
+Track candidates require an exact `<stem>.bff + <stem>_Physics.bff` pair. Vehicle
+candidates use the existing CDF+EDF physics-corpus admission convention. Every
+candidate still passes through `load_track` / `load_vehicle`; discovery alone is
+not readiness.
+
+## Scene IR and scene/vehicle builders
+
+Materialize renderer IR from the original corpus:
+
+`python tools/build_scene_ir.py Vehicles.zip Silverstone_Era3_.zip RENDER.bff -o out/scene-ir`
+
+Build the static/native scene resource chain from one selected raw SGB:
+
+`python tools/build_native_scene.py path/to/scene.sgb out/scene-ir -o out/native-scene`
+
+This uses an exact IR closure for SGB resource → IMB/IMX/MEB → BMT → FX/DDS.
+Legacy basename fallback is not accepted as identity proof and tied FXO candidates
+are not selected without exact evidence. Static RenderBinding is not promoted to
+runtime draw admission.
+
+Build vehicle resources from Process 3 outputs:
+
+`python tools/build_native_vehicle.py out/offline-pipeline/resource_catalog.json out/offline-pipeline/scene_vehicle_bootstrap.json out/offline-pipeline/vehicle_physics_bundle_report.json -o out/native-vehicle`
+
+The output includes `SHIFT.NativePhysicsParticipantBoundary/1`, which proves the
+current participant registry/selector/process structure but deliberately does not
+invent a concrete participant instance, registry index, selector ordinal or
+provider identity.
 
 ## Vehicle corpus inventory
 
@@ -132,7 +192,6 @@ observations without treating them as a source mismatch. No numeric parity is cl
 
 The same gate is available through `python shift_importer.py validate-native-submission ...`.
 Native execution is blocked unless every submesh has complete FXO payload and permutation identity provenance.
-
 
 ## Resource manifest identity
 
