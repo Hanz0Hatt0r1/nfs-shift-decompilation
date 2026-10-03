@@ -34,8 +34,12 @@ int main() {
                 "Phase 702 lost proven wheel/spindle readiness");
         require(!topology.rear_axle_body_index_ready,
                 "Phase 702 invented a retail rear-axle BODY index");
-        require(!topology.main_chassis_body_selected,
-                "Phase 702 invented a main chassis BODY");
+        require(topology.main_chassis_body_selected &&
+                topology.main_chassis_body_index == 0u,
+                "Phase 702 lost Process 1 proven main chassis BODY 0");
+        require(!topology.update_child_to_vehicle_solver_base_continuity_proven &&
+                !topology.vehicle_body_selection_ready,
+                "Phase 702 bypassed the remaining update-child continuity gate");
 
         bool unresolved_rejected = false;
         try {
@@ -48,7 +52,7 @@ int main() {
                 std::string::npos;
         }
         require(unresolved_rejected,
-                "Phase 702 full map failed open without rear-axle proof");
+                "Phase 702 full relation map failed open without rear-axle proof");
 
         bool range_rejected = false;
         try {
@@ -61,14 +65,14 @@ int main() {
         require(range_rejected,
                 "Phase 702 accepted rear-axle index outside retail BODY domain");
 
-        // Synthetic positive proof exercises only the completion transport. The
-        // value 0 is not promoted as the retail rear_axle or chassis identity.
+        // Synthetic positive rear-axle proof exercises only the completion
+        // transport. BODY 9 is not promoted as the retail rear_axle identity.
         const auto synthetic = complete_bmw_vehicle_constraint_body_identity_map(
             topology,
-            ProvenRearAxleBodyIndex{true, 0u});
+            ProvenRearAxleBodyIndex{true, 9u});
         require(synthetic.wheel_body_indices == expected_wheels &&
                 synthetic.spindle_body_indices == expected_spindles &&
-                synthetic.rear_axle_body_index == 0u,
+                synthetic.rear_axle_body_index == 9u,
                 "Phase 702 synthetic completion changed proven named indices");
 
         std::cout
@@ -80,7 +84,10 @@ int main() {
             << "\"spindle_body_indices\":[1,2,5,6],"
             << "\"wheel_spindle_body_indices_ready\":true,"
             << "\"rear_axle_body_index_ready\":false,"
-            << "\"main_chassis_body_selected\":false,"
+            << "\"main_chassis_body_selected\":true,"
+            << "\"main_chassis_body_index\":0,"
+            << "\"update_child_to_vehicle_solver_base_continuity_proven\":false,"
+            << "\"vehicle_body_selection_ready\":false,"
             << "\"full_vehicle_constraint_body_map_ready\":false,"
             << "\"synthetic_completion_only\":true,"
             << "\"distinct_body_indices_assumed\":false,"
