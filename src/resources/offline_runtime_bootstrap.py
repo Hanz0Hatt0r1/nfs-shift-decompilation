@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from offline_bootstrap_corpus_validation import build_bootstrap_corpus_validation
 from offline_native_scene import build_native_scene_files
 from offline_native_vehicle import build_native_vehicle_files
 from offline_resource_loaders import load_track, load_vehicle
@@ -130,6 +131,9 @@ def build_offline_runtime_bootstrap(
     graph = _load(resources_dir / "dependency_graph.json")
     bootstrap = _load(resources_dir / "scene_vehicle_bootstrap.json")
     typed_closure = _load(resources_dir / "typed_resource_closure.json")
+
+    corpus_validation = build_bootstrap_corpus_validation(catalog, graph)
+    _write(out / "bootstrap_corpus_validation.json", corpus_validation)
 
     track_load = load_track(catalog, graph, track=track)
     vehicle_load = load_vehicle(catalog, graph, vehicle=vehicle)
@@ -269,6 +273,16 @@ def build_offline_runtime_bootstrap(
         "track": track,
         "vehicle": vehicle,
         "inputs": [str(value) for value in inputs],
+        "diagnostics": {
+            "bootstrap_corpus_validation_status": corpus_validation.get("status"),
+            "bootstrap_corpus_validation_ready": corpus_validation.get("ready") is True,
+            "bootstrap_corpus_validation_summary": dict(
+                corpus_validation.get("summary") or {}
+            ),
+            "bootstrap_corpus_validation_blocking_reasons": list(
+                corpus_validation.get("blocking_reasons") or []
+            ),
+        },
         "readiness": {
             "resource_bootstrap_ready": resource_bootstrap_ready,
             "track_load_ready": track_load_ready,
@@ -287,6 +301,7 @@ def build_offline_runtime_bootstrap(
         "blocking_reasons": blockers,
         "stages": {
             "resource_pipeline": resource_pipeline,
+            "bootstrap_corpus_validation": corpus_validation,
             "track_load": track_load,
             "vehicle_load": vehicle_load,
             "scene_ir": scene_ir,
@@ -301,6 +316,9 @@ def build_offline_runtime_bootstrap(
             "typed_resource_closure": str(resources_dir / "typed_resource_closure.json"),
             "vehicle_physics_bundle": str(
                 resources_dir / "vehicle_physics_bundle_report.json"
+            ),
+            "bootstrap_corpus_validation": str(
+                out / "bootstrap_corpus_validation.json"
             ),
             "track_load": str(out / "track_load.json"),
             "vehicle_load": str(out / "vehicle_load.json"),
@@ -320,6 +338,8 @@ def build_offline_runtime_bootstrap(
             "static_scene_promoted_to_runtime_draw_proof": False,
             "vehicle_participant_structural_boundary_required": True,
             "vehicle_resource_manifest_promoted_to_participant_identity": False,
+            "bootstrap_corpus_validation_is_selected_target_admission": False,
+            "unrelated_blocked_targets_block_selected_bootstrap": False,
             "shader_permutation_invented": False,
             "missing_dependency_substituted": False,
             "runtime_execution_claimed": runtime_ready,
