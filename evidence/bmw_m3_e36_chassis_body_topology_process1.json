@@ -1,0 +1,45 @@
+{
+  "format": "SHIFT.BMWM3ChassisBodyTopologyEvidence/1",
+  "version": 1,
+  "source": {
+    "archive": "BMW_M3_E36.bff",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "sdf_path": "vehicles/physics/suspension/aarm_multilink.sdf",
+    "sdf_sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed",
+    "retained_reconstruction_commit": "17c4adebc3e0c42fdfa929be0cb5d25716d3d2e7",
+    "retained_reconstruction_path": "tests/test_bmw_m3_e36_solver_domain_runtime.py",
+    "provenance": "retained-phase405-real-asset-topology-reconstruction"
+  },
+  "joint_hinge_pairs": [
+    {"posbody": "fl_wheel", "negbody": "fl_spindle", "axis": [-1.0, 0.0, 0.0]},
+    {"posbody": "fr_wheel", "negbody": "fr_spindle", "axis": [1.0, 0.0, 0.0]},
+    {"posbody": "rl_wheel", "negbody": "rl_spindle", "axis": [-1.0, 0.0, 0.0]},
+    {"posbody": "rr_wheel", "negbody": "rr_spindle", "axis": [1.0, 0.0, 0.0]}
+  ],
+  "bar_topology": {
+    "bar_count": 20,
+    "common_body": "body",
+    "target_counts": {
+      "fl_spindle": 5,
+      "fr_spindle": 5,
+      "rl_spindle": 5,
+      "rr_spindle": 5
+    },
+    "source_record_order": "front-two-joint-hinge, twenty-bars, rear-two-joint-hinge"
+  },
+  "phase405_ordering_signature": {
+    "function": "FUN_007b1b60",
+    "initial_cost": 17516,
+    "final_cost": 17296,
+    "improvement_count": 2,
+    "pass_count": 2,
+    "final_order_tail": [25, 24, 27, 26]
+  },
+  "semantic_selection": {
+    "role": "main-suspension/chassis BODY",
+    "criterion": "unique BODY incident to all 20 suspension BAR records across all four spindle targets",
+    "body_name": "body",
+    "body_index": 0
+  },
+  "status": "retained-source-backed-real-asset-topology"
+}
