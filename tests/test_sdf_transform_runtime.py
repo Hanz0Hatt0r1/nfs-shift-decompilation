@@ -44,8 +44,25 @@ def test_helpers_reject_wrong_component_counts():
         raise AssertionError("expected matrix arity failure")
 
 
-def test_numeric_boundary_is_explicit():
+def test_numeric_boundary_is_machine_backed():
     c = runtime.build_transform_helper_contract()
-    assert c["numeric_boundary"]["input_components_are_cast_to_float"] is True
-    assert c["numeric_boundary"]["matrix_components_are_float"] is True
-    assert c["numeric_boundary"]["output_components_are_stored_as_double"] is True
+    assert c["format"] == "SHIFT.SDFTransformRuntime/3"
+    assert c["version"] == 3
+    assert c["canonical_transform_format"] == "SHIFT.MatrixVectorTransformRuntime/3"
+    boundary = c["numeric_boundary"]
+    assert boundary["input_components_are_cast_to_float"] is False
+    assert boundary["machine_vector_operand_width_bits"] == 64
+    assert boundary["matrix_component_width_bits"] == 32
+    assert boundary["output_component_width_bits"] == 64
+    assert boundary["x87_extended_intermediates"] is True
+
+
+def test_sdf_adapter_preserves_binary64_input_perturbation():
+    identity = (
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0,
+    )
+    perturbation = 1.0 + 2.0 ** -30
+    assert runtime.transform_forward(identity, (perturbation, 0.0, 0.0))[0] == perturbation
+    assert runtime.transform_transposed(identity, (perturbation, 0.0, 0.0))[0] == perturbation
