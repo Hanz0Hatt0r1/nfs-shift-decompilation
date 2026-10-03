@@ -16,6 +16,7 @@ from resource_formats import analyze_decoded_resource, parse_bmt_material, parse
 from meb_format import read_meb
 from imb_neutral_geometry import build_imb_neutral_geometry
 from imx_neutral_geometry import build_imx_neutral_geometry
+from sgb_runtime import parse_sgb_runtime
 from vehicle_cdf_runtime import parse_cdf
 from engine_edf_runtime import parse_engine_edf
 from gearbox_gdf_runtime import parse_gdf
@@ -272,6 +273,75 @@ def _vehicle_physics_neutral_summary(ext: str, parsed: dict[str, Any]) -> dict[s
     return summary
 
 
+def _sgb_runtime_dependencies(
+    payload: bytes,
+    scan_analysis: dict[str, Any],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Return exact SGB record refs without promoting heuristic string scans."""
+    runtime = parse_sgb_runtime(payload, strict=False)
+    runtime_ready = runtime.get("ready") is True
+    dependencies: list[dict[str, Any]] = []
+    exact_refs = 0
+
+    for chunk in runtime.get("chunks") or []:
+        tag = str(chunk.get("tag") or "")
+        if tag not in {"NODE", "SUMM", "OCCL"}:
+            continue
+        if chunk.get("decode_status") != "decoded":
+            continue
+        for record in chunk.get("records") or []:
+            resource = record.get("resource") or {}
+            value = str(resource.get("text") or "").replace("\\", "/").strip()
+            if not value:
+                continue
+            exact_refs += 1
+            dependencies.append({
+                "ref": value,
+                "kind": "scene-resource",
+                "scope": "global-exact" if runtime_ready else "diagnostic-only",
+                "parser": "sgb_runtime.parse_sgb_runtime",
+                "evidence": "source-backed-runtime-record-field",
+                "admissible": runtime_ready,
+                "source_chunk": tag,
+                "source_record_index": record.get("index"),
+                "source_field": "resource",
+            })
+
+    # The legacy parser scans arbitrary strings for familiar extensions. Keep
+    # those observations visible for diagnostics, but never let them close a
+    # dependency or rescue an incomplete source-backed SGB decode.
+    scan_refs = 0
+    for ref in scan_analysis.get("resource_refs") or []:
+        value = str(ref.get("path") or "").replace("\\", "/").strip()
+        if not value:
+            continue
+        scan_refs += 1
+        dependencies.append({
+            "ref": value,
+            "kind": str(ref.get("kind") or "resource"),
+            "scope": "diagnostic-only",
+            "parser": "resource_formats.parse_sgb",
+            "evidence": str(ref.get("confidence") or "string-scan"),
+            "admissible": False,
+        })
+
+    neutral = {
+        "format": runtime.get("format"),
+        "status": runtime.get("status"),
+        "ready": runtime_ready,
+        "chunk_count": runtime.get("chunk_count"),
+        "source_backed_resource_reference_count": exact_refs,
+        "string_scan_reference_count": scan_refs,
+        "blockers": list(runtime.get("blockers") or []),
+        "admission_policy": (
+            "source-backed-record-fields-admissible"
+            if runtime_ready
+            else "source-backed-record-fields-diagnostic-until-runtime-decode-ready"
+        ),
+    }
+    return dependencies, neutral
+
+
 def _semantic_dependencies(
     path: str,
     payload: bytes,
@@ -354,26 +424,15 @@ def _semantic_dependencies(
             "resource_reference_count": len(dependencies),
         }
     elif ext == ".sgb":
-        parsed = (analysis.get("analysis") or {})
-        # Current SGB resource_refs are produced by a string scan. Preserve them
-        # for diagnostics, but never use them to close an admission dependency.
-        for ref in parsed.get("resource_refs") or []:
-            value = str(ref.get("path") or "").replace("\\", "/").strip()
-            if value:
-                dependencies.append({
-                    "ref": value,
-                    "kind": str(ref.get("kind") or "resource"),
-                    "scope": "diagnostic-only",
-                    "parser": "resource_formats.parse_sgb",
-                    "evidence": str(ref.get("confidence") or "string-scan"),
-                    "admissible": False,
-                })
-        neutral = {
-            "format": parsed.get("format"),
-            "chunk_count": parsed.get("chunk_count"),
-            "resource_ref_counts": parsed.get("resource_ref_counts"),
-            "trailing_bytes": parsed.get("trailing_bytes"),
-        }
+        dependencies, neutral = _sgb_runtime_dependencies(
+            payload,
+            analysis.get("analysis") or {},
+        )
+        if neutral.get("ready") is not True:
+            detail = ";".join(str(value) for value in neutral.get("blockers") or [])
+            analysis["analysis_error"] = "source-backed-sgb-runtime-not-ready" + (
+                f":{detail}" if detail else ""
+            )
     else:
         parsed = analysis.get("analysis") or {}
         neutral = {
@@ -599,6 +658,8 @@ def build_catalog(
             "authoritative_dependencies": "semantic-parser-only",
             "basename_fallback": False,
             "sgb_string_scan_closes_dependencies": False,
+            "sgb_source_backed_record_fields_close_dependencies": True,
+            "sgb_source_backed_requires_runtime_decode_ready": True,
             "vehicle_physics_dependency_inference": False,
             "known_aliases": [".mtx<->.bmt"],
         },
@@ -636,6 +697,7 @@ def build_catalog(
             "runtime_evidence_substitution": False,
             "vehicle_physics_validation": "existing-source-backed-parsers",
             "vehicle_physics_dependency_inference": False,
+            "sgb_dependency_validation": "source-backed-runtime-record-fields-when-ready",
             "raw_sha256_semantics": "exact-stored-bff-payload-bytes",
             "duplicate_identity_semantics": "byte-or-path-identity-only-no-semantic-equivalence",
         },
@@ -655,6 +717,7 @@ def build_catalog(
             "verified_semantics": "decoded-and-parser-completed-without-analysis_error",
             "vehicle_physics_parser_semantics": "existing-source-backed-parser-ready",
             "vehicle_physics_dependency_inference": False,
+            "sgb_admissible_dependency_semantics": "ready-source-backed-runtime-record-resource-field",
             "malformed_requires_explicit_parser_classification": True,
             "unknown_version_layout_requires_explicit_parser_classification": True,
             "exception_text_classification": False,
