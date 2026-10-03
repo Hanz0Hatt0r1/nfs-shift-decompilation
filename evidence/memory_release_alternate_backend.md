@@ -61,6 +61,23 @@ immediately after `memory_release_pointer_chain.json`. No additional capture or
 Ghidra export is required; the normal forwarding artifact already contains the
 alternate `FUN_0064f260` site.
 
+The same one-shot runner also supplies this artifact to
+`SHIFT-MEMORY-RETAIL-STATIC-SUMMARY/1`. When the alternate proof is positive,
+the summary publishes:
+
+```text
+proven_physical_roles.alternate_release_backend_pointer.proven = true
+proven_physical_roles.alternate_release_backend_pointer.function = FUN_0064f260
+proven_physical_roles.alternate_release_backend_pointer.entry_storage = EDX:4
+proven_physical_roles.alternate_release_backend_pointer.wrapper = FUN_00886950
+proven_physical_roles.alternate_release_backend_pointer.wrapper_input_storage = Stack[0x4]:4
+```
+
+This extension is optional. Its absence or failure does not change the historical
+`static_evidence_chain_complete` result and does not enter the main static
+summary blocker list. Extension failures are reported separately under
+`alternate_release_backend_evidence.blockers`.
+
 ## Scope boundary
 
 A positive artifact proves only a physical role:
