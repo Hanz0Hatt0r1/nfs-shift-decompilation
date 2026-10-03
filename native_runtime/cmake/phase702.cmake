@@ -15,3 +15,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_bmw_wheel_spindle_body_topology
     COMMAND shift_runtime_bmw_wheel_spindle_body_topology_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase703.cmake)
