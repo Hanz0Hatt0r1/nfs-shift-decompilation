@@ -17,6 +17,48 @@ void require_finite(const Range& values, const char* label) {
     }
 }
 
+void require_finite_scalar(double value, const char* label) {
+    if (!std::isfinite(value)) {
+        throw std::invalid_argument(label);
+    }
+}
+
+double retail_x87_mul(float coefficient, double value) {
+    // Retail loads the matrix coefficient with FLD m32real and the operand with
+    // FLD/FMUL m64real, then stores one m64real result.  long double keeps the
+    // x87-shaped extended intermediate rather than introducing the old f32
+    // operand truncation.
+    const long double product =
+        static_cast<long double>(coefficient) *
+        static_cast<long double>(value);
+    return static_cast<double>(product);
+}
+
+double retail_x87_mul_add3(
+    float coefficient0,
+    double value0,
+    float coefficient1,
+    double value1,
+    float coefficient2,
+    double value2) {
+
+    // Keep the exact retail instruction order: product0, product1, add, product2,
+    // add, then FSTP m64real.  This intentionally differs from the older
+    // decompiler-shaped expression ordering.
+    long double accumulator =
+        static_cast<long double>(coefficient0) *
+        static_cast<long double>(value0);
+    const long double product1 =
+        static_cast<long double>(coefficient1) *
+        static_cast<long double>(value1);
+    accumulator = accumulator + product1;
+    const long double product2 =
+        static_cast<long double>(coefficient2) *
+        static_cast<long double>(value2);
+    accumulator = accumulator + product2;
+    return static_cast<double>(accumulator);
+}
+
 ConstraintRefreshVector3d cross(
     const ConstraintRefreshVector3d& left,
     const ConstraintRefreshVector3d& right) {
@@ -37,18 +79,44 @@ ConstraintRefreshVector3d transform_fun_007aefb0_refresh(
     require_finite(matrix, "FUN_007aefb0 matrix");
     require_finite(vector, "FUN_007aefb0 vector");
 
-    const float x = static_cast<float>(vector[0]);
-    const float y = static_cast<float>(vector[1]);
-    const float z = static_cast<float>(vector[2]);
+    // Exact retail x87 operand widths/order at 0x007aefb0..0x007af002:
+    //   m01*y + m00*x + m02*z
+    //   m10*x + m11*y + m12*z
+    //   m20*x + m21*y + m22*z
+    // Vector operands are QWORD doubles; there is no f64 -> f32 cast.
     ConstraintRefreshVector3d result = {
-        static_cast<double>(
-            matrix[2] * z + matrix[0] * x + matrix[1] * y),
-        static_cast<double>(
-            matrix[5] * z + matrix[4] * y + matrix[3] * x),
-        static_cast<double>(
-            matrix[8] * z + matrix[7] * y + matrix[6] * x),
+        retail_x87_mul_add3(
+            matrix[1], vector[1],
+            matrix[0], vector[0],
+            matrix[2], vector[2]),
+        retail_x87_mul_add3(
+            matrix[3], vector[0],
+            matrix[4], vector[1],
+            matrix[5], vector[2]),
+        retail_x87_mul_add3(
+            matrix[6], vector[0],
+            matrix[7], vector[1],
+            matrix[8], vector[2]),
     };
     require_finite(result, "FUN_007aefb0 result");
+    return result;
+}
+
+ConstraintRefreshVector3d transform_fun_007af010_refresh(
+    const ConstraintRefreshFrame3f& matrix,
+    double scalar) {
+
+    require_finite(matrix, "FUN_007af010 matrix");
+    require_finite_scalar(scalar, "FUN_007af010 scalar is non-finite");
+
+    // Retail 0x007af010..0x007af032 keeps the QWORD scalar on the x87 stack and
+    // multiplies it by the first matrix column at +0x00/+0x0c/+0x18.
+    ConstraintRefreshVector3d result = {
+        retail_x87_mul(matrix[0], scalar),
+        retail_x87_mul(matrix[3], scalar),
+        retail_x87_mul(matrix[6], scalar),
+    };
+    require_finite(result, "FUN_007af010 result");
     return result;
 }
 
@@ -59,16 +127,24 @@ ConstraintRefreshVector3d transform_fun_007af0a0_refresh(
     require_finite(matrix, "FUN_007af0a0 matrix");
     require_finite(vector, "FUN_007af0a0 vector");
 
-    const float x = static_cast<float>(vector[0]);
-    const float y = static_cast<float>(vector[1]);
-    const float z = static_cast<float>(vector[2]);
+    // Exact retail x87 operand widths/order at 0x007af0a0..0x007af0f2:
+    //   m10*y + m00*x + m20*z
+    //   m01*x + m11*y + m21*z
+    //   m02*x + m12*y + m22*z
+    // Vector operands are QWORD doubles; there is no f64 -> f32 cast.
     ConstraintRefreshVector3d result = {
-        static_cast<double>(
-            matrix[6] * z + matrix[0] * x + matrix[3] * y),
-        static_cast<double>(
-            matrix[7] * z + matrix[4] * y + matrix[1] * x),
-        static_cast<double>(
-            matrix[8] * z + matrix[5] * y + matrix[2] * x),
+        retail_x87_mul_add3(
+            matrix[3], vector[1],
+            matrix[0], vector[0],
+            matrix[6], vector[2]),
+        retail_x87_mul_add3(
+            matrix[1], vector[0],
+            matrix[4], vector[1],
+            matrix[7], vector[2]),
+        retail_x87_mul_add3(
+            matrix[2], vector[0],
+            matrix[5], vector[1],
+            matrix[8], vector[2]),
     };
     require_finite(result, "FUN_007af0a0 result");
     return result;
