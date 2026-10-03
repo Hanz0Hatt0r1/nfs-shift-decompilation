@@ -272,6 +272,15 @@ target_link_libraries(shift_runtime_body_state_feedback_check PRIVATE
 target_compile_options(shift_runtime_body_state_feedback_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_body_feedback_scheduler_check
+  tests/runtime_body_feedback_scheduler_check.cpp)
+target_include_directories(shift_runtime_body_feedback_scheduler_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(shift_runtime_body_feedback_scheduler_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_body_feedback_scheduler_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_builtin_sparse_solver
@@ -384,6 +393,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_body_state_feedback
     COMMAND shift_runtime_body_state_feedback_check)
+  add_test(
+    NAME shift_runtime_body_feedback_scheduler
+    COMMAND shift_runtime_body_feedback_scheduler_check)
 endif()
 
 add_executable(shift_runtime src/shift_runtime.cpp)
