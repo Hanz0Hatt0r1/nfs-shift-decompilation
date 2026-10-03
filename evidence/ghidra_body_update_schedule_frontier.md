@@ -2,9 +2,9 @@
 
 `tools/ghidra/build_body_update_schedule_frontier.py` recovers a narrow direct-call
 schedule around the already proven BODY/vehicle writer anchors. Its output format
-is `SHIFT.GhidraBodyUpdateScheduleFrontier/1`.
+is now `SHIFT.GhidraBodyUpdateScheduleFrontier/2`.
 
-This evidence was checked against the existing Ghidra export for:
+This evidence is based on the existing Ghidra export for:
 
 - program: `SHIFT.exe`;
 - PE MD5: `705af8b420e5eb1e3834ac43d5533c6b`;
@@ -14,10 +14,25 @@ This evidence was checked against the existing Ghidra export for:
 
 No game execution or runtime capture is required.
 
-## Main result
+## What changed in v2
 
-The existing direct callgraph closes substantially more of the outer physics
-ordering than the earlier subsystem-wide frontier showed.
+The earlier schedule report stopped at `FUN_007b4110` and therefore treated the
+persistent motion/pose writer as unresolved. That became stale after static source
+and retail-PE corroboration established the persistent BODY integration contract
+`SHIFT.BodyFrameIntegrationStatic/1`.
+
+The schedule analyzer now imports two already proven anchors from that contract:
+
+```text
+FUN_007b2270  BODY-array integration loop
+FUN_007bab70  persistent BODY integration primitive
+```
+
+The tool does not derive their field semantics from the Ghidra callgraph. It only
+requires the direct-call edges needed to place those proven primitives in the
+existing half-step schedule.
+
+## Direct-call schedule
 
 `FUN_00770e80` contains exactly two direct calls to `FUN_0076d100`:
 
@@ -27,55 +42,31 @@ ordering than the earlier subsystem-wide frontier showed.
 0x00770fbf -> FUN_0076d100
 ```
 
-The same anonymous helper, `FUN_00765470`, appears after both passes. It is the
-unique repeated helper in those windows that directly calls both the recovered
-SDF solve boundary and the post-solve writer.
+The same anonymous helper, `FUN_00765470`, appears after both passes. In v2 it is
+selected only if its direct callees contain all three of:
 
-Inside `FUN_00765470` the direct-call order is:
+```text
+FUN_007b3f40  SDF solve
+FUN_007b4110  post-solve BODY accumulator feedback
+FUN_007b2270  BODY-array integration loop
+```
+
+Inside `FUN_00765470` the required direct-call order is:
 
 ```text
 0x007657b2 -> FUN_00763570
 0x007657bd -> FUN_007b3f40
 0x007657c8 -> FUN_007b4110
+0x0076582a -> FUN_007b2270
 ```
 
-Therefore the following ordering is direct-callgraph-backed:
+`FUN_007b2270` must then contain exactly one direct call to `FUN_007bab70`.
+The separately corroborated BODY integration contract establishes that
+`FUN_007b2270` iterates the BODY array and that `FUN_007bab70` performs the
+persistent motion/origin/basis update.
 
-```text
-FUN_0076d100
-  -> FUN_00765470
-       -> FUN_00763570
-       -> FUN_007b3f40
-       -> FUN_007b4110
-```
-
-The recovered source already establishes that `FUN_00763570` reaches the
-wheel-local `FUN_00755f80` triplet writer, while `FUN_007b3f40` is the recovered
-SDF solve orchestration and `FUN_007b4110` applies post-solve BODY accumulator
-feedback. This report proves their call order in this anonymous helper; it does
-not claim that all three operate on the same BODY instance.
-
-## Inside `FUN_0076d100`
-
-The same export proves this direct-call subsequence:
-
-```text
-0x0076d12b -> FUN_00765c40
-0x0076d132 -> FUN_00758b50
-0x0076d139 -> FUN_00766510
-0x0076d2c1 -> FUN_00769ef0
-```
-
-`FUN_00769ef0` is recovered structurally rather than named semantically. It is the
-unique direct callee of `FUN_0076d100` which calls both the known contact-outer
-path and the known BODY motion read gate. Its local order is:
-
-```text
-0x0076a1c7 -> FUN_007675f0
-0x0076a1e8 -> FUN_007682c0
-```
-
-So the current static schedule is at least:
+Therefore the static schedule is now linked across the former persistent-state
+writer gap:
 
 ```text
 FUN_00770e80
@@ -90,73 +81,67 @@ FUN_00770e80
        -> FUN_00763570
        -> FUN_007b3f40
        -> FUN_007b4110
-  -> ...
+       -> FUN_007b2270
+            -> FUN_007bab70
+  -> FUN_007b8810
   -> FUN_0076d100
        -> same recovered pass ordering
   -> FUN_00765470
-       -> same recovered solver/post-solve ordering
+       -> same solver/post-solve/BODY-integration ordering
+  -> FUN_007b8810
 ```
 
-This is stronger than the earlier statement that `FUN_00770e80` merely executes
-two `FUN_0076d100` passes. It places known wheel/contact accumulator work,
-motion-side readers, the wheel shared-triplet pass, SDF solve and post-solve
-feedback into a repeatable direct-call schedule.
+This is direct-call ordering evidence plus imported source/machine-code semantics
+for the two BODY integration anchors. It is not a claim that callgraph structure
+alone proves field writes.
 
-## Still unresolved
+## `FUN_0076d100` tail
 
-The schedule does **not** reveal the missing persistent-state writer by itself.
-In particular it does not prove:
-
-- a write from BODY `+0x48..+0x70` into `+0x18..+0x28`;
-- a write into the motion triplet `+0x78/+0x80/+0x88`;
-- origin `+0x00/+0x08/+0x10` integration;
-- basis `+0xd4..+0xf4` integration;
-- that a register in one of the anonymous helpers is a BODY pointer;
-- that wheel-local `FUN_00755f80` state aliases chassis BODY state;
-- the semantic identity of `FUN_00765470` or `FUN_00769ef0`.
-
-Those remain explicit blockers until instruction/p-code and pointer-provenance
-evidence establish concrete loads/stores.
-
-## Indirect-call blockers
-
-The schedule analyzer keeps computed calls visible for all proven anchors and the
-newly recovered anonymous helpers. In the current export the relevant unresolved
-indirect sites are both inside `FUN_007b3f40`:
+The same direct-call evidence still recovers the anonymous `FUN_00769ef0` helper.
+It is the unique direct callee of `FUN_0076d100` that calls both the known
+contact-outer path and the BODY motion read gate, in this order:
 
 ```text
-0x007b3f8c
-0x007b4102
+0x0076a1c7 -> FUN_007675f0
+0x0076a1e8 -> FUN_007682c0
 ```
 
-No virtual target is assigned to either site from callgraph evidence alone.
-Vtable/object provenance must resolve them separately.
+No semantic rename is assigned to `FUN_00769ef0`.
 
-## Narrow next instruction targets
+## Fail-closed conditions
 
-Running the schedule builder on the current export produces this priority list:
+Version 2 aborts instead of weakening the conclusion when any of the following
+changes in the export:
 
-```text
-0x00765470
-0x00769ef0
-0x007b8810
-0x007b3e90
-0x00758810
-0x00754880
-0x007b2270
-0x007653f0
-```
+- `FUN_00770e80` no longer has exactly two direct `FUN_0076d100` calls;
+- the repeated between-pass helper is absent or ambiguous;
+- its required `FUN_00763570 -> FUN_007b3f40 -> FUN_007b4110 -> FUN_007b2270`
+  ordering is not preserved;
+- `FUN_007b2270` does not have exactly one direct call to `FUN_007bab70`;
+- the `FUN_0076d100` or `FUN_00769ef0` required ordering changes;
+- any required anchor is absent from `functions.jsonl`.
 
-The first two are the uniquely recovered orchestration candidates. The remaining
-entries are repeated or low-fan-in helpers directly adjacent to the recovered
-schedule. Generic high-fan-in support functions remain visible in the full
-ordered call lists but are deliberately not auto-selected.
+Indirect calls remain explicit blockers rather than guessed virtual targets.
 
-`FUN_007b8810` is especially useful as a next static target: it is called after
-`FUN_00765470` in both outer-pass windows and directly calls `FUN_007b3ed0`, but
-that adjacency is not enough to assign it a lifecycle or refresh name.
+## What remains unresolved
+
+The persistent BODY writer bridge itself is no longer the main static blocker.
+The remaining higher-level boundaries include:
+
+- caller ownership above `FUN_00770e80`;
+- exact vehicle/update-loop scheduling relative to rendered frames;
+- higher-level input/control ownership feeding that vehicle update path;
+- semantic identity of `FUN_00765470`, `FUN_00769ef0` and adjacent helpers;
+- the two unresolved indirect calls in `FUN_007b3f40`;
+- constructor/destructor/vptr/object-lifetime proof for PhysicsParticipant/vehicle
+  objects beyond heuristic vtable candidates.
+
+These should remain separate frontiers rather than being inferred from the now
+closed BODY integration path.
 
 ## Run
+
+The existing full Ghidra export is sufficient for the schedule report:
 
 ```bash
 python3 tools/ghidra/build_body_update_schedule_frontier.py \
@@ -165,8 +150,11 @@ python3 tools/ghidra/build_body_update_schedule_frontier.py \
   --targets-out out/body_update_schedule_targets.txt
 ```
 
-The existing export is sufficient for that step. A new Ghidra run is needed only
-for the next instruction/p-code layer:
+The generated target list deliberately excludes the already proven
+`FUN_007b2270`/`FUN_007bab70` anchors and keeps unproven adjacent helpers as the
+next targeted instruction-export worklist.
+
+If instruction-level evidence is needed for those remaining helpers:
 
 ```bash
 mapfile -t TARGETS < out/body_update_schedule_targets.txt
@@ -180,8 +168,8 @@ bash tools/ghidra/run_shift_function_instructions.sh \
   "${TARGETS[@]}"
 ```
 
-That output can then be passed through the existing register-relative access
-analyzer:
+Then audit register-relative loads/stores without promoting object identity by
+syntax alone:
 
 ```bash
 python3 tools/ghidra/analyze_register_relative_accesses.py \
@@ -189,14 +177,11 @@ python3 tools/ghidra/analyze_register_relative_accesses.py \
   --json-out out/body_update_schedule_register_accesses.json
 ```
 
-A candidate persistent-state bridge should only be promoted after the exact
-instruction stream proves both object-pointer provenance and the relevant
-`LOAD`/`STORE` offset relationship.
-
 ## Evidence boundary
 
 `FUN_00765470` and `FUN_00769ef0` remain anonymous, `promoted=false` candidates.
-The only newly proven property is their direct-callgraph position and ordering
-relative to already established anchors. No function rename, BODY field semantic
-promotion, virtual-call target, pose integrator or Linux runtime behavior is
-introduced by this layer.
+The BODY integration semantics belong to the separately source/machine-code-backed
+`SHIFT.BodyFrameIntegrationStatic/1` contract. Version 2 adds only the strict
+callgraph schedule link from post-solve feedback through `FUN_007b2270` to
+`FUN_007bab70`. No function rename, virtual-call target, or Linux runtime behavior
+is introduced by this layer.
