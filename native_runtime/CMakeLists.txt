@@ -60,6 +60,7 @@ add_library(shift_runtime_physics STATIC
   src/generated_body_constraint_frame.cpp
   src/body_state_feedback.cpp
   src/vehicle_driveline_math.cpp
+  src/body_frame_preparation.cpp
   src/bar_projection.cpp
   src/bar_matrix_coupling.cpp
   src/hinge_projection.cpp
@@ -289,6 +290,13 @@ target_link_libraries(shift_runtime_vehicle_driveline_math_check PRIVATE
 target_compile_options(shift_runtime_vehicle_driveline_math_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_body_frame_preparation_check
+  tests/body_frame_preparation_check.cpp)
+target_link_libraries(shift_runtime_body_frame_preparation_check PRIVATE
+  shift_runtime_physics)
+target_compile_options(shift_runtime_body_frame_preparation_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_builtin_sparse_solver
@@ -407,6 +415,9 @@ if(BUILD_TESTING)
   add_test(
     NAME shift_runtime_vehicle_driveline_math
     COMMAND shift_runtime_vehicle_driveline_math_check)
+  add_test(
+    NAME shift_runtime_body_frame_preparation
+    COMMAND shift_runtime_body_frame_preparation_check)
 endif()
 
 add_executable(shift_runtime src/shift_runtime.cpp)
