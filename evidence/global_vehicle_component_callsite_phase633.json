@@ -1,0 +1,43 @@
+{
+  "format": "SHIFT.GlobalVehicleComponentCallsiteStatic/1",
+  "version": 1,
+  "source_snapshot_sha256": "512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9",
+  "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+  "provenance": {
+    "phase633_commit": "665606d87fc207024e7ccc419f288ca0130bb34b",
+    "phase636_commit": "3b3f15bd4cf628654cfb504429a35f624edec0ac",
+    "evidence_kind": "merged-static-source-plus-raw-disassembly-audit"
+  },
+  "runtime_component_callsite": {
+    "caller": "0x0079a050",
+    "caller_name": "FUN_0079a050",
+    "call_address": "0x0079a5bc",
+    "return_address": "0x0079a5c1",
+    "callee_wrapper": "0x00757d20",
+    "callee_core": "0x00757d2c",
+    "caller_class": "runtime-threshold-slot",
+    "vehicle_pointer_register_at_core_entry": "ECX",
+    "component_offset_register_at_core_entry": "EAX",
+    "vehicle_base_address": "0x00c13700",
+    "component_base_offset": "0x400",
+    "component_stride": "0xa80",
+    "component_count": 4,
+    "component_offset_rule": "slot * 0xa80"
+  },
+  "vehicle_layout_join": {
+    "solver_setup_function": "0x007615c0",
+    "solver_setup_name": "FUN_007615c0",
+    "component_fields_same_layout_proven": true,
+    "wheel_spindle_body_fields_proven": true,
+    "rear_axle_semantic_field_offset": "0x2e00"
+  },
+  "scope": {
+    "global_vehicle_component_base_address_proven": true,
+    "update_child_pointer_equals_global_vehicle_base_proven": false,
+    "fun_007615c0_runtime_receiver_equals_global_base_proven": false,
+    "body_array_owner_equals_global_vehicle_base_proven": false,
+    "runtime_event_timing_proven": false,
+    "original_game_executed_for_this_evidence": false,
+    "new_runtime_capture_required": false
+  }
+}
