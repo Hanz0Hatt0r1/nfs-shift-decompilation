@@ -53,14 +53,28 @@ import sys
 from pathlib import Path
 Path(os.environ['FULL_WRAPPER_JOIN_LOG']).write_text('\\n'.join(sys.argv[1:]), encoding='utf-8')
 out = Path(sys.argv[sys.argv.index('--json-out') + 1])
-out.write_text(json.dumps({'format':'SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1'}) + '\\n', encoding='utf-8')
+out.write_text(json.dumps({'format':'SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1','rows':[]}) + '\\n', encoding='utf-8')
+""",
+        encoding="utf-8",
+    )
+
+    summarizer = live_dir / "summarize_memory_wrapper_argument_patterns.py"
+    summarizer.write_text(
+        """#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+Path(os.environ['FULL_WRAPPER_PATTERN_LOG']).write_text('\\n'.join(sys.argv[1:]), encoding='utf-8')
+out = Path(sys.argv[sys.argv.index('--json-out') + 1])
+out.write_text(json.dumps({'format':'SHIFT-MEMORY-WRAPPER-PROVENANCE-PATTERNS/1'}) + '\\n', encoding='utf-8')
 """,
         encoding="utf-8",
     )
     return runner
 
 
-def test_runner_builds_callsites_forwarding_and_argument_join(tmp_path):
+def test_runner_builds_callsites_forwarding_join_and_patterns(tmp_path):
     runner = _prepare_harness(tmp_path)
     source = tmp_path / "SHIFT.exe.c"
     source.write_text("/* recovered source */\n", encoding="utf-8")
@@ -70,12 +84,14 @@ def test_runner_builds_callsites_forwarding_and_argument_join(tmp_path):
     callsite_log = tmp_path / "callsites.log"
     forwarding_log = tmp_path / "forwarding.log"
     join_log = tmp_path / "join.log"
+    pattern_log = tmp_path / "patterns.log"
 
     env = dict(os.environ)
     env["GHIDRA_HOME"] = "/opt/fake-ghidra"
     env["FULL_WRAPPER_CALLSITE_LOG"] = str(callsite_log)
     env["FULL_WRAPPER_FORWARDING_LOG"] = str(forwarding_log)
     env["FULL_WRAPPER_JOIN_LOG"] = str(join_log)
+    env["FULL_WRAPPER_PATTERN_LOG"] = str(pattern_log)
 
     result = subprocess.run(
         [
@@ -118,12 +134,20 @@ def test_runner_builds_callsites_forwarding_and_argument_join(tmp_path):
         "--json-out",
         str(resolved_output / "memory_wrapper_argument_join.json"),
     ]
+    assert pattern_log.read_text(encoding="utf-8").splitlines() == [
+        str(resolved_output / "memory_wrapper_argument_join.json"),
+        "--json-out",
+        str(resolved_output / "memory_wrapper_provenance_patterns.json"),
+    ]
 
     joined = json.loads((output / "memory_wrapper_argument_join.json").read_text(encoding="utf-8"))
     assert joined["format"] == "SHIFT-MEMORY-WRAPPER-ARGUMENT-JOIN/1"
+    patterns = json.loads((output / "memory_wrapper_provenance_patterns.json").read_text(encoding="utf-8"))
+    assert patterns["format"] == "SHIFT-MEMORY-WRAPPER-PROVENANCE-PATTERNS/1"
     assert "memory wrapper callsites:" in result.stdout
     assert "memory wrapper forwarding:" in result.stdout
     assert "memory wrapper argument join:" in result.stdout
+    assert "memory wrapper provenance patterns:" in result.stdout
 
 
 def test_runner_rejects_missing_inputs_before_subtools(tmp_path):
