@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Validate and launch a complete native SHIFT vertical-slice runtime profile.
 
-The runner does not invent retail semantics. It only composes already-proven
-native_runtime inputs into one fail-closed launch contract and then executes the
-existing native binary with the same individual command-line options.
+The runner does not invent retail semantics. It composes already-proven
+native_runtime inputs into one fail-closed launch contract. Render/camera/
+participant inputs remain explicit CLI arguments; the admitted provider-absent
+BODY feedback packets are transported through a dedicated runtime scheduler
+environment so the legacy solver replay CLI path is not executed in parallel.
 """
 from __future__ import annotations
 
@@ -44,6 +46,14 @@ BINARY_INPUTS: dict[str, tuple[bytes, str]] = {
         b"SBPS",
         "SHIFT.NativePostSolveBodyProjectionPacket/1",
     ),
+}
+
+BODY_FEEDBACK_ENV: dict[str, str] = {
+    "SHIFT_NATIVE_BODY_FEEDBACK_SOLVER_FRAME": "solver_frame",
+    "SHIFT_NATIVE_BODY_FEEDBACK_GBCF": "generated_body_constraint_frame",
+    "SHIFT_NATIVE_BODY_FEEDBACK_CSRF": "constraint_sample_relation_frame",
+    "SHIFT_NATIVE_BODY_FEEDBACK_CRRF": "constraint_relation_reset_frame",
+    "SHIFT_NATIVE_BODY_FEEDBACK_SBPS": "post_solve_projection",
 }
 
 SCENE_FORMAT = "SHIFT.NativeSceneVulkanSet/1"
@@ -323,23 +333,16 @@ def build_launch_plan(
         str(resolved["physics_manifest"]),
         "--participant-boundary",
         str(resolved["participant_boundary"]),
-        "--solver-frame",
-        str(resolved["solver_frame"]),
-        "--generated-body-constraint-frame",
-        str(resolved["generated_body_constraint_frame"]),
-        "--constraint-sample-relation-frame",
-        str(resolved["constraint_sample_relation_frame"]),
-        "--constraint-relation-reset-frame",
-        str(resolved["constraint_relation_reset_frame"]),
-        "--post-solve-projection",
-        str(resolved["post_solve_projection"]),
-        "--persist-post-solve-body-state",
     ]
     if input_steps:
         argv.extend(["--input-script", str(resolved["input_script"])])
     argv.extend(["--frames", str(frames)])
     if validation:
         argv.append("--validation")
+
+    environment = {"SHIFT_NATIVE_BODY_FEEDBACK": "1"}
+    for environment_name, resolved_key in BODY_FEEDBACK_ENV.items():
+        environment[environment_name] = str(resolved[resolved_key])
 
     if input_steps:
         mode = "script"
@@ -365,6 +368,7 @@ def build_launch_plan(
         "persist_post_solve_body_state": True,
         "checks": checks,
         "argv": argv,
+        "environment": environment,
         "boundary": {
             "scene_render_admitted": True,
             "camera_state_admitted": True,
@@ -373,6 +377,8 @@ def build_launch_plan(
             "constraint_refresh_admitted": True,
             "relation_reset_selection_admitted": True,
             "post_solve_body_accumulator_persistence_admitted": True,
+            "dynamic_body_feedback_scheduler_admitted": True,
+            "legacy_solver_replay_cli_disabled": True,
             "window_quit_drives_session_end": interactive,
             "persistent_vehicle_transform_motion_claimed": False,
             "provider_present_dispatch_claimed": False,
@@ -419,7 +425,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.dry_run:
         return 0
-    completed = subprocess.run(plan["argv"], check=False)
+    launch_environment = os.environ.copy()
+    launch_environment.update(plan["environment"])
+    completed = subprocess.run(
+        plan["argv"],
+        env=launch_environment,
+        check=False,
+    )
     return completed.returncode
 
 

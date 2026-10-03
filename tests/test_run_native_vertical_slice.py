@@ -127,15 +127,24 @@ def test_build_launch_plan_composes_full_native_chain(tmp_path):
     assert "--camera-state" in plan["argv"]
     assert "--physics-manifest" in plan["argv"]
     assert "--participant-boundary" in plan["argv"]
-    assert "--solver-frame" in plan["argv"]
-    assert "--generated-body-constraint-frame" in plan["argv"]
-    assert "--constraint-sample-relation-frame" in plan["argv"]
-    assert "--constraint-relation-reset-frame" in plan["argv"]
-    assert "--post-solve-projection" in plan["argv"]
-    assert "--persist-post-solve-body-state" in plan["argv"]
+    assert "--solver-frame" not in plan["argv"]
+    assert "--generated-body-constraint-frame" not in plan["argv"]
+    assert "--constraint-sample-relation-frame" not in plan["argv"]
+    assert "--constraint-relation-reset-frame" not in plan["argv"]
+    assert "--post-solve-projection" not in plan["argv"]
+    assert "--persist-post-solve-body-state" not in plan["argv"]
     assert "--validation" in plan["argv"]
     assert plan["checks"]["solver_frame"]["magic"] == "SBFR"
     assert plan["checks"]["generated_body_constraint_frame"]["magic"] == "GBCF"
+    assert plan["environment"]["SHIFT_NATIVE_BODY_FEEDBACK"] == "1"
+    assert plan["environment"]["SHIFT_NATIVE_BODY_FEEDBACK_SOLVER_FRAME"].endswith(
+        "out/solver.sbfr"
+    )
+    assert plan["environment"]["SHIFT_NATIVE_BODY_FEEDBACK_GBCF"].endswith(
+        "out/generated.gbcf"
+    )
+    assert plan["boundary"]["dynamic_body_feedback_scheduler_admitted"] is True
+    assert plan["boundary"]["legacy_solver_replay_cli_disabled"] is True
     assert plan["boundary"]["window_quit_drives_session_end"] is False
     assert plan["boundary"]["persistent_vehicle_transform_motion_claimed"] is False
     assert plan["boundary"]["provider_present_dispatch_claimed"] is False
@@ -219,6 +228,29 @@ def test_rejects_profile_path_escape(tmp_path):
         MODULE.build_launch_plan(profile)
 
 
+def test_launch_injects_scheduler_environment(tmp_path, monkeypatch):
+    profile = _fixture(tmp_path)
+    observed = {}
+
+    class Completed:
+        returncode = 0
+
+    def capture_run(argv, *, env, check):
+        observed["argv"] = argv
+        observed["env"] = env
+        observed["check"] = check
+        return Completed()
+
+    monkeypatch.setattr(MODULE.subprocess, "run", capture_run)
+    result = MODULE.main([str(profile)])
+
+    assert result == 0
+    assert observed["check"] is False
+    assert observed["env"]["SHIFT_NATIVE_BODY_FEEDBACK"] == "1"
+    assert observed["env"]["SHIFT_NATIVE_BODY_FEEDBACK_SBPS"].endswith("out/post.sbps")
+    assert "--solver-frame" not in observed["argv"]
+
+
 def test_dry_run_writes_plan_without_launching(tmp_path, monkeypatch, capsys):
     profile = _fixture(tmp_path)
     output = tmp_path / "plan.json"
@@ -234,5 +266,6 @@ def test_dry_run_writes_plan_without_launching(tmp_path, monkeypatch, capsys):
     assert result == 0
     saved = json.loads(output.read_text(encoding="utf-8"))
     assert saved["ready"] is True
+    assert saved["environment"]["SHIFT_NATIVE_BODY_FEEDBACK"] == "1"
     printed = json.loads(capsys.readouterr().out)
     assert printed["format"] == "SHIFT.NativeVerticalSliceLaunchPlan/1"
