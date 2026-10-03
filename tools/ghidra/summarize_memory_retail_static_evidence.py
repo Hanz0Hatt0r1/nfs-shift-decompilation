@@ -68,9 +68,12 @@ def summarize_memory_retail_static_evidence(
         }
     )
 
-    diagnostic_inventory = backend.get("diagnostics")
-    if diagnostic_inventory is None:
-        diagnostic_inventory = backend.get("diagnostic_inventory") or []
+    allocation_diagnostic_proven = backend.get("allocation_backend_diagnostic_proven") is True
+    free_diagnostic_proven = backend.get("free_backend_diagnostic_proven") is True
+    release_diagnostic_path_proven = (
+        backend.get("release_thunk_to_free_diagnostic_path_proven") is True
+    )
+    diagnostic_inventory = backend.get("diagnostic_inventory") or []
 
     dl_behavior = {
         "analysis_complete": release_byte.get("analysis_complete") is True,
@@ -89,6 +92,12 @@ def summarize_memory_retail_static_evidence(
     blockers: list[str] = []
     if not wrapper_forwarding_proven:
         blockers.append("wrapper_forwarding_not_fully_proven")
+    if not allocation_diagnostic_proven:
+        blockers.append("allocation_backend_diagnostic_not_proven")
+    if not free_diagnostic_proven:
+        blockers.append("free_backend_diagnostic_not_proven")
+    if not release_diagnostic_path_proven:
+        blockers.append("release_thunk_to_free_diagnostic_path_not_proven")
     if not allocation_size_proven:
         blockers.append("allocation_size_backend_storage_not_proven")
     if not free_pointer_local_proven:
@@ -97,6 +106,17 @@ def summarize_memory_retail_static_evidence(
         blockers.append("released_pointer_wrapper_storage_not_proven")
     if not dl_behavior["analysis_complete"]:
         blockers.append("release_byte_behavior_incomplete")
+
+    static_chain_complete = bool(
+        wrapper_forwarding_proven
+        and allocation_diagnostic_proven
+        and free_diagnostic_proven
+        and release_diagnostic_path_proven
+        and allocation_size_proven
+        and free_pointer_local_proven
+        and released_pointer_wrapper_proven
+        and dl_behavior["analysis_complete"]
+    )
 
     return {
         "format": FORMAT,
@@ -116,14 +136,9 @@ def summarize_memory_retail_static_evidence(
             "all_wrapper_forwarding_confirmed": wrapper_forwarding_proven,
         },
         "backend_diagnostics": {
-            "allocation_path_proven": bool(
-                backend.get("allocation_diagnostic_xref_covered") is True
-                or backend.get("scope", {}).get("allocation_diagnostic_xref_covered") is True
-            ),
-            "free_path_proven": bool(
-                backend.get("release_diagnostic_path_proven") is True
-                or backend.get("scope", {}).get("release_diagnostic_path_proven") is True
-            ),
+            "allocation_backend_diagnostic_proven": allocation_diagnostic_proven,
+            "free_backend_diagnostic_proven": free_diagnostic_proven,
+            "release_thunk_to_free_diagnostic_path_proven": release_diagnostic_path_proven,
             "diagnostic_inventory": diagnostic_inventory,
         },
         "proven_physical_roles": {
@@ -146,6 +161,7 @@ def summarize_memory_retail_static_evidence(
             },
         },
         "release_byte_behavior": dl_behavior,
+        "static_evidence_chain_complete": static_chain_complete,
         "ready_for_source_semantic_join": bool(
             wrapper_forwarding_proven
             and allocation_size_proven
@@ -215,6 +231,7 @@ def main() -> int:
         "released-pointer wrapper role proven: "
         f"{report['proven_physical_roles']['released_pointer_wrapper']['proven']}"
     )
+    print(f"static evidence chain complete: {report['static_evidence_chain_complete']}")
     print(f"ready for source semantic join: {report['ready_for_source_semantic_join']}")
     if args.json_out:
         print(f"output: {args.json_out}")
