@@ -55,6 +55,9 @@ The output directory contains:
 - `memory_helper_semantics.json` — `SHIFT-MEMORY-HELPER-SEMANTICS/1`, storing
   bounded direct-call paths from helper families to exact retail pool-allocation
   and pool-free diagnostic strings;
+- `memory_wrapper_family.json` — `SHIFT-MEMORY-WRAPPER-FAMILY/1`, preserving
+  calling conventions, physical register/stack parameter storage and direct
+  backend calls for the five-function retail memory-wrapper cluster;
 - `lifecycle_investigation_targets.json` —
   `SHIFT.LifecycleInvestigationTargets/1`, containing one-hop Ghidra context
   around lifecycle-ready registration and initializer anchors;
@@ -68,8 +71,8 @@ structural-ready count, lifecycle-investigation-ready count, source lifecycle
 completion/base-transition/teardown-candidate counts, deleting-wrapper candidate
 and confirmed-shape counts, paired-lifetime/Ghidra-paired/helper-pair counts,
 helper-family recurrence/cross-check counts, diagnostic-backed memory-pool path
-counts, lifecycle target slice completeness, scorecard tiers and next-evidence
-blocker totals.
+counts, memory-wrapper ABI-shape counts, lifecycle target slice completeness,
+scorecard tiers and next-evidence blocker totals.
 
 ## Evidence boundary
 
@@ -98,6 +101,9 @@ underlying tools:
 - a bounded path to the exact retail allocation/free pool diagnostics proves
   participation in those memory-pool paths, but still does not establish
   `operator new`/`operator delete` ABI, argument semantics or ownership;
+- the memory-wrapper family uses calling conventions and physical register/stack
+  storage as ABI-shape evidence, but treats Ghidra semantic parameter types as
+  untrusted audit metadata and does not assign argument roles;
 - `lifecycle-investigation-ready` selects good targets for the next reverse-
   engineering pass but does not prove C++ constructor semantics, ownership,
   destructor order or gameplay behavior;
