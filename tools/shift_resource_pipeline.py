@@ -22,6 +22,9 @@ if SRC.is_dir():
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from offline_bootstrap_corpus_validation import (
+    build_bootstrap_corpus_validation_files,
+)
 from offline_resource_pipeline import (
     build_bootstrap_manifest,
     build_catalog,
@@ -145,6 +148,36 @@ def cmd_native_handoff(args: argparse.Namespace) -> int:
     return 0 if report["ready"] else 2
 
 
+def _augment_all_report_with_corpus_validation(
+    report: dict,
+    validation: dict,
+    output_dir: str | Path,
+) -> dict:
+    """Attach corpus target readiness as diagnostics, never as selected-target admission."""
+    out = Path(output_dir)
+    combined = dict(report)
+    combined["bootstrap_corpus_validation_status"] = validation.get("status")
+    combined["bootstrap_corpus_validation_ready"] = validation.get("ready") is True
+    combined["bootstrap_corpus_validation_summary"] = dict(
+        validation.get("summary") or {}
+    )
+    combined["bootstrap_corpus_validation_blocking_reasons"] = list(
+        validation.get("blocking_reasons") or []
+    )
+    artifacts = dict(report.get("artifacts") or {})
+    artifacts["bootstrap_corpus_validation"] = str(
+        out / "bootstrap_corpus_validation.json"
+    )
+    combined["artifacts"] = artifacts
+    boundary = dict(report.get("boundary") or {})
+    boundary["bootstrap_corpus_validation_automated"] = True
+    boundary["bootstrap_corpus_validation_is_selected_target_admission"] = False
+    boundary["unrelated_blocked_targets_block_selected_bootstrap"] = False
+    combined["boundary"] = boundary
+    _write_json(out / "pipeline_run.json", combined)
+    return combined
+
+
 def _augment_all_report_with_native_handoff(
     report: dict,
     handoff: dict,
@@ -190,6 +223,16 @@ def cmd_all(args: argparse.Namespace) -> int:
         track=args.track,
         vehicle=args.vehicle,
         decode_limit_per_archive=args.decode_limit_per_archive,
+    )
+    validation = build_bootstrap_corpus_validation_files(
+        out / "resource_catalog.json",
+        out / "dependency_graph.json",
+        out / "bootstrap_corpus_validation.json",
+    )
+    report = _augment_all_report_with_corpus_validation(
+        report,
+        validation,
+        out,
     )
     handoff = build_native_resource_handoff_files(
         out / "resource_catalog.json",
