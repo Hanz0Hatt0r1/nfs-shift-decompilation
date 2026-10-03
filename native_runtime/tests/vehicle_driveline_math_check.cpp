@@ -63,13 +63,13 @@ int main() {
         }
 
         const auto peak = scan_rpm_torque_peak_power(points);
-        if (!peak.has_point || peak.point_index != 1u ||
-            peak.rpm != 2000.0 || peak.throttle_torque != 200.0) {
+        if (!peak.has_point || peak.point_index != 2u ||
+            peak.rpm != 3000.0 || peak.throttle_torque != 150.0) {
             throw std::runtime_error("RPMTorque peak-power scan mismatch");
         }
         require_close(
             peak.peak,
-            2000.0 * 200.0 * 0.73756105 / 5252.0,
+            3000.0 * 150.0 * 0.73756105 / 5252.0,
             1e-12,
             "RPMTorque peak power",
             max_error);
