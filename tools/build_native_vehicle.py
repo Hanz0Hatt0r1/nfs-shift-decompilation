@@ -35,11 +35,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-o", "--output", required=True, help="output directory")
     parser.add_argument(
+        "--participant-observation",
+        help=(
+            "optional existing SHIFT.NativePhysicsParticipantObservation/1 JSON; "
+            "joined exactly to the generated structural participant boundary"
+        ),
+    )
+    parser.add_argument(
         "--require-runtime-physics-contract",
         action="store_true",
         help=(
             "return non-zero unless the current native runtime physics manifest "
             "contract is also ready"
+        ),
+    )
+    parser.add_argument(
+        "--require-participant-runtime-identity",
+        action="store_true",
+        help=(
+            "return non-zero unless exact participant runtime observation evidence "
+            "proves the selected participant identity"
         ),
     )
     return parser
@@ -52,20 +67,35 @@ def main(argv: list[str] | None = None) -> int:
         args.bootstrap,
         args.physics_bundle,
         args.output,
+        participant_observation_path=args.participant_observation,
     )
     print(json.dumps({
         "format": report["format"],
         "status": report["status"],
         "resource_ready": report["resource_ready"],
         "participant_structural_ready": report["participant_structural_ready"],
+        "participant_runtime_identity_evaluated": report.get(
+            "participant_runtime_identity_evaluated", False
+        ),
+        "participant_runtime_identity_ready": report.get(
+            "participant_runtime_identity_ready", False
+        ),
         "runtime_physics_contract_ready": report["runtime_physics_contract_ready"],
         "native_vehicle_runtime_ready": report["native_vehicle_runtime_ready"],
         "blocking_reasons": report["blocking_reasons"],
+        "runtime_gate_blocking_reasons": report.get(
+            "runtime_gate_blocking_reasons", []
+        ),
         "artifacts": report.get("artifacts") or {},
     }, ensure_ascii=False, indent=2))
     if not report["resource_ready"] or not report["participant_structural_ready"]:
         return 2
     if args.require_runtime_physics_contract and not report["runtime_physics_contract_ready"]:
+        return 2
+    if (
+        args.require_participant_runtime_identity
+        and report.get("participant_runtime_identity_ready") is not True
+    ):
         return 2
     return 0
 
