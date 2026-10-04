@@ -1,0 +1,31 @@
+name: Process 1 BMW offset33b Vehicle reference Y bootstrap zero
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py'
+      - 'tests/test_ghidra_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_VEHICLE_REFERENCE_Y_BOOTSTRAP_ZERO.md'
+      - '.github/workflows/process1-bmw-offset33b-vehicle-reference-y-bootstrap-zero.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py'
+      - 'tests/test_ghidra_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_VEHICLE_REFERENCE_Y_BOOTSTRAP_ZERO.md'
+      - '.github/workflows/process1-bmw-offset33b-vehicle-reference-y-bootstrap-zero.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run Vehicle reference-Y zero regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py
+      - name: Preserve offset33b store provenance regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_store_provenance.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py --help >/dev/null
