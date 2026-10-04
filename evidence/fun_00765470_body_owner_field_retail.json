@@ -1,0 +1,56 @@
+{
+  "format": "SHIFT.Fun00765470BodyOwnerFieldProvenance/1",
+  "source": {
+    "program": "SHIFT.exe",
+    "instruction_export_format": "SHIFT.GhidraFunctionInstructions/2",
+    "receiver_report_format": "SHIFT.Fun00765470BodyOwnerReceiverProvenance/1",
+    "provenance": "user-supplied targeted static Ghidra export",
+    "original_game_executed": false,
+    "new_runtime_capture_required": false
+  },
+  "target": {
+    "function": "FUN_00765470",
+    "address": "0x00765470",
+    "instruction_count": 247,
+    "reachable_instruction_count": 247,
+    "body_loop_call_instruction": "0x0076582a",
+    "body_loop_target": "0x007b2270"
+  },
+  "machine_edge": {
+    "entry_receiver_register": "ECX",
+    "preserved_base_register": "ESI",
+    "entry_receiver_copy_instruction": "0x0076548a",
+    "entry_receiver_copy_bytes": "8bf1",
+    "entry_receiver_copy_text": "MOV ESI,ECX",
+    "writers_to_ESI_before_BODY_owner_load": [
+      "0x0076548a"
+    ],
+    "BODY_owner_pointer_field_offset": "0x339c",
+    "BODY_owner_pointer_load_instruction": "0x00765824",
+    "BODY_owner_pointer_load_bytes": "8b8e9c330000",
+    "BODY_owner_pointer_load_text": "MOV ECX,dword ptr [ESI + 0x339c]",
+    "BODY_owner_pointer_expression": "dword ptr [entry:ECX + 0x339c]",
+    "BODY_owner_pointer_load_fallthrough": "0x0076582a",
+    "call_receiver_register": "ECX",
+    "entry_receiver_equals_call_receiver_pointer": false,
+    "entry_receiver_to_BODY_owner_pointer_field_edge_proven": true
+  },
+  "handoff": {
+    "half_step_entry_ECX_to_BODY_array_owner_field_continuity_proven": true,
+    "BODY_array_owner_pointer_field_offset": "0x339c",
+    "global_vehicle_to_BODY_owner_composition_ready": true,
+    "phase703_gate_rewrite_ready": true,
+    "phase698_positive_selection_admissible_by_this_artifact_alone": false,
+    "next_required_composition": "SHIFT.GlobalVehicleComponentBaseIdentity/1 + this field edge + proven BMW chassis BODY 0"
+  },
+  "blockers": [],
+  "scope": {
+    "BODY_array_owner_pointer_equals_vehicle_base_proven": false,
+    "BODY_owner_semantic_class_name_proven": false,
+    "FUN_007b2270_class_identity_proven": false,
+    "vehicle_BODY_selection_emitted": false,
+    "vehicle_world_transform_mapping_proven": false,
+    "original_game_executed": false,
+    "new_runtime_capture_required": false
+  }
+}
