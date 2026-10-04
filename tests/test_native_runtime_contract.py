@@ -311,7 +311,10 @@ def test_phase601_native_input_script_reaches_physics_tick_boundary():
     assert '"--input-script"' in source
     assert "load_input_script" in source
     assert "steps must be contiguous from zero" in source
-    assert "--frames must equal native input script step count" in source
+    assert "--frames must equal native input script step count" in (
+        source
+        + Path("native_runtime/src/runtime_loop_policy.hpp").read_text(encoding="utf-8")
+    )
     assert "input_script_mode" in source
     assert '"script" : "keyboard"' in source
     assert "vehicle_control_throttle_steps" in source
