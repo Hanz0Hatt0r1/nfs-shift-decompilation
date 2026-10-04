@@ -47,6 +47,7 @@ execute_fun_00770e80_scalar_provider_anchor_chain(
     const std::vector<std::uint8_t>& initial_body_bytes,
     const Fun0076d100AnchorProvider& physics_pass_provider,
     const Fun00765470MachineScalarHalfStepProvider& half_step_provider,
-    const Fun007b8810PostHalfStepCallback& post_half_step);
+    const Fun007b8810PostHalfStepCallback& post_half_step,
+    const Fun0076d100PostAnchorBodyStateMutator& post_anchor_body_mutator = {});
 
 }  // namespace shift::runtime::physics
