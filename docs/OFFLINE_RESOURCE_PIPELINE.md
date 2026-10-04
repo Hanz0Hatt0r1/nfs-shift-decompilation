@@ -107,6 +107,39 @@ to Process 1/2 without another extraction command, but it does **not** claim
 BODY0 identity, BODY bind semantics, SDF-model -> VHF frame relation, provider
 identity, scheduling, or vehicle-world-transform readiness.
 
+### Persistent selected vehicle archive
+
+`SHIFT.OfflineNativeVehicleBuild/1` now also preserves the exact selected primary
+vehicle BFF when the catalog carries real source provenance. This removes the
+manual `Vehicles.zip -> BMW_M3_E36.bff` extraction step for downstream proof or
+runtime consumers that still require an archive path.
+
+The materializer follows only the catalog-selected archive occurrence:
+
+- ZIP input: the exact recorded `source_member` is reopened; same-basename ZIP
+  members are never searched or substituted;
+- direct BFF input: the exact recorded source file is copied;
+- directory input: candidate files must match both the selected archive name and
+  SHA-256, and exactly one hit is required.
+
+In every case the bytes and size are reverified before the persistent artifact is
+admitted. Hash drift, missing source provenance, or a byte-identical duplicate
+occurrence blocks the archive handoff. Archive order and first-match selection
+are never used.
+
+The existing native-vehicle build report exposes the result as:
+
+```text
+vehicle_archive_materialization
+artifacts.vehicle_archive.path
+artifacts.vehicle_archive.sha256
+```
+
+For the unified playable path, canonical retail identity is still proved by the
+separate `SHIFT.RetailArchiveIdentityAdmission/1` gate. Archive materialization
+does not rederive or replace that proof, and it does not claim BODY semantics,
+participant identity, provider identity, scheduling, or vehicle transforms.
+
 ## Commands
 
 Inventory only:
@@ -205,8 +238,9 @@ The one-command `offline_runtime_bootstrap` additionally writes
 `retail_archive_identity_admission.json`; its readiness is now a required input
 to both static native scene and native vehicle admission. In that unified path,
 `native-vehicle/vehicle_physics_resource_manifest.json` also carries the exact
-persistent decoded paths described above, and `runtime_bootstrap.json` exposes
-`artifacts.vehicle_sdf` when the exact selected SDF was admitted.
+persistent decoded paths described above, `runtime_bootstrap.json` exposes
+`artifacts.vehicle_sdf`, and `native-vehicle/native_vehicle_build.json` exposes
+the persistent exact selected vehicle BFF through `artifacts.vehicle_archive`.
 
 See `docs/OFFLINE_NATIVE_RESOURCE_HANDOFF.md` for downstream join contracts and
 non-claims.
