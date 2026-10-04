@@ -1,0 +1,35 @@
+name: Process 1 outer Vehicle VHF root frontier
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/build_outer_vehicle_vhf_root_relation_frontier.py'
+      - 'tests/test_ghidra_outer_vehicle_vhf_root_relation_frontier.py'
+      - 'tools/ghidra/build_bmw_body0_vehicle_root_bind_relation.py'
+      - 'evidence/bmw_body0_vehicle_root_bind_relation.json'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_VHF_ROOT_RELATION_FRONTIER.md'
+      - '.github/workflows/process1-outer-vehicle-vhf-root-frontier.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/build_outer_vehicle_vhf_root_relation_frontier.py'
+      - 'tests/test_ghidra_outer_vehicle_vhf_root_relation_frontier.py'
+      - 'tools/ghidra/build_bmw_body0_vehicle_root_bind_relation.py'
+      - 'evidence/bmw_body0_vehicle_root_bind_relation.json'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_VHF_ROOT_RELATION_FRONTIER.md'
+      - '.github/workflows/process1-outer-vehicle-vhf-root-frontier.yml'
+
+jobs:
+  frontier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run outer Vehicle/VHF frontier regressions
+        run: python -m pytest -q tests/test_ghidra_outer_vehicle_vhf_root_relation_frontier.py
+      - name: Preserve symbolic BODY0/outer Vehicle relation regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_body0_vehicle_root_bind_relation.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/build_outer_vehicle_vhf_root_relation_frontier.py --help >/dev/null
