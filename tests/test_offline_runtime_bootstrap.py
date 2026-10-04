@@ -153,8 +153,10 @@ def test_runtime_bootstrap_composes_existing_stages_without_claiming_runtime(
         return report
 
     monkeypatch.setattr(runtime_bootstrap, "build_native_scene_files", fake_native_scene)
+    vehicle_call = {}
 
-    def fake_native_vehicle(catalog, bootstrap, physics, output_dir):
+    def fake_native_vehicle(catalog, bootstrap, physics, output_dir, **kwargs):
+        vehicle_call["kwargs"] = kwargs
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
         report = {
@@ -197,6 +199,9 @@ def test_runtime_bootstrap_composes_existing_stages_without_claiming_runtime(
     assert scene_call["ir"] == out / "scene-ir"
     assert scene_call["kwargs"]["root_consensus_path"] == "root.json"
     assert scene_call["kwargs"]["runtime_shader_admission_path"] == "shader.json"
+    assert Path(vehicle_call["kwargs"]["typed_closure_path"]) == (
+        out / "resources" / "typed_resource_closure.json"
+    )
     assert observed["decode_limit"] == 7
     persisted = json.loads((out / "runtime_bootstrap.json").read_text(encoding="utf-8"))
     assert persisted["boundary"]["retail_archive_name_alone_is_admission_proof"] is False
