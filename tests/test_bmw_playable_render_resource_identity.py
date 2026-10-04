@@ -183,7 +183,7 @@ def test_phase654_rejects_payload_hash_drift(tmp_path, monkeypatch):
 
     assert report["ready"] is False
     assert any(
-        "resource-claim-mismatch:vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt:payload-sha256-mismatch"
+        "phase654:resource-claim-mismatch:vehicles/bmw_m3_e36/bmw_m3_e36_paint.bmt:payload-sha256-mismatch"
         == reason
         for reason in report["blocking_reasons"]
     )
@@ -225,7 +225,7 @@ def test_phase654_rejects_claimed_entry_index_substitution(tmp_path, monkeypatch
 
     assert report["ready"] is False
     assert any(
-        "resource-claim-mismatch:vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb:entry-index-mismatch"
+        "phase654:resource-claim-mismatch:vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb:entry-index-mismatch"
         == reason
         for reason in report["blocking_reasons"]
     )
