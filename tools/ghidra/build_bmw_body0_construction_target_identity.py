@@ -185,6 +185,18 @@ def _validate_pose(report: Mapping[str, Any]) -> None:
     candidates = analysis.get("object_base_pose_store_candidates")
     if not isinstance(candidates, list) or not candidates:
         raise ValueError("construction pose-store object candidate set is empty")
+    builder_origin_candidates = [
+        row
+        for row in candidates
+        if isinstance(row, Mapping)
+        and row.get("function") == BODY_BUILDER
+        and any(
+            str(label).startswith("origin+")
+            for label in (row.get("pose_fields_touched") or [])
+        )
+    ]
+    if not builder_origin_candidates:
+        raise ValueError("BODY builder origin pose-store candidate is missing")
 
 
 def _validate_continuity(report: Mapping[str, Any]) -> None:
