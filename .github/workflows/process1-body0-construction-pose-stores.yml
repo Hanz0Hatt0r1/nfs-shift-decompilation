@@ -1,0 +1,32 @@
+name: Process 1 BODY0 construction pose stores
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_bmw_body0_construction_pose_stores.py'
+      - 'tests/test_ghidra_bmw_body0_construction_pose_stores.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_callsite_register_provenance.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_pose_writer_target_role.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_pose_writer_value_provenance.py'
+      - 'tools/ghidra/analyze_register_relative_accesses.py'
+      - '.github/workflows/process1-body0-construction-pose-stores.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_bmw_body0_construction_pose_stores.py'
+      - 'tests/test_ghidra_bmw_body0_construction_pose_stores.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_callsite_register_provenance.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_pose_writer_target_role.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_pose_writer_value_provenance.py'
+      - 'tools/ghidra/analyze_register_relative_accesses.py'
+      - '.github/workflows/process1-body0-construction-pose-stores.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_ghidra_bmw_body0_construction_pose_stores.py
