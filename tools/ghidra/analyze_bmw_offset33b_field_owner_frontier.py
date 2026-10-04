@@ -80,6 +80,8 @@ def _validate_input(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         raise ValueError("offset33b STORE provenance gate is not ready")
     if handoff.get("offset33b_memory_LOAD_frontier_ready") is not True:
         raise ValueError("offset33b memory-LOAD frontier gate is not ready")
+    if handoff.get("offset33b_exact_memory_field_worklist_ready") is not True:
+        raise ValueError("offset33b exact memory-field worklist is not ready")
     if handoff.get("BMW_numeric_offset33b_ready") is not False:
         raise ValueError("memory-LOAD report unexpectedly preclaims numeric offset33b")
     if handoff.get("BODY0_bind_frame_proof_ready") is not False:
@@ -93,6 +95,8 @@ def _validate_input(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     raw_worklist = analysis.get("exact_object_field_worklist")
     if not isinstance(raw_worklist, list):
         raise ValueError("exact_object_field_worklist missing")
+    if not raw_worklist:
+        raise ValueError("exact_object_field_worklist must not be empty")
 
     rows: list[dict[str, Any]] = []
     seen: set[tuple[tuple[str, ...], int, int]] = set()
@@ -146,12 +150,9 @@ def _classify_origins(origins: list[str]) -> tuple[str, str | None]:
         return "direct-HDVehicle-this", "HDVehicle"
     if len(origins) == 1:
         origin = origins[0]
-        entry = _ENTRY_ORIGIN.fullmatch(origin)
-        if entry is not None:
-            register = entry.group(1).upper()
+        if _ENTRY_ORIGIN.fullmatch(origin) is not None:
             return "other-entry-register", None
-        memory = _MEMORY_ORIGIN.fullmatch(origin)
-        if memory is not None:
+        if _MEMORY_ORIGIN.fullmatch(origin) is not None:
             return "indirect-owner-slot", None
         return "single-unresolved-origin", None
     return "multi-origin-unresolved", None
@@ -252,6 +253,7 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
         and float(additional.get("value", 1.0)) == 0.0
         and additional.get("term_elidable_for_first_bootstrap") is True
     )
+    additional_zero_available = additional_zero_ready and additional_machine_join_ready
 
     direct_ready = bool(direct_hdvehicle)
     all_owner_domains_classified = len(unresolved) == 0
@@ -284,13 +286,6 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
                 ),
             }
         )
-    if not classified:
-        blockers.append(
-            {
-                "id": "offset33b-field-owner-worklist-empty",
-                "required_evidence": "produce a non-empty exact memory field worklist from FUN_0076b280",
-            }
-        )
 
     return {
         "format": FORMAT,
@@ -299,10 +294,8 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
             "all-owner-semantics-ready"
             if all_semantic_owners_ready
             else "owner-domain-frontier-ready"
-            if classified
-            else "blocked"
         ),
-        "ready": bool(classified),
+        "ready": True,
         "inputs": {"memory_load_provenance": str(memory_load_path)},
         "producer_semantics": {
             "function": PRODUCER,
@@ -326,10 +319,12 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
         "known_semantic_reductions": {
             "additional_mass_first_bootstrap_zero_ready": additional_zero_ready,
             "additional_mass_machine_LOAD_join_ready": additional_machine_join_ready,
+            "additional_mass_zero_available_for_numeric_evaluator": additional_zero_available,
             "additional_mass_zero_applied_by_this_stage": False,
         },
         "handoff": {
             "offset33b_memory_LOAD_frontier_ready": True,
+            "offset33b_exact_memory_field_worklist_ready": True,
             "offset33b_direct_HDVehicle_field_owner_joins_ready": direct_ready,
             "offset33b_all_LOAD_owner_domains_classified": all_owner_domains_classified,
             "offset33b_all_field_owner_semantics_ready": all_semantic_owners_ready,
@@ -358,6 +353,15 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
                 }
                 for row in indirect_slots
             ],
+            "unresolved_owner_groups_requiring_provenance": [
+                {
+                    "base_origin_expression_set": row["base_origin_expression_set"],
+                    "displacement": row["displacement"],
+                    "load_width": row["load_width"],
+                    "feeds_offset33b_fields": row["feeds_offset33b_fields"],
+                }
+                for row in unresolved
+            ],
         },
         "scope": {
             "FUN_0076b280_entry_ECX_promoted_to_HDVehicle_this": True,
@@ -365,6 +369,7 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
             "memory_origin_promoted_to_HDVehicle_VDF_SDF_or_tire": False,
             "field_semantic_name_inferred_from_displacement": False,
             "additional_mass_zero_applied_without_machine_pointer_join": False,
+            "additional_mass_zero_reapplied_by_this_stage": False,
             "owner_join_promoted_to_numeric_value": False,
             "original_game_executed": False,
             "new_runtime_capture_required": False,
