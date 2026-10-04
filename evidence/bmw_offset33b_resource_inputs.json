@@ -1,0 +1,80 @@
+{
+  "format": "SHIFT.BMWOffset33bResourceInputs/1",
+  "version": 1,
+  "status": "resource-inputs-ready",
+  "ready": true,
+  "retail_archive": {
+    "filename": "BMW_M3_E36.bff",
+    "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70"
+  },
+  "cdf": {
+    "path": "vehicles/physics/chassis/bmw_m3_e36.cdf",
+    "entry_index": 1088,
+    "compression_type": 2,
+    "compressed_size": 5358,
+    "uncompressed_size": 24817,
+    "decoded_sha256": "bbee83f0d2fdcbfc2bbd62ddb2a10bf6fed71bb1b4fa78f303a4730d038b970d",
+    "values": {
+      "Mass": 1460.0,
+      "CGHeight": 0.28,
+      "GraphicalOffset": [0.0, 0.0, 0.0],
+      "FuelTankPos": [0.0, 0.2, -0.6],
+      "FuelTankMotion": [560.0, 0.7]
+    }
+  },
+  "sdf": {
+    "path": "vehicles/physics/suspension/aarm_multilink.sdf",
+    "entry_index": 1091,
+    "compression_type": 2,
+    "compressed_size": 1110,
+    "uncompressed_size": 5056,
+    "decoded_sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed",
+    "bodies": [
+      {"index": 0, "name": "body", "mass": 0.0, "pos": [0.0, 0.0, 0.0]},
+      {"index": 1, "name": "fl_spindle", "mass": 18.0, "pos": [0.67, 0.0, -1.65]},
+      {"index": 2, "name": "fr_spindle", "mass": 18.0, "pos": [-0.67, 0.0, -1.65]},
+      {"index": 3, "name": "fl_wheel", "mass": 25.0, "pos": [0.67, 0.0, -1.65]},
+      {"index": 4, "name": "fr_wheel", "mass": 25.0, "pos": [-0.67, 0.0, -1.65]},
+      {"index": 5, "name": "rl_spindle", "mass": 17.0, "pos": [0.749, 0.0, 1.35]},
+      {"index": 6, "name": "rr_spindle", "mass": 17.0, "pos": [-0.749, 0.0, 1.35]},
+      {"index": 7, "name": "rl_wheel", "mass": 26.0, "pos": [0.749, 0.0, 1.35]},
+      {"index": 8, "name": "rr_wheel", "mass": 26.0, "pos": [-0.749, 0.0, 1.35]},
+      {"index": 9, "name": "fuel_tank", "mass": 1.0, "pos": [0.0, 0.0, 0.0]},
+      {"index": 10, "name": "driver_head", "mass": 5.0, "pos": [0.0, 0.0, 0.0]}
+    ]
+  },
+  "fun_0076b280_load_data_mapping": {
+    "source_basis": "source-backed CDF parser object is load_data + 0x8; parser destination offsets are therefore shifted by +0x8 at FUN_0076b280",
+    "direct_fields": [
+      {"semantic_field": "CDF.GENERAL.Mass", "cdf_parser_offsets": [28], "load_data_offsets": [36], "value": 1460.0},
+      {"semantic_field": "CDF.GENERAL.GraphicalOffset", "cdf_parser_offsets": [200, 220, 240], "load_data_offsets": [208, 228, 248], "value": [0.0, 0.0, 0.0]},
+      {"semantic_field": "CDF.GENERAL.FuelTankPos", "cdf_parser_offsets": [344, 352, 360], "load_data_offsets": [352, 360, 368], "value": [0.0, 0.2, -0.6]},
+      {"semantic_field": "CDF.GENERAL.FuelTankMotion", "cdf_parser_offsets": [368, 376], "load_data_offsets": [376, 384], "value": [560.0, 0.7]}
+    ],
+    "observed_but_not_directly_mapped_here": [
+      {"semantic_field": "CDF.GENERAL.CGHeight", "cdf_parser_offsets": [384], "value": 0.28}
+    ],
+    "derived_load_data_offsets_not_promoted_from_resource_name": [824]
+  },
+  "handoff": {
+    "offset33b_resource_inputs_ready": true,
+    "offset33b_direct_CDF_load_data_mapping_ready": true,
+    "offset33b_SDF_body_resource_values_ready": true,
+    "offset33b_memory_LOAD_semantic_join_ready": false,
+    "BMW_numeric_offset33b_ready": false,
+    "BODY0_to_outer_vehicle_root_numeric_matrix_ready": false,
+    "BODY0_bind_frame_proof_ready": false,
+    "vehicle_world_transform_ready": false
+  },
+  "scope": {
+    "raw_retail_archive_committed": false,
+    "raw_CDF_or_SDF_committed": false,
+    "resource_field_value_promoted_to_machine_LOAD_without_pointer_provenance": false,
+    "derived_load_data_offset_0x338_assigned_CDF_semantics": false,
+    "runtime_BODY_mass_equals_raw_SDF_mass_assumed": false,
+    "runtime_BODY_position_equals_raw_SDF_pos_assumed": false,
+    "additional_mass_zero_reapplied_without_machine_pointer_join": false,
+    "original_game_executed": false,
+    "runtime_capture_required": false
+  }
+}
