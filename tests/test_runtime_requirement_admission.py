@@ -10,28 +10,38 @@ from offline_runtime_requirements import (
 
 
 def _bootstrap() -> dict:
+    track = "Silverstone_Era3_GrandPrix"
+    vehicle = "BMW_M3_E36"
     return {
         "format": "SHIFT.OfflineRuntimeBootstrap/1",
         "offline_build_ready": True,
         "runtime_ready": False,
-        "track": "Silverstone_Era3_GrandPrix",
-        "vehicle": "BMW_M3_E36",
+        "track": track,
+        "vehicle": vehicle,
         "readiness": {
+            "retail_archive_identity_ready": True,
             "vehicle_runtime_physics_contract_ready": True,
             "vehicle_participant_runtime_identity_ready": True,
             "runtime_scene_ready": False,
         },
         "artifacts": {
+            "retail_archive_identity_admission": "out/retail_archive_identity_admission.json",
             "participant_runtime_evidence": "out/participant.json",
         },
         "stages": {
+            "retail_archive_identity_admission": {
+                "format": "SHIFT.RetailArchiveIdentityAdmission/1",
+                "ready": True,
+                "track": track,
+                "vehicle": vehicle,
+            },
             "native_vehicle": {
                 "artifacts": {
                     "native_physics_manifest": {
                         "path": "out/physics.json",
                     }
                 }
-            }
+            },
         },
     }
 
@@ -106,6 +116,32 @@ def test_conflicting_validated_explicit_artifact_stays_ambiguous_and_cannot_over
     ]
     assert report["ready"] is False
     assert "runtime-requirement-ambiguous:scene_set" in report["blocking_reasons"]
+
+
+def test_failed_retail_identity_cannot_be_replaced_by_validated_explicit_resource_paths():
+    bootstrap = _bootstrap()
+    bootstrap["readiness"]["retail_archive_identity_ready"] = False
+    bootstrap["stages"]["retail_archive_identity_admission"]["ready"] = False
+
+    report = build_runtime_requirements(
+        bootstrap,
+        validated_runtime_inputs={
+            "scene_set": _validated("scene_set", "/workspace/scene"),
+            "physics_manifest": _validated(
+                "physics_manifest", "/workspace/physics.json"
+            ),
+            "participant_boundary": _validated(
+                "participant_boundary", "/workspace/participant.json"
+            ),
+        },
+    )
+    rows = {row["name"]: row for row in report["requirements"]}
+
+    for name in ("scene_set", "physics_manifest", "participant_boundary"):
+        assert rows[name]["satisfied"] is False
+        assert rows[name]["artifact"] is None
+        assert rows[name]["retail_archive_identity_gate_ready"] is False
+    assert report["ready"] is False
 
 
 def test_invalid_explicit_runtime_input_does_not_turn_missing_evidence_ready():
