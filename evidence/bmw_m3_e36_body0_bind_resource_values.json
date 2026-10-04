@@ -1,0 +1,36 @@
+{
+  "format": "SHIFT.BMWBody0BindResourceValues/1",
+  "version": 1,
+  "status": "exact-retail-derived-values",
+  "ready": true,
+  "source": {
+    "archive_filename": "BMW_M3_E36.bff",
+    "archive_size_bytes": 18934688,
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "resource_path": "vehicles/physics/suspension/aarm_multilink.sdf",
+    "resource_entry_index": 1091,
+    "resource_compression_type": 2,
+    "resource_compressed_size": 1110,
+    "resource_uncompressed_size": 5056,
+    "resource_sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed",
+    "extraction_contract": "SHIFT.BMWBody0BindResourceMaterialization/1"
+  },
+  "body0": {
+    "body_count": 11,
+    "body_index": 0,
+    "body_name": "body",
+    "pos": [0.0, 0.0, 0.0],
+    "ori": [0.0, 0.0, 0.0],
+    "ori_is_exact_zero": true,
+    "zero_orientation_identity_shortcut_eligible": true
+  },
+  "scope": {
+    "raw_archive_committed": false,
+    "raw_resource_committed": false,
+    "original_game_executed": false,
+    "new_runtime_capture_required": false,
+    "identity_matrix_assumed": false,
+    "SDF_model_frame_assumed_equal_VHF_vehicle_root": false,
+    "vehicle_world_transform_claimed": false
+  }
+}
