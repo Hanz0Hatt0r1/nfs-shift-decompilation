@@ -107,8 +107,45 @@ def _default_classification(row: Mapping[str, Any]) -> str:
     return MISSING
 
 
+def _scene_runtime_evidence_required(
+    runtime_scene_handoff: Mapping[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Return only the exact Phase 641 capture-observation frontier.
+
+    A generic blocked scene or a zero Phase 590 candidate count is not enough to
+    claim runtime evidence. Phase 641 emits both an explicit boundary flag and
+    the exact per-binding/register evidence rows after it has already observed
+    the typed D3D9 resource without usable snapshot content. Consume only that
+    self-consistent contract here.
+    """
+    if runtime_scene_handoff is None or runtime_scene_handoff.get("ready") is True:
+        return []
+    boundary = runtime_scene_handoff.get("boundary") or {}
+    completion = runtime_scene_handoff.get("existing_capture_completion") or {}
+    if not isinstance(boundary, Mapping) or not isinstance(completion, Mapping):
+        return []
+    if boundary.get("capture_observation_required") is not True:
+        return []
+
+    raw_rows = completion.get("runtime_evidence_required") or []
+    if not isinstance(raw_rows, list):
+        return []
+    rows = [dict(row) for row in raw_rows if isinstance(row, Mapping)]
+    if not rows or len(rows) != len(raw_rows):
+        return []
+
+    try:
+        expected_count = int(boundary.get("capture_observation_requirement_count"))
+    except (TypeError, ValueError):
+        return []
+    if expected_count != len(rows):
+        return []
+    return rows
+
+
 def _scene_blocker_classification(
     runtime_scene_handoff: Mapping[str, Any] | None,
+    runtime_evidence_required: list[Mapping[str, Any]],
 ) -> str | None:
     if runtime_scene_handoff is None or runtime_scene_handoff.get("ready") is True:
         return None
@@ -116,9 +153,21 @@ def _scene_blocker_classification(
         str(reason).lower()
         for reason in runtime_scene_handoff.get("blocking_reasons") or []
     ]
+    # Identity ambiguity remains a stronger blocker than missing runtime bytes.
+    # Never hide it behind an evidence request.
     if any("ambiguous" in reason or "multiple-" in reason for reason in reasons):
         return AMBIGUOUS
+    if runtime_evidence_required:
+        return RUNTIME_EVIDENCE_REQUIRED
     return None
+
+
+def _runtime_evidence_reason(row: Mapping[str, Any]) -> str:
+    binding = row.get("binding_index")
+    register = row.get("register")
+    sampler_type = str(row.get("sampler_type") or "unknown")
+    reason = str(row.get("reason") or "runtime-observation-required")
+    return f"binding-{binding}:s{register}:{sampler_type}:{reason}"
 
 
 def _apply_validated_input(
@@ -165,6 +214,11 @@ def _apply_validated_input(
     )
     row["artifact_origin"] = "explicit-validated"
     row["classification"] = READY
+    # Explicit, independently validated scene/resource input may satisfy a
+    # missing capture-derived frontier. Do not leave stale evidence diagnostics
+    # attached to a row that is now READY.
+    row.pop("runtime_evidence_required", None)
+    row.pop("runtime_evidence_reasons", None)
 
 
 def _section_row(row: Mapping[str, Any]) -> dict[str, Any]:
@@ -173,11 +227,18 @@ def _section_row(row: Mapping[str, Any]) -> dict[str, Any]:
         "artifact": row.get("artifact"),
         "source": row.get("source"),
     }
-    reasons = row.get("ambiguity_reasons") or row.get(
-        "explicit_validation_blocking_reasons"
+    reasons = (
+        row.get("ambiguity_reasons")
+        or row.get("runtime_evidence_reasons")
+        or row.get("explicit_validation_blocking_reasons")
     )
     if reasons:
         value["reasons"] = list(reasons)
+    evidence = row.get("runtime_evidence_required")
+    if isinstance(evidence, list) and evidence:
+        value["runtime_evidence_required"] = [
+            dict(item) for item in evidence if isinstance(item, Mapping)
+        ]
     return value
 
 
@@ -211,6 +272,7 @@ def build_runtime_requirements(
         if handoff_scene_ready
         else "runtime-proven draw admission"
     )
+    scene_runtime_evidence = _scene_runtime_evidence_required(runtime_scene_handoff)
 
     rows: list[dict[str, Any]] = [
         {
@@ -306,14 +368,26 @@ def build_runtime_requirements(
         },
     ]
 
-    scene_classification = _scene_blocker_classification(runtime_scene_handoff)
+    scene_classification = _scene_blocker_classification(
+        runtime_scene_handoff,
+        scene_runtime_evidence,
+    )
     for row in rows:
         row["classification"] = _default_classification(row)
         if row["name"] == "scene_set" and scene_classification is not None:
             row["classification"] = scene_classification
-            row["ambiguity_reasons"] = list(
-                runtime_scene_handoff.get("blocking_reasons") or []
-            )
+            if scene_classification == AMBIGUOUS:
+                row["ambiguity_reasons"] = list(
+                    runtime_scene_handoff.get("blocking_reasons") or []
+                )
+            elif scene_classification == RUNTIME_EVIDENCE_REQUIRED:
+                row["runtime_evidence_required"] = [
+                    dict(item) for item in scene_runtime_evidence
+                ]
+                row["runtime_evidence_reasons"] = [
+                    _runtime_evidence_reason(item)
+                    for item in scene_runtime_evidence
+                ]
         _apply_validated_input(row, validated.get(str(row["name"])))
 
     known = {str(row["name"]) for row in rows}
@@ -385,6 +459,10 @@ def build_runtime_requirements(
             "diagnostic_only": True,
             "runtime_scene_handoff_format": RUNTIME_SCENE_HANDOFF_FORMAT,
             "runtime_scene_handoff_accepted": handoff_scene_ready,
+            "runtime_scene_capture_observation_frontier_consumed": bool(
+                scene_runtime_evidence
+            ),
+            "runtime_scene_capture_observation_requires_exact_frontier": True,
             "validated_runtime_input_format": VALIDATED_INPUT_FORMAT,
             "validated_explicit_input_may_override_proven_artifact": False,
             "unvalidated_explicit_path_is_ready": False,
