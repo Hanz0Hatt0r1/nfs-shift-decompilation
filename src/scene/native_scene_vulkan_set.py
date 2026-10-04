@@ -269,17 +269,38 @@ def _texture_map_for_submesh(
             )
             continue
         path = resource.get("path")
+        expected_sha256 = str(resource.get("sha256") or "").lower()
+        if len(expected_sha256) != 64:
+            blockers.append(
+                f"texture:s{register}:renderer-resource-sha256-invalid"
+            )
+            continue
         row, error = _exact_row(
             rows,
             path=path,
             archive=prefer_archive,
+            sha256=expected_sha256,
         )
         if row is None and error == "not-found":
-            row, error = _exact_row(rows, path=path)
-        if row is None:
-            blockers.append(
-                f"texture:s{register}:ir-resource-{error or 'not-found'}"
+            row, error = _exact_row(
+                rows,
+                path=path,
+                sha256=expected_sha256,
             )
+        if row is None:
+            path_hits = [
+                candidate
+                for candidate in rows
+                if _norm(candidate.get("path")) == _norm(path)
+            ]
+            if error == "not-found" and path_hits:
+                blockers.append(
+                    f"texture:s{register}:ir-resource-sha256-mismatch"
+                )
+            else:
+                blockers.append(
+                    f"texture:s{register}:ir-resource-{error or 'not-found'}"
+                )
             continue
         raw = _raw_path(root, row)
         if raw is None:
@@ -305,6 +326,10 @@ def _texture_map_for_submesh(
             "path": row.get("path"),
             "archive": row.get("archive"),
             "sha256": row.get("sha256"),
+            "expected_sha256": expected_sha256,
+            "identity_sha256_match": (
+                str(row.get("sha256") or "").lower() == expected_sha256
+            ),
             "raw": row.get("raw"),
             "raw_sha256": _sha_file(raw),
         })
@@ -751,6 +776,7 @@ def build_native_scene_vulkan_set(
             "exact_primitive_range_revalidated": True,
             "scene_hashes_revalidated": True,
             "material_2d_dds_resolved_from_ir": True,
+            "material_2d_dds_render_resource_sha256_revalidated": True,
             "world_transform_serialized": True,
             "world_transform_executed": False,
             "explicit_external_sampler2d_snapshots_admitted": True,
