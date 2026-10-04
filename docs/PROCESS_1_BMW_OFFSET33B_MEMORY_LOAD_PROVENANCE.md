@@ -30,12 +30,17 @@ tools/ghidra/analyze_bmw_offset33b_memory_load_provenance.py
 
 ## Inputs
 
-The pass consumes three already-bounded artifacts:
+The pass consumes three bounded artifacts:
 
 1. positive `SHIFT.BMWOffset33bStoreProvenance/1`;
 2. the exact `SHIFT.GhidraFunctionInstructions/2` export for `FUN_0076b280`
    that produced that STORE report;
-3. positive `SHIFT.BMWOffset33bAdditionalMassBootstrapZero/1` from #1247.
+3. positive `SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1` from #1257.
+
+The historical manager-record proof `SHIFT.BMWOffset33bAdditionalMassBootstrapZero/1`
+is explicitly rejected. #1250 established that manager record `+0xba0` is not the
+consumed storage; the valid first-bootstrap zero belongs to the separately
+allocated actual PhysicsParticipant at `+0xba0`, alias embedded Vehicle `+0x860`.
 
 No second Ghidra export is needed.
 
@@ -43,9 +48,9 @@ Example:
 
 ```bash
 python3 tools/ghidra/analyze_bmw_offset33b_memory_load_provenance.py \
-  out/bmw_offset33b_static_proof/bmw_offset33b_store_provenance.json \
-  out/bmw_offset33b_static_proof/bmw_offset33b_fun_0076b280_instructions.jsonl \
-  out/bmw_offset33b_additional_mass_bootstrap_zero.json \
+  out/bmw_offset33b_static_proof/02_bmw_offset33b_store_provenance.json \
+  out/bmw_offset33b_static_proof/01_fun_0076b280_instructions.jsonl \
+  out/bmw_offset33b_actual_additional_mass_bootstrap_zero.json \
   --json-out out/bmw_offset33b_memory_load_provenance.json
 ```
 
@@ -62,74 +67,50 @@ one simple register-relative machine memory operand
 all-path register provenance for that memory base
 ```
 
-A positive machine join records:
+A positive machine join records the LOAD instruction, p-code node id, machine
+operand, base register, all-path base-origin expression set, exact displacement,
+LOAD width, consuming STOREs and affected offset33b components.
 
-```text
-LOAD instruction
-p-code node id
-machine operand
-base register
-all-path base-origin expression set
-exact displacement
-LOAD width
-which offset33b STORE(s) consume the value
-which offset33b x/y/z field(s) depend on it
-```
-
-The resulting semantic worklist is grouped by:
+The semantic worklist is grouped by:
 
 ```text
 (base-origin expression set, displacement, width)
 ```
 
-This is the first artifact in the numeric offset33b chain that turns an anonymous
-memory root into an exact object-origin/field-offset candidate.
+## Additional-mass reduction boundary
 
-## Why displacement is not semantics
-
-A displacement such as `+0xba0` or `+0x860` is not enough to identify an object.
-The analyzer therefore records matching displacements but keeps:
+The valid #1257 reduction is carried as:
 
 ```text
-additional_mass_pointer_identity_proven     = false
-additional_mass_zero_applied_to_this_load   = false
-resource_or_object_semantics_proven         = false
-```
-
-until pointer provenance joins the base to the exact current PhysicsParticipant
-or embedded outer Vehicle.
-
-This matters because #1247 independently proves:
-
-```text
-PhysicsParticipant+0xba0
-== Vehicle+0x860
-== additional participant mass root
+actual PhysicsParticipant+0xba0
+== embedded Vehicle+0x860
 == +0.0f
 ```
 
-for fresh/reinitialized first bootstrap. That proof is consumed and preserved as
-a known semantic reduction, but it is never attached to an unrelated machine
-LOAD merely because an offset happens to match.
+for a freshly allocated first-bootstrap actual participant. It remains independent
+of any machine LOAD until pointer provenance proves the LOAD base is that exact
+object. Matching `+0xba0` or `+0x860` alone never applies zero.
+
+The report therefore keeps:
+
+```text
+additional_mass_pointer_identity_proven   = false
+additional_mass_zero_applied_to_this_load = false
+```
+
+for displacement-only matches.
 
 ## Positive result
 
 A fully deterministic LOAD frontier exposes:
 
 ```text
-offset33b_memory_LOAD_frontier_ready          = true
-offset33b_exact_memory_field_worklist_ready   = true
+offset33b_memory_LOAD_frontier_ready        = true
+offset33b_exact_memory_field_worklist_ready = true
 ```
 
-Each worklist row still intentionally has:
-
-```text
-semantic_owner_or_resource = null
-semantic_field_name        = null
-semantic_join_ready        = false
-```
-
-The next proof can therefore be narrow and data-driven:
+Each worklist row still has unresolved semantic owner/field names. The next proof
+is narrow:
 
 ```text
 exact base-origin/displacement group
@@ -138,23 +119,13 @@ exact base-origin/displacement group
   -> numeric field value
 ```
 
-## Fail-closed cases
+## Fail-closed behavior
 
-The analyzer blocks or keeps the semantic frontier incomplete when:
+The pass fails closed on missing LOAD nodes, ambiguous machine LOADs, complex
+memory operands, non-deterministic base provenance, malformed STORE contracts,
+or an invalid/retracted additional-mass proof.
 
-- a LOAD p-code node from the STORE report is absent from the supplied
-  instruction export;
-- one machine instruction contains multiple LOADs that cannot be uniquely joined;
-- the relevant memory operand is complex rather than simple register-relative;
-- all-path base-register provenance is non-deterministic;
-- a memory root exists but no structured LOAD node reaches the STORE slice.
-
-It never creates a PHI value, CALL return value, object identity, or resource
-field meaning that is not already present in static evidence.
-
-## Deliberate non-claims
-
-Even a positive exact-memory-field worklist keeps:
+Even a positive worklist keeps:
 
 ```text
 BMW_numeric_offset33b_ready                       = false
@@ -163,6 +134,4 @@ BODY0_bind_frame_proof_ready                      = false
 vehicle_world_transform_ready                     = false
 ```
 
-The pass only removes the anonymous-memory part of the blocker. Numeric
-`offset33b` becomes ready only after all required field groups are joined to
-exact BMW resource/init values and the supported arithmetic is evaluated.
+No original-game execution or new runtime capture is required.

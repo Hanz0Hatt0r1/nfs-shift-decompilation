@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Run the reduced BMW offset33b static-proof chain in one command.
+"""Run the corrected reduced BMW offset33b static-proof chain in one command.
 
-The chain deliberately reuses one targeted FUN_0076b280 Ghidra export:
+The chain reuses one targeted ``FUN_0076b280`` Ghidra export and combines only
+currently valid first-bootstrap reductions:
 
-  existing one-command STORE proof
-    -> additional-mass bootstrap-zero proof
+  STORE/value-root proof
+    -> actual PhysicsParticipant additional-mass +0.0 proof (#1257)
+    -> Vehicle reference-Y +0.0 proof (#1259)
     -> exact memory-LOAD/object-field frontier
 
-No second Ghidra export is requested.  A completed bundle still does not mean the
-three offset33b doubles are numeric; it means the remaining memory/resource joins
-are explicitly bounded.
+The historical manager-record zero correction contract is not consumed.  A
+completed bundle still keeps the three offset33b doubles non-numeric until the
+remaining exact resource/init fields are joined and evaluated.
 """
 from __future__ import annotations
 
@@ -23,13 +25,15 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-import analyze_bmw_offset33b_additional_mass_bootstrap_zero as _mass
+import analyze_bmw_offset33b_actual_additional_mass_bootstrap_zero as _mass
 import analyze_bmw_offset33b_memory_load_provenance as _loads
+import analyze_bmw_offset33b_vehicle_reference_y_bootstrap_zero as _reference_y
 import run_bmw_offset33b_static_proof as _base
 
 FORMAT = "SHIFT.BMWOffset33bReducedStaticProofBundle/1"
-MASS_FILE = "03_bmw_offset33b_additional_mass_bootstrap_zero.json"
-LOAD_FILE = "04_bmw_offset33b_memory_load_provenance.json"
+MASS_FILE = "03_bmw_offset33b_actual_additional_mass_bootstrap_zero.json"
+REFERENCE_Y_FILE = "04_bmw_offset33b_vehicle_reference_y_bootstrap_zero.json"
+LOAD_FILE = "05_bmw_offset33b_memory_load_provenance.json"
 BUNDLE_FILE = "bmw_offset33b_reduced_static_proof_bundle.json"
 
 
@@ -88,7 +92,8 @@ def _failure_bundle(
         "stages": dict(stages),
         "handoff": {
             "offset33b_store_provenance_ready": False,
-            "offset33b_additional_mass_bootstrap_zero_ready": False,
+            "offset33b_actual_additional_mass_bootstrap_zero_ready": False,
+            "offset33b_vehicle_reference_y_bootstrap_zero_ready": False,
             "offset33b_memory_LOAD_frontier_ready": False,
             "offset33b_exact_memory_field_worklist_ready": False,
             "BMW_numeric_offset33b_ready": False,
@@ -99,6 +104,7 @@ def _failure_bundle(
         "scope": {
             "partial_artifacts_preserved": True,
             "failed_stage_promoted_to_numeric_proof": False,
+            "retracted_manager_record_zero_claim_reused": False,
             "additional_Ghidra_export_requested": False,
             "original_game_executed": False,
             "new_runtime_capture_required": False,
@@ -110,12 +116,12 @@ def _decision(load_report: Mapping[str, Any] | None, store_ready: bool) -> dict[
     if not store_ready:
         return {
             "class": "store-frontier-incomplete",
-            "next_action": "resolve the exact offset33b STORE coverage/value-root frontier before memory-field joining",
+            "next_action": "resolve exact offset33b STORE/value-root coverage before field joining",
         }
     if load_report is None:
         return {
             "class": "memory-load-stage-not-run",
-            "next_action": "repair the reduced static-proof orchestration before semantic field joining",
+            "next_action": "repair orchestration before semantic resource joining",
         }
     handoff = load_report.get("handoff")
     if not isinstance(handoff, Mapping):
@@ -128,7 +134,7 @@ def _decision(load_report: Mapping[str, Any] | None, store_ready: bool) -> dict[
             "class": "semantic-resource-field-join",
             "next_action": (
                 "join each exact (base-origin expression, displacement, width) group to its "
-                "HDV/VDF/SDF/tire field, then evaluate only the supported arithmetic"
+                "HDV/VDF/SDF/tire field, then evaluate only supported arithmetic"
             ),
             "field_worklist": list(
                 (load_report.get("analysis") or {}).get("exact_object_field_worklist") or []
@@ -138,7 +144,7 @@ def _decision(load_report: Mapping[str, Any] | None, store_ready: bool) -> dict[
         return {
             "class": "resolve-load-base-or-helper-frontier",
             "next_action": (
-                "resolve remaining non-deterministic LOAD bases or non-LOAD memory/helper roots; "
+                "resolve only remaining non-deterministic LOAD bases or non-LOAD/helper roots; "
                 "do not broaden to runtime capture yet"
             ),
         }
@@ -146,6 +152,20 @@ def _decision(load_report: Mapping[str, Any] | None, store_ready: bool) -> dict[
         "class": "memory-load-structure-incomplete",
         "next_action": "resolve complex/multi-LOAD structure using the existing FUN_0076b280 export",
     }
+
+
+def _run_metadata_stage(
+    *,
+    analyzer,
+    path: Path,
+    ghidra_export: Path,
+    format_name: str,
+) -> dict[str, Any]:
+    report = analyzer(ghidra_export)
+    _write_json(path, report)
+    if report.get("format") != format_name or report.get("ready") is not True:
+        raise ValueError(f"{format_name} did not produce a positive ready contract")
+    return report
 
 
 def run_bmw_offset33b_reduced_static_proof(
@@ -171,6 +191,7 @@ def run_bmw_offset33b_reduced_static_proof(
     instruction_path = output_dir / _base.INSTRUCTION_FILE
     store_path = output_dir / _base.PROVENANCE_FILE
     mass_path = output_dir / MASS_FILE
+    reference_y_path = output_dir / REFERENCE_Y_FILE
     load_path = output_dir / LOAD_FILE
     bundle_path = output_dir / BUNDLE_FILE
     inputs = _inputs(project_dir, project_name, ghidra_export, relation_path)
@@ -214,20 +235,46 @@ def run_bmw_offset33b_reduced_static_proof(
         raise
 
     try:
-        mass_report = _mass.analyze_bmw_offset33b_additional_mass_bootstrap_zero(
-            ghidra_export
+        mass_report = _run_metadata_stage(
+            analyzer=_mass.analyze,
+            path=mass_path,
+            ghidra_export=ghidra_export,
+            format_name=_mass.FORMAT,
         )
-        _write_json(mass_path, mass_report)
-        artifacts["additional_mass_bootstrap_zero"] = str(mass_path)
-        stages["additional_mass_bootstrap_zero"] = _stage(
+        artifacts["actual_additional_mass_bootstrap_zero"] = str(mass_path)
+        stages["actual_additional_mass_bootstrap_zero"] = _stage(
             "completed", path=mass_path, format_name=_mass.FORMAT
         )
     except Exception as exc:
-        stages["additional_mass_bootstrap_zero"] = _stage(
+        stages["actual_additional_mass_bootstrap_zero"] = _stage(
             "failed", path=mass_path, reason=f"{type(exc).__name__}: {exc}"
         )
         bundle = _failure_bundle(
-            failed_stage="additional_mass_bootstrap_zero",
+            failed_stage="actual_additional_mass_bootstrap_zero",
+            inputs=inputs,
+            artifacts=artifacts,
+            stages=stages,
+        )
+        _write_json(bundle_path, bundle)
+        raise
+
+    try:
+        reference_y_report = _run_metadata_stage(
+            analyzer=_reference_y.analyze,
+            path=reference_y_path,
+            ghidra_export=ghidra_export,
+            format_name=_reference_y.FORMAT,
+        )
+        artifacts["vehicle_reference_y_bootstrap_zero"] = str(reference_y_path)
+        stages["vehicle_reference_y_bootstrap_zero"] = _stage(
+            "completed", path=reference_y_path, format_name=_reference_y.FORMAT
+        )
+    except Exception as exc:
+        stages["vehicle_reference_y_bootstrap_zero"] = _stage(
+            "failed", path=reference_y_path, reason=f"{type(exc).__name__}: {exc}"
+        )
+        bundle = _failure_bundle(
+            failed_stage="vehicle_reference_y_bootstrap_zero",
             inputs=inputs,
             artifacts=artifacts,
             stages=stages,
@@ -273,10 +320,15 @@ def run_bmw_offset33b_reduced_static_proof(
             reason="base offset33b STORE/value-root frontier is not ready",
         )
 
-    mass_gates = mass_report.get("gates")
+    mass_handoff = mass_report.get("handoff")
     mass_ready = bool(
-        isinstance(mass_gates, Mapping)
-        and mass_gates.get("offset33b_additional_mass_bootstrap_zero_ready") is True
+        isinstance(mass_handoff, Mapping)
+        and mass_handoff.get("offset33b_actual_additional_mass_bootstrap_zero_ready") is True
+    )
+    reference_handoff = reference_y_report.get("handoff")
+    reference_y_ready = bool(
+        isinstance(reference_handoff, Mapping)
+        and reference_handoff.get("offset33b_vehicle_reference_y_bootstrap_zero_ready") is True
     )
     load_handoff = (
         load_report.get("handoff")
@@ -301,11 +353,19 @@ def run_bmw_offset33b_reduced_static_proof(
         "decision": decision,
         "exact_object_field_worklist": field_worklist,
         "known_semantic_reductions": {
-            "additional_mass_first_bootstrap_zero": mass_ready,
+            "actual_additional_mass_first_bootstrap_zero": mass_ready,
             "additional_mass_term_elidable_for_first_bootstrap": bool(
-                isinstance(mass_gates, Mapping)
-                and mass_gates.get(
+                isinstance(mass_handoff, Mapping)
+                and mass_handoff.get(
                     "offset33b_additional_mass_term_can_be_elided_for_first_bootstrap"
+                )
+                is True
+            ),
+            "vehicle_reference_y_first_bootstrap_zero": reference_y_ready,
+            "reference_y_reduced_to_negative_graphical_offset": bool(
+                isinstance(reference_handoff, Mapping)
+                and reference_handoff.get(
+                    "offset33b_reference_y_reduced_to_negative_graphical_offset"
                 )
                 is True
             ),
@@ -315,7 +375,8 @@ def run_bmw_offset33b_reduced_static_proof(
         },
         "handoff": {
             "offset33b_store_provenance_ready": store_ready,
-            "offset33b_additional_mass_bootstrap_zero_ready": mass_ready,
+            "offset33b_actual_additional_mass_bootstrap_zero_ready": mass_ready,
+            "offset33b_vehicle_reference_y_bootstrap_zero_ready": reference_y_ready,
             "offset33b_memory_LOAD_frontier_ready": bool(
                 load_handoff.get("offset33b_memory_LOAD_frontier_ready") is True
             ),
@@ -331,6 +392,7 @@ def run_bmw_offset33b_reduced_static_proof(
             "targeted_Ghidra_export_count": 1,
             "targeted_Ghidra_function": _base.TARGET,
             "additional_Ghidra_export_requested": False,
+            "retracted_manager_record_zero_claim_reused": False,
             "additional_mass_zero_applied_without_machine_pointer_join": False,
             "memory_field_worklist_promoted_to_resource_semantics": False,
             "numeric_offset33b_claimed": False,

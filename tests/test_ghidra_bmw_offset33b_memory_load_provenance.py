@@ -36,19 +36,13 @@ def _varnode(
     }
 
 
-def _load_instruction(
-    address: str,
-    operand: str,
-    *,
-    output: str = "EAX",
-    fallthrough: str,
-) -> dict:
+def _load_instruction(address: str, operand: str, *, fallthrough: str) -> dict:
     return {
         "address": address,
         "bytes": "8b",
         "mnemonic": "MOV",
-        "text": f"MOV {output},{operand}",
-        "operands": [output, operand],
+        "text": f"MOV EAX,{operand}",
+        "operands": ["EAX", operand],
         "flow_type": "FALL_THROUGH",
         "fallthrough": fallthrough,
         "flows": [],
@@ -56,8 +50,8 @@ def _load_instruction(
         "pcode": [
             {
                 "opcode": "LOAD",
-                "text": f"{output} = LOAD ram({operand})",
-                "output": _varnode(output),
+                "text": f"EAX = LOAD ram({operand})",
+                "output": _varnode("EAX"),
                 "inputs": [
                     _varnode(
                         "RAM",
@@ -195,36 +189,42 @@ def _store_report(
     return path
 
 
-def _additional_mass_proof(
+def _actual_additional_mass_proof(
     tmp_path: Path,
     *,
     participant_offset: int = 0xBA0,
     vehicle_offset: int = 0x860,
+    old_format: bool = False,
 ) -> Path:
     report = {
-        "format": MODULE.ADDITIONAL_MASS_FORMAT,
+        "format": (
+            "SHIFT.BMWOffset33bAdditionalMassBootstrapZero/1"
+            if old_format
+            else MODULE.ADDITIONAL_MASS_FORMAT
+        ),
         "ready": True,
-        "proof": {
-            "storage_alias": {
-                "participant_additional_mass_offset": participant_offset,
-                "vehicle_additional_mass_offset": vehicle_offset,
-            },
-            "offset33b_root": {
-                "semantic_name": "additional participant mass term",
-                "participant_storage": "participant+0xba0",
-                "vehicle_alias_storage": "Vehicle+0x860",
-                "value_type": "float32",
-                "value": 0.0,
-                "numeric_value_proven": True,
-            },
+        "object_graph": {
+            "participant_additional_mass_offset": participant_offset,
+            "vehicle_additional_mass_offset": vehicle_offset,
+            "manager_record_plus_0xba0_is_not_the_proven_storage": True,
         },
-        "gates": {
-            "offset33b_additional_mass_bootstrap_zero_ready": True,
+        "proven_value": {
+            "storage": "actual_participant+0xba0 / embedded_vehicle+0x860",
+            "type": "float32",
+            "bits": "0x00000000",
+            "value": 0.0,
+            "scope": "fresh actual PhysicsParticipant first bootstrap",
+        },
+        "handoff": {
+            "offset33b_actual_additional_mass_bootstrap_zero_ready": True,
             "offset33b_additional_mass_term_can_be_elided_for_first_bootstrap": True,
             "BMW_numeric_offset33b_ready": False,
         },
+        "scope": {
+            "retracted_manager_record_zero_claim_reused": False,
+        },
     }
-    path = tmp_path / "additional_mass.json"
+    path = tmp_path / "actual_additional_mass.json"
     path.write_text(json.dumps(report), encoding="utf-8")
     return path
 
@@ -233,7 +233,7 @@ def test_exact_load_becomes_object_origin_field_worklist(tmp_path):
     report = MODULE.analyze_bmw_offset33b_memory_load_provenance(
         _store_report(tmp_path),
         _instruction_export(tmp_path),
-        _additional_mass_proof(tmp_path),
+        _actual_additional_mass_proof(tmp_path),
     )
 
     assert report["format"] == MODULE.FORMAT
@@ -241,7 +241,6 @@ def test_exact_load_becomes_object_origin_field_worklist(tmp_path):
     assert report["status"] == "exact-memory-field-worklist-ready"
     assert report["analysis"]["slice_LOAD_node_count"] == 1
     assert report["analysis"]["machine_LOAD_join_count"] == 1
-
     load = report["analysis"]["load_sources"][0]
     assert load["node_id"] == "0x0076b280:0"
     assert load["base_register"] == "ECX"
@@ -270,38 +269,45 @@ def test_exact_load_becomes_object_origin_field_worklist(tmp_path):
         }
     ]
     assert report["handoff"]["offset33b_exact_memory_field_worklist_ready"] is True
+    assert report["handoff"]["offset33b_actual_additional_mass_bootstrap_zero_proof_consumed"] is True
     assert report["handoff"]["BMW_numeric_offset33b_ready"] is False
-    assert report["handoff"]["vehicle_world_transform_ready"] is False
+    assert report["scope"]["retracted_manager_record_zero_contract_accepted"] is False
 
 
-def test_additional_mass_displacement_is_not_semantically_promoted(tmp_path):
+def test_actual_additional_mass_displacement_is_not_semantically_promoted(tmp_path):
     report = MODULE.analyze_bmw_offset33b_memory_load_provenance(
         _store_report(tmp_path),
         _instruction_export(tmp_path, load_operand="[ECX+0xba0]"),
-        _additional_mass_proof(tmp_path),
+        _actual_additional_mass_proof(tmp_path),
     )
-
     load = report["analysis"]["load_sources"][0]
-    assert load["displacement"] == 0xBA0
     assert load["matches_additional_mass_displacement_only"] is True
     assert load["additional_mass_pointer_identity_proven"] is False
     assert load["additional_mass_zero_applied_to_this_load"] is False
     reduction = report["known_semantic_reductions"]["additional_mass_first_bootstrap"]
     assert reduction["value"] == 0.0
-    assert reduction["term_elidable_for_first_bootstrap"] is True
+    assert reduction["proof_format"] == MODULE.ADDITIONAL_MASS_FORMAT
+    assert reduction["retracted_manager_record_zero_claim_reused"] is False
     assert reduction["machine_LOAD_pointer_identity_joined"] is False
     assert reduction["displacement_only_candidate_load_nodes"] == ["0x0076b280:0"]
     assert reduction["displacement_match_is_semantic_identity"] is False
-    assert report["scope"]["matching_0xba0_or_0x860_displacement_promoted_to_additional_mass"] is False
+
+
+def test_retracted_manager_record_zero_contract_is_rejected(tmp_path):
+    with pytest.raises(ValueError, match="expected SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1"):
+        MODULE.analyze_bmw_offset33b_memory_load_provenance(
+            _store_report(tmp_path),
+            _instruction_export(tmp_path),
+            _actual_additional_mass_proof(tmp_path, old_format=True),
+        )
 
 
 def test_complex_machine_load_operand_blocks_structural_join(tmp_path):
     report = MODULE.analyze_bmw_offset33b_memory_load_provenance(
         _store_report(tmp_path),
         _instruction_export(tmp_path, load_operand="[ECX+EAX*4]"),
-        _additional_mass_proof(tmp_path),
+        _actual_additional_mass_proof(tmp_path),
     )
-
     assert report["ready"] is False
     assert report["status"] == "blocked"
     assert report["analysis"]["machine_LOAD_join_count"] == 0
@@ -316,9 +322,8 @@ def test_memory_root_without_structured_load_remains_semantic_blocker(tmp_path):
     report = MODULE.analyze_bmw_offset33b_memory_load_provenance(
         _store_report(tmp_path, dependency_opcode="INT_ADD"),
         _instruction_export(tmp_path),
-        _additional_mass_proof(tmp_path),
+        _actual_additional_mass_proof(tmp_path),
     )
-
     assert report["ready"] is True
     assert report["status"] == "memory-load-frontier-ready"
     assert report["analysis"]["slice_LOAD_node_count"] == 0
@@ -334,16 +339,16 @@ def test_store_numeric_preclaim_is_rejected(tmp_path):
         MODULE.analyze_bmw_offset33b_memory_load_provenance(
             _store_report(tmp_path, numeric_preclaim=True),
             _instruction_export(tmp_path),
-            _additional_mass_proof(tmp_path),
+            _actual_additional_mass_proof(tmp_path),
         )
 
 
-def test_additional_mass_alias_drift_is_rejected(tmp_path):
+def test_actual_additional_mass_alias_drift_is_rejected(tmp_path):
     with pytest.raises(ValueError, match="participant offset drift"):
         MODULE.analyze_bmw_offset33b_memory_load_provenance(
             _store_report(tmp_path),
             _instruction_export(tmp_path),
-            _additional_mass_proof(tmp_path, participant_offset=0xB9C),
+            _actual_additional_mass_proof(tmp_path, participant_offset=0xB9C),
         )
 
 
@@ -356,7 +361,7 @@ def test_dependency_load_node_must_exist_in_exact_instruction_export(tmp_path):
     report = MODULE.analyze_bmw_offset33b_memory_load_provenance(
         store_path,
         _instruction_export(tmp_path),
-        _additional_mass_proof(tmp_path),
+        _actual_additional_mass_proof(tmp_path),
     )
     assert report["ready"] is False
     assert any(
