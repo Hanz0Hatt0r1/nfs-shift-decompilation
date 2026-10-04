@@ -1,5 +1,6 @@
 #include "runtime_loop_policy.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
 
@@ -9,6 +10,7 @@ int main() {
     const auto bounded =
         make_runtime_loop_policy(false, false, 120, false, 0);
     if (bounded.continuous || !bounded.frame_limit_enabled ||
+        bounded.continuous_wall_clock_pacing ||
         bounded.frame_limit != 120 ||
         !bounded.should_continue(false, 119) ||
         bounded.should_continue(false, 120)) {
@@ -19,6 +21,8 @@ int main() {
     const auto continuous =
         make_runtime_loop_policy(true, false, 120, false, 0);
     if (!continuous.continuous || continuous.frame_limit_enabled ||
+        !continuous.continuous_wall_clock_pacing ||
+        continuous.fixed_tick_seconds != shift::runtime::kNativeContinuousFixedDt ||
         !continuous.should_continue(false, 0) ||
         !continuous.should_continue(false, 2000000000) ||
         continuous.should_continue(true, 0)) {
@@ -29,6 +33,7 @@ int main() {
     const auto capped =
         make_runtime_loop_policy(true, true, 3, false, 0);
     if (!capped.continuous || !capped.frame_limit_enabled ||
+        !capped.continuous_wall_clock_pacing ||
         capped.frame_limit != 3 ||
         !capped.should_continue(false, 2) ||
         capped.should_continue(false, 3)) {
@@ -36,9 +41,27 @@ int main() {
         return 1;
     }
 
+    const auto paced =
+        make_runtime_loop_policy(true, true, 3, false, 0);
+    const auto pacing_start = std::chrono::steady_clock::now();
+    if (!paced.should_continue(false, 0) ||
+        !paced.should_continue(false, 1) ||
+        !paced.should_continue(false, 2) ||
+        paced.should_continue(false, 3)) {
+        std::cerr << "continuous pacing iteration mismatch\n";
+        return 1;
+    }
+    const double pacing_elapsed = std::chrono::duration<double>(
+        std::chrono::steady_clock::now() - pacing_start).count();
+    if (pacing_elapsed < 0.020) {
+        std::cerr << "continuous pacing did not honor the fixed host tick\n";
+        return 1;
+    }
+
     const auto scripted =
         make_runtime_loop_policy(false, false, 120, true, 5);
     if (scripted.continuous || !scripted.frame_limit_enabled ||
+        scripted.continuous_wall_clock_pacing ||
         scripted.frame_limit != 5) {
         std::cerr << "scripted loop policy mismatch\n";
         return 1;
@@ -70,6 +93,9 @@ int main() {
         << "{\"format\":\"SHIFT.NativeRuntimeLoopPolicyRegression/1\","
         << "\"bounded\":true,\"continuous\":true,"
         << "\"continuous_safety_cap\":true,"
+        << "\"steady_clock_pacing\":true,"
+        << "\"fixed_tick_seconds\":"
+        << shift::runtime::kNativeContinuousFixedDt << ","
         << "\"script_fail_closed\":true}\n";
     return 0;
 }

@@ -1,21 +1,65 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
+#include <thread>
 
 namespace shift::runtime {
+
+inline constexpr double kNativeContinuousFixedDt = 1.0 / 60.0;
 
 struct RuntimeLoopPolicy {
     bool continuous = false;
     bool frame_limit_enabled = true;
     int frame_limit = 120;
+    bool continuous_wall_clock_pacing = false;
+    double fixed_tick_seconds = kNativeContinuousFixedDt;
+
+    mutable bool tick_clock_started = false;
+    mutable std::chrono::steady_clock::time_point next_tick{};
+
+    void pace_continuous_tick() const {
+        if (!continuous || !continuous_wall_clock_pacing) {
+            return;
+        }
+        if (!(fixed_tick_seconds > 0.0)) {
+            throw std::logic_error("continuous runtime fixed tick must be positive");
+        }
+
+        const auto tick = std::chrono::duration_cast<
+            std::chrono::steady_clock::duration>(
+                std::chrono::duration<double>(fixed_tick_seconds));
+        if (tick <= std::chrono::steady_clock::duration::zero()) {
+            throw std::logic_error("continuous runtime fixed tick is below clock resolution");
+        }
+
+        const auto now = std::chrono::steady_clock::now();
+        if (!tick_clock_started) {
+            tick_clock_started = true;
+            next_tick = now + tick;
+            return;
+        }
+
+        if (now < next_tick) {
+            std::this_thread::sleep_until(next_tick);
+        }
+        // Preserve every native tick.  If rendering is late, do not invent a
+        // retail catch-up/drop policy: subsequent iterations run without sleep
+        // until this host-only schedule catches up.
+        next_tick += tick;
+    }
 
     bool should_continue(bool quit, int rendered_frames) const {
         if (quit) {
             return false;
         }
-        return !frame_limit_enabled || rendered_frames < frame_limit;
+        if (frame_limit_enabled && rendered_frames >= frame_limit) {
+            return false;
+        }
+        pace_continuous_tick();
+        return true;
     }
 };
 
@@ -52,11 +96,9 @@ inline RuntimeLoopPolicy make_runtime_loop_policy(
     if (continuous) {
         // An explicit --frames value is an optional regression/safety cap only.
         // Without it, X11 quit/destroy events are the sole normal session end.
-        return RuntimeLoopPolicy{
-            true,
-            frames_explicit,
-            requested_frames,
-        };
+        RuntimeLoopPolicy policy{true, frames_explicit, requested_frames};
+        policy.continuous_wall_clock_pacing = true;
+        return policy;
     }
 
     return RuntimeLoopPolicy{false, true, requested_frames};
