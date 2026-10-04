@@ -33,7 +33,7 @@ jobs:
       - name: Install native build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build g++ pkg-config libvulkan-dev libxcb1-dev glslang-tools
+          sudo apt-get install -y cmake ninja-build g++ pkg-config libvulkan-dev libxcb1-dev glslang-tools python3-pytest
       - name: Configure
         run: cmake -S native_runtime -B native_runtime/build -G Ninja -DBUILD_TESTING=ON
       - name: Build loop regression
