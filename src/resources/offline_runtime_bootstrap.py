@@ -16,6 +16,7 @@ from offline_native_vehicle import build_native_vehicle_files
 from offline_resource_loaders import load_track, load_vehicle
 from offline_resource_pipeline import run_offline_pipeline
 from offline_scene_ir import build_scene_ir
+from retail_archive_admission import build_retail_archive_identity_admission
 
 FORMAT = "SHIFT.OfflineRuntimeBootstrap/1"
 TYPED_CLOSURE_FORMAT = "SHIFT.TypedResourceClosure/1"
@@ -101,6 +102,18 @@ def _selected_typed_root(
     return path, row, blockers
 
 
+def _blocked_native_vehicle(reasons: Sequence[str]) -> dict[str, Any]:
+    report = _blocked_stage("SHIFT.OfflineNativeVehicleBuild/1", reasons)
+    report["resource_ready"] = False
+    report["participant_structural_ready"] = False
+    report["participant_runtime_identity_evaluated"] = False
+    report["participant_runtime_identity_ready"] = False
+    report["runtime_physics_contract_ready"] = False
+    report["native_vehicle_runtime_ready"] = False
+    report["runtime_gate_blocking_reasons"] = ["native-vehicle-build-blocked"]
+    return report
+
+
 def build_offline_runtime_bootstrap(
     inputs: Sequence[str | Path],
     output_dir: str | Path,
@@ -131,6 +144,14 @@ def build_offline_runtime_bootstrap(
     graph = _load(resources_dir / "dependency_graph.json")
     bootstrap = _load(resources_dir / "scene_vehicle_bootstrap.json")
     typed_closure = _load(resources_dir / "typed_resource_closure.json")
+    retail_archive_admission = build_retail_archive_identity_admission(
+        catalog,
+        bootstrap,
+        track=track,
+        vehicle=vehicle,
+    )
+    _write(out / "retail_archive_identity_admission.json", retail_archive_admission)
+    retail_archive_identity_ready = retail_archive_admission.get("ready") is True
 
     track_load = load_track(catalog, graph, track=track)
     vehicle_load = load_vehicle(catalog, graph, vehicle=vehicle)
@@ -154,6 +175,10 @@ def build_offline_runtime_bootstrap(
     )
 
     scene_gate_blockers: list[str] = []
+    if not retail_archive_identity_ready:
+        scene_gate_blockers.extend(
+            _prefix_blockers("retail-archive-identity", retail_archive_admission)
+        )
     if track_load.get("ready") is not True:
         scene_gate_blockers.extend(_prefix_blockers("track-load", track_load))
     if scene_ir.get("ready") is not True:
@@ -186,36 +211,33 @@ def build_offline_runtime_bootstrap(
         native_scene["native_scene_runtime_ready"] = False
         _write(native_scene_dir / "native_scene_build.json", native_scene)
 
-    try:
-        vehicle_args = (
-            resources_dir / "resource_catalog.json",
-            resources_dir / "scene_vehicle_bootstrap.json",
-            resources_dir / "vehicle_physics_bundle_report.json",
-            native_vehicle_dir,
-        )
-        if participant_observation_path is None:
-            native_vehicle = build_native_vehicle_files(*vehicle_args)
-        else:
-            native_vehicle = build_native_vehicle_files(
-                *vehicle_args,
-                participant_observation_path=participant_observation_path,
+    if retail_archive_identity_ready:
+        try:
+            vehicle_args = (
+                resources_dir / "resource_catalog.json",
+                resources_dir / "scene_vehicle_bootstrap.json",
+                resources_dir / "vehicle_physics_bundle_report.json",
+                native_vehicle_dir,
             )
-    except (OSError, RuntimeError, ValueError) as exc:
-        native_vehicle = _blocked_stage(
-            "SHIFT.OfflineNativeVehicleBuild/1",
-            [f"native-vehicle-build-error:{type(exc).__name__}:{exc}"],
+            if participant_observation_path is None:
+                native_vehicle = build_native_vehicle_files(*vehicle_args)
+            else:
+                native_vehicle = build_native_vehicle_files(
+                    *vehicle_args,
+                    participant_observation_path=participant_observation_path,
+                )
+        except (OSError, RuntimeError, ValueError) as exc:
+            native_vehicle = _blocked_native_vehicle(
+                [f"native-vehicle-build-error:{type(exc).__name__}:{exc}"]
+            )
+            native_vehicle["participant_runtime_identity_evaluated"] = (
+                participant_observation_path is not None
+            )
+            _write(native_vehicle_dir / "native_vehicle_build.json", native_vehicle)
+    else:
+        native_vehicle = _blocked_native_vehicle(
+            _prefix_blockers("retail-archive-identity", retail_archive_admission)
         )
-        native_vehicle["resource_ready"] = False
-        native_vehicle["participant_structural_ready"] = False
-        native_vehicle["participant_runtime_identity_evaluated"] = (
-            participant_observation_path is not None
-        )
-        native_vehicle["participant_runtime_identity_ready"] = False
-        native_vehicle["runtime_physics_contract_ready"] = False
-        native_vehicle["native_vehicle_runtime_ready"] = False
-        native_vehicle["runtime_gate_blocking_reasons"] = [
-            "native-vehicle-build-failed"
-        ]
         _write(native_vehicle_dir / "native_vehicle_build.json", native_vehicle)
 
     resource_bootstrap_ready = resource_pipeline.get("resource_bootstrap_ready") is True
@@ -237,6 +259,7 @@ def build_offline_runtime_bootstrap(
 
     offline_build_ready = all((
         resource_bootstrap_ready,
+        retail_archive_identity_ready,
         track_load_ready,
         vehicle_load_ready,
         scene_ir_ready,
@@ -248,6 +271,10 @@ def build_offline_runtime_bootstrap(
     blockers: list[str] = []
     if not resource_bootstrap_ready:
         blockers.extend(_prefix_blockers("resource-pipeline", resource_pipeline))
+    if not retail_archive_identity_ready:
+        blockers.extend(
+            _prefix_blockers("retail-archive-identity", retail_archive_admission)
+        )
     if not track_load_ready:
         blockers.extend(_prefix_blockers("track-load", track_load))
     if not vehicle_load_ready:
@@ -262,7 +289,7 @@ def build_offline_runtime_bootstrap(
         participant_boundary = native_vehicle.get("participant_boundary") or {}
         if isinstance(participant_boundary, Mapping):
             blockers.extend(_prefix_blockers("participant-boundary", participant_boundary))
-        else:
+        elif retail_archive_identity_ready:
             blockers.append("participant-boundary:not-ready")
     if not runtime_scene_ready:
         blockers.append("runtime-scene:runtime-proven-draw-admission-required")
@@ -279,7 +306,12 @@ def build_offline_runtime_bootstrap(
             )
     blockers = list(dict.fromkeys(blockers))
 
-    if not resource_bootstrap_ready or not track_load_ready or not vehicle_load_ready:
+    if (
+        not resource_bootstrap_ready
+        or not retail_archive_identity_ready
+        or not track_load_ready
+        or not vehicle_load_ready
+    ):
         status = "resource-blocked"
     elif not offline_build_ready:
         status = "offline-native-build-blocked"
@@ -294,6 +326,9 @@ def build_offline_runtime_bootstrap(
         "dependency_graph": str(resources_dir / "dependency_graph.json"),
         "bootstrap": str(resources_dir / "scene_vehicle_bootstrap.json"),
         "typed_resource_closure": str(resources_dir / "typed_resource_closure.json"),
+        "retail_archive_identity_admission": str(
+            out / "retail_archive_identity_admission.json"
+        ),
         "vehicle_physics_bundle": str(
             resources_dir / "vehicle_physics_bundle_report.json"
         ),
@@ -331,6 +366,7 @@ def build_offline_runtime_bootstrap(
         "inputs": [str(value) for value in inputs],
         "readiness": {
             "resource_bootstrap_ready": resource_bootstrap_ready,
+            "retail_archive_identity_ready": retail_archive_identity_ready,
             "track_load_ready": track_load_ready,
             "vehicle_load_ready": vehicle_load_ready,
             "scene_ir_ready": scene_ir_ready,
@@ -353,6 +389,7 @@ def build_offline_runtime_bootstrap(
         "blocking_reasons": blockers,
         "stages": {
             "resource_pipeline": resource_pipeline,
+            "retail_archive_identity_admission": retail_archive_admission,
             "track_load": track_load,
             "vehicle_load": vehicle_load,
             "scene_ir": scene_ir,
@@ -363,6 +400,9 @@ def build_offline_runtime_bootstrap(
         "boundary": {
             "game_or_bff_inputs_to_offline_native_build_automated": True,
             "track_and_vehicle_names_are_high_level_inputs": True,
+            "retail_archive_name_alone_is_admission_proof": False,
+            "retail_archive_sha256_and_unique_occurrence_required": True,
+            "byte_identical_archive_duplicates_collapsed": False,
             "scene_root_selected_by_bootstrap_resource_id": True,
             "scene_ir_legacy_dependency_hints_are_admission_proof": False,
             "exact_scene_resource_closure_required_by_native_scene_stage": True,

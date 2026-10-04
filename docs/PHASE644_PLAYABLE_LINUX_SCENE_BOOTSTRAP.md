@@ -4,26 +4,26 @@
 
 Phase 643 proved that an already-prepared Silverstone `SHIFT.NativeSceneVulkanSet/1`
 and the canonical BMW M3 body can coexist in one neutral scene-set without
-changing the native runtime ABI.  Its remaining orchestration gap was manual:
-Phase 643 still required the caller to provide a ready BMW material-slice set and
-explicit source BFF paths.
+changing the native runtime ABI. Phase 644 removed the remaining manual vehicle
+render handoff: the caller no longer has to prepare a BMW material-slice set or
+pass individual BMW/renderer BFF paths.
 
-Phase 644 removes that handoff for the current playable target:
+The current path is:
 
 ```text
-same retail corpus inputs
-  -> existing offline resource/bootstrap
-  -> existing Phase 641 prepared Silverstone scene-set
-  -> exact canonical BMW/renderer BFF selection from the same corpus
+retail corpus inputs
+  -> offline resource/bootstrap
+  -> prepared Silverstone scene-set
+  -> exact retail BMW/renderer archive admission
   -> Phase 533 complete BMW body material admission
+  -> Phase 645 VHF body world transform
   -> Phase 643 Silverstone + BMW neutral composition
-  -> normal runtime requirements/profile
-  -> optional launcher validation
+  -> runtime requirements/profile
 ```
 
 No original game execution and no new runtime capture are introduced.
 
-## New corpus bootstrap
+## Exact retail archive identity
 
 `src/scene/native_playable_scene_bootstrap.py` emits:
 
@@ -32,30 +32,70 @@ SHIFT.NativePlayableSceneBootstrap/1
 ```
 
 It reuses `offline_resource_pipeline.materialize_bff_inputs()` and therefore
-accepts the same `.bff`, `.zip`, and directory corpus shapes already supported by
-the offline resource pipeline.
+accepts `.bff`, `.zip`, and directory corpus inputs. Basenames are now discovery
+hints only; they are not resource identity proof.
 
-For the currently supported vehicle target it requires exactly one archive with
-each canonical basename:
+The current BMW/render inputs are admitted only when both the canonical archive
+name and full source-backed retail SHA-256 match:
+
+| Archive | SHA-256 |
+| --- | --- |
+| `BMW_M3_E36.bff` | `c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70` |
+| `BMW_M3_E36_Cockpit.bff` | `a9bc1b3c0dfb21408913089d565fa2ffc80f2fb2c4a408ab9aef101d012f15be` |
+| `RENDER.bff` | `b0b03960ba7e620b7ad5e2b027ed13de67afffe168eb8b30da73c2a632a7c0af` |
+
+The identities live in `src/resources/retail_archive_identity.py` and cite the
+existing repository retail evidence. Admission additionally requires exactly one
+matching materialized corpus occurrence.
+
+This is intentionally stricter than byte equality:
+
+- archive order is never selection authority;
+- first-match fallback is forbidden;
+- basename-only admission is forbidden;
+- a same-name wrong-hash archive is rejected;
+- two occurrences with the same canonical name and the same bytes remain
+  ambiguous rather than being collapsed into one semantic identity.
+
+The emitted `archive_sources` records include the admitted SHA-256 plus original
+ZIP/directory provenance. Temporary extraction paths are not exposed as identity.
+
+## Earlier native-bootstrap gate
+
+The resource-driven native bootstrap now also emits:
 
 ```text
-BMW_M3_E36.bff
-BMW_M3_E36_Cockpit.bff
-RENDER.bff
+SHIFT.RetailArchiveIdentityAdmission/1
 ```
 
-Selection is by exact case-insensitive basename only.  Archive order, ZIP member
-order, fuzzy names and first-match fallback are not evidence.  Missing or
-multiple matching archives block the stage.
+before native scene or native vehicle admission. For the first playable target it
+requires one exact catalog occurrence for:
 
-The temporary extracted BFF paths are used only while the corpus materialization
-context is alive.  User-visible output records source ZIP/directory provenance,
-not temporary-path identity.
+```text
+Silverstone_Era3_GrandPrix.bff
+Silverstone_Era3_GrandPrix_Physics.bff
+BMW_M3_E36.bff
+BMW_M3_E36_Cockpit.bff
+```
+
+with the retail hashes recorded in `retail_archive_identity.py`. The corresponding
+Silverstone hashes are:
+
+```text
+Silverstone_Era3_GrandPrix.bff
+  aac2e1fe721aec25494d0bfc84eac2bd49d1628fe55b165097ae694ef7a7d56c
+Silverstone_Era3_GrandPrix_Physics.bff
+  b90b70a1965260599570efef5bce4a76e5f96732c9831e6614e8541b886edbd7
+```
+
+A legacy `SHIFT.SceneVehicleBootstrap/1` name match can still exist as a catalog
+candidate, but it cannot make `SHIFT.OfflineRuntimeBootstrap/1` ready unless this
+retail identity gate succeeds. Unknown track/vehicle targets have no implicit
+name-only fallback into the playable native path.
 
 ## Vehicle render materialization
 
-The selected archives feed the existing Phase 533
-`build_bmw_body_material_admission()` path:
+The admitted archives feed the existing Phase 533 material path:
 
 ```text
 BMW_M3_E36.bff
@@ -66,27 +106,18 @@ BMW_M3_E36.bff
 -> complete SHIFT.BMWMaterialSliceSet/1
 ```
 
-All selected canonical body primitives must be ready.  Partial material admission
-is preserved diagnostically but cannot seed the playable scene.
-
-Phase 644 deliberately does not ask Phase 533 to build the historical
-BMW-specific Vulkan bundle set.  The complete material-slice set is instead fed
-to Phase 643, which rebuilds genuine neutral `SHIFT.VulkanDrawBundle/1` vehicle
-children and preserves the normal `--scene-set` native ABI.
+All selected canonical body primitives must be ready. Partial material admission
+is diagnostic only and cannot seed the playable scene. The material slice then
+receives the Phase 645 source-backed VHF transform before Phase 643 rebuilds the
+neutral vehicle draw bundles.
 
 ## Playable entry point
 
-New command:
+The high-level command remains:
 
 ```text
 tools/bootstrap_playable_linux_slice.py
 ```
-
-It accepts the existing `tools/bootstrap_native_vertical_slice.py` arguments.
-The current playable command requires the existing renderer-capture evidence path
-because the Silverstone side still comes from the Phase 639-641 renderer chain.
-It rejects an explicit `--scene-set`: this command owns the generated composite
-scene and must not silently replace it with an unrelated prepared scene.
 
 Example shape:
 
@@ -102,129 +133,51 @@ python tools/bootstrap_playable_linux_slice.py \
   --keyboard
 ```
 
-The command first runs the merged resource/renderer bootstrap unchanged.  Launch
-plan validation is deferred until after Phase 644, because a launch plan created
-against the intermediate track-only scene would be the wrong authority for the
-playable slice.
+The command owns the generated composite scene and must not silently replace it
+with an unrelated prepared scene. If composition fails, the track-only
+intermediate cannot be promoted to the playable result.
 
-## Profile refresh policy
+## Current Process 3 boundary
 
-After successful Phase 644 composition, the generated composite scene-set is run
-through the same `runtime_input_validation` scene-set validator used for explicit
-runtime inputs.  Runtime requirements and the vertical-slice profile are then
-rebuilt with the composite path.
-
-This is intentionally conservative: the generated scene is already source-backed
-by Phase 533/643, but revalidating it at the launcher boundary cannot strengthen
-an unsupported claim and catches filesystem/manifest drift before profile use.
-
-If Phase 644 fails, the playable entry point:
-
-- reports `playable_scene_ready = false`;
-- marks the top-level bootstrap not ready;
-- clears the old track-only profile artifact;
-- clears any old launch plan;
-- never validates or launches the track-only scene as the playable result.
-
-## Process 1 BODY0 sync
-
-Process 1 PR #1188 now proves the BMW main/chassis BODY semantically from exact
-retail constraint topology:
+The later Phase 647/648/649 chain already closes the mechanical transport:
 
 ```text
-main_chassis_BODY_selected = true
-main_chassis_BODY_index = 0
+current persistent VehicleWorldMatrix
+-> freshness gate
+-> Vulkan vertex upload
 ```
 
-BODY 0 (`body`) is the unique BODY incident to all twenty suspension BAR records
-across all four spindle families.  The proof does not rely on the plausibility of
-the BODY name.
+That transport is infrastructure-complete for Process 3 and is not reopened by
+this phase. Phase 644/645 resource transforms are bootstrap state; Phase 649
+consumes current runtime state supplied by Process 2. Process 3 does not infer
+BODY identity, physics scheduling, input-to-drivetrain semantics, or camera-state
+production from these resource archives.
 
-That result deliberately stops before positive Phase 698/700 admission.  The
-remaining direct identity gate is:
-
-```text
-*record+0x340 update child
-  -> FUN_007615c0 vehicle solver base continuity
-```
-
-Until this continuity is proven, Process 1 still reports:
-
-```text
-vehicle_BODY_selection_ready = false
-phase698_positive_selection_admissible = false
-```
-
-Phase 644 therefore records a durable renderer-side vehicle identity but does not
-consume BODY 0 as a runtime vehicle pose source.
-
-## Preserved proof boundaries
-
-Phase 644 does **not** consume or claim:
-
-- Process 1 `*record+0x340 -> FUN_007615c0` vehicle-base continuity;
-- Phase 698 positive BODY selection;
-- Phase 700 runtime BODY pose handoff;
-- BODY origin/basis -> renderer matrix convention;
-- a dynamic vehicle world transform;
-- a camera-follow target;
-- Process 2 Phase 701 provider cadence ownership.
-
-The BMW children still carry the source RenderCommand world transform serialized
-through the existing SVWT path.  That transform is a resource/render bootstrap
-transform, not persistent physics pose transport.
-
-The durable benefit is object identity: the composite scene now contains an
-explicit `source_group=vehicle` subgroup with canonical BMW mesh/material identity.
-The renderer target therefore no longer needs to be rediscovered when the
-remaining Process 1 continuity proof permits Process 2 to emit the proven BODY 0
-pose.
+The next Process 3 work therefore expands exact resource/scene/render coverage,
+not another transform uploader or runtime scheduling abstraction.
 
 ## Regression coverage
 
 `tests/test_native_playable_scene_bootstrap.py` verifies:
 
-- exact canonical archive selection;
-- Phase 533 -> Phase 643 handoff;
-- no manual material-slice/BFF path requirement;
-- missing `RENDER.bff` rejection;
-- duplicate canonical basename rejection;
+- full SHA-256 admission for BMW primary/cockpit and `RENDER.bff`;
+- Phase 533 -> Phase 645 -> Phase 643 handoff;
+- missing archive rejection;
+- same-name wrong-hash rejection;
+- byte-identical duplicate occurrence rejection;
+- no archive-order fallback;
 - unsupported vehicle rejection before corpus parsing.
 
-`tests/test_bootstrap_playable_linux_slice.py` verifies:
+`tests/test_retail_archive_admission.py` verifies the earlier native-bootstrap
+Silverstone + BMW identity gate, including unknown-target fail-closed behavior and
+byte-identical duplicate ambiguity.
 
-- launcher validation is deferred until after composition;
-- the same original corpus inputs feed Phase 644;
-- requirements/profile are rebuilt with the generated composite scene;
-- the generated scene reaches the final launch plan;
-- a blocked Phase 644 stage removes stale track-only profile/launch artifacts;
-- Phase 700 pose transport remains unconsumed.
+`tests/test_offline_runtime_bootstrap.py` verifies that an identity failure blocks
+both native scene and native vehicle admission before either consumer runs.
 
-## Blocker after Phase 644
+## Result
 
-Once this phase is ready for the supplied corpus, the render/orchestration chain
-for the milestone becomes:
-
-```text
-Silverstone resources + existing renderer evidence
-+ canonical BMW resources
--> one prepared native scene-set
--> one launch profile
-```
-
-The next cross-process blocker is no longer “how do track and vehicle enter one
-renderer invocation?” and no longer “which retail BODY is the chassis?”.  The
-remaining dynamic join is:
-
-```text
-proven chassis BODY 0
-+ prove *record+0x340 -> FUN_007615c0 vehicle-base continuity
--> Phase 698/700 selected persistent BODY 0 pose
-+ prove BODY origin/basis -> vehicle renderer world-transform convention
-+ Phase 643 durable vehicle renderer identity
--> update vehicle subgroup SVWT each simulation step
-```
-
-Until those remaining joins are proven, Phase 644 keeps the vehicle render
-transform static and fail-closed rather than guessing from BODY name, proximity
-or matrix shape.
+For the selected first playable target, the resource/render chain can no longer
+become ready because a file merely has the expected basename. The required
+retail archive bytes and a unique corpus occurrence are now explicit admission
+proof before the scene/vehicle reaches native consumers.

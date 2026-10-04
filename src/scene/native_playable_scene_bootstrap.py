@@ -7,14 +7,15 @@ is recovered from the retail VHF hierarchy, identity-checked against the golden
 body MEB, converted to the SVWT/D3D row-vector convention, and attached to the
 material-slice set before Phase 643.
 
-No archive is selected by order or fuzzy name. Missing/duplicated canonical
-archives and missing/conflicting VHF identity remain explicit blockers.
+Archive basenames are discovery hints only.  The current playable target requires
+source-backed retail SHA-256 identity and exactly one matching corpus occurrence;
+archive order and byte-identical duplicate collapse are never selection authority.
 """
 from __future__ import annotations
 
 import json
 import shutil
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from bmw_body_material_admission import (
@@ -28,13 +29,36 @@ from bmw_vhf_body_world_transform import (
 )
 from native_playable_scene_vulkan_set import build_native_playable_scene_vulkan_set
 from offline_resource_pipeline import MaterializedArchive, materialize_bff_inputs
+from retail_archive_identity import (
+    RetailArchiveIdentity,
+    render_archive_identity,
+    select_materialized_archive,
+    vehicle_archive_identity,
+)
 
 FORMAT = "SHIFT.NativePlayableSceneBootstrap/1"
 TARGET_VEHICLE = "BMW_M3_E36"
-REQUIRED_ARCHIVES = {
-    "primary": "BMW_M3_E36.bff",
-    "cockpit": "BMW_M3_E36_Cockpit.bff",
-    "render": "RENDER.bff",
+
+
+def _required_identity(identity: RetailArchiveIdentity | None, label: str) -> RetailArchiveIdentity:
+    if identity is None:
+        raise RuntimeError(f"missing built-in retail archive identity: {label}")
+    return identity
+
+
+REQUIRED_ARCHIVES: dict[str, RetailArchiveIdentity] = {
+    "primary": _required_identity(
+        vehicle_archive_identity(TARGET_VEHICLE, "primary"),
+        "BMW primary",
+    ),
+    "cockpit": _required_identity(
+        vehicle_archive_identity(TARGET_VEHICLE, "cockpit"),
+        "BMW cockpit",
+    ),
+    "render": _required_identity(
+        render_archive_identity("RENDER.bff"),
+        "RENDER",
+    ),
 }
 
 
@@ -44,39 +68,6 @@ def _write(path: Path, value: Mapping[str, Any]) -> None:
         json.dumps(dict(value), ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-
-
-def _archive_basename(row: MaterializedArchive) -> str:
-    if row.member:
-        return PurePosixPath(row.member).name
-    return row.path.name
-
-
-def _select_archive(
-    rows: Sequence[MaterializedArchive],
-    expected: str,
-) -> tuple[MaterializedArchive | None, list[str]]:
-    hits = [
-        row
-        for row in rows
-        if _archive_basename(row).casefold() == expected.casefold()
-    ]
-    if len(hits) == 1:
-        return hits[0], []
-    if not hits:
-        return None, [f"playable-scene-corpus:archive-missing:{expected}"]
-    return None, [
-        f"playable-scene-corpus:archive-ambiguous:{expected}:{len(hits)}"
-    ]
-
-
-def _source_record(row: MaterializedArchive) -> dict[str, Any]:
-    return {
-        "archive": _archive_basename(row),
-        "source": row.source,
-        "member": row.member,
-        "source_kind": "zip-member" if row.member is not None else "filesystem-bff",
-    }
 
 
 def _blocked(
@@ -121,7 +112,10 @@ def _blocked(
             "scene_composition": None,
         },
         "boundary": {
-            "canonical_bff_selection_is_exact_basename": True,
+            "retail_archive_identity_required": True,
+            "archive_basename_is_selection_authority": False,
+            "archive_sha256_required": True,
+            "byte_identical_duplicate_collapse_allowed": False,
             "archive_order_is_selection_authority": False,
             "manual_vehicle_material_slice_handoff_required": False,
             "manual_vehicle_bff_path_handoff_required": False,
@@ -193,12 +187,16 @@ def build_native_playable_scene_bootstrap(
     try:
         with materialize_bff_inputs(inputs) as rows:
             selected: dict[str, MaterializedArchive] = {}
-            for role, expected in REQUIRED_ARCHIVES.items():
-                row, reasons = _select_archive(rows, expected)
+            for role, identity in REQUIRED_ARCHIVES.items():
+                row, reasons, provenance = select_materialized_archive(
+                    rows,
+                    identity,
+                    label="playable-scene-corpus",
+                )
                 blockers.extend(reasons)
-                if row is not None:
+                if row is not None and provenance is not None:
                     selected[role] = row
-                    archive_sources[role] = _source_record(row)
+                    archive_sources[role] = provenance
 
             if blockers:
                 return _blocked(
@@ -330,7 +328,10 @@ def build_native_playable_scene_bootstrap(
             "scene_composition": str(scene_dir / "playable_scene_composition.json"),
         },
         "boundary": {
-            "canonical_bff_selection_is_exact_basename": True,
+            "retail_archive_identity_required": True,
+            "archive_basename_is_selection_authority": False,
+            "archive_sha256_required": True,
+            "byte_identical_duplicate_collapse_allowed": False,
             "archive_order_is_selection_authority": False,
             "manual_vehicle_material_slice_handoff_required": False,
             "manual_vehicle_bff_path_handoff_required": False,

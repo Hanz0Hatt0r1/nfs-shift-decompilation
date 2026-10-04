@@ -64,6 +64,17 @@ def test_runtime_bootstrap_threads_exact_participant_identity_without_overclaimi
     monkeypatch.setattr(runtime_bootstrap, "run_offline_pipeline", fake_pipeline)
     monkeypatch.setattr(
         runtime_bootstrap,
+        "build_retail_archive_identity_admission",
+        lambda catalog, bootstrap, *, track, vehicle: {
+            "format": "SHIFT.RetailArchiveIdentityAdmission/1",
+            "status": "ready",
+            "ready": True,
+            "blocking_reasons": [],
+            "roles": {},
+        },
+    )
+    monkeypatch.setattr(
+        runtime_bootstrap,
         "load_track",
         lambda catalog, graph, *, track: {
             "format": "SHIFT.OfflineTrackLoad/1",
@@ -146,6 +157,7 @@ def test_runtime_bootstrap_threads_exact_participant_identity_without_overclaimi
     assert observed["participant_observation_path"] == observation
     assert report["offline_build_ready"] is True
     assert report["runtime_ready"] is False
+    assert report["readiness"]["retail_archive_identity_ready"] is True
     assert report["readiness"]["vehicle_participant_runtime_identity_evaluated"] is True
     assert report["readiness"]["vehicle_participant_runtime_identity_ready"] is True
     assert "runtime-vehicle:participant-runtime-observation-required" not in report[

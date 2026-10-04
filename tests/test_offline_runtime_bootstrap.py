@@ -11,6 +11,16 @@ def _write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value), encoding="utf-8")
 
 
+def _ready_retail_archive_admission():
+    return {
+        "format": "SHIFT.RetailArchiveIdentityAdmission/1",
+        "status": "ready",
+        "ready": True,
+        "blocking_reasons": [],
+        "roles": {},
+    }
+
+
 def _install_resource_pipeline_fixture(monkeypatch, tmp_path, *, include_sgb=True):
     observed = {}
 
@@ -69,6 +79,11 @@ def _install_resource_pipeline_fixture(monkeypatch, tmp_path, *, include_sgb=Tru
         }
 
     monkeypatch.setattr(runtime_bootstrap, "run_offline_pipeline", fake_run)
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "build_retail_archive_identity_admission",
+        lambda catalog, bootstrap, *, track, vehicle: _ready_retail_archive_admission(),
+    )
     return observed
 
 
@@ -170,6 +185,7 @@ def test_runtime_bootstrap_composes_existing_stages_without_claiming_runtime(
     assert report["offline_build_ready"] is True
     assert report["runtime_ready"] is False
     assert report["status"] == "offline-native-build-ready-runtime-gated"
+    assert report["readiness"]["retail_archive_identity_ready"] is True
     assert report["readiness"]["vehicle_participant_structural_ready"] is True
     assert report["readiness"]["vehicle_runtime_physics_contract_ready"] is True
     assert "runtime-scene:runtime-proven-draw-admission-required" in report["blocking_reasons"]
@@ -183,9 +199,71 @@ def test_runtime_bootstrap_composes_existing_stages_without_claiming_runtime(
     assert scene_call["kwargs"]["runtime_shader_admission_path"] == "shader.json"
     assert observed["decode_limit"] == 7
     persisted = json.loads((out / "runtime_bootstrap.json").read_text(encoding="utf-8"))
+    assert persisted["boundary"]["retail_archive_name_alone_is_admission_proof"] is False
+    assert persisted["boundary"]["retail_archive_sha256_and_unique_occurrence_required"] is True
     assert persisted["boundary"]["static_scene_promoted_to_runtime_draw_proof"] is False
     assert persisted["boundary"]["vehicle_participant_structural_boundary_required"] is True
     assert persisted["boundary"]["vehicle_resource_manifest_promoted_to_participant_identity"] is False
+    assert Path(persisted["artifacts"]["retail_archive_identity_admission"]).is_file()
+
+
+def test_retail_archive_identity_blocks_native_scene_and_vehicle_admission(
+    monkeypatch,
+    tmp_path,
+):
+    _install_resource_pipeline_fixture(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "build_retail_archive_identity_admission",
+        lambda *args, **kwargs: {
+            "format": "SHIFT.RetailArchiveIdentityAdmission/1",
+            "status": "blocked",
+            "ready": False,
+            "blocking_reasons": ["retail-archive-sha256-mismatch:vehicle_primary"],
+        },
+    )
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "load_track",
+        lambda catalog, graph, *, track: _ready_loader("SHIFT.OfflineTrackLoad/1"),
+    )
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "load_vehicle",
+        lambda catalog, graph, *, vehicle: _ready_loader("SHIFT.OfflineVehicleLoad/1"),
+    )
+    monkeypatch.setattr(
+        runtime_bootstrap,
+        "build_scene_ir",
+        lambda inputs, output_dir: {
+            "format": "SHIFT.OfflineSceneIRMaterialization/1",
+            "ready": True,
+            "blocking_reasons": [],
+        },
+    )
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("native admission must not run after retail archive identity failure")
+
+    monkeypatch.setattr(runtime_bootstrap, "build_native_scene_files", forbidden)
+    monkeypatch.setattr(runtime_bootstrap, "build_native_vehicle_files", forbidden)
+
+    report = runtime_bootstrap.build_offline_runtime_bootstrap(
+        ["corpus.zip"],
+        tmp_path / "bootstrap",
+        track="Silverstone_Era3_GrandPrix",
+        vehicle="BMW_M3_E36",
+    )
+
+    assert report["offline_build_ready"] is False
+    assert report["status"] == "resource-blocked"
+    assert report["readiness"]["retail_archive_identity_ready"] is False
+    assert any(
+        reason.startswith("retail-archive-identity:retail-archive-sha256-mismatch")
+        for reason in report["blocking_reasons"]
+    )
+    assert report["readiness"]["static_scene_ready"] is False
+    assert report["readiness"]["vehicle_resource_ready"] is False
 
 
 def test_missing_exact_typed_sgb_blocks_scene_without_invoking_builder(

@@ -4,7 +4,7 @@
 inputs toward the native runtime:
 
 ```text
-BFF / ZIP
+BFF / ZIP / directory
   -> canonical shift_importer.BFF archive parsing
   -> SHIFT.OfflineResourceCatalog/1
   -> known parser validation + neutral IR summaries
@@ -26,22 +26,43 @@ The pipeline is deliberately fail-closed.
 
 - Archive structure and payload decoding use `shift_importer.BFF`.
 - Unknown resource extensions are indexed but are not assigned invented layouts.
-- Admission dependency edges come only from semantic parsers already present in
-  the repository (`BMT`, `MEB`, `IMB`, `VHF`).
-- `SGB` currently exposes string-scan resource references. Those references are
-  retained as diagnostic-only edges and cannot satisfy an admission gate.
+- Admission dependency edges come only from source-backed semantic parsers.
+- Source-backed ready SGB record fields may close exact dependency edges; legacy
+  SGB string-scan observations remain diagnostic-only.
 - Resource lookup is exact normalized path. There is no basename fallback in the
-  admission graph.
+  dependency graph.
 - `.mtx <-> .bmt` is the only accepted alias and is recorded explicitly as the
   existing known legacy material alias.
 - Missing shaders/resources remain unresolved. Nothing is synthesized.
-- A resource-ready bootstrap does not bypass the existing native render,
-  physics, runtime-evidence, or provenance gates.
-- `all` may consume an existing runtime-proven native scene set, but never
-  creates one from static BFF evidence.
-- The current legacy native physics compatibility manifest is emitted only for
-  exact `BMW_M3_E36.bff` identity. Other vehicle manifests remain neutral rather
-  than being relabeled as BMW.
+- A resource-ready bootstrap does not bypass native render, physics,
+  runtime-evidence, or provenance gates.
+- Byte/hash duplicate reports prove only path/byte equivalence. They do not prove
+  semantic resource identity.
+
+`SHIFT.SceneVehicleBootstrap/1` still uses the requested archive filename to form
+its corpus candidate set. That candidate name is not sufficient proof for the
+first playable native target. `SHIFT.OfflineRuntimeBootstrap/1` now inserts the
+separate `SHIFT.RetailArchiveIdentityAdmission/1` gate before native scene or
+vehicle consumers.
+
+For the selected Silverstone + BMW vertical slice that gate requires full retail
+SHA-256 identity and exactly one catalog occurrence for:
+
+```text
+Silverstone_Era3_GrandPrix.bff
+Silverstone_Era3_GrandPrix_Physics.bff
+BMW_M3_E36.bff
+BMW_M3_E36_Cockpit.bff
+```
+
+The identities are centralized in `src/resources/retail_archive_identity.py`.
+Unknown target names do not fall back to name-only native admission. Two exact
+byte-identical occurrences remain ambiguous; archive order and first-match
+selection are never proof.
+
+The later Phase 644 playable scene bootstrap applies the same policy to the BMW
+primary/cockpit archives plus `RENDER.bff` before material/Vulkan scene
+composition.
 
 ## Commands
 
@@ -65,7 +86,7 @@ python tools/shift_resource_pipeline.py catalog \
 `--decode-limit-per-archive N` provides a reproducible bounded smoke run. `0`
 (the default) means the complete known-format corpus.
 
-Build a bootstrap from previously generated catalog/graph files:
+Build a catalog-level bootstrap from previously generated catalog/graph files:
 
 ```bash
 python tools/shift_resource_pipeline.py bootstrap \
@@ -77,20 +98,23 @@ python tools/shift_resource_pipeline.py bootstrap \
   --admission out/offline-resource-validation/native_admission.json
 ```
 
-Run the complete offline orchestration in one command:
+This subcommand is useful for corpus diagnostics, but a filename-selected
+candidate is not by itself playable-native admission proof.
+
+Run the complete offline resource orchestration in one command:
 
 ```bash
 python tools/shift_resource_pipeline.py all \
   Vehicles.zip Silverstone_Era3_.zip RENDER.bff \
   -o out/offline-pipeline \
   --track Silverstone_Era3_GrandPrix \
-  --vehicle Ford_Mustang_2010
+  --vehicle BMW_M3_E36
 ```
 
-The `all` command now also runs the native-resource handoff stage. Without a
+The `all` command also runs the native-resource handoff stage. Without a
 runtime-proven scene set the scene side intentionally remains blocked, but the
-neutral vehicle physics resource manifest is still generated. For the current
-BMW vertical slice, an existing scene set can be joined in the same command:
+neutral vehicle physics resource manifest is still generated. An existing scene
+set can be joined in the same command:
 
 ```bash
 python tools/shift_resource_pipeline.py all \
@@ -102,74 +126,62 @@ python tools/shift_resource_pipeline.py all \
   --require-native-resource-handoff
 ```
 
-`--require-native-resource-handoff` changes only the command exit gate: it
-returns non-zero unless the exact scene/physics resource-input join is ready. It
-does not claim camera, participant, BODY-feedback, provider-scheduling or full
+`--require-native-resource-handoff` changes only the command exit gate. It does
+not claim camera, participant, BODY-feedback, provider scheduling, or full
 runtime readiness.
 
-The standalone `native-handoff` subcommand remains available for rebuilding the
-join without re-decoding the BFF corpus.
-
 When `RENDER.bff` is not supplied, exact `.fx` dependencies referenced by
-Silverstone BMT materials remain visible as unresolved blockers. The command
-must return blocked rather than silently substituting an FXO or synthesized
+Silverstone/BMW material evidence remain visible as blockers where the consuming
+stage requires them. The pipeline must not silently substitute an FXO or invented
 shader.
 
 ## Outputs
 
-`all` writes:
+The resource pipeline writes:
 
-- `resource_catalog.json` — archive and entry identity, category, compression,
-  decoded status and hashes;
-- `dependency_graph.json` — semantic dependency edges plus diagnostic-only
-  non-admissible edges;
-- `coverage_report.json` — parsed/blocked/unsupported counts, unknown
-  extensions/layouts and parser failures;
-- `scene_vehicle_bootstrap.json` — exact track/vehicle archive selection and required
-  root resource identities;
+- `resource_catalog.json` — archive/entry provenance, compression, parse status,
+  and content hashes;
+- `dependency_graph.json` — admissible semantic dependency edges plus explicit
+  diagnostic-only observations;
+- `coverage_report.json` — parsed/blocked/unsupported/deferred counts and parser
+  failures;
+- `scene_vehicle_bootstrap.json` — selected archive candidates and required root
+  resource IDs;
 - `typed_resources/` + `typed_resource_closure.json` — decoded bytes for the
-  resolved semantic closure; unresolved dependencies are not materialized;
-- `vehicle_physics/vehicle_physics_asset_graph.json` — produced by the existing
-  `vehicle_physics_bundle.py` path for the selected vehicle;
+  resolved semantic closure;
+- `vehicle_physics/vehicle_physics_asset_graph.json` — existing source-backed
+  vehicle physics asset graph;
 - `native-handoff/vehicle_physics_resource_manifest.json` — exact neutral
   vehicle BFF/physics identity join;
-- `native-handoff/native_physics_manifest.json` — current native-runtime BMW
-  compatibility manifest when the exact BMW gate is satisfied;
-- `native-handoff/scene_catalog_join.json` — existing runtime-proven scene IMB
-  identities joined back to the exact offline catalog when `--scene-set` is
-  supplied;
 - `native-handoff/native_resource_handoff.json` — combined native resource-input
   admission state;
 - `native_runtime_admission.json` — explicit resource/runtime gate state;
-- `pipeline_run.json` — compact top-level reproducibility record including the
-  native-resource handoff status and artifact paths.
+- `pipeline_run.json` — compact top-level reproducibility record.
 
-See `docs/OFFLINE_NATIVE_RESOURCE_HANDOFF.md` for the exact join contracts and
+The one-command `offline_runtime_bootstrap` additionally writes
+`retail_archive_identity_admission.json`; its readiness is now a required input
+to both static native scene and native vehicle admission.
+
+See `docs/OFFLINE_NATIVE_RESOURCE_HANDOFF.md` for downstream join contracts and
 non-claims.
 
-## Current attached corpus intake
+## Current corpus intake
 
-The attached corpus used while introducing this pipeline contains:
+The established corpus inventory contains:
 
 | Source | BFFs | Entries | Type 2 | Type 0 |
 | --- | ---: | ---: | ---: | ---: |
 | `Vehicles.zip` | 12 | 12,447 | 12,429 | 18 |
 | `Silverstone_Era3_.zip` | 8 | 14,387 | 14,361 | 26 |
 
-Notable exact entry counts:
-
-- vehicle corpus: 9,934 `.fxo`, 1,086 `.meb`, 833 `.dds`, 411 `.bmt`,
-  six each of `.cdf/.cgp/.csd/.cdp/.cdv/.edf/.gdf/.sdf/.tbf`, and four `.bbf`;
-- Silverstone corpus: 6,071 `.meb`, 3,748 `.fxo`, 2,015 `.dds`, 1,303 `.bmt`,
-  585 `.vhf`, 427 `.imb`, four each of `.sgb/.trd/.lsd/.aiw/.csm`.
-
-The four Silverstone physics archives each expose one exact AIW and one exact
-CSM root. The four visual archives each expose one SGB/TRD/LSD root. This makes
-archive/root selection deterministic without guessing resource layout.
+Notable entry counts include 1,086 vehicle `.meb` resources and 427 Silverstone
+`.imb` resources. The four Silverstone physics archives each expose one AIW and
+one CSM root; the four visual archives each expose one SGB/TRD/LSD root. Those
+counts are corpus diagnostics, not identity-selection heuristics.
 
 `shift.zip` is a Ghidra project export rather than a retail BFF corpus.
-`SHIFT_tail.zip` contains split raw tail parts (`.aa` ... `.af`) rather than
-standalone BFF members, so neither input is counted as a BFF source.
+`SHIFT_tail.zip` contains split raw tail parts rather than standalone BFF members,
+so neither input is counted as a BFF source by this pipeline.
 
 ## Real-corpus regression hook
 

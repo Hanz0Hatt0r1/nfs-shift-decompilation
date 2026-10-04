@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import hashlib
 import json
 from pathlib import Path
 
@@ -18,6 +19,14 @@ def _rows(tmp_path: Path, names: list[str]) -> list[MaterializedArchive]:
     return rows
 
 
+def _fixture_identity(name: str) -> mod.RetailArchiveIdentity:
+    return mod.RetailArchiveIdentity(
+        archive_name=name,
+        sha256=hashlib.sha256(name.encode("ascii")).hexdigest(),
+        evidence="fixture",
+    )
+
+
 def _patch_materialize(monkeypatch, rows):
     @contextmanager
     def fake_materialize(inputs):
@@ -25,6 +34,15 @@ def _patch_materialize(monkeypatch, rows):
         yield rows
 
     monkeypatch.setattr(mod, "materialize_bff_inputs", fake_materialize)
+    monkeypatch.setattr(
+        mod,
+        "REQUIRED_ARCHIVES",
+        {
+            "primary": _fixture_identity("BMW_M3_E36.bff"),
+            "cockpit": _fixture_identity("BMW_M3_E36_Cockpit.bff"),
+            "render": _fixture_identity("RENDER.bff"),
+        },
+    )
 
 
 def _ready_admission():
@@ -146,6 +164,10 @@ def test_corpus_bootstrap_selects_exact_archives_builds_vhf_transform_and_phase6
     assert report["archive_sources"]["primary"]["archive"] == "BMW_M3_E36.bff"
     assert report["archive_sources"]["cockpit"]["archive"] == "BMW_M3_E36_Cockpit.bff"
     assert report["archive_sources"]["render"]["archive"] == "RENDER.bff"
+    assert report["archive_sources"]["primary"]["identity_match"] is True
+    assert report["archive_sources"]["primary"]["sha256"] == _fixture_identity(
+        "BMW_M3_E36.bff"
+    ).sha256
 
     primary, _, supplemental = admission_calls[0]
     assert primary.name == "BMW_M3_E36.bff"
@@ -165,6 +187,10 @@ def test_corpus_bootstrap_selects_exact_archives_builds_vhf_transform_and_phase6
     ]
     assert composition_calls[0][2]["validator"] == "glslangValidator"
 
+    assert report["boundary"]["retail_archive_identity_required"] is True
+    assert report["boundary"]["archive_basename_is_selection_authority"] is False
+    assert report["boundary"]["archive_sha256_required"] is True
+    assert report["boundary"]["byte_identical_duplicate_collapse_allowed"] is False
     assert report["boundary"]["phase645_vhf_body_world_transform_required"] is True
     assert report["boundary"]["vhf_body_world_transform_consumed"] is True
     assert report["boundary"]["phase643_composite_scene_consumed"] is True
@@ -198,6 +224,48 @@ def test_corpus_bootstrap_blocks_when_required_render_archive_is_missing(
     assert report["ready"] is False
     assert report["scene_set_ready"] is False
     assert "playable-scene-corpus:archive-missing:RENDER.bff" in report["blocking_reasons"]
+
+
+def test_corpus_bootstrap_blocks_on_retail_archive_hash_mismatch(
+    monkeypatch,
+    tmp_path,
+):
+    rows = _rows(
+        tmp_path,
+        ["BMW_M3_E36.bff", "BMW_M3_E36_Cockpit.bff", "RENDER.bff"],
+    )
+    _patch_materialize(monkeypatch, rows)
+    monkeypatch.setattr(
+        mod,
+        "REQUIRED_ARCHIVES",
+        {
+            **mod.REQUIRED_ARCHIVES,
+            "render": mod.RetailArchiveIdentity(
+                archive_name="RENDER.bff",
+                sha256="0" * 64,
+                evidence="fixture-mismatch",
+            ),
+        },
+    )
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("material admission must not run after archive hash mismatch")
+
+    monkeypatch.setattr(mod, "build_bmw_body_material_admission", forbidden)
+    track = tmp_path / "track-scene"
+    track.mkdir()
+    report = mod.build_native_playable_scene_bootstrap(
+        ["Vehicles.zip", "SHIFT_tail.zip"],
+        track,
+        tmp_path / "playable",
+        vehicle="BMW_M3_E36",
+    )
+
+    assert report["ready"] is False
+    assert any(
+        reason.startswith("playable-scene-corpus:archive-sha256-mismatch:RENDER.bff:")
+        for reason in report["blocking_reasons"]
+    )
 
 
 def test_corpus_bootstrap_blocks_when_vhf_transform_cannot_be_proven(
@@ -250,7 +318,7 @@ def test_corpus_bootstrap_blocks_when_vhf_transform_cannot_be_proven(
     assert report["boundary"]["vhf_body_world_transform_consumed"] is False
 
 
-def test_corpus_bootstrap_rejects_duplicate_canonical_archive_basename(
+def test_corpus_bootstrap_rejects_duplicate_exact_retail_archive_identity(
     monkeypatch,
     tmp_path,
 ):
@@ -274,8 +342,12 @@ def test_corpus_bootstrap_rejects_duplicate_canonical_archive_basename(
     )
 
     assert report["ready"] is False
-    assert "playable-scene-corpus:archive-ambiguous:RENDER.bff:2" in report["blocking_reasons"]
+    assert (
+        "playable-scene-corpus:archive-identity-ambiguous:RENDER.bff:2"
+        in report["blocking_reasons"]
+    )
     assert report["boundary"]["archive_order_is_selection_authority"] is False
+    assert report["boundary"]["byte_identical_duplicate_collapse_allowed"] is False
 
 
 def test_corpus_bootstrap_rejects_noncanonical_vehicle_before_archive_selection(
