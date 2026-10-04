@@ -1,0 +1,26 @@
+name: Process 1 BMW offset33b x87 memory qualifiers
+
+on:
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_register_relative_accesses.py'
+      - 'tests/test_ghidra_register_relative_float_qualifiers.py'
+      - 'tests/test_ghidra_bmw_offset33b_store_provenance.py'
+      - '.github/workflows/process1-bmw-offset33b-x87-memory.yml'
+  workflow_dispatch:
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Run memory qualifier regressions
+        run: |
+          pytest -q \
+            tests/test_ghidra_register_relative_accesses.py \
+            tests/test_ghidra_register_relative_float_qualifiers.py \
+            tests/test_ghidra_bmw_offset33b_store_provenance.py
