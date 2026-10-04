@@ -80,7 +80,7 @@ int main() {
                     retail_identity.handoff.selected_body_index == 0u,
                 "Phase 706 did not receive positive retail BODY0 identity");
 
-        bool uninitialized_runtime_rejected = false;
+        bool runtime_admission_rejected = false;
         try {
             (void)commit_retail_bmw_vehicle_world_transform(
                 state,
@@ -88,12 +88,13 @@ int main() {
                 vhf_bind_fixture(),
                 body0_bind_fixture());
         } catch (const std::runtime_error& exc) {
-            uninitialized_runtime_rejected =
-                std::string(exc.what()).find("persistent outer state") !=
+            runtime_admission_rejected =
+                std::string(exc.what()).find(
+                    "vehicle BODY pose runtime handoff requires") !=
                 std::string::npos;
         }
-        require(uninitialized_runtime_rejected,
-                "Phase 706 retail wrapper bypassed persistent runtime admission");
+        require(runtime_admission_rejected,
+                "Phase 706 retail wrapper bypassed Phase 700 runtime admission");
         require(!state.ready && state.commit_generation == 0u,
                 "Phase 706 mutated transform state on failed runtime admission");
 
