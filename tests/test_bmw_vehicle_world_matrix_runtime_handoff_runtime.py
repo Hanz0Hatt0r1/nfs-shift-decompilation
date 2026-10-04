@@ -7,12 +7,8 @@ from bmw_body0_vhf_world_matrix_composition_runtime import (
     ProvenVhfBindFrame,
 )
 from bmw_vehicle_world_matrix_runtime_handoff_runtime import (
-    build_handoff,
+    build_retail_handoff,
     contract,
-)
-from global_vehicle_body_owner_selection_runtime import (
-    blocked_current_retail_handoff,
-    synthetic_positive_handoff,
 )
 
 
@@ -44,7 +40,6 @@ def _basis() -> tuple[float, ...]:
 
 def _positive_kwargs() -> dict[str, object]:
     return {
-        "identity": synthetic_positive_handoff(),
         "body_index": 0,
         "origin": (10.0, 20.0, 30.0),
         "basis": _basis(),
@@ -53,8 +48,8 @@ def _positive_kwargs() -> dict[str, object]:
     }
 
 
-def test_phase705_composes_existing_identity_and_world_matrix_boundaries() -> None:
-    result = build_handoff(**_positive_kwargs())
+def test_phase707_retail_identity_composes_existing_world_matrix_boundaries() -> None:
+    result = build_retail_handoff(**_positive_kwargs())
     assert result["body_index"] == 0
     assert result["vehicle_world_matrix"] == pytest.approx(
         (
@@ -67,40 +62,40 @@ def test_phase705_composes_existing_identity_and_world_matrix_boundaries() -> No
     )
 
 
-def test_phase705_current_retail_identity_fails_before_bind_promotion() -> None:
+def test_phase707_current_retail_path_reaches_bind_blocker() -> None:
     kwargs = _positive_kwargs()
-    kwargs["identity"] = blocked_current_retail_handoff()
     kwargs["body0_bind"] = ProvenBody0BindFrame(False, False, 0, False, _body_bind())
-    with pytest.raises(ValueError, match="not retail-ready"):
-        build_handoff(**kwargs)
+    with pytest.raises(ValueError, match="proven-static"):
+        build_retail_handoff(**kwargs)
 
 
 def test_phase705_selection_must_match_supplied_persistent_pose() -> None:
     kwargs = _positive_kwargs()
     kwargs["body_index"] = 9
     with pytest.raises(ValueError, match="does not match supplied persistent pose"):
-        build_handoff(**kwargs)
+        build_retail_handoff(**kwargs)
 
 
 def test_phase705_preserves_phase704_bind_gate() -> None:
     kwargs = _positive_kwargs()
     kwargs["body0_bind"] = ProvenBody0BindFrame(False, False, 0, False, _body_bind())
     with pytest.raises(ValueError, match="proven-static"):
-        build_handoff(**kwargs)
+        build_retail_handoff(**kwargs)
 
 
-def test_phase705_contract_keeps_current_retail_and_scheduling_closed() -> None:
+def test_phase707_contract_removes_identity_input_and_keeps_bind_closed() -> None:
     payload = contract()
     assert payload["format"] == "SHIFT.NativeBMWVehicleWorldMatrixRuntimeHandoff/1"
     assert payload["phase703_identity_admission_reused"] is True
     assert payload["phase700_runtime_pose_handoff_reused_by_native"] is True
     assert payload["phase704_composition_reused"] is True
-    assert payload["current_retail_identity_ready"] is False
+    assert payload["current_retail_identity_ready"] is True
+    assert payload["retail_identity_injected_by_caller"] is False
     assert payload["current_retail_BODY0_bind_ready"] is False
     assert payload["current_retail_world_matrix_ready"] is False
     assert payload["read_only_runtime_handoff"] is True
     assert payload["phase646_matrix_output"] is True
-    assert payload["live_vulkan_buffer_mutation_enabled"] is False
+    assert payload["phase649_persistent_vulkan_upload_available"] is True
     assert payload["fixed_step_auto_schedule"] is False
     assert payload["original_game_executed"] is False
     assert payload["new_runtime_capture_required"] is False
