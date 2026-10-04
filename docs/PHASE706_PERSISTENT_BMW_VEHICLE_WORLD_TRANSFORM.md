@@ -1,13 +1,9 @@
 # Phase 706 — persistent BMW vehicle world-transform state
 
-## Playable-slice blocker reduced
+## Purpose
 
-Phase 705 produces a read-only `VehicleWorldMatrix` from the admitted persistent
-BODY0 pose and proven bind inputs. Before Phase 706 that matrix existed only as
-a return value; no persistent Process 2 runtime state could publish it to a
-future renderer/camera consumer while detecting stale physics provenance.
-
-Phase 706 adds a transactional persistent transform session:
+Phase 706 persists the Phase 705 `VehicleWorldMatrix` together with the exact
+persistent BODY0 provenance that produced it.
 
 ```text
 Phase 705 admitted world matrix
@@ -16,19 +12,7 @@ Phase 705 admitted world matrix
 -> freshness check against current NativeRuntimeState
 ```
 
-This is reusable infrastructure for the milestone:
-
-```text
-multiple explicit physics updates
--> updated persistent BODY0 pose
--> explicit transform recommit
--> current vehicle world transform
-```
-
-It does not claim a positive retail BODY-owner identity or BODY0 bind proof and
-does not attach any operation to `fixed_step()`.
-
-No original `SHIFT.exe` execution and no new runtime capture are used.
+No original `SHIFT.exe` execution or new runtime capture is used.
 
 ## Contract
 
@@ -36,15 +20,7 @@ No original `SHIFT.exe` execution and no new runtime capture are used.
 SHIFT.PersistentBMWVehicleWorldTransform/1
 ```
 
-Implementation:
-
-```text
-native_runtime/include/shift_persistent_bmw_vehicle_world_transform.hpp
-native_runtime/src/persistent_bmw_vehicle_world_transform.cpp
-```
-
-`PersistentBmwVehicleWorldTransformState` stores only data produced after a
-successful Phase 705 handoff:
+The state records:
 
 ```text
 ready
@@ -58,140 +34,89 @@ transform commit generation
 Phase 646 VehicleWorldMatrix
 ```
 
-The state is a Process 2 runtime session rather than a new field inside
-`NativeRuntimeState`. This keeps the core runtime free of a renderer-typed value
-until the retail transform path is positive, while still giving the executable
-a persistent object that can later be owned beside the existing Phase 701
-provider session.
+## Transactional commit and freshness
 
-## Transactional commit
+`commit_bmw_vehicle_world_transform(...)` executes the complete Phase 705 path
+before publishing a new state. A failure leaves the previous commit unchanged.
+Commit-generation overflow fails closed.
+
+`read_current_bmw_vehicle_world_transform(...)` accepts the state only when the
+current runtime still matches:
+
+- BODY index 0;
+- BODY cardinality;
+- pose snapshot generation;
+- explicit-update count;
+- exact BODY0 origin;
+- exact BODY0 basis.
+
+The exact origin/basis comparison is required because reinitialization can reuse
+zero generations with different BODY bytes.
+
+## Retail identity after Process 1 #1208
+
+Retail BODY-owner identity is now positive. Phase 707 adds:
 
 ```text
-commit_bmw_vehicle_world_transform(...)
+commit_retail_bmw_vehicle_world_transform(
+    state,
+    runtime,
+    vhf_bind,
+    body0_bind)
 ```
 
-first executes the complete Phase 705 read-only handoff. Only after identity,
-participant/runtime state, VHF bind and BODY0 bind admission plus world-matrix
-composition have all succeeded is a new persistent transform state built and
-assigned.
+which consumes the committed `SHIFT.GlobalVehicleBodyOwnerIdentity/1` producer
+internally. A retail caller therefore no longer injects BODY identity flags.
 
-If any upstream boundary throws, the previously committed transform remains
-unchanged.
+The remaining transform-semantic blocker is the independent
+`SHIFT.BMWBody0BindFrameProof/1`. Until that proof is positive, retail code still
+cannot publish a world matrix. Tests may use a synthetic bind only to regress
+transport and transactional behavior; it is not retail evidence.
 
-A successful commit increments only native transform telemetry:
+## Renderer side
 
-```text
-commit_generation += 1
-```
-
-It does not mutate:
-
-- persistent BODY bytes;
-- BODY pose snapshots;
-- BODY pose snapshot generation;
-- explicit outer-update count;
-- input telemetry;
-- camera state.
-
-Commit-generation overflow fails closed before publication.
-
-## Freshness / stale rejection
+Process 3 Phases 647/648/649 are already merged. In particular Phase 649 consumes
+this exact persistent state through:
 
 ```text
 read_current_bmw_vehicle_world_transform(...)
+-> wait in-flight Vulkan fences
+-> Phase 647 live vehicle vertex upload
 ```
 
-returns a transform only when its recorded source still matches the current
-`NativeRuntimeState.outer_update` state.
+Stale Phase 706 state therefore fails before GPU memory mutation.
 
-The comparison includes:
+## Scheduling boundary
 
-- BODY index = 0;
-- runtime BODY cardinality;
-- BODY pose snapshot generation;
-- explicit outer-update count;
-- exact stored BODY0 origin;
-- exact stored BODY0 basis.
+Phase 706/707 do not automatically commit a transform from
+`NativeRuntimeState::fixed_step()`. The deep explicit outer-update cadence owner
+remains evidence-gated. After any future explicit physics update, the old
+transform becomes stale until an explicit recommit succeeds.
 
-Generation/count checks alone are deliberately insufficient because
-`initialize_explicit_outer_update_body_state()` resets both values to zero. A
-reinitialize with different BODY bytes must therefore invalidate an old
-transform even when telemetry numerically repeats an earlier generation.
+## Regression coverage
 
-This gives renderer/camera consumers a simple rule:
+Python and native regressions now use the Phase 707 retail identity wrapper and
+verify:
 
-```text
-read succeeds -> transform belongs to current persistent BODY0 state
-read fails stale -> recompute/recommit after the current explicit physics state
-```
-
-## Current retail state remains blocked
-
-Phase 706 does not alter the two upstream Process 1 blockers:
-
-1. `SHIFT.GlobalVehicleBodyOwnerIdentity/1` is not retail-positive until the
-   targeted `FUN_00765470` receiver proof is committed;
-2. Process 1 PR #1200 narrows BODY0 bind initialization but retains
-   `BODY0_bind_matrix_proven = false`.
-
-Therefore current retail code cannot successfully commit a transform. Synthetic
-positive identity/bind fixtures are regression-only transport tests.
-
-## Python oracle
-
-```text
-src/physics/persistent_bmw_vehicle_world_transform_runtime.py
-tests/test_persistent_bmw_vehicle_world_transform_runtime.py
-```
-
-It verifies:
-
-- successful commit/read;
-- current retail identity rejection;
-- failed recommit leaves prior state unchanged;
-- stale snapshot generation rejection;
-- stale explicit-update count rejection;
-- reinitialize with reused zero generation but different BODY0 pose rejection;
-- successful recommit increments transform generation only;
-- generation overflow rejection.
-
-## Native regression
-
-```text
-shift_runtime_persistent_bmw_vehicle_world_transform_check
-```
-
-The native test uses the real `NativeRuntimeState` and Phase 705 path. It checks
-transactional publication, current reads, both telemetry stale gates, failed
-recommit preservation, repeated successful commit, and a real BODY-byte
-reinitialize with a changed BODY0 origin while generation/count reset to zero.
-
-## Preserved boundaries
-
-Phase 706 does **not**:
-
-- schedule the deep outer update in `fixed_step()`;
-- automatically recompute a transform after physics updates;
-- mutate live Vulkan buffers;
-- choose a camera follow convention;
-- make Phase 646 renderer transport cumulative;
-- replace any Phase 699/701 external physics provider;
-- weaken Phase 703/704/705 fail-closed proof gates.
+- retail identity passes without a caller-supplied handoff;
+- missing BODY0 bind stops publication transactionally;
+- successful test-only bind commit/read;
+- stale generation/count rejection;
+- changed pose with reused generations rejection;
+- failed recommit preservation;
+- transform-generation overflow rejection.
 
 ## Next blocker
 
-With Phase 706, Process 2 has persistent transform infrastructure ready for the
-first positive retail proof:
+The shortest transform path to visible retail movement is now:
 
 ```text
-positive retail BODY-owner identity
-+ positive BODY0 bind-frame proof
--> Phase 705 VehicleWorldMatrix
--> Phase 706 persistent current transform
--> Phase 646 renderer transport
--> Process 3 live Vulkan vehicle-buffer wiring
+source-backed BODY0 bind initialization/writer provenance
+-> positive SHIFT.BMWBody0BindFrameProof/1
+-> Phase 704/705 composition
+-> Phase 706 retail persistent matrix
+-> Phase 649 live Vulkan upload
 ```
 
-After each future explicit physics update, the previous transform becomes stale
-by provenance until a new explicit Phase 706 commit succeeds. This preserves the
-current scheduling boundary instead of inventing cadence ownership.
+Exact outer-update scheduling and unresolved Phase 699/701 physics producers are
+separate blockers and remain fail-closed.

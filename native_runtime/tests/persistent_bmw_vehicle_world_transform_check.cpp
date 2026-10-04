@@ -1,5 +1,6 @@
 #include "runtime_state.hpp"
 #include "shift_persistent_bmw_vehicle_world_transform.hpp"
+#include "shift_retail_global_vehicle_body_owner_identity.hpp"
 #include "fun_00770e80_outer_update_fixture.hpp"
 
 #include <cstring>
@@ -19,18 +20,6 @@ void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
     }
-}
-
-GlobalVehicleBodyOwnerIdentityHandoff synthetic_positive_identity() {
-    GlobalVehicleBodyOwnerIdentityHandoff handoff{};
-    handoff.outer_receiver_to_body_owner_continuity_proven = true;
-    handoff.vehicle_body_selection_ready = true;
-    handoff.selected_body_index_present = true;
-    handoff.selected_body_index = 0u;
-    handoff.phase698_positive_selection_admissible = true;
-    handoff.phase700_runtime_handoff_admissible = true;
-    handoff.phase703_gate_rewrite_ready = true;
-    return handoff;
 }
 
 ProvenBmwVhfBindFrame vhf_bind_fixture() {
@@ -86,24 +75,27 @@ int main() {
         NativeRuntimeState runtime{};
         PersistentBmwVehicleWorldTransformState state{};
 
-        bool blocked_identity_rejected = false;
+        const auto retail_identity = retail_global_vehicle_body_owner_identity();
+        require(retail_identity.handoff.vehicle_body_selection_ready &&
+                    retail_identity.handoff.selected_body_index == 0u,
+                "Phase 706 did not receive positive retail BODY0 identity");
+
+        bool uninitialized_runtime_rejected = false;
         try {
-            auto blocked_bind = body0_bind_fixture();
-            blocked_bind.ready = false;
-            (void)commit_bmw_vehicle_world_transform(
+            (void)commit_retail_bmw_vehicle_world_transform(
                 state,
                 runtime,
-                GlobalVehicleBodyOwnerIdentityHandoff{},
                 vhf_bind_fixture(),
-                blocked_bind);
-        } catch (const std::invalid_argument& exc) {
-            blocked_identity_rejected =
-                std::string(exc.what()).find("not retail-ready") != std::string::npos;
+                body0_bind_fixture());
+        } catch (const std::runtime_error& exc) {
+            uninitialized_runtime_rejected =
+                std::string(exc.what()).find("persistent outer state") !=
+                std::string::npos;
         }
-        require(blocked_identity_rejected,
-                "Phase 706 did not preserve Phase 705 identity-first rejection");
+        require(uninitialized_runtime_rejected,
+                "Phase 706 retail wrapper bypassed persistent runtime admission");
         require(!state.ready && state.commit_generation == 0u,
-                "Phase 706 mutated transform state on blocked identity");
+                "Phase 706 mutated transform state on failed runtime admission");
 
         runtime.physics.workspace.configure(2u, 1u, 1u);
         runtime.physics.participant_ready = true;
@@ -114,10 +106,27 @@ int main() {
         const auto initial_body_bytes = make_raw_bodies(projection.bodies);
         runtime.initialize_explicit_outer_update_body_state(initial_body_bytes);
 
-        const auto committed = commit_bmw_vehicle_world_transform(
+        bool missing_bind_rejected_before_commit = false;
+        try {
+            auto missing_bind = body0_bind_fixture();
+            missing_bind.ready = false;
+            (void)commit_retail_bmw_vehicle_world_transform(
+                state,
+                runtime,
+                vhf_bind_fixture(),
+                missing_bind);
+        } catch (const std::invalid_argument& exc) {
+            missing_bind_rejected_before_commit =
+                std::string(exc.what()).find("proven-static") != std::string::npos;
+        }
+        require(missing_bind_rejected_before_commit,
+                "Phase 706 did not stop at unresolved retail BODY0 bind proof");
+        require(!state.ready && state.commit_generation == 0u,
+                "Phase 706 mutated transform state on missing BODY0 bind proof");
+
+        const auto committed = commit_retail_bmw_vehicle_world_transform(
             state,
             runtime,
-            synthetic_positive_identity(),
             vhf_bind_fixture(),
             body0_bind_fixture());
         require(state.ready && committed.commit_generation == 1u,
@@ -165,10 +174,9 @@ int main() {
         try {
             auto missing_bind = body0_bind_fixture();
             missing_bind.ready = false;
-            (void)commit_bmw_vehicle_world_transform(
+            (void)commit_retail_bmw_vehicle_world_transform(
                 state,
                 runtime,
-                synthetic_positive_identity(),
                 vhf_bind_fixture(),
                 missing_bind);
         } catch (const std::invalid_argument& exc) {
@@ -182,10 +190,9 @@ int main() {
             committed,
             "Phase 706 failed recommit partially mutated persistent transform state");
 
-        const auto recommitted = commit_bmw_vehicle_world_transform(
+        const auto recommitted = commit_retail_bmw_vehicle_world_transform(
             state,
             runtime,
-            synthetic_positive_identity(),
             vhf_bind_fixture(),
             body0_bind_fixture());
         require(recommitted.commit_generation == 2u,
@@ -193,9 +200,6 @@ int main() {
         require(recommitted.vehicle_world_matrix == committed.vehicle_world_matrix,
                 "Phase 706 recommit drifted without a new BODY pose");
 
-        // Reinitialize with different BODY0 origin. Explicit-update and pose
-        // generations both return to zero, so source-pose provenance must still
-        // make the prior transform stale.
         auto reinitialized_bytes = initial_body_bytes;
         const double changed_origin_x = 123.0;
         std::memcpy(
@@ -220,10 +224,9 @@ int main() {
         state.commit_generation = std::numeric_limits<std::uint64_t>::max();
         bool overflow_rejected = false;
         try {
-            (void)commit_bmw_vehicle_world_transform(
+            (void)commit_retail_bmw_vehicle_world_transform(
                 state,
                 runtime,
-                synthetic_positive_identity(),
                 vhf_bind_fixture(),
                 body0_bind_fixture());
         } catch (const std::overflow_error&) {
@@ -242,7 +245,8 @@ int main() {
             << "\"stale_explicit_update_count_rejected\":true,"
             << "\"reinitialize_with_reused_generation_rejected\":true,"
             << "\"phase705_handoff_reused\":true,"
-            << "\"current_retail_identity_ready\":false,"
+            << "\"current_retail_identity_ready\":true,"
+            << "\"retail_identity_injected_by_caller\":false,"
             << "\"current_retail_body0_bind_ready\":false,"
             << "\"automatic_fixed_step_commit\":false,"
             << "\"renderer_mutation_enabled\":false,"

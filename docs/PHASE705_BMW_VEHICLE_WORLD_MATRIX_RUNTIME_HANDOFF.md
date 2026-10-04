@@ -1,27 +1,22 @@
 # Phase 705 — BMW vehicle world-matrix runtime handoff
 
-## Playable-slice blocker reduced
+## Purpose
 
-Phases 703, 700 and 704 already contain the three separate pieces needed before
-renderer transport:
+Phase 705 joins the existing selected persistent BODY pose to the exact Phase 704
+BODY0/VHF composition and returns the Phase 646 `VehicleWorldMatrix` ABI.
 
 ```text
-Process 1 global BODY-owner identity
--> Phase 703 identity admission
--> Phase 700 read-only persistent BODY0 pose
--> Phase 704 BODY0/VHF composition
--> Phase 646 VehicleWorldMatrix ABI
+Phase 703 identity admission
+-> Phase 700 persistent BODY0 pose
+-> Phase 704 VHF_bind * inverse(BODY0_bind) * BODY0_runtime
+-> Phase 646 VehicleWorldMatrix
 ```
 
-Before Phase 705 a caller still had to assemble those steps manually. That left
-an unnecessary integration gap in the exact path that will eventually run once
-the remaining Process 1 proofs become positive.
+The generic Phase 705 operation still accepts an explicit
+`GlobalVehicleBodyOwnerIdentityHandoff` so malformed/alternative contracts can be
+regressed. Phase 707 adds the retail wrapper that removes that injected argument.
 
-Phase 705 provides one read-only, fail-closed native handoff from
-`NativeRuntimeState` plus the existing typed proof inputs to the Phase 646 matrix
-ABI. It introduces no new physics arithmetic or transform semantics.
-
-No original `SHIFT.exe` execution and no new runtime capture are used.
+No original `SHIFT.exe` execution or new runtime capture is used.
 
 ## Contract
 
@@ -29,24 +24,7 @@ No original `SHIFT.exe` execution and no new runtime capture are used.
 SHIFT.NativeBMWVehicleWorldMatrixRuntimeHandoff/1
 ```
 
-Implementation:
-
-```text
-native_runtime/include/shift_bmw_vehicle_world_matrix_runtime_handoff.hpp
-native_runtime/src/bmw_vehicle_world_matrix_runtime_handoff.cpp
-```
-
-The public operation is:
-
-```text
-NativeRuntimeState
-+ GlobalVehicleBodyOwnerIdentityHandoff
-+ ProvenBmwVhfBindFrame
-+ ProvenBmwBody0BindFrame
--> BmwVehicleWorldMatrixRuntimeHandoffResult
-```
-
-The result transports:
+The handoff transports:
 
 ```text
 SelectedVehicleBodyPose
@@ -56,146 +34,76 @@ runtime BODY count
 explicit outer-update count
 ```
 
-## No duplicate gates
+It contains no new matrix arithmetic, trig, sqrt, or machine-scalar producer.
 
-Phase 705 deliberately delegates every decision to the already-proven boundary
-that owns it.
+## Retail identity after Process 1 #1208
 
-### Identity
-
-```text
-build_global_vehicle_body_pose_runtime_handoff(...)
-```
-
-reuses Phase 703 and Phase 700. Therefore:
-
-- current blocked retail `SHIFT.GlobalVehicleBodyOwnerIdentity/1` is rejected;
-- obsolete update-child pointer equality remains forbidden;
-- participant/runtime admission is still enforced by Phase 700;
-- BODY0 selection is not reimplemented.
-
-### Transform composition
+The BODY-owner identity is now positive:
 
 ```text
-compose_bmw_body0_pose_to_vehicle_world_matrix(...)
+global vehicle 0x00c13700
+-> pointer field +0x339c
+-> BODY-array owner
+-> BMW chassis BODY 0
 ```
 
-reuses Phase 704 unchanged. Therefore:
-
-- Phase 645 VHF bind proof remains required;
-- positive, proven-static `SHIFT.BMWBody0BindFrameProof/1` remains required;
-- exact multiplication order stays
-  `VHF_bind * inverse(BODY0_bind) * BODY0_runtime`;
-- no identity-bind or axis-remap assumption is introduced;
-- the output remains the Phase 646 float32 `VehicleWorldMatrix` ABI.
-
-Phase 705 contains no matrix inversion, multiplication, trig, sqrt or recovered
-machine-scalar arithmetic of its own.
-
-## Fail-closed ordering
-
-The integration order is intentional:
+Phase 707 exposes:
 
 ```text
-Phase 703 identity admission
--> Phase 700 runtime state / pose admission
--> Phase 704 bind proofs + composition
+build_retail_bmw_vehicle_world_matrix_runtime_handoff(
+    runtime,
+    vhf_bind,
+    body0_bind)
 ```
 
-A currently blocked retail identity is therefore rejected before uninitialized
-runtime pose state is inspected. Once identity is admitted, Phase 700 remains the
-owner of participant/cardinality/generation checks. Only an admitted selected
-pose reaches Phase 704.
+so a retail caller no longer supplies identity flags manually.
 
-All three operations are read-only with respect to the persistent runtime state.
+Phase 703/700 validation is still reused unchanged. In particular the owner
+pointer loaded from `+0x339c` is not treated as equal to the global vehicle base,
+and the obsolete update-child equality gate remains forbidden.
 
-## Current retail status
+## Remaining fail-closed transform input
 
-Process 1 PR #1196 still keeps the global BODY-owner identity blocked until the
-targeted retail `FUN_00765470` instruction/receiver proof is committed.
+The retail path is **not** yet a positive world-matrix producer because the
+source-backed `SHIFT.BMWBody0BindFrameProof/1` remains unresolved.
 
-Process 1 PR #1200 narrows the separate BODY0 bind-initialization search to a
-finite caller/callsite worklist around:
+Phase 705 therefore preserves the order:
 
 ```text
-FUN_007b6900
-FUN_007b3670
-FUN_007b7840 + direct callers
+retail identity (positive)
+-> Phase 700 runtime pose admission
+-> BODY0 bind proof (currently blocked)
+-> Phase 704 composition
 ```
 
-but explicitly keeps:
-
-```text
-BODY0_pointer_identity_proven        = false
-origin_basis_value_provenance_proven = false
-BODY0_bind_matrix_proven             = false
-```
-
-Therefore Phase 705 is currently reusable integration infrastructure, not a
-positive retail world-matrix producer.
+A missing BODY0 bind is rejected before any matrix is returned. No identity bind
+or axis-remap assumption is allowed.
 
 ## Regression coverage
 
-### Python oracle
+Python and native regressions now use the Phase 707 retail identity wrapper.
+They verify:
+
+- retail BODY 0 is selected without a caller-supplied identity handoff;
+- uninitialized persistent runtime state remains rejected by Phase 700;
+- missing BODY0 bind proof remains rejected by Phase 704;
+- a test-only bind fixture reaches the existing exact composition;
+- successful and failed reads do not mutate persistent BODY state.
+
+The test-only bind fixture is not retail proof.
+
+## Downstream state
+
+Process 3 Phases 647/648/649 already provide live Vulkan upload and a
+freshness-gated consumer of Phase 706 persistent matrices. Renderer transport is
+therefore no longer the semantic blocker.
+
+The next transform blocker is exactly:
 
 ```text
-src/physics/bmw_vehicle_world_matrix_runtime_handoff_runtime.py
-tests/test_bmw_vehicle_world_matrix_runtime_handoff_runtime.py
+source-backed BODY0 bind initialization/writer provenance
+-> positive SHIFT.BMWBody0BindFrameProof/1
 ```
 
-The oracle composes the existing Phase 703 and Phase 704 Python contracts and
-checks:
-
-- current retail identity rejection;
-- exact BODY0 selection agreement;
-- Phase 704 bind gate preservation;
-- exact non-commuting world matrix from the existing fixture;
-- current retail/world-renderer boundaries remain false.
-
-### Native regression
-
-```text
-shift_runtime_bmw_vehicle_world_matrix_runtime_handoff_check
-```
-
-The native test verifies:
-
-1. blocked retail identity rejects before Phase 700 reads an uninitialized
-   runtime state;
-2. synthetic positive identity still cannot bypass Phase 700 persistent-state
-   admission;
-3. after normal `NativeRuntimeState` initialization, the selected BODY0 pose is
-   transported unchanged;
-4. the final matrix exactly equals a direct call to Phase 704 on that selected
-   pose;
-5. missing BODY0 bind proof remains rejected;
-6. success and failure paths do not mutate BODY bytes, pose snapshots,
-   snapshot generation or explicit-update telemetry.
-
-## Preserved boundaries
-
-Phase 705 does **not**:
-
-- make Process 1 retail BODY-owner identity positive;
-- create a BODY0 bind-frame proof;
-- write Phase 646 output into live Vulkan buffers;
-- enable camera follow;
-- attach the explicit deep outer update to `fixed_step()`;
-- replace any of the nine Phase 699/701 external providers;
-- reinterpret Phase 645 static bind data as a dynamic pose.
-
-## Next blocker
-
-The Process 2 transport path is now ready end-to-end up to the two missing
-upstream proofs:
-
-```text
-positive retail global BODY-owner identity
-+ positive BODY0 bind-frame proof
--> Phase 705 NativeRuntimeState -> VehicleWorldMatrix
--> Phase 646 dynamic transform transport
--> Process 3 live Vulkan vehicle-buffer wiring
-```
-
-Until those proofs exist, Process 2 should keep this path explicit and
-fail-closed rather than manufacture a retail transform.
+Exact deep-physics scheduling and the remaining Phase 699/701 provider producers
+remain separate blockers.
