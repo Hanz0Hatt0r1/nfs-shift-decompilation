@@ -1,0 +1,48 @@
+name: process1-body0-bind-pose-writer-target-role
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_bmw_body0_bind_pose_writer_target_role.py'
+      - 'tests/test_ghidra_bmw_body0_bind_pose_writer_target_role.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_callsite_register_provenance.py'
+      - 'tools/ghidra/join_bmw_body0_bind_pose_writer_abi.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_stack_value_provenance.py'
+      - 'tests/test_ghidra_bmw_body0_bind_callsite_register_provenance.py'
+      - 'tests/test_ghidra_bmw_body0_bind_pose_writer_abi.py'
+      - 'tests/test_ghidra_bmw_body0_bind_stack_value_provenance.py'
+      - 'docs/PROCESS_1_BMW_BODY0_BIND_POSE_WRITER_TARGET_ROLE.md'
+      - '.github/workflows/process1-body0-bind-pose-writer-target-role.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_bmw_body0_bind_pose_writer_target_role.py'
+      - 'tests/test_ghidra_bmw_body0_bind_pose_writer_target_role.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_callsite_register_provenance.py'
+      - 'tools/ghidra/join_bmw_body0_bind_pose_writer_abi.py'
+      - 'tools/ghidra/analyze_bmw_body0_bind_stack_value_provenance.py'
+      - 'tests/test_ghidra_bmw_body0_bind_callsite_register_provenance.py'
+      - 'tests/test_ghidra_bmw_body0_bind_pose_writer_abi.py'
+      - 'tests/test_ghidra_bmw_body0_bind_stack_value_provenance.py'
+      - 'docs/PROCESS_1_BMW_BODY0_BIND_POSE_WRITER_TARGET_ROLE.md'
+      - '.github/workflows/process1-body0-bind-pose-writer-target-role.yml'
+
+jobs:
+  pose-writer-target-role:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run target-role regression
+        run: python -m pytest -q tests/test_ghidra_bmw_body0_bind_pose_writer_target_role.py
+      - name: Preserve upstream physical provenance regressions
+        run: >-
+          python -m pytest -q
+          tests/test_ghidra_bmw_body0_bind_callsite_register_provenance.py
+          tests/test_ghidra_bmw_body0_bind_pose_writer_abi.py
+          tests/test_ghidra_bmw_body0_bind_stack_value_provenance.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_bmw_body0_bind_pose_writer_target_role.py --help >/dev/null
