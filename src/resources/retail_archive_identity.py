@@ -8,7 +8,9 @@ into one semantic resource identity.
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -74,6 +76,17 @@ _RENDER_IDENTITIES: dict[str, RetailArchiveIdentity] = {
         evidence="docs/render-evidence/bmw_m3_e36_render_bff_evidence.json",
     ),
 }
+
+
+def sha256_file(path: str | Path, *, chunk_size: int = 1024 * 1024) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        while True:
+            chunk = stream.read(chunk_size)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def track_archive_identity(track: str, role: str) -> RetailArchiveIdentity | None:
