@@ -7,8 +7,14 @@ on:
       - 'tests/test_ghidra_run_bmw_offset33b_reduced_static_proof.py'
       - 'tools/ghidra/run_bmw_offset33b_static_proof.py'
       - 'tools/ghidra/analyze_bmw_offset33b_store_provenance.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_actual_additional_mass_bootstrap_zero.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py'
       - 'tools/ghidra/analyze_bmw_offset33b_additional_mass_bootstrap_zero.py'
       - 'tools/ghidra/analyze_bmw_offset33b_memory_load_provenance.py'
+      - 'tests/test_ghidra_bmw_offset33b_actual_additional_mass_bootstrap_zero.py'
+      - 'tests/test_ghidra_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py'
+      - 'tests/test_ghidra_bmw_offset33b_additional_mass_bootstrap_zero.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_REDUCED_STATIC_PROOF_RUNNER.md'
       - '.github/workflows/process1-bmw-offset33b-reduced-static-proof-runner.yml'
   pull_request:
     paths:
@@ -16,8 +22,14 @@ on:
       - 'tests/test_ghidra_run_bmw_offset33b_reduced_static_proof.py'
       - 'tools/ghidra/run_bmw_offset33b_static_proof.py'
       - 'tools/ghidra/analyze_bmw_offset33b_store_provenance.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_actual_additional_mass_bootstrap_zero.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py'
       - 'tools/ghidra/analyze_bmw_offset33b_additional_mass_bootstrap_zero.py'
       - 'tools/ghidra/analyze_bmw_offset33b_memory_load_provenance.py'
+      - 'tests/test_ghidra_bmw_offset33b_actual_additional_mass_bootstrap_zero.py'
+      - 'tests/test_ghidra_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py'
+      - 'tests/test_ghidra_bmw_offset33b_additional_mass_bootstrap_zero.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_REDUCED_STATIC_PROOF_RUNNER.md'
       - '.github/workflows/process1-bmw-offset33b-reduced-static-proof-runner.yml'
 
 jobs:
@@ -35,7 +47,11 @@ jobs:
         run: python -m pytest -q tests/test_ghidra_run_bmw_offset33b_static_proof.py
       - name: Preserve memory-LOAD regressions
         run: python -m pytest -q tests/test_ghidra_bmw_offset33b_memory_load_provenance.py
-      - name: Preserve bootstrap-zero regressions
+      - name: Preserve actual additional-mass bootstrap-zero regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_actual_additional_mass_bootstrap_zero.py
+      - name: Preserve Vehicle reference-Y bootstrap-zero regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py
+      - name: Preserve manager-record correction regressions
         run: python -m pytest -q tests/test_ghidra_bmw_offset33b_additional_mass_bootstrap_zero.py
       - name: Verify runner CLI
         run: python tools/ghidra/run_bmw_offset33b_reduced_static_proof.py --help >/dev/null
