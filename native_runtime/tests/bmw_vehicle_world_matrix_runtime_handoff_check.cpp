@@ -1,5 +1,6 @@
 #include "runtime_state.hpp"
 #include "shift_bmw_vehicle_world_matrix_runtime_handoff.hpp"
+#include "shift_retail_global_vehicle_body_owner_identity.hpp"
 #include "fun_00770e80_outer_update_fixture.hpp"
 
 #include <cmath>
@@ -44,18 +45,6 @@ bool snapshots_equal(
     return true;
 }
 
-GlobalVehicleBodyOwnerIdentityHandoff synthetic_positive_identity() {
-    GlobalVehicleBodyOwnerIdentityHandoff handoff{};
-    handoff.outer_receiver_to_body_owner_continuity_proven = true;
-    handoff.vehicle_body_selection_ready = true;
-    handoff.selected_body_index_present = true;
-    handoff.selected_body_index = 0u;
-    handoff.phase698_positive_selection_admissible = true;
-    handoff.phase700_runtime_handoff_admissible = true;
-    handoff.phase703_gate_rewrite_ready = true;
-    return handoff;
-}
-
 ProvenBmwVhfBindFrame vhf_bind_fixture() {
     return ProvenBmwVhfBindFrame{
         true,
@@ -88,38 +77,19 @@ ProvenBmwBody0BindFrame body0_bind_fixture() {
 int main() {
     try {
         NativeRuntimeState runtime{};
+        const auto retail_identity = retail_global_vehicle_body_owner_identity();
+        require(retail_identity.handoff.vehicle_body_selection_ready &&
+                    retail_identity.handoff.selected_body_index == 0u,
+                "Phase 705 did not receive positive retail BODY0 identity");
 
-        // Phase 703 must reject the currently blocked retail identity before
-        // Phase 700 attempts to inspect any runtime admission or pose state.
-        bool current_identity_rejected_first = false;
-        try {
-            auto missing_bind = body0_bind_fixture();
-            missing_bind.ready = false;
-            (void)build_bmw_vehicle_world_matrix_runtime_handoff(
-                runtime,
-                GlobalVehicleBodyOwnerIdentityHandoff{},
-                vhf_bind_fixture(),
-                missing_bind);
-        } catch (const std::invalid_argument& exc) {
-            current_identity_rejected_first =
-                std::string(exc.what()).find("not retail-ready") != std::string::npos;
-        }
-        require(
-            current_identity_rejected_first,
-            "Phase 705 did not preserve Phase 703 identity-first fail-closed ordering");
-
-        // Open only the participant/workspace gates. Persistent BODY state is
-        // intentionally still uninitialized so the next failure must belong to
-        // the existing Phase 700 persistent-state admission boundary.
         runtime.physics.workspace.configure(2u, 1u, 1u);
         runtime.physics.participant_ready = true;
         runtime.physics.participant_identity_join_proven = true;
 
         bool uninitialized_runtime_rejected = false;
         try {
-            (void)build_bmw_vehicle_world_matrix_runtime_handoff(
+            (void)build_retail_bmw_vehicle_world_matrix_runtime_handoff(
                 runtime,
-                synthetic_positive_identity(),
                 vhf_bind_fixture(),
                 body0_bind_fixture());
         } catch (const std::runtime_error& exc) {
@@ -128,7 +98,7 @@ int main() {
         }
         require(
             uninitialized_runtime_rejected,
-            "Phase 705 bypassed Phase 700 persistent-state admission");
+            "Phase 705 retail wrapper bypassed Phase 700 persistent-state admission");
 
         const auto source = make_frame();
         const auto relations = make_relations();
@@ -142,9 +112,8 @@ int main() {
             runtime.outer_update.body_pose_snapshot_generation;
         const auto committed_updates = runtime.outer_update.explicit_update_count;
 
-        const auto result = build_bmw_vehicle_world_matrix_runtime_handoff(
+        const auto result = build_retail_bmw_vehicle_world_matrix_runtime_handoff(
             runtime,
-            synthetic_positive_identity(),
             vhf_bind_fixture(),
             body0_bind_fixture());
 
@@ -179,9 +148,8 @@ int main() {
         try {
             auto missing_bind = body0_bind_fixture();
             missing_bind.ready = false;
-            (void)build_bmw_vehicle_world_matrix_runtime_handoff(
+            (void)build_retail_bmw_vehicle_world_matrix_runtime_handoff(
                 runtime,
-                synthetic_positive_identity(),
                 vhf_bind_fixture(),
                 missing_bind);
         } catch (const std::invalid_argument& exc) {
@@ -211,7 +179,8 @@ int main() {
             << "\"phase700_runtime_pose_handoff_reused\":true,"
             << "\"phase704_composition_reused\":true,"
             << "\"selected_body_index\":0,"
-            << "\"current_retail_identity_ready\":false,"
+            << "\"current_retail_identity_ready\":true,"
+            << "\"retail_identity_injected_by_caller\":false,"
             << "\"current_retail_body0_bind_ready\":false,"
             << "\"current_retail_world_matrix_ready\":false,"
             << "\"runtime_state_mutated\":false,"
