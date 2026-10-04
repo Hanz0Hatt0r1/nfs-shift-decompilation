@@ -10,3 +10,5 @@ set_property(
   APPEND PROPERTY COMPILE_OPTIONS
     -include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/shift_phase648_runtime_injection.hpp)
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase649.cmake)
