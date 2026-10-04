@@ -8,7 +8,7 @@ stage and rebuilds the runtime requirements/profile against that composite scene
 
 Phase 653 additionally accepts a ready Phase 650 capture-result bundle and uses
 the existing Phase 652 exact feedback resolver to derive the canonical sibling
-raw capture/root. Phase 654 can also resolve one canonical
+raw capture/root. Phase 655 can also resolve one canonical
 ``SHIFT.PEImageEvidence/1`` from the existing renderer report bundle when no
 explicit PE selector is supplied. The full renderer re-attribution chain remains
 unchanged.
