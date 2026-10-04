@@ -1,16 +1,15 @@
 """Fail-closed exact resource admission for the playable BMW body renderer.
 
-Phase 533 builds renderer-ready material slices from the selected retail BMW,
-cockpit and RENDER archives.  Some legacy helpers predate the current Process 3
-identity policy and may tolerate a byte-identical duplicate or a shader basename
-fallback.  This gate does not infer dependencies again.  Instead it revalidates
-the exact resources that Phase 533 actually selected before the playable scene
-may consume them.
+The legacy Phase 533 BMW material helpers may accept byte-identical duplicate
+resources or a shader basename fallback.  The playable path must not.  This
+module revalidates the MEB/BMT/FX/DDS resources actually selected by Phase 533
+against the already admitted BMW, cockpit and RENDER archives before Phase 644
+may consume the material slice.
 
-FXO cache copies are intentionally outside this resource-occurrence gate.  Their
-selected program is already carried by exact shader/permutation byte identities;
-byte-identical cache copies may therefore remain a byte-equivalence class, but
-this module never promotes one cache occurrence to semantic resource identity.
+FXO cache copies are intentionally not resource-selected here.  The renderer
+uses their exact program/permutation byte identities; repeated cache copies may
+remain a byte-equivalence class, but this gate never promotes one occurrence to
+semantic resource identity.
 """
 from __future__ import annotations
 
@@ -55,6 +54,7 @@ def _claim(
     primitive_index: int,
     raw: Mapping[str, Any] | None,
     expected_logical_path: Any = None,
+    require_index: bool = True,
 ) -> tuple[dict[str, Any] | None, list[str]]:
     prefix = f"phase654:primitive-{primitive_index}:{kind}"
     if not isinstance(raw, Mapping):
@@ -69,7 +69,9 @@ def _claim(
         blockers.append(prefix + ":path-missing")
     if not archive:
         blockers.append(prefix + ":archive-missing")
-    if index is None or index < 0:
+    if require_index and (index is None or index < 0):
+        blockers.append(prefix + ":entry-index-invalid")
+    if index is not None and index < 0:
         blockers.append(prefix + ":entry-index-invalid")
     if len(sha256) != 64:
         blockers.append(prefix + ":sha256-invalid")
@@ -83,9 +85,8 @@ def _claim(
             + ":observed="
             + _norm(path)
         )
-
     if blockers:
-        return None, blockers
+        return None, list(dict.fromkeys(blockers))
     return {
         "kind": kind,
         "path": path,
@@ -101,34 +102,29 @@ def _slice_claims(
     primitive_index: int,
     material_slice: Mapping[str, Any],
 ) -> tuple[list[dict[str, Any]], list[str]]:
-    blockers: list[str] = []
-    claims: list[dict[str, Any]] = []
     provenance = material_slice.get("provenance")
     if not isinstance(provenance, Mapping):
         return [], [f"phase654:primitive-{primitive_index}:provenance-missing"]
 
+    blockers: list[str] = []
+    claims: list[dict[str, Any]] = []
     packet = material_slice.get("packet")
     packet_mesh = packet.get("mesh") if isinstance(packet, Mapping) else None
     mesh_ref = packet_mesh.get("ref") if isinstance(packet_mesh, Mapping) else None
-    mesh, reasons = _claim(
-        kind="mesh",
-        primitive_index=primitive_index,
-        raw=provenance.get("mesh_entry") if isinstance(provenance, Mapping) else None,
-        expected_logical_path=mesh_ref,
-    )
-    blockers.extend(reasons)
-    if mesh is not None:
-        claims.append(mesh)
 
-    material, reasons = _claim(
-        kind="material",
-        primitive_index=primitive_index,
-        raw=provenance.get("material_entry") if isinstance(provenance, Mapping) else None,
-        expected_logical_path=material_slice.get("material_bmt"),
-    )
-    blockers.extend(reasons)
-    if material is not None:
-        claims.append(material)
+    for kind, raw, expected in (
+        ("mesh", provenance.get("mesh_entry"), mesh_ref),
+        ("material", provenance.get("material_entry"), material_slice.get("material_bmt")),
+    ):
+        claim, reasons = _claim(
+            kind=kind,
+            primitive_index=primitive_index,
+            raw=raw if isinstance(raw, Mapping) else None,
+            expected_logical_path=expected,
+        )
+        blockers.extend(reasons)
+        if claim is not None:
+            claims.append(claim)
 
     binding = material_slice.get("material_binding")
     shader_ref = binding.get("shader") if isinstance(binding, Mapping) else None
@@ -136,22 +132,19 @@ def _slice_claims(
     if not isinstance(shader_source, Mapping):
         blockers.append(f"phase654:primitive-{primitive_index}:shader:provenance-missing")
     elif shader_source.get("kind") != "bff-entry":
-        # The playable resource-driven path must be rooted in the already
-        # admitted retail archives.  A caller-supplied external file has no
-        # archive-local resource identity in this contract.
         blockers.append(
             f"phase654:primitive-{primitive_index}:shader:external-source-not-admissible"
         )
     else:
-        shader, reasons = _claim(
+        claim, reasons = _claim(
             kind="shader",
             primitive_index=primitive_index,
             raw=shader_source,
             expected_logical_path=shader_ref,
         )
         blockers.extend(reasons)
-        if shader is not None:
-            claims.append(shader)
+        if claim is not None:
+            claims.append(claim)
 
     raw_dds = provenance.get("dds_sources")
     if raw_dds is None:
@@ -160,16 +153,52 @@ def _slice_claims(
         blockers.append(f"phase654:primitive-{primitive_index}:dds-sources-not-list")
         raw_dds = []
     for source_index, raw in enumerate(raw_dds):
-        dds, reasons = _claim(
+        claim, reasons = _claim(
             kind=f"texture-{source_index}",
             primitive_index=primitive_index,
             raw=raw if isinstance(raw, Mapping) else None,
+            # Legacy DDS provenance did not retain entry index.  The unique
+            # exact occurrence found below becomes the authoritative index.
+            require_index=False,
         )
         blockers.extend(reasons)
-        if dds is not None:
-            claims.append(dds)
-
+        if claim is not None:
+            claims.append(claim)
     return claims, blockers
+
+
+def _merge_claims(raw_claims: list[dict[str, Any]]) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    by_path: dict[str, dict[str, Any]] = {}
+    blockers: list[str] = []
+    for claim in raw_claims:
+        key = str(claim["normalized_path"])
+        existing = by_path.get(key)
+        if existing is None:
+            by_path[key] = dict(claim)
+            continue
+        # A missing legacy DDS index may merge with the exact index from another
+        # primitive claim; any two concrete and different indices remain a
+        # provenance conflict.
+        existing_index = existing.get("index")
+        claim_index = claim.get("index")
+        index_conflict = (
+            existing_index is not None
+            and claim_index is not None
+            and existing_index != claim_index
+        )
+        if (
+            existing["archive"] != claim["archive"]
+            or existing["sha256"] != claim["sha256"]
+            or index_conflict
+        ):
+            blockers.append(f"phase654:claim-conflict:{key}")
+            continue
+        if existing_index is None and claim_index is not None:
+            existing["index"] = claim_index
+        existing["primitive_indices"] = sorted(set(
+            [*existing.get("primitive_indices", []), *claim.get("primitive_indices", [])]
+        ))
+    return by_path, blockers
 
 
 def build_bmw_playable_render_resource_identity_gate(
@@ -182,10 +211,9 @@ def build_bmw_playable_render_resource_identity_gate(
     if admission.get("ready") is not True:
         blockers.append("phase654:body-material-admission-not-ready")
 
-    required_roles = ("primary", "cockpit", "render")
     paths: dict[str, Path] = {}
     archive_identity: dict[str, dict[str, Any]] = {}
-    for role in required_roles:
+    for role in ("primary", "cockpit", "render"):
         raw = archive_paths.get(role)
         if raw is None:
             blockers.append(f"phase654:archive-role-missing:{role}")
@@ -225,35 +253,13 @@ def build_bmw_playable_render_resource_identity_gate(
         raw_claims.extend(claims)
         blockers.extend(reasons)
 
-    # Multiple body primitives may depend on the same exact resource.  Merge
-    # identical claims by logical path, but never merge different archive/index
-    # provenance merely because payload hashes happen to be equal.
-    claims_by_path: dict[str, dict[str, Any]] = {}
-    for claim in raw_claims:
-        key = str(claim["normalized_path"])
-        existing = claims_by_path.get(key)
-        if existing is None:
-            claims_by_path[key] = dict(claim)
-            continue
-        identity = (claim["archive"], claim["index"], claim["sha256"])
-        existing_identity = (
-            existing["archive"],
-            existing["index"],
-            existing["sha256"],
-        )
-        if identity != existing_identity:
-            blockers.append(f"phase654:claim-conflict:{key}")
-            continue
-        existing["primitive_indices"] = sorted(set(
-            [*existing.get("primitive_indices", []), *claim.get("primitive_indices", [])]
-        ))
-
+    claims_by_path, merge_blockers = _merge_claims(raw_claims)
+    blockers.extend(merge_blockers)
     verified: list[dict[str, Any]] = []
     archives: list[tuple[str, BFF]] = []
     try:
         for role, path in paths.items():
             archives.append((role, BFF(path)))
-
         occurrence_index: dict[str, list[tuple[str, BFF, Any]]] = {}
         for role, archive in archives:
             for entry in archive.entries:
@@ -280,7 +286,8 @@ def build_bmw_playable_render_resource_identity_gate(
             row_blockers: list[str] = []
             if archive.path.name.casefold() != str(claim["archive"]).casefold():
                 row_blockers.append("archive-mismatch")
-            if int(entry.index) != int(claim["index"]):
+            claimed_index = claim.get("index")
+            if claimed_index is not None and int(entry.index) != int(claimed_index):
                 row_blockers.append("entry-index-mismatch")
             if digest != claim["sha256"]:
                 row_blockers.append("payload-sha256-mismatch")
@@ -339,6 +346,7 @@ def build_bmw_playable_render_resource_identity_gate(
             "archive_order_is_selection_authority": False,
             "first_duplicate_selection_allowed": False,
             "byte_identical_duplicate_is_semantic_identity": False,
+            "legacy_dds_index_may_be_derived_only_from_unique_exact_occurrence": True,
             "payload_sha256_revalidated": True,
             "fxo_cache_byte_equivalence_is_resource_identity": False,
             "fxo_cache_semantic_source_selected_here": False,
