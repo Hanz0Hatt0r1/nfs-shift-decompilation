@@ -86,11 +86,11 @@ struct BodyFeedbackScheduler {
         if (environment_checked) {
             return;
         }
-        environment_checked = true;
 
         const char* raw_enabled = std::getenv("SHIFT_NATIVE_BODY_FEEDBACK");
         if (raw_enabled == nullptr || raw_enabled[0] == '\0' ||
             std::string(raw_enabled) == "0") {
+            environment_checked = true;
             return;
         }
         if (std::string(raw_enabled) != "1") {
@@ -98,6 +98,10 @@ struct BodyFeedbackScheduler {
                 "SHIFT_NATIVE_BODY_FEEDBACK must be 0 or 1");
         }
 
+        // Keep environment_checked false until every required source contract
+        // has loaded and configure() has committed the ready scheduler. A
+        // failed fixed step can therefore be retried after the evidence paths
+        // are corrected instead of silently degrading to disabled feedback.
         auto solver = physics::load_prepared_builtin_solver_frame(
             required_environment_path(
                 "SHIFT_NATIVE_BODY_FEEDBACK_SOLVER_FRAME"));
