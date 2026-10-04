@@ -7,6 +7,8 @@ artifact created earlier in this invocation. If no explicit scene-set is
 supplied, the same command then attempts the existing Phase 574 -> 585 runtime
 scene chain. Phase 641 additionally exhausts existing Phase 591/590/592 scene
 instance and external-sampler evidence before leaving a Phase 580/585 blocker.
+When Phase 641 proves an exact missing sampler snapshot frontier, Phase 643
+materializes the existing Phase 642 selective Wine capture plan automatically.
 """
 from __future__ import annotations
 
@@ -40,6 +42,7 @@ from materialize_renderer_native_scene_capture_handoff import (
 from offline_runtime_requirements import build_runtime_requirements
 from offline_vertical_slice_bootstrap import build_offline_vertical_slice_bootstrap
 from offline_vertical_slice_profile import build_vertical_slice_profile_prepare
+from phase641_external_sampler_capture_plan import build_capture_plan
 from run_native_vertical_slice import ProfileError, build_launch_plan
 from run_silverstone_renderer_source_bootstrap_production import (
     run_source_bootstrap_production,
@@ -186,6 +189,10 @@ def _scene_handoff_path(out: Path) -> Path:
     return out / "renderer-native-scene" / "renderer_native_scene_handoff.json"
 
 
+def _capture_plan_path(out: Path) -> Path:
+    return out / "renderer-native-scene" / "external_sampler_capture_plan.json"
+
+
 def _refresh_runtime_profile(
     report: dict[str, Any],
     *,
@@ -313,6 +320,7 @@ def main(argv: list[str] | None = None) -> int:
     launch_plan_path = out / "launch_plan.json"
     renderer_dir = out / "renderer-evidence"
     scene_handoff_dir = out / "renderer-native-scene"
+    capture_plan_path = _capture_plan_path(out)
 
     boundary = dict(report.get("boundary") or {})
     boundary["launcher_validation_requested"] = bool(args.validate_launch_plan)
@@ -327,6 +335,9 @@ def main(argv: list[str] | None = None) -> int:
     boundary["renderer_capture_root_is_identity_proof"] = False
     boundary["runtime_requirements_refreshed_only_after_renderer_scene_attempt"] = True
     boundary["validated_runtime_input_admission_preserved_across_renderer_refresh"] = True
+    boundary["phase642_capture_plan_materialization_enabled"] = renderer_requested
+    boundary["generic_renderer_recapture_inferred"] = False
+    boundary["renderer_capture_execution_claimed"] = False
     report["boundary"] = boundary
 
     artifacts = dict(report.get("artifacts") or {})
@@ -335,6 +346,9 @@ def main(argv: list[str] | None = None) -> int:
     renderer_report: Mapping[str, Any] | None = None
     renderer_ready = not renderer_requested
     renderer_started = False
+    capture_plan_report: Mapping[str, Any] | None = None
+    capture_plan_required = False
+    capture_plan_ready = False
 
     if renderer_requested:
         runtime_bootstrap_path = artifacts.get("runtime_bootstrap")
@@ -446,6 +460,44 @@ def main(argv: list[str] | None = None) -> int:
             }
         )
 
+        if isinstance(scene_handoff_report, Mapping):
+            handoff_boundary = scene_handoff_report.get("boundary")
+            capture_plan_required = (
+                isinstance(handoff_boundary, Mapping)
+                and handoff_boundary.get("capture_observation_required") is True
+            )
+            if capture_plan_required:
+                try:
+                    capture_plan_report = build_capture_plan(scene_handoff_report)
+                except Exception as exc:
+                    blockers.append(
+                        f"renderer-capture-plan:failed:{type(exc).__name__}:{exc}"
+                    )
+                else:
+                    capture_plan_ready = capture_plan_report.get("ready") is True
+                    stages["renderer_external_sampler_capture_plan"] = dict(
+                        capture_plan_report
+                    )
+                    if capture_plan_ready:
+                        _write(capture_plan_path, capture_plan_report)
+                        artifacts["renderer_external_sampler_capture_plan"] = str(
+                            capture_plan_path
+                        )
+                    else:
+                        blockers.extend(
+                            f"renderer-capture-plan:{reason}"
+                            for reason in capture_plan_report.get("blocking_reasons")
+                            or ["not-ready"]
+                        )
+            if not capture_plan_ready:
+                artifacts["renderer_external_sampler_capture_plan"] = None
+                if capture_plan_path.exists():
+                    capture_plan_path.unlink()
+        else:
+            artifacts["renderer_external_sampler_capture_plan"] = None
+            if capture_plan_path.exists():
+                capture_plan_path.unlink()
+
         blockers = [reason for reason in blockers if not reason.startswith("profile:")]
         report["artifacts"] = artifacts
         report["stages"] = stages
@@ -466,13 +518,20 @@ def main(argv: list[str] | None = None) -> int:
         stages = dict(report.get("stages") or {})
     else:
         artifacts["renderer_native_scene_handoff"] = None
+        artifacts["renderer_external_sampler_capture_plan"] = None
+        if capture_plan_path.exists():
+            capture_plan_path.unlink()
 
+    boundary["phase642_capture_plan_required"] = capture_plan_required
+    boundary["phase642_capture_plan_ready"] = capture_plan_ready
     report["artifacts"] = artifacts
     report["stages"] = stages
     report["renderer_evidence_requested"] = renderer_requested
     report["renderer_evidence_ready"] = renderer_ready
     report["renderer_native_scene_requested"] = scene_handoff_requested
     report["renderer_native_scene_ready"] = scene_handoff_ready
+    report["renderer_capture_observation_required"] = capture_plan_required
+    report["renderer_capture_plan_ready"] = capture_plan_ready
     report["renderer_capture_root"] = (
         str(renderer_capture_root) if renderer_capture_root is not None else None
     )
@@ -553,6 +612,10 @@ def main(argv: list[str] | None = None) -> int:
         "renderer_evidence_ready": report["renderer_evidence_ready"],
         "renderer_native_scene_requested": report["renderer_native_scene_requested"],
         "renderer_native_scene_ready": report["renderer_native_scene_ready"],
+        "renderer_capture_observation_required": report[
+            "renderer_capture_observation_required"
+        ],
+        "renderer_capture_plan_ready": report["renderer_capture_plan_ready"],
         "renderer_capture_root": report["renderer_capture_root"],
         "renderer_frontier": report["renderer_frontier"],
         "profile_ready": report["profile_ready"],
