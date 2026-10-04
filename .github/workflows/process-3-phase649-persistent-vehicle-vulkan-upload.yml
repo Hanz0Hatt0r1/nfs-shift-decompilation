@@ -1,0 +1,71 @@
+name: process-3-phase649-persistent-vehicle-vulkan-upload
+
+on:
+  push:
+    paths:
+      - '.github/workflows/process-3-phase649-persistent-vehicle-vulkan-upload.yml'
+      - 'native_runtime/include/shift_persistent_vehicle_vulkan_upload.hpp'
+      - 'native_runtime/src/persistent_vehicle_vulkan_upload.cpp'
+      - 'native_runtime/tests/persistent_vehicle_vulkan_upload_check.cpp'
+      - 'native_runtime/cmake/phase648.cmake'
+      - 'native_runtime/cmake/phase649.cmake'
+      - 'tests/test_phase649_persistent_vehicle_vulkan_upload.py'
+      - 'docs/PHASE649_PERSISTENT_VEHICLE_VULKAN_UPLOAD.md'
+  pull_request:
+    paths:
+      - '.github/workflows/process-3-phase649-persistent-vehicle-vulkan-upload.yml'
+      - 'native_runtime/include/shift_persistent_vehicle_vulkan_upload.hpp'
+      - 'native_runtime/src/persistent_vehicle_vulkan_upload.cpp'
+      - 'native_runtime/tests/persistent_vehicle_vulkan_upload_check.cpp'
+      - 'native_runtime/cmake/phase648.cmake'
+      - 'native_runtime/cmake/phase649.cmake'
+      - 'tests/test_phase649_persistent_vehicle_vulkan_upload.py'
+      - 'docs/PHASE649_PERSISTENT_VEHICLE_VULKAN_UPLOAD.md'
+  workflow_dispatch:
+
+jobs:
+  persistent-vehicle-vulkan-upload:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Vulkan and test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake g++ libvulkan-dev glslang-tools mesa-vulkan-drivers \
+            vulkan-tools libxcb1-dev
+          python -m pip install pytest
+
+      - name: Show Vulkan devices
+        run: vulkaninfo --summary
+
+      - name: Run Phase 649 source contract regression
+        run: |
+          python -m pytest -q \
+            tests/test_phase649_persistent_vehicle_vulkan_upload.py \
+            tests/test_native_live_vehicle_vertex_buffer_upload_cpp.py
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 649 regression
+        run: |
+          cmake --build native_runtime/build --config Release --parallel \
+            --target shift_runtime_persistent_vehicle_vulkan_upload_check
+
+      - name: Execute real Vulkan Phase 706 to Phase 647 join
+        run: |
+          native_runtime/build/shift_runtime_persistent_vehicle_vulkan_upload_check \
+            | tee /tmp/phase649.json
+          grep -q '"format":"SHIFT.PersistentVehicleVulkanUpload/1"' /tmp/phase649.json
+          grep -q '"phase":649' /tmp/phase649.json
+          grep -q '"phase706_freshness_before_gpu_write":true' /tmp/phase649.json
+          grep -q '"phase647_upload_reused":true' /tmp/phase649.json
+          grep -q '"stale_generation_no_gpu_mutation":true' /tmp/phase649.json
+          grep -q '"changed_pose_no_gpu_mutation":true' /tmp/phase649.json
+          grep -q '"real_vulkan_memory_upload":true' /tmp/phase649.json
