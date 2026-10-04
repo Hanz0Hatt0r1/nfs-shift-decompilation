@@ -156,19 +156,28 @@ def test_phase642_print_stages_cli_is_machine_readable(tmp_path):
     assert result.stderr == ""
 
 
-def test_phase642_wine_wrapper_uses_existing_proxy_snapshot_controls():
+def test_phase642_wine_wrapper_uses_existing_proxy_snapshot_controls_and_preflight():
     root = Path(__file__).resolve().parents[1]
     wrapper = root / "tools" / "run_phase641_snapshot_capture_wine.sh"
     text = wrapper.read_text(encoding="utf-8")
 
     subprocess.run(["bash", "-n", str(wrapper)], check=True)
     assert "phase641_external_sampler_capture_plan.py" in text
+    assert "phase642_external_sampler_capture_result.py" in text
     assert "run_shift_capture_wine.sh" in text
     assert "SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT=1" in text
     assert "SHIFT_D3D9_CAPTURE_TEXTURE_STAGES" in text
     assert "SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR" in text
     assert 'rm -rf "$texture_dir"' in text
+    assert 'rm -f "$capture_result"' in text
     assert "forward=(--mode capture)" in text
     assert text.index("forward=(--mode capture)") < text.index('forward+=("$@")')
     assert "requires --mode capture" in text
-    assert "exec bash \"$launcher\"" in text
+    assert 'bash "$launcher" "${forward[@]}"' in text
+    assert 'exec bash "$launcher"' not in text
+    assert 'python3 "$result_validator"' in text
+    assert '--capture-root "$output"' in text
+    assert '--output "$capture_result"' in text
+    assert text.index('bash "$launcher" "${forward[@]}"') < text.index(
+        'python3 "$result_validator"'
+    )
