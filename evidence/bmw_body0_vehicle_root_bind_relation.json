@@ -1,0 +1,76 @@
+{
+  "format": "SHIFT.BMWBody0VehicleRootBindRelation/1",
+  "status": "symbolic-ready",
+  "ready": true,
+  "retail": {
+    "program_name": "SHIFT.exe",
+    "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "functions": [
+      {"address":"0x00747b90","name":"FUN_00747b90","size":36,"calling_convention":"__fastcall","mnemonic_sha256":"fda8fcb2b4d9c692033d047f34517b0b63f7f13bbcc9d63f59b57d3f6719b2cd","role":"three-double vector subtraction"},
+      {"address":"0x0075bbd0","name":"FUN_0075bbd0","size":255,"calling_convention":"__thiscall","mnemonic_sha256":"1535aa3e485c32d31b215ed14c49dc988cdf2b42ed0537d4b3794adeab08e8c3","role":"BODY0-local -> vehicle-root reverse projection"},
+      {"address":"0x007615c0","name":"FUN_007615c0","size":792,"calling_convention":"__thiscall","mnemonic_sha256":"0b2268dceb26dfaff8814b4091e50d48371b74083ac6d41e3d50da99cc036a22","role":"SDF chassis BODY selection"},
+      {"address":"0x007633b0","name":"FUN_007633b0","size":319,"calling_convention":"__thiscall","mnemonic_sha256":"34643530b03a2868818cec0b31ed9f0f03ca146df2c1e915e846b88033aaebfe","role":"HDVehicle chassis transform setter"},
+      {"address":"0x0076b280","name":"FUN_0076b280","size":7796,"calling_convention":"__thiscall","mnemonic_sha256":"9563b40c06bcc7442aabd3308eefa62e1b9f7d0bb9afe752ddf0dc068e0cd7f6","role":"offset33b producer"},
+      {"address":"0x0076df50","name":"FUN_0076df50","size":1548,"calling_convention":"__thiscall","mnemonic_sha256":"73a0d9d46d5d1bfd58068d2f72e91b77cf8c31cadb27745ba75b646901834dda","role":"HDVehicle initialization bridge"},
+      {"address":"0x007927c0","name":"FUN_007927c0","size":340,"calling_convention":"__thiscall","mnemonic_sha256":"32b16c7d280c26335f9244b4cc7f8269995e4d2608724f8b0e5c4c0c41a75561","role":"outer Vehicle transform setter"},
+      {"address":"0x007b5ac0","name":"FUN_007b5ac0","size":993,"calling_convention":"__thiscall","mnemonic_sha256":"a12aa30b38d26372e09c263d7eec1f4147e46b8e7c4245e7a8af808990d12df2","role":"connected pmodel BODY pose setter"}
+    ],
+    "required_direct_edges": [
+      {"from":"0x007927c0","instruction":"0x007928e3","to":"0x007633b0"},
+      {"from":"0x007633b0","instruction":"0x0076344f","to":"0x00747b90"},
+      {"from":"0x007633b0","instruction":"0x00763479","to":"0x007b5ac0"},
+      {"from":"0x0076df50","instruction":"0x0076e238","to":"0x007615c0"},
+      {"from":"0x0076df50","instruction":"0x0076e270","to":"0x0076b280"}
+    ]
+  },
+  "source_audit": {
+    "evidence_state": "source-backed-decompiler",
+    "scope": "audited SHIFT.exe.c semantics anchored to exact retail function fingerprints/callsites; not an instruction-level semantic proof",
+    "facts": [
+      "FUN_007927c0 forwards the same outer Vehicle position/Euler to FUN_007633b0",
+      "FUN_007633b0 computes target_BODY0_origin = vehicle_position - R(vehicle_orientation) * offset33b",
+      "FUN_007633b0 passes the same vehicle orientation to FUN_007b5ac0 for BODY0/pmodel pose",
+      "FUN_0075bbd0 converts a world point to BODY0-local and subtracts offset33b to produce vehicle-root-local output",
+      "FUN_0076b280 is the initialization producer for offset33b after SDF load"
+    ]
+  },
+  "identity_aliases": {
+    "global_HDVehicle":"0x00c13700",
+    "chassis_BODY_pointer_field":"HDVehicle+0x33a0",
+    "chassis_BODY_pointer_absolute":"0x00c16aa0",
+    "offset33b_x_field":"HDVehicle+0x33b0",
+    "offset33b_x_absolute":"0x00c16ab0",
+    "absolute_alias_equations":["0x00c13700 + 0x33a0 = 0x00c16aa0","0x00c13700 + 0x33b0 = 0x00c16ab0"]
+  },
+  "symbolic_bind_relation": {
+    "from_frame":"BODY0-local",
+    "to_frame":"outer-Vehicle-root",
+    "rotation":"identity",
+    "translation":["-HDVehicle[0x33b0]","-HDVehicle[0x33b8]","-HDVehicle[0x33c0]"],
+    "row_vector_matrix":[1,0,0,0,0,1,0,0,0,0,1,0,"-HDVehicle[0x33b0]","-HDVehicle[0x33b8]","-HDVehicle[0x33c0]",1],
+    "spawn_equation":"O_BODY0_world = P_vehicle_world - R_vehicle * offset33b",
+    "reverse_equation":"q_vehicle_root = q_BODY0_local - offset33b"
+  },
+  "gates": {
+    "retail_vehicle_transform_to_HDVehicle_spawn_bridge_ready":true,
+    "BODY0_to_outer_vehicle_root_rotation_identity_ready":true,
+    "BODY0_to_outer_vehicle_root_translation_symbolic_ready":true,
+    "BODY0_to_outer_vehicle_root_symbolic_matrix_ready":true,
+    "BMW_numeric_offset33b_ready":false,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready":false,
+    "BODY0_local_to_VHF_vehicle_root_numeric_matrix_ready":false,
+    "BODY0_bind_frame_proof_ready":false,
+    "vehicle_world_transform_ready":false
+  },
+  "remaining_blockers": [
+    {"id":"bmw-offset33b-numeric-value","required":"exact BMW HDVehicle+0x33b0/+0x33b8/+0x33c0 after FUN_0076b280, or a source-equivalent reproduction from exact BMW init inputs"},
+    {"id":"outer-vehicle-root-to-vhf-root-join","required":"retail static/source-backed consumer join proving outer Vehicle root is the VHF hierarchy vehicle-root frame (or proving the exact affine delta)"}
+  ],
+  "scope": {
+    "numeric_offset_assumed":false,
+    "identity_translation_assumed":false,
+    "outer_vehicle_root_equated_to_VHF_root":false,
+    "new_runtime_capture_used":false,
+    "original_game_executed":false
+  }
+}
