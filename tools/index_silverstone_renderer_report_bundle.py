@@ -47,6 +47,17 @@ REPORT_SPECS: tuple[dict[str, Any], ...] = (
         "required_for_production": True,
     },
     {
+        "key": "pe_evidence",
+        "format": "SHIFT.PEImageEvidence/1",
+        "output": "d3d9_pe_evidence.json",
+        "required_for_production": False,
+        # PE evidence is an optional playable-bootstrap input.  Distinct bundle
+        # payloads remain AMBIGUOUS and are never normalized, but must not make
+        # an explicitly supplied PE selector fail merely because a cross-check
+        # bundle also carries unrelated PE variants.
+        "ambiguity_blocks_index": False,
+    },
+    {
         "key": "object_candidate_join",
         "format": "SHIFT.SGBRuntimeObjectCandidateJoin/1",
         "output": "silverstone_sgb_runtime_object_candidate_join.json",
@@ -215,9 +226,10 @@ def index_report_bundles(
                 blockers.append(f"report:{spec['key']}:missing-from-bundles")
         elif len(identities) > 1:
             status = "ambiguous-distinct-payloads"
-            blockers.append(
-                f"report:{spec['key']}:ambiguous-distinct-canonical-payloads:{len(identities)}"
-            )
+            if spec.get("ambiguity_blocks_index", True):
+                blockers.append(
+                    f"report:{spec['key']}:ambiguous-distinct-canonical-payloads:{len(identities)}"
+                )
         else:
             status = (
                 "exact-single-occurrence"
@@ -248,6 +260,7 @@ def index_report_bundles(
             "key": spec["key"],
             "format": report_format,
             "required_for_production": spec["required_for_production"],
+            "ambiguity_blocks_index": spec.get("ambiguity_blocks_index", True),
             "status": status,
             "occurrence_count": len(hits),
             "distinct_canonical_payload_count": len(identities),
@@ -296,6 +309,7 @@ def index_report_bundles(
             "runtime_shader_targets": normalized_outputs.get("runtime_shader_targets"),
             "draw_local": normalized_outputs.get("draw_local"),
             "capture_pipeline": normalized_outputs.get("capture_pipeline"),
+            "pe_evidence": normalized_outputs.get("pe_evidence"),
             "object_candidate_join": normalized_outputs.get("object_candidate_join"),
         },
         "boundary": {
