@@ -16,3 +16,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_global_vehicle_body_owner_selection
     COMMAND shift_runtime_global_vehicle_body_owner_selection_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase704.cmake)
