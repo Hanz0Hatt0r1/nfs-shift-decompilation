@@ -1,0 +1,28 @@
+name: Process 1 BODY0 vehicle-root bind relation
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/build_bmw_body0_vehicle_root_bind_relation.py'
+      - 'tests/test_ghidra_bmw_body0_vehicle_root_bind_relation.py'
+      - 'evidence/bmw_body0_vehicle_root_bind_relation.json'
+      - 'docs/PROCESS_1_BMW_BODY0_VEHICLE_ROOT_BIND_RELATION.md'
+      - '.github/workflows/process1-body0-vehicle-root-bind-relation.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/build_bmw_body0_vehicle_root_bind_relation.py'
+      - 'tests/test_ghidra_bmw_body0_vehicle_root_bind_relation.py'
+      - 'evidence/bmw_body0_vehicle_root_bind_relation.json'
+      - 'docs/PROCESS_1_BMW_BODY0_VEHICLE_ROOT_BIND_RELATION.md'
+      - '.github/workflows/process1-body0-vehicle-root-bind-relation.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_ghidra_bmw_body0_vehicle_root_bind_relation.py
