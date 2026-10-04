@@ -19,7 +19,7 @@ FORMAT = "SHIFT.GhidraRegisterRelativeAccesses/1"
 INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
 _GENERAL_REGISTERS = {"EAX", "EBX", "ECX", "EDX", "ESI", "EDI", "EBP", "ESP"}
 _MEMORY_OPERAND = re.compile(
-    r"^\s*(?:(?:byte|word|dword|qword|tword|xmmword)\s+ptr\s+)?"
+    r"^\s*(?:(?:byte|word|dword|qword|tword|xmmword|float|double)\s+ptr\s+)?"
     r"\[\s*([A-Za-z][A-Za-z0-9]*)\s*"
     r"(?:([+-])\s*(0x[0-9A-Fa-f]+|[0-9]+))?\s*\]\s*$",
     re.IGNORECASE,
