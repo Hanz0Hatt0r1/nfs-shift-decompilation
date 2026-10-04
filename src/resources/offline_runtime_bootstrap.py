@@ -219,13 +219,15 @@ def build_offline_runtime_bootstrap(
                 resources_dir / "vehicle_physics_bundle_report.json",
                 native_vehicle_dir,
             )
-            if participant_observation_path is None:
-                native_vehicle = build_native_vehicle_files(*vehicle_args)
-            else:
-                native_vehicle = build_native_vehicle_files(
-                    *vehicle_args,
-                    participant_observation_path=participant_observation_path,
-                )
+            vehicle_kwargs: dict[str, Any] = {
+                "typed_closure_path": resources_dir / "typed_resource_closure.json",
+            }
+            if participant_observation_path is not None:
+                vehicle_kwargs["participant_observation_path"] = participant_observation_path
+            native_vehicle = build_native_vehicle_files(
+                *vehicle_args,
+                **vehicle_kwargs,
+            )
         except (OSError, RuntimeError, ValueError) as exc:
             native_vehicle = _blocked_native_vehicle(
                 [f"native-vehicle-build-error:{type(exc).__name__}:{exc}"]
@@ -252,6 +254,11 @@ def build_offline_runtime_bootstrap(
     )
     participant_runtime_identity_ready = (
         native_vehicle.get("participant_runtime_identity_ready") is True
+    )
+    vehicle_physics_manifest = native_vehicle.get("vehicle_physics_manifest") or {}
+    physics_materialized_resources_ready = bool(
+        isinstance(vehicle_physics_manifest, Mapping)
+        and vehicle_physics_manifest.get("materialized_resources_ready") is True
     )
     runtime_scene_ready = native_scene.get("native_scene_runtime_ready") is True
     runtime_vehicle_ready = native_vehicle.get("native_vehicle_runtime_ready") is True
@@ -342,6 +349,12 @@ def build_offline_runtime_bootstrap(
         ),
     }
     native_vehicle_artifacts = native_vehicle.get("artifacts") or {}
+    if isinstance(native_vehicle_artifacts, Mapping):
+        for name in ("vehicle_physics_manifest", "native_physics_manifest"):
+            row = native_vehicle_artifacts.get(name)
+            if isinstance(row, Mapping) and row.get("path"):
+                artifacts[name] = str(row["path"])
+
     participant_runtime_artifact = (
         native_vehicle_artifacts.get("participant_runtime_evidence")
         if isinstance(native_vehicle_artifacts, Mapping)
@@ -354,6 +367,12 @@ def build_offline_runtime_bootstrap(
         artifacts["participant_runtime_evidence"] = str(
             participant_runtime_artifact["path"]
         )
+
+    if isinstance(vehicle_physics_manifest, Mapping):
+        entries = vehicle_physics_manifest.get("entries") or {}
+        sdf_entry = entries.get("sdf") if isinstance(entries, Mapping) else None
+        if isinstance(sdf_entry, Mapping) and sdf_entry.get("materialized_path"):
+            artifacts["vehicle_sdf"] = str(sdf_entry["materialized_path"])
 
     report = {
         "format": FORMAT,
@@ -372,6 +391,9 @@ def build_offline_runtime_bootstrap(
             "scene_ir_ready": scene_ir_ready,
             "static_scene_ready": static_scene_ready,
             "vehicle_resource_ready": vehicle_resource_ready,
+            "vehicle_physics_materialized_resources_ready": (
+                physics_materialized_resources_ready
+            ),
             "vehicle_participant_structural_ready": participant_structural_ready,
             "vehicle_participant_runtime_identity_evaluated": (
                 participant_runtime_identity_evaluated
@@ -406,6 +428,8 @@ def build_offline_runtime_bootstrap(
             "scene_root_selected_by_bootstrap_resource_id": True,
             "scene_ir_legacy_dependency_hints_are_admission_proof": False,
             "exact_scene_resource_closure_required_by_native_scene_stage": True,
+            "vehicle_physics_materialized_paths_require_exact_typed_closure": True,
+            "vehicle_sdf_artifact_claims_body_semantics": False,
             "static_scene_promoted_to_runtime_draw_proof": False,
             "vehicle_participant_structural_boundary_required": True,
             "participant_runtime_identity_requires_exact_observation": True,
