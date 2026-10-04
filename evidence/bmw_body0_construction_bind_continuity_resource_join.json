@@ -1,0 +1,90 @@
+{
+  "format": "SHIFT.BMWBody0ConstructionBindContinuity/1",
+  "version": 1,
+  "status": "static-continuity-proven",
+  "ready": true,
+  "retail_identity": {
+    "program_name": "SHIFT.exe",
+    "executable_md5": "705af8b420e5eb1e3834ac43d5533c6b",
+    "functions": [
+      {"address": "0x007b6900", "name": "FUN_007b6900", "role": "SDF BODY loader", "mnemonic_sha256": "154593816d7647c6cd8a0ee37b96e92c38cd78b318bd16cdbfcefb7bca3aba81"},
+      {"address": "0x007b3670", "name": "FUN_007b3670", "role": "persistent BODY builder", "mnemonic_sha256": "bcf42f221ca37b7ee8f907b0783fc8da894ecc3528e86506f6d58e448a0953d3"},
+      {"address": "0x007bbb10", "name": "FUN_007bbb10", "role": "BODY orientation descriptor copy", "mnemonic_sha256": "345f993d42c3338af314e48791796449516286b95ccdc40a7d188590fc091238"},
+      {"address": "0x007b00a0", "name": "FUN_007b00a0", "role": "BODY orientation -> 3x3 basis builder", "mnemonic_sha256": "1571bec085d38a85854dba34ab5e2f92d890ddbb4ea9e51c8d55e110d8e41d54"}
+    ],
+    "required_direct_edges": [
+      {"from": "0x007b6900", "instruction": "0x007b6e8f", "to": "0x007b3670"},
+      {"from": "0x007b3670", "instruction": "0x007b37c8", "to": "0x007bbb10"},
+      {"from": "0x007bbb10", "instruction": "0x007bbb3a", "to": "0x007b00a0"},
+      {"from": "0x007b00a0", "instruction": "0x007b00b5", "to": "0x00900c40"},
+      {"from": "0x007b00a0", "instruction": "0x007b00c6", "to": "0x00900b10"},
+      {"from": "0x007b00a0", "instruction": "0x007b00dd", "to": "0x00900c40"},
+      {"from": "0x007b00a0", "instruction": "0x007b00ee", "to": "0x00900b10"},
+      {"from": "0x007b00a0", "instruction": "0x007b0105", "to": "0x00900c40"},
+      {"from": "0x007b00a0", "instruction": "0x007b0116", "to": "0x00900b10"}
+    ]
+  },
+  "bmw_intake": {
+    "archive": {"filename": "BMW_M3_E36.bff", "size_bytes": 18934688, "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70", "note": "archive SHA-256 measured from the retail BMW archive"},
+    "sdf_entry": {"index": 1091, "path": "vehicles/physics/suspension/aarm_multilink.sdf", "compression_type": 2, "compressed_size": 1110, "uncompressed_size": 5056, "decoded_sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed"},
+    "body_count": 11,
+    "body_index": 0,
+    "body_name": "body"
+  },
+  "source_static_proof": {
+    "evidence_state": "proven-static",
+    "source_basis": "audited SHIFT.exe.c decompilation plus raw IA-32, anchored to exact retail function fingerprints and callsites",
+    "descriptor_layout": {"pos": ["+0x0", "+0x8", "+0x10"], "rot": ["+0x18", "+0x20", "+0x28"], "vel": ["+0x78", "+0x80", "+0x88"], "name": ["+0x100"], "ori": ["+0x108", "+0x110", "+0x118"], "mass": ["+0x120"], "inertia": ["+0x128", "+0x12c", "+0x130"]},
+    "runtime_layout": {"origin": ["+0x0", "+0x8", "+0x10"], "orientation_cache": ["+0x108", "+0x110", "+0x118"], "basis": ["+0xd4", "+0xd8", "+0xdc", "+0xe0", "+0xe4", "+0xe8", "+0xec", "+0xf0", "+0xf4"]},
+    "continuity": [
+      {"source_field": "BODY.pos", "descriptor_offsets": ["+0x0", "+0x8", "+0x10"], "runtime_field": "persistent_BODY.origin", "runtime_offsets": ["+0x0", "+0x8", "+0x10"], "producer": "FUN_007b6900", "consumer": "FUN_007b3670", "machine_witness": "FUN_007b3670 qword copies at 0x007b3797..0x007b37b1"},
+      {"source_field": "BODY.ori", "descriptor_offsets": ["+0x108", "+0x110", "+0x118"], "runtime_field": "persistent_BODY.basis", "runtime_offsets": ["+0xd4", "+0xd8", "+0xdc", "+0xe0", "+0xe4", "+0xe8", "+0xec", "+0xf0", "+0xf4"], "producer": "FUN_007b6900", "copy_helper": "FUN_007bbb10", "basis_builder": "FUN_007b00a0", "machine_witness": "0x007bbb21 pushes BODY.ori pointer while ECX=BODY+0xd4 before 0x007bbb3a -> FUN_007b00a0"}
+    ],
+    "phase424_group_resolution": {"group_a": "BODY.ori", "group_b": "BODY.rot"},
+    "basis_builder": {"function": "FUN_007b00a0", "input": "three f64 BODY.ori scalars at +0x00/+0x08/+0x10 of the supplied vector", "output": "nine f32 basis scalars at BODY +0xd4..+0xf4", "trig_helpers": {"0x00900c40": "x87 fsin", "0x00900b10": "x87 fcos"}, "zero_orientation_identity_exact": true}
+  },
+  "resource_BODY0": {
+    "available": true,
+    "path": "vehicles/physics/suspension/aarm_multilink.sdf",
+    "sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed",
+    "body_index": 0,
+    "body_name": "body",
+    "pos": [0.0, 0.0, 0.0],
+    "ori": [0.0, 0.0, 0.0],
+    "ori_is_exact_zero": true,
+    "basis_ready": true,
+    "basis": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+    "body0_local_to_sdf_model_row_matrix_ready": true,
+    "body0_local_to_sdf_model_row_matrix": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  },
+  "resource_materialization_evidence": {
+    "format": "SHIFT.BMWBody0BindResourceMaterialization/1",
+    "path": "evidence/bmw_body0_bind_resource_materialization.json",
+    "archive_sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "decoded_sdf_sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed"
+  },
+  "handoff": {
+    "BODY_descriptor_pos_ori_semantics_ready": true,
+    "construction_origin_continuity_ready": true,
+    "construction_basis_continuity_ready": true,
+    "BODY0_resource_pos_ori_values_ready": true,
+    "BODY0_local_to_SDF_model_bind_pose_ready": true,
+    "SDF_model_to_VHF_vehicle_root_frame_relation_ready": false,
+    "BODY0_bind_frame_proof_ready": false,
+    "vehicle_world_transform_ready": false
+  },
+  "blockers": [
+    {"id": "SDF-model-to-VHF-vehicle-root-frame-relation-unproven", "status": "unknown", "required_evidence": "prove the static frame relation between the SDF model construction frame and the VHF vehicle-root/assembly frame; do not assume equality from naming or zero BODY0 pose alone"}
+  ],
+  "scope": {
+    "original_game_executed": false,
+    "new_runtime_capture_required": false,
+    "identity_matrix_assumed": false,
+    "SDF_model_frame_assumed_equal_VHF_vehicle_root": false,
+    "construction_bind_continuity_proven": true,
+    "final_BODY0_to_VHF_bind_relation_proven": false,
+    "resource_materialization_evidence_consumed": true,
+    "raw_retail_archive_committed": false,
+    "raw_decoded_sdf_committed": false
+  }
+}

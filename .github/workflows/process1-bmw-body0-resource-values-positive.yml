@@ -1,0 +1,35 @@
+name: Process 1 BMW BODY0 positive resource values
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/promote_bmw_body0_construction_bind_resource.py'
+      - 'tests/test_ghidra_promote_bmw_body0_construction_bind_resource.py'
+      - 'evidence/bmw_body0_bind_resource_materialization.json'
+      - 'evidence/bmw_body0_construction_bind_continuity_resource_join.json'
+      - 'docs/PROCESS_1_BMW_BODY0_RESOURCE_VALUES_POSITIVE.md'
+      - '.github/workflows/process1-bmw-body0-resource-values-positive.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/promote_bmw_body0_construction_bind_resource.py'
+      - 'tests/test_ghidra_promote_bmw_body0_construction_bind_resource.py'
+      - 'evidence/bmw_body0_bind_resource_materialization.json'
+      - 'evidence/bmw_body0_construction_bind_continuity_resource_join.json'
+      - 'docs/PROCESS_1_BMW_BODY0_RESOURCE_VALUES_POSITIVE.md'
+      - '.github/workflows/process1-bmw-body0-resource-values-positive.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run BODY0 resource promotion regressions
+        run: python -m pytest -q tests/test_ghidra_promote_bmw_body0_construction_bind_resource.py
+      - name: Verify committed evidence is valid JSON
+        run: >-
+          python -m json.tool evidence/bmw_body0_bind_resource_materialization.json >/dev/null &&
+          python -m json.tool evidence/bmw_body0_construction_bind_continuity_resource_join.json >/dev/null
