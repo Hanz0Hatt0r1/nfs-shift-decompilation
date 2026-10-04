@@ -2,7 +2,7 @@
 
 This contract composes only already-recovered CameraManager control-flow facts.
 It deliberately does not identify any camera source object as the BMW/player
-vehicle follow camera.  Instead it narrows that remaining proof to the exact
+vehicle follow camera. Instead it narrows that remaining proof to the exact
 mode-2 source lane and the two source virtual-call boundaries that must be joined
 to a proven retail vehicle identity/transform before native camera-follow wiring
 can be admitted.
@@ -12,67 +12,73 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 FORMAT = "SHIFT.CameraFollowSourceFrontier/1"
+WORLD_HANDOFF_FORMAT = "SHIFT.NativeBMWVehicleWorldMatrixRuntimeHandoff/1"
 PERSISTENT_TRANSFORM_FORMAT = "SHIFT.PersistentBMWVehicleWorldTransform/1"
 REQUEST_PROCESS1 = "request_process1_static_proof"
 
 
 def _vehicle_transform_state(
-    persistent_transform: Mapping[str, Any] | None,
+    world_handoff: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
-    if persistent_transform is None:
+    """Evaluate only the existing Phase 705 semantic world-matrix contract.
+
+    Freshness remains a separate camera scheduling proof.  Phase 706/649 already
+    provide the persistent/freshness-checked renderer transport infrastructure,
+    but this frontier must not manufacture a current retail matrix from it while
+    Phase 705 still reports the BODY0 bind gate open.
+    """
+    if world_handoff is None:
         return {
             "evaluated": False,
             "format_valid": False,
             "current_retail_identity_ready": False,
+            "current_retail_BODY0_bind_ready": False,
             "current_retail_world_matrix_ready": False,
-            "fresh": False,
+            "persistent_vulkan_transport_available": False,
             "ready_for_camera_source_join": False,
             "blocking_reasons": [
-                "camera-follow:persistent-retail-vehicle-transform-not-supplied"
+                "camera-follow:retail-vehicle-world-matrix-handoff-not-supplied"
             ],
         }
 
     blockers: list[str] = []
-    if persistent_transform.get("format") != PERSISTENT_TRANSFORM_FORMAT:
-        blockers.append("camera-follow:persistent-transform-invalid-format")
-    retail_identity_ready = (
-        persistent_transform.get("current_retail_identity_ready") is True
-    )
-    world_ready = (
-        persistent_transform.get("current_retail_world_matrix_ready") is True
-    )
+    format_valid = world_handoff.get("format") == WORLD_HANDOFF_FORMAT
+    if not format_valid:
+        blockers.append("camera-follow:vehicle-world-matrix-handoff-invalid-format")
 
-    freshness = persistent_transform.get("freshness")
-    if isinstance(freshness, Mapping):
-        fresh = freshness.get("fresh") is True
-    else:
-        # Older Phase 706 reports expose the state at top level.  Absence of an
-        # explicit freshness proof is never treated as fresh.
-        fresh = persistent_transform.get("fresh") is True
+    retail_identity_ready = world_handoff.get("current_retail_identity_ready") is True
+    body0_bind_ready = world_handoff.get("current_retail_BODY0_bind_ready") is True
+    world_ready = world_handoff.get("current_retail_world_matrix_ready") is True
+    persistent_transport_available = (
+        world_handoff.get("phase649_persistent_vulkan_upload_available") is True
+    )
 
     if not retail_identity_ready:
         blockers.append("camera-follow:retail-vehicle-identity-not-ready")
+    if not body0_bind_ready:
+        blockers.append("camera-follow:retail-BODY0-bind-not-ready")
     if not world_ready:
         blockers.append("camera-follow:retail-vehicle-world-matrix-not-ready")
-    if not fresh:
-        blockers.append("camera-follow:persistent-transform-not-proven-fresh")
+    if not persistent_transport_available:
+        blockers.append("camera-follow:persistent-world-transform-transport-not-ready")
 
     return {
         "evaluated": True,
-        "format_valid": persistent_transform.get("format") == PERSISTENT_TRANSFORM_FORMAT,
+        "format_valid": format_valid,
         "current_retail_identity_ready": retail_identity_ready,
+        "current_retail_BODY0_bind_ready": body0_bind_ready,
         "current_retail_world_matrix_ready": world_ready,
-        "fresh": fresh,
+        "persistent_vulkan_transport_available": persistent_transport_available,
         "ready_for_camera_source_join": not blockers,
         "blocking_reasons": blockers,
     }
 
 
 def build_camera_follow_source_frontier(
-    persistent_transform: Mapping[str, Any] | None = None,
+    world_handoff: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return the strongest currently justified camera-follow source frontier."""
-    transform_state = _vehicle_transform_state(persistent_transform)
+    transform_state = _vehicle_transform_state(world_handoff)
 
     source_lanes = [
         {
@@ -163,6 +169,10 @@ def build_camera_follow_source_frontier(
         },
     ]
 
+    # None of these source semantics is positive yet.  Keeping the booleans
+    # literal makes accidental admission impossible even if a caller supplies a
+    # future-positive Phase 705 world-matrix contract before Process 1 closes the
+    # camera source identity itself.
     static_source_ready = False
     timing_ready = False
     native_follow_ready = (
@@ -201,13 +211,13 @@ def build_camera_follow_source_frontier(
             "candidate_only": True,
         },
         "source_lanes": source_lanes,
-        "persistent_vehicle_transform": transform_state,
+        "vehicle_world_matrix_handoff": transform_state,
         "proof_state": {
             "mode2_runtime_argument_vehicle_identity_ready": False,
             "mode2_source_vtable_identity_ready": False,
             "mode2_vehicle_pose_dependency_ready": False,
             "camera_follow_update_order_ready": False,
-            "persistent_retail_vehicle_transform_ready": transform_state[
+            "retail_vehicle_world_matrix_ready": transform_state[
                 "ready_for_camera_source_join"
             ],
         },
@@ -222,7 +232,8 @@ def build_camera_follow_source_frontier(
                 "mode-2 concrete source vtable identity (+0x90/+0x64)",
                 "mode-2 source -> retail vehicle pose dependency",
                 "retail vehicle update -> camera update ordering/freshness",
-                PERSISTENT_TRANSFORM_FORMAT + " fresh current retail world matrix",
+                WORLD_HANDOFF_FORMAT + " current retail world matrix",
+                PERSISTENT_TRANSFORM_FORMAT + " freshness-checked transport",
             ],
         },
         "evidence": {
@@ -235,12 +246,15 @@ def build_camera_follow_source_frontier(
             "controller_source_store": "CameraManager+0x2568",
             "source_manager_back_reference": "camera_source+0x44 = manager",
             "controller_source_vfunc": "+0x64()",
+            "phase705_world_matrix_contract": WORLD_HANDOFF_FORMAT,
+            "phase706_persistent_transport_contract": PERSISTENT_TRANSFORM_FORMAT,
         },
         "boundary": {
             "mode2_tracking_label_promoted_to_player_vehicle_follow_proof": False,
             "camera_source_pointer_invented": False,
             "camera_source_vtable_invented": False,
             "native_vehicle_world_matrix_substituted_for_retail_source": False,
+            "phase706_transport_promoted_to_camera_timing_proof": False,
             "retail_update_cadence_inferred_from_native_fixed_step": False,
             "camera_math_inferred": False,
             "runtime_execution_claimed": False,
