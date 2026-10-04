@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Resolve FUN_007b7840 stack argument values at every proven retail callsite.
+"""Resolve FUN_007b7840 stack argument values at every proven callsite.
 
 Consumes SHIFT.BMWBody0BindPoseWriterABI/1 from Process 1 #1210 and targeted
-SHIFT.GhidraFunctionInstructions/2 rows.  For every ABI stack slot this pass
+SHIFT.GhidraFunctionInstructions/2 rows. For every ABI stack slot this pass
 walks the unique machine predecessor chain backwards from the exact CALL,
 identifies the corresponding IA-32 PUSH, and resolves register PUSH operands to
-their nearest unambiguous MOV/LEA producer on that same linear lane.
+their nearest older MOV/LEA producer on the same machine lane.
 
-This is mechanical value provenance only.  It does not assign BODY/origin/basis
+This is mechanical value provenance only. It does not assign BODY/origin/basis
 semantics to any parameter and does not promote FUN_007b7840 to a bind
 initializer.
 """
@@ -94,7 +94,6 @@ def _function_rows(path: Path) -> dict[str, list[dict[str, Any]]]:
         _require(row.get("instruction_count") == len(instructions), f"{address}: instruction_count mismatch")
         previous = -1
         seen: set[str] = set()
-        normalized: list[dict[str, Any]] = []
         for ordinal, instruction in enumerate(instructions):
             _require(isinstance(instruction, dict), f"{address}: instruction {ordinal} is not object")
             ins_address = _addr(instruction.get("address"), field="instruction.address")
@@ -103,14 +102,12 @@ def _function_rows(path: Path) -> dict[str, list[dict[str, Any]]]:
             _require(ins_address not in seen, f"{address}: duplicate instruction {ins_address}")
             previous = numeric
             seen.add(ins_address)
-            normalized.append(instruction)
-        result[address] = normalized
+        result[address] = instructions
     return result
 
 
 def _direct_target(instruction: dict[str, Any]) -> str | None:
-    values = list(instruction.get("flows") or []) + list(instruction.get("operands") or [])
-    for value in values:
+    for value in list(instruction.get("flows") or []) + list(instruction.get("operands") or []):
         if not isinstance(value, str):
             continue
         try:
@@ -177,24 +174,20 @@ def _first_operand_writes_register(instruction: dict[str, Any], register: str) -
 def _writes_esp(instruction: dict[str, Any]) -> bool:
     mnemonic = str(instruction.get("mnemonic") or "").upper()
     operands = _ops(instruction)
-    if mnemonic == "PUSH":
+    if mnemonic in {"PUSH", "POP"}:
         return True
-    if mnemonic == "POP":
-        return True
-    if operands and operands[0] == "ESP" and mnemonic not in _READ_ONLY_FIRST_OPERAND:
-        return True
-    return False
+    return bool(operands and operands[0] == "ESP" and mnemonic not in _READ_ONLY_FIRST_OPERAND)
 
 
-def _resolve_register_source(
+def _find_register_source(
     register: str,
-    lane_newest_to_oldest: list[dict[str, Any]],
-) -> dict[str, Any]:
+    older_lane: list[dict[str, Any]],
+) -> dict[str, Any] | None:
     _require(register in _GENERAL_REGISTERS and register != "ESP", f"unsupported pushed register {register}")
-    for instruction in lane_newest_to_oldest:
+    for instruction in older_lane:
         mnemonic = str(instruction.get("mnemonic") or "").upper()
         address = _addr(instruction.get("address"), field="producer.address")
-        if "CALL" in str(instruction.get("flow_type") or "").upper() or mnemonic == "CALL":
+        if mnemonic == "CALL" or "CALL" in str(instruction.get("flow_type") or "").upper():
             raise ValueError(f"{address}: CALL blocks register value provenance for {register}")
         if not _first_operand_writes_register(instruction, register):
             continue
@@ -203,14 +196,17 @@ def _resolve_register_source(
             mnemonic in {"MOV", "LEA"} and len(operands) == 2,
             f"{address}: unsupported {register} writer {mnemonic}",
         )
+        source = operands[1]
+        _require(source not in _GENERAL_REGISTERS, f"{address}: transitive register source {source} remains unresolved")
+        _require("ESP" not in source, f"{address}: ESP-relative source remains stack-position dependent")
         return {
             "producer_instruction": address,
             "producer_mnemonic": mnemonic,
-            "producer_operand": operands[1],
-            "value_expression": operands[1],
+            "producer_operand": source,
+            "value_expression": source,
             "value_provenance_ready": True,
         }
-    raise ValueError(f"no unique MOV/LEA producer found for pushed register {register}")
+    return None
 
 
 def _validate_abi(abi: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -266,6 +262,20 @@ def _validate_abi(abi: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[
     return normalized_callsites, normalized_worklist
 
 
+def _all_register_push_sources_ready(
+    pushes: list[dict[str, Any]],
+    lane: list[dict[str, Any]],
+) -> bool:
+    for push in pushes:
+        operand = push["push_operand"]
+        if operand not in _GENERAL_REGISTERS:
+            continue
+        source = _find_register_source(operand, lane[push["lane_index"] + 1 :])
+        if source is None:
+            return False
+    return True
+
+
 def _trace_callsite(
     caller: str,
     callsite: str,
@@ -283,52 +293,54 @@ def _trace_callsite(
     pushes: list[dict[str, Any]] = []
     lane: list[dict[str, Any]] = []
     current = callsite
+
     for _ in range(MAX_BACKWARD_INSTRUCTIONS):
         incoming = predecessors.get(current, [])
         _require(len(incoming) == 1, f"{caller}:{current}: predecessor count {len(incoming)} blocks stack proof")
         previous = incoming[0]
         instruction = by_address[previous]
-        lane.append(instruction)
         mnemonic = str(instruction.get("mnemonic") or "").upper()
         flow_type = str(instruction.get("flow_type") or "").upper()
         if mnemonic == "CALL" or "CALL" in flow_type:
-            raise ValueError(f"{caller}:{previous}: CALL encountered before stack worklist resolved")
-        if mnemonic == "PUSH":
+            raise ValueError(f"{caller}:{previous}: CALL encountered before stack provenance resolved")
+
+        lane.append(instruction)
+        if mnemonic == "PUSH" and len(pushes) < needed_pushes:
             operands = _ops(instruction)
             _require(len(operands) == 1, f"{caller}:{previous}: malformed PUSH")
-            push_index = len(pushes) + 1
-            stack_offset = push_index * WORD_SIZE
-            operand = operands[0]
-            source: dict[str, Any]
-            if operand in _GENERAL_REGISTERS:
-                # Only instructions older than this PUSH can define its input.
-                source = _resolve_register_source(operand, lane[1:])
-            else:
-                source = {
-                    "producer_instruction": previous,
-                    "producer_mnemonic": "PUSH",
-                    "producer_operand": operand,
-                    "value_expression": operand,
-                    "value_provenance_ready": True,
-                }
             pushes.append(
                 {
                     "push_instruction": previous,
-                    "push_operand": operand,
-                    "callee_stack_offset": stack_offset,
-                    "callee_stack_offset_hex": f"0x{stack_offset:x}",
-                    **source,
+                    "push_operand": operands[0],
+                    "lane_index": len(lane) - 1,
+                    "callee_stack_offset": len(pushes) * WORD_SIZE + WORD_SIZE,
                 }
             )
-            if len(pushes) >= needed_pushes:
-                break
-        elif _writes_esp(instruction):
+        elif len(pushes) < needed_pushes and _writes_esp(instruction):
             raise ValueError(f"{caller}:{previous}: unsupported ESP mutation before stack worklist resolved")
+
+        if len(pushes) >= needed_pushes and _all_register_push_sources_ready(pushes, lane):
+            break
         current = previous
     else:
         raise ValueError(f"{caller}:{callsite}: backward stack proof exceeded instruction bound")
 
-    by_offset = {row["callee_stack_offset"]: row for row in pushes}
+    by_offset: dict[int, dict[str, Any]] = {}
+    for push in pushes:
+        operand = push["push_operand"]
+        if operand in _GENERAL_REGISTERS:
+            source = _find_register_source(operand, lane[push["lane_index"] + 1 :])
+            _require(source is not None, f"{caller}:{push['push_instruction']}: register source unresolved")
+        else:
+            source = {
+                "producer_instruction": push["push_instruction"],
+                "producer_mnemonic": "PUSH",
+                "producer_operand": operand,
+                "value_expression": operand,
+                "value_provenance_ready": True,
+            }
+        by_offset[push["callee_stack_offset"]] = {**push, **source}
+
     resolved_slots: list[dict[str, Any]] = []
     for requested in stack_worklist:
         offset = requested["stack_offset"]
@@ -356,6 +368,7 @@ def _trace_callsite(
         "callsite": callsite,
         "target": POSE_WRITER,
         "unique_predecessor_stack_lane_proven": True,
+        "backward_lane_instruction_count": len(lane),
         "resolved_stack_slot_count": len(resolved_slots),
         "resolved_stack_slots": resolved_slots,
         "stack_parameter_value_provenance_ready": True,
@@ -423,18 +436,9 @@ def analyze_bmw_body0_bind_stack_value_provenance(
             ),
         },
         "blockers": [
-            {
-                "id": "pose-writer-parameter-semantic-roles-unproven",
-                "evidence_state": "unknown",
-            },
-            {
-                "id": "BODY0-pointer-at-bind-callsite-unproven",
-                "evidence_state": "unknown",
-            },
-            {
-                "id": "bind-origin-basis-value-provenance-unproven",
-                "evidence_state": "unknown",
-            },
+            {"id": "pose-writer-parameter-semantic-roles-unproven", "evidence_state": "unknown"},
+            {"id": "BODY0-pointer-at-bind-callsite-unproven", "evidence_state": "unknown"},
+            {"id": "bind-origin-basis-value-provenance-unproven", "evidence_state": "unknown"},
         ],
         "scope": {
             "stack_slot_location_inferred_from_call_order_without_ABI": False,
