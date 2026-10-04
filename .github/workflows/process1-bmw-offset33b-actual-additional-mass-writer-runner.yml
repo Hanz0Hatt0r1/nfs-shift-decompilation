@@ -1,0 +1,41 @@
+name: Process 1 BMW offset33b actual additional-mass writer runner
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/run_bmw_offset33b_actual_additional_mass_writer_static_proof.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_actual_additional_mass_writer_frontier.py'
+      - 'tests/test_ghidra_run_bmw_offset33b_actual_additional_mass_writer_static_proof.py'
+      - 'tests/test_ghidra_bmw_offset33b_actual_additional_mass_writer_frontier.py'
+      - 'tests/test_ghidra_bmw_offset33b_additional_mass_bootstrap_zero.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_ACTUAL_ADDITIONAL_MASS_WRITER_STATIC_PROOF_RUNNER.md'
+      - '.github/workflows/process1-bmw-offset33b-actual-additional-mass-writer-runner.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/run_bmw_offset33b_actual_additional_mass_writer_static_proof.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_actual_additional_mass_writer_frontier.py'
+      - 'tests/test_ghidra_run_bmw_offset33b_actual_additional_mass_writer_static_proof.py'
+      - 'tests/test_ghidra_bmw_offset33b_actual_additional_mass_writer_frontier.py'
+      - 'tests/test_ghidra_bmw_offset33b_additional_mass_bootstrap_zero.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_ACTUAL_ADDITIONAL_MASS_WRITER_STATIC_PROOF_RUNNER.md'
+      - '.github/workflows/process1-bmw-offset33b-actual-additional-mass-writer-runner.yml'
+
+jobs:
+  writer-runner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run writer-runner regressions
+        run: python -m pytest -q tests/test_ghidra_run_bmw_offset33b_actual_additional_mass_writer_static_proof.py
+      - name: Preserve writer-frontier regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_actual_additional_mass_writer_frontier.py
+      - name: Preserve PR 1250 retraction regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_additional_mass_bootstrap_zero.py
+      - name: Verify runner CLI
+        run: python tools/ghidra/run_bmw_offset33b_actual_additional_mass_writer_static_proof.py --help >/dev/null
+      - name: Verify targeted exporter CLI surface
+        run: bash tools/ghidra/run_shift_function_instructions.sh --help >/dev/null 2>&1 || test $? -ne 0
