@@ -87,6 +87,7 @@ def _fixture(tmp_path: Path, *, values_ready: bool = True):
                     {
                         "function": m.BODY_BUILDER,
                         "instruction": "0x007b3797",
+                        "pose_fields_touched": ["origin+0x0"],
                         "persistent_BODY_target_identity_proven": False,
                         "BODY0_identity_proven": False,
                     }
@@ -176,6 +177,25 @@ def test_rejects_incomplete_pose_store_discovery(tmp_path: Path):
     payload["handoff"]["construction_pose_store_discovery_complete"] = False
     _write_json(pose, payload)
     with pytest.raises(ValueError, match="discovery is incomplete"):
+        m.build_bmw_body0_construction_target_identity(ghidra, intake, pose, continuity)
+
+
+def test_rejects_non_builder_origin_candidate(tmp_path: Path):
+    m, ghidra, intake, pose, continuity = _fixture(tmp_path)
+    payload = json.loads(pose.read_text())
+    candidate = payload["analysis"]["object_base_pose_store_candidates"][0]
+    candidate["function"] = m.ORI_HELPER
+    _write_json(pose, payload)
+    with pytest.raises(ValueError, match="BODY builder origin pose-store candidate is missing"):
+        m.build_bmw_body0_construction_target_identity(ghidra, intake, pose, continuity)
+
+
+def test_rejects_builder_candidate_without_origin_store(tmp_path: Path):
+    m, ghidra, intake, pose, continuity = _fixture(tmp_path)
+    payload = json.loads(pose.read_text())
+    payload["analysis"]["object_base_pose_store_candidates"][0]["pose_fields_touched"] = ["basis+0xd4"]
+    _write_json(pose, payload)
+    with pytest.raises(ValueError, match="BODY builder origin pose-store candidate is missing"):
         m.build_bmw_body0_construction_target_identity(ghidra, intake, pose, continuity)
 
 
