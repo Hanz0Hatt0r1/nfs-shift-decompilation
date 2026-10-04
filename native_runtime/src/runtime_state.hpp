@@ -119,7 +119,11 @@ struct CameraBufferRuntime {
         int32_t active_group,
         int32_t group_restore_value,
         uint8_t active_buffer_sub_flag) {
-        if (index >= buffer_count) {
+        if (index >= buffer_count || update_busy) {
+            // A recovered busy guard proves only that retail was mid-update.
+            // Native continuation/completion semantics are not proven. Seeding
+            // this state would make every begin_swap() return false forever,
+            // so reject it instead of inventing a completion policy.
             return false;
         }
 
@@ -136,7 +140,7 @@ struct CameraBufferRuntime {
             active_buffer_sub_flag;
         buffers[index] = state;
         active_index = index;
-        update_in_progress = update_busy;
+        update_in_progress = false;
         return true;
     }
 
