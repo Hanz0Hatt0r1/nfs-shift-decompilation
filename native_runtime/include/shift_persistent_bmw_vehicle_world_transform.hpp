@@ -12,17 +12,23 @@ inline constexpr const char* kPersistentBmwVehicleWorldTransformFormat =
 struct PersistentBmwVehicleWorldTransformState {
     bool ready = false;
     std::uint32_t body_index = 0u;
+    std::uint32_t source_runtime_body_count = 0u;
     std::uint64_t source_pose_snapshot_generation = 0u;
     std::uint64_t source_explicit_update_count = 0u;
     std::uint64_t commit_generation = 0u;
+    BodyFrameIntegrationVector3d source_origin{};
+    ConstraintRefreshFrame3f source_basis{};
     shift::runtime::render::VehicleWorldMatrix vehicle_world_matrix{};
 };
 
 struct PersistentBmwVehicleWorldTransformSnapshot {
     std::uint32_t body_index = 0u;
+    std::uint32_t source_runtime_body_count = 0u;
     std::uint64_t source_pose_snapshot_generation = 0u;
     std::uint64_t source_explicit_update_count = 0u;
     std::uint64_t commit_generation = 0u;
+    BodyFrameIntegrationVector3d source_origin{};
+    ConstraintRefreshFrame3f source_basis{};
     shift::runtime::render::VehicleWorldMatrix vehicle_world_matrix{};
 };
 
