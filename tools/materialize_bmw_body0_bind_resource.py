@@ -238,6 +238,7 @@ def _result(
             "BODY0_resource_pos_ori_values_ready": True,
             "construction_bind_continuity_input_ready": True,
             "BODY0_local_to_SDF_model_bind_pose_ready": False,
+            "SDF_model_to_VHF_vehicle_root_frame_relation_ready": False,
             "outer_vehicle_root_to_VHF_vehicle_root_ready": False,
             "BODY0_bind_frame_proof_ready": False,
             "vehicle_world_transform_ready": False,
@@ -245,6 +246,9 @@ def _result(
         "next_proof": {
             "consumer": "tools/ghidra/build_bmw_body0_construction_bind_continuity.py",
             "requires_materialized_sdf": materialized_path is None,
+            "remaining_semantic_blocker": (
+                "outer Vehicle root -> VHF vehicle-root frame relation"
+            ),
             "remaining_semantic_blockers": [
                 "BMW numeric HDVehicle offset33b values",
                 "outer Vehicle root -> VHF vehicle-root frame relation",
