@@ -149,6 +149,7 @@ def test_build_launch_plan_composes_full_native_chain(tmp_path):
     assert plan["boundary"]["scene_and_physics_from_resource_pipeline"] is False
     assert plan["boundary"]["resource_pipeline_replaces_runtime_evidence"] is False
     assert plan["boundary"]["window_quit_drives_session_end"] is False
+    assert plan["boundary"]["native_continuous_runtime_loop_admitted"] is False
     assert plan["boundary"]["persistent_vehicle_transform_motion_claimed"] is False
     assert plan["boundary"]["provider_present_dispatch_claimed"] is False
     assert plan["boundary"]["retail_game_loop_claimed"] is False
@@ -172,11 +173,12 @@ def test_interactive_keyboard_uses_window_quit_session(tmp_path):
 
     assert plan["mode"] == "interactive-keyboard"
     assert plan["interactive"] is True
-    assert plan["frames"] == MODULE.INTERACTIVE_FRAME_LIMIT
-    assert plan["frame_limit_policy"] == "int32-max-with-window-quit"
+    assert plan["frames"] is None
+    assert plan["frame_limit_policy"] == "native-continuous-until-window-quit"
     assert plan["boundary"]["window_quit_drives_session_end"] is True
-    index = plan["argv"].index("--frames")
-    assert plan["argv"][index + 1] == str(MODULE.INTERACTIVE_FRAME_LIMIT)
+    assert plan["boundary"]["native_continuous_runtime_loop_admitted"] is True
+    assert "--continuous" in plan["argv"]
+    assert "--frames" not in plan["argv"]
 
 
 def test_interactive_mode_rejects_input_script(tmp_path):

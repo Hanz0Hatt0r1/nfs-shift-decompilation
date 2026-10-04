@@ -311,7 +311,10 @@ def test_phase601_native_input_script_reaches_physics_tick_boundary():
     assert '"--input-script"' in source
     assert "load_input_script" in source
     assert "steps must be contiguous from zero" in source
-    assert "--frames must equal native input script step count" in source
+    assert "--frames must equal native input script step count" in (
+        source
+        + Path("native_runtime/src/runtime_loop_policy.hpp").read_text(encoding="utf-8")
+    )
     assert "input_script_mode" in source
     assert '"script" : "keyboard"' in source
     assert "vehicle_control_throttle_steps" in source
@@ -625,3 +628,19 @@ def test_phase632_fixed_step_joins_relation_reset_selection_to_solver_frame():
     assert "select_fun_007b3f40_reset_nodes" in reset_header
     assert "normalize_fun_007b3f40_reset_nodes" in reset_header
     assert "verify_fun_007b3f40_reset_nodes_match" in reset_header
+
+
+
+def test_phase709_continuous_runtime_loop_is_explicit_and_non_retail():
+    source = Path("native_runtime/src/shift_runtime.cpp").read_text(encoding="utf-8")
+    policy = Path("native_runtime/src/runtime_loop_policy.hpp").read_text(encoding="utf-8")
+    cmake = Path("native_runtime/CMakeLists.txt").read_text(encoding="utf-8")
+
+    assert '#include "runtime_loop_policy.hpp"' in source
+    assert 'option == "--continuous"' in source
+    assert "loop_policy.should_continue(quit, rendered)" in source
+    assert "one-native-fixed-step-per-render-frame-non-retail" in source
+    assert "--continuous cannot be combined with --input-script" in policy
+    assert "frame_limit_enabled" in policy
+    assert "shift_runtime_loop_policy_check" in cmake
+    assert "NAME shift_runtime_loop_policy" in cmake
