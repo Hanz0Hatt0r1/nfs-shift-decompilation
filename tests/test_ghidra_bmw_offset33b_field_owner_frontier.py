@@ -46,6 +46,8 @@ def _report(
     exact_ready: bool = True,
     numeric_preclaim: bool = False,
     machine_mass_join: bool = False,
+    proof_format: str | None = None,
+    retracted_used: bool = False,
 ) -> Path:
     report = {
         "format": MODULE.INPUT_FORMAT,
@@ -57,10 +59,13 @@ def _report(
         },
         "known_semantic_reductions": {
             "additional_mass_first_bootstrap": {
-                "semantic_name": "additional participant mass term",
+                "semantic_name": "actual participant additional mass term",
                 "value": 0.0,
                 "numeric_value_proven": True,
                 "term_elidable_for_first_bootstrap": True,
+                "machine_LOAD_pointer_identity_joined": False,
+                "proof_format": proof_format or MODULE.ACTUAL_ZERO_FORMAT,
+                "retracted_manager_record_zero_claim_reused": retracted_used,
             }
         },
         "analysis": {"exact_object_field_worklist": groups},
@@ -68,10 +73,15 @@ def _report(
             "offset33b_store_provenance_ready": True,
             "offset33b_memory_LOAD_frontier_ready": True,
             "offset33b_exact_memory_field_worklist_ready": exact_ready,
+            "offset33b_actual_additional_mass_bootstrap_zero_proof_consumed": True,
             "offset33b_additional_mass_machine_LOAD_join_ready": machine_mass_join,
             "BMW_numeric_offset33b_ready": numeric_preclaim,
             "BODY0_bind_frame_proof_ready": False,
             "vehicle_world_transform_ready": False,
+        },
+        "scope": {
+            "retracted_manager_record_zero_contract_accepted": False,
+            "additional_mass_zero_promoted_to_unjoined_machine_LOAD": False,
         },
     }
     path = tmp_path / "memory_loads.json"
@@ -105,6 +115,8 @@ def test_entry_ecx_is_promoted_only_to_exact_HDVehicle_field_owner(tmp_path):
     assert report["handoff"]["offset33b_semantic_field_names_ready"] is False
     assert report["handoff"]["BMW_numeric_offset33b_ready"] is False
     assert report["handoff"]["vehicle_world_transform_ready"] is False
+    assert report["known_semantic_reductions"]["additional_mass_proof_format"] == MODULE.ACTUAL_ZERO_FORMAT
+    assert report["scope"]["retracted_manager_record_zero_contract_accepted"] is False
 
 
 def test_memory_derived_base_remains_typed_less_indirect_owner_slot(tmp_path):
@@ -215,8 +227,30 @@ def test_additional_mass_zero_requires_upstream_machine_pointer_join(tmp_path):
     assert joined["scope"]["additional_mass_zero_reapplied_by_this_stage"] is False
 
 
+def test_retracted_manager_record_proof_format_is_rejected(tmp_path):
+    with pytest.raises(ValueError, match="additional-mass reduction proof format drift"):
+        MODULE.analyze_bmw_offset33b_field_owner_frontier(
+            _report(
+                tmp_path,
+                [_group(["entry:ECX"], 0x120)],
+                proof_format="SHIFT.BMWOffset33bAdditionalMassBootstrapZero/1",
+            )
+        )
+
+
+def test_retracted_manager_record_reuse_flag_is_rejected(tmp_path):
+    with pytest.raises(ValueError, match="retracted manager-record zero reduction was reused"):
+        MODULE.analyze_bmw_offset33b_field_owner_frontier(
+            _report(
+                tmp_path,
+                [_group(["entry:ECX"], 0x120)],
+                retracted_used=True,
+            )
+        )
+
+
 def test_exact_memory_field_worklist_gate_is_required(tmp_path):
-    with pytest.raises(ValueError, match="exact memory-field worklist is not ready"):
+    with pytest.raises(ValueError, match="offset33b_exact_memory_field_worklist_ready is not ready"):
         MODULE.analyze_bmw_offset33b_field_owner_frontier(
             _report(
                 tmp_path,
@@ -234,7 +268,7 @@ def test_empty_exact_worklist_is_rejected(tmp_path):
 
 
 def test_upstream_numeric_preclaim_is_rejected(tmp_path):
-    with pytest.raises(ValueError, match="unexpectedly preclaims numeric offset33b"):
+    with pytest.raises(ValueError, match="unexpectedly preclaims BMW_numeric_offset33b_ready"):
         MODULE.analyze_bmw_offset33b_field_owner_frontier(
             _report(
                 tmp_path,
