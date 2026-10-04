@@ -2,18 +2,15 @@
 
 ## Playable-slice blocker reduced
 
-The reduced static proof now turns the three `offset33b` STORE value slices into
-an exact worklist of memory field groups:
+The repaired reduced static proof now turns the three `offset33b` STORE value
+slices into an exact memory-field worklist:
 
 ```text
 (base-origin expression set, displacement, width)
 ```
 
-The remaining semantic gap is not arithmetic yet. Each group must first be
-attached to the correct object domain without guessing VDF/SDF/tire meanings.
-
-This pass performs only the owner promotions that are already justified by the
-retail producer ABI.
+This pass classifies only the owner relations already justified by retail ABI and
+keeps VDF/SDF/tire identity unresolved until pointer provenance proves it.
 
 Contract:
 
@@ -29,132 +26,100 @@ tools/ghidra/analyze_bmw_offset33b_field_owner_frontier.py
 
 ## Input gate
 
-The analyzer consumes a positive:
+The input must be a positive repaired:
 
 ```text
 SHIFT.BMWOffset33bMemoryLoadProvenance/1
 ```
 
-and requires all of:
+with:
 
 ```text
-offset33b_store_provenance_ready               = true
-offset33b_memory_LOAD_frontier_ready            = true
-offset33b_exact_memory_field_worklist_ready     = true
-BMW_numeric_offset33b_ready                     = false
-BODY0_bind_frame_proof_ready                    = false
-vehicle_world_transform_ready                   = false
+offset33b_store_provenance_ready                              = true
+offset33b_memory_LOAD_frontier_ready                           = true
+offset33b_exact_memory_field_worklist_ready                    = true
+offset33b_actual_additional_mass_bootstrap_zero_proof_consumed = true
+BMW_numeric_offset33b_ready                                    = false
+BODY0_bind_frame_proof_ready                                   = false
+vehicle_world_transform_ready                                  = false
 ```
 
-The exact object-field worklist must be non-empty and must still carry no
-upstream semantic owner or semantic field-name preclaims.
+The additional-mass reduction must identify:
+
+```text
+proof_format = SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1
+retracted_manager_record_zero_claim_reused = false
+```
+
+and the LOAD report scope must keep:
+
+```text
+retracted_manager_record_zero_contract_accepted = false
+```
+
+Thus a historical #1247-style manager-record proof cannot enter this stage even
+indirectly.
 
 ## Safe direct promotion
 
-`FUN_0076b280` is already source-backed as the HDVehicle `offset33b` producer and
-its retail ABI is `__thiscall`. Therefore:
-
-```text
-FUN_0076b280 entry ECX == HDVehicle this
-```
-
-is the only entry-register owner promotion made by this stage.
-
-A worklist group with:
+`FUN_0076b280` is source-backed as the HDVehicle `offset33b` producer and uses
+`__thiscall`, so only:
 
 ```text
 base_origin_expression_set = ["entry:ECX"]
 ```
 
-becomes an exact owner reference:
-
-```text
-HDVehicle+<displacement>
-```
-
-For example, a load group at displacement `0x120` is classified as:
+is promoted to:
 
 ```text
 semantic_owner_domain       = HDVehicle
-exact_owner_field_reference = HDVehicle+0x120
+exact_owner_field_reference = HDVehicle+<displacement>
 owner_join_ready             = true
-semantic_field_name          = null
-semantic_field_value_ready   = false
 ```
 
-The displacement still does not provide a semantic field name or numeric value.
+The displacement still does not imply a semantic field name or value.
 
-## Indirect owner slots
+## Indirect and unresolved owners
 
-A deterministic origin such as:
+A deterministic memory-derived base such as:
 
 ```text
 memory:[esi+0x20]
 ```
 
-is preserved exactly as:
+remains:
 
 ```text
-owner_class                       = indirect-owner-slot
-indirect_owner_origin_expression  = memory:[esi+0x20]
-semantic_owner_domain             = null
-candidate_owner_types             = []
-owner_join_ready                   = false
-VDF_SDF_tire_identity_assumed      = false
+owner_class                      = indirect-owner-slot
+semantic_owner_domain            = null
+candidate_owner_types            = []
+VDF_SDF_tire_identity_assumed     = false
+owner_join_ready                  = false
 ```
 
-The analyzer intentionally does not label this as VDF, SDF, tire, another
-HDVehicle, or any other object based on call proximity or displacement.
+Other entry registers, multi-origin sets, and derived/unknown bases remain
+unresolved. No argument meaning or resource type is inferred from register name,
+call proximity, or displacement.
 
-## Other entry registers and multiple origins
+## Correct additional-mass reduction
 
-`entry:EAX`, `entry:EDX`, and other non-ECX entry origins are not interpreted as
-arguments merely because they are registers at function entry. Multi-origin,
-derived, and otherwise unresolved sets also remain blocked.
-
-These groups are emitted in:
+#1257 proves for a fresh first-bootstrap **actual separately allocated**
+PhysicsParticipant:
 
 ```text
-unresolved_owner_groups
-```
-
-with a concrete next requirement to prove one object identity first.
-
-## Additional-mass reduction
-
-#1247 independently proves the first-bootstrap semantic root:
-
-```text
-PhysicsParticipant+0xba0
-== Vehicle+0x860
+actual PhysicsParticipant+0xba0
+== embedded Vehicle+0x860
 == +0.0f
 ```
 
-The memory-LOAD frontier carries whether that semantic root has also been joined
-to a concrete machine LOAD pointer.
-
-This stage exposes:
-
-```text
-additional_mass_first_bootstrap_zero_ready
-additional_mass_machine_LOAD_join_ready
-additional_mass_zero_available_for_numeric_evaluator
-```
-
-The final availability flag is true only when both the zero proof and machine
-pointer join are already positive upstream.
-
-Even then this stage does not apply the zero itself:
-
-```text
-additional_mass_zero_applied_by_this_stage = false
-```
-
-so owner classification cannot silently alter numeric arithmetic.
+This stage accepts that fact only from the #1257 format. It exposes whether an
+upstream machine LOAD pointer join has also identified the exact storage. Zero is
+available to a future numeric evaluator only when both proofs are positive, and
+this owner-classification stage never reapplies the numeric zero itself.
 
 ## Handoff
 
-The output separates three finite sets:
+The output separates:
 
 ```text
 direct_HDVehicle_fields
@@ -162,50 +127,30 @@ indirect_owner_slots
 unresolved_owner_groups
 ```
 
-and reports:
+and reports whether direct HDVehicle owner joins are ready, whether all LOAD
+owner domains are classified, and whether every owner identity is concrete.
+Semantic field names remain a later proof.
 
-```text
-offset33b_direct_HDVehicle_field_owner_joins_ready
-offset33b_all_LOAD_owner_domains_classified
-offset33b_all_field_owner_semantics_ready
-offset33b_semantic_field_names_ready = false
-```
+The next work is finite:
 
-`offset33b_all_LOAD_owner_domains_classified` means every exact LOAD group is at
-least categorized as direct, indirect-slot, or unresolved. It does **not** mean
-that every owner identity is known.
-
-`offset33b_all_field_owner_semantics_ready` is true only when every worklist row
-has a concrete owner join. Semantic field names and values are still separate
-proofs.
-
-## Next proof
-
-After this pass the numeric blocker is narrowed to two tasks:
-
-1. map direct `HDVehicle+offset` references to their exact semantic HDV fields;
-2. resolve only the reported indirect/unresolved bases to concrete HDV/VDF/SDF/
-   tire owners, then map their exact offsets to resource/init fields.
-
-Only after those joins should a numeric evaluator reconstruct the three
-`offset33b` doubles.
+1. map direct `HDVehicle+offset` references to exact HDV field semantics;
+2. resolve only reported indirect/unresolved bases to concrete HDV/VDF/SDF/tire
+   owners;
+3. map those exact owner+offset pairs to resource/init values;
+4. only then evaluate numeric `offset33b`.
 
 ## Deliberate non-claims
 
-This stage keeps all of the following false:
+The analyzer keeps:
 
 ```text
-offset33b_semantic_field_names_ready                = false
-BMW_numeric_offset33b_ready                         = false
-BODY0_to_outer_vehicle_root_numeric_matrix_ready   = false
-BODY0_bind_frame_proof_ready                        = false
-vehicle_world_transform_ready                       = false
+offset33b_semantic_field_names_ready              = false
+BMW_numeric_offset33b_ready                       = false
+BODY0_to_outer_vehicle_root_numeric_matrix_ready = false
+BODY0_bind_frame_proof_ready                      = false
+vehicle_world_transform_ready                     = false
 ```
 
-It does not infer:
-
-- VDF/SDF/tire identity from a memory origin expression;
-- parameter semantics from non-ECX entry registers;
-- semantic field names from displacement;
-- numeric values from owner identity;
-- additional-mass applicability without the upstream machine pointer join.
+It never accepts the retracted manager-record zero contract, guesses VDF/SDF/tire
+identity, infers a semantic field name from displacement, promotes owner identity
+to a numeric value, executes the original game, or requests a runtime capture.
