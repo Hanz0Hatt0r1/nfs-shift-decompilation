@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Join construction-time BODY pose writes to the persistent BMW chassis BODY0.
 
-This pass closes the target-identity half of the construction bind proof.  It
+This pass closes the target-identity half of the construction bind proof. It
 combines the existing machine/p-code pose-store discovery with the source-audited
 SDF BODY loader/builder semantics, exact retail function fingerprints, the BMW
 Phase-404 BODY order, and the already-proven descriptor->persistent-pose
@@ -171,8 +171,8 @@ def _validate_intake(report: Mapping[str, Any]) -> None:
 
 
 def _validate_pose(report: Mapping[str, Any]) -> None:
-    retail = report.get("retail_identity") or {}
-    if retail.get("program_name") != PROGRAM or retail.get("executable_md5") != PE_MD5:
+    source = report.get("source") or {}
+    if source.get("program") != PROGRAM or source.get("executable_md5") != PE_MD5:
         raise ValueError("construction pose-store retail identity drift")
     handoff = report.get("handoff") or {}
     if handoff.get("construction_pose_store_discovery_complete") is not True:
@@ -182,6 +182,9 @@ def _validate_pose(report: Mapping[str, Any]) -> None:
     analysis = report.get("analysis") or {}
     if analysis.get("structural_blockers"):
         raise ValueError("construction pose-store report retains structural ambiguity")
+    candidates = analysis.get("object_base_pose_store_candidates")
+    if not isinstance(candidates, list) or not candidates:
+        raise ValueError("construction pose-store object candidate set is empty")
 
 
 def _validate_continuity(report: Mapping[str, Any]) -> None:
