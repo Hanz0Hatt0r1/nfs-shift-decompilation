@@ -21,8 +21,8 @@ launcher="$script_dir/run_shift_capture_wine.sh"
 
 handoff=""
 output="./shift-capture"
-mode_seen=0
-forward=()
+# Keep capture mode ahead of any forwarded `--` game-argument separator.
+forward=(--mode capture)
 
 while (($#)); do
   case "$1" in
@@ -41,8 +41,8 @@ while (($#)); do
         echo "Phase 641 snapshot capture requires --mode capture" >&2
         exit 2
       fi
-      mode_seen=1
-      forward+=("$1" "$2")
+      # Capture mode is already the first delegated option.  Consume the
+      # caller's equivalent request so game arguments can never reorder it.
       shift 2
       ;;
     -h|--help)
@@ -104,10 +104,6 @@ PY
 export SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT=1
 export SHIFT_D3D9_CAPTURE_TEXTURE_STAGES="$texture_stages"
 export SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR="$snapshot_dir_windows"
-
-if (( ! mode_seen )); then
-  forward+=(--mode capture)
-fi
 
 printf 'Phase 641 snapshot stages: %s\n' "$texture_stages"
 printf 'Snapshot directory        : %s\n' "$texture_dir"
