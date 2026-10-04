@@ -1,0 +1,94 @@
+{
+  "blocker": {
+    "id": "BODY0-bind-frame-source-writer-still-unproven",
+    "reason": "car-body/CHASSIS initializer does not directly write the runtime post-transform pose-source fields and no VHF vehicle-root frame join is present",
+    "required_next_join": "return to the source-backed BODY construction side-effect/write chain; do not continue the eliminated 0x007aef50 branch or infer identity from the +0x340 owner join"
+  },
+  "chassis_init": {
+    "direct_bind_pose_writer_proven": false,
+    "direct_receiver_writes": [
+      {"instruction": "0x007ac9bb", "mnemonic": "FSTP", "offset": "+0x148"},
+      {"instruction": "0x007ac9c7", "mnemonic": "FSTP", "offset": "+0x14c"},
+      {"instruction": "0x007ac9d9", "mnemonic": "FST", "offset": "+0x150"},
+      {"instruction": "0x007acc2b", "mnemonic": "MOV", "offset": "+0x80c"},
+      {"instruction": "0x007acd22", "mnemonic": "FSTP", "offset": "+0x1a8"},
+      {"instruction": "0x007acd2e", "mnemonic": "FSTP", "offset": "+0x1ac"},
+      {"instruction": "0x007acd3a", "mnemonic": "FSTP", "offset": "+0x1b0"},
+      {"instruction": "0x007acd46", "mnemonic": "FSTP", "offset": "+0x1b4"},
+      {"instruction": "0x007acd52", "mnemonic": "FSTP", "offset": "+0x1b8"},
+      {"instruction": "0x007acd5e", "mnemonic": "FSTP", "offset": "+0x1bc"},
+      {"instruction": "0x007acd6c", "mnemonic": "FSTP", "offset": "+0x1c0"},
+      {"instruction": "0x007ace13", "mnemonic": "FSTP", "offset": "+0x4c"},
+      {"instruction": "0x007ace20", "mnemonic": "FSTP", "offset": "+0x50"},
+      {"instruction": "0x007ace26", "mnemonic": "FSTP", "offset": "+0x54"},
+      {"instruction": "0x007ace2c", "mnemonic": "FSTP", "offset": "+0x58"},
+      {"instruction": "0x007ace32", "mnemonic": "FSTP", "offset": "+0x5c"},
+      {"instruction": "0x007ace38", "mnemonic": "FSTP", "offset": "+0x60"}
+    ],
+    "direct_write_intersection_with_post_transform_pose_source_fields": [],
+    "embedded_owner_edges": [
+      {"callee": "0x007519d0", "offset": "+0x30"},
+      {"callee": "0x00777cd0", "kind": "loaded-pointer", "offset": "+0x34"},
+      {"callees": ["0x0049f980", "0x007a5a40", "0x007a3d60"], "offset": "+0x534"}
+    ],
+    "entry_receiver_saved_in": "EDI",
+    "function": "0x007ac4d0",
+    "post_transform_pose_source_fields": ["+0x90", "+0x94", "+0x98", "+0x160", "+0x164", "+0x168", "+0x178"],
+    "semantic_string_witnesses": [
+      {"address": "0x00ab5b74", "value": "car body", "xref": "0x007ac504"},
+      {"address": "0x00abc55c", "value": "CHASSIS", "xref": "0x007acba8"},
+      {"address": "0x00b0c6d8", "value": ".joi.xml", "xref": "0x007acc55"}
+    ]
+  },
+  "dependencies": ["SHIFT.OuterVehicleOwnerCandidateRoles/1 (FUN_007633b0 proven-HDVehicle-control-bridge)"],
+  "format": "SHIFT.OuterVehicleChassisOwnerJoin/1",
+  "forwarded_branch": {
+    "excluded_from_owner_search": true,
+    "function": "0x007aef50",
+    "output_float_offsets": ["+0x0", "+0x4", "+0x8"],
+    "owner_forward_edge_present": false,
+    "receiver_matrix_float_offsets": ["+0x0", "+0x4", "+0x8", "+0xc", "+0x10", "+0x14", "+0x18", "+0x1c", "+0x20"],
+    "receiver_write_present": false,
+    "role": "call-free-3x3-matrix-vector-leaf"
+  },
+  "handoff": {
+    "BODY0_bind_frame_proof_ready": false,
+    "HDVehicle_car_body_CHASSIS_child_domain_joined_to_runtime_post_transform_domain": true,
+    "forwarded_007afb60_branch_eliminated": true,
+    "join_strength": "same-HDVehicle-relative-receiver-expression-and-concrete-init/update-callees",
+    "outer_owner_search_has_parallel_anonymous_thiscall_branch": false,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": false,
+    "vehicle_world_transform_ready": false
+  },
+  "inputs": {
+    "chassis_join_instruction_export_sha256": "4e74fd64ff14ab8761954773e41ea1b58f11c2645e48d19336ff457dc2022bdd",
+    "owner_candidate_instruction_export_sha256": "48377f9335925597d49efa9d57ae60a429211433ed8eba0ec4ab3171e8145d36"
+  },
+  "owner_join": {
+    "HDVehicle_Init_entry_receiver_saved_in": "ESI",
+    "chassis_init_callee": "0x007ac4d0",
+    "chassis_init_callsite": "0x0076e261",
+    "chassis_init_receiver_expression": "*([HDVehicle+0x3fe8])+0x340",
+    "chassis_init_stack_argument_machine_sources": ["[HDVehicle+0x66b4]", "0x1", "[HDVehicle+0x3fe8]+0x10c"],
+    "control_post_transform_callee": "0x007ac2f0",
+    "control_post_transform_callsite": "0x007634df",
+    "control_post_transform_receiver_expression": "*([HDVehicle+0x3fe8])+0x340",
+    "cross_invocation_pointer_equality_proven": false,
+    "frame_identity_proven": false,
+    "same_HDVehicle_relative_child_expression": true,
+    "solver_setup_receiver": "HDVehicle entry ECX"
+  },
+  "ready": true,
+  "retail": {"md5": "705af8b420e5eb1e3834ac43d5533c6b", "program": "SHIFT.exe"},
+  "scope": {
+    "Ghidra_fastcall_metadata_used_as_semantic_ABI": false,
+    "absence_of_direct_pose_field_writes_promoted_to_absence_of_indirect_writers": false,
+    "car_body_label_promoted_to_VHF_frame_identity": false,
+    "new_runtime_capture_required": false,
+    "original_game_executed": false,
+    "same_relative_expression_promoted_to_cross_invocation_pointer_equality": false,
+    "upstream_HDVehicle_control_role_revalidated_here": false
+  },
+  "status": "chassis-owner-join-ready",
+  "version": 1
+}
