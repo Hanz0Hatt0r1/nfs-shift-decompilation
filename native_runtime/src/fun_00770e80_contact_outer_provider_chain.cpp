@@ -34,7 +34,8 @@ execute_fun_00770e80_contact_outer_provider_chain(
     const std::vector<std::uint8_t>& initial_body_bytes,
     const Fun0076d100ContactOuterProvider& physics_pass_provider,
     const Fun00765470MachineScalarHalfStepProvider& half_step_provider,
-    const Fun007b8810PostHalfStepCallback& post_half_step) {
+    const Fun007b8810PostHalfStepCallback& post_half_step,
+    const Fun0076d100PostAnchorBodyStateMutator& post_anchor_body_mutator) {
     if (!physics_pass_provider) {
         throw std::invalid_argument(
             "FUN_00770e80 contact-outer provider chain requires physics-pass provider");
@@ -84,7 +85,8 @@ execute_fun_00770e80_contact_outer_provider_chain(
             return adapted;
         },
         half_step_provider,
-        post_half_step);
+        post_half_step,
+        post_anchor_body_mutator);
 
     for (std::size_t pass_index = 0u;
          pass_index < kFun00770e80PassCount;
