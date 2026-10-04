@@ -1,0 +1,32 @@
+name: Process 1 BODY0 construction bind continuity
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/build_bmw_body0_construction_bind_continuity.py'
+      - 'tests/test_ghidra_bmw_body0_construction_bind_continuity.py'
+      - 'src/physics/rigid_body_sdf_runtime.py'
+      - 'evidence/bmw_body0_construction_bind_continuity.json'
+      - '.github/workflows/process1-body0-construction-bind-continuity.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/build_bmw_body0_construction_bind_continuity.py'
+      - 'tests/test_ghidra_bmw_body0_construction_bind_continuity.py'
+      - 'src/physics/rigid_body_sdf_runtime.py'
+      - 'evidence/bmw_body0_construction_bind_continuity.json'
+      - '.github/workflows/process1-body0-construction-bind-continuity.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - run: >-
+          python -m pytest -q
+          tests/test_ghidra_bmw_body0_construction_bind_continuity.py
+          tests/test_rigid_body_sdf_runtime.py
+          tests/test_ghidra_bmw_body0_construction_pose_stores.py
