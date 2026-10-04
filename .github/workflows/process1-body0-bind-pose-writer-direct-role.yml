@@ -1,0 +1,26 @@
+name: Process 1 BODY0 bind pose-writer direct role
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/prove_bmw_body0_bind_pose_writer_direct_role.py'
+      - 'tests/test_ghidra_bmw_body0_bind_pose_writer_direct_role.py'
+      - 'src/physics/body_frame_integration_static.py'
+      - '.github/workflows/process1-body0-bind-pose-writer-direct-role.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/prove_bmw_body0_bind_pose_writer_direct_role.py'
+      - 'tests/test_ghidra_bmw_body0_bind_pose_writer_direct_role.py'
+      - 'src/physics/body_frame_integration_static.py'
+      - '.github/workflows/process1-body0-bind-pose-writer-direct-role.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_ghidra_bmw_body0_bind_pose_writer_direct_role.py
