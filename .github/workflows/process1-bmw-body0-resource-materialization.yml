@@ -1,0 +1,37 @@
+name: Process 1 BMW BODY0 resource materialization
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/materialize_bmw_body0_bind_resource.py'
+      - 'tools/verify_bmw_m3_e36_solver_domain.py'
+      - 'src/physics/rigid_body_sdf_runtime.py'
+      - 'src/legacy/shift_importer_v3_reference.py'
+      - 'evidence/bmw_m3_e36_physics_intake_phase404.json'
+      - 'tests/test_materialize_bmw_body0_bind_resource.py'
+      - 'docs/PROCESS_1_BMW_BODY0_RESOURCE_MATERIALIZATION.md'
+      - '.github/workflows/process1-bmw-body0-resource-materialization.yml'
+  pull_request:
+    paths:
+      - 'tools/materialize_bmw_body0_bind_resource.py'
+      - 'tools/verify_bmw_m3_e36_solver_domain.py'
+      - 'src/physics/rigid_body_sdf_runtime.py'
+      - 'src/legacy/shift_importer_v3_reference.py'
+      - 'evidence/bmw_m3_e36_physics_intake_phase404.json'
+      - 'tests/test_materialize_bmw_body0_bind_resource.py'
+      - 'docs/PROCESS_1_BMW_BODY0_RESOURCE_MATERIALIZATION.md'
+      - '.github/workflows/process1-bmw-body0-resource-materialization.yml'
+
+jobs:
+  body0-resource:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test dependencies
+        run: python -m pip install pytest
+      - name: BODY0 resource materialization regression
+        run: python -m pytest -q tests/test_materialize_bmw_body0_bind_resource.py
