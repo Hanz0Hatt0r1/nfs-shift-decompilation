@@ -297,14 +297,29 @@ def _resolve_snapshot_path(
     raw_path: str,
     capture_root: Path,
 ) -> tuple[Path | None, str, list[str]]:
+    """Resolve a captured PPM without basename search or archive-order fallback.
+
+    The native launcher owns one exact portable layout: the JSONL is written to
+    <OutputDir>/shift_d3d9_capture.jsonl and texture snapshots to
+    <OutputDir>/textures/.  Therefore a copied Windows-absolute snapshot path may
+    be relocated only when its immediate source parent is exactly ``textures``;
+    the target is deterministically ``capture_root/textures/<filename>``.  No
+    recursive basename lookup is permitted.
+    """
     blockers: list[str] = []
     direct = Path(raw_path)
     if direct.is_absolute() and direct.is_file():
-        return direct, "absolute-existing", []
+        return direct.resolve(), "absolute-existing", []
 
+    windows_path = PureWindowsPath(raw_path)
+    windows_absolute = windows_path.is_absolute()
     normalized = raw_path.replace("\\", "/")
     normalized_path = Path(normalized)
-    if not normalized_path.is_absolute():
+    posix_absolute = normalized_path.is_absolute()
+
+    # Relative paths are already portable provenance.  Resolve the exact path
+    # below the explicitly supplied launcher output root and reject traversal.
+    if not windows_absolute and not posix_absolute:
         joined = (capture_root / normalized_path).resolve()
         try:
             joined.relative_to(capture_root.resolve())
@@ -313,24 +328,29 @@ def _resolve_snapshot_path(
         else:
             if joined.is_file():
                 return joined, "capture-root-relative", []
+            blockers.append("snapshot-path-not-found")
+        return None, "unresolved", blockers
 
-    # Native capture paths are often Windows-absolute. When a capture directory
-    # is copied to Linux, remap only by a unique basename below an explicitly
-    # supplied capture root. Ambiguity stays fail-closed.
-    name = PureWindowsPath(raw_path).name
-    if not name:
-        return None, "unresolved", blockers + ["snapshot-path-name-missing"]
-    hits = sorted(
-        (path for path in capture_root.rglob(name) if path.is_file()),
-        key=lambda path: path.as_posix(),
+    # Cross-platform relocation is allowed only by the exact producer layout
+    # established by tools/run_shift_capture.ps1.  This is a root relocation,
+    # not a basename lookup: a non-launcher source parent is never searched.
+    source_name = windows_path.name if windows_absolute else normalized_path.name
+    source_parent = (
+        windows_path.parent.name if windows_absolute else normalized_path.parent.name
     )
-    if len(hits) == 1:
-        return hits[0], "capture-root-unique-basename", blockers
-    if not hits:
-        blockers.append("snapshot-path-not-found")
-    else:
-        blockers.append("snapshot-path-basename-ambiguous")
-    return None, "unresolved", blockers
+    if not source_name:
+        return None, "unresolved", ["snapshot-path-name-missing"]
+    if str(source_parent).casefold() != "textures":
+        return None, "unresolved", ["snapshot-path-no-exact-relocation"]
+
+    relocated = (capture_root / "textures" / source_name).resolve()
+    try:
+        relocated.relative_to(capture_root.resolve())
+    except ValueError:
+        return None, "unresolved", ["snapshot-path-escapes-capture-root"]
+    if relocated.is_file():
+        return relocated, "capture-launcher-textures-relative", []
+    return None, "unresolved", ["snapshot-path-launcher-layout-not-found"]
 
 
 def _matching_texture_rows(
@@ -386,11 +406,11 @@ def build_scene_external_sampler_capture_adapter(
         raise ValueError("scene input must be SHIFT.NativeSceneBundle/1")
     if scene_bridge.get("format") != BRIDGE_FORMAT:
         raise ValueError(
-            "bridge input must be SHIFT.SGBRenderBindingBridge/1"
+            f"bridge input must be {BRIDGE_FORMAT}"
         )
     if capture_pipeline.get("format") != PIPELINE_FORMAT:
         raise ValueError(
-            "capture input must be SHIFT.IMBRuntimeCapturePipeline/1"
+            f"capture input must be {PIPELINE_FORMAT}"
         )
 
     root = Path(capture_root)
@@ -901,6 +921,11 @@ def build_scene_external_sampler_capture_adapter(
             "requires_observed_cube_texture_creation": True,
             "requires_exactly_one_ppm_snapshot_path": True,
             "requires_exactly_six_named_cube_face_paths": True,
+            "capture_snapshot_basename_fallback_allowed": False,
+            "capture_snapshot_archive_order_fallback_allowed": False,
+            "cross_platform_snapshot_relocation": (
+                "exact tools/run_shift_capture.ps1 <OutputDir>/textures layout"
+            ),
             "material_textures_promoted": False,
             "sampler_cube_promoted": True,
             "sampler_cube_register_policy": "s3-only",
@@ -940,7 +965,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--capture-root",
         required=True,
-        help="directory containing PPM texture snapshots from native capture",
+        help=(
+            "native capture output directory; exact relative snapshot paths "
+            "and the launcher-owned textures/ directory are admissible"
+        ),
     )
     parser.add_argument(
         "--instance-transform-match",

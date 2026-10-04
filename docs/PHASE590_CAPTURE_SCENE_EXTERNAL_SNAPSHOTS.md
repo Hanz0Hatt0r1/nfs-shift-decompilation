@@ -30,7 +30,7 @@ Phase 590 only joins these existing contracts.
 `SHIFT.IMBRuntimeCapturePipeline/1` still does **not** retain full runtime
 frames.
 
-For every binding that Phase 572 uniquely attributes, it now preserves a small
+For every binding that Phase 572 uniquely attributes, it preserves a small
 `attributed_texture_observations` list containing only runtime draws that
 support the selected strong shader variant.
 
@@ -56,7 +56,7 @@ preserved. Phase 573 does not choose one.
 
 ## Capture adapter
 
-New module:
+Module:
 
 `src/scene/native_scene_external_sampler_capture.py`
 
@@ -69,7 +69,7 @@ Inputs:
 - ready `SHIFT.NativeSceneBundle/1`;
 - ready `SHIFT.SGBRenderBindingBridge/1`;
 - `SHIFT.IMBRuntimeCapturePipeline/1`;
-- an explicit capture root containing the PPM files.
+- an explicit capture root containing the capture output tree.
 
 The bridge is required so Phase 590 can distinguish RenderCommand
 `external_samplers` from ordinary material textures.
@@ -88,7 +88,7 @@ only when:
 6. the created object is exactly `texture2d`;
 7. snapshot status is `captured`;
 8. exactly one PPM snapshot path is present;
-9. the PPM resolves unambiguously under the explicit capture root;
+9. the recorded PPM path resolves through an exact supported provenance mode;
 10. the generated snapshot passes the complete Phase 589 validator.
 
 Repeated scene instances sharing one resource-level binding remain blocked by
@@ -118,16 +118,36 @@ The Phase 589 provenance row records:
 
 ## Cross-platform capture paths
 
-Native capture commonly emits Windows-absolute paths.
+Native capture commonly emits Windows-absolute paths, while the same capture
+bundle may later be consumed on Linux.
 
-The adapter first accepts an existing absolute path or an exact path relative
-to the explicit capture root.
+Phase 590 no longer performs recursive basename search. A unique basename is not
+identity proof.
 
-For a copied Windows capture processed on another OS, it may remap by basename
-only when exactly one file with that basename exists recursively below the
-explicit capture root.
+Accepted resolution modes are now only:
 
-Zero or multiple basename matches remain fail-closed.
+1. an already-existing absolute path;
+2. an exact path relative to the explicit capture root, with traversal outside
+   that root rejected;
+3. exact relocation through the source-backed launcher layout established by
+   `tools/run_shift_capture.ps1`:
+
+```text
+<OutputDir>/shift_d3d9_capture.jsonl
+<OutputDir>/textures/<captured PPM>
+```
+
+For mode 3, a recorded absolute path is admissible only when its immediate
+source parent is exactly `textures`; it maps deterministically to
+`capture_root/textures/<filename>`. The adapter never `rglob()`s for that file,
+never picks the first duplicate, and never treats archive/filesystem order as
+authority.
+
+A non-launcher absolute source path fails with
+`snapshot-path-no-exact-relocation`. A launcher-layout file missing from the
+portable bundle fails with `snapshot-path-launcher-layout-not-found`. Relative
+paths missing at their exact recorded location fail with
+`snapshot-path-not-found`.
 
 ## Output
 
@@ -157,7 +177,7 @@ python shift_importer.py native-scene-external-capture \
   out/silverstone-runtime-attribution.json \
   out/scene-external-capture.json \
   --capture-root out/capture \
-  --instance-transform-match out/scene-instance-transform-match.json \\
+  --instance-transform-match out/scene-instance-transform-match.json \
   --snapshot-output out/scene-external-snapshots.json \
   --cube-snapshot-output out/scene-external-cube-snapshots.json
 ```
@@ -178,13 +198,15 @@ python shift_importer.py native-scene-vulkan-set \
 
 The adapter blocks rather than guessing when:
 
-- one binding appears in multiple NativeSceneBundle instances without a ready Phase 591 exact transform match;
+- one binding appears in multiple NativeSceneBundle instances without a ready
+  Phase 591 exact transform match;
 - more than one attributed runtime draw can supply the register;
 - texture creation is not observed;
 - the runtime object type does not match the declared sampler type;
 - no PPM is captured;
 - multiple snapshot paths exist;
-- capture path resolution is missing or ambiguous;
+- exact capture path relocation is unavailable;
+- a same-basename file exists only elsewhere in the capture tree;
 - the generated Phase 589 contract fails exact identity validation.
 
 Ordinary material textures are never promoted into the external snapshot
@@ -193,14 +215,17 @@ contract.
 ## Boundary after Phase 590
 
 The software path from authentic D3D9 `SetTexture` PPM capture to exact
-scene-level external `sampler2D` admission is now executable.
+scene-level external `sampler2D` admission remains executable without basename
+identity fallback.
 
 Still external/evidence-gated:
 
-- obtaining a real Silverstone capture containing the required renderer-owned
-  sampler snapshots;
+- obtaining an existing Silverstone capture bundle containing the required
+  renderer-owned sampler snapshots at exact recorded/launcher-layout paths;
 - repeated-instance disambiguation is available through Phase 591 when exact
-  draw-local VS constant windows uniquely identify one world matrix; otherwise it remains blocked;
-- Phase 593 closes external `samplerCube` only at proven s3; other renderer-owned resource types or cube registers remain gated;
+  draw-local VS constant windows uniquely identify one world matrix; otherwise
+  it remains blocked;
+- Phase 593 closes external `samplerCube` only at proven s3; other
+  renderer-owned resource types or cube registers remain gated;
 - unresolved scene streaming/LOD and MatrixNumber update history;
 - IMX XML neutral adaptation.

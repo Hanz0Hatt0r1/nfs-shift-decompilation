@@ -24,7 +24,7 @@ the recapture decision later, behind the actual PPM/observation diagnostics.
 
 ## Implementation
 
-New wrapper:
+Wrapper:
 
 ```text
 tools/materialize_renderer_native_scene_capture_handoff.py
@@ -35,17 +35,19 @@ It first executes the unchanged Phase 640 handoff. It retries only when Phase
 attribution, static scene identity, runtime RenderBinding provenance, or
 NativeSceneBundle construction stops the wrapper immediately.
 
-The unified `tools/bootstrap_native_vertical_slice.py` now uses this wrapper and
-adds:
+The unified `tools/bootstrap_native_vertical_slice.py` uses this wrapper and
+accepts:
 
 ```text
 --renderer-capture-root DIR
 ```
 
 When omitted, the filesystem directory containing
-`--renderer-capture-jsonl` is used as the capture root. This root is only a
-location for resolving already-recorded snapshot paths; it is never resource or
-scene identity evidence.
+`--renderer-capture-jsonl` is used as the capture root. For captures created by
+`tools/run_shift_capture.ps1`, this is the exact launcher `OutputDir`: the JSONL
+lives directly under that directory and texture snapshots live under its
+`textures/` child. The root is location/provenance context only; it is never
+resource or scene identity evidence.
 
 ## Phase 591 integration
 
@@ -79,11 +81,26 @@ It preserves the existing requirements:
 - exact sampler register/type;
 - one captured PPM for external sampler2D;
 - six named captured PPM faces for the proven samplerCube s3 path;
-- exact or uniquely remapped snapshot path under the explicit capture root.
+- exact snapshot provenance under the explicit capture root.
 
-If a path is absent or ambiguous, Phase 641 reports the Phase 590 reason such
-as `snapshot-path-not-found` or `snapshot-path-basename-ambiguous`. It does not
-convert that into a generic request for a new capture.
+Cross-platform relocation is now fail-closed and producer-backed. Native
+Windows-absolute paths are portable only through the exact layout established by
+`tools/run_shift_capture.ps1`:
+
+```text
+<OutputDir>/shift_d3d9_capture.jsonl
+<OutputDir>/textures/<captured PPM>
+```
+
+A recorded absolute `...\\textures\\<file>` therefore maps deterministically to
+`capture_root/textures/<file>`. Phase 590 never recursively searches the root by
+basename and never treats a unique basename as identity proof. A non-launcher
+source parent reports `snapshot-path-no-exact-relocation`; a missing file in the
+launcher layout reports `snapshot-path-launcher-layout-not-found`. Exact relative
+paths continue to resolve only at their recorded relative location.
+
+These are specific missing observations/artifacts, not generic requests for a
+new capture.
 
 ## Retry policy
 
@@ -124,7 +141,8 @@ The top-level vertical-slice report also records the effective
 Phase 641 does not claim that:
 
 - capture-root path proximity proves resource identity;
-- a basename match is accepted when more than one file matches;
+- basename uniqueness proves snapshot identity;
+- a non-launcher directory suffix may be remapped heuristically;
 - VS constant position proves retail world-matrix register semantics;
 - a blocked repeated instance may be selected manually;
 - renderer-owned textures may be synthesized;
@@ -138,6 +156,9 @@ Tests prove that:
 - Phase 591 and Phase 590 execute before the Phase 580/585 retry;
 - exact generated snapshot contracts are passed to Phase 580;
 - a ready Phase 585 retry is required before scene readiness;
+- exact `run_shift_capture.ps1` `textures/` relocation remains portable across
+  Windows/Linux;
+- a unique basename outside that exact producer layout is rejected;
 - Phase 590 path/instance blockers are preserved without a recapture claim;
 - an earlier Phase 576 blocker is never bypassed;
 - explicit Phase 640 renderer-resource inputs remain authoritative.
