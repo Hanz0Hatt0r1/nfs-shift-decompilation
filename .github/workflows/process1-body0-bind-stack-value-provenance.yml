@@ -1,0 +1,36 @@
+name: process1-body0-bind-stack-value-provenance
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_bmw_body0_bind_stack_value_provenance.py'
+      - 'tests/test_ghidra_bmw_body0_bind_stack_value_provenance.py'
+      - 'tools/ghidra/join_bmw_body0_bind_pose_writer_abi.py'
+      - 'tests/test_ghidra_bmw_body0_bind_pose_writer_abi.py'
+      - 'docs/PROCESS_1_BMW_BODY0_BIND_STACK_VALUE_PROVENANCE.md'
+      - '.github/workflows/process1-body0-bind-stack-value-provenance.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_bmw_body0_bind_stack_value_provenance.py'
+      - 'tests/test_ghidra_bmw_body0_bind_stack_value_provenance.py'
+      - 'tools/ghidra/join_bmw_body0_bind_pose_writer_abi.py'
+      - 'tests/test_ghidra_bmw_body0_bind_pose_writer_abi.py'
+      - 'docs/PROCESS_1_BMW_BODY0_BIND_STACK_VALUE_PROVENANCE.md'
+      - '.github/workflows/process1-body0-bind-stack-value-provenance.yml'
+
+jobs:
+  stack-value-provenance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run stack-value provenance regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_body0_bind_stack_value_provenance.py
+      - name: Preserve upstream ABI join regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_body0_bind_pose_writer_abi.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_bmw_body0_bind_stack_value_provenance.py --help >/dev/null
