@@ -20,7 +20,7 @@ shift::runtime::physics::PreparedGeneratedBodyConstraintFrame make_frame() {
         body.body_index = index;
         body.matrix_double_count = 36;
         body.provider_present = false;
-        body.row_indices = {0, 1, 2, 3, 4, 5};
+        body.row_indices = {0, 6, 12, 18, 24, 30};
         body.constraints.scalar_count = 6;
         body.constraints.body_position = {
             static_cast<double>(index), 0.0, 0.0};
