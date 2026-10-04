@@ -5,7 +5,7 @@ The BODY0 construction proof already establishes:
 
     SDF BODY pos/ori -> FUN_007b6900 -> persistent BODY origin/basis
 
-but deliberately stops at the SDF-model construction frame.  This analyzer
+but deliberately stops at the SDF model construction frame.  This analyzer
 narrows the remaining frame join by proving only the physical IA-32 receiver
 continuity on the retail vehicle initialization path:
 
@@ -21,7 +21,8 @@ the already-regressed FUN_00765470 receiver proof.
 A positive result proves pointer/receiver continuity only.  It does *not* infer
 that the HighDetailVehicle object frame equals the VHF vehicle-root frame, that
 BODY0 local equals the body-MEB local frame, or that the BODY0 bind matrix is
-identity.
+identity.  Exact BODY0 resource values are owned independently by
+``SHIFT.BMWBody0BindResourceMaterialization/1``.
 """
 from __future__ import annotations
 
@@ -39,6 +40,7 @@ import analyze_bmw_body0_bind_callsite_register_provenance as _callsite_engine
 
 FORMAT = "SHIFT.BMWSDFVehicleAssemblyReceiverProvenance/1"
 INSTRUCTION_FORMAT = "SHIFT.GhidraFunctionInstructions/2"
+BODY0_RESOURCE_FORMAT = "SHIFT.BMWBody0BindResourceMaterialization/1"
 PROGRAM = "SHIFT.exe"
 PE_MD5 = "705af8b420e5eb1e3834ac43d5533c6b"
 INIT_LABEL = "MWL::Core::HighDetailVehicle::Init"
@@ -380,14 +382,6 @@ def analyze_bmw_sdf_vehicle_assembly_receiver_provenance(
                 "the HighDetailVehicle::Init debug label alone is not frame identity"
             ),
         },
-        {
-            "id": "BODY0-resource-pos-ori-values-unavailable",
-            "evidence_state": "data-unavailable",
-            "required_resource": "vehicles/physics/suspension/aarm_multilink.sdf",
-            "required_decoded_sha256": (
-                "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed"
-            ),
-        },
     ]
 
     return {
@@ -399,6 +393,7 @@ def analyze_bmw_sdf_vehicle_assembly_receiver_provenance(
             "ghidra_export": str(ghidra_export),
             "instruction_export": str(instruction_export),
             "instruction_format": INSTRUCTION_FORMAT,
+            "BODY0_resource_materialization_format": BODY0_RESOURCE_FORMAT,
         },
         "retail_identity": retail,
         "receiver_links": links,
@@ -420,6 +415,8 @@ def analyze_bmw_sdf_vehicle_assembly_receiver_provenance(
         "handoff": {
             "SDF_loader_owner_receiver_continuity_ready": chain_ready,
             "SDF_loader_receiver_equals_HighDetailVehicle_Init_entry_ECX": chain_ready,
+            "BODY0_resource_values_owned_by_separate_materialization_contract": True,
+            "BODY0_resource_materialization_format": BODY0_RESOURCE_FORMAT,
             "SDF_model_to_VHF_vehicle_root_frame_relation_ready": False,
             "BODY0_bind_frame_proof_ready": False,
             "vehicle_world_transform_ready": False,
@@ -441,6 +438,7 @@ def analyze_bmw_sdf_vehicle_assembly_receiver_provenance(
             "BODY0_local_equals_MEB_local_assumed": False,
             "BODY0_bind_matrix_identity_assumed": False,
             "BODY0_bind_matrix_emitted": False,
+            "BODY0_resource_bytes_redecoded_by_this_artifact": False,
             "original_game_executed": False,
             "new_runtime_capture_required": False,
         },
