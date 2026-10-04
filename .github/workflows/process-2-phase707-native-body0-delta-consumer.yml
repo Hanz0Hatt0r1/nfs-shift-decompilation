@@ -1,0 +1,75 @@
+name: process-2-phase707-native-body0-delta-consumer
+
+on:
+  push:
+    paths:
+      - '.github/workflows/process-2-phase707-native-body0-delta-consumer.yml'
+      - 'native_runtime/cmake/phase706.cmake'
+      - 'native_runtime/cmake/phase707.cmake'
+      - 'native_runtime/include/shift_fun_007682c0_body0_delta_consumer_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_composed_anchor_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_contact_outer_provider_chain.hpp'
+      - 'native_runtime/include/shift_fun_00770e80_scalar_provider_anchor_chain.hpp'
+      - 'native_runtime/include/shift_native_body0_delta_runtime.hpp'
+      - 'native_runtime/include/shift_native_vehicle_provider_session_v2.hpp'
+      - 'native_runtime/src/fun_007682c0_body0_delta_consumer_chain.cpp'
+      - 'native_runtime/src/fun_00770e80_composed_anchor_chain.cpp'
+      - 'native_runtime/src/fun_00770e80_contact_outer_provider_chain.cpp'
+      - 'native_runtime/src/fun_00770e80_scalar_provider_anchor_chain.cpp'
+      - 'native_runtime/src/native_body0_delta_runtime.cpp'
+      - 'native_runtime/src/native_vehicle_provider_session_v2.cpp'
+      - 'native_runtime/tests/native_vehicle_provider_session_v2_check.cpp'
+      - 'docs/PHASE707_NATIVE_FUN_007682C0_BODY0_DELTA_CONSUMER.md'
+  pull_request:
+    paths:
+      - '.github/workflows/process-2-phase707-native-body0-delta-consumer.yml'
+      - 'native_runtime/**'
+      - 'docs/PHASE707_NATIVE_FUN_007682C0_BODY0_DELTA_CONSUMER.md'
+  workflow_dispatch:
+
+jobs:
+  native-body0-delta-consumer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake g++ libvulkan-dev glslang-tools libxcb1-dev
+
+      - name: Configure native runtime
+        run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Phase 707 and compatibility regressions
+        run: |
+          cmake --build native_runtime/build --config Release --parallel --target \
+            shift_runtime_native_vehicle_provider_session_v2_check \
+            shift_runtime_native_vehicle_provider_session_check \
+            shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check \
+            shift_runtime_fun_00770e80_contact_outer_provider_chain_check \
+            shift_runtime_fun_00770e80_scalar_provider_anchor_chain_check \
+            shift_runtime_fun_00770e80_composed_anchor_chain_check
+
+      - name: Execute Phase 707 eight-provider session
+        run: |
+          native_runtime/build/shift_runtime_native_vehicle_provider_session_v2_check \
+            | tee /tmp/phase707.json
+          grep -q '"format":"SHIFT.NativeVehicleProviderSession/2"' /tmp/phase707.json
+          grep -q '"phase":707' /tmp/phase707.json
+          grep -q '"external_provider_count":8' /tmp/phase707.json
+          grep -q '"retail_body_owner_identity_positive":true' /tmp/phase707.json
+          grep -q '"selected_body_index":0' /tmp/phase707.json
+          grep -q '"fun_007682c0_body0_delta_consumer_native":true' /tmp/phase707.json
+          grep -q '"body0_delta_before_half_step":true' /tmp/phase707.json
+          grep -q '"fixed_step_auto_schedule":false' /tmp/phase707.json
+
+      - name: Regress pre-707 native chains
+        run: |
+          native_runtime/build/shift_runtime_native_vehicle_provider_session_check >/tmp/phase701.json
+          native_runtime/build/shift_runtime_fun_00770e80_motion_read_effect_provider_chain_check >/tmp/phase696.json
+          native_runtime/build/shift_runtime_fun_00770e80_contact_outer_provider_chain_check >/tmp/phase693.json
+          native_runtime/build/shift_runtime_fun_00770e80_scalar_provider_anchor_chain_check >/tmp/phase691.json
+          native_runtime/build/shift_runtime_fun_00770e80_composed_anchor_chain_check >/tmp/phase689.json
