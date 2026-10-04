@@ -1,0 +1,132 @@
+#include "shift_native_vehicle_provider_session_v2.hpp"
+
+#include "runtime_state.hpp"
+
+#include <stdexcept>
+#include <utility>
+
+namespace shift::runtime {
+namespace {
+
+void require_complete_bundle(
+    const NativeVehicleExternalProviderBundleV2& providers) {
+    if (!providers.contact_factor ||
+        !providers.wheel_update ||
+        !providers.contact_response ||
+        !providers.contact_outer_input ||
+        !providers.motion_read_effect ||
+        !providers.scalar_provider_factory ||
+        !providers.half_step_refresh ||
+        !providers.post_half_step) {
+        throw std::invalid_argument(
+            "native vehicle provider session v2 requires all eight Phase 707 external provider boundaries");
+    }
+}
+
+}  // namespace
+
+NativeVehicleProviderSessionV2::NativeVehicleProviderSessionV2(
+    NativeVehicleExternalProviderBundleV2 providers,
+    physics::GlobalVehicleBodyOwnerIdentityHandoff owner_handoff)
+    : providers_(std::move(providers)),
+      owner_handoff_(std::move(owner_handoff)) {
+    require_complete_bundle(providers_);
+    // Validate the positive Process 1 #1208 / Phase 703 retail BODY identity
+    // before any provider can run.
+    (void)physics::build_vehicle_body_identity_selection_from_global_owner(
+        owner_handoff_);
+}
+
+NativeVehicleProviderSessionV2Result
+NativeVehicleProviderSessionV2::execute_explicit_step(
+    NativeRuntimeState& runtime,
+    double outer_timestep) {
+    require_complete_bundle(providers_);
+
+    NativeVehicleProviderSessionV2Telemetry telemetry{};
+
+    physics::Fun0076d100MotionReadEffectNativeBodyProvider pass_provider =
+        [this, &telemetry](std::size_t pass_index) {
+            physics::Fun0076d100MotionReadEffectNativeBodyCallbacks callbacks{};
+            callbacks.contact_factor = [this, &telemetry, pass_index] {
+                ++telemetry.contact_factor_call_count;
+                providers_.contact_factor(pass_index);
+            };
+            callbacks.wheel_update = [this, &telemetry, pass_index] {
+                ++telemetry.wheel_update_call_count;
+                providers_.wheel_update(pass_index);
+            };
+            callbacks.contact_response = [this, &telemetry, pass_index] {
+                ++telemetry.contact_response_call_count;
+                providers_.contact_response(pass_index);
+            };
+            callbacks.contact_outer_input_provider =
+                [this, &telemetry, pass_index] {
+                    ++telemetry.contact_outer_input_call_count;
+                    return providers_.contact_outer_input(pass_index);
+                };
+            callbacks.motion_read_effect_provider =
+                [this, &telemetry, pass_index] {
+                    ++telemetry.motion_read_effect_call_count;
+                    return providers_.motion_read_effect(pass_index);
+                };
+            return callbacks;
+        };
+
+    physics::Fun00765470MachineScalarHalfStepProvider half_step_provider =
+        [this, &telemetry](
+            std::size_t pass_index,
+            double half_timestep,
+            const std::vector<std::uint8_t>& current_body_bytes) {
+            ++telemetry.half_step_refresh_call_count;
+            auto refresh = providers_.half_step_refresh(
+                pass_index,
+                half_timestep,
+                current_body_bytes);
+
+            ++telemetry.scalar_provider_factory_call_count;
+            auto scalar_provider = providers_.scalar_provider_factory(pass_index);
+            if (!scalar_provider) {
+                throw std::invalid_argument(
+                    "native vehicle provider session v2 scalar provider factory returned an empty provider");
+            }
+
+            physics::Fun00765470MachineScalarHalfStepInput input{};
+            input.machine = std::move(refresh.machine);
+            input.source = std::move(refresh.source);
+            input.relations = std::move(refresh.relations);
+            input.reset_state = std::move(refresh.reset_state);
+            input.solver_topology = std::move(refresh.solver_topology);
+            input.projection = std::move(refresh.projection);
+            input.scalar_provider = std::move(scalar_provider);
+            input.tolerance = refresh.tolerance;
+            return input;
+        };
+
+    physics::Fun007b8810PostHalfStepCallback post_half_step =
+        [this, &telemetry](std::size_t pass_index) {
+            ++telemetry.post_half_step_call_count;
+            providers_.post_half_step(pass_index);
+        };
+
+    auto joined = execute_explicit_outer_update_with_native_body0_delta_consumer(
+        runtime,
+        outer_timestep,
+        pass_provider,
+        half_step_provider,
+        post_half_step,
+        owner_handoff_);
+
+    telemetry.native_body0_delta_application_count =
+        joined.native_delta_application_count;
+    ++step_count_;
+    last_telemetry_ = telemetry;
+
+    NativeVehicleProviderSessionV2Result result{};
+    result.joined = std::move(joined);
+    result.session_step_count = step_count_;
+    result.telemetry = last_telemetry_;
+    return result;
+}
+
+}  // namespace shift::runtime
