@@ -340,14 +340,27 @@ struct NativeRuntimeState {
             physics.participant_ready,
             physics.participant_identity_join_proven);
 
-        const bool camera_update_started =
-            begin_camera_update();
+        // fixed_step() is a native transaction across the state that this
+        // shell mutates directly. BODY feedback computes its result before
+        // committing scheduler state, so only the lightweight camera/physics
+        // boundaries need explicit rollback if that downstream step rejects.
+        const CameraBufferRuntime camera_before = camera;
+        const PhysicsTickBoundary physics_before = physics;
 
-        physics.tick(input);
-        body_feedback.fixed_step();
+        try {
+            const bool camera_update_started =
+                begin_camera_update();
 
-        if (camera_update_started) {
-            complete_camera_update();
+            physics.tick(input);
+            body_feedback.fixed_step();
+
+            if (camera_update_started) {
+                complete_camera_update();
+            }
+        } catch (...) {
+            camera = camera_before;
+            physics = physics_before;
+            throw;
         }
     }
 };
