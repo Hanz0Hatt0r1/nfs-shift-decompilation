@@ -1,0 +1,60 @@
+{
+  "format": "SHIFT.BMWBody0BindResourceMaterialization/1",
+  "version": 1,
+  "status": "materialized",
+  "ready": true,
+  "source_mode": "retail-bff-extraction",
+  "retail_archive": {
+    "canonical_filename": "BMW_M3_E36.bff",
+    "sha256": "c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70",
+    "input_path": null
+  },
+  "resource": {
+    "path": "vehicles/physics/suspension/aarm_multilink.sdf",
+    "entry_index": 1091,
+    "compression_type": 2,
+    "compressed_size": 1110,
+    "uncompressed_size": 5056,
+    "decoded_sha256": "fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed",
+    "materialized_path": null
+  },
+  "body0": {
+    "body_count": 11,
+    "body_index": 0,
+    "body_name": "body",
+    "pos": [0.0, 0.0, 0.0],
+    "ori": [0.0, 0.0, 0.0],
+    "ori_is_exact_zero": true,
+    "zero_orientation_identity_shortcut_eligible": true
+  },
+  "handoff": {
+    "BODY0_resource_pos_ori_values_ready": true,
+    "construction_bind_continuity_input_ready": true,
+    "BODY0_local_to_SDF_model_bind_pose_ready": false,
+    "SDF_model_to_VHF_vehicle_root_frame_relation_ready": false,
+    "outer_vehicle_root_to_VHF_vehicle_root_ready": false,
+    "BODY0_bind_frame_proof_ready": false,
+    "vehicle_world_transform_ready": false
+  },
+  "next_proof": {
+    "consumer": "tools/ghidra/promote_bmw_body0_construction_bind_resource.py",
+    "requires_materialized_sdf": false,
+    "remaining_semantic_blocker": "outer Vehicle root -> VHF vehicle-root frame relation",
+    "remaining_semantic_blockers": [
+      "BMW numeric HDVehicle offset33b values",
+      "outer Vehicle root -> VHF vehicle-root frame relation"
+    ]
+  },
+  "scope": {
+    "original_game_executed": false,
+    "new_runtime_capture_required": false,
+    "new_BFF_parser_semantics_added": false,
+    "retail_hash_semantics_rederived": false,
+    "typed_resource_identity_rederived": false,
+    "raw_retail_archive_committed": false,
+    "raw_decoded_sdf_committed": false,
+    "SDF_model_frame_assumed_equal_VHF_vehicle_root": false,
+    "outer_vehicle_root_assumed_equal_VHF_vehicle_root": false,
+    "vehicle_world_transform_claimed": false
+  }
+}
