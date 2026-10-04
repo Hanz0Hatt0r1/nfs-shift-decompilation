@@ -1,0 +1,37 @@
+name: Process 1 BMW offset33b static proof runner
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/run_bmw_offset33b_static_proof.py'
+      - 'tests/test_ghidra_run_bmw_offset33b_static_proof.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_store_provenance.py'
+      - 'tools/ghidra/run_shift_function_instructions.sh'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_STATIC_PROOF_RUNNER.md'
+      - '.github/workflows/process1-bmw-offset33b-static-proof-runner.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/run_bmw_offset33b_static_proof.py'
+      - 'tests/test_ghidra_run_bmw_offset33b_static_proof.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_store_provenance.py'
+      - 'tools/ghidra/run_shift_function_instructions.sh'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_STATIC_PROOF_RUNNER.md'
+      - '.github/workflows/process1-bmw-offset33b-static-proof-runner.yml'
+
+jobs:
+  runner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run offset33b runner regressions
+        run: python -m pytest -q tests/test_ghidra_run_bmw_offset33b_static_proof.py
+      - name: Preserve offset33b store frontier regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_store_provenance.py
+      - name: Verify runner CLI
+        run: python tools/ghidra/run_bmw_offset33b_static_proof.py --help >/dev/null
+      - name: Verify targeted exporter CLI
+        run: bash tools/ghidra/run_shift_function_instructions.sh 2>&1 | grep -q '^Usage:'
