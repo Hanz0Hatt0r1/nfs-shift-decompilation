@@ -23,9 +23,10 @@ def materialize_selected_archive(
 ) -> dict[str, object] | None:
     """Materialize one exact selected archive when source provenance is present.
 
-    Returns ``None`` only for legacy/test catalogs whose selected occurrence has
-    incomplete source provenance. Real offline-pipeline catalogs always carry
-    both ``source`` and ``source_kind`` and therefore take the strict path.
+    Returns ``None`` only for legacy/test catalogs that predate archive rows or
+    whose selected occurrence has incomplete source provenance. Real
+    offline-pipeline catalogs always carry archive rows plus both ``source`` and
+    ``source_kind`` and therefore take the strict path.
     """
     if catalog.get("format") != CATALOG_FORMAT:
         raise ValueError(f"catalog must be {CATALOG_FORMAT}")
@@ -44,9 +45,16 @@ def materialize_selected_archive(
     selected_id = str(selected.get("id") or "").strip()
     if not selected_id:
         raise ValueError(f"selected archive id missing:{selected_key}")
+
+    raw_archives = catalog.get("archives")
+    if raw_archives is None:
+        return None
+    if not isinstance(raw_archives, list):
+        raise ValueError("catalog archives must be a list")
+
     hits = [
         row
-        for row in (catalog.get("archives") or [])
+        for row in raw_archives
         if isinstance(row, Mapping) and str(row.get("id") or "") == selected_id
     ]
     if len(hits) != 1:
