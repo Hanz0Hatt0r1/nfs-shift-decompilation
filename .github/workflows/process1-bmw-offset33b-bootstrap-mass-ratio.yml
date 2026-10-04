@@ -1,0 +1,31 @@
+name: Process 1 BMW offset33b bootstrap mass ratio
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_bmw_offset33b_bootstrap_mass_ratio.py'
+      - 'tests/test_ghidra_bmw_offset33b_bootstrap_mass_ratio.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_BOOTSTRAP_MASS_RATIO.md'
+      - 'evidence/bmw_offset33b_resource_inputs.json'
+      - '.github/workflows/process1-bmw-offset33b-bootstrap-mass-ratio.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_bmw_offset33b_bootstrap_mass_ratio.py'
+      - 'tests/test_ghidra_bmw_offset33b_bootstrap_mass_ratio.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_BOOTSTRAP_MASS_RATIO.md'
+      - 'evidence/bmw_offset33b_resource_inputs.json'
+      - '.github/workflows/process1-bmw-offset33b-bootstrap-mass-ratio.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run bootstrap mass-ratio regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_bootstrap_mass_ratio.py
+      - name: Verify CLI
+        run: python tools/ghidra/analyze_bmw_offset33b_bootstrap_mass_ratio.py --help >/dev/null
