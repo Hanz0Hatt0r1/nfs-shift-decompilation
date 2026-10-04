@@ -1,0 +1,29 @@
+name: Process 1 outer Vehicle owner candidate roles
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_owner_candidate_roles.py'
+      - 'tests/test_ghidra_outer_vehicle_owner_candidate_roles.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_OWNER_CANDIDATE_ROLES.md'
+      - '.github/workflows/process1-outer-vehicle-owner-candidate-roles.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_owner_candidate_roles.py'
+      - 'tests/test_ghidra_outer_vehicle_owner_candidate_roles.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_OWNER_CANDIDATE_ROLES.md'
+      - '.github/workflows/process1-outer-vehicle-owner-candidate-roles.yml'
+
+jobs:
+  owner-role-frontier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run owner candidate role regressions
+        run: python -m pytest -q tests/test_ghidra_outer_vehicle_owner_candidate_roles.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_outer_vehicle_owner_candidate_roles.py --help >/dev/null
