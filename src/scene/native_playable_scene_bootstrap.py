@@ -5,7 +5,9 @@ composite scene builder. Phase 645 closes the real-corpus transform gap: Phase
 533 material slices carry no instance matrix, so the canonical BMW body matrix
 is recovered from the retail VHF hierarchy, identity-checked against the golden
 body MEB, converted to the SVWT/D3D row-vector convention, and attached to the
-material-slice set before Phase 643.
+material-slice set before Phase 643. Phase 654 revalidates every MEB/BMT/FX/DDS
+resource actually selected by Phase 533 against the exact admitted retail
+archives before the playable scene may consume that material admission.
 
 Archive basenames are discovery hints only.  The current playable target requires
 source-backed retail SHA-256 identity and exactly one matching corpus occurrence;
@@ -22,6 +24,9 @@ from bmw_body_material_admission import (
     DEFAULT_GOLDEN,
     build_bmw_body_material_admission,
     write_bmw_body_material_admission,
+)
+from bmw_playable_render_resource_identity import (
+    build_bmw_playable_render_resource_identity_gate,
 )
 from bmw_vhf_body_world_transform import (
     apply_bmw_vhf_body_world_transform,
@@ -119,6 +124,8 @@ def _blocked(
             "archive_order_is_selection_authority": False,
             "manual_vehicle_material_slice_handoff_required": False,
             "manual_vehicle_bff_path_handoff_required": False,
+            "phase654_exact_vehicle_render_resource_identity_required": True,
+            "phase654_exact_vehicle_render_resource_identity_consumed": False,
             "phase643_composite_scene_consumed": False,
             "vhf_body_world_transform_consumed": False,
             "persistent_BODY_pose_consumed": False,
@@ -128,6 +135,54 @@ def _blocked(
     }
     if persist and output_dir.exists() and output_dir.is_dir():
         _write(output_dir / "playable_scene_bootstrap.json", result)
+    return result
+
+
+def _apply_exact_render_resource_gate(
+    admission: Mapping[str, Any],
+    *,
+    selected: Mapping[str, MaterializedArchive],
+) -> dict[str, Any]:
+    """Attach Phase 654 without changing the underlying Phase 533 evidence."""
+    result = dict(admission)
+    phase533_ready = admission.get("ready") is True
+    result["phase533_ready_before_phase654"] = phase533_ready
+    boundary = dict(result.get("boundary") or {})
+    boundary.update({
+        "phase654_exact_vehicle_render_resource_identity_required": True,
+        "basename_fallback_allowed_for_playable_admission": False,
+        "byte_identical_duplicate_is_semantic_identity": False,
+    })
+    result["boundary"] = boundary
+
+    if not phase533_ready:
+        result["playable_render_resource_identity_gate"] = None
+        return result
+
+    gate = build_bmw_playable_render_resource_identity_gate(
+        admission,
+        {
+            role: selected[role].path
+            for role in ("primary", "cockpit", "render")
+        },
+    )
+    result["playable_render_resource_identity_gate"] = gate
+    boundary["phase654_exact_vehicle_render_resource_identity_consumed"] = (
+        gate.get("ready") is True
+    )
+    if gate.get("ready") is True:
+        return result
+
+    reasons = [
+        "phase654:" + str(reason).removeprefix("phase654:")
+        for reason in gate.get("blocking_reasons") or ["not-ready"]
+    ]
+    result["ready"] = False
+    result["status"] = "blocked"
+    result["blocking_reasons"] = list(dict.fromkeys([
+        *[str(reason) for reason in result.get("blocking_reasons") or []],
+        *reasons,
+    ]))
     return result
 
 
@@ -221,6 +276,10 @@ def build_native_playable_scene_bootstrap(
                     f"{type(exc).__name__}:{exc}"
                 )
             else:
+                admission = _apply_exact_render_resource_gate(
+                    admission,
+                    selected=selected,
+                )
                 write_bmw_body_material_admission(dict(admission), admission_dir)
                 if admission.get("ready") is not True:
                     blockers.extend(
@@ -283,10 +342,17 @@ def build_native_playable_scene_bootstrap(
         )
 
     blockers = list(dict.fromkeys(blockers))
+    exact_resource_gate = (
+        admission.get("playable_render_resource_identity_gate")
+        if isinstance(admission, Mapping)
+        else None
+    )
     ready = (
         not blockers
         and isinstance(admission, Mapping)
         and admission.get("ready") is True
+        and isinstance(exact_resource_gate, Mapping)
+        and exact_resource_gate.get("ready") is True
         and isinstance(vhf_transform, Mapping)
         and vhf_transform.get("ready") is True
         and isinstance(composition, Mapping)
@@ -336,6 +402,8 @@ def build_native_playable_scene_bootstrap(
             "manual_vehicle_material_slice_handoff_required": False,
             "manual_vehicle_bff_path_handoff_required": False,
             "phase533_complete_body_admission_required": True,
+            "phase654_exact_vehicle_render_resource_identity_required": True,
+            "phase654_exact_vehicle_render_resource_identity_consumed": True,
             "phase645_vhf_body_world_transform_required": True,
             "vhf_body_world_transform_consumed": True,
             "phase643_composite_scene_consumed": True,
