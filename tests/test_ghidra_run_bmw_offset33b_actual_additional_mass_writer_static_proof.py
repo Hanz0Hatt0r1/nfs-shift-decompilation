@@ -60,7 +60,7 @@ def _install_success(monkeypatch, report: dict):
 
     def fake_run(command, *, env, check):
         process_calls.append({"command": list(command), "env": dict(env), "check": check})
-        output = Path(command[6])
+        output = Path(command[5])
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text('{"format":"SHIFT.GhidraFunctionInstructions/2"}\n', encoding="utf-8")
         return subprocess.CompletedProcess(command, 0)
@@ -178,7 +178,7 @@ def test_instruction_export_failure_persists_fail_closed_bundle(tmp_path, monkey
 
 def test_writer_frontier_failure_preserves_instruction_export(tmp_path, monkeypatch):
     def fake_run(command, *, env, check):
-        output = Path(command[6])
+        output = Path(command[5])
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text("validated\n", encoding="utf-8")
         return subprocess.CompletedProcess(command, 0)
