@@ -16,3 +16,5 @@ if(BUILD_TESTING)
     NAME shift_runtime_persistent_bmw_vehicle_world_transform
     COMMAND shift_runtime_persistent_bmw_vehicle_world_transform_check)
 endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/phase648.cmake)

@@ -1,0 +1,212 @@
+name: native-render-phase648
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/native-render-phase648.yml"
+      - "native_runtime/cmake/phase648.cmake"
+      - "native_runtime/cmake/phase706.cmake"
+      - "native_runtime/include/shift_phase648_runtime_injection.hpp"
+      - "native_runtime/include/shift_phase648_runtime_vehicle_vulkan_wiring.hpp"
+      - "native_runtime/include/shift_live_vehicle_vertex_buffer_upload.hpp"
+      - "native_runtime/src/live_vehicle_vertex_buffer_upload.cpp"
+      - "native_runtime/include/shift_vehicle_world_transform_transport.hpp"
+      - "native_runtime/src/vehicle_world_transform_transport.cpp"
+      - "native_runtime/src/shift_runtime.cpp"
+      - "src/scene/native_vehicle_world_transform_script.py"
+      - "src/scene/native_scene_vulkan_prepare.py"
+      - "shift_importer.py"
+      - "tools/run_linux_vulkan_smoke.py"
+      - "evidence/bmw_m3_vehicle_physics_manifest.json"
+      - "docs/PHASE648_RUNTIME_VEHICLE_VULKAN_WIRING.md"
+      - "tests/test_phase648_runtime_vehicle_vulkan_wiring.py"
+  workflow_dispatch:
+
+jobs:
+  runtime-vehicle-vulkan-wiring:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native Vulkan dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake g++ libvulkan-dev glslang-tools mesa-vulkan-drivers \
+            vulkan-tools libxcb1-dev xvfb vulkan-validationlayers python3-pytest
+
+      - name: Regress Phase 648 source contract
+        run: pytest -q tests/test_phase648_runtime_vehicle_vulkan_wiring.py
+
+      - name: Build Vulkan helpers and native runtime
+        run: |
+          cmake -S native_vulkan -B native_vulkan/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build native_vulkan/build --config Release --parallel
+          cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build native_runtime/build --config Release --parallel
+
+      - name: Prepare source-backed mixed BMW bundle
+        run: python3 tools/run_linux_vulkan_smoke.py out/phase648/bundle --validation
+
+      - name: Prepare explicit vehicle scene-set fixture
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import shutil
+          from pathlib import Path
+
+          source = Path("out/phase648/bundle/bundle")
+          root = Path("out/phase648/vehicle_scene")
+          child = root / "draw_0000"
+          if root.exists():
+              shutil.rmtree(root)
+          shutil.copytree(source, child)
+
+          world = child / "world_transform.svwt"
+          world_sha = hashlib.sha256(world.read_bytes()).hexdigest()
+
+          child_manifest_path = child / "bundle_manifest.json"
+          child_manifest = json.loads(
+              child_manifest_path.read_text(encoding="utf-8")
+          )
+          child_manifest["format"] = "SHIFT.VulkanDrawBundle/1"
+          child_manifest["ready"] = True
+          child_manifest["blocking_reasons"] = []
+          child_manifest["scene_transform"] = {
+              "world_matrix": [
+                  0.0, 2.0, 0.0, 0.0,
+                  -1.0, 0.0, 0.0, 0.0,
+                  0.0, 0.0, 0.5, 0.0,
+                  0.10, 0.20, 0.30, 1.0,
+              ],
+              "packet": {
+                  "format": "SHIFT.VulkanWorldTransformPacket/1",
+                  "path": "world_transform.svwt",
+                  "sha256": world_sha,
+              },
+              "blocking_for_scene_native_submission": True,
+          }
+          child_manifest_path.write_text(
+              json.dumps(child_manifest, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          manifest_sha = hashlib.sha256(
+              child_manifest_path.read_bytes()
+          ).hexdigest()
+
+          (child / "runtime_provenance_gate.json").write_text(
+              json.dumps({
+                  "format": "SHIFT.VulkanDrawRuntimeProvenanceGate/1",
+                  "version": 1,
+                  "ready": True,
+                  "status": "ready",
+                  "blocking_reasons": [],
+              }, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+
+          top = {
+              "format": "SHIFT.NativeSceneVulkanSet/1",
+              "version": 1,
+              "status": "ready",
+              "ready": True,
+              "blocking_reasons": [],
+              "draw_count": 1,
+              "ready_draw_count": 1,
+              "native_scene_submission": {
+                  "ready": False,
+                  "blocking_reasons": [
+                      "draw-0:scene-world-transform-not-executed"
+                  ],
+              },
+              "draws": [{
+                  "draw_order": 0,
+                  "binding_index": 0,
+                  "source_group": "vehicle",
+                  "ready": True,
+                  "status": "ready",
+                  "scene_draw_identity_sha256": "0" * 64,
+                  "bundle": {
+                      "manifest_path": "draw_0000/bundle_manifest.json",
+                      "manifest_sha256": manifest_sha,
+                  },
+              }],
+          }
+          root.mkdir(parents=True, exist_ok=True)
+          (root / "bundle_set_manifest.json").write_text(
+              json.dumps(top, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          (root / "bundle_set.paths").write_text(
+              "draw_0000\n", encoding="utf-8"
+          )
+          PY
+
+          python3 shift_importer.py native-scene-vulkan-prepare \
+            out/phase648/vehicle_scene \
+            --validator glslangValidator \
+            > out/phase648/vehicle_scene/prepare_stdout.json
+
+          PYTHONPATH=src/scene python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from native_vehicle_world_transform_script import write_scene_draw_groups
+
+          root = Path("out/phase648/vehicle_scene")
+          manifest = json.loads(
+              (root / "bundle_set_manifest.json").read_text(encoding="utf-8")
+          )
+          write_scene_draw_groups(root, manifest)
+          PY
+
+          grep -q '^vehicle$' out/phase648/vehicle_scene/bundle_set.groups
+          grep -q '"ready": true' \
+            out/phase648/vehicle_scene/bundle_set_prepare.json
+
+      - name: Prepare structural physics boundary and transform script
+        run: |
+          mkdir -p out/phase648/runtime
+          python3 src/physics/native_physics_participant_boundary.py \
+            -o out/phase648/runtime/native_physics_participant_boundary.json
+
+          cat > out/phase648/runtime/vehicle_world.script <<'EOF'
+          SHIFT.NativeVehicleWorldTransformScript/1
+          0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1
+          1 1 0 0 0 0 1 0 0 0 0 1 0 1 0 0 1
+          2 1 0 0 0 0 1 0 0 0 0 1 0 2 0 0 1
+          EOF
+
+      - name: Execute active Phase 648 runtime wiring
+        run: |
+          set -o pipefail
+          SHIFT_NATIVE_VEHICLE_WORLD_TRANSFORM_SCRIPT=out/phase648/runtime/vehicle_world.script \
+          xvfb-run -a native_runtime/build/shift_runtime \
+            --scene-set out/phase648/vehicle_scene \
+            --shader-dir native_runtime/build/shaders \
+            --physics-manifest evidence/bmw_m3_vehicle_physics_manifest.json \
+            --participant-boundary out/phase648/runtime/native_physics_participant_boundary.json \
+            --frames 3 --validation \
+            | tee out/phase648/runtime/phase648.jsonl
+
+      - name: Assert synchronized merged-uploader execution
+        run: |
+          test "$(grep -c 'SHIFT.RuntimeVehicleVulkanWiring/1' out/phase648/runtime/phase648.jsonl)" -eq 1
+          test "$(grep -c 'SHIFT.RuntimeVehicleVulkanUpload/1' out/phase648/runtime/phase648.jsonl)" -eq 3
+          grep -q '"step":0' out/phase648/runtime/phase648.jsonl
+          grep -q '"step":1' out/phase648/runtime/phase648.jsonl
+          grep -q '"step":2' out/phase648/runtime/phase648.jsonl
+          test "$(grep -c '"all_frame_fences_waited":true' out/phase648/runtime/phase648.jsonl)" -eq 3
+          test "$(grep -c '"object_space_reapply":true' out/phase648/runtime/phase648.jsonl)" -eq 3
+          test "$(grep -c '"track_draw_writes":0' out/phase648/runtime/phase648.jsonl)" -eq 3
+          test "$(grep -c '"upload_primitive":"SHIFT.LiveVehicleVertexBufferUpload/1"' out/phase648/runtime/phase648.jsonl)" -eq 4
+          grep -q '"source":"phase646-script-regression"' out/phase648/runtime/phase648.jsonl
+          grep -q '"phase706_snapshot_abi_compatible":true' out/phase648/runtime/phase648.jsonl
+          grep -q '"retail_producer_claimed":false' out/phase648/runtime/phase648.jsonl
+          grep -q '"frames_rendered": 3' out/phase648/runtime/phase648.jsonl
+          grep -q '"simulation_steps": 3' out/phase648/runtime/phase648.jsonl
+          grep -q '"scene_set_mode": true' out/phase648/runtime/phase648.jsonl
+          grep -q '"material_draws": 1' out/phase648/runtime/phase648.jsonl
+          grep -q '"validation_errors": 0' out/phase648/runtime/phase648.jsonl
+          grep -q '"status": "ok"' out/phase648/runtime/phase648.jsonl
