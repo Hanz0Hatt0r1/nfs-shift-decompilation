@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   apply:
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,8 +18,13 @@ jobs:
           ref: process-2/phase709-continuous-native-loop
           fetch-depth: 0
       - name: Apply Phase 709
-        run: python3 tools/_phase709_apply.py
+        shell: bash
+        run: |
+          awk '/^Path\("\.github\/workflows\/native-runtime-phase709\.yml"\)\.write_text\(/ {exit} {print}' \
+            tools/_phase709_apply.py > /tmp/phase709_apply.py
+          python3 /tmp/phase709_apply.py
       - name: Commit Phase 709
+        shell: bash
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
