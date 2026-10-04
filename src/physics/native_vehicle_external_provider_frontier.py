@@ -2,14 +2,9 @@
 
 Phase 699 is coordination infrastructure, not a physics implementation. It
 freezes the providers still injected into the Phase 697 persistent outer-update
-path and classifies each boundary using the Process 2 policy:
-
-* already-proven producer -> implement now;
-* static frontier available -> request an exact Process 1 proof;
-* runtime-only evidence -> remain blocked.
-
-The report deliberately keeps an empty ``implement_now`` set when no additional
-producer is proven strongly enough for a native substitution.
+path and classifies each provider using the Process 2 policy. This refresh
+consumes Process 1 PR #1196 / Phase 703 and Process 3 Phases 645-646 without
+promoting any unproven producer, cadence, BODY-owner identity, or transform.
 """
 from __future__ import annotations
 
@@ -144,17 +139,15 @@ def build_frontier() -> dict[str, Any]:
             evidence=[
                 "Phase 380 proves the visible BODY +0x50 effect lane",
                 "Phase 696 narrows application to one finite scalar delta",
-                "Phase 698 provides fail-closed future BODY-index pose selection infrastructure",
-                "Process 1 PR #1183 proves nine named BMW BODY field roles and narrows the chassis candidate frontier",
+                "Process 1 PR #1188 proves retail BMW chassis BODY 0",
+                "Process 1 PR #1196 defines SHIFT.GlobalVehicleBodyOwnerIdentity/1 and removes update-child equality from the required identity model",
+                "Phase 703 consumes the composed BODY-owner identity through the existing Phase 698/700 selector/handoff and remains fail-closed while retail identity is blocked",
             ],
             blockers=[
-                "main/chassis BODY semantic selection is not proven",
-                "update-child to vehicle solver-base continuity is not proven",
-                "concrete retail selected BODY index remains null",
+                "SHIFT.GlobalVehicleBodyOwnerIdentity/1 is not retail-ready because the targeted FUN_00765470 instruction export/receiver proof is not committed",
             ],
             requested_proof=[
-                "prove the exact main/chassis SDF BODY row/index from the remaining named topology frontier",
-                "prove update-child to vehicle solver-base continuity through FUN_007615c0",
+                "commit the targeted FUN_00765470 instruction export and prove entry ECX reaches FUN_007b2270 as BODY-array owner ECX on all relevant paths",
             ],
         ),
         _provider(
@@ -195,13 +188,17 @@ def build_frontier() -> dict[str, Any]:
             evidence=[
                 "Phases 688/689/691 consume native machine/constraint/solver/projection inputs",
                 "each half-step remains independently refreshable",
+                "Process 1 PR #1195 defines the exact FUN_00765470 BODY-owner receiver provenance frontier",
+                "Process 1 PR #1196 composes that receiver frontier with the global vehicle and chassis identities without claiming the producer refresh schedule",
             ],
             blockers=[
-                "retail ownership and refresh schedule are not proven",
+                "the targeted retail FUN_00765470 instruction export needed to close BODY-owner receiver provenance is not committed",
+                "producer field ownership and exact refresh schedule remain unproven",
                 "reuse versus recomputation between half-steps is not proven",
             ],
             requested_proof=[
-                "prove retail producer and source order for every composite-provider field",
+                "commit the targeted FUN_00765470 instruction export and close entry-ECX to BODY-array-owner receiver provenance",
+                "prove retail producer/source order for every composite-provider field",
                 "prove whether each producer refreshes before pass 0, pass 1, both, or another exact boundary",
             ],
         ),
@@ -209,37 +206,49 @@ def build_frontier() -> dict[str, Any]:
 
     closed = [
         {"boundary": "FUN_007675f0 arithmetic", "state": "native_in_deepest_chain", "phase": 693},
+        {"boundary": "FUN_007682c0 broad arbitrary callback", "state": "replaced_by_typed_effect_provider_consumer", "phase": 696},
+        {"boundary": "persistent BODY bytes across explicit outer updates", "state": "runtime_owned_persistent", "phase": 697},
+        {"boundary": "persistent BODY origin/basis decode", "state": "runtime_owned_typed_snapshots", "phase": 695},
+        {"boundary": "BODY-index -> persistent pose selector", "state": "fail_closed_infrastructure_ready", "phase": 698},
+        {"boundary": "NativeRuntimeState -> selected BODY pose handoff", "state": "read_only_transport_ready", "phase": 700},
         {
-            "boundary": "FUN_007682c0 broad arbitrary callback",
-            "state": "replaced_by_typed_effect_provider_consumer",
-            "phase": 696,
+            "boundary": "BMW main/chassis BODY semantic identity",
+            "state": "process1_structurally_proven",
+            "proof": "SHIFT.BMWChassisBodyIdentityFrontier/1",
+            "selected_BODY_index": 0,
         },
         {
-            "boundary": "persistent BODY bytes across explicit outer updates",
-            "state": "runtime_owned_persistent",
-            "phase": 697,
+            "boundary": "global vehicle/BODY-owner identity composition contract",
+            "state": "contract_ready_retail_FUN_00765470_receiver_proof_pending",
+            "proof": "SHIFT.GlobalVehicleBodyOwnerIdentity/1 / Process 1 PR #1196",
+            "selected_BODY_index_when_ready": 0,
+            "retail_identity_ready": False,
+            "update_child_pointer_equality_required": False,
         },
         {
-            "boundary": "persistent BODY origin/basis decode",
-            "state": "runtime_owned_typed_snapshots",
-            "phase": 695,
-        },
-        {
-            "boundary": "proven BODY-index -> persistent pose selection transport",
-            "state": "fail_closed_infrastructure_ready",
-            "phase": 698,
+            "boundary": "native composed BODY-owner identity consumer",
+            "state": "phase703_fail_closed_consumer_ready",
+            "phase": 703,
+            "proof": "SHIFT.NativeGlobalVehicleBodyOwnerSelection/1",
             "retail_identity_ready": False,
         },
         {
-            "boundary": "BMW named BODY field topology",
-            "state": "process1_named_roles_ready_chassis_unselected",
-            "proof": "SHIFT.VehicleNamedBodyTopologyFrontier/1",
-            "selected_BODY_index": None,
+            "boundary": "resource-driven Silverstone+BMW playable scene bootstrap",
+            "state": "process3_one_command_bootstrap_ready",
+            "phase": 644,
+            "proof": "SHIFT.NativePlayableSceneBootstrap/1 / Process 3 PR #1191",
         },
         {
-            "boundary": "renderer prepared native scene path",
-            "state": "process3_resource_side_ready_or_fail_closed",
-            "phase": 641,
+            "boundary": "canonical BMW VHF static bind transform",
+            "state": "process3_static_bind_transform_ready_not_dynamic_pose",
+            "phase": 645,
+            "proof": "SHIFT.BMWVHFBodyWorldTransform/1",
+        },
+        {
+            "boundary": "dynamic vehicle world-transform transport core",
+            "state": "process3_transport_core_ready_live_vulkan_wiring_pending",
+            "phase": 646,
+            "proof": "SHIFT.NativeVehicleWorldTransformScript/1 + native transform core / Process 3 PR #1197",
         },
     ]
 
@@ -257,23 +266,33 @@ def build_frontier() -> dict[str, Any]:
         },
         {
             "id": "body_to_vehicle_identity",
-            "state": "static_frontier_available",
+            "state": "composed_global_owner_contract_ready_retail_receiver_proof_pending",
             "process2_action": REQUEST_PROCESS1,
-            "blockers": [
-                "Process 1 PR #1183 keeps main_chassis_BODY_selected false",
-                "selected_BODY_index remains null",
-                "update-child -> vehicle solver-base continuity is not proven",
-                "vehicle/world transform mapping from selected BODY pose is not proven",
+            "evidence": [
+                "Process 1 PR #1194 proves the global FUN_00770e80 outer receiver is the global vehicle component base",
+                "Process 1 PR #1195 defines FUN_00765470 entry-ECX -> BODY-array-owner receiver provenance",
+                "Process 1 PR #1196 composes those contracts with BMW chassis BODY 0 in SHIFT.GlobalVehicleBodyOwnerIdentity/1",
+                "Phase 703 removes the obsolete update-child equality gate and consumes the composed handoff directly",
             ],
-            "policy": "Phase 698 selector remains fail-closed until exact retail chassis BODY identity is proven",
+            "blockers": [
+                "targeted retail FUN_00765470 instruction export/receiver proof is not committed, so the composed identity is not retail-ready",
+            ],
+            "policy": "Phase 703/698/700 remain fail-closed until SHIFT.GlobalVehicleBodyOwnerIdentity/1 is positive; do not reintroduce update-child pointer equality",
         },
         {
-            "id": "body_pose_to_renderer_object_identity",
-            "state": "cross_process_identity_blocked",
+            "id": "body_pose_to_renderer_world_transform",
+            "state": "bind_frame_composition_blocked_transport_core_ready",
             "process2_action": REQUEST_PROCESS1,
-            "blockers": ["BODY/vehicle -> prepared scene child identity is not proven"],
-            "additional_dependency": "Process 3 Phase 641 renderer/resource side",
-            "policy": "do not rewrite SVWT, scene state or camera without identity/mapping proof",
+            "evidence": [
+                "Phase 700 can expose an authorized persistent BODY pose without mutating runtime state",
+                "Process 3 Phase 645 proves the canonical BMW VHF vehicle-root/body-MEB static bind transform and VHF->SVWT convention bridge",
+                "Process 3 Phase 646 provides exact vehicle draw-group identity and a non-cumulative native dynamic transform transport core",
+            ],
+            "blockers": [
+                "persistent BODY0 pose frame -> Phase 645 VHF vehicle-root/body-MEB bind-frame composition is not proven",
+            ],
+            "additional_dependency": "Process 3 Phase 646 live Vulkan buffer wiring is a renderer-side mechanical follow-up, not a BODY-frame proof",
+            "policy": "do not synthesize BODY0->VHF composition or promote the Phase 645 static bind matrix into a dynamic physics pose",
         },
         {
             "id": "retail_resource_to_initial_body_state",
@@ -282,7 +301,7 @@ def build_frontier() -> dict[str, Any]:
             "blockers": [
                 "retail vehicle physics resources -> concrete initial 0x170 BODY records are not proven end-to-end"
             ],
-            "additional_dependency": "Process 3 vehicle resource graph/bootstrap",
+            "additional_dependency": "Process 3 can select/compose BMW resources, but concrete physics BODY initialization remains a separate producer proof",
             "policy": "Phase 697 initialization continues to require exact admitted BODY bytes",
         },
     ]
@@ -297,17 +316,14 @@ def build_frontier() -> dict[str, Any]:
         "format": FORMAT,
         "version": 1,
         "phase": 699,
-        "deepest_native_chain": "Phase 697 persistent FUN_00770e80 outer-update path",
+        "refresh_after_phase": 703,
+        "deepest_native_chain": "Phase 697 persistent FUN_00770e80 outer-update path wrapped by Phase 701 persistent provider session",
         "external_provider_count": len(providers),
         "providers": providers,
         "action_counts": action_counts,
         "implement_now": [row["id"] for row in providers if row["process2_action"] == IMPLEMENT_NOW],
-        "process1_handoff_requests": [
-            row["id"] for row in providers if row["process2_action"] == REQUEST_PROCESS1
-        ],
-        "runtime_only_blocked": [
-            row["id"] for row in providers if row["process2_action"] == RUNTIME_ONLY_BLOCKED
-        ],
+        "process1_handoff_requests": [row["id"] for row in providers if row["process2_action"] == REQUEST_PROCESS1],
+        "runtime_only_blocked": [row["id"] for row in providers if row["process2_action"] == RUNTIME_ONLY_BLOCKED],
         "closed_boundaries": closed,
         "cross_chain_joins": joins,
         "guards": {
@@ -319,17 +335,14 @@ def build_frontier() -> dict[str, Any]:
             "host_sqrt_substitution_allowed": False,
             "host_sin_substitution_allowed": False,
             "host_cos_substitution_allowed": False,
+            "update_child_pointer_equality_required": False,
             "body_pose_to_vehicle_transform_promotion_allowed": False,
+            "phase645_static_bind_transform_is_dynamic_pose": False,
+            "phase646_transport_core_is_body_frame_proof": False,
             "original_game_execution_required": False,
             "new_runtime_capture_required": False,
         },
     }
 
 
-__all__ = [
-    "FORMAT",
-    "IMPLEMENT_NOW",
-    "REQUEST_PROCESS1",
-    "RUNTIME_ONLY_BLOCKED",
-    "build_frontier",
-]
+__all__ = ["FORMAT", "IMPLEMENT_NOW", "REQUEST_PROCESS1", "RUNTIME_ONLY_BLOCKED", "build_frontier"]
