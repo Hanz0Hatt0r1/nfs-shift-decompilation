@@ -2,11 +2,15 @@
 """Build the current fail-closed Silverstone + BMW native Linux playable slice.
 
 This entry point deliberately reuses tools/bootstrap_native_vertical_slice.py for
-all existing resource, renderer-evidence, runtime-input and profile behavior.  It
+all existing resource, renderer-evidence, runtime-input and profile behavior. It
 then inserts the Phase 644 corpus -> BMW material -> Phase 643 composite-scene
 stage and rebuilds the runtime requirements/profile against that composite scene.
 
-The historical track-only bootstrap remains unchanged.  This command is the
+Phase 653 additionally accepts a ready Phase 650 capture-result bundle and uses
+the existing Phase 652 exact feedback resolver to derive the canonical sibling
+raw capture/root. The full renderer re-attribution chain remains unchanged.
+
+The historical track-only bootstrap remains unchanged. This command is the
 playable-specific orchestration path and therefore owns scene-set production;
 passing --scene-set is rejected rather than silently replacing the generated
 track+vehicle scene.
@@ -28,6 +32,9 @@ for path in (TOOLS, ROOT):
 # Importing the existing bootstrap installs the repository src/* search paths.
 from bootstrap_native_vertical_slice import build_parser as build_base_parser
 from bootstrap_native_vertical_slice import main as base_main
+from bootstrap_native_vertical_slice_from_capture_result import (
+    resolve_capture_feedback_input,
+)
 from native_playable_scene_bootstrap import build_native_playable_scene_bootstrap
 from offline_runtime_requirements import build_runtime_requirements
 from offline_vertical_slice_profile import build_vertical_slice_profile_prepare
@@ -56,6 +63,25 @@ def _unique(values: list[str]) -> list[str]:
 
 def _without_flag(argv: list[str], flag: str) -> list[str]:
     return [value for value in argv if value != flag]
+
+
+def _without_option(argv: list[str], option: str) -> list[str]:
+    """Remove one ordinary option/value pair, including --option=value form."""
+    result: list[str] = []
+    index = 0
+    while index < len(argv):
+        value = argv[index]
+        if value == option:
+            if index + 1 >= len(argv):
+                raise ValueError(f"missing value for {option}")
+            index += 2
+            continue
+        if value.startswith(option + "="):
+            index += 1
+            continue
+        result.append(value)
+        index += 1
+    return result
 
 
 def _runtime_bootstrap(report: Mapping[str, Any]) -> Mapping[str, Any] | None:
@@ -114,21 +140,60 @@ def _blocked_status(report: Mapping[str, Any]) -> str:
 def main(argv: list[str] | None = None) -> int:
     values = list(sys.argv[1:] if argv is None else argv)
     parser = build_base_parser()
+    parser.add_argument(
+        "--renderer-capture-result",
+        help=(
+            "ready Phase 650 external-sampler capture-result bundle; derives "
+            "the exact sibling renderer capture JSONL/root via Phase 652"
+        ),
+    )
     args = parser.parse_args(values)
     if args.scene_set:
         parser.error(
             "bootstrap_playable_linux_slice owns the composite scene set; "
             "do not pass --scene-set"
         )
+
+    capture_feedback: Mapping[str, Any] | None = None
+    base_values = list(values)
+    if args.renderer_capture_result:
+        if args.renderer_capture_jsonl or args.renderer_capture_root:
+            parser.error(
+                "--renderer-capture-result owns the exact renderer capture "
+                "JSONL/root; do not also pass --renderer-capture-jsonl or "
+                "--renderer-capture-root"
+            )
+        try:
+            capture_feedback = resolve_capture_feedback_input(
+                args.renderer_capture_result
+            )
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            parser.error(
+                "renderer capture result is not a ready exact Phase 650 bundle: "
+                f"{type(exc).__name__}:{exc}"
+            )
+        base_values = _without_option(base_values, "--renderer-capture-result")
+        base_values.extend([
+            "--renderer-capture-jsonl",
+            str(capture_feedback["capture_jsonl"]),
+            "--renderer-capture-root",
+            str(capture_feedback["capture_root"]),
+        ])
+        # Keep the parsed playable-layer values aligned with the exact inputs
+        # that the lower-level bootstrap will consume.
+        args.renderer_capture_jsonl = str(capture_feedback["capture_jsonl"])
+        args.renderer_capture_root = str(capture_feedback["capture_root"])
+
     if not args.renderer_capture_jsonl:
         parser.error(
-            "playable scene composition requires the existing renderer evidence "
-            "path (--renderer-capture-jsonl plus its PE evidence selector)"
+            "playable scene composition requires renderer evidence through "
+            "either --renderer-capture-result or --renderer-capture-jsonl, "
+            "plus its PE evidence selector"
         )
 
     # A launch plan produced before Phase 644 would point at the track-only scene.
     # Defer launcher validation until the composite scene/profile is rebuilt.
-    base_argv = _without_flag(values, "--validate-launch-plan")
+    base_argv = _without_flag(base_values, "--validate-launch-plan")
     base_main(base_argv)
 
     out = Path(args.output).resolve()
@@ -144,11 +209,20 @@ def main(argv: list[str] | None = None) -> int:
         and not str(reason).startswith("launch-plan:")
     ]
 
+    if capture_feedback is not None:
+        stages["renderer_capture_feedback"] = dict(capture_feedback)
+        artifacts["renderer_capture_result"] = str(
+            Path(args.renderer_capture_result).expanduser().resolve()
+        )
+
     boundary.update({
         "playable_linux_scene_composition_requested": True,
         "playable_linux_scene_uses_same_resource_corpus": True,
         "manual_vehicle_material_slice_handoff_required": False,
         "manual_vehicle_bff_path_handoff_required": False,
+        "manual_renderer_capture_path_handoff_required": False,
+        "phase652_capture_feedback_consumed": capture_feedback is not None,
+        "renderer_capture_result_is_render_admission": False,
         "track_only_profile_is_playable_profile": False,
         "phase700_runtime_pose_handoff_consumed": False,
         "dynamic_vehicle_world_transform_claimed": False,
