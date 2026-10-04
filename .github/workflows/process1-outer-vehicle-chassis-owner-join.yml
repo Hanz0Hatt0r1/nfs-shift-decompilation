@@ -1,0 +1,43 @@
+name: Process 1 outer Vehicle chassis owner join
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_chassis_owner_join.py'
+      - 'tests/test_ghidra_outer_vehicle_chassis_owner_join.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_CHASSIS_OWNER_JOIN.md'
+      - 'evidence/outer_vehicle_chassis_owner_join_retail.json'
+      - '.github/workflows/process1-outer-vehicle-chassis-owner-join.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_outer_vehicle_chassis_owner_join.py'
+      - 'tests/test_ghidra_outer_vehicle_chassis_owner_join.py'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_CHASSIS_OWNER_JOIN.md'
+      - 'evidence/outer_vehicle_chassis_owner_join_retail.json'
+      - '.github/workflows/process1-outer-vehicle-chassis-owner-join.yml'
+
+jobs:
+  chassis-owner-join:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run chassis owner join regressions
+        run: python -m pytest -q tests/test_ghidra_outer_vehicle_chassis_owner_join.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/analyze_outer_vehicle_chassis_owner_join.py --help >/dev/null
+      - name: Validate committed retail evidence schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('evidence/outer_vehicle_chassis_owner_join_retail.json')
+          r = json.loads(p.read_text())
+          assert r['format'] == 'SHIFT.OuterVehicleChassisOwnerJoin/1'
+          assert r['ready'] is True
+          assert r['handoff']['forwarded_007afb60_branch_eliminated'] is True
+          assert r['handoff']['BODY0_bind_frame_proof_ready'] is False
+          PY

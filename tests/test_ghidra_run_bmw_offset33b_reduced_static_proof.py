@@ -50,9 +50,22 @@ def _mass_report() -> dict:
     return {
         "format": MODULE._mass.FORMAT,
         "ready": True,
-        "gates": {
-            "offset33b_additional_mass_bootstrap_zero_ready": True,
+        "handoff": {
+            "offset33b_actual_additional_mass_bootstrap_zero_ready": True,
             "offset33b_additional_mass_term_can_be_elided_for_first_bootstrap": True,
+            "BMW_numeric_offset33b_ready": False,
+        },
+        "scope": {"retracted_manager_record_zero_claim_reused": False},
+    }
+
+
+def _reference_y_report() -> dict:
+    return {
+        "format": MODULE._reference_y.FORMAT,
+        "ready": True,
+        "handoff": {
+            "offset33b_vehicle_reference_y_bootstrap_zero_ready": True,
+            "offset33b_reference_y_reduced_to_negative_graphical_offset": True,
             "BMW_numeric_offset33b_ready": False,
         },
     }
@@ -82,16 +95,17 @@ def _load_report(*, exact: bool = True) -> dict:
     }
 
 
-def test_one_command_chain_reuses_single_export_and_emits_field_worklist(
+def _install_metadata_reductions(monkeypatch):
+    monkeypatch.setattr(MODULE._mass, "analyze", lambda root: _mass_report())
+    monkeypatch.setattr(MODULE._reference_y, "analyze", lambda root: _reference_y_report())
+
+
+def test_one_command_chain_reuses_single_export_and_emits_current_reductions(
     tmp_path,
     monkeypatch,
 ):
     _install_base(monkeypatch, tmp_path)
-    monkeypatch.setattr(
-        MODULE._mass,
-        "analyze_bmw_offset33b_additional_mass_bootstrap_zero",
-        lambda root: _mass_report(),
-    )
+    _install_metadata_reductions(monkeypatch)
     observed: list[tuple[Path, Path, Path]] = []
 
     def fake_load(store_path, instruction_path, mass_path):
@@ -112,7 +126,6 @@ def test_one_command_chain_reuses_single_export_and_emits_field_worklist(
     assert report["format"] == MODULE.FORMAT
     assert report["completed"] is True
     assert report["status"] == "semantic-resource-field-join"
-    assert report["decision"]["class"] == "semantic-resource-field-join"
     assert report["exact_object_field_worklist"][0]["displacement"] == 48
     assert observed == [
         (
@@ -121,31 +134,29 @@ def test_one_command_chain_reuses_single_export_and_emits_field_worklist(
             out / MODULE.MASS_FILE,
         )
     ]
-    assert report["known_semantic_reductions"]["additional_mass_first_bootstrap_zero"] is True
-    assert report["known_semantic_reductions"][
-        "additional_mass_term_elidable_for_first_bootstrap"
-    ] is True
-    assert report["known_semantic_reductions"]["additional_mass_machine_LOAD_join_ready"] is False
+    reductions = report["known_semantic_reductions"]
+    assert reductions["actual_additional_mass_first_bootstrap_zero"] is True
+    assert reductions["additional_mass_term_elidable_for_first_bootstrap"] is True
+    assert reductions["vehicle_reference_y_first_bootstrap_zero"] is True
+    assert reductions["reference_y_reduced_to_negative_graphical_offset"] is True
+    assert reductions["additional_mass_machine_LOAD_join_ready"] is False
     assert report["handoff"]["offset33b_exact_memory_field_worklist_ready"] is True
     assert report["handoff"]["BMW_numeric_offset33b_ready"] is False
-    assert report["handoff"]["vehicle_world_transform_ready"] is False
     assert report["scope"]["targeted_Ghidra_export_count"] == 1
     assert report["scope"]["additional_Ghidra_export_requested"] is False
+    assert report["scope"]["retracted_manager_record_zero_claim_reused"] is False
     assert (out / MODULE.MASS_FILE).is_file()
+    assert (out / MODULE.REFERENCE_Y_FILE).is_file()
     assert (out / MODULE.LOAD_FILE).is_file()
     assert (out / MODULE.BUNDLE_FILE).is_file()
 
 
-def test_incomplete_store_frontier_still_proves_mass_zero_but_skips_load_stage(
+def test_incomplete_store_frontier_still_proves_metadata_reductions_but_skips_load(
     tmp_path,
     monkeypatch,
 ):
     _install_base(monkeypatch, tmp_path, store_ready=False)
-    monkeypatch.setattr(
-        MODULE._mass,
-        "analyze_bmw_offset33b_additional_mass_bootstrap_zero",
-        lambda root: _mass_report(),
-    )
+    _install_metadata_reductions(monkeypatch)
 
     def forbidden(*args, **kwargs):
         raise AssertionError("memory load stage must not run before STORE frontier is ready")
@@ -161,7 +172,9 @@ def test_incomplete_store_frontier_still_proves_mass_zero_but_skips_load_stage(
     )
 
     assert report["status"] == "store-frontier-incomplete"
-    assert report["known_semantic_reductions"]["additional_mass_first_bootstrap_zero"] is True
+    reductions = report["known_semantic_reductions"]
+    assert reductions["actual_additional_mass_first_bootstrap_zero"] is True
+    assert reductions["vehicle_reference_y_first_bootstrap_zero"] is True
     assert report["stages"]["memory_load_provenance"]["state"] == "blocked_by_upstream_gate"
     assert report["handoff"]["offset33b_store_provenance_ready"] is False
     assert report["handoff"]["BMW_numeric_offset33b_ready"] is False
@@ -169,11 +182,7 @@ def test_incomplete_store_frontier_still_proves_mass_zero_but_skips_load_stage(
 
 def test_nonexact_load_frontier_routes_to_base_or_helper_resolution(tmp_path, monkeypatch):
     _install_base(monkeypatch, tmp_path)
-    monkeypatch.setattr(
-        MODULE._mass,
-        "analyze_bmw_offset33b_additional_mass_bootstrap_zero",
-        lambda root: _mass_report(),
-    )
+    _install_metadata_reductions(monkeypatch)
     monkeypatch.setattr(
         MODULE._loads,
         "analyze_bmw_offset33b_memory_load_provenance",
@@ -188,41 +197,51 @@ def test_nonexact_load_frontier_routes_to_base_or_helper_resolution(tmp_path, mo
     assert report["handoff"]["offset33b_exact_memory_field_worklist_ready"] is False
 
 
-def test_additional_mass_failure_preserves_base_artifacts_and_failure_bundle(
-    tmp_path,
-    monkeypatch,
-):
+def test_actual_mass_failure_preserves_base_artifacts_and_failure_bundle(tmp_path, monkeypatch):
     _install_base(monkeypatch, tmp_path)
 
     def fail(root):
-        raise ValueError("mass proof drift")
+        raise ValueError("actual mass proof drift")
 
-    monkeypatch.setattr(
-        MODULE._mass,
-        "analyze_bmw_offset33b_additional_mass_bootstrap_zero",
-        fail,
-    )
+    monkeypatch.setattr(MODULE._mass, "analyze", fail)
 
-    with pytest.raises(ValueError, match="mass proof drift"):
+    with pytest.raises(ValueError, match="actual mass proof drift"):
         MODULE.run_bmw_offset33b_reduced_static_proof(
             *_args(tmp_path), ghidra_home=tmp_path / "ghidra"
         )
 
     out = tmp_path / "out"
     bundle = json.loads((out / MODULE.BUNDLE_FILE).read_text(encoding="utf-8"))
-    assert bundle["failed_stage"] == "additional_mass_bootstrap_zero"
+    assert bundle["failed_stage"] == "actual_additional_mass_bootstrap_zero"
     assert "base_bundle" in bundle["artifacts"]
     assert bundle["handoff"]["BMW_numeric_offset33b_ready"] is False
-    assert bundle["scope"]["additional_Ghidra_export_requested"] is False
+    assert bundle["scope"]["retracted_manager_record_zero_claim_reused"] is False
 
 
-def test_memory_load_failure_preserves_mass_proof_and_failure_bundle(tmp_path, monkeypatch):
+def test_reference_y_failure_preserves_actual_mass_artifact(tmp_path, monkeypatch):
     _install_base(monkeypatch, tmp_path)
-    monkeypatch.setattr(
-        MODULE._mass,
-        "analyze_bmw_offset33b_additional_mass_bootstrap_zero",
-        lambda root: _mass_report(),
-    )
+    monkeypatch.setattr(MODULE._mass, "analyze", lambda root: _mass_report())
+
+    def fail(root):
+        raise ValueError("reference y proof drift")
+
+    monkeypatch.setattr(MODULE._reference_y, "analyze", fail)
+
+    with pytest.raises(ValueError, match="reference y proof drift"):
+        MODULE.run_bmw_offset33b_reduced_static_proof(
+            *_args(tmp_path), ghidra_home=tmp_path / "ghidra"
+        )
+
+    out = tmp_path / "out"
+    bundle = json.loads((out / MODULE.BUNDLE_FILE).read_text(encoding="utf-8"))
+    assert bundle["failed_stage"] == "vehicle_reference_y_bootstrap_zero"
+    assert (out / MODULE.MASS_FILE).is_file()
+    assert bundle["handoff"]["vehicle_world_transform_ready"] is False
+
+
+def test_memory_load_failure_preserves_both_reduction_artifacts(tmp_path, monkeypatch):
+    _install_base(monkeypatch, tmp_path)
+    _install_metadata_reductions(monkeypatch)
 
     def fail(*args):
         raise ValueError("load provenance drift")
@@ -242,6 +261,7 @@ def test_memory_load_failure_preserves_mass_proof_and_failure_bundle(tmp_path, m
     bundle = json.loads((out / MODULE.BUNDLE_FILE).read_text(encoding="utf-8"))
     assert bundle["failed_stage"] == "memory_load_provenance"
     assert (out / MODULE.MASS_FILE).is_file()
+    assert (out / MODULE.REFERENCE_Y_FILE).is_file()
     assert bundle["handoff"]["vehicle_world_transform_ready"] is False
 
 

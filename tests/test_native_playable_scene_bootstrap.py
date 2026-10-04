@@ -27,6 +27,24 @@ def _fixture_identity(name: str) -> mod.RetailArchiveIdentity:
     )
 
 
+def _ready_resource_gate():
+    return {
+        "format": "SHIFT.BMWPlayableRenderResourceIdentityGate/1",
+        "version": 1,
+        "status": "ready",
+        "ready": True,
+        "blocking_reasons": [],
+        "summary": {"claimed_resource_count": 4, "verified_resource_count": 4},
+        "resources": [],
+        "boundary": {
+            "exact_logical_path_required": True,
+            "exact_single_occurrence_required": True,
+            "basename_fallback_allowed": False,
+            "first_duplicate_selection_allowed": False,
+        },
+    }
+
+
 def _patch_materialize(monkeypatch, rows):
     @contextmanager
     def fake_materialize(inputs):
@@ -42,6 +60,14 @@ def _patch_materialize(monkeypatch, rows):
             "cockpit": _fixture_identity("BMW_M3_E36_Cockpit.bff"),
             "render": _fixture_identity("RENDER.bff"),
         },
+    )
+    # These orchestration tests deliberately mock Phase 533 and therefore do
+    # not carry real primitive resource provenance.  Model the new Phase 654
+    # boundary explicitly; dedicated Phase 654 tests exercise the real gate.
+    monkeypatch.setattr(
+        mod,
+        "build_bmw_playable_render_resource_identity_gate",
+        lambda *args, **kwargs: _ready_resource_gate(),
     )
 
 
@@ -77,6 +103,25 @@ def _ready_vhf_transform():
     }
 
 
+def _write_ready_admission(report, output_dir):
+    root = Path(output_dir)
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "material_slice_set.json").write_text(
+        json.dumps({
+            "format": "SHIFT.BMWMaterialSliceSet/1",
+            "ready": True,
+            "render_command": {"world_matrix": None},
+        }),
+        encoding="utf-8",
+    )
+    path = root / "admission.json"
+    path.write_text(
+        json.dumps(report) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
 def test_corpus_bootstrap_selects_exact_archives_builds_vhf_transform_and_phase643(
     monkeypatch,
     tmp_path,
@@ -96,24 +141,6 @@ def test_corpus_bootstrap_selects_exact_archives_builds_vhf_transform_and_phase6
             (Path(primary), Path(golden), [Path(x) for x in supplemental_bffs])
         )
         return _ready_admission()
-
-    def write_admission(report, output_dir):
-        root = Path(output_dir)
-        root.mkdir(parents=True, exist_ok=True)
-        (root / "material_slice_set.json").write_text(
-            json.dumps({
-                "format": "SHIFT.BMWMaterialSliceSet/1",
-                "ready": True,
-                "render_command": {"world_matrix": None},
-            }),
-            encoding="utf-8",
-        )
-        path = root / "admission.json"
-        path.write_text(
-            '{"format":"SHIFT.BMWBodyMaterialAdmission/1","ready":true}\n',
-            encoding="utf-8",
-        )
-        return path
 
     def build_transform(primary, golden):
         transform_calls.append((Path(primary), Path(golden)))
@@ -141,7 +168,7 @@ def test_corpus_bootstrap_selects_exact_archives_builds_vhf_transform_and_phase6
         }
 
     monkeypatch.setattr(mod, "build_bmw_body_material_admission", admission)
-    monkeypatch.setattr(mod, "write_bmw_body_material_admission", write_admission)
+    monkeypatch.setattr(mod, "write_bmw_body_material_admission", _write_ready_admission)
     monkeypatch.setattr(mod, "build_bmw_vhf_body_world_transform", build_transform)
     monkeypatch.setattr(mod, "apply_bmw_vhf_body_world_transform", apply_transform)
     monkeypatch.setattr(mod, "build_native_playable_scene_vulkan_set", compose)
@@ -191,10 +218,15 @@ def test_corpus_bootstrap_selects_exact_archives_builds_vhf_transform_and_phase6
     assert report["boundary"]["archive_basename_is_selection_authority"] is False
     assert report["boundary"]["archive_sha256_required"] is True
     assert report["boundary"]["byte_identical_duplicate_collapse_allowed"] is False
+    assert report["boundary"]["phase654_exact_vehicle_render_resource_identity_required"] is True
+    assert report["boundary"]["phase654_exact_vehicle_render_resource_identity_consumed"] is True
     assert report["boundary"]["phase645_vhf_body_world_transform_required"] is True
     assert report["boundary"]["vhf_body_world_transform_consumed"] is True
     assert report["boundary"]["phase643_composite_scene_consumed"] is True
     assert report["boundary"]["phase700_runtime_pose_handoff_consumed"] is False
+    assert report["stages"]["vehicle_material_admission"][
+        "playable_render_resource_identity_gate"
+    ]["ready"] is True
     assert Path(report["artifacts"]["vehicle_vhf_body_world_transform"]).is_file()
     assert Path(
         report["artifacts"]["vehicle_material_slice_set_with_vhf_transform"]
@@ -268,6 +300,58 @@ def test_corpus_bootstrap_blocks_on_retail_archive_hash_mismatch(
     )
 
 
+def test_corpus_bootstrap_blocks_when_phase654_resource_gate_blocks(
+    monkeypatch,
+    tmp_path,
+):
+    rows = _rows(
+        tmp_path,
+        ["BMW_M3_E36.bff", "BMW_M3_E36_Cockpit.bff", "RENDER.bff"],
+    )
+    _patch_materialize(monkeypatch, rows)
+    monkeypatch.setattr(mod, "build_bmw_body_material_admission", lambda *a, **k: _ready_admission())
+    monkeypatch.setattr(mod, "write_bmw_body_material_admission", _write_ready_admission)
+    monkeypatch.setattr(
+        mod,
+        "build_bmw_playable_render_resource_identity_gate",
+        lambda *a, **k: {
+            "format": "SHIFT.BMWPlayableRenderResourceIdentityGate/1",
+            "ready": False,
+            "status": "blocked",
+            "blocking_reasons": [
+                "phase654:exact-resource-occurrence-count:render/shaders/bodywork.fx:expected=1:observed=2"
+            ],
+        },
+    )
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("VHF/Phase643 must not run after exact resource gate blocks")
+
+    monkeypatch.setattr(mod, "build_bmw_vhf_body_world_transform", forbidden)
+    monkeypatch.setattr(mod, "build_native_playable_scene_vulkan_set", forbidden)
+
+    track = tmp_path / "track-scene"
+    track.mkdir()
+    report = mod.build_native_playable_scene_bootstrap(
+        ["Vehicles.zip", "SHIFT_tail.zip"],
+        track,
+        tmp_path / "playable",
+        vehicle="BMW_M3_E36",
+    )
+
+    assert report["ready"] is False
+    assert report["scene_set_ready"] is False
+    assert any(
+        "exact-resource-occurrence-count:render/shaders/bodywork.fx:expected=1:observed=2"
+        in reason
+        for reason in report["blocking_reasons"]
+    )
+    admission = report["stages"]["vehicle_material_admission"]
+    assert admission["phase533_ready_before_phase654"] is True
+    assert admission["playable_render_resource_identity_gate"]["ready"] is False
+    assert report["boundary"]["phase654_exact_vehicle_render_resource_identity_consumed"] is False
+
+
 def test_corpus_bootstrap_blocks_when_vhf_transform_cannot_be_proven(
     monkeypatch,
     tmp_path,
@@ -279,17 +363,7 @@ def test_corpus_bootstrap_blocks_when_vhf_transform_cannot_be_proven(
     _patch_materialize(monkeypatch, rows)
 
     monkeypatch.setattr(mod, "build_bmw_body_material_admission", lambda *a, **k: _ready_admission())
-
-    def write_admission(report, output_dir):
-        root = Path(output_dir)
-        root.mkdir(parents=True, exist_ok=True)
-        (root / "material_slice_set.json").write_text(
-            '{"format":"SHIFT.BMWMaterialSliceSet/1","ready":true}\n',
-            encoding="utf-8",
-        )
-        return root / "admission.json"
-
-    monkeypatch.setattr(mod, "write_bmw_body_material_admission", write_admission)
+    monkeypatch.setattr(mod, "write_bmw_body_material_admission", _write_ready_admission)
     monkeypatch.setattr(
         mod,
         "build_bmw_vhf_body_world_transform",

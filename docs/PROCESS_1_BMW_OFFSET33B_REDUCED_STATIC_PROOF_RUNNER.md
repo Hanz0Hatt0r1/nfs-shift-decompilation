@@ -2,23 +2,27 @@
 
 ## Playable-slice blocker reduced
 
-The numeric BMW BODY0 bind translation depends on three `offset33b` doubles.
-Three bounded proofs now exist:
+The numeric BMW BODY0 bind translation depends on three `offset33b` doubles. The
+canonical reduced chain now composes only sound current proofs:
 
 ```text
 SHIFT.BMWOffset33bStaticProofBundle/1
   -> one read-only/noanalysis FUN_0076b280 export
   -> exact HDVehicle STORE/value-root frontier
 
-SHIFT.BMWOffset33bAdditionalMassBootstrapZero/1
-  -> PhysicsParticipant+0xba0 / Vehicle+0x860 = +0.0f
-     for fresh/reinitialized first bootstrap
+SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1
+  -> actual PhysicsParticipant+0xba0 / embedded Vehicle+0x860 = +0.0f
+     for fresh first bootstrap
+
+SHIFT.BMWOffset33bVehicleReferenceYBootstrapZero/1
+  -> actual PhysicsParticipant+0x500 / Vehicle+0x1c0 = +0.0f
+  -> Y reference reduces to -effective_graphical_offset_y
 
 SHIFT.BMWOffset33bMemoryLoadProvenance/1
   -> exact memory LOAD base-origin/displacement/width worklist
 ```
 
-This runner composes them without requesting another Ghidra export.
+The historical manager-record zero contract retracted by #1250 is not consumed.
 
 Contract:
 
@@ -43,22 +47,24 @@ run_bmw_offset33b_static_proof.py
         +-> 01_fun_0076b280_instructions.jsonl
         +-> 02_bmw_offset33b_store_provenance.json
         |
-        v
-analyze_bmw_offset33b_additional_mass_bootstrap_zero.py
+        +-> analyze_bmw_offset33b_actual_additional_mass_bootstrap_zero.py
+        |     +-> 03_bmw_offset33b_actual_additional_mass_bootstrap_zero.json
         |
-        +-> 03_bmw_offset33b_additional_mass_bootstrap_zero.json
+        +-> analyze_bmw_offset33b_vehicle_reference_y_bootstrap_zero.py
+        |     +-> 04_bmw_offset33b_vehicle_reference_y_bootstrap_zero.json
         |
         v
 analyze_bmw_offset33b_memory_load_provenance.py
         |
-        +-> 04_bmw_offset33b_memory_load_provenance.json
+        +-> 05_bmw_offset33b_memory_load_provenance.json
         |
         v
 bmw_offset33b_reduced_static_proof_bundle.json
 ```
 
-The first instruction export is reused by the LOAD analysis. There is no second
-Ghidra project open and no second target list.
+Only `FUN_0076b280` requires a Ghidra instruction export. The two bootstrap-zero
+reductions use the saved retail metadata and exact reviewed/fingerprinted static
+semantics.
 
 ## Invocation
 
@@ -71,44 +77,16 @@ python3 tools/ghidra/run_bmw_offset33b_reduced_static_proof.py \
   out/bmw_offset33b_reduced_static_proof
 ```
 
-Optional arguments remain compatible with the base runner:
-
-```text
---relation <SHIFT.BMWBody0VehicleRootBindRelation/1>
---program-name SHIFT.exe
---ghidra-home /opt/ghidra
---timeout-seconds N
-```
-
-## Upstream blocking behavior
-
-The additional-mass proof is useful independently of STORE coverage, so it runs
-after any successfully completed base bundle.
-
-If the base bundle does not yet have both:
-
-```text
-offset33b_store_provenance_ready    = true
-offset33b_value_root_frontier_ready = true
-```
-
-then the memory-LOAD stage is marked:
-
-```text
-blocked_by_upstream_gate
-```
-
-rather than being invoked on an incomplete STORE artifact.
-
 ## Positive handoff
 
-When the LOAD pass produces a deterministic exact worklist, the bundle reports:
+A fully bounded result exposes:
 
 ```text
-offset33b_store_provenance_ready                = true
-offset33b_additional_mass_bootstrap_zero_ready  = true
-offset33b_memory_LOAD_frontier_ready             = true
-offset33b_exact_memory_field_worklist_ready      = true
+offset33b_store_provenance_ready                         = true
+offset33b_actual_additional_mass_bootstrap_zero_ready     = true
+offset33b_vehicle_reference_y_bootstrap_zero_ready        = true
+offset33b_memory_LOAD_frontier_ready                      = true
+offset33b_exact_memory_field_worklist_ready               = true
 ```
 
 and the decision becomes:
@@ -126,28 +104,32 @@ The next action is exactly:
   -> supported numeric arithmetic
 ```
 
-## Additional-mass reduction boundary
+## Current reductions
 
-The bundle carries the independent fact:
+The bundle carries two independent first-bootstrap reductions:
 
 ```text
-additional_mass_first_bootstrap_zero = true
+actual_additional_mass_first_bootstrap_zero = true
 additional_mass_term_elidable_for_first_bootstrap = true
+
+vehicle_reference_y_first_bootstrap_zero = true
+reference_y_reduced_to_negative_graphical_offset = true
 ```
 
-but keeps:
+The additional-mass zero is still not attached to an arbitrary `+0xba0/+0x860`
+machine LOAD until exact pointer provenance joins that LOAD to the actual
+PhysicsParticipant/embedded Vehicle object.
 
-```text
-additional_mass_machine_LOAD_join_ready = false
-```
+## Upstream blocking and failure behavior
 
-until the LOAD base pointer is proved to be the exact current PhysicsParticipant
-or embedded outer Vehicle. Matching `+0xba0`/`+0x860` alone is not pointer
-identity.
+Both metadata-only reductions run after a successfully completed base bundle.
+The LOAD stage runs only when STORE/value-root provenance is ready. Downstream
+failures preserve all earlier artifacts and write a fail-closed bundle naming the
+failed stage.
 
 ## Deliberate non-claims
 
-Even the strongest current reduced-static bundle keeps:
+Even the strongest current reduced bundle keeps:
 
 ```text
 BMW_numeric_offset33b_ready                       = false
@@ -156,16 +138,6 @@ BODY0_bind_frame_proof_ready                      = false
 vehicle_world_transform_ready                     = false
 ```
 
-The runner does not:
-
-- request another Ghidra export after `FUN_0076b280`;
-- convert a field worklist into resource semantics automatically;
-- apply bootstrap-zero to an unjoined machine LOAD;
-- invent helper return values or unsupported p-code arithmetic;
-- execute the original game or request a runtime capture.
-
-## Failure behavior
-
-Every downstream failure preserves artifacts already produced and writes a
-fail-closed bundle identifying the failed stage. No failure path can promote a
-partial field worklist to numeric offset33b readiness.
+The runner never reuses the retracted manager-record zero claim, never requests a
+second Ghidra export, never infers resource semantics from displacement alone,
+and never executes the original game or requests a runtime capture.
