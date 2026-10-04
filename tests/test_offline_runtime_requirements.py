@@ -10,20 +10,23 @@ from offline_runtime_requirements import FORMAT, build_runtime_requirements
 
 
 def _bootstrap() -> dict:
+    track = "Silverstone_Era3_GrandPrix"
+    vehicle = "BMW_M3_E36"
     return {
         "format": "SHIFT.OfflineRuntimeBootstrap/1",
         "version": 1,
         "status": "offline-native-build-ready-runtime-gated",
         "offline_build_ready": True,
         "runtime_ready": False,
-        "track": "Silverstone_Era3_GrandPrix",
-        "vehicle": "BMW_M3_E36",
+        "track": track,
+        "vehicle": vehicle,
         "blocking_reasons": [
             "runtime-scene:runtime-proven-draw-admission-required",
             "runtime-vehicle:participant-input-binding-required",
         ],
         "readiness": {
             "resource_bootstrap_ready": True,
+            "retail_archive_identity_ready": True,
             "track_load_ready": True,
             "vehicle_load_ready": True,
             "scene_ir_ready": True,
@@ -37,9 +40,16 @@ def _bootstrap() -> dict:
             "runtime_vehicle_ready": False,
         },
         "artifacts": {
+            "retail_archive_identity_admission": "out/retail_archive_identity_admission.json",
             "participant_runtime_evidence": "out/native-vehicle/native_physics_participant_runtime_evidence.json",
         },
         "stages": {
+            "retail_archive_identity_admission": {
+                "format": "SHIFT.RetailArchiveIdentityAdmission/1",
+                "ready": True,
+                "track": track,
+                "vehicle": vehicle,
+            },
             "native_vehicle": {
                 "artifacts": {
                     "native_physics_manifest": {
@@ -51,7 +61,7 @@ def _bootstrap() -> dict:
                         "sha256": "b" * 64,
                     },
                 }
-            }
+            },
         },
     }
 
@@ -74,6 +84,11 @@ def test_requirements_reuse_only_proven_bootstrap_runtime_artifacts():
 
     assert report["format"] == FORMAT
     assert report["ready"] is False
+    assert report["retail_archive_identity_required"] is True
+    assert report["retail_archive_identity_ready"] is True
+    assert report["retail_archive_identity_admission"].endswith(
+        "retail_archive_identity_admission.json"
+    )
     assert report["summary"]["requirement_count"] == 10
     assert report["summary"]["satisfied"] == [
         "physics_manifest",
@@ -93,6 +108,8 @@ def test_requirements_reuse_only_proven_bootstrap_runtime_artifacts():
     )
     assert rows["scene_set"]["satisfied"] is False
     assert rows["scene_set"]["artifact"] is None
+    assert report["boundary"]["retail_archive_identity_admission_consumed"] is True
+    assert report["boundary"]["retail_archive_identity_rederived_by_process2"] is False
     assert report["boundary"]["missing_evidence_synthesized"] is False
     assert report["boundary"]["artifact_substitution_allowed"] is False
     assert report["boundary"]["static_scene_promoted_to_runtime_scene"] is False
@@ -122,6 +139,41 @@ def test_requirements_accept_only_ready_renderer_native_scene_handoff():
     blocked_rows = {row["name"]: row for row in blocked["requirements"]}
     assert blocked_rows["scene_set"]["satisfied"] is False
     assert blocked_rows["scene_set"]["artifact"] is None
+
+
+def test_retail_identity_failure_blocks_resource_bound_runtime_inputs():
+    bootstrap = _bootstrap()
+    bootstrap["readiness"]["retail_archive_identity_ready"] = False
+    bootstrap["stages"]["retail_archive_identity_admission"]["ready"] = False
+
+    report = build_runtime_requirements(
+        bootstrap,
+        runtime_scene_handoff=_scene_handoff(),
+    )
+    rows = {row["name"]: row for row in report["requirements"]}
+
+    assert report["retail_archive_identity_ready"] is False
+    assert report["ready"] is False
+    assert rows["scene_set"]["satisfied"] is False
+    assert rows["physics_manifest"]["satisfied"] is False
+    assert rows["participant_boundary"]["satisfied"] is False
+    assert any(
+        reason.startswith("retail-archive-identity:")
+        for reason in report["blocking_reasons"]
+    )
+
+
+def test_retail_identity_target_mismatch_fails_closed():
+    bootstrap = _bootstrap()
+    bootstrap["stages"]["retail_archive_identity_admission"]["vehicle"] = "OTHER"
+
+    report = build_runtime_requirements(bootstrap)
+
+    assert report["retail_archive_identity_ready"] is False
+    assert (
+        "retail-archive-identity:retail-archive-identity-vehicle-mismatch"
+        in report["blocking_reasons"]
+    )
 
 
 def test_requirements_reject_wrong_renderer_scene_handoff_contract():
@@ -191,6 +243,7 @@ def test_bootstrap_cli_writes_requirements_without_making_them_an_exit_gate(
     written = json.loads((out / "runtime_requirements.json").read_text())
     assert written["format"] == FORMAT
     assert written["ready"] is False
+    assert written["retail_archive_identity_ready"] is True
     assert written["summary"]["satisfied"] == [
         "physics_manifest",
         "participant_boundary",

@@ -12,6 +12,7 @@ from typing import Any, Mapping
 FORMAT = "SHIFT.OfflineNativeRuntimeRequirements/1"
 BOOTSTRAP_FORMAT = "SHIFT.OfflineRuntimeBootstrap/1"
 RUNTIME_SCENE_HANDOFF_FORMAT = "SHIFT.RendererNativeSceneHandoff/1"
+RETAIL_ARCHIVE_ADMISSION_FORMAT = "SHIFT.RetailArchiveIdentityAdmission/1"
 VALIDATED_INPUT_FORMAT = "SHIFT.OfflineValidatedRuntimeInput/1"
 
 READY = "READY"
@@ -30,6 +31,12 @@ _RUNTIME_EVIDENCE_NAMES = {
     "post_solve_projection",
 }
 
+_RETAIL_IDENTITY_BOUND_NAMES = {
+    "scene_set",
+    "physics_manifest",
+    "participant_boundary",
+}
+
 
 def _artifact_path(bootstrap: Mapping[str, Any], name: str) -> str | None:
     artifacts = bootstrap.get("artifacts") or {}
@@ -37,6 +44,44 @@ def _artifact_path(bootstrap: Mapping[str, Any], name: str) -> str | None:
         return None
     text = str(artifacts.get(name) or "").strip()
     return text or None
+
+
+def _retail_archive_identity_gate(
+    bootstrap: Mapping[str, Any],
+) -> tuple[bool, str | None, list[str]]:
+    """Consume the Process 3 exact-retail admission without re-deriving it."""
+    blockers: list[str] = []
+    readiness = bootstrap.get("readiness") or {}
+    if not isinstance(readiness, Mapping):
+        blockers.append("bootstrap-readiness-missing")
+        return False, None, blockers
+    if readiness.get("retail_archive_identity_ready") is not True:
+        blockers.append("bootstrap-retail-archive-identity-not-ready")
+
+    stages = bootstrap.get("stages") or {}
+    admission = (
+        stages.get("retail_archive_identity_admission")
+        if isinstance(stages, Mapping)
+        else None
+    )
+    if not isinstance(admission, Mapping):
+        blockers.append("retail-archive-identity-admission-missing")
+    else:
+        if admission.get("format") != RETAIL_ARCHIVE_ADMISSION_FORMAT:
+            blockers.append("retail-archive-identity-admission-format-mismatch")
+        if admission.get("ready") is not True:
+            blockers.append("retail-archive-identity-admission-not-ready")
+        if str(admission.get("track") or "") != str(bootstrap.get("track") or ""):
+            blockers.append("retail-archive-identity-track-mismatch")
+        if str(admission.get("vehicle") or "") != str(bootstrap.get("vehicle") or ""):
+            blockers.append("retail-archive-identity-vehicle-mismatch")
+
+    artifact = _artifact_path(bootstrap, "retail_archive_identity_admission")
+    if artifact is None:
+        blockers.append("retail-archive-identity-admission-artifact-missing")
+
+    blockers = list(dict.fromkeys(blockers))
+    return not blockers, artifact if not blockers else None, blockers
 
 
 def _vehicle_artifact_path(bootstrap: Mapping[str, Any], name: str) -> str | None:
@@ -167,6 +212,24 @@ def _apply_validated_input(
     row["classification"] = READY
 
 
+def _apply_retail_identity_gate(row: dict[str, Any], *, gate_ready: bool) -> None:
+    name = str(row.get("name") or "")
+    row["retail_archive_identity_gate_ready"] = gate_ready
+    if gate_ready or name not in _RETAIL_IDENTITY_BOUND_NAMES:
+        return
+
+    # Exact archive identity is a prerequisite for all resource/vehicle-bound
+    # runtime artifacts.  Even an independently valid explicit file cannot
+    # replace a failed Process 3 identity admission for the playable target.
+    row["satisfied"] = False
+    row["artifact"] = None
+    row["artifact_origin"] = None
+    row["classification"] = MISSING
+    reasons = list(row.get("ambiguity_reasons") or [])
+    reasons.append("retail-archive-identity-admission-not-ready")
+    row["ambiguity_reasons"] = list(dict.fromkeys(reasons))
+
+
 def _section_row(row: Mapping[str, Any]) -> dict[str, Any]:
     value = {
         "name": row.get("name"),
@@ -195,16 +258,25 @@ def build_runtime_requirements(
     if not isinstance(readiness, Mapping):
         readiness = {}
 
+    retail_identity_ready, retail_identity_artifact, retail_identity_blockers = (
+        _retail_archive_identity_gate(bootstrap)
+    )
     validated = _validated_inputs(validated_runtime_inputs)
-    physics_ready = readiness.get("vehicle_runtime_physics_contract_ready") is True
+    physics_ready = (
+        retail_identity_ready
+        and readiness.get("vehicle_runtime_physics_contract_ready") is True
+    )
     participant_ready = (
-        readiness.get("vehicle_participant_runtime_identity_ready") is True
+        retail_identity_ready
+        and readiness.get("vehicle_participant_runtime_identity_ready") is True
     )
     handoff_scene_ready, handoff_scene_artifact = _runtime_scene_artifact(
         runtime_scene_handoff
     )
     bootstrap_scene_ready = readiness.get("runtime_scene_ready") is True
-    scene_ready = bootstrap_scene_ready or handoff_scene_ready
+    scene_ready = retail_identity_ready and (
+        bootstrap_scene_ready or handoff_scene_ready
+    )
     scene_artifact = handoff_scene_artifact if handoff_scene_ready else None
     scene_source = (
         "runtime-proven renderer native scene handoff"
@@ -315,6 +387,7 @@ def build_runtime_requirements(
                 runtime_scene_handoff.get("blocking_reasons") or []
             )
         _apply_validated_input(row, validated.get(str(row["name"])))
+        _apply_retail_identity_gate(row, gate_ready=retail_identity_ready)
 
     known = {str(row["name"]) for row in rows}
     unknown_validated = sorted(set(validated) - known)
@@ -339,8 +412,11 @@ def build_runtime_requirements(
         for row in rows
         if row.get("classification") != READY
     ]
-    ready = not blocking
-    blocking_reasons: list[str] = []
+    ready = retail_identity_ready and not blocking
+    blocking_reasons: list[str] = [
+        "retail-archive-identity:" + reason
+        for reason in retail_identity_blockers
+    ]
     for row in rows:
         name = str(row["name"])
         classification = row.get("classification")
@@ -361,6 +437,9 @@ def build_runtime_requirements(
         "ready": ready,
         "offline_build_ready": bootstrap.get("offline_build_ready") is True,
         "runtime_ready_claimed_by_bootstrap": bootstrap.get("runtime_ready") is True,
+        "retail_archive_identity_required": True,
+        "retail_archive_identity_ready": retail_identity_ready,
+        "retail_archive_identity_admission": retail_identity_artifact,
         "track": bootstrap.get("track"),
         "vehicle": bootstrap.get("vehicle"),
         "requirements": rows,
@@ -385,6 +464,10 @@ def build_runtime_requirements(
             "diagnostic_only": True,
             "runtime_scene_handoff_format": RUNTIME_SCENE_HANDOFF_FORMAT,
             "runtime_scene_handoff_accepted": handoff_scene_ready,
+            "retail_archive_identity_admission_format": RETAIL_ARCHIVE_ADMISSION_FORMAT,
+            "retail_archive_identity_admission_consumed": retail_identity_ready,
+            "retail_archive_identity_rederived_by_process2": False,
+            "resource_bound_runtime_inputs_require_retail_identity": True,
             "validated_runtime_input_format": VALIDATED_INPUT_FORMAT,
             "validated_explicit_input_may_override_proven_artifact": False,
             "unvalidated_explicit_path_is_ready": False,

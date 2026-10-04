@@ -22,6 +22,7 @@ PROFILE_FORMAT = "SHIFT.NativeVerticalSliceProfile/1"
 PLAN_FORMAT = "SHIFT.NativeVerticalSliceLaunchPlan/1"
 PIPELINE_FORMAT = "SHIFT.OfflineResourcePipelineRun/1"
 RESOURCE_HANDOFF_FORMAT = "SHIFT.OfflineNativeResourceHandoff/1"
+RETAIL_ARCHIVE_ADMISSION_FORMAT = "SHIFT.RetailArchiveIdentityAdmission/1"
 JSON_INPUTS: dict[str, tuple[str, bool]] = {
     "camera_state": ("SHIFT.NativeCameraStateBridge/1", True),
     "physics_manifest": ("SHIFT.BMWM3VehiclePhysicsResourceManifest/1", False),
@@ -129,6 +130,49 @@ def _require_json_contract(
     if require_ready and value.get("ready") is not True:
         raise ProfileError(f"{label} is not ready: {path}")
     return value
+
+
+def _validate_retail_archive_identity_profile(
+    profile: Mapping[str, Any],
+    workspace_root: Path,
+) -> dict[str, Any] | None:
+    raw = profile.get("retail_archive_identity_admission")
+    if raw in (None, ""):
+        return None
+
+    track = str(profile.get("track") or "").strip()
+    vehicle = str(profile.get("vehicle") or "").strip()
+    if not track or not vehicle:
+        raise ProfileError(
+            "retail archive identity profile requires non-empty track and vehicle"
+        )
+
+    path = _resolve_member(
+        workspace_root,
+        raw,
+        label="retail_archive_identity_admission",
+    )
+    admission = _require_json_contract(
+        path,
+        expected_format=RETAIL_ARCHIVE_ADMISSION_FORMAT,
+        require_ready=True,
+        label="retail archive identity admission",
+    )
+    if str(admission.get("track") or "") != track:
+        raise ProfileError(
+            "retail archive identity admission track does not match profile target"
+        )
+    if str(admission.get("vehicle") or "") != vehicle:
+        raise ProfileError(
+            "retail archive identity admission vehicle does not match profile target"
+        )
+    return {
+        "format": RETAIL_ARCHIVE_ADMISSION_FORMAT,
+        "ready": True,
+        "track": track,
+        "vehicle": vehicle,
+        "artifact": str(path),
+    }
 
 
 def _require_binary_packet(
@@ -332,6 +376,12 @@ def build_launch_plan(
 
     resolved: dict[str, Path] = {}
     checks: dict[str, Any] = {}
+    retail_identity_check = _validate_retail_archive_identity_profile(
+        profile,
+        workspace_root,
+    )
+    if retail_identity_check is not None:
+        checks["retail_archive_identity_admission"] = retail_identity_check
 
     resource_pipeline_raw = profile.get("resource_pipeline")
     use_resource_pipeline = resource_pipeline_raw not in (None, "")
@@ -514,6 +564,10 @@ def build_launch_plan(
             "legacy_solver_replay_cli_disabled": True,
             "scene_and_physics_from_resource_pipeline": use_resource_pipeline,
             "resource_pipeline_replaces_runtime_evidence": False,
+            "retail_archive_identity_revalidated": (
+                retail_identity_check is not None
+            ),
+            "retail_archive_identity_rederived_by_process2": False,
             "window_quit_drives_session_end": interactive,
             "native_continuous_runtime_loop_admitted": interactive,
             "persistent_vehicle_transform_motion_claimed": False,
