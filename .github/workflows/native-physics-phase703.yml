@@ -3,79 +3,63 @@ name: native-physics-phase703
 on:
   push:
     paths:
-      - 'src/physics/bmw_chassis_body_selection_gate_runtime.py'
-      - 'tests/test_bmw_chassis_body_selection_gate_runtime.py'
-      - 'native_runtime/include/shift_bmw_chassis_body_selection_gate.hpp'
-      - 'native_runtime/src/bmw_chassis_body_selection_gate.cpp'
-      - 'native_runtime/tests/bmw_chassis_body_selection_gate_check.cpp'
+      - 'src/physics/global_vehicle_body_owner_selection_runtime.py'
+      - 'tests/test_global_vehicle_body_owner_selection_runtime.py'
+      - 'native_runtime/include/shift_global_vehicle_body_owner_selection.hpp'
+      - 'native_runtime/src/global_vehicle_body_owner_selection.cpp'
+      - 'native_runtime/tests/global_vehicle_body_owner_selection_check.cpp'
       - 'native_runtime/cmake/phase702.cmake'
       - 'native_runtime/cmake/phase703.cmake'
       - 'docs/PHASE703_BMW_CHASSIS_BODY_SELECTION_GATE.md'
       - '.github/workflows/native-physics-phase703.yml'
   pull_request:
     paths:
-      - 'src/physics/bmw_chassis_body_selection_gate_runtime.py'
-      - 'tests/test_bmw_chassis_body_selection_gate_runtime.py'
-      - 'native_runtime/include/shift_bmw_chassis_body_selection_gate.hpp'
-      - 'native_runtime/src/bmw_chassis_body_selection_gate.cpp'
-      - 'native_runtime/tests/bmw_chassis_body_selection_gate_check.cpp'
+      - 'src/physics/global_vehicle_body_owner_selection_runtime.py'
+      - 'tests/test_global_vehicle_body_owner_selection_runtime.py'
+      - 'native_runtime/include/shift_global_vehicle_body_owner_selection.hpp'
+      - 'native_runtime/src/global_vehicle_body_owner_selection.cpp'
+      - 'native_runtime/tests/global_vehicle_body_owner_selection_check.cpp'
       - 'native_runtime/cmake/phase702.cmake'
       - 'native_runtime/cmake/phase703.cmake'
       - 'docs/PHASE703_BMW_CHASSIS_BODY_SELECTION_GATE.md'
       - '.github/workflows/native-physics-phase703.yml'
 
 jobs:
-  bmw-chassis-body-selection-gate:
+  global-vehicle-body-owner-selection:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-
       - name: Install native runtime dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake g++ python3-pytest libvulkan-dev glslang-tools libxcb1-dev
-
-      - name: Run Phase 702 and 703 Python regressions
+      - name: Run Phase 703 Python regression
         run: >-
           PYTHONPATH=src/physics python3 -m pytest -q
-          tests/test_bmw_wheel_spindle_body_topology_runtime.py
-          tests/test_bmw_chassis_body_selection_gate_runtime.py
-
+          tests/test_global_vehicle_body_owner_selection_runtime.py
       - name: Configure native runtime
         run: cmake -S native_runtime -B native_runtime/build -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build Phase 700, 702 and 703 native regressions
+      - name: Build Phase 700 and rewritten 703 regressions
         run: >-
           cmake --build native_runtime/build --config Release --parallel
           --target shift_runtime_vehicle_body_pose_runtime_handoff_check
-          shift_runtime_bmw_wheel_spindle_body_topology_check
-          shift_runtime_bmw_chassis_body_selection_gate_check
-
+          shift_runtime_global_vehicle_body_owner_selection_check
       - name: Run focused CTest regressions
         run: >-
           ctest --test-dir native_runtime/build --output-on-failure
-          -R '^(shift_runtime_vehicle_body_pose_runtime_handoff|shift_runtime_bmw_wheel_spindle_body_topology|shift_runtime_bmw_chassis_body_selection_gate)$'
-
+          -R '^(shift_runtime_vehicle_body_pose_runtime_handoff|shift_runtime_global_vehicle_body_owner_selection)$'
       - name: Verify Phase 703 report
         run: |
           mkdir -p out/native-physics-phase703
-          native_runtime/build/shift_runtime_bmw_chassis_body_selection_gate_check \
-            > out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"gate_format":"SHIFT.NativeBMWChassisBodySelectionGate/1"' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"main_chassis_body_index":0' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"current_update_child_to_vehicle_solver_base_continuity_proven":false' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"current_vehicle_body_selection_ready":false' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"current_frontier_rejected":true' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"synthetic_positive_continuity_is_retail_proof":false' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"phase700_runtime_handoff_reused":true' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"selected_body_index":0' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
-          grep -q '"world_transform_mapping_proven":false' \
-            out/native-physics-phase703/bmw_chassis_body_selection_gate.json
+          native_runtime/build/shift_runtime_global_vehicle_body_owner_selection_check \
+            > out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"format":"SHIFT.NativeGlobalVehicleBodyOwnerSelection/1"' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"process1_contract":"SHIFT.GlobalVehicleBodyOwnerIdentity/1"' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"current_retail_identity_ready":false' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"current_retail_selection_emitted":false' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"synthetic_positive_identity_is_retail_proof":false' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"synthetic_selected_body_index":0' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"phase698_selector_reused":true' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"phase700_runtime_handoff_reused":true' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"obsolete_update_child_gate_required":false' out/native-physics-phase703/global_vehicle_body_owner_selection.json
+          grep -q '"dynamic_body0_to_vhf_composition_proven":false' out/native-physics-phase703/global_vehicle_body_owner_selection.json
