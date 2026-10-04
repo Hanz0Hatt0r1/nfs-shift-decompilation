@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -51,6 +52,63 @@ def _provenance() -> dict:
     }
 
 
+def _runtime_bootstrap_fixture(
+    tmp_path: Path,
+    data: bytes,
+    *,
+    retail_ready: bool = True,
+    materialized_ready: bool = True,
+    manifest_source: str | None = None,
+    bootstrap_sdf: Path | None = None,
+) -> tuple[Path, Path, Path]:
+    sdf = tmp_path / "resources" / "decoded" / "aarm_multilink.sdf"
+    sdf.parent.mkdir(parents=True)
+    sdf.write_bytes(data)
+
+    manifest_path = tmp_path / "native-vehicle" / "vehicle_physics_resource_manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest = {
+        "format": MODULE.PHYSICS_MANIFEST_FORMAT,
+        "ready": materialized_ready,
+        "status": "ready" if materialized_ready else "blocked",
+        "blocking_reasons": [] if materialized_ready else ["materialization-blocked"],
+        "materialized_resources_ready": materialized_ready,
+        "entries": {
+            "sdf": {
+                "resource_id": "bmw-sdf-fixture",
+                "path": MODULE.TARGET_RESOURCE,
+                "decoded_sha256": MODULE.TARGET_RESOURCE_SHA256,
+                "materialized_path": str(sdf),
+                "materialized_sha256": MODULE.TARGET_RESOURCE_SHA256,
+                "materialization_source": (
+                    MODULE.TYPED_CLOSURE_FORMAT
+                    if manifest_source is None
+                    else manifest_source
+                ),
+            }
+        },
+    }
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    bootstrap_path = tmp_path / "runtime_bootstrap.json"
+    bootstrap = {
+        "format": MODULE.RUNTIME_BOOTSTRAP_FORMAT,
+        "offline_build_ready": True,
+        "runtime_ready": False,
+        "vehicle": MODULE.TARGET_VEHICLE,
+        "readiness": {
+            "retail_archive_identity_ready": retail_ready,
+            "vehicle_physics_materialized_resources_ready": materialized_ready,
+        },
+        "artifacts": {
+            "vehicle_sdf": str(sdf if bootstrap_sdf is None else bootstrap_sdf),
+            "vehicle_physics_manifest": str(manifest_path),
+        },
+    }
+    bootstrap_path.write_text(json.dumps(bootstrap), encoding="utf-8")
+    return bootstrap_path, manifest_path, sdf
+
+
 def test_materializer_reports_body0_values_and_writes_exact_sdf(tmp_path, monkeypatch):
     data = _sdf_bytes()
     monkeypatch.setattr(MODULE, "extract_target_sdf", lambda path: (data, _provenance()))
@@ -63,6 +121,7 @@ def test_materializer_reports_body0_values_and_writes_exact_sdf(tmp_path, monkey
 
     assert report["format"] == MODULE.FORMAT
     assert report["ready"] is True
+    assert report["source_mode"] == "retail-bff-extraction"
     assert output.read_bytes() == data
     assert report["resource"]["entry_index"] == 1091
     assert report["resource"]["materialized_path"] == str(output)
@@ -116,8 +175,101 @@ def test_phase404_identity_drift_fails_closed(tmp_path):
     intake = MODULE._load_intake(MODULE.DEFAULT_INTAKE)
     intake["sdf_entry"]["index"] = 1
     path = tmp_path / "intake.json"
-    import json
-
     path.write_text(json.dumps(intake), encoding="utf-8")
     with pytest.raises(ValueError, match="entry index drift"):
         MODULE._load_intake(path)
+
+
+def test_runtime_bootstrap_exact_typed_sdf_materializes_body0_without_bff(
+    tmp_path,
+    monkeypatch,
+):
+    data = _sdf_bytes(pos=(4.0, 5.0, 6.0), ori=(0.0, 0.0, 0.0))
+    bootstrap, manifest, sdf = _runtime_bootstrap_fixture(tmp_path, data)
+    monkeypatch.setattr(MODULE, "_sha256_bytes", lambda value: MODULE.TARGET_RESOURCE_SHA256)
+
+    report = MODULE.materialize_bmw_body0_bind_resource_from_runtime_bootstrap(
+        bootstrap
+    )
+
+    assert report["ready"] is True
+    assert report["source_mode"] == "offline-runtime-bootstrap-typed-sdf"
+    assert report["retail_archive"]["input_path"] is None
+    assert report["runtime_bootstrap"] == {
+        "format": MODULE.RUNTIME_BOOTSTRAP_FORMAT,
+        "path": str(bootstrap),
+        "vehicle_physics_manifest": str(manifest.resolve()),
+        "vehicle_sdf_handoff_consumed": True,
+    }
+    assert report["resource"]["materialized_path"] == str(sdf.resolve())
+    assert report["resource"]["decoded_sha256"] == MODULE.TARGET_RESOURCE_SHA256
+    assert report["body0"]["pos"] == [4.0, 5.0, 6.0]
+    assert report["body0"]["ori"] == [0.0, 0.0, 0.0]
+    assert report["handoff"]["BODY0_resource_pos_ori_values_ready"] is True
+    assert report["next_proof"]["requires_materialized_sdf"] is False
+    assert report["scope"]["typed_resource_identity_rederived"] is False
+
+
+def test_runtime_bootstrap_rehashes_current_sdf_bytes(tmp_path):
+    data = _sdf_bytes()
+    bootstrap, _, _ = _runtime_bootstrap_fixture(tmp_path, data)
+
+    with pytest.raises(ValueError, match="current SHA-256 mismatch"):
+        MODULE.materialize_bmw_body0_bind_resource_from_runtime_bootstrap(bootstrap)
+
+
+def test_runtime_bootstrap_vehicle_sdf_must_match_manifest_path(tmp_path, monkeypatch):
+    data = _sdf_bytes()
+    other = tmp_path / "other.sdf"
+    other.write_bytes(data)
+    bootstrap, _, _ = _runtime_bootstrap_fixture(
+        tmp_path,
+        data,
+        bootstrap_sdf=other,
+    )
+    monkeypatch.setattr(MODULE, "_sha256_bytes", lambda value: MODULE.TARGET_RESOURCE_SHA256)
+
+    with pytest.raises(ValueError, match="disagrees with physics manifest"):
+        MODULE.materialize_bmw_body0_bind_resource_from_runtime_bootstrap(bootstrap)
+
+
+def test_runtime_bootstrap_requires_retail_identity_and_typed_materialization(
+    tmp_path,
+    monkeypatch,
+):
+    data = _sdf_bytes()
+    bootstrap, _, _ = _runtime_bootstrap_fixture(
+        tmp_path,
+        data,
+        retail_ready=False,
+    )
+    monkeypatch.setattr(MODULE, "_sha256_bytes", lambda value: MODULE.TARGET_RESOURCE_SHA256)
+
+    with pytest.raises(ValueError, match="retail archive identity is not ready"):
+        MODULE.materialize_bmw_body0_bind_resource_from_runtime_bootstrap(bootstrap)
+
+    blocked = tmp_path / "blocked"
+    blocked.mkdir()
+    bootstrap2, _, _ = _runtime_bootstrap_fixture(
+        blocked,
+        data,
+        materialized_ready=False,
+    )
+    with pytest.raises(ValueError, match="typed physics materializations are not ready"):
+        MODULE.materialize_bmw_body0_bind_resource_from_runtime_bootstrap(bootstrap2)
+
+
+def test_runtime_bootstrap_requires_typed_closure_materialization_source(
+    tmp_path,
+    monkeypatch,
+):
+    data = _sdf_bytes()
+    bootstrap, _, _ = _runtime_bootstrap_fixture(
+        tmp_path,
+        data,
+        manifest_source="guessed-path",
+    )
+    monkeypatch.setattr(MODULE, "_sha256_bytes", lambda value: MODULE.TARGET_RESOURCE_SHA256)
+
+    with pytest.raises(ValueError, match="materialization source drift"):
+        MODULE.materialize_bmw_body0_bind_resource_from_runtime_bootstrap(bootstrap)
