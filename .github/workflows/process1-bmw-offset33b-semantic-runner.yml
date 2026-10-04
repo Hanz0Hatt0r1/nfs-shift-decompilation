@@ -1,0 +1,29 @@
+name: Process 1 BMW offset33b semantic runner
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/run_bmw_offset33b_semantic_static_proof.py'
+      - 'tests/test_ghidra_run_bmw_offset33b_semantic_static_proof.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_SEMANTIC_STATIC_PROOF_RUNNER.md'
+      - '.github/workflows/process1-bmw-offset33b-semantic-runner.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/run_bmw_offset33b_semantic_static_proof.py'
+      - 'tests/test_ghidra_run_bmw_offset33b_semantic_static_proof.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_SEMANTIC_STATIC_PROOF_RUNNER.md'
+      - '.github/workflows/process1-bmw-offset33b-semantic-runner.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run semantic runner regressions
+        run: python -m pytest -q tests/test_ghidra_run_bmw_offset33b_semantic_static_proof.py
+      - name: Verify CLI
+        run: python tools/ghidra/run_bmw_offset33b_semantic_static_proof.py --help >/dev/null
