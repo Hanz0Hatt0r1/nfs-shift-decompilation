@@ -28,10 +28,19 @@ def materialize_selected_archive(
     offline-pipeline catalogs always carry archive rows plus both ``source`` and
     ``source_kind`` and therefore take the strict path.
     """
+    # Legacy unit fixtures existed before archive-level provenance was part of
+    # the catalog contract.  Real resource-pipeline catalogs always have this
+    # field, so its presence is the switch into strict production validation.
+    raw_archives = catalog.get("archives")
+    if raw_archives is None:
+        return None
+
     if catalog.get("format") != CATALOG_FORMAT:
         raise ValueError(f"catalog must be {CATALOG_FORMAT}")
     if bootstrap.get("format") != BOOTSTRAP_FORMAT:
         raise ValueError(f"bootstrap must be {BOOTSTRAP_FORMAT}")
+    if not isinstance(raw_archives, list):
+        raise ValueError("catalog archives must be a list")
 
     selected_archives = bootstrap.get("selected_archives") or {}
     selected = (
@@ -46,12 +55,6 @@ def materialize_selected_archive(
     if not selected_id:
         raise ValueError(f"selected archive id missing:{selected_key}")
 
-    raw_archives = catalog.get("archives")
-    if raw_archives is None:
-        return None
-    if not isinstance(raw_archives, list):
-        raise ValueError("catalog archives must be a list")
-
     hits = [
         row
         for row in raw_archives
@@ -64,8 +67,9 @@ def materialize_selected_archive(
         )
     occurrence = dict(hits[0])
 
-    # Older synthetic fixtures predate archive source provenance. Keep direct
-    # unit-level callers compatible; real pipeline catalogs always have both.
+    # Older synthetic fixtures may carry archive rows but not source provenance.
+    # Real pipeline catalogs always have both fields and therefore cannot bypass
+    # the exact-source path here.
     if not occurrence.get("source") or not occurrence.get("source_kind"):
         return None
 
