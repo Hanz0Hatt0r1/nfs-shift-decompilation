@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from typing import Any, Sequence
 
 
 @dataclass(frozen=True)
@@ -87,6 +88,68 @@ def sha256_file(path: str | Path, *, chunk_size: int = 1024 * 1024) -> str:
                 break
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def materialized_archive_name(row: Any) -> str:
+    member = getattr(row, "member", None)
+    if member:
+        return PurePosixPath(str(member)).name
+    return Path(getattr(row, "path")).name
+
+
+def materialized_archive_provenance(row: Any, *, sha256: str | None = None) -> dict[str, Any]:
+    member = getattr(row, "member", None)
+    path = Path(getattr(row, "path"))
+    digest = sha256 or sha256_file(path)
+    return {
+        "archive": materialized_archive_name(row),
+        "sha256": digest,
+        "source": str(getattr(row, "source")),
+        "member": str(member) if member is not None else None,
+        "source_kind": "zip-member" if member is not None else "filesystem-bff",
+    }
+
+
+def select_materialized_archive(
+    rows: Sequence[Any],
+    identity: RetailArchiveIdentity,
+    *,
+    label: str,
+) -> tuple[Any | None, list[str], dict[str, Any] | None]:
+    """Resolve one exact retail identity without archive-order or duplicate fallback."""
+    name_hits = [
+        row
+        for row in rows
+        if materialized_archive_name(row).casefold() == identity.archive_name.casefold()
+    ]
+    if not name_hits:
+        return None, [f"{label}:archive-missing:{identity.archive_name}"], None
+
+    observed: list[tuple[Any, str]] = [
+        (row, sha256_file(getattr(row, "path")))
+        for row in name_hits
+    ]
+    exact = [
+        (row, digest)
+        for row, digest in observed
+        if digest.casefold() == identity.sha256.casefold()
+    ]
+    if not exact:
+        hashes = ",".join(sorted({digest for _, digest in observed}))
+        return None, [
+            f"{label}:archive-sha256-mismatch:{identity.archive_name}:"
+            f"expected={identity.sha256}:observed={hashes}"
+        ], None
+    if len(exact) != 1:
+        return None, [
+            f"{label}:archive-identity-ambiguous:{identity.archive_name}:{len(exact)}"
+        ], None
+
+    row, digest = exact[0]
+    provenance = materialized_archive_provenance(row, sha256=digest)
+    provenance["expected_identity"] = identity.as_dict()
+    provenance["identity_match"] = True
+    return row, [], provenance
 
 
 def track_archive_identity(track: str, role: str) -> RetailArchiveIdentity | None:
