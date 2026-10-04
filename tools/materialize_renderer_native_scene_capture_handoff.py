@@ -84,6 +84,154 @@ def _retryable_blockers(base: Mapping[str, Any]) -> tuple[list[str], list[str]]:
     return early, renderer_resource
 
 
+def _safe_int(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _capture_observations_by_binding(
+    capture: Mapping[str, Any],
+) -> dict[int, list[Mapping[str, Any]]]:
+    by_binding: dict[int, list[Mapping[str, Any]]] = {}
+    for resource in capture.get("resource_results") or []:
+        if not isinstance(resource, Mapping):
+            continue
+        for observation in resource.get("attributed_texture_observations") or []:
+            if not isinstance(observation, Mapping):
+                continue
+            binding_index = _safe_int(observation.get("binding_index"))
+            if binding_index is None:
+                continue
+            by_binding.setdefault(binding_index, []).append(observation)
+    return by_binding
+
+
+def _snapshot_runtime_evidence_required(
+    capture: Mapping[str, Any],
+    capture_adapter: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Describe only snapshot bytes proven missing at an admitted sampler stage.
+
+    Phase 590 intentionally filters its candidate rows to fully captured PPM
+    snapshots. A zero candidate count alone therefore cannot distinguish an
+    absent SetTexture observation from an observed texture object whose content
+    simply was not snapshotted. This diagnostic reuses the compact Phase 573
+    draw-local observations and emits a capture requirement only when the exact
+    sampler stage and expected D3D9 resource type were already observed.
+    """
+    observations_by_binding = _capture_observations_by_binding(capture)
+    requirements: list[dict[str, Any]] = []
+
+    for field, expected_type, required_path_count in (
+        ("rows", "texture2d", 1),
+        ("cube_rows", "cube_texture", 6),
+    ):
+        for raw_row in capture_adapter.get(field) or []:
+            if not isinstance(raw_row, Mapping):
+                continue
+            if raw_row.get("snapshot_ready") is True:
+                continue
+            if _safe_int(raw_row.get("candidate_observation_count")) != 0:
+                continue
+
+            binding_index = _safe_int(raw_row.get("binding_index"))
+            register = _safe_int(raw_row.get("register"))
+            if binding_index is None or register is None:
+                continue
+
+            stage_binding_count = 0
+            typed_creation_count = 0
+            valid_snapshot_count = 0
+            snapshot_status_counts: dict[str, int] = {}
+            snapshot_path_counts: list[int] = []
+            frames: set[int] = set()
+            draw_indices: set[int] = set()
+
+            for observation in observations_by_binding.get(binding_index, []):
+                if observation.get("status") != "observed":
+                    continue
+                for binding in observation.get("active_texture_bindings") or []:
+                    if not isinstance(binding, Mapping):
+                        continue
+                    if _safe_int(binding.get("stage")) != register:
+                        continue
+                    stage_binding_count += 1
+                    creation = binding.get("resource_creation")
+                    if (
+                        binding.get("resource_creation_status") != "observed"
+                        or not isinstance(creation, Mapping)
+                        or str(creation.get("resource_type") or "")
+                        != expected_type
+                    ):
+                        continue
+                    typed_creation_count += 1
+                    status = str(binding.get("snapshot_status") or "missing")
+                    snapshot_status_counts[status] = (
+                        snapshot_status_counts.get(status, 0) + 1
+                    )
+                    paths = [
+                        path
+                        for path in (binding.get("snapshot_paths") or [])
+                        if isinstance(path, str) and path
+                    ]
+                    snapshot_path_counts.append(len(paths))
+                    if status == "captured" and len(paths) == required_path_count:
+                        valid_snapshot_count += 1
+                    frame = _safe_int(observation.get("frame"))
+                    draw_index = _safe_int(observation.get("draw_index"))
+                    if frame is not None:
+                        frames.add(frame)
+                    if draw_index is not None:
+                        draw_indices.add(draw_index)
+
+            if typed_creation_count == 0 or valid_snapshot_count > 0:
+                continue
+
+            captured_but_incomplete = (
+                snapshot_status_counts.get("captured", 0) > 0
+                and any(count != required_path_count for count in snapshot_path_counts)
+            )
+            reason = (
+                "snapshot-content-incomplete"
+                if captured_but_incomplete
+                else "snapshot-content-not-captured"
+            )
+            requirements.append({
+                "binding_index": binding_index,
+                "draw_order": raw_row.get("draw_order"),
+                "register": register,
+                "sampler": raw_row.get("sampler"),
+                "sampler_type": raw_row.get("sampler_type"),
+                "reason": reason,
+                "expected_d3d9_resource_type": expected_type,
+                "required_snapshot_path_count": required_path_count,
+                "stage_binding_observation_count": stage_binding_count,
+                "typed_resource_creation_observation_count": typed_creation_count,
+                "valid_snapshot_observation_count": valid_snapshot_count,
+                "snapshot_status_counts": dict(sorted(snapshot_status_counts.items())),
+                "snapshot_path_counts": sorted(snapshot_path_counts),
+                "capture_frames": sorted(frames),
+                "capture_draw_indices": sorted(draw_indices),
+                "requested_texture_stage": register,
+                "required_observation": (
+                    "exact draw-local SetTexture snapshot content for the "
+                    "already observed typed D3D9 resource"
+                ),
+            })
+
+    requirements.sort(
+        key=lambda row: (
+            int(row["binding_index"]),
+            int(row["register"]),
+            str(row.get("sampler_type") or ""),
+            _safe_int(row.get("draw_order")) or -1,
+        )
+    )
+    return requirements
+
+
 def _blocked_completion(
     base: Mapping[str, Any],
     *,
@@ -91,7 +239,11 @@ def _blocked_completion(
     capture_root: Path,
     instance_match: Mapping[str, Any] | None = None,
     capture_adapter: Mapping[str, Any] | None = None,
+    runtime_evidence_required: list[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    evidence_required = [
+        dict(row) for row in (runtime_evidence_required or [])
+    ]
     result = dict(base)
     result["status"] = "blocked"
     result["ready"] = False
@@ -104,6 +256,9 @@ def _blocked_completion(
         "phase590_snapshot_identity_invented": False,
         "manual_scene_instance_selection": False,
         "new_capture_required": False,
+        "capture_observation_required": bool(evidence_required),
+        "capture_observation_requirement_count": len(evidence_required),
+        "capture_observation_requirement_is_exact_stage_type_only": True,
     })
     result["boundary"] = boundary
     result["existing_capture_completion"] = {
@@ -114,6 +269,7 @@ def _blocked_completion(
         "external_sampler_capture": (
             dict(capture_adapter) if isinstance(capture_adapter, Mapping) else None
         ),
+        "runtime_evidence_required": evidence_required,
         "retry_performed": False,
     }
     return result
@@ -280,12 +436,23 @@ def materialize_renderer_native_scene_capture_handoff(
                 f"phase591:{reason}"
                 for reason in instance_match.get("blocking_reasons") or []
             )
+        runtime_evidence_required = _snapshot_runtime_evidence_required(
+            capture,
+            capture_adapter,
+        )
+        blockers.extend(
+            "phase590:runtime-evidence-required:"
+            f"binding-{row['binding_index']}:s{row['register']}:"
+            f"{row['sampler_type']}:{row['reason']}"
+            for row in runtime_evidence_required
+        )
         result = _blocked_completion(
             base,
             blockers=blockers,
             capture_root=root,
             instance_match=instance_match,
             capture_adapter=capture_adapter,
+            runtime_evidence_required=runtime_evidence_required,
         )
         _write(handoff_path, result)
         return result
@@ -415,12 +582,15 @@ def materialize_renderer_native_scene_capture_handoff(
         "phase590_snapshot_identity_invented": False,
         "manual_scene_instance_selection": False,
         "new_capture_required": False,
+        "capture_observation_required": False,
+        "capture_observation_requirement_count": 0,
     })
     result["boundary"] = boundary
     result["existing_capture_completion"] = {
         "capture_root": str(root),
         "instance_transform_match": dict(instance_match),
         "external_sampler_capture": dict(capture_adapter),
+        "runtime_evidence_required": [],
         "retry_performed": True,
         "phase580_retry": {
             "format": vulkan_set.get("format"),
