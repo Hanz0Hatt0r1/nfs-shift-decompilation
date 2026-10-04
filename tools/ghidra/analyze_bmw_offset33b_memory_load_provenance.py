@@ -6,17 +6,17 @@ STORE targets and records conservative backward p-code value slices.  Memory
 inputs in those slices still terminate as anonymous roots, which is too weak for
 a numeric BMW bind translation.
 
-This pass reuses the *same* targeted FUN_0076b280 instruction export.  For every
-p-code LOAD that actually appears in an admitted offset33b STORE dependency
-slice it joins that LOAD to one simple machine memory operand, proves the
-all-path origin of the operand base register, and records exact displacement and
-width.  The result is a finite ``object-origin expression + field offset``
-worklist suitable for HDV/VDF/SDF/tire semantic joins.
+This pass reuses the same targeted ``FUN_0076b280`` instruction export.  For
+every p-code LOAD that actually appears in an admitted offset33b STORE dependency
+slice it joins that LOAD to one simple machine memory operand, proves the all-path
+origin of the operand base register, and records exact displacement and width.
 
-The separate first-bootstrap proof that PhysicsParticipant+0xba0 / Vehicle+0x860
-is +0.0f is consumed as a known semantic reduction.  It is not attached to a
-machine LOAD merely because a numeric displacement happens to match; pointer
-identity must still be proved.
+The independent first-bootstrap additional-mass reduction is accepted only from
+the corrected actual-object contract
+``SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1``.  The retracted
+manager-record zero contract is not an accepted input.  Even the correct +0.0f
+reduction is not attached to a machine LOAD merely because its displacement is
+0xba0 or 0x860; pointer identity remains a separate proof.
 """
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ import analyze_register_relative_accesses as _access
 
 FORMAT = "SHIFT.BMWOffset33bMemoryLoadProvenance/1"
 STORE_FORMAT = _stores.FORMAT
-ADDITIONAL_MASS_FORMAT = "SHIFT.BMWOffset33bAdditionalMassBootstrapZero/1"
+ADDITIONAL_MASS_FORMAT = "SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1"
 INSTRUCTION_FORMAT = _stores.INSTRUCTION_FORMAT
 TARGET = _stores.TARGET
 
@@ -123,28 +123,33 @@ def _validate_additional_mass_proof(path: Path) -> dict[str, Any]:
     if report.get("format") != ADDITIONAL_MASS_FORMAT:
         raise ValueError(f"{path}: expected {ADDITIONAL_MASS_FORMAT}")
     if report.get("ready") is not True:
-        raise ValueError("additional-mass bootstrap-zero proof is not ready")
-    gates = report.get("gates")
-    if not isinstance(gates, Mapping):
-        raise ValueError("additional-mass proof gates missing")
-    if gates.get("offset33b_additional_mass_bootstrap_zero_ready") is not True:
-        raise ValueError("additional-mass bootstrap-zero gate is not ready")
-    if gates.get("offset33b_additional_mass_term_can_be_elided_for_first_bootstrap") is not True:
-        raise ValueError("additional-mass term is not proven elidable")
-    if gates.get("BMW_numeric_offset33b_ready") is not False:
-        raise ValueError("additional-mass proof unexpectedly preclaims numeric offset33b")
+        raise ValueError("actual additional-mass bootstrap-zero proof is not ready")
 
-    proof = report.get("proof")
-    root = proof.get("offset33b_root") if isinstance(proof, Mapping) else None
-    alias = proof.get("storage_alias") if isinstance(proof, Mapping) else None
-    if not isinstance(root, Mapping) or not isinstance(alias, Mapping):
-        raise ValueError("additional-mass proof semantic root/storage alias missing")
-    if root.get("numeric_value_proven") is not True or float(root.get("value", 1.0)) != 0.0:
-        raise ValueError("additional-mass proof value is not exact zero")
-    if int(alias.get("participant_additional_mass_offset", -1)) != 0xBA0:
-        raise ValueError("additional-mass participant offset drift")
-    if int(alias.get("vehicle_additional_mass_offset", -1)) != 0x860:
-        raise ValueError("additional-mass Vehicle offset drift")
+    handoff = report.get("handoff")
+    if not isinstance(handoff, Mapping):
+        raise ValueError("actual additional-mass proof handoff missing")
+    if handoff.get("offset33b_actual_additional_mass_bootstrap_zero_ready") is not True:
+        raise ValueError("actual additional-mass bootstrap-zero gate is not ready")
+    if handoff.get("offset33b_additional_mass_term_can_be_elided_for_first_bootstrap") is not True:
+        raise ValueError("actual additional-mass term is not proven elidable")
+    if handoff.get("BMW_numeric_offset33b_ready") is not False:
+        raise ValueError("actual additional-mass proof unexpectedly preclaims numeric offset33b")
+
+    object_graph = report.get("object_graph")
+    proven = report.get("proven_value")
+    scope = report.get("scope")
+    if not isinstance(object_graph, Mapping) or not isinstance(proven, Mapping):
+        raise ValueError("actual additional-mass object graph/value proof missing")
+    if int(object_graph.get("participant_additional_mass_offset", -1)) != 0xBA0:
+        raise ValueError("actual additional-mass participant offset drift")
+    if int(object_graph.get("vehicle_additional_mass_offset", -1)) != 0x860:
+        raise ValueError("actual additional-mass Vehicle offset drift")
+    if object_graph.get("manager_record_plus_0xba0_is_not_the_proven_storage") is not True:
+        raise ValueError("actual additional-mass proof lost manager-record/object distinction")
+    if float(proven.get("value", 1.0)) != 0.0 or proven.get("type") != "float32":
+        raise ValueError("actual additional-mass proven value is not exact float32 zero")
+    if isinstance(scope, Mapping) and scope.get("retracted_manager_record_zero_claim_reused") is not False:
+        raise ValueError("actual additional-mass proof unexpectedly reuses retracted manager-record zero")
     return report
 
 
@@ -237,7 +242,7 @@ def analyze_bmw_offset33b_memory_load_provenance(
     instruction_export: Path,
     additional_mass_proof_path: Path,
 ) -> dict[str, Any]:
-    store_report, candidates = _validate_store_report(store_provenance_path)
+    _store_report, candidates = _validate_store_report(store_provenance_path)
     additional_mass = _validate_additional_mass_proof(additional_mass_proof_path)
     instructions, instruction_by_address = _instruction_map(instruction_export)
     incoming, iterations = _callsite._analyze_incoming_states(instructions)
@@ -248,7 +253,10 @@ def analyze_bmw_offset33b_memory_load_provenance(
     blockers: list[dict[str, Any]] = []
     consumed_nodes: set[str] = set()
 
-    for node_id in sorted(fields_by_node, key=lambda value: (int(_node_address(value), 0), int(value.rpartition(":")[2]))):
+    for node_id in sorted(
+        fields_by_node,
+        key=lambda value: (int(_node_address(value), 0), int(value.rpartition(":")[2]),),
+    ):
         node = nodes.get(node_id)
         if not isinstance(node, Mapping):
             blockers.append(
@@ -328,34 +336,37 @@ def analyze_bmw_offset33b_memory_load_provenance(
             and flags.get("contains_unknown_or_derived") is False
         )
         displacement_only_alias = displacement in {0xBA0, 0x860}
-        row = {
-            "node_id": node_id,
-            "instruction": address,
-            "instruction_text": instruction.get("text"),
-            "pcode_load_index": pcode_index,
-            "operand_index": operand_index,
-            "operand": operand,
-            "base_register": base_register,
-            "base_register_origins": origins,
-            "base_register_origin_flags": flags,
-            "base_origin_class": _origin_class(origins),
-            "base_origin_deterministic": deterministic,
-            "displacement": displacement,
-            "displacement_hex": (
-                f"0x{displacement:x}" if displacement >= 0 else f"-0x{-displacement:x}"
-            ),
-            "load_width": width,
-            "feeds_store_instructions": sorted(stores_by_node[node_id], key=lambda value: int(value, 0)),
-            "feeds_offset33b_fields": sorted(fields_by_node[node_id]),
-            "machine_LOAD_join_proven": True,
-            "object_field_reference_ready": deterministic,
-            "matches_additional_mass_displacement_only": displacement_only_alias,
-            "additional_mass_pointer_identity_proven": False,
-            "additional_mass_zero_applied_to_this_load": False,
-            "resource_or_object_semantics_proven": False,
-            "numeric_loaded_value_proven": False,
-        }
-        load_rows.append(row)
+        load_rows.append(
+            {
+                "node_id": node_id,
+                "instruction": address,
+                "instruction_text": instruction.get("text"),
+                "pcode_load_index": pcode_index,
+                "operand_index": operand_index,
+                "operand": operand,
+                "base_register": base_register,
+                "base_register_origins": origins,
+                "base_register_origin_flags": flags,
+                "base_origin_class": _origin_class(origins),
+                "base_origin_deterministic": deterministic,
+                "displacement": displacement,
+                "displacement_hex": (
+                    f"0x{displacement:x}" if displacement >= 0 else f"-0x{-displacement:x}"
+                ),
+                "load_width": width,
+                "feeds_store_instructions": sorted(
+                    stores_by_node[node_id], key=lambda value: int(value, 0)
+                ),
+                "feeds_offset33b_fields": sorted(fields_by_node[node_id]),
+                "machine_LOAD_join_proven": True,
+                "object_field_reference_ready": deterministic,
+                "matches_additional_mass_displacement_only": displacement_only_alias,
+                "additional_mass_pointer_identity_proven": False,
+                "additional_mass_zero_applied_to_this_load": False,
+                "resource_or_object_semantics_proven": False,
+                "numeric_loaded_value_proven": False,
+            }
+        )
         consumed_nodes.add(node_id)
 
     unresolved_nodes = sorted(set(fields_by_node) - consumed_nodes)
@@ -421,8 +432,8 @@ def analyze_bmw_offset33b_memory_load_provenance(
     )
     exact_worklist_ready = structural_ready and bool(load_rows) and not nondeterministic_rows
 
-    additional_root = additional_mass["proof"]["offset33b_root"]
-    alias = additional_mass["proof"]["storage_alias"]
+    object_graph = additional_mass["object_graph"]
+    proven = additional_mass["proven_value"]
     displacement_matches = [
         row["node_id"] for row in load_rows if row["matches_additional_mass_displacement_only"]
     ]
@@ -441,7 +452,7 @@ def analyze_bmw_offset33b_memory_load_provenance(
         "inputs": {
             "store_provenance": str(store_provenance_path),
             "instruction_export": str(instruction_export),
-            "additional_mass_proof": str(additional_mass_proof_path),
+            "actual_additional_mass_proof": str(additional_mass_proof_path),
         },
         "producer": {
             "function": TARGET,
@@ -452,18 +463,20 @@ def analyze_bmw_offset33b_memory_load_provenance(
         },
         "known_semantic_reductions": {
             "additional_mass_first_bootstrap": {
-                "semantic_name": additional_root.get("semantic_name"),
-                "participant_storage": additional_root.get("participant_storage"),
-                "vehicle_alias_storage": additional_root.get("vehicle_alias_storage"),
-                "participant_offset": alias.get("participant_additional_mass_offset"),
-                "vehicle_offset": alias.get("vehicle_additional_mass_offset"),
-                "value_type": additional_root.get("value_type"),
-                "value": additional_root.get("value"),
+                "semantic_name": "actual participant additional mass term",
+                "participant_storage": "actual_participant+0xba0",
+                "vehicle_alias_storage": "embedded_vehicle+0x860",
+                "participant_offset": object_graph.get("participant_additional_mass_offset"),
+                "vehicle_offset": object_graph.get("vehicle_additional_mass_offset"),
+                "value_type": proven.get("type"),
+                "value": proven.get("value"),
                 "numeric_value_proven": True,
                 "term_elidable_for_first_bootstrap": True,
                 "machine_LOAD_pointer_identity_joined": False,
                 "displacement_only_candidate_load_nodes": displacement_matches,
                 "displacement_match_is_semantic_identity": False,
+                "proof_format": additional_mass.get("format"),
+                "retracted_manager_record_zero_claim_reused": False,
             }
         },
         "analysis": {
@@ -480,7 +493,7 @@ def analyze_bmw_offset33b_memory_load_provenance(
             "offset33b_store_provenance_ready": True,
             "offset33b_memory_LOAD_frontier_ready": structural_ready,
             "offset33b_exact_memory_field_worklist_ready": exact_worklist_ready,
-            "offset33b_additional_mass_bootstrap_zero_proof_consumed": True,
+            "offset33b_actual_additional_mass_bootstrap_zero_proof_consumed": True,
             "offset33b_additional_mass_machine_LOAD_join_ready": False,
             "BMW_numeric_offset33b_ready": False,
             "BODY0_to_outer_vehicle_root_numeric_matrix_ready": False,
@@ -493,7 +506,7 @@ def analyze_bmw_offset33b_memory_load_provenance(
             "field_worklist": field_worklist,
             "additional_mass_join_rule": (
                 "only apply the proven +0.0f reduction after pointer provenance proves a load is "
-                "the current PhysicsParticipant+0xba0 / embedded Vehicle+0x860 storage"
+                "the actual PhysicsParticipant+0xba0 / embedded Vehicle+0x860 storage"
             ),
             "runtime_value_witness_required_if_static_resource_joins_fail": True,
         },
@@ -504,6 +517,7 @@ def analyze_bmw_offset33b_memory_load_provenance(
             "matching_0xba0_or_0x860_displacement_promoted_to_additional_mass": False,
             "memory_load_promoted_to_resource_field": False,
             "additional_mass_zero_promoted_to_unjoined_machine_LOAD": False,
+            "retracted_manager_record_zero_contract_accepted": False,
             "original_game_executed": False,
             "new_runtime_capture_required": False,
         },
@@ -514,16 +528,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("store_provenance", type=Path)
     parser.add_argument("instruction_export", type=Path)
-    parser.add_argument("additional_mass_proof", type=Path)
+    parser.add_argument("actual_additional_mass_proof", type=Path)
     parser.add_argument("--json-out", type=Path)
     args = parser.parse_args(argv)
 
     report = analyze_bmw_offset33b_memory_load_provenance(
         args.store_provenance,
         args.instruction_export,
-        args.additional_mass_proof,
+        args.actual_additional_mass_proof,
     )
-    text = json.dumps(report, indent=2, sort_keys=True) + "\n"
+    text = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.json_out is None:
         print(text, end="")
     else:
