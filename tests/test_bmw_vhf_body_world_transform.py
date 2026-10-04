@@ -9,6 +9,8 @@ import bmw_vhf_body_world_transform as mod
 
 MEB = "vehicles/bmw_m3_e36/bmw_m3_e36_kit00_body_loda.meb"
 SHA = "9" * 64
+VHF_SHA = "6" * 64
+ARCHIVE_SHA = "5" * 64
 
 
 def _golden():
@@ -16,6 +18,26 @@ def _golden():
         "format": "SHIFT.BMWGoldenAssetManifest/1",
         "golden": {"resource": MEB, "resource_sha256": SHA},
     }
+
+
+def _vhf_identity():
+    return {
+        "archive": "BMW_M3_E36.bff",
+        "archive_sha256": ARCHIVE_SHA,
+        "entry_index": 7,
+        "path": mod.DEFAULT_VHF,
+        "decoded_sha256": VHF_SHA,
+        "decoded_size": 1234,
+    }
+
+
+@pytest.fixture(autouse=True)
+def _stub_vhf_source_identity(monkeypatch):
+    monkeypatch.setattr(
+        mod,
+        "_vhf_source_identity",
+        lambda *args, **kwargs: _vhf_identity(),
+    )
 
 
 def _scene(matrix=None, *, sha=SHA, resource=MEB, name=mod.DEFAULT_BODY_NODE):
@@ -70,6 +92,7 @@ def test_vhf_body_transform_requires_exact_body_identity_and_transposes_to_svwt(
     assert report["source"]["node_name"] == mod.DEFAULT_BODY_NODE
     assert report["source"]["mesh_resource"] == MEB
     assert report["source"]["mesh_sha256"] == SHA
+    assert report["source"]["vhf_entry"] == _vhf_identity()
     assert report["world_matrix"] == [
         0.0, 1.0, 0.0, 0.0,
         -1.0, 0.0, 0.0, 0.0,
@@ -78,6 +101,7 @@ def test_vhf_body_transform_requires_exact_body_identity_and_transposes_to_svwt(
     ]
     assert report["translation_xyz"] == [4.0, 5.0, 6.0]
     assert report["convention"]["operation"] == "exact 4x4 transpose"
+    assert report["boundary"]["vhf_source_resource_identity_proven"] is True
     assert report["boundary"]["phase700_runtime_pose_handoff_consumed"] is False
     assert report["boundary"]["dynamic_vehicle_world_transform_claimed"] is False
 
@@ -104,6 +128,20 @@ def test_vhf_body_transform_rejects_non_affine_source_matrix(monkeypatch):
         mod.build_bmw_vhf_body_world_transform("BMW_M3_E36.bff", _golden())
 
 
+def test_vhf_body_transform_rejects_invalid_vhf_source_provenance(monkeypatch):
+    identity = _vhf_identity()
+    identity["path"] = "vehicles/other.vhf"
+    monkeypatch.setattr(
+        mod,
+        "_vhf_source_identity",
+        lambda *args, **kwargs: identity,
+    )
+    monkeypatch.setattr(mod, "build_vhf_scene", lambda *args, **kwargs: _scene())
+
+    with pytest.raises(ValueError, match="logical path disagrees"):
+        mod.build_bmw_vhf_body_world_transform("BMW_M3_E36.bff", _golden())
+
+
 def test_apply_vhf_transform_preserves_material_set_abi(monkeypatch):
     monkeypatch.setattr(mod, "build_vhf_scene", lambda *args, **kwargs: _scene())
     monkeypatch.setattr(
@@ -122,7 +160,17 @@ def test_apply_vhf_transform_preserves_material_set_abi(monkeypatch):
     assert result["render_command"]["world_matrix"] == transform["world_matrix"]
     assert result["vhf_body_world_transform"]["format"] == mod.FORMAT
     assert result["boundary"]["material_slice_set_abi_preserved"] is True
+    assert result["boundary"]["vhf_source_resource_identity_required"] is True
     assert result["boundary"]["dynamic_vehicle_world_transform_claimed"] is False
+
+
+def test_apply_vhf_transform_rejects_missing_vhf_source_identity(monkeypatch):
+    monkeypatch.setattr(mod, "build_vhf_scene", lambda *args, **kwargs: _scene())
+    transform = mod.build_bmw_vhf_body_world_transform("BMW_M3_E36.bff", _golden())
+    del transform["source"]["vhf_entry"]
+
+    with pytest.raises(ValueError, match="VHF source provenance is missing"):
+        mod.apply_bmw_vhf_body_world_transform(_material_set(), transform)
 
 
 def test_apply_vhf_transform_rejects_existing_conflicting_matrix(monkeypatch):
