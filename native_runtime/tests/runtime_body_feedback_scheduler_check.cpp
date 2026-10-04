@@ -1,6 +1,7 @@
 #include "runtime_state.hpp"
 
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 #include <utility>
@@ -186,27 +187,31 @@ shift::runtime::physics::PreparedConstraintRelationResetFrame make_reset() {
     return reset;
 }
 
+void configure_feedback_state(shift::runtime::NativeRuntimeState& state) {
+    auto source = make_frame();
+    auto relations = make_relations();
+    auto projection = make_projection(source, relations);
+    auto solver = make_solver(source, relations);
+    auto reset = make_reset();
+
+    state.physics.workspace.configure(2, 1, 1);
+    state.physics.participant_contract_ready = true;
+    state.physics.participant_identity_join_proven = true;
+    state.physics.participant_ready = true;
+    state.body_feedback.configure(
+        std::move(source),
+        std::move(relations),
+        std::move(reset),
+        std::move(solver),
+        std::move(projection));
+}
+
 }  // namespace
 
 int main() {
     try {
-        auto source = make_frame();
-        auto relations = make_relations();
-        auto projection = make_projection(source, relations);
-        auto solver = make_solver(source, relations);
-        auto reset = make_reset();
-
         shift::runtime::NativeRuntimeState state{};
-        state.physics.workspace.configure(2, 1, 1);
-        state.physics.participant_contract_ready = true;
-        state.physics.participant_identity_join_proven = true;
-        state.physics.participant_ready = true;
-        state.body_feedback.configure(
-            std::move(source),
-            std::move(relations),
-            std::move(reset),
-            std::move(solver),
-            std::move(projection));
+        configure_feedback_state(state);
 
         shift::runtime::VehicleControlIntent input{};
         input.throttle = true;
@@ -249,9 +254,66 @@ int main() {
                 "runtime BODY feedback scheduler accepted workspace mismatch");
         }
 
+        // Phase 713: a failure after the camera swap and PhysicsTickBoundary
+        // mutation must not commit a partial native tick.
+        shift::runtime::NativeRuntimeState transactional{};
+        configure_feedback_state(transactional);
+        transactional.body_feedback.solver_topology.matrix.clear();
+        shift::runtime::VehicleControlIntent failed_input{};
+        failed_input.throttle = true;
+        bool transactional_rejected = false;
+        try {
+            transactional.fixed_step(failed_input);
+        } catch (const std::runtime_error&) {
+            transactional_rejected = true;
+        }
+        if (!transactional_rejected ||
+            transactional.physics.fixed_step != 0 ||
+            transactional.physics.throttle_steps != 0 ||
+            transactional.physics.last_input.throttle ||
+            transactional.camera.active_index != 0 ||
+            transactional.camera.update_in_progress ||
+            transactional.camera.snapshot_count != 0 ||
+            transactional.camera.native_update_count != 0 ||
+            transactional.body_feedback.step_count != 0) {
+            throw std::runtime_error(
+                "failed native fixed step committed partial camera/physics state");
+        }
+
+        // Failed environment admission must remain retryable. In particular,
+        // environment_checked must not latch true before all source contracts
+        // have loaded successfully.
+        if (setenv("SHIFT_NATIVE_BODY_FEEDBACK", "1", 1) != 0) {
+            throw std::runtime_error("failed to set BODY feedback test environment");
+        }
+        unsetenv("SHIFT_NATIVE_BODY_FEEDBACK_SOLVER_FRAME");
+        unsetenv("SHIFT_NATIVE_BODY_FEEDBACK_GBCF");
+        unsetenv("SHIFT_NATIVE_BODY_FEEDBACK_CSRF");
+        unsetenv("SHIFT_NATIVE_BODY_FEEDBACK_CRRF");
+        unsetenv("SHIFT_NATIVE_BODY_FEEDBACK_SBPS");
+
+        shift::runtime::NativeRuntimeState retryable{};
+        bool environment_rejected = false;
+        try {
+            retryable.fixed_step({});
+        } catch (const std::runtime_error&) {
+            environment_rejected = true;
+        }
+        unsetenv("SHIFT_NATIVE_BODY_FEEDBACK");
+        if (!environment_rejected ||
+            retryable.body_feedback.environment_checked ||
+            retryable.body_feedback.enabled ||
+            retryable.physics.fixed_step != 0 ||
+            retryable.camera.snapshot_count != 0) {
+            throw std::runtime_error(
+                "failed BODY feedback environment admission was not retry-safe");
+        }
+
         std::cout
             << "{\"format\":\"SHIFT.NativeBodyFeedbackScheduler/1\","
             << "\"ready\":true,"
+            << "\"transactional_fixed_step\":true,"
+            << "\"environment_retry_safe\":true,"
             << "\"steps\":" << state.body_feedback.step_count << ","
             << "\"body_count\":" << state.body_feedback.body_count << ","
             << "\"scalar_count\":" << state.body_feedback.scalar_count << ","
