@@ -3,6 +3,7 @@
 
 #include "shift_ir.hpp"
 #include "runtime_state.hpp"
+#include "runtime_loop_policy.hpp"
 #include "shift_builtin_solver_frame.hpp"
 #include "shift_body_export_solver_join.hpp"
 #include "shift_body_solver_export_frame.hpp"
@@ -2975,6 +2976,7 @@ struct Args {
     std::string input_script;
     int frames = kDefaultFrames;
     bool frames_explicit = false;
+    bool continuous = false;
     bool persist_post_solve_body_state = false;
     bool validation = false;
 };
@@ -3032,6 +3034,8 @@ Args parse_args(int argc, char** argv) {
                 args.frames = std::max(1, std::stoi(value));
                 args.frames_explicit = true;
             }
+        } else if (option == "--continuous") {
+            args.continuous = true;
         } else if (option == "--persist-post-solve-body-state") {
             args.persist_post_solve_body_state = true;
         } else if (option == "--validation") {
@@ -3050,7 +3054,7 @@ Args parse_args(int argc, char** argv) {
                 << "[--post-solve-projection FILE] "
                 << "[--persist-post-solve-body-state] "
                 << "[--input-script FILE] [--frames N] "
-                << "[--validation]\n";
+                << "[--continuous] [--validation]\n";
             std::exit(EXIT_SUCCESS);
         } else {
             throw std::runtime_error(
@@ -3090,23 +3094,15 @@ int main(int argc, char** argv) {
         if (input_script_mode) {
             input_script = load_input_script(
                 args.input_script);
-            if (input_script.steps.size() >
-                static_cast<size_t>(
-                    std::numeric_limits<int>::max())) {
-                throw std::runtime_error(
-                    "native input script has too many fixed-step rows");
-            }
-            if (args.frames_explicit &&
-                static_cast<size_t>(args.frames) !=
-                    input_script.steps.size()) {
-                throw std::runtime_error(
-                    "--frames must equal native input script step count");
-            }
         }
-        const int frame_limit =
-            input_script_mode
-                ? static_cast<int>(input_script.steps.size())
-                : args.frames;
+        const shift::runtime::RuntimeLoopPolicy loop_policy =
+            shift::runtime::make_runtime_loop_policy(
+                args.continuous,
+                args.frames_explicit,
+                args.frames,
+                input_script_mode,
+                input_script.steps.size());
+        const int frame_limit = loop_policy.frame_limit;
 
         PacketGeometry mesh_geometry;
         std::vector<PacketGeometry> material_geometry;
@@ -3209,6 +3205,12 @@ int main(int argc, char** argv) {
             << (input_script_mode ? "true" : "false") << ",\n"
             << "  \"input_script_steps\": "
             << input_script.steps.size() << ",\n"
+            << "  \"continuous_mode\": "
+            << (loop_policy.continuous ? "true" : "false") << ",\n"
+            << "  \"frame_limit_enabled\": "
+            << (loop_policy.frame_limit_enabled ? "true" : "false") << ",\n"
+            << "  \"runtime_loop_schedule\": "
+            << "\"one-native-fixed-step-per-render-frame-non-retail\",\n"
             << "  \"solver_frame_mode\": "
             << (!args.solver_frame.empty() ? "true" : "false") << ",\n"
             << "  \"body_solver_export_frame_mode\": "
@@ -3230,7 +3232,7 @@ int main(int argc, char** argv) {
             << (!args.post_solve_projection.empty() ? "true" : "false")
             << ",\n"
             << "  \"frames_requested\": "
-            << frame_limit << "\n"
+            << (loop_policy.frame_limit_enabled ? frame_limit : 0) << "\n"
             << "}\n";
 
         window.create();
@@ -3640,7 +3642,7 @@ int main(int argc, char** argv) {
         const auto start =
             std::chrono::steady_clock::now();
 
-        while (!quit && rendered < frame_limit) {
+        while (loop_policy.should_continue(quit, rendered)) {
             window.poll(quit, live_input);
 
             const InputState step_input =
@@ -3803,6 +3805,12 @@ int main(int argc, char** argv) {
             << simulation_steps << ",\n"
             << "  \"fixed_dt\": "
             << kFixedDt << ",\n"
+            << "  \"continuous_mode\": "
+            << (loop_policy.continuous ? "true" : "false") << ",\n"
+            << "  \"frame_limit_enabled\": "
+            << (loop_policy.frame_limit_enabled ? "true" : "false") << ",\n"
+            << "  \"runtime_loop_schedule\": "
+            << "\"one-native-fixed-step-per-render-frame-non-retail\",\n"
             << "  \"input_layer\": "
             << "\"SHIFT.NativeRuntimeInput/1\",\n"
             << "  \"input_source\": \""

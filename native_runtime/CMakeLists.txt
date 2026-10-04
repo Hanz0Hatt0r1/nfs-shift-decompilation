@@ -329,7 +329,17 @@ target_link_libraries(shift_runtime_aux_contact_response_check PRIVATE
 target_compile_options(shift_runtime_aux_contact_response_check PRIVATE
   -Wall -Wextra -Wpedantic)
 
+add_executable(shift_runtime_loop_policy_check
+  tests/runtime_loop_policy_check.cpp)
+target_include_directories(shift_runtime_loop_policy_check PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_options(shift_runtime_loop_policy_check PRIVATE
+  -Wall -Wextra -Wpedantic)
+
 if(BUILD_TESTING)
+  add_test(
+    NAME shift_runtime_loop_policy
+    COMMAND shift_runtime_loop_policy_check)
   add_test(
     NAME shift_runtime_builtin_sparse_solver
     COMMAND shift_runtime_builtin_solver_check)

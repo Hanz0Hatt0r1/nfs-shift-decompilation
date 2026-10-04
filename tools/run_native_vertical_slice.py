@@ -22,8 +22,6 @@ PROFILE_FORMAT = "SHIFT.NativeVerticalSliceProfile/1"
 PLAN_FORMAT = "SHIFT.NativeVerticalSliceLaunchPlan/1"
 PIPELINE_FORMAT = "SHIFT.OfflineResourcePipelineRun/1"
 RESOURCE_HANDOFF_FORMAT = "SHIFT.OfflineNativeResourceHandoff/1"
-INTERACTIVE_FRAME_LIMIT = 0x7FFFFFFF
-
 JSON_INPUTS: dict[str, tuple[str, bool]] = {
     "camera_state": ("SHIFT.NativeCameraStateBridge/1", True),
     "physics_manifest": ("SHIFT.BMWM3VehiclePhysicsResourceManifest/1", False),
@@ -421,7 +419,7 @@ def build_launch_plan(
         raise ProfileError("interactive mode must not specify frames")
 
     if interactive:
-        frames = INTERACTIVE_FRAME_LIMIT
+        frames = None
     else:
         frames_raw = profile.get("frames", input_steps if input_steps else 120)
         if isinstance(frames_raw, bool):
@@ -463,7 +461,10 @@ def build_launch_plan(
     ]
     if input_steps:
         argv.extend(["--input-script", str(resolved["input_script"])])
-    argv.extend(["--frames", str(frames)])
+    if interactive:
+        argv.append("--continuous")
+    else:
+        argv.extend(["--frames", str(frames)])
     if validation:
         argv.append("--validation")
 
@@ -493,7 +494,7 @@ def build_launch_plan(
         "interactive": interactive,
         "frames": frames,
         "frame_limit_policy": (
-            "int32-max-with-window-quit"
+            "native-continuous-until-window-quit"
             if interactive
             else "explicit-bounded-frame-count"
         ),
@@ -514,6 +515,7 @@ def build_launch_plan(
             "scene_and_physics_from_resource_pipeline": use_resource_pipeline,
             "resource_pipeline_replaces_runtime_evidence": False,
             "window_quit_drives_session_end": interactive,
+            "native_continuous_runtime_loop_admitted": interactive,
             "persistent_vehicle_transform_motion_claimed": False,
             "provider_present_dispatch_claimed": False,
             "retail_game_loop_claimed": False,
