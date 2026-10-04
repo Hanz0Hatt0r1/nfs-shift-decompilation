@@ -1,39 +1,20 @@
 # Phase 699 — deepest native vehicle external-provider frontier
 
-## Playable-slice blocker reduced
+## Role
 
-Phase 697 carries the strongest current two-half-step physics path persistently
-through `NativeRuntimeState`. Phase 698 adds fail-closed infrastructure for a
-future proven concrete BODY index to select one persistent BODY pose. Process 1
-PR #1183 further narrows the BMW chassis identity frontier by proving nine named
-BODY field roles and the exact retail SDF cardinality, but it still reports:
+`SHIFT.NativeVehicleExternalProviderFrontier/1` is the machine-readable
+coordination graph for the deepest persistent native vehicle chain. It is not a
+physics implementation and never promotes a provider merely because a nearby
+identity or renderer boundary became ready.
 
-```text
-main_chassis_BODY_selected = false
-selected_BODY_index = null
-vehicle_BODY_selection_ready = false
-```
-
-The remaining execution-depth problem is therefore the set of injected producers
-inside the Phase 697 path. Phase 699 freezes that set as a machine-readable
-handoff rather than replacing an unresolved producer with guessed behavior.
-
-No original `SHIFT.exe` execution or new runtime capture is used.
-
-## Contract
-
-```text
-SHIFT.NativeVehicleExternalProviderFrontier/1
-```
-
-Source and report builder:
+Source and builder:
 
 ```text
 src/physics/native_vehicle_external_provider_frontier.py
 tools/build_native_vehicle_external_provider_frontier.py
 ```
 
-Classification policy:
+Classification remains:
 
 ```text
 already proven producer     -> implement_now
@@ -41,7 +22,17 @@ static frontier available   -> request_process1_static_proof
 runtime-only evidence       -> remain_blocked_runtime_only
 ```
 
-Current result:
+## Phase 708 refresh status
+
+This document now reflects:
+
+- Process 1 #1208 — positive retail `SHIFT.GlobalVehicleBodyOwnerIdentity/1`;
+- Process 1 #1210 — physical `SHIFT.BMWBody0BindPoseWriterABI/1`;
+- Process 2 Phase 707 — native retail BODY-owner identity producer;
+- Process 3 Phases 647-649 — live Vulkan upload and freshness-gated Phase706
+  renderer sink.
+
+Current provider inventory is still:
 
 ```text
 external providers = 9
@@ -50,72 +41,98 @@ Process 1 handoffs = 9
 runtime-only blocked = 0
 ```
 
-`implement_now = 0` is intentional: every producer currently strong enough for
-safe native substitution is already integrated.
+The count remains nine because #1208 closes a cross-chain identity join, not the
+producer semantics of any of the nine Phase 697/701 injected boundaries.
 
 ## Remaining provider inventory
 
-| Boundary | Current API | Missing proof |
+| Boundary | Current API | Remaining proof |
 | --- | --- | --- |
 | complete `FUN_00765c40` | generic `contact_factor` callback | complete/separable local work, query world-position producer, collision-provider ownership |
 | `FUN_00758b50` | generic `wheel_update` callback | complete inputs/writes/nested work and wheel/control ownership |
 | `FUN_00766510` | generic `contact_response` callback | primary response application into `FUN_007baa70` and caller-state producers |
 | `FUN_007675f0` caller inputs | `Fun007675f0ContactOuterInputProvider` | producers/refresh timing for all ten typed inputs |
 | `FUN_007682c0` effect production | `Fun007682c0EffectProvider` | exact magnitude/x87 path and complete response inputs |
-| `FUN_007682c0` BODY `+0x50` application | `Fun007682c0AccumulatorDeltaConsumer` | exact main/chassis BODY index plus update-child -> solver-base continuity |
+| `FUN_007682c0` BODY `+0x50` application | `Fun007682c0AccumulatorDeltaConsumer` | exact destination BODY pointer/record provenance at the application site, joined to proven retail BODY 0 |
 | `FUN_007afdd0` f32 scalars | `Fun007afdd0ScalarProvider` | exact stores/returns, sqrt/trig provenance, floating-control state |
 | `FUN_007b8810` | `Fun007b8810PostHalfStepCallback` | complete refresh producer semantics |
-| `FUN_00765470` refresh | `Fun00765470MachineScalarHalfStepProvider` | producer ownership and exact refresh timing across both half-steps |
+| `FUN_00765470` refresh | `Fun00765470MachineScalarHalfStepProvider` | producer ownership plus exact per-half-step refresh/reuse schedule |
 
-The JSON contract contains the exact proof requests for every row.
+## Identity join is closed
 
-## Process 1 sync
-
-PR #1183 (`SHIFT.VehicleNamedBodyTopologyFrontier/1`) is the latest identity
-narrowing used here. It proves the BMW named BODY field topology and establishes
-that the retail suspension SDF contains 11 BODY records. With an exact hash-
-matched SDF it can recover BODY name order and finite residual rows, but it does
-not declare any plausible residual name to be the chassis.
-
-Two identity joins remain:
-
-1. main/chassis BODY semantic selection;
-2. update-child -> vehicle solver-base continuity through `FUN_007615c0`.
-
-Phase 698 is ready to consume an exact selected index once those proofs become
-positive.
-
-The scheduling boundary remains separate. Current committed evidence narrows the
-source gate and finite machine candidates, but does not provide the complete
-retail proof needed for automatic scheduling: exact selected machine callsite,
-dynamic statement multiplicity and runtime cadence ownership all remain gated.
-
-Policy:
+Process 1 #1208 commits:
 
 ```text
-explicit outer update only
+global vehicle base 0x00c13700
+  -> pointer field +0x339c
+  -> BODY-array owner
+  -> retail BMW chassis BODY 0
+```
+
+The BODY-array owner pointer is not asserted equal to the global vehicle base.
+Phase 707 consumes the contract through the existing Phase 703/698/700 path and
+provides retail Phase 705/706 wrappers without caller-injected identity.
+
+Therefore `body_to_vehicle_identity` is now a closed cross-chain join. The
+historical targeted `FUN_00765470` receiver proof must not be requested again.
+
+This does **not** by itself close `FUN_007682c0` delta application. That row still
+needs proof that the exact destination record at the application site is the
+proven chassis BODY 0 record.
+
+## BODY0 bind frontier after Process 1 #1210
+
+#1210 proves the physical pose-writer ABI for `FUN_007b7840`, but explicitly does
+not prove semantic roles:
+
+```text
+BODY0_pointer_proven = false
+BODY0_bind_origin_proven = false
+BODY0_bind_basis_proven = false
+BODY0_bind_frame_proof_ready = false
+```
+
+Consequently Phase 704/705/706 stay fail-closed on
+`SHIFT.BMWBody0BindFrameProof/1`. Physical register/stack placement is not a
+license to infer BODY0 pointer, origin, or basis meaning.
+
+The next static bind work is now narrowly:
+
+1. stack argument value provenance at the proven pose-writer callsites;
+2. parameter semantic roles;
+3. target pointer -> retail chassis BODY 0 join;
+4. source-backed bind origin/basis semantics.
+
+## Renderer transport is no longer the blocker
+
+Process 3 now provides:
+
+```text
+Phase 646  dynamic vehicle transform core
+Phase 647  SHIFT.LiveVehicleVertexBufferUpload/1
+Phase 648  shift_runtime explicit regression wiring
+Phase 649  SHIFT.PersistentVehicleVulkanUpload/1
+```
+
+Phase 649 reads the current Phase 706 state before GPU access, waits the supplied
+frame fences, then reuses Phase 647. Stale transform state is rejected before
+vertex memory mutation.
+
+Thus the BODY-pose -> renderer join is blocked on the semantic BODY0 bind witness
+(and later a proven production commit schedule), not on another renderer
+transport layer.
+
+## Scheduling and machine-scalar guards
+
+Nothing in #1208, #1210, Phase 707, or Phases 647-649 proves the retail outer
+cadence. The deep update remains explicit:
+
+```text
 fixed_step auto-schedule forbidden
 ```
 
-## Process 3 sync
-
-Phase 641 advances the resource/renderer side by exhausting existing capture
-sampler evidence before recapture. It still does not establish physics
-BODY/vehicle -> exact renderer scene-object identity.
-
-## Fail-closed guards
-
-Phase 699 preserves:
-
-- exactly two half-steps;
-- persistent BODY state;
-- participant admission;
-- missing-provider rejection;
-- no host `sqrt`, `sin` or `cos` substitution at unresolved machine boundaries;
-- no BODY-pose -> vehicle-transform promotion;
-- no fixed-step auto scheduling;
-- no original-game execution;
-- no new runtime capture requirement.
+Likewise unresolved machine boundaries still forbid replacing retail paths with
+host `sqrt`, `sin`, or `cos`.
 
 ## Regression / CI
 
@@ -124,19 +141,14 @@ tests/test_native_vehicle_external_provider_frontier.py
 .github/workflows/native-physics-phase699.yml
 ```
 
-The regression verifies exactly nine external providers, an empty
-`implement_now` set, the actual Phase 697 C++ provider API symbols, Phase 698
-fail-closed selection infrastructure, the PR #1183 chassis-selection state, and
-the negative scheduling/math/transform guards.
+The Phase 708 refresh regression verifies:
 
-## Next Process 2 action
+- exactly nine external provider rows and `implement_now = []`;
+- positive #1208/Phase707 retail identity;
+- no reintroduction of update-child pointer equality;
+- no stale request for the closed `FUN_00765470` receiver proof;
+- #1210 physical ABI without semantic bind promotion;
+- Process 3 Phases 647-649 as closed renderer transport;
+- all scheduling and host-math guards remain fail-closed.
 
-Regenerate the report before each provider-replacement stage and implement only a
-row whose upstream proof has moved to an implementable state. Highest-value
-frontiers are currently:
-
-1. exact main/chassis BODY selection and update-child -> solver-base continuity;
-2. exact `FUN_007682c0` machine/effect production;
-3. exact outer-update callsite + dynamic multiplicity/cadence ownership;
-4. complete/separable `FUN_00765c40` production;
-5. retail resource -> concrete initial BODY construction.
+No original game execution or new runtime capture is used or required.
