@@ -1,0 +1,35 @@
+name: Process 1 BMW offset33b field owner frontier
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/analyze_bmw_offset33b_field_owner_frontier.py'
+      - 'tests/test_ghidra_bmw_offset33b_field_owner_frontier.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_memory_load_provenance.py'
+      - 'tools/ghidra/run_bmw_offset33b_reduced_static_proof.py'
+      - '.github/workflows/process1-bmw-offset33b-field-owner-frontier.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/analyze_bmw_offset33b_field_owner_frontier.py'
+      - 'tests/test_ghidra_bmw_offset33b_field_owner_frontier.py'
+      - 'tools/ghidra/analyze_bmw_offset33b_memory_load_provenance.py'
+      - 'tools/ghidra/run_bmw_offset33b_reduced_static_proof.py'
+      - '.github/workflows/process1-bmw-offset33b-field-owner-frontier.yml'
+
+jobs:
+  owner-frontier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Run field-owner regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_field_owner_frontier.py
+      - name: Preserve memory-LOAD regressions
+        run: python -m pytest -q tests/test_ghidra_bmw_offset33b_memory_load_provenance.py
+      - name: Preserve reduced-runner regressions
+        run: python -m pytest -q tests/test_ghidra_run_bmw_offset33b_reduced_static_proof.py
+      - name: Verify CLI
+        run: python tools/ghidra/analyze_bmw_offset33b_field_owner_frontier.py --help >/dev/null
