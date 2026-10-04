@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Mapping
 
 from retail_archive_materialization import (
     ADMISSION_FORMAT,
@@ -14,18 +14,18 @@ BOOTSTRAP_FORMAT = "SHIFT.SceneVehicleBootstrap/1"
 
 
 def materialize_selected_archive(
-    catalog: Mapping[str, Any],
-    bootstrap: Mapping[str, Any],
+    catalog: Mapping[str, object],
+    bootstrap: Mapping[str, object],
     *,
     selected_key: str,
     role: str,
     output_dir: str | Path,
-) -> dict[str, Any] | None:
+) -> dict[str, object] | None:
     """Materialize one exact selected archive when source provenance is present.
 
     Returns ``None`` only for legacy/test catalogs whose selected occurrence has
-    no source provenance at all.  Real offline-pipeline catalogs always carry
-    source/source_kind and therefore take the strict materialization path.
+    incomplete source provenance. Real offline-pipeline catalogs always carry
+    both ``source`` and ``source_kind`` and therefore take the strict path.
     """
     if catalog.get("format") != CATALOG_FORMAT:
         raise ValueError(f"catalog must be {CATALOG_FORMAT}")
@@ -57,8 +57,8 @@ def materialize_selected_archive(
     occurrence = dict(hits[0])
 
     # Older synthetic fixtures predate archive source provenance. Keep direct
-    # unit-level callers compatible; real pipeline catalogs never use this path.
-    if not occurrence.get("source") and not occurrence.get("source_kind"):
+    # unit-level callers compatible; real pipeline catalogs always have both.
+    if not occurrence.get("source") or not occurrence.get("source_kind"):
         return None
 
     for field in ("archive_name", "sha256"):
