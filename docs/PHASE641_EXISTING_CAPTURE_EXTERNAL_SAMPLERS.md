@@ -83,7 +83,7 @@ It preserves the existing requirements:
 - six named captured PPM faces for the proven samplerCube s3 path;
 - exact snapshot provenance under the explicit capture root.
 
-Cross-platform relocation is now fail-closed and producer-backed. Native
+Cross-platform relocation is fail-closed and producer-backed. Native
 Windows-absolute paths are portable only through the exact layout established by
 `tools/run_shift_capture.ps1`:
 
@@ -101,6 +101,51 @@ paths continue to resolve only at their recorded relative location.
 
 These are specific missing observations/artifacts, not generic requests for a
 new capture.
+
+## Exact missing-snapshot frontier
+
+A Phase 590 `capture-observation-count:0` is not sufficient evidence that a new
+snapshot capture is required. Phase 590 filters its candidates to already
+captured PPM content, so the same count can mean several different things.
+
+Phase 641 now rechecks the compact Phase 573 draw-local observations only after
+Phase 590 has identified the exact runtime-admitted scene sampler. It emits an
+entry under:
+
+```text
+existing_capture_completion.runtime_evidence_required[]
+```
+
+only when all of the following are already observed together:
+
+1. exact `binding_index` from the runtime-proven scene draw;
+2. exact external sampler register from the RenderBinding submesh;
+3. a draw-local active texture binding at that register;
+4. observed D3D9 resource creation;
+5. the expected resource type (`texture2d` or `cube_texture`);
+6. no valid snapshot payload for that typed observation.
+
+Each entry preserves the capture frame/draw indices, register, sampler name/type,
+resource type, observed snapshot statuses/path cardinalities and the minimal
+`requested_texture_stage`. A 2D sampler requires one PPM path; the proven cube
+s3 path requires six face paths.
+
+The handoff boundary then records:
+
+```text
+capture_observation_required = true
+capture_observation_requirement_count = N
+new_capture_required = false
+```
+
+The last value deliberately remains false as a global claim: an explicit
+already-proven external resource input can still satisfy the renderer boundary.
+The new field states only that automatic completion from the supplied capture
+cannot proceed without the listed draw-local snapshot observation.
+
+Phase 641 does **not** emit this requirement for a path relocation failure, a
+scene-instance ambiguity, an unobserved/mismatched texture creation type, or an
+already valid snapshot. Those cases remain their original fail-closed blockers.
 
 ## Retry policy
 
@@ -131,7 +176,10 @@ A Phase 641-completed handoff records:
 - generated Phase 592 cube snapshot contract when applicable;
 - retried `NativeSceneVulkanSet` directory;
 - retried Phase 585 prepare report;
-- exact Phase 591/590 diagnostics under `existing_capture_completion`.
+- exact Phase 591/590 diagnostics under `existing_capture_completion`;
+- exact per-stage missing snapshot observations under
+  `existing_capture_completion.runtime_evidence_required` when and only when
+  the typed draw-local resource was already observed without usable content.
 
 The top-level vertical-slice report also records the effective
 `renderer_capture_root`.
@@ -147,7 +195,8 @@ Phase 641 does not claim that:
 - a blocked repeated instance may be selected manually;
 - renderer-owned textures may be synthesized;
 - Phase 590 observation absence automatically requires recapture;
-- a new capture is required by this phase.
+- a zero snapshot candidate count proves a texture binding existed;
+- a new capture is globally required when an explicit proven resource could be supplied.
 
 ## Regression coverage
 
@@ -160,5 +209,10 @@ Tests prove that:
   Windows/Linux;
 - a unique basename outside that exact producer layout is rejected;
 - Phase 590 path/instance blockers are preserved without a recapture claim;
+- an observed typed sampler2D binding with no PPM produces one exact stage
+  observation requirement;
+- an already captured valid PPM does not produce that requirement;
+- a resource-type mismatch cannot be promoted into a capture requirement;
+- an incomplete samplerCube s3 snapshot requires exactly six face paths;
 - an earlier Phase 576 blocker is never bypassed;
 - explicit Phase 640 renderer-resource inputs remain authoritative.
