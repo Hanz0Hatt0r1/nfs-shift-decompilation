@@ -1,0 +1,44 @@
+name: process-3-phase647-live-vehicle-vulkan-buffer
+
+on:
+  push:
+    paths:
+      - 'native_runtime/include/shift_live_vehicle_vertex_buffer_upload.hpp'
+      - 'native_runtime/src/live_vehicle_vertex_buffer_upload.cpp'
+      - 'native_runtime/tests/live_vehicle_vertex_buffer_upload_check.cpp'
+      - 'native_runtime/include/shift_vehicle_world_transform_transport.hpp'
+      - 'native_runtime/src/vehicle_world_transform_transport.cpp'
+      - 'tests/test_native_live_vehicle_vertex_buffer_upload_cpp.py'
+      - 'docs/PHASE647_LIVE_VEHICLE_VULKAN_VERTEX_UPLOAD.md'
+      - '.github/workflows/process-3-phase647-live-vehicle-vulkan-buffer.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/include/shift_live_vehicle_vertex_buffer_upload.hpp'
+      - 'native_runtime/src/live_vehicle_vertex_buffer_upload.cpp'
+      - 'native_runtime/tests/live_vehicle_vertex_buffer_upload_check.cpp'
+      - 'native_runtime/include/shift_vehicle_world_transform_transport.hpp'
+      - 'native_runtime/src/vehicle_world_transform_transport.cpp'
+      - 'tests/test_native_live_vehicle_vertex_buffer_upload_cpp.py'
+      - 'docs/PHASE647_LIVE_VEHICLE_VULKAN_VERTEX_UPLOAD.md'
+      - '.github/workflows/process-3-phase647-live-vehicle-vulkan-buffer.yml'
+
+jobs:
+  live-vehicle-vulkan-buffer:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Vulkan software stack
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ libvulkan-dev mesa-vulkan-drivers vulkan-tools pkg-config
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Show Vulkan devices
+        run: vulkaninfo --summary
+      - name: Run Phase 647 real Vulkan regression
+        run: python -m pytest -q tests/test_native_live_vehicle_vertex_buffer_upload_cpp.py
+      - name: Regress Phase 646 transform core
+        run: python -m pytest -q tests/test_native_vehicle_world_transform_transport_cpp.py tests/test_native_vehicle_world_transform_script.py
