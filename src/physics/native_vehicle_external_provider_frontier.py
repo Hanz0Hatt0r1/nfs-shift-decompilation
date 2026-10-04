@@ -3,8 +3,9 @@
 Phase 699 is coordination infrastructure, not a physics implementation. It
 freezes the providers still injected into the Phase 697 persistent outer-update
 path and classifies each provider using the Process 2 policy. This refresh
-consumes Process 1 PR #1196 / Phase 703 and Process 3 Phases 645-646 without
-promoting any unproven producer, cadence, BODY-owner identity, or transform.
+consumes Process 1 PRs #1196, #1199 and #1200, Process 2 Phases 703-706 and
+Process 3 Phases 645-646 without promoting any unproven producer, cadence,
+retail BODY-owner identity, BODY0 bind witness, or renderer mutation.
 """
 from __future__ import annotations
 
@@ -233,6 +234,40 @@ def build_frontier() -> dict[str, Any]:
             "retail_identity_ready": False,
         },
         {
+            "boundary": "BODY0/VHF bind-frame composition contract",
+            "state": "composition_formula_proven_bind_witness_pending",
+            "proof": "SHIFT.BMWBody0VHFBindFrameFrontier/1 / Process 1 PR #1199",
+            "BODY0_bind_frame_proven": False,
+        },
+        {
+            "boundary": "BODY0 bind initialization static frontier",
+            "state": "bounded_static_worklist_ready_bind_matrix_pending",
+            "proof": "SHIFT.BMWBody0BindInitializationFrontier/1 / Process 1 PR #1200",
+            "BODY0_bind_matrix_proven": False,
+        },
+        {
+            "boundary": "native BODY0/VHF world-matrix composition",
+            "state": "phase704_fail_closed_composition_ready",
+            "phase": 704,
+            "proof": "SHIFT.NativeBMWBody0VHFWorldMatrixComposition/1",
+            "current_retail_world_matrix_ready": False,
+        },
+        {
+            "boundary": "NativeRuntimeState -> BMW vehicle world-matrix handoff",
+            "state": "phase705_read_only_handoff_ready",
+            "phase": 705,
+            "proof": "SHIFT.NativeBMWVehicleWorldMatrixRuntimeHandoff/1",
+            "current_retail_world_matrix_ready": False,
+        },
+        {
+            "boundary": "persistent BMW vehicle world transform",
+            "state": "phase706_transactional_freshness_checked_state_ready",
+            "phase": 706,
+            "proof": "SHIFT.PersistentBMWVehicleWorldTransform/1",
+            "current_retail_world_matrix_ready": False,
+            "renderer_mutation_enabled": False,
+        },
+        {
             "boundary": "resource-driven Silverstone+BMW playable scene bootstrap",
             "state": "process3_one_command_bootstrap_ready",
             "phase": 644,
@@ -281,18 +316,21 @@ def build_frontier() -> dict[str, Any]:
         },
         {
             "id": "body_pose_to_renderer_world_transform",
-            "state": "bind_frame_composition_blocked_transport_core_ready",
+            "state": "composition_handoff_and_persistence_ready_retail_bind_witness_pending",
             "process2_action": REQUEST_PROCESS1,
             "evidence": [
-                "Phase 700 can expose an authorized persistent BODY pose without mutating runtime state",
-                "Process 3 Phase 645 proves the canonical BMW VHF vehicle-root/body-MEB static bind transform and VHF->SVWT convention bridge",
-                "Process 3 Phase 646 provides exact vehicle draw-group identity and a non-cumulative native dynamic transform transport core",
+                "Process 1 PR #1199 proves the exact row-vector composition M_vhf_bind * inverse(M_BODY0_bind) * M_BODY0_runtime",
+                "Process 1 PR #1200 narrows BODY0 bind initialization to a finite static caller/callsite worklist but keeps BODY0_bind_matrix_proven=false",
+                "Phase 704 implements the exact composition fail-closed without assuming an identity BODY0 bind",
+                "Phase 705 joins admitted NativeRuntimeState BODY0 pose to the Phase 646 VehicleWorldMatrix ABI",
+                "Phase 706 persists that matrix transactionally and rejects stale BODY0 provenance",
+                "Process 3 Phase 646 provides exact vehicle draw-group identity and non-cumulative dynamic transform transport",
             ],
             "blockers": [
-                "persistent BODY0 pose frame -> Phase 645 VHF vehicle-root/body-MEB bind-frame composition is not proven",
+                "positive SHIFT.BMWBody0BindFrameProof/1 with source-backed BODY0 bind matrix is not committed",
             ],
-            "additional_dependency": "Process 3 Phase 646 live Vulkan buffer wiring is a renderer-side mechanical follow-up, not a BODY-frame proof",
-            "policy": "do not synthesize BODY0->VHF composition or promote the Phase 645 static bind matrix into a dynamic physics pose",
+            "additional_dependency": "Process 3 Phase 646 live Vulkan buffer wiring remains the renderer-side mechanical follow-up after a current world matrix exists",
+            "policy": "do not synthesize the BODY0 bind matrix, treat the Phase 645 static VHF bind as BODY0 pose, or bypass Phase 704-706 freshness/proof gates",
         },
         {
             "id": "retail_resource_to_initial_body_state",
@@ -316,8 +354,8 @@ def build_frontier() -> dict[str, Any]:
         "format": FORMAT,
         "version": 1,
         "phase": 699,
-        "refresh_after_phase": 703,
-        "deepest_native_chain": "Phase 697 persistent FUN_00770e80 outer-update path wrapped by Phase 701 persistent provider session",
+        "refresh_after_phase": 706,
+        "deepest_native_chain": "Phase 697 persistent FUN_00770e80 outer-update path wrapped by Phase 701 persistent provider session; Phase 706 persists admitted BODY0 world transform separately",
         "external_provider_count": len(providers),
         "providers": providers,
         "action_counts": action_counts,
@@ -339,6 +377,8 @@ def build_frontier() -> dict[str, Any]:
             "body_pose_to_vehicle_transform_promotion_allowed": False,
             "phase645_static_bind_transform_is_dynamic_pose": False,
             "phase646_transport_core_is_body_frame_proof": False,
+            "phase704_composition_contract_is_retail_bind_proof": False,
+            "phase706_persistent_transform_is_renderer_mutation": False,
             "original_game_execution_required": False,
             "new_runtime_capture_required": False,
         },
