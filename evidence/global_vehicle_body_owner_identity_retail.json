@@ -1,0 +1,49 @@
+{
+  "format": "SHIFT.GlobalVehicleBodyOwnerIdentity/1",
+  "inputs": {
+    "global_vehicle_component_base_identity": "SHIFT.GlobalVehicleComponentBaseIdentity/1 (Process 1 PR #1194)",
+    "half_step_BODY_owner_receiver": "user-supplied retail SHIFT.Fun00765470BodyOwnerReceiverProvenance/1",
+    "BODY_owner_field_provenance": "evidence/fun_00765470_body_owner_field_retail.json",
+    "BMW_chassis_BODY_identity": "SHIFT.BMWChassisBodyIdentityFrontier/1 (Process 1 PR #1188)"
+  },
+  "identity_join": {
+    "global_vehicle_address": "0x00c13700",
+    "global_vehicle_component_base_identity_ready": true,
+    "half_step_entry_ECX_to_BODY_array_owner_ECX_continuity_proven": false,
+    "half_step_entry_ECX_to_BODY_array_owner_field_continuity_proven": true,
+    "BODY_array_owner_is_global_vehicle_base": false,
+    "BODY_array_owner_pointer_loaded_from_global_vehicle_base": true,
+    "BODY_array_owner_pointer_field_offset": "0x339c",
+    "main_chassis_BODY_selected": true,
+    "main_chassis_BODY_name": "body",
+    "main_chassis_BODY_index": 0,
+    "global_vehicle_BODY_owner_identity_ready": true,
+    "evidence_state": "proven-composed-static-field"
+  },
+  "handoff": {
+    "outer_receiver_to_BODY_owner_continuity_proven": true,
+    "vehicle_BODY_selection_ready": true,
+    "selected_BODY_index": 0,
+    "phase698_positive_selection_admissible": true,
+    "phase700_runtime_handoff_admissible": true,
+    "phase703_update_child_equality_gate_required": false,
+    "phase703_gate_rewrite_ready": true,
+    "vehicle_world_transform_ready": false,
+    "critical_next_join": "BODY0 bind initialization/writer provenance -> SHIFT.BMWBody0BindFrameProof/1"
+  },
+  "blockers": [],
+  "scope": {
+    "update_child_pointer_equals_global_vehicle_base_proven": false,
+    "update_child_pointer_equality_required": false,
+    "callgraph_adjacency_used_as_object_identity": false,
+    "BODY_name_plausibility_used_as_chassis_proof": false,
+    "BODY_array_owner_pointer_equals_global_vehicle_base_proven": false,
+    "BODY_array_owner_pointer_field_edge_proven": true,
+    "BODY_array_owner_pointer_field_offset": "0x339c",
+    "renderer_bind_frame_consumed": false,
+    "dynamic_BODY_pose_to_VHF_composition_proven": false,
+    "fixed_step_auto_schedule_proven": false,
+    "original_game_executed": false,
+    "new_runtime_capture_required": false
+  }
+}
