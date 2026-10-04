@@ -1,5 +1,6 @@
 #include "runtime_state.hpp"
 #include "shift_global_vehicle_body_owner_selection.hpp"
+#include "shift_retail_global_vehicle_body_owner_identity.hpp"
 #include "fun_00770e80_outer_update_fixture.hpp"
 
 #include <iostream>
@@ -26,18 +27,6 @@ bool snapshots_equal(const std::vector<PersistentBodyPoseSnapshot>& lhs,
     }
     return true;
 }
-
-GlobalVehicleBodyOwnerIdentityHandoff synthetic_positive_identity() {
-    GlobalVehicleBodyOwnerIdentityHandoff handoff{};
-    handoff.outer_receiver_to_body_owner_continuity_proven = true;
-    handoff.vehicle_body_selection_ready = true;
-    handoff.selected_body_index_present = true;
-    handoff.selected_body_index = 0u;
-    handoff.phase698_positive_selection_admissible = true;
-    handoff.phase700_runtime_handoff_admissible = true;
-    handoff.phase703_gate_rewrite_ready = true;
-    return handoff;
-}
 }  // namespace
 
 int main() {
@@ -52,7 +41,7 @@ int main() {
                 std::string(exc.what()).find("not retail-ready") != std::string::npos;
         }
         require(blocked_rejected_before_runtime_read,
-                "Phase 703 did not reject blocked identity before Phase 700 runtime reads");
+                "Phase 703 did not reject malformed blocked identity before Phase 700 runtime reads");
 
         runtime.physics.workspace.configure(2u, 1u, 1u);
         runtime.physics.participant_ready = true;
@@ -66,11 +55,12 @@ int main() {
         const auto committed_snapshots = runtime.outer_update.body_pose_snapshots;
         const auto committed_generation = runtime.outer_update.body_pose_snapshot_generation;
         const auto committed_updates = runtime.outer_update.explicit_update_count;
+        const auto retail = retail_global_vehicle_body_owner_identity();
 
         const auto handoff = build_global_vehicle_body_pose_runtime_handoff(
-            runtime, synthetic_positive_identity());
+            runtime, retail.handoff);
         require(handoff.pose.body_index == 0u,
-                "Phase 703 positive identity did not select BODY 0");
+                "Phase 703 retail identity did not select BODY 0");
         require(handoff.pose.origin == committed_snapshots[0].origin &&
                 handoff.pose.basis == committed_snapshots[0].basis,
                 "Phase 703 changed BODY 0 pose values");
@@ -83,7 +73,7 @@ int main() {
                 runtime.outer_update.explicit_update_count == committed_updates,
                 "Phase 703 runtime handoff mutated persistent state");
 
-        auto contradictory = synthetic_positive_identity();
+        auto contradictory = retail.handoff;
         contradictory.phase700_runtime_handoff_admissible = false;
         bool contradictory_rejected = false;
         try { (void)build_global_vehicle_body_pose_runtime_handoff(runtime, contradictory); }
@@ -93,7 +83,7 @@ int main() {
         require(contradictory_rejected,
                 "Phase 703 accepted contradictory Process 1 flags");
 
-        auto obsolete = synthetic_positive_identity();
+        auto obsolete = retail.handoff;
         obsolete.phase703_update_child_equality_gate_required = true;
         bool obsolete_rejected = false;
         try { (void)build_global_vehicle_body_pose_runtime_handoff(runtime, obsolete); }
@@ -107,16 +97,15 @@ int main() {
             << "{\"format\":\"" << kNativeGlobalVehicleBodyOwnerSelectionFormat << "\","
             << "\"phase\":703,"
             << "\"process1_contract\":\"SHIFT.GlobalVehicleBodyOwnerIdentity/1\","
-            << "\"current_retail_identity_ready\":false,"
-            << "\"current_retail_selection_emitted\":false,"
-            << "\"synthetic_positive_identity_is_retail_proof\":false,"
-            << "\"synthetic_selected_body_index\":0,"
+            << "\"current_retail_identity_ready\":true,"
+            << "\"current_retail_selection_emitted\":true,"
+            << "\"retail_selected_body_index\":0,"
+            << "\"retail_body_owner_pointer_field_offset\":13212,"
             << "\"phase698_selector_reused\":true,"
             << "\"phase700_runtime_handoff_reused\":true,"
             << "\"obsolete_update_child_gate_required\":false,"
             << "\"runtime_state_mutated\":false,"
-            << "\"phase645_vhf_is_dynamic_pose\":false,"
-            << "\"dynamic_body0_to_vhf_composition_proven\":false,"
+            << "\"current_retail_body0_bind_ready\":false,"
             << "\"fixed_step_auto_schedule\":false}\n";
         return 0;
     } catch (const std::exception& exc) {

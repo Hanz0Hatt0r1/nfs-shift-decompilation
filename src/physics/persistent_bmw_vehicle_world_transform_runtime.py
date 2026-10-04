@@ -12,6 +12,7 @@ from bmw_vehicle_world_matrix_runtime_handoff_runtime import build_handoff
 from global_vehicle_body_owner_selection_runtime import (
     GlobalVehicleBodyOwnerIdentityHandoff,
     build_selection,
+    retail_positive_handoff,
 )
 
 FORMAT = "SHIFT.PersistentBMWVehicleWorldTransform/1"
@@ -83,6 +84,23 @@ def commit_transform(
     )
 
 
+def commit_retail_transform(
+    state: PersistentVehicleWorldTransformState,
+    *,
+    runtime: RuntimeBodyPoseState,
+    vhf_bind: ProvenVhfBindFrame,
+    body0_bind: ProvenBody0BindFrame,
+) -> PersistentVehicleWorldTransformState:
+    """Phase 707 retail wrapper with no caller-supplied identity handoff."""
+    return commit_transform(
+        state,
+        runtime=runtime,
+        identity=retail_positive_handoff(),
+        vhf_bind=vhf_bind,
+        body0_bind=body0_bind,
+    )
+
+
 def read_current_transform(
     state: PersistentVehicleWorldTransformState,
     runtime: RuntimeBodyPoseState,
@@ -113,7 +131,8 @@ def contract() -> dict[str, Any]:
         "stale_explicit_update_count_rejected": True,
         "reinitialized_pose_with_reused_generation_rejected": True,
         "phase705_handoff_reused": True,
-        "current_retail_identity_ready": False,
+        "current_retail_identity_ready": True,
+        "retail_identity_injected_by_caller": False,
         "current_retail_BODY0_bind_ready": False,
         "automatic_fixed_step_commit": False,
         "renderer_mutation_enabled": False,
