@@ -1,0 +1,38 @@
+name: Native runtime Phase 713
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'native_runtime/src/runtime_state.hpp'
+      - 'native_runtime/src/runtime_body_feedback_scheduler.hpp'
+      - 'native_runtime/tests/runtime_body_feedback_scheduler_check.cpp'
+      - 'tests/test_native_runtime_phase713_transactional_fixed_step.py'
+      - 'docs/PHASE713_TRANSACTIONAL_NATIVE_FIXED_STEP.md'
+      - '.github/workflows/native-runtime-phase713.yml'
+  pull_request:
+    paths:
+      - 'native_runtime/src/runtime_state.hpp'
+      - 'native_runtime/src/runtime_body_feedback_scheduler.hpp'
+      - 'native_runtime/tests/runtime_body_feedback_scheduler_check.cpp'
+      - 'tests/test_native_runtime_phase713_transactional_fixed_step.py'
+      - 'docs/PHASE713_TRANSACTIONAL_NATIVE_FIXED_STEP.md'
+      - '.github/workflows/native-runtime-phase713.yml'
+
+jobs:
+  phase713:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ pkg-config libvulkan-dev libxcb1-dev glslang-tools python3-pytest
+      - name: Configure
+        run: cmake -S native_runtime -B native_runtime/build -G Ninja -DBUILD_TESTING=ON
+      - name: Build BODY feedback scheduler regression
+        run: cmake --build native_runtime/build --target shift_runtime_body_feedback_scheduler_check
+      - name: CTest transactional fixed step
+        run: ctest --test-dir native_runtime/build --output-on-failure -R '^shift_runtime_body_feedback_scheduler$'
+      - name: Python transactional boundary
+        run: python3 -m pytest -q tests/test_native_runtime_phase713_transactional_fixed_step.py tests/test_native_runtime_contract.py
