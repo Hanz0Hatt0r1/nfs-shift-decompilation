@@ -1,0 +1,42 @@
+name: Process 1 outer Vehicle VHF receiver static proof runner
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/run_outer_vehicle_vhf_receiver_static_proof.py'
+      - 'tests/test_ghidra_run_outer_vehicle_vhf_receiver_static_proof.py'
+      - 'tools/ghidra/build_outer_vehicle_vhf_root_relation_frontier.py'
+      - 'tools/ghidra/analyze_outer_vehicle_transform_sink_receiver_provenance.py'
+      - 'tools/ghidra/run_shift_function_instructions.sh'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_VHF_RECEIVER_STATIC_PROOF_RUNNER.md'
+      - '.github/workflows/process1-outer-vehicle-vhf-receiver-static-proof-runner.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/run_outer_vehicle_vhf_receiver_static_proof.py'
+      - 'tests/test_ghidra_run_outer_vehicle_vhf_receiver_static_proof.py'
+      - 'tools/ghidra/build_outer_vehicle_vhf_root_relation_frontier.py'
+      - 'tools/ghidra/analyze_outer_vehicle_transform_sink_receiver_provenance.py'
+      - 'tools/ghidra/run_shift_function_instructions.sh'
+      - 'docs/PROCESS_1_OUTER_VEHICLE_VHF_RECEIVER_STATIC_PROOF_RUNNER.md'
+      - '.github/workflows/process1-outer-vehicle-vhf-receiver-static-proof-runner.yml'
+
+jobs:
+  runner:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run receiver static-proof runner regressions
+        run: python -m pytest -q tests/test_ghidra_run_outer_vehicle_vhf_receiver_static_proof.py
+      - name: Preserve component-stage regressions
+        run: >-
+          python -m pytest -q
+          tests/test_ghidra_outer_vehicle_vhf_root_relation_frontier.py
+          tests/test_ghidra_outer_vehicle_transform_sink_receiver_provenance.py
+      - name: Verify runner CLI
+        run: python tools/ghidra/run_outer_vehicle_vhf_receiver_static_proof.py --help >/dev/null
+      - name: Verify targeted exporter CLI
+        run: bash tools/ghidra/run_shift_function_instructions.sh 2>&1 | grep -q '^Usage:'
