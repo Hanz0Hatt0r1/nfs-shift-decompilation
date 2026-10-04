@@ -1,134 +1,111 @@
-# Process 1 — BMW `offset33b` additional-mass bootstrap-zero proof
+# Process 1 — correction: BMW `offset33b` additional-mass object frontier
 
-## Playable-slice blocker reduced
+## Correction to PR #1247
 
-The symbolic BMW BODY0-local -> outer Vehicle-root relation is already proven,
-and `SHIFT.BMWOffset33bStoreProvenance/1` bounds the exact producer stores in
-`FUN_0076b280`. Numeric `offset33b` still depends on several resource/init roots.
-One of those roots was previously anonymous: the scalar read from the current
-PhysicsParticipant at `+0xba0` and used as an additional mass contribution.
+The original `SHIFT.BMWOffset33bAdditionalMassBootstrapZero/1` contract is
+**retracted**. It confused two distinct objects:
 
-This proof closes that one root for the first/reinitialized vehicle bootstrap.
+1. a PhysicsParticipant **manager record** with stride `0x1fa0`; and
+2. the separately allocated **actual PhysicsParticipant object** stored in
+   `record[0]`.
 
-Contract:
+`FUN_00714360 -> FUN_00552dd0` does clear state inside the manager record, but
+that does **not** prove the value consumed by HighDetailVehicle initialization.
+The old `ready=true` bootstrap-zero claim must not be used.
 
-```text
-SHIFT.BMWOffset33bAdditionalMassBootstrapZero/1
-```
-
-Analyzer:
+The historical analyzer path is retained only so existing invocations fail
+closed and emit the corrected frontier:
 
 ```text
-tools/ghidra/analyze_bmw_offset33b_additional_mass_bootstrap_zero.py
+SHIFT.BMWOffset33bAdditionalMassActualObjectFrontier/1
 ```
 
-## Proven storage alias
+## Correct object chain
 
-The outer `Vehicle` is embedded at `PhysicsParticipant+0x340`, therefore:
+The source-backed allocation/construction sequence is:
 
 ```text
-participant+0xba0
-== (participant+0x340)+0x860
-== Vehicle+0x860
+manager record
+  |
+  | FUN_007125e0
+  |   allocate 0x2b90 bytes
+  |   FUN_0072ed20(actual PhysicsParticipant)
+  |   record[0] = actual PhysicsParticipant
+  v
+actual PhysicsParticipant
+  |
+  | FUN_0072ed20
+  |   FUN_0079c1c0(actual_participant + 0x340)
+  v
+embedded Vehicle @ actual_participant+0x340
 ```
 
-This is the scalar consumed by the source-backed `FUN_0076b280` offset33b
-producer as the additional participant-mass term.
-
-## Constructor/reset proof
-
-PhysicsParticipantManager allocates participant records with stride `0x1fa0`
-and constructs them through `FUN_00714360`.
-
-The exact retail constructor calls:
+HighDetailVehicle initialization then copies:
 
 ```text
-0x007143c9 -> FUN_00552dd0
+HDVehicle+0x3428 = (double)*(float *)(*record + 0xba0)
 ```
 
-with the recovered argument:
+Therefore the real additional-mass source is:
 
 ```text
-participant + 0xb00
+actual PhysicsParticipant+0xba0
+== embedded Vehicle+0x860
 ```
 
-`FUN_00552dd0` has exact retail fingerprint
-`cf7b038743bf9c6e0d8554f2c4026e3197c668ef8dc1bfbdf4711b5d38670d02`.
-Its reviewed body clears dwords across the first recovered zero range
-`subobject+[0x24,0x124)`. The target scalar is `subobject+0xa0`, so:
+It is **not** manager-record `+0xba0`.
+
+## What remains proven
+
+The existing `SHIFT.BMWOffset33bStoreProvenance/1` store frontier remains valid:
+`FUN_0076b280` is still the source-backed producer of
+`HDVehicle+0x33b0/+0x33b8/+0x33c0`.
+
+Only the #1247 zero-value proof is withdrawn.
+
+The corrected analyzer now reports:
 
 ```text
-(participant+0xb00)+0xa0 = participant+0xba0 = 0x00000000 = +0.0f
+ready = false
+status = additional-mass-actual-object-producer-unresolved
+offset33b_additional_mass_bootstrap_zero_ready = false
+offset33b_additional_mass_term_can_be_elided_for_first_bootstrap = false
+BMW_numeric_offset33b_ready = false
 ```
 
-Reused slots go through `FUN_007126a0`, which calls the same zero helper at
-`0x007126db` with the same `participant+0xb00` subobject. The proof therefore
-covers both fresh construction and participant-slot reinitialization.
+## Next exact proof target
 
-## Preservation to `Vehicle::InitVehicle`
-
-The proof freezes the exact source-backed bootstrap path:
+Trace the last writer/value reaching:
 
 ```text
-FUN_0074e1a0
-  -> VDF/GetCarPhysicsDetails pre-init
-  -> FUN_0074ddb0
-  -> FUN_0041cbd6
-  -> MWL::Core::PhysicsParticipant::Restart (FUN_0074ddc3)
-       0x0074ddc3 -> FUN_0074d640
-       0x0074dddb -> FUN_00797fd0
-       0x0074de12 -> MWL::Core::Vehicle::InitVehicle (FUN_00798df0)
+embedded Vehicle+0x860
 ```
 
-`FUN_0074e1a0`, `FUN_0074d640`, and `FUN_00797fd0` were reviewed against the
-retail decompiler output and do not write the target storage before
-`Vehicle::InitVehicle`. The contract does not infer this from names: their exact
-retail function fingerprints and the exact direct-call instruction addresses are
-validated fail-closed.
+between construction of the actual `0x2b90` PhysicsParticipant object and the
+HighDetailVehicle initialization read. The relevant constructor frontier is now
+finite:
+
+```text
+FUN_007125e0
+  -> FUN_0072ed20
+       -> FUN_0079c1c0(actual_participant+0x340)
+            -> FUN_0079bfd0(...)
+```
+
+A separate constructor fact has also been observed in the retail decompiler:
+`FUN_0079bfd0` initializes embedded `Vehicle+0x1c0` to zero. That concerns the
+`reference_point.y` side of the `FUN_0076b280` formula and does not establish
+`Vehicle+0x860`; it must be promoted through its own fail-closed proof before a
+numeric evaluator consumes it.
 
 ## Usage
 
 ```bash
 python3 tools/ghidra/analyze_bmw_offset33b_additional_mass_bootstrap_zero.py \
   out/shift_ghidra_database \
-  --json-out out/bmw_offset33b_additional_mass_bootstrap_zero.json
+  --json-out out/bmw_offset33b_additional_mass_actual_object_frontier.json
 ```
 
-No new Ghidra analysis, game execution, Wine run, or runtime capture is needed.
-The input is the already exported retail evidence:
-
-```text
-binary.json
-functions.jsonl
-callgraph.jsonl
-strings_xrefs.jsonl
-```
-
-## Exact result and deliberate non-claims
-
-For the first/reinitialized bootstrap path the contract proves:
-
-```text
-offset33b additional participant mass root = +0.0f
-```
-
-and exposes:
-
-```text
-offset33b_additional_mass_bootstrap_zero_ready = true
-offset33b_additional_mass_term_can_be_elided_for_first_bootstrap = true
-```
-
-It deliberately keeps these gates false:
-
-```text
-BMW_numeric_offset33b_ready                       = false
-BODY0_to_outer_vehicle_root_numeric_matrix_ready = false
-BODY0_bind_frame_proof_ready                      = false
-vehicle_world_transform_ready                     = false
-```
-
-The remaining numeric work is the bounded HDV/VDF/SDF/tire-resource evaluation
-already exposed by the `FUN_0076b280` store/value-root frontier. This contract
-removes one root from that evaluator; it does not pretend the other resource
-values are already known.
+No original-game execution is required for this correction. The purpose of this
+step is to restore soundness: no numeric BODY0/Vehicle bind gate is allowed to
+consume the retracted manager-record zero assumption.
