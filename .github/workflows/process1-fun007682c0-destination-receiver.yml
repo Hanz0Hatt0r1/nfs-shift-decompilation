@@ -33,4 +33,4 @@ jobs:
           python -m pytest -q
           tests/test_ghidra_fun_007682c0_destination_receiver_provenance.py
           tests/test_ghidra_bmw_sdf_vehicle_assembly_receiver_provenance.py
-          tests/test_ghidra_body0_bind_callsite_register_provenance.py
+          tests/test_ghidra_bmw_body0_bind_callsite_register_provenance.py
