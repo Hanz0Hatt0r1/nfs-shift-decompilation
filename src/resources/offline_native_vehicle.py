@@ -31,11 +31,13 @@ from offline_native_resource_handoff import (
     build_bmw_m3_runtime_compat_manifest,
     build_vehicle_physics_resource_manifest,
 )
+from selected_archive_materialization import materialize_selected_archive
 from typed_physics_resource_materialization import (
     attach_typed_physics_materializations,
 )
 
 FORMAT = "SHIFT.OfflineNativeVehicleBuild/1"
+ARCHIVE_MATERIALIZATION_FORMAT = "SHIFT.RetailArchiveMaterialization/1"
 
 
 def _load(path: str | Path) -> dict[str, Any]:
@@ -63,6 +65,26 @@ def _blocked_participant_runtime_evidence(reason: str) -> dict[str, Any]:
             "selected_runtime_instance_proven": False,
             "selected_provider_proven": False,
             "numeric_physics_equivalence_proven": False,
+        },
+    }
+
+
+def _blocked_archive_materialization(reason: str) -> dict[str, Any]:
+    return {
+        "format": ARCHIVE_MATERIALIZATION_FORMAT,
+        "version": 1,
+        "status": "blocked",
+        "ready": False,
+        "role": "vehicle_primary",
+        "blocking_reasons": [reason],
+        "path": None,
+        "sha256": None,
+        "bytes": None,
+        "boundary": {
+            "exact_selected_occurrence_required": True,
+            "basename_fallback_used": False,
+            "archive_order_used": False,
+            "canonical_retail_identity_claimed_here": False,
         },
     }
 
@@ -229,6 +251,9 @@ def build_native_vehicle_files(
     participant_observation_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Build and persist generic plus runtime-compatible vehicle artifacts."""
+    catalog = _load(catalog_path)
+    bootstrap = _load(bootstrap_path)
+    physics_bundle = _load(physics_bundle_path)
     typed_closure = (
         _load(typed_closure_path)
         if typed_closure_path is not None
@@ -250,9 +275,9 @@ def build_native_vehicle_files(
             )
 
     report = build_native_vehicle(
-        _load(catalog_path),
-        _load(bootstrap_path),
-        _load(physics_bundle_path),
+        catalog,
+        bootstrap,
+        physics_bundle,
         typed_closure=typed_closure,
         participant_observation=observation,
     )
@@ -278,6 +303,44 @@ def build_native_vehicle_files(
 
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
+
+    archive_materialization: dict[str, Any] | None
+    try:
+        archive_materialization = materialize_selected_archive(
+            catalog,
+            bootstrap,
+            selected_key="vehicle",
+            role="vehicle_primary",
+            output_dir=out / "retail-archives",
+        )
+    except (OSError, ValueError) as exc:
+        archive_materialization = _blocked_archive_materialization(
+            f"selected-archive-join-error:{type(exc).__name__}:{exc}"
+        )
+
+    boundary = dict(report.get("boundary") or {})
+    boundary["vehicle_archive_materialization_evaluated"] = (
+        archive_materialization is not None
+    )
+    boundary["vehicle_archive_materialization_ready"] = bool(
+        isinstance(archive_materialization, Mapping)
+        and archive_materialization.get("ready") is True
+    )
+    boundary["vehicle_archive_materialization_claims_body_semantics"] = False
+    report["boundary"] = boundary
+    report["vehicle_archive_materialization"] = archive_materialization
+
+    if isinstance(archive_materialization, Mapping) and archive_materialization.get("ready") is not True:
+        archive_blockers = [
+            "vehicle-archive-materialization:" + str(reason)
+            for reason in archive_materialization.get("blocking_reasons") or ["not-ready"]
+        ]
+        report["blocking_reasons"] = list(dict.fromkeys(
+            list(report.get("blocking_reasons") or []) + archive_blockers
+        ))
+        report["resource_ready"] = False
+        report["status"] = "resource-blocked"
+
     paths: dict[str, Path] = {
         "vehicle_physics_manifest": out / "vehicle_physics_resource_manifest.json",
         "participant_boundary": out / "native_physics_participant_boundary.json",
@@ -286,6 +349,10 @@ def build_native_vehicle_files(
     compatibility = report["native_physics_compatibility"]
     if compatibility.get("ready") is True:
         paths["native_physics_manifest"] = out / "native_physics_manifest.json"
+    if isinstance(archive_materialization, Mapping) and archive_materialization.get("ready") is True:
+        archive_path = Path(str(archive_materialization.get("path") or ""))
+        if archive_path.is_file():
+            paths["vehicle_archive"] = archive_path
 
     paths["vehicle_physics_manifest"].write_text(
         json.dumps(
