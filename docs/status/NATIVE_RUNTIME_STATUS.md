@@ -36,7 +36,7 @@ The Linux target does not require EA services, online functionality, DRM, login/
 4. Phases 603–610 supply the provider-absent native reset→solve→post-solve chain, including exact participant evidence and fixed-step joins. Phase 611 adds explicit continuity for the six opaque BODY accumulator channels across fixed steps while keeping persistent vehicle motion false. Remaining physics evidence gates are authentic matrix/RHS/reset/constraint assembly, provider-present dispatch and rigid-body/vehicle integration.
 5. Connect scene/track resource loading. Phases 581–585 close SVWT transport, semantic-aware SVGP v3, affine execution and neutral scene-set preparation. Phase 586 adds direct `SHIFT.NativeSceneVulkanSetPrepare/1` ingestion through `native_runtime --scene-set`. Authentic runtime-proven Silverstone draws, unresolved renderer-owned scene resources, streaming/LOD and per-instance transform history remain.
 6. Live keyboard vehicle controls already feed the neutral intent layer. Phase 601 adds a deterministic fixed-step input script and physics-boundary activity telemetry for CI. Gamepad/analog normalization and retail filtering remain.
-7. Replace the bounded frame loop with the native game loop/state machine after render/state contracts stabilize.
+7. Phase 709 removes the interactive INT32_MAX surrogate and adds an explicit native continuous-until-window-quit loop policy. Deterministic/scripted runs remain frame-bounded. The current continuous schedule is still one native fixed step per rendered frame and is explicitly non-retail; retail outer-update cadence/game-loop ownership remains evidence-gated.
 
 The renderer remains downstream of normalized IR; original BFF parsing stays outside the native executable.
 
