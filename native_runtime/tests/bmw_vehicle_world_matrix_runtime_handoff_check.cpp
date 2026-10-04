@@ -90,7 +90,7 @@ int main() {
         NativeRuntimeState runtime{};
 
         // Phase 703 must reject the currently blocked retail identity before
-        // Phase 700 attempts to inspect uninitialized runtime pose state.
+        // Phase 700 attempts to inspect any runtime admission or pose state.
         bool current_identity_rejected_first = false;
         try {
             auto missing_bind = body0_bind_fixture();
@@ -108,8 +108,13 @@ int main() {
             current_identity_rejected_first,
             "Phase 705 did not preserve Phase 703 identity-first fail-closed ordering");
 
-        // With identity admitted, Phase 700 remains responsible for runtime
-        // initialization/admission rather than Phase 705 bypassing it.
+        // Open only the participant/workspace gates. Persistent BODY state is
+        // intentionally still uninitialized so the next failure must belong to
+        // the existing Phase 700 persistent-state admission boundary.
+        runtime.physics.workspace.configure(2u, 1u, 1u);
+        runtime.physics.participant_ready = true;
+        runtime.physics.participant_identity_join_proven = true;
+
         bool uninitialized_runtime_rejected = false;
         try {
             (void)build_bmw_vehicle_world_matrix_runtime_handoff(
@@ -125,9 +130,6 @@ int main() {
             uninitialized_runtime_rejected,
             "Phase 705 bypassed Phase 700 persistent-state admission");
 
-        runtime.physics.workspace.configure(2u, 1u, 1u);
-        runtime.physics.participant_ready = true;
-        runtime.physics.participant_identity_join_proven = true;
         const auto source = make_frame();
         const auto relations = make_relations();
         const auto projection = make_projection(source, relations);
@@ -156,9 +158,6 @@ int main() {
         require(result.explicit_update_count == committed_updates,
                 "Phase 705 changed explicit update count");
 
-        // The fixture runtime pose comes from the existing Phase 700 fixture,
-        // so assert the output against a direct Phase 704 composition of the
-        // exact selected pose rather than assuming a synthetic runtime pose.
         const auto direct = compose_bmw_body0_pose_to_vehicle_world_matrix(
             result.pose,
             vhf_bind_fixture(),
@@ -199,8 +198,6 @@ int main() {
                         committed_generation,
                 "Phase 705 failure path mutated persistent state");
 
-        // Expose a small deterministic matrix fingerprint without asserting a
-        // particular fixture pose value beyond direct Phase 704 parity.
         require_close(
             result.vehicle_world_matrix[15],
             1.0f,
