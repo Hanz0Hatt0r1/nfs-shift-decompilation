@@ -1,0 +1,64 @@
+name: process1-body-owner-field-provenance
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/promote_fun_00765470_body_owner_field.py'
+      - 'tools/ghidra/promote_global_vehicle_body_owner_identity.py'
+      - 'tests/test_ghidra_fun_00765470_body_owner_field.py'
+      - 'tests/test_ghidra_promote_global_vehicle_body_owner_identity.py'
+      - 'evidence/fun_00765470_body_owner_field_retail.json'
+      - 'evidence/global_vehicle_body_owner_identity_retail.json'
+      - 'docs/PROCESS_1_FUN_00765470_BODY_OWNER_FIELD_PROVENANCE.md'
+      - '.github/workflows/process1-body-owner-field-provenance.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/promote_fun_00765470_body_owner_field.py'
+      - 'tools/ghidra/promote_global_vehicle_body_owner_identity.py'
+      - 'tests/test_ghidra_fun_00765470_body_owner_field.py'
+      - 'tests/test_ghidra_promote_global_vehicle_body_owner_identity.py'
+      - 'evidence/fun_00765470_body_owner_field_retail.json'
+      - 'evidence/global_vehicle_body_owner_identity_retail.json'
+      - 'docs/PROCESS_1_FUN_00765470_BODY_OWNER_FIELD_PROVENANCE.md'
+      - '.github/workflows/process1-body-owner-field-provenance.yml'
+
+jobs:
+  body-owner-field-provenance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: python -m pip install pytest
+      - name: Run focused regressions
+        run: >-
+          python -m pytest -q
+          tests/test_ghidra_fun_00765470_body_owner_field.py
+          tests/test_ghidra_promote_global_vehicle_body_owner_identity.py
+      - name: Verify CLI surfaces
+        run: |
+          python tools/ghidra/promote_fun_00765470_body_owner_field.py --help >/dev/null
+          python tools/ghidra/promote_global_vehicle_body_owner_identity.py --help >/dev/null
+      - name: Verify committed retail field proof
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          field = json.loads(Path('evidence/fun_00765470_body_owner_field_retail.json').read_text())
+          assert field['format'] == 'SHIFT.Fun00765470BodyOwnerFieldProvenance/1'
+          assert field['machine_edge']['entry_receiver_to_BODY_owner_pointer_field_edge_proven'] is True
+          assert field['machine_edge']['entry_receiver_equals_call_receiver_pointer'] is False
+          assert field['machine_edge']['BODY_owner_pointer_field_offset'] == '0x339c'
+
+          identity = json.loads(Path('evidence/global_vehicle_body_owner_identity_retail.json').read_text())
+          assert identity['format'] == 'SHIFT.GlobalVehicleBodyOwnerIdentity/1'
+          assert identity['identity_join']['BODY_array_owner_is_global_vehicle_base'] is False
+          assert identity['identity_join']['BODY_array_owner_pointer_loaded_from_global_vehicle_base'] is True
+          assert identity['identity_join']['BODY_array_owner_pointer_field_offset'] == '0x339c'
+          assert identity['handoff']['vehicle_BODY_selection_ready'] is True
+          assert identity['handoff']['selected_BODY_index'] == 0
+          assert identity['handoff']['phase700_runtime_handoff_admissible'] is True
+          PY
