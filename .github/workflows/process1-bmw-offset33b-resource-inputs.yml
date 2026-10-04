@@ -1,0 +1,44 @@
+name: Process 1 BMW offset33b resource inputs
+
+on:
+  push:
+    paths:
+      - 'evidence/bmw_offset33b_resource_inputs.json'
+      - 'tools/ghidra/validate_bmw_offset33b_resource_inputs.py'
+      - 'tests/test_ghidra_validate_bmw_offset33b_resource_inputs.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_RESOURCE_INPUTS.md'
+      - 'src/physics/vehicle_cdf_runtime.py'
+      - 'evidence/bmw_m3_vehicle_physics_manifest.json'
+      - 'evidence/bmw_body0_bind_resource_materialization.json'
+      - '.github/workflows/process1-bmw-offset33b-resource-inputs.yml'
+  pull_request:
+    paths:
+      - 'evidence/bmw_offset33b_resource_inputs.json'
+      - 'tools/ghidra/validate_bmw_offset33b_resource_inputs.py'
+      - 'tests/test_ghidra_validate_bmw_offset33b_resource_inputs.py'
+      - 'docs/PROCESS_1_BMW_OFFSET33B_RESOURCE_INPUTS.md'
+      - 'src/physics/vehicle_cdf_runtime.py'
+      - 'evidence/bmw_m3_vehicle_physics_manifest.json'
+      - 'evidence/bmw_body0_bind_resource_materialization.json'
+      - '.github/workflows/process1-bmw-offset33b-resource-inputs.yml'
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest
+      - name: Run resource input regressions
+        run: python -m pytest -q tests/test_ghidra_validate_bmw_offset33b_resource_inputs.py
+      - name: Validate committed resource contract
+        run: >-
+          python tools/ghidra/validate_bmw_offset33b_resource_inputs.py
+          evidence/bmw_offset33b_resource_inputs.json
+          evidence/bmw_m3_vehicle_physics_manifest.json
+          evidence/bmw_body0_bind_resource_materialization.json
+          --json-out /tmp/bmw_offset33b_resource_inputs_validation.json
+      - name: Validate JSON syntax
+        run: python -m json.tool evidence/bmw_offset33b_resource_inputs.json >/dev/null
