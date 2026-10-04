@@ -1,0 +1,49 @@
+name: Process 1 BMW BODY0 construction bind resource join
+
+on:
+  push:
+    paths:
+      - 'tools/ghidra/build_bmw_body0_construction_bind_resource_join.py'
+      - 'tools/ghidra/build_bmw_body0_construction_bind_continuity.py'
+      - 'evidence/bmw_m3_e36_body0_bind_resource_values.json'
+      - 'evidence/bmw_m3_e36_physics_intake_phase404.json'
+      - 'tests/test_ghidra_bmw_body0_construction_bind_resource_join.py'
+      - '.github/workflows/process1-body0-construction-bind-resource-join.yml'
+  pull_request:
+    paths:
+      - 'tools/ghidra/build_bmw_body0_construction_bind_resource_join.py'
+      - 'tools/ghidra/build_bmw_body0_construction_bind_continuity.py'
+      - 'evidence/bmw_m3_e36_body0_bind_resource_values.json'
+      - 'evidence/bmw_m3_e36_physics_intake_phase404.json'
+      - 'tests/test_ghidra_bmw_body0_construction_bind_resource_join.py'
+      - '.github/workflows/process1-body0-construction-bind-resource-join.yml'
+
+jobs:
+  resource-join:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Run construction-bind resource join regressions
+        run: pytest -q tests/test_ghidra_bmw_body0_construction_bind_resource_join.py
+      - name: Verify CLI surface
+        run: python tools/ghidra/build_bmw_body0_construction_bind_resource_join.py --help
+      - name: Validate committed derived evidence boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('evidence/bmw_m3_e36_body0_bind_resource_values.json')
+          v = json.loads(p.read_text())
+          assert v['format'] == 'SHIFT.BMWBody0BindResourceValues/1'
+          assert v['ready'] is True
+          assert v['source']['archive_sha256'] == 'c31d34a0a7cab04bcff693fa0cbda3400f50d690a9c8bb2521b2882fc2a68d70'
+          assert v['source']['resource_sha256'] == 'fe0b18e95e81f87d67076b70890965a0a1384a925bfd836aaf5aa705fc4781ed'
+          assert v['body0']['pos'] == [0.0, 0.0, 0.0]
+          assert v['body0']['ori'] == [0.0, 0.0, 0.0]
+          assert v['scope']['raw_archive_committed'] is False
+          assert v['scope']['raw_resource_committed'] is False
+          PY
