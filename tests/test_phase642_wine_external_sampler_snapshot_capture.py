@@ -168,6 +168,7 @@ def test_phase642_wine_wrapper_uses_existing_proxy_snapshot_controls():
     assert "SHIFT_D3D9_CAPTURE_TEXTURE_STAGES" in text
     assert "SHIFT_D3D9_CAPTURE_TEXTURE_SNAPSHOT_DIR" in text
     assert 'rm -rf "$texture_dir"' in text
-    assert "forward+=(--mode capture)" in text
+    assert "forward=(--mode capture)" in text
+    assert text.index("forward=(--mode capture)") < text.index('forward+=("$@")')
     assert "requires --mode capture" in text
     assert "exec bash \"$launcher\"" in text
