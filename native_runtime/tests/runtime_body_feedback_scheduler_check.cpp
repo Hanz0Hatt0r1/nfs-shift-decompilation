@@ -309,11 +309,66 @@ int main() {
                 "failed BODY feedback environment admission was not retry-safe");
         }
 
+        // Phase 714: an admitted evidence snapshot must start from a completed
+        // camera transaction. A recovered busy guard has no proven native
+        // completion semantics and would otherwise block begin_swap forever.
+        shift::runtime::CameraBufferRuntime camera{};
+        camera.buffers[0].manager_mode = 17;
+        camera.buffers[0].camera_id = 23;
+        const bool busy_applied = camera.apply_evidence_snapshot(
+            1u,
+            true,
+            99,
+            7,
+            42,
+            3,
+            2,
+            1u);
+        if (busy_applied || camera.active_index != 0u ||
+            camera.update_in_progress || camera.snapshot_count != 0u ||
+            camera.native_update_count != 0u ||
+            camera.buffers[0].manager_mode != 17 ||
+            camera.buffers[0].camera_id != 23) {
+            throw std::runtime_error(
+                "busy recovered camera evidence was not rejected transactionally");
+        }
+
+        const bool ready_applied = camera.apply_evidence_snapshot(
+            1u,
+            false,
+            1,
+            7,
+            42,
+            3,
+            2,
+            1u);
+        if (!ready_applied || camera.active_index != 1u ||
+            camera.update_in_progress || camera.active().manager_mode != 1 ||
+            camera.active().camera_id != 42 ||
+            camera.active().active_group != 3 ||
+            camera.active().group_restore_value != 2 ||
+            camera.active().active_buffer_sub_flag != 1u) {
+            throw std::runtime_error(
+                "completed recovered camera evidence was not admitted");
+        }
+        if (!camera.begin_swap()) {
+            throw std::runtime_error(
+                "admitted completed camera evidence could not start next native swap");
+        }
+        camera.complete_update();
+        if (camera.update_in_progress || camera.snapshot_count != 1u ||
+            camera.native_update_count != 1u) {
+            throw std::runtime_error(
+                "camera scheduler did not continue after completed evidence admission");
+        }
+
         std::cout
             << "{\"format\":\"SHIFT.NativeBodyFeedbackScheduler/1\","
             << "\"ready\":true,"
             << "\"transactional_fixed_step\":true,"
             << "\"environment_retry_safe\":true,"
+            << "\"busy_camera_evidence_rejected\":true,"
+            << "\"completed_camera_evidence_continues\":true,"
             << "\"steps\":" << state.body_feedback.step_count << ","
             << "\"body_count\":" << state.body_feedback.body_count << ","
             << "\"scalar_count\":" << state.body_feedback.scalar_count << ","
