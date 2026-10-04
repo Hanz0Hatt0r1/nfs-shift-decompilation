@@ -3,20 +3,20 @@
 
 ``SHIFT.BMWOffset33bMemoryLoadProvenance/1`` turns anonymous p-code memory roots
 into exact ``(base-origin expression set, displacement, width)`` groups.  This
-pass performs the next semantic promotion that is already justified by the
-producer ABI:
+pass performs only the semantic promotion already justified by the producer ABI:
 
 * ``FUN_0076b280`` is source-backed as an HDVehicle ``__thiscall`` producer;
-* therefore a LOAD whose all-path base origin is exactly ``entry:ECX`` is an
+* a LOAD whose all-path base origin is exactly ``entry:ECX`` is therefore an
   exact ``HDVehicle+offset`` field reference;
 * a deterministic ``memory:[...]`` base remains only an indirect owner slot;
 * any other entry register, multi-origin, derived, or unknown base remains
   unresolved.
 
-The analyzer deliberately does not assign VDF/SDF/tire names to indirect slots,
-does not infer field meaning from displacement, and does not apply the separate
-additional-mass +0.0f proof unless an upstream machine-LOAD pointer join has
-already made that identity explicit.
+The input must come from the repaired canonical LOAD pipeline merged in #1262.
+It must explicitly consume ``SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1``
+and reject the retracted manager-record zero contract.  This stage never assigns
+VDF/SDF/tire names by displacement and never applies the +0.0f reduction unless
+an upstream machine-LOAD pointer join has already proved that exact identity.
 """
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ from typing import Any, Mapping, Sequence
 
 FORMAT = "SHIFT.BMWOffset33bFieldOwnerFrontier/1"
 INPUT_FORMAT = "SHIFT.BMWOffset33bMemoryLoadProvenance/1"
+ACTUAL_ZERO_FORMAT = "SHIFT.BMWOffset33bActualAdditionalMassBootstrapZero/1"
 PRODUCER = "0x0076b280"
 PRODUCER_NAME = "FUN_0076b280"
 PRODUCER_ROLE = "HDVehicle offset33b producer"
@@ -76,18 +77,51 @@ def _validate_input(path: Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     handoff = report.get("handoff")
     if not isinstance(handoff, Mapping):
         raise ValueError("memory-LOAD handoff missing")
-    if handoff.get("offset33b_store_provenance_ready") is not True:
-        raise ValueError("offset33b STORE provenance gate is not ready")
-    if handoff.get("offset33b_memory_LOAD_frontier_ready") is not True:
-        raise ValueError("offset33b memory-LOAD frontier gate is not ready")
-    if handoff.get("offset33b_exact_memory_field_worklist_ready") is not True:
-        raise ValueError("offset33b exact memory-field worklist is not ready")
-    if handoff.get("BMW_numeric_offset33b_ready") is not False:
-        raise ValueError("memory-LOAD report unexpectedly preclaims numeric offset33b")
-    if handoff.get("BODY0_bind_frame_proof_ready") is not False:
-        raise ValueError("memory-LOAD report unexpectedly preclaims BODY0 bind frame")
-    if handoff.get("vehicle_world_transform_ready") is not False:
-        raise ValueError("memory-LOAD report unexpectedly preclaims vehicle world transform")
+    required_true = (
+        "offset33b_store_provenance_ready",
+        "offset33b_memory_LOAD_frontier_ready",
+        "offset33b_exact_memory_field_worklist_ready",
+        "offset33b_actual_additional_mass_bootstrap_zero_proof_consumed",
+    )
+    for field in required_true:
+        if handoff.get(field) is not True:
+            raise ValueError(f"{field} is not ready")
+    for field in (
+        "BMW_numeric_offset33b_ready",
+        "BODY0_bind_frame_proof_ready",
+        "vehicle_world_transform_ready",
+    ):
+        if handoff.get(field) is not False:
+            raise ValueError(f"memory-LOAD report unexpectedly preclaims {field}")
+
+    scope = report.get("scope")
+    if not isinstance(scope, Mapping):
+        raise ValueError("memory-LOAD scope missing")
+    if scope.get("retracted_manager_record_zero_contract_accepted") is not False:
+        raise ValueError("retracted manager-record zero contract was accepted")
+    if scope.get("additional_mass_zero_promoted_to_unjoined_machine_LOAD") is not False:
+        raise ValueError("unjoined additional-mass zero was promoted")
+
+    reductions = report.get("known_semantic_reductions")
+    additional = (
+        reductions.get("additional_mass_first_bootstrap")
+        if isinstance(reductions, Mapping)
+        else None
+    )
+    if not isinstance(additional, Mapping):
+        raise ValueError("actual additional-mass reduction missing")
+    if additional.get("proof_format") != ACTUAL_ZERO_FORMAT:
+        raise ValueError("additional-mass reduction proof format drift")
+    if additional.get("retracted_manager_record_zero_claim_reused") is not False:
+        raise ValueError("retracted manager-record zero reduction was reused")
+    if additional.get("numeric_value_proven") is not True:
+        raise ValueError("actual additional-mass reduction is not numeric")
+    if float(additional.get("value", 1.0)) != 0.0:
+        raise ValueError("actual additional-mass reduction is not exact zero")
+    if additional.get("term_elidable_for_first_bootstrap") is not True:
+        raise ValueError("actual additional-mass reduction is not first-bootstrap elidable")
+    if additional.get("machine_LOAD_pointer_identity_joined") is not False:
+        raise ValueError("additional-mass machine pointer identity was unexpectedly prejoined")
 
     analysis = report.get("analysis")
     if not isinstance(analysis, Mapping):
@@ -236,22 +270,18 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
             unresolved.append(blocked)
             classified.append(blocked)
 
-    reduction = report.get("known_semantic_reductions")
-    additional = (
-        reduction.get("additional_mass_first_bootstrap")
-        if isinstance(reduction, Mapping)
-        else None
-    )
+    reductions = report["known_semantic_reductions"]
+    additional = reductions["additional_mass_first_bootstrap"]
+    handoff = report["handoff"]
     additional_machine_join_ready = bool(
-        isinstance(report.get("handoff"), Mapping)
-        and report["handoff"].get("offset33b_additional_mass_machine_LOAD_join_ready")
-        is True
+        handoff.get("offset33b_additional_mass_machine_LOAD_join_ready") is True
     )
     additional_zero_ready = bool(
-        isinstance(additional, Mapping)
+        additional.get("proof_format") == ACTUAL_ZERO_FORMAT
         and additional.get("numeric_value_proven") is True
         and float(additional.get("value", 1.0)) == 0.0
         and additional.get("term_elidable_for_first_bootstrap") is True
+        and additional.get("retracted_manager_record_zero_claim_reused") is False
     )
     additional_zero_available = additional_zero_ready and additional_machine_join_ready
 
@@ -318,9 +348,11 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
         },
         "known_semantic_reductions": {
             "additional_mass_first_bootstrap_zero_ready": additional_zero_ready,
+            "additional_mass_proof_format": additional.get("proof_format"),
             "additional_mass_machine_LOAD_join_ready": additional_machine_join_ready,
             "additional_mass_zero_available_for_numeric_evaluator": additional_zero_available,
             "additional_mass_zero_applied_by_this_stage": False,
+            "retracted_manager_record_zero_claim_used": False,
         },
         "handoff": {
             "offset33b_memory_LOAD_frontier_ready": True,
@@ -364,13 +396,14 @@ def analyze_bmw_offset33b_field_owner_frontier(memory_load_path: Path) -> dict[s
             ],
         },
         "scope": {
+            "actual_object_additional_mass_proof_consumed": True,
+            "retracted_manager_record_zero_contract_accepted": False,
             "FUN_0076b280_entry_ECX_promoted_to_HDVehicle_this": True,
             "other_entry_register_promoted_to_argument_semantics": False,
             "memory_origin_promoted_to_HDVehicle_VDF_SDF_or_tire": False,
             "field_semantic_name_inferred_from_displacement": False,
-            "additional_mass_zero_applied_without_machine_pointer_join": False,
-            "additional_mass_zero_reapplied_by_this_stage": False,
             "owner_join_promoted_to_numeric_value": False,
+            "additional_mass_zero_reapplied_by_this_stage": False,
             "original_game_executed": False,
             "new_runtime_capture_required": False,
         },
